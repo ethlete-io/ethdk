@@ -315,7 +315,6 @@ export default definePart<{
   empty?: boolean;
   listingError?: boolean;
   noted?: boolean;
-  sketchMissing?: boolean;
   noteHint?: string;
   manyStates?: boolean;
   folded?: boolean;
@@ -334,7 +333,7 @@ export default definePart<{
   call?: 'open' | 'transferred';
   developer?: boolean;
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft only while slow rules run and no blocker is definite: as soon as one blocker is definite the badge reads Nicht baubereit, even while a slow rule still runs, ADR 0270) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. Steht statt eines Teils ein Hinweis auf der Fläche (Design-Server nicht gestartet, Lesefehler, Sketch nicht gefunden), zeigt sie eine Karte wie die leere Seite: ein Icon, ein kurzer Titel und darunter der Hinweis; keine Rahmen, kein Chip, keine Kommentar-Taste. A legacy call has no header bar: its headline and slug sit top left on the canvas, and top right, where a part shows Kommentar and the open-points chip, the surface and colour theme switches and Als übertragen markieren, which turns into an übertragen badge. A part with 12 or more states opens on the states with an open comment and folds the rest behind a pill at the bottom centre of the canvas: "13 weitere Zustände eingeklappt" and the disclosure Alle Zustände zeigen, which shows every state and leaves only the disclosure, open, in the pill. When no state or every state has an open comment, nothing folds.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft only while slow rules run and no blocker is definite: as soon as one blocker is definite the badge reads Nicht baubereit, even while a slow rule still runs, ADR 0270) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. Steht statt eines Teils ein Hinweis auf der Fläche (Design-Server nicht gestartet, Lesefehler), zeigt sie eine Karte wie die leere Seite: ein Icon, ein kurzer Titel und darunter der Hinweis; keine Rahmen, kein Chip, keine Kommentar-Taste. A legacy call has no header bar: its headline and slug sit top left on the canvas, and top right, where a part shows Kommentar and the open-points chip, the surface and colour theme switches and Als übertragen markieren, which turns into an übertragen badge. A part with 12 or more states opens on the states with an open comment and folds the rest behind a pill at the bottom centre of the canvas: "13 weitere Zustände eingeklappt" and the disclosure Alle Zustände zeigen, which shows every state and leaves only the disclosure, open, in the pill. When no state or every state has an open comment, nothing folds.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6', 'design check'],
   implements: {
     route: '/',
@@ -347,7 +346,7 @@ export default definePart<{
     },
     {
       label: 'Leer und Hinweise',
-      states: ['empty', 'canvas-note', 'sketch-missing'],
+      states: ['empty', 'canvas-note'],
     },
     {
       label: 'Kommentare',
@@ -391,7 +390,6 @@ export default definePart<{
     empty: { empty: true },
     'listing-error': { listingError: true },
     'canvas-note': { noted: true, noteHint: CANVAS_NOTE },
-    'sketch-missing': { noted: true, sketchMissing: true },
     'many-states': { manyStates: true },
     'many-states-folded': { closed: true, comments: true, folded: true },
     fit: { fit: true },
@@ -446,8 +444,6 @@ export default definePart<{
       'A failed listing read; check the centred error card with the server reason and Erneut laden, and that no frames show.',
     'canvas-note':
       'A note instead of a part; check the card with its icon, title and the hint, and that no chip or comment button shows.',
-    'sketch-missing':
-      'A picked sketch that no longer exists; check the card with its icon and title and that no hint shows.',
     'many-states': 'A part with many states; check that only the states with an open comment open and the rest fold.',
     'many-states-folded':
       'The folded states; check the pill at the bottom centre with the count and Alle Zustände zeigen.',
@@ -510,7 +506,6 @@ export default definePart<{
     empty,
     listingError,
     noted,
-    sketchMissing = false,
     noteHint = '',
     manyStates,
     folded = false,
@@ -585,9 +580,7 @@ export default definePart<{
         content: html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)" data-canvas-note>
           <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
             ${icon('warning', { size: 24, cls: 'text-et-surface-muted' })}
-            <p class="m-0 text-et-surface font-ui-strong text-ui-md">
-              ${sketchMissing ? SYSTEM_LABELS.sketchMissing : SYSTEM_LABELS.serverDown}
-            </p>
+            <p class="m-0 text-et-surface font-ui-strong text-ui-md">${SYSTEM_LABELS.serverDown}</p>
             ${noteHint ? html`<p class="m-0 text-et-surface-muted">${noteHint}</p>` : ''}
           </div>
         </div>`,

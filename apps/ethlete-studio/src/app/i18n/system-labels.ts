@@ -12,7 +12,6 @@ export const TREE_ROW_LABELS = {
 
 export const SYSTEM_LABELS = {
   none: 'Noch keine Teile.',
-  sketchMissing: 'Sketch nicht gefunden',
   serverDown: 'Design-Server läuft nicht',
   readFailed: 'Lesefehler',
   foldedStates: (count: number) =>

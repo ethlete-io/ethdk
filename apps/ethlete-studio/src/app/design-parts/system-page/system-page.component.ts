@@ -176,10 +176,7 @@ export const FRAME_HEAD_CLASS =
               <path d="M8 6.5v3" />
               <path d="M8 11.25v.01" />
             </svg>
-            <p
-              [attr.data-sketch-missing]="sketchMissing() ? '' : null"
-              class="m-0 text-ui-md font-ui-strong text-et-surface"
-            >
+            <p class="m-0 text-ui-md font-ui-strong text-et-surface">
               {{ noteTitle() }}
             </p>
             @if (noteHint()) {
@@ -388,7 +385,6 @@ export class SystemPageComponent {
   public noted = input(false);
   public noteTitle = input('');
   public noteHint = input('');
-  public sketchMissing = input(false);
   public missingShots = input(0);
   public empty = input(false);
   public listingError = input<string | null>(null);

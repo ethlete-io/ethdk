@@ -164,11 +164,9 @@ describe('SystemPageComponent canvas note', () => {
     expect(card.querySelector('svg')).not.toBeNull();
 
     fixture.componentRef.setInput('noteHint', '');
-    fixture.componentRef.setInput('sketchMissing', true);
     await fixture.whenStable();
 
     expect(card.querySelectorAll('p')).toHaveLength(1);
-    expect(card.querySelector('[data-sketch-missing]')?.textContent?.trim()).toBe('Lesefehler');
   });
 });
 

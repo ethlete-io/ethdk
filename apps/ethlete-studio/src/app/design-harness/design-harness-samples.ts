@@ -422,8 +422,8 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(props['noted']
         ? {
             tree: { layers: [] },
-            noteTitle: props['sketchMissing'] ? SYSTEM_LABELS.sketchMissing : SYSTEM_LABELS.serverDown,
-            noteHint: props['sketchMissing'] ? '' : SHELL_LABELS.startServer,
+            noteTitle: SYSTEM_LABELS.serverDown,
+            noteHint: SHELL_LABELS.startServer,
           }
         : {}),
       ...(comments

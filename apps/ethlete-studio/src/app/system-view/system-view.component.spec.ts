@@ -2051,7 +2051,6 @@ describe('SystemViewComponent on a tree pick', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/gone' });
     const element: HTMLElement = fixture.nativeElement;
 
-    expect(element.querySelector('[data-sketch-missing]')).toBeNull();
     expect(element.querySelector('[data-canvas-note]')).toBeNull();
     expect(fixture.componentInstance['part']()?.key).toBeTruthy();
   });
@@ -2060,7 +2059,6 @@ describe('SystemViewComponent on a tree pick', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating@other' });
 
     expect(fixture.componentInstance['part']()?.key).toBe('elements/rating');
-    expect(fixture.nativeElement.querySelector('[data-sketch-missing]')).toBeNull();
   });
 });
 
