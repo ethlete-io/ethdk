@@ -949,6 +949,44 @@ describe('classifyCalls, a call nothing ended', () => {
     expect(windows.map((window) => [window.from, window.to])).toEqual([[at(40, 52), at(47, 3)]]);
   });
 
+  describe('a short glance at its window', () => {
+    const vesktop = 'dev.vencord.Vesktop';
+    const room = '(39) Discord | Meeting #1 | Braune Digital';
+    const talk: [number, number][] = [
+      [41, 4],
+      [41, 32],
+      [42, 3],
+      [46, 26],
+      [46, 57],
+    ];
+
+    const glanced = (glance: { minute: number; second: number; heldSeconds: number }) =>
+      classifyCalls({
+        events: [
+          focus(40, vesktop, room, 44),
+          call(40, 'call-start', vesktop, 52),
+          focus(41, 'code', 'calls.ts', 31),
+          focus(glance.minute, vesktop, room, glance.second),
+          focus(glance.minute, 'code', 'calls.ts', glance.second + glance.heldSeconds),
+        ],
+        rules: rules({ countsAsWork: ['Braune Digital'] }),
+        until: at(120),
+        heard: talk.map(([minute, second]) => ({ atMs: +at(minute, second), appId: vesktop })),
+      }).map((window) => window.to);
+
+    it('does not extend it after a long silence', () => {
+      expect(glanced({ minute: 75, second: 39, heldSeconds: 2 })).toEqual([at(46, 57)]);
+    });
+
+    it('extends it when the focus lasts 5 s or more', () => {
+      expect(glanced({ minute: 75, second: 39, heldSeconds: 5 })).toEqual([at(75, 44)]);
+    });
+
+    it('extends it within 15 min of the last heard chunk', () => {
+      expect(glanced({ minute: 55, second: 39, heldSeconds: 2 })).toEqual([at(55, 41)]);
+    });
+  });
+
   it('ends it with the accepted meeting it ran over', () => {
     const windows = classify([
       focus(0, 'code', 'calls.ts'),

@@ -62,6 +62,9 @@ export const MIN_HEARD_CHUNKS = 2;
  */
 export const HEARD_RUN_GAP_MS = 15 * 60_000;
 
+/** A focus on a call's window shorter than this does not extend the call after {@link HEARD_RUN_GAP_MS} of silence. */
+export const GLANCE_MS = 5000;
+
 /**
  * The break in the microphone that still reads as one call.
  *
@@ -465,16 +468,24 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     const inRun = heard.filter((atMs, index) =>
       heard.some((other, otherIndex) => otherIndex !== index && Math.abs(other - atMs) <= HEARD_RUN_GAP_MS),
     );
+    const holds = clipWindows({
+      windows: held.filter((window) => callHolderBelongsTo(call.appId, window.appId)),
+      within: [call],
+    }).sort((a, b) => a.from.getTime() - b.from.getTime());
     const ends = [
-      ...clipWindows({
-        windows: held.filter((window) => callHolderBelongsTo(call.appId, window.appId)),
-        within: [call],
-      }).map((window) => window.to.getTime()),
+      ...holds.filter((window) => window.to.getTime() - window.from.getTime() >= GLANCE_MS).map((window) => +window.to),
       ...inRun,
       ...invited
         .filter((event) => event.at < call.to && event.until > call.from)
         .map((event) => Math.min(event.until.getTime(), call.to.getTime())),
     ];
+
+    for (const glance of holds.filter((window) => window.to.getTime() - window.from.getTime() < GLANCE_MS)) {
+      const lastSign = Math.max(call.from.getTime(), ...ends);
+
+      if (glance.from.getTime() - lastSign <= HEARD_RUN_GAP_MS) ends.push(glance.to.getTime());
+    }
+
     const end = Math.max(...ends);
 
     return end > call.from.getTime() ? new Date(end) : undefined;
