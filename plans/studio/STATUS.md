@@ -40,6 +40,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 9. **Timetrack-Gleichstand (B616)** ⏳ Diagnose 23.11.: vier Causes (Pfad je Repo-Schlüssel, Regel gelöschter Worktrees, Meeting-Benennungen reisen nicht, Annehmen per Zeilen-ID). Fix 1 gebaut 32ad7a15e. Offen: heute fehlt auf dem Mac ein Meeting und es zeigt 30 min Pause (Tom); Fixes 3, 4, 2; neuer Vergleich - Builder
 10. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: frühestens 24.11. löscht Tom `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - Tom, dann Builder
 11. **Rundenwähler ohne Rahmen (B680)** ⏳ Ghost-Select, so breit wie der Rundenname, kein Leeren-X (ADR 0417) - Builder
+12. **Neustart startet Agent (B682)** ⏳ `agent-sessions restart` startet nur claude oder codex, nie eine Shell; Footer-Erkennung enger (S44, fifagg) - Builder
 
 Geparkt: B105, B108, B109, B148, B312, B313.
 
