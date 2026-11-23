@@ -75,11 +75,10 @@
   "components/copy-button": "fdc91e5c36d6d68e",
   "components/description-list": "2f40dd62ec286cb9",
   "components/dialog": {
-    "hash": "ab609978e9a6fba4",
+    "hash": "bc84f7fb3281860d",
     "variant": "new",
-    "decidedBy": "plan: B584: fill the missing control states of components/dialog",
-    "at": "2026-11-18T14:07:53.418Z",
-    "note": "merged without a pick: allowed by B584: fill the missing control states of components/dialog"
+    "decidedBy": "builder",
+    "at": "2026-11-23T09:07:09.928Z"
   },
   "components/divider": "71b52e568e69dfed",
   "components/empty-state": {
