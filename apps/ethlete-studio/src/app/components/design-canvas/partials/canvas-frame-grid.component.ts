@@ -308,7 +308,8 @@ export class CanvasFrameCellComponent {
                 <div
                   [class.grid]="sheet.centered"
                   [class.place-items-center]="sheet.centered"
-                  class="bg-(--et-surface-background-solid) p-space-3 ring-1 ring-(--et-surface-border-solid)"
+                  [class]="backdropOf(scheme)"
+                  class="p-space-3 ring-1"
                   data-grid-cell
                 >
                   @if (cellOf(row, column); as cell) {
@@ -357,10 +358,7 @@ export class CanvasFrameCellComponent {
                 <span></span>
               }
               @for (row of line; track row) {
-                <div
-                  class="bg-(--et-surface-background-solid) p-space-3 ring-1 ring-(--et-surface-border-solid)"
-                  data-grid-cell
-                >
+                <div [class]="backdropOf(scheme)" class="p-space-3 ring-1" data-grid-cell>
                   @if (cellOf(row, sheet.first); as cell) {
                     <ethlete-canvas-frame-cell
                       #cell
@@ -633,6 +631,12 @@ export class CanvasFrameGridComponent {
 
       return next;
     });
+  }
+
+  protected backdropOf(scheme: ColorScheme | null) {
+    return scheme === 'light'
+      ? 'bg-white ring-black/15'
+      : 'bg-(--et-surface-background-solid) ring-(--et-surface-border-solid)';
   }
 
   protected schemeLabelOf(scheme: ColorScheme | null) {

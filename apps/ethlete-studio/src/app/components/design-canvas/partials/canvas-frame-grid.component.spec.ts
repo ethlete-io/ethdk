@@ -298,6 +298,19 @@ describe('CanvasFrameGridComponent', () => {
       },
     );
 
+    it.each(['groups', 'table'] as const)(
+      'backs a light cell with a light surface and a dark cell with the app surface (sheet %s)',
+      async (sheet) => {
+        const host = await renderGrid(grid(sheet));
+        const backdropOf = (scheme: string) =>
+          host.querySelector(`[data-grid-cell]:has([data-cell-scheme="${scheme}"])`)?.className ?? '';
+
+        expect(backdropOf('light')).toContain('bg-white');
+        expect(backdropOf('light')).not.toContain('bg-(--et-surface-background-solid)');
+        expect(backdropOf('dark')).toContain('bg-(--et-surface-background-solid)');
+      },
+    );
+
     it('draws one scheme without a scheme head, its cells in that scheme', async () => {
       const host = await renderGrid({ ...grid('groups'), schemes: ['dark'] });
 
