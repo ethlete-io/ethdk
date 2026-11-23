@@ -20,7 +20,7 @@ _Avoid_: track, lane, timeline
 
 **Stream key**:
 The identity of a stream. It names the checkout, or the application when there is no checkout. It
-does **not** name the branch.
+does **not** name the branch — see ADR 0001.
 _Avoid_: context key (that is the older, branch-bearing identity, kept for attribution)
 
 **Block**:
@@ -52,7 +52,7 @@ _Avoid_: line, item. A row drawn against a time axis is a **band**; the work beh
 **Band**:
 One line on the day timeline: a row drawn against a proportional time axis. A band can be split and
 glued by hand; the stream behind it cannot, because a stream is keyed by its checkout. Opening a
-band shows that stream's evidence.
+band shows that stream's evidence. See ADR 0011.
 _Avoid_: bar, slot, entry
 
 **Fold**:
@@ -84,7 +84,7 @@ _Avoid_: default ticket, catch-all, bucket
 A name the user gave work that Jira does not hold yet. It takes bands across days and across
 checkouts, it books nothing, and it is resolved to an issue in one act. A band carries it in
 `standInId`, never in `issueKey`, so it stays "shown, counted undecided, never written". The matches
-live on attribution rules that point at it.
+live on attribution rules that point at it. See ADR 0021.
 _Avoid_: placeholder (an HTML attribute, and the `<KEY>` stand-in in a branch name), draft, pending
 ticket. It is not a **standing ticket** - that is a real issue that takes every hour of one context.
 
@@ -98,7 +98,7 @@ _Avoid_: late, expired, stale, breached
 **Remembered naming**:
 A stored answer that names later work the way earlier work was named: a set of features, an issue
 key, a count and the date it was last seen. Seeded from Tempo history, written by a naming of the
-user's, and never written by a model.
+user's, and never written by a model. See ADR 0012.
 _Avoid_: rule (a rule is hand-written and matches a context, not a call), pattern, learning
 
 A naming has one of two keys, and which one it has depends on whether the calendar held the meeting.
@@ -179,14 +179,14 @@ _Avoid_: message, request, call, iteration
 
 **Prompt**:
 One thing the person typed at an agent, as an instant and a checkout. The text is never collected.
-It is the one agent evidence that says somebody was at the keyboard. A prompt and a
+It is the one agent evidence that says somebody was at the keyboard — see ADR 0006. A prompt and a
 turn are kept for a checkout no project link covers, and both drop for a private one.
 _Avoid_: message, input, keystroke in prose
 
 **Remote prompt**:
 A prompt sent while the app watched nobody touch the seat: the person steered from a phone or another
 device. Inside a break, a run of remote prompts at most a quarter hour apart is drawn and booked as
-work, from the first prompt's allowance to the last prompt.
+work, from the first prompt's allowance to the last prompt — see ADR 0033.
 A prompt the app could not watch is neither remote nor desk, and buys back only the allowance.
 _Avoid_: phone prompt, mobile prompt, away prompt
 
@@ -231,7 +231,7 @@ _Avoid_: feature, permission (a permission is one reason a capability is missing
 
 **Pass**:
 One walk over one agent's session logs, with cursors of its own. There is a session pass, a spend
-pass and a prompt pass per provider, and no two passes share a cursor.
+pass and a prompt pass per provider, and no two passes share a cursor. See ADR 0003 and ADR 0005.
 _Avoid_: run (a run is one tick of one pass), scan, sweep
 
 **Backbone**:
@@ -241,7 +241,7 @@ _Avoid_: integration, provider (a provider is an agent CLI)
 
 **Machine**:
 One store, named by the random id its first start wrote. The events it collected are its own; the
-events a paired machine sent it are received events, kept apart.
+events a paired machine sent it are received events, kept apart. See ADR 0039.
 _Avoid_: origin (that is a git remote), device, host, instance
 
 ### What leaves the machine
@@ -255,6 +255,6 @@ _Avoid_: dictionary, mapping, glossary
 **Pseudonym**:
 The fictional name a real name becomes in anything sent to a model. Derived, never stored, and
 reversed by the same rule over the name list. A Jira project key prefix is a project name, so it
-becomes a pseudonym too.
+becomes a pseudonym too. See ADR 0013.
 _Avoid_: alias, placeholder, redaction (redaction removes a thing; a pseudonym replaces it and can
 be reversed)
