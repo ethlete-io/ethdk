@@ -56,6 +56,13 @@ export type HeardChunk = { atMs: number; appId: string };
 export const MIN_HEARD_CHUNKS = 2;
 
 /**
+ * How far apart two transcript chunks may lie and still carry an open call's end between them. A chunk
+ * with no other this close does not: measured on 2026-11-23, whisper heard "Vielen Dank." 20 minutes
+ * after a Discord meeting's last words while the room stayed open, and ran the call on to it.
+ */
+export const HEARD_RUN_GAP_MS = 15 * 60_000;
+
+/**
  * The break in the microphone that still reads as one call.
  *
  * Every Google Meet opens it twice: the pre-join screen runs a device check, drops the microphone and
@@ -455,12 +462,15 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
           (callHolderBelongsTo(chunk.appId, call.appId) || callHolderBelongsTo(call.appId, chunk.appId)),
       )
       .map((chunk) => chunk.atMs);
+    const inRun = heard.filter((atMs, index) =>
+      heard.some((other, otherIndex) => otherIndex !== index && Math.abs(other - atMs) <= HEARD_RUN_GAP_MS),
+    );
     const ends = [
       ...clipWindows({
         windows: held.filter((window) => callHolderBelongsTo(call.appId, window.appId)),
         within: [call],
       }).map((window) => window.to.getTime()),
-      ...(heard.length >= MIN_HEARD_CHUNKS ? heard : []),
+      ...inRun,
       ...invited
         .filter((event) => event.at < call.to && event.until > call.from)
         .map((event) => Math.min(event.until.getTime(), call.to.getTime())),

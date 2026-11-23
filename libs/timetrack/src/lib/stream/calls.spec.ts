@@ -913,6 +913,42 @@ describe('classifyCalls, a call nothing ended', () => {
     expect(windows.map((window) => window.to)).toEqual([at(45)]);
   });
 
+  it('does not run it on to a lone chunk heard long after the talk ended', () => {
+    const vesktop = 'dev.vencord.Vesktop';
+    const room = '(39) Discord | Meeting #1 | Braune Digital';
+    const talk: [number, number][] = [
+      [41, 4],
+      [41, 32],
+      [42, 3],
+      [42, 31],
+      [42, 57],
+      [43, 32],
+      [44, 3],
+      [44, 38],
+      [45, 17],
+      [45, 47],
+      [46, 26],
+      [46, 57],
+    ];
+    const windows = classifyCalls({
+      events: [
+        focus(40, vesktop, room, 44),
+        call(40, 'call-start', vesktop, 52),
+        focus(41, 'code', 'calls.ts', 31),
+        focus(47, vesktop, room, 2),
+        focus(47, 'code', 'calls.ts', 3),
+      ],
+      rules: rules({ countsAsWork: ['Braune Digital'] }),
+      until: at(75),
+      heard: [...talk.map(([minute, second]) => +at(minute, second)), +at(66, 54)].map((atMs) => ({
+        atMs,
+        appId: vesktop,
+      })),
+    });
+
+    expect(windows.map((window) => [window.from, window.to])).toEqual([[at(40, 52), at(47, 3)]]);
+  });
+
   it('ends it with the accepted meeting it ran over', () => {
     const windows = classify([
       focus(0, 'code', 'calls.ts'),
