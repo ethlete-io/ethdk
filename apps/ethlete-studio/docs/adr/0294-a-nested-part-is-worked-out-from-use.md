@@ -14,3 +14,5 @@ part that gains a second user moves back to its layer.
 
 The human chose this over a declared host folder with a check rule (answer "q1ok" to the recommendation). The look was
 already decided by the merged `elements/part-tree@parts-only` variant a.
+
+Amended by ADR 0408: a part can name its family in its design.

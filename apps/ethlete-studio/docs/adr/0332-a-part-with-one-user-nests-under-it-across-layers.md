@@ -15,3 +15,5 @@ user in any layer, or (B) keeping nesting within one layer; the human answered "
 The part tree shows a part under its user when exactly one part uses it, in any layer, with a small tag naming its own
 layer. Nothing declares the nesting; it is worked out from use. A part that gains a second user moves back to its
 layer. A base part from the SDK never nests.
+
+Amended by ADR 0408: a part can name its family in its design.
