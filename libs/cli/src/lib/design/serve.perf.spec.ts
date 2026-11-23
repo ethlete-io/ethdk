@@ -33,7 +33,12 @@ vi.mock('vite', () => ({
   createServer: async (options: ServerOptions) => {
     created.push(options);
 
-    return { listen: async () => undefined, printUrls: () => undefined, close: async () => undefined };
+    return {
+      listen: async () => undefined,
+      printUrls: () => undefined,
+      close: async () => undefined,
+      environments: { ssr: { fetchModule: async () => ({}) } },
+    };
   },
 }));
 
