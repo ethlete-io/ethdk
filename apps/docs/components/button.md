@@ -246,7 +246,9 @@ Base override tokens, all read by the surface button (`et-button`); the other fl
 
 The surface button has no height token: its height comes from its content. It is twice the border width, plus
 twice the block padding, plus the font size times the line height. An icon adds height only when it is taller
-than the line box, so set `--et-button-line-height` large enough for the icon. Then a button with an icon and a
+than the line box, so set `--et-button-line-height` large enough for the icon. The icon is centred on the
+label's cap height, not on the line box, so a large icon can need a line height of `2` or more: measure a
+button with and without the icon. Then a button with an icon and a
 button with text only have the same height, and `--et-button-padding` sets that height exactly:
 
 ```css
