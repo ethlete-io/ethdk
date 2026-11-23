@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { basename, join } from 'path';
+import { basename, dirname, join } from 'path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 const SCRIPT = join(__dirname, '../../content/skills/agent-sessions/agent-sessions.mjs');
@@ -582,7 +582,7 @@ describe('agent-sessions', () => {
       const agent = `claude-dispatch-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
       const dispatchSession = `mailbox-dispatch-restart-${process.pid}`;
-      const fakeAgent = join(dir, 'fakeagent');
+      const fakeAgent = fakeAgentPath();
       writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
 
       spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
@@ -757,7 +757,7 @@ describe('agent-sessions', () => {
       const scoped = `${agent}@${basename(dir)}`;
       const exited = join(dir, 'exited.log');
       const started = join(dir, 'started.log');
-      const fakeAgent = join(dir, 'fakeagent');
+      const fakeAgent = fakeAgentPath();
       writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$*" > ${started}; exec cat\n`, { mode: 0o755 });
 
       spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "$line" > ${exited}`]);
@@ -790,7 +790,7 @@ describe('agent-sessions', () => {
       const agent = `claude-tmpdir-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
       const started = join(dir, 'started.log');
-      const fakeAgent = join(dir, 'fakeagent');
+      const fakeAgent = fakeAgentPath();
       writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$CLAUDE_CODE_TMPDIR" > ${started}; exec cat\n`, {
         mode: 0o755,
       });
@@ -821,7 +821,7 @@ describe('agent-sessions', () => {
       const agent = `claude-stale-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
       const started = join(dir, 'started.log');
-      const fakeAgent = join(dir, 'fakeagent');
+      const fakeAgent = fakeAgentPath();
       writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$*" > ${started}; exec cat\n`, { mode: 0o755 });
 
       spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
@@ -861,10 +861,10 @@ describe('agent-sessions', () => {
       const scoped = `${agent}@${basename(dir)}`;
       const started = join(dir, 'started.log');
       const viaFunction = join(dir, 'via-function.log');
-      const fakeAgent = join(dir, 'fakeagent');
+      const fakeAgent = fakeAgentPath();
       const rc = join(dir, 'rc.sh');
       writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$*" > ${started}; exec cat\n`, { mode: 0o755 });
-      writeFileSync(rc, `fakeagent() { echo function > ${viaFunction}; }\n`);
+      writeFileSync(rc, `claude() { echo function > ${viaFunction}; }\n`);
 
       spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
       spawnSync('tmux', [
@@ -872,7 +872,7 @@ describe('agent-sessions', () => {
         '-t',
         `=${scoped}:`,
         '@ethlete_command',
-        `PATH=${dir}:${process.env['PATH']} fakeagent`,
+        `PATH=${dirname(fakeAgent)}:${process.env['PATH']} claude`,
       ]);
       spawnSync('tmux', ['set-environment', '-t', `=${scoped}:`, 'ENV', rc]);
 
@@ -898,6 +898,12 @@ describe('agent-sessions', () => {
 
   const BUILDER_RULE =
     'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.';
+
+  const fakeAgentPath = () => {
+    mkdirSync(join(dir, 'agent-bin'), { recursive: true });
+
+    return join(dir, 'agent-bin', 'claude');
+  };
 
   const fakeClaude = (started: string) => {
     const bin = join(dir, 'bin');
@@ -1163,7 +1169,7 @@ describe('agent-sessions', () => {
       const agent = `claude-dialog-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
       const answered = join(dir, 'answered.log');
-      const fakeAgent = join(dir, 'fakeagent');
+      const fakeAgent = fakeAgentPath();
       const dialog = [
         'Background work is running',
         'The following will stop when you exit:',
@@ -1205,7 +1211,7 @@ describe('agent-sessions', () => {
     const startPane = (agent: string, footer: string) => {
       const scoped = `${agent}@${basename(dir)}`;
       const started = join(dir, `${agent}.started`);
-      const fakeAgent = join(dir, `${agent}.sh`);
+      const fakeAgent = fakeAgentPath();
       writeFileSync(fakeAgent, `#!/bin/sh\necho started > ${started}; exec cat\n`, { mode: 0o755 });
       spawnSync('tmux', [
         'new-session',
@@ -1251,6 +1257,89 @@ describe('agent-sessions', () => {
     }, 30_000);
   });
 
+  describe.skipIf(!hasTmux)('restart with the captured fifagg log of a bare shell', () => {
+    const [footerLine, startedLine] = readFileSync(join(__dirname, 'fixtures/restart-log-bare-shell.txt'), 'utf8')
+      .trim()
+      .split('\n');
+    const footer = (footerLine ?? '').match(/shows background work \((.*)\), restart goes through/)?.[1] ?? '';
+    const storedCommand = (startedLine ?? '').split('started a new process: ')[1] ?? '';
+    const rule = '─'.repeat(40);
+
+    it.each([
+      ['--process with the captured footer', ['--process'], footer],
+      ['with background shells in the footer', [], '2 shells · ↓ to manage'],
+    ])(
+      'refuses and leaves the pane alone for restart %s',
+      (_name, flags, paneFooter) => {
+        const agent = `claude-bareshell-${process.pid}`;
+        const scoped = `${agent}@${basename(dir)}`;
+        const exited = join(dir, 'exited.log');
+        spawnSync('tmux', [
+          'new-session',
+          '-d',
+          '-s',
+          scoped,
+          `printf '${rule}\\n❯ \\n${rule}\\n  ${paneFooter}\\n'; read line; echo "$line" > ${exited}; exec cat`,
+        ]);
+        spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', storedCommand]);
+        for (
+          let wait = 0;
+          wait < 50 &&
+          !spawnSync('tmux', ['capture-pane', '-p', '-t', `=${scoped}:`], { encoding: 'utf8' }).stdout.includes(
+            paneFooter.slice(0, 7),
+          );
+          wait++
+        )
+          spawnSync('sleep', ['0.1']);
+
+        try {
+          const result = run(['restart', agent, '--now', '--after', '0', ...flags, 'resume'], undefined, {
+            TMUX_PANE: paneOf(scoped),
+            SHELL: 'sh',
+            AGENT_RESTART_EXIT_WAIT_MS: '1000',
+          });
+
+          expect(result.stderr).toContain('has no claude or codex program');
+          expect(existsSync(exited)).toBe(false);
+          expect(
+            spawnSync('tmux', ['display-message', '-p', '-t', `=${scoped}:`, '#{pane_dead}'], { encoding: 'utf8' })
+              .stdout,
+          ).toBe('0\n');
+        } finally {
+          spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        }
+      },
+      30_000,
+    );
+
+    it('does not take the process path for a footer that only offers to manage a feedback draft', () => {
+      const agent = `claude-draftfooter-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-s',
+        scoped,
+        `printf '${rule}\\n❯ \\n${rule}\\n  ${footer}\\n'; read line; exec cat`,
+      ]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', 'claude']);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          AGENT_RESTART_EXIT_WAIT_MS: '1000',
+        });
+
+        expect(
+          existsSync(join(dir, 'restart.log')) ? readFileSync(join(dir, 'restart.log'), 'utf8') : '',
+        ).not.toContain('background work');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    }, 30_000);
+  });
+
   it.skipIf(!hasTmux)(
     'stores the command of run without the prompt',
     async () => {
@@ -1258,7 +1347,7 @@ describe('agent-sessions', () => {
       const scoped = `${agent}@${basename(dir)}`;
       const runner = `runner-${process.pid}`;
       const dispatch = `dispatch-${process.pid}`;
-      const fakeAgent = join(dir, 'fake-agent.sh');
+      const fakeAgent = fakeAgentPath();
       writeFileSync(fakeAgent, 'exec cat\n');
 
       spawnSync('tmux', [
@@ -1302,7 +1391,7 @@ describe('agent-sessions', () => {
       const scoped = `${agent}@${basename(dir)}`;
       const runner = `runner-${process.pid}`;
       const dispatch = `dispatch-${process.pid}`;
-      const fakeAgent = join(dir, 'fake-agent');
+      const fakeAgent = fakeAgentPath();
       writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
 
       spawnSync('tmux', [
@@ -1376,7 +1465,7 @@ describe('agent-sessions', () => {
         });
 
         expect(result.status).toBe(1);
-        expect(result.stderr).toContain('no agent program');
+        expect(result.stderr).toContain('no claude or codex program');
         expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
@@ -1513,7 +1602,7 @@ describe('agent-sessions', () => {
       const scoped = `${agent}@${basename(dir)}`;
       const config = join(dir, 'claude');
       const started = join(dir, 'started.log');
-      const fakeAgent = join(dir, 'fakeagent');
+      const fakeAgent = fakeAgentPath();
       writeFileSync(
         fakeAgent,
         `#!/bin/sh\nprintf '%s|%s|%s\\n' "$*" "$CLAUDE_CONFIG_DIR" "$ETHLETE_AGENT_ROLE" > ${started}; exec cat\n`,
@@ -1537,7 +1626,9 @@ describe('agent-sessions', () => {
 
         await expect
           .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
-          .toBe(`resume [typed by agent-sessions]|${config}|builder\n`);
+          .toMatch(
+            new RegExp(`${BUILDER_RULE.slice(0, 20)}.* resume \\[typed by agent-sessions\\]\\|${config}\\|builder\\n$`),
+          );
         expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
         expect(
           spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
@@ -1753,6 +1844,7 @@ process.stdin.on('data', (data) => {
       writeFileSync(log, '');
 
       spawnSync('tmux', ['new-session', '-d', '-x', '120', '-y', '30', '-s', scoped, panelPane(log)]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', 'claude']);
 
       try {
         run(['restart', agent, '--now', '--after', '1', 'resume', 'slug'], undefined, {
@@ -1789,6 +1881,7 @@ process.stdin.on('data', (data) => {
         scoped,
         panelPane(log, 'claude-pane-footer-pill-focused.txt', 'claude-pane-footer-pill-unfocused.txt'),
       ]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', 'claude']);
 
       try {
         run(['restart', agent, '--now', '--after', '1', 'resume', 'slug'], undefined, {

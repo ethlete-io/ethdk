@@ -238,6 +238,22 @@ const hasAgentBinary = (words) => {
     index++;
   return index < words.length;
 };
+const AGENT_PROGRAM = /^(?:claude|codex)$/;
+const programIndexOf = (words) => {
+  let index = 0;
+  while (
+    index < words.length &&
+    (ENV_WORD.test(words[index]) ||
+      words[index] === 'env' ||
+      (index > 0 && words.includes('env') && words[index].startsWith('-')))
+  )
+    index++;
+  return index;
+};
+const runsAgentProgram = (words) => {
+  const index = programIndexOf(words);
+  return index < words.length && AGENT_PROGRAM.test(basename(words[index]));
+};
 const quoteShellWord = (word) =>
   ENV_WORD.test(word) ? word.replace(/^([^=]+=)(.*)$/s, (_, key, value) => `${key}${quote(value)}`) : quote(word);
 const unwrappedRun = (command) => {
@@ -254,19 +270,11 @@ const unwrappedRun = (command) => {
   const end = rest.findIndex((word) => /[;&|]$/.test(word));
   const inner = end < 0 ? rest : [...rest.slice(0, end), rest[end].replace(/[;&|]+$/, '')];
   const program = inner.findIndex((word) => !ENV_WORD.test(word));
-  if (program < 0 || !hasAgentBinary(inner)) return null;
+  if (program < 0 || !runsAgentProgram(inner)) return null;
   const kept = [...inner.slice(0, program), ...withoutPrompt(inner.slice(program))];
   const env = tokens.slice(0, at).filter((word) => ENV_WORD.test(word));
   const unwrapped = [...env, ...kept.map(quoteShellWord)].join(' ');
   return runRole ? commandWithRole(unwrapped, runRole) : unwrapped;
-};
-const healedCommand = (command, agent) => {
-  const unwrapped = unwrappedRun(command);
-  if (unwrapped) return unwrapped;
-  const words = [...command.matchAll(SHELL_WORD)].map(([word]) => unquoteWord(word));
-  if (hasAgentBinary(words)) return command;
-  const binary = agent.match(/^(claude|codex)/)?.[1];
-  return binary ? `${command} ${quote(binary)}` : null;
 };
 const SHELL_WRAP =
   /^((?:[A-Za-z_][A-Za-z0-9_]*=(?:'[^']*'|\S*)\s+)*)'?((?:\S*\/)?(?:sh|bash|zsh|dash))'?\s+'?(-[a-z]*c)'?\s+(.+)$/s;
@@ -278,6 +286,17 @@ const wrapOf = (command) => {
   const double = rest.match(/^"((?:[^"\\]|\\.)*)"$/s);
   const inner = single ? single[1].replaceAll("'\\''", "'") : double ? double[1].replace(/\\(["\\$`])/g, '$1') : rest;
   return { head, shell, flag, inner };
+};
+const wordsOf = (command) => [...command.matchAll(SHELL_WORD)].map(([word]) => unquoteWord(word));
+const healedCommand = (command, agent) => {
+  const unwrapped = unwrappedRun(command);
+  if (unwrapped) return unwrapped;
+  const wrap = wrapOf(command);
+  if (wrap) return runsAgentProgram(wordsOf(wrap.inner)) ? command : null;
+  const words = wordsOf(command);
+  if (programIndexOf(words) < words.length) return runsAgentProgram(words) ? command : null;
+  const binary = agent.match(/^(claude|codex)/)?.[1];
+  return binary ? `${command} ${quote(binary)}` : null;
 };
 const rewrapped = (wrap, head, inner) => `${head}${wrap.shell} ${wrap.flag} ${quote(inner)}`;
 const commandWithoutPrompt = (command) => {
@@ -485,7 +504,7 @@ const inAgentScopeCommand = (command, session, unscoped = (plain) => plain) => {
 };
 const EXIT_DIALOG_JOBS = /will stop when you exit/i;
 const EXIT_AND_STOP = /exit and stop/i;
-const BACKGROUND_FOOTER = /\b\d+ (?:shells?|agents?)\b|↓ to manage/i;
+const BACKGROUND_FOOTER = /\b\d+ (?:shells?|agents?)\b/i;
 
 /**
  * Reads the last prompt line (`❯` for Claude Code, `›` for Codex) of the pane. Dim text is the empty
@@ -949,7 +968,7 @@ if (command === 'send' && sender) {
     healedCommand(commandWithoutPrompt(agentCommandOf(session)), sender) === null
   ) {
     process.stderr.write(
-      `Refused: the stored command of ${session} has no agent program (${agentCommandOf(session)}), restarting would end the session. Nothing was stopped.\n`,
+      `Refused: the stored command of ${session} has no claude or codex program (${agentCommandOf(session)}), restarting would end the session. Nothing was stopped.\n`,
     );
     restartLog(`${session} refused, stored command has no agent program: ${agentCommandOf(session)}`);
     process.exitCode = 1;
@@ -979,6 +998,10 @@ if (command === 'send' && sender) {
       const restartRole = restartRoleOf(session, words.join(' '));
       const recorded = commandWithoutPrompt(agentCommandOf(session));
       const stored = healedCommand(recorded, sender);
+      if (stored === null) {
+        restartNotice(`restart of ${session} refused, its stored command has no agent program: ${recorded}`);
+        process.exit(1);
+      }
       if (configMismatch(stored.split(' ').map((word) => word.replaceAll("'", '')))) {
         restartNotice(
           `restart of ${session} refused, its command sets another CLAUDE_CONFIG_DIR than the caller (${callerConfigDir()})`,
