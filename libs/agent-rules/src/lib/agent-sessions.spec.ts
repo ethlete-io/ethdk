@@ -1930,7 +1930,17 @@ process.stdin.on('data', (data) => {
     const agent = `claude-${name}-${process.pid}`;
     const scoped = `${agent}@${basename(dir)}`;
 
+    const fakeAgent = fakeAgentPath();
+    writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
+
     spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat ${join(__dirname, 'fixtures', fixture)}; cat`]);
+    spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+    const end = Date.now() + 5000;
+    while (
+      !spawnSync('tmux', ['capture-pane', '-p', '-t', `=${scoped}:`], { encoding: 'utf8' }).stdout.includes('─') &&
+      Date.now() < end
+    )
+      spawnSync('sleep', ['0.05']);
 
     try {
       const result = run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
