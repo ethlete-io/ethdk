@@ -255,8 +255,6 @@ export const prepareShots = async (part: SketchPart) => {
   return renders[0]?.styles ?? '';
 };
 
-const firstChanged = (row: Row) => (isBase(row) ? undefined : row.changed[0]);
-
 const unchanged = (row: Row, state: string) => !isBase(row) && !row.changed.includes(state);
 
 export const cell = (part: SketchPart, row: Row, state: string, place = '', pending = false) =>
@@ -266,8 +264,6 @@ export const cell = (part: SketchPart, row: Row, state: string, place = '', pend
     shot: shot[`${part.key}:${state}`] ?? '',
     look: row.changed.includes(state) ? row.look : '',
     same: !pending && unchanged(row, state),
-    first: !pending && state === firstChanged(row),
-    marked: !pending && !isBase(row) && row.changed.includes(state),
     place,
     sample: pending ? undefined : `${part.sample ?? part.key} ${row.key} ${state}${isSame(row) ? ' unchanged' : ''}`,
   });

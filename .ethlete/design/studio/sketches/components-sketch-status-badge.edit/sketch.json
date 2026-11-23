@@ -72,8 +72,8 @@
     "components/shell-system-picker": "4259cf38cf4acfc5",
     "components/shortcuts-dialog": "6bf3eb58b2194f69",
     "components/skeleton": "05507b79c084a190",
-    "components/sketch-head": "2574011ed07bc251",
-    "components/sketch-status-badge": "fbae5c8de75f9187",
+    "components/sketch-head": "ac690254cddde3f7",
+    "components/sketch-status-badge": "fb8a93c49f140906",
     "components/slider": "dbf5f9fd735b6e90",
     "components/standings": "78634e0d7745e9bd",
     "components/stat-tile": "264c5f17f3364032",
@@ -104,7 +104,8 @@
     "pages/system": "1726d8b674da3ca2",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "4897a5a438c845e72556b9466296ca19a0b150d4",
+  "baselineTree": "8b70e058156598886b851c84eef4108d477e0894",
+  "editOldCommit": "b3eb956c3bf0ada2cc35823268176170313ad9d7",
   "rounds": [
     {
       "key": "r1",
@@ -127,6 +128,5 @@
   "readyContent": {
     "new": "28db73db58181eb0",
     "old": "a5229ad64f9f6da2"
-  },
-  "editOldCommit": "b3eb956c3bf0ada2cc35823268176170313ad9d7"
+  }
 }

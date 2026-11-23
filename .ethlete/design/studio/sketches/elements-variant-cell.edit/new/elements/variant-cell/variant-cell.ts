@@ -12,8 +12,6 @@ type Props = {
   look?: string;
   same?: boolean;
   sameAsRest?: string[];
-  first?: boolean;
-  marked?: boolean;
   place?: string;
   loading?: boolean;
   sample?: string;
@@ -122,7 +120,7 @@ const frame = ({
 };
 
 export const variantCell = (props: Props) => {
-  const { state, same = false, sameAsRest = [], first = false, marked = false, place = '' } = props;
+  const { state, same = false, sameAsRest = [], place = '' } = props;
   return html`<div
     class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
     data-sk-state="${state}"
@@ -137,7 +135,7 @@ export const variantCell = (props: Props) => {
         }"
         ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span
         >${same ? SKETCHES_LABELS.unchanged : ''}</span
-      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-same-as-rest>${SKETCHES_LABELS.sameAsRest(sameAsRest)}</span>` : ''}${marked ? html`<span class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-on-theme" data-sk-changed-mark>geändert</span>` : ''}${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">${SKETCHES_LABELS.firstChange}</span>` : ''}</span
+      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-same-as-rest>${SKETCHES_LABELS.sameAsRest(sameAsRest)}</span>` : ''}</span
     >
     ${frame(props)}
   </div>`;
@@ -151,13 +149,11 @@ const base: Props = { state: 'rest', width: 480, shot: demo };
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
-  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a rest cell names the states folded as drawn like it (hover, active = rest); the first state it changes carries erste Änderung. The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; the host places comment pins on their point in the shot through the overlay slot.',
+  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a rest cell names the states folded as drawn like it (hover, active = rest). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; a selected cell draws the accent outline inside the frame; the host places comment pins on their point in the shot through the overlay slot.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [240],
   states: {
     changed: base,
-    first: { ...base, first: true },
-    marked: { ...base, marked: true },
     unchanged: { ...base, same: true },
     'same-as-rest': { ...base, sameAsRest: ['hover', 'active'] },
     loading: { ...base, loading: true, height: 120, shown: 120 },
@@ -192,8 +188,6 @@ export default definePart({
   describe: {
     changed:
       'A changed state cell with rest above the half-scale Speichern shot; check that the label sits on the first row and the shot fits the 240px frame.',
-    first: 'The first changed state; check the erste Änderung mark beside the state name, on one line with it.',
-    marked: 'A changed cell inside a row of unchanged neighbours; check that the cell stands out from the dimmed ones.',
     unchanged:
       'A state the variant leaves as it was; check that the whole cell is dimmed and the label reads rest · unverändert.',
     'same-as-rest':
@@ -215,8 +209,8 @@ export default definePart({
     'loading-small': { from: 'loading-small', to: 'loading-small' },
   },
   controls: {},
-  sample: { id: 'sample', marks: ['look', 'same', 'first'] },
-  instant: 'A cell dims or gains its mark at once when the comparison ends.',
+  sample: { id: 'sample', marks: ['look', 'same'] },
+  instant: 'A cell dims at once when the comparison ends.',
   frame: (body) =>
     html`<div
       class="grid grid-cols-(--sk-frame) gap-y-space-1"
