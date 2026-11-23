@@ -1709,6 +1709,38 @@ describe('sketchRowsOf', () => {
     expect(revisionsOf('a')).toEqual(['7', '7', '7', '7']);
   });
 
+  it('fits a part without widths to its content, not to the widths of another target part', () => {
+    const colors = part({ layer: 'foundations', name: 'colors', states: ['surface-dark', 'accent-dark'] });
+    const card = part({ layer: 'elements', name: 'title-card', widths: [168, 112] });
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product([colors, card]),
+      part: colors,
+      sketch: sketch({
+        target: 'foundations/colors',
+        layer: 'foundations',
+        name: 'colors',
+        variants: ['a'],
+        targetParts: ['foundations/colors', 'elements/title-card'],
+        targets: [
+          { part: 'foundations/colors', variant: 'a', states: ['surface-dark', 'accent-dark'] },
+          { part: 'elements/title-card', variant: 'a', states: ['default'], widths: [168, 112] },
+        ],
+      }),
+      variants: ['a'],
+      epoch: 1,
+      revision: 1,
+    });
+
+    expect(rows.map((row) => row.width)).toEqual([null, null]);
+    expect(rows.flatMap((row) => row.shots.map((shot) => new URL(shot.src).searchParams.has('fit')))).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
+  });
+
   it('renews a variant row only with the revision of that variant', () => {
     const button = part({ name: 'button' });
     const rows = sketchRowsOf({

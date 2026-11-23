@@ -920,7 +920,7 @@ const cellSizeOf = (product: ListedProduct, size: string | null): CellSize => {
     : { width: Number(size), label: `${size} px` };
 };
 
-/** The sizes a sketch offers: the presets of a page, else every width the part or a variant declares, else none. */
+/** The sizes a sketch offers: the presets of a page, else every width the target part or a variant of it declares, else none. */
 const sketchSizesOf = ({
   product,
   sketch,
@@ -932,7 +932,9 @@ const sketchSizesOf = ({
 }) => {
   if (sketch.layer === 'pages') return Object.keys(product.presets);
 
-  const widths = new Set([...(part?.widths ?? []), ...(sketch.targets ?? []).flatMap((target) => target.widths ?? [])]);
+  const key = sketchPartOf(sketch);
+  const own = (sketch.targets ?? []).filter((target) => (target.part ?? key) === key);
+  const widths = new Set([...(part?.widths ?? []), ...own.flatMap((target) => target.widths ?? [])]);
 
   return [...widths].sort((a, b) => a - b).map(String);
 };

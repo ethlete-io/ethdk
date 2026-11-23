@@ -2,27 +2,29 @@
   #labelRow
   [class.hidden]="labelHidden()"
   [class.opacity-50]="same()"
-  class="relative row-start-1 flex w-0 min-w-full items-center gap-x-space-2 whitespace-nowrap"
+  class="relative row-start-1 flex w-0 min-w-full items-center gap-x-space-2 overflow-hidden whitespace-nowrap"
   data-sk-label
   ><span
     #stateLabel
     [class.text-et-surface]="!same()"
     [class.text-et-surface-muted]="same()"
     [style.font-size.px]="labelFont()"
-    class="font-code text-(length:--sk-label) leading-[1.35]"
+    class="min-w-0 truncate font-code text-(length:--sk-label) leading-[1.35]"
     data-sk-label-text
     ><span [class.hidden]="stateHidden()">{{ state() }}{{ same() ? LABELS.stateSeparator : '' }}</span
     >{{ same() ? LABELS.unchanged : '' }}</span
   >
   @if (marked()) {
     <span
-      class="rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-theme-ink"
+      class="shrink-0 rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-theme-ink"
       data-sk-changed-mark
       >{{ LABELS.changedCell }}</span
     >
   }
   @if (first()) {
-    <span class="text-ui-xs font-ui-medium text-et-surface" data-sk-first-change>{{ LABELS.firstChange }}</span>
+    <span class="shrink-0 text-ui-xs font-ui-medium text-et-surface" data-sk-first-change>{{
+      LABELS.firstChange
+    }}</span>
   }
 </span>
 <div [class]="wrapperClass()" class="relative row-start-2 flex min-w-0 flex-col self-start">

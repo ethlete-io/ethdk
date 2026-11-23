@@ -36,7 +36,7 @@ describe('VariantCellComponent', () => {
     expect(frame?.style.height).toBe('36px');
   });
 
-  it('never wraps the label row, so a narrow frame lets it run wider', async () => {
+  it('never wraps the label row, and truncates the state name at the frame width so the chips stay whole', async () => {
     const cell = await setup({
       state: 'default · phone',
       marked: true,
@@ -50,6 +50,10 @@ describe('VariantCellComponent', () => {
     expect(row?.classList.contains('flex-wrap')).toBe(false);
     expect(row?.classList.contains('whitespace-nowrap')).toBe(true);
     expect(cell.querySelector('[data-sk-label-text]')?.classList.contains('wrap-anywhere')).toBe(false);
+    expect(row?.classList.contains('overflow-hidden')).toBe(true);
+    expect(cell.querySelector('[data-sk-label-text]')?.classList.contains('truncate')).toBe(true);
+    expect(cell.querySelector('[data-sk-changed-mark]')?.classList.contains('shrink-0')).toBe(true);
+    expect(cell.querySelector('[data-sk-first-change]')?.classList.contains('shrink-0')).toBe(true);
   });
 
   it('marks a changed cell with the geändert chip only when asked', async () => {
