@@ -1089,10 +1089,11 @@ describe('SystemViewComponent on a merge', () => {
 
     expect(view['partTree']().sketches?.items.map((item) => item.nested)).toEqual([
       [
-        { name: 'elements/rating', key: 'sketch:elements/rating@stars/elements/rating' },
+        { name: 'elements/rating', key: 'sketch:elements/rating@stars/elements/rating', selected: true },
         {
           name: 'components/a-long-target-name',
           key: 'sketch:elements/rating@stars/components/a-long-target-name',
+          selected: false,
         },
       ],
     ]);
@@ -1160,6 +1161,50 @@ describe('SystemViewComponent on a merge', () => {
     expect(element.querySelector('[data-sk-frame="a default"]')?.hasAttribute('data-selected')).toBe(true);
     expect(element.querySelector('[data-shot="a default"]')?.hasAttribute('data-active')).toBe(false);
     expect(view['partTree']().sketches?.items[0]?.nested?.some((row) => 'hint' in row)).toBe(false);
+  });
+
+  it('marks the target row of the shown part in the tree, not the sketch row', async () => {
+    const fixture = await mountSketch(MULTI_PART);
+    const view = fixture.componentInstance;
+    const selectedRows = () => {
+      const item = view['partTree']().sketches?.items[0];
+
+      return [item, ...(item?.nested ?? [])].filter((row) => row?.selected).map((row) => row?.key);
+    };
+
+    expect(selectedRows()).toEqual(['sketch:foundations/colors/foundations/colors']);
+
+    view['activate']('sketch:foundations/colors/foundations/type');
+    await settle(fixture);
+
+    expect(selectedRows()).toEqual(['sketch:foundations/colors/foundations/type']);
+  });
+
+  it('keeps a sketch with several targets an expandable host while a part is selected', async () => {
+    const fixture = await mountSketch(MULTI_PART);
+    const view = fixture.componentInstance;
+    const item = () => view['partTree']().sketches?.items[0];
+
+    view['activate']('elements/rating');
+    await settle(fixture);
+
+    expect(view.selectedKey()).toBe('elements/rating');
+    expect(item()?.open).toBe(true);
+    expect(item()?.nested?.map((row) => row.name)).toEqual([
+      'foundations/colors',
+      'foundations/type',
+      'foundations/tokens',
+    ]);
+
+    view['rememberOpen'](view.expandedValues().filter((key) => key !== 'sketch:foundations/colors'));
+
+    expect(item()?.open).toBe(false);
+
+    view['activate']('sketch:foundations/colors/foundations/type');
+    await settle(fixture);
+
+    expect(view.selectedKey()).toBe('sketch:foundations/colors');
+    expect(item()?.nested?.find((row) => row.selected)?.name).toBe('foundations/type');
   });
 
   it('names a sketch with several targets by its shown round title in the tree', async () => {

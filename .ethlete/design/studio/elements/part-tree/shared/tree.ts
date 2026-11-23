@@ -20,6 +20,7 @@ export type OpenSketch = {
   name?: string;
   status: 'in-progress' | 'ready';
   selected?: boolean;
+  open?: boolean;
   nested?: TreePart[];
 };
 type LegacyProject = { name: string; open?: boolean; calls: string[] };

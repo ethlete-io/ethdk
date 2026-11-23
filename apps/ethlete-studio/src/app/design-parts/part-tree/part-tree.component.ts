@@ -20,12 +20,13 @@ export type PartTreePart = Marks & {
 
 export type PartTreeLayer = { title: string; key?: string; open: boolean; parts: PartTreePart[] };
 
-/** A sketch, labelled by its `title` when it has one; one with `nested` target parts is their open host. */
+/** A sketch, labelled by its `title` when it has one; one with `nested` target parts is their host and opens unless `open` is false. */
 export type PartTreeSketch = Marks & {
   part: string;
   name?: string;
   title?: string;
   status: TreeRowStatus;
+  open?: boolean;
   nested?: PartTreePart[];
 };
 
@@ -153,7 +154,7 @@ export class PartTreeComponent {
             value: itemKey,
             label,
             mark: { ...markOf(host ? 'part' : 'leaf', item), status: item.status },
-            open: true,
+            open: item.open !== false,
             nodes: host ? item.nested?.map((child) => partNode(itemKey, child)) : undefined,
           });
         }),

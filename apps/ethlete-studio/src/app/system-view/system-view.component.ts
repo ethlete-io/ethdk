@@ -1037,6 +1037,27 @@ export class SystemViewComponent {
     hasProducts: this.products().length > 0,
   }));
 
+  private sketchTargets = computed(() =>
+    this.sketches().flatMap((sketch) => {
+      const key = sketchKeyOf(sketch.target);
+
+      return multiPartTargetsOf(sketch).map((part) => ({ sketch: key, key: `${key}/${part}`, part }));
+    }),
+  );
+
+  private shownTargetKey = computed(() => {
+    const shown = this.sketchShown()?.sketch;
+    const key = shown && `${sketchKeyOf(shown.target)}/${sketchPartOf(shown)}`;
+
+    return this.sketchTargets().some((target) => target.key === key) ? key : null;
+  });
+
+  private openSketchHosts = computed(() => {
+    const remembered = this.openGroups();
+
+    return [...new Set(this.sketchTargets().map(({ sketch }) => sketch))].filter((key) => remembered[key] !== false);
+  });
+
   public expandedValues = computed(() => {
     const context = this.openContext();
     const open = (node: TreeGroup | TreeSection, isOpen: boolean) => (isOpen ? [node.key] : []);
@@ -1051,6 +1072,7 @@ export class SystemViewComponent {
 
     return this.tree().flatMap((group) => [
       ...open(group, isGroupOpen(group, context)),
+      ...(group.key === 'sketches' ? this.openSketchHosts() : []),
       ...openParts(group),
       ...(group.sections ?? []).flatMap((section) => [
         ...open(section, isSectionOpen(section, context)),
@@ -1059,19 +1081,11 @@ export class SystemViewComponent {
     ]);
   });
 
-  private sketchTargets = computed(() => {
-    const sketch = this.sketch();
-    const key = sketch ? sketchKeyOf(sketch.target) : null;
-
-    if (!sketch) return [];
-
-    return multiPartTargetsOf(sketch).map((part) => ({ sketch: key, key: `${key}/${part}`, part }));
-  });
-
   protected partTree = computed<PartTree>(() => {
     const open = new Set(this.expandedValues());
-    const selected = this.selectedKey();
-    const marksOf = (entry: TreeEntry) => ({
+    const shownTarget = this.shownTargetKey();
+    const selected = shownTarget ?? this.selectedKey();
+    const marksOf = (entry: Pick<TreeEntry, 'key' | 'badges'>) => ({
       key: entry.key,
       selected: entry.key === selected,
       ...(entry.badges.some(
@@ -1113,9 +1127,10 @@ export class SystemViewComponent {
                 ...this.sketchTitleOf(entry.key),
                 ...marksOf(entry),
                 status: entry.badges.includes('ready') ? ('ready' as const) : ('in-progress' as const),
+                open: open.has(entry.key),
                 nested: this.sketchTargets()
                   .filter(({ sketch }) => sketch === entry.key)
-                  .map(({ key, part }) => ({ name: part, key })),
+                  .map(({ key, part }) => ({ name: part, ...marksOf({ key, badges: [] }) })),
               })),
             },
           }
@@ -1424,8 +1439,9 @@ export class SystemViewComponent {
 
   protected rememberOpen(expanded: readonly string[]) {
     const was = this.expandedValues();
-    const changes = [...this.nodes().children.keys()].flatMap((key) =>
-      key !== null && expanded.includes(key) !== was.includes(key) ? [[key, expanded.includes(key)] as const] : [],
+    const changes = [...this.nodes().children.keys(), ...this.sketchTargets().map(({ sketch }) => sketch)].flatMap(
+      (key) =>
+        key !== null && expanded.includes(key) !== was.includes(key) ? [[key, expanded.includes(key)] as const] : [],
     );
 
     if (changes.length === 0) return;
@@ -1445,7 +1461,11 @@ export class SystemViewComponent {
     const target = this.sketchTargets().find((entry) => entry.key === key);
 
     if (frame) return this.openFrame(frame);
-    if (target) return this.openTarget(target.part);
+    if (target) {
+      if (target.sketch !== this.selectedKey()) this.activate(target.sketch);
+
+      return this.openTarget(target.part);
+    }
     if (!this.nodes().entries.has(key)) return;
 
     this.picked.set(key);

@@ -5,6 +5,7 @@ import { type OpenSketch, type Props, partRows, segments, treeGrid, treeStates }
 const sketchRows = (items: OpenSketch[]): Row[] =>
   items.flatMap((item): Row[] => {
     const host = (item.nested?.length ?? 0) > 0;
+    const open = host && item.open !== false;
 
     return [
       {
@@ -12,11 +13,11 @@ const sketchRows = (items: OpenSketch[]): Row[] =>
         depth: 1,
         kind: host ? 'part' : 'leaf',
         action: host ? 'emit:expandedChange' : 'emit:activate',
-        ...(host ? { expanded: true } : {}),
+        ...(host ? { expanded: open } : {}),
         ...(item.selected ? { selected: true } : {}),
         status: item.status,
       },
-      ...(item.nested ?? []).flatMap((child) => partRows(child, 2)),
+      ...(open ? (item.nested ?? []).flatMap((child) => partRows(child, 2)) : []),
     ];
   });
 

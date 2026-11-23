@@ -211,6 +211,19 @@ describe('PartTreeComponent', () => {
     expect(activated).toEqual(['sketch:pages/sketches@multi-part-head/components/badge', 'own-key']);
   });
 
+  it('draws a closed sketch host with its chevron and hides its targets', async () => {
+    const fixture = await render([], {
+      sketches: {
+        open: true,
+        items: [{ part: 'sketches', status: 'ready', open: false, nested: [{ name: 'components/badge' }] }],
+      },
+    });
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(labelsOf(element)).toEqual(['Sketches', 'sketches']);
+    expect(rowsOf(element)[1]?.dataset['kind']).toBe('part');
+  });
+
   it('opens a closed layer on click and emits the key of the activated row', async () => {
     const fixture = await render();
     const element = fixture.nativeElement as HTMLElement;
