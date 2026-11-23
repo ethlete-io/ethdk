@@ -24,7 +24,10 @@ session=$([ -n "${TMUX_PANE:-}" ] && tmux display-message -p -t "$TMUX_PANE" '#{
 session=${session:-agent@$(basename "$target")}
 proxy_url=http://127.0.0.1:$proxy_port
 
-[ ! -f "$real_home/.claude/.credentials.json" ] || install -m 600 "$real_home/.claude/.credentials.json" "$config/.credentials.json"
+credentials=$real_home/.claude/.credentials.json
+[ -f "$credentials" ] || die "no $credentials - log in on the host first"
+rm -f "$config/.credentials.json"
+install -m 600 /dev/null "$config/.credentials.json"
 [ -e "$config/.claude.json" ] || echo '{"hasCompletedOnboarding":true}' > "$config/.claude.json"
 [ -d "$home/.cache/node/corepack" ] || cp -a "$real_home/.cache/node/corepack" "$home/.cache/node/corepack"
 
@@ -47,6 +50,7 @@ args=(
   --ro-bind "$(dirname "$claude_real")" "$(dirname "$claude_real")"
   --symlink "$claude_real" /opt/bin/claude
   --bind "$home" "$home"
+  --bind "$credentials" "$config/.credentials.json"
   --bind "$target" "$target"
   --ro-bind "$target/node_modules" "$target/node_modules"
 )
