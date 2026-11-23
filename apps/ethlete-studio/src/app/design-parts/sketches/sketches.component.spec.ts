@@ -1186,6 +1186,26 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-same]')).toBeNull();
   });
 
+  it.each([
+    ['row stage', 400, '[data-sk-stage]'],
+    ['transposed matrix', 4000, '[data-sk-matrix]'],
+  ] as const)('swaps the states of the %s for another part without the NG0956 warning', async (_, width, view) => {
+    const rowsWith = (states: string[]) =>
+      ROWS.map((row) => ({ ...row, width, shots: states.map((state) => ({ state, changed: true, height: 100 })) }));
+    const warn = vi.spyOn(console, 'warn');
+    const fixture = await render({ camera: '100', part: 'foundations/colors', rows: rowsWith(['light', 'dark']) });
+    const root: HTMLElement = fixture.nativeElement;
+
+    fixture.componentRef.setInput('part', 'foundations/logo');
+    fixture.componentRef.setInput('rows', rowsWith(['mark', 'wordmark']));
+    await fixture.whenStable();
+
+    expect(root.querySelector(view)).not.toBeNull();
+    expect(root.querySelector('[data-sk-state="mark"]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-state="light"]')).toBeNull();
+    expect(warn.mock.calls.flat().filter((line) => String(line).includes('NG0956'))).toEqual([]);
+  });
+
   it('keeps an unfolded variant unfolded while a quick listing knows nothing about its compare', async () => {
     const pending = ROWS.map((row) =>
       row.key === 'x' ? { ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) } : row,

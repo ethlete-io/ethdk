@@ -100,7 +100,7 @@
             >
               @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
                 @let offset = blockIndex * matrixStride();
-                @for (state of block.states; track state; let line = $index) {
+                @for (state of block.states; track part() + ' ' + state; let line = $index) {
                   @let group = headHidden() ? undefined : groupOfState().get(state);
                   <div
                     #gutter
@@ -303,7 +303,7 @@
           class="grid min-w-0 gap-y-space-3"
           data-sk-stage
         >
-          @for (state of stageStates(); track state) {
+          @for (state of stageStates(); track part() + ' ' + state) {
             @if (shotOf(row, state); as item) {
               <ng-container
                 *ngTemplateOutlet="cellTemplate; context: { $implicit: row, item, column: null, line: null }"
