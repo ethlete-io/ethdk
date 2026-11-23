@@ -279,7 +279,7 @@ export const missingStateOf = (options: {
 };
 
 export const undesignedBranchMessageOf = (branch: string, component: string) =>
-  `${branch} in ${component} renders something no design state draws - draw a state for it: design serve opens the missing-state sketch of ADR 0048 with the built look as its variant, and the hit waits for the pick while it is open (ADR 0010)`;
+  `${branch} in ${component} renders something no design state draws - draw a state for it: design serve opens the missing-state sketch with the built look as its variant, and the hit waits for the pick while it is open`;
 
 /** Loads `@angular/compiler` from the checkout, or answers `null` when it is not installed. */
 export const angularCompilerOf = async (): Promise<Compiler | null> => import('@angular/compiler').catch(() => null);

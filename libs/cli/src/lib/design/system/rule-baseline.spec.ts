@@ -59,7 +59,7 @@ describe('rule baseline (ADR 0201)', () => {
     });
 
     expect(found.lines).toEqual([
-      'baselined (ADR 0201): CONTROL-STATE components/rail: section - finding 489, sketch components/rail-bubble',
+      'baselined: CONTROL-STATE components/rail: section - finding 489, sketch components/rail-bubble',
     ]);
     expect(found.problems).toEqual([hitOn('rail', 'product')]);
   });
@@ -105,7 +105,7 @@ describe('rule baseline (ADR 0201)', () => {
       {
         rule: 'CONTROL-STATE',
         file,
-        message: 'components/rail: section no longer hits - remove its entry (finding 489, ADR 0201)',
+        message: 'components/rail: section no longer hits - remove its entry (finding 489)',
       },
     ]);
     expect(ruleBaselineOf({ product: product(), problems: [], checked: (rule) => rule !== 'CONTROL-STATE' })).toEqual({
@@ -133,7 +133,7 @@ describe('rule baseline (ADR 0201)', () => {
     });
 
     expect(found.problems.map((problem) => problem.message)).toEqual([
-      'components/chip: remove was added to the rule baseline - it may only shrink (ADR 0201)',
+      'components/chip: remove was added to the rule baseline - it may only shrink',
     ]);
   });
 
@@ -155,7 +155,7 @@ describe('rule baseline (ADR 0201)', () => {
     const found = ruleBaselineOf({ product: product(), problems: [], checked: () => false });
 
     expect(found.problems.map((problem) => problem.message)).toEqual([
-      'components/chip: size was added to the rule baseline - it may only shrink (ADR 0201)',
+      'components/chip: size was added to the rule baseline - it may only shrink',
     ]);
   });
 

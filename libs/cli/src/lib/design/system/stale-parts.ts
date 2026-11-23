@@ -166,7 +166,7 @@ export const uncomparedAppProblemsOf = (options: {
 
   const checksBaseline = !options.onlyChanged || changed.has(relative(root, baselineFile).split(sep).join('/'));
   const added = (checksBaseline ? addedBaselineEntriesOf({ file: baselineFile }) : []).map((part) =>
-    baselineProblem(`${part} was added to the baseline - it may only shrink (ADR 0205)`),
+    baselineProblem(`${part} was added to the baseline - it may only shrink`),
   );
   const removable = Object.entries(checksBaseline ? baseline : {})
     .filter(([part]) => {
@@ -195,7 +195,7 @@ export const uncomparedAppProblemsOf = (options: {
         part,
         message: `${
           entry
-            ? `changed since ${part} was baselined for finding ${entry.finding} (ADR 0205)`
+            ? `changed since ${part} was baselined for finding ${entry.finding}`
             : `changed since ${part} was recorded as implemented (${record.at})`
         } - run ${invocation} compare --affected --product ${product.name} to compare and record every affected part`,
       }));

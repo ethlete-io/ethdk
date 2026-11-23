@@ -783,7 +783,7 @@ const coversEdited = (context: Context) =>
     console.log(
       (edited.covers ?? []).length === 0
         ? `${edited.target} covers no compare DIFF`
-        : `${edited.target} covers the compare DIFFs of ${(edited.covers ?? []).join(', ')} while it is open (ADR 0222)`,
+        : `${edited.target} covers the compare DIFFs of ${(edited.covers ?? []).join(', ')} while it is open`,
     );
 
     return 0;

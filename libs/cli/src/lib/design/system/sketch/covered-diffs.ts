@@ -134,4 +134,4 @@ export const editCovers = (options: { sketch: Sketch; covers: readonly string[] 
 };
 
 /** The line `compare` prints for a DIFF an open sketch covers (ADR 0222). */
-export const coveredLineOf = (line: string, sketch: string) => `${line} (covered by open sketch ${sketch}, ADR 0222)`;
+export const coveredLineOf = (line: string, sketch: string) => `${line} (covered by open sketch ${sketch})`;

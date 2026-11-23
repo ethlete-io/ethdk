@@ -48,8 +48,7 @@ export const readImplementationBaseline = (productDir: string) => {
 export const driftPinOf = (drifted: string[], now: FileHashes): FileHashes =>
   Object.fromEntries(drifted.map((path) => [path, now[path] ?? REMOVED_FILE]));
 
-export const baselineLineOf = (part: string, entry: BaselineEntry) =>
-  `baselined (ADR 0205): ${part} - finding ${entry.finding}`;
+export const baselineLineOf = (part: string, entry: BaselineEntry) => `baselined: ${part} - finding ${entry.finding}`;
 
 const keyOf = (part: string, entry: BaselineEntry) =>
   JSON.stringify([part, entry.finding, Object.entries(entry.app).sort(([a], [b]) => a.localeCompare(b))]);

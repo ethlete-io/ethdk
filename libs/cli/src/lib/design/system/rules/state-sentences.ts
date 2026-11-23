@@ -33,8 +33,8 @@ export const missingStateSentencesOf = (product: ResolvedProduct): Problem[] =>
           ...(states.length > 0 && { states }),
           message:
             missing === 'all'
-              ? 'no state has a sentence: add describe: { <state>: "<what it shows and what to check>" } for every state (ADR 0330)'
-              : `state without a sentence in describe: ${missing.join(', ')} (ADR 0330)`,
+              ? 'no state has a sentence: add describe: { <state>: "<what it shows and what to check>" } for every state'
+              : `state without a sentence in describe: ${missing.join(', ')}`,
         },
       ];
     });

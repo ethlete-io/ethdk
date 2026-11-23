@@ -174,6 +174,6 @@ describe('sketch check', { timeout: 120_000 }, () => {
     await designSketch({ target, argv: ['check', ID, '--product', 'acme'], invocation: 'et design' });
 
     expect(vi.mocked(console.error).mock.calls.flat().join('\n')).not.toContain('SCROLLS');
-    expect(vi.mocked(console.log).mock.calls.flat().join('\n')).toContain('baselined (ADR 0201): SCROLLS');
+    expect(vi.mocked(console.log).mock.calls.flat().join('\n')).toContain('baselined: SCROLLS');
   });
 });

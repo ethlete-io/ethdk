@@ -50,7 +50,7 @@ export const staleCliDistWarning = (options: { distDir: string; repoRoot: string
 
   if (newest <= builtAt) return null;
 
-  return `WARN: the built cli is older than libs/cli/src (built ${new Date(builtAt).toISOString()}, newest source ${new Date(newest).toISOString()}); a fix in the source may not be in this build. Rebuild: ${CLI_REBUILD_COMMAND}`;
+  return `WARN: the built cli is older than its source (built ${new Date(builtAt).toISOString()}, newest source ${new Date(newest).toISOString()}); a fix in the source may not be in this build. Rebuild: ${CLI_REBUILD_COMMAND}`;
 };
 
 // Must match PINNED_FILE in tools/scripts/studio-code.mjs.

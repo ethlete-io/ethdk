@@ -16,7 +16,7 @@ const messagesOf = (source: string): { message: string; states?: string[] }[] =>
     return states.length > MAX_UNGROUPED_STATES
       ? [
           {
-            message: `${states.length} states and no groups: add definePart({ groups: [{ label, states }] }) in flow order, the normal case first and errors last (ADR 0407)`,
+            message: `${states.length} states and no groups: add definePart({ groups: [{ label, states }] }) in flow order, the normal case first and errors last`,
           },
         ]
       : [];
@@ -27,15 +27,9 @@ const messagesOf = (source: string): { message: string; states?: string[] }[] =>
   const unknown = [...new Set(grouped.filter((state) => !states.includes(state)))];
 
   return [
-    ...(ungrouped.length > 0
-      ? [{ message: `state in no group: ${ungrouped.join(', ')} (ADR 0407)`, states: ungrouped }]
-      : []),
-    ...(twice.length > 0
-      ? [{ message: `state in more than one group: ${twice.join(', ')} (ADR 0407)`, states: twice }]
-      : []),
-    ...(unknown.length > 0
-      ? [{ message: `group names a state the part does not have: ${unknown.join(', ')} (ADR 0407)` }]
-      : []),
+    ...(ungrouped.length > 0 ? [{ message: `state in no group: ${ungrouped.join(', ')}`, states: ungrouped }] : []),
+    ...(twice.length > 0 ? [{ message: `state in more than one group: ${twice.join(', ')}`, states: twice }] : []),
+    ...(unknown.length > 0 ? [{ message: `group names a state the part does not have: ${unknown.join(', ')}` }] : []),
   ];
 };
 

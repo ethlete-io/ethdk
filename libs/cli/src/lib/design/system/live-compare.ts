@@ -541,7 +541,7 @@ export const undesignedLiveProblemOf = (options: {
 
   return undesignedWaitOf(product)({ part, state: design })
     ? null
-    : `${STATE_UNDESIGNED_RULE}: the app state "${state}" of ${part} has no design state "${design}" - draw it: the missing-state sketch with the built look as variant a (ADR 0010); its states: ${Object.keys(states).join(', ')}`;
+    : `${STATE_UNDESIGNED_RULE}: the app state "${state}" of ${part} has no design state "${design}" - draw it: the missing-state sketch with the built look as variant a; its states: ${Object.keys(states).join(', ')}`;
 };
 
 export const shootLiveStates: ShootStates = async ({

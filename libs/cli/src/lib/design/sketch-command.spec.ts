@@ -3253,9 +3253,7 @@ describe('sketch covers (ADR 0222)', () => {
       lines.join('\n'),
     ).toBe(0);
     expect(await acmeWrite(target, 'covers', 'components/button', 'default', 'hover@0,0,20,10')).toBe(0);
-    expect(lines.pop()).toBe(
-      'components/button covers the compare DIFFs of default, hover@0,0,20,10 while it is open (ADR 0222)',
-    );
+    expect(lines.pop()).toBe('components/button covers the compare DIFFs of default, hover@0,0,20,10 while it is open');
     expect(await acmeWrite(target, 'note', 'components/button', 'a', 'the built look')).toBe(0);
     expect(coversOf(target)).toEqual(['default', 'hover@0,0,20,10']);
     expect(await acmeWrite(target, 'covers', 'components/button')).toBe(0);

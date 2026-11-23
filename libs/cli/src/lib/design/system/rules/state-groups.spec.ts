@@ -45,9 +45,9 @@ describe('stateGroupProblemsOf', () => {
     const problems = stateGroupProblemsOf(productOf(partWith(namesOf(3), groups)));
 
     expect(problems.map((problem) => [problem.message, problem.states])).toEqual([
-      ['state in no group: s2 (ADR 0407)', ['s2']],
-      ['state in more than one group: s1 (ADR 0407)', ['s1']],
-      ['group names a state the part does not have: gone (ADR 0407)', undefined],
+      ['state in no group: s2', ['s2']],
+      ['state in more than one group: s1', ['s1']],
+      ['group names a state the part does not have: gone', undefined],
     ]);
   });
 

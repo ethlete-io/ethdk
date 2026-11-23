@@ -88,10 +88,7 @@ describe('compare DIFFs an open sketch covers (ADR 0222)', () => {
     const { result, lines } = await compared({ covers: ['folded'] });
 
     expect(result).toMatchObject({ green: true });
-    expect(lines).toEqual([
-      'default ok',
-      'folded DIFF 1 px (covered by open sketch components/chip@all-states, ADR 0222)',
-    ]);
+    expect(lines).toEqual(['default ok', 'folded DIFF 1 px (covered by open sketch components/chip@all-states)']);
   });
 
   it('fails a DIFF in a state the sketch does not name', async () => {
@@ -119,7 +116,7 @@ describe('compare DIFFs an open sketch covers (ADR 0222)', () => {
     const inside = await compared({ covers: ['folded@2,2,2,2'] }, corner);
 
     expect(inside.result).toMatchObject({ green: true });
-    expect(inside.lines[1]).toBe('folded DIFF 1 px (covered by open sketch components/chip@all-states, ADR 0222)');
+    expect(inside.lines[1]).toBe('folded DIFF 1 px (covered by open sketch components/chip@all-states)');
 
     vi.restoreAllMocks();
 

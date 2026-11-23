@@ -238,7 +238,7 @@ export const pageStateInnerOf = async (options: {
         file: part.file,
         at: state,
         states: [state],
-        message: `state "${state}" differs from "${base}" only inside ${inner}: make it a state of ${inner} and drop it from ${own}, which draws ${inner} in its default (ADR 0331)`,
+        message: `state "${state}" differs from "${base}" only inside ${inner}: make it a state of ${inner} and drop it from ${own}, which draws ${inner} in its default`,
       });
   }
 

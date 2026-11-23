@@ -100,7 +100,7 @@ describe('implementation baseline (ADR 0205)', () => {
 
     const { status, problems, baselined } = run(target);
 
-    expect(baselined).toEqual([`baselined (ADR 0205): ${CHIP} - finding 495`]);
+    expect(baselined).toEqual([`baselined: ${CHIP} - finding 495`]);
     expect(problems).toHaveLength(1);
     expect(problems[0]).toMatch(new RegExp(`^IMPLEMENTATION-UNCOMPARED ${BADGE_HTML}: changed since ${BADGE}`));
     expect(status).toBe(1);
@@ -117,7 +117,7 @@ describe('implementation baseline (ADR 0205)', () => {
 
     const { status, problems, baselined } = run(target);
 
-    expect(baselined).toEqual([`baselined (ADR 0205): ${CHIP} - finding 495`]);
+    expect(baselined).toEqual([`baselined: ${CHIP} - finding 495`]);
     expect(problems).toEqual([
       expect.stringMatching(
         new RegExp(`^IMPLEMENTATION-UNCOMPARED ${CHIP_HTML}: changed since ${CHIP} was baselined for finding 495`),
@@ -163,7 +163,7 @@ describe('implementation baseline (ADR 0205)', () => {
     const { status, problems } = run(target);
 
     expect(problems).toContain(
-      `IMPLEMENTATION-UNCOMPARED ${DESIGN_DIR}/app-a/${IMPLEMENTATION_BASELINE_FILE}: ${BADGE} was added to the baseline - it may only shrink (ADR 0205)`,
+      `IMPLEMENTATION-UNCOMPARED ${DESIGN_DIR}/app-a/${IMPLEMENTATION_BASELINE_FILE}: ${BADGE} was added to the baseline - it may only shrink`,
     );
     expect(status).toBe(1);
 

@@ -81,7 +81,7 @@ export const renderProblemOf = (product: ResolvedProduct, issue: RenderIssue): P
 const partOfHit = (hit: string) => hit.slice(0, hit.indexOf(': '));
 
 export const ruleBaselineLineOf = ({ rule, hit, entry }: { rule: string; hit: string; entry: RuleBaselineEntry }) =>
-  `baselined (ADR 0201): ${rule} ${hit} - finding ${entry.finding}, sketch ${entry.sketch}`;
+  `baselined: ${rule} ${hit} - finding ${entry.finding}, sketch ${entry.sketch}`;
 
 /**
  * The entries of `product`'s rule baseline added after their rule was first committed in it: it may only shrink, a note
@@ -127,12 +127,12 @@ export const ruleBaselineOf = (options: {
     .map(({ rule, hit, entry }): Problem => ({
       rule,
       file,
-      message: `${hit} no longer hits - remove its entry (finding ${entry.finding}, ADR 0201)`,
+      message: `${hit} no longer hits - remove its entry (finding ${entry.finding})`,
     }));
   const added = addedRuleBaselineEntriesOf(product).map((name): Problem => ({
     rule: name.slice(0, name.indexOf(' ')),
     file,
-    message: `${name.slice(name.indexOf(' ') + 1)} was added to the rule baseline - it may only shrink (ADR 0201)`,
+    message: `${name.slice(name.indexOf(' ') + 1)} was added to the rule baseline - it may only shrink`,
   }));
 
   return { problems: [...added, ...stale, ...failing], lines };
