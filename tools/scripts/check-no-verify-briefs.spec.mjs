@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isBriefPath, noVerifyFindings, noVerifyProblems } from './check-no-verify-briefs.mjs';
@@ -47,8 +47,9 @@ test('checks only the brief paths it is given', () => {
 });
 
 // A tracked brief deleted in the working tree has nothing to check and never stops the run.
-test('skips a tracked brief that is deleted on disk', () => {
+test('skips a tracked brief that is deleted on disk', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'no-verify-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
 
   assert.deepEqual(noVerifyProblems(root, ['.agents/skills/gone/SKILL.md']), []);
 });
