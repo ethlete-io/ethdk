@@ -661,37 +661,34 @@ fn spawn(servers: &DesignServers, checkout: &str, mut preface: Vec<String>) -> S
 }
 
 /// Starts the checkout's server. Started from this repository, it runs from a copy of the committed
-/// CLI build, never from the build agents rewrite in the working tree, and the frontend server
-/// switches to the build of the last committed frontend.
-enum Prepared {
-    Script,
-    RepoBuild {
-        copy: crate::studio_code::CliCopy,
-        preface: Vec<String>,
-        app_copy: crate::studio_code::AppCopy,
-    },
+/// CLI build, never from the build agents rewrite in the working tree. A development build switches
+/// the frontend server to the build of the last committed frontend for every checkout.
+struct Prepared {
+    cli: Option<(crate::studio_code::CliCopy, Vec<String>)>,
+    app_copy: Option<crate::studio_code::AppCopy>,
 }
 
 async fn prepare(servers: &DesignServers, checkout: &str) -> StudioResult<Prepared> {
-    if !crate::studio_code::starts_from_repo_build(Path::new(checkout)) {
-        return Ok(Prepared::Script);
-    }
-
+    let repo_build = crate::studio_code::repo_build(Path::new(checkout));
     let on_phase = |name: &str| {
         if let Some(phase) = StartPhase::named(name) {
             servers.set_phase(checkout, phase);
         }
     };
-    let (copy, preface) = crate::studio_code::cli_copy(&on_phase).await?;
-    let app_copy = crate::studio_code::app_copy(&on_phase).await?;
+    let cli = match repo_build.cli {
+        true => Some(crate::studio_code::cli_copy(&on_phase).await?),
+        false => None,
+    };
+    let app_copy = match repo_build.app {
+        true => Some(crate::studio_code::app_copy(&on_phase).await?),
+        false => None,
+    };
 
-    servers.set_phase(checkout, StartPhase::Starting);
+    if cli.is_some() || app_copy.is_some() {
+        servers.set_phase(checkout, StartPhase::Starting);
+    }
 
-    Ok(Prepared::RepoBuild {
-        copy,
-        preface,
-        app_copy,
-    })
+    Ok(Prepared { cli, app_copy })
 }
 
 fn launch(
@@ -699,18 +696,12 @@ fn launch(
     checkout: &str,
     prepared: Prepared,
 ) -> StudioResult<Option<crate::studio_code::AppCopy>> {
-    match prepared {
-        Prepared::Script => spawn(servers, checkout, Vec::new()).map(|()| None),
-        Prepared::RepoBuild {
-            copy,
-            preface,
-            app_copy,
-        } => {
-            spawn_from(servers, checkout, &copy.entry, preface, Some(copy.sha))?;
-
-            Ok(Some(app_copy))
-        }
+    match prepared.cli {
+        None => spawn(servers, checkout, Vec::new())?,
+        Some((copy, preface)) => spawn_from(servers, checkout, &copy.entry, preface, Some(copy.sha))?,
     }
+
+    Ok(prepared.app_copy)
 }
 
 async fn start(servers: &DesignServers, checkout: &str) -> StudioResult<Option<crate::studio_code::AppCopy>> {

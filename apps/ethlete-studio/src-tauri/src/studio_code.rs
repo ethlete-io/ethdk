@@ -181,14 +181,32 @@ pub fn reload_on_switch(app: &AppHandle, copy: &AppCopy) {
     }
 }
 
-pub fn starts_from_repo_build(checkout: &Path) -> bool {
-    if !cfg!(debug_assertions) || std::env::var_os("ETHLETE_CLI").is_some() {
-        return false;
-    }
+/// Which copies a start takes from this repository's committed build.
+#[derive(Debug, PartialEq, Eq)]
+pub struct RepoBuild {
+    pub cli: bool,
+    pub app: bool,
+}
 
-    match (checkout.canonicalize(), repo_root().canonicalize()) {
+pub fn repo_build(checkout: &Path) -> RepoBuild {
+    let is_repo = match (checkout.canonicalize(), repo_root().canonicalize()) {
         (Ok(checkout), Ok(root)) => checkout == root,
         _ => false,
+    };
+
+    repo_build_of(
+        cfg!(debug_assertions),
+        std::env::var_os("ETHLETE_CLI").is_some(),
+        is_repo,
+    )
+}
+
+fn repo_build_of(debug: bool, cli_named: bool, is_repo: bool) -> RepoBuild {
+    let from_repo = debug && !cli_named;
+
+    RepoBuild {
+        cli: from_repo && is_repo,
+        app: from_repo,
     }
 }
 
@@ -263,6 +281,15 @@ mod tests {
 
         assert_eq!(areas.push.map(|push| push.unpushed), Some(0));
         assert!(areas.uncommitted.is_empty());
+    }
+
+    #[test]
+    fn a_start_of_any_checkout_refreshes_the_app_copy() {
+        // After a new commit, "Neu starten" serves a build that contains it, in every project.
+        assert_eq!(repo_build_of(true, false, false), RepoBuild { cli: false, app: true });
+        assert_eq!(repo_build_of(true, false, true), RepoBuild { cli: true, app: true });
+        assert_eq!(repo_build_of(true, true, false), RepoBuild { cli: false, app: false });
+        assert_eq!(repo_build_of(false, false, true), RepoBuild { cli: false, app: false });
     }
 
     #[test]
