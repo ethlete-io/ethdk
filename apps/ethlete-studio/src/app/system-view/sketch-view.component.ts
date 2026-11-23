@@ -4,6 +4,7 @@ import {
   ElementRef,
   ViewEncapsulation,
   computed,
+  effect,
   viewChild,
   viewChildren,
   inject,
@@ -992,6 +993,19 @@ export class SketchViewComponent {
     );
   });
 
+  private pendingPart = linkedSignal<string, string | null>({
+    source: this.sketchTarget,
+    computation: () => null,
+  });
+
+  constructor() {
+    effect(() => {
+      const part = this.pendingPart();
+
+      if (part !== null && this.focusPart(part)) this.pendingPart.set(null);
+    });
+  }
+
   protected startComment({ variant, shot, point }: SketchCommentPlace) {
     const target = this.sketch().target;
     const row = this.rows().find((candidate) => candidate.key === variant);
@@ -1025,19 +1039,9 @@ export class SketchViewComponent {
     if (variant) this.showVariant(variant);
   }
 
-  /** Moves the canvas onto the first frame of `part`; `false` when the view draws no frame of it. */
+  /** Moves the canvas onto the first frame of `part`, once the view draws one. */
   public showPart(part: string) {
-    const sketch = this.sketch();
-    const partOf = (state: string) =>
-      sketch.targetParts?.find((target) => state.startsWith(`${target} `)) ?? sketchPartOf(sketch);
-    const keys = this.rows().flatMap((row) =>
-      row.shots.filter((shot) => partOf(shot.state) === part).map((shot) => `${row.key} ${shot.state}`),
-    );
-    const key = keys.find((candidate) => !candidate.startsWith(`${CURRENT} `)) ?? keys[0];
-
-    if (key === undefined) return false;
-
-    return this.sketches()?.focusFrame(key) ?? false;
+    this.pendingPart.set(this.focusPart(part) ? null : part);
   }
 
   public showVariant(variant: string) {
@@ -1122,6 +1126,20 @@ export class SketchViewComponent {
     if (naturalWidth === 0 || this.pictureRatios()[key] === naturalHeight / naturalWidth) return;
 
     this.pictureRatios.update((ratios) => ({ ...ratios, [key]: naturalHeight / naturalWidth }));
+  }
+
+  private focusPart(part: string) {
+    const sketch = this.sketch();
+    const partOf = (state: string) =>
+      sketch.targetParts?.find((target) => state.startsWith(`${target} `)) ?? sketchPartOf(sketch);
+    const keys = this.rows().flatMap((row) =>
+      row.shots.filter((shot) => partOf(shot.state) === part).map((shot) => `${row.key} ${shot.state}`),
+    );
+    const key = keys.find((candidate) => !candidate.startsWith(`${CURRENT} `)) ?? keys[0];
+
+    if (key === undefined) return false;
+
+    return this.sketches()?.focusFrame(key) ?? false;
   }
 
   private shotOfPlace(variant: string, place: { state: string; size?: string | number }) {

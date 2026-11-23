@@ -19,6 +19,8 @@ import {
   sketchLabelOf,
   multiPartTargetsOf,
   PENDING_LABEL,
+  sketchDrawsPart,
+  sketchScopedTo,
   sketchHeadTitleOf,
   sketchMatrixOf,
   sketchRoundsOf,
@@ -1680,6 +1682,44 @@ describe('a sketch that is gone', () => {
     expect(pickedPartKeyOf('sketch:components/tree')).toBe('components/tree');
     expect(pickedPartKeyOf('components/card')).toBe('components/card');
     expect(pickedPartKeyOf(null)).toBeNull();
+  });
+});
+
+describe('sketchScopedTo', () => {
+  const several = sketch({
+    target: 'foundations/colors',
+    targetParts: ['foundations/colors', 'foundations/type', 'elements/hero'],
+    variants: ['a'],
+    targets: [
+      { variant: 'a', part: 'foundations/colors', states: ['surface-dark'] },
+      { variant: 'a', part: 'elements/hero', states: ['knight', 'dune'] },
+    ],
+  });
+
+  it('draws the frames of a later target part that the product does not list', () => {
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product(),
+      part: null,
+      sketch: sketchScopedTo(several, 'elements/hero'),
+      variants: ['a'],
+      epoch: 1,
+      revision: 1,
+    });
+
+    expect(rows.map((row) => [row.key, row.shots.map((shot) => shot.state)])).toEqual([['a', ['knight', 'dune']]]);
+    expect(new URL(rows[0]!.shots[0]!.src).searchParams.get('part')).toBe('elements/hero');
+  });
+
+  it('keeps the sketch for its first part, a part it has not, or none', () => {
+    expect(sketchScopedTo(several, 'foundations/colors')).toBe(several);
+    expect(sketchScopedTo(several, 'elements/other')).toBe(several);
+    expect(sketchScopedTo(several, null)).toBe(several);
+  });
+
+  it('tells a drawn target part from one no variant draws', () => {
+    expect(sketchDrawsPart(several, 'elements/hero')).toBe(true);
+    expect(sketchDrawsPart(several, 'foundations/type')).toBe(false);
   });
 });
 

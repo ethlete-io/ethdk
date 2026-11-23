@@ -32,6 +32,7 @@ import { shardShareOf } from './shard-share.mjs';
 import { FRAME, measureZoom, ZOOM_BUDGET } from './zoom-budget.mjs';
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
 import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
+import { placeSketchDraft } from './sketch-comment-draft.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -4236,6 +4237,21 @@ const CASES = [
     },
   },
   {
+    name: 'the sketch comment button in a wide sketch: crosshair, a click on a frame places the draft pin',
+    pages: ['Wide'],
+    viewport: WIDE,
+    run: async (page) => {
+      await listingAnswered(page);
+      await settle(page);
+      try {
+        return await placeSketchDraft(page, WAIT_MS);
+      } finally {
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('Escape');
+      }
+    },
+  },
+  {
     name: 'Fit shows every column of a wide sketch, heads at the top',
     pages: ['Wide'],
     viewport: WIDE,
@@ -5064,6 +5080,104 @@ const CASES = [
         return {
           ok,
           detail: `sketch row shows title ${titled}; opened ${JSON.stringify(opened)}; undrawn row click ${JSON.stringify(results.unbuilt)}, hint tooltip ${hinted}; listed rows leave the sketch view: zoom-chip ${JSON.stringify(results.zoomChip)}, shell-main ${JSON.stringify(results.shellMain)}`,
+        };
+      } finally {
+        rmSync(sketchDir, { recursive: true, force: true });
+      }
+    },
+  },
+  {
+    name: 'a click on each target row of a several-part sketch shows that part, drawn but not listed',
+    listingMayPend: 'waits for the new sketch row itself and reads the frames each row click shows, not the listing',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const title = 'Runde Teilansicht';
+      const studio = join(checkout, '.ethlete/design/studio');
+      const sketchDir = join(studio, 'sketches/foundations-e2e-sheet');
+      const parts = {
+        'foundations/e2e-sheet': ['sheet-plain', 'sheet-dense'],
+        'foundations/e2e-scale': ['scale-steps'],
+        'elements/e2e-bar': ['bar-top', 'bar-scrolled'],
+        'elements/e2e-card': ['card-film', 'card-series', 'card-long'],
+        'elements/e2e-banner': ['banner-wide'],
+      };
+      const targets = Object.keys(parts);
+      const row = (text) => page.locator('ethlete-part-tree [etTreeNode]').filter({ hasText: text }).first();
+      const state = () =>
+        page.evaluate(() => ({
+          sketchView: !!document.querySelector('[data-sk-rows]'),
+          selected: document.querySelector('[data-sk-frame][data-selected]')?.getAttribute('data-sk-frame') ?? null,
+          frames: [...document.querySelectorAll('[data-sk-rows] [data-sk-frame]')].map((frame) =>
+            frame.getAttribute('data-sk-frame'),
+          ),
+        }));
+      const results = {};
+
+      try {
+        for (const [part, states] of Object.entries(parts)) {
+          const name = part.split('/')[1];
+          const dir = join(sketchDir, 'a', part);
+
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(
+            join(dir, `${name}.ts`),
+            [
+              "import { definePart, html } from '@design-system';",
+              '',
+              'export default definePart({',
+              `  note: 'The ${name} part of the canvas e2e several-part sketch.',`,
+              `  states: { ${states.map((key) => `'${key}': {}`).join(', ')} },`,
+              `  describe: { ${states.map((key) => `'${key}': 'The ${key} state; check its label.'`).join(', ')} },`,
+              `  render: () => html\`<p style="padding: 24px">${name}</p>\`,`,
+              '});',
+              '',
+            ].join('\n'),
+          );
+        }
+        writeFileSync(
+          join(sketchDir, 'sketch.json'),
+          JSON.stringify({
+            target: targets[0],
+            targets,
+            status: 'ready',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            rounds: [{ key: 'r1', title, note: 'canvas e2e' }],
+            variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
+          }),
+        );
+        await row(title).waitFor({ timeout: 2 * FULL_COMPARE_MS });
+        await row(title).click();
+        await page.waitForSelector('[data-sk-rows] [data-sk-frame]', { timeout: 2 * FULL_COMPARE_MS });
+        await settle(page);
+
+        for (const target of targets) {
+          await row(target).locator('.text-ellipsis').click();
+          await page.waitForFunction(
+            (key) => document.querySelector('[data-sk-frame][data-selected]')?.getAttribute('data-sk-frame') === key,
+            `a ${parts[target][0]}`,
+            { timeout: FULL_COMPARE_MS },
+          );
+          await settle(page);
+          results[target] = await state();
+        }
+
+        const shows = (target) => {
+          const shown = results[target];
+          const expected = parts[target].map((key) => `a ${key}`);
+
+          return (
+            shown.sketchView &&
+            shown.selected === expected[0] &&
+            JSON.stringify(shown.frames) === JSON.stringify(expected)
+          );
+        };
+
+        return {
+          ok: targets.every(shows),
+          detail: targets
+            .map((target) => `${target} ${shows(target) ? 'shown' : 'NOT shown'} ${JSON.stringify(results[target])}`)
+            .join('; '),
         };
       } finally {
         rmSync(sketchDir, { recursive: true, force: true });

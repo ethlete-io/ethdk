@@ -857,6 +857,18 @@ export const sketchRoundsOf = (
 export const multiPartTargetsOf = (sketch: Pick<ListedSketch, 'targetParts'>): string[] =>
   (sketch.targetParts?.length ?? 0) > 1 ? (sketch.targetParts ?? []) : [];
 
+/** The sketch as its view shows `part`: that target first; unchanged when `part` is none of its targets. */
+export const sketchScopedTo = (sketch: ListedSketch, part: string | null): ListedSketch =>
+  part !== null && part !== sketchPartOf(sketch) && sketch.targetParts?.includes(part)
+    ? { ...sketch, targetParts: [part, ...sketch.targetParts.filter((target) => target !== part)] }
+    : sketch;
+
+/** Whether a variant of `sketch` draws `part`. */
+export const sketchDrawsPart = (sketch: Pick<ListedSketch, 'target' | 'targetParts' | 'targets'>, part: string) =>
+  (sketch.targets ?? []).some(
+    (target) => (target.part ?? sketchPartOf(sketch)) === part && !target.error && target.states.length > 0,
+  );
+
 /** The head of a sketch with several parts: the title of its shown round, `null` for the target as head. */
 export const sketchHeadTitleOf = (sketch: Pick<ListedSketch, 'targetParts' | 'rounds'>, round: string) =>
   multiPartTargetsOf(sketch).length > 0 ? sketch.rounds?.find((entry) => entry.key === round)?.title || null : null;

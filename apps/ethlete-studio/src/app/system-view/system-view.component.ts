@@ -58,7 +58,9 @@ import {
   isGroupOpen,
   isSectionOpen,
   multiPartTargetsOf,
+  sketchDrawsPart,
   sketchHeadTitleOf,
+  sketchScopedTo,
   sketchRoundsOf,
   partKeyOf,
   sketchKeyOf,
@@ -645,12 +647,19 @@ export class SystemViewComponent {
     () => this.sketches().find((listed) => sketchKeyOf(listed.target) === this.picked()) ?? null,
   );
 
+  private sketchPartShown = linkedSignal<string | null, string | null>({
+    source: () => this.picked(),
+    computation: () => null,
+  });
+
   public sketchShown = computed(() => {
     const port = this.port();
     const product = this.product();
-    const sketch = this.sketch();
+    const listed = this.sketch();
 
-    if (!port || !product || !sketch) return null;
+    if (!port || !product || !listed) return null;
+
+    const sketch = sketchScopedTo(listed, this.sketchPartShown());
 
     return {
       port,
@@ -1063,7 +1072,7 @@ export class SystemViewComponent {
       sketch: key,
       key: `${key}/${part}`,
       part,
-      reachable: entries.has(part) || part === sketchPartOf(sketch),
+      reachable: entries.has(part) || sketchDrawsPart(sketch, part),
     }));
   });
 
@@ -1589,8 +1598,14 @@ export class SystemViewComponent {
   }
 
   private openTarget(part: string) {
-    if (this.nodes().entries.has(part)) this.activate(part);
-    else this.sketchView()?.showPart(part);
+    if (this.nodes().entries.has(part)) {
+      this.activate(part);
+
+      return;
+    }
+
+    this.sketchPartShown.set(part);
+    afterNextRender(() => this.sketchView()?.showPart(part), { injector: this.injector });
   }
 
   private sketchTitleOf(key: string) {

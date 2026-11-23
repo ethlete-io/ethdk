@@ -1150,7 +1150,10 @@ describe('SystemViewComponent on a merge', () => {
   });
 
   it('hints a target the sketch view does not draw and the product does not have', async () => {
-    const fixture = await mountSketch(MULTI_PART);
+    const fixture = await mountSketch({
+      ...MULTI_PART,
+      targets: MULTI_PART.targets?.filter((target) => target.part !== 'foundations/type'),
+    });
 
     expect(fixture.componentInstance['partTree']().sketches?.items[0]?.nested).toEqual([
       { name: 'foundations/colors', key: 'sketch:foundations/colors/foundations/colors' },
