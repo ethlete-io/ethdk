@@ -39,3 +39,6 @@ ADR 0362, which keeps the old inventory as its reference.
 - The agent runs sandboxed: outside its copy it may read only the built SDK packages. The design skill that every
   product repo gets names Studio-lab parts close to tomflix (film detail page, login dialog, main shell) as examples;
   they must not be reachable.
+
+Amended 2026-11-23 (doc-agent session): the examiner is its own fresh session, started by the doc agent; it reports each
+miss as one line to the doc agent, who files it in the owning group. The human chose this option: "q14 A".
