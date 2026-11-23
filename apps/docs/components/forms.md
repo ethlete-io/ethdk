@@ -1040,6 +1040,12 @@ In `floating-inside`, the control text renders at `--et-form-field-control-font-
 `--et-form-field-floating-inside-control-font-scale`. The scale is read from any ancestor and
 defaults to `0.96`. Set it to `1` for the same text size as the other label modes.
 
+The size heights are a floor, not a fixed height. A `floating-inside` field adds the floated label
+above the text, so it grows past the floor when both borders, twice
+`--et-form-field-control-padding-block`, the label offset and the text line height add up to more.
+For example, an `md` field with a `14px` label (a `12.5px` offset) and an `18px` line height stays at
+`50px` up to a padding of `8.75px`. The `md` default padding is `6px`.
+
 On a touch device (`pointer: coarse`), the text of a native input or textarea inside a field
 never renders below `16px`, whatever `--et-form-field-control-font-size` says. Below that size,
 iOS Safari zooms the page when the field takes focus.
