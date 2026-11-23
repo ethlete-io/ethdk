@@ -2136,18 +2136,37 @@ const picked = (context: Context) =>
       );
     if (hasPersonName(words)) return fail(`--decided-by ${PERSON_NAME_REFUSAL}`);
 
-    const decided = journaledPickOf({
-      target: context.target,
-      product,
-      sketch,
-      decision: { kind: 'pick', variant, comment: words, ...originOf('designer') },
-    });
+    const pickNow = async () => {
+      const afterMerge = await embedderCheckAroundMerge({
+        target: context.target,
+        config: context.config,
+        product,
+        sketch,
+        variant,
+      });
+      const result = timedPhase('merge', () =>
+        mergeAndRecord({
+          target: context.target,
+          config: context.config,
+          product,
+          sketch,
+          by: authorOf(context.args) ?? undefined,
+          pick: { kind: 'pick', variant, comment: words, ...originOf('designer') },
+        }),
+      );
 
-    if (typeof decided === 'string') return fail(decided);
+      if (typeof result === 'string') return fail(result);
 
-    console.log(`picked ${sketch.target} variant ${variant} in ${product.name}: ${words}`);
+      await afterMerge();
+      console.log(
+        `picked and merged ${sketch.target} variant ${result.variant} into ${product.name}: ${result.parts.join(', ')}`,
+      );
+      await printPortItems({ target: context.target, config: context.config, product, parts: result.parts });
 
-    return 0;
+      return 0;
+    };
+
+    return pickNow();
   });
 
 const merged = (context: Context) =>

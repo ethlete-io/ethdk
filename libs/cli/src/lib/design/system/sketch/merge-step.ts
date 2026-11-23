@@ -14,7 +14,15 @@ import { appGatedMergeOf } from './merge-app-gate';
 import { regenerateStudioThemesOf } from './merge-studio-themes';
 import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
-import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch, writeSketchFile } from './sketch';
+import {
+  decideSketch,
+  findSketch,
+  parseTarget,
+  rejectionOf,
+  Sketch,
+  SketchDecisionInput,
+  writeSketchFile,
+} from './sketch';
 
 export const MERGE_WAIT_MS = 300_000;
 
@@ -42,7 +50,10 @@ export const editRefOf = (options: { target: string; sketch: Sketch; planRef: st
   options.sketch.target.endsWith('@edit') &&
   decisionRefsOf({ target: options.target, text: options.planRef }).length > 0;
 
-/** Merges the picked variant of `sketch` and logs the reason; answers the merged variant and part keys, or why not. */
+/**
+ * Merges the picked variant of `sketch` and logs the reason; answers the merged variant and part keys, or why not. With
+ * `pick` it records that pick in the same journaled step, so a refused merge leaves no pick behind.
+ */
 export const mergeAndRecord = (options: {
   target: string;
   config: DesignConfig;
@@ -53,12 +64,15 @@ export const mergeAndRecord = (options: {
   by?: string;
   decidedBy?: string;
   allowed?: { variant: string; planRef: string; editRef?: boolean };
+  pick?: Extract<SketchDecisionInput, { kind: 'pick' }>;
 }): { variant: string; parts: string[] } | string => {
-  const { target, config, product, sketch, note, replaceNote, by, decidedBy, allowed } = options;
+  const { target, config, product, sketch, note, replaceNote, by, decidedBy, allowed, pick } = options;
   const own = withoutAgentPickOf(sketch);
   const decided = allowed
     ? allowedMergeOf({ sketch: own, variant: allowed.variant, by, editRef: allowed.editRef })
-    : own;
+    : pick
+      ? { ...own, decision: { ...pick, decidedAt: new Date().toISOString() } }
+      : own;
 
   if (typeof decided === 'string') return decided;
 
@@ -69,18 +83,23 @@ export const mergeAndRecord = (options: {
       target,
       product,
       sketch: decided,
-      merge: () =>
-        mergeSketch({
+      merge: () => {
+        const toMerge = pick ? decideSketch({ sketch: own, decision: pick }) : decided;
+
+        if (typeof toMerge === 'string') return { reason: toMerge };
+
+        return mergeSketch({
           target,
           config,
           product,
-          sketch: decided,
+          sketch: toMerge,
           note,
           replaceNote,
           author: by,
           deferRebase: true,
           ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : decidedBy ? { decidedBy } : {}),
-        }),
+        });
+      },
       finish: (before, sketchDirs) => {
         const refreshed = timedPhase('harness-map', () => refreshHarnessMap({ target, product }));
 

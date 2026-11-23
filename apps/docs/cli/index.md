@@ -818,9 +818,10 @@ pick stays.
 for example `human`. Both `merge` and `pick` refuse a person name in `--decided-by` (exit 1). It does not go with `--allowed-by`, which records the plan.
 
 `et design sketch pick <layer>/<name> --variant <key> --decided-by "<the words and where they were said>" --by <model>`
-records a pick the designer gave outside Studio, for example in chat, in `sketch.json`: the same pick Studio writes
-(`by: designer`), with the words as its comment. It refuses an unknown or rejected variant and a sketch that is not
-ready. A later `sketch merge --decided-by <role>` merges it.
+merges the variant the designer picked outside Studio, for example in chat, at once: the pick (`by: designer`, the words
+as its comment) and the merge are one journaled step, so a refused merge prints its reason, exits 1 and leaves no pick.
+An interrupted one is finished or undone by the next CLI call or server start. It refuses an unknown or rejected variant
+and a sketch that is not ready.
 
 `sketch ready` also draws each live variant's changed parts at rest and refuses with
 `CONTROL-UNDECLARED <part> - … (variant <key>)` for a control the variant draws that no `controls` entry declares, unless

@@ -3104,24 +3104,9 @@ export default definePart({
       expect(lines.pop()).toContain('"human"');
       expect(readFileSync(file, 'utf8')).toBe(before);
 
-      expect(
-        await write(
-          target,
-          'pick',
-          'components/button',
-          '--variant',
-          'b',
-          '--decided-by',
-          'human in chat: b',
-          '--product',
-          'acme',
-        ),
-      ).toBe(0);
-      const picked = readFileSync(file, 'utf8');
-
       expect(await write(target, 'merge', 'components/button', '--decided-by', PERSON, '--product', 'acme')).toBe(1);
       expect(lines.pop()).toContain('"human"');
-      expect(readFileSync(file, 'utf8')).toBe(picked);
+      expect(readFileSync(file, 'utf8')).toBe(before);
       expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
     });
 
@@ -3181,22 +3166,44 @@ export default definePart({
       expect(existsSync(sketchDir(target))).toBe(true);
     });
 
-    it('records the pick the designer gave in chat as Studio does, so merge --decided-by goes through', async () => {
+    // Decision: `sketch pick` merges at once as one step; there is no picked-but-unmerged state.
+    it('merges the variant the designer picked in chat at once, with no pick left waiting', async () => {
       const { target, lines } = await readied('a,b');
       const said = 'human in chat: nimm b';
 
-      expect(await write(target, 'merge', 'components/button', '--decided-by', 'human', '--product', 'acme')).toBe(1);
-      expect(lines.pop()).toContain('has no pick');
       expect(
         await write(target, 'pick', 'components/button', '--variant', 'b', '--decided-by', said, '--product', 'acme'),
       ).toBe(0);
-      expect(JSON.parse(readFileSync(join(sketchDir(target), 'sketch.json'), 'utf8'))).toMatchObject({
-        decision: { kind: 'pick', variant: 'b', comment: said, by: 'designer', pid: process.pid },
-      });
-      expect(await write(target, 'merge', 'components/button', '--decided-by', 'human', '--product', 'acme')).toBe(0);
+      expect(lines.join('\n')).toContain('picked and merged components/button variant b into acme');
+      expect(existsSync(sketchDir(target))).toBe(false);
       expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
-        'components/button': { variant: 'b', decidedBy: 'human' },
+        'components/button': { variant: 'b', decidedBy: 'user' },
       });
+    });
+
+    it('fails a pick whose merge is refused and leaves no pick behind', async () => {
+      const { target, lines } = await readied('a,b');
+      const file = join(sketchDir(target), 'sketch.json');
+      const sketch = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+
+      writeFileSync(file, JSON.stringify({ ...sketch, baseline: undefined }));
+
+      expect(
+        await write(
+          target,
+          'pick',
+          'components/button',
+          '--variant',
+          'b',
+          '--decided-by',
+          'human: b',
+          '--product',
+          'acme',
+        ),
+      ).toBe(1);
+      expect(lines.pop()).toContain('records no baseline of the product');
+      expect(JSON.parse(readFileSync(file, 'utf8')).decision).toBeUndefined();
+      expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
     });
 
     it('refuses a pick of an unknown variant, and one without the words', async () => {
