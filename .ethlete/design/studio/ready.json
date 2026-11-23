@@ -2179,16 +2179,17 @@
     "pid": 2221996
   },
   "pages/start": {
-    "hash": "9b9f8eb0fa83c826",
+    "hash": "9f68fd6206a046ed",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
       ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
       ".ethlete/design/studio/assets/studio-app-icon.svg": "d1927cc46bc95568",
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
-      ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
-      ".ethlete/design/studio/pages/start/start.ts": "2c7073e57be8787c",
-      "apps/ethlete-studio/src/app/i18n/start-labels.ts": "43fc3d8609cea544",
+      ".ethlete/design/studio/foundations/logo/logo.css": "e2f2bd7b79651d04",
+      ".ethlete/design/studio/foundations/logo/logo.ts": "4922f4ee3a0cb4a8",
+      ".ethlete/design/studio/pages/start/start.ts": "b9264000b5a78914",
+      "apps/ethlete-studio/src/app/i18n/start-labels.ts": "e1273bd9cc0f1ebb",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
       "libs/components/design/icon.ts": "829a95253b948ba9",
@@ -2206,13 +2207,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "afa0cd68296aa1e9",
-    "actions": ["emit:copyPrompt", "emit:openRepo", "emit:otherRepo"],
+    "app": "42c9aa5cbb2ae410",
+    "actions": ["emit:copyPrompt", "emit:openRepo", "emit:otherRepo", "emit:projectChange"],
     "builder": "designer",
-    "at": "2026-11-21T05:46:08.018Z",
+    "at": "2026-11-23T11:38:19.438Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2234079
+    "pid": 985225
   },
   "pages/system": {
     "actions": [
