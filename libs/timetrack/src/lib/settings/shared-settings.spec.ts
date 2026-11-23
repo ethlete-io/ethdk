@@ -193,6 +193,31 @@ describe('shared settings', () => {
     expect(JSON.stringify(mapped)).not.toContain('secret');
   });
 
+  it('sends a rule of a removed worktree its events still carry, with the path the events keep', () => {
+    const removed = '/home/human/dev/fifa-wt-gone';
+    const removedRule = rule({ id: `repo:${removed}@feat/gone#3`, repoPath: removed, branch: 'feat/gone' });
+    const tank = stamped({ after: { attributionRules: [rule(), removedRule] }, atMs: 1_000 });
+    const entries = sharedSettingsEntriesOf({ settings: tank, ownKeys: TANK_KEYS, carriedPaths: [removed] });
+    const parsed = parseSharedSettings(encodeSharedSettings(entries));
+
+    if (!parsed) throw new Error('unparsable');
+
+    const mac = withPeerSharedSettings({
+      settings: DEFAULT_TIMETRACK_SETTINGS,
+      peers: [
+        {
+          entries: mapSharedSettings({ entries: parsed, peerKeys: TANK_KEYS, localKeys: MAC_KEYS }),
+          clockOffsetMs: 0,
+        },
+      ],
+    });
+
+    expect(mac.attributionRules.map((entry) => entry.repoPath)).toEqual(['/Users/human/dev/fifa', removed]);
+    expect(
+      sharedSettingsEntriesOf({ settings: tank, ownKeys: TANK_KEYS }).some((entry) => entry.id.includes('gone')),
+    ).toBe(false);
+  });
+
   it('keeps its stamps through the stored settings', () => {
     const tank = stamped({ after: { standIns: [standIn()] }, atMs: 1_000 });
     const read = parseTimetrackSettings(JSON.parse(JSON.stringify(tank)));

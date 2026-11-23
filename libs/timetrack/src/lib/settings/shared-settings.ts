@@ -279,14 +279,17 @@ const outgoingOf = (entry: SharedSettingsEntry, keys: CheckoutKeys): SharedSetti
 export const sharedSettingsEntriesOf = (options: {
   settings: TimetrackSettings;
   ownKeys: CheckoutKeys;
+  /** Machine paths the events of this machine still name though no checkout is there any more, such as a removed worktree. */
+  carriedPaths?: readonly string[];
 }): SharedSettingsEntry[] => {
+  const keys = { ...Object.fromEntries((options.carriedPaths ?? []).map((path) => [path, path])), ...options.ownKeys };
   const live = liveEntriesOf(options.settings);
   const stamps = options.settings.sharedStamps ?? {};
 
   return [
     ...[...live.values()].map((entry): SharedSettingsEntry => ({ ...entry, atMs: stamps[entry.id]?.atMs ?? 0 })),
     ...tombstonesOf(stamps, live),
-  ].flatMap((entry) => outgoingOf(entry, options.ownKeys) ?? []);
+  ].flatMap((entry) => outgoingOf(entry, keys) ?? []);
 };
 
 const SHARED_SETTINGS_VERSION = 1;
@@ -388,6 +391,20 @@ const localTextOf = (options: Keys & { text: string }) => {
   return local !== undefined && holdsOnlyKeyedPaths(local, localKeys) ? local : undefined;
 };
 
+const carriedTextOf = (options: Keys & { text: string }) => {
+  const { peerKeys, localKeys } = options;
+
+  return replaceRoots({
+    text: options.text,
+    keys: peerKeys,
+    replace: (root) => {
+      const path = translatePeerPath({ path: root, peerKeys, localKeys });
+
+      return Object.keys(localKeys).map(trimRoot).includes(path) ? path : undefined;
+    },
+  });
+};
+
 const localTextsOf = (options: Keys & { texts: readonly string[] | undefined }) => {
   const kept = options.texts?.flatMap((text) => localTextOf({ ...options, text }) ?? []);
 
@@ -396,7 +413,8 @@ const localTextsOf = (options: Keys & { texts: readonly string[] | undefined }) 
 
 const mapEntry = (options: Keys & { entry: SharedSettingsEntry }): SharedSettingsEntry | null => {
   const { entry } = options;
-  const id = localTextOf({ ...options, text: entry.id });
+  const textOf = entry.id.startsWith(RULE) ? carriedTextOf : localTextOf;
+  const id = textOf({ ...options, text: entry.id });
 
   if (id === undefined) return null;
 
@@ -404,8 +422,8 @@ const mapEntry = (options: Keys & { entry: SharedSettingsEntry }): SharedSetting
     case 'deleted':
       return { ...entry, id };
     case 'rule': {
-      const ruleId = localTextOf({ ...options, text: entry.rule.id });
-      const repoPath = entry.rule.repoPath ? localTextOf({ ...options, text: entry.rule.repoPath }) : undefined;
+      const ruleId = carriedTextOf({ ...options, text: entry.rule.id });
+      const repoPath = entry.rule.repoPath ? carriedTextOf({ ...options, text: entry.rule.repoPath }) : undefined;
 
       if (ruleId === undefined || (entry.rule.repoPath && repoPath === undefined)) return null;
 
