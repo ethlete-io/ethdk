@@ -1297,8 +1297,20 @@
     "pid": 2342738
   },
   "foundations/logo": {
+    "hash": "41e899d10a7b6bed",
+    "files": {
+      ".ethlete/design/studio/assets/studio-app-icon.svg": "d1927cc46bc95568",
+      ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
+      ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
+      ".ethlete/design/studio/foundations/logo/logo.css": "e2f2bd7b79651d04",
+      ".ethlete/design/studio/foundations/logo/logo.ts": "4922f4ee3a0cb4a8"
+    },
     "actions": [],
-    "at": "2026-11-17T13:28:23.600Z"
+    "builder": "designer",
+    "at": "2026-11-23T11:38:35.695Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 995454
   },
   "foundations/motion": {
     "hash": "b74d37ee2116e228",
