@@ -12,7 +12,7 @@ export type TreeRow = {
   expanded?: boolean;
   selected?: boolean;
   inert?: boolean;
-  warning?: string[];
+  warning?: boolean;
   status?: TreeRowStatus;
   comments?: number;
   layer?: string;
@@ -63,19 +63,7 @@ const SELECTED_CLASS =
       <span [class]="'flex-none text-ui-xs ' + accentClass()">{{ row.layer }}</span>
     }
     @if (row.warning) {
-      <ng-template #warningLines>
-        <ul class="m-0 flex list-none flex-col gap-space-1 p-0" data-warning-lines>
-          @for (line of row.warning; track $index) {
-            <li>{{ line }}</li>
-          }
-        </ul>
-      </ng-template>
-      <span
-        [etProvideColor]="warningTheme()"
-        [etTooltip]="warningLines"
-        [etTooltipAriaDescription]="row.warning.join('; ')"
-        class="flex flex-none text-et-theme"
-      >
+      <span [etProvideColor]="warningTheme()" class="flex flex-none text-et-theme">
         <svg
           width="12"
           height="12"

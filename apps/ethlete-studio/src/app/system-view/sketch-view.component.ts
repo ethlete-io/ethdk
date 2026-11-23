@@ -95,7 +95,6 @@ import {
   waitsForPick,
 } from './system-tree';
 import { partOpenPoints$ } from '../../host/design-open-points';
-import { addedSkipsByVariant } from './added-skips';
 import { keptRead$ } from './kept-read';
 import { sketchPointGroupsOf } from './open-points';
 import { undecidedShotsOf } from './undecided-shots';
@@ -265,7 +264,6 @@ const scrollOf = (data: unknown) =>
       [selected]="picked() ?? undefined"
       [openPoints]="openPointGroups()"
       [errored]="erroredVariants()"
-      [skips]="addedSkips()"
       [mergeHold]="sketch().mergeHold ?? null"
       [error]="mergeError()"
       [listError]="listError()"
@@ -611,8 +609,6 @@ export class SketchViewComponent {
     ).pipe(scan(sketchFrameRetriesWith, NO_SKETCH_FRAME_RETRIES)),
     { initialValue: NO_SKETCH_FRAME_RETRIES },
   );
-
-  protected addedSkips = computed(() => addedSkipsByVariant(this.sketch().addedSkips ?? []));
 
   protected erroredVariants = computed(() => {
     return erroredVariantsOf({

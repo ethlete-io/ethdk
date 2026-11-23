@@ -109,8 +109,6 @@ import {
 
 const MOVE_REST_MS = 200;
 
-export type SketchAddedSkip = { part: string; classes: string };
-
 export type SketchShotContext = { $implicit: SketchRow; state: string };
 
 const ZOOM_STEP = 1.5;
@@ -234,7 +232,6 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
 })
 export class SketchesComponent {
   protected errorTheme = injectSemanticColorTheme('error');
-  protected warningTheme = injectSemanticColorTheme('warning');
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private injector = inject(Injector);
@@ -254,7 +251,6 @@ export class SketchesComponent {
   public openPoints = input<OpenPointGroup[]>([]);
   public pointsClosed = model(true);
   public errored = input<readonly string[]>([]);
-  public skips = input<Readonly<Record<string, readonly SketchAddedSkip[]>>>({});
   public mergeHold = input<SketchMergeHold | null>(null);
   public drawn = input<string | null>(SKETCH_DRAWN);
   public hold = input<SketchHold>(SKETCH_HOLD);

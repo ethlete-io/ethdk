@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection, TemplateRef } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { TooltipDirective } from '@ethlete/components';
@@ -59,34 +59,19 @@ describe('TreeRowComponent', () => {
     expect(pressed).toEqual(['Components', 'empty', 'filled']);
   });
 
-  it('shows each warning finding on its own line', async () => {
+  it('marks a warning row with an icon and lists no finding', async () => {
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
     });
 
     const fixture = TestBed.createComponent(TreeRowComponent);
-    const warning = ['LOAD: the part draws it', 'UTILITY-CSS: min-width: 100% outside foundations'];
-
-    fixture.componentRef.setInput('rows', [{ label: 'canvas-frames', depth: 1, kind: 'leaf', warning }]);
+    fixture.componentRef.setInput('rows', [{ label: 'canvas-frames', depth: 1, kind: 'leaf', warning: true }]);
     await fixture.whenStable();
 
-    const tip = fixture.debugElement
-      .queryAll(By.directive(TooltipDirective))
-      .map((tooltip) => tooltip.injector.get(TooltipDirective))
-      .find((candidate) => candidate.content() instanceof TemplateRef);
-    const content = tip?.content();
+    const element: HTMLElement = fixture.nativeElement;
 
-    if (!(content instanceof TemplateRef)) throw new Error('the warning tooltip is not a list template');
-
-    const view = content.createEmbeddedView({});
-    view.detectChanges();
-
-    const lines = view.rootNodes
-      .flatMap((node: Node) => (node instanceof HTMLElement ? [...node.querySelectorAll('li')] : []))
-      .map((line) => line.textContent?.trim());
-
-    expect(tip?.ariaDescription()).toBe(warning.join('; '));
-    expect(lines).toEqual(warning);
+    expect(element.querySelector('svg path[d="M8 2.5 14 13H2z"]')).not.toBeNull();
+    expect(fixture.debugElement.queryAll(By.directive(TooltipDirective))).toHaveLength(1);
   });
 
   it('shows a hint as the tooltip of the label and draws no tag', async () => {

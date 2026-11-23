@@ -1082,7 +1082,7 @@ export class SystemViewComponent {
           badge === 'hold target ended' ||
           badge === 'rebase not committed',
       )
-        ? { warns: entry.title ?? true }
+        ? { warns: true }
         : {}),
     });
     const partOf = (entry: TreeEntry): PartTreePart => ({

@@ -728,24 +728,6 @@ describe('SketchViewComponent', () => {
     expect(badge((await render({ ...drawing, autoMergeForecast: null }, noComments)).root)).toBeNull();
   });
 
-  it('lists the skip markers the listing names for a variant in that variant head', async () => {
-    const { root } = await render(
-      {
-        ...SKETCH,
-        decision: undefined,
-        addedSkips: [{ variant: 'b', part: 'components/card', classes: 'WRAP CLIPPED' }],
-      },
-      noComments,
-    );
-
-    expect(
-      [...root.querySelectorAll('[data-sk-row="b"] [data-sk-added-skip]')].map((line) =>
-        line.textContent?.replace(/\s+/g, ' ').trim(),
-      ),
-    ).toEqual([`${SKETCHES_LABELS.addedSkip} WRAP CLIPPED ${SKETCHES_LABELS.addedSkipIn('components/card')}`]);
-    expect(root.querySelector('[data-sk-row="a"] [data-sk-added-skip]')).toBeNull();
-  });
-
   it('names a ready, picked sketch whose files changed after ready as not ready and offers no merge', async () => {
     const changed = {
       ...SKETCH,

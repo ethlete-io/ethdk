@@ -210,9 +210,6 @@ const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => 
   title: orFallback(
     [
       ...(sketch.targets ?? []).flatMap(({ variant, error }) => (error ? [`${variant}: ${error}`] : [])),
-      ...(sketch.problems ?? []).flatMap(({ variant, problems }) =>
-        problems.map((found) => `${variant}: ${found.rule}: ${found.message}`),
-      ),
       ...(sketch.staleBase ? [TREE_ROW_LABELS.sketchNeedsRebase(sketch.staleBase)] : []),
       ...(sketch.changedSinceReady?.length ? [TREE_ROW_LABELS.sketchChangedSinceReady(sketch.changedSinceReady)] : []),
       ...(sketch.rebaseUncommitted ? [TREE_ROW_LABELS.sketchRebaseUncommitted(sketch.rebaseUncommitted.commit)] : []),

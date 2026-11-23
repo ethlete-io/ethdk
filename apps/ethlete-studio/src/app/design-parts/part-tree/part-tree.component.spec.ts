@@ -72,7 +72,7 @@ describe('PartTreeComponent', () => {
     const [, , button, , , , select] = rowsOf(element);
 
     expect(button?.getAttribute('aria-current')).toBe('true');
-    expect(withTooltip(select, 'Render-Check: 1 Warnung')).not.toBeNull();
+    expect(select?.querySelector('svg path[d="M8 2.5 14 13H2z"]')).not.toBeNull();
   });
 
   it('tags a nested part of another layer with its layer after the label', async () => {
@@ -242,7 +242,7 @@ describe('PartTreeComponent', () => {
     expect(labelsOf(element).slice(0, 3)).toEqual(['Foundations', 'colors', 'Components']);
   });
 
-  it('uses own keys, a closed host and an own warning title, and emits the open keys', async () => {
+  it('uses own keys, a closed host, and emits the open keys', async () => {
     const fixture = await render([
       {
         title: 'Components',
@@ -253,7 +253,7 @@ describe('PartTreeComponent', () => {
             name: 'title-bar',
             key: 'components/title-bar',
             open: false,
-            warns: ['LOAD: broken'],
+            warns: true,
             nested: [{ name: 'title-search', key: 'components/title-bar/title-search' }],
           },
         ],
@@ -267,7 +267,6 @@ describe('PartTreeComponent', () => {
     fixture.componentInstance.expandedChange.subscribe((keys) => expanded.push(keys));
 
     expect(labelsOf(element)).toEqual(['Components', 'title-bar']);
-    expect(withTooltip(element, 'LOAD: broken')).not.toBeNull();
 
     rowsOf(element)[1]?.click();
     await fixture.whenStable();

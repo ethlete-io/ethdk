@@ -76,17 +76,12 @@ type SketchStatus = SketchHeadStatus;
 
 type ScreenMode = 'crop' | 'whole';
 
-type AddedSkip = { part: string; classes: string };
-
-type AddedSkips = Partial<Record<RowKey, AddedSkip[]>>;
-
 type Props = {
   camera: 'fit' | '100' | Camera;
   selected?: RowKey;
   status?: SketchStatus;
   readyReason?: string;
   errored?: RowKey[];
-  skips?: AddedSkips;
   fresh?: boolean;
   autoMerge?: boolean;
   part?: PartKind;
@@ -117,7 +112,6 @@ type View = {
   selected?: RowKey;
   status: SketchStatus;
   errored: RowKey[];
-  skips: AddedSkips;
   comparing: boolean;
   listError?: string;
   retry: string;
@@ -140,33 +134,6 @@ const LIST_VIEWPORT = { width: LIST_WIDTH, height: LIST_HEIGHT };
 
 const LIST_ERROR = 'missing build: pages/sketches';
 const FAILED_REASON = 'b · default: boom is not defined';
-const ADDED_SKIPS: AddedSkips = {
-  a: [{ part: 'components/zoom-chip', classes: 'WRAP' }],
-  b: [
-    { part: 'components/zoom-chip', classes: 'CLIPPED OFF-CENTRE' },
-    { part: 'components/button', classes: 'CONTROL-HEIGHT' },
-  ],
-};
-
-const skipLines = (skips: AddedSkip[] | undefined) =>
-  skips?.length
-    ? html`<ul class="m-0 flex list-none flex-col gap-space-1 p-0" data-sk-added-skips>
-        ${skips
-          .map(
-            ({ part, classes }) =>
-              html`<li class="flex min-w-0 items-start gap-space-1 text-ui-xs text-et-surface-muted" data-sk-added-skip>
-                <span class="contents" data-et-semantic-color="warning"
-                  >${icon('warning', { size: 14, cls: 'mt-px flex-none text-et-theme' })}</span
-                ><span class="min-w-0 wrap-anywhere"
-                  >${SKETCHES_LABELS.addedSkip} <code class="font-code text-et-surface">${classes}</code> in ${part} -
-                  stellt eine Prüfung stumm</span
-                >
-              </li>`,
-          )
-          .join('')}
-      </ul>`
-    : '';
-
 const failedMark = (reason: string) =>
   html`<span class="text-ui-xs text-et-theme-ink" data-et-semantic-color="error" role="alert" data-sk-compare-failed
     >Vergleich fehlgeschlagen: ${reason}</span
@@ -445,7 +412,7 @@ const headOf = (row: Row, view: View) => {
       ? html`<span class="relative flex flex-wrap items-center gap-space-2">${take}${view.points}</span>`
       : take;
   const mergeFailed = view.error && row.key === view.selected ? errorText(view.error) : '';
-  const action = drawn ? drawingMark : skipLines(view.skips[row.key]) + withPoints + mergeFailed;
+  const action = drawn ? drawingMark : withPoints + mergeFailed;
   const failed = view.listError ? failedMark(view.listError) : comparingMark;
   const mark = view.comparing && row.key !== 'current' ? failed : '';
   if (isWithdrawn(row, view.withdrawn)) return rowHead(row, withdrawnMark, mark);
@@ -778,7 +745,6 @@ export default definePart<Props>({
     drawing: { camera: 'fit', status: 'drawing' },
     paused: { camera: 'fit', status: 'paused' },
     failed: { camera: 'fit', status: 'failed', errored: ['b'], readyReason: FAILED_REASON },
-    'added-skips': { camera: 'fit', part: 'narrow', skips: ADDED_SKIPS },
     'picked-errored': { camera: 'fit', part: 'narrow', status: 'picked', selected: 'b', errored: ['a'] },
     'new-part': { camera: 'fit', fresh: true },
     'auto-merge': { camera: 'fit', status: 'drawing', autoMerge: true },
@@ -843,8 +809,6 @@ export default definePart<Props>({
     paused: 'A paused sketch; check the Pausiert badge in the header.',
     failed:
       'Variant b failed to render; check Render fehlgeschlagen in the error colour with b · default: and the error, and no Übernehmen in any row.',
-    'added-skips':
-      'Variants that add data-et-skip markers; check one warning line per marker above Übernehmen in that variant head.',
     'picked-errored':
       'Variant b picked while a has a render error; check Variante gewählt and that no row offers Übernehmen.',
     'auto-merge':
@@ -938,15 +902,7 @@ export default definePart<Props>({
     },
     {
       label: 'Status',
-      states: [
-        'drawing',
-        'paused',
-        'picked',
-        'auto-merge',
-        'added-skips',
-        'sketch-only-points',
-        'sketch-only-points-open',
-      ],
+      states: ['drawing', 'paused', 'picked', 'auto-merge', 'sketch-only-points', 'sketch-only-points-open'],
     },
     {
       label: 'Agent und Runden',
@@ -985,7 +941,6 @@ export default definePart<Props>({
     status = 'waiting',
     readyReason,
     errored = [],
-    skips = {},
     fresh = false,
     autoMerge = false,
     part: kind = 'wide',
@@ -1067,7 +1022,6 @@ export default definePart<Props>({
       selected,
       status,
       errored,
-      skips,
       comparing,
       listError,
       retry,

@@ -65,8 +65,6 @@ export const SKETCHES_LABELS = {
   drawingMark: 'zeichnet',
   drawingVariant: 'zeichnet diese Variante',
   drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',
-  addedSkip: 'Neuer Skip',
-  addedSkipIn: (part: string) => `in ${part} - stellt eine Prüfung stumm`,
   mergePort: (merged: readonly string[]) => `Agent portiert nach Merge von ${merged.join(', ')}`,
   fresh: 'neu',
   autoMerge: 'Übernimmt sich selbst',

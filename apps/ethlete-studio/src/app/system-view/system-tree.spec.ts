@@ -213,14 +213,31 @@ describe('product problems in the tree', () => {
     ]);
     const lines = (entry: TreeEntry) => (entry.badges.includes('error') ? (entry.title ?? []) : []);
     const shown = rows.flatMap(lines);
-    const listed = [
-      ...studio.problems,
-      ...studio.parts.flatMap((listedPart) => listedPart.problems),
-      ...sketches.flatMap((listedSketch) => (listedSketch.problems ?? []).flatMap((entry) => entry.problems)),
-    ];
+    const listed = [...studio.problems, ...studio.parts.flatMap((listedPart) => listedPart.problems)];
 
-    expect(listed.length).toBeGreaterThanOrEqual(6);
+    expect(listed.length).toBeGreaterThanOrEqual(5);
     expect(listed.filter((found) => !shown.some((line) => line.endsWith(`${found.rule}: ${found.message}`)))).toEqual(
+      [],
+    );
+  });
+
+  it('shows no check finding in the title of a sketch row', () => {
+    const [studio] = listing.system as unknown as ListedProduct[];
+    const { sketches } = listing.sketches as unknown as ListedSketches;
+
+    if (!studio) throw new Error('the captured listing has no product');
+
+    const findings = sketches.flatMap((listedSketch) =>
+      (listedSketch.problems ?? []).flatMap((entry) => entry.problems),
+    );
+    const rows = treeOf(studio.parts, { product: studio, sketches }).flatMap((group) => [
+      ...group.entries,
+      ...(group.sections ?? []).flatMap((section) => section.entries),
+    ]);
+    const lines = rows.flatMap((entry) => entry.title ?? []);
+
+    expect(findings.length).toBeGreaterThan(0);
+    expect(lines.filter((line) => findings.some((found) => line.includes(`${found.rule}: ${found.message}`)))).toEqual(
       [],
     );
   });
@@ -860,7 +877,7 @@ describe('sketches in the tree', () => {
     expect(tree[1]?.entries.map((entry) => entry.badges)).toEqual([['sketch open'], []]);
     expect(tree[0]?.entries.map((entry) => [entry.key, entry.name, entry.title, entry.badges])).toEqual([
       ['sketch:components/button', 'button', ['components/button'], ['in progress']],
-      ['sketch:elements/header', 'header', ['a: LAYER: m'], ['ready', 'error']],
+      ['sketch:elements/header', 'header', ['elements/header'], ['ready', 'error']],
     ]);
   });
 
@@ -926,27 +943,6 @@ describe('sketches in the tree', () => {
       [['Rebase nach abc1234 nicht committet'], ['in progress', 'rebase not committed']],
       [['elements/a'], ['in progress']],
     ]);
-  });
-
-  it('titles a sketch with one line per problem, naming its variant and rule', () => {
-    const [sketches] = treeOf([part()], {
-      sketches: [
-        sketch({
-          problems: [
-            { variant: 'a', problems: [] },
-            {
-              variant: 'b',
-              problems: [
-                { rule: 'LAYER', file: 'x', message: 'uses a page' },
-                { rule: 'HARD-CODED-COLOUR', file: 'y', message: '#fff' },
-              ],
-            },
-          ],
-        }),
-      ],
-    });
-
-    expect(sketches?.entries[0]?.title).toEqual(['b: LAYER: uses a page', 'b: HARD-CODED-COLOUR: #fff']);
   });
 
   it('marks a sketch with a variant that fails to render, and titles it with the reason', () => {

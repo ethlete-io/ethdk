@@ -6,8 +6,7 @@ import { TreeRow, TreeRowItemComponent, TreeRowStatus } from '../tree-row/tree-r
 type Marks = {
   key?: string;
   selected?: boolean;
-  /** Lines are the warning's own findings, one per line, instead of `warningTitle`. */
-  warns?: boolean | string[];
+  warns?: boolean;
 };
 
 /** A part; one with `nested` parts is their host and opens unless `open` is false. */
@@ -90,7 +89,6 @@ export class PartTreeComponent {
   public sketches = input<PartTreeSketches>();
   public legacy = input<PartTreeLegacy>();
   public label = input('Designsystem');
-  public warningTitle = input('Render-Check: 1 Warnung');
 
   /** The key of an activated row: its own `key`, else the path of labels from its group down, joined by `/`. */
   public activate = output<string>();
@@ -104,7 +102,6 @@ export class PartTreeComponent {
     const children = new Map<string | null, TreeNode<string>[]>();
     const marks = new Map<string, RowMarks>();
     const open: string[] = [];
-    const warning = [this.warningTitle()];
 
     const add = (node: {
       value: string;
@@ -123,7 +120,7 @@ export class PartTreeComponent {
     const markOf = (kind: RowMarks['kind'], own: Marks = {}): RowMarks => ({
       kind,
       selected: own.selected,
-      warning: Array.isArray(own.warns) ? own.warns : own.warns ? warning : undefined,
+      warning: own.warns,
     });
 
     const partNode = (parentKey: string, part: PartTreePart): TreeNode<string> => {
