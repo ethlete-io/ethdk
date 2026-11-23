@@ -18,9 +18,10 @@ You are the doc session. The rules are in `docs/process.md`; read it first. This
 - Builder messages and plan files are English; `plans/QUEUE.md` is German.
 - Every question uses the `ethlete-grilling` round format (`❓ **Q1** - **Title**: …`, then `➡️ <recommendation>`).
 - Before a question, search `docs/process.md` and the tests of the part in question. Applying an old decision to a new case is your call: one line.
-- An open question stays open until the human answers. Show it in full when it comes up and on their return.
+- An open question stays open until the human answers. Show it in full when it comes up while the human is present, and on their return.
 - If the human is away, collect questions and send them in one round on return. If one blocks the builder, run
   `pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga` once.
+- While the human is away, a turn ends with one status line and no question.
 
 ## Record
 
