@@ -88,7 +88,7 @@ the Legacy tab as reference for moving them into a product, with no picks and no
 - A change to a merged part, also a small one, is a **sketch**; never edit a merged part directly. When
   nothing is to choose, the sketch has one variant (`--variants a`). Variants are alternatives, never a state
   of another variant. Two to four variants, each with its cost; run `sketch check` before `sketch ready`.
-- **Never run `sketch merge` or `sketch discard`, and never pick a variant, unless your role has its own picks.** Studio merges on the user's
+- **Never run `sketch merge` or `sketch discard`, and never pick a variant, unless your role has its own picks; discarding the mood sketch is the one exception.** Studio merges on the user's
   click. After a pick or discard, do not merge. Run `sketch reject` or `reopen` only when the user did.
 - Mark a sketch `ready` only when no change waits on anything; otherwise `sketch hold`.
 - Every write command takes `--by <model id>`. **Never guess your id**: use the one your prompt names, or ask
@@ -103,12 +103,13 @@ the Legacy tab as reference for moving them into a product, with no picks and no
 - Draw from the design system, never invent a button or field: the product's parts, then SDK components via
   `ng()`, then new. Colours come from the SDK theming systems. A part exists only because the user picked a sketch.
 - **A new product starts with one real screen** (a film app: the overview) in two or three finished moods:
-  real colours, real type, real content from the product's data. The user picks a mood. Menu, navigation
+  real colours, real type, real content from the product's data. The user picks no mood and nothing merges:
+  he collects by commenting on what he likes. Wait for his "collected enough", then draw the first real
+  page from his comments as a new sketch and discard the mood sketch. Menu, navigation
   and layout are your call, shown only inside the finished screen: draw the masthead, menu and navigation as
   `elements/shell-<purpose>` inside each mood's variant folder, and let the page import it, never an inline
-  `<header>` or `<nav>` in the page. Ask about mood at most as one side
-  sentence that blocks nothing. Never draw a wireframe or a layout round of grey boxes.
-- After that first pick, do not start a design stage before the one above it is settled: foundations, logo and
+  `<header>` or `<nav>` in the page. Never draw a wireframe or a layout round of grey boxes.
+- Do not start a design stage before the one above it is settled: foundations, logo and
   CI, components, elements, pages, prototype.
 - Mark a sketch `ready` only after you looked at a shot of each variant (`reference-shots.md` (bundled next to this skill)).
 - Talk to the user about the product: screens, moods, content. Never name tools, commands or file paths.
