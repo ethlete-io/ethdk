@@ -33,6 +33,6 @@
   "exclude": ["angular-patterns", "git-commit", "git-flow", "handoff", "rxjs-signals"],
   "claudeMdImportsAgentsMd": true,
   "hooks": ["context-warning", "subagent-model-policy", "background-design-commands", "git-safety"],
-  "report": { "planFiles": ["plans/studio/STATUS.md", "plans/studio/queue.md", "plans/studio/rows.md"] },
+  "report": { "planFiles": ["plans/QUEUE.md"] },
   "mods": ["e2e-progress", "status-line"]
 }
