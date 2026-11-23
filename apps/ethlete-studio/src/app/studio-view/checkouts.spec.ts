@@ -1,6 +1,7 @@
 import { EnvironmentInjector, createEnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { injectNotificationManager, provideNotificationManager } from '@ethlete/components';
+import { Observable, Subject } from 'rxjs';
 import { createCheckouts } from './checkouts';
 
 type Answers = Record<string, (args: Record<string, unknown>) => unknown>;
@@ -23,13 +24,13 @@ const settle = async () => {
   for (let round = 0; round < 5; round++) await new Promise((resolve) => setTimeout(resolve));
 };
 
-const mount = async (answers: Answers, remembered: string) => {
+const mount = async (answers: Answers, remembered: string, openRequests$?: Observable<string>) => {
   stubHost(answers);
 
   const picks: string[] = [];
   const injector = createEnvironmentInjector(provideNotificationManager(), TestBed.inject(EnvironmentInjector));
   const checkouts = runInInjectionContext(injector, () =>
-    createCheckouts({ remembered, pick: (checkout) => picks.push(checkout) }),
+    createCheckouts({ remembered, pick: (checkout) => picks.push(checkout), openRequests$ }),
   );
 
   await settle();
@@ -51,6 +52,24 @@ describe('createCheckouts', () => {
 
     expect(checkouts.current()).toBe('/dev/beta');
     expect(picks).toEqual(['/dev/beta']);
+  });
+
+  it('switches to a checkout an agent asked Studio to open, and keeps the others', async () => {
+    const requests = new Subject<string>();
+    let kept = ['/dev/alpha'];
+    const { checkouts, picks } = await mount(
+      { design_roots: () => ({ search: '', roots: kept }) },
+      '/dev/alpha',
+      requests,
+    );
+
+    kept = ['/dev/alpha', '/dev/beta'];
+    requests.next('/dev/beta');
+    await settle();
+
+    expect(checkouts.current()).toBe('/dev/beta');
+    expect(checkouts.names()).toEqual(['alpha', 'beta']);
+    expect(picks).toEqual(['/dev/alpha', '/dev/beta']);
   });
 
   it('names a Windows checkout by its folder, and picks a checkout by that name', async () => {

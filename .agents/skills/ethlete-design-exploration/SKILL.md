@@ -22,12 +22,11 @@ or loses only against the other variants of its question.
 1. **One open call at a time.** Take one question. Draw its variants. Stop.
 2. **Put the variants in the call, then name your pick.** Two to four variants, drawn for
    real, side by side, labelled, with what each one costs. Your pick is a proposal. Never ask
-   a yes/no question about content, and never ask the user what they want: deliver strong
-   variants, and the user picks.
-3. **Commit only when the user says commit.** A merge the user makes in Ethlete Studio counts as
-   that word for the merged part: commit the part, not the open sketches.
-4. **A clear rejection starts the next call.** Settle and record the rejected call, then draw
-   the next focused question automatically, within the user's original scope. Stop only when the
+   the user what they want or a yes/no question about content: deliver strong variants.
+3. **Commit only when the user says commit.** A merge in Ethlete Studio counts as
+   that word for the merged part: commit the part, not open sketches.
+4. **A clear rejection starts the next call.** Settle and record it, then draw
+   the next focused question, within the user's original scope. Stop only when the
    user asks to pause or end the exploration, or when their feedback leaves no grounded next
    question.
 5. **Keep the answer short.** 120 words at most.
@@ -67,7 +66,9 @@ The exploration's plan file names the tool. Two shapes exist.
 user reads and decides in Ethlete Studio. The tool is `et design`, from `@ethlete/cli`; run
 `et design --help` for every command, `et design <command> [<subcommand>] --help` for one.
 In the SDK checkout, `yarn design` builds the CLI before each call; in a check-and-shot loop,
-build once and call `node dist/libs/cli/src/index.js design` instead.
+build once and call `node dist/libs/cli/src/index.js design`.
+Ask the user, then run `et design studio open` to show your checkout in Studio. If it is not
+running, the user opens it; run again.
 
 ```
 .ethlete/design/
@@ -79,9 +80,8 @@ build once and call `node dist/libs/cli/src/index.js design` instead.
   calls/                              old calls: Legacy, read-only
 ```
 
-Studio no longer takes new calls. **New work goes to a product, never to a new call**; do not run
-`et design new`. Old calls stay in Studio's Legacy tab as reference for moving them into a
-product. They take no picks and no new variants.
+Studio takes no new calls. **New work goes to a product**, never `et design new`. Old calls stay in
+the Legacy tab as reference for moving them into a product, with no picks and no new variants.
 
 ## Hard rules for products and sketches
 
@@ -92,7 +92,7 @@ product. They take no picks and no new variants.
   click. After a pick or discard, do not merge. Run `sketch reject` or `reopen` only when the user did.
 - Mark a sketch `ready` only when no change waits on anything; otherwise `sketch hold`.
 - Every write command takes `--by <model id>`. **Never guess your id**: use the one your prompt names, or ask
-  the coordinator or the user before you write.
+  before you write.
 - `design check` opens an edit sketch for a direct edit of a merged part; the user picks in Studio. Remove a part only with `et design part remove`, never `git rm`.
 - Share code between variants in the sketch's `shared/` folder only. An asset is one file in `<product>/assets/`.
 - A user comment to combine variants is a new variant in a new round (`sketch variant --from --round --note`).

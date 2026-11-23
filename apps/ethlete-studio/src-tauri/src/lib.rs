@@ -24,6 +24,7 @@ mod shutdown {
     pub fn exit_with_signal_code() {}
 }
 mod studio_code;
+mod studio_open;
 mod traffic_lights;
 mod update;
 #[cfg(target_os = "macos")]
@@ -203,6 +204,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(design_server::DesignServers::default())
         .manage(call_status::StatusWatch::default())
+        .manage(studio_open::OpenWatch::default())
         .manage(update::PendingUpdate::default())
         .manage(window_chrome::ChromeWatch::default())
         .setup(|app| {
@@ -213,6 +215,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             call_status::design_status_watch,
+            studio_open::design_open_watch,
             design::design_project,
             design_action_log::design_action_refused,
             design_roots::design_roots,

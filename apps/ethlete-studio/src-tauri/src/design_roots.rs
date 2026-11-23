@@ -190,6 +190,10 @@ pub fn keep_only_root(app: &tauri::AppHandle, checkout: &str) -> StudioResult<De
     keep_only(&store_path(app)?, checkout)
 }
 
+pub fn add_root(app: &tauri::AppHandle, checkout: &str) -> StudioResult<DesignRoots> {
+    add(&store_path(app)?, checkout)
+}
+
 #[tauri::command]
 pub fn design_roots(app: tauri::AppHandle) -> StudioResult<DesignRoots> {
     Ok(read(&store_path(&app)?))

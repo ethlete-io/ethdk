@@ -118,6 +118,22 @@ export const designStatusChanges$ = (): Observable<void> =>
     invoke('design_status_watch', { changes }).catch((error: unknown) => subscriber.error(error));
   });
 
+/** Reports each checkout an agent asked Studio to open with `et design studio open`. Studio has kept it by then. */
+export const designOpenRequests$ = (): Observable<string> =>
+  new Observable<string>((subscriber) => {
+    if (!hasHostShell()) {
+      subscriber.error(new HostShellMissingError());
+
+      return;
+    }
+
+    const requests = new Channel<string>();
+
+    requests.onmessage = (checkout) => subscriber.next(checkout);
+
+    invoke('design_open_watch', { requests }).catch((error: unknown) => subscriber.error(error));
+  });
+
 /** The crash-log entry a design server wrote before it died. `time` is an ISO timestamp. */
 export type DesignServerCrash = { time: string; pid: number; port: number; path: string; stack: string[] };
 

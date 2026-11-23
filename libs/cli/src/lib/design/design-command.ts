@@ -11,6 +11,7 @@ import { designComment, designInbox } from './inbox-command';
 import { markLegacy } from './legacy';
 import { newCall } from './new-call';
 import { designProduct } from './product-command';
+import { designStudio } from './studio-open';
 import { serveDesign } from './serve';
 import { enterDesignServerScope } from './system/own-scope';
 import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './asset-shot';
@@ -114,6 +115,10 @@ const helpOf = (invocation: string) =>
     `${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>]`,
     '  Create a product: its config.json entry and the empty layer folders. Without a base it gets the presets',
     '  phone (390x844) and desktop (1440x900). --from-project copies styles, head, providers and themes.',
+    '',
+    `${invocation} studio open [<dir>]`,
+    '  Add a checkout (the current one by default) to the running Studio and switch Studio to it. Ask the human first.',
+    '  It never starts Studio: when Studio is not running it fails and says so, and the human opens Studio.',
     '',
     `${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b] [--feature <name>]`,
     '  Write a call that renders at once: call.ts, fixture.ts and one variant file per key.',
@@ -335,6 +340,7 @@ const TIMED_COMMANDS = new Set([
   'sketch',
   'status',
   'stop',
+  'studio',
   'system',
   'task',
   'token',
@@ -534,6 +540,12 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designProduct({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'studio') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designStudio({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'legacy') {

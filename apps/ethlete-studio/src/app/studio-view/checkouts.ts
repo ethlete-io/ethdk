@@ -1,9 +1,10 @@
 import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectNotificationManager } from '@ethlete/components';
-import { EMPTY, catchError, concat, finalize, last, of, switchMap, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, concat, finalize, last, of, switchMap, tap } from 'rxjs';
 import {
   DesignRoots,
+  designOpenRequests$,
   designRoots$,
   designRootsAdd$,
   designRootsForget$,
@@ -24,10 +25,11 @@ export type CheckoutsOptions = {
   /** The checkout the window showed last. It wins over the first kept one when Studio still keeps it. */
   remembered: string;
   pick: (checkout: string) => void;
+  openRequests$?: Observable<string>;
 };
 
 /** Keeps the list of checkouts and the picked one. Call it in an injection context. */
-export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
+export const createCheckouts = ({ remembered, pick, openRequests$ = designOpenRequests$() }: CheckoutsOptions) => {
   const destroyRef = inject(DestroyRef);
   const notifications = injectNotificationManager();
   const held = signal<DesignRoots>(NONE);
@@ -74,6 +76,24 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
       catchError(() => of(NONE)),
       switchMap((roots) => (roots.roots.length ? of(roots) : keepTheHostCheckout())),
       tap((roots) => settle(roots)),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  openRequests$
+    .pipe(
+      switchMap((checkout) =>
+        designRoots$().pipe(
+          tap((roots) => {
+            held.set(roots);
+            choose(checkout);
+          }),
+          // eslint-disable-next-line ethlete/no-silent-catch-error -- a failed read leaves the list and the shown checkout as they were
+          catchError(() => EMPTY),
+        ),
+      ),
+      // eslint-disable-next-line ethlete/no-silent-catch-error -- outside the host shell there is no agent to ask for a checkout
+      catchError(() => EMPTY),
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();
