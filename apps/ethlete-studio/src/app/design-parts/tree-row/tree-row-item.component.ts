@@ -16,6 +16,7 @@ export type TreeRow = {
   status?: TreeRowStatus;
   comments?: number;
   layer?: string;
+  hint?: string;
 };
 
 const STATUS_TITLE: Record<TreeRowStatus, string> = {
@@ -57,7 +58,7 @@ const SELECTED_CLASS =
         </svg>
       }
     </span>
-    <span class="min-w-0 flex-1 overflow-hidden text-ellipsis">{{ row.label }}</span>
+    <span [etTooltip]="row.hint ?? null" class="min-w-0 flex-1 overflow-hidden text-ellipsis">{{ row.label }}</span>
     @if (row.layer) {
       <span [class]="'flex-none text-ui-xs ' + accentClass()">{{ row.layer }}</span>
     }

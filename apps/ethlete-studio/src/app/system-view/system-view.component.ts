@@ -1117,7 +1117,7 @@ export class SystemViewComponent {
                   .map(({ key, part, reachable }) => ({
                     name: part,
                     key,
-                    ...(reachable ? {} : { layer: SYSTEM_TREE_LABELS.notInSketch }),
+                    ...(reachable ? {} : { hint: SYSTEM_TREE_LABELS.notInSketch }),
                   })),
               })),
             },

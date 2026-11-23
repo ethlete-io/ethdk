@@ -94,6 +94,26 @@ describe('PartTreeComponent', () => {
     ]);
   });
 
+  it('shows a part hint as the tooltip of the full name and draws no tag', async () => {
+    const element = (
+      await render([
+        {
+          title: 'Pages',
+          open: true,
+          parts: [
+            { name: 'sketches', nested: [{ name: 'foundations/colors', hint: 'nicht gezeichnet' }, { name: 'cell' }] },
+          ],
+        },
+      ])
+    ).nativeElement as HTMLElement;
+    const [, , hinted, plain] = rowsOf(element);
+
+    expect(hinted?.querySelector('.text-ui-xs')).toBeNull();
+    expect(hinted?.textContent?.trim()).toBe('foundations/colors');
+    expect(withTooltip(hinted, 'nicht gezeichnet')).not.toBeNull();
+    expect(withTooltip(plain, 'nicht gezeichnet')).toBeNull();
+  });
+
   it('puts the open sketches on top as part@name and the Legacy projects at the bottom', async () => {
     const fixture = await render([{ title: 'Pages', open: false, parts: [] }], {
       sketches: {

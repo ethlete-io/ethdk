@@ -70,8 +70,11 @@ describe('TreeRowComponent', () => {
     fixture.componentRef.setInput('rows', [{ label: 'canvas-frames', depth: 1, kind: 'leaf', warning }]);
     await fixture.whenStable();
 
-    const tip = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
-    const content = tip.content();
+    const tip = fixture.debugElement
+      .queryAll(By.directive(TooltipDirective))
+      .map((tooltip) => tooltip.injector.get(TooltipDirective))
+      .find((candidate) => candidate.content() instanceof TemplateRef);
+    const content = tip?.content();
 
     if (!(content instanceof TemplateRef)) throw new Error('the warning tooltip is not a list template');
 
@@ -82,7 +85,23 @@ describe('TreeRowComponent', () => {
       .flatMap((node: Node) => (node instanceof HTMLElement ? [...node.querySelectorAll('li')] : []))
       .map((line) => line.textContent?.trim());
 
-    expect(tip.ariaDescription()).toBe(warning.join('; '));
+    expect(tip?.ariaDescription()).toBe(warning.join('; '));
     expect(lines).toEqual(warning);
+  });
+
+  it('shows a hint as the tooltip of the label and draws no tag', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(TreeRowComponent);
+
+    fixture.componentRef.setInput('rows', [{ label: 'foundations/colors', depth: 1, kind: 'leaf', hint: 'a hint' }]);
+    await fixture.whenStable();
+
+    const tips = fixture.debugElement.queryAll(By.directive(TooltipDirective));
+
+    expect(tips.map((tip) => tip.injector.get(TooltipDirective).content())).toEqual(['a hint']);
+    expect(fixture.nativeElement.querySelector('.text-ui-xs')).toBeNull();
   });
 });

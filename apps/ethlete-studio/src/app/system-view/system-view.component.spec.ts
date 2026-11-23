@@ -1085,7 +1085,7 @@ describe('SystemViewComponent on a merge', () => {
         {
           name: 'components/a-long-target-name',
           key: 'sketch:elements/rating@stars/components/a-long-target-name',
-          layer: SYSTEM_TREE_LABELS.notInSketch,
+          hint: SYSTEM_TREE_LABELS.notInSketch,
         },
       ],
     ]);
@@ -1149,7 +1149,7 @@ describe('SystemViewComponent on a merge', () => {
     expect(view.selectedKey()).toBe('foundations/tokens');
   });
 
-  it('tags a target the sketch view does not draw and the product does not have', async () => {
+  it('hints a target the sketch view does not draw and the product does not have', async () => {
     const fixture = await mountSketch(MULTI_PART);
 
     expect(fixture.componentInstance['partTree']().sketches?.items[0]?.nested).toEqual([
@@ -1157,7 +1157,7 @@ describe('SystemViewComponent on a merge', () => {
       {
         name: 'foundations/type',
         key: 'sketch:foundations/colors/foundations/type',
-        layer: SYSTEM_TREE_LABELS.notInSketch,
+        hint: SYSTEM_TREE_LABELS.notInSketch,
       },
       { name: 'foundations/tokens', key: 'sketch:foundations/colors/foundations/tokens' },
     ]);
