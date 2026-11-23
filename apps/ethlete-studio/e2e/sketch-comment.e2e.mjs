@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { placeSketchDraft } from './sketch-comment-draft.mjs';
 
@@ -10,6 +11,16 @@ const built = args.includes('--built') ? resolve(valueOf('--built')) : undefined
 const product = valueOf('--product', 'studio');
 const target = valueOf('--sketch', 'pages/system');
 const shot = valueOf('--shot');
+const afterShot = resolve(valueOf('--after-shot', '/tmp/kommentar-senden/after.png'));
+const commentsRoot = join(checkout, '.ethlete/design');
+const commentFiles = (dir = commentsRoot) =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+
+    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : commentFiles(path);
+
+    return entry.name.endsWith('.json') && dir.endsWith('/comments') ? [path] : [];
+  });
 
 const result = await withStudio(
   async ({ page, studioUrl }) => {
@@ -29,8 +40,36 @@ const result = await withStudio(
     const placed = await placeSketchDraft(page);
 
     if (shot) await page.screenshot({ path: shot });
+    if (!placed.ok) return placed;
 
-    return placed;
+    const text = `e2e Kommentar ${Date.now()}`;
+    const list = page.locator('ethlete-sketches ethlete-comment-list');
+    const before = existsSync(commentsRoot) ? commentFiles() : [];
+    const textarea = page.locator('ethlete-sketches ethlete-comment-draft textarea');
+    const send = page.locator('ethlete-sketches ethlete-comment-draft button[et-button]', {
+      hasText: /^\s*Senden\s*$/,
+    });
+
+    await textarea.fill(text);
+    await send.click();
+    await page.waitForTimeout(2000);
+    mkdirSync(dirname(afterShot), { recursive: true });
+    await page.screenshot({ path: afterShot });
+
+    const written = commentFiles().filter(
+      (file) => !before.includes(file) && readFileSync(file, 'utf8').includes(text),
+    );
+    const listed = await list.innerText().catch(() => '');
+
+    written.forEach((file) => rmSync(file));
+
+    const onDisk = written.length === 1;
+    const shown = /1\s*offen/.test(listed) && listed.includes(text);
+
+    return {
+      ok: onDisk && shown,
+      detail: `${placed.detail}; Senden: on disk ${onDisk ? written[0] : 'no'}, list ${JSON.stringify(listed.replace(/\s+/g, ' ').trim().slice(0, 120))}`,
+    };
   },
   { checkout, built },
 );

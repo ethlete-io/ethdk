@@ -1008,15 +1008,11 @@ export class SketchViewComponent {
 
   protected startComment({ variant, shot, point }: SketchCommentPlace) {
     const target = this.sketch().target;
-    const row = this.rows().find((candidate) => candidate.key === variant);
     const preset = this.sketchRows()
       .find((candidate) => candidate.key === variant)
       ?.shots.find((candidate) => candidate.state === shot)?.place;
     const size =
-      (this.sketch().layer === 'pages' ? preset?.size : undefined) ??
-      row?.shots.find((candidate) => candidate.state === shot)?.width ??
-      row?.width ??
-      'fitted';
+      preset?.size === undefined ? 'fitted' : this.sketch().layer === 'pages' ? preset.size : Number(preset.size);
 
     this.commentStore.start({
       frameId: `${variant} ${shot}`,

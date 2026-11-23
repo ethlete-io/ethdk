@@ -307,6 +307,28 @@ describe('SketchViewComponent', () => {
     expect(fixture.componentInstance['sketchDraft']()?.shot).toBe('default · desktop');
   });
 
+  // A comment on a part without widths is fitted, never the measured frame width the server rejects.
+  it('starts a comment on a part without widths as fitted, and on a part with widths at its width', async () => {
+    const { fixture, root } = await render(ROUNDED, noComments);
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        source: root.querySelector<HTMLIFrameElement>('iframe[data-variant="b"]')!.contentWindow,
+        data: { type: 'design-explore:height', height: 300, width: 992, viewport: { width: 992, height: 800 } },
+      }),
+    );
+    await settle(fixture);
+    fixture.componentInstance['startComment']({ variant: 'b', shot: 'default', point: null });
+
+    expect(fixture.componentInstance.commentStore.draft()?.place).toMatchObject({ state: 'default', size: 'fitted' });
+
+    const sized = await render(ROUNDED, noComments, { ...CARD, widths: [390] });
+
+    sized.fixture.componentInstance['startComment']({ variant: 'b', shot: 'default', point: null });
+
+    expect(sized.fixture.componentInstance.commentStore.draft()?.place).toMatchObject({ state: 'default', size: 390 });
+  });
+
   it('shows the picture, not a painted frame, while the frame page is narrower than its cell or scrolled', async () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
     const { fixture, root } = await render(ROUNDED, noComments);
