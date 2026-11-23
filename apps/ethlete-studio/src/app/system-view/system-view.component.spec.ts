@@ -10,7 +10,7 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import { THEMES } from '../../themes';
 import { START_LABELS } from '../i18n/start-labels';
 import { SHELL_LABELS } from '../i18n/shell-labels';
-import { SYSTEM_LABELS } from '../i18n/system-labels';
+import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../i18n/system-labels';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
@@ -1082,9 +1082,99 @@ describe('SystemViewComponent on a merge', () => {
     expect(view['partTree']().sketches?.items.map((item) => item.nested)).toEqual([
       [
         { name: 'elements/rating', key: 'sketch:elements/rating@stars/elements/rating' },
-        { name: 'components/a-long-target-name', key: 'sketch:elements/rating@stars/components/a-long-target-name' },
+        {
+          name: 'components/a-long-target-name',
+          key: 'sketch:elements/rating@stars/components/a-long-target-name',
+          layer: SYSTEM_TREE_LABELS.notInSketch,
+        },
       ],
     ]);
+  });
+
+  const MULTI_PART: ListedSketch = {
+    target: 'foundations/colors',
+    targetParts: ['foundations/colors', 'foundations/type', 'foundations/tokens'],
+    status: 'in progress',
+    createdAt: '2026-11-23T10:00:00Z',
+    product: 'web',
+    layer: 'foundations',
+    name: 'colors',
+    dir: 'foundations-colors',
+    variants: ['a'],
+    problems: [],
+    rounds: [{ key: 'r1', title: 'Draft 46 B', note: '' }],
+    variantInfo: { a: { round: 'r1' } },
+    targets: ['foundations/colors', 'foundations/type', 'foundations/tokens'].map((part) => ({
+      part,
+      variant: 'a',
+      states: ['default'],
+      interactions: [],
+      unchanged: [],
+    })),
+  };
+
+  const mountSketch = async (sketch: ListedSketch) => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches: [sketch], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    return mount({ systemProduct: 'web', systemEntry: `sketch:${sketch.target}` });
+  };
+
+  it('goes to the first target in the sketch on a click when the product has no such part yet', async () => {
+    const fixture = await mountSketch(MULTI_PART);
+    const view = fixture.componentInstance;
+    const element = fixture.nativeElement as HTMLElement;
+
+    view['activate']('sketch:foundations/colors/foundations/colors');
+    await settle(fixture);
+
+    expect(view.selectedKey()).toBe('sketch:foundations/colors');
+    expect(element.querySelector('[data-shot="a default"]')?.hasAttribute('data-active')).toBe(true);
+  });
+
+  it('opens a target the product has as its part on a click', async () => {
+    const fixture = await mountSketch(MULTI_PART);
+    const view = fixture.componentInstance;
+
+    view['activate']('sketch:foundations/colors/foundations/tokens');
+    await settle(fixture);
+
+    expect(view.selectedKey()).toBe('foundations/tokens');
+  });
+
+  it('tags a target the sketch view does not draw and the product does not have', async () => {
+    const fixture = await mountSketch(MULTI_PART);
+
+    expect(fixture.componentInstance['partTree']().sketches?.items[0]?.nested).toEqual([
+      { name: 'foundations/colors', key: 'sketch:foundations/colors/foundations/colors' },
+      {
+        name: 'foundations/type',
+        key: 'sketch:foundations/colors/foundations/type',
+        layer: SYSTEM_TREE_LABELS.notInSketch,
+      },
+      { name: 'foundations/tokens', key: 'sketch:foundations/colors/foundations/tokens' },
+    ]);
+  });
+
+  it('names a sketch with several targets by its shown round title in the tree', async () => {
+    const fixture = await mountSketch(MULTI_PART);
+
+    expect(fixture.componentInstance['partTree']().sketches?.items[0]).toMatchObject({ title: 'Draft 46 B' });
+  });
+
+  it('names a sketch with one part by its part in the tree', async () => {
+    const fixture = await mountSketch({ ...MULTI_PART, targetParts: ['foundations/colors'] });
+    const item = fixture.componentInstance['partTree']().sketches?.items[0];
+
+    expect(item?.part).toBe('colors');
+    expect(item?.title).toBeUndefined();
   });
 
   it('nests a part under its one user of the same layer in the tree, open, and picks it from there', async () => {

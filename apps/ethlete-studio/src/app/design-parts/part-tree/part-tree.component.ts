@@ -15,8 +15,14 @@ export type PartTreePart = Marks & { name: string; layer?: string; open?: boolea
 
 export type PartTreeLayer = { title: string; key?: string; open: boolean; parts: PartTreePart[] };
 
-/** A sketch; one with `nested` target parts is their open host. */
-export type PartTreeSketch = Marks & { part: string; name?: string; status: TreeRowStatus; nested?: PartTreePart[] };
+/** A sketch, labelled by its `title` when it has one; one with `nested` target parts is their open host. */
+export type PartTreeSketch = Marks & {
+  part: string;
+  name?: string;
+  title?: string;
+  status: TreeRowStatus;
+  nested?: PartTreePart[];
+};
 
 export type PartTreeSketches = { key?: string; open: boolean; items: PartTreeSketch[] };
 
@@ -135,7 +141,7 @@ export class PartTreeComponent {
         mark: markOf('group'),
         open: group.open,
         nodes: group.items.map((item) => {
-          const label = item.name ? `${item.part}@${item.name}` : item.part;
+          const label = item.title ?? (item.name ? `${item.part}@${item.name}` : item.part);
           const itemKey = item.key ?? keyOf(value, label);
           const host = !!item.nested?.length;
 

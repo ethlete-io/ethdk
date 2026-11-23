@@ -47,6 +47,7 @@ import {
   mergeSketch$,
   rejectionOf,
   saveListWidth,
+  sketchPartOf,
 } from '../../host/design';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import {
@@ -471,7 +472,7 @@ export class SketchViewComponent {
     computation: () => null,
   });
 
-  protected shownRoundKey = computed(() => this.shownRounds().find((round) => round.open)?.key ?? '');
+  public shownRoundKey = computed(() => this.shownRounds().find((round) => round.open)?.key ?? '');
 
   protected roundQuestion = computed(() => this.shownRounds().find((round) => round.open)?.note ?? '');
 
@@ -1026,6 +1027,26 @@ export class SketchViewComponent {
 
     this.jumpedCommentId.set(comment.id);
     if (variant) this.showVariant(variant);
+  }
+
+  /** Moves the canvas onto the first frame of `part`; `false` when the view draws no frame of it. */
+  public showPart(part: string) {
+    const sketch = this.sketch();
+    const partOf = (state: string) =>
+      sketch.targetParts?.find((target) => state.startsWith(`${target} `)) ?? sketchPartOf(sketch);
+    const keys = this.rows().flatMap((row) =>
+      row.shots.filter((shot) => partOf(shot.state) === part).map((shot) => `${row.key} ${shot.state}`),
+    );
+    const key = keys.find((candidate) => !candidate.startsWith(`${CURRENT} `)) ?? keys[0];
+
+    if (key === undefined) return false;
+
+    // SketchesComponent has no API to focus a frame; its canvas focuses the frame it gets a double click on.
+    this.shotCellRefs()
+      .find((ref) => ref.nativeElement.dataset['shot'] === key)
+      ?.nativeElement.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+    return true;
   }
 
   public showVariant(variant: string) {

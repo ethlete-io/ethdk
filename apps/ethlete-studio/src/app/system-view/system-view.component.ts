@@ -58,6 +58,8 @@ import {
   isGroupOpen,
   isSectionOpen,
   multiPartTargetsOf,
+  sketchHeadTitleOf,
+  sketchRoundsOf,
   partKeyOf,
   sketchKeyOf,
   pickedPartKeyOf,
@@ -82,7 +84,7 @@ import { InventoryViewComponent } from './inventory-view.component';
 import { RememberedTreeScrollDirective } from './remembered-tree-scroll.directive';
 import { COMMAND_PALETTE_LABELS, SHELL_LABELS, DESIGN_SERVER_LABELS } from '../i18n/shell-labels';
 import { START_LABELS } from '../i18n/start-labels';
-import { SYSTEM_LABELS } from '../i18n/system-labels';
+import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../i18n/system-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { createExceptionStore } from './exception-store';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
@@ -1053,7 +1055,16 @@ export class SystemViewComponent {
     const sketch = this.sketch();
     const key = sketch ? sketchKeyOf(sketch.target) : null;
 
-    return sketch ? multiPartTargetsOf(sketch).map((part) => ({ sketch: key, key: `${key}/${part}`, part })) : [];
+    if (!sketch) return [];
+
+    const { entries } = this.nodes();
+
+    return multiPartTargetsOf(sketch).map((part) => ({
+      sketch: key,
+      key: `${key}/${part}`,
+      part,
+      reachable: entries.has(part) || part === sketchPartOf(sketch),
+    }));
   });
 
   protected partTree = computed<PartTree>(() => {
@@ -1098,11 +1109,16 @@ export class SystemViewComponent {
               open: open.has(sketches.key),
               items: sketches.entries.map((entry) => ({
                 ...sketchLabelOf(entry.key),
+                ...this.sketchTitleOf(entry.key),
                 ...marksOf(entry),
                 status: entry.badges.includes('ready') ? ('ready' as const) : ('in-progress' as const),
                 nested: this.sketchTargets()
                   .filter(({ sketch }) => sketch === entry.key)
-                  .map(({ key, part }) => ({ name: part, key })),
+                  .map(({ key, part, reachable }) => ({
+                    name: part,
+                    key,
+                    ...(reachable ? {} : { layer: SYSTEM_TREE_LABELS.notInSketch }),
+                  })),
               })),
             },
           }
@@ -1427,12 +1443,12 @@ export class SystemViewComponent {
     this.exceptions.approve(`${part}.${rule}`);
   }
 
-  protected activate(key: string): void {
+  protected activate(key: string) {
     const frame = this.nodes().frames.get(key);
     const target = this.sketchTargets().find((entry) => entry.key === key);
 
     if (frame) return this.openFrame(frame);
-    if (target) return this.activate(target.part);
+    if (target) return this.openTarget(target.part);
     if (!this.nodes().entries.has(key)) return;
 
     this.picked.set(key);
@@ -1570,6 +1586,20 @@ export class SystemViewComponent {
       case 'part':
         return this.activate(target.part);
     }
+  }
+
+  private openTarget(part: string) {
+    if (this.nodes().entries.has(part)) this.activate(part);
+    else this.sketchView()?.showPart(part);
+  }
+
+  private sketchTitleOf(key: string) {
+    const listed = this.sketches().find((sketch) => sketchKeyOf(sketch.target) === key);
+    const shown = this.sketch() === listed ? this.sketchView()?.shownRoundKey() : undefined;
+    const round = shown ?? (listed && sketchRoundsOf(listed).find((entry) => entry.open)?.key);
+    const title = listed && round !== undefined ? sketchHeadTitleOf(listed, round) : null;
+
+    return title ? { title } : {};
   }
 
   private openPaletteEntry(entry: PaletteEntry) {

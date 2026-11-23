@@ -93,6 +93,7 @@ export const SYSTEM_TREE_LABELS = {
   pages: 'Pages',
   wireframes: 'Wireframes',
   sketches: 'Sketches',
+  notInSketch: 'nicht in der Sketch-Ansicht',
   pending: 'Agent zeichnet noch',
   rejected: 'abgelehnt',
   withdrawn: 'vom Agent zurückgezogen',
