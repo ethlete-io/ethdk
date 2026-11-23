@@ -144,6 +144,6 @@ One line per unproven Suspect (ADR 0276). A second hit joins its rebuild group; 
 - look claims (20.11.): 08e824394 said the diff-mark ring is not clipped in the app; only a design shot backed it, the app clips it. Suspect: a look commit claims app behaviour from a design shot.
 - mac Studio bundle (20.11.): publish Bundle ethlete-studio (macos-latest) in 44774695508 failed with npm ECOMPROMISED "Lock compromised". Suspect: npm cache lock race on the runner.
 - compare without run deadline (Linux, 20.11., C21): the shell-main compare hang of 19.11. (> 25 min) is not reproduced in 3 uncached runs (26-35 s). Suspect: compare has no run deadline (RUN_DEADLINES_MS covers shot and check only).
-- host-signal under CI (CI, 20.11., 454d99322): `studio:e2e:host-signal` sigint/sigterm left 8 processes after 5 s, sigint-inherited-ignore 4.9 s; rerun green, local 4/4. Suspect: 6e0b50cd4 pre_exec (fork instead of posix_spawn) or a slow runner.
 - scratch checkout lost files (machinery, 20.11.): a builder scratch checkout lost 16274 tracked files between two design server runs, once; restored. Suspect, first time.
 - apps-bundle without timeout (machinery, 21.11.): the job in publish.yml has no `timeout-minutes`; a hung rust-cache post step held the next_environment CI queue ~2 h. Build only on red CI.
+- form-field heights (SDK, 23.11., B669 measurement): the sm field (token 32 px) is already 38.3 px at scale 0.96 and grows with the scale; the underline appearance ignores the height token (own min-height). Suspect, not checked whether intended. First time.
