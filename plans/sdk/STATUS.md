@@ -27,7 +27,7 @@ eine blockierte Sitzung unterbricht sofort.
 - S39 (fifagg, 22.11.): nicht blockiert, kein SDK-Code: `fill="sunken"` ist der dokumentierte Weg für ein vertieftes Feld; die Höhe kommt aus dem App-Token, das nur `data-fill=filled` trifft; fifagg informiert.
 - S40 (fifagg, 22.11.): ausgeliefert in @ethlete/components 1.0.0-next.98 (4103379e9): Variable `--et-form-field-floating-inside-control-font-scale` (Standard 0.96).
 - S41 (fifagg, 23.11.): nicht blockiert -> B669: Schriftgröße 1 im floating-inside-Feld macht das Feld 1 px höher als das Höhen-Token; fifagg bleibt solange bei 0.96.
-- S42 (fifagg, 23.11.): nicht blockiert -> B670: next.98 hat den `data-text-shell`-Block in select.css entfernt; Frage, ob gewollt und welche Tokens ihn ersetzen.
+- S42 (fifagg, 23.11.): kein SDK-Code: der `data-text-shell`-Block in select.css wurde absichtlich entfernt (6f86022cf: ein Feld behält seinen Rand, außer bei ghost); Ersatz `variant="ghost"`; fifagg informiert.
 - Dialog (Studio, 21.11.): die Dialog-Overlay-Strategie zentriert die Pane auf Bruchpixeln (302,5 px hoch -> top 40,25), was Textzeilen abwechselnd rundet (shortcuts-dialog 1694 px, die echte App zeigt es auch); Suspect bis zum Biss; Fix: ganzzahlige Zentrierung in der Strategie.
 
 ## Offene Plan-Dateien
