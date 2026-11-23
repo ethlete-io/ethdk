@@ -8,8 +8,9 @@ Zu [STATUS.md](STATUS.md).
 
 - Suspect (19.11.): commitlint lehnt den Scope `timetrack` ab, der Builder nimmt `repo`.
 - Suspect (19.11., 23.11., zweimal): der slice-paths-Hook warnt über Pfade unter einem gesetzten `**`-Glob (`apps/timetrack/src/**`; `libs/cli/src/lib/design/**` meldete studio-api.ts); Glob-Matcher kann `**` nicht.
-- Suspect (19.11.): die Timetrack-Dev-App starb 01:25 (SIGBUS), als ein Subagent mit `cargo test`/`clippy` das laufende
-  `target/debug/timetrack` neu linkte. Unmöglich, wenn `nx serve timetrack-app` in ein eigenes Target-Verzeichnis baut.
+- Suspect (19.11., 23.11., zweimal): die Timetrack-Dev-App starb 01:25 (SIGBUS), als ein Subagent mit `cargo test`/`clippy` das laufende
+  `target/debug/timetrack` neu linkte. Unmöglich, wenn `nx serve timetrack-app` in ein eigenes Target-Verzeichnis baut. 23.11.: Toms Studio starb, während ein Subagent `cargo test` im geteilten src-tauri-Target lief.
+- Suspect (23.11.): agent-sessions-Spec „fails run loudly when the started program ends at once“ fällt nur im Mehrfach-Lauf, auch auf HEAD.
 - Cause (19.11., dreimal): WIP eines Subagenten (Debug-Code, Band-Versuch 2) kam per Hot-Reload in Toms laufende
   Timetrack-Dev-App und verfälschte seinen Tag. Unmöglich, wenn Subagenten in einem eigenen Scratch-Checkout arbeiten.
 - Befund (19.11., Doc-Agent, viermal): Grill-Frage oder Befund auf ungeprüfter Annahme, obwohl die Antwort dastand
@@ -61,8 +62,8 @@ Zu [STATUS.md](STATUS.md).
 
 - Gruppe Design-Drift (gebaut bis b5e57ae51, Einzelheiten in git): Offen: Suspect: andere SDK-Designs mit text-shell-Feld; about-dialog Rest 15 px bleibt rot (nur eine Aufweitung der Antialias-Regel ADR 0341 bräuchte Tom).
 
-- Befund (23.11., Tom, Tomflix-Lauf 2), alle gebaut: gleich hohe Varianten a4500fa48, Desktop-Rahmen je Variante 4a7475977 (Cause: sketchRowsOf nahm nur das erste Preset; Desktop noch unter statt neben Telefon), helle Zelle dbf193394 (Cause gemessen: transparente Shots, kein --surface), „Neu starten“ ea044a20e (Cause: nur Server-Neustart, alte Seite; live ungeprüft), hängender Canvas fe75d4c92 (Cause: Ziehen endete nur bei pointerup am Dokument), Befehlsnamen in Labels c09bf1c89. Suspect: Rot vor dem ersten Zeichnen 82414e152 (fehlender Playwright-Chromium gab 503; unmöglich, wenn ein fehlender Browser eigene Meldung zeigt). Offen: Sketch-Rahmen per Doppelklick live (ADR 0365, Entscheid Doc-Agent).
-- Prüfer Lauf 2 (Batch 1-2): R3/R4 zweimal verfehlt, Anleitung a370001c5 (Cause gelesen: Erster-Screen-Regel widersprach der Shell-Regel); ein Check erst nach drittem Fehlschlag. OVERFLOW nur Breite eaf55a4f4; FONT-FACE 7fcc0e66d (Cause bewiesen: Sandbox sperrt Google Fonts). tomflix components/button ohne disabled: Fehler des Produkt-Agenten.
+- Befund (23.11., Tom, Tomflix-Lauf 2), alle gebaut (Einzelheiten in git): gleich hohe Varianten, Desktop neben Telefon, helle Zelle, „Neu starten“ (live ungeprüft), hängender Canvas, Variante in Arbeit bleibt live, Doppelklick live 2b051c38a, altes Repo mit Entwürfen öffnet als Produkt (B683, Cause: Studio nahm die alte CLI des Repos). Offen: bei 20 % Zoom bricht das Telefon-Label in vier Zeilen um; unmöglich, wenn ein Rahmen-Label nie umbricht. Suspect: Studio legte den Direkt-Sketch foundations-logo.edit ohne Bearbeitung an.
+- Prüfer Lauf 2 (Batch 1-5): R2 Technik-Rede an den Kunden (Datenmodell, TMDB-Schlüssel, Rechte-Dialog, Pfade), Anleitung 4cec104cd; R3/R4 offen (kein Shell-Teil, keine Hover/Focus-Zustände). Bildsuche außerhalb der Kopie sah nur die Sandbox, kein Fehler. Suspect: ein Clean-Slate-Brief braucht einen Ablageort für Kunden-Bilder.
 
 ## B. Design-CLI: neue Prüfungen
 

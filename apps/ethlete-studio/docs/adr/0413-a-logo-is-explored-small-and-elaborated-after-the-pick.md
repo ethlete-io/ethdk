@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B677
+built: 607d4f2ea
 decided: 2026-11-23
 source: doc-agent session 2026-11-23 (morning), B677
 ---

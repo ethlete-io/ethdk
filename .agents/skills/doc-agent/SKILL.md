@@ -76,6 +76,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 
 ## Authority over the builder
 
+- A user screenshot may be a crop; never judge position.
 - If the builder looks stuck, read its pane (`tmux capture-pane`) and `ps` before you ask it.
 - You may clear its dead background agents and shells, or restart its CLI (agent-sessions `restart`, `/handoff resume` prompt), after agreeing with the builder.
 
@@ -89,8 +90,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 ## Record
 
 - After the user confirms a short summary, write each decision of this repo as an ADR in `apps/ethlete-studio/docs/adr/` (a decision governing all three products: `docs/adr/`; in doubt Studio; next number = highest across both folders + 1); another repo's decision goes only to that session
-  (English, the human's words verbatim and named "the human", never by name; frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
-- A Studio ADR needs no changeset (ADR 0265).
+  (English, the human's words verbatim and named "the human", never by name; frontmatter `built: <sha>` or `open: B<row>`).
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never stash, never amend.
 - Collect notes, new group lines and closed rows in `.claude/handoffs/doc-agent-collect.md` (outside git), never open in `STATUS.md`. Once an hour and at shift end, fold them in (ten notes on one group are
   one line), commit, and empty the file (ADR 0284).
@@ -98,12 +98,12 @@ CLI gets better because Studio work uses it, not because findings are collected.
   ADR with `open: B<row>` (pre-commit hook).
 - Collect what the builder needs and send it in one English `SendMessage` about every 15 minutes (ADR 0356). What
   blocks its current row or shows its work wrong goes at once.
-- An ADR records a decision of the human. That a row was built is in git: no ADR, no note. The "as built" text lives only
+- An ADR records a decision of the human on a product; a test-run choice goes to its brief. That a row was built is in git: no ADR, no note. The "as built" text lives only
   in the builder's commit message; you fold its closed rows in with the hourly commit (ADR 0350).
 
 - No agent memory: a lesson becomes a group line or a skill. A skill gains words
   only when as many go (counted in words: builder-agent, doc-agent, ethlete-agent-sessions, AGENTS.md).
-- Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/studio/archive/`; never rewrite an archive file by hand.
+- Archive findings only with `node tools/scripts/archive-findings.mjs`, never by hand.
 
 ## Never
 
