@@ -154,6 +154,7 @@ export const designProject = (checkout, designPort) => ({
 
 const IDLE_HOST_COMMANDS = [
   'design_action_refused',
+  'design_open_watch',
   'design_status_watch',
   'help_open',
   'studio_code_state',
