@@ -3978,6 +3978,34 @@ const CASES = [
     },
   },
   {
+    name: 'double-click makes a sketch frame live',
+    pages: ['Sketches'],
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      const liveOf = () =>
+        page.evaluate(() => {
+          const frames = [...document.querySelectorAll('[data-sk-frame] iframe:not(.opacity-0)')];
+
+          return {
+            shown: frames.length,
+            interactive: frames.some((shown) => getComputedStyle(shown).pointerEvents !== 'none'),
+          };
+        });
+      const live = await readUntil(page, liveOf, (found) => found.interactive);
+
+      await page.keyboard.press('Escape');
+      await settle(page);
+      const ended = await readUntil(page, liveOf, (found) => !found.interactive);
+
+      return {
+        ok: live.interactive && !ended.interactive,
+        detail: `interactive=${live.interactive} afterEsc=${ended.interactive}`,
+      };
+    },
+  },
+  {
     name: 'Space+drag pans',
     run: async (page, state) => {
       const from = state.frame ?? state.empty;

@@ -246,7 +246,7 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
     ZoomChipComponent,
     OpenPointsChipComponent,
   ],
-  host: { class: 'block h-screen w-full' },
+  host: { class: 'block h-screen w-full', '(keydown.escape)': 'frameActivate.emit(null)' },
 })
 export class SketchesComponent {
   protected errorTheme = injectSemanticColorTheme('error');
@@ -303,6 +303,7 @@ export class SketchesComponent {
   public sendReason = input('');
   public confirm = model<SketchConfirm | null>(null);
   public retry = output();
+  public frameActivate = output<string | null>();
   public shellAction = output<ShellAction>();
   public discard = output();
   public merge = output<string>();
@@ -1175,7 +1176,10 @@ export class SketchesComponent {
   private show(target: CameraTarget, pressed: HTMLElement | null) {
     if (target.kind === 'all') this.fit();
     else if (target.kind === 'visible') this.zoomReset();
-    else this.focus(pressed);
+    else {
+      this.focus(pressed);
+      this.frameActivate.emit(pressed?.dataset['skFrame'] ?? null);
+    }
   }
 
   private focus(frame: HTMLElement | null) {

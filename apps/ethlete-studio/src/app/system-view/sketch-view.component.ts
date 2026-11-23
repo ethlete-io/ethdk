@@ -285,6 +285,7 @@ const scrollOf = (data: unknown) =>
       (sendComment)="commentStore.send($event)"
       (commentPick)="pickComment($event)"
       (retry)="retry.emit()"
+      (frameActivate)="activeShot.set($event)"
       (cameraChange)="camera.set($event); cameraChange.emit($event)"
       (moving)="moving.set($event)"
       (listWidthChange)="saveListWidth($event)"
@@ -301,7 +302,13 @@ const scrollOf = (data: unknown) =>
 
     <ng-template #shot let-row let-state="state">
       @let key = row.key + ' ' + state;
-      <div #shotCell [attr.data-shot]="key" class="relative size-full">
+      <div
+        #shotCell
+        [attr.data-shot]="key"
+        [attr.data-active]="activeShot() === key ? '' : null"
+        [class.pointer-events-auto]="activeShot() === key"
+        class="relative size-full"
+      >
         @if (shotPictures().get(key); as picture) {
           @let shown = loadedPictures().get(key);
           @if (shown && shown !== picture) {
@@ -340,7 +347,7 @@ const scrollOf = (data: unknown) =>
               class="absolute inset-0 block size-full border-0 scheme-normal"
             ></iframe>
           }
-          @if (srcs.length) {
+          @if (srcs.length && activeShot() !== key) {
             <ethlete-frame-shield class="pointer-events-auto" />
           }
         }
@@ -949,21 +956,24 @@ export class SketchViewComponent {
     );
   });
 
-  private currentLiveShots = computed(
-    () =>
-      new Set(
-        this.sketch().targets === undefined && this.listError() === null
-          ? []
-          : liveShotsOf({
-              order: this.sketchRows()
-                .flatMap((row) => row.shots.map((shot) => `${row.key} ${shot.state}`))
-                .filter((key) => !this.undecidedShots().has(key)),
-              near: this.nearShots(),
-              pictured: new Set(this.loadedPictures().keys()),
-              painted: this.paintedShots(),
-            }),
-      ),
-  );
+  protected activeShot = linkedSignal<ListedSketch, string | null>({ source: this.sketch, computation: () => null });
+
+  private currentLiveShots = computed(() => {
+    const live =
+      this.sketch().targets === undefined && this.listError() === null
+        ? []
+        : liveShotsOf({
+            order: this.sketchRows()
+              .flatMap((row) => row.shots.map((shot) => `${row.key} ${shot.state}`))
+              .filter((key) => !this.undecidedShots().has(key)),
+            near: this.nearShots(),
+            pictured: new Set(this.loadedPictures().keys()),
+            painted: this.paintedShots(),
+          });
+    const active = this.activeShot();
+
+    return new Set(active ? [...live, active] : live);
+  });
 
   protected liveShots = linkedSignal<{ now: Set<string>; moving: boolean }, Set<string>>({
     source: () => ({ now: this.currentLiveShots(), moving: this.moving() }),
