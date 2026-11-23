@@ -1238,6 +1238,11 @@ describe('designSketch', { timeout: 120_000 }, () => {
     recordShotViewed({ target, sketch: sketch(), variant: 'a', shot });
 
     expect(await ready()).toEqual({ code: 0, reason: null });
+
+    mkdirSync(join(sketch().dir, 'shared'), { recursive: true });
+    writeFileSync(join(sketch().dir, 'shared', 'posters.ts'), 'export const posters = [];\n');
+
+    expect(await ready()).toEqual(unviewed);
   });
 
   it('keeps a variant viewed after a later shot of another variant rewrites the same sheet file', async () => {
