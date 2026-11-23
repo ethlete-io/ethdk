@@ -22,11 +22,10 @@
     "at": "2026-11-17T20:31:21.565Z"
   },
   "components/banner": {
-    "hash": "2898c2b68e70c1b2",
+    "hash": "15630976270c5744",
     "variant": "new",
-    "decidedBy": "plan: B584: fill the missing control states of components/banner",
-    "at": "2026-11-18T14:07:02.575Z",
-    "note": "merged without a pick: allowed by B584: fill the missing control states of components/banner"
+    "decidedBy": "builder",
+    "at": "2026-11-23T09:06:57.343Z"
   },
   "components/bracket": {
     "hash": "012f20cb99db1cea",
