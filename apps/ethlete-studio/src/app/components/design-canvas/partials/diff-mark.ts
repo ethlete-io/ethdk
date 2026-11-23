@@ -2,15 +2,10 @@ import { StateDiff } from '../../../../host/design';
 
 export type DiffMark = { left: string; top: string; right: string; bottom: string };
 
-const DIFF_STROKE = '--et-diff-mark-stroke';
-
 const percentOf = (part: number, whole: number) => `${(part / Math.max(whole, 1)) * 100}%`;
 
-const outsetOf = (edge: number, whole: number) => `calc(${percentOf(edge, whole)} - var(${DIFF_STROKE}))`;
-
 /**
- * Where a cell draws the outline around the region `diff` found, as insets from the cell edges: one stroke outside the
- * box so the outline never covers its pixels, also past a cell edge; `null` without a region.
+ * The region `diff` found, as insets from the cell edges, for the cell to leave undimmed; `null` without a region.
  */
 export const diffMarkOf = (diff: StateDiff | null): DiffMark | null => {
   if (!diff?.box) return null;
@@ -18,9 +13,9 @@ export const diffMarkOf = (diff: StateDiff | null): DiffMark | null => {
   const { box, frame } = diff;
 
   return {
-    left: outsetOf(box.x, frame.width),
-    top: outsetOf(box.y, frame.height),
-    right: outsetOf(frame.width - box.x - box.width, frame.width),
-    bottom: outsetOf(frame.height - box.y - box.height, frame.height),
+    left: percentOf(box.x, frame.width),
+    top: percentOf(box.y, frame.height),
+    right: percentOf(frame.width - box.x - box.width, frame.width),
+    bottom: percentOf(frame.height - box.y - box.height, frame.height),
   };
 };

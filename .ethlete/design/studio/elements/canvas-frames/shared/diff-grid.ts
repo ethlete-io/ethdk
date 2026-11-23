@@ -13,8 +13,6 @@ const interactions: Interaction[] = ['rest', 'hover', 'active', 'focus-visible']
 
 const CELL = { width: 196, height: 96 };
 
-const STROKE = 2;
-
 const TRIGGER: Box = { x: 8, y: 8, width: 120, height: 28 };
 
 const OPEN_TRIGGER: Box = { ...TRIGGER, width: 168 };
@@ -24,12 +22,12 @@ const reason = html`<span class="font-ui-medium text-et-surface">Wartet auf ADR 
 
 const regionOf = (cell: Cell) => (cell.interaction === REST ? undefined : cell.open ? OPEN_TRIGGER : TRIGGER);
 
-const insetOf = (edge: number) => `${edge - STROKE}px`;
+const insetOf = (edge: number) => `${edge}px`;
 
 const markOf = (box: Box) =>
   html`<div class="pointer-events-none absolute inset-0 overflow-clip" data-diff-mark data-et-skip="CLIPPED">
     <div
-      class="absolute rounded-control-sm outline-2 outline-solid outline-(--et-theme-color-primary-solid) shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_40%,transparent)]"
+      class="absolute shadow-[0_0_0_100vmax_color-mix(in_srgb,var(--et-surface-background-solid)_50%,transparent)]"
       style="left: ${insetOf(box.x)}; top: ${insetOf(box.y)}; right: ${insetOf(
         CELL.width - box.x - box.width,
       )}; bottom: ${insetOf(CELL.height - box.y - box.height)}"
@@ -45,13 +43,16 @@ const drawCell = async (cell: Cell) => {
   });
   const region = regionOf(cell);
 
-  return html`<div class="relative" style="width: ${CELL.width}px; height: ${CELL.height}px">
+  return html`<div
+    class="relative ${region ? '' : 'opacity-50'}"
+    style="width: ${CELL.width}px; height: ${CELL.height}px"
+  >
     <div class="size-full overflow-clip p-space-2" ${slot('frame')}>${body}</div>
     ${region ? markOf(region) : ''}
   </div>`;
 };
 
-/** The states of components/hold-trigger as a state grid of framed part stills, each state in an interaction marked over the region it changes against the rest state of its row. */
+/** The states of components/hold-trigger as a state grid of framed part stills, each state in an interaction dimmed outside the region it changes against the rest state of its row, a rest state dimmed whole. */
 export const diffGrid = async () => ({
   columns: interactions,
   rows: await Promise.all(

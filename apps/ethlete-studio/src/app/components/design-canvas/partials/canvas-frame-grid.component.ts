@@ -90,16 +90,13 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
       ></iframe>
     }
     @if (diffMark(); as mark) {
-      <div
-        class="pointer-events-none absolute inset-0 overflow-clip [--et-diff-mark-stroke:calc(0.2rem*var(--et-design-canvas-label-scale,1))] [overflow-clip-margin:calc(2*var(--et-diff-mark-stroke))]"
-        data-diff-mark
-      >
+      <div class="pointer-events-none absolute inset-0 overflow-clip" data-diff-mark>
         <div
           [style.left]="mark.left"
           [style.top]="mark.top"
           [style.right]="mark.right"
           [style.bottom]="mark.bottom"
-          class="absolute rounded-control-sm outline-solid outline-(--et-theme-color-primary-solid) outline-(length:--et-diff-mark-stroke) shadow-[0_0_0_100vmax_color-mix(in_srgb,color-mix(in_srgb,var(--et-surface-background-solid)_82%,var(--et-surface-color-solid))_40%,transparent)]"
+          class="absolute shadow-[0_0_0_100vmax_color-mix(in_srgb,var(--et-surface-background-solid)_50%,transparent)]"
         ></div>
       </div>
     }
@@ -115,6 +112,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
     '[attr.data-painted]': 'painted() ? "" : null',
     '[class.min-h-20]': 'failed() || slow()',
     '[class.min-w-40]': 'failed() || slow()',
+    '[class.opacity-50]': 'unchanged()',
   },
 })
 export class CanvasFrameCellComponent {
@@ -159,6 +157,8 @@ export class CanvasFrameCellComponent {
   );
 
   protected diffMark = computed(() => diffMarkOf(this.diff()));
+
+  protected unchanged = computed(() => this.diff() !== null && this.diff()?.box === null);
 
   protected size = signal<Size | null>(null);
 
