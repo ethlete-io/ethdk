@@ -1095,6 +1095,20 @@ describe('TableComponent', () => {
       expect(host.querySelectorAll('.et-table-row').length).toBe(PEOPLE.length);
     });
 
+    // A table with headerHidden hides its header row visually and keeps it in the DOM for screen readers.
+    it('keeps the header row rendered while headerHidden marks the host', () => {
+      const fixture = create(columns());
+      const host = hostOf(fixture);
+
+      expect(host.classList.contains('et-table-host--header-hidden')).toBe(false);
+
+      fixture.componentRef.setInput('headerHidden', true);
+      fixture.detectChanges();
+
+      expect(host.classList.contains('et-table-host--header-hidden')).toBe(true);
+      expect(host.querySelector('.et-table-header-row')).not.toBeNull();
+    });
+
     it('renders projected [etTableError] content instead of the default label', async () => {
       @Component({
         template: `

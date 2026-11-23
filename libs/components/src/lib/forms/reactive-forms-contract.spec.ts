@@ -211,6 +211,7 @@ const blur = (el: HTMLElement) => {
 
 const caseNamed = (name: string) => CASES.find((c) => c.name === name)!;
 
+// An et-* form control works with [formControl]: it writes, reads, disables and enables like a native control.
 describe('reactive forms on et-* form controls', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] }));
 
