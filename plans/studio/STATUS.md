@@ -29,17 +29,18 @@ origin, Liste in `.claude/handoffs/mac-tank-branches.md`.
 
 Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er ihn gegen git; ist er erledigt, nimmt er den nächsten. Nur der Doc-Agent ordnet die Liste. Ein neuer Befund unterbricht nur bei rotem CI (ADR 0230) oder wenn er den laufenden Eintrag blockiert. Die Zeile „wie gebaut“ steht nur in der Commit-Nachricht (ADR 0350).
 
-1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
-2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
-3. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
-4. **Timetrack nach Projekten (B641)** ⏳ Teil 1 gebaut 9dffd2970; Beweis: Snapshot-Vergleich nach Release, dann Bild vom Tag-Screen - Builder
-5. **Sketch bleibt bei seinem Teil (B686)** ⏳ Werkzeug-Sperre gebaut (14e97850d); Entwurf 46 B bleibt unverändert, Beweis ist der Vorlauf B687. Werkzeug verhindert fremde Teile in einem Sketch; jeder Teil eines Sketches ist per Klick im Baum zu sehen (ADR 0422) - Builder
-6. **Prüf-Meldungen nur für den Agenten (B685)** ⏳ Studio-Teil gebaut (e31148c79, lokal); offen: Agent bekommt die Meldungen beim Schreiben, Spec gegen ADR-Verweise in CLI-Texten. Studio zeigt keine Prüf-Meldungen, der Agent behebt sie beim Schreiben (ADR 0420); Werkzeug-Texte ohne ADR-Verweise (ADR 0421) - Builder
-7. **Automatischer Kunden-Vorlauf (B687)** ⏳ nach B685: Kunden-Agent statt des Menschen, Skript prüft das Ergebnis, erst grün dann Lauf mit dem Menschen; beweist B685 und B686 (ADR 0423) - Builder
-8. **Frame-Präsentation je Schicht (B676)** ⏳ Foundations Spec-Blatt, Components kompakt, Elements im Ausschnitt ihrer Umgebung, Pages nach Ablauf; Text-Teile werden Zustände; Sketch-Kopf als Komponente; nie die ganze Seite immer wieder (ADR 0411). Rest nach B685: „a“-Beschriftung je Spalte, Aussehen eines Sketches in Arbeit - Builder
-9. **Timetrack-Beschreibung (B602)** ⏳ Scrollen bestätigt (der Mensch 23.11.). Offen: Live-Messung, Endstück, doppelter Cherry-Pick, Anruf ohne Vorschlag - Builder
-10. **Timetrack-Gleichstand (B616)** ⏳ Diagnose 23.11.: vier Causes (Pfad je Repo-Schlüssel, Regel gelöschter Worktrees, Meeting-Benennungen reisen nicht, Annehmen per Zeilen-ID). Fix 1 gebaut 32ad7a15e. Offen: heute fehlt auf dem Mac ein Meeting und es zeigt 30 min Pause (der Mensch); Fixes 3, 4, 2; neuer Vergleich - Builder
-11. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: frühestens 24.11. löscht der Mensch `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - der Mensch, dann Builder
+1. **Prozess-Stapel ersetzen (B688)** ⏳ eine Warteschlangen-Datei, eine Prozess-Seite, kürzere Anleitungen, weniger Hooks; Seite zuerst zum Menschen (ADR 0424) - Doc-Agent, dann Builder
+2. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
+3. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
+4. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
+5. **Timetrack nach Projekten (B641)** ⏳ Teil 1 gebaut 9dffd2970; Beweis: Snapshot-Vergleich nach Release, dann Bild vom Tag-Screen - Builder
+6. **Sketch bleibt bei seinem Teil (B686)** ⏳ Werkzeug-Sperre gebaut (14e97850d); Entwurf 46 B bleibt unverändert, Beweis ist der Vorlauf B687. Werkzeug verhindert fremde Teile in einem Sketch; jeder Teil eines Sketches ist per Klick im Baum zu sehen (ADR 0422) - Builder
+7. **Prüf-Meldungen nur für den Agenten (B685)** ⏳ Studio-Teil gebaut (e31148c79, lokal); offen: Agent bekommt die Meldungen beim Schreiben, Spec gegen ADR-Verweise in CLI-Texten. Studio zeigt keine Prüf-Meldungen, der Agent behebt sie beim Schreiben (ADR 0420); Werkzeug-Texte ohne ADR-Verweise (ADR 0421) - Builder
+8. **Automatischer Kunden-Vorlauf (B687)** ⏳ nach B685: Kunden-Agent statt des Menschen, Skript prüft das Ergebnis, erst grün dann Lauf mit dem Menschen; beweist B685 und B686 (ADR 0423) - Builder
+9. **Frame-Präsentation je Schicht (B676)** ⏳ (ADR 0411). Rest: Rundenwähler, „a“ je Spalte, Foundation-Spec-Blätter, Sketch in Arbeit - Builder
+10. **Timetrack-Beschreibung (B602)** ⏳ Scrollen bestätigt (der Mensch 23.11.). Offen: Live-Messung, Endstück, doppelter Cherry-Pick, Anruf ohne Vorschlag - Builder
+11. **Timetrack-Gleichstand (B616)** ⏳ Diagnose 23.11.: vier Causes (Pfad je Repo-Schlüssel, Regel gelöschter Worktrees, Meeting-Benennungen reisen nicht, Annehmen per Zeilen-ID). Fix 1 gebaut 32ad7a15e. Offen: heute fehlt auf dem Mac ein Meeting und es zeigt 30 min Pause (der Mensch); Fixes 3, 4, 2; neuer Vergleich - Builder
+12. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: frühestens 24.11. löscht der Mensch `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - der Mensch, dann Builder
 
 Geparkt: B105, B108, B109, B148, B312, B313.
 
