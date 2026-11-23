@@ -134,7 +134,7 @@ export type WrittenWorklog = {
   description: string;
 };
 
-/** A booked day's review as it was drawn when it was booked, and what Tempo held of it then. See ADR 0040. */
+/** A booked day's review as it was drawn when it was booked, and what Tempo held of it then. */
 export type BookedDay = {
   written: WrittenWorklog[];
   /** The edits `review` was drawn with, without `frozenRows` and `booked`. */
@@ -155,7 +155,7 @@ export type AutoModeSubject =
  * `approvalId` names the queue item and `createdKey` the issue its approval filed.
  */
 /**
- * The existing issue a draft offers beside its new one (ADR 0054). `leads` where the same branch already
+ * The existing issue a draft offers beside its new one. `leads` where the same branch already
  * books it that day: the band is named with it, and the new issue is the alternative.
  */
 export type AutoModeExisting = { issueKey: string; summary?: string; leads?: true };
@@ -258,7 +258,7 @@ export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
   proposed?: WorklogProposal;
   /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */
   hidden: boolean;
-  /** The remote time the row draws and does not book, when there is any. See ADR 0033. */
+  /** The remote time the row draws and does not book, when there is any. */
   unbookedMs?: number;
   /** Who set each field. A field absent here holds what the engine observed. See `rowFieldSourceOf`. */
   sources?: RowFieldSources;

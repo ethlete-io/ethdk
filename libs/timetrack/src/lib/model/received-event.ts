@@ -1,7 +1,7 @@
 import { CollectedEvent } from './event';
 import { CheckoutKeys } from './peer-path';
 
-/** An event a paired machine collected and this machine pulled. It stays apart from this machine's own (ADR 0039). */
+/** An event a paired machine collected and this machine pulled. It stays apart from this machine's own. */
 export type ReceivedEvent = {
   machineId: string;
   /** The name the machine was paired under. */

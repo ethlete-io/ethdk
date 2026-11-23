@@ -103,7 +103,7 @@ ${source.slice(0, exported.start)}((drawn) => {
 };
 
 /**
- * Opens `<part>@<state>` for an app branch no design state draws (B251b, ADR 0048, ADR 0010): its one variant `built`
+ * Opens `<part>@<state>` for an app branch no design state draws (B251b): its one variant `built`
  * is the part with `state` declared and drawn as `picture`, the developer's build. The hit waits while it is open.
  */
 export const openUndesignedSketch = (options: {

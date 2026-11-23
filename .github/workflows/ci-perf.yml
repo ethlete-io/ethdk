@@ -9,7 +9,6 @@ on:
       - main
     paths-ignore:
       - 'plans/**'
-      - 'apps/ethlete-studio/docs/adr/**'
   pull_request:
 
 concurrency:

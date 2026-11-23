@@ -4,7 +4,7 @@ import { stateGroupsOf, stateNamesOf } from '../sketch/part-definition';
 
 const RULE = 'STATE-GROUPS';
 
-/** A part with more own states than this names the groups of its states (ADR 0407). */
+/** A part with more own states than this names the groups of its states. */
 export const MAX_UNGROUPED_STATES = 12;
 
 const messagesOf = (source: string): { message: string; states?: string[] }[] => {

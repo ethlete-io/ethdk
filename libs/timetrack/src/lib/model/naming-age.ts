@@ -34,7 +34,7 @@ export const namedIssueKeys = (options: { namings: readonly MeetingNaming[]; cal
 /**
  * The remembered namings whose ticket has gone quiet in Jira.
  *
- * A record never expires on a date — ADR 0012 — so what is read is the ticket and never the record's
+ * A record never expires on a date, so what is read is the ticket and never the record's
  * own age: a naming written two years ago that points at a ticket people still work in is right, and
  * one written last week that points at last year's standing ticket is not.
  *

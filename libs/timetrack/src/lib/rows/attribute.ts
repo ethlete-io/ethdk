@@ -215,7 +215,7 @@ const ruleAttribution = (options: {
 /**
  * The same rung for a rule naming a stand-in. The block is named and still books nothing: `standInId`
  * sits where `issueKey` would, and every reader that asks whether a row can be written asks for the
- * key. See ADR 0021.
+ * key.
  */
 const standInAttribution = (options: {
   block: ActivityBlock;
@@ -294,7 +294,7 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
       });
     }
 
-    // A conforming branch ends a stand-in on its own (ADR 0021); a deprecated spelling does not.
+    // A conforming branch ends a stand-in on its own; a deprecated spelling does not.
     if (parsed.issueKey && !(branchStandIn && parsed.deprecated)) {
       return {
         block,

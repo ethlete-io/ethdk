@@ -31,8 +31,7 @@ export const callDurationBand = (durationMs: number) => {
  * What a call is recognised by when no calendar occurrence names it.
  *
  * `after` is the only feature that is a relation rather than a property, and it is the one that
- * describes a call with no fixed clock time — one that starts when the meeting before it ends. See
- * ADR 0012.
+ * describes a call with no fixed clock time — one that starts when the meeting before it ends.
  */
 export type CallFeatures = {
   /** The process that held the microphone, lowercased. */

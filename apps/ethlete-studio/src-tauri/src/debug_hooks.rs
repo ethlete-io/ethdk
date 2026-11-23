@@ -19,7 +19,7 @@ fn cache_dir() -> Option<PathBuf> {
 }
 
 /// Chromium keeps `devtools.remote_debugging.allowed = false` in Local State once a run had the port
-/// disabled, and reads it before the runtime's own preference applies (ADR 0251). Must run before CEF starts.
+/// disabled, and reads it before the runtime's own preference applies. Must run before CEF starts.
 pub fn forget_disallowed_port() {
     if let Some(path) = cache_dir() {
         remove_disallowed_key(&path);
@@ -48,7 +48,7 @@ fn remove_disallowed_key(path: &Path) {
     }
 }
 
-/// The debug socket Chromium listens on is inherited by every child unless it is closed on exec (ADR 0251).
+/// The debug socket Chromium listens on is inherited by every child unless it is closed on exec.
 #[cfg(unix)]
 pub fn close_inherited_sockets(command: &mut tokio::process::Command) {
     unsafe {

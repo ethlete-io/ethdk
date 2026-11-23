@@ -1,7 +1,7 @@
 # Ethlete Studio
 
 Studio is the desktop design tool in which a human designs a product as parts, compares agent-made sketches and
-picks what gets built. Its decisions are recorded in `docs/adr/`.
+picks what gets built.
 
 ## Language
 
@@ -81,7 +81,7 @@ _Avoid_: a person's name, designer
 ### Sessions
 
 **Grill session**:
-The session that asks the human the design questions and writes the plans and ADRs.
+The session that asks the human the design questions and writes the plans and the tests of its decisions.
 _Avoid_: doc agent (as a product term)
 
 **Builder**:

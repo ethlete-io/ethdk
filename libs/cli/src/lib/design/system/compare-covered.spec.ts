@@ -81,7 +81,7 @@ const compared = async (sketch?: Record<string, unknown>, shots: ShootStates = s
   return { result, lines };
 };
 
-describe('compare DIFFs an open sketch covers (ADR 0222)', () => {
+describe('compare DIFFs an open sketch covers', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('lists a DIFF the open sketch names with the sketch and does not fail it', async () => {

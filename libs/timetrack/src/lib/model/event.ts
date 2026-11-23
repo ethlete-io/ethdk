@@ -181,9 +181,8 @@ export type PromptSenderKind = 'subagent' | 'session' | 'system';
  * One prompt an agent was given: its instant, its session and the checkout it was given in.
  *
  * A turn says the machine worked, and a *human* prompt says a person was at the keyboard. That
- * difference is why it is the only agent evidence a day nothing observed may rebuild presence from —
- * see ADR 0006. It carries no text, which is what lets it outlive the raw samples the way spend does
- * (ADR 0002).
+ * difference is why it is the only agent evidence a day nothing observed may rebuild presence from.
+ * It carries no text, which is what lets it outlive the raw samples the way spend does.
  *
  * It is no `ActivityEvent`: on an observed day the focused window says where the person was, and a
  * prompt at 09:00 would otherwise open a block in a checkout nobody had in front of them.

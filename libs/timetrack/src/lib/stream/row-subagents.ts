@@ -9,7 +9,7 @@ export type RowSubagent = { agentId: string; task: string | undefined; from: Dat
 /** The run time from which a subagent is drawn as its own stripe rather than as a tick on its session. */
 export const SUBAGENT_STRIPE_MIN_MS = 15 * 60_000;
 
-/** Whether a subagent is drawn as its own stripe beside its session. See ADR 0052. */
+/** Whether a subagent is drawn as its own stripe beside its session. */
 export const isSubagentStripe = (subagent: Pick<RowSubagent, 'from' | 'to'>) =>
   subagent.to.getTime() - subagent.from.getTime() >= SUBAGENT_STRIPE_MIN_MS;
 

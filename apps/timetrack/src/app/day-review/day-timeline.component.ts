@@ -1508,7 +1508,7 @@ export class DayTimelineComponent {
 
   /**
    * Read off the clock rather than off the index, because a day may start at a configured hour: on a
-   * day that starts at 04:00 the first row of the axis is 04:00, not midnight. See ADR 0015.
+   * day that starts at 04:00 the first row of the axis is 04:00, not midnight.
    */
   protected labelFor(hour: number) {
     return formatClockTime(new Date(this.focusedDate().getTime() + hour * HOUR_MS));

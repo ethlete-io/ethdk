@@ -7,7 +7,7 @@ import { WorkGroup } from './merge';
 
 /**
  * What one checkout books, the parent of that issue, and the parent's other open children —
- * pre-fetched by the caller, because the core makes no call of its own. See ADR 0029.
+ * pre-fetched by the caller, because the core makes no call of its own.
  */
 export type EpicSibling = {
   /** The checkout the naming came from, as the collectors report it. */
@@ -63,7 +63,7 @@ export type EpicSiblingMatch = {
  *
  * It answers nothing unless every step is unambiguous. Several parents, several free children, a
  * child list the cap cut short, or no project link on either side all leave the block for the rungs
- * below — a wrong ticket costs more than an unnamed band. See ADR 0029.
+ * below — a wrong ticket costs more than an unnamed band.
  */
 export const epicSiblingFor = (options: {
   context: ActivityContext;
@@ -125,7 +125,7 @@ export type EpicCandidate = {
  * What a day has to ask Jira before the rung can answer, and nothing more.
  *
  * No candidate means no call: the whole question only exists for a checkout that is still unnamed, so
- * a day the other rungs answered in full must not cost a request. See ADR 0029.
+ * a day the other rungs answered in full must not cost a request.
  */
 export type EpicQuestion = {
   candidates: EpicCandidate[];

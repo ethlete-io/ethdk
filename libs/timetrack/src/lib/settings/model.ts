@@ -139,12 +139,12 @@ export type TimetrackReasoningSettings = {
    * client; `unmaskedWords` reports every capitalised word this list does not hold, before a send.
    *
    * The list is the map. Nothing derived from it is stored, so the same list is what reads an answer
-   * written in pseudonyms back into real names. See ADR 0013.
+   * written in pseudonyms back into real names.
    */
   maskedNames: string[];
   /**
    * Whether the model runs without a press on each new unnamed band and open stand-in of today. Off
-   * until the user turns it on, and only while `enabled` is on too. See ADR 0035.
+   * until the user turns it on, and only while `enabled` is on too.
    */
   autoMode: boolean;
   /**
@@ -283,12 +283,12 @@ export type TimetrackSettings = {
   gapFillMs: number;
   /**
    * The local hour a day starts at. Work at 01:00 belongs to the evening it came from, so a day is
-   * not a calendar date — see ADR 0015. Zero keeps the two the same.
+   * not a calendar date. Zero keeps the two the same.
    */
   dayStartHour: number;
   /**
    * How many open children of one parent the sibling-checkout rung reads. It guards a Jira read, not
-   * a judgement about the work, which is why it is settable at all — see ADR 0029.
+   * a judgement about the work, which is why it is settable at all.
    */
   epicChildLimit: number;
   jira: TimetrackJiraSettings;

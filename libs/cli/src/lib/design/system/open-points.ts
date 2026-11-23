@@ -45,7 +45,6 @@ export type OpenPointsInput = {
   missingStates?: { part: string; control: string }[];
   busyStates?: { part: string; state: string }[];
   directEdits?: { part: string; sketch: string | null }[];
-  planQuestions?: { part: string; adr: string }[];
   staleSketchBases?: { part: string; sketch: string; changed: string[] }[];
   sketchProblems?: { part: string; sketch: string; variant: string; rule: string; message: string }[];
 };
@@ -162,9 +161,6 @@ const keyedPointsOf = (input: OpenPointsInput, key: string): OpenPoint[] => [
   ...(input.directEdits ?? [])
     .filter((edit) => edit.part === key)
     .map(({ sketch }) => ({ kind: 'direct-edit' as const, sketch })),
-  ...(input.planQuestions ?? [])
-    .filter((question) => question.part === key)
-    .map(({ adr }) => ({ kind: 'plan-question' as const, adr })),
   ...input.sketches
     .filter((sketch) => sketch.targets.includes(key))
     .map((sketch) => ({
@@ -248,8 +244,6 @@ const subjectOf = (point: OpenPoint) => {
       return point.comment;
     case 'direct-edit':
       return point.sketch ?? '';
-    case 'plan-question':
-      return point.adr;
     case 'stale-sketch-base':
       return `${point.sketch} ${point.changed.join(',')}`;
     case 'sketch-problem':
@@ -375,11 +369,6 @@ const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
           ? `sketch ${point.sketch} needs a rebase before merge (${point.changed.join(', ')} changed since its base)`
           : '',
       )
-      .join('; ');
-
-  if (kind === 'plan-question')
-    return points
-      .map((point) => (point.kind === 'plan-question' ? `ADR ${point.adr} is decided but not built` : ''))
       .join('; ');
 
   if (kind === 'direct-edit')

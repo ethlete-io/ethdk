@@ -15,7 +15,6 @@ Compute by ssh: `ethlete-mac`, Windows "rack" `trbor@192.168.1.115` (never shut 
 
 ## Build
 
-- Before you change files, run `yarn adr:governs <files>` and read the ADRs it lists.
 - Each subagent brief includes the lines of `subagent-brief.md` next to this skill.
 - Before a commit, run `npx vitest related --run <changed files>` in each touched vitest project, `node --test <specs>`
   for `tools/**`, and the `typecheck` target of each project with a changed `.ts` or config file.

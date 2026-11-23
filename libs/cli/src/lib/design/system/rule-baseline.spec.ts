@@ -45,7 +45,7 @@ const checkout = () => {
 const entry = { finding: '489', sketch: 'components/rail-bubble' };
 const everywhere = () => true;
 
-describe('rule baseline (ADR 0201)', () => {
+describe('rule baseline', () => {
   it('passes a baselined hit with its printed line, and fails a hit the baseline does not list', () => {
     const { product, hitOn, commit, writeBaseline } = checkout();
 

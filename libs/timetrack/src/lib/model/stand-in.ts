@@ -15,7 +15,7 @@ export type StandInState = 'open' | 'resolved';
  * It takes bands the way an issue key does, across days and across checkouts, and it books nothing.
  * A band carries it in `standInId` and never in `issueKey`, so it stays shown, counted as covered and
  * never written. The contexts it covers live on attribution rules that point at the `id` here, which
- * is what makes a resolve one rewrite of those rules rather than a walk over every day. See ADR 0021.
+ * is what makes a resolve one rewrite of those rules rather than a walk over every day.
  */
 export type StandIn = {
   id: string;
@@ -419,7 +419,7 @@ export type StandInAge = {
  */
 export const standInAge = (options: {
   standIn: Pick<StandIn, 'state' | 'createdAt' | 'days'>;
-  /** From `standInHeldMs`, totalled on demand. Nothing stores a running total — see ADR 0021. */
+  /** From `standInHeldMs`, totalled on demand. Nothing stores a running total. */
   heldMs: number;
   now: Date;
   overdueAfterWorkdays: number;

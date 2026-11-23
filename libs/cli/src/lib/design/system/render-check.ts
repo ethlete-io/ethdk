@@ -182,7 +182,7 @@ const SINGLE_LINE =
  */
 const ESCAPABLE = ESCAPABLE_RULES;
 
-/** The render rules that warn instead of failing. A new rule fails, with a rule baseline for its old hits (ADR 0201). */
+/** The render rules that warn instead of failing. A new rule fails, with a rule baseline for its old hits. */
 /** A multi-line render error as one RENDER detail line, every line kept. */
 export const renderErrorDetailOf = (error: string) =>
   stripVTControlCharacters(error)
@@ -193,7 +193,7 @@ export const renderErrorDetailOf = (error: string) =>
 
 export const WARNING_RULES: ReadonlySet<string> = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
-/** The render rules whose hits on merged parts the rule baseline of their product lists (ADR 0201). */
+/** The render rules whose hits on merged parts the rule baseline of their product lists. */
 export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([CONTROL_HEIGHT_RULE, 'HIDDEN-CONTENT', 'SCROLLS']);
 
 const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';

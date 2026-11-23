@@ -10,7 +10,6 @@ export const CHECKS = [
   'lint:cli-related-map',
   'lint:migration-entries',
   'lint:studio-label-specs',
-  'lint:studio-adrs',
   'lint:runner-os',
   'lint:commit-messages',
   'lint:spec-typecheck',

@@ -7,7 +7,7 @@ export const SPEC_INDEX_FILE = 'index.md';
 
 /**
  * The slice of a spec document that may leave this machine: what the work is called, what kind of work
- * it is, and the paragraph the spec opens with. The body of a spec never goes — see ADR 0013.
+ * it is, and the paragraph the spec opens with. The body of a spec never goes.
  */
 export type SpecHeader = {
   title: string;

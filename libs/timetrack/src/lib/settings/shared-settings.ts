@@ -273,7 +273,7 @@ const outgoingOf = (entry: SharedSettingsEntry, keys: CheckoutKeys): SharedSetti
 
 /**
  * What this machine shares of its settings: its rules and stand-ins and the ones it removed. No credential
- * travels, and no machine path but a checkout of `ownKeys` (ADR 0047 pt 2): a rule or stand-in whose id or
+ * travels, and no machine path but a checkout of `ownKeys`: a rule or stand-in whose id or
  * repository names another path stays here, and a stand-in opened for one travels without that checkout.
  */
 export const sharedSettingsEntriesOf = (options: {
@@ -531,7 +531,7 @@ const foldStandIn = (into: StandIn, from: StandIn): StandIn =>
 
 /**
  * `settings` with the rules, stand-ins and refusals the paired machines changed later than this machine: the
- * latest stamp wins once each peer's stamp is moved onto this machine's clock (ADR 0041 pt 2), and a tie
+ * latest stamp wins once each peer's stamp is moved onto this machine's clock, and a tie
  * keeps this machine's version. A stand-in taken from a peer keeps the days this machine drew it on.
  * Open placeholders the app made for one checkout and branch fold into the one with the smallest id, so
  * every machine keeps the same survivor; rows of a folded one still read it through `mergedIds`. Returns

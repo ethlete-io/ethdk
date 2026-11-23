@@ -309,7 +309,7 @@ export type StreamDay = {
   /**
    * The part of `presenceMs` that no window and no idle transition observed. It is presence the
    * prompts and commits of the day rebuilt, and it is inside `presenceMs` rather than beside it — a
-   * day the collector never ran would otherwise report an empty one. See ADR 0006.
+   * day the collector never ran would otherwise report an empty one.
    */
   rebuiltMs: number;
   /** Every turn the day read, whichever stream took it. */
@@ -1746,8 +1746,7 @@ const streamOrigin = (options: {
     ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
   ];
 
-  // A prompt the agent gave itself buys nothing back: nobody read anything and nobody typed. See
-  // ADR 0018.
+  // A prompt the agent gave itself buys nothing back: nobody read anything and nobody typed.
   const typed = prompts.filter((prompt) => prompt.askedBy !== 'machine');
   const remote = typed.filter((prompt) => originAt(prompt.at) === 'remote');
   const remoteSet = new Set(remote);

@@ -267,7 +267,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   /**
-   * Stores the review a frozen finished day is drawn from (ADR 0040). Without `sync` only a day with no
+   * Stores the review a frozen finished day is drawn from. Without `sync` only a day with no
    * stored review is booked; with it the day is booked again with the sync's writes laid over Tempo's.
    */
   const bookedRead$ = (day: string, sync?: { plan: TempoSyncPlan; outcome: TempoSyncOutcome }): Observable<DayRead> =>
@@ -437,7 +437,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const addRow$ = (options: { day: string; row: ManualRow }): Observable<void> =>
     review.changeDay$(options.day, (edits) => addManualRow({ edits, row: options.row })).pipe(take(1));
 
-  /** Books a frozen finished day, or, given the sync that wrote it, books it again. See ADR 0040. */
+  /** Books a frozen finished day, or, given the sync that wrote it, books it again. */
   const book$ = (day: string, sync?: { plan: TempoSyncPlan; outcome: TempoSyncOutcome }): Observable<void> =>
     bookedRead$(day, sync).pipe(map(() => undefined));
 

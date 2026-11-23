@@ -537,7 +537,7 @@ describe('required data states (B251a)', () => {
     ).toEqual([]);
   });
 
-  it('counts a sketch that draws one data state as adding nothing (ADR 0095)', () => {
+  it('counts a sketch that draws one data state as adding nothing', () => {
     const merged = openPointsOf(input({ parts: [part('components/a', ['rest'], true)] }));
     const sketched = openPointsOf(input({ parts: [part('components/a', ['rest', 'loading'], true)] }));
 
@@ -553,27 +553,5 @@ describe('required data states (B251a)', () => {
         },
       ],
     });
-  });
-
-  it('puts a plan-question on each part an unbuilt ADR names, and none for a built one', () => {
-    const parts = [
-      { key: 'components/a', layer: 'components' as const, controls: true },
-      { key: 'components/b', layer: 'components' as const, controls: true },
-    ];
-    const open = openPointsOf(
-      input({
-        parts,
-        planQuestions: [
-          { part: 'components/a', adr: '0400' },
-          { part: 'components/b', adr: '0400' },
-        ],
-      }),
-    );
-
-    expect(open).toEqual([
-      { part: 'components/a', points: [{ kind: 'plan-question', adr: '0400' }] },
-      { part: 'components/b', points: [{ kind: 'plan-question', adr: '0400' }] },
-    ]);
-    expect(openPointsOf(input({ parts, planQuestions: [] }))).toEqual([]);
   });
 });

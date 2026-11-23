@@ -452,7 +452,7 @@ than 0.5 px, for example `CONTROL-HEIGHT studio components/title-search default 
 that sets a fixed `height` of its own, is not judged. The height is read from the computed style, so a scaled
 thumbnail measures the same as the full size. A compare of design and app never sees this: both share the CSS, so
 both are off by the same amount. Its hits on merged parts that predate it are listed in the
-product's `rule-baseline.json` (ADR 0201), and `data-et-skip="CONTROL-HEIGHT"` marks one on purpose.
+product's `rule-baseline.json`, and `data-et-skip="CONTROL-HEIGHT"` marks one on purpose.
 
 `SKIP-UNUSED` names a `data-et-skip` (or a `checks: { skip }` entry of the part) that suppresses no problem in any rendered
 state of its part: delete it, a skip lives only while it hides something.
@@ -612,7 +612,7 @@ it cannot shoot the state. `source=design`, the default, draws the design.
 `== <part> (changed: <files>)`. A part whose states are all ok gets its actions check on the same harness, and when every
 action works its record is written again with the current app file hashes. A part whose design changed since its record
 is not recorded: that needs `task --verify`. It exits 1 unless every affected part is recorded. A UI item is done when
-it shows in the app and `compare --affected` is green (ADR 0203); `check --rules --base` and the design rules gate
+it shows in the app and `compare --affected` is green; `check --rules --base` and the design rules gate
 refuse a change that leaves an implemented part uncompared and name the parts.
 
 `--base <rev>` adds a baseline to any compare but `--live`: it builds the harness app of `<rev>` from a clone and compares each part there too, against HEAD's design. After the parts it prints

@@ -17,7 +17,7 @@ export type WorkGroup = {
   taskKey?: string;
   /**
    * The other work a second rung named for this band, when two rungs named different work. The band
-   * still books `issueKey` — the ranking in ADR 0012 decides that — and this is what lets the band show
+   * still books `issueKey` — the call ranking decides that — and this is what lets the band show
    * both and offer the loser in one press, so the higher rung is never picked silently.
    */
   disputedIssueKey?: string;

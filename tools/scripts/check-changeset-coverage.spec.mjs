@@ -149,9 +149,9 @@ describe('check-changeset-coverage docs-only paths', () => {
     put(repo, 'libs/cli/package.json', JSON.stringify({ name: '@ethlete/cli' }));
   };
 
-  test('an ADR-only range passes without a changeset', () => {
+  test('a plans-only range passes without a changeset', () => {
     const { commit, check } = fixture(REAL_BEFORE, [], withPackages);
-    commit((repo) => put(repo, 'apps/ethlete-studio/docs/adr/0001-a.md', '# A\n'));
+    commit((repo) => put(repo, 'plans/a.md', '# A\n'));
 
     assert.equal(check().status, 0);
   });
@@ -166,10 +166,10 @@ describe('check-changeset-coverage docs-only paths', () => {
     assert.match(result.stderr, /@ethlete\/cli changed/);
   });
 
-  test('a Studio code change next to an ADR still needs a changeset', () => {
+  test('a Studio code change next to a plan still needs a changeset', () => {
     const { commit, check } = fixture(REAL_BEFORE, [], withPackages);
     commit((repo) => {
-      put(repo, 'apps/ethlete-studio/docs/adr/0001-a.md', '# A\n');
+      put(repo, 'plans/a.md', '# A\n');
       put(repo, 'apps/ethlete-studio/src/a.ts', 'export const a = 1;\n');
     });
 

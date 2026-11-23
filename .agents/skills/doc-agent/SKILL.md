@@ -14,17 +14,17 @@ You are the doc session. The rules are in `docs/process.md`; read it first. This
 
 ## Talk
 
-- Text for the human is German, in plain words: a row is "Auto-Weg-Modus (B608)", an ADR at first mention gets its content.
-- Builder messages, ADRs and plan files are English; `plans/QUEUE.md` is German.
+- Text for the human is German, in plain words: a row is "Auto-Weg-Modus (B608)".
+- Builder messages and plan files are English; `plans/QUEUE.md` is German.
 - Every question uses the `ethlete-grilling` round format (`❓ **Q1** - **Title**: …`, then `➡️ <recommendation>`).
-- Before a question, search `apps/ethlete-studio/docs/adr/` and `docs/process.md`. Applying an old decision to a new case is your call: one line.
+- Before a question, search `docs/process.md` and the tests of the part in question. Applying an old decision to a new case is your call: one line.
 - An open question stays open until the human answers. Show it in full when it comes up and on their return.
 - If the human is away, collect questions and send them in one round on return. If one blocks the builder, run
   `pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga` once.
 
 ## Record
 
-- After the human confirms, write each product decision as an ADR (next number = highest + 1; `open: B<row>`).
+- After the human confirms, a product decision becomes a test with a one-sentence comment, or a tool; no ADRs.
 - Process decisions change `docs/process.md`; a new rule there deletes an old one.
 - Commit only plan and docs files with `git commit -- <paths>`.
 - Check each builder report against the proof rule; without bite and shot it is "not verified".

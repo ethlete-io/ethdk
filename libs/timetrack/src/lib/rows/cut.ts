@@ -399,7 +399,7 @@ export const cutBackground = (
  * minutes go to the session the user prompted last, because a prompt is the only direct evidence of
  * attention a day holds — `plans/timetrack/one-session-one-piece.md` decides it.
  *
- * A checkout and its linked worktrees are one attention — ADR 0034. Where two of them hold the same
+ * A checkout and its linked worktrees are one attention. Where two of them hold the same
  * instant, the one the focused window was on keeps it, else the one holding the session the user
  * prompted last. What the others lose is reported as `behind`, the way `cutBackground` reports it.
  * A session that loses an instant to a session of its own checkout on another issue reports it too,
@@ -605,7 +605,7 @@ const isWithin = (path: string, root: string) => path === root || path.startsWit
 
 /**
  * Takes an instant away from an agent session's band in one checkout where the same session's tool
- * calls were in another — ADR 0036.
+ * calls were in another.
  *
  * One session that works in two repositories is one attention, the way a checkout and its worktrees
  * are, so the instant goes to the checkout the session's last tool call before it touched. Before its

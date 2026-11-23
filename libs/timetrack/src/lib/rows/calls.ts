@@ -149,7 +149,7 @@ const confidenceOf = (options: { meeting?: PickedCandidate; key?: NamedWork }): 
 /**
  * The answer the user already gave for a call like this one — same application, and enough of the
  * weekday, the length and what ran before it. It is what names a call the calendar never held, which
- * has no series to be remembered under. See ADR 0012.
+ * has no series to be remembered under.
  */
 const rememberedCallNaming = (options: { features: CallFeatures; meetings: MeetingOptions }): NamedWork | undefined => {
   const found = matchCallNaming({ features: options.features, namings: options.meetings.callNamings ?? [] });
@@ -230,7 +230,7 @@ const namesSameWork = (left: NamedTarget, right: NamedTarget) =>
 /**
  * The other work a rung named for this call, when two rungs named different work.
  *
- * The ranking in ADR 0012 still decides what the row books. What this adds is the answer that lost, so
+ * The call ranking still decides what the row books. What this adds is the answer that lost, so
  * the band shows both and the pick is never silent — a remembered answer keyed on a weekday and a
  * duration band matches more calls than the one it was given for.
  */
@@ -301,7 +301,7 @@ const matchOne = (options: {
   };
 };
 
-/** Whether an occurrence no call was heard over is drawn as a suggested call row: ADR 0048. */
+/** Whether an occurrence no call was heard over is drawn as a suggested call row. */
 export const suggestsMeetingRow = (occurrence: UnobservedOccurrence) =>
   occurrence.event.accepted && isSharedOccurrence(occurrence.event);
 

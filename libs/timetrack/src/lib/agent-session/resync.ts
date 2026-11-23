@@ -35,7 +35,7 @@ export const resyncAgentSessionCursors = (options: {
  * cursor in the store or the next run would skip it again.
  *
  * Every event a backfill pass stores keys on the provider and the provider's own id, so a re-read of a
- * log it already covered appends nothing. See ADR 0003.
+ * log it already covered appends nothing.
  */
 export const rewindAgentBackfillCursors = (options: {
   cursors: readonly AgentSessionCursor[];
@@ -153,7 +153,7 @@ export const agentSessionReparseBatch = (options: {
 /**
  * What a re-read under newer parse rules writes: its events less every one dated on a frozen day, and
  * the span per session and day the store replaces with them. A finished day this app booked keeps the
- * rows it was booked with (ADR 0038), so the store keeps that day's samples as they are.
+ * rows it was booked with, so the store keeps that day's samples as they are.
  */
 export const reparsedAgentSessionWrite = (options: {
   collection: Pick<AgentSessionCollection, 'events' | 'usage' | 'prompts'>;

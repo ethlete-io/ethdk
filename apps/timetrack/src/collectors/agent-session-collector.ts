@@ -136,7 +136,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
    *
    * A typed prompt and a turn answer the first question differently: together they are what a day
    * nothing watched is rebuilt from, so both are kept for an unlinked checkout and dropped only for a
-   * private one. See ADR 0006.
+   * private one.
    *
    * The cursors move either way: the line was read, and re-reading it would only drop it again.
    *
@@ -192,7 +192,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
   /** Set once no listed log is left that older parse rules read, so the rest of the session skips the listing. */
   let reparsed = false;
 
-  /** The finished days this app booked, whose rows are frozen (ADR 0038). Today is re-cut until it is over. */
+  /** The finished days this app booked, whose rows are frozen. Today is re-cut until it is over. */
   const frozenDaysOf$ = (options: { days: readonly string[]; today: string }): Observable<Set<string>> => {
     const finished = options.days.filter((day) => day < options.today);
 

@@ -27,7 +27,6 @@ import {
   stateNamesOf,
   unreachableOf,
 } from './sketch/part-definition';
-import { planQuestionsOf } from './adr-parts';
 import { directEditsOf } from './sketch/merged-parts';
 import { rebaseNeededOf } from './sketch/stale-base';
 import { variantProblemsOf } from './sketch/check-sketches';
@@ -281,7 +280,6 @@ export const readOpenPoints = (
     })),
     sketchProblems: sketchProblems ? sketchProblemsOf({ product, sketches, productRules }) : [],
     directEdits,
-    planQuestions: planQuestionsOf(resolve(product.dir, '..', '..', '..')),
     staleSketchBases: sketches
       .filter((sketch) => sketch.status === 'ready')
       .flatMap((sketch) => {

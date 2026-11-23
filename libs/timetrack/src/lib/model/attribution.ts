@@ -8,7 +8,7 @@ export type AttributionScope = 'branch' | 'repo' | 'app';
  * What a naming points at, wherever one is given: an attribution rule, a remembered call.
  *
  * `stand-in` names work Jira does not hold yet. It books nothing, and one rewrite of every rule that
- * carries it turns the whole set into `issue`. See `StandIn` and ADR 0021.
+ * carries it turns the whole set into `issue`. See `StandIn`.
  */
 export type NamedTarget = { kind: 'issue'; issueKey: string } | { kind: 'stand-in'; standInId: string };
 
@@ -25,7 +25,7 @@ export type AttributionTarget = NamedTarget | { kind: 'donate' };
 /**
  * Who wrote a naming down. An agent may prepare one, and the app itself opens a stand-in for a linked
  * checkout no rule could name, so a day never hides which of its answers the user gave and which one
- * it was handed. See ADR 0012.
+ * it was handed.
  */
 export type NamingAuthor = 'user' | 'agent' | 'app';
 

@@ -425,7 +425,7 @@ export const propose = (options: {
    * and an attended row is cut where one is drawn over it.
    */
   breaks?: readonly TimeWindow[];
-  /** The stretches no break may cover: a call the user attended and a run they timed — see ADR 0030. */
+  /** The stretches no break may cover: a call the user attended and a run they timed. */
   presence?: readonly TimeWindow[];
   /**
    * Evidence no row carries: the commit copies `surplusCommitCopies` found in another row too. A row

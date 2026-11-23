@@ -8,7 +8,7 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
  * The other work a rung named for this band, one press that keeps the booked answer and one that takes
  * the other instead.
  *
- * The row already books the answer ADR 0012 ranks higher, so this never withholds time. What it stops
+ * The row already books the answer the call ranking puts higher, so this never withholds time. What it stops
  * is the higher rung winning silently: a remembered answer is keyed on a weekday and a duration band,
  * so it matches more calls than the one it was given for, and the band has to say which two answers
  * it had. Taking the other one writes it the way naming any row does, which also teaches the store;

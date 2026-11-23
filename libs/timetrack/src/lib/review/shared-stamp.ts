@@ -6,7 +6,7 @@ export type StampedEntry = { id: string; atMs: number; kind: string };
 /** A paired machine's stamped entries and how far its clock is ahead of this one's. */
 export type PeerStampedEntries<T extends StampedEntry> = { entries: readonly T[]; clockOffsetMs: number };
 
-/** Per id, the latest entry of all `peers`, each stamp moved onto this machine's clock (ADR 0041 pt 2). */
+/** Per id, the latest entry of all `peers`, each stamp moved onto this machine's clock. */
 export const latestPeerEntries = <T extends StampedEntry>(peers: readonly PeerStampedEntries<T>[]): Map<string, T> => {
   const latest = new Map<string, T>();
 

@@ -202,13 +202,6 @@ describe('openPointGroupsOf blockers', () => {
       { text: 'x is not build-ready', detail: 'embedded' },
     ]);
   });
-  it('lists a decided but unbuilt ADR naming the part with the comments', () => {
-    expect(
-      openPointGroupsOf({ points: [{ kind: 'plan-question', adr: '0412' }], buildReady: { ready: true } }),
-    ).toEqual([
-      { icon: 'comment', lines: [{ text: 'ADR 0412 ist entschieden, aber noch nicht gebaut', detail: 'ADR 0412' }] },
-    ]);
-  });
 });
 
 describe('buildReadyStatusOf', () => {

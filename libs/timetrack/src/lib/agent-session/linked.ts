@@ -75,7 +75,7 @@ export const keepLinkedAgentSessions = <TEvent extends AgentSessionRecord>(optio
  * kept for a checkout no project link covers, where a session sample is dropped — the day happened
  * either way, and only the hours are the point. A link decides what can be billed, not what is
  * collected, and no worklog can be written for a checkout no project covers. A private checkout stays
- * dropped whole, which is the one rule above this one. See ADR 0006.
+ * dropped whole, which is the one rule above this one.
  */
 export const keepPublicAgentRecords = <TEvent extends AgentSessionRecord>(options: {
   events: readonly TEvent[];

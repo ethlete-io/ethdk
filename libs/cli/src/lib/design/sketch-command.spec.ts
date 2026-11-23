@@ -3234,7 +3234,7 @@ export default definePart({
   });
 });
 
-describe('sketch covers (ADR 0222)', () => {
+describe('sketch covers', () => {
   const acmeWrite = (target: string, ...argv: string[]) => write(target, ...argv, '--product', 'acme');
   const coversOf = (target: string) =>
     (

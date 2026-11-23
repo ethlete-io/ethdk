@@ -65,7 +65,7 @@ export const pushSlice = (root, { name, dryRun = false, run = runCommand(root), 
     '--title',
     `Slice ${branch.slice('slice/'.length)}: ${subject}`,
     '--body',
-    `CI for a slice of \`${BASE}\` while its push is held (ADR 0216). Do not merge: \`${BASE}\` is pushed on its own.`,
+    `CI for a slice of \`${BASE}\` while its push is held. Do not merge: \`${BASE}\` is pushed on its own.`,
   ];
 
   if (dryRun) {

@@ -251,7 +251,7 @@ const outcomeOf = (options: {
 
 /**
  * Runs the "Ask AI" ticket call without a press on each new unnamed band and open stand-in of today,
- * while auto mode is on. See ADR 0035.
+ * while auto mode is on.
  *
  * A match is applied as `auto`, or waits in the approval queue as an `autoMode.apply` where the user
  * made applying stricter; a draft waits as a `jira.create`, and the key its approval files is applied

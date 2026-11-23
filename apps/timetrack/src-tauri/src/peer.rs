@@ -531,7 +531,7 @@ fn split_address(address: &str) -> TimetrackResult<(String, u16)> {
 
 /// The changes after `after_seq` among this machine's own events, oldest first, as one frame that
 /// stays within `PAGE_BYTES` unless its first row alone is larger. `received_event` is never read:
-/// a machine serves only what it collected (ADR 0039). With `day_rows_from_ms` the frame also carries the
+/// a machine serves only what it collected. With `day_rows_from_ms` the frame also carries the
 /// day rows of the days from there on that changed at or before `after_seq`.
 fn changes_after(
     connection: &Connection,

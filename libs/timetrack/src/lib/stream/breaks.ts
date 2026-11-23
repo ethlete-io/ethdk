@@ -226,7 +226,7 @@ export const longAbsences = (options: {
 /**
  * The stretches of each break the user worked from another device. Each remote prompt claims its
  * allowance backwards from itself, inside its break, and allowances that touch join one stretch, so
- * a stretch runs on while the prompts in it are at most `promptAttentionMs` apart. See ADR 0033.
+ * a stretch runs on while the prompts in it are at most `promptAttentionMs` apart.
  */
 export const remoteWorkWindows = (options: {
   breaks: readonly TimeWindow[];
@@ -252,7 +252,7 @@ export type RemotePrompt = { at: Date; laneKey?: string };
  * The remote stretches of `remoteWorkWindows`, each part with the lane of the prompt that bought it.
  *
  * Each remote prompt books its allowance, backwards from the prompt and inside its break; where
- * allowances overlap, the earlier prompt keeps the overlap. See ADR 0033.
+ * allowances overlap, the earlier prompt keeps the overlap.
  */
 export const bookedRemoteWindows = (options: {
   breaks: readonly TimeWindow[];
@@ -489,7 +489,7 @@ export const breaksBetweenRows = (options: {
   round?: Partial<RoundOptions>;
   /**
    * The stretches the day holds as presence whatever the samples say: a call the user attended, and a
-   * timer run they started. A break may not cover one — see ADR 0030.
+   * timer run they started. A break may not cover one.
    */
   presence?: readonly TimeWindow[];
   /** What the user said the day's stretches were. A statement outranks everything above it. */

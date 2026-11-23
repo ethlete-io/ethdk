@@ -94,7 +94,7 @@ const pieceOf = (options: { row: ReviewedRow; span: Span; at: number }): Reviewe
  *
  * A row nobody has answered yet still claims them: the test is what the band is, never whether a sync
  * writes it. Naming an excluded call is the user overruling the rule, and from then on it claims like
- * any other row - the same reading as `colorTokenOf` on the day screen. See ADR 0024.
+ * any other row - the same reading as `colorTokenOf` on the day screen.
  */
 const takesNothing = (row: ReviewedRow) => (!!row.excluded && !row.issueKey) || row.state === 'rejected';
 

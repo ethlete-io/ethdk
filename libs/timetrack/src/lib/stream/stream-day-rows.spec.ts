@@ -203,7 +203,7 @@ describe('the rows a day with a meeting produces', () => {
   });
 
   /**
-   * What ADR 0007 measured, stated as the rule rather than as a difference: the sticky checkout is
+   * What was measured, stated as the rule rather than as a difference: the sticky checkout is
    * passed only inside the application that set it, so the browser that opens a meeting takes none
    * of the editor's branch with it. `sessionize` booked it five minutes of FIP-2177.
    */

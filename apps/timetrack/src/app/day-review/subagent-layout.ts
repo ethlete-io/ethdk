@@ -20,7 +20,7 @@ export type SubagentStripe = {
 /** A shorter subagent, drawn on the session band's edge. Offsets are percent of the band. */
 export type SubagentTick = { key: string; title: string; offset: number; span: number };
 
-/** How one placed block draws the subagents of its session. See ADR 0052. */
+/** How one placed block draws the subagents of its session. */
 export type SubagentLayout = {
   /** The band's own width while stripes sit beside it, as a CSS length. */
   bandWidth: string | null;

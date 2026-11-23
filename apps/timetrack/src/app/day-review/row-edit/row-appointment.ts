@@ -239,7 +239,7 @@ export const appointmentLabel = (appointment: Appointment) => {
   return `${named} · ${formatDurationMs(entry.durationMs)}${shared}${alone}${disputed}${isManualRow(entry.row) ? ' · by hand' : ''}${skipped}`;
 };
 
-/** What a band adds when part of the time it draws is remote work the day does not book. See ADR 0033. */
+/** What a band adds when part of the time it draws is remote work the day does not book. */
 export const unbookedLabel = (appointment: Appointment) => {
   const unbookedMs = rowEntryOf(appointment)?.row.unbookedMs;
 

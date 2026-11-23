@@ -99,7 +99,7 @@ const open = (page: Page, issues: typeof ISSUES) =>
 const rows = (page: Page) => page.locator('[data-lane] [data-kind="row"]');
 
 /**
- * ADR 0029. The two checkouts share nothing but the last segment of their branch names, and both link
+ * The two checkouts share nothing but the last segment of their branch names, and both link
  * to the same Jira project — so a project link can never tell them apart, and only the epic can.
  */
 test.describe('a checkout that shares a branch name with a checkout that is already named', () => {

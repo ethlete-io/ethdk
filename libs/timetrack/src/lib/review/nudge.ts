@@ -17,7 +17,7 @@ export type DayNudgeReason =
   | 'unattributed'
   /**
    * Rows a stand-in names, which wait on a ticket rather than on the reviewer. It is never the only
-   * reason a day is reported: nothing in the app answers it. See ADR 0021.
+   * reason a day is reported: nothing in the app answers it.
    */
   | 'waiting';
 

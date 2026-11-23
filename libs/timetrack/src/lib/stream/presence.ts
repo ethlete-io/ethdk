@@ -3,7 +3,7 @@ import { TimeWindow } from '../model/time-window';
 
 /**
  * What presence is read from: the machine's own samples, plus the two agent events a day nothing
- * observed is rebuilt from. See ADR 0006.
+ * observed is rebuilt from.
  */
 export type PresenceSample = ActivityEvent | AgentPromptEvent | AgentUsageEvent;
 
@@ -102,12 +102,12 @@ export type PresenceOptions = {
  * A turn is the one mark that holds a stretch open without extending it: it postpones the close, and
  * the stretch still ends at the last real sample. That is what carries a stretch across the minutes a
  * person spent reading what an agent wrote, and it can only ever happen between two of their own
- * actions. See ADR 0006.
+ * actions.
  *
  * An `idle-start` ends the stretch whatever the agent is doing. Five minutes without a key or the
  * mouse is the machine saying nobody is there, and an agent that keeps working through it is
  * `unattendedMs` rather than presence. What the person gave the wait is bought back per prompt, in
- * `breakWindows`, so it is taken off the break rather than added to the stretch. See ADR 0028.
+ * `breakWindows`, so it is taken off the break rather than added to the stretch.
  */
 export const presenceWindows = (options: PresenceOptions): TimeWindow[] => {
   const agentGapMs = options.maxAgentGapMs ?? options.maxUnobservedMs;

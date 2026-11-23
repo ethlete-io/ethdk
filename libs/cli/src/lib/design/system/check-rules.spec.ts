@@ -26,7 +26,7 @@ describe('CHECK_RULES', () => {
     expect(unlisted).toEqual([]);
   });
 
-  it('fails a new render rule that warns instead of failing with a rule baseline (ADR 0201)', () => {
+  it('fails a new render rule that warns instead of failing with a rule baseline', () => {
     const predating = ['EMBED-SCALE', 'UNDEFINED-CLASS'];
 
     expect([...WARNING_RULES].filter((rule) => !predating.includes(rule))).toEqual([]);

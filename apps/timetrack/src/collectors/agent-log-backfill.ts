@@ -71,7 +71,7 @@ const keepPrompts: BackfillKeep = ({ result, links }) => keepPublicAgentRecords(
  * Both the token counts and the typed prompts were collected only after months of logs had been read,
  * so every stored day before that shows neither. This fills them in: it reads each log once from the
  * top, appends only what `keep` selects, and never touches the collector's own cursor — an activity
- * sample has no dedupe key, so a re-read would store every one of them a second time. See ADR 0003.
+ * sample has no dedupe key, so a re-read would store every one of them a second time.
  *
  * The pass converges and then stops. Everything a log gains after its one read is the session
  * collector's to store, because that collector reports both as it goes.

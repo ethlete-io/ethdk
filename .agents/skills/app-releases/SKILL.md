@@ -30,15 +30,15 @@ key in the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PA
 Do not run it again: an installed app accepts only its own key, so a new key stops every update. Only a
 release build checks for updates, and `createUpdaterArtifacts` is on in CI only.
 `plugins.updater.endpoints` lists the GitHub release first and
-`https://elrond.invalid/updates/<app>/latest.json` second (ADR 0342, 0345; `elrond.invalid` stands in for
+`https://elrond.invalid/updates/<app>/latest.json` second (`elrond.invalid` stands in for
 elrond's real host): the plugin tries the next endpoint when one fails or answers non-2xx, so the
 self-hosted one takes over once the repo is private. Keep that order until every installed app has it.
-elrond pulls (ADR 0346): `apps-release` uploads `latest-elrond.json` next to `latest.json`, with each url
+elrond pulls: `apps-release` uploads `latest-elrond.json` next to `latest.json`, with each url
 rewritten to `$MIRROR_BASE/<app>/<tag>/<file>`; elrond mirrors those files and serves it as `<app>/latest.json`.
 `MIRROR_BASE` in publish.yml and the second endpoint change together.
 
 Studio on every OS, and Timetrack on Linux, run on Tauri's CEF (Chromium) runtime from its `feat/cef`
-branch (ADR 0249, 0400); Timetrack on macOS and Windows runs on wry. The Studio macOS and Windows bundles
+branch; Timetrack on macOS and Windows runs on wry. The Studio macOS and Windows bundles
 are built by `@tauri-apps/cli-cef` too: the dmg is about 147 MiB larger, the NSIS installer is about 142 MiB.
 On Windows, cef-dll-sys needs CMake and Ninja on `PATH`; `publish.yml` takes both from the Visual Studio install.
 Studio's `tauri`, `tauri:dev` and `tauri:build` targets go through `tools/scripts/studio-tauri.mjs`, which
@@ -53,12 +53,12 @@ Windows, install the NSIS bundle and pass `--app <install dir>\ethlete-studio.ex
 
 ## Private switch
 
-The repository variable `CI_SELF_HOSTED` (ADR 0342, 0344) is unset, so CI runs on `ubuntu-latest`. Set to `true`, every
+The repository variable `CI_SELF_HOSTED` is unset, so CI runs on `ubuntu-latest`. Set to `true`, every
 Linux job runs on `[self-hosted, linux, x64, ethdk]` (the org runner `runner-ethlete`). A pull request from a fork stays on
 `ubuntu-latest`. Not switched: the Tauri bundles and the macOS WebKit job. Leave it off until the runner group admits
 this repo.
 
-The switch also moves publishing (ADR 0345, 0346): off, `publish.yml` and `api-models.yml` publish to npmjs through
+The switch also moves publishing: off, `publish.yml` and `api-models.yml` publish to npmjs through
 trusted publishing (OIDC); on, they publish to the Verdaccio in the repository variable `VERDACCIO_URL`
 (`http://78.46.42.73:54873`) with the repository secret `VERDACCIO_TOKEN`, no provenance (`publish.yml` through
 `tools/scripts/release-verdaccio.mjs`). Verdaccio needs a token to read `@ethlete/*` too, so each consumer (bvb-, dfb-,

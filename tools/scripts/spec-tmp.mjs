@@ -41,5 +41,5 @@ export const leakMessageOf = (who, left, cwd = process.cwd()) => {
   const name = who.startsWith('/') ? relative(realOrSame(cwd), realOrSame(who)) : who;
   const shown = left.slice(0, 5).join(', ') + (left.length > 5 ? `, and ${left.length - 5} more` : '');
 
-  return `tmp leak: ${name} left ${left.length} folder${left.length === 1 ? '' : 's'} in /tmp (${shown}). Remove each temp folder it creates when it is done (ADR 0275).`;
+  return `tmp leak: ${name} left ${left.length} folder${left.length === 1 ? '' : 's'} in /tmp (${shown}). Remove each temp folder it creates when it is done.`;
 };

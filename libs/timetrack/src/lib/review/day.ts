@@ -4,7 +4,7 @@ const pad = (value: number) => String(value).padStart(2, '0');
  * The local hour a day starts at. `0` is midnight.
  *
  * A day of work is not a calendar date. Work from 22:00 to 02:00 is one evening, and with a midnight
- * boundary the second half becomes a two-hour day that describes nothing a person did. See ADR 0015.
+ * boundary the second half becomes a two-hour day that describes nothing a person did.
  *
  * It is a required argument everywhere it matters rather than a defaulted one: two parts of the app
  * disagreeing about which day an hour falls in is worse than the problem the boundary solves, and a
@@ -12,7 +12,7 @@ const pad = (value: number) => String(value).padStart(2, '0');
  */
 export type DayBoundary = { startHour: number };
 
-/** The boundary a calendar date is: the one every day-keyed thing used before ADR 0015. */
+/** The boundary a calendar date is: the one every day-keyed thing used before the day boundary became settable. */
 export const MIDNIGHT: DayBoundary = { startHour: 0 };
 
 const keyOf = (at: Date) => `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;

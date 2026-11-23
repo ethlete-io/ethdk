@@ -44,7 +44,7 @@ const touches = (changed: string[], inputs: string[]) =>
   changed.some((path) => inputs.some((input) => (input.endsWith('/') ? path.startsWith(input) : path === input)));
 
 /**
- * Splits the render issues of a run into new and old (ADR 0095): an issue is old when HEAD already shows it. A drawn
+ * Splits the render issues of a run into new and old: an issue is old when HEAD already shows it. A drawn
  * part whose inputs the working tree does not change shows HEAD itself, so all its issues are old, and they are stored
  * in `file` as the part's base. A part the working tree changes compares against its stored base, which holds only
  * while no commit since changed its inputs; without one, every issue counts as new.

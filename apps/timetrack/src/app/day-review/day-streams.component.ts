@@ -17,7 +17,7 @@ import {
  * spent and what was observed in it.
  *
  * It is a stream and never a row, so nothing here can be cut, named or booked — a stream is keyed by
- * its checkout under ADR 0001. It scrolls inside a bounded height, so a day of twenty checkouts fits
+ * its checkout. It scrolls inside a bounded height, so a day of twenty checkouts fits
  * the debug panel the same way a day of three does.
  */
 @Component({

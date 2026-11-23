@@ -19,7 +19,7 @@ Commits in this repo are **lean** and follow the **commitlint rules**
   - Subject is **sentence-case** ("Add git-commit skill", not
     "add git-commit skill") - e.g. `chore(repo): Add git-commit skill`,
     `fix(components): Close overlay on trigger click`
-- A subject names a row short name first ("Auto-Weg-Modus (B608)"); an ADR at first mention carries a short content.
+- A subject names a row short name first ("Auto-Weg-Modus (B608)").
 - When unsure a message passes, check it: `echo "<msg>" | yarn commitlint`.
 - Add a short body only when the change genuinely needs context that the diff
   can't convey.
@@ -46,4 +46,4 @@ Commits in this repo are **lean** and follow the **commitlint rules**
 - **Sketches:** one commit per finished round and one per merge.
 - **Never rewrite shared history.** No rebase, `--fixup` or `--amend` in a shared checkout.
 - Brief subagents with these commit rules.
-- Push a finished row with `yarn push`, never plain `git push` (ADR 0286); ADR 0357 says when.
+- Push a finished row with `yarn push`, never plain `git push`, once the running CI run has finished.

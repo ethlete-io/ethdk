@@ -39,7 +39,7 @@ const ownerOrder = (a: BookingRow, b: BookingRow) =>
   a.id.localeCompare(b.id);
 
 /**
- * The remote time each of `rows` draws and does not book, in their order. See ADR 0033.
+ * The remote time each of `rows` draws and does not book, in their order.
  *
  * A booked part counts only on the rows in the lane of the prompt that bought it. When none of `rows`
  * is in that lane, it counts on the one row over it that names an issue before one that does not, then

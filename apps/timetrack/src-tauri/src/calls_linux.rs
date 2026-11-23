@@ -10,8 +10,7 @@ use std::time::Duration;
 ///
 /// Reading it costs a runtime dependency on PipeWire's own command line tools and no build dependency
 /// on libpipewire, which is what keeps a Linux build of this app buildable without audio headers. A
-/// missing binary is reported as a degraded source rather than a failure — see
-/// `libs/timetrack/docs/adr/0008-the-linux-call-source-reads-pw-dump.md`.
+/// missing binary is reported as a degraded source rather than a failure.
 const DUMP: &str = "pw-dump";
 
 /// Marks the stream Timetrack records the microphone with, so that stream is never a call of its own.

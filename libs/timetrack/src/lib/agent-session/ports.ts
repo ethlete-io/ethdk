@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
  *
  * Three passes read the same files from an offset of their own: the session pass collects activity
  * samples as the agent writes them, and the spend and prompt passes each read every log once from the
- * top for the keyed events the session pass went past. See ADR 0003 and ADR 0006.
+ * top for the keyed events the session pass went past.
  *
  * One pass per provider, so two collectors that run at the same time move disjoint sets of cursors —
  * both write back every cursor they read, and a shared set would let one undo the other's offset.

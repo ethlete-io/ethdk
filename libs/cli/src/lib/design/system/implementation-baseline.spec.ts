@@ -89,7 +89,7 @@ const run = (target: string) => {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('implementation baseline (ADR 0205)', () => {
+describe('implementation baseline', () => {
   it('lets a baselined part pass with its pinned drift and prints the entry, while an unlisted part still fails', () => {
     const { target, commit, writeBaseline, hashOf } = checkout();
 

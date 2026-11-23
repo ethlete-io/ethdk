@@ -155,7 +155,7 @@ export type DayRows = {
    * blocker. They are questions the review asks.
    */
   unobserved: UnobservedOccurrence[];
-  /** The occurrences no call was heard over that each suggest a call row (ADR 0048). */
+  /** The occurrences no call was heard over that each suggest a call row. */
   suggested?: UnobservedOccurrence[];
   /**
    * Every call of the day as a row: the ones a rule counted as work, named from the calendar and
@@ -200,7 +200,7 @@ export type DayRows = {
  * close enough together that the block builder would otherwise bridge the hole and bill it.
  *
  * A break ends a band, and an attended band that runs through one is cut where the break is drawn:
- * nobody was there, so the day books the work on either side and nothing inside it — see ADR 0037.
+ * nobody was there, so the day books the work on either side and nothing inside it.
  *
  * A block that names nothing but an application on `noWorkContext` is dropped before it is
  * attributed, so a media player proposes no time and gets no lane. Which meeting a call was is read

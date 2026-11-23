@@ -10,7 +10,7 @@ import { partKeyOf, partOfFile, ResolvedProduct } from './resolve-product';
 export const RULE_BASELINE_FILE = 'rule-baseline.json';
 
 /**
- * A rule hit on a part that predates the rule (ADR 0201): the finding that tracks its fix, and the sketch that fixes
+ * A rule hit on a part that predates the rule: the finding that tracks its fix, and the sketch that fixes
  * it.
  */
 export type RuleBaselineEntry = { finding: string; sketch: string };

@@ -454,7 +454,7 @@ export const changedAppFilesOf = (options: { product: ResolvedProduct; part: str
 
 /**
  * The product's own implemented parts whose app files changed since their implemented record, each with those files:
- * the parts a change left uncompared (ADR 0203).
+ * the parts a change left uncompared.
  */
 export const affectedPartsOf = (product: ResolvedProduct): { part: string; files: string[] }[] => {
   const implemented = readImplemented(product.dir);

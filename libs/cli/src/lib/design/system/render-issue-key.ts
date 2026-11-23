@@ -18,9 +18,9 @@ export const isControlInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PA
 const isDetailFree = (issue: RenderIssue) => isControlInput(issue) || issue.rule === 'OVERFLOW';
 
 /**
- * The identity two render issues share when they are the same issue (ADR 0095): product, part, rule, detail and
+ * The identity two render issues share when they are the same issue: product, part, rule, detail and
  * element path. An overflow matches without its detail, which holds pixel sizes. `inFrame` names whether the
- * drawing had the part's demo frame, so a path compares across the frame move of ADR 0093; `null` keeps the path as
+ * drawing had the part's demo frame, so a path compares across the demo frame move; `null` keeps the path as
  * drawn.
  */
 export const sameRenderIssueKeyOf = (issue: RenderIssue, inFrame: boolean | null) =>

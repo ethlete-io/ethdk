@@ -8,7 +8,7 @@ export const IMPLEMENTATION_BASELINE_FILE = 'implementation-baseline.json';
 export const REMOVED_FILE = 'removed';
 
 /**
- * A part whose IMPLEMENTATION-UNCOMPARED drift predates the gate (ADR 0205): the finding that tracks its fix, and the
+ * A part whose IMPLEMENTATION-UNCOMPARED drift predates the gate: the finding that tracks its fix, and the
  * hash of each drifted app file when it was baselined (`removed` for a file gone since its implemented record).
  */
 export type BaselineEntry = { finding: string; app: FileHashes };

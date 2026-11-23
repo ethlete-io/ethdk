@@ -6,8 +6,8 @@ import { TimeWindow } from './time-window';
  * A break carries no id: it is derived from the gaps between two stretches of presence, and the next
  * event moves it. An edit keyed by a break therefore does not survive the next run of `streamDay`. So
  * the user states the stretch instead, and the day's breaks follow — `present` clips a break out of
- * the window, `away` draws one over it. A statement outranks every derived rule, the call guard of
- * ADR 0030 included.
+ * the window, `away` draws one over it. A statement outranks every derived rule, the call guard
+ * included.
  */
 export type PresenceStatement = TimeWindow & {
   id: string;

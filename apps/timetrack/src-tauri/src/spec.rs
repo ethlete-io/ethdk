@@ -59,7 +59,7 @@ fn read_capped(path: &Path) -> Option<String> {
 /// Reads the spec files of the first candidate directory that holds them.
 ///
 /// This command exists instead of a general file read on purpose. A ticket is written from a spec, and
-/// ADR 0013 puts the whole of what leaves this machine in front of the user first. A command that can
+/// Everything that leaves this machine is put in front of the user first. A command that can
 /// only ever return two files, from inside one checkout, under names the core fixes, is a surface a
 /// reader can audit; a general read is not.
 ///

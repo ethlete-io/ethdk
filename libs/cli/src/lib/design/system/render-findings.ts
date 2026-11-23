@@ -20,7 +20,7 @@ const isBasePartKey = (product: ResolvedProduct, key: string) =>
   product.parts.find((part) => partKeyOf(part) === key)?.origin === 'base';
 
 /**
- * Splits the render issues of a draw of `resolved` into the ones that fail, after the rule baseline (ADR 0201), and
+ * Splits the render issues of a draw of `resolved` into the ones that fail, after the rule baseline, and
  * answers the rules each part fails by. `design check` and `design ready` both decide a part from this; `part` limits
  * the stale-baseline problems to that part.
  */

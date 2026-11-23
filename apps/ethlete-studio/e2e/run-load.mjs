@@ -53,7 +53,7 @@ export const GOAL_MS = 90_000;
 export const GOAL_MACHINE = 'tank';
 
 /**
- * The 90 s goal line of a full e2e run (ADR 0240): it counts on the desk PC (`GOAL_MACHINE`, or
+ * The 90 s goal line of a full e2e run: it counts on the desk PC (`GOAL_MACHINE`, or
  * `STUDIO_E2E_GOAL_MACHINE`); every other machine reports its time only. A noisy run is no measurement.
  */
 export const goalLineOf = ({ ms, machine, noisy, goalMachine = GOAL_MACHINE }) => {

@@ -7,7 +7,6 @@ export const OPEN_POINT_KINDS = [
   'sketch-problem',
   'stale-sketch-base',
   'direct-edit',
-  'plan-question',
   'missing-motion',
 ] as const;
 
@@ -24,7 +23,7 @@ export type DataState = (typeof DATA_STATES)[number];
  * name its `dataStates` gives it; `redraw` is a
  * state the part draws as the app picture a merged `built` pick left, a placeholder until a sketch draws it; `open-comment` is a thread the
  * user has not resolved, `answered` when it waits on the user; `unmerged-sketch` is a sketch on the part that is still
- * there, picked or not; `sketch-problem` is a static rule problem a variant of a ready sketch brings in; `stale-sketch-base` is a ready sketch whose base parts `changed` in the product, so a merge is refused until a rebase; `plan-question` is an ADR that names the part in `parts` and has no `built` yet; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
+ * there, picked or not; `sketch-problem` is a static rule problem a variant of a ready sketch brings in; `stale-sketch-base` is a ready sketch whose base parts `changed` in the product, so a merge is refused until a rebase; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
  * (`sketch` null until one is open); `missing-motion` is a pair of states without a motion between them, or, with `from` equal to
  * `to`, an ongoing-work state without its looping motion.
  */
@@ -42,5 +41,4 @@ export type OpenPoint =
   | { kind: 'sketch-problem'; sketch: string; variant: string; rule: string; message: string }
   | { kind: 'stale-sketch-base'; sketch: string; changed: string[] }
   | { kind: 'direct-edit'; sketch: string | null }
-  | { kind: 'plan-question'; adr: string }
   | { kind: 'missing-motion'; from: string; to: string };

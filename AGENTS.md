@@ -73,7 +73,7 @@ the `env:` block from `.github/workflows/*.yml` (`neverConnectToCloud` does **no
 
 Every change to a workspace package needs a changeset: every `@ethlete/*` lib, and the private
 `timetrack-app`, `ethlete-studio` and `@ethlete/timetrack`. A test or story change names the package with level
-`none`; `yarn lint:changesets` fails the push otherwise. Studio ADRs and `plans/**` need none (ADR 0265). Use
+`none`; `yarn lint:changesets` fails the push otherwise. `plans/**` needs none. Use
 the **`changeset`** skill and write the file directly, not via the interactive CLI.
 
 Before a publish, run `yarn release:smoke`. `publish.yml`, the Tauri bundles, signing, the updater key and the
@@ -96,9 +96,6 @@ Lint, Prettier and comment rules are in the generated block below; for judgment 
 see the **`styleguide`** skill. To run what CI runs before pushing, use the **`ci-check`** skill. The hooks
 run checks on staged files (pre-commit) and on the pushed range (pre-push); fix what they report rather than
 skipping them.
-
-Before you change a file or ask a question about it, run `yarn adr:governs <files>` (or `--staged`, or `<a>..<b>`) and read the ADRs it lists.
-Repo-level process ADRs live in `docs/adr/`, a product's own in its `docs/adr/` (Studio: `apps/ethlete-studio/docs/adr/`); one number sequence runs across both.
 
 ## Testing beyond unit specs
 

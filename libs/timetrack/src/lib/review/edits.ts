@@ -168,7 +168,7 @@ export const setRowDescription = (options: {
   });
 
 /**
- * Sets what a row logs by moving its end, because a row logs the time its band covers — see ADR 0019.
+ * Sets what a row logs by moving its end, because a row logs the time its band covers.
  * A duration that is not a whole increment books the increment it reaches into, the same way a
  * proposal does.
  */

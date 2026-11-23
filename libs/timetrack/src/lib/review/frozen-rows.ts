@@ -28,7 +28,7 @@ const holdsWork = (rows: DayRows) => rows.proposals.length > 0 || rows.unnamed.l
 
 /**
  * The edits with the day's rows frozen into them, or `null` when nothing changes. Only a finished day this
- * machine wrote to Tempo on is frozen (Timetrack ADR 0038); a paired machine's booking never freezes it.
+ * machine wrote to Tempo on is frozen; a paired machine's booking never freezes it.
  * A stored freeze with no work in it and no worklog of this machine behind it is dropped.
  */
 export const withFrozenRows = (options: {
@@ -368,7 +368,7 @@ export const patchBookedReview = (options: { stored: DayReview; before: DayRevie
 /**
  * A booked day's review with a read-only row for each worklog this app wrote that no row carries, drawn
  * from the worklog as Tempo holds it and counted in the day's totals. The row keeps the ledger's id, so
- * a sync reads the worklog as its own rather than as one to delete. See ADR 0038.
+ * a sync reads the worklog as its own rather than as one to delete.
  */
 export const withUncarriedWorklogs = (options: {
   review: DayReview;
@@ -436,7 +436,7 @@ export const isNotInTempo = (row: ReviewedRow) =>
 /**
  * The edits with the day drawn into them as it is booked: `written` is what Tempo holds of this app's
  * writes. `review` draws a day's edits, as `reviewDay` does. A day booked again keeps every row the
- * edits since and the new writes leave alone. See ADR 0040.
+ * edits since and the new writes leave alone.
  */
 export const withBookedReview = (options: {
   edits: DayReviewEdits;

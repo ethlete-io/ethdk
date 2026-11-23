@@ -906,7 +906,7 @@ const branchOf = (context: { repoPath?: string; branch?: string } | undefined) =
   context?.repoPath && context.branch ? `${context.repoPath}@${context.branch}` : undefined;
 
 /**
- * The existing issue a draft for `subject` carries beside its new one (ADR 0054). It leads where the
+ * The existing issue a draft for `subject` carries beside its new one. It leads where the
  * subject's held answer named one, or where a band of the same checkout branch already books one that
  * day; otherwise it is the best-ranked candidate the ask offered that is no parent.
  */
@@ -1204,7 +1204,7 @@ export const autoModeCreatedKeys = (options: {
 
 /**
  * The creates auto mode queued that were rejected or expired while the draft carries an existing issue,
- * which the band then keeps as its proposal (ADR 0054).
+ * which the band then keeps as its proposal.
  */
 export const autoModeDeclinedCreates = (options: {
   answers: readonly AutoModeAnswer[];

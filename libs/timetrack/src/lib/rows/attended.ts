@@ -197,8 +197,8 @@ const partOf = (options: { group: WorkGroup; part: TimeWindow; first: boolean; l
 /**
  * `group` cut at the gaps in `spans` no shorter than `maxGapMs`, each part with whether a span holds
  * it. A group with no blocks of its own, like a call or a timer run, is never cut, and neither is a
- * stretch in `away`: ADR 0028 and ADR 0037 decide what of a break is booked. Nor is a stretch in
- * `elsewhere`, where a paired machine saw the user: a minute any machine attended is attended (ADR 0018).
+ * stretch in `away`: the break rules decide what of a break is booked. Nor is a stretch in
+ * `elsewhere`, where a paired machine saw the user: a minute any machine attended is attended.
  */
 const cutAtAttendance = (options: {
   group: WorkGroup;

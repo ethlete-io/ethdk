@@ -244,7 +244,7 @@ const overlaps = (left: readonly string[], right: readonly string[]) => left.som
 
 /**
  * `edits` with what the paired machines changed later than this machine: the latest stamp wins once each
- * peer's stamp is moved onto this machine's clock (ADR 0041 pt 2), and a tie keeps this machine's version.
+ * peer's stamp is moved onto this machine's clock, and a tie keeps this machine's version.
  * A peer's built row whose engine rows this machine built differently, later, is left out; one built later
  * than this machine's takes their place. Returns `edits` when no peer changed anything.
  */

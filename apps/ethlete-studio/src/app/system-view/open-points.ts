@@ -20,7 +20,6 @@ const ICON_OF: Record<ListedPoint['kind'], OpenPointIcon> = {
   'sketch-problem': 'error',
   'stale-sketch-base': 'error',
   'open-comment': 'comment',
-  'plan-question': 'comment',
   'missing-motion': 'flow',
 };
 
@@ -65,8 +64,6 @@ const lineOf = (point: ListedPoint): OpenPointLine => {
         detail: 'sketch',
         target: { kind: 'sketch', sketch: point.sketch },
       };
-    case 'plan-question':
-      return { text: LABELS.planQuestion(point.adr), detail: `ADR ${point.adr}` };
     case 'missing-motion':
       return {
         text: `${point.from} → ${point.to}`,

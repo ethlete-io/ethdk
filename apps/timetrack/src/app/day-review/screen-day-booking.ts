@@ -5,7 +5,7 @@ import { EMPTY, catchError, concatMap, distinctUntilChanged, filter } from 'rxjs
 import { injectAgentDay } from '../agent/agent-day';
 import { injectDayReview } from './day-review';
 
-/** Books the day on screen once it is frozen and has no stored review yet. See ADR 0040. */
+/** Books the day on screen once it is frozen and has no stored review yet. */
 const SCREEN_DAY_BOOKING_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const dayReview = injectDayReview();
   const agentDay = injectAgentDay();

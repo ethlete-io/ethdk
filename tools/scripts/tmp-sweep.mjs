@@ -18,7 +18,6 @@ export const TMP_PATTERNS = [
   /^commit-export-spec-/,
   /^playwright-artifacts-/,
   ...[
-    'adr-',
     'archive-',
     'archive-cli-',
     'completeness-cache-',

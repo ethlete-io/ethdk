@@ -258,7 +258,7 @@ const clipStretches = (stretches: readonly TimeWindow[] | undefined, window: Tim
  *
  * A stretch comes back unnamed. The reviewer shortened a row to say those minutes were not that work,
  * so handing them back under its issue would book the time they just took off it. What a resize cut
- * off the row does not come back at all (ADR 0044, a human edit wins); only what the band grew since does.
+ * off the row does not come back at all (a human edit wins); only what the band grew since does.
  */
 const leftoverRows = (options: {
   rows: readonly PinnedRow[];
@@ -506,8 +506,8 @@ const onEditedIds = (options: {
 
 /**
  * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
- * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
- * The exceptions are remote time a prompt in another lane bought, which ADR 0033 draws and never books
+ * 13:45 logs 30 minutes and never a shorter time the label would then have to explain.
+ * The exceptions are remote time a prompt in another lane bought, which the row draws and never books
  * on this row, and the rows of two agent sessions on one ticket, which share their observed minutes out (`siblingBookingsOf`);
  * a row the reviewer wrote, resized, split or merged books its span regardless.
  *

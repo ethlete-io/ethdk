@@ -25,7 +25,7 @@ pub struct StoredEvent {
 #[serde(rename_all = "camelCase")]
 pub struct AgentSessionCursorRow {
     pub id: String,
-    /// Which pass over the log wrote it: `agent-session` or `spend`. See ADR 0003.
+    /// Which pass over the log wrote it: `agent-session` or `spend`.
     pub kind: String,
     pub next_line: i64,
     pub after_ms: Option<i64>,

@@ -141,7 +141,7 @@ const SCHEMA_V10: &str = "
 ALTER TABLE agent_session_cursor ADD COLUMN cwd TEXT;
 ";
 
-/// Splits the session-log cursors by the pass that wrote them, so the spend backfill of ADR 0003 can
+/// Splits the session-log cursors by the pass that wrote them, so the spend backfill can
 /// read a log from the top without moving the collector's own offset.
 ///
 /// SQLite cannot widen a primary key in place, so the table is rebuilt. Every existing row belongs to
@@ -237,7 +237,7 @@ CREATE TABLE IF NOT EXISTS tempo_sync_run (
 );
 ";
 
-/// Sync identity and change tracking (ADR 0039). The triggers are the only writers of `changed_seq`
+/// Sync identity and change tracking. The triggers are the only writers of `changed_seq`
 /// and tombstones, so no write path to `collected_event` can skip them. The update trigger lists the
 /// content columns so its own `changed_seq` write does not fire it again.
 const SCHEMA_V20: &str = "
