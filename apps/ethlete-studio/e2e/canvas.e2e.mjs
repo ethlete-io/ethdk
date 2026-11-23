@@ -807,6 +807,51 @@ const withChangedCliAndSlowRestart = (key) => {
   };
 };
 
+const withChangedUiThenRestart = () => {
+  const internals = window.__TAURI_INTERNALS__;
+  const invoke = internals.invoke;
+  const SHA = 'cccccccccccc';
+
+  window.__codePolls = 0;
+  internals.invoke = (command, args) => {
+    if (command === 'studio_code_state') {
+      const restarted = !!localStorage.getItem('e2e.ui-restarted');
+
+      window.__codePolls++;
+
+      return Promise.resolve({
+        cli: { running: SHA, latest: SHA, dirty: false },
+        frontend: { latest: restarted || window.__codePolls > 1 ? 'bbbbbbbbbbbb' : 'aaaaaaaaaaaa' },
+        host: { running: SHA, latest: SHA },
+      });
+    }
+    if (command === 'window_chrome_watch') {
+      setTimeout(() => args.changes.onmessage({ os: 'linux', left: [], right: ['close'], preferNoCsd: false }));
+
+      return Promise.resolve(null);
+    }
+    if (command === 'design_server_restart') {
+      localStorage.setItem('e2e.ui-restarted', '1');
+
+      return Promise.resolve({
+        port: 0,
+        listening: true,
+        managed: true,
+        foreign: false,
+        stale: false,
+        exited: false,
+        crash: null,
+        log: [],
+        logRevision: 0,
+        phase: null,
+        phaseMs: 0,
+      });
+    }
+
+    return invoke(command, args);
+  };
+};
+
 const listingCounts = { requested: 0, outstanding: 0 };
 let listingHoldOn = true;
 
@@ -4952,6 +4997,34 @@ const CASES = [
       await restart.waitFor({ state: 'visible' });
 
       return expectFeedbackWithin(restart, FEEDBACK_MS);
+    },
+  },
+  {
+    name: 'restart button reloads a changed UI',
+    pages: ['System'],
+    run: async (page) => {
+      await page.addInitScript(withChangedUiThenRestart);
+      await page.evaluate(() => localStorage.removeItem('e2e.ui-restarted'));
+      await page.reload();
+
+      const notice = page.locator('ethlete-title-bar').getByRole('button', { name: 'Neu starten' });
+
+      await notice.waitFor({ state: 'visible', timeout: 2 * WAIT_MS });
+      await page.evaluate(() => (window.__beforeReload = true));
+      await notice.click();
+      await page.waitForFunction(() => window.__beforeReload !== true && window.__codePolls >= 1, undefined, {
+        timeout: WAIT_MS,
+      });
+      await page.waitForTimeout(1000);
+
+      const shown = await notice.count();
+
+      await page.evaluate(() => localStorage.removeItem('e2e.ui-restarted'));
+
+      return {
+        ok: shown === 0,
+        detail: `the page reloaded after the restart; restart buttons after the reload ${shown} (must be 0)`,
+      };
     },
   },
 ];
