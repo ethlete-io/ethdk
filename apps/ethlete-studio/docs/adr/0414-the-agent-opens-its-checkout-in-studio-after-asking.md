@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B678
+built: 835a0f96d
 decided: 2026-11-23
 source: doc-agent session 2026-11-23 (late morning), B678, tomflix clean-slate run
 ---
