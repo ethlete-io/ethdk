@@ -10,7 +10,7 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import { THEMES } from '../../themes';
 import { START_LABELS } from '../i18n/start-labels';
 import { SHELL_LABELS } from '../i18n/shell-labels';
-import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../i18n/system-labels';
+import { SYSTEM_LABELS } from '../i18n/system-labels';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
@@ -1085,7 +1085,6 @@ describe('SystemViewComponent on a merge', () => {
         {
           name: 'components/a-long-target-name',
           key: 'sketch:elements/rating@stars/components/a-long-target-name',
-          hint: SYSTEM_TREE_LABELS.notInSketch,
         },
       ],
     ]);
@@ -1139,31 +1138,18 @@ describe('SystemViewComponent on a merge', () => {
     expect(element.querySelector('[data-shot="a default"]')?.hasAttribute('data-active')).toBe(true);
   });
 
-  it('opens a target the product has as its part on a click', async () => {
+  // A target row stays in the sketch view, also for a part the product lists, and carries no hint.
+  it('opens a target the product has as its part in the sketch view on a click', async () => {
     const fixture = await mountSketch(MULTI_PART);
     const view = fixture.componentInstance;
+    const element = fixture.nativeElement as HTMLElement;
 
     view['activate']('sketch:foundations/colors/foundations/tokens');
     await settle(fixture);
 
-    expect(view.selectedKey()).toBe('foundations/tokens');
-  });
-
-  it('hints a target the sketch view does not draw and the product does not have', async () => {
-    const fixture = await mountSketch({
-      ...MULTI_PART,
-      targets: MULTI_PART.targets?.filter((target) => target.part !== 'foundations/type'),
-    });
-
-    expect(fixture.componentInstance['partTree']().sketches?.items[0]?.nested).toEqual([
-      { name: 'foundations/colors', key: 'sketch:foundations/colors/foundations/colors' },
-      {
-        name: 'foundations/type',
-        key: 'sketch:foundations/colors/foundations/type',
-        hint: SYSTEM_TREE_LABELS.notInSketch,
-      },
-      { name: 'foundations/tokens', key: 'sketch:foundations/colors/foundations/tokens' },
-    ]);
+    expect(view.selectedKey()).toBe('sketch:foundations/colors');
+    expect(element.querySelector('[data-shot="a default"]')?.hasAttribute('data-active')).toBe(true);
+    expect(view['partTree']().sketches?.items[0]?.nested?.some((row) => 'hint' in row)).toBe(false);
   });
 
   it('names a sketch with several targets by its shown round title in the tree', async () => {

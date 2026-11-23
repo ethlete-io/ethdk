@@ -19,7 +19,6 @@ import {
   sketchLabelOf,
   multiPartTargetsOf,
   PENDING_LABEL,
-  sketchDrawsPart,
   sketchScopedTo,
   sketchHeadTitleOf,
   sketchMatrixOf,
@@ -1715,11 +1714,6 @@ describe('sketchScopedTo', () => {
     expect(sketchScopedTo(several, 'foundations/colors')).toBe(several);
     expect(sketchScopedTo(several, 'elements/other')).toBe(several);
     expect(sketchScopedTo(several, null)).toBe(several);
-  });
-
-  it('tells a drawn target part from one no variant draws', () => {
-    expect(sketchDrawsPart(several, 'elements/hero')).toBe(true);
-    expect(sketchDrawsPart(several, 'foundations/type')).toBe(false);
   });
 });
 

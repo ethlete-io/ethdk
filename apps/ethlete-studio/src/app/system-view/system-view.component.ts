@@ -58,7 +58,6 @@ import {
   isGroupOpen,
   isSectionOpen,
   multiPartTargetsOf,
-  sketchDrawsPart,
   sketchHeadTitleOf,
   sketchScopedTo,
   sketchRoundsOf,
@@ -86,7 +85,7 @@ import { InventoryViewComponent } from './inventory-view.component';
 import { RememberedTreeScrollDirective } from './remembered-tree-scroll.directive';
 import { COMMAND_PALETTE_LABELS, SHELL_LABELS, DESIGN_SERVER_LABELS } from '../i18n/shell-labels';
 import { START_LABELS } from '../i18n/start-labels';
-import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../i18n/system-labels';
+import { SYSTEM_LABELS } from '../i18n/system-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { createExceptionStore } from './exception-store';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
@@ -1066,14 +1065,7 @@ export class SystemViewComponent {
 
     if (!sketch) return [];
 
-    const { entries } = this.nodes();
-
-    return multiPartTargetsOf(sketch).map((part) => ({
-      sketch: key,
-      key: `${key}/${part}`,
-      part,
-      reachable: entries.has(part) || sketchDrawsPart(sketch, part),
-    }));
+    return multiPartTargetsOf(sketch).map((part) => ({ sketch: key, key: `${key}/${part}`, part }));
   });
 
   protected partTree = computed<PartTree>(() => {
@@ -1123,11 +1115,7 @@ export class SystemViewComponent {
                 status: entry.badges.includes('ready') ? ('ready' as const) : ('in-progress' as const),
                 nested: this.sketchTargets()
                   .filter(({ sketch }) => sketch === entry.key)
-                  .map(({ key, part, reachable }) => ({
-                    name: part,
-                    key,
-                    ...(reachable ? {} : { hint: SYSTEM_TREE_LABELS.notInSketch }),
-                  })),
+                  .map(({ key, part }) => ({ name: part, key })),
               })),
             },
           }
@@ -1598,12 +1586,6 @@ export class SystemViewComponent {
   }
 
   private openTarget(part: string) {
-    if (this.nodes().entries.has(part)) {
-      this.activate(part);
-
-      return;
-    }
-
     this.sketchPartShown.set(part);
     afterNextRender(() => this.sketchView()?.showPart(part), { injector: this.injector });
   }

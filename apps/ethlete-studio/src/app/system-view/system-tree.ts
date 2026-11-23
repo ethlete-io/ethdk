@@ -863,12 +863,6 @@ export const sketchScopedTo = (sketch: ListedSketch, part: string | null): Liste
     ? { ...sketch, targetParts: [part, ...sketch.targetParts.filter((target) => target !== part)] }
     : sketch;
 
-/** Whether a variant of `sketch` draws `part`. */
-export const sketchDrawsPart = (sketch: Pick<ListedSketch, 'target' | 'targetParts' | 'targets'>, part: string) =>
-  (sketch.targets ?? []).some(
-    (target) => (target.part ?? sketchPartOf(sketch)) === part && !target.error && target.states.length > 0,
-  );
-
 /** The head of a sketch with several parts: the title of its shown round, `null` for the target as head. */
 export const sketchHeadTitleOf = (sketch: Pick<ListedSketch, 'targetParts' | 'rounds'>, round: string) =>
   multiPartTargetsOf(sketch).length > 0 ? sketch.rounds?.find((entry) => entry.key === round)?.title || null : null;
