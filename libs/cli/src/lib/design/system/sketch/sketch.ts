@@ -128,7 +128,7 @@ export type SketchFile = {
    * `into-base`, into the base, removing the product copy the sketch started from.
    */
   merge?: SketchMerge;
-  /** The compare DIFFs this sketch covers while it is open (ADR 0222): `<state>`, or `<state>@<x>,<y>,<w>,<h>` for one region of its picture. */
+  /** The compare DIFFs this sketch covers while it is open: `<state>`, or `<state>@<x>,<y>,<w>,<h>` for one region of its picture. */
   covers?: string[];
   /** The `STATE-UNDESIGNED` branches of the app whose built look this sketch holds; each waits for the pick while it is open (B251b). */
   undesigned?: string[];
