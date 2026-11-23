@@ -104,14 +104,19 @@ the Legacy tab as reference for moving them into a product, with no picks and no
   `ng()`, then new. Colours come from the SDK theming systems. A part exists only because the user picked a sketch.
 - **A new product starts with one real screen** (a film app: the overview) in two or three finished moods:
   real colours, real type, real content from the product's data. The user picks a mood. Menu, navigation
-  and layout are your call, shown only inside the finished screen. Ask about mood at most as one side
+  and layout are your call, shown only inside the finished screen: draw the masthead, menu and navigation as
+  `elements/shell-<purpose>` inside each mood's variant folder, and let the page import it, never an inline
+  `<header>` or `<nav>` in the page. Ask about mood at most as one side
   sentence that blocks nothing. Never draw a wireframe or a layout round of grey boxes.
 - After that first pick, do not start a design stage before the one above it is settled: foundations, logo and
   CI, components, elements, pages, prototype.
 - Mark a sketch `ready` only after you looked at a shot of each variant (`.agents/skills/ethlete-design-exploration/reference-shots.md`).
 - Talk to the user about the product: screens, moods, content. Never name tools, commands or file paths.
-- Every interactive part draws its hover and focus-visible states, next to rest.
-- The app shell is one element each page imports, never drawn inside a page.
+- Every interactive part (a poster card, a search field, a chip, a button) draws its own hover and focus-visible
+  states next to rest. A page has none: it imports those parts and shows theirs, so never write a hover or
+  focus rule only in a page's CSS.
+- The app shell (masthead, menu, navigation, and any header or footer every page shares) is one element each
+  page imports, never drawn inside a page. This holds in the first sketch too.
 
 Details, commands and examples, read on demand:
 
