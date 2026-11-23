@@ -8,15 +8,15 @@ A slice number is a name, not a position. ADRs cite slice numbers, so never renu
 gets the next free number. Every new flow needs the three e2e tests in
 [`apps/timetrack/TESTING.md`](../../apps/timetrack/TESTING.md) ("Every new flow").
 
-| #   | Name                            | Slices | Ends when                                                          |
-| --- | ------------------------------- | ------ | ------------------------------------------------------------------ |
-| M5  | No day is lost                  | 7      | A reboot, a crash and two hours off all reconcile on the screen.   |
-| M6  | Book it                         | 3      | One real week reaches Tempo, and the second sync writes nothing.   |
-| M7  | One day, every machine          | 8      | A day worked on two machines reads the same on both, once.         |
-| M8  | What a day cost                 | 5, 9   | A real day shows a cost Tom recognises, and names what it missed.  |
-| M9  | The week, and the price of work | 6, 10  | Time and cost per issue and per project, over a week.              |
-| M10 | A second person installs it     | 11     | A colleague books a day from a build, with no help from this repo. |
-| M11 | The noisy tail                  | 12     | The browser reporter, if needed, and a Figma plugin.               |
+| #   | Name                            | Slices | Ends when                                                               |
+| --- | ------------------------------- | ------ | ----------------------------------------------------------------------- |
+| M5  | No day is lost                  | 7      | A reboot, a crash and two hours off all reconcile on the screen.        |
+| M6  | Book it                         | 3      | One real week reaches Tempo, and the second sync writes nothing.        |
+| M7  | One day, every machine          | 8      | A day worked on two machines reads the same on both, once.              |
+| M8  | What a day cost                 | 5, 9   | A real day shows a cost the human recognises, and names what it missed. |
+| M9  | The week, and the price of work | 6, 10  | Time and cost per issue and per project, over a week.                   |
+| M10 | A second person installs it     | 11     | A colleague books a day from a build, with no help from this repo.      |
+| M11 | The noisy tail                  | 12     | The browser reporter, if needed, and a Figma plugin.                    |
 
 M1 to M4 are built. Their leftovers come first below.
 
@@ -25,7 +25,7 @@ M1 to M4 are built. Their leftovers come first below.
 Take the fourth reading of unnamed focus (five workdays, due after 2026-09-09; not recorded yet).
 Then decide between these, together:
 
-- A title rule that says "no work". Tom named YouTube, Jellyfin, Spotify and Home Assistant tab
+- A title rule that says "no work". The human named YouTube, Jellyfin, Spotify and Home Assistant tab
   titles. `DEFAULT_NO_WORK_CONTEXT_APPS` matches `app_id` only, so `verdictFor` reads them as a gap.
   Decide whether they belong to a no-work-context rule (keeps the minute, marks it) or an exclusion
   rule (drops the event). A no-work title rule may need its own kind: `title-pattern` in
@@ -57,7 +57,7 @@ contradicts it. Settle that too.
   it. The design: learn the dominant value with one JQL per project and issue type through
   `searchJiraIssues$`; fill it when it is `likely` or better; otherwise open the Jira create screen
   with summary and description filled in; after a hand-off, read the issue back and store the chosen
-  value per project, issue type and field. Confirm with Tom that this is still wanted.
+  value per project, issue type and field. Confirm with the human that this is still wanted.
 - **The report for the project manager.** "Copy the report" was never built. Decide whether it stays
   as copied text once the project manager says what they want.
 
@@ -94,7 +94,7 @@ Slice 3. The sync write and its idempotence are built (`sync-write.spec.ts`).
 - **The first production write** gets its own gate: one day, one issue, one hour, checked by hand in
   the Tempo UI before a week is synced.
 
-Exit test: one real week reaches Tempo through the app. Tom types no worklog by hand for code work.
+Exit test: one real week reaches Tempo through the app. The human types no worklog by hand for code work.
 Every day syncs twice, and the second sync writes nothing.
 
 ## M7: One day, every machine
@@ -113,7 +113,7 @@ Slices 5 and 9. The price table, the cost on the day and the share of spend no s
 - Whether a model-call press refreshes the day. `probe` in `day-review.ts` tracks collector
   `lastRun()`, so the own-spend line appears only on the next collector pass.
 
-Exit test: a real day shows a cost Tom recognises, and states the share of spend no stream took.
+Exit test: a real day shows a cost the human recognises, and states the share of spend no stream took.
 
 ## M9: The week, and the price of work
 
@@ -200,13 +200,13 @@ The calls live in `.ethlete/design/calls/timetrack/kerbe/`, served by `yarn desi
 - Not drawn yet: the active band that is still collecting, and the current-time marker.
 - Data question: does work landing inside a derived break shorten the break?
 
-## Exit tests only Tom can judge
+## Exit tests only the human can judge
 
 None of these is recorded as done:
 
 - M1: three replayed days (2026-08-12, 2026-08-17, 2026-08-18) read as true with no edit.
-- M2: Tom reads and cuts a real day on one screen, and writes down his judgment.
-- M3: Tom writes the issues down before opening the screen, then judges every band in writing.
+- M2: the human reads and cuts a real day on one screen, and writes down his judgment.
+- M3: the human writes the issues down before opening the screen, then judges every band in writing.
 - M4: the live case end to end (a stand-in on day 1, three days across two checkouts, the epic and
   both tasks filed from the card, no row typed by hand), plus one real week where every band has a
   key or a stand-in.

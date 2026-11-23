@@ -27,7 +27,7 @@ The example checkout is `../fifagg/fifagg-frontend`. A preliminary file inventor
 of distinct useful components or working examples. The repository contains several apps,
 Angular 21, older Ethlete packages, NgRx, API integrations and project-specific styling.
 
-Tom's constraints:
+The human's constraints:
 
 - Most stories are not maintained; their presence does not establish usability or coverage.
 - There are duplicate and triplicate implementations and substantial architectural drift.

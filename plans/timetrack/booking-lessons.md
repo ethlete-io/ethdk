@@ -4,18 +4,18 @@ Status: recorded on 2026-09-27, not started.
 
 parked since 2026-11-18
 
-Tom booked September by hand from a draft that agents built out of the Timetrack evidence. Tom
+The human booked September by hand from a draft that agents built out of the Timetrack evidence. The human
 corrected the draft many times. Each correction below is a rule that the app does not know yet.
 The rules belong to M2 (attribution) and M6 (the sync).
 
 ## Attribution rules
 
 1. **A background ticket loses to project work.** The SDK ticket took about 40 % of all hours in
-   the first draft. Tom wants it only for time with no project signal at all. On a day with project
+   the first draft. The human wants it only for time with no project signal at all. On a day with project
    work, SDK time between 08:00 and 20:00 goes to the nearest project block.
 2. **A meeting ticket is never a filler.** Meeting and PM tickets take only real meetings. When a
    day has no project work, its time stays on the background ticket.
-3. **An accepted calendar event does not prove attendance.** Tom stopped attending a recurring
+3. **An accepted calendar event does not prove attendance.** The human stopped attending a recurring
    meeting after a project change, but the calendar still showed it as accepted. The app needs a
    way to mark a series as "not attended". Alternatively, the app must see a call.
 4. Dropped by the human on 2026-11-18: no clock rule (Timetrack ADR 0046).
@@ -42,7 +42,7 @@ The rules belong to M2 (attribution) and M6 (the sync).
 
 - The Jira `issue` op returns no status. The agent used "appears in the search for open issues"
   as a proxy and was wrong about one closed ticket. Add the status and the resolution.
-- Tom named most missing tickets from memory. The app needs a fast way to map a stand-in to a key
+- The human named most missing tickets from memory. The app needs a fast way to map a stand-in to a key
   and to remember that mapping for the next day.
 - Nothing was booked in Tempo for September before this. The manual path took one long session,
   which is the cost M6 removes.

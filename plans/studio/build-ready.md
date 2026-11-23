@@ -98,10 +98,10 @@ fills the cache; serve reruns them after a part's files change; spec runner conf
 (projects without it skip `APP-SPEC`); `VISIBLE-CHANGE` base defaults to the merge base with the default branch.
 Deps: contract only.
 
-**S6a Studio design: footer status (sketch, Tom picks).** Goal: draw what replaces Go geben / Änderung abnehmen in
+**S6a Studio design: footer status (sketch, the human picks).** Goal: draw what replaces Go geben / Änderung abnehmen in
 the open-points popover: build-ready state, "wird geprüft", blocker list grouped by kind, and the direct-edit entry
 that opens the old/new sketch. Owns: a sketch over `.ethlete/design/studio/pages/system/` and
-`capabilities.json` (`edit-accept` out). Done: Tom picked a variant, merged (`ethlete-design-exploration` skill:
+`capabilities.json` (`edit-accept` out). Done: the human picked a variant, merged (`ethlete-design-exploration` skill:
 he decides). Deps: none.
 
 ### Group B (after S1; S2 and S5 parallel)
@@ -192,7 +192,7 @@ On the `studio-serve` tmux server (:4402), after S6b:
 - **Q1 Is `ready.json` committed or a cache?** Recommend committed, tool-written: CI, `doneParts` and `ACTION-LOST`
   need the last green hash and actions without a browser; agents commit it like `pictures.json`.
 - **Q2 What does Studio call the state?** Recommend "Baubereit" / "Nicht baubereit (n)" / "Wird geprüft"; the final
-  wording comes from Tom's pick in S6a.
+  wording comes from the human's pick in S6a.
 - **Q3 Leftover go.json / accepted.json in other repos?** Recommend no `et update` migration: readers ignore them and
   `design check` prints one warning naming the file to delete.
 - **Q4 Where does `sketch merge --allowed-by` log its plan ref?** Recommend in the part's `merged.json` entry

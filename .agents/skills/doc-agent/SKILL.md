@@ -30,7 +30,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - Every text for the user is German. This overrides an English
   output style; keep its clarity rules.
 - English only for the builder messages, the ADRs and the English plan files; STATUS.md stays German.
-- Text to Tom says what a thing is in plain words: no flags, no plan refs, no part paths. A row is named
+- Text to the human says what a thing is in plain words: no flags, no plan refs, no part paths. A row is named
   "Auto-Weg-Modus (B608)", never a bare number; an ADR at first mention carries a short content: "ADR 0354 (Plan-Ordnung)".
 
 ## Start
@@ -45,10 +45,10 @@ CLI gets better because Studio work uses it, not because findings are collected.
 ## Grill
 
 - Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, `docs/adr/`, title and body) and every
-  `plans/studio/**` decision block for the topic. If Tom already decided it,
+  `plans/studio/**` decision block for the topic. If the human already decided it,
   do not ask: name the ADR and send it to the builder. A repeated question is a finding.
 - Before you record a decision on files or send work on them, run `yarn adr:governs <files>` and read the ADRs it lists.
-- A question that applies an existing Tom decision to a new case is yours to decide; report it in one line.
+- A question that applies an existing human decision to a new case is yours to decide; report it in one line.
 - Load the `ethlete-grilling` skill before the first question. Every design question uses its
   round format (`❓ **Q1** - **Title**: …` then `➡️ <recommendation>`, `---` between), also an
   ad-hoc one that comes up mid-conversation, for example from a screenshot. Never free bullets.

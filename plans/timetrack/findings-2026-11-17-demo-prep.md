@@ -10,7 +10,7 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 ## Attribution
 
 1. ~~**Night rows count as attended.**~~ Fixed (61271d9b7, 4681e8512; ADR 0045, 0046). Eight rows between 00:00 and 07:00 on 15.11. to 17.11. (13.5 h,
-   one of them 01:00 to 05:30) carried no `unattended` flag, although Tom was away and agents ran.
+   one of them 01:00 to 05:30) carried no `unattended` flag, although the human was away and agents ran.
    This is lessons 4 and 5 of [`booking-lessons.md`](./booking-lessons.md), still open. Which event
    counted as presence is unknown; a peer machine's input or an agent prompt are the suspects.
 2. ~~**Accepted night rows inflate a day.**~~ Fixed (4681e8512: night-row warning). 08.11. holds 20.75 h logged, with accepted ET-772 rows from
@@ -21,7 +21,7 @@ written a wrong record. "Suspected" marks a cause nobody proved.
 4. **One description is repeated on every row of a lane.** Built 39ee1d898, reverted with the band cut in ce72b9e68, relanded in 8ce7c5a6b; the real-data check needs the app. 13.11. has six ET-772 rows with the same
    three commits and "+99 more". A row should describe its own span.
 5. **Descriptions are English commit lists.** Built 7a68de505 (worklog language default German, one ask per past-day
-   row), not yet seen with real model text. Tom books in German and wants one sentence for each
+   row), not yet seen with real model text. The human books in German and wants one sentence for each
    row. The agent rewrote 57 by hand.
 
 ## Auto mode

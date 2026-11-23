@@ -36,7 +36,7 @@ The six decisions and the discovery are in ADR 0041
 0. Bugs a-e (S-M, 2-3 d).
 1. Done. ADR 0039 + migration 20 (machine id, change counter, tombstones, `received_event`,
    `peer_cursor`) + `repoKeyOf`. The read fold and the stream key change wait for slice 4.
-2. Pairing and transport, a "Paired machines" view with last-seen, and a status item in the sidebar next to Auto mode that shows the connected Timetrack instances (Tom, 2026-10-08); verify on ethlete-mac (M, 3-5 d). Done 2026-10-08.
+2. Pairing and transport, a "Paired machines" view with last-seen, and a status item in the sidebar next to Auto mode that shows the connected Timetrack instances (the human, 2026-10-08); verify on ethlete-mac (M, 3-5 d). Done 2026-10-08.
    - 2a. Done (639dca492). Port 52741, override `TIMETRACK_PEER_PORT`; the ops are answered in the
      host, so the `ethlete-agents timetrack` CLI does not know them yet. Host: machine key and self-signed certificate (key in the keychain), SPAKE2 pairing on the
      6-digit code that binds both certificate fingerprints, `paired_machine` table (migration 21),
@@ -59,7 +59,7 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      launch a test build on the Mac once and keep it running. The macOS firewall is off on ethlete-mac.
      The installed `/Applications/Timetrack.app` is arm64-only and does not run on this Intel MacBook.
 3. Read-only overlay, the first user value: "Nobody was here" becomes "Worked on MacBook". No row
-   changes (S-M, 2-3 d). In progress. Tom, 2026-10-08: the peer sends raw events per ADR 0039 (not
+   changes (S-M, 2-3 d). In progress. The human, 2026-10-08: the peer sends raw events per ADR 0039 (not
    derived windows), and booked rows are dropped from this slice (Tempo coverage already shows a
    booking from either machine; peer claims come in slice 5).
    - 3a. Done (77f6f8fc8). Host pull. New `Frame` variants for "changes after my cursor": the server answers only for a
@@ -86,14 +86,14 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
    - 3d. The label and its e2e spec landed with 3c. Left: verify between tank and ethlete-mac (one new Mac build, signed
      with `macos-dev-sign.sh`, about 10 password prompts).
 4. Full merge: replication per origin into `readDay$`, path aliases, commit dedupe, attendance across
-   machines, spend per origin, sender filter (L, 1-2 wk). Steps below; 4d is the first that Tom sees
+   machines, spend per origin, sender filter (L, 1-2 wk). Steps below; 4d is the first that the human sees
    (work done only on the Mac shows as rows on the PC). Retention of `received_event` by event time is
    already in `store.rs`. A step that changes rows runs `timetrack snapshot` before and `--compare`
    after, and explains every changed row.
-   - 4a. Dropped (Tom, 2026-10-09). Both machines are his own and received events sit in the same
+   - 4a. Dropped (the human, 2026-10-09). Both machines are his own and received events sit in the same
      encrypted store, so the receiver applies its own private links and exclusion rules at read time
      (4d) instead of the sender filtering. Transcripts are never sent.
-   - 4b. Done (571b3c3d7). Tom, 2026-10-08: `streamKey` stays `repo:<local path>`; a peer path maps
+   - 4b. Done (571b3c3d7). The human, 2026-10-08: `streamKey` stays `repo:<local path>`; a peer path maps
      onto the local checkout with the same origin key (open question 1). Landed as migration 23, since
      4a is on hold; 4a takes the next free number. `readRepoKey$` reads the key; the git collector
      writes the map after each discovery; `receivedBetween$` returns `{ events, repoKeys }` (by machine
@@ -161,7 +161,7 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      usage), on every stream, the day's total, the unattributed and the app's own spend; absent on a
      day only this machine spent. Received turns were already priced here and counted once (4c). The
      day streams show "2 turns on MacBook" (`data-spend-peers`); the Sources view says so on the spend
-     source. Unattended per machine (the 4e point Tom accepted): a stream's agent-alone time leaves
+     source. Unattended per machine (the 4e point the human accepted): a stream's agent-alone time leaves
      out what another machine's presence covers, so the day total no longer holds time spent at the
      Mac. That time is in neither engaged nor unattended on the stream line. No `cargo test`: no
      compactor exists (ADR 0002 "Not built"), and retention by event time is already tested.
@@ -195,10 +195,10 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      after the freeze). Full Timetrack e2e: 476 passed.
      Plan as written: "Changed after booking": a booked (frozen) day whose merged read now differs from
      `frozenRows` shows the note and is not re-cut (decision 4). Files: `day-review.ts`, the day
-     header. Tests: unit spec, e2e `booked-day-frozen.spec.ts` peer case. Tom, 2026-10-09: the
+     header. Tests: unit spec, e2e `booked-day-frozen.spec.ts` peer case. The human, 2026-10-09: the
      frozen day also draws a peer's work as read-only bands labeled "Booked on <machine>", so 10-08
      shows the MacBook's 13:15-18:00 and not an empty gap.
-   - 4i. Done (9ea342ab9, 82959b851, 8c210453e; Tom approved the design 2026-10-09). A booked day draws a
+   - 4i. Done (9ea342ab9, 82959b851, 8c210453e; the human approved the design 2026-10-09). A booked day draws a
      paired machine's own rows. On 10-08 tank showed no "Booked on" band (it names no issue for the
      Mac's work: the Mac named its rows with its own rules, auto answers and pins), the bands were
      raw-block fragments, Mac app ids became lanes, and "Changed after booking" fired for the peer time
@@ -258,7 +258,7 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      work of a day shows as rows on tank, Mac lanes map onto the local checkout (the Mac build in use
      on 2026-10-09 predates 4b, so its rows sit in `repo:/Users/tom/...` lanes), a private checkout
      shows as a bare interval. Also check that the rebuild asks for no keychain password.
-   - Open for Tom. (1) 4b realizes decision 3 by mapping a peer path onto the local checkout of the
+   - Open for the human. (1) 4b realizes decision 3 by mapping a peer path onto the local checkout of the
      same origin key, so `streamKey` stays `repo:<local path>` and stored lane keys, edits, pins and
      path rules keep working. Spelling `streamKey` as `repo:<origin key>` instead would need a
      migration of all of them. Recommendation: map onto the local path. (2) A title-pattern rule the
@@ -267,13 +267,13 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      invalid, as the settings screen already does for a rule that does not compile.
 5. One owner and an incomplete day: claim + Tempo marker, the other machine refuses to book, the
    freeze waits for peers, "MacBook not seen since X" (M, 3-4 d).
-6. Settings and stand-ins replicated (M). Tom approved the design on 2026-10-09; build it after 4h.
+6. Settings and stand-ins replicated (M). The human approved the design on 2026-10-09; build it after 4h.
    Today the settings are one JSON row (`app_setting`, `store.rs:550` and `:588`) saved whole, with
    no timestamps, so a synced write would overwrite the other machine.
    - Scope per field, fixed in code next to `TimetrackSettings` (`settings/model.ts:269`):
      `shared` or `machine`. A `machine` field never leaves its machine. `machine`: `gitScanRoots`,
      `lockWindow`, `lockAfterIdleMs`, `transcribeCalls`, `transcribeLanguage`, `noWorkContextApps`,
-     `holdsWorkApps`. Everything else is `shared`, including `display` (Tom, 2026-10-09). A new field
+     `holdsWorkApps`. Everything else is `shared`, including `display` (the human, 2026-10-09). A new field
      must name its scope; a spec fails when one does not.
    - Merge per scalar field and per list item, never per document. Each scalar field and each list
      item (rules, links, stand-ins, namings) carries `updatedAt` and the machine id of the write; the
@@ -286,7 +286,7 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
    - Wire: a new peer message `settings` next to `hello` and `pull` (dispatch at `peer.rs` ~987),
      over the same pairing and TLS. Secrets never travel (decision 5).
    - First sync is reviewed: the two machines already differ, so the first exchange with a peer lists
-     every difference and Tom picks per item. After that, changes apply automatically, and a changed
+     every difference and the human picks per item. After that, changes apply automatically, and a changed
      field or item shows "changed on <machine>".
    - A synced write is a human write from another machine; agents still cannot write settings
      (`plans/timetrack/auto-mode.md:42`).

@@ -1,6 +1,6 @@
 # File a ticket in three clicks
 
-Status: agreed with Tom on 2026-09-26, not started.
+Status: agreed with the human on 2026-09-26, not started.
 
 ## Problem
 

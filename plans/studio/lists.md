@@ -28,17 +28,17 @@ Steht in [machinery.md](machinery.md).
 - **A35** Motion-Editor.
 - **A37** Design-Editor nach A35: der Designer passt im Sketch selbst an (echte Editor-Controls). Dazu Komfort wie in
   Figma: einzelne Komponenten anklicken und ihren Zustand sehen, in verschachtelte Komponenten hineinklicken. Großes
-  Thema, eigene Grill-Runde vor dem Start (Tom, 29.10. und 02.11.; designer-workflow.md, Abschnitt 2: Herkunft eines
+  Thema, eigene Grill-Runde vor dem Start (der Mensch, 29.10. und 02.11.; designer-workflow.md, Abschnitt 2: Herkunft eines
   Werts aus Token, geerbtem Teil oder eigenem Wert, Rückgängig, Zusammenspiel mit Agenten).
 - **A38** Git in Studio: Repo holen, Branch anlegen und wechseln, Commit, Push, eingehende Änderungen und Konflikte, ohne
   eigenes Git-Setup; Chat, Editor und Git arbeiten auf demselben Stand (designer-workflow.md, Abschnitte 3 und 4).
 - **A39** Bestehenden Frontend-Code importieren: eine Ansicht mit ihren Abhängigkeiten und Fixtures
   (existing-code-import.md; offene Entscheidungen dort).
 
-- Gruppe Design-Drift (gebaut bis b5e57ae51, Einzelheiten in git): Offen: Suspect: andere SDK-Designs mit text-shell-Feld; about-dialog Rest 15 px bleibt rot (nur eine Aufweitung der Antialias-Regel ADR 0341 bräuchte Tom).
+- Gruppe Design-Drift (gebaut bis b5e57ae51, Einzelheiten in git): Offen: Suspect: andere SDK-Designs mit text-shell-Feld; about-dialog Rest 15 px bleibt rot (nur eine Aufweitung der Antialias-Regel ADR 0341 bräuchte den Menschen).
 
-- Befund (23.11., Tom, Tomflix-Lauf 2), alle gebaut (Einzelheiten in git): gleich hohe Varianten, Desktop neben Telefon, helle Zelle, „Neu starten“ (live ungeprüft), hängender Canvas, Variante in Arbeit bleibt live, Doppelklick live 2b051c38a, altes Repo mit Entwürfen öffnet als Produkt (B683, Cause: Studio nahm die alte CLI des Repos). Offen: bei 20 % Zoom bricht das Telefon-Label in vier Zeilen um; unmöglich, wenn ein Rahmen-Label nie umbricht. Suspect: Studio legte den Direkt-Sketch foundations-logo.edit ohne Bearbeitung an.
-- Prüfer Lauf 2 (Batch 1-5): R2 Technik-Rede an den Kunden (Datenmodell, TMDB-Schlüssel, Rechte-Dialog, Pfade), Anleitung 4cec104cd; R3/R4 offen (kein Shell-Teil, keine Hover/Focus-Zustände). Bildsuche außerhalb der Kopie sah nur die Sandbox, kein Fehler. Suspect: ein Clean-Slate-Brief braucht einen Ablageort für Kunden-Bilder. Batch 6: +2 Aufteilung 46 B in richtiger Reihenfolge, +R3 elements/app-shell; R2 Technik-Rede („HTML-Datei“, „Quelltext“); Agent schrieb Ordner `extrahiert` in Toms Referenzordner; `find /` nach dem Logo (obs 7); meldet „fehlerfrei“, Studio zeigt „noch nicht geprüft“.
+- Befund (23.11., der Mensch, Tomflix-Lauf 2), alle gebaut (Einzelheiten in git): gleich hohe Varianten, Desktop neben Telefon, helle Zelle, „Neu starten“ (live ungeprüft), hängender Canvas, Variante in Arbeit bleibt live, Doppelklick live 2b051c38a, altes Repo mit Entwürfen öffnet als Produkt (B683, Cause: Studio nahm die alte CLI des Repos). Offen: bei 20 % Zoom bricht das Telefon-Label in vier Zeilen um; unmöglich, wenn ein Rahmen-Label nie umbricht. Suspect: Studio legte den Direkt-Sketch foundations-logo.edit ohne Bearbeitung an.
+- Prüfer Lauf 2 (Batch 1-5): R2 Technik-Rede an den Kunden (Datenmodell, TMDB-Schlüssel, Rechte-Dialog, Pfade), Anleitung 4cec104cd; R3/R4 offen (kein Shell-Teil, keine Hover/Focus-Zustände). Bildsuche außerhalb der Kopie sah nur die Sandbox, kein Fehler. Suspect: ein Clean-Slate-Brief braucht einen Ablageort für Kunden-Bilder. Batch 6: +2 Aufteilung 46 B in richtiger Reihenfolge, +R3 elements/app-shell; R2 Technik-Rede („HTML-Datei“, „Quelltext“); Agent schrieb Ordner `extrahiert` in den Referenzordner des Menschen; `find /` nach dem Logo (obs 7); meldet „fehlerfrei“, Studio zeigt „noch nicht geprüft“.
 
 ## B. Design-CLI: neue Prüfungen
 
@@ -73,10 +73,10 @@ Steht in [machinery.md](machinery.md).
   (neue sichtbare Oberfläche: erst Sketch, dann Bau; dl 02.11., Befund 143).
 - **B39** Wechselt eine Ansicht auf einen Design-Teil, muss jeder gelöschte Test entweder in der Liste „was das Design
   weglässt“ stehen oder im neuen Spec wieder auftauchen; die CLI prüft das (Befund 137).
-- **B40** Jeder `partless`-Eintrag (bewusst ohne Teil) erscheint in Studio als offener Punkt, damit Tom ihn sieht; ein
+- **B40** Jeder `partless`-Eintrag (bewusst ohne Teil) erscheint in Studio als offener Punkt, damit der Mensch ihn sieht; ein
   ungenutzter Eintrag ist ein Fehler (B30-Nachlauf).
 - **B41** Studio zeigt `sketch hold` als Badge „Pausiert“, ein Klick zeigt den Grund (`--until`); ein Sketch in Arbeit
-  ohne Bericht und ohne Dateiänderung seit N Minuten zeigt „keine Aktivität“ (Tom, 02.11.; Befund 138; Zustände
+  ohne Bericht und ohne Dateiänderung seit N Minuten zeigt „keine Aktivität“ (der Mensch, 02.11.; Befund 138; Zustände
   gehören in den pages/sketches-Sketch).
 - **B43** Der ng()-Harness jedes Produkts registriert die Farb-Themes der App (Provider je Produkt in der Config)
   (Befund 140).
@@ -84,7 +84,7 @@ Steht in [machinery.md](machinery.md).
   (Befund 140).
 - **B46** Sketch im Kontext: Umschalter „Einzeln | Im Kontext“ in der Sketch-Ansicht, für jedes Produkt; bei
   mehreren Fundstellen die erste plus Auswahl; `sketch check` prüft die Passform im Kontext. Erst Sketch, dann Bau
-  (Tom, 02.11.).
+  (der Mensch, 02.11.).
 - **B47** Ansicht bleibt stabil: Spec prüft, dass eine wiederholte Größenmeldung keine neue iframe-Quelle und keine
   neue Größe setzt; E2E zählt iframe-Ladevorgänge 2 s nach dem Einschwingen, mehr als einer je Rahmen scheitert
   (Befund 142, Flackern).
@@ -164,13 +164,13 @@ Steht in [machinery.md](machinery.md).
   ein unveränderter eingebetteter Part behält seine Aktion ohne Zeile (Entscheidung 10, z. B. Buttons im
   update-dialog).
 - **B107** CONTROL-STATE-Treffer: je eine Skizze für zoom-chip `reset`, shell-main `section` und shell-main
-  `product` mit zwei Varianten (unveränderter SDK-Button, neuer eigener Control-Part); Tom wählt und mergt
+  `product` mit zwei Varianten (unveränderter SDK-Button, neuer eigener Control-Part); der Mensch wählt und mergt
   (Entscheidung 11).
   sketch` zeigen ihn (Befund 180).
 - Suspect (19.11.): `spec:stress` meldet Playwright-Specs nach 1 s mit 0/4 (nur für vitest gebaut).
 - Suspect (19.11.): der Mac-post-merge-Hook findet `node` nicht über nicht-Login-SSH; Mac-Vergleich braucht `zsh -lc`.
 - Lücke (19.11.): kein Weg, die Tauri-Dev-Webview zu fotografieren; kein Szenario-Ordner in `libs/timetrack`.
-- Cause (19.11., gebaut 4c1c3fae5): im Weg-Modus erreichte die Rechtefrage eines fable-Cross-Checks Tom und schaltete den Weg-Modus aus.
+- Cause (19.11., gebaut 4c1c3fae5): im Weg-Modus erreichte die Rechtefrage eines fable-Cross-Checks den Menschen und schaltete den Weg-Modus aus.
 - Suspect (20.11.): der Design-Harness kann Inhalt (Pins) nicht in einen Part projizieren, daher weicht `compare` bei `pinned` ab (D9d).
 
 ## C. CLI: Tempo und Ablauf
@@ -184,7 +184,7 @@ Steht in [machinery.md](machinery.md).
 
 ## D. SDK und Libs
 
-## E. Fragen und Entwürfe für Tom
+## E. Fragen und Entwürfe für den Menschen
 
 - **E3** Logo-Knopf: Radius bei Hover und Active (Befund 107).
 - **E4** Schnellwahl: welche zwei Buchstaben, woher kommt das Logo?
@@ -192,6 +192,6 @@ Steht in [machinery.md](machinery.md).
   Inventar-Einstieg, „Alle Produkte“.
 - **E10** `floating-action`: Normalisierung erweitern oder `fa-page` behalten?
 - **E12** canvas-frames umbenennen und mit shell-main verknüpfen (Q248).
-- **E13** Toms gesammelte Runde nach dem MVP (Q25, Q38): Status und Kommentar-Zahlen im Baum, Problemtext als Warnung,
+- **E13** Die gesammelte Runde des Menschen nach dem MVP (Q25, Q38): Status und Kommentar-Zahlen im Baum, Problemtext als Warnung,
   deutsche Tooltips am Zoom-Chip (Q41).
 - **E15** Codex-Agenten: über die tmux-Mailbox oder über einen Wrapper? (ADR 0369)
