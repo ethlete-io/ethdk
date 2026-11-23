@@ -165,11 +165,12 @@ describe('TitleBarComponent', () => {
     expect(description && document.getElementById(description)?.textContent).toContain('Agent-Regeln geändert');
   });
 
-  it('draws the notice text inline without a restart button when no notice is pending', () => {
-    const text = 'CLI hat uncommittete Änderungen in drei Dateien, Studio läuft auf Stand abc1234';
-    const { bar } = render({ os: 'macos', left: [], right: [], noticeText: text });
+  // The human decided Studio does not show the CLI copy's uncommitted state.
+  it('draws no notice text without a pending restart', () => {
+    const { bar } = render({ os: 'macos', left: [], right: [], noticeText: 'x' });
 
-    expect(bar?.querySelector('[data-code-notice]')?.textContent?.trim()).toBe(text);
+    expect(bar?.querySelector('[data-code-notice]')).toBeNull();
+    expect(bar?.textContent).not.toContain('CLI hat uncommittete Änderungen');
     expect(bar?.textContent).not.toContain('Neu starten');
   });
 

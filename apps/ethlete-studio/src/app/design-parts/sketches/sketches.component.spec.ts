@@ -335,32 +335,19 @@ describe('SketchesComponent', () => {
     expect(root.querySelectorAll('[data-sk-merge]').length).toBe(1);
   });
 
-  it('says once why an unchanged sketch did not merge itself and what clears it', async () => {
-    const hold = { reason: 'studio has uncommitted edits', dirty: ['pages/home/home.ts', 'shared/x.ts'] };
-    const rows = [...ROWS, { ...ROWS[1]!, key: 'y' }].map((row) => ({
-      ...row,
-      shots: row.shots.map((shot) => ({ ...shot, changed: false })),
-    }));
-    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', rows, mergeHold: hold })).nativeElement;
-
-    expect(root.querySelectorAll('[data-sk-merge-hold]').length).toBe(1);
-    expect(textOf(root.querySelector('[data-sk-merge-hold]'))).toBe(LABELS.mergeHold(hold));
-    expect(textOf(root.querySelector('[data-sk-merge-hold]'))).toContain('pages/home/home.ts, shared/x.ts');
-    expect(root.querySelector('[data-sk-merge]')).toBeNull();
-  });
-
-  it('shows no merge notice for a sketch whose variant changes a picture', async () => {
-    const root: HTMLElement = (
-      await render({ camera: '100', status: 'waiting', mergeHold: { reason: 'variant x changes open' } })
-    ).nativeElement;
-
-    expect(root.querySelector('[data-sk-merge-hold]')).toBeNull();
-  });
-
   it('shows the short model name with the full id and time as its tooltip', async () => {
     const root: HTMLElement = (await render({})).nativeElement;
     const model = withTooltip(root.querySelector('[data-sk-row="x"]'), 'claude-sonnet-5-5 · 01.11. 09:00');
 
+    expect(textOf(model)).toBe('Sonnet 5.5');
+  });
+
+  // The human wants the model icon and name in the variant label; keep it.
+  it('shows the model icon and name beside the variant label', async () => {
+    const root: HTMLElement = (await render({})).nativeElement;
+    const model = withTooltip(root.querySelector('[data-sk-row="x"]'), 'claude-sonnet-5-5 · 01.11. 09:00');
+
+    expect(model?.querySelector('svg[ethlete-agent-logo]')).not.toBeNull();
     expect(textOf(model)).toBe('Sonnet 5.5');
   });
 
@@ -1672,22 +1659,12 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-head] + div [data-sk-rows]')).not.toBeNull();
   });
 
-  it('shows a running agent with its model, task and step and marks the sketch as drawing', async () => {
-    const agent = {
-      by: { short: 'Haiku 5.5', id: 'claude-haiku-5-5', agent: 'claude' },
-      task: 'baut Variante z',
-      step: 'Zustand leer',
-      since: 'seit 9 Min',
-    };
+  it('shows a running agent with its model and marks the sketch as drawing', async () => {
+    const agent = { by: { short: 'Haiku 5.5', id: 'claude-haiku-5-5', agent: 'claude' }, since: 'seit 9 Min' };
     const root: HTMLElement = (await render({ camera: '100', status: 'waiting', agent })).nativeElement;
     const line = root.querySelector('[data-sk-agent]');
 
-    expect([...(line?.children ?? [])].map(textOf)).toEqual([
-      '',
-      'Haiku 5.5',
-      'baut Variante z',
-      '· Zustand leer · seit 9 Min',
-    ]);
+    expect([...(line?.children ?? [])].map(textOf)).toEqual(['', 'Haiku 5.5', LABELS.drawingMark, '· seit 9 Min']);
     expect(line?.querySelector('.animate-pulse')).not.toBeNull();
     expect(textOf(root.querySelector('header'))).toContain(LABELS.status.drawing);
   });
@@ -1695,10 +1672,8 @@ describe('SketchesComponent', () => {
   it('shows a failed agent run without the pulse and keeps the sketch status', async () => {
     const agent = {
       by: { short: 'Haiku 5.5', id: 'claude-haiku-5-5', agent: 'claude' },
-      task: 'Runde 3 fehlgeschlagen',
-      step: 'Build-Fehler',
       since: 'vor 1 Min',
-      failed: true,
+      failure: 'Runde 3 fehlgeschlagen',
     };
     const root: HTMLElement = (await render({ camera: '100', status: 'picked', agent })).nativeElement;
 

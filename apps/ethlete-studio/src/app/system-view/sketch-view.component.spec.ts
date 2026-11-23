@@ -766,6 +766,17 @@ describe('SketchViewComponent', () => {
     expect(badge((await render({ ...drawing, autoMergeForecast: null }, noComments)).root)).toBeNull();
   });
 
+  // The human decided Studio does not show why a merge is held or which files hold it.
+  it('shows no merge-hold line on a held sketch', async () => {
+    const held = { reason: 'uncommitted edits', at: '2026-10-27T10:00:00Z', dirty: ['shared/held-file.ts'] };
+    const { root } = await render({ ...SKETCH, decision: undefined, mergeHold: held }, noComments);
+
+    expect(root.querySelector('[data-sk-merge-hold]')).toBeNull();
+    expect(root.textContent).not.toContain('shared/held-file.ts');
+    expect(root.textContent).not.toContain('Automatischer Merge wartet');
+    expect(root.textContent).not.toContain('Nicht automatisch gemerged');
+  });
+
   it('offers no merge on a ready, picked sketch whose files changed after ready', async () => {
     const changed = {
       ...SKETCH,
@@ -828,7 +839,8 @@ describe('SketchViewComponent', () => {
     expect(buttonNamed(ready.root, SKETCHES_LABELS.merge)).toBeDefined();
   });
 
-  it('shows the agent line from the drawing report: who, its message, the variant and since when', async () => {
+  // The human decided Studio does not show the agent's task or step in the agent line.
+  it('shows the agent line from the drawing report: the model, zeichnet and since when', async () => {
     const updatedAt = new Date(Date.now() - 7 * 60_000).toISOString();
     const { root } = await render(
       {
@@ -841,7 +853,10 @@ describe('SketchViewComponent', () => {
     );
     const parts = [...(root.querySelector('[data-sk-agent]')?.children ?? [])].map((part) => part.textContent?.trim());
 
-    expect(parts).toEqual(['', 'Sonnet 5.5', 'baut Runde 3', `· Variante b · ${SKETCHES_LABELS.since(7)}`]);
+    expect(parts).toEqual(['', 'Sonnet 5.5', SKETCHES_LABELS.drawingMark, `· ${SKETCHES_LABELS.since(7)}`]);
+    expect(root.querySelector('[data-sk-agent] svg[ethlete-agent-logo]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-agent]')?.textContent).not.toContain('baut Runde 3');
+    expect(root.querySelector('[data-sk-agent]')?.textContent).not.toContain('Variante b');
   });
 
   it('draws every in-progress variant live with the latest report line, never as a placeholder or a finished one', async () => {
@@ -879,7 +894,7 @@ describe('SketchViewComponent', () => {
     expect(row('c')?.querySelector('[data-sk-merge]')).toBeNull();
   });
 
-  it('shows the variant step of a report that names a state, and no agent line once the report stalls', async () => {
+  it('shows the agent line while the report is fresh, and none once the report stalls', async () => {
     const open = { ...SKETCH, status: 'in progress' as const, decision: undefined };
     const drawing = await render(
       {
@@ -894,8 +909,8 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(drawing.root.querySelector('[data-sk-agent]')?.textContent).toContain('Zustand reset-hover');
-    expect(drawing.root.querySelector('[data-sk-agent]')?.textContent).toContain('Variante a');
+    expect(drawing.root.querySelector('[data-sk-agent]')?.textContent).toContain(SKETCHES_LABELS.drawingMark);
+    expect(drawing.root.querySelector('[data-sk-agent]')?.textContent).not.toContain('Zustand reset-hover');
     drawing.fixture.destroy();
 
     const stalled = await render(
@@ -932,7 +947,7 @@ describe('SketchViewComponent', () => {
     const labels = SKETCHES_LABELS.agentRun;
 
     expect(line).toContain('Opus 5.5');
-    expect(line).toContain(labels.errors(['a: tsc failed', 'b: tsc failed']));
+    expect(line).not.toContain('tsc failed');
     expect(line).toContain(labels.ago(50));
     expect(line).toMatch(/Runde (\d+ )?fehlgeschlagen/);
     expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.failed);
@@ -969,7 +984,7 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('header [data-sk-failed]')?.textContent?.trim()).toBe(
       `${variant} · default: boom is not defined`,
     );
-    expect(root.querySelector('[data-sk-agent]')?.textContent).toContain(`${variant} · default: boom is not defined`);
+    expect(root.querySelector('[data-sk-agent]')?.textContent).not.toContain('boom is not defined');
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
 
     await report(failing);
@@ -1052,7 +1067,8 @@ describe('SketchViewComponent', () => {
     expect(chip?.closest('[data-sk-points]')?.parentElement?.querySelector('[data-sk-merge]')).not.toBeNull();
   });
 
-  it('shows a held sketch as paused with what it waits on, who held it and since when', async () => {
+  // The human decided Studio does not show the agent's model in the hold reason.
+  it('shows a held sketch as paused with what it waits on and since when, without the model', async () => {
     const heldAt = new Date(Date.now() - 7 * 60_000).toISOString();
     const { root } = await render(
       {
@@ -1074,7 +1090,7 @@ describe('SketchViewComponent', () => {
     const reason = root.querySelector('[data-sk-hold-reason]')?.textContent ?? '';
 
     expect(reason).toContain(SKETCHES_LABELS.holdUntil('B99 und B100'));
-    expect(reason).toContain('Sonnet 5.5');
+    expect(reason).not.toContain('Sonnet 5.5');
     expect(reason).toContain(SKETCHES_LABELS.since(7));
   });
 

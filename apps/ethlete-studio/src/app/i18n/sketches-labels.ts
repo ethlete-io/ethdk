@@ -30,10 +30,6 @@ export const SKETCHES_LABELS = {
   },
   confirm: { cancel: 'Abbrechen' },
   merge: 'Übernehmen',
-  mergeHold: ({ reason, dirty }: { reason: string; dirty?: string[] }) =>
-    dirty?.length
-      ? `Automatischer Merge wartet auf ungespeicherte Änderungen in ${dirty.join(', ')} - committen oder verwerfen, dann läuft er von selbst.`
-      : `Nicht automatisch gemerged: ${reason}`,
   variant: (label: string) => `Variante ${label}`,
   withdrawnToggle: (count: number) => `Zurückgezogene (${count})`,
   fitHint: 'Doppelklick zum Einpassen',
@@ -77,8 +73,6 @@ export const SKETCHES_LABELS = {
   since: (minutes: number) => `seit ${spanOf(minutes)}`,
   agentRun: {
     failed: (round: number | null) => (round === null ? 'Runde fehlgeschlagen' : `Runde ${round} fehlgeschlagen`),
-    errored: (variants: readonly string[]) =>
-      `Render-Fehler in ${variants.length === 1 ? 'Variante' : 'Varianten'} ${variants.join(', ')}`,
     errors: (lines: readonly string[]) => (lines.length > 1 ? `${lines[0]} (+${lines.length - 1})` : (lines[0] ?? '')),
     ago: (minutes: number) => `vor ${spanOf(minutes)}`,
   },

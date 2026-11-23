@@ -36,7 +36,6 @@ const INTERACTIONS = ['hover', 'active', 'focus-visible'] as const;
 
 const CONTENTS = {
   notice: { update: true, notice: true, noticeText: CODE_LABELS.cli },
-  'cli-dirty': { noticeText: 'CLI hat uncommittete Änderungen, Studio läuft auf Stand 5dbc7ca' },
   update: { update: true },
   rest: {},
 } satisfies Record<string, Partial<Props>>;
@@ -91,7 +90,6 @@ const contentStates = (content: Content) =>
 
 export const states = {
   ...contentStates('notice'),
-  ...contentStates('cli-dirty'),
   ...(Object.assign({}, ...rows.map((row) => row.states)) as Record<StateName, Props>),
   ...contentStates('update'),
   ...contentStates('rest'),

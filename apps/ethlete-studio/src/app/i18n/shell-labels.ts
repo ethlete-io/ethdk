@@ -64,7 +64,6 @@ export const SHORTCUTS_DIALOG_LABELS = {
 export const CODE_LABELS = {
   host: 'Host geändert - Studio neu starten',
   cli: 'CLI geändert - neu starten',
-  cliDirty: (sha: string) => `CLI hat uncommittete Änderungen, Studio läuft auf Stand ${sha}`,
   frontend: 'Oberfläche geändert - neu starten',
   restart: 'Neu starten',
   restartFailedTitle: 'Neustart fehlgeschlagen',

@@ -12,9 +12,7 @@ export type CodeAction = 'restartStudio' | 'restartServer' | 'restartServerAndRe
 
 export type RestartState = 'pending' | 'failed' | null;
 
-export type CodeNotice = { text: string; action: CodeAction | null };
-
-const short = (sha: string) => sha.slice(0, 7);
+export type CodeNotice = { text: string; action: CodeAction };
 
 export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string | null): CodeNotice | null => {
   if (!state) return null;
@@ -26,9 +24,9 @@ export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string
     return { text: labels.host, action: 'restartStudio' };
   }
 
-  if (cli.running && cli.dirty) return { text: labels.cliDirty(short(cli.running)), action: null };
-
-  if (cli.running && cli.latest && cli.running !== cli.latest) return { text: labels.cli, action: 'restartServer' };
+  if (cli.running && !cli.dirty && cli.latest && cli.running !== cli.latest) {
+    return { text: labels.cli, action: 'restartServer' };
+  }
 
   if (pageLoadedAt && frontend.latest && pageLoadedAt !== frontend.latest) {
     return { text: labels.frontend, action: 'restartServerAndReload' };

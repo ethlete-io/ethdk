@@ -22,8 +22,6 @@ import {
   SketchWithdrawn,
 } from '../sketches/sketches-sample';
 
-export type SketchMergeHold = { reason: string; dirty?: string[] };
-
 @Component({
   selector: 'ethlete-sketch-head',
   templateUrl: './sketch-head.component.html',
@@ -53,7 +51,6 @@ export class SketchHeadComponent {
   public status = input<SketchStatus>('waiting');
   public readyReason = input<string | null>(null);
   public hold = input.required<SketchHold>();
-  public heldMerge = input<SketchMergeHold | null>(null);
   public autoMerge = input(false);
   public error = input<string | null>(null);
   public commentable = input(false);

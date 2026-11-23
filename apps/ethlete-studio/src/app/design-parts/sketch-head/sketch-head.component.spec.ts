@@ -3,16 +3,19 @@ import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
-import { SketchStatus, SketchWithdrawn } from '../sketches/sketches-sample';
+import { SketchAgentRun, SketchStatus, SketchWithdrawn } from '../sketches/sketches-sample';
 import { SketchHeadComponent } from './sketch-head.component';
 
-const HOLD = { until: 'B1', by: { short: 'Sol', agent: 'codex' as const }, since: 'seit 1 Min' };
+const HOLD = { until: 'B1', since: 'seit 1 Min' };
+const OPUS = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' as const };
 
 @Component({
   imports: [SketchHeadComponent],
   template: `<ethlete-sketch-head
     [(withdrawn)]="withdrawn"
     [hold]="hold"
+    [agent]="agent()"
+    [reasonOpen]="reasonOpen()"
     [status]="status()"
     [readyReason]="readyReason()"
     [discardable]="discardable()"
@@ -27,6 +30,8 @@ const HOLD = { until: 'B1', by: { short: 'Sol', agent: 'codex' as const }, since
 })
 class HostComponent {
   hold = HOLD;
+  agent = signal<SketchAgentRun | null>(null);
+  reasonOpen = signal(false);
   status = signal<SketchStatus>('waiting');
   readyReason = signal<string | null>(null);
   discardable = signal(true);
@@ -77,6 +82,40 @@ describe('SketchHeadComponent', () => {
     expect(text).not.toContain('Letzte Änderung');
     expect(root.querySelector('[data-sk-not-ready], [data-sk-question]')).toBeNull();
     expect(root.querySelector('header')?.nextElementSibling?.querySelector('et-select')).not.toBeNull();
+  });
+
+  // The human wants the model icon and name in the agent line; keep it.
+  it('shows the model icon and name with zeichnet in the agent line', async () => {
+    const { fixture, root, host } = await setup();
+
+    host.status.set('drawing');
+    host.agent.set({ by: OPUS, since: 'seit 4 Min' });
+    await fixture.whenStable();
+
+    const line = root.querySelector('[data-sk-agent]');
+
+    expect(line?.querySelector('svg[ethlete-agent-logo]')).not.toBeNull();
+    expect([...(line?.children ?? [])].map((part) => part.textContent?.trim())).toEqual([
+      '',
+      'Opus 5.5',
+      'zeichnet',
+      '· seit 4 Min',
+    ]);
+  });
+
+  // The human decided Studio does not show the agent's model in the hold reason.
+  it('shows the hold reason without a model', async () => {
+    const { fixture, root, host } = await setup();
+
+    host.status.set('paused');
+    host.reasonOpen.set(true);
+    await fixture.whenStable();
+
+    const text = root.textContent ?? '';
+
+    expect(text).toContain('Wartet auf B1');
+    expect(text).toContain('seit 1 Min');
+    expect(root.querySelector('svg[ethlete-agent-logo]')).toBeNull();
   });
 
   it('emits discard and retry, and toggles the withdrawn rows', async () => {

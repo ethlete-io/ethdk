@@ -13,21 +13,12 @@
       <ng-template #holdContent><ethlete-sketch-status-badge status="paused" /></ng-template>
       <ng-template #holdReason>
         <span class="font-ui-medium text-et-surface">{{ LABELS.holdUntil(hold().until) }}</span>
-        <span>·</span>
-        <span class="inline-flex items-center gap-space-1"
-          ><svg [agent]="hold().by.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ hold().by.short }}</span
-        >
         <span>· {{ hold().since }}</span>
       </ng-template>
     }
     @case ('waiting') {
       <span class="flex items-center gap-space-2">
         <ethlete-sketch-status-badge status="waiting" />
-        @if (heldMerge(); as held) {
-          <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-merge-hold>{{
-            LABELS.mergeHold(held)
-          }}</span>
-        }
       </span>
     }
     @case ('picked') {
@@ -103,21 +94,25 @@
   </et-form-field>
   @if (agent(); as run) {
     <span
-      [etProvideColor]="run.failed ? errorTheme() : undefined"
+      [etProvideColor]="run.failure ? errorTheme() : undefined"
       class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-muted"
       data-sk-agent
     >
       <span
-        [class.animate-pulse]="!run.failed"
+        [class.animate-pulse]="!run.failure"
         class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
       ></span>
       <span class="inline-flex items-center gap-space-1"
         ><svg [agent]="run.by.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ run.by.short }}</span
       >
-      <span [class]="run.failed ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'" class="font-ui-medium">{{
-        run.task
-      }}</span>
-      <span>· {{ run.step }}{{ run.since ? ' · ' + run.since : '' }}</span>
+      <span
+        [class]="run.failure ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'"
+        class="font-ui-medium"
+        >{{ run.failure ?? LABELS.drawingMark }}</span
+      >
+      @if (run.since) {
+        <span>· {{ run.since }}</span>
+      }
     </span>
   }
   @if (port(); as merge) {

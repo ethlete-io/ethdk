@@ -37,12 +37,12 @@ describe('codeNoticeOf', () => {
     });
   });
 
-  // A dirty libs/cli keeps the last copy running and the notice names its commit, with no click.
-  it('names the commit it runs on while the cli has uncommitted changes, and offers no click', () => {
-    expect(codeNoticeOf({ ...settled, cli: { running: A, latest: B, dirty: true } }, A)).toEqual({
-      text: 'CLI hat uncommittete Änderungen, Studio läuft auf Stand aaaaaaa',
-      action: null,
-    });
+  // The human decided Studio does not show that the CLI copy has uncommitted changes.
+  it('shows no notice while the cli has uncommitted changes', () => {
+    const notice = codeNoticeOf({ ...settled, cli: { running: A, latest: B, dirty: true } }, A);
+
+    expect(notice).toBeNull();
+    expect(JSON.stringify(notice)).not.toContain('CLI hat uncommittete Änderungen');
   });
 
   it('asks to restart the server after a commit to the app copy', () => {

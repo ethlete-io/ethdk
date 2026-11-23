@@ -55,7 +55,7 @@ const statusMarkup = async (status: SketchHeadStatus, readyReason?: string) => {
         content: tag.body,
         open: false,
         reason: html`<span class="font-ui-medium text-et-surface">Wartet auf ${HOLD.until}</span>
-          <span>·</span>${modelName(HOLD.by)}<span>· ${HOLD.since}</span>`,
+          <span>· ${HOLD.since}</span>`,
       }),
     };
   }
@@ -88,9 +88,9 @@ const agentLine = (run: AgentProgress) =>
     ></span>
     ${modelName(run.by)}
     <span class="font-ui-medium ${run.failed ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'}"
-      >${run.task}</span
+      >${run.failed ? run.task : SKETCHES_LABELS.drawingMark}</span
     >
-    <span>· ${run.step} · ${run.since}</span>
+    <span>· ${run.since}</span>
   </span>`;
 
 const portLine = (port: MergePort) =>
@@ -243,7 +243,7 @@ export default definePart({
   describe: {
     plain: 'A round; check the picker one row under the head row and the withdrawn switch beside it.',
     agent:
-      'An agent drawing the round; check the zeichnet badge and the pulsing agent line with model, task and step beside the picker.',
+      'An agent drawing the round; check the zeichnet badge and the pulsing agent line with the model, zeichnet and its time beside the picker.',
     edit: 'A direct edit; check the Auto-Merge tag and the edit hint in place of Verwerfen.',
     error: 'A merge that failed outside the rows; check the server reason in the error colour before Verwerfen.',
     'comments-retry':

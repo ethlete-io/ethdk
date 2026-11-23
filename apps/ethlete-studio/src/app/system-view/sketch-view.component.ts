@@ -262,7 +262,6 @@ const scrollOf = (data: unknown) =>
       [selected]="picked() ?? undefined"
       [openPoints]="openPointGroups()"
       [errored]="erroredVariants()"
-      [mergeHold]="sketch().mergeHold ?? null"
       [error]="mergeError()"
       [listError]="listError()"
       [comments]="sketchCommentRows()"
@@ -664,11 +663,9 @@ export class SketchViewComponent {
   protected held = computed<SketchHold>(() => {
     const hold = this.sketch().hold;
     const at = hold ? Date.parse(hold.heldAt) : NaN;
-    const by = hold?.by ?? '';
 
     return {
       until: hold?.until ?? '',
-      by: sketchModelOf(by),
       since: Number.isNaN(at) ? '' : SKETCHES_LABELS.since(minutesSince(at)),
     };
   });
@@ -757,14 +754,11 @@ export class SketchViewComponent {
     const report = this.sketch().report;
     const at = report ? Date.parse(report.updatedAt) : NaN;
     const minutes = Number.isNaN(at) ? null : minutesSince(at);
-    const drawn = this.drawnVariant();
     const labels = SKETCHES_LABELS.agentRun;
 
-    if (report && drawn !== null)
+    if (report && this.drawnVariant() !== null)
       return {
         by: sketchModelOf(report.author ?? ''),
-        task: report.message,
-        step: SKETCHES_LABELS.variant(report.variant ?? drawn),
         since: minutes === null ? '' : SKETCHES_LABELS.since(minutes),
       };
 
@@ -776,10 +770,8 @@ export class SketchViewComponent {
 
     return {
       by: sketchModelOf(report?.author ?? this.newestAuthor() ?? ''),
-      task: labels.failed(round < 0 ? null : round + 1),
-      step: labels.errors(this.renderState().errors) || labels.errored(errored),
       since: minutes === null ? '' : labels.ago(minutes),
-      failed: true,
+      failure: labels.failed(round < 0 ? null : round + 1),
     };
   });
 

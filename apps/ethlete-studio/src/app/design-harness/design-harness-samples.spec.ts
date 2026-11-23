@@ -61,7 +61,7 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
   });
 
   it('feeds the agent and port props as their samples and refuses a value without one', () => {
-    expect(sketchesOf({ part: 'narrow', agent: 'failed' })['agent']).toMatchObject({ failed: true });
+    expect(sketchesOf({ part: 'narrow', agent: 'failed' })['agent']).toMatchObject({ failure: expect.any(String) });
     expect(sketchesOf({ part: 'narrow', port: 'two' })['port']).toMatchObject({ merged: expect.any(Array) });
     expect(sketchesOf({ part: 'narrow' })).not.toHaveProperty('agent');
     expect(() => sketchesOf({ part: 'narrow', agent: 'nope' })).toThrow('agent=nope');

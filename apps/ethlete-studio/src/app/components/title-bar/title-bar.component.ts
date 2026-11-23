@@ -51,9 +51,6 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
       <ethlete-title-search [product]="product()" [part]="part()" [os]="os()" />
 
       <div [class.self-stretch]="caption()" class="flex items-center justify-end gap-2">
-        @if (!notice() && noticeText(); as text) {
-          <span class="whitespace-nowrap text-et-surface-muted" data-code-notice>{{ text }}</span>
-        }
         @if (notice()) {
           <button
             [etTooltip]="restart() ? null : noticeText()"

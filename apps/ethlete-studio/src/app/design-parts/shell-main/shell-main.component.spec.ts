@@ -487,11 +487,13 @@ describe('ShellMainComponent', () => {
       expect(hint).toBe('CLI geändert - neu starten');
     });
 
-    it('draws only the hint while the cli has uncommitted changes', async () => {
-      const { restart, text } = await renderWith({ ...running, cli: { ...running.cli, dirty: true } });
+    // The human decided Studio does not show that the CLI copy has uncommitted changes.
+    it('draws nothing while the cli has uncommitted changes', async () => {
+      const { restart, text, hint } = await renderWith({ ...running, cli: { ...running.cli, dirty: true } });
 
       expect(restart).toBeUndefined();
-      expect(text).toBe('CLI hat uncommittete Änderungen, Studio läuft auf Stand aaaaaaa');
+      expect(hint).toBeUndefined();
+      expect(text ?? '').not.toContain('CLI hat uncommittete Änderungen');
     });
   });
 });

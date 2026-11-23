@@ -57,7 +57,7 @@ import { Camera } from '../../components/design-canvas/canvas-math';
 import { FrameZoom, frameZoomCamera } from '../../components/design-canvas/frame-zoom-camera';
 import { mountFrameZoomViewport } from '../../components/design-canvas/frame-zoom-viewport';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
-import { SketchHeadComponent, SketchMergeHold } from '../sketch-head/sketch-head.component';
+import { SketchHeadComponent } from '../sketch-head/sketch-head.component';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { SYSTEM_TREE_LABELS } from '../../i18n/system-labels';
 import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.component';
@@ -249,7 +249,6 @@ export class SketchesComponent {
   public openPoints = input<OpenPointGroup[]>([]);
   public pointsClosed = model(true);
   public errored = input<readonly string[]>([]);
-  public mergeHold = input<SketchMergeHold | null>(null);
   public drawn = input<string | null>(SKETCH_DRAWN);
   public hold = input<SketchHold>(SKETCH_HOLD);
   public reason = input(false);
@@ -487,7 +486,7 @@ export class SketchesComponent {
     this.labelsHiddenAt({ scale: this.scale(), label: this.labelFont() }) ? null : this.labelFont(),
   );
   protected shownStatus = computed(() =>
-    (this.agent() && !this.agent()?.failed) || this.port()
+    (this.agent() && !this.agent()?.failure) || this.port()
       ? 'drawing'
       : this.errored().length > 0 && ['waiting', 'not-ready'].includes(this.status())
         ? 'failed'
@@ -532,12 +531,6 @@ export class SketchesComponent {
           .map((row) => row.key),
       ),
   );
-  protected heldMerge = computed(() => {
-    const variants = this.listedRows().filter((row) => !isBaseRow(row));
-    const same = this.sameKeys();
-
-    return variants.length > 0 && variants.every((row) => same.has(row.key)) ? this.mergeHold() : null;
-  });
   protected sameLabel = computed(() =>
     this.LABELS.sameVariants(this.sameRows().map((row) => row.label ?? this.LABELS.variant(row.key))),
   );
