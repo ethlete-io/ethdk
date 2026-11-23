@@ -615,7 +615,7 @@ export class SketchViewComponent {
           : {}),
         width,
         sized: known !== undefined,
-        shots: row.shots.map(({ state, changed, change }) => {
+        shots: row.shots.map(({ state, changed, change, width: presetWidth, height: presetHeight }) => {
           const ratio = ratios[`${row.key} ${state}`];
           const measuredWidth = sizeOf(state)?.width;
 
@@ -623,11 +623,12 @@ export class SketchViewComponent {
             state,
             changed,
             ...(change ? { change } : {}),
-            ...(row.height === null && measuredWidth !== undefined && measuredWidth > width
+            ...(presetWidth !== undefined ? { width: presetWidth } : {}),
+            ...(presetHeight === undefined && measuredWidth !== undefined && measuredWidth > width
               ? { width: measuredWidth }
               : {}),
             height:
-              row.height ??
+              presetHeight ??
               sizeOf(state)?.height ??
               (ratio ? Math.round(ratio * width) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
           };
@@ -866,7 +867,7 @@ export class SketchViewComponent {
               ...inboxCommentOf(comment, { now, userName }),
               part: labels.get(variant) ?? variant,
               variant,
-              shot: comment.state,
+              shot: this.shotOfPlace(variant, comment),
               point: comment.point ?? null,
             },
           ]
@@ -880,7 +881,12 @@ export class SketchViewComponent {
 
     if (!draft || !variant || draft.place.sketch?.target !== this.sketch().target) return null;
 
-    return { variant, shot: draft.place.state, point: draft.point, ...senderOf('user', undefined) };
+    return {
+      variant,
+      shot: this.shotOfPlace(variant, draft.place),
+      point: draft.point,
+      ...senderOf('user', undefined),
+    };
   });
 
   protected variantPins = computed<SketchPin[]>(() =>
@@ -969,11 +975,18 @@ export class SketchViewComponent {
   protected startComment({ variant, shot, point }: SketchCommentPlace) {
     const target = this.sketch().target;
     const row = this.rows().find((candidate) => candidate.key === variant);
-    const size = row?.shots.find((candidate) => candidate.state === shot)?.width ?? row?.width ?? 'fitted';
+    const preset = this.sketchRows()
+      .find((candidate) => candidate.key === variant)
+      ?.shots.find((candidate) => candidate.state === shot)?.place;
+    const size =
+      (this.sketch().layer === 'pages' ? preset?.size : undefined) ??
+      row?.shots.find((candidate) => candidate.state === shot)?.width ??
+      row?.width ??
+      'fitted';
 
     this.commentStore.start({
       frameId: `${variant} ${shot}`,
-      place: { part: target, state: shot, size, sketch: { target, variant } },
+      place: { part: target, state: preset?.state ?? shot, size, sketch: { target, variant } },
       point,
     });
   }
@@ -1074,6 +1087,15 @@ export class SketchViewComponent {
     if (naturalWidth === 0 || this.pictureRatios()[key] === naturalHeight / naturalWidth) return;
 
     this.pictureRatios.update((ratios) => ({ ...ratios, [key]: naturalHeight / naturalWidth }));
+  }
+
+  private shotOfPlace(variant: string, place: { state: string; size?: string | number }) {
+    const shots = this.sketchRows().find((row) => row.key === variant)?.shots ?? [];
+
+    return (
+      shots.find((shot) => shot.place.state === place.state && shot.place.size === String(place.size))?.state ??
+      place.state
+    );
   }
 
   private safeUrlOf(src: string) {

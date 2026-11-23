@@ -1406,13 +1406,16 @@ export type SketchRowShot = {
   src: string;
   picture: string;
   change?: SketchChange;
+  place: { state: string; size?: string };
+  width?: number;
+  height?: number;
 };
 
-export type SketchRowOf = { key: string; width: number | null; height: number | null; shots: SketchRowShot[] };
+export type SketchRowOf = { key: string; width: number | null; shots: SketchRowShot[] };
 
 /**
  * One row for the part as it is now (when it exists) and one per shown variant, each with every state in the
- * part's order. A variant's state is changed unless its target lists it as `unchanged`, and `null` while no compare
+ * part's order, a page's state once per preset of the product at that preset's size. A variant's state is changed unless its target lists it as `unchanged`, and `null` while no compare
  * answered yet; the current row changes nothing.
  */
 export const sketchRowsOf = ({
@@ -1432,8 +1435,9 @@ export const sketchRowsOf = ({
   currentRevision?: number;
   variantRevisions?: Record<string, number>;
 }): SketchRowOf[] => {
-  const size = sketchSizesOf({ product, sketch, part })[0] ?? null;
-  const cell = cellSizeOf(product, size);
+  const offered = sketchSizesOf({ product, sketch, part });
+  const sizes = sketch.layer === 'pages' && offered.length > 1 ? offered : [offered[0] ?? null];
+  const cell = cellSizeOf(product, sizes[0] ?? null);
   const partKey = sketchPartOf(sketch);
   const rowOf = (key: string): SketchRowOf => {
     const target =
@@ -1445,30 +1449,35 @@ export const sketchRowsOf = ({
     return {
       key,
       width: cell.width ?? null,
-      height: sketch.layer === 'pages' ? (cell.height ?? null) : null,
-      shots: states.map((state) => {
-        const address = {
-          port,
-          product: product.name,
-          part: partKey,
-          state,
-          epoch,
-          revision: key === CURRENT ? currentRevision : (variantRevisions[key] ?? revision),
-          surface,
-          color,
-          ...(key === CURRENT ? {} : { sketch: sketch.target, variant: key }),
-        };
+      shots: states.flatMap((state) =>
+        sizes.map((size) => {
+          const sized = cellSizeOf(product, size);
+          const address = {
+            port,
+            product: product.name,
+            part: partKey,
+            state,
+            epoch,
+            revision: key === CURRENT ? currentRevision : (variantRevisions[key] ?? revision),
+            surface,
+            color,
+            ...(key === CURRENT ? {} : { sketch: sketch.target, variant: key }),
+          };
 
-        const change = key === CURRENT ? undefined : target?.crops?.[state];
+          const change = key === CURRENT ? undefined : target?.crops?.[state];
 
-        return {
-          state,
-          changed: key === CURRENT ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
-          ...(change ? { change } : {}),
-          src: partFrameUrl({ ...address, ...(size === null ? { fit: true } : {}) }),
-          picture: partShotUrl({ ...address, preset: cell.preset, width: cell.width }),
-        };
-      }),
+          return {
+            state: sizes.length > 1 ? `${state} · ${size}` : state,
+            changed: key === CURRENT ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
+            ...(change ? { change } : {}),
+            src: partFrameUrl({ ...address, ...(size === null ? { fit: true } : {}) }),
+            picture: partShotUrl({ ...address, preset: sized.preset, width: sized.width }),
+            place: { state, ...(size === null ? {} : { size }) },
+            ...(sized.width !== undefined && sized.width !== cell.width ? { width: sized.width } : {}),
+            ...(sketch.layer === 'pages' && sized.height !== undefined ? { height: sized.height } : {}),
+          };
+        }),
+      ),
     };
   };
 

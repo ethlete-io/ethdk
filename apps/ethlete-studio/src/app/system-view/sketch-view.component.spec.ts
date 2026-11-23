@@ -261,7 +261,7 @@ describe('SketchViewComponent', () => {
     expect(picture().classList).toContain('opacity-0');
   });
 
-  it('draws every variant of a page sketch at the page frame size, whatever its content measures', async () => {
+  it('draws every variant of a page sketch once per preset at its size, whatever its content measures', async () => {
     const page: ListedSketch = {
       ...ROUNDED,
       target: 'pages/overview',
@@ -293,10 +293,18 @@ describe('SketchViewComponent', () => {
     const rows = fixture.componentInstance['rows']();
 
     expect(rows.map((row) => row.width)).toEqual([390, 390]);
-    expect(rows.flatMap((row) => row.shots.map((shot) => [shot.height, shot.width]))).toEqual([
-      [844, undefined],
-      [844, undefined],
+    expect(rows.flatMap((row) => row.shots.map((shot) => [shot.state, shot.height, shot.width]))).toEqual([
+      ['default · phone', 844, undefined],
+      ['default · desktop', 900, 1440],
+      ['default · phone', 844, undefined],
+      ['default · desktop', 900, 1440],
     ]);
+    expect(root.querySelectorAll('iframe[data-variant="a"]').length).toBe(2);
+
+    fixture.componentInstance['startComment']({ variant: 'a', shot: 'default · desktop', point: null });
+
+    expect(fixture.componentInstance.commentStore.draft()?.place).toMatchObject({ state: 'default', size: 'desktop' });
+    expect(fixture.componentInstance['sketchDraft']()?.shot).toBe('default · desktop');
   });
 
   it('shows the picture, not a painted frame, while the frame page is narrower than its cell or scrolled', async () => {
@@ -408,8 +416,7 @@ describe('SketchViewComponent', () => {
     const row = (key: string, shots: [string, boolean | null][]) => ({
       key,
       width: null,
-      height: null,
-      shots: shots.map(([state, changed]) => ({ state, changed, src: '', picture: '' })),
+      shots: shots.map(([state, changed]) => ({ state, changed, src: '', picture: '', place: { state } })),
     });
 
     expect([
