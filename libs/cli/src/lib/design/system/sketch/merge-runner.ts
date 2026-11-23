@@ -10,14 +10,30 @@ import { commitMergeResultSync } from './merge-commit';
 import { mergeSketch, MergeRefusal } from './merge';
 import { journaledMergeOf } from './merge-step';
 import { recordMergeReason } from './merged-parts';
-import { Sketch } from './sketch';
+import { decideSketch, Sketch, SketchDecisionInput } from './sketch';
 
-export type MergeRequest = { target: string; product: string; sketch: Sketch; note?: string };
+export type MergeRequest = {
+  target: string;
+  product: string;
+  sketch: Sketch;
+  note?: string;
+  pick?: Extract<SketchDecisionInput, { kind: 'pick' }>;
+};
 
 export type MergeResponse = { result?: string[] | MergeRefusal; error?: string };
 
-/** Merges the picked variant of `sketch` as the Studio merge does, on this thread: refreshes the harness map, records the note and commits the result. */
-export const studioMergeOf = ({ target, product: name, sketch, note }: MergeRequest): string[] | MergeRefusal => {
+/**
+ * Merges the picked variant of `sketch` as the Studio merge does, on this thread: refreshes the harness map, records the
+ * note and commits the result. With `pick` it records that pick in the same journaled step, so a refused merge leaves
+ * no pick behind.
+ */
+export const studioMergeOf = ({
+  target,
+  product: name,
+  sketch: asked,
+  note,
+  pick,
+}: MergeRequest): string[] | MergeRefusal => {
   const config = readConfig(target);
 
   if (!config) return { reason: 'no design config' };
@@ -26,13 +42,20 @@ export const studioMergeOf = ({ target, product: name, sketch, note }: MergeRequ
 
   if (typeof product === 'string') return { reason: product };
 
+  const sketch: Sketch = pick ? { ...asked, decision: { ...pick, decidedAt: new Date().toISOString() } } : asked;
   const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
 
   return journaledMergeOf({
     target,
     product,
     sketch,
-    merge: () => mergeSketch({ target, config, product, sketch, note, deferRebase: true }),
+    merge: () => {
+      const toMerge = pick ? decideSketch({ sketch: asked, decision: pick }) : sketch;
+
+      if (typeof toMerge === 'string') return { reason: toMerge };
+
+      return mergeSketch({ target, config, product, sketch: toMerge, note, deferRebase: true });
+    },
     finish: (before, sketchDirs) => {
       refreshHarnessMap({ target, product });
 

@@ -20,7 +20,6 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
   Observable,
   catchError,
-  concatMap,
   distinctUntilChanged,
   filter,
   fromEvent,
@@ -43,9 +42,8 @@ import {
   ListedSketch,
   MergeNeedsRebaseError,
   SketchAddress,
-  decideSketch$,
   discardSketch$,
-  mergeSketch$,
+  pickSketch$,
   rejectionOf,
   saveListWidth,
   sketchPartOf,
@@ -86,13 +84,11 @@ import {
 import {
   CURRENT,
   partKeyOf,
-  pickedVariantOf,
   sketchHeadTitleOf,
   sketchMatrixOf,
   sketchRoundsOf,
   sketchRowsOf,
   sketchUsingPagesOf,
-  waitsForPick,
 } from './system-tree';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { keptRead$ } from './kept-read';
@@ -259,7 +255,7 @@ const scrollOf = (data: unknown) =>
       [rounds]="rounds()"
       [round]="shownRoundKey()"
       [pins]="variantPins()"
-      [selected]="picked() ?? undefined"
+      [selected]="taken() ?? undefined"
       [openPoints]="openPointGroups()"
       [errored]="erroredVariants()"
       [error]="mergeError()"
@@ -424,7 +420,12 @@ export class SketchViewComponent {
 
   public busy = signal<Busy | null>(null);
 
-  protected picked = computed(() => pickedVariantOf(this.sketch()));
+  private sketchTarget = computed(() => this.sketch().target);
+
+  protected taken = linkedSignal<string, string | null>({
+    source: this.sketchTarget,
+    computation: () => null,
+  });
 
   protected openedCamera = computed(() => {
     this.cameraKey();
@@ -462,8 +463,8 @@ export class SketchViewComponent {
       })),
   );
 
-  protected mergeError = linkedSignal<string | null, string | null>({
-    source: this.picked,
+  protected mergeError = linkedSignal<string, string | null>({
+    source: this.sketchTarget,
     computation: () => null,
   });
 
@@ -796,7 +797,7 @@ export class SketchViewComponent {
     if (this.renderState().state === 'failed') return 'failed';
     if (this.renderState().state === 'drawing') return 'drawing';
 
-    return waitsForPick(this.sketch()) ? 'waiting' : 'picked';
+    return 'waiting';
   });
 
   private openPointReads = toSignal(
@@ -804,7 +805,7 @@ export class SketchViewComponent {
       computed(() => {
         const { port, product, sketch } = this.address();
 
-        return this.picked() === null ? null : { address: { port, product }, part: sketch, revision: this.revision() };
+        return this.taken() === null ? null : { address: { port, product }, part: sketch, revision: this.revision() };
       }),
     ).pipe(
       keptRead$({
@@ -836,8 +837,6 @@ export class SketchViewComponent {
         ),
     ].filter((comment) => isInSketch(comment, { sketch: this.sketch(), contextPages: this.contextPages() })),
   );
-
-  private sketchTarget = computed(() => this.sketch().target);
 
   protected confirm = linkedSignal<SketchConfirm | null>(() => {
     this.sketchTarget();
@@ -1036,12 +1035,12 @@ export class SketchViewComponent {
 
     if (this.busy()) return;
 
+    this.taken.set(variant);
     this.merging.emit(true);
     this.mergeError.set(null);
     this.run(
       'merge',
-      decideSketch$(address, { kind: 'pick', variant }).pipe(
-        concatMap(() => mergeSketch$(address)),
+      pickSketch$(address, variant).pipe(
         tap(() => this.mergeComplete.emit(address.sketch)),
         catchError((error: unknown) => {
           this.mergeError.set(

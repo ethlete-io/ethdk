@@ -1231,12 +1231,12 @@ describe('SketchesComponent', () => {
     expect(notReady.querySelector('[data-sk-row="x"] button')).toBeNull();
   });
 
-  it('keeps Übernehmen after a pick and opens the sketch points from the chip in the head of the picked variant only', async () => {
+  it('keeps Übernehmen and opens the sketch points from the chip in the head of the selected variant only', async () => {
     const y = { ...ROWS[1], key: 'y', note: 'Variante y' } as SketchRow;
     const groups = [{ icon: 'error', lines: [{ text: SYSTEM_LABELS.sketchProblem('NO-HEX'), detail: 'y' }] }];
     const fixture = await render({
       camera: '100',
-      status: 'picked',
+      status: 'waiting',
       fresh: true,
       rows: [ROWS[1], y],
       selected: 'y',
@@ -1246,7 +1246,6 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = fixture.nativeElement;
     const chip = root.querySelector<HTMLButtonElement>('[data-sk-row="y"] [data-open-points-chip]');
 
-    expect(textOf(root.querySelector('header [data-sk-picked]'))).toBe(LABELS.status.picked);
     expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-merge]'))).toBe(LABELS.merge);
     expect(root.querySelector('[data-sk-row="x"] [data-open-points-chip]')).toBeNull();
     expect(textOf(chip)).toBe(SYSTEM_LABELS.openCount(1));
@@ -1676,10 +1675,10 @@ describe('SketchesComponent', () => {
       since: 'vor 1 Min',
       failure: 'Runde 3 fehlgeschlagen',
     };
-    const root: HTMLElement = (await render({ camera: '100', status: 'picked', agent })).nativeElement;
+    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', agent })).nativeElement;
 
     expect(root.querySelector('[data-sk-agent] .animate-pulse')).toBeNull();
-    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.picked);
+    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.waiting);
     expect(textOf(root.querySelector('header'))).not.toContain(LABELS.status.drawing);
   });
 

@@ -711,37 +711,15 @@ export const listedSketches$ = ({
     timeout(LISTED_SKETCHES_TIMEOUT_MS),
   );
 
-export type SketchDecisionWrite =
-  | { kind: 'pick'; variant: string; comment?: string }
-  | { kind: 'discard'; comment?: string }
-  | { kind: 'reject' | 'reopen'; variant: string; reason?: string }
-  | { kind: 'reason'; variant: string; reason: string };
-
-export type SketchDecided = Pick<ListedSketch, 'decision' | 'rejections'>;
-
 /**
- * Writes the user's pick or discard, or the designer's verdict on one variant, into `sketch.json`, and answers the
- * decision and rejections as written. A pick needs a sketch that is ready and a variant that is not rejected.
+ * Picks `variant` and merges it into the product in one step, and answers the merged parts. A refused merge leaves no
+ * pick behind; a stale baseline fails with {@link MergeNeedsRebaseError}.
  */
-export const decideSketch$ = (address: SketchAddress, decision: SketchDecisionWrite): Observable<SketchDecided> =>
-  designAnswer$<Partial<ListedSketch> | null>(
+export const pickSketch$ = (address: SketchAddress, variant: string): Observable<string[]> =>
+  designAnswer$<{ merged: string[] }>(
     sketchUrl({ ...address, path: 'sketch-decision' }),
-    postJson(decision),
-  ).pipe(
-    map((answer) => ({
-      ...(answer && 'decision' in answer && { decision: answer.decision }),
-      ...(answer?.rejections && { rejections: answer.rejections }),
-    })),
-  );
-
-/**
- * Merges the picked variant into the product and answers the merged parts. A stale baseline fails with
- * {@link MergeNeedsRebaseError}.
- */
-export const mergeSketch$ = (address: SketchAddress): Observable<string[]> =>
-  designAnswer$<{ merged: string[] }>(sketchUrl({ ...address, path: 'sketch-merge' }), postJson({})).pipe(
-    map(({ merged }) => merged),
-  );
+    postJson({ kind: 'pick', variant }),
+  ).pipe(map(({ merged }) => merged));
 
 /** Deletes the sketch with all its variants. */
 export const discardSketch$ = (address: SketchAddress): Observable<void> =>

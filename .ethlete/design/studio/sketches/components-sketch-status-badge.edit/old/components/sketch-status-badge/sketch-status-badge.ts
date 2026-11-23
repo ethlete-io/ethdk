@@ -2,7 +2,7 @@ import { definePart } from '@design-system';
 import badge from '@system/components/badge';
 import { SKETCHES_LABELS } from '../../../../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 
-export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'idle' | 'not-ready';
+export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused';
 
 export type SketchBadgeStatus = SketchStatus | 'failed';
 
@@ -13,8 +13,6 @@ const LABEL: Record<SketchBadgeStatus, string> = {
   waiting: SKETCHES_LABELS.status.waiting,
   picked: SKETCHES_LABELS.status.picked,
   paused: 'Pausiert',
-  idle: SKETCHES_LABELS.status.idle,
-  'not-ready': SKETCHES_LABELS.status.notReady,
   failed: SKETCHES_LABELS.status.failed,
 };
 
@@ -31,7 +29,7 @@ export const sketchStatusBadge = async (status: SketchBadgeStatus) => {
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/sketch-status-badge/sketch-status-badge.component.ts',
-  note: 'The status of a sketch as a small tonal badge: zeichnet while a variant is drawn, Wartet auf deine Wahl when all stand and nothing is picked, Variante gewählt once the designer picked a variant and the merge is still to come, Pausiert while the agent waits on other work, Keine Aktivität when nothing moved for a while, Noch nicht bereit while `sketch ready` has not passed. Render fehlgeschlagen, when its render failed, takes the error colour theme by its semantic type. The host places it, and wraps the paused badge in the hold trigger.',
+  note: 'The status of a sketch as a small tonal badge: zeichnet while a variant is drawn, Wartet auf deine Wahl when all stand and nothing is picked, Variante gewählt once the designer picked a variant and the merge is still to come, and Pausiert while the agent waits on other work. Render fehlgeschlagen, when its render failed, takes the error colour theme by its semantic type. The host places it, and wraps the paused badge in the hold trigger.',
   madeBy: ['claude-opus-5-5', 'design check'],
   widths: [200],
   states: {
@@ -39,8 +37,6 @@ export default definePart({
     waiting: { status: 'waiting' },
     picked: { status: 'picked' },
     paused: { status: 'paused' },
-    idle: { status: 'idle' },
-    'not-ready': { status: 'not-ready' },
     failed: { status: 'failed' },
   },
   describe: {
@@ -48,8 +44,6 @@ export default definePart({
     waiting: 'The tonal badge Wartet auf deine Wahl; check that the longest label stays on one line inside 200px.',
     picked: 'The tonal badge Variante gewählt; check that it uses the same tonal look as the others.',
     paused: 'The tonal badge Pausiert; check that it keeps the same height and padding as the others.',
-    idle: 'The tonal badge Keine Aktivität; check that it reads as neutral, not as a warning.',
-    'not-ready': 'The tonal badge Noch nicht bereit; check that it keeps the neutral tonal look.',
     failed:
       'The badge Render fehlgeschlagen in the error colour; check that the tint and text switch to the error theme.',
   },

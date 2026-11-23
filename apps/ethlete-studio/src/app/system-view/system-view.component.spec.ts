@@ -1694,8 +1694,7 @@ describe('SystemViewComponent on a merge', () => {
         if (url.includes('/__design/system')) return json([PRODUCT]);
         if (url.includes('/__design/calls')) return json([]);
         if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
-        if (url.includes('/__design/sketch-decision')) return json({});
-        if (url.includes('/__design/sketch-merge'))
+        if (url.includes('/__design/sketch-decision'))
           return new Promise<Response>((done) => {
             finishMerge = () => {
               sketches = [];
@@ -1761,8 +1760,7 @@ describe('SystemViewComponent on a merge', () => {
       if (url.includes('/__design/system')) return json([PRODUCT]);
       if (url.includes('/__design/calls')) return json([]);
       if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
-      if (url.includes('/__design/sketch-decision')) return json({});
-      if (url.includes('/__design/sketch-merge'))
+      if (url.includes('/__design/sketch-decision'))
         return new Promise<Response>((done) => {
           finishMerge = () => done(new Response(JSON.stringify({ merged: ['elements/rating'] })));
         });

@@ -1,53 +1,69 @@
-import { cpSync, mkdtempSync, readFileSync } from 'fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
-import { SKETCH_DECISION_PATH, sketchDecisionAnswer } from './studio-api';
+import { sketchDecisionAnswer } from './studio-api';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget } from './system/sketch/sketch';
 
-describe('the Studio pick route', () => {
-  it('writes the pick with by, cmd and pid', async () => {
-    const target = mkdtempSync(join(tmpdir(), 'cli-studio-pick-'));
+const readied = () => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-studio-pick-'));
 
-    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+  cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
 
-    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
-    const parsed = parseTarget('elements/hero');
+  const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+  const parsed = parseTarget('elements/hero');
 
-    if (typeof parsed === 'string') throw new Error(parsed);
+  if (typeof parsed === 'string') throw new Error(parsed);
 
-    const created = createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
+  const created = createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
 
-    if (typeof created === 'string') throw new Error(created);
+  if (typeof created === 'string') throw new Error(created);
 
-    markSketchReady({ checkout: target, sketch: created });
+  markSketchReady({ checkout: target, sketch: created });
 
-    const answer = await sketchDecisionAnswer({
-      target,
-      url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
-      request: Object.assign(Readable.from([JSON.stringify({ kind: 'pick', variant: 'b' })]), {
-        method: 'POST',
-      }) as unknown as IncomingMessage,
-      signal: new AbortController().signal,
+  return { target, sketchDir: join(target, DESIGN_DIR, 'acme/sketches/elements-hero') };
+};
+
+const pick = (target: string, variant: string) =>
+  sketchDecisionAnswer({
+    target,
+    url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
+    request: Object.assign(Readable.from([JSON.stringify({ kind: 'pick', variant })]), {
+      method: 'POST',
+    }) as unknown as IncomingMessage,
+    signal: new AbortController().signal,
+  });
+
+describe('the Studio pick route', { timeout: 60_000 }, () => {
+  // Decision: a pick in Studio is a merge; there is no picked-but-unmerged state.
+  it('merges the picked variant at once', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, sketchDir } = readied();
+    const answer = await pick(target, 'b');
+
+    expect(answer).toMatchObject({ status: 200, body: { merged: ['elements/hero'] } });
+    expect(existsSync(sketchDir)).toBe(false);
+    expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
+      'elements/hero': { variant: 'b' },
     });
+  });
 
-    expect(answer.status).toBe(200);
+  it('refuses a pick whose merge is refused and leaves no pick behind', async () => {
+    const { target, sketchDir } = readied();
+    const file = join(sketchDir, 'sketch.json');
+    const sketch = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
 
-    const written = JSON.parse(
-      readFileSync(join(target, DESIGN_DIR, 'acme/sketches/elements-hero/sketch.json'), 'utf8'),
-    ) as { decision: unknown };
+    writeFileSync(file, JSON.stringify({ ...sketch, baseline: undefined }));
 
-    expect(written.decision).toEqual({
-      kind: 'pick',
-      variant: 'b',
-      by: 'designer',
-      cmd: `POST ${SKETCH_DECISION_PATH}`,
-      pid: process.pid,
-      decidedAt: expect.any(String),
-    });
+    const before = readFileSync(file, 'utf8');
+    const answer = await pick(target, 'b');
+
+    expect(answer.status).toBe(422);
+    expect(readFileSync(file, 'utf8')).toBe(before);
   });
 });

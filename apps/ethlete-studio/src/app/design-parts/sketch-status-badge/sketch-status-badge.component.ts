@@ -3,7 +3,7 @@ import { BADGE_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
-export type SketchBadgeStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'failed';
+export type SketchBadgeStatus = 'drawing' | 'waiting' | 'paused' | 'failed';
 
 const LABELS = SKETCHES_LABELS.status;
 

@@ -336,7 +336,7 @@
   </section>
 </ng-template>
 <ng-template #mergeTemplate let-row>
-  @let mergeOpen = status() === 'waiting' || status() === 'picked';
+  @let mergeOpen = status() === 'waiting';
   @let take = (mergeOpen || status() === 'drawing') && errored().length === 0 && !sameKeys().has(row.key);
   @let points = openPoints().length > 0 && row.key === selected();
   @if (take || points) {

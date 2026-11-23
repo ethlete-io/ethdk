@@ -1394,7 +1394,8 @@ describe('the design server for sketches and comments', () => {
     expect(plugin?.transform(code, '/some/other.ts')).toBeNull();
   });
 
-  it('writes a pick into sketch.json on POST only, and 422 for a variant that does not exist', async () => {
+  // Decision: a pick in Studio is a merge; there is no picked-but-unmerged state.
+  it('merges a pick at once on POST only, and 422 for a variant that does not exist', async () => {
     const target = acme();
 
     readySketch(target);
@@ -1408,14 +1409,11 @@ describe('the design server for sketches and comments', () => {
     );
     expect((await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'nope' })).status).toBe(400);
     expect(
-      (await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'b', comment: 'calmer' }))
-        .status,
-    ).toBe(200);
-    expect(JSON.parse(readFileSync(file, 'utf8'))).toMatchObject({
-      decision: { kind: 'pick', variant: 'b', comment: 'calmer', by: 'designer', pid: process.pid },
-    });
+      await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'b', comment: 'calmer' }),
+    ).toMatchObject({ status: 200, body: { merged: ['components/card'] } });
+    expect(existsSync(file)).toBe(false);
     expect((await ask('/__design/sketch-decision', '?product=acme&sketch=elements/none', 'POST', {})).status).toBe(404);
-  });
+  }, 120_000);
 
   it('records a designer rejection, refuses its pick and merge with the reason, and reopens it', async () => {
     const target = acme();
@@ -1427,7 +1425,6 @@ describe('the design server for sketches and comments', () => {
 
     expect((await decide({ kind: 'reject' })).status).toBe(400);
     expect((await decide({ kind: 'reason', variant: 'b' })).status).toBe(400);
-    expect((await decide({ kind: 'pick', variant: 'b' })).status).toBe(200);
     expect(await decide({ kind: 'reject', variant: 'b' })).toMatchObject({
       status: 200,
       body: { rejections: { b: [{ by: 'designer', decidedAt: expect.any(String) }] } },
@@ -1448,10 +1445,13 @@ describe('the design server for sketches and comments', () => {
       status: 200,
       body: { rejections: { b: [{ reopened: { by: 'designer', reason: 'second look' } }] } },
     });
-    expect((await decide({ kind: 'pick', variant: 'b' })).status).toBe(200);
-  }, 30_000);
+    expect(await decide({ kind: 'pick', variant: 'b' })).toMatchObject({
+      status: 200,
+      body: { merged: ['components/card'] },
+    });
+  }, 120_000);
 
-  it('discards a sketch, and refuses a merge without a pick', async () => {
+  it('discards a sketch, and refuses a merge without a pick and a pick whose merge is refused', async () => {
     const target = acme();
 
     readySketch(target);
@@ -1462,17 +1462,18 @@ describe('the design server for sketches and comments', () => {
       status: 422,
       body: { error: expect.stringContaining('has no pick') },
     });
-    expect((await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'b' })).status).toBe(
-      200,
-    );
     writeFileSync(join(target, DESIGN_DIR, 'acme-base/components/card/card.css'), '.acme-card { padding: 0; }');
-    expect(await ask('/__design/sketch-merge', sketchQuery, 'POST', { note: 'x' })).toMatchObject({
+    expect(await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'b' })).toMatchObject({
       status: 422,
       body: {
         error: expect.stringContaining('changed in the product'),
         changed: ['components/card'],
         rebase: expect.stringMatching(/ sketch rebase components\/card --product acme --by <model id>$/u),
       },
+    });
+    expect(await ask('/__design/sketch-merge', sketchQuery, 'POST', { note: 'x' })).toMatchObject({
+      status: 422,
+      body: { error: expect.stringContaining('has no pick') },
     });
     expect(await ask('/__design/sketch-discard', sketchQuery, 'POST')).toMatchObject({
       status: 200,

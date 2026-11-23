@@ -7,7 +7,6 @@ import { SYSTEM_LABELS } from '../i18n/system-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent, frameFitsCell, liveShotsOf, nearShotsOf } from './sketch-view.component';
-import { waitsForPick } from './system-tree';
 import { undecidedShotsOf } from './undecided-shots';
 
 const PRODUCT: ListedProduct = { name: 'web', base: null, presets: {}, parts: [], problems: [] };
@@ -629,6 +628,7 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-row="b"]')).not.toBeNull();
   });
 
+  // Decision: a pick in Studio is a merge, so Übernehmen calls the host once and no pick waits for a merge.
   it('asks to confirm Übernehmen and merges the variant only once confirmed', async () => {
     const bodies: Record<string, unknown> = {};
     const { fixture, root } = await render(SKETCH, (url, init) => {
@@ -638,7 +638,7 @@ describe('SketchViewComponent', () => {
 
       bodies[path] = JSON.parse(String(init?.body ?? '{}'));
 
-      return json(path === 'sketch-merge' ? { merged: ['components/card'] } : {});
+      return json({ merged: ['components/card'] });
     });
     const completed: string[] = [];
 
@@ -662,7 +662,7 @@ describe('SketchViewComponent', () => {
     await confirmed(mergeButtons(root)[0], fixture);
     await settle(fixture);
 
-    expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' }, 'sketch-merge': {} });
+    expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' } });
     expect(completed).toEqual(['components/card']);
   });
 
@@ -691,9 +691,8 @@ describe('SketchViewComponent', () => {
       body: { error: 'stale', changed: ['components/card'], rebase: 'design sketch rebase' },
     };
     const { fixture, root } = await render(SKETCH, (url) => {
-      if (url.includes('/__design/sketch-merge'))
+      if (url.includes('/__design/sketch-decision'))
         return Promise.resolve(new Response(JSON.stringify(refusal.body), { status: refusal.status }));
-      if (url.includes('/__design/sketch-decision')) return json({});
 
       return noComments(url);
     });
@@ -750,7 +749,6 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('header et-badge')).toBeNull();
     expect(root.querySelector('header')?.textContent).not.toContain('SHOT-NOT-VIEWED');
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
-    expect(waitsForPick(refused)).toBe(false);
   });
 
   it('shows the auto-merge badge in the head only while the forecast says merges, also on a held merge', async () => {
@@ -1033,7 +1031,8 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-merge-port]')).toBeNull();
   });
 
-  it('shows a pick the rules refuse as picked, with the sketch points in the head of the picked variant of a sketch-only part', async () => {
+  // Decision: a pick in Studio is a merge, so a recorded pick shows no picked state.
+  it('shows a ready sketch with a recorded pick as waiting, and the sketch points in the head of the variant whose merge was refused', async () => {
     const asked: string[] = [];
     const sketch: ListedSketch = {
       ...SKETCH,
@@ -1043,12 +1042,13 @@ describe('SketchViewComponent', () => {
       problems: [{ variant: 'c', problems: [{ file: 'c.ts', rule: 'UTILITY-CSS', message: 'flex' }] }],
     };
     const fetch = (url: string) => {
+      if (url.includes('/__design/sketch-decision'))
+        return Promise.resolve(new Response(JSON.stringify({ error: 'UTILITY-CSS c.ts: flex' }), { status: 422 }));
       if (!url.includes('/__design/open-points')) return noComments(url);
       asked.push(new URL(url).searchParams.get('part') ?? '');
 
       return json({
         points: [
-          { kind: 'unmerged-sketch', status: 'ready', decision: 'pick' },
           { kind: 'sketch-problem', sketch: 'elements/rating', variant: 'c', rule: 'UTILITY-CSS', message: 'flex' },
           { kind: 'sketch-problem', sketch: 'elements/rating', variant: 'c', rule: 'UTILITY-CSS', message: 'gap' },
           { kind: 'missing-motion', from: 'rest', to: 'hover' },
@@ -1057,17 +1057,23 @@ describe('SketchViewComponent', () => {
       });
     };
 
-    const { root } = await render(sketch, fetch, null as unknown as ListedPart);
-    const chip = root.querySelector('[data-selected] [data-sk-points] [data-open-points-chip]');
+    const { fixture, root } = await render(sketch, fetch, null as unknown as ListedPart);
+    const badges = () => [...root.querySelectorAll('header et-badge')].map((badge) => badge.textContent?.trim());
 
-    const badges = [...root.querySelectorAll('header et-badge')].map((badge) => badge.textContent?.trim());
+    expect(badges()).toEqual([SKETCHES_LABELS.status.waiting]);
+    expect(root.querySelector('[data-sk-row][data-selected]')).toBeNull();
+    expect(asked).toEqual([]);
 
-    expect(badges).toContain(SKETCHES_LABELS.status.picked);
-    expect(badges).not.toContain(SKETCHES_LABELS.status.waiting);
+    fixture.componentInstance['merge']('c');
+    await settle(fixture);
+
+    const chip = root.querySelector('[data-sk-row="c"][data-selected] [data-sk-points] [data-open-points-chip]');
+
+    expect(badges()).toEqual([SKETCHES_LABELS.status.waiting]);
     expect(asked).toEqual(['elements/rating']);
-    expect(chip?.textContent?.trim()).toBe(SYSTEM_LABELS.openCount(3));
+    expect(chip?.textContent?.trim()).toBe(SYSTEM_LABELS.openCount(2));
     expect(root.querySelectorAll('[data-sk-points]')).toHaveLength(1);
-    expect(chip?.closest('[data-sk-points]')?.parentElement?.querySelector('[data-sk-merge]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-merge-error]')?.textContent?.trim()).toBe('UTILITY-CSS c.ts: flex');
   });
 
   // The human decided Studio does not show the agent's model in the hold reason.

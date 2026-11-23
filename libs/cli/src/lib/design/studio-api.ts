@@ -700,53 +700,22 @@ export const sketchCropAnswer = withSketch('GET', async ({ asked, product, sketc
   return { status: 200, body: { area: changedAreaOf(diffs) } };
 });
 
-/**
- * POST `?product=&sketch=`, body `{ kind: 'pick', variant, comment? }`, `{ kind: 'discard', comment? }`, or a verdict
- * by the designer on one variant: `{ kind: 'reject' | 'reopen', variant, reason? }` or `{ kind: 'reason', variant, reason }`.
- * Writes it into sketch.json.
- */
-export const sketchDecisionAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
-  const body = await bodyOf(asked.request);
-  const kind = body?.['kind'] as SketchDecisionInput['kind'];
-  const comment = textOf(body?.['comment']);
-  const reason = textOf(body?.['reason']);
-  const variant = textOf(body?.['variant']) ?? '';
-  const studioOrigin = originOf('designer', `POST ${SKETCH_DECISION_PATH}`);
-
-  if (!SKETCH_DECISION_KINDS.includes(kind))
-    return failure(400, `kind must be one of ${SKETCH_DECISION_KINDS.join(', ')}`);
-  if (kind !== 'discard' && !variant) return failure(400, `a ${kind} needs a variant`);
-  if (kind === 'reason' && !reason) return failure(400, 'a reason needs text');
-
-  const decision: SketchDecisionInput =
-    kind === 'discard'
-      ? { kind, ...(comment ? { comment } : {}), ...studioOrigin }
-      : kind === 'pick'
-        ? { kind, variant, ...(comment ? { comment } : {}), ...studioOrigin }
-        : { kind, variant, reason: reason ?? '', by: 'designer' };
-  const decided = await journaledAsync(
-    { productDir: product.dir, root: asked.target, label: `pick of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
-    () => decideSketch({ sketch, decision }),
-  );
-
-  return typeof decided === 'string'
-    ? failure(422, decided)
-    : { status: 200, body: sketchOf({ sketch: decided, target: asked.target }) };
-});
-
-/**
- * POST `?product=&sketch=`, body `{ note? }`: merges the picked variant into the product, as `et design sketch merge` does.
- * A merge refused for a stale baseline answers 422 with `changed` (the parts, `[]` without a baseline) and the `rebase` command;
- * one the check fails after answers 422 with reason `check-failed` and the check's `findings` lines.
- */
-export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
-  const body = await bodyOf(asked.request);
-  const note = textOf(body?.['note']);
-  const refused = mergeRefusalOf({ product, sketch });
+const mergeAnswerOf = async (options: {
+  asked: Asked;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  note?: string;
+  pick?: Extract<SketchDecisionInput, { kind: 'pick' }>;
+}) => {
+  const { asked, product, sketch, note, pick } = options;
+  const refused = mergeRefusalOf({
+    product,
+    sketch: pick ? { ...sketch, decision: { ...pick, decidedAt: new Date().toISOString() } } : sketch,
+  });
 
   if (refused !== null) return failure(422, refused);
 
-  const merged = await mergeInWorker({ target: asked.target, product: product.name, sketch, note });
+  const merged = await mergeInWorker({ target: asked.target, product: product.name, sketch, note, pick });
 
   if (Array.isArray(merged)) return { status: 200, body: { merged } };
 
@@ -767,7 +736,7 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, ske
       rebase: `${repoInvocation({ root: asked.target, subcommand: 'design' })} sketch rebase ${sketch.target} --product ${product.name} --by <model id>`,
     },
   };
-});
+};
 
 /** POST `?product=&sketch=`: deletes the sketch with all its variants, as `et design sketch discard` does. */
 export const sketchDiscardAnswer = withSketch('POST', ({ asked, product, sketch }) => {
@@ -787,6 +756,55 @@ const userNameOf = (dir: string) => {
     return null;
   }
 };
+
+/**
+ * POST `?product=&sketch=`, body `{ kind: 'pick', variant, comment? }`, `{ kind: 'discard', comment? }`, or a verdict
+ * by the designer on one variant: `{ kind: 'reject' | 'reopen', variant, reason? }` or `{ kind: 'reason', variant, reason }`.
+ * A pick merges the variant at once and answers as `sketch-merge` does; a refused merge leaves no pick. The others are
+ * written into sketch.json.
+ */
+export const sketchDecisionAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
+  const body = await bodyOf(asked.request);
+  const kind = body?.['kind'] as SketchDecisionInput['kind'];
+  const comment = textOf(body?.['comment']);
+  const reason = textOf(body?.['reason']);
+  const variant = textOf(body?.['variant']) ?? '';
+  const studioOrigin = originOf('designer', `POST ${SKETCH_DECISION_PATH}`);
+
+  if (!SKETCH_DECISION_KINDS.includes(kind))
+    return failure(400, `kind must be one of ${SKETCH_DECISION_KINDS.join(', ')}`);
+  if (kind !== 'discard' && !variant) return failure(400, `a ${kind} needs a variant`);
+  if (kind === 'reason' && !reason) return failure(400, 'a reason needs text');
+
+  const decision: SketchDecisionInput =
+    kind === 'discard'
+      ? { kind, ...(comment ? { comment } : {}), ...studioOrigin }
+      : kind === 'pick'
+        ? { kind, variant, ...(comment ? { comment } : {}), ...studioOrigin }
+        : { kind, variant, reason: reason ?? '', by: 'designer' };
+
+  if (decision.kind === 'pick') return mergeAnswerOf({ asked, product, sketch, pick: decision });
+
+  const decided = await journaledAsync(
+    { productDir: product.dir, root: asked.target, label: `pick of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
+    () => decideSketch({ sketch, decision }),
+  );
+
+  return typeof decided === 'string'
+    ? failure(422, decided)
+    : { status: 200, body: sketchOf({ sketch: decided, target: asked.target }) };
+});
+
+/**
+ * POST `?product=&sketch=`, body `{ note? }`: merges the picked variant into the product, as `et design sketch merge` does.
+ * A merge refused for a stale baseline answers 422 with `changed` (the parts, `[]` without a baseline) and the `rebase` command;
+ * one the check fails after answers 422 with reason `check-failed` and the check's `findings` lines.
+ */
+export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
+  const body = await bodyOf(asked.request);
+
+  return mergeAnswerOf({ asked, product, sketch, note: textOf(body?.['note']) });
+});
 
 /**
  * `?product=[&part=<layer>/<name>]`: every comment with its `replies`, oldest first, each with the reason it

@@ -33,7 +33,7 @@ export type SketchRow = {
 
 export type SketchWithdrawn = 'hidden' | 'shown';
 
-export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'not-ready' | 'failed';
+export type SketchStatus = 'drawing' | 'waiting' | 'paused' | 'not-ready' | 'failed';
 
 export type SketchHold = { until: string; since: string };
 
@@ -406,7 +406,6 @@ const SCREEN_UNCHANGED = [
   'unchanged-matrix',
   'unchanged-matrix-open',
   'folded',
-  'picked',
 ];
 
 const screenShotsOf = (changed: boolean): SketchShot[] => [

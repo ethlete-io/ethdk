@@ -15,7 +15,6 @@ import {
   isSectionOpen,
   framesOf,
   isSmallPart,
-  pickedVariantOf,
   pickedPartKeyOf,
   sketchLabelOf,
   multiPartTargetsOf,
@@ -1608,15 +1607,6 @@ describe('picking a variant', () => {
     expect(canPick(sketch({ status: 'ready', problems }), 'b')).toBe(false);
   });
 
-  it('reads the picked variant, ignoring a discard and a variant that is gone', () => {
-    const decidedAt = '2026-10-27T11:00:00.000Z';
-
-    expect(pickedVariantOf(sketch({ decision: { kind: 'pick', variant: 'b', decidedAt } }))).toBe('b');
-    expect(pickedVariantOf(sketch({ decision: { kind: 'pick', variant: 'z', decidedAt } }))).toBeNull();
-    expect(pickedVariantOf(sketch({ decision: { kind: 'discard', decidedAt } }))).toBeNull();
-    expect(pickedVariantOf(sketch())).toBeNull();
-  });
-
   it('labels a variant its agent withdrew as withdrawn by the agent, and a designer rejection as rejected', () => {
     const decidedAt = '2026-10-30T11:00:00.000Z';
     const button = part();
@@ -1678,9 +1668,7 @@ describe('picking a variant', () => {
     });
 
     expect(canPick(rejected, 'a')).toBe(false);
-    expect(pickedVariantOf(rejected)).toBeNull();
     expect(canPick(reopened, 'a')).toBe(true);
-    expect(pickedVariantOf(reopened)).toBe('a');
   });
 });
 

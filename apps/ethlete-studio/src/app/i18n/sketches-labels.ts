@@ -65,7 +65,6 @@ export const SKETCHES_LABELS = {
   status: {
     drawing: 'zeichnet',
     waiting: 'Wartet auf deine Wahl',
-    picked: 'Variante gewählt',
     paused: 'Pausiert',
     failed: 'Render fehlgeschlagen',
   },

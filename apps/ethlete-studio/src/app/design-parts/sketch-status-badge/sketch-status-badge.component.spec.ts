@@ -28,6 +28,11 @@ describe('SketchStatusBadgeComponent', () => {
     expect(host.querySelector('et-badge')?.textContent?.trim()).toBe(label);
   });
 
+  // Decision: a pick in Studio is a merge, so there is no picked badge.
+  it('has no picked status', () => {
+    expect(Object.keys(SKETCHES_LABELS.status)).toEqual(['drawing', 'waiting', 'paused', 'failed']);
+  });
+
   it('puts only the failed badge in the error colour theme', async () => {
     const failed = await render('failed');
     const failedStyle = failed.querySelector('span')?.className;

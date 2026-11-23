@@ -281,7 +281,7 @@ const drawingStage = (row: Row, place = '') =>
     data-sk-placeholder-row
     style="${place}"
   >
-    ${row.model ? drawingPlaceholder({ name: row.model.short, agent: row.model.agent }) : ''}
+    ${drawingPlaceholder()}
   </div>`;
 
 const pointsChip = async (open: boolean) => {
@@ -851,10 +851,11 @@ export default definePart<Props>({
     'withdrawn-shown':
       'The withdrawn variant shown; check its faded row and Vom Agent zurückgezogen with the reason in its head.',
     'agent-round':
-      'An agent drawing a new round; check the pulsing dot, the model, the task and its step and time beside the picker.',
+      'An agent drawing a new round; check the pulsing dot, the model, zeichnet and its time beside the picker.',
     'agent-variant':
-      'An agent drawing one variant; check the agent line with its task beside the picker and the zeichnet badge.',
-    'agent-failed': 'A failed agent run; check that the dot stops pulsing and the task turns to the error colour.',
+      'An agent drawing one variant; check the agent line with the model and zeichnet beside the picker and the zeichnet badge.',
+    'agent-failed':
+      'A failed agent run; check that the dot stops pulsing and the failed round turns to the error colour.',
     picked: 'Variant b picked; check Variante gewählt in the header and the picked mark on row b.',
     'sketch-only-points':
       'A picked new part with open points; check the open-points chip beside Übernehmen in the head of b.',
