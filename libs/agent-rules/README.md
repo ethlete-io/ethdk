@@ -312,14 +312,7 @@ per hook in the config:
 
 ```json
 {
-  "hooks": [
-    "context-warning",
-    "subagent-model-policy",
-    "background-design-commands",
-    "git-safety",
-    "builder-chat-words",
-    "away-mode"
-  ]
+  "hooks": ["context-warning", "subagent-model-policy", "background-design-commands", "git-safety"]
 }
 ```
 
@@ -380,16 +373,6 @@ Available hooks:
   A call that names `fable` asks the user - it is the most expensive option, and only the
   user knows whether the task is judgment-heavy. A fork and an agent type whose own
   definition sets a model both pass untouched, because `model` would change nothing there.
-
-- **`away-mode`** (Claude Code only) - switches an interactive session into "user is away" mode
-  on its own. Opt in with `"awayMode": { "skills": ["my-skill"], "thresholdMinutes": 15 }` in the
-  config (the local config overrides it); a session is tracked once a prompt starts with
-  `/my-skill`. When a prompt that is not typed by a human (mailbox, cross-session, task
-  notification, restart) arrives after the threshold without typed input, the hook tells the
-  agent the user is away; the next typed prompt tells it the user is back. A typed `afk` marks
-  the session away at once. With `"reportCommand": "<cli> report"` inside `awayMode`, the back
-  message also carries that command's table since the last typed input (dropped when it fails or
-  takes over 10 s). State is kept in `.git/ethlete/away/`.
 
 Hooks can be turned off per machine - see the local config below.
 

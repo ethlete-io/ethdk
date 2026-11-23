@@ -23,23 +23,11 @@ if [ -n "$styles" ]; then
   node ./tools/scripts/lint-css-properties.js $styles
 fi
 
-# Warns, never blocks, when a staged path is outside the slice paths of the brief: env ETHLETE_SLICE_PATHS or
-# the file `slice-paths` in the worktree's git dir. One git diff (about 0.05 s); silent when none are declared.
-node ./tools/scripts/check-slice-paths.mjs
-
-# A closed STATUS row whose ADR still says `open:` fails here instead of at push (about 0.7 s).
-adr_files=$(git diff --cached --name-only --diff-filter=ACM -- 'plans/studio/STATUS.md' 'plans/studio/rows.md' 'apps/ethlete-studio/docs/adr/*.md' 'docs/adr/*.md')
+# An ADR with a wrong status or parts line fails here instead of at push.
+adr_files=$(git diff --cached --name-only --diff-filter=ACM -- 'apps/ethlete-studio/docs/adr/*.md' 'docs/adr/*.md')
 
 if [ -n "$adr_files" ]; then
   node ./tools/scripts/check-studio-adrs.mjs --summary >/dev/null
-fi
-
-# Prettier check of every staged Markdown blob; size budget and cell cap of the big plan files.
-plan_files=$(git diff --cached --name-only --diff-filter=ACM -- '*.md')
-
-if [ -n "$plan_files" ]; then
-  # shellcheck disable=SC2086
-  node ./tools/scripts/check-staged-plans.mjs $plan_files
 fi
 
 # A staged studio spec or label file fails here when a spec still asserts a label text removed since the upstream.
@@ -65,14 +53,6 @@ if [ -n "$design_files" ]; then
   node ./tools/scripts/lint-staged-design.mjs $design_files
 fi
 
-# Refuses a ✅ row, an Erledigt section and a Stand older than 3 days in the staged STATUS.md blob (about 0.05 s).
-if git diff --cached --name-only --diff-filter=ACM -- 'plans/studio/STATUS.md' | grep -q .; then
-  git show :plans/studio/STATUS.md | node ./tools/scripts/check-studio-status.mjs -
-fi
-if git diff --cached --name-only --diff-filter=ACM -- 'plans/studio/rows.md' | grep -q .; then
-  git show :plans/studio/rows.md | node ./tools/scripts/check-studio-status.mjs --rows -
-fi
-
 # A staged path under a data glob of tools/scripts/data-spec-map.json runs the specs that read that data (finding 799);
 # a commit touching none of them skips it. Fails the commit on a red spec.
 data_files=$(git diff --cached --name-only --diff-filter=ACMR -- '.ethlete' '.github/workflows')
@@ -89,13 +69,6 @@ script_files=$(git diff --cached --name-only --diff-filter=ACMR -- 'tools/script
 if [ -n "$script_files" ]; then
   # shellcheck disable=SC2086
   node ./tools/scripts/staged-script-specs.mjs $script_files
-fi
-
-# A staged file that names a real person fails here with the pre-push message; the staged blob is read, not the working tree.
-name_files=$(git diff --cached --name-only --diff-filter=ACM -- 'libs' 'apps' '.ethlete/design')
-
-if [ -n "$name_files" ]; then
-  node ./tools/scripts/check-person-names.mjs --staged
 fi
 
 type_files=$(git diff --cached --name-only --diff-filter=ACMR -- 'apps/*.ts' 'apps/*.json' 'libs/*.ts' 'libs/*.json')

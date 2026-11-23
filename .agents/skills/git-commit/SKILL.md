@@ -37,7 +37,7 @@ Commits in this repo are **lean** and follow the **commitlint rules**
   list from `git diff` or `git status` - that list holds other sessions' files.
 - To stop tracking a file but keep it on disk, run `yarn untrack -m "..." <paths>`. `git rm --cached` followed by
   `git commit -- <paths>` loses the removal: the pathspec commit stages the file again.
-- `yarn commit -m "..." -- <paths>` takes the same arguments as `git commit`: it adds untracked paths and waits for `.git/index.lock` to clear before committing. The pre-commit hook checks the staged files only: changesets, CSS custom properties, eslint, Markdown format and plan size, person names, and the specs of a staged tools script or `.ethlete` data file. Typecheck, other specs and the Studio gates run in pre-push and CI.
+- `yarn commit -m "..." -- <paths>` takes the same arguments as `git commit`: it adds untracked paths and waits for `.git/index.lock` to clear before committing. The pre-commit hook checks the staged files only: changesets, CSS custom properties, eslint, and the specs of a staged tools script or `.ethlete` data file. Typecheck, other specs and the Studio gates run in pre-push and CI.
 - **Few commits.** One commit per finished slice of work: the code, its specs, its
   changeset and its plan note ("as built") go in together. Fix format, lint and
   review findings before that commit, not in a follow-up commit.

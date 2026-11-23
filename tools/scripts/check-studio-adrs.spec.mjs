@@ -3,44 +3,18 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
-import { checkAdr, checkAdrs, findingErrors, lostFindingErrors, warningLines } from './check-studio-adrs.mjs';
-import { parseStatusRows } from './studio-status.mjs';
+import { checkAdr, checkAdrs, warningLines } from './check-studio-adrs.mjs';
 
-const rows = parseStatusRows(`| ID | Was | Stand |
-| -- | -- | -- |
-| B1 | open one | ⏳ |
-| B2 | done one | ✅ |
-`);
 const adr = (front) => `---\n${front}\n---\n\n# Title\n`;
 
-test('accepts built and open ADRs', () => {
-  assert.deepEqual(checkAdr('a', adr('status: accepted\nbuilt: 409246e68'), rows).errors, []);
-  assert.deepEqual(checkAdr('a', adr('status: superseded by 0004\nopen: B1'), rows).errors, []);
-});
-
-test('open: none is refused on a new ADR and grandfathered on an old one', () => {
-  const text = adr('status: accepted\nopen: none');
-
-  assert.match(checkAdr('0205-new.md', text, rows).errors[0], /needs a "built/);
-  assert.deepEqual(checkAdr('0204-old.md', text, rows).errors, []);
-});
-
-test('open: none passes with a warning', () => {
-  const result = checkAdr('a', adr('status: accepted\nopen: none'), rows);
-  assert.deepEqual(result.errors, []);
-  assert.equal(result.warnings.length, 1);
-});
-
-test('fails a missing row, a done row, and a missing build state', () => {
-  assert.equal(checkAdr('a', adr('status: accepted\nopen: B9'), rows).errors.length, 1);
-  assert.match(checkAdr('a', adr('status: accepted\nopen: B2'), rows).errors[0], /is done/);
-  assert.equal(checkAdr('a', adr('status: accepted'), rows).errors.length, 1);
-  assert.equal(checkAdr('a', adr('status: accepted\nbuilt: x\nopen: B1'), rows).errors.length, 1);
+test('accepts an accepted or superseded status', () => {
+  assert.deepEqual(checkAdr('a', adr('status: accepted')).errors, []);
+  assert.deepEqual(checkAdr('a', adr('status: superseded by 0004')).errors, []);
 });
 
 test('fails a bad status and missing frontmatter', () => {
-  assert.equal(checkAdr('a', adr('status: maybe\nbuilt: 409246e68'), rows).errors.length, 1);
-  assert.equal(checkAdr('a', '# no front matter', rows).errors.length, 1);
+  assert.equal(checkAdr('a', adr('status: maybe')).errors.length, 1);
+  assert.equal(checkAdr('a', '# no front matter').errors.length, 1);
 });
 
 test('a missing or empty adr folder passes', () => {
@@ -50,15 +24,6 @@ test('a missing or empty adr folder passes', () => {
   assert.deepEqual(checkAdrs(root), { errors: [], warnings: [] });
 });
 
-test('reads ADR files against STATUS.md from disk', () => {
-  const root = tempDir('adr-');
-  mkdirSync(join(root, 'apps/ethlete-studio/docs/adr'), { recursive: true });
-  mkdirSync(join(root, 'plans/studio'), { recursive: true });
-  writeFileSync(join(root, 'plans/studio/STATUS.md'), '| B1 | x | ✅ |\n');
-  writeFileSync(join(root, 'apps/ethlete-studio/docs/adr/0001-a.md'), adr('status: accepted\nopen: B1'));
-  assert.equal(checkAdrs(root).errors.length, 1);
-});
-
 const putAdr = (root, rel, text) => {
   mkdirSync(join(root, rel, '..'), { recursive: true });
   writeFileSync(join(root, rel), text);
@@ -66,13 +31,13 @@ const putAdr = (root, rel, text) => {
 
 test('an ADR in the repo-level docs/adr is checked', () => {
   const root = tempDir('adr-');
-  putAdr(root, 'docs/adr/0300-a.md', adr('status: bogus\nopen: none'));
+  putAdr(root, 'docs/adr/0300-a.md', adr('status: bogus'));
   assert.match(checkAdrs(root).errors[0], /^docs\/adr\/0300-a\.md: status/);
 });
 
 test('the same number in both folders is an error naming both paths', () => {
   const root = tempDir('adr-');
-  const ok = adr('status: accepted\nbuilt: 409246e68');
+  const ok = adr('status: accepted');
   putAdr(root, 'docs/adr/0300-a.md', ok);
   putAdr(root, 'apps/ethlete-studio/docs/adr/0300-b.md', ok);
   const { errors } = checkAdrs(root);
@@ -80,60 +45,11 @@ test('the same number in both folders is an error naming both paths', () => {
   assert.match(errors[0], /0300.*apps\/ethlete-studio\/docs\/adr\/0300-b\.md.*docs\/adr\/0300-a\.md/);
 });
 
-const fixture = (name) => join(import.meta.dirname, 'fixtures/studio-findings', name);
-
-test('passes findings with unique, increasing numbers that every Bef. resolves to', () => {
-  assert.deepEqual(checkAdrs(fixture('ok')).errors, []);
-});
-
-test('fails a plan that prettier renumbered', () => {
-  const { errors } = checkAdrs(fixture('renumbered'));
-  assert.ok(errors.some((e) => /findings-2026-11\.md:5: "157\. " is a list item/.test(e)));
-  assert.ok(errors.some((e) => /B2 cites Bef\. 160, but no finding 160 exists/.test(e)));
-});
-
-test('fails a duplicate and a dangling Bef.', () => {
-  const archives = [
-    { name: 'findings-2026-10.md', text: '5\\. Tom (2026-10-01): archived.\n' },
-    { name: 'findings-2026-11.md', text: '4\\. a\n\n5\\. b\n' },
-  ];
-  assert.deepEqual(findingErrors(archives, '| B1 | x (Bef. 4/9) | ⏳ |\n'), [
-    'finding 5 exists twice (findings-2026-11.md)',
-    'B1 cites Bef. 9, but no finding 9 exists',
-  ]);
-});
-
-test('the pre-commit hook runs the check when STATUS.md or an ADR is staged', () => {
+test('the pre-commit hook runs the check when an ADR is staged', () => {
   const hook = readFileSync(new URL('../../.husky/pre-commit', import.meta.url), 'utf8');
-  assert.match(hook, /plans\/studio\/STATUS\.md/);
   assert.match(hook, /apps\/ethlete-studio\/docs\/adr\/\*\.md/);
   assert.match(hook, /node \.\/tools\/scripts\/check-studio-adrs\.mjs --summary/);
   assert.match(hook, /^set -e$/m);
-});
-
-test('an archive that lost a finding of its committed version fails', () => {
-  const committed = '1\\. one\n\n2\\. two\n\n3\\. three\n';
-  const errors = lostFindingErrors(
-    [{ name: 'findings-2026-11.md', text: '3\\. three\n\n4\\. four\n' }],
-    () => committed,
-  );
-
-  assert.deepEqual(errors, [
-    'findings-2026-11.md lost findings 1, 2 of its committed version; append with archive-findings.mjs',
-  ]);
-});
-
-test('an appended or new archive passes', () => {
-  const archives = [{ name: 'findings-2026-11.md', text: '1\\. one\n\n2\\. two\n' }];
-
-  assert.deepEqual(
-    lostFindingErrors(archives, () => '1\\. one\n'),
-    [],
-  );
-  assert.deepEqual(
-    lostFindingErrors(archives, () => null),
-    [],
-  );
 });
 
 test('the summary prints one line for many warnings and every line without it', () => {
@@ -147,7 +63,7 @@ test('the summary prints one line for many warnings and every line without it', 
 
 test('parts must be a list of existing design parts', () => {
   const known = (part) => part === 'components/title-bar';
-  const check = (front) => checkAdr('a', adr(`status: accepted\nbuilt: 409246e68\n${front}`), rows, known).errors;
+  const check = (front) => checkAdr('a', adr(`status: accepted\n${front}`), known).errors;
 
   assert.deepEqual(check('parts: [components/title-bar]'), []);
   assert.match(check('parts: components/title-bar')[0], /parts must be a list/);

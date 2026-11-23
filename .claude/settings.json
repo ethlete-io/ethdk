@@ -38,15 +38,6 @@
             "timeout": 10
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ethlete/away-mode.py\" --agent claude",
-            "timeout": 10
-          }
-        ]
       }
     ],
     "SessionStart": [
@@ -77,15 +68,6 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ethlete/context-warning.py\" --agent claude",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/libs/agent-rules/content/hooks/builder-chat-words.py\"",
             "timeout": 10
           }
         ]

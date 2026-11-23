@@ -45,12 +45,6 @@ export const KNOWN_HOOKS: Record<string, HookDefinition> = {
     timeout: 10,
     agents: ['claude'],
   },
-  'away-mode': {
-    events: [{ event: 'UserPromptSubmit' }],
-    file: 'away-mode.py',
-    timeout: 10,
-    agents: ['claude'],
-  },
   'background-design-commands': {
     events: [{ event: 'PreToolUse', matcher: 'Bash' }],
     file: 'background-design-commands.py',
@@ -66,12 +60,6 @@ export const KNOWN_HOOKS: Record<string, HookDefinition> = {
   'git-safety': {
     events: [{ event: 'PreToolUse', matcher: 'Bash' }],
     file: 'git-safety.py',
-    timeout: 10,
-    agents: ['claude'],
-  },
-  'builder-chat-words': {
-    events: [{ event: 'Stop' }],
-    file: 'builder-chat-words.py',
     timeout: 10,
     agents: ['claude'],
   },

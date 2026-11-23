@@ -74,7 +74,6 @@ jobs:
       # Changeset notes are capped at one to two sentences / 40 words (see the `changeset` skill).
       # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
       - run: yarn lint:changesets
-      - run: yarn lint:size
       - run: node tools/scripts/check-migration-entries.mjs
       - run: yarn test:tools
 

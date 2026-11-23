@@ -65,7 +65,6 @@ libs/components/.design-base/
 **/.vitepress/cache/**
 .claude/worktrees
 .claude/handoffs
-.claude/builder-chat-words.jsonl
 .nx/polygraph
 .nx/self-healing
 .nx/migrate-runs

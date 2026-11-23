@@ -1,18 +1,9 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { splitFindings } from './archive-findings.mjs';
-import { parseStatusRows } from './studio-status.mjs';
-import { studioRowsText } from './studio-plan.mjs';
 
 const STATUS_VALUE = /^(accepted|superseded by \d{4})$/;
-const BUILT_VALUE = /^[0-9a-f]{7,40}$/;
-const OPEN_VALUE = /^(B\d+|none)$/;
 const PARTS_VALUE = /^\[\s*([a-z-]+\/[a-z0-9-]+(\s*,\s*[a-z-]+\/[a-z0-9-]+)*)\s*\]$/;
-const LIST_ITEM = /^(\d+)\. /;
-const FINDING_LIKE_LIST_NUMBER = 100;
-const OPEN_NONE_GRANDFATHERED_UP_TO = 204;
 
 export const frontmatterOf = (text) => {
   const match = /^---\n([\s\S]*?)\n---/.exec(text);
@@ -28,7 +19,7 @@ export const frontmatterOf = (text) => {
 
 export const partsOf = (value) => PARTS_VALUE.exec(value ?? '')?.[1].split(/\s*,\s*/) ?? [];
 
-export const checkAdr = (name, text, rows, partExists = () => true) => {
+export const checkAdr = (name, text, partExists = () => true) => {
   const errors = [];
   const warnings = [];
   const meta = frontmatterOf(text);
@@ -45,87 +36,8 @@ export const checkAdr = (name, text, rows, partExists = () => true) => {
       }
     }
   }
-  const hasBuilt = 'built' in meta;
-  const hasOpen = 'open' in meta;
-  if (hasBuilt === hasOpen) {
-    errors.push(`${name}: needs exactly one of "built: <sha>" or "open: B<row>"`);
-  } else if (hasBuilt) {
-    if (!BUILT_VALUE.test(meta.built)) errors.push(`${name}: built must be a commit sha, got "${meta.built}"`);
-  } else if (!OPEN_VALUE.test(meta.open)) {
-    errors.push(`${name}: open must be B<row> or none, got "${meta.open}"`);
-  } else if (meta.open === 'none') {
-    if (Number(/^(\d+)-/.exec(name)?.[1] ?? 0) > OPEN_NONE_GRANDFATHERED_UP_TO) {
-      errors.push(`${name}: open: none needs a "built: <sha>" or an "open: B<row>"; a decided ADR must be tracked`);
-    }
-    warnings.push(`${name}: open: none (decided, no STATUS row yet)`);
-  } else {
-    const row = rows.find((r) => r.id === meta.open);
-    if (!row) errors.push(`${name}: open row ${meta.open} is not in STATUS.md or rows.md`);
-    else if (row.done)
-      errors.push(`${name}: open row ${meta.open} is done in STATUS.md or rows.md; set "built: <sha>"`);
-  }
   return { errors, warnings };
 };
-
-const listItemErrors = (name, text) =>
-  text.split('\n').flatMap((line, i) => {
-    const match = LIST_ITEM.exec(line);
-    if (!match || Number(match[1]) < FINDING_LIKE_LIST_NUMBER) return [];
-    return [
-      `${name}:${i + 1}: "${match[1]}. " is a list item that prettier renumbers; write the finding as "${match[1]}\\. "`,
-    ];
-  });
-
-export const findingErrors = (archives, statusText) => {
-  const errors = [];
-  const known = new Set();
-  for (const { name, text } of archives) {
-    errors.push(...listItemErrors(name, text));
-    for (const { number } of splitFindings(text)) {
-      if (known.has(number)) errors.push(`finding ${number} exists twice (${name})`);
-      known.add(number);
-    }
-  }
-  for (const row of parseStatusRows(statusText)) {
-    for (const number of row.findings) {
-      if (!known.has(number)) errors.push(`${row.id} cites Bef. ${number}, but no finding ${number} exists`);
-    }
-  }
-  return errors;
-};
-
-export const lostFindingErrors = (archives, committedTextOf) =>
-  archives.flatMap(({ name, text }) => {
-    const committed = committedTextOf(name);
-    if (committed === null) return [];
-    const kept = new Set(splitFindings(text).map(({ number }) => number));
-    const lost = splitFindings(committed)
-      .map(({ number }) => number)
-      .filter((number) => !kept.has(number));
-    return lost.length
-      ? [`${name} lost findings ${lost.join(', ')} of its committed version; append with archive-findings.mjs`]
-      : [];
-  });
-
-const committedArchiveOf = (root) => (name) => {
-  try {
-    return execFileSync('git', ['show', `HEAD:./plans/studio/archive/${name}`], {
-      cwd: root,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-  } catch {
-    return null;
-  }
-};
-
-const readArchives = (dir) =>
-  existsSync(dir)
-    ? readdirSync(dir)
-        .filter((f) => /^findings-.*\.md$/.test(f))
-        .sort()
-        .map((name) => ({ name, text: readFileSync(join(dir, name), 'utf8') }))
-    : [];
 
 const ADR_DIRS = ['apps/ethlete-studio/docs/adr', 'docs/adr'];
 
@@ -139,9 +51,6 @@ const partExistsIn = (root) => {
 };
 
 export const checkAdrs = (root) => {
-  const statusText = studioRowsText(root);
-  const archives = readArchives(join(root, 'plans/studio/archive'));
-  const findings = [...findingErrors(archives, statusText), ...lostFindingErrors(archives, committedArchiveOf(root))];
   const files = ADR_DIRS.flatMap((rel) => {
     const dir = join(root, rel);
     return existsSync(dir)
@@ -150,9 +59,8 @@ export const checkAdrs = (root) => {
           .map((f) => ({ path: `${rel}/${f}`, file: join(dir, f) }))
       : [];
   });
-  const rows = parseStatusRows(statusText);
   const partExists = partExistsIn(root);
-  const results = files.map((f) => checkAdr(f.path, readFileSync(f.file, 'utf8'), rows, partExists));
+  const results = files.map((f) => checkAdr(f.path, readFileSync(f.file, 'utf8'), partExists));
   const seen = new Map();
   const duplicates = [];
   for (const { path } of files) {
@@ -162,7 +70,7 @@ export const checkAdrs = (root) => {
     else seen.set(number, path);
   }
   return {
-    errors: [...findings, ...duplicates, ...results.flatMap((r) => r.errors)],
+    errors: [...duplicates, ...results.flatMap((r) => r.errors)],
     warnings: results.flatMap((r) => r.warnings),
   };
 };

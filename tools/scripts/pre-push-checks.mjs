@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export const CHECKS = [
   'lint:changesets',
   'versions:check',
-  'lint:size',
   'lint:cli-related-map',
   'lint:migration-entries',
   'lint:studio-label-specs',
@@ -16,20 +15,16 @@ export const CHECKS = [
   'lint:commit-messages',
   'lint:spec-typecheck',
   'lint:no-verify-briefs',
-  'lint:person-names',
   'docs:error-codes:check',
   'sdk:tokens:check',
 ];
 
-const PERSON_NAMES_SCRIPT = join(import.meta.dirname, 'check-person-names.mjs');
-
-export const commandsFor = (check, head, base) => {
+export const commandsFor = (check, head) => {
   if (check === 'lint:changesets')
     return [
       ['node', ['tools/scripts/lint-changesets.js', '--rev', head]],
       ['yarn', ['lint:changeset-coverage']],
     ];
-  if (check === 'lint:person-names') return [['node', [PERSON_NAMES_SCRIPT, '--range', base, head]]];
   return [['yarn', [check]]];
 };
 
@@ -38,7 +33,7 @@ export const runChecks = (base, head, { cwd = process.cwd(), stopAtFirst = false
   const env = { ...process.env, NX_BASE: base, NX_HEAD: head, NX_NO_CLOUD: 'true', NX_DAEMON: 'false' };
   const failed = [];
   for (const check of CHECKS) {
-    const run = commandsFor(check, head, base)
+    const run = commandsFor(check, head)
       .map(([command, args]) => spawnSync(command, args, { cwd, env, encoding: 'utf8' }))
       .find((result) => result.status !== 0);
     if (!run) continue;

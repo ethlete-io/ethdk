@@ -815,7 +815,7 @@ recorded before this merge, for example in a merge that was refused. `sketch reb
 pick stays.
 
 `sketch merge --decided-by <role>` records who picked the variant in `merged.json` (`user` without it): give it the role,
-for example `human`. Both `merge` and `pick` refuse a person name in `--decided-by` (exit 1), as `yarn lint:person-names` does. It does not go with `--allowed-by`, which records the plan.
+for example `human`. Both `merge` and `pick` refuse a person name in `--decided-by` (exit 1). It does not go with `--allowed-by`, which records the plan.
 
 `et design sketch pick <layer>/<name> --variant <key> --decided-by "<the words and where they were said>" --by <model>`
 records a pick the designer gave outside Studio, for example in chat, in `sketch.json`: the same pick Studio writes
