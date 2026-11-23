@@ -39,7 +39,7 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 8. **Änderung durch Abdunkeln (B675)** ⏳ keine Änderungs-Outline; Unverändertes dunkler, wie beim Sketch-Vergleich (ADR 0410) - Builder
 9. **Frame-Präsentation je Schicht (B676)** ⏳ Foundations Spec-Blatt, Components kompakt, Elements im Ausschnitt ihrer Umgebung, Pages nach Ablauf; Text-Teile werden Zustände; Sketch-Kopf als Komponente; nie die ganze Seite immer wieder (ADR 0411) - Builder
 10. **Timetrack-Beschreibung (B602)** ⏳ Scrollen bestätigt (Tom 23.11.). Offen: Live-Messung, Endstück, doppelter Cherry-Pick, Anruf ohne Vorschlag - Builder
-11. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Neuer Build läuft auf tank und mac (Tom 23.11.). Offen: Live-Vergleich auf einem Commit (Timetrack ADR 0047); blockiert, bis Tom Timetrack auf dem Mac entsperrt - Tom, dann Builder
+11. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Neuer Build läuft auf tank und mac (Tom 23.11.). Offen: Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
 12. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: frühestens 24.11. löscht Tom `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - Tom, dann Builder
 
 Geparkt: B105, B108, B109, B148, B312, B313.
