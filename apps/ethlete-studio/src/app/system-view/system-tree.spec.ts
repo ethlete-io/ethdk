@@ -1778,6 +1778,38 @@ describe('sketchRowsOf', () => {
     ]);
   });
 
+  it('draws an element sketch state at every width the element declares, desktop as well as mobile', () => {
+    const hero = part({ layer: 'elements', name: 'hero', states: ['knight', 'dune'], widths: [1440, 390] });
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product([hero]),
+      part: hero,
+      sketch: sketchScopedTo(
+        sketch({
+          target: 'foundations/colors',
+          layer: 'foundations',
+          name: 'colors',
+          variants: ['a'],
+          targetParts: ['foundations/colors', 'elements/hero'],
+          targets: [{ part: 'elements/hero', variant: 'a', states: ['knight', 'dune'], widths: [1440, 390] }],
+        }),
+        'elements/hero',
+      ),
+      variants: ['a'],
+      epoch: 1,
+      revision: 1,
+    });
+    const variant = rows.find((row) => row.key === 'a');
+
+    expect(variant?.width).toBe(390);
+    expect(variant?.shots.map((shot) => [shot.state, shot.width ?? variant.width, shot.place])).toEqual([
+      ['knight · 390', 390, { state: 'knight', size: '390' }],
+      ['knight · 1440', 1440, { state: 'knight', size: '1440' }],
+      ['dune · 390', 390, { state: 'dune', size: '390' }],
+      ['dune · 1440', 1440, { state: 'dune', size: '1440' }],
+    ]);
+  });
+
   it('renews a variant row only with the revision of that variant', () => {
     const button = part({ name: 'button' });
     const rows = sketchRowsOf({

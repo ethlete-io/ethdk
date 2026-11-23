@@ -1420,7 +1420,7 @@ export type SketchRowOf = { key: string; width: number | null; perLine?: number;
 
 /**
  * One row for the part as it is now (when it exists) and one per shown variant, each with every state in the
- * part's order, a page's state once per preset of the product at that preset's size. A variant's state is changed unless its target lists it as `unchanged`, and `null` while no compare
+ * part's order, a page's state once per preset of the product and a part's once per declared width, at that size. A variant's state is changed unless its target lists it as `unchanged`, and `null` while no compare
  * answered yet; the current row changes nothing.
  */
 export const sketchRowsOf = ({
@@ -1441,7 +1441,7 @@ export const sketchRowsOf = ({
   variantRevisions?: Record<string, number>;
 }): SketchRowOf[] => {
   const offered = sketchSizesOf({ product, sketch, part });
-  const sizes = sketch.layer === 'pages' && offered.length > 1 ? offered : [offered[0] ?? null];
+  const sizes = offered.length > 1 ? offered : [offered[0] ?? null];
   const cell = cellSizeOf(product, sizes[0] ?? null);
   const partKey = sketchPartOf(sketch);
   const rowOf = (key: string): SketchRowOf => {
