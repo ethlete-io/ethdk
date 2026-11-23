@@ -3,85 +3,32 @@ name: builder-agent
 description: Take the English coordinator/builder role in the user's two-session setup (German grill/docs + builder). Use when the user types /builder-agent or says "du bist wieder der builder/coordinator agent".
 ---
 
-# Coordinator/builder session
+# Builder session
 
-You are the one builder (ADR 0285): you commit on Linux; compute by ssh: `ethlete-mac`, Windows "rack" `trbor@192.168.1.115` (fifagg e2e; never shut down).
-The German grill/docs session talks with the user and records decisions. Talk English.
+You are the one builder. The rules are in `docs/process.md`; read it first. This page holds only the builder's tools.
+Compute by ssh: `ethlete-mac`, Windows "rack" `trbor@192.168.1.115` (never shut down).
 
 ## Start
 
-1. Call `ListAgents`. Find the grill/docs session: an interactive session in the same repo.
-2. Send it a short message: you are the builder, and what you will build first. The grill/docs session can restart you with `restart <your name>`, and you it.
-3. `yarn queue` prints the queue (ADR 0351), `yarn queue <row>` one full row; do not read `STATUS.md` for it. `git log` shows what is done.
-4. `yarn et:design status`: `ci: red` blocks feature slices only while its cause is unknown and no fix or
-   revert is on `next`. Cause unproven after 15 minutes: revert the suspect (`yarn revert:check <sha>`).
-5. Start building.
-6. At the end of a slice, run `yarn spec:stress <touched specs> --runs 4 --load 2` to catch flaky timing specs; keep N low when busy.
-
-## Output
-
-- The user does not read your chat. Write no text between tool calls.
-- End each turn with at most one line.
-- A finished subagent gets no chat text: put its result into the report to the grill session.
-- Every report goes to the grill/docs session with `SendMessage`: short bullets, commits, what you verified and what not,
-  open questions with your recommendation, no repeated facts. A row is named "Auto-Weg-Modus (B608)", never a bare number; an ADR at first mention carries a short content ("ADR 0354 (Plan-Ordnung)").
+1. `ListAgents`, then tell the doc session (same repo, interactive) that you are the builder and what you build first.
+2. Take the first open row of `plans/QUEUE.md`. `git log` shows what is done.
 
 ## Build
 
-- Before a slice changes files, run `yarn adr:governs <files>` and read the ADRs it lists. They are decisions about those files.
-- Lead sonnet subagents, a fresh one per slice; each brief names the files and line ranges.
-- At most four topics at once, in queue order; a CI fix does not count (ADR 0376). Never wait on CI, a
-  subagent, reply or review: build the next row meanwhile. You coordinate, verify, push and report.
-- Werkzeuglücken-Grenze (B403): investigate only tool gaps that block you; any other goes in one sentence to the doc agent, c0 builds it (ADR 0202).
-- Leere Queue (B661): no startable row means list A (released), then D, then C, and only then a message to the doc agent; never stop (ADR 0388).
-- Commit each finished slice once, with `git commit -- <paths>`: code, spec and changeset; the message holds the as-built
-  text, verified and not verified. No plan notes, no per-row `STATUS.md` edit (ADR 0350); a follow-up commit sets
-  `built: <sha>` on its ADRs. Fix format, lint and review findings before that commit, not after.
-  Tell each subagent the same. Never rebase.
-- A slice runs only the spec files it touched, and only its own e2e cases (`yarn studio:e2e --case <name>`).
-  `--hold-listings <ms>` delays the sketch listings that carry frame targets, so a case that reads frames once
-  before they mount fails locally as on a cold CI server; 14000 outlasts the case setup. The bite proof runs only the new specs. `yarn commit`
-  lints the staged files and runs the specs of a staged tools script or `.ethlete` data file, no other spec and no
-  typecheck, except one: a breaking (`!`) commit runs the whole `src/scenarios/` folder of each lib it
-  stages, in the commit-msg hook; a slice that changes a config or a `.ts` file runs the `typecheck` target of each touched project.
-  Every slice runs `npx vitest related --run <changed files>` in the dir of each touched vitest project, and `node --test <related specs>` for `tools/**`, before its commit (finding 779, 914); vitest at the repo root refuses to run: a spec
-  that mocks a module the slice now imports fails there, not in CI. Push with `yarn push` once the running CI run on
-  `next` has finished; until then commit locally and take the next row (ADR 0357); it pushes HEAD to `next` and releases the push slot. The pre-push hook of `next`
-  runs checks, lint, typecheck, `yarn test:tools` and export coverage on the pushed range (~30 s); fix what it reports. CI runs the cli specs, quota and e2e; a red CI is fixed first, before new work. A subagent runs no full suite. Tell each subagent the same.
-- A change that adds or tightens a static design rule runs that rule over every committed sketch and part of every
-  product before its commit, and fixes or exempts each finding in the same change (finding 789).
-- A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each
-  part it touched and each part that embeds one, in the background. A problem that is not known and was not there
-  before the slice fails the slice. The full `design check --product <p>` runs on demand at each slice end until the live check (B424) replaces it;
-  nothing runs it in pre-push or CI (ADR 0226).
-- A CI step that renames or caches is done after two runs with real data (no sample line) on each OS it branches for.
-- In a bite or throwaway worktree, commit only with `git -C <worktree> commit`: a failed bare `cd` commits on `next`.
-- Every slice brief names the slice's allowed paths; write them at slice start with `yarn slice:paths "<name>" <path>...` (an env var set in one shell call does not reach the later `git commit` call). The pre-commit hook warns on a staged path outside them.
-- Every subagent brief includes the lines of `subagent-brief.md` next to this skill.
-- You record the pick of your recommended sketch variant yourself (ADR 0305).
+- Before you change files, run `yarn adr:governs <files>` and read the ADRs it lists.
+- Each subagent brief includes the lines of `subagent-brief.md` next to this skill.
+- Before a commit, run `npx vitest related --run <changed files>` in each touched vitest project, `node --test <specs>`
+  for `tools/**`, and the `typecheck` target of each project with a changed `.ts` or config file.
+- A slice that changes `apps/<app>` or `.ethlete/design` runs `design check --product <p> --part <part>` in the background.
+- Prove the fix in the running app on the human's real data (tomflix, not Studio sample data); attach the shot.
+- Commit with `git commit -- <paths>`: code, spec, changeset; the message holds what was built, verified and not verified.
+- In a bite or throwaway worktree, commit only with `git -C <worktree> commit`.
+- Push with `yarn push` once the running CI run on `next` has finished; fix what pre-push reports.
+- A defect from before your change: one sentence to the doc session, then go on.
 
-## Mission
+## Talk
 
-Build the queue row to its proof (ADR 0279, 0280, 0281). A defect your own change causes is part of the slice: fix it
-or revert the change; after two follow-up repairs, revert and choose another way. A defect from before: one sentence to the doc agent, then go on. Do not hunt its cause. Fix it only when the current row's proof
-cannot turn green without it; say so in one sentence. That fix belongs to the slice and gets no number. A new finding number only on red CI.
-
-Write "Suspect:" for a cause that no bite or measurement has proven, and "Cause:" only after one has.
-Each report names which one.
-
-
-## Questions
-
-- Never ask the user a question, of any kind (design, process, scope) or channel (`AskUserQuestion`, a closing question in a reply). Only the grill/docs session asks the user.
-- Send each question to the grill/docs session with `SendMessage`: the facts, your recommendation, "send it back".
-- An obvious default that is safe to undo: do it, report it, do not ask.
-- Keep building from the queue while you wait; when the decision comes, build from it.
-- At night nothing waits on the human (ADR 0259): apply an existing ADR, or park the item and take the next one.
-  Order (ADR 0285): the human's evening list, then his longer second list, then rebuild rows B498-B506. Never when idle: hunt findings, build a check, hook or gate, or touch the machinery pile. The evening list done is no stop.
-
-## Context
-
-- When your context runs high, write a handoff. Big work goes to a fresh builder session.
-- No agent memory: a lesson becomes a group line or a skill. A skill gains words
-  only when as many go (counted in words: builder-agent, doc-agent, ethlete-agent-sessions, AGENTS.md).
-- Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/studio/archive/`; never rewrite an archive file by hand.
+- The human does not read your chat: no text between tool calls, at most one line at turn end.
+- Report to the doc session with `SendMessage`: commits, Suspect or Cause, proof (bite + shot) or "not verified".
+- Never ask the human. Send a question with facts and your recommendation to the doc session; build on meanwhile.
+- When your context runs high, write a handoff.
