@@ -1022,10 +1022,26 @@ export class SystemViewComponent {
     });
   });
 
-  private openGroups = linkedSignal<string[], Record<string, boolean>>({
-    source: computed(() => holdersOf(this.tree(), this.selectedKey()), {
-      equal: (a, b) => a.join('\n') === b.join('\n'),
+  private sketchTargets = computed(() =>
+    this.sketches().flatMap((sketch) => {
+      const key = sketchKeyOf(sketch.target);
+
+      return multiPartTargetsOf(sketch).map((part) => ({ sketch: key, key: `${key}/${part}`, part }));
     }),
+  );
+
+  private openGroups = linkedSignal<string[], Record<string, boolean>>({
+    source: computed(
+      () => {
+        const selected = this.selectedKey();
+        const holders = holdersOf(this.tree(), selected);
+
+        return selected !== null && this.sketchTargets().some(({ sketch }) => sketch === selected)
+          ? [...holders, selected]
+          : holders;
+      },
+      { equal: (a, b) => a.join('\n') === b.join('\n') },
+    ),
     computation: (holders, previous) => ({
       ...(previous?.value ?? rememberedView().openGroups ?? {}),
       ...Object.fromEntries(holders.map((key) => [key, true])),
@@ -1036,14 +1052,6 @@ export class SystemViewComponent {
     remembered: this.openGroups(),
     hasProducts: this.products().length > 0,
   }));
-
-  private sketchTargets = computed(() =>
-    this.sketches().flatMap((sketch) => {
-      const key = sketchKeyOf(sketch.target);
-
-      return multiPartTargetsOf(sketch).map((part) => ({ sketch: key, key: `${key}/${part}`, part }));
-    }),
-  );
 
   private shownTargetKey = computed(() => {
     const shown = this.sketchShown()?.sketch;

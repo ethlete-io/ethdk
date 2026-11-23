@@ -1207,6 +1207,33 @@ describe('SystemViewComponent on a merge', () => {
     expect(item()?.nested?.find((row) => row.selected)?.name).toBe('foundations/type');
   });
 
+  it('keeps the target rows of a sketch open on the click that opens it, and closes them on the next', async () => {
+    const fixture = await mountSketch(MULTI_PART);
+    const view = fixture.componentInstance;
+    const rows = () => [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('ethlete-part-tree [etTreeNode]'),
+    ];
+    const sketchRow = () => rows().find((row) => row.textContent?.includes('Draft 46 B'));
+    const targetRows = () => rows().filter((row) => row.textContent?.includes('foundations/type'));
+
+    view['activate']('elements/rating');
+    await settle(fixture);
+
+    expect(targetRows()).toHaveLength(1);
+
+    sketchRow()?.click();
+    await settle(fixture);
+
+    expect(view.selectedKey()).toBe('sketch:foundations/colors');
+    expect(targetRows()).toHaveLength(1);
+
+    sketchRow()?.click();
+    await settle(fixture);
+
+    expect(view.selectedKey()).toBe('sketch:foundations/colors');
+    expect(targetRows()).toHaveLength(0);
+  });
+
   it('names a sketch with several targets by its shown round title in the tree', async () => {
     const fixture = await mountSketch(MULTI_PART);
 
