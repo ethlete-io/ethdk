@@ -89,11 +89,11 @@
     "components/toolbar": "b62bb6c1539dbdd4",
     "components/tooltip": "4defd5665eab5f5f",
     "components/tree": "e15213fac4751487",
-    "components/tree-row": "31a401aa008665e9",
+    "components/tree-row": "9992f42343511c64",
     "components/update-dialog": "63ad322093769a56",
     "components/zoom-chip": "99a38ecebede39be",
     "elements/canvas-frames": "b2153089c7e8799f",
-    "elements/part-tree": "f46f52061b0e078e",
+    "elements/part-tree": "9be5f6720decae3f",
     "elements/shell-main": "e819f34d77ea3e58",
     "elements/studio-menu": "52e34e78cf208413",
     "elements/variant-cell": "ceed5cf0d7edbc2c",
@@ -105,7 +105,7 @@
     "pages/system": "1726d8b674da3ca2",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "535cb651288eb049672eb3f841ed5f73989818e0",
+  "baselineTree": "e504d0cc861bb1b8d6bf43fd8651dc4c987921f8",
   "editOldCommit": "dfb704c4f68abaa2418eafbac6178a491ed1c68d",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "9a0a7a3b22f8b030",
