@@ -3,7 +3,7 @@ import { BADGE_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
-export type SketchBadgeStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'idle' | 'not-ready' | 'failed';
+export type SketchBadgeStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'failed';
 
 const LABELS = SKETCHES_LABELS.status;
 
@@ -25,9 +25,5 @@ export class SketchStatusBadgeComponent {
 
   public status = input<SketchBadgeStatus>('waiting');
   protected failed = computed(() => this.status() === 'failed');
-  protected label = computed(() => {
-    const status = this.status();
-
-    return LABELS[status === 'not-ready' ? 'notReady' : status];
-  });
+  protected label = computed(() => LABELS[this.status()]);
 }

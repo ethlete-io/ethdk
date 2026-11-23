@@ -16,7 +16,6 @@ import { SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status
 import {
   SketchAgentRun,
   SketchHold,
-  SketchIdle,
   SketchMergePort,
   SketchRound,
   SketchStatus,
@@ -51,18 +50,15 @@ export class SketchHeadComponent {
   protected warningTheme = injectSemanticColorTheme('warning');
   protected successTheme = injectSemanticColorTheme('success');
   public heading = input('');
-  public fresh = input(false);
   public status = input<SketchStatus>('waiting');
   public readyReason = input<string | null>(null);
   public hold = input.required<SketchHold>();
-  public lastChange = input.required<SketchIdle>();
   public heldMerge = input<SketchMergeHold | null>(null);
   public autoMerge = input(false);
   public error = input<string | null>(null);
   public commentable = input(false);
   public discardable = input(true);
   public listError = input(false);
-  public question = input('');
   public rounds = input<SketchRound[]>([]);
   public round = input('');
   public agent = input<SketchAgentRun | null>(null);

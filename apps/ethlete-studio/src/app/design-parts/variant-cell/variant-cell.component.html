@@ -22,18 +22,6 @@
       >{{ LABELS.sameAsRest(sameAsRest()) }}</span
     >
   }
-  @if (marked()) {
-    <span
-      class="shrink-0 rounded-full bg-et-theme px-space-2 text-ui-xs font-ui-medium text-et-on-theme"
-      data-sk-changed-mark
-      >{{ LABELS.changedCell }}</span
-    >
-  }
-  @if (first()) {
-    <span class="shrink-0 text-ui-xs font-ui-medium text-et-surface" data-sk-first-change>{{
-      LABELS.firstChange
-    }}</span>
-  }
 </span>
 <div [class]="wrapperClass()" class="relative row-start-2 flex min-w-0 flex-col self-start">
   <ng-content select="[overlay]" />

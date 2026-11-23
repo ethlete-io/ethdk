@@ -1,0 +1,15 @@
+@layer components {
+  .st-title-bar {
+    width: 1440px;
+  }
+  .st-notice-hint {
+    container-type: inline-size;
+  }
+  .st-notice-hint .et-tooltip-mock-frame {
+    margin-right: min(0px, calc(50cqi - 30px));
+  }
+  .st-notice-hint .et-overlay-arrow {
+    left: auto;
+    right: max(20px, calc(50cqi - 10px));
+  }
+}

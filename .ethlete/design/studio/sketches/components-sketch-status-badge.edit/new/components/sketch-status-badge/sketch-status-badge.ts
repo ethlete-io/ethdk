@@ -1,0 +1,56 @@
+import { definePart } from '@design-system';
+import badge from '@system/components/badge';
+import { SKETCHES_LABELS } from '../../../../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
+
+export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'idle';
+
+export type SketchBadgeStatus = SketchStatus | 'failed';
+
+type Props = { status: SketchBadgeStatus };
+
+const LABEL: Record<SketchBadgeStatus, string> = {
+  drawing: SKETCHES_LABELS.status.drawing,
+  waiting: SKETCHES_LABELS.status.waiting,
+  picked: SKETCHES_LABELS.status.picked,
+  paused: 'Pausiert',
+  idle: SKETCHES_LABELS.status.idle,
+  failed: SKETCHES_LABELS.status.failed,
+};
+
+export const sketchStatusBadge = async (status: SketchBadgeStatus) => {
+  const { body, styles } = (await badge.render({
+    badges: [{ label: LABEL[status], variant: 'tonal', size: 'sm' }],
+  })) as { body: string; styles: string };
+
+  return {
+    body: status === 'failed' ? `<span class="flex w-fit" data-et-semantic-color="error">${body}</span>` : body,
+    styles,
+  };
+};
+
+export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/sketch-status-badge/sketch-status-badge.component.ts',
+  note: 'The status of a sketch as a small tonal badge: zeichnet while a variant is drawn, Wartet auf deine Wahl when all stand and nothing is picked, Variante gewählt once the designer picked a variant and the merge is still to come, Pausiert while the agent waits on other work and Keine Aktivität when nothing moved for a while. Render fehlgeschlagen, when its render failed, takes the error colour theme by its semantic type. The host places it, and wraps the paused badge in the hold trigger.',
+  madeBy: ['claude-opus-5-5', 'design check'],
+  widths: [200],
+  states: {
+    drawing: { status: 'drawing' },
+    waiting: { status: 'waiting' },
+    picked: { status: 'picked' },
+    paused: { status: 'paused' },
+    idle: { status: 'idle' },
+    failed: { status: 'failed' },
+  },
+  describe: {
+    drawing: 'The tonal badge zeichnet while a variant is drawn; check that it fits its label on one line.',
+    waiting: 'The tonal badge Wartet auf deine Wahl; check that the longest label stays on one line inside 200px.',
+    picked: 'The tonal badge Variante gewählt; check that it uses the same tonal look as the others.',
+    paused: 'The tonal badge Pausiert; check that it keeps the same height and padding as the others.',
+    idle: 'The tonal badge Keine Aktivität; check that it reads as neutral, not as a warning.',
+    failed:
+      'The badge Render fehlgeschlagen in the error colour; check that the tint and text switch to the error theme.',
+  },
+  controls: {},
+  instant: 'The badge swaps its label at once when the sketch status changes.',
+  render: ({ status }: Props) => sketchStatusBadge(status),
+});

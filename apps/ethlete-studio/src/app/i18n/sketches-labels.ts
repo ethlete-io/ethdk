@@ -46,8 +46,6 @@ export const SKETCHES_LABELS = {
   compareFailed: (message: string) => `Vergleich fehlgeschlagen: ${message}`,
   reload: 'Erneut laden',
   sameVariants: (names: string[]) => `Unverändert: ${names.map((name) => name.replace(/ /g, '\u00A0')).join(', ')}`,
-  firstChange: 'erste Änderung',
-  changedCell: 'geändert',
   foldedStates: (count: number) =>
     count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`,
   pendingStates: (count: number) => (count === 1 ? 'vergleicht 1 Zustand …' : `vergleicht ${count} Zustände …`),
@@ -67,21 +65,15 @@ export const SKETCHES_LABELS = {
   drawingVariant: 'zeichnet diese Variante',
   drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',
   mergePort: (merged: readonly string[]) => `Agent portiert nach Merge von ${merged.join(', ')}`,
-  fresh: 'neu',
   autoMerge: 'Übernimmt sich selbst',
   status: {
     drawing: 'zeichnet',
     waiting: 'Wartet auf deine Wahl',
     picked: 'Variante gewählt',
     paused: 'Pausiert',
-    idle: 'Keine Aktivität',
-    notReady: 'Noch nicht bereit',
     failed: 'Render fehlgeschlagen',
   },
-  notReadyUnknown: 'Grund unbekannt - der Agent hat den Sketch noch nicht geprüft',
   holdUntil: (until: string) => `Wartet auf ${until}`,
-  lastChange: (by: string, since: string) =>
-    by || since ? [by ? `Letzte Änderung von ${by}` : 'Letzte Änderung', since].filter(Boolean).join(' · ') : '',
   since: (minutes: number) => `seit ${spanOf(minutes)}`,
   agentRun: {
     failed: (round: number | null) => (round === null ? 'Runde fehlgeschlagen' : `Runde ${round} fehlgeschlagen`),

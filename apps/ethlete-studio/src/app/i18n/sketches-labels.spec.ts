@@ -23,8 +23,4 @@ describe('SKETCHES_LABELS', () => {
       'vor 3 Tagen',
     ]);
   });
-
-  it('names no command in a reason line', () => {
-    expect(SKETCHES_LABELS.notReadyUnknown).not.toMatch(/\b(et design|sketch ready|führe .* aus)\b/);
-  });
 });

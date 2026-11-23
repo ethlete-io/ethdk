@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { NEVER } from 'rxjs';
 import { StudioCodeState } from '../host/studio-code';
-import { codeNoticeOf, injectCodeWatch, pushNoticeOf } from './code-watch';
+import { codeNoticeOf, injectCodeWatch } from './code-watch';
 
 vi.mock('../host/studio-code', () => ({ studioCodeState$: () => NEVER, quitForRebuild$: () => NEVER }));
 
@@ -103,21 +103,5 @@ describe('the restart of a changed page', () => {
 
     expect(reload).not.toHaveBeenCalled();
     expect(watch.restart()).toBeNull();
-  });
-});
-
-describe('pushNoticeOf', () => {
-  it('passes the unpushed commits and the age of the oldest in hours', () => {
-    expect(pushNoticeOf({ unpushed: 158, oldestAgeHours: 31.5 })).toEqual({
-      unpushed: 158,
-      age: '31,5 h',
-    });
-    expect(pushNoticeOf({ unpushed: 2, oldestAgeHours: null })?.age).toBe('0 h');
-  });
-
-  it('shows nothing when everything is pushed or the host reports no push state', () => {
-    expect(pushNoticeOf({ unpushed: 0, oldestAgeHours: null })).toBeNull();
-    expect(pushNoticeOf(null)).toBeNull();
-    expect(pushNoticeOf(undefined)).toBeNull();
   });
 });

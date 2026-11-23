@@ -51,8 +51,7 @@ describe('VariantCellComponent', () => {
   it('wraps the label row at the frame width, so the full state name and the chips stay visible', async () => {
     const cell = await setup({
       state: 'default · phone',
-      marked: true,
-      first: true,
+      sameAsRest: ['default · tablet'],
       width: 300,
       height: 90,
       scale: 0.2,
@@ -64,29 +63,15 @@ describe('VariantCellComponent', () => {
     expect(cell.querySelector('[data-sk-label-text]')?.classList.contains('wrap-anywhere')).toBe(true);
     expect(row?.classList.contains('overflow-hidden')).toBe(false);
     expect(cell.querySelector('[data-sk-label-text]')?.classList.contains('truncate')).toBe(false);
-    expect(cell.querySelector('[data-sk-changed-mark]')?.classList.contains('shrink-0')).toBe(true);
-    expect(cell.querySelector('[data-sk-first-change]')?.classList.contains('shrink-0')).toBe(true);
   });
 
-  it('marks a changed cell with the geändert chip only when asked', async () => {
-    const marked = await setup({ state: 'rest-hover', marked: true, width: 200, height: 50 });
+  // The human decided Studio does not show the changed badge or the first-change line.
+  it('draws no changed badge and no first-change line on a changed cell', async () => {
+    const cell = await setup({ state: 'rest-hover', changed: 'b', width: 200, height: 50 });
 
-    expect(marked.querySelector('[data-sk-changed-mark]')?.textContent?.trim()).toBe('geändert');
-  });
-
-  it('draws the geändert chip with on-theme text on the theme fill', async () => {
-    const marked = await setup({ state: 'rest-hover', marked: true, width: 200, height: 50 });
-    const chip = marked.querySelector('[data-sk-changed-mark]');
-
-    expect(chip?.classList.contains('bg-et-theme')).toBe(true);
-    expect(chip?.classList.contains('text-et-on-theme')).toBe(true);
-    expect(chip?.classList.contains('text-et-theme-ink')).toBe(false);
-  });
-
-  it('draws no geändert chip without the mark', async () => {
-    const plain = await setup({ state: 'rest-hover', width: 200, height: 50 });
-
-    expect(plain.querySelector('[data-sk-changed-mark]')).toBeNull();
+    expect(cell.textContent).not.toContain('geändert');
+    expect(cell.textContent).not.toContain('erste Änderung');
+    expect(cell.querySelector('[data-sk-changed-mark], [data-sk-first-change]')).toBeNull();
   });
 
   it('dims an unchanged state and reads unverändert', async () => {
@@ -96,10 +81,9 @@ describe('VariantCellComponent', () => {
     expect(cell.querySelector('[data-sk-frame]')?.classList.contains('opacity-50')).toBe(true);
   });
 
-  it('marks the first change and the selected frame', async () => {
-    const cell = await setup({ state: 'a', first: true, selected: true, width: 200, height: 50 });
+  it('marks the selected frame', async () => {
+    const cell = await setup({ state: 'a', selected: true, width: 200, height: 50 });
 
-    expect(cell.querySelector('[data-sk-first-change]')).not.toBeNull();
     expect(cell.querySelector('[data-sk-frame]')?.getAttribute('data-selected')).toBe('');
     expect(cell.querySelector('[data-frame-border]')?.className).toContain('outline-solid');
   });

@@ -15,7 +15,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
-  BADGE_IMPORTS,
   BUTTON_IMPORTS,
   injectOverlayManager,
   TOOLTIP_IMPORTS,
@@ -32,16 +31,6 @@ import { isWindowMaximized$, WindowButton, WindowChrome } from '../../../host/wi
 import { CODE_LABELS, TITLE_BAR_LABELS } from '../../i18n/shell-labels';
 import { ErrorToastComponent } from '../../design-parts/error-toast/error-toast.component';
 import { TitleSearchComponent } from '../title-search/title-search.component';
-
-export type TitleBarPush = { unpushed: number; age: string };
-
-const UNCOMMITTED_LINE = /^(\S+ \S+) \S+ ([^:]+):/;
-
-const uncommittedEntryOf = (line: string) => {
-  const [, kind = line, what = ''] = UNCOMMITTED_LINE.exec(line) ?? [];
-
-  return { kind: CODE_LABELS.uncommittedKinds[kind] ?? kind, what };
-};
 
 @Component({
   selector: 'ethlete-title-bar',
@@ -62,50 +51,6 @@ const uncommittedEntryOf = (line: string) => {
       <ethlete-title-search [product]="product()" [part]="part()" [os]="os()" />
 
       <div [class.self-stretch]="caption()" class="flex items-center justify-end gap-2">
-        @if (push(); as push) {
-          <span class="inline-flex" data-push-state>
-            <et-badge variant="tonal" size="sm">
-              <span class="flex items-center gap-1 whitespace-nowrap">
-                <span class="[text-box:trim-both_cap_alphabetic]">{{ CODE_LABELS.push(push) }}</span>
-              </span>
-            </et-badge>
-          </span>
-        }
-        @if (uncommittedEntries().length) {
-          <span
-            [etTooltip]="uncommittedList"
-            [etTooltipAriaDescription]="uncommittedDescription()"
-            class="inline-flex items-center gap-1 whitespace-nowrap text-et-surface-muted"
-            placement="bottom-end"
-            data-uncommitted-state
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M10.5 3 13 5.5 6 12.5H3.5V10z" />
-              <path d="m9 4.5 2.5 2.5" />
-            </svg>
-            {{ CODE_LABELS.uncommitted(uncommittedEntries().length) }}
-          </span>
-          <ng-template #uncommittedList>
-            <span class="flex flex-col gap-1.5">
-              @for (entry of uncommittedEntries(); track $index) {
-                <span class="flex flex-col">
-                  <span class="text-et-surface-muted">{{ entry.kind }}</span>
-                  <span class="whitespace-nowrap">{{ entry.what }}</span>
-                </span>
-              }
-            </span>
-          </ng-template>
-        }
         @if (!notice() && noticeText(); as text) {
           <span class="whitespace-nowrap text-et-surface-muted" data-code-notice>{{ text }}</span>
         }
@@ -350,7 +295,6 @@ const uncommittedEntryOf = (line: string) => {
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
-    BADGE_IMPORTS,
     BUTTON_IMPORTS,
     TOOLTIP_IMPORTS,
     NgTemplateOutlet,
@@ -372,8 +316,6 @@ export class TitleBarComponent {
   public notice = input(false);
   public noticeText = input<string | null>(null);
   public restart = input<'pending' | 'failed' | null>(null);
-  public push = input<TitleBarPush | null>(null);
-  public uncommitted = input<string[]>([]);
   public product = input('');
 
   public part = input('');
@@ -394,14 +336,6 @@ export class TitleBarComponent {
   protected readonly SIZE = WINDOW_CONTROL_BUTTON_SIZES.MD;
 
   protected readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
-
-  protected uncommittedEntries = computed(() => this.uncommitted().map(uncommittedEntryOf));
-
-  protected uncommittedDescription = computed(() =>
-    this.uncommittedEntries()
-      .map(({ kind, what }) => `${kind} ${what}`)
-      .join(', '),
-  );
 
   protected restarting = computed(() => this.restart() === 'pending');
   protected round = computed(() => this.os() === 'linux');

@@ -37,8 +37,6 @@ export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'not-re
 
 export type SketchHold = { until: string; by: SketchModel; since: string };
 
-export type SketchIdle = { by: string; since: string };
-
 export type SketchRound = { value: string; label: string; note?: string };
 
 export type SketchAgentRun = { by: SketchModel; task: string; step: string; since: string; failed?: boolean };
@@ -141,8 +139,6 @@ export const SKETCH_LOOKS: Record<string, string> = {
 export const SKETCH_DRAWN = 'b';
 
 export const SKETCH_HOLD: SketchHold = { until: 'B34/B36/B38', by: OPUS, since: 'seit 12 Min' };
-
-export const SKETCH_IDLE: SketchIdle = { by: 'Opus 5.5', since: 'seit 25 Min' };
 
 export const SKETCH_AGENT_RUNS: Record<'round' | 'variant' | 'failed', SketchAgentRun> = {
   round: { by: OPUS, task: 'baut Runde 2', step: 'Variante c, 1 von 2', since: 'seit 4 Min' },

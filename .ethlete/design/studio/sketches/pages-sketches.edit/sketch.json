@@ -106,7 +106,7 @@
     "fixtures.ts": "909089fbef7b8f34"
   },
   "baselineTree": "9952e891f30f9a1ea3096e3b789cb5b6c0378c27",
-  "editOldCommit": "a8078f9a68a3101491333884fd9318486527b1aa",
+  "editOldCommit": "b3eb956c3bf0ada2cc35823268176170313ad9d7",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "9a0a7a3b22f8b030",
     "pages/sketches/shared/multi-part.ts": "baa5ef7f1cd1fb1c",

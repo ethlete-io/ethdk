@@ -3,19 +3,18 @@ import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
-import { SketchWithdrawn } from '../sketches/sketches-sample';
+import { SketchStatus, SketchWithdrawn } from '../sketches/sketches-sample';
 import { SketchHeadComponent } from './sketch-head.component';
 
 const HOLD = { until: 'B1', by: { short: 'Sol', agent: 'codex' as const }, since: 'seit 1 Min' };
-const IDLE = { by: 'Sol', since: 'seit 2 Min' };
 
 @Component({
   imports: [SketchHeadComponent],
   template: `<ethlete-sketch-head
     [(withdrawn)]="withdrawn"
     [hold]="hold"
-    [lastChange]="idle"
-    [question]="question()"
+    [status]="status()"
+    [readyReason]="readyReason()"
     [discardable]="discardable()"
     [listError]="listError()"
     [withdrawnCount]="3"
@@ -28,8 +27,8 @@ const IDLE = { by: 'Sol', since: 'seit 2 Min' };
 })
 class HostComponent {
   hold = HOLD;
-  idle = IDLE;
-  question = signal('Welche Farbe bekommt der Rahmen der gewählten Variante, wenn sie gerade gezeichnet wird?');
+  status = signal<SketchStatus>('waiting');
+  readyReason = signal<string | null>(null);
   discardable = signal(true);
   listError = signal(true);
   withdrawn = signal<SketchWithdrawn>('hidden');
@@ -59,19 +58,24 @@ const setup = async () => {
 };
 
 describe('SketchHeadComponent', () => {
-  it('shows a long question on one truncated line and moves the picker below it', async () => {
+  // The human decided Studio does not show the new or not-ready badges, the not-ready reason, the last
+  // change line or the description line under the title.
+  it('shows no not-ready badge, reason, last change or description line', async () => {
     const { fixture, root, host } = await setup();
-    const line = root.querySelector<HTMLElement>('[data-sk-question]')!;
 
-    expect(root.querySelector('header')?.textContent).toContain('pages/home');
-    expect(line.textContent?.trim()).toBe(host.question());
-    expect(line.classList).toContain('truncate');
-    expect(line.nextElementSibling?.querySelector('et-select')).not.toBeNull();
-
-    host.question.set('');
+    host.status.set('not-ready');
+    host.readyReason.set('components/title-bar b: SHOT-NOT-VIEWED default draws a pixel diff nobody viewed');
     await fixture.whenStable();
 
-    expect(root.querySelector('[data-sk-question]')).toBeNull();
+    const text = root.textContent ?? '';
+
+    expect(root.querySelector('header')?.textContent).toContain('pages/home');
+    expect(root.querySelector('header et-badge')).toBeNull();
+    expect(text).not.toContain('Noch nicht bereit');
+    expect(text).not.toContain('Grund unbekannt');
+    expect(text).not.toContain('SHOT-NOT-VIEWED');
+    expect(text).not.toContain('Letzte Änderung');
+    expect(root.querySelector('[data-sk-not-ready], [data-sk-question]')).toBeNull();
     expect(root.querySelector('header')?.nextElementSibling?.querySelector('et-select')).not.toBeNull();
   });
 

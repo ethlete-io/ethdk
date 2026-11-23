@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 import { WindowChrome } from '../../../host/window';
 import { THEMES } from '../../../themes';
 import { UpdateDialogComponent } from '../update-dialog/update-dialog.component';
-import { TitleBarComponent, TitleBarPush } from './title-bar.component';
+import { TitleBarComponent } from './title-bar.component';
 
 vi.mock('../../../host/window', () => ({ isWindowMaximized$: () => of(false) }));
 
@@ -15,8 +15,6 @@ type Props = Omit<WindowChrome, 'preferNoCsd'> & {
   notice?: boolean;
   noticeText?: string | null;
   restart?: 'pending' | 'failed' | null;
-  push?: TitleBarPush | null;
-  uncommitted?: string[];
   product?: string;
   part?: string;
 };
@@ -126,69 +124,12 @@ describe('TitleBarComponent', () => {
     fixture.destroy();
   });
 
-  it('draws the push badge before Update, tonal', () => {
-    const bar = render({ ...linux([], ['close']), update: true, push: { unpushed: 158, age: '31,5 h' } }).bar;
-    const state = bar?.lastElementChild?.firstElementChild as HTMLElement | null;
+  // The human decided Studio does not show the git push state or the uncommitted count.
+  it('shows no unpushed or uncommitted state', () => {
+    const { element } = render({ ...linux([], ['close']), update: true, notice: true, noticeText: 'x' });
 
-    expect(state?.matches('[data-push-state]')).toBe(true);
-    expect(state?.textContent?.trim()).toBe('158 ungepusht · 31,5 h');
-    expect(state?.querySelector('et-badge')?.getAttribute('data-variant')).toBe('tonal');
-
-    TestBed.resetTestingModule();
-    expect(render(linux([], [])).bar?.querySelector('[data-push-state]')).toBeNull();
-  });
-
-  it('centres the push badge text on its cap height', () => {
-    const bar = render({ ...linux([], []), push: { unpushed: 3, age: '2 h' } }).bar;
-    const text = bar?.querySelector<HTMLElement>(
-      '[data-push-state] et-badge .\\[text-box\\:trim-both_cap_alphabetic\\]',
-    );
-
-    expect(text?.textContent?.trim()).toBe('3 ungepusht · 2 h');
-  });
-
-  describe('uncommitted', () => {
-    const UNCOMMITTED = [
-      'READY UNCOMMITTED studio components/menu: marked ready, HEAD has no mark - commit ready.json or the mark is lost',
-      'SKETCH UNTRACKED studio pages/inbox: sketch folder is untracked',
-      'SKETCH LEFTOVER studio pages/a-very-long-sketch-name-for-the-hint: sketch folder is left over',
-      'READY UNCOMMITTED studio components/badge: marked ready, HEAD has no mark - commit ready.json or the mark is lost',
-    ];
-
-    it('draws the open count after the push badge, muted', () => {
-      const bar = render({ ...linux([], []), push: { unpushed: 3, age: '2 h' }, uncommitted: UNCOMMITTED }).bar;
-      const mark = bar?.querySelector<HTMLElement>('[data-uncommitted-state]');
-
-      expect(mark?.textContent?.trim()).toBe('4 offen');
-      expect(mark?.classList).toContain('text-et-surface-muted');
-      expect(mark?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
-      expect(mark?.previousElementSibling?.matches('[data-push-state]')).toBe(true);
-    });
-
-    it('names each entry on hover', async () => {
-      const { fixture, bar } = render({ ...linux([], []), uncommitted: UNCOMMITTED });
-      const mark = bar?.querySelector<HTMLElement>('[data-uncommitted-state]');
-      const enter = Object.assign(new Event('pointerenter'), { pointerType: 'mouse' });
-
-      mark?.dispatchEvent(enter);
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      await fixture.whenStable();
-
-      const text = document.body.textContent ?? '';
-
-      expect(text).toContain('Ready-Marke');
-      expect(text).toContain('components/menu');
-      expect(text).toContain('Sketch ungetrackt');
-      expect(text).toContain('pages/inbox');
-      expect(text).toContain('Sketch übrig');
-      expect(text).toContain('pages/a-very-long-sketch-name-for-the-hint');
-      expect(text).toContain('components/badge');
-      expect(text).not.toContain('HEAD has no mark');
-    });
-
-    it('draws no mark when nothing is uncommitted', () => {
-      expect(render({ ...linux([], []), uncommitted: [] }).bar?.querySelector('[data-uncommitted-state]')).toBeNull();
-    });
+    expect(element.textContent).not.toMatch(/ungepusht|\d+ offen/);
+    expect(element.querySelector('[data-push-state], [data-uncommitted-state]')).toBeNull();
   });
 
   it('fires restart from the notice button and hides Update without an update', () => {
@@ -278,9 +219,9 @@ describe('TitleBarComponent', () => {
     });
   });
 
-  // The title bar shows the push state and the open count, and no CI state.
+  // The title bar shows no CI state.
   it('shows no CI state', () => {
-    const { element } = render({ ...linux([], ['close']), push: { unpushed: 2, age: '3 Min' }, uncommitted: ['a.ts'] });
+    const { element } = render(linux([], ['close']));
 
     expect(element.textContent).not.toMatch(/\bCI\b/i);
     expect(element.querySelector('[data-ci-state]')).toBeNull();

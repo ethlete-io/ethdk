@@ -106,6 +106,7 @@
     "fixtures.ts": "909089fbef7b8f34"
   },
   "baselineTree": "c36ab33ba53fd7a1234cabb1d27786a46cd7f01e",
+  "editOldCommit": "b3eb956c3bf0ada2cc35823268176170313ad9d7",
   "rounds": [
     {
       "key": "r1",
@@ -128,6 +129,5 @@
   "readyContent": {
     "new": "abdf8d56642a235a",
     "old": "f136c1ebc8a80d05"
-  },
-  "editOldCommit": "2b71a2ac19e7169f5acaffa5a7dfc2efc9af2f9c"
+  }
 }

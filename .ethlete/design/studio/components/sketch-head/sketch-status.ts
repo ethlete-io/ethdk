@@ -7,7 +7,6 @@ export const OPUS: Model = { name: 'Opus 5.5', agent: 'claude' };
 export const SOL: Model = { name: 'GPT-6.1 Sol', agent: 'codex' };
 
 export const HOLD = { until: 'B34/B36/B38', by: OPUS, since: 'seit 12 Min' };
-export const IDLE = { since: 'seit 25 Min', last: 'Letzte Änderung von Opus 5.5' };
 
 export const modelName = (model: Model) =>
   html`<span class="inline-flex items-center gap-space-1"

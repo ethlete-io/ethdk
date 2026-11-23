@@ -21,8 +21,7 @@ const render = async (status: SketchBadgeStatus) => {
 describe('SketchStatusBadgeComponent', () => {
   it.each([
     ['drawing', SKETCHES_LABELS.status.drawing],
-    ['not-ready', SKETCHES_LABELS.status.notReady],
-    ['idle', SKETCHES_LABELS.status.idle],
+    ['paused', SKETCHES_LABELS.status.paused],
   ] as const)('names the %s status', async (status, label) => {
     const host = await render(status);
 

@@ -96,7 +96,6 @@ type Props = {
   sameOpen?: boolean;
   withdrawn?: Withdrawn;
   agent?: AgentRun;
-  question?: string;
   port?: MergePort;
   points?: boolean;
   pointsOpen?: boolean;
@@ -146,8 +145,6 @@ const errorText = (reason: string) =>
   html`<p class="m-0 text-ui-xs text-et-theme-ink" data-et-semantic-color="error" role="alert" data-sk-merge-error>
     ${reason}
   </p>`;
-
-const QUESTION = 'Wo soll der Reset-Knopf der Zoom-Pille stehen?';
 
 const foldedLabel = (count: number) =>
   count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`;
@@ -739,8 +736,8 @@ export default definePart<Props>({
     'comment-target': { kind: 'button', part: 'components/comment-target' },
   },
   states: {
-    'page-sketch': { camera: 'fit', question: QUESTION },
-    'page-100': { camera: '100', question: QUESTION },
+    'page-sketch': { camera: 'fit' },
+    'page-100': { camera: '100' },
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
     drawing: { camera: 'fit', status: 'drawing' },
     paused: { camera: 'fit', status: 'paused' },
@@ -800,9 +797,8 @@ export default definePart<Props>({
   },
   describe: {
     'page-sketch':
-      'A sketch fitted to the view with Aktuell and the first variant; check each row head with variant, model, note and Übernehmen and the state grid beside it, and the open round question as its own line above the round picker, with the canvas 40 px lower.',
-    'page-100':
-      'The sketch at 100 %; check the 15px notes and 13px state names, that no cell is cut off, and the open round question as its own line above the round picker, with the canvas 40 px lower.',
+      'A sketch fitted to the view with Aktuell and the first variant; check each row head with variant, model, note and Übernehmen and the state grid beside it.',
+    'page-100': 'The sketch at 100 %; check the 15px notes and 13px state names, and that no cell is cut off.',
     'zoomed-page':
       'The sketch zoomed to 60 % and panned with variant a selected; check that the row heads stay pinned at the left edge, opaque over the cells.',
     drawing: 'A variant still drawing; check the zeichnet badge in the header and that Übernehmen is missing.',
@@ -828,9 +824,8 @@ export default definePart<Props>({
     'compare-pending':
       'Some states known as changed while the rest still compare; check that only those show and the rest sit folded behind one line.',
     neighbourhood:
-      'Each variant changes one interaction of a control; check that the whole row of that control shows, the changed cell marked and its neighbours dimmed, and that the other controls stay folded.',
-    'compare-answered':
-      'The comparison done; check that unchanged states are dimmed, the first change is marked and the grid did not jump.',
+      'Each variant changes one interaction of a control; check that the whole row of that control shows, the changed cell bright and its neighbours dimmed, and that the other controls stay folded.',
+    'compare-answered': 'The comparison done; check that unchanged states are dimmed and the grid did not jump.',
     'added-state':
       'A variant adds a state Aktuell lacks; check the dashed neu in der Skizze frame in Aktuell and fehlt in dieser Variante where it is missing.',
     'narrow-wide-state':
@@ -955,7 +950,6 @@ export default definePart<Props>({
     sameOpen = false,
     withdrawn,
     agent,
-    question = '',
     port,
     points = false,
     pointsOpen = false,
@@ -1049,9 +1043,7 @@ export default definePart<Props>({
       round: ROUNDS[screen ? 'screen' : kind],
       status,
       readyReason,
-      fresh,
       autoMerge,
-      question,
       discardable: kind !== 'edit' || !!screen,
       retry: !!listError,
       commentToggle: commentToggle?.body,

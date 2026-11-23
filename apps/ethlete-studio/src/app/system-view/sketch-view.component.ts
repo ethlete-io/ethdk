@@ -55,7 +55,6 @@ import {
   SketchAgentRun,
   SketchHold,
   SketchMergePort,
-  SketchIdle,
   SketchModel,
   SketchComment,
   SketchCommentDraft,
@@ -252,7 +251,6 @@ const scrollOf = (data: unknown) =>
       [fresh]="!part()"
       [autoMerge]="sketch().autoMergeForecast?.merges === true"
       [status]="sketchStatus()"
-      [lastChange]="lastChange()"
       [readyReason]="readyReason()"
       [hold]="held()"
       [agent]="agentRun()"
@@ -260,7 +258,6 @@ const scrollOf = (data: unknown) =>
       [drawn]="drawnVariant()"
       [rounds]="rounds()"
       [round]="shownRoundKey()"
-      [question]="roundQuestion()"
       [pins]="variantPins()"
       [selected]="picked() ?? undefined"
       [openPoints]="openPointGroups()"
@@ -473,8 +470,6 @@ export class SketchViewComponent {
 
   public shownRoundKey = computed(() => this.shownRounds().find((round) => round.open)?.key ?? '');
 
-  protected roundQuestion = computed(() => this.shownRounds().find((round) => round.open)?.note ?? '');
-
   protected heading = computed(() => sketchHeadTitleOf(this.sketch(), this.shownRoundKey()));
 
   private matrix = computed(() =>
@@ -666,17 +661,6 @@ export class SketchViewComponent {
       .at(-1);
   });
 
-  protected lastChange = computed<SketchIdle>(() => {
-    const report = this.sketch().report;
-    const at = report ? Date.parse(report.updatedAt) : NaN;
-    const author = report?.author ?? this.newestAuthor();
-
-    return {
-      by: author ? modelNameOf(author) : '',
-      since: Number.isNaN(at) ? '' : SKETCHES_LABELS.since(minutesSince(at)),
-    };
-  });
-
   protected held = computed<SketchHold>(() => {
     const hold = this.sketch().hold;
     const at = hold ? Date.parse(hold.heldAt) : NaN;
@@ -810,9 +794,7 @@ export class SketchViewComponent {
   });
 
   protected readyReason = computed(() =>
-    this.renderState().state === 'failed'
-      ? SKETCHES_LABELS.agentRun.errors(this.renderState().errors)
-      : (this.sketch().readyRefusal?.lines[0] ?? null),
+    this.renderState().state === 'failed' ? SKETCHES_LABELS.agentRun.errors(this.renderState().errors) : null,
   );
 
   protected sketchStatus = computed<SketchStatus>(() => {

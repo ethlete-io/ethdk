@@ -87,7 +87,6 @@ import {
   SKETCH_CURRENT,
   SKETCH_DRAWN,
   SKETCH_HOLD,
-  SKETCH_IDLE,
   SKETCH_PINS,
   SKETCH_ROUNDS,
   SKETCH_ROWS,
@@ -99,7 +98,6 @@ import {
   SketchConfirm,
   SketchHold,
   SketchMergePort,
-  SketchIdle,
   SketchPin,
   SketchRow,
   SketchWithdrawn,
@@ -254,11 +252,9 @@ export class SketchesComponent {
   public mergeHold = input<SketchMergeHold | null>(null);
   public drawn = input<string | null>(SKETCH_DRAWN);
   public hold = input<SketchHold>(SKETCH_HOLD);
-  public lastChange = input<SketchIdle>(SKETCH_IDLE);
   public reason = input(false);
   public readyReason = input<string | null>(null);
   public agent = input<SketchAgentRun | null>(null);
-  public question = input('');
   public port = input<SketchMergePort | null>(null);
   public rounds = input(SKETCH_ROUNDS);
   public round = input(SKETCH_ROUNDS[0]?.value ?? '');
@@ -833,16 +829,6 @@ export class SketchesComponent {
 
   protected isPending(row: SketchRow) {
     return row.key !== SKETCH_CURRENT && this.pendingRows().has(row.key);
-  }
-
-  protected isMarked(row: SketchRow, changed: boolean | null) {
-    return !isBaseRow(row) && changed === true && !this.isPending(row) && !this.isDrawn(row) && !this.screenMode();
-  }
-
-  protected firstChangeOf(row: SketchRow) {
-    return isBaseRow(row) || this.isPending(row) || this.isDrawn(row) || this.screenMode()
-      ? null
-      : (row.shots.find((shot) => shot.changed === true)?.state ?? null);
   }
 
   protected pinOf(key: string) {

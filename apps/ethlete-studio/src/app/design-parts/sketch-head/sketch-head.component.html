@@ -1,10 +1,5 @@
 <header class="relative z-3 flex items-center gap-space-3">
   <span class="text-ui-lg font-ui-strong">{{ heading() }}</span>
-  @if (fresh()) {
-    <div class="flex flex-wrap items-center">
-      <et-badge variant="tonal" size="sm">{{ LABELS.fresh }}</et-badge>
-    </div>
-  }
   @switch (status()) {
     @case ('paused') {
       <span class="flex min-w-0 items-center gap-space-2">
@@ -15,7 +10,7 @@
           (openChange)="reasonOpen.set($event)"
         />
       </span>
-      <ng-template #holdContent><ethlete-sketch-status-badge [status]="status()" /></ng-template>
+      <ng-template #holdContent><ethlete-sketch-status-badge status="paused" /></ng-template>
       <ng-template #holdReason>
         <span class="font-ui-medium text-et-surface">{{ LABELS.holdUntil(hold().until) }}</span>
         <span>·</span>
@@ -27,7 +22,7 @@
     }
     @case ('waiting') {
       <span class="flex items-center gap-space-2">
-        <ethlete-sketch-status-badge [status]="status()" />
+        <ethlete-sketch-status-badge status="waiting" />
         @if (heldMerge(); as held) {
           <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-merge-hold>{{
             LABELS.mergeHold(held)
@@ -37,12 +32,12 @@
     }
     @case ('picked') {
       <span class="flex items-center gap-space-2">
-        <ethlete-sketch-status-badge [status]="status()" data-sk-picked />
+        <ethlete-sketch-status-badge status="picked" data-sk-picked />
       </span>
     }
     @case ('failed') {
       <span class="flex min-w-0 items-center gap-space-2">
-        <ethlete-sketch-status-badge [status]="status()" data-sk-render-error />
+        <ethlete-sketch-status-badge status="failed" data-sk-render-error />
         @if (readyReason(); as reason) {
           <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-failed>{{ reason }}</span>
         }
@@ -50,18 +45,7 @@
     }
     @case ('drawing') {
       <span class="flex items-center gap-space-2">
-        <ethlete-sketch-status-badge [status]="status()" />
-      </span>
-    }
-    @case ('not-ready') {
-      <span class="flex items-center gap-space-2">
-        <ethlete-sketch-status-badge [status]="status()" />
-        <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-not-ready
-          >{{ readyReason() ?? LABELS.notReadyUnknown }}
-          @if (LABELS.lastChange(lastChange().by, lastChange().since); as lastChange) {
-            · {{ lastChange }}
-          }
-        </span>
+        <ethlete-sketch-status-badge status="drawing" />
       </span>
     }
   }
@@ -104,11 +88,6 @@
     <span class="text-ui-sm whitespace-nowrap text-et-surface-muted" data-sk-edit-hint>{{ LABELS.editHint }}</span>
   }
 </header>
-@if (question(); as question) {
-  <p class="relative z-2 m-0 truncate text-ui-md font-ui-medium text-et-surface" data-sk-question>
-    {{ question }}
-  </p>
-}
 <div class="relative z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto">
   <et-form-field size="sm" variant="ghost">
     <et-select

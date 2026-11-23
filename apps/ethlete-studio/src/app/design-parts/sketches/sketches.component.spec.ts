@@ -168,12 +168,10 @@ describe('SketchesComponent', () => {
     expect(textOf(states[0])).toBe(`rest${LABELS.stateSeparator}${LABELS.unchanged}`);
     expect(states[0]?.querySelector('[data-sk-label]')?.classList.contains('opacity-50')).toBe(true);
     expect(states[1]?.querySelector('[data-sk-label]')?.classList.contains('opacity-50')).toBe(false);
-    expect(textOf(variant?.querySelector('[data-sk-first-change]'))).toBe(LABELS.firstChange);
-    expect(root.querySelector('[data-sk-row="current"] [data-sk-first-change]')).toBeNull();
     expect(root.querySelector('[data-sk-row="current"] .opacity-50')).toBeNull();
   });
 
-  it('shows the whole interaction row of a changed state, marks the changed cell and folds the other rows', async () => {
+  it('shows the whole interaction row of a changed state and folds the other rows', async () => {
     const states = ['save', 'save-hover', 'save-active', 'remove', 'remove-hover'];
     const rowOf = (key: string, changed: string[]): SketchRow => ({
       key,
@@ -189,9 +187,6 @@ describe('SketchesComponent', () => {
     );
 
     expect(names).toEqual(['save', 'save-hover', 'save-active']);
-    expect(variant?.querySelectorAll('[data-sk-changed-mark]')).toHaveLength(1);
-    expect(variant?.querySelector('[data-sk-state="save-hover"] [data-sk-changed-mark]')).not.toBeNull();
-    expect(root.querySelector('[data-sk-row="current"] [data-sk-changed-mark]')).toBeNull();
   });
 
   it('folds every state no variant is known to change while a compare is pending, and shows all from the toggle', async () => {
@@ -224,7 +219,6 @@ describe('SketchesComponent', () => {
       camera: '100',
       rounds: [{ value: 'r1', label: 'Runde 1', note: 'Wo steht der Status?' }],
       round: 'r1',
-      question: 'Wo steht der Status?',
     });
     const root: HTMLElement = fixture.nativeElement;
     const framesOf = () =>
@@ -237,7 +231,6 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-folded]')?.hasAttribute('data-sk-pending')).toBe(true);
     expect(textOf(root.querySelector('[data-sk-folded] > span > span'))).toBe(LABELS.pendingStates(2));
     expect(textOf(root.querySelector('[data-sk-folded] button'))).toBe(LABELS.showAllStates);
-    expect(textOf(root.querySelector('[data-sk-question]'))).toBe('Wo steht der Status?');
 
     root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
     await fixture.whenStable();
@@ -319,11 +312,9 @@ describe('SketchesComponent', () => {
       status: 'waiting',
       rounds: [{ value: 'r1', label: 'Runde 1', note: 'Wo steht der Status?' }],
       round: 'r1',
-      question: 'Wo steht der Status?',
     });
     const root: HTMLElement = fixture.nativeElement;
 
-    expect(textOf(root.querySelector('[data-sk-question]'))).toBe('Wo steht der Status?');
     expect(root.querySelector('[data-sk-folded]')).toBeNull();
     expect(root.querySelectorAll('[data-sk-row="current"] [data-sk-state]').length).toBe(2);
     expect(root.querySelector('[data-sk-merge]')).toBeNull();
@@ -556,11 +547,10 @@ describe('SketchesComponent', () => {
     expect(started).toEqual([{ variant: 'x', shot: shown?.replace('x ', ''), point: null }]);
   });
 
-  it('drops the current row and shows neu for a new part', async () => {
+  it('drops the current row for a new part', async () => {
     const root: HTMLElement = (await render({ fresh: true })).nativeElement;
 
     expect(root.querySelector('[data-sk-row="current"]')).toBeNull();
-    expect(textOf(root.querySelector('header'))).toContain(LABELS.fresh);
   });
 
   // A sketch forecast to merge itself shows a mark in the Studio header.
@@ -614,20 +604,12 @@ describe('SketchesComponent', () => {
     expect(discarded).toHaveBeenCalledTimes(1);
   });
 
-  it('shows Noch nicht bereit with the ready refusal and the last change, or the hint to run sketch ready, and no merge', async () => {
-    const refused: HTMLElement = (
+  it('offers no merge while the sketch is not ready', async () => {
+    const root: HTMLElement = (
       await render({ camera: '100', status: 'not-ready', readyReason: 'elements/x a: a long refusal line' })
     ).nativeElement;
-    const unknown: HTMLElement = (
-      await render({ camera: '100', status: 'not-ready', lastChange: { by: '', since: '' } })
-    ).nativeElement;
 
-    expect(textOf(refused.querySelector('header'))).toContain(LABELS.status.notReady);
-    expect(textOf(refused.querySelector('[data-sk-not-ready]'))).toBe(
-      `elements/x a: a long refusal line · ${LABELS.lastChange('Opus 5.5', 'seit 25 Min')}`,
-    );
-    expect(textOf(unknown.querySelector('[data-sk-not-ready]'))).toBe(LABELS.notReadyUnknown);
-    expect(refused.querySelector('[data-sk-merge]')).toBeNull();
+    expect(root.querySelector('[data-sk-merge]')).toBeNull();
   });
 
   it('draws the in-progress variant live with the in-progress mark and the report line, never as finished', async () => {
@@ -640,7 +622,6 @@ describe('SketchesComponent', () => {
     expect(row?.querySelector('[data-sk-stage]')).not.toBeNull();
     expect(textOf(row)).toContain(LABELS.drawingMark);
     expect(textOf(row?.querySelector('[data-sk-drawing-line]'))).toBe('baut Runde 3');
-    expect(row?.querySelector('[data-sk-changed-mark]')).toBeNull();
     expect(row?.querySelector('[data-sk-merge]')).toBeNull();
   });
 
@@ -1685,19 +1666,10 @@ describe('SketchesComponent', () => {
     expect(fixture.componentInstance.transposed()).toBe(flips);
   });
 
-  it('draws the question line above the pickers in the head, above the rows', async () => {
-    const root: HTMLElement = (await render({ camera: '100', question: 'Wohin mit dem Knopf?' })).nativeElement;
-    const question = root.querySelector('[data-sk-question]');
+  it('draws the head above the rows', async () => {
+    const root: HTMLElement = (await render({ camera: '100' })).nativeElement;
 
-    expect(question?.tagName).toBe('P');
-    expect(textOf(question)).toBe('Wohin mit dem Knopf?');
-    expect(question?.nextElementSibling?.querySelector('et-select')).not.toBeNull();
     expect(root.querySelector('[data-sk-head] + div [data-sk-rows]')).not.toBeNull();
-
-    const plain: HTMLElement = (await render({ camera: '100' })).nativeElement;
-
-    expect(plain.querySelector('[data-sk-question]')).toBeNull();
-    expect(plain.querySelector('[data-sk-head] + div [data-sk-rows]')).not.toBeNull();
   });
 
   it('shows a running agent with its model, task and step and marks the sketch as drawing', async () => {

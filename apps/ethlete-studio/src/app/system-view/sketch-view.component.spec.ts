@@ -616,21 +616,6 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-row="a"]')).toBeNull();
   });
 
-  // A sketch round shows its note as the question line.
-  it('shows the note of the open round as the question line', async () => {
-    const { fixture, root } = await render(
-      { ...ROUNDED, rounds: [ROUNDED.rounds[0]!, { key: 'r2', title: 'Second', note: 'Wo steht der Status?' }] },
-      noComments,
-    );
-
-    expect(root.querySelector('[data-sk-question]')?.textContent?.trim()).toBe('Wo steht der Status?');
-
-    (fixture.componentInstance as unknown as { pickRound: (key: string) => void }).pickRound('r1');
-    await settle(fixture);
-
-    expect(root.querySelector('[data-sk-question]')).toBeNull();
-  });
-
   it('ignores the round flags remembered for an earlier sketch of the same part', async () => {
     localStorage.setItem(
       'ethlete-studio.call-view',
@@ -748,7 +733,7 @@ describe('SketchViewComponent', () => {
     expect(completed).toEqual([]);
   });
 
-  it('names a not-ready sketch with the first line of its ready refusal, offers no merge and does not wait for a pick', async () => {
+  it('shows no status or refusal for a not-ready sketch, offers no merge and does not wait for a pick', async () => {
     const refused = {
       ...SKETCH,
       status: 'in progress' as const,
@@ -762,10 +747,8 @@ describe('SketchViewComponent', () => {
     };
     const { root } = await render(refused, noComments);
 
-    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.notReady);
-    expect(root.querySelector('[data-sk-not-ready]')?.textContent?.trim()).toBe(
-      'pages/system b: SHOT-NOT-VIEWED listing-error',
-    );
+    expect(root.querySelector('header et-badge')).toBeNull();
+    expect(root.querySelector('header')?.textContent).not.toContain('SHOT-NOT-VIEWED');
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
     expect(waitsForPick(refused)).toBe(false);
   });
@@ -783,7 +766,7 @@ describe('SketchViewComponent', () => {
     expect(badge((await render({ ...drawing, autoMergeForecast: null }, noComments)).root)).toBeNull();
   });
 
-  it('names a ready, picked sketch whose files changed after ready as not ready and offers no merge', async () => {
+  it('offers no merge on a ready, picked sketch whose files changed after ready', async () => {
     const changed = {
       ...SKETCH,
       status: 'ready' as const,
@@ -797,10 +780,7 @@ describe('SketchViewComponent', () => {
     };
     const { root } = await render(changed, noComments);
 
-    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.notReady);
-    expect(root.querySelector('[data-sk-not-ready]')?.textContent?.trim()).toBe(
-      'pages/sketches is picked (variant a) and a changed since sketch ready judged it',
-    );
+    expect(root.querySelector('header et-badge')).toBeNull();
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
   });
 
@@ -825,10 +805,8 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(badgeOf(stalled.root)).toBe(status.notReady);
-    expect(stalled.root.querySelector('[data-sk-not-ready]')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      `${SKETCHES_LABELS.notReadyUnknown} · Letzte Änderung von Opus 5.5 · seit 40 Min`,
-    );
+    expect(badgeOf(stalled.root)).toBeUndefined();
+    expect(stalled.root.querySelector('header')?.textContent).not.toContain('Letzte Änderung');
     stalled.fixture.destroy();
 
     const silent = await render(
@@ -840,7 +818,7 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(badgeOf(silent.root)).toBe(status.notReady);
+    expect(badgeOf(silent.root)).toBeUndefined();
     expect(buttonNamed(silent.root, SKETCHES_LABELS.merge)).toBeUndefined();
     silent.fixture.destroy();
 
