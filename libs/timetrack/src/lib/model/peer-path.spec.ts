@@ -92,6 +92,26 @@ describe('translatePeerPath', () => {
       }),
     ).toBe('/home/human/dev/sdk');
   });
+
+  it('prefers the local checkout whose trailing folders match the peer checkout over a shorter one', () => {
+    expect(
+      translatePeerPath({
+        path: '/home/human/dev/ethlete-sdk/libs/core',
+        peerKeys: { '/home/human/dev/ethlete-sdk': SDK },
+        localKeys: { '/Users/human/tmp/scratch': SDK, '/Users/human/dev/ethlete-sdk': SDK },
+      }),
+    ).toBe('/Users/human/dev/ethlete-sdk/libs/core');
+  });
+
+  it('matches trailing folders across Windows and POSIX separators', () => {
+    expect(
+      translatePeerPath({
+        path: 'C:\\dev\\ethlete-sdk',
+        peerKeys: { 'C:\\dev\\ethlete-sdk': SDK },
+        localKeys: { '/x/y': SDK, '/home/human/projects/ethlete-sdk': SDK },
+      }),
+    ).toBe('/home/human/projects/ethlete-sdk');
+  });
 });
 
 describe('withRepoAliases', () => {

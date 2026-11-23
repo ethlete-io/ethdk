@@ -20,13 +20,31 @@ const remainderUnder = (path: string, root: string) => {
   return path.startsWith(trimmed) && /^[\\/]/.test(path.slice(trimmed.length)) ? path.slice(trimmed.length) : null;
 };
 
+const segmentsOf = (root: string) => root.split(SEPARATORS).filter(Boolean);
+
+const sharedTailOf = (left: string, right: string) => {
+  const leftSegments = segmentsOf(left);
+  const rightSegments = segmentsOf(right);
+  let shared = 0;
+
+  while (
+    shared < leftSegments.length &&
+    shared < rightSegments.length &&
+    leftSegments[leftSegments.length - 1 - shared] === rightSegments[rightSegments.length - 1 - shared]
+  )
+    shared++;
+
+  return shared;
+};
+
 const separatorOf = (root: string) => (root.includes('\\') && !root.includes('/') ? '\\' : '/');
 
 /**
  * Maps a path a paired machine reported onto this machine's checkout with the same repository key,
  * keeping whatever lies below the peer's checkout, a trailing separator included. A path under no
  * peer checkout, or under one whose key no local checkout has, comes back unchanged. With several
- * local checkouts of one key the shortest path wins.
+ * local checkouts of one key the one whose trailing folders match the peer checkout's most wins, then
+ * the shortest path.
  */
 export const translatePeerPath = (options: { path: string; peerKeys: CheckoutKeys; localKeys: CheckoutKeys }) => {
   const { path, peerKeys, localKeys } = options;
@@ -39,7 +57,12 @@ export const translatePeerPath = (options: { path: string; peerKeys: CheckoutKey
 
   const local = Object.keys(localKeys)
     .filter((root) => localKeys[root] === peerKeys[peer.root])
-    .sort((left, right) => left.length - right.length || left.localeCompare(right))[0];
+    .sort(
+      (left, right) =>
+        sharedTailOf(right, peer.root) - sharedTailOf(left, peer.root) ||
+        left.length - right.length ||
+        left.localeCompare(right),
+    )[0];
 
   if (local === undefined) return path;
 
