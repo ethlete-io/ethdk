@@ -93,10 +93,10 @@
     "components/update-dialog": "63ad322093769a56",
     "components/zoom-chip": "99a38ecebede39be",
     "elements/canvas-frames": "b2153089c7e8799f",
-    "elements/part-tree": "1f197d3699ffc33b",
-    "elements/shell-main": "d4285f2e27393c34",
+    "elements/part-tree": "f46f52061b0e078e",
+    "elements/shell-main": "e819f34d77ea3e58",
     "elements/studio-menu": "52e34e78cf208413",
-    "elements/variant-cell": "1f031de509e96237",
+    "elements/variant-cell": "59f2d92ee0b17e6c",
     "pages/flows": "5f9d41e1be7d2953",
     "pages/inbox": "9fe9d1c9a513990c",
     "pages/inventory": "bb84266858a56467",
@@ -105,7 +105,8 @@
     "pages/system": "1726d8b674da3ca2",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "6ce29d9990b4db5d5550206bc8202415d739b837",
+  "baselineTree": "9952e891f30f9a1ea3096e3b789cb5b6c0378c27",
+  "editOldCommit": "a8078f9a68a3101491333884fd9318486527b1aa",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "9a0a7a3b22f8b030",
     "pages/sketches/shared/multi-part.ts": "baa5ef7f1cd1fb1c",
@@ -136,6 +137,5 @@
   "readyContent": {
     "new": "d26d28fc1157b2da",
     "old": "7340e082741e19cd"
-  },
-  "editOldCommit": "a8078f9a68a3101491333884fd9318486527b1aa"
+  }
 }
