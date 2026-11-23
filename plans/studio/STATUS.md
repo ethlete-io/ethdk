@@ -31,11 +31,10 @@ Der Builder nimmt den ersten offenen Eintrag (ADR 0351). Vor dem Start prüft er
 
 1. **Plan-Dateien sortieren (B597)** ⏳ Plan-Dateien sortiert (alle vier Produkte); Rest: übergreifende ADRs nach `docs/adr/` verschieben, B599 ist da (ADR 0354) - Doc-Agent
 2. **Prozesszahlen nachmessen (B605)** ⏳ fällig 2026-11-25: Prozesszahlen nachmessen gegen `plans/repo/process-baseline-2026-11-18.md` - Doc-Agent
-3. **Formularfeld-Höhe bei Schriftgröße 1 (B669)** ⏳ fifagg S41: kein SDK-Code, Höhe ist ein Minimum (Guide 52e4f7310); Antwort an fifagg: padding-block 0.875rem oder Skala 0.96. Offen: fifagg bestätigt 50 px - fifagg
-4. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
-5. **Timetrack-Beschreibung (B602)** ⏳ Host-Speicher geschlossen: Cause (gemessen) glibc-Arena, mit Grenze nach 2 h 1,60 GB flach (alt 6,36 GB nach 26 min). Tag-Aufbau: Sliver-Patch 187be7874 (740 -> 410 ms). Offen: Toms nächstes Tagesbild, serve.perf 354 > 224 ms, Tom bestätigt Scrollen; Anruf ohne Vorschlag - Builder
-6. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Offen: beide Rechner auf neuem Build prüfen, Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
-7. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: Tom löscht `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - Tom, dann Builder
+3. **Consumer-Auslieferung (B610)** ⏳ frühestens 2026-11-25: Plan-Ordnung, Kurznamen, Weg-Modus über agent-rules (ADR 0374) - Builder
+4. **Timetrack-Beschreibung (B602)** ⏳ Host-Speicher geschlossen: Cause (gemessen) glibc-Arena, mit Grenze nach 2 h 1,60 GB flach (alt 6,36 GB nach 26 min). Tag-Aufbau: Sliver-Patch 187be7874 (740 -> 410 ms). Offen: Toms nächstes Tagesbild, Tom bestätigt Scrollen; Anruf ohne Vorschlag - Builder
+5. **Timetrack-Gleichstand (B616)** ⏳ gebuchte Zeilen reisen, gemeinsame Freigabe-Warteschlange (Timetrack ADR 0053) gebaut. Offen: beide Rechner auf neuem Build prüfen, Live-Vergleich auf einem Commit (Timetrack ADR 0047) - Builder
+6. **Eigene CI-Runner, neuer Testlauf (B580)** ⏳ Verdaccio-Check am Anfang des Laufs (6d9b1b8e9). Lauf 44646105879 starb vor dem Check: runner-ethlete-2 findet actions/checkout nicht. Verdacht: halber oder geteilter `_actions`-Cache. Offen: Tom löscht `_work/_actions` je Runner (oder getrennte Arbeitsordner) und startet die Runner neu, dann neuer Lauf - Tom, dann Builder
 
 Geparkt: B105, B108, B109, B148, B312, B313.
 
