@@ -36,6 +36,7 @@ describe('provideMenuConfig', () => {
     expect(resolvedOffsets()).toEqual([4, 1]);
   });
 
+  // provideMenuConfig replaces the default root menu offset for the app.
   it('replaces the default root offset', () => {
     expect(resolvedOffsets(provideMenuConfig({ offset: 2 }))[0]).toBe(2);
   });

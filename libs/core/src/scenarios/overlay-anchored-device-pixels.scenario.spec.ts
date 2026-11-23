@@ -219,6 +219,7 @@ describe('anchored overlay at a fractional reference position', () => {
     reference.remove();
   });
 
+  // An anchored overlay pane is sized on whole pixels wherever the browser can round its natural size.
   it('sizes the pane on whole pixels where the browser can round its natural size', async () => {
     vi.spyOn(window, 'devicePixelRatio', 'get').mockReturnValue(1);
     vi.spyOn(CSS, 'supports').mockReturnValue(true);

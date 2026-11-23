@@ -335,6 +335,7 @@ describe('seo scenarios', () => {
     if (!hadTitleElement) document.head.querySelector('title')?.remove();
   });
 
+  // A head binding on the overlay layer outranks one on the page layer, and creation order decides within a layer.
   it('ranks overlay bindings above page bindings and keeps creation order within a layer', async () => {
     const s = scenario();
     const overlay = s.consumer();

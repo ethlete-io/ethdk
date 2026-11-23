@@ -227,6 +227,7 @@ describe('createAlertDialogOpener', () => {
     expect(dialogHost()?.hasAttribute('aria-describedby')).toBe(false);
   });
 
+  // An alert dialog renders an optional slot component or template under the message and above the actions.
   it('renders a slot component with its inputs under the message, above the actions, outside the description', async () => {
     setup();
 
@@ -296,6 +297,7 @@ describe('createAlertDialogOpener', () => {
     expect(document.activeElement).toBe(buttonNamed('Cancel'));
   });
 
+  // A destructive confirm action renders in the error theme and any other confirm action stays plain.
   it('renders a destructive confirm action in the error theme and a plain one without it', async () => {
     setup();
 

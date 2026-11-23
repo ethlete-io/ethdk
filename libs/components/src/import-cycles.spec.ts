@@ -71,6 +71,7 @@ const findCycles = (graph: Map<string, string[]>) => {
 };
 
 describe('import cycles', () => {
+  // The components library has no circular runtime imports; type-only cycles are allowed.
   it('has no circular runtime imports in libs/components/src', () => {
     const cycles = findCycles(buildImportGraph(listSourceFiles(SRC_ROOT))).map((cycle) =>
       cycle.map((file) => relative(SRC_ROOT, file)).join(' > '),

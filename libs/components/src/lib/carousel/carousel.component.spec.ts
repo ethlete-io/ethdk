@@ -130,6 +130,7 @@ describe('CarouselComponent', () => {
     }
   });
 
+  // A carousel with fewer than two slides renders no navigation.
   it('renders no navigation for fewer than two slides', () => {
     const fixture = createHost();
     const navigation = '.et-carousel-controls, .et-carousel-control, .et-carousel-dot, .et-carousel-play-toggle-corner';

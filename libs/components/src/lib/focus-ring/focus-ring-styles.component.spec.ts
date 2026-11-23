@@ -3,6 +3,7 @@ import '../../test-helpers';
 import { FocusRingStylesComponent } from './index';
 
 describe('FocusRingStylesComponent', () => {
+  // The focus ring styles are public API of the focus-ring entry.
   it('is exported from the focus-ring entry', () => {
     expect(FocusRingStylesComponent).toBeDefined();
     TestBed.configureTestingModule({ imports: [FocusRingStylesComponent] });

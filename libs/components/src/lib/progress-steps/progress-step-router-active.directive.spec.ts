@@ -52,6 +52,7 @@ describe('ProgressStepRouterActiveDirective', () => {
     };
   };
 
+  // A progress step takes its state from the stepState input and follows its router link only while the link is active.
   it('keeps the set state while its link is inactive', async () => {
     const { states } = await setup();
 

@@ -31,6 +31,7 @@ describe('et-form-field variant', () => {
     expect(render().hasAttribute('data-variant')).toBe(false);
   });
 
+  // A form field takes a ghost variant and shows it as data-variant.
   it('reflects ghost as data-variant', () => {
     expect(render('ghost').getAttribute('data-variant')).toBe('ghost');
   });

@@ -162,6 +162,7 @@ describe('YoutubePlayerDirective', () => {
     expect(player.state().isMuted).toBe(true);
   });
 
+  // The YouTube player merges the given playerVars over the SDK defaults.
   it('should merge the given player vars over the defaults', async () => {
     const { instance } = await setup({ videoId: 'vid1', startTime: 30, playerVars: { controls: 0, rel: 1 } });
 

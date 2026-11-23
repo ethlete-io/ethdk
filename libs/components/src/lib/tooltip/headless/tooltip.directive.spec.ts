@@ -345,6 +345,7 @@ describe('TooltipDirective inside a modal overlay', () => {
     return { closedVia: () => closedVia, trigger };
   };
 
+  // The first Escape hides a tooltip inside a dialog and a second one closes the dialog.
   it('Escape dismisses a hover-shown tooltip and leaves the dialog beneath it open', async () => {
     const { closedVia } = await openDialogWithHoveredTooltip();
 
@@ -361,6 +362,7 @@ describe('TooltipDirective inside a modal overlay', () => {
     expect(closedVia()).toBe('escape');
   });
 
+  // A tooltip does not consume Escape, so the host it bubbles through still handles it.
   it('leaves Escape unprevented for the host it bubbles through and still keeps the dialog open', async () => {
     const { closedVia, trigger } = await openDialogWithHoveredTooltip();
     let preventedAtHost: boolean | null = null;

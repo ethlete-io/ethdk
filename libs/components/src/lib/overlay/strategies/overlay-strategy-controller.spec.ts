@@ -199,6 +199,7 @@ describe('overlay strategy controller', () => {
     expect(document.documentElement.classList.contains('large-document')).toBe(false);
   });
 
+  // OverlayRef.updateSize changes the width and height of the active breakpoint and survives a re-apply.
   describe('updateSize', () => {
     const maxWidthOf = (value: string) => `min(${value}, var(--et-overlay-max-width, ${value}))`;
 

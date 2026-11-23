@@ -1753,6 +1753,7 @@ describe('TableComponent', () => {
         expect(labelKeyOf(fixture, PEOPLE.length - 1)).toBe('name');
       });
 
+      // A linked row takes its accessible name from the column marked rowLinkLabel.
       it('names the link from the column marked rowLinkLabel', () => {
         const fixture = buildLabel('role');
 

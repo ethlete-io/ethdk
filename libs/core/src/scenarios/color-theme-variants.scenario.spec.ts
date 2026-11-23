@@ -130,6 +130,7 @@ describe('color theme variant scenarios', () => {
     providers: [provideColorThemesWithTailwind4(COLOR_THEMES), provideSurfaceThemesWithTailwind4(SURFACE_THEMES)],
   });
 
+  // A surface swaps an accent for its own variant through colorThemeVariants, and only where it has an entry for it.
   it('swaps a named accent on a surface that has an entry for it, and only there', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(ColorThemeVariantsComponent);
