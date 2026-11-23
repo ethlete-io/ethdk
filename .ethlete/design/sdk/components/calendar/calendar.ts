@@ -90,7 +90,41 @@ const render = (props: Props) => {
 
 export default definePart({
   note: 'Decided rules only',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'design check'],
+  groups: [
+    {
+      label: 'Rest',
+      states: ['rest', 'long-label'],
+    },
+    {
+      label: 'Selection',
+      states: [
+        'selected',
+        'selected-hover',
+        'selected-focus-visible',
+        'range',
+        'range-focus-visible',
+        'day-hover',
+        'day-focus-visible',
+      ],
+    },
+    {
+      label: 'Views',
+      states: ['year-view', 'year-view-hover', 'year-view-focus-visible', 'multi-year-view'],
+    },
+    {
+      label: 'Navigation',
+      states: ['nav-hover', 'nav-focus-visible', 'label-hover', 'label-focus-visible'],
+    },
+    {
+      label: 'Options',
+      states: ['week-numbers', 'comparison'],
+    },
+    {
+      label: 'Disabled',
+      states: ['disabled', 'limits'],
+    },
+  ],
   states: {
     rest: {},
     selected: { selected: true },

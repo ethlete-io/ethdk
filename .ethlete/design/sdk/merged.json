@@ -40,7 +40,12 @@
     "decidedBy": "user",
     "at": "2026-11-20T19:26:55.265Z"
   },
-  "components/calendar": "daa79be9b799f897",
+  "components/calendar": {
+    "hash": "a1791a943f625038",
+    "variant": "new",
+    "decidedBy": "builder",
+    "at": "2026-11-23T09:07:01.661Z"
+  },
   "components/card": {
     "hash": "b78ba22292a76eaf",
     "variant": "new",
