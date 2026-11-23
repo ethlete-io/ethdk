@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { callsRootOf, DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { SYSTEM_PATH } from './system/list-system';
+import { COMMENTS_PATH, EXCEPTIONS_PATH, FLOWS_PATH, SKETCHES_PATH } from './studio-api';
 
 const CALL = `import { defineCall } from '@design-system';
 
@@ -55,6 +56,33 @@ describe('a checkout in the layout before products', () => {
         ),
       ).toEqual([{ name: 'app-a', parts: [], problems: [] }]);
       expect(one.status).toBe(200);
+    } finally {
+      await server.close();
+    }
+  }, 60_000);
+
+  it('answers the Studio product requests for such a project', async () => {
+    const { target, config } = oldLayoutCheckout();
+    const server = await createDesignServer({ target, config, listen: true, port: 0 });
+
+    await server.listen();
+
+    const { port, address, family } = server.httpServer?.address() as AddressInfo;
+    const origin = `http://${family === 'IPv6' ? `[${address}]` : address}:${port}`;
+
+    try {
+      const statuses = await Promise.all(
+        [COMMENTS_PATH, EXCEPTIONS_PATH, FLOWS_PATH, SKETCHES_PATH].map(
+          async (path) => [path, (await fetch(`${origin}${path}?product=app-a`)).status] as const,
+        ),
+      );
+
+      expect(statuses).toEqual([
+        [COMMENTS_PATH, 200],
+        [EXCEPTIONS_PATH, 200],
+        [FLOWS_PATH, 200],
+        [SKETCHES_PATH, 200],
+      ]);
     } finally {
       await server.close();
     }

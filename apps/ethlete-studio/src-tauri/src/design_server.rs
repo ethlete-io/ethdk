@@ -644,8 +644,8 @@ fn collect<R: AsyncRead + Unpin + Send + 'static>(source: R, log: Arc<Mutex<Log>
     });
 }
 
-fn reachable_cli(checkout: &str) -> StudioResult<PathBuf> {
-    cli_entry(Path::new(checkout)).ok_or_else(|| {
+fn reachable_cli(checkout: &str) -> StudioResult<(PathBuf, Option<String>)> {
+    entry_of(Path::new(checkout), shipped_cli).ok_or_else(|| {
         StudioError::Rejected(format!(
             "No copy of @ethlete/cli is reachable for {checkout}. Build one with \
              `npx nx build cli`, or point ETHLETE_CLI at a src/index.js."
@@ -653,8 +653,11 @@ fn reachable_cli(checkout: &str) -> StudioResult<PathBuf> {
     })
 }
 
-fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> StudioResult<()> {
-    spawn_from(servers, checkout, &reachable_cli(checkout)?, preface, None)
+fn spawn(servers: &DesignServers, checkout: &str, mut preface: Vec<String>) -> StudioResult<()> {
+    let (entry, reason) = reachable_cli(checkout)?;
+
+    preface.extend(reason);
+    spawn_from(servers, checkout, &entry, preface, None)
 }
 
 /// Starts the checkout's server. Started from this repository, it runs from a copy of the committed
@@ -957,8 +960,8 @@ pub async fn design_server_restart(
     answer
 }
 
-/// The copy of the design tool this app ships, or `None` when the app runs from a build that never
-/// made one.
+/// The copy of the design tool this app ships, else in a development build the copy
+/// `nx cli-runtime` built; `None` when neither exists.
 fn shipped_cli() -> Option<PathBuf> {
     let package = tauri::utils::PackageInfo {
         name: PRODUCT_NAME.to_owned(),
@@ -972,27 +975,108 @@ fn shipped_cli() -> Option<PathBuf> {
         .ok()?
         .join(SHIPPED_CLI);
 
-    path.is_file().then_some(path)
+    if path.is_file() {
+        return Some(path);
+    }
+
+    let built = crate::studio_code::repo_root()
+        .join("dist/apps/ethlete-studio")
+        .join(SHIPPED_CLI);
+
+    (cfg!(all(debug_assertions, not(test))) && built.is_file()).then_some(built)
 }
 
-fn entry_of(checkout: &Path, shipped: impl FnOnce() -> Option<PathBuf>) -> Option<PathBuf> {
+fn version_of(entry: &Path) -> Option<String> {
+    let manifest = entry.parent()?.parent()?.join("package.json");
+    let parsed: Value = serde_json::from_str(&std::fs::read_to_string(manifest).ok()?).ok()?;
+
+    parsed.get("version")?.as_str().map(str::to_owned)
+}
+
+fn compare_versions(a: &str, b: &str) -> Option<std::cmp::Ordering> {
+    fn parts(version: &str) -> Option<(Vec<u64>, Option<Vec<String>>)> {
+        let version = version.split('+').next()?;
+        let (core, pre) = match version.split_once('-') {
+            Some((core, pre)) => (core, Some(pre.split('.').map(str::to_owned).collect())),
+            None => (version, None),
+        };
+        let core = core.split('.').map(|n| n.parse().ok()).collect::<Option<Vec<u64>>>()?;
+
+        (core.len() == 3).then_some((core, pre))
+    }
+
+    fn compare_pre(a: &[String], b: &[String]) -> std::cmp::Ordering {
+        for (x, y) in a.iter().zip(b) {
+            let order = match (x.parse::<u64>(), y.parse::<u64>()) {
+                (Ok(x), Ok(y)) => x.cmp(&y),
+                (Ok(_), Err(_)) => std::cmp::Ordering::Less,
+                (Err(_), Ok(_)) => std::cmp::Ordering::Greater,
+                (Err(_), Err(_)) => x.cmp(y),
+            };
+
+            if order.is_ne() {
+                return order;
+            }
+        }
+
+        a.len().cmp(&b.len())
+    }
+
+    let (a_core, a_pre) = parts(a)?;
+    let (b_core, b_pre) = parts(b)?;
+
+    Some(a_core.cmp(&b_core).then_with(|| match (a_pre, b_pre) {
+        (None, None) => std::cmp::Ordering::Equal,
+        (None, Some(_)) => std::cmp::Ordering::Greater,
+        (Some(_), None) => std::cmp::Ordering::Less,
+        (Some(a), Some(b)) => compare_pre(&a, &b),
+    }))
+}
+
+fn entry_of(checkout: &Path, shipped: impl FnOnce() -> Option<PathBuf>) -> Option<(PathBuf, Option<String>)> {
     if let Some(named) = std::env::var_os("ETHLETE_CLI") {
         let path = PathBuf::from(named);
 
-        return path.is_file().then_some(path);
+        return path.is_file().then_some((path, None));
     }
 
-    CLI_ENTRIES
+    let own = CLI_ENTRIES
         .iter()
         .map(|entry| checkout.join(entry))
-        .find(|path| path.is_file())
-        .or_else(shipped)
+        .find(|path| path.is_file());
+
+    let Some(own) = own else {
+        return shipped().map(|shipped| (shipped, None));
+    };
+    let Some(shipped) = shipped() else {
+        return Some((own, None));
+    };
+    let Some(app) = version_of(&shipped) else {
+        return Some((own, None));
+    };
+    let mine = version_of(&own);
+
+    if mine
+        .as_deref()
+        .and_then(|mine| compare_versions(mine, &app))
+        .is_some_and(|order| order.is_ge())
+    {
+        return Some((own, None));
+    }
+
+    let reason = format!(
+        "design tool: the app's copy {app}, since the checkout's {} is {}",
+        own.display(),
+        mine.map_or("of no readable version".to_owned(), |mine| format!("older ({mine})")),
+    );
+
+    Some((shipped, Some(reason)))
 }
 
-/// The `et` entry point that draws and checks a checkout. Step by step: an explicit override, the
-/// copy the checkout installed, the copy this repository builds, then the copy the app ships.
+/// The `et` entry point that draws and checks a checkout: an explicit override, else the copy the
+/// checkout installed or this repository builds, unless the copy the app ships is newer.
 pub fn cli_entry(checkout: &Path) -> Option<PathBuf> {
-    entry_of(checkout, shipped_cli)
+    entry_of(checkout, shipped_cli).map(|(entry, _)| entry)
 }
 
 #[cfg(test)]
@@ -1618,7 +1702,10 @@ mod tests {
             std::fs::write(&path, "").expect("an entry point");
         }
 
-        assert_eq!(cli_entry(&checkout), Some(checkout.join(CLI_ENTRIES[0])));
+        assert_eq!(
+            entry_of(&checkout, || None).map(|(entry, _)| entry),
+            Some(checkout.join(CLI_ENTRIES[0]))
+        );
     }
 
     #[test]
@@ -1627,7 +1714,10 @@ mod tests {
 
         std::fs::write(&shipped, "").expect("a shipped entry point");
 
-        assert_eq!(entry_of(&ground("bare"), || Some(shipped.clone())), Some(shipped));
+        assert_eq!(
+            entry_of(&ground("bare"), || Some(shipped.clone())).map(|(entry, _)| entry),
+            Some(shipped)
+        );
     }
 
     #[test]
@@ -1639,9 +1729,69 @@ mod tests {
         std::fs::write(&path, "").expect("an entry point");
 
         assert_eq!(
-            entry_of(&checkout, || Some(PathBuf::from("/nowhere/index.js"))),
+            entry_of(&checkout, || Some(PathBuf::from("/nowhere/index.js"))).map(|(entry, _)| entry),
             Some(path)
         );
+    }
+
+    fn package(root: &Path, version: &str) -> PathBuf {
+        let entry = root.join("src/index.js");
+
+        std::fs::create_dir_all(entry.parent().expect("a parent")).expect("a directory");
+        std::fs::write(&entry, "").expect("an entry point");
+        std::fs::write(root.join("package.json"), format!(r#"{{"version":"{version}"}}"#)).expect("a manifest");
+
+        entry
+    }
+
+    #[test]
+    fn an_older_installed_cli_yields_to_the_copy_the_app_ships() {
+        let checkout = ground("older");
+        package(&checkout.join("node_modules/@ethlete/cli"), "3.0.0-next.26");
+        let shipped = package(&ground("older-shipped"), "3.0.0-next.44");
+
+        let (entry, reason) = entry_of(&checkout, || Some(shipped.clone())).expect("an entry");
+
+        assert_eq!(entry, shipped);
+        assert!(reason.is_some_and(|reason| reason.contains("older (3.0.0-next.26)")));
+    }
+
+    #[test]
+    fn an_installed_cli_not_older_than_the_shipped_one_is_kept() {
+        let checkout = ground("same");
+        let own = package(&checkout.join("node_modules/@ethlete/cli"), "3.0.0-next.44");
+        let shipped = package(&ground("same-shipped"), "3.0.0-next.44");
+
+        assert_eq!(
+            entry_of(&checkout, || Some(shipped.clone())).map(|(entry, _)| entry),
+            Some(own)
+        );
+    }
+
+    #[test]
+    fn an_installed_cli_without_a_readable_version_yields_to_the_shipped_one() {
+        let checkout = ground("unversioned");
+        let path = checkout.join(CLI_ENTRIES[0]);
+        std::fs::create_dir_all(path.parent().expect("a parent")).expect("a directory");
+        std::fs::write(&path, "").expect("an entry point");
+        let shipped = package(&ground("unversioned-shipped"), "3.0.0-next.44");
+
+        assert_eq!(
+            entry_of(&checkout, || Some(shipped.clone())).map(|(entry, _)| entry),
+            Some(shipped)
+        );
+    }
+
+    #[test]
+    fn versions_order_by_semver_with_numeric_prerelease_parts() {
+        use std::cmp::Ordering::*;
+
+        assert_eq!(compare_versions("3.0.0-next.26", "3.0.0-next.44"), Some(Less));
+        assert_eq!(compare_versions("3.0.0-next.100", "3.0.0-next.44"), Some(Greater));
+        assert_eq!(compare_versions("3.0.0", "3.0.0-next.44"), Some(Greater));
+        assert_eq!(compare_versions("2.9.9", "3.0.0-next.1"), Some(Less));
+        assert_eq!(compare_versions("3.0.0", "3.0.0"), Some(Equal));
+        assert_eq!(compare_versions("latest", "3.0.0"), None);
     }
 
     #[test]

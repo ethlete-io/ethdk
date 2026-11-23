@@ -1,4 +1,5 @@
 import { configPathOf, DesignConfig, readConfig } from '../../design-config';
+import { withLegacyProducts } from '../../legacy';
 import { resolveProduct, ResolvedProduct } from '../resolve-product';
 
 /** `values` holds the last value of each flag, `repeated` every value in order. */
@@ -80,7 +81,8 @@ export const oneProductOf = (options: {
   config: DesignConfig;
   asked: string | undefined;
 }): ResolvedProduct | string => {
-  const { target, config, asked } = options;
+  const { target, asked } = options;
+  const config = withLegacyProducts(target, options.config);
   const declared = declaredOf(config);
   const name = asked ?? (declared.length === 1 ? declared[0] : undefined);
 
