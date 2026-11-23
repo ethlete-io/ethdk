@@ -42,8 +42,7 @@ or loses only against the other variants of its question.
    "regression" items are no exception. Without a picked sketch, build data and specs only and
    stop at the UI.
 
-Confirm the step size once, at the start. Do not ask again at every stop. A task is not
-finished while the user is still talking about it.
+Confirm the step size once, at the start. A task is not finished while the user is still talking about it.
 
 ## What one stop looks like
 
@@ -91,32 +90,35 @@ product. They take no picks and no new variants.
   of another variant. Two to four variants, each with its cost; run `sketch check` before `sketch ready`.
 - **Never run `sketch merge` or `sketch discard`, and never pick a variant, unless your role has its own picks.** Studio merges on the user's
   click. After a pick or discard, do not merge. Run `sketch reject` or `reopen` only when the user did.
-- Mark a sketch `ready` only when no change to it waits on anything; otherwise `sketch hold`.
+- Mark a sketch `ready` only when no change waits on anything; otherwise `sketch hold`.
 - Every write command takes `--by <model id>`. **Never guess your id**: use the one your prompt names, or ask
   the coordinator or the user before you write.
-- A direct edit of a merged part is never accepted by hand: `design check` opens an old/new edit sketch and the
-  user picks in Studio. Remove a part only with `et design part remove`, never `git rm`.
-- Studio takes no new calls: never run `et design new`. New work goes to a product.
-- Share code between variants in the sketch's `shared/` folder only; no shared parameter or branch for one
-  variant. An asset is one file in `<product>/assets/`, never inlined.
+- `design check` opens an edit sketch for a direct edit of a merged part; the user picks in Studio. Remove a part only with `et design part remove`, never `git rm`.
+- Share code between variants in the sketch's `shared/` folder only. An asset is one file in `<product>/assets/`.
 - A user comment to combine variants is a new variant in a new round (`sketch variant --from --round --note`).
 - Read the inbox at the start of a session and after each `ready`. Answer with `inbox done <id> --note`,
   ask with `comment reply --question` only when you cannot go on. Only the user resolves a thread.
 - Use the `ethlete-design` MCP tools when they are in your tool list, and call `sketch_report` before every
   variant edit.
 - Draw from the design system, never invent a button or field: the product's parts, then SDK components via
-  `ng()`, then new. Colours come from the SDK theming systems, never your own tokens. A part exists only
-  because the user picked a sketch.
-- A wireframe is rough and fast: regions and names only, no polish, no subagent, one sketch per screen.
-- Do not start a design stage before the one above it is settled: wireframes, foundations, logo and CI,
-  components, elements, pages, prototype.
+  `ng()`, then new. Colours come from the SDK theming systems. A part exists only because the user picked a sketch.
+- **A new product starts with one real screen** (a film app: the overview) in two or three finished moods:
+  real colours, real type, real content from the product's data. The user picks a mood. Menu, navigation
+  and layout are your call, shown only inside the finished screen. Ask about mood at most as one side
+  sentence that blocks nothing. Never draw a wireframe or a layout round of grey boxes.
+- After that first pick, do not start a design stage before the one above it is settled: foundations, logo and
+  CI, components, elements, pages, prototype.
+- Mark a sketch `ready` only after you looked at a shot of each variant (`reference-shots.md` (bundled next to this skill)).
+- Talk to the user about the product: screens, moods, content. Never name tools, commands or file paths.
+- Every interactive part draws its hover and focus-visible states, next to rest.
+- The app shell is one element each page imports, never drawn inside a page.
 
 Details, commands and examples, read on demand:
 
 - `reference-products-and-sketches.md` (bundled next to this skill): creating a product, every `sketch` command, shared code,
   assets, rounds, `--by`, the merge and accept flow. Read before the first sketch command.
 - `reference-inbox-and-mcp.md` (bundled next to this skill): reading and answering comments, thread states, the MCP tools.
-- `reference-flows-and-wireframes.md` (bundled next to this skill): flow JSON, the wireframe kit and its rules.
+- `reference-flows.md` (bundled next to this skill): flow JSON, `embedPage`, the shell.
 - `reference-check-and-notes.md` (bundled next to this skill): `design check` rules and warnings, drawing-file constraints,
   `setup`, `ngStates`, notes.
 - `reference-order-and-design-system.md` (bundled next to this skill): the stage order, component states and
@@ -145,10 +147,8 @@ With a Storybook, copy `check-story.mjs` (bundled next to this skill) to the **r
 node check-story.mjs --lint <changed files> --tsconfig apps/<app>/.storybook/tsconfig.json
 ```
 
-Both take about four seconds and need no dev server. Then stop and hand the slug to the
-user. Do not also render it in a browser: it costs a browser launch, and both tools
-transpile without type checking, so the render reports `ok` on a file that does not
-compile. Open it only when the check passes and the drawing still does not appear:
+Both take about four seconds and need no dev server. Open a browser only when the check passes and
+the drawing still does not appear:
 
 ```bash
 et design check --call <slug>             # every variant of the call
@@ -158,8 +158,7 @@ node check-story.mjs --tsconfig <path> --story <story-id>
 
 A passing check says the variant builds, not that it looks good. Before `sketch ready`, look at
 each variant at a readable scale and in its whole host page, and critique its hierarchy, spacing,
-nesting and host context together. Drop a variant that is technically valid but visually weak
-before the user sees it. In your summary, say "renders correctly", never "good" or "approved":
+nesting and host context together. Drop a visually weak variant before the user sees it. In your summary, say "renders correctly", never "good" or "approved":
 the user decides that.
 
 ## Delegating a sketch
@@ -183,7 +182,4 @@ command." You know the id because you chose the model; the sub-agent does not, a
 
 ## Writing it down
 
-Every settled call goes in the exploration's plan file: what won, what lost, and why. Keep
-an **Open** list for the calls not yet made. A rejected variant written down stops the next
-session from drawing it again. After a clear rejection, use that record to frame and draw the
-next call; do not wait for the user to type “continue”.
+Every settled call goes in the exploration's plan file: what won, what lost, and why, plus an **Open** list. After a clear rejection, draw the next call from that record without waiting.
