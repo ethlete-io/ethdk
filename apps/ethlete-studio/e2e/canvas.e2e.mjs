@@ -4786,6 +4786,7 @@ const CASES = [
   {
     name: 'a narrow cell wraps its label so the state name and the chips stay whole',
     pages: ['Sketches'],
+    engines: ['chromium', 'webkit'],
     labels: ['Large', 'Sketches'],
     run: async (page) => {
       const LONG_LABEL = 'series-new-season-focus-visible · 112';
