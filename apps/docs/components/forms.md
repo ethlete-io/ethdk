@@ -180,6 +180,8 @@ Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 | `variant`       | `'default' \| 'ghost'`                                            | `'default'`     |
 | `labelPosition` | `'top' \| 'start'`                                                | `'top'`         |
 
+`variant="ghost"` draws no border at rest or on hover; the focus ring still shows.
+
 `labelPosition="start"` moves the label out of the control frame to its start, vertically
 centred, and the control takes the remaining width. It replaces `labelMode` with a static label
 (floating and inline labels do not apply), and hints and errors stay under the control. It only

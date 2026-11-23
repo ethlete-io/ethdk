@@ -773,3 +773,16 @@ test.describe('select / leave animation', () => {
     await expect(pane).toHaveCount(0);
   });
 });
+
+test.describe('select / ghost variant', () => {
+  test.skip(({ isMobile }) => isMobile, 'hover is a desktop pointer state');
+
+  test('a ghost field shows no border on hover', async ({ page }) => {
+    await openStory(page, 'components-forms-select--ghost');
+
+    const control = page.locator('et-form-field .et-form-field-control-frame').first();
+    await control.hover();
+
+    await expect(control).toHaveCSS('border-top-color', /^rgba\(.*, 0\)$|^transparent$/);
+  });
+});

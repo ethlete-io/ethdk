@@ -51,6 +51,14 @@ describe('form-field tokens', () => {
     expect(declarationsReading(token)).toContain(property);
   });
 
+  it('keeps the ghost variant borderless on hover', () => {
+    const ghost = /et-form-field:where\(\[data-variant='ghost'\]\)\s*\{([^{}]*)\}/.exec(
+      read('form-field.component.css'),
+    );
+
+    expect(ghost?.[1]).toMatch(/--et-form-field-control-border-color-hover:\s*transparent/);
+  });
+
   it('keeps the colour and spacing tokens unregistered, so an unset one falls back to the inherited value', () => {
     const registered = [...css.matchAll(/@property\s+(--et-[\w-]+)/g)].map(([, name]) => name);
 
