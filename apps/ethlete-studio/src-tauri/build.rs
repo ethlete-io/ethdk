@@ -6,6 +6,7 @@ fn main() {
     tauri_build::try_build(
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
             "design_action_refused",
+            "design_open_watch",
             "design_project",
             "design_roots",
             "design_roots_add",
