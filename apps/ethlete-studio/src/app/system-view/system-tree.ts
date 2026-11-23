@@ -359,6 +359,16 @@ const hostsOf = (entries: TreeEntry[], key: string): string[] | null => {
   return null;
 };
 
+const isHostIn = (entries: TreeEntry[], key: string): boolean =>
+  entries.some((entry) => (entry.key === key ? !!entry.nested : isHostIn(entry.nested ?? [], key)));
+
+/** Whether the key is a part entry that holds nested parts. */
+export const isPartHost = (tree: TreeGroup[], key: string | null): boolean =>
+  key !== null &&
+  tree.some(
+    (group) => isHostIn(group.entries, key) || (group.sections ?? []).some((section) => isHostIn(section.entries, key)),
+  );
+
 /** The keys of the group, the section and the host entries that hold the entry, outermost first. */
 export const holdersOf = (tree: TreeGroup[], key: string | null): string[] => {
   if (key === null) return [];

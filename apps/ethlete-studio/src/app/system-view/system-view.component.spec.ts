@@ -1280,6 +1280,49 @@ describe('SystemViewComponent on a merge', () => {
     expect(view.shownPart()).toBe('components/title-search');
   });
 
+  it('keeps the nested rows of an open part host on the click that selects it, and closes them on the next', async () => {
+    const product: ListedProduct = {
+      ...PRODUCT,
+      parts: [
+        { ...part('elements', 'shell'), usedBy: [] },
+        { ...part('components', 'title-bar'), usedBy: ['elements/shell'] },
+        { ...part('components', 'title-search'), usedBy: ['components/title-bar'] },
+      ],
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches: [], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([product]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web' });
+    const view = fixture.componentInstance;
+    const rows = () => [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('ethlete-part-tree [etTreeNode]'),
+    ];
+    const hostRow = () => rows().find((row) => row.textContent?.includes('title-bar'));
+    const nestedRows = () => rows().filter((row) => row.textContent?.includes('title-search'));
+
+    expect(nestedRows()).toHaveLength(1);
+
+    hostRow()?.click();
+    await settle(fixture);
+
+    expect(view.selectedKey()).toBe('components/title-bar');
+    expect(nestedRows()).toHaveLength(1);
+
+    hostRow()?.click();
+    await settle(fixture);
+
+    expect(view.selectedKey()).toBe('components/title-bar');
+    expect(nestedRows()).toHaveLength(0);
+  });
+
   it('nests a part under its one page user with its layer tag and picks it from there', async () => {
     const product: ListedProduct = {
       ...PRODUCT,

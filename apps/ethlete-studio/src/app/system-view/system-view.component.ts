@@ -55,6 +55,7 @@ import {
   callKeyOf,
   framesOf,
   holdersOf,
+  isPartHost,
   isGroupOpen,
   isSectionOpen,
   multiPartTargetsOf,
@@ -1036,7 +1037,8 @@ export class SystemViewComponent {
         const selected = this.selectedKey();
         const holders = holdersOf(this.tree(), selected);
 
-        return selected !== null && this.sketchTargets().some(({ sketch }) => sketch === selected)
+        return selected !== null &&
+          (this.sketchTargets().some(({ sketch }) => sketch === selected) || isPartHost(this.tree(), selected))
           ? [...holders, selected]
           : holders;
       },
