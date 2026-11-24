@@ -260,12 +260,12 @@ const everyPageFrameDraws = async (context) => {
 const CASES = [
   { name: 'a frame that sends no frame message shows the failed load', run: silentFrame },
   {
-    name: 'a sketch variant whose module fails shows a render error, no Übernehmen, and recovers on the next change',
-    run: failedSketchModule,
-  },
-  {
     name: 'a sketch view of a page with many states draws every frame without a render error',
     run: everyPageFrameDraws,
+  },
+  {
+    name: 'a sketch variant whose module fails shows a render error, no Übernehmen, and recovers on the next change',
+    run: failedSketchModule,
   },
 ];
 
@@ -273,12 +273,17 @@ const results = await withStudio(
   async (context) => {
     const rows = [];
 
-    for (const testCase of CASES) rows.push({ name: testCase.name, ...(await testCase.run(context)) });
+    for (const testCase of CASES) {
+      const startedAt = performance.now();
+
+      rows.push({ name: testCase.name, ...(await testCase.run(context)), ms: performance.now() - startedAt });
+    }
 
     return rows;
   },
   { checkout, built },
 ).finally(() => rmSync(checkout, { recursive: true, force: true }));
 
-for (const result of results) console.log(`${result.ok ? 'PASS' : 'FAIL'}  ${result.name}: ${result.detail}`);
+for (const result of results)
+  console.log(`${result.ok ? 'PASS' : 'FAIL'}  ${(result.ms / 1000).toFixed(1)}s  ${result.name}: ${result.detail}`);
 process.exit(results.every((result) => result.ok) ? 0 : 1);
