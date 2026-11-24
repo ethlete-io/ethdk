@@ -53,6 +53,15 @@ const reportError = (event: Event) => {
 addEventListener('error', reportError);
 addEventListener('unhandledrejection', reportError);
 
+const stayOnLink = (event: MouseEvent) => {
+  const href = event.target instanceof Element ? event.target.closest('a[href]')?.getAttribute('href') : undefined;
+
+  if (typeof href === 'string' && !href.startsWith('#')) event.preventDefault();
+};
+
+addEventListener('click', stayOnLink, { capture: true });
+addEventListener('auxclick', stayOnLink, { capture: true });
+
 const root = document.querySelector('#root') as HTMLElement;
 const surface = params.get('surface');
 const color = params.get('color');

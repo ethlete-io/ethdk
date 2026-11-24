@@ -106,6 +106,10 @@ test('the design frame page and the frame-scrollbar fixture run the frame-scroll
   );
 });
 
+test('the design frame script runs the frame-link e2e', () => {
+  assert.deepEqual(mapChanged(['libs/cli/design/web/frame.ts']).suites, ['frame-link']);
+});
+
 test('a canvas view suite runs canvas.e2e with --view', () => {
   assert.deepEqual(suiteInvocation('canvas-flow'), {
     script: 'apps/ethlete-studio/e2e/canvas.e2e.mjs',

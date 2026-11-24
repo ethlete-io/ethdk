@@ -4,6 +4,7 @@ import { join } from 'node:path';
 export const STANDALONE_PAGE = 'Standalone';
 
 export const STANDALONE_FILES = [
+  { file: 'frame-link.e2e.mjs', takesBuilt: true },
   { file: 'frame-load-failed.e2e.mjs', takesBuilt: true, ownShard: true },
   { file: 'frame-scrollbar.e2e.mjs', takesBuilt: false },
   { file: 'server-restart.e2e.mjs', takesBuilt: true },
