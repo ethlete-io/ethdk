@@ -602,15 +602,7 @@
     "pid": 2155132
   },
   "components/title-bar": {
-    "actions": [
-      "emit:close",
-      "emit:dismiss",
-      "emit:maximize",
-      "emit:minimize",
-      "emit:restart",
-      "opens:command-palette",
-      "opens:components/update-dialog"
-    ],
+    "actions": ["emit:dismiss", "emit:restart", "opens:command-palette", "opens:components/update-dialog"],
     "at": "2026-11-21T20:40:01.095Z"
   },
   "components/title-search": {
