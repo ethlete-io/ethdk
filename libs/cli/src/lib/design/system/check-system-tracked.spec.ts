@@ -1,12 +1,14 @@
-import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { git } from '../../git-test-env.fixtures';
 import { DESIGN_DIR, readConfig } from '../design-config';
+import { partActionFailuresOf } from './actions-command';
 import { checkSystemRendered } from './check-system';
 import { partsCompletenessOf } from './complete';
 import { renderIssuesOf } from './render-check';
+import { slowProblemsOf } from './slow-checks';
 import { readStampText } from './stamp-files';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
@@ -21,15 +23,20 @@ vi.mock('./complete', async (actual) => ({
   partsCompletenessOf: vi.fn(),
 }));
 
-vi.mock('./actions-command', async (actual) => ({
-  ...(await actual<typeof import('./actions-command')>()),
-  partActionFailuresOf: vi.fn(async () => []),
-}));
+vi.mock('./actions-command', { spy: true });
+
+vi.mock('./slow-checks', async (actual) => {
+  const real = await actual<typeof import('./slow-checks')>();
+
+  return { ...real, slowProblemsOf: vi.fn(real.slowProblemsOf) };
+});
 
 vi.mock('./action-lost', async (actual) => ({
   ...(await actual<typeof import('./action-lost')>()),
   declaredPartActionsOf: vi.fn(async () => []),
 }));
+
+const harness = { app: 'apps/app-a', map: 'apps/app-a/src/map.ts' };
 
 const committedAcme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-check-tracked-'));
@@ -134,6 +141,49 @@ describe('a design check and the tracked stamp files', () => {
     },
     120_000,
   );
+
+  it('counts each failed action of a part it left without a record as a finding', async () => {
+    const { target } = committedAcme();
+    const dir = join(target, DESIGN_DIR, 'acme');
+
+    targets.push(target);
+    mkdirSync(join(target, 'apps/app-a/src'), { recursive: true });
+    writeFileSync(join(target, 'apps/app-a/src/chip.component.ts'), '@Component({})\nexport class Chip {}\n');
+    mkdirSync(join(dir, 'components/chip'), { recursive: true });
+    writeFileSync(
+      join(dir, 'components/chip/chip.ts'),
+      "export default definePart({ implements: 'apps/app-a/src/chip.component.ts', controls: {}, describe: {}, states: {} });\n",
+    );
+    writeFileSync(
+      join(dir, 'ready.json'),
+      JSON.stringify({ 'components/chip': { hash: 'stale', at: '2026-11-06T00:00:00Z' } }),
+    );
+    vi.mocked(renderIssuesOf).mockResolvedValue({ issues: [], warnings: [] } as never);
+    vi.mocked(partsCompletenessOf).mockResolvedValue({ gaps: new Map(), exceptions: [], hints: new Map() });
+    vi.mocked(slowProblemsOf).mockReturnValue([]);
+    vi.mocked(partActionFailuresOf).mockResolvedValue([
+      'drawing button "Suchen in studio, Title bar" (19.) pointer focus FAILED locator.click: Timeout 15000ms exceeded.',
+      'comments-mode button "Kommentar zu a reset" FAILED the design draws no element of this name',
+    ]);
+    const lines: string[] = [];
+
+    vi.spyOn(console, 'log').mockImplementation((line: unknown) => void lines.push(String(line)));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const loaded = readConfig(target) ?? {};
+
+    await checkSystemRendered({
+      target,
+      config: { ...loaded, products: { ...loaded.products, acme: { ...loaded.products?.['acme'], harness } } },
+      products: ['acme'],
+      part: 'components/chip',
+      drawPictures: async ({ parts }) => new Map(parts.map((name) => [name, 'not drawn in this spec'])),
+    });
+
+    expect(lines).toContain('PART acme components/chip: 2 problems (ACTION-FAILED)');
+    expect(lines).toContain('ACTION-FAILED 2');
+  }, 120_000);
 
   it('names the edit sketch it opened in its summary', async () => {
     const { target, dir } = committedAcme();
