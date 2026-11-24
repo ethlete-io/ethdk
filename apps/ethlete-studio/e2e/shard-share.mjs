@@ -25,3 +25,10 @@ export const shardShareOf = (queue, shard, keyOf, weights = {}) => {
 
   return rest.filter((job) => shardOf.get(job) === shard.index - 1);
 };
+
+/** Sorts a shard's jobs so the longest starts first: by local timings in ms, else by the CI weight in s. Quiet jobs go last. */
+export const runOrderOf = (queue, keyOf, { known = {}, weights = {}, quiet = () => false } = {}) => {
+  const expectedMs = (job) => known[keyOf(job)] ?? (weights[keyOf(job)] ?? Infinity) * 1000;
+
+  return queue.toSorted((a, b) => quiet(a) - quiet(b) || expectedMs(b) - expectedMs(a));
+};

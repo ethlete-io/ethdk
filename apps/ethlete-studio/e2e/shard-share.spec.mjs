@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { shardShareOf } from './shard-share.mjs';
+import { runOrderOf, shardShareOf } from './shard-share.mjs';
 import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
 import { STANDALONE_FILES, STANDALONE_PAGE } from './standalone-jobs.mjs';
 
@@ -102,4 +102,24 @@ test('a single shard runs every job', () => {
   const queue = jobsOf('System', ['a', 'heavy']);
 
   assert.deepEqual(sharesOf(queue, 1), [['System :: a', 'System :: heavy']]);
+});
+
+test('without local timings, the real shard 1 starts its heaviest CI-weighted job first, not the standalone file it appends last', () => {
+  const runner = fileURLToPath(new URL('./canvas.e2e.mjs', import.meta.url));
+  const weights = JSON.parse(readFileSync(SHARD_WEIGHTS_FILE, 'utf8'));
+  const keys = execFileSync(process.execPath, [runner, '--list'], {
+    encoding: 'utf8',
+    env: { ...process.env, STUDIO_E2E_SHARD: '1/8' },
+  })
+    .trim()
+    .split('\n')
+    .slice(1)
+    .map((line) => line.replace(/^\s*[\d.]+s {2}(\S+)\s+/, '$1 :: '));
+  const queue = [
+    ...keys.filter((key) => !key.startsWith(`${STANDALONE_PAGE} :: `)),
+    ...keys.filter((key) => key.startsWith(`${STANDALONE_PAGE} :: `)),
+  ].map((key) => ({ key }));
+  const heaviest = keys.toSorted((a, b) => (weights[b] ?? 0) - (weights[a] ?? 0))[0];
+
+  assert.equal(runOrderOf(queue, (job) => job.key, { weights })[0].key, heaviest);
 });

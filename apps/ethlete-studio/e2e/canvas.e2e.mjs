@@ -28,7 +28,7 @@ import { noMatchLineOf } from './case-filter.mjs';
 import { copyPart } from './copy-part.mjs';
 import { shootProducts } from './product-matrix.mjs';
 import { settleLayout } from './settle-wait.mjs';
-import { shardShareOf } from './shard-share.mjs';
+import { runOrderOf, shardShareOf } from './shard-share.mjs';
 import { runStandalone, standaloneJobsOf } from './standalone-jobs.mjs';
 import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
 import { FRAME, measureZoom, ZOOM_BUDGET } from './zoom-budget.mjs';
@@ -6075,7 +6075,7 @@ const lead = async () => {
   const unweighted = shard ? queue.filter((job) => !job.ownShard && shardWeights[keyOf(job)] === undefined).length : 0;
   const quiet = (job) => !!job && !job.file && !!CASES[job.case].quiet;
 
-  queue.sort((a, b) => quiet(a) - quiet(b) || (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
+  queue.splice(0, queue.length, ...runOrderOf(queue, keyOf, { known, weights: shardWeights, quiet }));
 
   const shardLabel = shard ? ` (shard ${shard.index}/${shard.count})` : '';
   const unweightedNote = unweighted
