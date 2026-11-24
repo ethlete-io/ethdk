@@ -45,8 +45,6 @@ export type CanvasFrame = {
   note?: string;
   /** What the frame shows and what to check, under the label. */
   description?: string;
-  /** Dims the frame and shows this text over it, while what it draws is not final. */
-  pending?: string;
   /** Dims the frame of a variant the designer or an agent rejected. */
   rejected?: true;
   /** Draws a dashed empty cell with this text instead of a page, at the size of the row's other frames. */

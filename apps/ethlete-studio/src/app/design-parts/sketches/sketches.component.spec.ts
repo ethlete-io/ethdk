@@ -1233,7 +1233,7 @@ describe('SketchesComponent', () => {
 
   it('keeps Übernehmen and opens the sketch points from the chip in the head of the selected variant only', async () => {
     const y = { ...ROWS[1], key: 'y', note: 'Variante y' } as SketchRow;
-    const groups = [{ icon: 'error', lines: [{ text: SYSTEM_LABELS.sketchProblem('NO-HEX'), detail: 'y' }] }];
+    const groups = [{ icon: 'grid', lines: [{ text: SYSTEM_LABELS.sketchOpen, detail: 'y' }] }];
     const fixture = await render({
       camera: '100',
       status: 'waiting',
@@ -1254,7 +1254,7 @@ describe('SketchesComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.pointsClosed()).toBe(false);
-    expect(textOf(document.querySelector('[role="dialog"]'))).toContain(SYSTEM_LABELS.sketchProblem('NO-HEX'));
+    expect(textOf(document.querySelector('[role="dialog"]'))).toContain(SYSTEM_LABELS.sketchOpen);
     expect(document.querySelector('[role="dialog"] ul')?.classList.contains('divide-y')).toBe(false);
   });
 

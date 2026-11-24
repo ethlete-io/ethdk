@@ -291,19 +291,6 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         </div>
       }
     </ng-template>
-    @if (frame().pending; as pending) {
-      <div
-        class="pointer-events-none absolute inset-0 flex items-start justify-center bg-(--et-surface-background-solid)/70 p-[calc(2.4rem*var(--et-design-canvas-label-scale))]"
-        data-frame-pending
-      >
-        <span
-          class="flex items-center gap-[0.6em] rounded-full border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-[0.8em] py-[0.3em] text-[calc(1.4rem*var(--et-design-canvas-label-scale))] leading-normal font-semibold whitespace-nowrap text-text shadow-md"
-        >
-          <span class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>
-          {{ pending }}
-        </span>
-      </div>
-    }
     <ethlete-frame-shield
       [class.hidden]="active()"
       class="group-data-dragging/canvas:block group-data-wheeling/canvas:block"
@@ -350,7 +337,6 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-empty]': 'frame().empty !== undefined || null',
-    '[attr.data-pending]': 'frame().pending !== undefined || null',
     '[attr.data-rejected]': 'frame().rejected || null',
     '[attr.data-fitted]': 'frame().width === undefined || null',
     '[attr.data-frame-id]': 'frame().id',

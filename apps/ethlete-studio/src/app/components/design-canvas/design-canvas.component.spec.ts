@@ -462,39 +462,6 @@ describe('DesignCanvasComponent', () => {
     expect(gapBelow(hover, outline)).toBe(96);
   });
 
-  it('dims a pending frame under its label', async () => {
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
-    });
-
-    const fixture = TestBed.createComponent(DesignCanvasComponent);
-    const cell = (column: string, row: string, pending?: string): CanvasFrame => ({
-      ...FITTED,
-      id: `${column} ${row}`,
-      row,
-      column,
-      width: 200,
-      height: 100,
-      ...(pending ? { pending } : {}),
-    });
-
-    fixture.componentRef.setInput('frames', [cell('c', 'default', 'Still drawing'), cell('a', 'default')]);
-    fixture.componentRef.setInput('arrangement', 'matrix');
-    fixture.componentRef.setInput('columns', [
-      { key: 'c', label: 'c' },
-      { key: 'a', label: 'a' },
-    ]);
-    await fixture.whenStable();
-
-    const [drawn, other] = fixture.debugElement
-      .queryAll(By.directive(CanvasFrameComponent))
-      .map((frame) => frame.nativeElement as HTMLElement);
-
-    expect(drawn?.hasAttribute('data-pending')).toBe(true);
-    expect(drawn?.querySelector('[data-frame-pending]')?.textContent?.trim()).toBe('Still drawing');
-    expect(other?.querySelector('[data-frame-pending]')).toBeNull();
-  });
-
   it('widens every fitted tile in a matrix column to the widest one, so the right edges line up', async () => {
     localStorage.setItem(
       'ethlete-studio.call-view',

@@ -1050,7 +1050,7 @@ describe('SketchViewComponent', () => {
       return json({
         points: [
           { kind: 'sketch-problem', sketch: 'elements/rating', variant: 'c', rule: 'UTILITY-CSS', message: 'flex' },
-          { kind: 'sketch-problem', sketch: 'elements/rating', variant: 'c', rule: 'UTILITY-CSS', message: 'gap' },
+          { kind: 'unmerged-sketch', sketch: 'elements/rating', primary: true, status: 'ready', decision: null },
           { kind: 'missing-motion', from: 'rest', to: 'hover' },
         ],
         buildReady: { ready: false, blockers: [{ kind: 'pending', text: 'pending' }] },
@@ -1071,7 +1071,8 @@ describe('SketchViewComponent', () => {
 
     expect(badges()).toEqual([SKETCHES_LABELS.status.waiting]);
     expect(asked).toEqual(['elements/rating']);
-    expect(chip?.textContent?.trim()).toBe(SYSTEM_LABELS.openCount(2));
+    // B695: the agent fixes a sketch rule problem, so the chip counts only the unmerged sketch.
+    expect(chip?.textContent?.trim()).toBe(SYSTEM_LABELS.openCount(1));
     expect(root.querySelectorAll('[data-sk-points]')).toHaveLength(1);
     expect(root.querySelector('[data-sk-merge-error]')?.textContent?.trim()).toBe('UTILITY-CSS c.ts: flex');
   });

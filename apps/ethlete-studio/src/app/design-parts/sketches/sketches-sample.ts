@@ -355,13 +355,6 @@ export const sketchMultiSampleOf = (count: 'three' | 'many') => ({
 
 export const SKETCH_POINTS_SAMPLE: OpenPointGroup[] = [
   { icon: 'grid', lines: [{ text: SYSTEM_LABELS.sketchPicked, detail: 'sketch' }] },
-  {
-    icon: 'error',
-    lines: [
-      { text: SYSTEM_LABELS.sketchProblem('UTILITY-CSS'), detail: 'b' },
-      { text: SYSTEM_LABELS.sketchProblem('UTILITY-CSS'), detail: 'b' },
-    ],
-  },
 ];
 
 const SCREEN = { width: 1440, height: 900 };
