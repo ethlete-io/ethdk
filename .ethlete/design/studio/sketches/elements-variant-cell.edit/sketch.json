@@ -1,6 +1,6 @@
 {
   "target": "elements/variant-cell@edit",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-24T08:42:44.560Z",
   "createdBy": {
     "cmd": "design __resident --checkout .",
@@ -137,5 +137,24 @@
       "note": "Die Zelle in echter Größe mit echten Zustandsnamen; der Ausschnitt trifft Speichern und der kleine Lade-Frame zeigt den Spinner. Kostet nichts am Zell-Renderer, nur die Demo ändert sich."
     }
   },
-  "recommended": "a"
+  "readyContent": {
+    "a": "e79093c4bab55104",
+    "new": "065cc394356af21f",
+    "old": "427607e0b169dcfa"
+  },
+  "autoMergeForecast": {
+    "merges": false,
+    "reason": "variant a changes changed, unchanged, same-as-rest, loading, loading-small, cropped, stacked, pinned; variant new changes changed, unchanged, same-as-rest, loading, loading-small, cropped, stacked, pinned; variant old changes selected",
+    "contents": {
+      "a": "e79093c4bab55104",
+      "new": "065cc394356af21f",
+      "old": "427607e0b169dcfa"
+    },
+    "at": "2026-11-24T13:59:49.630Z"
+  },
+  "recommended": "a",
+  "mergeHold": {
+    "reason": "variant a changes changed, unchanged, same-as-rest, loading, loading-small, cropped, stacked, pinned; variant new changes changed, unchanged, same-as-rest, loading, loading-small, cropped, stacked, pinned; variant old changes selected",
+    "at": "2026-11-24T13:59:49.835Z"
+  }
 }
