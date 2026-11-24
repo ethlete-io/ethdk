@@ -16,6 +16,7 @@
     "amend": "git commit --amend --no-edit",
     "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn versions:sync && yarn install --mode=update-lockfile",
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn versions:sync && yarn install --mode=update-lockfile",
+    "client-run": "node ./tools/client-run/run.mjs",
     "commit": "node ./tools/scripts/commit-wait.mjs",
     "commit:prompt": "yarn dlx @commitlint/prompt-cli",
     "components:export-coverage": "node ./tools/export-coverage/check.mjs components",

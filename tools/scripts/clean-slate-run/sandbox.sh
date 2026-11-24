@@ -54,6 +54,10 @@ args=(
   --bind "$target" "$target"
   --ro-bind "$target/node_modules" "$target/node_modules"
 )
+if [ -d "$real_home/.cache/ms-playwright" ]; then
+  mkdir -p "$home/.cache/ms-playwright"
+  args+=(--ro-bind "$real_home/.cache/ms-playwright" "$home/.cache/ms-playwright")
+fi
 for dir in .design-explore .vite .vite-temp .cache; do
   mkdir -p "$target/node_modules/$dir"
   args+=(--bind "$target/node_modules/$dir" "$target/node_modules/$dir")
