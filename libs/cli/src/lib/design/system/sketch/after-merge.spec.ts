@@ -1,5 +1,5 @@
 import { originOf } from '../write-origin';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -9,6 +9,7 @@ import { resolveProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
 import { rebaseAfterCommit } from './after-merge';
 import { mergeSketch } from './merge';
+import { overlaySketch } from './overlay';
 import { commitMergeResultSync } from './merge-commit';
 import { journaledMergeOf } from './merge-step';
 import { journaledRebaseOf } from './rebase-port';
@@ -91,6 +92,74 @@ describe('a merge and the other open sketches', { timeout: 120_000 }, () => {
     expect(after.status).toBe('ready');
     expect(after.portAfterMerge).toBeUndefined();
     expect(lines).toContain('REBASED acme pages/home after the merge of elements/hero');
+  });
+
+  it('rebases a composition sketch onto the new part it borrowed once that part merges', () => {
+    const target = acme();
+    const lines = output();
+    const tabBar = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'components', name: 'tab-bar' },
+      variants: ['a'],
+    }) as Sketch;
+
+    mkdirSync(join(tabBar.dir, 'a', 'components/tab-bar'), { recursive: true });
+    writeFileSync(
+      join(tabBar.dir, 'a', 'components/tab-bar/tab-bar.ts'),
+      `import { definePart, drawing, html } from '@design-system';
+
+export default definePart<{ active: string }>({
+  note: 'The tabs at the bottom of the phone.',
+  states: { start: { active: 'start' } },
+  describe: { start: 'Two tabs with Start active; check that the active tab stands out.' },
+  render: ({ active }) =>
+    drawing({ body: html\`<nav class="acme-tab-bar" data-active="\${active}"><a>Start</a><a>Films</a></nav>\`, styles: '' }),
+});
+`,
+    );
+    writeSketchFile({ ...tabBar, recommended: 'a' }, { base: tabBar });
+
+    const hero = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a'],
+    }) as Sketch;
+
+    edit(
+      heroFile(hero),
+      "import button from '@system/components/button';",
+      "import button from '@system/components/button';\nimport tabBar from '@system/components/tab-bar';",
+    );
+    edit(
+      heroFile(hero),
+      "const play = await button.render({ label: 'Play' });",
+      "const play = await button.render({ label: 'Play' });\n    const bar = await tabBar.render({ active: 'start' });",
+    );
+    edit(heroFile(hero), '${play.body}', '${play.body} ${bar.body}');
+
+    expect(overlaySketch({ product: resolveAcme(target), sketch: hero, variant: 'a' }).borrowed).toEqual([
+      { part: 'components/tab-bar', sketch: 'components/tab-bar', variant: 'a' },
+    ]);
+
+    const ready = markSketchReady({ checkout: target, sketch: reread(tabBar) }) as Sketch;
+
+    expect(
+      mergeSketch({
+        target,
+        config: readConfig(target) ?? {},
+        product: resolveAcme(target),
+        sketch: decideSketch({
+          sketch: ready,
+          decision: { kind: 'pick', variant: 'a', ...originOf('spec') },
+        }) as Sketch,
+      }),
+    ).toEqual(['components/tab-bar']);
+
+    const after = reread(hero);
+
+    expect(lines).toContain('REBASED acme elements/hero after the merge of components/tab-bar');
+    expect(after.baseline).toEqual(baselineOf(resolveAcme(target)));
+    expect(overlaySketch({ product: resolveAcme(target), sketch: after, variant: 'a' }).borrowed).toEqual([]);
   });
 
   it('commits the sketches the merge rebased in the merge commit', () => {
