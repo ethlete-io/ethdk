@@ -6,6 +6,7 @@ import { jsonLayoutOf } from './json-layout';
 import { configPathOf, DesignConfig, DesignProduct, readConfig } from './design-config';
 import { isBuiltInBase } from './system/base';
 import { argsOf } from './system/sketch/cli-args';
+import { COLOR_SCHEMES, ColorScheme, colorsSkeletonOf, isHexColor } from './system/sketch/foundation-skeletons';
 import { LAYERS } from './system/layers';
 import { productDirOf } from './system/product';
 
@@ -13,16 +14,25 @@ export const PRODUCT_PATH = '/__design/product';
 
 const FROM_PROJECT_KEYS = ['styles', 'head', 'providers', 'themes'] as const;
 
-/** Writes a product's `config.json` entry and its empty layer folders; answers with why it refused, or null. */
+/**
+ * Writes a product's `config.json` entry and its empty layer folders, plus a colors foundation when `colors` or
+ * `accent` is given; answers with why it refused, or null.
+ */
 export const createProduct = (options: {
   target: string;
   name: string;
   base?: string | null;
   fromProject?: string | null;
+  colors?: string | null;
+  accent?: string | null;
 }): string | null => {
-  const { target, name, base, fromProject } = options;
+  const { target, name, base, fromProject, colors, accent } = options;
 
   if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) return `BAD NAME "${name}" - use lowercase letters, digits and dashes.`;
+  if (colors && !COLOR_SCHEMES.includes(colors as ColorScheme)) {
+    return `BAD COLORS "${colors}" - use ${COLOR_SCHEMES.join(', ')}.`;
+  }
+  if (accent && !isHexColor(accent)) return `BAD ACCENT "${accent}" - use a hex colour like #e50914.`;
 
   const config: DesignConfig = readConfig(target) ?? {};
   const dir = productDirOf({ target, product: name });
@@ -48,6 +58,8 @@ export const createProduct = (options: {
   if (base) entry.base = base;
   else entry.presets = { phone: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } };
 
+  if (colors === 'light' || colors === 'dark') entry.schemes = [colors];
+
   const configPath = configPathOf(target);
 
   mkdirSync(dirname(configPath), { recursive: true });
@@ -57,17 +69,28 @@ export const createProduct = (options: {
 
   if (!base) writeDesignFile(`${dir}/fixtures.ts`, '');
 
+  if (colors || accent) {
+    const skeleton = colorsSkeletonOf({ scheme: (colors as ColorScheme | null | undefined) ?? 'both', accent });
+
+    mkdirSync(`${dir}/foundations/colors`, { recursive: true });
+
+    for (const [file, source] of Object.entries(skeleton.files)) {
+      writeDesignFile(`${dir}/foundations/colors/${file}`, source);
+    }
+  }
+
   return null;
 };
 
 /**
- * `et design product new <name> [--base <path|@ethlete/components>] [--from-project <name>]` writes the
- * product's `config.json` entry and its empty layer folders.
+ * `et design product new <name> [--base <path|@ethlete/components>] [--from-project <name>] [--colors light|dark|both] [--accent <#hex>]` writes the
+ * product's `config.json` entry and its empty layer folders. `--colors` and `--accent` start its colors foundation
+ * with those surfaces and that primary colour.
  */
 export const designProduct = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const usage = `USAGE ${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>]`;
-  const args = argsOf(argv, { values: ['--base', '--from-project'], switches: [] });
+  const usage = `USAGE ${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>] [--colors light|dark|both] [--accent <#hex>]`;
+  const args = argsOf(argv, { values: ['--base', '--from-project', '--colors', '--accent'], switches: [] });
 
   if (typeof args === 'string') {
     console.error(`${args}\n${usage}`);
@@ -86,7 +109,10 @@ export const designProduct = (options: { target: string; argv: string[]; invocat
   const base = args.values['--base'] ?? null;
   const fromProject = args.values['--from-project'] ?? null;
 
-  const refused = createProduct({ target, name, base, fromProject });
+  const colors = args.values['--colors'] ?? null;
+  const accent = args.values['--accent'] ?? null;
+
+  const refused = createProduct({ target, name, base, fromProject, colors, accent });
 
   if (refused) {
     console.error(refused);
@@ -116,7 +142,7 @@ const jsonBodyOf = async (request: IncomingMessage): Promise<Record<string, unkn
 };
 
 /**
- * POST `/__design/product` with `{ name, base? }` creates a product as `et design product new` does. `base` names
+ * POST `/__design/product` with `{ name, base?, colors?, accent? }` creates a product as `et design product new` does. `base` names
  * another product of the checkout, or `@ethlete/components`. Answers 201 with `{ name }`, or 400/409 with `{ error }`.
  */
 export const newProductAnswer = async (options: { target: string; request: IncomingMessage }) => {
@@ -126,7 +152,12 @@ export const newProductAnswer = async (options: { target: string; request: Incom
 
   const body = await jsonBodyOf(request);
   const name = typeof body?.['name'] === 'string' ? body['name'].trim() : '';
-  const base = typeof body?.['base'] === 'string' && body['base'] !== '' ? body['base'] : null;
+  const stringOf = (key: string) => {
+    const value = body?.[key];
+
+    return typeof value === 'string' && value !== '' ? value : null;
+  };
+  const base = stringOf('base');
 
   if (!name) return { status: 400, body: { error: 'A name is required.' } };
 
@@ -143,6 +174,8 @@ export const newProductAnswer = async (options: { target: string; request: Incom
     target,
     name,
     base: base ? (builtIn ? base : relative(target, productDirOf({ target, product: base }))) : null,
+    colors: stringOf('colors'),
+    accent: stringOf('accent'),
   });
 
   if (refused) return { status: refused.startsWith('PRODUCT EXISTS') ? 409 : 400, body: { error: refused } };

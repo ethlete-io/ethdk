@@ -123,12 +123,54 @@ describe('designProduct', () => {
     expect(existsSync(join(target, DESIGN_DIR, 'other/fixtures.ts'))).toBe(false);
   });
 
+  it('starts a dark colors foundation with the accent as primary colour, and passes the check', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+
+    expect(run(target, 'new', 'tomflix', '--colors', 'dark', '--accent', '#e50914')).toBe(0);
+
+    const dir = join(target, DESIGN_DIR, 'tomflix', 'foundations', 'colors');
+    const css = readFileSync(join(dir, 'colors.css'), 'utf8');
+    const ts = readFileSync(join(dir, 'colors.ts'), 'utf8');
+
+    expect(css).toContain(':root,\n  .et-surface--dark {\n    --et-surface-background: 0 0 0;');
+    expect(css).not.toContain('et-surface--light');
+    expect(css).not.toContain('prefers-color-scheme');
+    expect(css).toContain('--et-color-primary: 229 9 20;');
+    expect(css).toContain('--et-color-on-primary: 255 255 255;');
+    expect(ts).toContain("states: { dark: { surface: 'dark' } }");
+    expect(readConfig(target)?.products?.['tomflix']?.schemes).toEqual(['dark']);
+    expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['tomflix'] })).toBe(0);
+  }, 60_000);
+
+  it('starts both surfaces with the accent, and refuses an unknown colour base or accent', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const target = make();
+
+    expect(await post(target, { name: 'shop', colors: 'both', accent: '#fc0' })).toMatchObject({ status: 201 });
+
+    const css = readFileSync(join(target, DESIGN_DIR, 'shop', 'foundations', 'colors', 'colors.css'), 'utf8');
+
+    expect(css).toContain('.et-surface--light');
+    expect(css).toContain('.et-surface--dark');
+    expect(css).toContain('--et-color-primary: 255 204 0;');
+    expect(css).toContain('--et-color-on-primary: 0 0 0;');
+    expect(readConfig(target)?.products?.['shop']?.schemes).toBeUndefined();
+    expect(run(target, 'new', 'web', '--colors', 'grey')).toBe(1);
+    expect(await post(target, { name: 'app', accent: 'red' })).toMatchObject({ status: 400 });
+    expect(readConfig(target)?.products?.['web']).toBeUndefined();
+    expect(readConfig(target)?.products?.['app']).toBeUndefined();
+  });
+
   it('refuses an unknown flag and creates nothing', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const target = make();
 
     expect(run(target, 'new', 'shop', '--bogus')).toBe(2);
-    expect(error.mock.calls.flat().join('')).toContain('unknown flag --bogus (flags: --base, --from-project)');
+    expect(error.mock.calls.flat().join('')).toContain(
+      'unknown flag --bogus (flags: --base, --from-project, --colors, --accent)',
+    );
     expect(existsSync(join(target, DESIGN_DIR, 'shop'))).toBe(false);
   });
 
