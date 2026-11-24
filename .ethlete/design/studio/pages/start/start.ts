@@ -1,9 +1,11 @@
 import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
 import { studioMark } from '@system/foundations/logo';
-import { START_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/start-labels';
+import { START_LABELS, StartColors } from '../../../../../apps/ethlete-studio/src/app/i18n/start-labels';
 
-type Props = { repo?: string; repos?: string[]; busy?: boolean };
+type Props = { repo?: string; repos?: string[]; busy?: boolean; colors?: StartColors; accent?: string };
+
+const COLORS: StartColors[] = ['light', 'dark', 'both'];
 
 const header = (other: string, repo?: string) =>
   html`<header class="flex items-center gap-space-3 p-space-4">
@@ -36,7 +38,13 @@ const noRepo = (open: string, known: string[]) =>
       ${withAction(open, 'emit:openRepo')} ${knownRepos(known)}`,
   );
 
-const noProducts = (copy: string, repo: string, known: string[]) =>
+const question = (title: string, buttons: string[]) =>
+  html`<div class="flex flex-col items-center gap-space-2">
+    <p class="m-0 text-et-surface font-ui-strong text-ui-sm">${title}</p>
+    <div class="flex flex-wrap justify-center gap-space-2" role="group" aria-label="${title}">${buttons.join('')}</div>
+  </div>`;
+
+const noProducts = (copy: string, repo: string, known: string[], questions: string, prompt: string) =>
   card(
     html`<div class="flex items-center gap-space-2" aria-hidden="true">
         ${ghostProduct}${ghostProduct}${ghostProduct}
@@ -46,14 +54,13 @@ const noProducts = (copy: string, repo: string, known: string[]) =>
         Ein Produkt ist ein eigenes Design-System, zum Beispiel für eine App, mit Teilen, Sketches und Flows. Dein Agent
         legt es an. Bitte ihn zum Beispiel so:
       </p>
-      <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
-        Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App.
-      </p>
+      ${questions}
+      <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">${prompt}</p>
       ${withAction(copy, 'emit:copyPrompt')} ${knownRepos(known)}`,
   );
 
 export default definePart<Props>({
-  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it gives an example prompt for the agent and a copy button; Studio text names no CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331). When Studio knows other repos, both cards list them under Zuletzt geöffnet as small outline buttons that switch without a folder dialog (ADR 0419).',
+  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it asks for the colour base (Hell, Dunkel or Beides, Beides by default) and the accent (five named swatches, Rot by default) as outline toggle buttons, and gives an example prompt for the agent that carries both answers, and a copy button; Studio text names no CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331). When Studio knows other repos, both cards list them under Zuletzt geöffnet as small outline buttons that switch without a folder dialog (ADR 0419).',
   madeBy: ['claude-opus-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/start/start.component.ts' },
   widths: [1440],
@@ -62,6 +69,7 @@ export default definePart<Props>({
     'no-products': { repo: 'ethlete-sdk' },
     'no-repo-known': { repos: ['ethlete-sdk', 'tomflix'] },
     'no-products-known': { repo: 'tomflix', repos: ['ethlete-sdk', 'tomflix', 'fifagg-frontend'] },
+    'no-products-dark': { repo: 'tomflix', colors: 'dark', accent: 'Rot' },
   },
   describe: {
     'no-repo':
@@ -72,8 +80,42 @@ export default definePart<Props>({
       'No repo open but two known: check the Zuletzt geöffnet label and one small outline button per repo below Repo öffnen.',
     'no-products-known':
       'A repo without products and two other known repos: check the Zuletzt geöffnet row below Prompt kopieren, without the current repo.',
+    'no-products-dark':
+      'Tomflix answered Dunkel and Rot: check that only those two toggles are pressed and the prompt asks for a dunkler Farb-Grundlage with Akzent Rot.',
   },
-  render: async ({ repo, repos = [], busy }) => {
+  render: async ({ repo, repos = [], busy, colors = 'both', accent: accentName }) => {
+    const accent = START_LABELS.accents.find((item) => item.name === accentName) ?? START_LABELS.accents[0];
+    const schemeButtons = await Promise.all(
+      COLORS.map((scheme) =>
+        button.render({
+          label: START_LABELS.colors[scheme],
+          variant: 'outline',
+          size: 'sm',
+          pressed: scheme === colors,
+        }),
+      ),
+    );
+    const accentButtons = await Promise.all(
+      START_LABELS.accents.map((item) =>
+        button.render({
+          label: item.name,
+          icon: `<span class="block size-3 rounded-full" style="background: ${item.hex}"></span>`,
+          variant: 'outline',
+          size: 'sm',
+          pressed: item === accent,
+        }),
+      ),
+    );
+    const questions =
+      question(
+        START_LABELS.colorsQuestion,
+        schemeButtons.map((rendered) => rendered.body),
+      ) +
+      question(
+        START_LABELS.accentQuestion,
+        accentButtons.map((rendered) => rendered.body),
+      );
+
     const open = await button.render({ label: START_LABELS.openRepo, variant: 'filled', loading: busy });
     const copy = await button.render({ label: START_LABELS.copyPrompt, variant: 'outline', size: 'sm' });
     const other = await button.render({
@@ -96,9 +138,14 @@ export default definePart<Props>({
 
     return drawing({
       body: html`<div class="h-full min-h-225 flex flex-col bg-et-surface-bg">
-        ${header(other.body, repo)} ${repo ? noProducts(copy.body, repo, known) : noRepo(open.body, known)}
+        ${header(other.body, repo)}
+        ${
+          repo
+            ? noProducts(copy.body, repo, known, questions, START_LABELS.prompt({ repo, colors, accent }))
+            : noRepo(open.body, known)
+        }
       </div>`,
-      styles: open.styles + copy.styles + other.styles,
+      styles: open.styles + copy.styles + other.styles + (schemeButtons[0]?.styles ?? ''),
     });
   },
 });

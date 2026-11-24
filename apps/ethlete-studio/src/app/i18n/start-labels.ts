@@ -1,3 +1,9 @@
+export type StartColors = 'light' | 'dark' | 'both';
+
+export type StartAccent = { name: string; hex: string };
+
+const PROMPT_COLORS: Record<StartColors, string> = { light: 'heller', dark: 'dunkler', both: 'heller und dunkler' };
+
 export const START_LABELS = {
   title: 'Ethlete Studio',
   otherRepo: 'Anderes Repo',
@@ -8,7 +14,18 @@ export const START_LABELS = {
   noProducts: 'Noch keine Produkte',
   productExplainer:
     'Ein Produkt ist ein eigenes Design-System, zum Beispiel für eine App, mit Teilen, Sketches und Flows. Dein Agent legt es an. Bitte ihn zum Beispiel so:',
-  prompt: (repo: string) => `Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App.`,
+  colorsQuestion: 'Farb-Grundlage',
+  colors: { light: 'Hell', dark: 'Dunkel', both: 'Beides' },
+  accentQuestion: 'Akzent',
+  accents: [
+    { name: 'Rot', hex: '#e50914' },
+    { name: 'Orange', hex: '#f97316' },
+    { name: 'Grün', hex: '#16a34a' },
+    { name: 'Blau', hex: '#2563eb' },
+    { name: 'Violett', hex: '#7c3aed' },
+  ],
+  prompt: ({ repo, colors, accent }: { repo: string; colors: StartColors; accent: StartAccent }) =>
+    `Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App, mit ${PROMPT_COLORS[colors]} Farb-Grundlage und dem Akzent ${accent.name} (${accent.hex}).`,
   copyPrompt: 'Prompt kopieren',
   knownRepos: 'Zuletzt geöffnet',
 } as const;

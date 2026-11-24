@@ -49,6 +49,36 @@ describe('StartComponent', () => {
     expect(emitted).toEqual(['other', 'copy']);
   });
 
+  it('asks for the colour base and the accent and copies a prompt with both answers', async () => {
+    const { fixture, element, button } = await render('tomflix');
+    const copied: string[] = [];
+
+    fixture.componentInstance.copyPrompt.subscribe((prompt) => copied.push(prompt));
+    button('Dunkel')?.click();
+    button('Blau')?.click();
+    await fixture.whenStable();
+    button('Prompt kopieren')?.click();
+
+    const pressed = [...element.querySelectorAll('[aria-pressed="true"]')].map((node) => node.textContent?.trim());
+    const groups = [...element.querySelectorAll('[role="group"]')].map((group) => group.getAttribute('aria-label'));
+
+    expect(groups).toEqual(['Farb-Grundlage', 'Akzent']);
+    expect(pressed).toEqual(['Dunkel', 'Blau']);
+    expect(copied).toEqual([
+      'Lege in tomflix das Produkt shop an, für das Design-System der Shop-App, mit dunkler Farb-Grundlage und dem Akzent Blau (#2563eb).',
+    ]);
+    expect(element.textContent).toContain('mit dunkler Farb-Grundlage und dem Akzent Blau (#2563eb).');
+  });
+
+  it('starts on both colour bases and the first accent', async () => {
+    const { element } = await render('shop-repo');
+
+    const pressed = [...element.querySelectorAll('[aria-pressed="true"]')].map((node) => node.textContent?.trim());
+
+    expect(pressed).toEqual(['Beides', 'Rot']);
+    expect(element.textContent).toContain('mit heller und dunkler Farb-Grundlage und dem Akzent Rot (#e50914).');
+  });
+
   it('turns Repo öffnen into a busy button that takes no click while busy', async () => {
     const { fixture, element } = await render(undefined, true);
     let opened = 0;

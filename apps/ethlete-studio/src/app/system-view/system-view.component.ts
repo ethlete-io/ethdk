@@ -85,7 +85,6 @@ import { FlowViewComponent } from './flow-view.component';
 import { InventoryViewComponent } from './inventory-view.component';
 import { RememberedTreeScrollDirective } from './remembered-tree-scroll.directive';
 import { COMMAND_PALETTE_LABELS, SHELL_LABELS, DESIGN_SERVER_LABELS } from '../i18n/shell-labels';
-import { START_LABELS } from '../i18n/start-labels';
 import { SYSTEM_LABELS, TREE_ROW_LABELS } from '../i18n/system-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { createExceptionStore } from './exception-store';
@@ -169,7 +168,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [repos]="projects()"
         [busy]="busy()"
         (projectChange)="projectChange.emit($event)"
-        (copyPrompt)="copyText(START_LABELS.prompt(start.repo ?? ''))"
+        (copyPrompt)="copyText($event)"
         (otherRepo)="openProject.emit()"
         (openRepo)="openProject.emit()"
       />
@@ -434,7 +433,6 @@ export class SystemViewComponent {
   protected readonly PART_ZOOM_CHIP_CLASS = PART_ZOOM_CHIP_CLASS;
 
   protected readonly LABELS = SHELL_LABELS;
-  protected readonly START_LABELS = START_LABELS;
   protected readonly EMPTY_LABELS = SYSTEM_LABELS;
 
   private listingReloads = signal(0);

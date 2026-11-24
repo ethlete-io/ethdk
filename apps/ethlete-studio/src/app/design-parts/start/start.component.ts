@@ -1,6 +1,6 @@
-import { booleanAttribute, Component, computed, input, output, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, output, signal, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { START_LABELS } from '../../i18n/start-labels';
+import { START_LABELS, StartAccent, StartColors } from '../../i18n/start-labels';
 
 @Component({
   selector: 'ethlete-start',
@@ -34,10 +34,59 @@ import { START_LABELS } from '../../i18n/start-labels';
           </div>
           <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ LABELS.noProducts }}</p>
           <p class="m-0 text-et-surface-muted">{{ LABELS.productExplainer }}</p>
+          <div class="flex flex-col items-center gap-space-2">
+            <p class="m-0 text-et-surface font-ui-strong text-ui-sm">{{ LABELS.colorsQuestion }}</p>
+            <div
+              [attr.aria-label]="LABELS.colorsQuestion"
+              class="flex flex-wrap justify-center gap-space-2"
+              role="group"
+            >
+              @for (scheme of COLORS; track scheme) {
+                <button
+                  [pressed]="colors() === scheme"
+                  (click)="colors.set(scheme)"
+                  et-button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                >
+                  {{ LABELS.colors[scheme] }}
+                </button>
+              }
+            </div>
+          </div>
+          <div class="flex flex-col items-center gap-space-2">
+            <p class="m-0 text-et-surface font-ui-strong text-ui-sm">{{ LABELS.accentQuestion }}</p>
+            <div
+              [attr.aria-label]="LABELS.accentQuestion"
+              class="flex flex-wrap justify-center gap-space-2"
+              role="group"
+            >
+              @for (item of LABELS.accents; track item.name) {
+                <button
+                  [pressed]="accent() === item"
+                  (click)="accent.set(item)"
+                  et-button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                >
+                  <span [style.background]="item.hex" class="block size-3 rounded-full" etIcon></span>
+                  {{ item.name }}
+                </button>
+              }
+            </div>
+          </div>
           <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
-            {{ LABELS.prompt(name) }}
+            {{ LABELS.prompt({ repo: name, colors: colors(), accent: accent() }) }}
           </p>
-          <button (click)="copyPrompt.emit()" et-button type="button" variant="outline" size="sm">
+          <button
+            (click)="copyPrompt.emit(LABELS.prompt({ repo: name, colors: colors(), accent: accent() }))"
+            et-button
+            type="button"
+            variant="outline"
+            size="sm"
+          >
             {{ LABELS.copyPrompt }}
           </button>
           @if (others().length) {
@@ -94,10 +143,13 @@ export class StartComponent {
   public busy = input(false, { transform: booleanAttribute });
   public openRepo = output();
   public otherRepo = output();
-  public copyPrompt = output();
+  public copyPrompt = output<string>();
   public projectChange = output<string>();
 
+  protected colors = signal<StartColors>('both');
+  protected accent = signal<StartAccent>(START_LABELS.accents[0]);
   protected others = computed(() => this.repos().filter((name) => name !== this.repo()));
 
   protected readonly LABELS = START_LABELS;
+  protected readonly COLORS: readonly StartColors[] = ['light', 'dark', 'both'];
 }
