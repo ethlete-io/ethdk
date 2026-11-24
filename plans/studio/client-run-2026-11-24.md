@@ -40,3 +40,4 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
 - Button a: hover gleich wie default (B697, schwacher Zustand; die Live-Prüfung meldete es dem Agenten nicht).
 - Hero und App Shell blieben „in progress“: der Agent wartet auf den übernommenen Button und das Logo. Suspect: der Auftrag bestellt Teile, die von nicht gewählten Teilen abhängen.
 - Keine eigene Schrift: der Agent konnte keine herunterladen.
+- Stand Builder (Batch 53): Fehlalarme behoben a743686f3 (Prüfer misst Tinte, Biss, Neuprüfung 0 Textbefunde). Hero und Shell: Cause im Design-Skill (Agent wartete auf die Wahl anderer Teile), geändert ac7d61188, nicht verifiziert; der Lauf ab f688a59ee hat die Änderung noch nicht. Schrift: Cause Sandbox ohne Netz (gewollt); 46 B nutzt die Systemschrift, also bleibt es so.
