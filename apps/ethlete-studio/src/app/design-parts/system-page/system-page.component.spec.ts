@@ -155,6 +155,22 @@ describe('SystemPageComponent', () => {
 });
 
 describe('SystemPageComponent canvas note', () => {
+  it('shows no comment button and no open points on the blank canvas until a part is loaded', async () => {
+    const fixture = await render({ noted: false, noteTitle: '', noteHint: '', empty: false, part: '' });
+    const actions = () =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-canvas-actions]')?.textContent ?? '';
+
+    expect(actions()).not.toContain(LABELS.comment);
+    expect(actions()).not.toContain(LABELS.nothingOpen);
+
+    fixture.componentRef.setInput('part', 'components/button');
+    fixture.componentRef.setInput('nothingOpen', true);
+    await fixture.whenStable();
+
+    expect(actions()).toContain(LABELS.comment);
+    expect(actions()).toContain(LABELS.nothingOpen);
+  });
+
   it('draws the note title and hint as a card, and omits an empty hint', async () => {
     const fixture = await render({ noted: true, noteTitle: 'Lesefehler', noteHint: 'boom' });
     const card: HTMLElement = fixture.nativeElement.querySelector('[data-canvas-note]');

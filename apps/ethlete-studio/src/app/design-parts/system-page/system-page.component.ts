@@ -298,33 +298,35 @@ export const FRAME_HEAD_CLASS =
         }
         <div #actions class="absolute top-space-3 right-space-3 z-1 flex gap-space-2" data-canvas-actions>
           <ng-content select="[systemActions]" />
-          @if (commentMode() && draft() === null) {
-            <span class="flex items-center gap-space-1 self-center text-ui-xs whitespace-nowrap text-et-surface-muted"
-              ><et-kbd keys="esc" /> {{ LABELS.commentModeOr }} <et-kbd keys="c" /> {{ LABELS.commentModeEnds }}</span
+          @if (part()) {
+            @if (commentMode() && draft() === null) {
+              <span class="flex items-center gap-space-1 self-center text-ui-xs whitespace-nowrap text-et-surface-muted"
+                ><et-kbd keys="esc" /> {{ LABELS.commentModeOr }} <et-kbd keys="c" /> {{ LABELS.commentModeEnds }}</span
+              >
+            }
+            <button
+              [pressed]="commentMode()"
+              (click)="toggleComments()"
+              et-button
+              type="button"
+              variant="outline"
+              size="sm"
             >
+              {{ LABELS.comment }}
+            </button>
+            <ethlete-open-points-chip
+              [(closed)]="closed"
+              [(blockersOpen)]="blockersOpen"
+              [part]="part()"
+              [groups]="groups()"
+              [exceptions]="openExceptions()"
+              [buildReady]="buildReady()"
+              [missingShots]="missingShots()"
+              (openPoint)="openPoint.emit($event)"
+              (openEditSketch)="openEditSketch.emit($event)"
+              (approveException)="approveException.emit($event)"
+            />
           }
-          <button
-            [pressed]="commentMode()"
-            (click)="toggleComments()"
-            et-button
-            type="button"
-            variant="outline"
-            size="sm"
-          >
-            {{ LABELS.comment }}
-          </button>
-          <ethlete-open-points-chip
-            [(closed)]="closed"
-            [(blockersOpen)]="blockersOpen"
-            [part]="part()"
-            [groups]="groups()"
-            [exceptions]="openExceptions()"
-            [buildReady]="buildReady()"
-            [missingShots]="missingShots()"
-            (openPoint)="openPoint.emit($event)"
-            (openEditSketch)="openEditSketch.emit($event)"
-            (approveException)="approveException.emit($event)"
-          />
         </div>
       }
     </ethlete-shell-page>
