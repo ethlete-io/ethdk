@@ -1,5 +1,4 @@
 export const TREE_ROW_LABELS = {
-  sketchInProgress: 'Entwurf in Arbeit',
   sketchReady: 'Entwurf fertig',
   sketchNeedsRebase: (parts: readonly string[]) =>
     parts.length === 0 ? 'Braucht Rebase: keine Baseline' : `Braucht Rebase: ${parts.join(', ')} geändert`,
@@ -8,13 +7,8 @@ export const TREE_ROW_LABELS = {
   sketchHoldTargetEnded: (target: string, end: 'merged' | 'discarded') =>
     `Pausiert auf ${target}, das ${end === 'merged' ? 'übernommen' : 'verworfen'} ist: Pause aufheben`,
   warnings: {
-    error: 'Beim Lesen dieses Entwurfs ist ein Fehler aufgetreten. Bitte deinen Agenten, ihn zu prüfen.',
-    'needs rebase': 'Teile haben sich seit dem Entwurf geändert. Bitte deinen Agenten, ihn zu aktualisieren.',
-    composition: 'Der Entwurf passt nicht mehr zu seiner Umgebung. Bitte deinen Agenten, ihn anzupassen.',
     'changed since ready': 'Der Entwurf wurde nach der Freigabe geändert. Prüfe ihn erneut und gib ihn wieder frei.',
     'hold target ended': 'Der Entwurf wartet auf einen Entwurf, der schon abgeschlossen ist. Hebe die Pause auf.',
-    'rebase not committed':
-      'Die Aktualisierung des Entwurfs ist noch nicht gespeichert. Bitte deinen Agenten, sie zu speichern.',
   },
   openComments: (count: number) => (count === 1 ? '1 offener Kommentar' : `${count} offene Kommentare`),
 } as const;
@@ -46,14 +40,8 @@ export const SYSTEM_LABELS = {
     `Daten-Part ohne Zustand ${{ loading: 'Laden', error: 'Fehler', empty: 'Leer' }[state]}`,
   builtPlaceholder: 'Bild der App als Platzhalter - im Sketch neu zeichnen',
   commentAnswered: 'Beantwortet, wartet auf dich',
-  commentWaiting: 'Wartet auf den Agenten',
   sketchPicked: 'Sketch gewählt, noch nicht gemergt',
   sketchOpen: 'Sketch noch nicht gemergt',
-  sketchProblem: (rule: string) => `Sketch-Regel verletzt: ${rule}`,
-  sketchStaleBase: (parts: readonly string[]) => `Braucht Rebase vor dem Merge: ${parts.join(', ')} geändert`,
-  recordStale: 'Kein Prüfergebnis zum aktuellen Design - der Agent hat es noch nicht geprüft',
-  slowChecksPending: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen',
-  noHarness: 'Kein Harness - ohne Harness in config.json laufen die App-Prüfungen nie',
   embeddedNotReady: (part: string) => `${part} ist noch nicht baubereit`,
   directEdit: 'Bild ohne Sketch geändert',
   comment: 'Kommentar',
@@ -71,12 +59,6 @@ export const BUILD_READY_LABELS = {
   blocked: (count: number) => `Nicht baubereit (${count})`,
   reasons: 'Gründe',
   openEditSketch: 'Sketch öffnen',
-  agent: {
-    working: (doing: string) => `Agent ${doing}`,
-    waiting: 'Agent wartet',
-    interrupted: 'Agent unterbrochen',
-    failed: 'Agent fehlgeschlagen',
-  },
   groups: {
     'direct-edit': 'Direkte Änderung',
     'open-point': 'Offene Punkte',
@@ -101,10 +83,8 @@ export const SYSTEM_TREE_LABELS = {
   pages: 'Pages',
   wireframes: 'Wireframes',
   sketches: 'Sketches',
-  pending: 'Agent zeichnet noch',
   rejected: 'abgelehnt',
   withdrawn: 'vom Agent zurückgezogen',
-  noReport: 'Seit 30 Minuten kein Bericht',
   drawing: 'wird gezeichnet …',
   variantBy: (variant: string, authors: string) => `${variant} von ${authors}`,
   newInSketch: (state: string | undefined, has: string[]) =>
