@@ -1,7 +1,7 @@
 import { DestroyRef, Signal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
-import { EMPTY, Observable, catchError, filter, map, of, retry, scan, startWith, switchMap, tap, timer } from 'rxjs';
+import { EMPTY, Observable, catchError, map, of, retry, scan, startWith, switchMap, tap, timer } from 'rxjs';
 import {
   DesignAnswerError,
   ListedComments,
@@ -66,9 +66,7 @@ export class CommentStore {
                   return timer(RECONNECT_DELAY);
                 },
               }),
-              map((event) => event === 'changed' || !this.live()),
               tap(() => this.live.set(true)),
-              filter(Boolean),
               scan((count) => count + 1, 0),
             )
           : EMPTY;

@@ -140,6 +140,16 @@ describe('CommentStore', () => {
     expect(store.loadError()).toBe('');
   });
 
+  it('reloads the list when the live connection opens, so a comment written before it opened is listed', () => {
+    const { store } = setup();
+
+    stored = [...stored, listed('c', '2026-10-27T10:00:03Z')];
+    changes.next('connected');
+    TestBed.tick();
+
+    expect(store.comments().map((comment) => comment.id)).toEqual(['a', 'b', 'c']);
+  });
+
   it('reports an interrupted live connection and reconnects on retry', () => {
     host.changes.mockReturnValueOnce(throwError(() => new Error('closed')));
     const { store } = setup();
