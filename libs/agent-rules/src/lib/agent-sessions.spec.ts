@@ -1507,8 +1507,42 @@ describe('agent-sessions', () => {
     return { log, env: { PATH: `${bin}:${process.env['PATH']}`, TMUX: 'fake', HOME: dir } };
   };
 
-  it.skipIf(!hasTmux)('run inside a tmux pane switches the calling client to the session it created', () => {
-    const agent = `claude-pane-${process.pid}`;
+  it.skipIf(!hasTmux)(
+    'run inside a tmux pane with a terminal switches the calling client to the session it created',
+    () => {
+      const agent = `claude-pane-${process.pid}`;
+      const { log, env } = fakeClientTmux();
+      const result = spawnSync(
+        'python3',
+        ['-I', '-c', 'import pty,sys; sys.exit(pty.spawn(sys.argv[1:]) >> 8)', 'node', SCRIPT, 'run', agent, 'cat'],
+        {
+          cwd: dir,
+          encoding: 'utf8',
+          timeout: 25_000,
+          env: {
+            ...process.env,
+            ...env,
+            TMUX_PANE: paneOf('spec-keepalive'),
+            AGENT_MAILBOX: join(dir, 'mailbox.jsonl'),
+            CLAUDE_CONFIG_DIR: join(dir, 'claude'),
+            CLAUDE_CODE_SESSION_ID: '',
+            XDG_RUNTIME_DIR: '',
+            DBUS_SESSION_BUS_ADDRESS: '',
+            AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+          },
+        },
+      );
+      spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+      const switched = existsSync(log) ? readFileSync(log, 'utf8') : '';
+      spawnSync('tmux', ['kill-session', '-t', `=${agent}@${basename(dir)}`]);
+
+      expect(result.status).toBe(0);
+      expect(switched).toContain(`-c /dev/fake-client -t =${agent}@${basename(dir)}`);
+    },
+  );
+
+  it.skipIf(!hasTmux)('run inside a tmux pane without a terminal starts detached and leaves the client alone', () => {
+    const agent = `claude-agent-shell-${process.pid}`;
     const { log, env } = fakeClientTmux();
     const result = run(['run', agent, 'cat'], undefined, {
       ...env,
@@ -1520,7 +1554,8 @@ describe('agent-sessions', () => {
     spawnSync('tmux', ['kill-session', '-t', `=${agent}@${basename(dir)}`]);
 
     expect(result.status).toBe(0);
-    expect(switched).toContain(`-c /dev/fake-client -t =${agent}@${basename(dir)}`);
+    expect(switched).toBe('');
+    expect(result.stdout).toContain(`Started ${agent}@${basename(dir)}. Attach with: tmux attach -t`);
   });
 
   it.skipIf(!hasTmux)('run inside a tmux pane refuses when the session of that name already exists', () => {

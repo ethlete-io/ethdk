@@ -848,13 +848,9 @@ if (command === 'send' && sender) {
       );
       process.exitCode = 1;
     } else createRunSession(session, shellCommand, baseCommand);
-    const callerSession = tmux(
-      'display-message',
-      '-p',
-      '-t',
-      process.env.TMUX_PANE ?? '',
-      '#{session_id}',
-    ).stdout.trim();
+    const callerSession = hasTerminal
+      ? tmux('display-message', '-p', '-t', process.env.TMUX_PANE ?? '', '#{session_id}').stdout.trim()
+      : '';
     const [callerClient] = callerSession
       ? tmux('list-clients', '-t', callerSession, '-F', '#{client_tty}').stdout.split('\n').filter(Boolean)
       : [];
