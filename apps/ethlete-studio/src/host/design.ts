@@ -553,6 +553,8 @@ export type SketchTarget = {
   crops?: Record<string, SketchChange>;
   /** Each state this variant draws the same as its grid row's rest state, with that rest state. Missing while no compare is kept. */
   sameAsRest?: Record<string, string>;
+  /** For a part inherited from the base, the base states this variant does not draw. Missing from an `@ethlete/cli` older than this field. */
+  inherited?: string[];
   error?: string;
 };
 

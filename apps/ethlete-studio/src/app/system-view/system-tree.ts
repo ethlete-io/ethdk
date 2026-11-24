@@ -1402,6 +1402,7 @@ export type SketchRowShot = {
   sameAsRest?: boolean;
   /** The states this row folds as drawn like this rest state. */
   restOf?: string[];
+  inherited?: true;
   place: { state: string; size?: string };
   width?: number;
   height?: number;
@@ -1412,7 +1413,8 @@ export type SketchRowOf = { key: string; width: number | null; perLine?: number;
 /**
  * One row for the part as it is now (when it exists) and one per shown variant, each with every state in the
  * part's order, a page's state once per preset of the product and a part's once per declared width, at that size. A variant's state is changed unless its target lists it as `unchanged`, and `null` while no compare
- * answered yet; the current row changes nothing.
+ * answered yet; the current row changes nothing. A base state the variant of an inherited part does not draw shows
+ * the part now, marked `inherited`.
  */
 export const sketchRowsOf = ({
   port,
@@ -1441,24 +1443,26 @@ export const sketchRowsOf = ({
         ? undefined
         : sketch.targets?.find((entry) => entry.variant === key && (entry.part ?? partKey) === partKey);
     const states = (key === CURRENT ? part?.states : (target?.states ?? part?.states)) ?? [];
+    const inherited = new Set(key === CURRENT ? [] : (target?.inherited ?? []));
 
     return {
       key,
       width: cell.width ?? null,
       ...(sizes.length > 1 ? { perLine: sizes.length } : {}),
-      shots: states.flatMap((state) =>
+      shots: [...states, ...inherited].flatMap((state) =>
         sizes.map((size) => {
           const sized = cellSizeOf(product, size);
+          const drawnHere = key !== CURRENT && !inherited.has(state);
           const address = {
             port,
             product: product.name,
             part: partKey,
             state,
             epoch,
-            revision: key === CURRENT ? currentRevision : (variantRevisions[key] ?? revision),
+            revision: drawnHere ? (variantRevisions[key] ?? revision) : currentRevision,
             surface,
             color,
-            ...(key === CURRENT ? {} : { sketch: sketch.target, variant: key }),
+            ...(drawnHere ? { sketch: sketch.target, variant: key } : {}),
           };
 
           const change = key === CURRENT ? undefined : target?.crops?.[state];
@@ -1467,8 +1471,9 @@ export const sketchRowsOf = ({
 
           return {
             state: sizes.length > 1 ? `${state} · ${size}` : state,
-            changed: key === CURRENT ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
+            changed: !drawnHere ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
             ...(change ? { change } : {}),
+            ...(inherited.has(state) ? { inherited: true as const } : {}),
             ...(sameAsRest.some(([folded]) => folded === state) ? { sameAsRest: true } : {}),
             ...(restOf.length > 0 ? { restOf } : {}),
             src: partFrameUrl({ ...address, ...(size === null ? { fit: true } : {}) }),

@@ -1708,6 +1708,32 @@ describe('sketchScopedTo', () => {
 });
 
 describe('sketchRowsOf', () => {
+  it('shows a base state a variant of an inherited part does not draw from the part now, marked inherited', () => {
+    const button = part({ name: 'button', states: ['filled', 'disabled'] });
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product([button]),
+      part: button,
+      sketch: sketch({ targets: [{ variant: 'a', states: ['disabled'], inherited: ['filled'] }] }),
+      variants: ['a'],
+      epoch: 1,
+      revision: 1,
+    });
+    const shots = rows.find((row) => row.key === 'a')?.shots ?? [];
+
+    expect(
+      shots.map(({ state, inherited, changed, src }) => ({
+        state,
+        inherited,
+        changed,
+        variant: new URL(src).searchParams.get('variant'),
+      })),
+    ).toEqual([
+      { state: 'disabled', inherited: undefined, changed: null, variant: 'a' },
+      { state: 'filled', inherited: true, changed: false, variant: null },
+    ]);
+  });
+
   it('renews the Aktuell row only with its own revision, so a variant edit keeps its frames and pictures', () => {
     const button = part({ name: 'button' });
     const rows = sketchRowsOf({

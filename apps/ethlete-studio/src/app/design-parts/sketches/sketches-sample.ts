@@ -16,6 +16,8 @@ export type SketchShot = {
   sameAsRest?: boolean;
   /** The states this row folds as drawn like this rest state. */
   restOf?: string[];
+  /** The variant does not draw this state; the cell shows the base's. */
+  inherited?: true;
 };
 
 export type SketchRow = {

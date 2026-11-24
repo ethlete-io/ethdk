@@ -16,6 +16,7 @@ const FRAME_RING = 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
     '[attr.data-sk-state]': 'state()',
     '[attr.data-sk-variant]': 'variant() || null',
     '[attr.data-sk-changed]': 'changed() || null',
+    '[attr.data-sk-inherited]': 'inherited() ? "" : null',
     '[style.grid-column]': 'column()',
     '[style.grid-row]': 'line()',
     '[style.--sk-scale]': 'scale()',
@@ -33,6 +34,7 @@ export class VariantCellComponent {
   public labelHidden = input(false);
   public stateHidden = input(false);
   public same = input(false);
+  public inherited = input(false);
   public sameAsRest = input<readonly string[]>([]);
   public loading = input(false);
   public frameKey = input('');
@@ -51,6 +53,8 @@ export class VariantCellComponent {
   protected readonly LABELS = SKETCHES_LABELS;
   protected readonly STACK_INSETS = [32, 64];
 
+  protected dimmed = computed(() => this.same() || this.inherited());
+  protected note = computed(() => (this.inherited() ? this.LABELS.fromSdk : this.same() ? this.LABELS.unchanged : ''));
   protected frameWidth = computed(() => this.width() * this.scale());
   protected shownHeight = computed(() => this.shown() ?? this.height() ?? 0);
   protected frameClass = computed(() => (this.stacked() ? 'z-1' : FRAME_RING));

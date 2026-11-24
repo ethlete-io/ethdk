@@ -491,6 +491,7 @@
     [labelHidden]="labelSize() === null"
     [stateHidden]="transposed()"
     [same]="isSame(row, item.changed)"
+    [inherited]="!!item.inherited"
     [sameAsRest]="statesOpen() ? [] : (item.restOf ?? [])"
     [loading]="loadingShots().has(key)"
     [frameKey]="key"

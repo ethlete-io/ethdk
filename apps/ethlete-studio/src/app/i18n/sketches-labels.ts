@@ -35,6 +35,7 @@ export const SKETCHES_LABELS = {
   fitHint: 'Doppelklick zum Einpassen',
   current: 'Aktuell',
   unchanged: 'unverändert',
+  fromSdk: 'vom SDK',
   stateSeparator: ' · ',
   sameAsRest: (states: readonly string[]) => `${states.join(', ')} = rest`,
   comparing: 'vergleicht …',

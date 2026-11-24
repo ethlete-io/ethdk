@@ -725,6 +725,7 @@ export class SketchViewComponent {
             ...(change ? { change } : {}),
             ...(shot.sameAsRest ? { sameAsRest: true } : {}),
             ...(shot.restOf ? { restOf: shot.restOf } : {}),
+            ...(shot.inherited ? { inherited: true as const } : {}),
             ...(presetWidth !== undefined ? { width: presetWidth } : {}),
             ...(presetHeight === undefined && measuredWidth !== undefined && measuredWidth !== width
               ? { width: measuredWidth }
