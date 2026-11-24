@@ -318,17 +318,17 @@ const scrollOf = (data: unknown) =>
         }
         @if (liveShots().has(key)) {
           @let srcs = frameSrcs().get(key) ?? [];
-          @for (src of srcs; track src) {
+          @for (frame of srcs; track frame.url) {
             <iframe
               #shotFrame
-              [src]="src"
-              [ethleteFramePainted]="src"
+              [src]="frame.src"
+              [ethleteFramePainted]="frame.src"
               [title]="key"
               [attr.data-variant]="row.key"
               [attr.data-state]="state"
               [attr.data-painted]="paintedFrames().get(key)?.frame === shotFrame ? '' : null"
               [class.opacity-0]="paintedFrames().get(key)?.frame !== shotFrame"
-              (paintedChange)="framePainted({ key, frame: shotFrame, src, painted: $event })"
+              (paintedChange)="framePainted({ key, frame: shotFrame, url: frame.url, painted: $event })"
               class="absolute inset-0 block size-full border-0 scheme-normal"
             ></iframe>
           }
@@ -407,7 +407,12 @@ export class SketchViewComponent {
     return nearShotsOf({ cells, viewport: rectOf(canvas) });
   });
 
-  private pictureSizes = signal<Record<string, { width: number; height: number }>>({});
+  private sketchDir = computed(() => this.sketch().dir);
+
+  private pictureSizes = linkedSignal<string, Record<string, { width: number; height: number }>>({
+    source: this.sketchDir,
+    computation: () => ({}),
+  });
 
   private safeUrls = new Map<string, SafeResourceUrl>();
 
@@ -494,7 +499,10 @@ export class SketchViewComponent {
     }),
   );
 
-  private reportedFrames = signal<ReadonlyMap<string, { frame: HTMLIFrameElement; src: SafeResourceUrl }>>(new Map());
+  private reportedFrames = linkedSignal<string, ReadonlyMap<string, { frame: HTMLIFrameElement; url: string }>>({
+    source: this.sketchDir,
+    computation: () => new Map(),
+  });
 
   private frameReports = toSignal(
     fromEvent<MessageEvent>(this.document.defaultView ?? [], 'message').pipe(
@@ -539,9 +547,16 @@ export class SketchViewComponent {
     return new Set([...this.paintedFrames()].flatMap(([key, { frame }]) => (mounted.has(frame) ? [key] : [])));
   });
 
-  private measured = toSignal(
+  private measuredBySketch = toSignal(
     fromEvent<MessageEvent>(this.document.defaultView ?? [], 'message').pipe(
-      map((event) => ({ shot: this.shotShowing(event.source), message: frameMessageOf(event.data) })),
+      map((event) => {
+        const shot = this.shotShowing(event.source);
+
+        return {
+          shot: shot === null ? null : `${this.sketch().dir}\n${shot}`,
+          message: frameMessageOf(event.data),
+        };
+      }),
       filter(
         (report): report is { shot: string; message: HeightMessage } =>
           report.shot !== null && report.message?.type === 'height',
@@ -575,6 +590,16 @@ export class SketchViewComponent {
     ),
     { initialValue: {} as Record<string, FrameSize> },
   );
+
+  private measured = computed(() => {
+    const prefix = `${this.sketchDir()}\n`;
+
+    return Object.fromEntries(
+      Object.entries(this.measuredBySketch()).flatMap(([key, size]) =>
+        key.startsWith(prefix) ? [[key.slice(prefix.length), size] as const] : [],
+      ),
+    );
+  });
 
   private frameRetries = toSignal(
     merge(
@@ -619,12 +644,12 @@ export class SketchViewComponent {
   private rowShots = computed(() => {
     const { retry } = this.frameRetries();
 
-    return new Map<string, SafeResourceUrl>(
+    return new Map<string, string>(
       this.sketchRows().flatMap((row) =>
         row.shots.map((shot) => {
           const key = `${row.key} ${shot.state}`;
 
-          return [key, this.safeUrlOf(retriedSrcOf(shot.src, retry[key]))] as const;
+          return [key, retriedSrcOf(shot.src, retry[key])] as const;
         }),
       ),
     );
@@ -635,10 +660,13 @@ export class SketchViewComponent {
     const frames = this.paintedFrames();
 
     return new Map(
-      [...this.rowShots()].map(([key, src]) => {
-        const shown = painted.has(key) ? frames.get(key)?.src : undefined;
+      [...this.rowShots()].map(([key, url]) => {
+        const shown = painted.has(key) ? frames.get(key)?.url : undefined;
 
-        return [key, shown && shown !== src ? [shown, src] : [src]] as const;
+        return [
+          key,
+          (shown && shown !== url ? [shown, url] : [url]).map((frame) => ({ url: frame, src: this.safeUrlOf(frame) })),
+        ] as const;
       }),
     );
   });
@@ -905,7 +933,10 @@ export class SketchViewComponent {
 
   protected failedPictures = signal<ReadonlySet<string>>(new Set());
 
-  protected loadedPictures = signal<ReadonlyMap<string, string>>(new Map());
+  protected loadedPictures = linkedSignal<string, ReadonlyMap<string, string>>({
+    source: this.sketchDir,
+    computation: () => new Map(),
+  });
 
   private undecidedShots = computed(() => {
     if (this.sketch().problems !== undefined || this.listError() !== null) return new Set<string>();
@@ -928,8 +959,6 @@ export class SketchViewComponent {
       ),
     );
   });
-
-  private sketchDir = computed(() => this.sketch().dir);
 
   protected activeShot = linkedSignal<string, string | null>({ source: this.sketchDir, computation: () => null });
 
@@ -1075,12 +1104,12 @@ export class SketchViewComponent {
   protected framePainted({
     key,
     frame,
-    src,
+    url,
     painted,
   }: {
     key: string;
     frame: HTMLIFrameElement;
-    src: SafeResourceUrl;
+    url: string;
     painted: boolean;
   }) {
     this.reportedFrames.update((frames) => {
@@ -1088,7 +1117,7 @@ export class SketchViewComponent {
 
       const next = new Map(frames);
 
-      if (painted) next.set(key, { frame, src });
+      if (painted) next.set(key, { frame, url });
       else next.delete(key);
 
       return next;

@@ -243,6 +243,39 @@ describe('SketchViewComponent', () => {
     expect(shots.filter((shot) => shot.width === undefined).map((shot) => shot.height)).toEqual([191, 191, 191]);
   });
 
+  it('shows no picture of the sketch opened before while the pictures of the next sketch load', async () => {
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(390);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(844);
+
+    const sketchOf = (name: string, states: string[]) =>
+      ({
+        ...SKETCH,
+        target: `elements/${name}`,
+        layer: 'elements',
+        name,
+        dir: `elements-${name}`,
+        variants: ['a', 'b', 'c'],
+        decision: undefined,
+        rounds: [{ key: 'r1', title: 'Rahmen der App', note: '' }],
+        variantInfo: { a: { round: 'r1' }, b: { round: 'r1' }, c: { round: 'r1' } },
+        targets: ['a', 'b', 'c'].map((variant) => ({ variant, states, interactions: [], unchanged: [] })),
+      }) satisfies ListedSketch;
+    const { fixture, root } = await render(sketchOf('hero', ['default', 'phone']), noComments, null);
+
+    root.querySelectorAll('img[data-shot-picture]').forEach((picture) => picture.dispatchEvent(new Event('load')));
+    await settle(fixture);
+
+    fixture.componentRef.setInput('sketch', sketchOf('shell-app', ['desktop', 'phone']));
+    await settle(fixture);
+
+    const phone = root.querySelector('[data-shot="a phone"]')!;
+
+    expect([...phone.querySelectorAll('img')].map((picture) => picture.getAttribute('src'))).not.toContainEqual(
+      expect.stringContaining('hero'),
+    );
+    expect(fixture.componentInstance['loadingShots']().has('a phone')).toBe(true);
+  });
+
   it('draws a picture narrower than its cell at its own size, so every cell shows the part at one scale', async () => {
     vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(71);
     vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(71);
