@@ -4,7 +4,7 @@ import { baseIssuesFileOf, oldRenderIssuesOf } from './base-issues';
 import { designHashOf } from './design-hash';
 import { repoRootOf } from './reachable-files';
 import { chromiumOf } from '../browser';
-import { configPathOf, DesignConfig } from '../design-config';
+import { configPathOf, DESIGN_DIR, DesignConfig } from '../design-config';
 import { autoAcceptOf, DrawStates } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
@@ -656,6 +656,9 @@ const printOpenPoints = async (
   }
 };
 
+const noHarnessLine = (product: string) =>
+  `NO HARNESS ${product}: its app checks and actions never run, so no part is build-ready - add "harness": { "app": "<repo path of the app>", "map": "<repo path of the generated .ts file>" } to the ${product} product in ${DESIGN_DIR}/config.json`;
+
 const printProductOpenPoints = async (
   options: CheckOptions & {
     rendered: RenderIssue[] | null;
@@ -679,6 +682,8 @@ const printProductOpenPoints = async (
   }
 
   openPointsText(name, points).forEach((line) => console.log(line));
+
+  if (product.config.harness === undefined) console.log(noHarnessLine(name));
 
   if (!options.part) uncoveredViewsText(name, uncoveredViewsOf(product)).forEach((line) => console.log(line));
 

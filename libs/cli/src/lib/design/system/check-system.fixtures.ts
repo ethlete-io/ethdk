@@ -34,6 +34,7 @@ export const withoutOpenPoints = (lines: string[]) =>
       !line.startsWith('cli: runs the build at ') &&
       !/^\[\d+\/\d+\] /.test(line) &&
       !line.startsWith('UNLINKED ') &&
+      !line.startsWith('NO HARNESS ') &&
       !line.startsWith('  ') &&
       !line.startsWith('PART ') &&
       !line.startsWith('PARTS ') &&

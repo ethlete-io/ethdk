@@ -59,6 +59,19 @@ describe('checkDesign', () => {
     expect(lines).toContain('ok');
   });
 
+  it('names a product without a harness and how to add one', async () => {
+    const target = acme();
+    const lines = output();
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    // B695: Studio no longer lists the missing harness, so the CLI output names it for the developer.
+    expect(lines.filter((line) => line.startsWith('NO HARNESS '))).toEqual([
+      expect.stringMatching(
+        /^NO HARNESS acme: .*"harness": \{ "app": .* to the acme product in \.ethlete\/design\/config\.json$/,
+      ),
+    ]);
+  });
+
   it('prints the instant line of a part that declares instant switches, like sketch ready', async () => {
     const target = acme();
     const lines = output();

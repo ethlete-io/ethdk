@@ -428,7 +428,7 @@ warning does not fail the check.
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
 for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged`. A point is a
 comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), or a sketch on the part that is not merged yet. A part outside `foundations/` without `implements` is
-not an open point: `et design check` lists those on one `UNLINKED <product>: <part>, ...` line. Outside `foundations/` and `pages/`, a pair of a part's states needs a
+not an open point: `et design check` lists those on one `UNLINKED <product>: <part>, ...` line. A product without a `harness` in `config.json` gets a `NO HARNESS <product>: ...` line that names the entry to add; Studio does not list it, and no part of the product is build-ready. Outside `foundations/` and `pages/`, a pair of a part's states needs a
 motion when an interaction connects them: the two names differ only in interaction words (`hover`, `active`,
 `pressed`, `disabled`, `open`, `closed`, `expanded`, `collapsed`, `checked`, `unchecked`, `selected`, `dragging` or an
 ongoing-work word), so `filled -> hover-filled` needs one and `filled -> tonal` does not. A name of interaction words
