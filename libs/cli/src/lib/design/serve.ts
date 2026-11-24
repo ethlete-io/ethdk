@@ -123,10 +123,6 @@ import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError
 import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
 import { assetRoot, editorAssetRootOf, snapshotPackage, installedAssetRoot } from './package-root';
 import { productDirOf } from './system/product';
-import { watchRecreatedDirs } from './rearm-watch';
-import { commentsDirOf } from './system/comments/comment';
-import { notesDirOf } from './system/notes/note';
-import { flowsDirOf } from './system/flows/flow';
 import { primeJsonStyles } from './system/sketch/check-format';
 import { claimViteCache, viteCacheOf } from './vite-cache';
 import { workRootOf } from './work-root';
@@ -1153,18 +1149,7 @@ const designExplore = ({
       studio(EXCEPTIONS_PATH, exceptionsAnswer);
       studio(EXCEPTION_APPROVE_PATH, exceptionApproveAnswer);
       vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
-      const recreated = watchRecreatedDirs({
-        root: designRoot,
-        dirs: system.products().flatMap((name) => {
-          const dir = productDirOf({ target, product: name });
-
-          return [commentsDirOf(dir), notesDirOf(dir), flowsDirOf(dir)];
-        }),
-        onFile: (file) => file.endsWith('.json') && refresh(file),
-      });
-
       vite.httpServer?.on('close', () => {
-        recreated.close();
         events.close();
         settling?.abort();
         void Promise.all([

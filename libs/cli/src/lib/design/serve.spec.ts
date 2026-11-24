@@ -508,32 +508,6 @@ describe('the design server for a design system', () => {
     expect(written).toHaveLength(2);
   });
 
-  it('signals a comment written after the comments dir is deleted and recreated, as the restore of an edit sketch does', async () => {
-    const target = acme();
-    const comments = join(target, '.ethlete/design/acme/comments');
-
-    mkdirSync(comments, { recursive: true });
-    writeFileSync(join(comments, 'first.json'), '{}');
-
-    const { handlers } = await serveAcme(target);
-    const written: string[] = [];
-
-    handlers.get('/__design/comment-events')?.(
-      { on: () => undefined } as unknown as IncomingMessage,
-      { writeHead: () => undefined, write: (chunk: string) => written.push(chunk) } as unknown as ServerResponse,
-    );
-    await new Promise((done) => setTimeout(done, 300));
-    rmSync(comments, { recursive: true, force: true });
-    mkdirSync(comments);
-    await new Promise((done) => setTimeout(done, 300));
-    written.length = 0;
-    writeFileSync(join(comments, 'later.json'), '{}');
-
-    await vi.waitFor(() => expect(written.some((chunk) => chunk.startsWith('event: comments'))).toBe(true), {
-      timeout: 3000,
-    });
-  });
-
   it('answers the parts list of every product, or of one, and 404 for an unknown one', async () => {
     const { ask, loaded } = await serveAcme(acme());
     const all = await ask('/__design/system');
