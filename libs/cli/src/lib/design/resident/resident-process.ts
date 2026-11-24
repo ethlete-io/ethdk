@@ -20,7 +20,7 @@ import { WarmDraw } from '../warm-draw';
 import { watchEmbedStalls } from '../embed-stall';
 import { checkoutGoneOf, watchCheckout } from './checkout-gone';
 import { ResidentClient, runsInResident, takeResidentForServe } from './client';
-import { removeDiscovery, writeDiscovery } from './discovery';
+import { processStartOf, removeDiscovery, writeDiscovery } from './discovery';
 import { ABORTED_EXIT, ResidentRequest, ResidentRun, residentIdleMsOf, startResidentServer } from './server';
 
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
@@ -259,6 +259,7 @@ export const serveResident = async (options: { target: string }) => {
     build,
     token,
     startedAt: new Date().toISOString(),
+    started: processStartOf(process.pid) ?? undefined,
   });
   console.error(`resident design process ${process.pid} serves on 127.0.0.1:${server.port}`);
 
@@ -308,6 +309,7 @@ export const hostResidentInServe = async (options: {
       build: client.build,
       token,
       startedAt: new Date().toISOString(),
+      started: processStartOf(process.pid) ?? undefined,
       owner: 'serve',
     });
   } finally {

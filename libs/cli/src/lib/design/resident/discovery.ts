@@ -1,4 +1,5 @@
 import { writeDesignFile } from '../system/design-file';
+import { execFileSync } from 'child_process';
 import { mkdirSync, readFileSync, renameSync, rmSync } from 'fs';
 import { join } from 'path';
 
@@ -10,6 +11,8 @@ export type Discovery = {
   build: string;
   token: string;
   startedAt: string;
+  /** The process start time from `processStartOf`; a pid is only stopped when it still matches. */
+  started?: string;
   /** `serve` when a running `design serve` hosts the resident; the client never stops that process. */
   owner?: 'serve';
 };
@@ -24,6 +27,37 @@ export const isAlive: IsAlive = (pid) => {
   } catch (error) {
     return (error as NodeJS.ErrnoException).code !== 'ESRCH';
   }
+};
+
+export type StartOf = (pid: number) => string | null;
+
+const linuxStartOf: StartOf = (pid) => {
+  try {
+    const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+    const fields = stat.slice(stat.lastIndexOf(')') + 2).split(' ');
+
+    return fields[19] ? `linux:${fields[19]}` : null;
+  } catch {
+    return null;
+  }
+};
+
+const psStartOf: StartOf = (pid) => {
+  try {
+    const started = execFileSync('ps', ['-o', 'lstart=', '-p', String(pid)], { encoding: 'utf8' }).trim();
+
+    return started ? `ps:${started}` : null;
+  } catch {
+    return null;
+  }
+};
+
+/** When the process started, as a token that tells a reused pid apart; null when it cannot be read (Windows). */
+export const processStartOf: StartOf = (pid) => {
+  if (process.platform === 'linux') return linuxStartOf(pid);
+  if (process.platform === 'win32') return null;
+
+  return psStartOf(pid);
 };
 
 export const residentDirOf = (target: string) => join(target, 'tmp', 'design-resident');

@@ -76,6 +76,7 @@ const startFake = async (options: { target: string; build?: string; owner?: 'ser
     build,
     token,
     startedAt: '',
+    started: `start-${pid}`,
     ...(owner ? { owner } : {}),
   });
 
@@ -88,6 +89,7 @@ const clientOf = (overrides: Partial<ResidentClient> = {}) => {
     build: 'b1',
     env: {},
     alive: (pid) => live.has(pid) || pid === process.pid,
+    startOf: (pid) => `start-${pid}`,
     kill: vi.fn(),
     start: vi.fn(),
     out: (text) => void out.push(text),

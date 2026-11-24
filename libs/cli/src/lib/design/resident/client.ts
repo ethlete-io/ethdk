@@ -6,7 +6,16 @@ import { join, resolve } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { acquireApiLock, releaseApiLock } from '../../api/lock';
 import { LIB_READER_ENV } from '../system/lib-build-lock';
-import { IsAlive, isAlive, liveDiscoveryOf, removeDiscovery, residentDirOf, Discovery } from './discovery';
+import {
+  Discovery,
+  IsAlive,
+  isAlive,
+  liveDiscoveryOf,
+  processStartOf,
+  removeDiscovery,
+  residentDirOf,
+  StartOf,
+} from './discovery';
 import { FORWARDED_ENV, ResidentFrame, ResidentRequest, TOKEN_HEADER } from './server';
 
 /** `ETHLETE_DESIGN_RESIDENT=0` keeps every design call in its own process, as `CI` does. */
@@ -24,6 +33,7 @@ export type ResidentClient = {
   build: string;
   env: NodeJS.ProcessEnv;
   alive: IsAlive;
+  startOf: StartOf;
   kill: (pid: number, signal: NodeJS.Signals) => void;
   start: (target: string) => void;
   out: (text: string) => void;
@@ -59,6 +69,7 @@ export const realResidentClient = (build: string): ResidentClient => ({
   build,
   env: process.env,
   alive: isAlive,
+  startOf: processStartOf,
   kill: (pid, signal) => {
     try {
       process.kill(pid, signal);
@@ -153,6 +164,15 @@ const fits = ({ found, target, client }: { found: Discovery; target: string; cli
   found.checkout === resolve(target) && found.build === client.build;
 
 const stopProcess = async ({ found, target, client }: { found: Discovery; target: string; client: ResidentClient }) => {
+  if (!found.started || client.startOf(found.pid) !== found.started) {
+    removeDiscovery(target, found.pid);
+    client.err(
+      `removed the resident design record (pid ${found.pid}): the process there is not the one that wrote it - stopped nothing\n`,
+    );
+
+    return false;
+  }
+
   await call({ found, method: 'POST', path: '/stop', timeoutMs: client.pingTimeoutMs });
 
   const until = client.now() + client.stopGraceMs;
@@ -162,6 +182,8 @@ const stopProcess = async ({ found, target, client }: { found: Discovery; target
   if (client.alive(found.pid)) client.kill(found.pid, 'SIGKILL');
 
   removeDiscovery(target, found.pid);
+
+  return true;
 };
 
 const coldStartFileOf = (target: string) => join(residentDirOf(target), 'cold-start.json');
@@ -232,8 +254,7 @@ export const takeResidentForServe = async (
     return { ok: false, reason: `design serve (pid ${found.pid}) already hosts the resident design process` };
   }
 
-  if (found && !servedBy(found)) {
-    await stopProcess({ found, target, client });
+  if (found && !servedBy(found) && (await stopProcess({ found, target, client }))) {
     client.err(`stopped the resident design process (pid ${found.pid}); this design serve hosts it now\n`);
   }
 
@@ -272,9 +293,9 @@ export const ensureResident = async (target: string, client: ResidentClient): Pr
       if (fits({ found, target, client })) {
         if (await answers(found, client)) return found;
 
-        await stopProcess({ found, target, client });
-
-        return `the resident design process (pid ${found.pid}) did not answer and was stopped`;
+        return (await stopProcess({ found, target, client }))
+          ? `the resident design process (pid ${found.pid}) did not answer and was stopped`
+          : `the resident design process (pid ${found.pid}) did not answer`;
       }
 
       await stopProcess({ found, target, client });
@@ -386,8 +407,7 @@ export const runThroughResident = async (options: {
   if (code === null)
     client.err(`the resident design process (pid ${found.pid}) ended without an answer - running in-process\n`);
 
-  if (!servedBy(found) && existsSync(join(target, SCRATCH_MARKER))) {
-    await stopProcess({ found, target, client });
+  if (!servedBy(found) && existsSync(join(target, SCRATCH_MARKER)) && (await stopProcess({ found, target, client }))) {
     client.err(`stopped the resident design process (pid ${found.pid}) of this scratch copy\n`);
   }
 
@@ -410,8 +430,8 @@ export const stopResident = async (target: string, client: ResidentClient) => {
     return 0;
   }
 
-  await stopProcess({ found, target, client });
-  client.out(`stopped the resident design process (pid ${found.pid})\n`);
+  if (await stopProcess({ found, target, client }))
+    client.out(`stopped the resident design process (pid ${found.pid})\n`);
 
   return 0;
 };

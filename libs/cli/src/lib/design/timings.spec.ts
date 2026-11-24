@@ -144,6 +144,7 @@ describe('recordRun', () => {
       build: 'b',
       env: {},
       alive: () => true,
+      startOf: () => null,
       kill: () => undefined,
       start: () => undefined,
       out: () => undefined,

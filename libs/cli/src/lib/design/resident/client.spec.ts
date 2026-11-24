@@ -5,8 +5,8 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ResidentClient, runThroughResident, SCRATCH_MARKER, stopResident } from './client';
-import { isAlive, readDiscovery, writeDiscovery } from './discovery';
+import { ResidentClient, runThroughResident, SCRATCH_MARKER, stopResident, takeResidentForServe } from './client';
+import { isAlive, processStartOf, readDiscovery, writeDiscovery } from './discovery';
 import { ResidentRun, startResidentServer } from './server';
 
 const DEAD_PID = 2 ** 22 + 17;
@@ -44,7 +44,15 @@ const startFake = async (options: {
   });
 
   closers.push(server.close);
-  writeDiscovery(target, { pid, port: server.port, checkout: target, build, token, startedAt: '' });
+  writeDiscovery(target, {
+    pid,
+    port: server.port,
+    checkout: target,
+    build,
+    token,
+    startedAt: '',
+    started: `start-${pid}`,
+  });
 
   return { server, stopped, pid };
 };
@@ -56,6 +64,7 @@ const clientOf = (overrides: Partial<ResidentClient> = {}) => {
     build: 'b1',
     env: {},
     alive: (pid) => live.has(pid),
+    startOf: (pid) => `start-${pid}`,
     kill: vi.fn(),
     start: vi.fn(),
     out: (text) => void out.push(text),
@@ -133,7 +142,15 @@ describe('runThroughResident', () => {
   it('replaces a discovery file whose process died', async () => {
     const target = checkoutOf();
 
-    writeDiscovery(target, { pid: DEAD_PID, port: 1, checkout: target, build: 'b1', token: 't', startedAt: '' });
+    writeDiscovery(target, {
+      pid: DEAD_PID,
+      port: 1,
+      checkout: target,
+      build: 'b1',
+      token: 't',
+      startedAt: '',
+      started: `start-${DEAD_PID}`,
+    });
 
     const { client } = clientOf({ start: vi.fn(() => void startFake({ target })) });
 
@@ -157,7 +174,15 @@ describe('runThroughResident', () => {
     const hung = nextPid++;
 
     live.add(hung);
-    writeDiscovery(target, { pid: hung, port: 9, checkout: target, build: 'b1', token: 't', startedAt: '' });
+    writeDiscovery(target, {
+      pid: hung,
+      port: 9,
+      checkout: target,
+      build: 'b1',
+      token: 't',
+      startedAt: '',
+      started: `start-${hung}`,
+    });
 
     const { client, err } = clientOf({ kill: vi.fn((pid) => void live.delete(pid)) });
 
@@ -235,5 +260,65 @@ describe('stopResident', () => {
       `stopped the resident design process (pid ${fake.pid})\n`,
       'no resident design process runs\n',
     ]);
+  });
+});
+
+describe('takeResidentForServe with a record from another process table', () => {
+  const recordOfSleep = (started: (pid: number) => string | undefined) => {
+    const target = checkoutOf();
+    const child = spawn('sleep', ['60'], { stdio: 'ignore' });
+    const pid = child.pid ?? 0;
+
+    closers.push(async () => void child.kill('SIGKILL'));
+    writeDiscovery(target, {
+      pid,
+      port: 1,
+      checkout: target,
+      build: 'b1',
+      token: 't',
+      startedAt: '',
+      started: started(pid),
+    });
+
+    const { client, err } = clientOf({
+      alive: isAlive,
+      startOf: processStartOf,
+      kill: (dead) => process.kill(dead, 'SIGKILL'),
+    });
+
+    return { target, pid, client, err };
+  };
+
+  it('stops nothing when the start time of the pid does not match the record', async () => {
+    const { target, pid, client, err } = recordOfSleep(() => 'linux:1');
+    const taken = await takeResidentForServe(target, client);
+
+    if (taken.ok) taken.release();
+    await delay(100);
+
+    expect(isAlive(pid)).toBe(true);
+    expect(readDiscovery(target)).toBe(null);
+    expect(err.join('')).toContain('stopped nothing');
+  });
+
+  it('stops nothing when the record holds no start time', async () => {
+    const { target, pid, client } = recordOfSleep(() => undefined);
+    const taken = await takeResidentForServe(target, client);
+
+    if (taken.ok) taken.release();
+    await delay(100);
+
+    expect(isAlive(pid)).toBe(true);
+  });
+
+  it('stops the resident whose start time matches the record', async () => {
+    const { target, pid, client, err } = recordOfSleep((own) => processStartOf(own) ?? undefined);
+    const taken = await takeResidentForServe(target, client);
+
+    if (taken.ok) taken.release();
+    await delay(100);
+
+    expect(isAlive(pid)).toBe(false);
+    expect(err.join('')).toContain(`stopped the resident design process (pid ${pid})`);
   });
 });
