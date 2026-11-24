@@ -268,6 +268,12 @@ const variantChangesOf = ({ current, drawn }: { current: PartFacts; drawn: PartF
   note: drawn.note === current.note ? null : { before: current.note, after: drawn.note },
 });
 
+const inheritedOf = ({ base, drawn }: { base: string[]; drawn: string[] }) => {
+  const inherited = base.filter((state) => !drawn.includes(state));
+
+  return inherited.length > 0 ? { inherited } : {};
+};
+
 /** Maps `items` side by side, each started once the server could answer other requests, and stops once `signal` aborts. */
 const inTurns = <TItem, TResult>(
   { items, signal }: { items: readonly TItem[]; signal?: AbortSignal | undefined },
@@ -354,7 +360,8 @@ const partTargetsOf = async ({
   signal?: AbortSignal;
   compare: boolean;
 }) => {
-  const currentFile = product.parts.find((entry) => partKeyOf(entry) === part)?.file;
+  const currentPart = product.parts.find((entry) => partKeyOf(entry) === part);
+  const currentFile = currentPart?.file;
   const current =
     currentFile && load
       ? await readPartModule({
@@ -394,6 +401,9 @@ const partTargetsOf = async ({
       ...(problem || !current || current.problem
         ? {}
         : { changes: variantChangesOf({ current, drawn: { states, note } }) }),
+      ...(problem || currentPart?.origin !== 'base' || !current || current.problem
+        ? {}
+        : inheritedOf({ base: current.states, drawn: states })),
       ...(problem ? { error: problem } : {}),
     };
   });
@@ -581,7 +591,7 @@ const startedListing = ({
  * draws it (`targets`, one entry per part and variant, tagged with `part`, the first part's entries first), with the states it
  * draws the same as the product now (`unchanged`), where each state it draws differently differs from the product's
  * picture (`crops`, by state: picture size, box, pixel count and regions), the states it adds and drops and its part note when that differs
- * from the product's (`changes`), and the live report
+ * from the product's (`changes`), for a part inherited from the base the base states it does not draw (`inherited`), and the live report
  * of the agent (`report`, `null` when none runs). `&sketch=<layer>/<name>@<sketch>` answers that sketch alone, compared, without
  * `problems`: no rule check, so it answers before a full listing. `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
  * while a full listing's comparison of the same sources is kept: no rule check, no pictures. `&targets=no` also leaves out `targets`: no part module loads.
