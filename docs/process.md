@@ -5,7 +5,7 @@ How the doc session and the builder work. A process change edits this page.
 ## Roles
 
 - One doc session talks to the human (German) and keeps the queue. One builder builds.
-- The builder uses at most two subagents at a time, a fresh one per slice.
+- The builder only coordinates: subagents write every change, a fresh one per slice. It keeps two at work whenever two slices can move.
 - Only the doc session orders the queue. The builder takes the first open row that can move without the human; if none can, it takes a row marked "Füllarbeit", then a parked row. An empty queue never stops it.
 - The builder reports only to the doc session, in batched messages.
 
