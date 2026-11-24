@@ -134,50 +134,41 @@ export const variantCell = (props: Props) => {
         }"
         ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span
         >${same ? SKETCHES_LABELS.unchanged : ''}</span
-      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-same-as-rest>${SKETCHES_LABELS.sameAsRest(sameAsRest)}</span>` : ''}</span
+      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-same-as-rest>${sameAsRest.join(', ')} = ${state}</span>` : ''}</span
     >
     ${frame(props)}
   </div>`;
 };
 
-const demo = html`<div class="flex h-30 items-center justify-center bg-et-surface-bg text-ui-lg text-et-surface">
+const demo = html`<div class="flex h-full items-center justify-center bg-et-surface-bg text-ui-lg text-et-surface">
   Speichern
 </div>`;
 
-const base: Props = { state: 'rest', width: 480, shot: demo };
+const base: Props = { state: 'default', width: 240, height: 120, shot: demo };
+const crop = {
+  shown: 60,
+  crop: 'scale(2) translate(-60px, -45px)',
+  mark: { left: 72, top: 46, width: 96, height: 28 },
+};
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
-  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a rest cell names the states folded as drawn like it (hover, active = rest). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; the host places comment pins on their point in the shot through the overlay slot.',
+  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a base-state cell names the states folded as drawn like it after its own state name (hover, active = default). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; the host places comment pins on their point in the shot through the overlay slot.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [240],
   states: {
     changed: base,
-    unchanged: { ...base, same: true },
+    unchanged: { ...base, state: 'hover', same: true },
     'same-as-rest': { ...base, sameAsRest: ['hover', 'active'] },
-    loading: { ...base, loading: true, height: 120, shown: 120 },
-    'loading-small': { ...base, loading: true, height: 24, shown: 24 },
-    cropped: {
-      ...base,
-      height: 120,
-      shown: 60,
-      crop: 'scale(2) translate(-40px, -30px)',
-      mark: { left: 36, top: 26, width: 80, height: 40 },
-    },
-    stacked: {
-      ...base,
-      height: 120,
-      shown: 60,
-      crop: 'scale(2) translate(-40px, -30px)',
-      mark: { left: 36, top: 26, width: 80, height: 40 },
-      stacked: true,
-    },
+    loading: { ...base, state: 'active', loading: true, shown: 120 },
+    'loading-small': { ...base, state: 'focus-visible', loading: true, height: 16, shown: 16 },
+    cropped: { ...base, state: 'hover', ...crop },
+    stacked: { ...base, state: 'hover', ...crop, stacked: true },
     pinned: {
       ...base,
-      height: 120,
       overlay: [
-        { x: 120, y: 40 },
-        { x: 360, y: 90, selected: true },
+        { x: 60, y: 30 },
+        { x: 180, y: 90, selected: true },
       ]
         .map(pinAt)
         .join(''),
@@ -185,19 +176,19 @@ export default definePart({
   },
   describe: {
     changed:
-      'A changed state cell with rest above the half-scale Speichern shot; check that the label sits on the first row and the shot fits the 240px frame.',
+      'A changed state cell with default above the Speichern shot at its own size; check that the label sits on the first row and the shot fills the 240px frame.',
     unchanged:
-      'A state the variant leaves as it was; check that the whole cell is dimmed and the label reads rest · unverändert.',
+      'A state the variant leaves as it was; check that the whole cell is dimmed and the label reads hover · unverändert.',
     'same-as-rest':
-      'A rest cell standing in for the folded states the variant draws the same; check that hover, active = rest follows the state name, muted.',
+      'A base-state cell standing in for the folded states the variant draws the same; check that hover, active = default follows default, muted.',
     cropped:
-      'A cell cropped to its change; check the magnified change fills the frame and the accent crop mark frames it.',
+      'A cell cropped to its change; check the magnified Speichern fills the frame and the accent crop mark frames it.',
     stacked:
       'A cropped cell standing for a group of states; check the two shorter bars under the frame that read as a stack.',
     pinned:
       'A cell with two comment pins; check that each pin point sits on its spot in the shot and the selected pin shows the accent fill.',
     'loading-small':
-      'A loading cell whose frame is 12px tall; check that only the spinner shows, with no Lädt text, and nothing leaves the frame.',
+      'A loading cell whose frame is 16px tall; check that only the spinner shows, with no Lädt text, and nothing leaves the frame.',
     loading:
       'A cell whose shot still loads; check the spinner with Lädt centered in the empty busy frame and the label row unchanged.',
   },
@@ -211,7 +202,7 @@ export default definePart({
   frame: (body) =>
     html`<div
       class="grid grid-cols-(--sk-frame) gap-y-space-1"
-      style="--sk-frame: 240px; --sk-scale: 0.5; --sk-label: 13px"
+      style="--sk-frame: 240px; --sk-scale: 1; --sk-label: 13px"
     >
       ${body}
     </div>`,
