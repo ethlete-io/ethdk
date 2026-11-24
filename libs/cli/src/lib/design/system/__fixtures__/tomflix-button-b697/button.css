@@ -1,0 +1,10 @@
+@layer components {
+  .tf-button-stage {
+    background: var(--et-surface-background-solid);
+  }
+
+  .tf-button-stage .tf-button {
+    --et-button-border-radius: 999px;
+    --et-button-padding: 0 24px;
+  }
+}

@@ -297,6 +297,15 @@ export const drawState = <TProps>(part: Part<TProps>, props: TProps): Promise<Dr
   );
 
 /**
+ * Draws a part imported from `@system/<layer>/<name>` inside a base part. A product may replace that part with props
+ * of its own, so `props` is not checked against them: pass what the base part's own version takes.
+ */
+export const renderSystemPart = (
+  part: { render: (props: never, options?: RenderOptions) => DrawnPart | Promise<DrawnPart> },
+  props: object,
+): Promise<DrawnPart> => Promise.resolve(part.render(props as never));
+
+/**
  * Types a part where it is written. A part file default-exports the result, and may export named
  * helpers next to it that other parts import from `@system/<layer>/<name>`. Without type
  * arguments, `TProps` comes from the props `render` takes and the state names stay in the type, so

@@ -1,7 +1,7 @@
 import { anchoredDialog, anchoredDialogStyles } from '@ethlete/components/design/anchored-dialog';
 import { checkboxGroup, checkboxGroupStyles } from '@ethlete/components/design/checkbox';
 import { control } from '@ethlete/components/design/control';
-import { definePart, drawing } from '@design-system';
+import { definePart, drawing, renderSystemPart } from '@design-system';
 import button from '@system/components/button';
 import edge from './anchored-dialog.css?inline';
 
@@ -71,7 +71,7 @@ export default definePart({
     anchor,
     modal = true,
   }: Props) => {
-    const apply = await button.render({ label: 'Apply', variant: 'filled' });
+    const apply = await renderSystemPart(button, { label: 'Apply', variant: 'filled' });
     const pane = content ?? (kind === 'filter' ? filter(apply.body) : openPoints());
 
     return drawing({

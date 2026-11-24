@@ -1,0 +1,27 @@
+import { forceInteraction, interactionRows, ng } from '@design-system';
+
+type Interaction = 'hover' | 'active' | 'focus-visible';
+type Variant = 'filled' | 'tonal' | 'outline';
+
+export type ButtonProps = { label: string; variant: Variant; disabled: boolean; interaction?: Interaction };
+
+const rows = interactionRows<ButtonProps, 'default' | 'tonal' | 'outline' | 'disabled', Interaction>(
+  {
+    default: { label: 'Abspielen', variant: 'filled', disabled: false },
+    tonal: { label: 'Merken', variant: 'tonal', disabled: false },
+    outline: { label: 'Mehr Infos', variant: 'outline', disabled: false },
+    disabled: { label: 'Abspielen', variant: 'filled', disabled: true },
+  },
+  { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
+);
+
+export const { states, grid } = rows;
+
+export const renderButton = async ({ label, variant, disabled, interaction }: ButtonProps, classes: string) => {
+  const body = await ng(
+    `<button et-button class="tf-button ${classes}" data-et-control="button" variant="${variant}"${disabled ? ' disabled' : ''}>${label}</button>`,
+    { imports: ['ButtonComponent'] },
+  );
+
+  return `<div class="tf-button-stage inline-flex p-3">${interaction ? forceInteraction(body, interaction) : body}</div>`;
+};
