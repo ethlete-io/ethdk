@@ -395,10 +395,6 @@ jobs:
         run: yarn nx run cli:test-dist
         timeout-minutes: 5
 
-      - if: matrix.shard == 1
-        run: node apps/ethlete-studio/e2e/frame-scrollbar.e2e.mjs
-        timeout-minutes: 5
-
       - run: set -o pipefail; yarn studio:e2e 2>&1 | tee "$RUNNER_TEMP/studio-e2e.log"
         timeout-minutes: 40
         env:

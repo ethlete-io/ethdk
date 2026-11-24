@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { shardShareOf } from './shard-share.mjs';
 import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
+import { STANDALONE_FILES, STANDALONE_PAGE } from './standalone-jobs.mjs';
 
 const keyOf = (job) => `${job.page} :: ${job.name}`;
 const jobsOf = (page, names) => names.map((name) => ({ page, name, ownShard: name === 'heavy' }));
@@ -66,6 +67,21 @@ test('the real case list splits into shards within 10 % of the mean measured tim
     Math.max(...loads) <= mean * 1.1,
     `shard loads ${loads.map((load) => load.toFixed(0)).join(' ')} s, mean ${mean.toFixed(0)} s`,
   );
+});
+
+test('every standalone e2e file runs in exactly one of the 8 shards', () => {
+  const runner = fileURLToPath(new URL('./canvas.e2e.mjs', import.meta.url));
+  const listed = [1, 2, 3, 4, 5, 6, 7, 8].flatMap((index) =>
+    execFileSync(process.execPath, [runner, '--list'], {
+      encoding: 'utf8',
+      env: { ...process.env, STUDIO_E2E_SHARD: `${index}/8` },
+    })
+      .split('\n')
+      .filter((line) => line.includes(` ${STANDALONE_PAGE} `))
+      .map((line) => line.trim().split(/\s+/).at(-1)),
+  );
+
+  assert.deepEqual(listed.toSorted(), STANDALONE_FILES.map(({ file }) => file).toSorted());
 });
 
 test('each ownShard job runs alone in one of the last shards', () => {

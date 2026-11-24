@@ -29,6 +29,7 @@ import { copyPart } from './copy-part.mjs';
 import { shootProducts } from './product-matrix.mjs';
 import { settleLayout } from './settle-wait.mjs';
 import { shardShareOf } from './shard-share.mjs';
+import { runStandalone, standaloneJobsOf } from './standalone-jobs.mjs';
 import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
 import { FRAME, measureZoom, ZOOM_BUDGET } from './zoom-budget.mjs';
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
@@ -4284,6 +4285,55 @@ const CASES = [
     },
   },
   {
+    name: 'the sketch toolbar stays clear of the part tree panel and the zoom chip in a narrow window',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads the toolbar',
+    pages: ['Sketches'],
+    run: async (page) => {
+      await listingAnswered(page);
+      const faults = [];
+      const overlapping = [];
+      const onZoom = [];
+
+      for (let width = 700; width <= 1440; width += 20) {
+        await page.setViewportSize({ width, height: NARROW.height });
+        await settle(page);
+        const hit = await page.evaluate(() => {
+          const panel = document.querySelector('main ~ aside')?.getBoundingClientRect();
+          const head = document.querySelector('ethlete-sketch-head');
+          const badge = [...(head?.querySelectorAll('ethlete-sketch-status-badge') ?? [])]
+            .map((element) => element.getBoundingClientRect())
+            .find((rect) => rect.width > 0);
+          const box = head?.getBoundingClientRect();
+          const zoom = document.querySelector('ethlete-zoom-chip')?.getBoundingClientRect();
+
+          if (!panel || !box || !zoom) return null;
+
+          const crosses = (rect, other) =>
+            rect.left < other.right && rect.right > other.left && rect.top < other.bottom && rect.bottom > other.top;
+
+          return { head: crosses(box, panel), badge: !!badge && crosses(badge, panel), zoom: crosses(box, zoom) };
+        });
+
+        if (!hit) return { ok: false, detail: `no toolbar, panel or zoom chip at ${width} px` };
+        if (hit.head || hit.badge) overlapping.push(width);
+        if (hit.zoom) onZoom.push(width);
+      }
+      if (overlapping.length) {
+        faults.push(
+          `toolbar under the panel at ${overlapping.length} widths from ${overlapping[0]} to ${overlapping.at(-1)} px`,
+        );
+      }
+      if (onZoom.length) {
+        faults.push(`toolbar over the zoom chip at ${onZoom.length} widths from ${onZoom[0]} to ${onZoom.at(-1)} px`);
+      }
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || 'toolbar clear of the panel and the zoom chip from 700 to 1440 px',
+      };
+    },
+  },
+  {
     name: 'the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms',
     listingMayPend: 'waits for the listing itself (listingAnswered) before it reads heads and pictures',
     pages: ['Sketches', 'Wide'],
@@ -5985,6 +6035,7 @@ const lead = async () => {
         : [],
     ),
   );
+  if (!perfOnly && engine === 'chromium' && !proofRow && !view) queue.push(...standaloneJobsOf({ only, pageGroups }));
   const matched = queue.length;
 
   if (!matched && (only || pageGroups)) {
@@ -6018,7 +6069,7 @@ const lead = async () => {
 
   if (shard) queue.splice(0, queue.length, ...shardShareOf(queue, shard, keyOf, shardWeights));
   const unweighted = shard ? queue.filter((job) => !job.ownShard && shardWeights[keyOf(job)] === undefined).length : 0;
-  const quiet = (job) => !!job && !!CASES[job.case].quiet;
+  const quiet = (job) => !!job && !job.file && !!CASES[job.case].quiet;
 
   queue.sort((a, b) => quiet(a) - quiet(b) || (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
 
@@ -6034,8 +6085,8 @@ const lead = async () => {
       `${queue.length} of ${matched} cases${shardLabel}, ${seconds(knownMs).trim()} by the last local timings${unweightedNote}:`,
     );
     for (const job of queue) {
-      const undelayed = delayPicturesMs && CASES[job.case].delayPictures === false ? '  [pictures not delayed]' : '';
-      const unheld = holdListingsMs && CASES[job.case].holdListings === false ? '  [listings not held]' : '';
+      const undelayed = delayPicturesMs && CASES[job.case]?.delayPictures === false ? '  [pictures not delayed]' : '';
+      const unheld = holdListingsMs && CASES[job.case]?.holdListings === false ? '  [listings not held]' : '';
 
       console.log(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}${undelayed}${unheld}`);
     }
@@ -6142,6 +6193,12 @@ const lead = async () => {
         if (current && !firstCase) {
           firstCase = true;
           console.log(`[canvas-e2e] first case starting at ${seconds(performance.now() - runStartedAt).trim()}`);
+        }
+        if (current?.file) {
+          record(current, await runStandalone(current, { built: built ?? scratch, port: await freePort() }));
+          current = undefined;
+          busy.delete(index);
+          return giveJob();
         }
         child.send({ job: current ?? null });
       };
