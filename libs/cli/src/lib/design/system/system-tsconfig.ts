@@ -3,6 +3,7 @@ import { isAbsolute, relative, resolve, sep } from 'path';
 import { typecheck, typecheckAsync, TypecheckResult } from '../typecheck';
 import { DRAWING_COMPILER_OPTIONS, writeTsconfigText } from '../calls-tsconfig';
 import { assetRoot as servedAssetRoot, editorAssetRootOf, installedAssetRoot } from '../package-root';
+import { collapseShippedErrors } from '../shipped-skew';
 import { readConfig } from '../design-config';
 import { workRootOf } from '../work-root';
 import { renderPackagesOf, typePathsOf } from '../render-packages';
@@ -43,7 +44,12 @@ export const writeSystemTsconfig = (options: { target: string; product: Resolved
 const productTypecheckOf = (options: { target: string; product: ResolvedProduct & SharedDirs }) => {
   const tsconfig = writeSystemTsconfig(options);
 
-  return { target: options.target, tsconfig, buildInfo: `${tsconfig}.tsbuildinfo` };
+  return {
+    target: options.target,
+    tsconfig,
+    buildInfo: `${tsconfig}.tsbuildinfo`,
+    collapse: (raw: string) => collapseShippedErrors(raw, options.target),
+  };
 };
 
 /** The one typecheck of a product, shared by `design check` and every sketch variant. */
