@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { frameFindingsOf, probeFrame } from './frame-probe.mjs';
 import { decodePng, differenceOf, inkOf } from './png.mjs';
+import { textOnlyCopiesOf } from './text-only.mjs';
 import { leftRefusalsOf, readTranscript } from './transcript.mjs';
 import { logoFindingsOf, trapFindingsOf } from './trap-check.mjs';
 import { treeFindingsOf } from './tree-check.mjs';
@@ -118,10 +119,17 @@ const collectShots = async ({ base, shotsDir, browser }) => {
     writeFileSync(file, png);
     progress(`shot ${file.split('/').pop()}`);
     const picture = decodePng(png);
-    const frame = await probeView({ base, browser, view, width: picture.width }).catch((error) => ({
+    const { textless, ...frame } = await probeView({ base, browser, view, width: picture.width }).catch((error) => ({
       error: String(error).slice(0, 200),
     }));
-    shots.push({ ...view, file, note: answer.headers.get('x-et-note'), picture, frame });
+    shots.push({
+      ...view,
+      file,
+      note: answer.headers.get('x-et-note'),
+      picture,
+      ...(textless && { textless: decodePng(textless) }),
+      frame,
+    });
   }
   return { shots, sketches: allSketches, parts: allParts, skipped: Math.max(views.length - MAX_SHOTS, 0) };
 };
@@ -191,6 +199,12 @@ export const findingsOf = ({ shots, refusals, result, tree = [] }) => {
           one.file,
         );
       }
+      for (const copies of textOnlyCopiesOf(states))
+        add(
+          `${where({ ...copies[0], state: null })}: Zustände ${copies.map((shot) => shot.state).join(', ')} zeigen dasselbe Bild, nur der Text ist anders.`,
+          'Jeder Zustand ändert nur seine Überschrift und zeichnet nicht, wofür er steht.',
+          copies[0].file,
+        );
     }
   }
   for (const call of refusals)
@@ -250,7 +264,7 @@ export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] 
     const { shots, sketches, parts, skipped } = await collectShots({ base: server.base, shotsDir, browser });
     writeFileSync(
       join(runDir, 'shots.json'),
-      JSON.stringify(shots, (key, value) => (key === 'picture' ? undefined : value), 1),
+      JSON.stringify(shots, (key, value) => (key === 'picture' || key === 'textless' ? undefined : value), 1),
     );
     const findings = findingsOf({
       shots,

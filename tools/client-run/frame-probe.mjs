@@ -220,10 +220,32 @@ const cellPageOf = (url, width, height) => `<!doctype html>
   ${height ? '' : FOLLOW_HEIGHT}
 </body>`;
 
+const STRIP_TEXT = `(() => {
+  const root = document.getElementById('root');
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const texts = [];
+  while (walker.nextNode()) texts.push(walker.currentNode);
+  for (const node of texts) node.textContent = '';
+  root.style.width = 'max-content';
+})()`;
+
+/**
+ * The frame's root as a PNG with every text node emptied and the root at its content width, so two states that
+ * differ only in their words come out pixel-equal. Changes the frame: call it after the probe.
+ */
+const textlessShotOf = async (cell) => {
+  await cell.evaluate(STRIP_TEXT);
+  await cell.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+  return cell
+    .locator('#root')
+    .screenshot({ animations: 'disabled' })
+    .catch(() => null);
+};
+
 /**
  * Opens the frame of one state the way a Studio cell shows it, `width` wide and as high as the frame reports (or a
  * fixed `height`, as a cell of a part drawn at a preset height), and
- * returns its probe and failed image requests. Launch the browser with scrollbars shown (`ignoreDefaultArgs: ['--hide-scrollbars']`).
+ * returns its probe, failed image requests and `textless` shot. Launch the browser with scrollbars shown (`ignoreDefaultArgs: ['--hide-scrollbars']`).
  */
 export const probeFrame = async ({ page, url, width, height }) => {
   const failedImages = [];
@@ -247,7 +269,8 @@ export const probeFrame = async ({ page, url, width, height }) => {
       .catch(() => undefined);
     await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
     await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
-    return { probe: await cell.evaluate(PROBE_SCRIPT), failedImages: [...new Set(failedImages)] };
+    const probe = await cell.evaluate(PROBE_SCRIPT);
+    return { probe, failedImages: [...new Set(failedImages)], textless: await textlessShotOf(cell) };
   } finally {
     page.off('response', onResponse);
     page.off('requestfailed', onFailed);
