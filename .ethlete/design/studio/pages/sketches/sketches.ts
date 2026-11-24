@@ -369,14 +369,14 @@ const confirmDialog = async (kind: ConfirmKind, part: string, variant: string) =
       })
     : await anchoredDialog.render({
         label: SKETCHES_LABELS.discardConfirm.label,
-        placement: 'top',
+        placement: 'top-end',
         anchor: '[data-sk-discard]',
         content,
       });
   return {
     body: html`<div
-      class="absolute ${merge ? 'top-full left-0 mt-2.5' : 'bottom-full left-1/2 mb-2.5'} z-10"
-      style="transform: translate3d(${merge ? '0' : '-50%'}, 0, 0)"
+      class="absolute ${merge ? 'top-full left-0 mt-2.5' : 'right-1/2 bottom-full mb-2.5'} z-10"
+      style="transform: translate3d(${merge ? '0' : '2.6rem'}, 0, 0)"
     >
       ${dialog.body}
     </div>`,

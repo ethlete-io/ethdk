@@ -1034,9 +1034,7 @@ const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) =
 const discardScene = (page) =>
   page
     .evaluate(() => {
-      const buttons = [...document.querySelectorAll('ethlete-sketches button')].filter((button) =>
-        button.textContent.includes('Verwerfen'),
-      );
+      const buttons = [...document.querySelectorAll('ethlete-sketches [data-sk-discard] button')];
       const box = buttons[0]?.getBoundingClientRect();
       const hit = box && document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
 
@@ -1056,7 +1054,7 @@ const discardScene = (page) =>
 
 const openDiscardConfirm = async (page) => {
   const clicked = await page
-    .locator('ethlete-sketches button', { hasText: 'Verwerfen' })
+    .locator('ethlete-sketches [data-sk-discard] button')
     .first()
     .click()
     .then(
@@ -1251,9 +1249,7 @@ const withEditSketch = async (page, designPort, run) => {
     return page.evaluate(() => ({
       variants: [...new Set([...document.querySelectorAll('[data-sk-variant]')].map((cell) => cell.dataset.skVariant))],
       folded: !!document.querySelector('[data-sk-folded]'),
-      discard: [...document.querySelectorAll('ethlete-sketches button')].some((button) =>
-        button.textContent.includes('Verwerfen'),
-      ),
+      discard: !!document.querySelector('ethlete-sketches [data-sk-discard] button'),
     }));
   };
   const pick = async (variant) => {
