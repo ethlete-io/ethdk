@@ -50,3 +50,8 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
 - Titelkarte a, b, c: focus-visible gleich wie rest (8 Befunde). Button a, b, c: default, hover und disabled gleich; der Agent sagt, das liegt an den vorläufigen Farben (B697).
 - Hero a, b, c ohne Logo: Titel „John Williams: Live in Vienna“ läuft 20 px aus dem Kasten (Tinte gemessen). Suspect: echter Befund.
 - Hero und Shell warten wieder auf die Wahl von Button und Logo (Lauf ohne ac7d61188).
+- Feedback des Menschen 24.11. (Bild: foundations/logo Variante a, sieben Frames). Der Judge meldete nichts davon:
+  - Bilder größer als ihr Frame: mark, colour-variants und minimum-size laufen unten aus dem Frame; anatomy, clear-space und motion füllen ihn nicht.
+  - Viele Frames sind exakte Kopien: anatomy, clear-space, colour-variants, misuse und motion zeigen dasselbe T mit einem Titel. Kein Aufbau, kein Schutzraum, keine Farbvariante, keine falsche Verwendung. Ziel verfehlt.
+  - motion bewegt sich nicht.
+  - Der Agent schrieb selbst „Aufbau, Schutzraum und Mindestgröße sind vorerst nur Platzhalter“ (findings.md:53); das Werkzeug ließ die Variante trotzdem fertig zur Wahl werden.
