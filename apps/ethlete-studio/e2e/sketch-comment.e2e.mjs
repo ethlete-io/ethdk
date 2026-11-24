@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { copyPart } from './copy-part.mjs';
 import { placeSketchDraft } from './sketch-comment-draft.mjs';
 
 const args = process.argv.slice(2);
@@ -9,7 +10,8 @@ const valueOf = (flag, fallback) => (args.includes(flag) ? args[args.indexOf(fla
 const checkout = resolve(valueOf('--checkout', resolve(import.meta.dirname, '../../..')));
 const built = args.includes('--built') ? resolve(valueOf('--built')) : undefined;
 const product = valueOf('--product', 'studio');
-const target = valueOf('--sketch', 'pages/system');
+const ownTarget = 'components/zoom-chip';
+const target = valueOf('--sketch', ownTarget);
 const shot = valueOf('--shot');
 const afterShot = resolve(valueOf('--after-shot', '/tmp/kommentar-senden/after.png'));
 const commentsRoot = join(checkout, '.ethlete/design');
@@ -21,6 +23,52 @@ const commentFiles = (dir = commentsRoot) =>
 
     return entry.name.endsWith('.json') && dir.endsWith('/comments') ? [path] : [];
   });
+
+const ownSketch = join(checkout, '.ethlete/design/studio/sketches', ownTarget.replace('/', '-'));
+const createsOwnSketch = target === ownTarget && !existsSync(ownSketch);
+
+if (createsOwnSketch) {
+  const part = join(checkout, '.ethlete/design/studio', ownTarget);
+
+  if (!existsSync(part)) {
+    console.log(`FAIL  part ${ownTarget} does not exist in ${checkout}; pass an existing sketch with --sketch <part>`);
+    process.exit(1);
+  }
+
+  mkdirSync(join(ownSketch, 'a', dirname(ownTarget)), { recursive: true });
+  copyPart(part, join(ownSketch, 'a', ownTarget));
+
+  const variantFile = join(ownSketch, 'a', ownTarget, 'zoom-chip.ts');
+  const needle = 'return [name, target ? { ...(props as Props), target } : props];';
+  const source = readFileSync(variantFile, 'utf8');
+
+  if (!source.includes(needle)) {
+    console.log(
+      `FAIL  ${variantFile} no longer holds \`${needle}\`; update the variant change or pass --sketch <part>`,
+    );
+    process.exit(1);
+  }
+
+  writeFileSync(
+    variantFile,
+    source.replace(
+      needle,
+      () =>
+        "return [name, name === 'reset' ? { ...(props as Props), percent: 110 } : target ? { ...(props as Props), target } : props];",
+    ),
+  );
+  writeFileSync(
+    join(ownSketch, 'sketch.json'),
+    JSON.stringify({
+      target: ownTarget,
+      targets: [ownTarget],
+      status: 'ready',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      rounds: [{ key: 'r1', title: '', note: 'sketch-comment e2e' }],
+      variantInfo: { a: { authors: ['sketch-comment-e2e'], round: 'r1' } },
+    }),
+  );
+}
 
 const result = await withStudio(
   async ({ page, studioUrl }) => {
@@ -73,6 +121,8 @@ const result = await withStudio(
   },
   { checkout, built },
 );
+
+if (createsOwnSketch) rmSync(ownSketch, { recursive: true, force: true });
 
 console.log(`${result.ok ? 'PASS' : 'FAIL'}  ${product} sketch ${target}: ${result.detail}`);
 console.log(`\n${result.ok ? 1 : 0}/1 passed`);
