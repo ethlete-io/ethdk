@@ -848,6 +848,40 @@ describe('SketchesComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-sk-matrix]')).not.toBeNull();
   });
 
+  it('keeps a shown sketch visible when a state turns unsized after the first open (zoom to 30 %, pictures refused)', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? 1076 : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? 1000 : 0;
+    });
+    const variant = (key: string, sized: boolean): SketchRow => ({
+      key,
+      note: '',
+      width: 1472,
+      shots: [
+        { state: 'desktop', changed: true, height: 672 },
+        { state: 'phone', changed: true, height: 876, width: 422, ...(sized ? {} : { sized: false as const }) },
+      ],
+    });
+    const fixture = await render({
+      part: 'elements/shell-app',
+      rows: ['a', 'b', 'c'].map((key) => variant(key, true)),
+      camera: 'fit',
+    });
+    const world = () => fixture.nativeElement.querySelector('[data-sk-rows] > div') as HTMLElement;
+
+    expect(world().classList).not.toContain('invisible');
+
+    fixture.componentRef.setInput(
+      'rows',
+      ['a', 'b', 'c'].map((key) => variant(key, false)),
+    );
+    await fixture.whenStable();
+
+    expect(world().classList).not.toContain('invisible');
+  });
+
   describe('matrix blocks', () => {
     beforeEach(() => {
       vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {

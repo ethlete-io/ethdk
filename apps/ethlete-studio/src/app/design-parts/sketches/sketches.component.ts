@@ -36,6 +36,7 @@ import {
   Subject,
   switchMap,
   take,
+  takeWhile,
   tap,
   timer,
 } from 'rxjs';
@@ -565,9 +566,11 @@ export class SketchesComponent {
     );
   });
   private sizingHeld = toSignal(
-    toObservable(this.unsizedRows).pipe(
+    toObservable(computed(() => (this.listMeasured() ? this.unsizedRows() : null))).pipe(
+      filter((unsized) => unsized !== null),
       distinctUntilChanged(),
       switchMap((unsized) => (unsized ? merge([true], timer(SIZING_HOLD_MS).pipe(map(() => false))) : [false])),
+      takeWhile((held) => held, true),
     ),
     { initialValue: true },
   );
