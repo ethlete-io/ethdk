@@ -24,7 +24,7 @@ only the final message, so one run costs you a few hundred tokens instead of the
 Below, `<skill-dir>` is the directory this file sits in.
 
 ```bash
-node <skill-dir>/codex-agent.mjs -m gpt-6.1-terra -e medium "<prompt>"
+node <skill-dir>/codex-agent.mjs -m gpt-6.2-sol -e medium "<prompt>"
 ```
 
 Options: `-m` model, `-e` effort (`low`, `medium`, `high`, `xhigh`), `-C` working root,
@@ -36,12 +36,10 @@ id and the log path. Read the log only when a run fails.
 
 ## Pick the model
 
-| Model           | The work it fits                                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------------------------ |
-| `gpt-6-luna`    | Fast and cheap: a lookup, a grep, a question about one file.                                                 |
-| `gpt-6.1-terra` | Balanced agentic coding. The default for real work, and the wrapper's default.                               |
-| `gpt-6.1-sol`   | A reliable workhorse for a straight task. Its usage limit runs out fast, so ask the user before you pick it. |
-| `gpt-6-astra`   | Complex, demanding work. The most expensive of the four, so ask the user before you pick it.                 |
+| Model           | The work it fits                                                                        |
+| --------------- | --------------------------------------------------------------------------------------- |
+| `gpt-6.2-sol`   | The default for real work, lookups included, and the wrapper's default. No need to ask. |
+| `gpt-6.2-astra` | The hardest work. Ask the user (through the doc session) before you pick it.            |
 
 Effort follows both the flag and the prompt. Pass `-e low` for a lookup and `-e high` for a
 hard bug. Say "keep it brief" in the prompt when you want a short answer.
