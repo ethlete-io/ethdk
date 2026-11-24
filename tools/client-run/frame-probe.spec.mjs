@@ -7,6 +7,7 @@ import { frameFindingsOf } from './frame-probe.mjs';
 // Probes of the 2026-11-24-0056 title card on a copy of the run: variant b with the logo path an agent would
 // write for `~/bilder-von-tom`, variant c at 120 px, variant a at 40 px and as the agent left it. The `title-card-film`
 // probes are the human's tomflix title card (state film, 112 and 168 px) in a cell that follows the reported height.
+// The `run-1029-*` probes are the title card fallback (b, c) and the colors sheet of run 2026-11-24-1029.
 // `card-fixed-height-168` is the card of apps/ethlete-studio/e2e/fixtures/frame-scrollbar in a 168x120 cell.
 const { probes } = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures/frame-probes.json'), 'utf8'));
 const seenOf = (name) => frameFindingsOf(probes[name]).map((finding) => finding.seen);
@@ -29,6 +30,12 @@ describe('frameFindingsOf', () => {
       'Text „2024 · Film“ läuft aus seinem Kasten.',
       'Inhalt ist größer als der Rahmen (40x179) und wird abgeschnitten.',
     ]);
+  });
+
+  it('reports nothing for text whose glyph box passes its box by 2-3 px while its ink stays inside', () => {
+    assert.deepEqual(seenOf('run-1029-b-fallback'), []);
+    assert.deepEqual(seenOf('run-1029-c-fallback'), []);
+    assert.deepEqual(seenOf('run-1029-colors-kinosaal'), []);
   });
 
   it('reports the scrollbar a cell keeps when the frame measured its height with the scrollbar', () => {

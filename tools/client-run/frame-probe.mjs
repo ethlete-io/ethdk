@@ -1,6 +1,6 @@
 /**
- * Reads, in the drawn frame of one state, what a human would see broken: images that did not load, text cut off
- * or running out of its box, content larger than the frame, and a scrollbar on the page or on an element in it.
+ * Reads, in the drawn frame of one state, what a human would see broken: images that did not load, text whose ink is
+ * cut off or runs out of its box, content larger than the frame, and a scrollbar on the page or on an element in it.
  * Runs in the page; returns plain data so `frameFindingsOf` can judge it without a browser.
  */
 export const PROBE_SCRIPT = `(() => {
@@ -42,6 +42,15 @@ export const PROBE_SCRIPT = `(() => {
       naturalWidth: img.naturalWidth,
       box: rectOf(img),
     }));
+  const ink = document.createElement('canvas').getContext('2d');
+  const inkInsetOf = (style, text) => {
+    ink.font = [style.fontStyle, style.fontWeight, style.fontSize, style.fontFamily].join(' ');
+    const m = ink.measureText(text);
+    return {
+      top: Math.max(Math.floor(m.fontBoundingBoxAscent - m.actualBoundingBoxAscent), 0),
+      bottom: Math.max(Math.floor(m.fontBoundingBoxDescent - m.actualBoundingBoxDescent), 0),
+    };
+  };
   const texts = [];
   for (const el of all) {
     const own = [...el.childNodes].filter((node) => node.nodeType === 3 && node.textContent.trim());
@@ -60,6 +69,7 @@ export const PROBE_SCRIPT = `(() => {
       text: el.textContent.trim().replace(/\\s+/g, ' ').slice(0, 60),
       box: rectOf(el),
       textBox: { x: Math.round(text.x), y: Math.round(text.y), width: Math.round(text.width), height: Math.round(text.height) },
+      ink: inkInsetOf(style, own.map((node) => node.textContent).join(' ')),
       clips: clips(style),
       ellipsis: style.textOverflow === 'ellipsis',
       scroll: { width: el.scrollWidth, height: el.scrollHeight },
@@ -117,6 +127,12 @@ const outside = (inner, outer) =>
 
 const shown = (box) => box.width > 0 && box.height > 0;
 
+const inkBoxOf = ({ textBox, ink = { top: 0, bottom: 0 } }) => ({
+  ...textBox,
+  y: textBox.y + ink.top,
+  height: Math.max(textBox.height - ink.top - ink.bottom, 0),
+});
+
 /**
  * The findings a human would notice in one drawn state, from its probe and the image requests that failed.
  * Each finding is `{ seen, cause }` in German, as `findings.md` lists them.
@@ -136,16 +152,18 @@ export const frameFindingsOf = ({ probe, failedImages = [] }) => {
   for (const text of probe.texts) {
     if (!shown(text.box)) continue;
     const quote = `„${text.text}“`;
-    const clipper = text.clippers.find((up) => outside(text.textBox, up.box) > SLACK);
+    const inkBox = inkBoxOf(text);
+    const clipper = text.clippers.find((up) => outside(inkBox, up.box) > SLACK);
     if (
       text.clips &&
-      (text.scroll.width > text.client.width + SLACK || text.scroll.height > text.client.height + SLACK)
+      (text.scroll.width > text.client.width + SLACK ||
+        text.scroll.height > text.client.height + (text.ink?.bottom ?? 0) + SLACK)
     )
       add(
         `Text ${quote} ist abgeschnitten${text.ellipsis ? ' (endet mit …)' : ''}.`,
         `${text.element} ist ${text.client.width}x${text.client.height} groß, der Text braucht ${text.scroll.width}x${text.scroll.height}.`,
       );
-    else if (!text.clips && outside(text.textBox, text.box) > SLACK)
+    else if (!text.clips && outside(inkBox, text.box) > SLACK)
       add(
         `Text ${quote} läuft aus seinem Kasten.`,
         `Text ${text.textBox.width}x${text.textBox.height} in ${text.element} ${text.box.width}x${text.box.height}.`,
@@ -153,7 +171,7 @@ export const frameFindingsOf = ({ probe, failedImages = [] }) => {
     else if (clipper)
       add(
         `Text ${quote} wird vom Rand abgeschnitten.`,
-        `Text ragt ${outside(text.textBox, clipper.box)} px über ${clipper.element} hinaus, das überlaufenden Inhalt versteckt.`,
+        `Text ragt ${outside(inkBox, clipper.box)} px über ${clipper.element} hinaus, das überlaufenden Inhalt versteckt.`,
       );
   }
   for (const bar of probe.scrollbars ?? [])
