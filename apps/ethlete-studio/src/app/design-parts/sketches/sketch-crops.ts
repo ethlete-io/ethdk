@@ -15,6 +15,7 @@ export type SketchCropGroup = {
   reasons: SketchCropReason[];
   crop: Box;
   magnify: number;
+  whole: boolean;
 };
 
 const reasonsOf = (changes: readonly { variant: CropVariant; change: SketchChange }[]): SketchCropReason[] => {
@@ -55,6 +56,7 @@ export const cropOf = (change: Pick<SketchChange, 'width' | 'height'>, box: Box)
 /**
  * The changed states of the variant rows, one group per crop: states whose every variant changes the same pixels in
  * the same place form one group, in the order the rows list them. A state without a measured change is in no group.
+ * A group is `whole` when its crop is the whole picture.
  */
 export const cropGroupsOf = (rows: readonly SketchRow[]): SketchCropGroup[] => {
   const variants = rows.filter((row) => row.key !== SKETCH_CURRENT);
@@ -88,6 +90,7 @@ export const cropGroupsOf = (rows: readonly SketchRow[]): SketchCropGroup[] => {
       reasons: reasonsOf(named),
       crop,
       magnify: first.width / crop.width,
+      whole: crop.width >= first.width && crop.height >= first.height,
     });
   }
 

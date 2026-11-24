@@ -1473,9 +1473,9 @@ describe('SketchesComponent', () => {
       expect(root.querySelectorAll('[data-sk-state="hover"]')).toHaveLength(0);
       expect(textOf(gutters[0]?.querySelector('[data-sk-crop-count]'))).toBe(LABELS.sameCrop(2));
       expect(textOf(gutters[0]?.querySelector('[data-sk-crop-reason]'))).toBe('1358 px in 3 Stellen · 4,6× vergrößert');
-      expect(textOf(gutters[1]?.querySelector('[data-sk-crop-reason]'))).toBe('90000 px in 1 Stelle · 1,0× vergrößert');
+      expect(gutters[1]?.querySelector('[data-sk-crop-reason]')).toBeNull();
       expect(gutters[1]?.querySelector('[data-sk-crop-count]')).toBeNull();
-      expect(gutters[1]?.querySelector('[data-sk-crop-locator]')).not.toBeNull();
+      expect(gutters[1]?.querySelector('[data-sk-crop-locator]')).toBeNull();
       expect(root.querySelectorAll('[data-sk-state="rest"]')).toHaveLength(0);
 
       const frame = root.querySelector<HTMLElement>('[data-sk-frame="x open"]');
@@ -1509,6 +1509,33 @@ describe('SketchesComponent', () => {
       expect(edges?.classList.contains('absolute')).toBe(true);
       expect((edges?.firstElementChild as HTMLElement | null)?.style.height).toBe(frame?.style.height);
       expect(root.querySelector('[data-sk-matrix]')?.parentElement?.classList.contains('min-w-full')).toBe(true);
+    });
+
+    it('names no pixels, magnification or screen toggle beside a crop that is the whole picture (tomflix colors)', async () => {
+      const picture = { width: 992, height: 1000, box: { x: 16, y: 16, width: 960, height: 968 }, regions: 1 };
+      const variant = (key: string, pixels: number): SketchRow => ({
+        key,
+        note: '',
+        width: 992,
+        shots: [{ state: 'dark', changed: true, height: 1000, change: { ...picture, pixels } }],
+      });
+      const rows: SketchRow[] = [
+        { key: 'current', note: '', width: 992, shots: [{ state: 'dark', changed: false, height: 1000 }] },
+        variant('a', 914156),
+        variant('b', 907315),
+        variant('c', 913310),
+      ];
+
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute('data-sk-rows') ? 1100 : 0;
+      });
+
+      const root: HTMLElement = (await render({ rows, camera: '100' })).nativeElement;
+      const gutter = root.querySelector('[data-sk-gutter]');
+
+      expect(textOf(gutter)).toBe('dark');
+      expect(gutter?.querySelector('[data-sk-crop-locator]')).toBeNull();
+      expect(gutter?.querySelector('[data-sk-screen-toggle]')).toBeNull();
     });
 
     it('switches one crop group to the whole screen and back', async () => {
@@ -1574,7 +1601,6 @@ describe('SketchesComponent', () => {
 
       expect(root.querySelector('[data-sk-frame="x moved"]')?.hasAttribute('data-sk-cropped')).toBe(false);
       expect(root.querySelector('[data-sk-frame="x open"]')?.hasAttribute('data-sk-cropped')).toBe(true);
-      expect(textOf(root.querySelectorAll('[data-sk-screen-toggle]')[1])).toBe(LABELS.cropScreen);
 
       root.querySelectorAll<HTMLButtonElement>('[data-sk-screen-toggle]')[0]?.click();
       await fixture.whenStable();

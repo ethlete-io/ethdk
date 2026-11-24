@@ -89,11 +89,11 @@
                     data-sk-gutter
                   >
                     <span class="font-code">{{ state }}</span>
-                    @if (group) {
+                    @if (group && group.states.length > 1) {
+                      <span data-sk-crop-count>{{ LABELS.sameCrop(group.states.length) }}</span>
+                    }
+                    @if (group && !group.whole) {
                       @let whole = !croppedOf(state);
-                      @if (group.states.length > 1) {
-                        <span data-sk-crop-count>{{ LABELS.sameCrop(group.states.length) }}</span>
-                      }
                       @for (reason of group.reasons; track $index; let last = $last) {
                         <span [class.text-et-surface-muted]="!headHidden()" data-sk-crop-reason
                           >{{ reasonTextOf(reason)
