@@ -959,21 +959,36 @@ const eventLog = (startedAt = Date.now()) => {
 let streamTimeline = eventLog();
 let writeSeen = false;
 let awaitingListing = false;
+let writtenIds = [];
 
 const markWrite = (what) => {
   writeSeen = true;
   awaitingListing = true;
+  writtenIds.push(what.replace(/\.json$/u, ''));
   streamTimeline.add('wrote', what);
 };
+
+const listedIdsOf = (response, ids) =>
+  response.json().then(
+    (body) => {
+      const listed = new Set((body?.comments ?? []).map((comment) => comment.id));
+
+      return `${ids.filter((id) => listed.has(id)).length}/${ids.length} written ids listed`;
+    },
+    (error) => `unreadable body: ${String(error).split('\n')[0]}`,
+  );
 
 const watchStream = (page) => {
   streamTimeline = eventLog();
   writeSeen = false;
   awaitingListing = false;
+  writtenIds = [];
 
   const pathOf = (request) => new URL(request.url()).pathname;
   const onRequest = (request) => {
     if (pathOf(request) === '/__design/comment-events') streamTimeline.add('stream request', request.url());
+    else if (writeSeen && pathOf(request) === '/__design/comments')
+      streamTimeline.add('comments request', request.url());
     else if (awaitingListing && pathOf(request) === '/__design/sketches') {
       awaitingListing = false;
       streamTimeline.add('first listing request after the write', request.url());
@@ -982,6 +997,8 @@ const watchStream = (page) => {
   const onResponse = (response) => {
     if (pathOf(response.request()) === '/__design/comment-events')
       streamTimeline.add('stream response', response.url());
+    else if (writeSeen && pathOf(response.request()) === '/__design/comments')
+      streamTimeline.add('comments response', response.url(), listedIdsOf(response, [...writtenIds]));
   };
 
   page.on('request', onRequest);
@@ -2431,7 +2448,15 @@ const CASES = [
               () => false,
             );
 
-          return { ok: seen, detail: `resolved pin on the variant of the sketch view: ${seen}` };
+          if (seen) return { ok: true, detail: `resolved pin on the variant of the sketch view: ${seen}` };
+
+          const cells = await pinCount(`ethlete-sketches [data-sk-frame="a ${WIDE_SKETCH.changed}"]`);
+          const after = await pinCount('ethlete-sketches ethlete-comment-pin [aria-label$="resolved"]');
+
+          return {
+            ok: false,
+            detail: `resolved pin on the variant of the sketch view: false (resolved pins ${before} -> ${after}, cells of a ${WIDE_SKETCH.changed}: ${cells})`,
+          };
         }
 
         const before = await pinCount('ethlete-comment-pin');
