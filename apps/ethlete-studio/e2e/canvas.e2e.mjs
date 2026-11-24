@@ -1995,7 +1995,11 @@ const CASES = [
             .map((chip) => ({ chip, box: chip.getBoundingClientRect() }))
             .filter(({ box }) => box.width > 0)
             .map(({ chip, box }) => {
-              const area = (chip.closest(CANVAS) ?? chip.offsetParent).getBoundingClientRect();
+              let holder = chip.parentElement;
+
+              while (holder && !holder.querySelector(CANVAS)) holder = holder.parentElement;
+
+              const area = (chip.closest(CANVAS) ?? holder ?? chip.offsetParent).getBoundingClientRect();
 
               return { right: area.right - box.right, bottom: area.bottom - box.bottom, left: box.left };
             }),
