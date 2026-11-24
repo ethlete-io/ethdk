@@ -110,6 +110,31 @@ run('bash', [
   sdk,
 ]);
 
+run(
+  'node',
+  [
+    'node_modules/@ethlete/cli/src/index.js',
+    ...['design', 'product', 'new', 'tomflix', '--base', '@ethlete/components', '--from-project', 'tomflix'],
+    ...['--colors', 'dark', '--accent', '#e50914'],
+  ],
+  { cwd: target },
+);
+run('git', ['add', '.ethlete/design'], { cwd: target });
+run(
+  'git',
+  [
+    '-c',
+    'user.name=designer',
+    '-c',
+    'user.email=designer@example.invalid',
+    'commit',
+    '-q',
+    '-m',
+    'chore: start the tomflix product',
+  ],
+  { cwd: target },
+);
+
 const entries = writeImageSet({
   catalog: values.catalog ? resolve(values.catalog) : join(resolve(values.source), '.dev/srv'),
   out: join(`${target}-home`, 'bilder-von-tom'),

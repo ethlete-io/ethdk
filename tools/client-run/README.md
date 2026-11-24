@@ -12,6 +12,8 @@ yarn client-run --judge <run dir> [--sdk <dir>]  # judges an earlier run again, 
 
 `expect.json` names what the order asks for; the judge reports a missing sketch or a wrong variant count.
 
+The start setup is `tools/scripts/clean-slate-run/overlays/tomflix` plus `et design product new tomflix --base @ethlete/components --from-project tomflix --colors dark --accent #e50914`, run and committed in the copy: the run starts on a dark colour base.
+
 ## When it runs
 
 There is no schedule: the human names a client run, and the doc session starts it.
