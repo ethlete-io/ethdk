@@ -10,6 +10,7 @@ import {
   sampleMarkDriftLines,
   stateInnerLines,
   interactionRepeatLines,
+  weakStateWarnings,
   variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -46,6 +47,7 @@ vi.mock('./ready-shots', () => {
     sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
     stateInnerLines: vi.fn(async (): Promise<string[]> => []),
     interactionRepeatLines: vi.fn(async (): Promise<string[]> => []),
+    weakStateWarnings: vi.fn(async (): Promise<string[]> => []),
     variantChangesShown: vi.fn(async (): Promise<VariantChange[] | string> => [
       { variant: 'a', changed: 1, change: 'variant a changes default' },
     ]),
@@ -958,6 +960,31 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines).toContain(`ready will refuse: ${repeated}`);
     expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
+  });
+
+  it('warns in ready of a state that barely differs from its rest state', async () => {
+    const target = acme();
+    const lines = output();
+    const weak =
+      'components/button a: components/button default-hover barely differs from its rest state default - 18 px change beyond a shift of 4 px';
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    vi.mocked(weakStateWarnings).mockResolvedValueOnce([weak]);
+    await write(target, 'ready', 'components/button', '--product', 'acme');
+
+    expect(lines).toContain(weak);
   });
 
   it('refuses ready while a variant adds nothing visible, and check warns of it', async () => {

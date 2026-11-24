@@ -120,3 +120,49 @@ export const pixelPairOf = (a: Buffer, b: Buffer): PixelPair => {
 
   return { same, change: same ? null : changeBoxOf(a, b) };
 };
+
+/**
+ * How many pixels of `after` differ from `before` by the tolerance of `looksTheSame` and match no pixel of `before`
+ * within `reach` px, or the other way round, whichever is more; counting stops at `limit`. A part that only moves by
+ * up to `reach` px counts next to nothing. `limit` when the pictures differ in size or do not decode.
+ */
+export const visibleChangeOf = (
+  pair: { before: Buffer; after: Buffer },
+  { reach, limit }: { reach: number; limit: number },
+) => {
+  const { before, after } = pair;
+
+  try {
+    const left = decodePng(before);
+    const right = decodePng(after);
+
+    if (left.width !== right.width || left.height !== right.height) return limit;
+
+    const { width, height } = left;
+    const wordAt = (data: Buffer, at: { x: number; y: number }) => data.readUInt32BE((at.y * width + at.x) * 4);
+    const unmatched = (from: Buffer, to: Buffer) => {
+      let count = 0;
+
+      for (let y = 0; y < height && count < limit; y++)
+        for (let x = 0; x < width && count < limit; x++) {
+          const word = wordAt(to, { x, y });
+
+          if (!pixelsDiffer(wordAt(from, { x, y }), word)) continue;
+
+          let matched = false;
+
+          for (let ny = Math.max(0, y - reach); ny <= Math.min(height - 1, y + reach) && !matched; ny++)
+            for (let nx = Math.max(0, x - reach); nx <= Math.min(width - 1, x + reach) && !matched; nx++)
+              matched = !pixelsDiffer(wordAt(from, { x: nx, y: ny }), word);
+
+          if (!matched) count++;
+        }
+
+      return count;
+    };
+
+    return Math.max(unmatched(left.data, right.data), unmatched(right.data, left.data));
+  } catch {
+    return limit;
+  }
+};

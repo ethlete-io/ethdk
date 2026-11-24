@@ -126,6 +126,8 @@ the Legacy tab as reference for moving them into a product, with no picks and no
 - Every interactive part (a poster card, a search field, a chip, a button) draws its own hover and focus-visible
   states next to rest. A page has none: it imports those parts and shows theirs, so never write a hover or
   focus rule only in a page's CSS.
+- A state must read as different from rest at a glance: change colour, surface, outline or shadow. A lift or move
+  of a few px alone barely differs, and `sketch check` and `sketch ready` warn about it.
 - The app shell (masthead, menu, navigation, and any header or footer every page shares) is one element each
   page imports, never drawn inside a page. This holds in the first sketch too.
 

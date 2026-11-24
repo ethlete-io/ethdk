@@ -43,6 +43,7 @@ import {
   sampleMarkDriftLines,
   restLikeStateWarnings,
   sketchRenderLines,
+  weakStateWarnings,
   stateInnerLines,
   interactionRepeatLines,
   variantChangesShown,
@@ -1023,6 +1024,8 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
       { product, sketch },
       `${identical.join('\n')}\n${sketch.target} draws variants alike - fix them before ready`,
     );
+
+  (await timedPhase('weak-states', () => weakStateWarnings(shots))).forEach((warning) => console.warn(warning));
 
   const undeclared = await timedPhase('undeclared', () =>
     undeclaredLinesOf({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
