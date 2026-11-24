@@ -486,10 +486,12 @@ export class CanvasFrameComponent {
 
   private newest = computed(() => this.iframes().at(-1)?.nativeElement ?? null);
 
-  protected failure = linkedSignal<HTMLIFrameElement | null, string | null>({
+  private pageFailure = linkedSignal<HTMLIFrameElement | null, string | null>({
     source: () => this.newest(),
     computation: () => null,
   });
+
+  protected failure = computed(() => this.gridView()?.failure() ?? this.pageFailure());
 
   protected loading = computed(
     () =>
@@ -621,6 +623,7 @@ export class CanvasFrameComponent {
   protected reloadPage(event: Event) {
     event.stopPropagation();
     this.pageReload.emit();
+    this.gridView()?.reloadFailed();
 
     const iframe = this.newest();
     const src = this.sources().at(-1)?.src;
@@ -686,7 +689,7 @@ export class CanvasFrameComponent {
     if (load === 'pending') return EMPTY;
 
     if (load === 'painted') {
-      this.failure.set(null);
+      this.pageFailure.set(null);
       this.shown.set(src);
       this.settled$.next(src);
 
@@ -695,7 +698,7 @@ export class CanvasFrameComponent {
 
     return failedLoadReason$(src).pipe(
       tap((reason) => {
-        this.failure.set(reason);
+        this.pageFailure.set(reason);
         this.settled$.next(src);
       }),
       switchMap(() => (retry ? designServerBack$(src) : EMPTY)),

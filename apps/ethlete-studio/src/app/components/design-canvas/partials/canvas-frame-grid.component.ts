@@ -46,7 +46,7 @@ import { SYSTEM_LABELS } from '../../../i18n/system-labels';
 import { stateDiff$ } from '../../../../host/design';
 import { Rect, Size } from '../canvas-math';
 import { diffMarkOf } from './diff-mark';
-import { paintedFrame$ } from '../frame-paint';
+import { FRAME_UNREPORTED_PAINT_MS, failedLoadReason$, frameLoad$, paintedFrame$ } from '../frame-paint';
 import { ShotRankDirective } from './shot-rank';
 import { ShotStateComponent, ShotStateDirective } from './shot-state';
 
@@ -117,6 +117,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
 })
 export class CanvasFrameCellComponent {
   private sanitizer = inject(DomSanitizer);
+  private unreportedPaintMs = inject(FRAME_UNREPORTED_PAINT_MS);
   public cell = input.required<FrameCell>();
 
   public live = input(false);
@@ -166,6 +167,8 @@ export class CanvasFrameCellComponent {
 
   protected failed = computed(() => this.shotState()?.state() === 'failed');
 
+  public failure = linkedSignal<string, string | null>({ source: () => this.src(), computation: () => null });
+
   protected slow = computed(() => this.shotState()?.state() === 'slow');
 
   /** The window of the cell's live page once it painted; `null` while the cell shows a shot. */
@@ -202,6 +205,20 @@ export class CanvasFrameCellComponent {
       )
       .subscribe();
 
+    toObservable(this.page)
+      .pipe(
+        switchMap(({ iframe, src }) =>
+          iframe
+            ? frameLoad$(iframe, { unreportedMs: this.unreportedPaintMs }).pipe(
+                switchMap((load) => (load === 'failed' ? failedLoadReason$(src) : of(null))),
+              )
+            : of(null),
+        ),
+        tap((reason) => this.failure.set(reason)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     toObservable(this.live)
       .pipe(
         switchMap((live) => (live ? EMPTY : this.decodedShot$())),
@@ -221,6 +238,12 @@ export class CanvasFrameCellComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  public reload() {
+    const iframe = this.iframe()?.nativeElement;
+
+    if (iframe) iframe.src = this.src();
   }
 
   protected readScreenshotSize(event: Event) {
@@ -578,6 +601,13 @@ export class CanvasFrameGridComponent {
     };
   });
 
+  public failure = computed(
+    () =>
+      this.cellViews()
+        .find((view) => view.failure() !== null)
+        ?.failure() ?? null,
+  );
+
   constructor() {
     toObservable(this.observed)
       .pipe(
@@ -594,6 +624,10 @@ export class CanvasFrameGridComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  public reloadFailed() {
+    for (const view of this.cellViews()) if (view.failure() !== null) view.reload();
   }
 
   /** The window of the cell `id` once its live page painted, in the first colour scheme that painted; `null` before. */
