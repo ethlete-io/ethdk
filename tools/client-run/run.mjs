@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { referenceAccentOf } from './accent.mjs';
 import { writeImageSet } from './image-set.mjs';
+import { registerInStudio } from './studio-register.mjs';
 
 const USAGE = `usage: yarn client-run [--source <tomflix>] [--reference <old design>] [--out <dir>] [--sdk <built sdk copy>] [--titles <n>] [--model <m>]
        yarn client-run --judge <run dir> [--sdk <built sdk copy>]     judge an earlier run again, with that sdk's cli`;
@@ -148,4 +149,10 @@ console.log(`client-run: image set of ${entries.length} titles, ${entries.filter
 const status = runAgent({ runDir, target, model: values.model });
 console.log(`client-run: agent exited ${status}`);
 await judge({ runDir, target });
+const registered = registerInStudio({ target });
+console.log(
+  registered === 0
+    ? 'client-run: registered in Studio'
+    : `client-run: Studio did not take the run (exit ${registered})`,
+);
 if (!values.sdk) run('node', [join(repo, 'tools/scripts/scratch-checkout.mjs'), '--remove', sdk]);
