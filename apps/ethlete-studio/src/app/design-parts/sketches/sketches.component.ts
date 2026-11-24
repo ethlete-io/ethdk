@@ -59,6 +59,7 @@ import { mountFrameZoomViewport } from '../../components/design-canvas/frame-zoo
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { SketchHeadComponent } from '../sketch-head/sketch-head.component';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
+import { CANVAS_LABELS } from '../../i18n/canvas-labels';
 import { SYSTEM_TREE_LABELS } from '../../i18n/system-labels';
 import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.component';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
@@ -275,6 +276,7 @@ export class SketchesComponent {
   public sendPhase = input<CommentSendPhase | null>(null);
   public sendReason = input('');
   public confirm = model<SketchConfirm | null>(null);
+  public live = input(false);
   public retry = output();
   public frameActivate = output<string | null>();
   public shellAction = output<ShellAction>();
@@ -314,6 +316,7 @@ export class SketchesComponent {
   private listSize = signalElementDimensions(this.list);
 
   protected readonly LABELS = SKETCHES_LABELS;
+  protected readonly CANVAS_LABELS = CANVAS_LABELS;
   protected readonly IS_WITHDRAWN = isWithdrawn;
   protected readonly CURRENT = SKETCH_CURRENT;
   protected readonly COLUMN_GAP = COLUMN_GAP;

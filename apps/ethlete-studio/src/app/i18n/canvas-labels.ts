@@ -1,6 +1,7 @@
 export const CANVAS_LABELS = {
   label: 'Design Canvas',
   loading: 'Lädt',
+  live: 'Live · Esc',
   loadFailed: 'Laden fehlgeschlagen.',
   unanswered: 'Der Design-Server antwortet nicht.',
   reload: 'Neu laden',

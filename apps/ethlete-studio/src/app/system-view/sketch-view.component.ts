@@ -262,6 +262,7 @@ const scrollOf = (data: unknown) =>
       [tree]="shell().tree"
       [shell]="shell()"
       [restoredCamera]="openedCamera()"
+      [live]="activeShot() !== null"
       (commentModeChange)="commentStore.toggle()"
       (commentStart)="startComment($event)"
       (commentCancel)="commentStore.cancel()"
@@ -970,6 +971,16 @@ export class SketchViewComponent {
 
       if (part !== null && this.focusPart(part)) this.pendingPart.set(null);
     });
+
+    fromEvent<MessageEvent>(this.document.defaultView ?? [], 'message')
+      .pipe(
+        filter(
+          (event) => this.shotFrameOf(event.source) !== undefined && frameMessageOf(event.data)?.type === 'escape',
+        ),
+        tap(() => this.activeShot.set(null)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
   protected startComment({ variant, shot, point }: SketchCommentPlace) {

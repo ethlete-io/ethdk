@@ -22,7 +22,7 @@ export const MARK_ACTION: Record<FrameMark | 'rest', string> = {
   loading: '',
 };
 
-export const liveBadge = `<span class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)" data-live-badge>Live · Esc</span>`;
+export const liveBadge = `<span class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)" data-live-badge>${CANVAS_LABELS.live}</span>`;
 
 export const failureBanner = async (reason: string) =>
   html`<div

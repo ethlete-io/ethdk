@@ -95,9 +95,8 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         <span
           class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)"
           data-live-badge
+          >{{ LABELS.live }}</span
         >
-          Live · Esc
-        </span>
       }
     </ng-template>
     @for (copy of copies(); track copy.scheme; let first = $first) {

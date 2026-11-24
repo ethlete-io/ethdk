@@ -20,6 +20,7 @@ import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
+import { liveBadge } from '@system/elements/canvas-frames';
 import disclosurePart, { disclosure } from '@system/components/disclosure';
 import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -102,6 +103,7 @@ type Props = {
   multi?: MultiTargets;
   comments?: CommentPhase;
   confirm?: ConfirmKind;
+  live?: boolean;
 };
 
 type ConfirmKind = 'merge' | 'discard';
@@ -791,6 +793,7 @@ export default definePart<Props>({
     'comments-draft': { camera: 'fit', part: 'narrow', comments: 'draft' },
     'merge-confirm': { camera: 'fit', part: 'narrow', selected: 'b', confirm: 'merge' },
     'discard-confirm': { camera: 'fit', part: 'narrow', confirm: 'discard' },
+    live: { camera: 'fit', part: 'narrow', live: true },
   },
   describe: {
     'page-sketch':
@@ -874,6 +877,7 @@ export default definePart<Props>({
       'Übernehmen of b asks first; check the confirmation dialog anchored to the button with Bestätigen.',
     'discard-confirm':
       'Verwerfen asks first; check the confirmation dialog above the Verwerfen icon in the floating toolbar.',
+    live: 'A frame made live by a double click; check the Live · Esc badge at the top right of the canvas.',
   },
   groups: [
     {
@@ -893,7 +897,7 @@ export default definePart<Props>({
     },
     {
       label: 'Status',
-      states: ['drawing', 'paused', 'auto-merge', 'sketch-only-points', 'sketch-only-points-open'],
+      states: ['drawing', 'paused', 'auto-merge', 'sketch-only-points', 'sketch-only-points-open', 'live'],
     },
     {
       label: 'Agent und Runden',
@@ -953,6 +957,7 @@ export default definePart<Props>({
     multi,
     comments,
     confirm,
+    live = false,
   }) => {
     if (empty) {
       const menu = await studioMenu({ open: false });
@@ -1083,6 +1088,7 @@ export default definePart<Props>({
         })}
       </div>
       ${head.body} ${chip.body}
+      ${live ? html`<div class="pointer-events-none absolute top-space-3 right-space-3 z-3 flex text-ui-sm">${liveBadge}</div>` : ''}
     </div>`;
 
     const menu = await studioMenu({ open: false });

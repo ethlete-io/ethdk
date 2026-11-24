@@ -4064,6 +4064,59 @@ const CASES = [
     },
   },
   {
+    name: 'a live sketch frame shows the Live badge and Esc ends it, also from inside the frame',
+    pages: ['Sketches'],
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      const liveOf = () =>
+        page.evaluate(() => {
+          const badge = document.querySelector('[data-sketches-page] [data-live-badge]');
+          const frame = document.querySelector('[data-shot][data-active] iframe:not(.opacity-0)');
+
+          return {
+            badge:
+              !!badge && badge.getBoundingClientRect().width > 0 && getComputedStyle(badge).visibility !== 'hidden',
+            text: badge?.textContent?.trim() ?? '',
+            interactive: !!frame && getComputedStyle(frame).pointerEvents !== 'none',
+          };
+        });
+
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      const live = await readUntil(page, liveOf, (found) => found.badge && found.interactive);
+
+      await page.keyboard.press('Escape');
+      await settle(page);
+      const ended = await readUntil(page, liveOf, (found) => !found.badge && !found.interactive);
+
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      const again = await readUntil(page, liveOf, (found) => found.badge && found.interactive);
+      const box = await page.locator('[data-shot][data-active] iframe:not(.opacity-0)').first().boundingBox();
+
+      if (box) await page.mouse.click(box.x + 4, box.y + 4);
+      await settle(page);
+      const inFrame = await page.evaluate(() => document.activeElement?.tagName === 'IFRAME');
+
+      await page.keyboard.press('Escape');
+      await settle(page);
+      const endedInFrame = await readUntil(page, liveOf, (found) => !found.badge && !found.interactive);
+
+      return {
+        ok:
+          live.badge &&
+          live.text === 'Live · Esc' &&
+          !ended.badge &&
+          !ended.interactive &&
+          again.badge &&
+          inFrame &&
+          !endedInFrame.badge &&
+          !endedInFrame.interactive,
+        detail: `badge=${live.badge} text="${live.text}" afterEsc=${ended.badge}/${ended.interactive} again=${again.badge} focusInFrame=${inFrame} afterEscInFrame=${endedInFrame.badge}/${endedInFrame.interactive}`,
+      };
+    },
+  },
+  {
     name: 'Space+drag pans',
     run: async (page, state) => {
       const from = state.frame ?? state.empty;

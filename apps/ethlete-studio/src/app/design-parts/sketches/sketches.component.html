@@ -270,6 +270,15 @@
         class="pointer-events-auto shrink-0"
       />
     </div>
+    @if (live()) {
+      <div class="pointer-events-none absolute top-space-3 right-space-3 z-3 flex text-ui-sm">
+        <span
+          class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)"
+          data-live-badge
+          >{{ CANVAS_LABELS.live }}</span
+        >
+      </div>
+    }
   </div>
 </ethlete-shell-page>
 <ng-template #rowTemplate let-row>
