@@ -61,9 +61,13 @@ export const INTERACTIVE_SELECTOR = [
   '[tabindex]:not([tabindex^="-"])',
 ].join(', ');
 
-/** An interactive element of a page: `key` is its role and whitespace-free accessible name, `occurrence` its index among equal keys. */
+/**
+ * An interactive element of a page: `key` is its role and whitespace-free accessible name, `name` the same with its
+ * spaces for a report line, `occurrence` its index among equal keys.
+ */
 export type ActionElement = {
   key: string;
+  name?: string;
   occurrence: number;
   probe: number;
   action: string | null;
@@ -86,11 +90,13 @@ export const actionScanScriptOf = (roots: string[]) => `(() => {
       if (element.matches(':disabled, [aria-disabled="true"]') || element.closest('[inert], [aria-hidden="true"]')) continue;
       if (element.getClientRects().length === 0) continue;
       const role = element.getAttribute('role') ?? (element.tagName === 'INPUT' ? 'input-' + element.type : implicit[element.tagName] ?? (['DIV', 'SPAN'].includes(element.tagName) || element.tagName.includes('-') ? 'generic' : element.tagName.toLowerCase()));
-      const key = role + ' "' + (element.getAttribute('aria-label') ?? element.textContent ?? '').replace(/\\s+/g, '') + '"';
+      const label = element.getAttribute('aria-label') ?? element.textContent ?? '';
+      const key = role + ' "' + label.replace(/\\s+/g, '') + '"';
+      const name = role + ' "' + label.replace(/\\s+/g, ' ').trim() + '"';
       const occurrence = counts.get(key) ?? 0;
       counts.set(key, occurrence + 1);
       element.setAttribute('data-et-action-probe', String(found.length));
-      found.push({ key, occurrence, probe: found.length, action: element.getAttribute('data-et-action'), control: element.getAttribute('data-et-control') });
+      found.push({ key, name, occurrence, probe: found.length, action: element.getAttribute('data-et-action'), control: element.getAttribute('data-et-control') });
     }
   }
   return found;
@@ -343,7 +349,7 @@ export const accessibleNameDriftsOf = <TDesign extends ActionElement>(
 
 /** The failure line for an element the app names differently from the design. */
 export const accessibleNameFailureOf = (options: { app: ActionElement; design: ActionElement }) =>
-  `${ACCESSIBLE_NAME_RULE}: the design names it ${options.design.key}, the app names it ${options.app.key}`;
+  `${ACCESSIBLE_NAME_RULE}: the design names it ${options.design.name ?? options.design.key}, the app names it ${options.app.name ?? options.app.key}`;
 
 /** A script over a design picture that answers, per `data-et-action-probe`, the `data-et-control` names around the element, innermost first. */
 export const enclosingControlsScriptOf = () => `(() => {
@@ -430,8 +436,11 @@ export const ownScopeOf = <TDesign extends ActionElement & { owners: readonly st
 };
 
 /** The name a report line gives an element. */
-export const elementNameOf = (element: ActionElement) =>
-  element.occurrence === 0 ? element.key : `${element.key} (${element.occurrence + 1}.)`;
+export const elementNameOf = (element: ActionElement) => {
+  const name = element.name ?? element.key;
+
+  return element.occurrence === 0 ? name : `${name} (${element.occurrence + 1}.)`;
+};
 
 export type ActionOutcome = {
   emitted: string[];

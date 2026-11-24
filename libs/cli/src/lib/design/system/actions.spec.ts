@@ -14,6 +14,7 @@ import {
   actionScanScriptOf,
   componentSelectorOf,
   drawsStateAlreadyOf,
+  elementNameOf,
   embeddedOwnersScriptOf,
   embeddersOf,
   enclosingControlsScriptOf,
@@ -613,6 +614,27 @@ describe('runActionInput', () => {
         'generic "DesignCanvas"#1',
       ]);
       expect(within).toEqual({ '0': ['canvas'], '1': [] });
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('names an element by its accessible name with its spaces, while keying it without them', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    try {
+      await page.setContent(`<div role="button" tabindex="0" aria-label="Kommentar zu a reset"></div>
+        <div role="button" tabindex="0" aria-label="Kommentar zu a"></div>`);
+
+      const [app, design] = (await page.evaluate(actionScanScriptOf(['body']))) as ActionElement[];
+
+      expect(app?.key).toBe('button "Kommentarzuareset"');
+      expect(app && elementNameOf(app)).toBe('button "Kommentar zu a reset"');
+      expect(app && design && accessibleNameFailureOf({ app, design })).toBe(
+        'ACCESSIBLE-NAME: the design names it button "Kommentar zu a", the app names it button "Kommentar zu a reset"',
+      );
     } finally {
       await page.close();
     }
