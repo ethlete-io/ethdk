@@ -114,7 +114,8 @@ test('without local timings, the real shard 1 starts its heaviest CI-weighted jo
     .trim()
     .split('\n')
     .slice(1)
-    .map((line) => line.replace(/^\s*[\d.]+s {2}(\S+)\s+/, '$1 :: '));
+    .map((line) => line.replace(/^\s*[\d.]+s {2}(\S+)\s+/, '$1 :: '))
+    .filter((key) => key in weights);
   const queue = [
     ...keys.filter((key) => !key.startsWith(`${STANDALONE_PAGE} :: `)),
     ...keys.filter((key) => key.startsWith(`${STANDALONE_PAGE} :: `)),
