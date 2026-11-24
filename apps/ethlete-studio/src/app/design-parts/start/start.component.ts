@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, computed, input, output, signal, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { START_LABELS, StartAccent, StartColors } from '../../i18n/start-labels';
 
@@ -64,8 +64,8 @@ import { START_LABELS, StartAccent, StartColors } from '../../i18n/start-labels'
             >
               @for (item of LABELS.accents; track item.name) {
                 <button
-                  [pressed]="accent() === item"
-                  (click)="accent.set(item)"
+                  [pressed]="accent() === item.name"
+                  (click)="accent.set(item.name)"
                   et-button
                   type="button"
                   variant="outline"
@@ -78,10 +78,10 @@ import { START_LABELS, StartAccent, StartColors } from '../../i18n/start-labels'
             </div>
           </div>
           <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
-            {{ LABELS.prompt({ repo: name, colors: colors(), accent: accent() }) }}
+            {{ LABELS.prompt({ repo: name, colors: colors(), accent: accentItem() }) }}
           </p>
           <button
-            (click)="copyPrompt.emit(LABELS.prompt({ repo: name, colors: colors(), accent: accent() }))"
+            (click)="copyPrompt.emit(LABELS.prompt({ repo: name, colors: colors(), accent: accentItem() }))"
             et-button
             type="button"
             variant="outline"
@@ -141,13 +141,16 @@ export class StartComponent {
   public repo = input<string | undefined>();
   public repos = input<readonly string[]>([]);
   public busy = input(false, { transform: booleanAttribute });
+  public colors = model<StartColors>('both');
+  public accent = model<string>(START_LABELS.accents[0].name);
   public openRepo = output();
   public otherRepo = output();
   public copyPrompt = output<string>();
   public projectChange = output<string>();
 
-  protected colors = signal<StartColors>('both');
-  protected accent = signal<StartAccent>(START_LABELS.accents[0]);
+  protected accentItem = computed<StartAccent>(
+    () => START_LABELS.accents.find((item) => item.name === this.accent()) ?? START_LABELS.accents[0],
+  );
   protected others = computed(() => this.repos().filter((name) => name !== this.repo()));
 
   protected readonly LABELS = START_LABELS;
