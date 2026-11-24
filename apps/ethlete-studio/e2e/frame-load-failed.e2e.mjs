@@ -21,7 +21,7 @@ const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 
 
 process.env['DE_PORT'] ??= '4478';
 
-const SYSTEM_VIEW = { systemProduct: 'studio', systemEntry: 'pages/system' };
+const SYSTEM_VIEW = { systemProduct: 'studio', systemEntry: 'components/zoom-chip' };
 const SKETCH_TARGET = 'components/zoom-chip';
 const SKETCH_VIEW = { systemProduct: 'studio', systemEntry: `sketch:${SKETCH_TARGET}` };
 const SKETCH_MODULE = `/sketches/components-zoom-chip/a/${SKETCH_TARGET}/zoom-chip.ts`;
@@ -29,7 +29,7 @@ const UNRELATED_PART = '.ethlete/design/studio/components/error-toast/error-toas
 const FAILED_TIMEOUT_MS = 60000;
 const PAGE_TARGET = 'pages/sketches';
 const PAGE_SKETCH_VIEW = { systemProduct: 'studio', systemEntry: `sketch:${PAGE_TARGET}` };
-const PAGE_VARIANTS = ['a', 'b', 'c'];
+const PAGE_VARIANTS = { a: 'red', b: 'green', c: 'blue' };
 const DRAWN_TIMEOUT_MS = 180000;
 const SILENT_PAGE = '<!doctype html><html><body></body></html>';
 
@@ -63,15 +63,17 @@ writeFileSync(
 
 const pageSketchFolder = join(checkout, '.ethlete/design/studio/sketches', PAGE_TARGET.replace('/', '-'));
 
-for (const variant of PAGE_VARIANTS) {
+for (const [variant, colour] of Object.entries(PAGE_VARIANTS)) {
   copyPart(join(checkout, '.ethlete/design/studio', PAGE_TARGET), join(pageSketchFolder, variant, PAGE_TARGET));
 
   const pageFile = join(pageSketchFolder, variant, PAGE_TARGET, 'sketches.ts');
 
-  writeFileSync(
-    pageFile,
-    readFileSync(pageFile, 'utf8').replace("label: 'Verwerfen'", `label: 'Verwerfen ${variant}'`),
-  );
+  const source = readFileSync(pageFile, 'utf8');
+  const marked = source.replace(/kit \+\s+styles,/, `kit + styles + 'body * { outline: 1px solid ${colour}; }',`);
+
+  if (marked === source) throw new Error(`${pageFile}: no \`kit + styles\` to mark variant ${variant} with`);
+
+  writeFileSync(pageFile, marked);
 }
 writeFileSync(
   join(pageSketchFolder, 'sketch.json'),
@@ -82,7 +84,7 @@ writeFileSync(
     createdAt: '2026-01-01T00:00:00.000Z',
     rounds: [{ key: 'r1', title: '', note: 'frame-load-failed e2e' }],
     variantInfo: Object.fromEntries(
-      PAGE_VARIANTS.map((variant) => [variant, { authors: ['frame-load-failed-e2e'], round: 'r1' }]),
+      Object.keys(PAGE_VARIANTS).map((variant) => [variant, { authors: ['frame-load-failed-e2e'], round: 'r1' }]),
     ),
   }),
 );
@@ -125,12 +127,48 @@ const silentFrame = async (context) => {
     const marked = await page.locator('ethlete-canvas-frame[data-load-failed]').count();
 
     return {
-      ok: text.includes('Load failed.') && text.includes('sent no frame message') && reload > 0 && marked > 0,
+      ok: text.includes('Laden fehlgeschlagen.') && text.includes('keine Frame-Nachricht') && reload > 0 && marked > 0,
       detail: `banner "${text}", reload buttons ${reload}, marked frames ${marked}`,
     };
   } finally {
     await page.unroute(isPartFrame, silence);
   }
+};
+
+const cellsOf = async (page, variant) => {
+  const cells = await page.$$(`ethlete-sketch-view [data-shot${variant ? `^="${variant} "` : ''}]`);
+
+  return Promise.all(
+    cells.map(async (cell) => {
+      const key = (await cell.getAttribute('data-shot')) ?? '';
+      const picture = await cell
+        .$$eval('img[data-shot-picture]', (images) =>
+          images.some((image) => image.complete && image.naturalWidth > 0 && !image.classList.contains('hidden')),
+        )
+        .catch(() => false);
+      const frame = await (await cell.$('iframe[data-painted]'))?.contentFrame();
+      const text = (await frame?.evaluate(() => (document.body?.innerText ?? '').trim()).catch(() => '')) ?? '';
+      const failed = text.startsWith('design-explore:');
+
+      return { key, failed, error: failed ? text.split('\n').at(-1) : '', drawn: !failed && (picture || !!text) };
+    }),
+  );
+};
+
+const drawnCells = async (page, { variant, timeout, rows = [] }) => {
+  const deadline = Date.now() + timeout;
+  const settled = (cells) =>
+    cells.length > 0 &&
+    cells.every((cell) => cell.drawn || cell.failed) &&
+    rows.every((row) => cells.some((cell) => cell.key.startsWith(`${row} `)));
+  let cells = await cellsOf(page, variant);
+
+  while (Date.now() < deadline && !settled(cells)) {
+    await page.waitForTimeout(1000);
+    cells = await cellsOf(page, variant);
+  }
+
+  return cells;
 };
 
 const failedSketchModule = async (context) => {
@@ -179,20 +217,19 @@ const failedSketchModule = async (context) => {
     recovered = false;
   }
 
-  const retried = await page.$$eval(
-    variantFrames,
-    (frames) => frames.filter((frame) => new URL(frame.src).searchParams.has('retry')).length,
-  );
+  const after = await drawnCells(page, { variant: 'a', timeout: FAILED_TIMEOUT_MS });
+  const drawnAfter = after.filter((cell) => cell.drawn).length;
 
   return {
     ok:
-      badge === 'Render-Fehler in dieser Runde' &&
+      badge === 'Render fehlgeschlagen' &&
       mergeWhileFailed === 0 &&
       failedBefore.all > 0 &&
       failedBefore.failed === failedBefore.all &&
       recovered &&
-      retried === failedBefore.all,
-    detail: `badge "${badge}", Übernehmen while failed ${mergeWhileFailed}, frames failed ${failedBefore.failed}/${failedBefore.all}, recovered after a change ${recovered}, variant frames retried ${retried}/${failedBefore.all}`,
+      after.length > 0 &&
+      drawnAfter === after.length,
+    detail: `badge "${badge}", Übernehmen while failed ${mergeWhileFailed}, frames failed ${failedBefore.failed}/${failedBefore.all}, recovered after a change ${recovered}, variant cells drawn after it ${drawnAfter}/${after.length}`,
   };
 };
 
@@ -203,41 +240,20 @@ const everyPageFrameDraws = async (context) => {
   const unloaded = sketch.targets
     .filter((target) => target.error)
     .map((target) => `${target.variant}: ${target.error}`);
-  const expected =
-    sketch.targets.reduce((sum, target) => sum + target.states.length, 0) + sketch.targets[0].states.length;
 
   await openView(context, PAGE_SKETCH_VIEW);
 
-  const deadline = Date.now() + DRAWN_TIMEOUT_MS;
-  let seen = { frames: 0, drawn: 0, failed: [] };
-
-  while (Date.now() < deadline) {
-    const shots = page.frames().filter((frame) => new URL(frame.url()).searchParams.get('part') === PAGE_TARGET);
-    const texts = await Promise.all(
-      shots.map((frame) =>
-        frame
-          .evaluate(() => (document.body?.innerText ?? '').trim())
-          .then((text) => ({ text, at: new URL(frame.url()).searchParams }))
-          .catch(() => ({ text: '', at: new URL(frame.url()).searchParams })),
-      ),
-    );
-    const failed = texts
-      .filter(({ text }) => text.startsWith('design-explore:'))
-      .map(({ at, text }) => `${at.get('variant') ?? 'current'} ${at.get('state')}: ${text.split('\n').at(-1)}`);
-
-    seen = { frames: expected, drawn: texts.filter(({ text }) => text.length > 0).length - failed.length, failed };
-
-    if (failed.length || (await page.locator('[data-sk-render-error]').count())) break;
-    if (expected > 0 && seen.drawn >= expected) break;
-
-    await page.waitForTimeout(1000);
-  }
-
+  const cells = await drawnCells(page, { timeout: DRAWN_TIMEOUT_MS, rows: Object.keys(PAGE_VARIANTS) });
+  const drawn = cells.filter((cell) => cell.drawn).length;
+  const failed = cells.filter((cell) => cell.failed).map((cell) => `${cell.key}: ${cell.error}`);
+  const missing = Object.keys(PAGE_VARIANTS).filter(
+    (variant) => !cells.some((cell) => cell.key.startsWith(`${variant} `)),
+  );
   const badge = (await page.locator('[data-sk-render-error]').allTextContents()).join(' ').trim();
 
   return {
-    ok: !unloaded.length && seen.frames > 0 && seen.drawn >= seen.frames && !seen.failed.length && !badge,
-    detail: `${seen.drawn}/${seen.frames} frames drawn, badge "${badge}", failed ${seen.failed.length}${seen.failed.length ? ': ' + seen.failed.slice(0, 4).join('; ') : ''}, unloaded variants ${unloaded.length}${unloaded.length ? ': ' + unloaded.join('; ').slice(0, 300) : ''}`,
+    ok: !unloaded.length && cells.length > 0 && drawn === cells.length && !failed.length && !missing.length && !badge,
+    detail: `${drawn}/${cells.length} cells drawn, variants without a cell ${missing.length}${missing.length ? ': ' + missing.join(', ') : ''}, badge "${badge}", failed ${failed.length}${failed.length ? ': ' + failed.slice(0, 4).join('; ') : ''}, unloaded variants ${unloaded.length}${unloaded.length ? ': ' + unloaded.join('; ').slice(0, 300) : ''}`,
   };
 };
 
