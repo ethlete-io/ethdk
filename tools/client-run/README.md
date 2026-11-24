@@ -10,7 +10,9 @@ yarn client-run --sdk <built sdk copy>           # reuses a scratch copy with di
 yarn client-run --judge <run dir> [--sdk <dir>]  # judges an earlier run again, with that copy's cli
 ```
 
-`expect.json` names what the order asks for; the judge reports a missing sketch or a wrong variant count.
+`expect.json` names what the order asks for; the judge reports a missing sketch or a wrong variant count. Its
+`traps` list, per part, the traps 46 B shows; the order does not name them, and the judge reports each trap no
+state of a sketch variant shows.
 
 The reference is the old Tomflix design, call 46 B (`--reference`, default `~/dev/tomflix-clean-home/alter-katalog`),
 copied into the sandbox home as `~/alter-katalog`. The image set `~/bilder-von-tom` starts with the titles of

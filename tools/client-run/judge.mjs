@@ -6,6 +6,7 @@ import { chromium } from 'playwright';
 import { frameFindingsOf, probeFrame } from './frame-probe.mjs';
 import { decodePng, differenceOf, inkOf } from './png.mjs';
 import { leftRefusalsOf, readTranscript } from './transcript.mjs';
+import { trapFindingsOf } from './trap-check.mjs';
 import { treeFindingsOf } from './tree-check.mjs';
 
 const EMPTY_INK = 0.004;
@@ -250,7 +251,7 @@ export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] 
       shots,
       refusals: leftRefusalsOf(transcript),
       result: transcript.result,
-      tree: treeFindingsOf({ expected, sketches, parts }),
+      tree: [...treeFindingsOf({ expected, sketches, parts }), ...trapFindingsOf({ expected, shots })],
     });
     const markdown = markdownOf({ runDir, findings, skipped, result: transcript.result });
     writeFileSync(join(runDir, 'findings.md'), markdown);

@@ -1,0 +1,1964 @@
+[
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "default",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 256,
+          "height": 100
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Abspielen"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "default-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 256,
+          "height": 100
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Abspielen"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "default-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 256,
+          "height": 100
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Abspielen"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "default-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 256,
+          "height": 100
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Abspielen"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "disabled",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 256,
+          "height": 100
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Abspielen"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "secondary",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 236,
+          "height": 98
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Mehr Infos"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "secondary-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 236,
+          "height": 98
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Mehr Infos"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "secondary-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 236,
+          "height": 98
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Mehr Infos"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "secondary-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 236,
+          "height": 98
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Mehr Infos"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/button",
+    "sketch": "components/button",
+    "variant": "a",
+    "state": "secondary-disabled",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 236,
+          "height": 98
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Mehr Infos"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "logo",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "logo-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "logo-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "logo-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "fallback",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "fallback-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "fallback-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "fallback-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "series",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "series-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "series-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "series-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "a",
+    "state": "row",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 1328,
+          "height": 340
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          },
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          },
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          },
+          {
+            "src": "f1-der-film-2025-plakat-klein.webp"
+          },
+          {
+            "src": "f1-der-film-2025-logo.png"
+          },
+          {
+            "src": "wicked-2024-plakat-klein.webp"
+          },
+          {
+            "src": "wicked-2024-logo.png"
+          },
+          {
+            "src": "warfare-2025-plakat-klein.webp"
+          },
+          {
+            "src": "warfare-2025-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          },
+          {
+            "text": "2024"
+          },
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          },
+          {
+            "text": "2025"
+          },
+          {
+            "text": "2024"
+          },
+          {
+            "text": "2025"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "logo",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "logo-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "logo-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "logo-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "fallback",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "fallback-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "fallback-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "fallback-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "series",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "series-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "series-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "series-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "b",
+    "state": "row",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 1328,
+          "height": 364
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-plakat-klein.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          },
+          {
+            "src": "dune-part-two-2024-plakat-klein.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          },
+          {
+            "src": "john-williams-live-in-vienna-2020-plakat-klein.webp"
+          },
+          {
+            "src": "f1-der-film-2025-plakat-klein.webp"
+          },
+          {
+            "src": "f1-der-film-2025-logo.png"
+          },
+          {
+            "src": "wicked-2024-plakat-klein.webp"
+          },
+          {
+            "src": "wicked-2024-logo.png"
+          },
+          {
+            "src": "warfare-2025-plakat-klein.webp"
+          },
+          {
+            "src": "warfare-2025-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2026"
+          },
+          {
+            "text": "2024"
+          },
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          },
+          {
+            "text": "2025"
+          },
+          {
+            "text": "2024"
+          },
+          {
+            "text": "2025"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "logo",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-hintergrund.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "logo-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-hintergrund.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "logo-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-hintergrund.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "logo-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-hintergrund.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "fallback",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-hintergrund.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "fallback-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-hintergrund.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "fallback-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-hintergrund.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "fallback-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "john-williams-live-in-vienna-2020-hintergrund.webp"
+          }
+        ],
+        "texts": [
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "series",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-hintergrund.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2026"
+          },
+          {
+            "text": "Serie"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "series-hover",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-hintergrund.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2026"
+          },
+          {
+            "text": "Serie"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "series-active",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-hintergrund.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2026"
+          },
+          {
+            "text": "Serie"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "series-focus-visible",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-hintergrund.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2026"
+          },
+          {
+            "text": "Serie"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "components/title-card",
+    "sketch": "components/title-card",
+    "variant": "c",
+    "state": "row",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 1328,
+          "height": 129
+        },
+        "images": [
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-hintergrund.webp"
+          },
+          {
+            "src": "a-knight-of-the-seven-kingdoms-2026-logo.png"
+          },
+          {
+            "src": "dune-part-two-2024-hintergrund.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          },
+          {
+            "src": "john-williams-live-in-vienna-2020-hintergrund.webp"
+          },
+          {
+            "src": "f1-der-film-2025-hintergrund.webp"
+          },
+          {
+            "src": "f1-der-film-2025-logo.png"
+          },
+          {
+            "src": "wicked-2024-hintergrund.webp"
+          },
+          {
+            "src": "wicked-2024-logo.png"
+          },
+          {
+            "src": "warfare-2025-hintergrund.webp"
+          },
+          {
+            "src": "warfare-2025-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2026"
+          },
+          {
+            "text": "Serie"
+          },
+          {
+            "text": "2024"
+          },
+          {
+            "text": "John Williams: Live in Vienna"
+          },
+          {
+            "text": "2020"
+          },
+          {
+            "text": "2025"
+          },
+          {
+            "text": "2024"
+          },
+          {
+            "text": "2025"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "elements/hero",
+    "sketch": "elements/hero",
+    "variant": "a",
+    "state": "dune",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 390,
+          "height": 600
+        },
+        "images": [
+          {
+            "src": "dune-part-two-2024-hintergrund.webp"
+          },
+          {
+            "src": "dune-part-two-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024 · Film · 2 Std. 46 Min."
+          },
+          {
+            "text": "Abspielen"
+          },
+          {
+            "text": "Mehr Infos"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "elements/hero",
+    "sketch": "elements/hero",
+    "variant": "a",
+    "state": "furiosa",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 390,
+          "height": 600
+        },
+        "images": [
+          {
+            "src": "furiosa-a-mad-max-saga-2024-hintergrund.webp"
+          },
+          {
+            "src": "furiosa-a-mad-max-saga-2024-logo.png"
+          }
+        ],
+        "texts": [
+          {
+            "text": "2024 · Film · 2 Std. 28 Min."
+          },
+          {
+            "text": "Abspielen"
+          },
+          {
+            "text": "Mehr Infos"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "elements/shell",
+    "sketch": "elements/shell",
+    "variant": "a",
+    "state": "startseite",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Tomflix"
+          },
+          {
+            "text": "Startseite"
+          },
+          {
+            "text": "Filme"
+          },
+          {
+            "text": "Serien"
+          },
+          {
+            "text": "Meine Liste"
+          },
+          {
+            "text": "Startseite"
+          },
+          {
+            "text": "Filme"
+          },
+          {
+            "text": "Serien"
+          },
+          {
+            "text": "Meine Liste"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "elements/shell",
+    "sketch": "elements/shell",
+    "variant": "a",
+    "state": "serien",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Tomflix"
+          },
+          {
+            "text": "Startseite"
+          },
+          {
+            "text": "Filme"
+          },
+          {
+            "text": "Serien"
+          },
+          {
+            "text": "Meine Liste"
+          },
+          {
+            "text": "Startseite"
+          },
+          {
+            "text": "Filme"
+          },
+          {
+            "text": "Serien"
+          },
+          {
+            "text": "Meine Liste"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "foundations/colors",
+    "sketch": "foundations/colors",
+    "variant": "a",
+    "state": "dark",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 992,
+          "height": 968
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Dark surface"
+          },
+          {
+            "text": "Aa"
+          },
+          {
+            "text": "--et-surface-background"
+          },
+          {
+            "text": "20 17 15"
+          },
+          {
+            "text": "--et-surface-color"
+          },
+          {
+            "text": "245 240 233"
+          },
+          {
+            "text": "--et-surface-color-muted"
+          },
+          {
+            "text": "178 169 158"
+          },
+          {
+            "text": "--et-surface-color-subtle"
+          },
+          {
+            "text": "140 131 121"
+          },
+          {
+            "text": "--et-surface-border"
+          },
+          {
+            "text": "62 55 49"
+          },
+          {
+            "text": "--et-surface-interaction"
+          },
+          {
+            "text": "38 33 30"
+          },
+          {
+            "text": "--et-surface-interaction-hover"
+          },
+          {
+            "text": "46 40 36"
+          },
+          {
+            "text": "--et-surface-interaction-focus"
+          },
+          {
+            "text": "54 47 42"
+          },
+          {
+            "text": "--et-surface-interaction-active"
+          },
+          {
+            "text": "64 56 50"
+          },
+          {
+            "text": "--et-surface-interaction-disabled"
+          },
+          {
+            "text": "30 26 24"
+          },
+          {
+            "text": "--et-shadow-color-rgb"
+          },
+          {
+            "text": "8 6 5"
+          },
+          {
+            "text": "--et-color-primary"
+          },
+          {
+            "text": "224 164 82"
+          },
+          {
+            "text": "--et-color-primary-hover"
+          },
+          {
+            "text": "236 182 106"
+          },
+          {
+            "text": "--et-color-primary-focus"
+          },
+          {
+            "text": "236 182 106"
+          },
+          {
+            "text": "--et-color-primary-active"
+          },
+          {
+            "text": "204 145 64"
+          },
+          {
+            "text": "--et-color-primary-disabled"
+          },
+          {
+            "text": "98 84 66"
+          },
+          {
+            "text": "--et-color-on-primary"
+          },
+          {
+            "text": "28 19 10"
+          },
+          {
+            "text": "--et-color-on-primary-hover"
+          },
+          {
+            "text": "28 19 10"
+          },
+          {
+            "text": "--et-color-on-primary-focus"
+          },
+          {
+            "text": "28 19 10"
+          },
+          {
+            "text": "--et-color-on-primary-active"
+          },
+          {
+            "text": "28 19 10"
+          },
+          {
+            "text": "--et-color-on-primary-disabled"
+          },
+          {
+            "text": "58 50 42"
+          },
+          {
+            "text": "--et-color-primary-ink"
+          },
+          {
+            "text": "240 190 120"
+          },
+          {
+            "text": "--et-color-primary-ink-hover"
+          },
+          {
+            "text": "248 206 146"
+          },
+          {
+            "text": "--et-color-primary-ink-focus"
+          },
+          {
+            "text": "248 206 146"
+          },
+          {
+            "text": "--et-color-primary-ink-active"
+          },
+          {
+            "text": "226 172 100"
+          },
+          {
+            "text": "--et-color-primary-ink-disabled"
+          },
+          {
+            "text": "124 112 98"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "foundations/colors",
+    "sketch": "foundations/colors",
+    "variant": "a",
+    "state": "kinosaal",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 672,
+          "height": 349
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Heute im Saal 3"
+          },
+          {
+            "text": "Die Nacht der langen Schatten"
+          },
+          {
+            "text": "Drama · 2 Std. 14 Min. · ab 12 Jahren"
+          },
+          {
+            "text": "Originalfassung mit Untertiteln"
+          },
+          {
+            "text": "Jetzt ansehen"
+          },
+          {
+            "text": "Merken"
+          },
+          {
+            "text": "Trailer"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "foundations/logo",
+    "sketch": "foundations/logo",
+    "variant": "a",
+    "state": "mark",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 309,
+          "height": 128
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Tomflix"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "foundations/logo",
+    "sketch": "foundations/logo",
+    "variant": "a",
+    "state": "anatomy",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 309,
+          "height": 164
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Anatomie"
+          },
+          {
+            "text": "Tomflix"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "foundations/logo",
+    "sketch": "foundations/logo",
+    "variant": "a",
+    "state": "clear-space",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 309,
+          "height": 164
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Schutzraum"
+          },
+          {
+            "text": "Tomflix"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "foundations/logo",
+    "sketch": "foundations/logo",
+    "variant": "a",
+    "state": "minimum-size",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 309,
+          "height": 164
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Mindestgröße"
+          },
+          {
+            "text": "Tomflix"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "foundations/logo",
+    "sketch": "foundations/logo",
+    "variant": "a",
+    "state": "colour-variants",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 309,
+          "height": 164
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Farbvarianten"
+          },
+          {
+            "text": "Tomflix"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "foundations/logo",
+    "sketch": "foundations/logo",
+    "variant": "a",
+    "state": "misuse",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 309,
+          "height": 164
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Falsche Verwendung"
+          },
+          {
+            "text": "Tomflix"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "part": "foundations/logo",
+    "sketch": "foundations/logo",
+    "variant": "a",
+    "state": "motion",
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 309,
+          "height": 164
+        },
+        "images": [],
+        "texts": [
+          {
+            "text": "Bewegung"
+          },
+          {
+            "text": "Tomflix"
+          }
+        ]
+      }
+    }
+  }
+]
