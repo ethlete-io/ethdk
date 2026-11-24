@@ -784,6 +784,11 @@ that shows another sample passes another id. The line names the part, the id, bo
 whose props it repeats, only inside one embedded part, such as a shell state that only hovers its search button. The
 line names the state and the part, and asks to add the state in that part instead.
 
+`sketch ready` also refuses (`INTERACTION-REPEAT`) a grid row after the first that draws an interaction (hover, focus,
+active) the same way the first row does and only changes content, such as a title card row that adds a "New season"
+badge. The first row draws the interactions once; a content row is drawn only at rest. With `interactionRows`, name such
+a row in `restOnly`.
+
 The agent that drew such a variant takes it out of the open set with `et design sketch withdraw <part> --variant <key>
 --by <model id>`. It refuses unless `--by` is a model id (not `designer`) that drew the variant, and the variant draws
 the same pixels as a sibling variant in its first changed state. `sketch.json` keeps it as a rejection with the status

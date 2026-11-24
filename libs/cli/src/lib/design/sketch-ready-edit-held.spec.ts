@@ -30,6 +30,7 @@ vi.mock('./ready-shots', () => {
     })),
     sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
     stateInnerLines: vi.fn(async (): Promise<string[]> => []),
+    interactionRepeatLines: vi.fn(async (): Promise<string[]> => []),
     variantChangesShown: vi.fn(async () => []),
     variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
   };

@@ -196,8 +196,10 @@ const gridGapOf = (options: {
 
   if (missing.length > 0) return `its grid has no column ${missing.join(', ')} - ${fix}`;
 
-  const holes = Object.entries(grid['rows']).flatMap(([row, cells]) =>
-    isRecord(cells) && typeof cells['rest'] === 'string' && disabledStates.has(cells['rest'])
+  const holes = Object.entries(grid['rows']).flatMap(([row, cells], index) =>
+    isRecord(cells) &&
+    typeof cells['rest'] === 'string' &&
+    (disabledStates.has(cells['rest']) || (index > 0 && Object.keys(cells).every((cell) => cell === 'rest')))
       ? []
       : interactions
           .filter((interaction) => {

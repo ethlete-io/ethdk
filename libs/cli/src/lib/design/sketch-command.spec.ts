@@ -9,6 +9,7 @@ import {
   identicalRenders,
   sampleMarkDriftLines,
   stateInnerLines,
+  interactionRepeatLines,
   variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -44,6 +45,7 @@ vi.mock('./ready-shots', () => {
     identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
     sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
     stateInnerLines: vi.fn(async (): Promise<string[]> => []),
+    interactionRepeatLines: vi.fn(async (): Promise<string[]> => []),
     variantChangesShown: vi.fn(async (): Promise<VariantChange[] | string> => [
       { variant: 'a', changed: 1, change: 'variant a changes default' },
     ]),
@@ -921,6 +923,40 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines).toContain(`ready will refuse: ${inner}`);
+    expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
+  });
+
+  it('refuses ready while a content row repeats the interactions of the base row, and check warns of it', async () => {
+    const target = acme();
+    const lines = output();
+    const repeated =
+      'INTERACTION-REPEAT components/button a components/button: row "series" draws hover as the base row "default" does and only changes content: draw "series" only at rest - drop series-hover (with interactionRows, add "series" to restOnly); its interactions are drawn once, on "default"';
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    vi.mocked(interactionRepeatLines).mockResolvedValueOnce([repeated]);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toBe(
+      `${repeated}\ncomponents/button draws the interactions of a content row - draw that row only at rest before ready`,
+    );
+
+    vi.mocked(interactionRepeatLines).mockResolvedValueOnce([repeated]);
+    lines.length = 0;
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(`ready will refuse: ${repeated}`);
     expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
   });
 

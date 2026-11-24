@@ -17,6 +17,7 @@ vi.mock('./ready-shots', () => ({
   identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
   sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
   stateInnerLines: vi.fn(async (): Promise<string[]> => []),
+  interactionRepeatLines: vi.fn(async (): Promise<string[]> => []),
   sketchRenderLines: vi.fn(async () => ({ refusals: [] as string[], warnings: [] as string[] })),
   identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
   variantChangesShown: vi.fn(async () => [{ variant: 'a', changed: 1, change: 'variant a changes default' }]),

@@ -37,6 +37,19 @@ describe('interactionRows', () => {
     expect(rows.grid.rows.off).toEqual({ rest: 'off' });
   });
 
+  it('draws a row named in restOnly only at rest, and leaves its interactions out of the type', () => {
+    const rows = interactionRows(
+      { film: { label: 'a' }, series: { label: 'b' } },
+      { interactions: ['hover'], force: (props, interaction) => ({ ...props, interaction }), restOnly: ['series'] },
+    );
+
+    expect(Object.keys(rows.states)).toEqual(['film', 'film-hover', 'series']);
+    expect(rows.grid.rows.series).toEqual({ rest: 'series' });
+
+    // @ts-expect-error a rest-only row has no interaction state
+    expect(rows.states['series-hover']).toBeUndefined();
+  });
+
   it('keeps the built state names in the type of a part', () => {
     const describe = Object.fromEntries(Object.keys(built.states).map((state) => [state, `the ${state} row`]));
     const part = definePart({
