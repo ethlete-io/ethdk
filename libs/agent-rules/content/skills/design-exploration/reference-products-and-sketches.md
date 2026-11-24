@@ -76,6 +76,16 @@ draw that first.
 A section of an app is a page under `pages/`, never a state of the shell. An element holds its
 own chrome only. A sketch on an element adds no state whose difference is page content in a slot.
 
+The variants of a composition (an element or a page) differ only in arrangement and use the same
+sub-parts. A sub-part the composition needs (a tab bar, a search field) is a part of its own under
+`components/`: open a sketch on it and import it as `@system/components/<name>`. `sketch check` and
+`design check` fail a composition whose variants hold different copies of a part they import. While
+that sub-part is new in its open sketch, record the variant you recommend with
+`sketch recommend <layer>/<name> --variant <key> --by <model id>`: every sketch that imports it
+draws that variant, or the user's pick once there is one, with no hint in Studio. The composition
+cannot merge before the sub-part does; the merge of the sub-part rebases the composition sketch onto
+the merged part.
+
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. A part in a variant keeps every state the part has in the product: `sketch check`
