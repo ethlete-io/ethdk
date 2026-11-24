@@ -56,6 +56,20 @@ describe('mountCanvasViewport', () => {
     expect(viewport.camera().x).toBeGreaterThanOrEqual(300);
   });
 
+  it('leaves the camera unchanged on a double-click on a frame', () => {
+    const viewport = mount(0);
+    const frame = document.createElement('figure');
+
+    frame.getBoundingClientRect = () => DOMRect.fromRect({ x: 40, y: 30, width: 80, height: 40 });
+    viewport.element.firstElementChild?.append(frame);
+    viewport.refresh();
+    const before = viewport.camera();
+
+    frame.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+    expect(viewport.camera()).toEqual(before);
+  });
+
   it('marks a pointer focus and clears it on the next key press or blur', () => {
     const viewport = mount(0);
     const element = viewport.element;

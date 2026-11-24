@@ -4,7 +4,7 @@ import { Camera, panCamera, Rect } from './canvas-math';
 import { trackPointerFocus } from './pointer-focus';
 
 export type CanvasViewportOptions = {
-  /** The clipping element that takes wheel, drag, double-click and keys. */
+  /** The clipping element that takes wheel, drag and keys. */
   viewport: HTMLElement;
   /** The element the camera transforms, positioned at the viewport's top-left with `transform-origin: 0 0`. */
   world: HTMLElement;
@@ -52,7 +52,7 @@ const padded = (rect: Rect, by: number): Rect => ({
 
 /**
  * Gives a drawing the design canvas's camera: fit all, a focused frame and the visible frame at 100%,
- * with wheel, drag, double-click and Shift+1/2/0. Frames are measured again whenever the viewport or
+ * with wheel, drag and Shift+1/2/0. Frames are measured again whenever the viewport or
  * the world resizes, and the camera keeps fitting all until the user moves it.
  */
 export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewport => {
@@ -61,7 +61,6 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
   let elements: HTMLElement[] = [];
   let frames: Rect[] = [];
   let focused: HTMLElement | null = null;
-  let pressed: HTMLElement | null = null;
   let following = !options.start;
   const zoom = signal(camera.zoom);
 
@@ -144,9 +143,6 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
     return { x: event.clientX - box.left, y: event.clientY - box.top };
   };
 
-  const frameOf = (target: EventTarget | null) =>
-    target instanceof Element ? target.closest<HTMLElement>(options.frameSelector) : null;
-
   viewport.addEventListener(
     'wheel',
     (event) => {
@@ -160,7 +156,6 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
   viewport.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 && event.button !== 1) return;
 
-    pressed = frameOf(event.target);
     viewport.focus();
     viewport.setPointerCapture(event.pointerId);
     event.preventDefault();
@@ -175,15 +170,6 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
 
   viewport.addEventListener('pointerup', (event) => {
     if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
-  });
-
-  viewport.addEventListener('dblclick', (event) => {
-    const frame = frameOf(event.target) ?? pressed;
-
-    if (!frame) return;
-
-    focused = frame;
-    show({ kind: 'focused' });
   });
 
   viewport.addEventListener('keydown', (event) => {

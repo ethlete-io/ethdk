@@ -3954,6 +3954,7 @@ const CASES = [
   },
   {
     name: 'double-click leaves the viewport unchanged',
+    pages: ['System', 'Sketches', 'Flow'],
     run: async (page, state) => {
       if (!state.frame) return { ok: false, detail: 'no frame point' };
       const before = await probe(page);

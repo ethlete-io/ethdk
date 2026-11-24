@@ -221,7 +221,6 @@ const isInteractive = (target: EventTarget | null) => {
     '(wheel)': 'moveCameraByWheel($event)',
     '(pointerdown)': 'startPan($event)',
     '(click)': 'clickCanvas($event)',
-    '(dblclick)': 'focusProjectedFrame($event)',
     '(window:keydown)': 'handleShortcut($event)',
     '(window:keyup)': 'releaseSpace($event)',
     '(lostpointercapture)': 'panEnd$.next()',
@@ -925,15 +924,6 @@ export class DesignCanvasComponent {
     this.selectedId.set(null);
     this.selectedProjected.set(null);
     this.activeId.set(null);
-  }
-
-  protected focusProjectedFrame(event: MouseEvent) {
-    const frame = this.projectedFrameOf(event.target);
-
-    if (!frame) return;
-
-    this.selectedProjected.set(frame);
-    this.show({ kind: 'focused' });
   }
 
   protected storeHeight(id: string, height: number) {
