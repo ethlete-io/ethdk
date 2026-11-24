@@ -69,6 +69,7 @@ vi.mock('./browser', async (original) => ({
           newPage: async () => ({
             goto: async () => undefined,
             mouse: { move: async () => undefined },
+            mainFrame: () => ({ childFrames: () => [] }),
             url: () => 'http://localhost/frame.html',
             screenshot,
             evaluate: async (script: string) =>

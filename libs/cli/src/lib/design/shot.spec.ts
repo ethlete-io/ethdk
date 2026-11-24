@@ -44,6 +44,7 @@ const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
   newPage: async () => ({
     goto,
     mouse: { move: async () => undefined },
+    mainFrame: () => ({ childFrames: () => [] }),
     url: () => 'http://localhost/frame.html',
     screenshot,
     evaluate,

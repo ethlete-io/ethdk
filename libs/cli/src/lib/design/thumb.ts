@@ -125,13 +125,29 @@ export const openFrame = async (page: Page, url: string) => {
   const state = new URL(url, 'http://frame').searchParams.get('state');
 
   if (state !== null) await page.evaluate(drawnOnLoadedFontsOf({ state, switching: false }));
-  await page
-    .locator('iframe[data-et-embed]:not([data-et-embed-drawn])')
-    .first()
-    .waitFor({ state: 'detached', timeout })
-    .catch(async () => {
-      throw stalled(never('draw its embedded frames', await pendingRequestsLineOf(page)));
-    });
+  await embedsDrawnOnLoadedFonts(page, timeout).catch(async () => {
+    throw stalled(never('draw its embedded frames', await pendingRequestsLineOf(page)));
+  });
+};
+
+type PageFrame = ReturnType<Page['mainFrame']>;
+
+const embedsDrawnIn = (frame: Pick<PageFrame, 'locator'>, timeout: number) =>
+  frame.locator('iframe[data-et-embed]:not([data-et-embed-drawn])').first().waitFor({ state: 'detached', timeout });
+
+const embedsRedrawnOnLoadedFonts = async (frames: PageFrame[], timeout: number): Promise<void> => {
+  for (const frame of frames) {
+    const state = new URL(frame.url()).searchParams.get('state');
+
+    if (state !== null) await frame.evaluate(drawnOnLoadedFontsOf({ state, switching: false }));
+    await embedsDrawnIn(frame, timeout);
+    await embedsRedrawnOnLoadedFonts(frame.childFrames(), timeout);
+  }
+};
+
+const embedsDrawnOnLoadedFonts = async (page: Page, timeout: number) => {
+  await embedsDrawnIn(page, timeout);
+  await embedsRedrawnOnLoadedFonts(page.mainFrame().childFrames(), timeout);
 };
 
 /** What a part frame loads apart from its `state`: two frames with the same boot key can switch into each other. */
@@ -154,17 +170,13 @@ export const switchFrame = async (page: Page, state: string) => {
 
   const timeout = loadScaledMs(DRAW_TIMEOUT_MS);
 
-  await page
-    .locator('iframe[data-et-embed]:not([data-et-embed-drawn])')
-    .first()
-    .waitFor({ state: 'detached', timeout })
-    .catch(async () => {
-      throw stalled(
-        new ShotTimeoutError(
-          `design-explore: ${page.url()} did not draw its embedded frames within ${timeout} ms${await pendingRequestsLineOf(page)}`,
-        ),
-      );
-    });
+  await embedsDrawnOnLoadedFonts(page, timeout).catch(async () => {
+    throw stalled(
+      new ShotTimeoutError(
+        `design-explore: ${page.url()} did not draw its embedded frames within ${timeout} ms${await pendingRequestsLineOf(page)}`,
+      ),
+    );
+  });
 
   return true;
 };

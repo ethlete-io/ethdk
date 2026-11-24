@@ -26,6 +26,7 @@ const newContext = vi.fn(async () => ({
   newPage: async () => ({
     goto,
     mouse: { move: async () => undefined },
+    mainFrame: () => ({ childFrames: () => [] }),
     url: () => 'http://localhost/frame.html',
     evaluate,
     locator: () => ({ first: () => ({ waitFor: async () => undefined }) }),
@@ -290,6 +291,7 @@ describe('openFrame', () => {
     const page = {
       goto: async (url: string) => void visits.push(url),
       mouse: { move: async () => undefined },
+      mainFrame: () => ({ childFrames: () => [] }),
       url: () => 'http://localhost/frame.html',
       locator: (selector: string) => ({
         count: async () => 0,
@@ -317,6 +319,28 @@ describe('openFrame', () => {
 
     await expect(openFrame(page, '/frame.html?b')).rejects.toBeInstanceOf(ShotTimeoutError);
     expect(visits).toHaveLength(2);
+  });
+
+  it('draws each embedded frame with a state again on loaded fonts, a nested one after its parent', async () => {
+    const { page } = pageOf([true]);
+    const redrawn: string[] = [];
+    const frameOf = (url: string, children: unknown[] = []) => ({
+      url: () => url,
+      evaluate: async (script: string) => void (script.includes('etSwitchState') && redrawn.push(url)),
+      locator: () => ({ first: () => ({ waitFor: async () => undefined }) }),
+      childFrames: () => children,
+    });
+    const sketches = 'http://localhost/frame.html?part=app-a&state=rows';
+    const row = 'http://localhost/frame.html?part=app-b&state=row';
+
+    Object.assign(page, {
+      mainFrame: () =>
+        frameOf('http://localhost/frame.html', [frameOf(sketches, [frameOf(row)]), frameOf('about:blank')]),
+    });
+
+    await openFrame(page, '/frame.html?d');
+
+    expect(redrawn).toEqual([sketches, row]);
   });
 
   it('fails a frame the design server answered with an error status, naming the URL and status', async () => {
