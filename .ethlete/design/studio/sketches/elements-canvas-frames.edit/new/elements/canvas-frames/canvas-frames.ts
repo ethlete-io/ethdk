@@ -21,6 +21,7 @@ import {
   type RoundSample,
 } from '@shared/canvas-marks';
 import { diffGrid, diffGridStyles } from '@shared/diff-grid';
+export { liveBadge } from '@shared/canvas-marks';
 import styles from './canvas-frames.css?inline';
 import { SYSTEM_LABELS } from '../../../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 import { CANVAS_LABELS } from '../../../../../../../../apps/ethlete-studio/src/app/i18n/canvas-labels';

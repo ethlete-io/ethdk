@@ -92,7 +92,7 @@
     "components/tree-row": "a831f03c88024f59",
     "components/update-dialog": "63ad322093769a56",
     "components/zoom-chip": "99a38ecebede39be",
-    "elements/canvas-frames": "0bc2e40594bb44b5",
+    "elements/canvas-frames": "601c27ea2b4350be",
     "elements/part-tree": "cb9aa016a48c9f96",
     "elements/shell-main": "e819f34d77ea3e58",
     "elements/studio-menu": "52e34e78cf208413",
@@ -100,14 +100,15 @@
     "pages/flows": "5f9d41e1be7d2953",
     "pages/inbox": "9fe9d1c9a513990c",
     "pages/inventory": "bb84266858a56467",
-    "pages/sketches": "413ca864bb47a64b",
+    "pages/sketches": "88c2d6dd05e366f1",
     "pages/start": "c64a95d26c294b69",
     "pages/system": "0fba82d212ab2b06",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "c6a139858ad2ab249d1617a2af46d6a12db80285",
+  "baselineTree": "7b6c181b446a65d19406edff8f424b82ee02745d",
+  "editOldCommit": "90d24021dcfe11332bc96566db1549eff6a57d21",
   "sharedBase": {
-    "elements/canvas-frames/shared/canvas-marks.ts": "801c47a2a3707a0f",
+    "elements/canvas-frames/shared/canvas-marks.ts": "96a8935bad2bee13",
     "elements/canvas-frames/shared/diff-grid.ts": "3bb4b6fa1607d05e"
   },
   "rounds": [
@@ -132,6 +133,5 @@
   "readyContent": {
     "new": "36b2b409e414c11d",
     "old": "c2f7e0669d9f9efe"
-  },
-  "editOldCommit": "90d24021dcfe11332bc96566db1549eff6a57d21"
+  }
 }
