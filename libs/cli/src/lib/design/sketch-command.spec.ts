@@ -603,6 +603,38 @@ describe('designSketch', { timeout: 120_000 }, () => {
     ).toMatchObject({ status: 'in progress' });
   });
 
+  it('notes a render issue of the old copy of a direct edit as there before, not as a problem', async () => {
+    const target = acme();
+    const lines = output();
+
+    await write(target, 'new', 'elements/hero@edit', '--variants', 'old,new', '--note', 'n', '--product', 'acme');
+    vi.mocked(renderIssuesOf).mockResolvedValueOnce({
+      issues: [
+        {
+          rule: 'CONTROL-STATE',
+          product: 'acme',
+          part: 'elements/hero',
+          state: '-',
+          size: '-',
+          path: '-',
+          detail:
+            'state selected draws an interaction (hover, focus, pressed, active or selected), which only a control part draws, and elements/hero declares no control of a kind button - extract the control as its own control part and draw this state there',
+          sketch: { target: 'elements/hero@edit', variant: 'old' },
+        },
+      ],
+      warnings: [],
+      grids: [],
+      drawn: [],
+    });
+
+    await write(target, 'ready', 'elements/hero@edit', '--product', 'acme');
+
+    expect(lines.join('\n')).not.toContain('elements/hero@edit has problems');
+    expect(lines).toContainEqual(
+      expect.stringMatching(/^NOTE elements\/hero@edit old: CONTROL-STATE acme elements\/hero .*\(there before\)$/u),
+    );
+  });
+
   it('does not let a render issue in a rejected variant block ready', async () => {
     const target = acme();
 

@@ -72,6 +72,7 @@ import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf, editHoldsOf } from './system/sketch/edit-sketch';
 import { refusingRendersOf } from './system/sketch/identical-renders';
 import { isEditSketch, MERGED_FILE, recordMerged, untilSketchOf } from './system/sketch/merged-parts';
+import { EDIT_OLD } from './system/sketch/edit-old-base';
 import { noVerdictLineOf } from './system/no-verdict';
 import { renderFindingsOf } from './system/render-findings';
 import { BusyState, groupedIssueLinesOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './system/render-check';
@@ -1806,10 +1807,20 @@ const renderedVariantsOf = async ({
     })),
   });
 
+  const isEditOldIssue = (issue: RenderIssue) =>
+    !issue.undrawn &&
+    issue.sketch?.variant === EDIT_OLD &&
+    entries.some(
+      ({ sketch, variant }) => variant === EDIT_OLD && isEditSketch(sketch) && sketch.target === issue.sketch?.target,
+    );
+  const unbaselined =
+    'unavailable' in drawnIssues ? [] : unbaselinedIssuesOf({ target, product, issues: drawnIssues.issues });
   const rendered =
     'unavailable' in drawnIssues
       ? drawnIssues
-      : { ...drawnIssues, issues: unbaselinedIssuesOf({ target, product, issues: drawnIssues.issues }) };
+      : { ...drawnIssues, issues: unbaselined.filter((issue) => !isEditOldIssue(issue)) };
+
+  groupedIssueLinesOf(unbaselined.filter(isEditOldIssue)).forEach((line) => console.log(`NOTE ${line} (there before)`));
 
   if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
   else {
