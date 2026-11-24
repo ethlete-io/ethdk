@@ -53,8 +53,6 @@ type TypecheckOptions = {
   tsconfig: string;
   /** Where `tsc --incremental` keeps its state between runs; without it every run checks from scratch. */
   buildInfo?: string;
-  /** Rewrites the raw compiler output before it is trimmed to the first lines. */
-  collapse?: (raw: string) => string;
 };
 
 const tscCommandOf = (options: TypecheckOptions): TscCommand | TypecheckResult => {
@@ -82,14 +80,8 @@ const tscCommandOf = (options: TypecheckOptions): TscCommand | TypecheckResult =
       };
 };
 
-const failureOf = (options: {
-  command: TscCommand;
-  error: unknown;
-  collapse?: (raw: string) => string;
-}): TypecheckResult => {
-  const { command, error, collapse } = options;
-  const shape = error as { stdout?: string; stderr?: string };
-  const output = collapse ? trim(collapse(`${shape.stdout ?? ''}${shape.stderr ?? ''}`)) : outputOf(error);
+const failureOf = (command: TscCommand, error: unknown): TypecheckResult => {
+  const output = outputOf(error);
 
   if (output) return { kind: 'failed', output };
 
@@ -108,7 +100,7 @@ export const typecheck = (options: TypecheckOptions): TypecheckResult => {
   try {
     execPlain([command.file, ...command.args], { cwd: options.target });
   } catch (error) {
-    return failureOf({ command, error, collapse: options.collapse });
+    return failureOf(command, error);
   }
 
   return { kind: 'ok' };
@@ -123,14 +115,11 @@ export const typecheckAsync = async (options: TypecheckOptions): Promise<Typeche
   const result = await spawnPlainAsync([command.file, ...command.args], { cwd: options.target });
 
   if (result.error || result.status !== 0)
-    return failureOf({
-      command,
-      error: {
-        ...result,
-        message: result.error?.message,
-        code: (result.error as NodeJS.ErrnoException | undefined)?.code,
-      },
-      collapse: options.collapse,
+    return failureOf(command, {
+      ...result,
+      message: result.error?.message,
+      code: (result.error as NodeJS.ErrnoException | undefined)?.code,
     });
+
   return { kind: 'ok' };
 };
