@@ -63,9 +63,9 @@ const linkStaysInFrame = async ({ page, studioUrl }) => {
   );
   await page.goto(studioUrl);
 
-  const cell = page.locator('ethlete-sketch-view [data-sk-frame^="a "]').first();
+  const cell = page.locator('ethlete-sketch-view [data-sk-frame^="a "]:has(iframe[data-painted])').first();
 
-  await cell.locator('iframe[data-painted]').first().waitFor({ state: 'attached', timeout: DRAWN_TIMEOUT_MS });
+  await cell.waitFor({ state: 'attached', timeout: DRAWN_TIMEOUT_MS });
 
   const key = await cell.getAttribute('data-sk-frame');
   const box = await cell.boundingBox();
