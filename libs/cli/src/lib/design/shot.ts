@@ -496,6 +496,8 @@ export const createPartShooter = (options: {
   chromiumOf?: typeof chromiumOf;
   ledger?: DrawLedger;
   statesOf?: (address: Pick<PartAddress, 'product' | 'part' | 'sketch'>) => Promise<string[] | null>;
+  /** The container width a shot asked without a preset or a width draws at; `null` fits the part to its content. */
+  defaultWidthOf?: (address: Pick<PartAddress, 'product' | 'part' | 'sketch'>) => Promise<number | null>;
   store?: ShotStore;
   queue?: ReturnType<typeof createDrawQueue>;
   /** Called when a part's picture changed although no `forget` or announced `clear` dropped it. */
@@ -1022,21 +1024,28 @@ export const createPartShooter = (options: {
         return;
       }
 
+      const shotAt = (drawnWidth: number | null) =>
+        partShotOf({
+          product,
+          part,
+          state,
+          preset: preset ?? null,
+          width: drawnWidth,
+          sketch: sketchVariant,
+          interaction: params.get('interaction'),
+          params,
+          want,
+          onSource,
+        });
+      const shot =
+        preset || pixels !== null || !options.defaultWidthOf
+          ? shotAt(preset ? null : pixels)
+          : options.defaultWidthOf({ product, part, sketch: sketchVariant }).then(shotAt);
+
       sendShot(
         response,
         noteFailure(
-          partShotOf({
-            product,
-            part,
-            state,
-            preset: preset ?? null,
-            width: preset ? null : pixels,
-            sketch: sketchVariant,
-            interaction: params.get('interaction'),
-            params,
-            want,
-            onSource,
-          }).then((picture) => {
+          shot.then((picture) => {
             if (sketchVariant && want.priority === 'high') viewed({ product, ...sketchVariant, png: picture.png });
 
             return { png: picture.png, ...(picture.note ? { note: picture.note } : {}) };

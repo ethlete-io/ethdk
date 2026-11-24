@@ -5,6 +5,8 @@ import baseConfig from '../../eslint.config.mjs';
 export default [
   ...baseConfig,
 
+  { ignores: ['src/lib/design/__fixtures__/*/.ethlete/**'] },
+
   {
     files: ['**/*.json'],
     rules: {

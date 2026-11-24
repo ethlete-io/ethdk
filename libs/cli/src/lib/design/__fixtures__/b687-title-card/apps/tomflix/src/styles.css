@@ -1,0 +1,10 @@
+@import 'tailwindcss' source(none);
+@source './app';
+
+@theme {
+  --spacing: 0.4rem;
+}
+
+html {
+  font-size: 62.5%;
+}

@@ -113,7 +113,7 @@ import { KIT_SPECIFIER } from './system/kit';
 import { DESIGN_SYSTEM_SPECIFIER, writeEditorTsconfig } from './system/system-tsconfig';
 import { SKETCH_FILE } from './system/sketch/sketch';
 import { CheckSketches, createSketchChecker } from './system/sketch/sketch-checker';
-import { forgetUnchangedStates } from './system/sketch/unchanged-states';
+import { defaultFrameOf, forgetUnchangedStates } from './system/sketch/unchanged-states';
 import { inventoryOf } from './system/inventory';
 import { SHOT_VIEW_PATH } from './shot-board';
 import { STUDIO_LIST_WIDTH_PATH, studioListWidthMiddleware } from './studio-list-width';
@@ -689,6 +689,25 @@ const designExplore = ({
       const ruleChecker = checkSketches ? undefined : createSketchChecker();
       const events = createDesignEvents();
       let revision = 0;
+      const partDefinitionOf = async ({
+        product,
+        part,
+        sketch,
+      }: {
+        product: string;
+        part: string;
+        sketch: SketchVariant | null;
+      }) => {
+        const file = system.partOf({ product, part, sketch })?.file;
+
+        if (!file) return null;
+
+        const module = (await vite.ssrLoadModule(productModuleIdOf({ file, product, sketch }))) as {
+          default?: { states?: unknown; widths?: unknown };
+        };
+
+        return module.default ?? {};
+      };
       const shots = createPartShooter({
         target,
         base,
@@ -713,17 +732,19 @@ const designExplore = ({
               }),
             }
           : {}),
-        statesOf: async ({ product, part, sketch }) => {
-          const file = system.partOf({ product, part, sketch })?.file;
+        statesOf: async (address) => {
+          const definition = await partDefinitionOf(address);
 
-          if (!file) return null;
+          if (!definition) return null;
 
-          const module = (await vite.ssrLoadModule(productModuleIdOf({ file, product, sketch }))) as {
-            default?: { states?: unknown };
-          };
-          const states = module.default?.states;
+          const states = definition.states;
 
           return states && typeof states === 'object' ? Object.keys(states) : [];
+        },
+        defaultWidthOf: async (address) => {
+          const definition = await partDefinitionOf(address);
+
+          return definition ? defaultFrameOf({ widths: definition.widths, interactions: undefined }, null).width : null;
         },
       });
       const baseDirs = [
