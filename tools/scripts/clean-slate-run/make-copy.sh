@@ -53,13 +53,8 @@ fs.writeFileSync(file, JSON.stringify(config, null, 2) + "\n");
 
 yarn install
 
-# Must run after yarn install: it overwrites the published packages so the skills and the cli match the SDK checkout.
-rm -rf node_modules/@ethlete/agent-rules
-cp -a "$sdk/dist/libs/agent-rules" node_modules/@ethlete/agent-rules
-if [ -d "$sdk/dist/libs/cli" ]; then
-  rm -rf node_modules/@ethlete/cli
-  cp -a "$sdk/dist/libs/cli" node_modules/@ethlete/cli
-fi
+# Must run after yarn install: the published packages are replaced by the SDK build.
+bash "$here/install-sdk.sh" "$sdk" "$target"
 
 git init -q -b main
 node node_modules/@ethlete/agent-rules/src/index.js sync

@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { referenceAccentOf } from './accent.mjs';
 import { writeImageSet } from './image-set.mjs';
+import { skewOf, SDK_LIBS } from './sdk-skew.mjs';
 import { registerInStudio } from './studio-register.mjs';
 
 const USAGE = `usage: yarn client-run [--source <tomflix>] [--reference <old design>] [--out <dir>] [--sdk <built sdk copy>] [--titles <n>] [--model <m>]
@@ -50,7 +51,7 @@ const stampOf = (date) => {
 
 const buildSdk = (dir) => {
   run('node', [join(repo, 'tools/scripts/scratch-checkout.mjs'), dir]);
-  run('npx', ['nx', 'run-many', '-t', 'build', '-p', 'cli', 'agent-rules', '--outputStyle=static'], {
+  run('npx', ['nx', 'run-many', '-t', 'build', '-p', ...SDK_LIBS, '--outputStyle=static'], {
     cwd: dir,
     env: { ...process.env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false' },
   });
@@ -112,6 +113,14 @@ run('bash', [
   '--sdk',
   sdk,
 ]);
+
+const skew = skewOf({ target, sdk });
+if (skew.length) {
+  console.error(
+    `client-run: installed packages differ from the SDK build: ${skew.map((s) => `${s.lib} ${s.installed} != ${s.built}`).join(', ')}`,
+  );
+  process.exit(1);
+}
 
 run(
   'node',
