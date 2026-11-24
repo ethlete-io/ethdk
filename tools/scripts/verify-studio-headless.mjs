@@ -283,11 +283,12 @@ export const serveOnlyAnswer = (dir, answer, view) => async (request, response) 
  * the design server, leaves its port refused for `downMs`, and starts a new one; pin the port with DE_PORT to keep it.
  * `serveOnly: { view }` launches no browser: it serves the Studio build with the same shim, forwarding host commands over `POST /__host`,
  * and calls `run({ studioUrl, designPort })`. `chrome: { value, delayMs }` answers `window_chrome_watch` with `value` after `delayMs`, like the desktop shell does;
- * without it the stubbed shell sends no window chrome and Studio draws no title bar.
+ * without it the stubbed shell sends no window chrome and Studio draws no title bar. `host(command, args, designPort)` answers
+ * a host command first; `undefined` falls back to the single-checkout stub.
  */
 export const withStudio = async (
   run,
-  { checkout = root, build = true, built, chrome, echoDesign = false, engine = 'chromium', serveOnly } = {},
+  { checkout = root, build = true, built, chrome, echoDesign = false, engine = 'chromium', host, serveOnly } = {},
 ) => {
   const startedAt = Date.now();
   const stamp = (phase) => console.log(phaseLine(phase, startedAt));
@@ -324,7 +325,11 @@ export const withStudio = async (
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     stamp(`${engine} launched`);
 
-    await page.exposeFunction('__studioHost', (command) => studioHostAnswer(command, checkout, design.port));
+    await page.exposeFunction('__studioHost', async (command, args) => {
+      const answer = await host?.(command, args, design.port);
+
+      return answer === undefined ? studioHostAnswer(command, checkout, design.port) : answer;
+    });
     await page.addInitScript(studioShim, chrome ?? null);
 
     const restartDesign = async (downMs) => {

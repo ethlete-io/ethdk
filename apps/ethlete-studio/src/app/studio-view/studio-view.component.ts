@@ -12,12 +12,15 @@ import {
   interval,
   map,
   merge,
+  from,
   of,
+  repeat,
   retry,
   share,
   startWith,
   switchMap,
   takeUntil,
+  takeWhile,
   tap,
   timeout,
   timer,
@@ -56,6 +59,8 @@ const SERVER_ANSWER_RETRY_MS = 1000;
 const SERVER_ANSWER_TIMEOUT_MS = 5000;
 
 const SERVER_SILENT_MS = 30_000;
+
+const OTHER_ROOT_POLL_MS = 1000;
 
 const START_PHASE_POLL_MS = 1000;
 
@@ -187,12 +192,31 @@ export class StudioViewComponent {
     return state?.listening ? state.port : null;
   });
 
-  private serverAnswer = toSignal(
-    toObservable(this.listeningPort).pipe(
-      switchMap((port) => (port === null ? of<ServerAnswer>('waiting') : serverAnswers$(port))),
-    ),
-    { initialValue: 'waiting' },
+  private handOver = signal<{ checkout: string; port: number } | null>(null);
+
+  private answerTarget = computed(
+    () => {
+      const port = this.listeningPort();
+
+      return port === null ? null : { port, checkout: this.checkout() };
+    },
+    { equal: (a, b) => a?.port === b?.port && a?.checkout === b?.checkout },
   );
+
+  private serverAnswer = toSignal(
+    toObservable(this.answerTarget).pipe(
+      switchMap((target) =>
+        target === null ? of<ServerAnswer>('waiting') : serverAnswers$(target.port, target.checkout),
+      ),
+    ),
+    { initialValue: 'waiting' as ServerAnswer },
+  );
+
+  private servedOtherRoot = computed(() => {
+    const answer = this.serverAnswer();
+
+    return typeof answer === 'object' ? answer.otherRoot : null;
+  });
 
   public serverReady = computed(() => this.listeningPort() !== null && this.serverAnswer() === 'answers');
 
@@ -209,7 +233,11 @@ export class StudioViewComponent {
   protected serverDown = computed(() => {
     const state = this.server();
 
-    return state && !state.listening && !this.serverBusy() ? state : null;
+    if (!state || this.serverBusy()) return null;
+
+    const otherProject = this.servedOtherRoot() !== null && !this.handOver() && !this.serverStopping();
+
+    return !state.listening || otherProject ? state : null;
   });
 
   protected serverStarting = computed(
@@ -218,7 +246,12 @@ export class StudioViewComponent {
 
   protected serverCrash = computed(() => serverCrashOf(this.serverDown()?.crash ?? null));
 
-  protected downLog = computed(() => (this.startError() ?? this.serverDown()?.log ?? []).slice(-10));
+  protected downLog = computed(() => {
+    const otherRoot = this.servedOtherRoot();
+    const taken = otherRoot === null ? null : [`Port ${this.listeningPort()} serves another project: ${otherRoot}`];
+
+    return (this.startError() ?? taken ?? this.serverDown()?.log ?? []).slice(-10);
+  });
 
   constructor() {
     injectUpdateCheck();
@@ -258,6 +291,14 @@ export class StudioViewComponent {
       .pipe(
         switchMap((port) => (port === null ? EMPTY : designServerReplaced$(port))),
         tap(() => this.epoch.update((value) => value + 1)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.servedOtherRoot)
+      .pipe(
+        filter((root): root is string => root !== null),
+        tap((root) => this.handOverPort(root)),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -383,6 +424,11 @@ export class StudioViewComponent {
   }
 
   private setCheckout(path: string) {
+    const before = this.server();
+
+    this.handOver.set(
+      before?.listening && before.managed && this.checkout() ? { checkout: this.checkout(), port: before.port } : null,
+    );
     this.checkout.set(path);
     this.design.set(null);
     this.foreignWatch?.unsubscribe();
@@ -390,6 +436,35 @@ export class StudioViewComponent {
     rememberView({ checkout: path });
     this.read();
     this.readServer();
+  }
+
+  private handOverPort(otherRoot: string) {
+    const handOver = this.handOver();
+    const checkout = this.checkout();
+
+    if (!handOver || handOver.port !== this.listeningPort() || !sameRoot(handOver.checkout, otherRoot)) return;
+
+    this.serverStopping.set(true);
+
+    designServerStop$(handOver.checkout)
+      .pipe(
+        switchMap(() => designServerState$(checkout)),
+        tap((state) => {
+          if (checkout !== this.checkout()) return;
+
+          this.showServer(state);
+
+          if (!state.listening) this.startServer();
+        }),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- the stopped page shows the other project and offers a restart
+        catchError(() => of(null)),
+        finalize(() => {
+          this.handOver.set(null);
+          this.serverStopping.set(false);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   private absorbChanges(changes: DesignChange[]) {
@@ -478,19 +553,30 @@ export class StudioViewComponent {
   }
 }
 
-type ServerAnswer = 'waiting' | 'answers' | 'silent';
+type ServerAnswer = 'waiting' | 'answers' | 'silent' | { otherRoot: string };
 
 const serverUrlOf = (port: number) => `http://localhost:${port}`;
 
-const serverAnswers$ = (port: number) => {
+const sameRoot = (a: string, b: string) => a.replace(/[\\/]+$/, '') === b.replace(/[\\/]+$/, '');
+
+const answerOf = (stamp: unknown, checkout: string): ServerAnswer => {
+  const root = (stamp as { projectRoot?: unknown } | null)?.projectRoot;
+
+  return typeof root === 'string' && !sameRoot(root, checkout) ? { otherRoot: root } : 'answers';
+};
+
+const serverAnswers$ = (port: number, checkout: string) => {
   const answers$ = fromFetch(`${serverUrlOf(port)}${DESIGN_STAMP_PATH}`).pipe(
-    map((response): ServerAnswer => {
+    switchMap((response) => {
       if (response.status >= 500) throw new Error(`${response.status}`);
 
-      return 'answers';
+      return from(response.json().catch(() => null));
     }),
+    map((stamp) => answerOf(stamp, checkout)),
     timeout(SERVER_ANSWER_TIMEOUT_MS),
     retry({ delay: () => timer(SERVER_ANSWER_RETRY_MS) }),
+    repeat({ delay: () => timer(OTHER_ROOT_POLL_MS) }),
+    takeWhile((answer) => answer !== 'answers', true),
     share(),
   );
 

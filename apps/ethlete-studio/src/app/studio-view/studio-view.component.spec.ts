@@ -85,8 +85,8 @@ const RUNNING = {
 
 const sent: { command: string; args: unknown }[] = [];
 
-const stubHost = (overrides: Record<string, () => unknown> = {}) => {
-  const answers: Record<string, () => unknown> = {
+const stubHost = (overrides: Record<string, (args: { checkout?: string }) => unknown> = {}) => {
+  const answers: Record<string, (args: { checkout?: string }) => unknown> = {
     design_roots: () => ({ search: '', roots: [CHECKOUT] }),
     design_project: () => PROJECT,
     design_server_state: () => RUNNING,
@@ -100,7 +100,9 @@ const stubHost = (overrides: Record<string, () => unknown> = {}) => {
       invoke: (command: string, args: unknown) => {
         sent.push({ command, args });
 
-        return command in answers ? Promise.resolve(answers[command]?.()) : new Promise(() => undefined);
+        return command in answers
+          ? Promise.resolve(answers[command]?.(args as { checkout?: string }))
+          : new Promise(() => undefined);
       },
       transformCallback: () => next++,
       unregisterCallback: () => undefined,
@@ -626,5 +628,72 @@ describe('StudioViewComponent', () => {
 
     expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
     expect(system(fixture)?.epoch()).toEqual(before);
+  });
+
+  it('stops its own server of the project before when the switched project shares its port, then shows the switched one', async () => {
+    let served: string | null = CHECKOUT;
+    const shown: { checkout: string; served: string | null }[] = [];
+    const stateOf = (checkout?: string) =>
+      served === null
+        ? { ...RUNNING, listening: false }
+        : { ...RUNNING, managed: served === checkout, foreign: served !== checkout };
+
+    vi.stubGlobal('fetch', (url: string) =>
+      url.endsWith('/__design/stamp') && served === null
+        ? Promise.reject(new TypeError('refused'))
+        : Promise.resolve(new Response(JSON.stringify({ projectRoot: served, pid: 1 }), { status: 200 })),
+    );
+    stubHost({
+      design_roots: () => ({ search: '', roots: [CHECKOUT, '/other'] }),
+      design_server_state: ({ checkout }) => stateOf(checkout),
+      design_server_stop: ({ checkout }) => {
+        if (served === checkout) served = null;
+
+        return stateOf(checkout);
+      },
+      design_server_start: ({ checkout }) => {
+        served ??= checkout ?? null;
+
+        return stateOf(checkout);
+      },
+    });
+
+    const fixture = await mount();
+
+    expect(system(fixture)?.checkout()).toBe(CHECKOUT);
+
+    const record = () => {
+      const view = system(fixture);
+
+      if (view?.port() != null) shown.push({ checkout: view.checkout(), served });
+    };
+    const watch = setInterval(record);
+
+    system(fixture)?.projectChange.emit('other');
+    await settle(fixture);
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    await settle(fixture);
+    clearInterval(watch);
+    record();
+
+    expect(sent.filter((call) => call.command === 'design_server_stop').map((call) => call.args)).toEqual([
+      { checkout: CHECKOUT },
+    ]);
+    expect(shown.filter((entry) => entry.checkout !== entry.served)).toEqual([]);
+    expect(system(fixture)?.checkout()).toBe('/other');
+    expect(served).toBe('/other');
+  });
+
+  it('shows no system view while the port of the checkout serves a project Studio did not start', async () => {
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve(new Response(JSON.stringify({ projectRoot: '/somewhere/else', pid: 1 }), { status: 200 })),
+    );
+    stubHost({ design_server_state: () => ({ ...RUNNING, foreign: true }) });
+
+    const fixture = await mount();
+
+    expect(system(fixture)).toBeUndefined();
+    expect(element(fixture).textContent).toContain('/somewhere/else');
+    expect(sent.some((call) => call.command === 'design_server_stop')).toBe(false);
   });
 });
