@@ -25,6 +25,9 @@ with properties such as border radius and margin. The user must be able to ident
 target, inspect the relevant value, change it and see the result without asking the agent to
 perform every adjustment.
 
+After the MVP (human 2026-11-24): an element tree with an inspector, as in Figma. It shows which piece of a design is a
+component and which part or sketch it comes from.
+
 Edits must persist in the project's authoritative design source. A temporary DOM or preview
 override alone is insufficient: reloads, sketches and later agent work must retain the change.
 The editor must identify whether a value comes from a token, an inherited part, a local
