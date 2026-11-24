@@ -1641,9 +1641,10 @@ describe('SketchesComponent', () => {
 
     expect(page.firstElementChild?.querySelector('[data-sk-rows]')).not.toBeNull();
     expect(page.querySelector('[data-sk-head]')).toBeNull();
-    expect(toolbar.parentElement).toBe(page);
-    expect(toolbar.classList).toContain('absolute');
-    expect(toolbar.classList).toContain('bottom-space-3');
+    expect(toolbar.parentElement?.parentElement).toBe(page);
+    expect(toolbar.parentElement?.classList).toContain('absolute');
+    expect(toolbar.parentElement?.classList).toContain('bottom-space-3');
+    expect(toolbar.parentElement?.querySelector('ethlete-zoom-chip')).not.toBeNull();
     expect(toolbar.querySelector('[role="toolbar"]')).not.toBeNull();
   });
 

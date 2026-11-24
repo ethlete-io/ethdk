@@ -235,37 +235,41 @@
         </div>
       </ethlete-canvas-viewport>
     </div>
-    <ethlete-sketch-head
-      [(reasonOpen)]="reasonOpen"
-      [(roundsOpen)]="roundsOpen"
-      [(commentMode)]="commentMode"
-      [(withdrawn)]="withdrawn"
-      [status]="shownStatus()"
-      [readyReason]="readyReason()"
-      [hold]="hold()"
-      [autoMerge]="autoMerge()"
-      [error]="errorInRow() ? null : error()"
-      [commentable]="comments() !== null"
-      [discardable]="discardable()"
-      [listError]="!!listError()"
-      [rounds]="rounds()"
-      [round]="round()"
-      [agent]="agent()"
-      [port]="port()"
-      [withdrawnCount]="withdrawnCount()"
-      (roundChange)="roundChange.emit($event)"
-      (retry)="retry.emit()"
-      (discard)="askDiscard()"
-      class="absolute bottom-space-3 left-1/2 z-3 max-w-[calc(100%-40rem)] -translate-x-1/2"
-    />
-    <ethlete-zoom-chip
-      [percent]="percent()"
-      (zoomOut)="zoomOut()"
-      (zoomReset)="zoomReset()"
-      (zoomIn)="zoomIn()"
-      (fit)="fit()"
-      class="absolute right-space-3 bottom-space-3 z-3"
-    />
+    <div
+      class="pointer-events-none absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 flex items-end gap-space-3"
+    >
+      <ethlete-sketch-head
+        [(reasonOpen)]="reasonOpen"
+        [(roundsOpen)]="roundsOpen"
+        [(commentMode)]="commentMode"
+        [(withdrawn)]="withdrawn"
+        [status]="shownStatus()"
+        [readyReason]="readyReason()"
+        [hold]="hold()"
+        [autoMerge]="autoMerge()"
+        [error]="errorInRow() ? null : error()"
+        [commentable]="comments() !== null"
+        [discardable]="discardable()"
+        [listError]="!!listError()"
+        [rounds]="rounds()"
+        [round]="round()"
+        [agent]="agent()"
+        [port]="port()"
+        [withdrawnCount]="withdrawnCount()"
+        (roundChange)="roundChange.emit($event)"
+        (retry)="retry.emit()"
+        (discard)="askDiscard()"
+        class="pointer-events-auto mx-auto min-w-0"
+      />
+      <ethlete-zoom-chip
+        [percent]="percent()"
+        (zoomOut)="zoomOut()"
+        (zoomReset)="zoomReset()"
+        (zoomIn)="zoomIn()"
+        (fit)="fit()"
+        class="pointer-events-auto shrink-0"
+      />
+    </div>
   </div>
 </ethlete-shell-page>
 <ng-template #rowTemplate let-row>
