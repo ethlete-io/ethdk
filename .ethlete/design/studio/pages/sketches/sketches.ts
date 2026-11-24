@@ -25,7 +25,7 @@ import disclosurePart, { disclosure } from '@system/components/disclosure';
 import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
-import { AGENT_RUNS, type AgentRun, drawingPlaceholder } from './shared/sketch-status';
+import { AGENT_RUNS, type AgentRun } from './shared/sketch-status';
 import {
   PARTS,
   type PartKind,
@@ -282,15 +282,6 @@ const drawingMark = html`<span class="flex items-center gap-space-1 text-ui-sm t
   >${SKETCHES_LABELS.drawingMark}</span
 >`;
 
-const drawingStage = (row: Row, place = '') =>
-  html`<div
-    class="sk-shot flex min-h-24 w-0 min-w-full items-center justify-center rounded-control-md"
-    data-sk-placeholder-row
-    style="${place}"
-  >
-    ${drawingPlaceholder()}
-  </div>`;
-
 const pointsChip = async (open: boolean) => {
   const drawn = await button.render({
     label: openLabel(SKETCH_POINTS.length),
@@ -425,7 +416,6 @@ const headOf = (row: Row, view: View) => {
 };
 
 const gridRow = (part: SketchPart, row: Row, view: View) => {
-  const drawn = view.status === 'drawing' && row.key === DRAWN;
   return html`<section
     class="sk-row grid grid-cols-[minmax(0,1fr)] gap-space-5 rounded-control-md p-space-3 in-data-sk-head-hidden:gap-space-2"
     data-sk-row="${row.key}"
@@ -440,7 +430,7 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
       <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
     </div>
     <div class="relative min-w-0 ${isWithdrawn(row, view.withdrawn) ? 'opacity-60' : ''}">
-      ${drawn ? drawingStage(row) : stageOf(part, row, view)}${view.comments?.[row.key] ?? ''}
+      ${stageOf(part, row, view)}${view.comments?.[row.key] ?? ''}
     </div>
   </section>`;
 };
@@ -484,7 +474,6 @@ const shortLabelOf = (label: string) =>
     .join('');
 
 const column = (part: SketchPart, states: string[], row: Row, at: number, top: number, view: View, block = 0) => {
-  const drawn = view.status === 'drawing' && row.key === DRAWN;
   const head = html`<section
     class="sk-row relative w-0 min-w-full rounded-control-md p-space-2"
     data-sk-row="${row.key}"
@@ -498,13 +487,11 @@ const column = (part: SketchPart, states: string[], row: Row, at: number, top: n
     >
     ${block > 0 ? '' : html`<div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>`}
   </section>`;
-  const cells = drawn
-    ? drawingStage(row, `grid-column: ${at}; grid-row: ${top + 1} / span ${states.length * 2}`)
-    : states
-        .map((state, index) =>
-          cell(part, row, state, `grid-column: ${at}; grid-row: ${top + 1 + index * 2} / span 2`, view.comparing),
-        )
-        .join('');
+  const cells = states
+    .map((state, index) =>
+      cell(part, row, state, `grid-column: ${at}; grid-row: ${top + 1 + index * 2} / span 2`, view.comparing),
+    )
+    .join('');
   return head + cells;
 };
 
@@ -806,7 +793,8 @@ export default definePart<Props>({
     'page-100': 'The sketch at 100 %; check the 15px notes and 13px state names, and that no cell is cut off.',
     'zoomed-page':
       'The sketch zoomed to 60 % and panned with variant a selected; check that the row heads stay pinned at the left edge, opaque over the cells.',
-    drawing: 'A variant still drawing; check the zeichnet badge in the header and that Übernehmen is missing.',
+    drawing:
+      'A variant still drawing; check the zeichnet badge in the header, that Übernehmen is missing, and that the drawing variant shows its frames live like a finished one.',
     paused: 'A paused sketch; check the Pausiert badge in the header.',
     failed:
       'Variant b failed to render; check Render fehlgeschlagen in the error colour with b · default: and the error, and no Übernehmen in any row.',
