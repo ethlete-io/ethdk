@@ -20,6 +20,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
   Observable,
   catchError,
+  debounceTime,
   distinctUntilChanged,
   filter,
   fromEvent,
@@ -64,7 +65,14 @@ import {
   SketchWithdrawn,
 } from '../design-parts/sketches/sketches-sample';
 import { SKETCHES_LABELS, MERGE_LABELS } from '../i18n/sketches-labels';
-import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
+import {
+  SketchViewPick,
+  frameSizesOf,
+  rememberSketchView,
+  rememberView,
+  rememberedView,
+} from '../studio-view/remembered';
+import { shotSizesOf, storedShotSizesWith } from './shot-sizes';
 import { isInSketch } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 import { inboxCommentOf, modelNameOf, senderOf } from './inbox-comments';
@@ -95,6 +103,8 @@ type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
 type FrameSize = { width?: number; height?: number };
 
 const MEASURING_HEIGHT = 150;
+
+const SIZES_WRITE_MS = 500;
 
 const minutesSince = (at: number) => Math.max(0, Math.round((Date.now() - at) / 60_000));
 
@@ -431,6 +441,11 @@ export class SketchViewComponent {
     sketch: this.sketch().target,
   }));
 
+  private storedSizes = linkedSignal<string | null, Record<string, FrameSize>>({
+    source: this.cameraKey,
+    computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().measuredSizes ?? {}, key)),
+  });
+
   private remembered = linkedSignal<string | null, SketchViewPick>({
     source: this.cameraKey,
     computation: (key) => (key === null ? {} : (rememberedView().sketchViews?.[key] ?? {})),
@@ -673,8 +688,9 @@ export class SketchViewComponent {
 
   protected rows = computed<SketchRow[]>(() => {
     const sketch = this.sketch();
-    const measured = this.measured();
-    const pictures = this.pictureSizes();
+    const stored = this.storedSizes();
+    const measured = shotSizesOf({ stored, kind: 'frame', live: this.measured() });
+    const pictures = shotSizesOf({ stored, kind: 'picture', live: this.pictureSizes() });
     const sizes = Object.entries(measured);
     const tallestOf = (state?: string) =>
       widestOf(
@@ -733,7 +749,7 @@ export class SketchViewComponent {
             height:
               (presetHeight === undefined ? undefined : Math.max(presetHeight, sizeOf(state)?.height ?? 0)) ??
               sizeOf(state)?.height ??
-              (picture
+              (picture?.width && picture.height
                 ? Math.round((picture.height * Math.min(picture.width, shownWidth)) / picture.width)
                 : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
           };
@@ -968,6 +984,26 @@ export class SketchViewComponent {
   });
 
   constructor() {
+    toObservable(computed(() => ({ key: this.cameraKey(), frames: this.measured(), pictures: this.pictureSizes() })))
+      .pipe(
+        debounceTime(SIZES_WRITE_MS),
+        tap(({ key, frames, pictures }) => {
+          if (key === null || (Object.keys(frames).length === 0 && Object.keys(pictures).length === 0)) return;
+
+          const stored = [
+            { kind: 'frame' as const, live: frames },
+            { kind: 'picture' as const, live: pictures },
+          ].reduce(
+            (sizes, { kind, live }) => storedShotSizesWith({ stored: sizes, cameraKey: key, kind, live }),
+            rememberedView().measuredSizes ?? {},
+          );
+
+          rememberView({ measuredSizes: stored });
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     effect(() => {
       const part = this.pendingPart();
 
