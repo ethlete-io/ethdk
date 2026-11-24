@@ -228,6 +228,18 @@ describe('designProduct', () => {
     expect(readConfig(target)?.products?.['shop']).toEqual({ base: '@ethlete/components' });
   });
 
+  it('starts both surfaces over POST without colors', async () => {
+    const target = make();
+
+    expect(await post(target, { name: 'shop' })).toEqual({ status: 201, body: { name: 'shop' } });
+
+    const css = readFileSync(join(target, DESIGN_DIR, 'shop', 'foundations', 'colors', 'colors.css'), 'utf8');
+
+    expect(css).toContain('.et-surface--light');
+    expect(css).toContain('.et-surface--dark');
+    expect(readConfig(target)?.products?.['shop']?.schemes).toBeUndefined();
+  });
+
   it('refuses over POST a name that exists, an unknown base and a GET', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const target = make();

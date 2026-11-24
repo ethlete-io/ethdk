@@ -188,7 +188,7 @@ const jsonBodyOf = async (request: IncomingMessage): Promise<Record<string, unkn
 };
 
 /**
- * POST `/__design/product` with `{ name, base?, colors?, accent? }` creates a product as `et design product new` does. `base` names
+ * POST `/__design/product` with `{ name, base?, colors?, accent? }` creates a product as `et design product new` does, `colors` defaulting to both. `base` names
  * another product of the checkout, or `@ethlete/components`. Answers 201 with `{ name }`, or 400/409 with `{ error }`.
  */
 export const newProductAnswer = async (options: { target: string; request: IncomingMessage }) => {
@@ -220,7 +220,7 @@ export const newProductAnswer = async (options: { target: string; request: Incom
     target,
     name,
     base: base ? (builtIn ? base : relative(target, productDirOf({ target, product: base }))) : null,
-    colors: stringOf('colors'),
+    colors: stringOf('colors') ?? 'both',
     accent: stringOf('accent'),
   });
 
