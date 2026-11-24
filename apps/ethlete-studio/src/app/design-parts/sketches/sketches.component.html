@@ -58,8 +58,6 @@
       >
         <div
           #world
-          [attr.data-sk-sizing]="sizing() ? '' : null"
-          [class.invisible]="sizing()"
           [class.w-max]="transposed() || canvas.zoom() !== 'fit'"
           [class.min-w-full]="!transposed() || screenMode()"
           [style.transform]="canvas.transform()"

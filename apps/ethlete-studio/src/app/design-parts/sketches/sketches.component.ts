@@ -110,8 +110,6 @@ import {
 
 const MOVE_REST_MS = 200;
 
-const SIZING_HOLD_MS = 4000;
-
 export type SketchShotContext = { $implicit: SketchRow; state: string };
 
 const ZOOM_STEP = 1.5;
@@ -552,15 +550,6 @@ export class SketchesComponent {
       (state) => (groups.get(state)?.states[0] ?? state) === state,
     );
   });
-  private unsizedRows = computed(() => this.listMeasured() && this.shownRows().some((row) => row.sized === false));
-  private sizingHeld = toSignal(
-    toObservable(this.unsizedRows).pipe(
-      distinctUntilChanged(),
-      switchMap((unsized) => (unsized ? merge([true], timer(SIZING_HOLD_MS).pipe(map(() => false))) : [false])),
-    ),
-    { initialValue: true },
-  );
-  protected sizing = computed(() => this.unsizedRows() && this.sizingHeld());
   private stackedFit = signal(false);
   protected stacked = computed(
     () => this.stackedFit() && !this.transposed() && this.listMeasured() && this.changedRows().length > 1,

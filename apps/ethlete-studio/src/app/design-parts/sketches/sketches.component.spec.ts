@@ -807,47 +807,6 @@ describe('SketchesComponent', () => {
     expect(root.querySelectorAll('[data-sk-changed] [data-sk-row]')).toHaveLength(4);
   });
 
-  it('shows the variants of a first open only once their frames report a size (tomflix shell-app at 1440 px)', async () => {
-    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
-      return this.hasAttribute('data-sk-rows') ? 1076 : 0;
-    });
-    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
-      return this.hasAttribute('data-sk-rows') ? 1000 : 0;
-    });
-    const variant = (key: string, sized: boolean): SketchRow => ({
-      key,
-      note: '',
-      width: sized ? 1472 : 1440,
-      sized,
-      shots: sized
-        ? [
-            { state: 'desktop', changed: true, height: 672 },
-            { state: 'phone', changed: true, height: 876, width: 422 },
-          ]
-        : [
-            { state: 'desktop', changed: true, height: 900 },
-            { state: 'phone', changed: true, height: 900 },
-          ],
-    });
-    const fixture = await render({
-      part: 'elements/shell-app',
-      rows: ['a', 'b', 'c'].map((key) => variant(key, false)),
-      camera: 'fit',
-    });
-    const world = () => fixture.nativeElement.querySelector('[data-sk-rows] > div') as HTMLElement;
-
-    expect(world().classList).toContain('invisible');
-
-    fixture.componentRef.setInput(
-      'rows',
-      ['a', 'b', 'c'].map((key) => variant(key, true)),
-    );
-    await fixture.whenStable();
-
-    expect(world().classList).not.toContain('invisible');
-    expect(fixture.nativeElement.querySelector('[data-sk-matrix]')).not.toBeNull();
-  });
-
   describe('matrix blocks', () => {
     beforeEach(() => {
       vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
