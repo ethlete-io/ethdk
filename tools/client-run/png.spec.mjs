@@ -29,4 +29,11 @@ describe('differenceOf', () => {
     assert.equal(differenceOf(shot, shot), 0);
     assert.equal(differenceOf(shot, fixture('empty-variant-shot.png')), 1);
   });
+
+  it('sees a focus ring drawn as opaque black on a transparent background', () => {
+    const rest = fixture('title-card-film-shot.png');
+    const focused = fixture('title-card-film-focus-visible-shot.png');
+
+    assert.ok(differenceOf(rest, focused) > 0.01);
+  });
 });

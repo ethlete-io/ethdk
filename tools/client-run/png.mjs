@@ -88,6 +88,10 @@ export const differenceOf = (one, two) => {
   if (one.width !== two.width || one.height !== two.height) return 1;
   let changed = 0;
   for (let i = 0; i < one.rgba.length; i += 4)
-    if (!near(one.rgba, i, [two.rgba[i], two.rgba[i + 1], two.rgba[i + 2]])) changed++;
+    if (
+      !near(one.rgba, i, [two.rgba[i], two.rgba[i + 1], two.rgba[i + 2]]) ||
+      Math.abs(one.rgba[i + 3] - two.rgba[i + 3]) > NEAR
+    )
+      changed++;
   return changed / (one.width * one.height);
 };
