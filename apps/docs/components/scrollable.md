@@ -174,7 +174,7 @@ Mark a child with `[etScrollableActiveChild]` and the track opens scrolled to it
 </et-scrollable>
 ```
 
-The first enabled marker in DOM order wins, and `scrollOrigin` decides where it comes to rest. This is a one-time **initial** scroll position, not a live binding: it is applied the first time the track is actually able to scroll to that child, and later changes to the bindings don't re-scroll it - drive those with `scrollToElement(...)` instead.
+The first enabled marker in DOM order wins, and `scrollOrigin` decides where it comes to rest. It is applied the first time the track is actually able to scroll to that child, and re-applied whenever the track or one of its children resizes (a font swap, a late icon, a hidden track that becomes visible) until the user scrolls, clicks, touches or types in the track. Changes to the bindings alone don't re-scroll it - drive those with `scrollToElement(...)` instead.
 
 An `et-segmented-button` inside an `et-scrollable` needs no marker: it registers itself, so the checked segment is the initial position and a later selection scrolls it into view (centered). A marker bound to `false` registers the child but never claims the initial position, so `[etScrollableActiveChild]="false"` on every child means the track opens at the start.
 

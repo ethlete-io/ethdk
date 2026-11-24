@@ -5,6 +5,7 @@ import {
   NavRouteOneComponent,
   NavRouteThreeComponent,
   NavRouteTwoComponent,
+  NavTabsLayoutShiftStorybookComponent,
   NavTabsStorybookComponent,
 } from './components';
 
@@ -14,7 +15,7 @@ export default {
   title: 'Components/Navigation/Tabs/Nav Tabs',
   component: NavTabsStorybookComponent,
   decorators: [
-    moduleMetadata({ imports: [NavTabsStorybookComponent] }),
+    moduleMetadata({ imports: [NavTabsStorybookComponent, NavTabsLayoutShiftStorybookComponent] }),
     applicationConfig({
       providers: [
         provideRouter(
@@ -118,4 +119,16 @@ export const ColoredLabelsWithoutUnderline: Story = {
       '--et-tab-inactive-color': '#fff',
     },
   },
+};
+
+export const LayoutShift: StoryObj<NavTabsLayoutShiftStorybookComponent> = {
+  args: { shift: 'font-swap', shiftDelay: 400 },
+  argTypes: {
+    shift: { control: 'radio', options: ['font-swap', 'late-icon', 'hidden-first-frame'] },
+    shiftDelay: { control: 'number' },
+  },
+  render: (args) => ({
+    props: args,
+    template: `<et-sb-nav-tabs-layout-shift [shift]="shift" [shiftDelay]="shiftDelay" />`,
+  }),
 };

@@ -1,4 +1,5 @@
 import {
+  DestroyRef,
   Directive,
   ElementRef,
   Signal,
@@ -6,10 +7,12 @@ import {
   afterNextRender,
   booleanAttribute,
   computed,
+  effect,
   inject,
   input,
   numberAttribute,
   signal,
+  untracked,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -33,7 +36,7 @@ import {
   typedBreakpointTransform,
   mountEasingTokens,
 } from '@ethlete/core';
-import { EMPTY, fromEvent, switchMap } from 'rxjs';
+import { EMPTY, fromEvent, map, merge, switchMap, take } from 'rxjs';
 import { ResolvedScrollableChrome, ScrollableChrome } from './scrollable-chrome';
 import { SCROLLABLE_ERROR_CODES } from './scrollable-errors';
 import { SCROLLABLE_SCROLL_CONTAINER } from './scrollable-scroll-container';
@@ -102,17 +105,19 @@ export class ScrollableDirective {
 
   private activeChildren = signal<ScrollableActiveChildRef[]>([]);
 
-  private initialActiveChildScrollPosition = computed(() => {
-    const firstActive = this.activeChildren().find((child) => child.isActiveChildEnabled());
+  private initialActiveChildScrollPosition = computed(() => this.measureActiveChildScrollPosition());
 
-    if (!firstActive) return null;
-
-    const position = this.getElementScrollCoordinates({ element: firstActive.elementRef.nativeElement });
-
-    // `signalElementScrollState` stops watching once it gets a position, and the coordinates come back
-    // offsetless while the track cannot scroll yet - handing those over would spend the one shot on nothing.
-    return position.left === undefined && position.top === undefined ? null : position;
-  });
+  private hasUserTakenOverScroll = toSignal(
+    merge(
+      ...(['wheel', 'pointerdown', 'touchstart', 'keydown'] as const).map((type) =>
+        fromEvent(this.hostElement, type, { passive: true }),
+      ),
+    ).pipe(
+      take(1),
+      map(() => true),
+    ),
+    { initialValue: false },
+  );
 
   /** @internal */
   public scrollObserverRef = signal<ScrollObserverDirective | null>(null);
@@ -264,6 +269,7 @@ export class ScrollableDirective {
 
   constructor() {
     mountEasingTokens();
+    this.keepActiveChildPinnedOnLayoutChange();
     if (ngDevMode) {
       afterNextRender(() => {
         if (!this.scrollContainerRef()) {
@@ -288,7 +294,8 @@ export class ScrollableDirective {
 
   /**
    * Register a child as the one to open the track on. Registration order is DOM order, and the first
-   * registered child whose `isActiveChildEnabled` reads `true` wins.
+   * registered child whose `isActiveChildEnabled` reads `true` wins. The track re-pins that child whenever
+   * its own or the track's layout changes, until the user scrolls, clicks, touches or types in it.
    *
    * @internal
    */
@@ -455,6 +462,54 @@ export class ScrollableDirective {
 
   public getScrollContainerRef() {
     return this.scrollContainerRef.asReadonly();
+  }
+
+  private measureActiveChildScrollPosition() {
+    const firstActive = this.activeChildren().find((child) => child.isActiveChildEnabled());
+
+    if (!firstActive) return null;
+
+    const position = this.getElementScrollCoordinates({ element: firstActive.elementRef.nativeElement });
+
+    // `signalElementScrollState` stops watching once it gets a position, and the coordinates come back
+    // offsetless while the track cannot scroll yet - handing those over would spend the one shot on nothing.
+    return position.left === undefined && position.top === undefined ? null : position;
+  }
+
+  private pinActiveChild() {
+    const scrollElement = this.scrollContainerRef()?.nativeElement;
+    const position = untracked(() => this.measureActiveChildScrollPosition());
+
+    if (!scrollElement || !position) return;
+
+    if (position.left !== undefined) scrollElement.scrollLeft = position.left;
+    if (position.top !== undefined) scrollElement.scrollTop = position.top;
+  }
+
+  private keepActiveChildPinnedOnLayoutChange() {
+    if (typeof ResizeObserver === 'undefined') return;
+
+    // A font swap or a late label resizes the children without a DOM mutation, and re-pinning inside the
+    // observer callback lands before paint, so the track never shows a frame at the stale offset.
+    // eslint-disable-next-line ethlete/no-native-observers -- pre-paint timing, see above
+    const observer = new ResizeObserver(() => this.pinActiveChild());
+
+    effect(() => {
+      const container = this.scrollContainerRef()?.nativeElement;
+      const children = this.scrollableChildren();
+      const isPinned = !this.hasUserTakenOverScroll();
+
+      untracked(() => {
+        observer.disconnect();
+
+        if (!container || !isPinned) return;
+
+        observer.observe(container);
+        children.forEach((child) => observer.observe(child));
+      });
+    });
+
+    inject(DestroyRef).onDestroy(() => observer.disconnect());
   }
 
   private scrollToEdge(edge: 'start' | 'end') {
