@@ -41,3 +41,12 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
 - Hero und App Shell blieben „in progress“: der Agent wartet auf den übernommenen Button und das Logo. Suspect: der Auftrag bestellt Teile, die von nicht gewählten Teilen abhängen.
 - Keine eigene Schrift: der Agent konnte keine herunterladen.
 - Stand Builder (Batch 53): Fehlalarme behoben a743686f3 (Prüfer misst Tinte, Biss, Neuprüfung 0 Textbefunde). Hero und Shell: Cause im Design-Skill (Agent wartete auf die Wahl anderer Teile), geändert ac7d61188, nicht verifiziert; der Lauf ab f688a59ee hat die Änderung noch nicht. Schrift: Cause Sandbox ohne Netz (gewollt); 46 B nutzt die Systemschrift, also bleibt es so.
+
+## Lauf 2026-11-24-1109 (Start von 46 B, Fallen, Akzent-Regel; SDK f688a59ee; 27 Befunde)
+
+- Alle sechs Teile fertig zur Wahl, je 3 Varianten. Akzent Rot hält überall (ACCENT-PRIMARY wirkt).
+- Suspect: ACCENT-PRIMARY ist zu streng. Der Agent konnte das Türkis aus 46 B nicht als zusätzliche Variante zeigen; die Entscheidung 24.11. erlaubt eine andere Farbe als zusätzliche Variante.
+- 13 Fallen ohne Zustand: Titelkarte ohne Plakat, 4K, 3D, Neue Folge, langer Titel, mobil; Hero Serie; Button gedrückt; App Shell gescrollt, versteckt, Tab-Leiste. Der Agent liest 46 B, zeichnet aber die Fallen nicht; nichts im Werkzeug fordert sie.
+- Titelkarte a, b, c: focus-visible gleich wie rest (8 Befunde). Button a, b, c: default, hover und disabled gleich; der Agent sagt, das liegt an den vorläufigen Farben (B697).
+- Hero a, b, c ohne Logo: Titel „John Williams: Live in Vienna“ läuft 20 px aus dem Kasten (Tinte gemessen). Suspect: echter Befund.
+- Hero und Shell warten wieder auf die Wahl von Button und Logo (Lauf ohne ac7d61188).
