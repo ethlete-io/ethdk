@@ -38,7 +38,7 @@ export const openSketchesDrawingOf = (sketch: Sketch, keys: Set<string>) =>
           : other.targets.filter((key) => keys.has(key)).map((part) => ({ part, sketch: other })),
       );
 
-const borrowedPartsOf = (options: { sketch: Sketch; held: ResolvedPart[]; has: Set<string> }) => {
+const lentPartsOf = (options: { sketch: Sketch; held: ResolvedPart[]; has: Set<string> }) => {
   const missing = new Set(
     options.held
       .flatMap((part) => partDependenciesOf(part))
@@ -63,6 +63,22 @@ const borrowedPartsOf = (options: { sketch: Sketch; held: ResolvedPart[]; has: S
 
     return [{ resolved, borrowed: { part, sketch: sketch.target, variant } }];
   });
+};
+
+const borrowedPartsOf = (options: { sketch: Sketch; held: ResolvedPart[]; has: Set<string> }) => {
+  const has = new Set(options.has);
+  const borrowed: ReturnType<typeof lentPartsOf> = [];
+  let held = options.held;
+
+  while (held.length > 0) {
+    const lent = lentPartsOf({ sketch: options.sketch, held, has });
+
+    for (const entry of lent) has.add(entry.borrowed.part);
+    borrowed.push(...lent);
+    held = lent.map(({ resolved }) => resolved);
+  }
+
+  return borrowed;
 };
 
 const mayChange = (sketch: Sketch, part: { layer: (typeof LAYERS)[number]; name: string }) =>

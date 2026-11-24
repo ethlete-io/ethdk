@@ -7,12 +7,14 @@ import {
   CONFIG,
   opened,
   SHELL_USING_TAB_BAR,
+  TAB_BAR_USING_TAB_ICON,
+  TAB_ICON_SOURCE,
   tabBarSource,
   tomflixShellAndTabBar,
   write,
 } from './open-sub-part.fixtures';
 import { resolveProduct } from './system/resolve-product';
-import { variantProblemsOf } from './system/sketch/check-sketches';
+import { typecheckVariant, variantProblemsOf } from './system/sketch/check-sketches';
 import { mergeRefusalOf } from './system/sketch/merge';
 import { findSketch, parseTarget, Sketch, variantDirOf, writeSketchFile } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
@@ -53,6 +55,48 @@ describe('a composition sketch that uses a part of another open sketch', () => {
       ),
     ).toEqual([]);
   });
+
+  // The lent tab bar draws a tab icon that is new in a third open sketch: the shell draws both, with no import problem.
+  it('draws a part the lent part imports from the open sketch that holds it', () => {
+    const { target, product, shell, tabBar } = tomflixShellAndTabBar({ recommend: 'a' });
+    const tabIcon = opened(product(), 'components/tab-icon');
+
+    for (const variant of tabIcon.variants)
+      write(
+        resolve(variantDirOf(tabIcon, variant), 'components/tab-icon/tab-icon.ts'),
+        TAB_ICON_SOURCE.replace('NAME', variant),
+      );
+    writeSketchFile({ ...tabIcon, recommended: 'b' }, { base: tabIcon });
+    write(resolve(variantDirOf(tabBar, 'a'), 'components/tab-bar/tab-bar.ts'), TAB_BAR_USING_TAB_ICON);
+
+    const system = createSystemModules({ target, config: { products: { tomflix: CONFIG } } });
+    const lentBar = system.resolveId(
+      '@system/components/tab-bar',
+      productModuleIdOf({
+        file: resolve(variantDirOf(shell, 'a'), 'elements/shell-app/shell-app.ts'),
+        product: 'tomflix',
+        sketch: { target: shell.target, variant: 'a' },
+      }),
+    );
+
+    expect(system.resolveId('@system/components/tab-icon', lentBar ?? '')).toBe(
+      productModuleIdOf({
+        file: resolve(variantDirOf(tabIcon, 'b'), 'components/tab-icon/tab-icon.ts'),
+        product: 'tomflix',
+        sketch: { target: 'components/tab-icon', variant: 'b' },
+      }),
+    );
+    expect(
+      variantProblemsOf({ product: product(), sketch: reread(target, shell.target) }).flatMap(({ problems }) =>
+        problems.map((problem) => problem.message),
+      ),
+    ).toEqual([]);
+    expect(
+      typecheckVariant({ target, product: product(), sketch: reread(target, shell.target), variant: 'a' }),
+    ).toEqual({
+      kind: 'ok',
+    });
+  }, 120_000);
 
   // Until the agent of the tab bar sketch recommends a variant, the shell check names the command that does it.
   it('names sketch recommend while the open sketch recommends no variant', () => {

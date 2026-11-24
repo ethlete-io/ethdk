@@ -46,6 +46,35 @@ export default definePart<Props>({
 });
 `;
 
+export const TAB_ICON_SOURCE = `import { definePart, drawing } from '@design-system';
+
+type Props = Record<string, never>;
+
+export default definePart<Props>({
+  note: 'Das Symbol eines Reiters.',
+  states: { start: {} },
+  describe: { start: 'One tab icon; check that it reads at 24 px.' },
+  render: () => drawing({ body: '<i class="tf-tab-icon">NAME</i>', styles: '' }),
+});
+`;
+
+export const TAB_BAR_USING_TAB_ICON = `import { definePart, drawing } from '@design-system';
+import tabIcon from '@system/components/tab-icon';
+
+type Props = { active: string };
+
+export default definePart<Props>({
+  note: 'Die Reiter unten am Telefon.',
+  states: { start: { active: 'start' } },
+  describe: { start: 'Four tabs with Start active; check that the active tab stands out.' },
+  render: async () => {
+    const icon = await tabIcon.render({});
+
+    return drawing({ body: \`<nav aria-label="Hauptnavigation" class="tf-tab-bar">\${icon.body}</nav>\`, styles: icon.styles });
+  },
+});
+`;
+
 export const write = (file: string, text: string) => {
   mkdirSync(join(file, '..'), { recursive: true });
   writeFileSync(file, text, 'utf8');
