@@ -81,11 +81,11 @@ describe('VariantCellComponent', () => {
     expect(cell.querySelector('[data-sk-frame]')?.classList.contains('opacity-50')).toBe(true);
   });
 
-  it('marks the selected frame', async () => {
+  it('marks the selected frame without a selection outline', async () => {
     const cell = await setup({ state: 'a', selected: true, width: 200, height: 50 });
 
     expect(cell.querySelector('[data-sk-frame]')?.getAttribute('data-selected')).toBe('');
-    expect(cell.querySelector('[data-frame-border]')?.className).toContain('outline-solid');
+    expect(cell.querySelector('[data-frame-border]')?.className).not.toContain('outline');
   });
 
   it('draws the crop mark and the stack bars for a cropped group', async () => {

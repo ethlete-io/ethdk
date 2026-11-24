@@ -5,7 +5,6 @@ import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 export type VariantCellMark = { left: number; top: number; width: number; height: number };
 
 const FRAME_RING = 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
-const SELECTED_RING = 'outline-2 -outline-offset-2 outline-(--et-theme-color-primary-solid) outline-solid';
 
 @Component({
   selector: 'ethlete-variant-cell',
@@ -51,7 +50,6 @@ export class VariantCellComponent {
 
   protected readonly LABELS = SKETCHES_LABELS;
   protected readonly STACK_INSETS = [32, 64];
-  protected readonly SELECTED_RING_CLASS = SELECTED_RING;
 
   protected frameWidth = computed(() => this.width() * this.scale());
   protected shownHeight = computed(() => this.shown() ?? this.height() ?? 0);

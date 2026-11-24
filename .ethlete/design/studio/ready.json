@@ -777,52 +777,6 @@
     "pid": 2178669
   },
   "elements/canvas-frames": {
-    "hash": "4b4a6213751a542b",
-    "files": {
-      ".ethlete/design/sdk/components/button/button.css": "9504bb8a28701488",
-      ".ethlete/design/sdk/components/button/button.ts": "1f5f46bf5b74f852",
-      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.css": "61d833c902ab2771",
-      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "c679638a8b364d68",
-      ".ethlete/design/studio/components/hold-trigger/hold-trigger.css": "58922d213e30d6be",
-      ".ethlete/design/studio/components/hold-trigger/hold-trigger.ts": "5e3c9d89d3a9998c",
-      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "e6271128b7faf39f",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "5969029e682ff5d9",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "bc5876550882989b",
-      ".ethlete/design/studio/elements/canvas-frames/shared/canvas-marks.ts": "b16f37a6727487cc",
-      ".ethlete/design/studio/elements/canvas-frames/shared/diff-grid.ts": "3bb4b6fa1607d05e",
-      "apps/ethlete-studio/src/app/components/design-canvas/canvas-math.ts": "6a0ecb63bc6beed9",
-      "apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames-geometry.ts": "b6a23bfac763fb58",
-      "apps/ethlete-studio/src/app/i18n/canvas-labels.ts": "e973529bfd653257",
-      "apps/ethlete-studio/src/app/i18n/system-labels.ts": "c1bc3b25f181b1d3",
-      "libs/components/design/button.ts": "48f441533cf5bb8f",
-      "libs/components/design/control.ts": "b0244bc4c0f922a6",
-      "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
-      "libs/components/design/icon.ts": "829a95253b948ba9",
-      "libs/components/design/loader.ts": "e05586c3d6f1de74",
-      "libs/components/design/tooltip.ts": "1288fd3f374f7801",
-      "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
-      "libs/components/src/lib/button/button.component.css": "23b972531d7ef9c5",
-      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
-      "libs/components/src/lib/button/icon-button.component.css": "5dc15211d1dd02fc",
-      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "df6f86f168edd72e",
-      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
-      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
-      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
-      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
-      "libs/components/src/lib/overlay/floating-tip-styles.component.css": "3cbc9929b4432ad8",
-      "libs/components/src/lib/overlay/overlay-container.component.css": "68455f1f6f6ce18e",
-      "libs/components/src/lib/overlay/strategies/overlay-arrow-styles.component.css": "072cf01f3393af28",
-      "libs/components/src/lib/tooltip/tooltip.component.css": "50e163741bd6a713",
-      "libs/core/design/interactive-styles.ts": "781528322bd34499",
-      "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
-      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
-    },
-    "app": "7e42f262f548e8aa",
-    "embedded": {
-      "components/canvas-viewport": "193484d55b7df4cf",
-      "components/hold-trigger": "4e25491c5b82b2d0",
-      "components/zoom-chip": "a12b6c2fb13710fc"
-    },
     "actions": [
       "active",
       "emit:columnToggle",
@@ -835,15 +789,7 @@
       "emit:zoomReset",
       "selected"
     ],
-    "builder": "developer",
-    "builderReasons": [
-      "injects the service DesignCanvasComponent (apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts)",
-      "injects the service CANVAS_LIVE_REST_MS (apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts)"
-    ],
-    "at": "2026-11-23T11:46:24.043Z",
-    "by": "ethlete-sdk-5d",
-    "cmd": "ready",
-    "pid": 1070872
+    "at": "2026-11-23T18:03:48.755Z"
   },
   "elements/part-tree": {
     "hash": "ecb89982f137f343",
@@ -1079,7 +1025,7 @@
   },
   "elements/variant-cell": {
     "actions": ["emit:pinToggle"],
-    "at": "2026-11-23T14:11:02.590Z"
+    "at": "2026-11-24T02:16:44.184Z"
   },
   "foundations/agent-logos": {
     "hash": "d4f785b87245bd87",

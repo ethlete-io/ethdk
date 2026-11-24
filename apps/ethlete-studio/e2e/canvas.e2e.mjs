@@ -3830,12 +3830,10 @@ const CASES = [
     },
   },
   {
-    name: 'selected frame draws the selection outline',
+    name: 'a click on a frame selects it without a selection outline',
     run: async (page, state) => {
       if (!state.frame) return { ok: false, detail: 'no frame point' };
       await page.mouse.click(state.frame.x, state.frame.y);
-      const drawn = (outline) =>
-        !!outline && outline.style === 'solid' && Number.parseFloat(outline.width) > 1 && outline.fills;
       const read = () =>
         page.evaluate(
           ({ CANVAS }) => {
@@ -3847,24 +3845,15 @@ const CASES = [
             if (!border) return null;
 
             const style = getComputedStyle(border);
-            const box = border.getBoundingClientRect();
-            const host = border.closest('[data-selected]').getBoundingClientRect();
 
-            return {
-              width: style.outlineWidth,
-              style: style.outlineStyle,
-              color: style.outlineColor,
-              fills: Math.abs(box.width - host.width) < 1 && Math.abs(box.height - host.height) < 1,
-            };
+            return { width: style.outlineWidth, style: style.outlineStyle, color: style.outlineColor };
           },
           { CANVAS },
         );
-      const outline = await readUntil(page, read, drawn);
+      const outline = await readUntil(page, read, (outline) => !!outline);
+      const ringless = !!outline && (outline.style === 'none' || Number.parseFloat(outline.width) === 0);
 
-      return {
-        ok: drawn(outline),
-        detail: JSON.stringify(outline),
-      };
+      return { ok: ringless, detail: JSON.stringify(outline) };
     },
   },
   {
@@ -5142,6 +5131,14 @@ const CASES = [
         page.evaluate(() => ({
           sketchView: !!document.querySelector('[data-sk-rows]'),
           selected: document.querySelector('[data-sk-frame][data-selected]')?.getAttribute('data-sk-frame') ?? null,
+          ring: (() => {
+            const border = document.querySelector('[data-sk-frame][data-selected] [data-frame-border]');
+            const style = border && getComputedStyle(border);
+
+            return style && style.outlineStyle !== 'none' && Number.parseFloat(style.outlineWidth) > 0
+              ? `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`
+              : null;
+          })(),
           frames: [...document.querySelectorAll('[data-sk-rows] [data-sk-frame]')].map((frame) =>
             frame.getAttribute('data-sk-frame'),
           ),
@@ -5203,6 +5200,7 @@ const CASES = [
           return (
             shown.sketchView &&
             shown.selected === expected[0] &&
+            shown.ring === null &&
             JSON.stringify(shown.frames) === JSON.stringify(expected)
           );
         };

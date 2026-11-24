@@ -7,7 +7,7 @@ export type GridHeads = 'open' | 'folded';
 const BUTTON_IMPORTS = { imports: ['BUTTON_IMPORTS'] };
 
 export const MARK_CLASS: Record<FrameMark, string> = {
-  selected: 'after:outline-2 after:outline-solid after:outline-(--et-theme-color-primary-solid)',
+  selected: '',
   active: 'after:outline-2 after:outline-dashed after:outline-(--et-theme-color-primary-solid)',
   failed: '',
   loading: '',

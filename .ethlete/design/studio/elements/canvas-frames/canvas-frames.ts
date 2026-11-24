@@ -248,7 +248,7 @@ const defaultFrames: Props = {
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts',
-  note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. A click selects a frame (a 2 px primary outline), a second click on the selected frame, the double click, makes it live (a dashed outline and the Live · Esc badge in its head; Escape leaves it). A frame keeps following the size of its content; it has no size control. A frame whose page failed to load shows the reason and Neu laden on top of it. On the variant grid each round has a head: its title folds the round to one narrow column with its note, the switch beside it shows the unchanged states; a column head names the variant above its frames. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames; canvasView places components/zoom-chip in the corner. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
+  note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. A click selects a frame without a mark of its own (it only aims the zoom shortcuts), a second click on the selected frame, the double click, makes it live (a dashed outline and the Live · Esc badge in its head; Escape leaves it). A frame keeps following the size of its content; it has no size control. A frame whose page failed to load shows the reason and Neu laden on top of it. On the variant grid each round has a head: its title folds the round to one narrow column with its note, the switch beside it shows the unchanged states; a column head names the variant above its frames. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames; canvasView places components/zoom-chip in the corner. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [1440],
   instant:
@@ -681,7 +681,7 @@ export default definePart({
     reset: 'The canvas at 100 % with the percent hovered; check the hover fill on 100 % and the frame at its own size.',
     in: 'The canvas at 250 % with + hovered; check that the frame grows past the view and the zoom chip stays on top.',
     fit: 'The canvas with Fit hovered; check the hover fill on Fit and the frame fitted into the view.',
-    selected: 'A selected frame; check the 2px primary outline around the whole frame, head included.',
+    selected: 'A selected frame; check that it draws no outline and looks like the default frame.',
     active: 'A live frame; check the dashed outline and the Live · Esc badge in its head.',
     'load-failed':
       'A frame whose page failed to load; check the reason and Neu laden over the frame and that no stale cells show.',
