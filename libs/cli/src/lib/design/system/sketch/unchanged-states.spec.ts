@@ -1,9 +1,9 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 import { readConfig } from '../../design-config';
-import { resolveProduct } from '../resolve-product';
+import { partKeyOf, resolveProduct } from '../resolve-product';
 import { createSketch, sharedDirOf, Sketch, variantDirOf } from './sketch';
 import { PictureOf } from '../../merge-compare';
 import { encodePng } from '../part-compare';
@@ -322,6 +322,22 @@ describe('unchangedStatesOf', () => {
         expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual([]);
         forgetUnchangedStates({ all: false, parts: [{ product: product.name, part: sketch.target, sketch: null }] });
         expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual(['default']);
+      });
+
+      it('keeps the pixel compare after a file of a part it does not draw changes', async () => {
+        const { product, sketch } = spaced();
+        const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true };
+        const button = product.parts.find((part) => partKeyOf(part) === 'components/button')?.file ?? '';
+
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual(['default']);
+        appendFileSync(button, '\n');
+        forgetUnchangedStates({
+          all: false,
+          parts: [{ product: product.name, part: 'components/button', sketch: null }],
+        });
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf((variant) => variant ?? 'now') })).toEqual([
+          'default',
+        ]);
       });
 
       it('does not keep a result whose draw failed', async () => {

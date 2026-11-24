@@ -1,11 +1,11 @@
 import { createHash } from 'crypto';
-import { resolve } from 'path';
+import { dirname, resolve } from 'path';
 import { ALL_PARTS, DrawnPart, PartsChange, redraws } from '../../changed-parts';
 import { drawnPair, PictureOf } from '../../merge-compare';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
-import { baselineInTurnsOf, partHashOf } from './baseline';
+import { partHashOf } from './baseline';
 import { ChangeBox } from './change-box';
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
@@ -158,7 +158,13 @@ const drawsTheSame = async (options: {
   }
 };
 
-const keyOf = async (options: {
+const ownHashOf = (product: ResolvedProduct, compared: string) => {
+  const file = product.parts.find((part) => partKeyOf(part) === compared)?.file;
+
+  return file ? partHashOf({ product, dir: dirname(file) }) : null;
+};
+
+const keyOf = (options: {
   product: ResolvedProduct;
   overlaid: ResolvedProduct;
   sketch: Sketch;
@@ -176,8 +182,8 @@ const keyOf = async (options: {
       sketch.dir,
       compared,
       variant,
-      await baselineInTurnsOf(product),
-      await baselineInTurnsOf(overlaid),
+      ownHashOf(product, compared),
+      ownHashOf(overlaid, compared),
       partHashOf({ product, dir: sharedDirOf(sketch) }),
       partHashOf({ product, dir: variantDirOf(sketch, variant) }),
       pictured,
@@ -204,7 +210,7 @@ export const keptComparisonOf = async (
   if (!product.parts.some((part) => partKeyOf(part) === compared)) return null;
   if (!overlaid.parts.some((part) => partKeyOf(part) === compared)) return null;
 
-  const key = await keyOf({
+  const key = keyOf({
     product,
     overlaid,
     sketch,
@@ -226,8 +232,9 @@ export const keptComparisonOf = async (
  * part stylesheet the product's stylesheets `@import`. With `pictureOf`, any other state, or one that cannot be
  * rendered outside a browser (`ng()`), is unchanged when every frame draws the
  * same pixels in the default theme. A state the product lacks, or one that fails to draw on either side, is never
- * unchanged, and neither is any state of the `new` of an edit sketch: it is the product itself. Markup-only comparisons are kept by source hashes. Pixel comparisons are kept the same way only with
- * `keepPictures`, and never when a draw failed; `forgetUnchangedStates` drops them. Set `compareFrames` to false
+ * unchanged, and neither is any state of the `new` of an edit sketch: it is the product itself. Markup-only comparisons are kept by the source hashes of the compared part and the sketch, so a change to a part it imports
+ * needs `forgetUnchangedStates` to drop them. Pixel comparisons are kept the same way only with
+ * `keepPictures`, and never when a draw failed. Set `compareFrames` to false
  * to compare drawings without requiring matching widths and interactions.
  */
 export const unchangedStatesOf = async (options: {
@@ -259,7 +266,7 @@ export const unchangedStatesOf = async (options: {
 
   if (!merged || !drawn || comparesNothing(sketch, variant)) return [];
 
-  const key = await keyOf({
+  const key = keyOf({
     product,
     overlaid,
     sketch,
@@ -406,7 +413,7 @@ const restKeyOf = (options: KeptOptions) => {
 
 /** The states `sameAsRestOf` found drawn like their rest state for the same sources, or `null` while none is kept. */
 export const keptSameAsRestOf = async (options: KeptOptions): Promise<Record<string, string> | null> =>
-  restCache.get(await restKeyOf(options))?.same ?? null;
+  restCache.get(restKeyOf(options))?.same ?? null;
 
 /**
  * Each state of the grid of the part `variant` draws that renders the same as its row's `rest` state, in every
@@ -427,7 +434,7 @@ export const sameAsRestOf = async (options: {
 
   if (!drawnPart) return {};
 
-  const key = await restKeyOf({ product, sketch, variant, pictured: !!pictureOf, part: compared });
+  const key = restKeyOf({ product, sketch, variant, pictured: !!pictureOf, part: compared });
   const known = restCache.get(key)?.same;
 
   if (known) return known;
