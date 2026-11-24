@@ -19,6 +19,8 @@ export type SketchedProduct = ResolvedProduct & {
   variantSharedDir: string;
   assetsDir: string;
   borrowed: BorrowedPart[];
+  /** Whether the user picked this variant; before that its part may still hold fewer states than a merged one. */
+  picked: boolean;
 };
 
 /** The variant an open sketch lends its new parts in: the user's pick, else the one its agent recommends. */
@@ -154,5 +156,6 @@ export const overlaySketch = (options: {
     variantSharedDir: variantSharedDirOf(sketch, variant),
     assetsDir: resolve(dir, ASSETS_FOLDER),
     borrowed: borrowed.map((entry) => entry.borrowed),
+    picked: sketch.decision?.kind === 'pick' && sketch.decision.variant === variant,
   };
 };

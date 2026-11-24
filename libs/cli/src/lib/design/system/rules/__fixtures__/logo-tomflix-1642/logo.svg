@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="16 12 307 76" fill="none">
+  <defs>
+    <linearGradient id="tomflix-logo-a-fade" x1="0" y1="16" x2="0" y2="86" gradientUnits="userSpaceOnUse">
+      <stop offset="0" style="stop-color: var(--et-surface-background-solid)" stop-opacity="0" />
+      <stop offset="1" style="stop-color: var(--et-surface-background-solid)" stop-opacity="0.38" />
+    </linearGradient>
+  </defs>
+  <path fill="currentColor" d="M16 16h68v22H62v48H38V38H16z" />
+  <path fill="url(#tomflix-logo-a-fade)" d="M16 16h68v22H62v48H38V38H16z" />
+  <path style="fill: var(--et-surface-background-solid)" fill-opacity="0.38" d="M38 38h24v3L38 47z" />
+  <g transform="translate(125 12.5) scale(0.75)"><g fill="currentColor"><g transform="translate(0 0)"><path fill-rule="evenodd" d="M16 0h8a16 16 0 0 1 16 16v68a16 16 0 0 1-16 16h-8A16 16 0 0 1 0 84V16A16 16 0 0 1 16 0zM16 20v60a4 4 0 0 0 8 0V20a4 4 0 0 0-8 0z"/></g><g transform="translate(47 0)"><path d="M0 0h18l10 40 10-40h18v100H40V42l-8 28h-8l-8-28v58H0z"/></g><g transform="translate(110 0)"><path d="M0 0h36v16H16v26h16v15H16v43H0z"/></g><g transform="translate(153 0)"><path d="M0 0h16v84h18v16H0z"/></g><g transform="translate(194 0)"><path d="M0 0h16v100H0z"/></g><g transform="translate(217 0)"><path d="M0 0h17l6 30 6-30h17L32 50l14 50H29l-6-30-6 30H0l14-50z"/></g></g></g>
+</svg>

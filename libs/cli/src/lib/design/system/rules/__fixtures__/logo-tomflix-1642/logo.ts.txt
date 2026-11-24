@@ -1,0 +1,24 @@
+import { definePart, drawing, html, svgAsset } from '@design-system';
+import mark from '@assets/logo.svg?raw';
+import styles from './logo.css?inline';
+
+const ASPECT = 307 / 76;
+
+export const logoMark = (height: number) =>
+  svgAsset(mark, {
+    size: height,
+    class: 'logo-mark',
+    attrs: { width: String(Math.round(height * ASPECT)), 'aria-hidden': 'true' },
+  });
+
+export default definePart<{ height: number }>({
+  note: 'Gefaltetes T vor OMFLIX wie im alten Katalog.',
+  styles,
+  states: {
+    mark: { height: 48 },
+  },
+  describe: {
+    mark: 'The Tomflix logo at 48 px on the page surface; check that the T reads as the initial of OMFLIX.',
+  },
+  render: ({ height }) => drawing({ body: html`<div class="logo-stage">${logoMark(height)}</div>` }),
+});

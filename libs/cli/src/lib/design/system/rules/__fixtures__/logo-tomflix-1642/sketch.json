@@ -1,0 +1,90 @@
+{
+  "target": "foundations/logo",
+  "status": "in progress",
+  "createdAt": "2026-11-24T15:48:04.170Z",
+  "createdBy": {
+    "cmd": "design sketch new foundations/logo --variants a,b,c --product tomflix --by claude-opus-5-5 --round Gefaltetes T --note Drei Fassungen der Wortmarke mit gefaltetem T als Initiale. --variant-note a=Das gefaltete T vor OMFLIX wie im alten Katalog. Kostet nichts, ist aber bei 16 px weich in der Faltkante. --variant-note b=Gefaltetes T kompakter und kräftiger, Falz als klare Kerbe. Hält bei kleinen Größen, verliert etwas Tiefe. --variant-note c=Das T als gefalteter Filmstreifen mit Perforation. Eigenständiger Kinobezug, braucht dafür mindestens 24 px.",
+    "session": "20b79383-6098-4d21-a8a4-0aca4aeafed7"
+  },
+  "baseline": {
+    "foundations/colors": "eff1a167696d4748",
+    "foundations/elevation": "b65239ed38c1c248",
+    "foundations/icons": "3510796a035d17a9",
+    "components/accent-on-light": "4eb3fb5dbf1c71db",
+    "components/accordion": "0d7f9a2d0bb92ebc",
+    "components/avatar": "f12507c53bb1690e",
+    "components/badge": "16a47a87b6ba476c",
+    "components/banner": "0fce8ea823bcf0cd",
+    "components/bracket": "7844744a21ea6ddf",
+    "components/breadcrumb": "c265f4e685545d87",
+    "components/button": "df72d1c2c667daa0",
+    "components/calendar": "181231a653f5a519",
+    "components/card": "8257d97d0cb964bb",
+    "components/carousel": "2bc4ff5fa5f62239",
+    "components/chart": "e4f0b4ff6a46cd22",
+    "components/chip": "3c09c403bba96f46",
+    "components/copy-button": "7e19305835ee3335",
+    "components/description-list": "876e9769cdaaa0db",
+    "components/dialog": "5a5b65618a1ef57e",
+    "components/divider": "262640a582310ef4",
+    "components/empty-state": "8fa8e079abfc47c6",
+    "components/floating-action": "f8f914cde664cba4",
+    "components/form-field": "cc4ef0d867c01e7d",
+    "components/grid": "9ede09dbc48b003e",
+    "components/input": "6aac3b508f335322",
+    "components/kbd": "2f6a45d7f9906c80",
+    "components/loader": "99f7898647898f89",
+    "components/masonry": "fc8c1255b484b9e1",
+    "components/match": "5c7f4e548c20ab6f",
+    "components/menu": "7913e3be5a13290d",
+    "components/notification": "a8230f9cf2a27c8d",
+    "components/otp-input": "6133a50e21578261",
+    "components/pagination": "0e43ed5d0d8330f0",
+    "components/picture": "2b313e5092712213",
+    "components/progress-steps": "0ccddf315c1322c7",
+    "components/query-error": "35c819d8fb5b2800",
+    "components/scheduler": "b458e60680bd2086",
+    "components/scrollable": "9314e628f4cfb274",
+    "components/scrollbar": "323b58aa1a374158",
+    "components/select": "7921dcc3c165b08d",
+    "components/select-panel": "f813ce420cb9bf2e",
+    "components/skeleton": "e069cbdf48470a50",
+    "components/slider": "cff5255c1c209968",
+    "components/standings": "fa68ab24e94c1047",
+    "components/stat-tile": "e8516e4a656c937e",
+    "components/stream": "c1b67a2d02006a79",
+    "components/switch": "dc7e7e9a12644aeb",
+    "components/table": "1ec35bb39f7230c3",
+    "components/tabs": "4bc4913df27b8ec7",
+    "components/textarea": "8ccdbf8a2c7de6ad",
+    "components/timeline": "174c0b896bc10b07",
+    "components/toolbar": "3dc096f731917bb8",
+    "components/tooltip": "697b4852381e9eb1",
+    "components/tree": "1032b9739b4279e8",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Gefaltetes T",
+      "note": "Drei Fassungen der Wortmarke mit gefaltetem T als Initiale."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Das gefaltete T vor OMFLIX wie im alten Katalog. Kostet nichts, ist aber bei 16 px weich in der Faltkante."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Gefaltetes T kompakter und kräftiger, Falz als klare Kerbe. Hält bei kleinen Größen, verliert etwas Tiefe."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Das T als gefalteter Filmstreifen mit Perforation. Eigenständiger Kinobezug, braucht dafür mindestens 24 px."
+    }
+  }
+}

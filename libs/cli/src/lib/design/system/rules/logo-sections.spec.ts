@@ -34,4 +34,11 @@ describe('logoPartsWithoutSectionsOf (B677)', () => {
     expect(logoPartsWithoutSectionsOf(productOf('foundations', 'logo', all))).toEqual([]);
     expect(logoPartsWithoutSectionsOf(productOf('elements', 'logo', ['rest']))).toEqual([]);
   });
+
+  it('demands the sections of a sketch variant only once it is picked', () => {
+    const bare = productOf('foundations', 'logo', ['sizes']);
+
+    expect(logoPartsWithoutSectionsOf({ ...bare, picked: false } as unknown as ResolvedProduct)).toEqual([]);
+    expect(logoPartsWithoutSectionsOf({ ...bare, picked: true } as unknown as ResolvedProduct)).toHaveLength(6);
+  });
 });
