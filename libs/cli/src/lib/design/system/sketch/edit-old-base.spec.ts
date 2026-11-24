@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { readConfig } from '../../design-config';
 import { initGitRepo } from '../git-repo.fixtures';
 import { importProblemsOf } from '../imports';
+import { typecheckVariant } from './check-sketches';
 import { partKeyOf, resolveProduct } from '../resolve-product';
 import { openEditSketch } from './edit-sketch';
 import { recordMerged } from './merged-parts';
@@ -63,4 +64,42 @@ describe('the old side of an edit sketch', () => {
       "export default 'button edited later';\n",
     );
   });
+
+  it('reads the files outside the product its old parts import as the old commit held them, not as later edits left them', async () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-edit-old-base-outside-'));
+
+    cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
+
+    const configFile = join(target, '.ethlete', 'design', 'config.json');
+    const config = JSON.parse(readFileSync(configFile, 'utf8'));
+
+    config.products.acme.harness = { app: 'app', map: 'app/parts.ts', shared: ['app/i18n/**'] };
+    writeFileSync(configFile, JSON.stringify(config));
+
+    const product = resolveAppA(target);
+    const labels = join(target, 'app', 'i18n', 'labels.ts');
+    const partReading = (name: string, key: string) => {
+      mkdirSync(join(product.dir, 'components', name), { recursive: true });
+      writeFileSync(
+        join(product.dir, 'components', name, `${name}.ts`),
+        `import { LABELS } from '../../../../../app/i18n/labels';\nexport default LABELS.agent.${key};\n`,
+      );
+    };
+
+    mkdirSync(join(target, 'app', 'i18n'), { recursive: true });
+    writeFileSync(labels, "export const LABELS = { agent: { failed: 'failed', waiting: 'waiting', done: 'done' } };\n");
+    partReading('status', 'failed');
+    partReading('pill', 'waiting');
+    recordMerged({ product, parts: ['elements/hero'] });
+    initGitRepo(target, 'base');
+    writeFileSync(join(product.dir, 'elements', 'hero', 'hero.css'), '.acme-hero { padding: 0; }\n');
+
+    const sketch = (await openEditSketch({ target, product: resolveAppA(target), part: 'elements/hero' })) as Sketch;
+
+    writeFileSync(labels, "export const LABELS = { agent: { done: 'done' } };\n");
+    partReading('status', 'done');
+
+    expect(typecheckVariant({ target, product: resolveAppA(target), sketch, variant: 'old' })).toEqual({ kind: 'ok' });
+    expect(importProblemsOf(overlaySketch({ product: resolveAppA(target), sketch, variant: 'old' }))).toEqual([]);
+  }, 120_000);
 });

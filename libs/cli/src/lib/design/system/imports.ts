@@ -9,6 +9,7 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { importsOf } from './ts-source';
 import { openedPartKeyOf } from './actions';
 import { openedPartNamesOf } from './action-grammar';
+import { workingTreeFileOf } from './sketch/edit-old-base-folder';
 
 const SYSTEM = '@system/';
 export const FIXTURES_SPECIFIER = '@system/fixtures';
@@ -108,7 +109,7 @@ const reachesSharedAppFile = (options: { product: ResolvedProduct; part: Resolve
   const { product, part, specifier } = options;
   const shared = product.config.harness?.shared ?? [];
   const root = resolve(product.configFile, '../../..');
-  const file = relative(root, resolve(dirname(part.file), specifier.split('?')[0] ?? specifier))
+  const file = relative(root, workingTreeFileOf(resolve(dirname(part.file), specifier.split('?')[0] ?? specifier)))
     .split(sep)
     .join('/');
 

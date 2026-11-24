@@ -1,24 +1,168 @@
 import { createHash } from 'crypto';
 import { catFilesOf, git } from '../../git-reader';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs';
-import { dirname, join, relative, resolve, sep } from 'path';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'fs';
+import { dirname, join, posix as posixPath, relative, resolve, sep } from 'path';
 import { filesBelow } from '../assets';
 import { gitTopOf } from '../../git-top';
 import { LAYERS } from '../layers';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { isEditSketch } from './merged-parts';
-import { rebaseOutsideImports, Sketch } from './sketch';
+import { EDIT_OLD_BASE_FOLDER } from './edit-old-base-folder';
+import { relativeSpecifierOf, Sketch, SOURCE_FILE, sourceFilesIn } from './sketch';
 
 export const EDIT_OLD = 'old';
 export const EDIT_NEW = 'new';
 
-const EDIT_OLD_BASE_FOLDER = join('node_modules', '.cache', 'ethlete-design', 'edit-old-base');
+const CACHE_FORMAT = 2;
 
-/** Whether `file` belongs to the snapshot an edit sketch's `old` variant draws its other parts from, not to the variant. */
-export const isEditOldBaseFile = (file: string) => file.includes(`${sep}${EDIT_OLD_BASE_FOLDER}${sep}`);
+const RELATIVE_SPECIFIER = /(['"])(\.{1,2}\/[^'"]+)\1/gu;
 
 const posix = (path: string) => path.split(sep).join('/');
+
+const relativeSpecifiersOf = (source: string) =>
+  [...source.matchAll(RELATIVE_SPECIFIER)].map(([, , specifier = '']) => specifier);
+
+const importedPathOf = (from: string, specifier: string) =>
+  posixPath.join(posixPath.dirname(from), specifier.split('?')[0] ?? specifier);
+
+const candidatesOf = (path: string) => [
+  path,
+  ...['.ts', '.mts', '.js', '.mjs'].map((extension) => `${path}${extension}`),
+  path.replace(/\.(m?)js$/u, '.$1ts'),
+  `${path}/index.ts`,
+  `${path}/index.js`,
+];
+
+const isInside = (dir: string, path: string) => path === dir || path.startsWith(`${dir}/`);
+
+const leavesProduct = (productPath: string, path: string) => !path.startsWith('..') && !isInside(productPath, path);
+
+const blobsAtCommitOf = (options: { top: string; commit: string }) => {
+  const listings = new Map<string, Map<string, string>>();
+
+  return (path: string) => {
+    const dir = posixPath.dirname(path);
+
+    if (!listings.has(dir)) {
+      const entries = git(['ls-tree', '-z', options.commit, '--', dir === '.' ? '.' : `${dir}/`], {
+        cwd: options.top,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+        .split('\0')
+        .flatMap((entry): [string, string][] => {
+          const [meta, name] = entry.split('\t');
+          const [, type, oid] = meta?.split(' ') ?? [];
+
+          return type === 'blob' && oid && name ? [[posixPath.basename(name), oid]] : [];
+        });
+
+      listings.set(dir, new Map(entries));
+    }
+
+    return listings.get(dir)?.get(posixPath.basename(path)) ?? null;
+  };
+};
+
+const outsideFilesAtCommitOf = (options: {
+  top: string;
+  commit: string;
+  productPath: string;
+  sources: { path: string; source: string }[];
+}) => {
+  const { top, commit, productPath } = options;
+  const blobOf = blobsAtCommitOf({ top, commit });
+  const reached = new Set<string>();
+  const files = new Map<string, Buffer>();
+  let queue = options.sources;
+
+  while (queue.length > 0) {
+    const wanted = new Map<string, string>();
+
+    for (const { path, source } of queue) {
+      for (const specifier of relativeSpecifiersOf(source)) {
+        const imported = importedPathOf(path, specifier);
+
+        if (!leavesProduct(productPath, imported) || reached.has(imported)) continue;
+
+        const file = candidatesOf(imported).find((candidate) => blobOf(candidate) !== null);
+
+        if (!file) continue;
+
+        reached.add(imported);
+
+        if (!files.has(file)) wanted.set(file, blobOf(file) ?? '');
+      }
+    }
+
+    const blobs = catFilesOf([...wanted.values()], { cwd: top });
+
+    queue = [...wanted.keys()].flatMap((path, index) => {
+      const blob = blobs[index] ?? Buffer.alloc(0);
+
+      files.set(path, blob);
+
+      return SOURCE_FILE.test(path) ? [{ path, source: blob.toString('utf8') }] : [];
+    });
+  }
+
+  return { reached, files };
+};
+
+const pointMissingImportsAtWorkingTree = (options: {
+  top: string;
+  drawnRoot: string;
+  productPath: string;
+  reached: Set<string>;
+}) => {
+  const { top, drawnRoot, productPath, reached } = options;
+
+  for (const file of sourceFilesIn(drawnRoot)) {
+    const path = posix(relative(drawnRoot, file));
+    const source = readFileSync(file, 'utf8');
+    const rewritten = source.replace(RELATIVE_SPECIFIER, (...[match = '', quote = '', specifier = '']: string[]) => {
+      const imported = importedPathOf(path, specifier);
+
+      return isInside(productPath, imported) || reached.has(imported)
+        ? match
+        : `${quote}${relativeSpecifierOf({ from: file, to: resolve(top, dirname(path), specifier) })}${quote}`;
+    });
+
+    if (rewritten !== source) writeFileSync(file, rewritten);
+  }
+};
+
+const isFile = (file: string) => statSync(file, { throwIfNoEntry: false })?.isFile() ?? false;
+
+const outsideImportsUnchanged = (options: { top: string; drawnRoot: string; productPath: string; dir: string }) => {
+  const { top, drawnRoot, productPath } = options;
+  const seen = new Set<string>();
+  const queue = sourceFilesIn(options.dir);
+
+  for (let file = queue.pop(); file !== undefined; file = queue.pop()) {
+    const path = posix(relative(drawnRoot, file));
+
+    for (const specifier of relativeSpecifiersOf(readFileSync(file, 'utf8'))) {
+      const imported = importedPathOf(path, specifier);
+
+      if (!leavesProduct(productPath, imported)) continue;
+
+      const found = candidatesOf(imported).find((candidate) => isFile(resolve(drawnRoot, candidate)));
+
+      if (!found || seen.has(found)) continue;
+
+      seen.add(found);
+
+      const old = resolve(drawnRoot, found);
+      const now = resolve(top, found);
+
+      if (!isFile(now) || !readFileSync(old).equals(readFileSync(now))) return false;
+      if (SOURCE_FILE.test(found)) queue.push(old);
+    }
+  }
+
+  return true;
+};
 
 const gitIn = (cwd: string, args: string[]) => git(args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 
@@ -38,9 +182,14 @@ const productAtCommitOf = (options: { top: string; commit: string; productDir: s
   const root = join(
     top,
     EDIT_OLD_BASE_FOLDER,
-    `${commit}-${createHash('sha1').update(productPath).digest('hex').slice(0, 12)}`,
+    `${commit}-${createHash('sha1').update(`${CACHE_FORMAT}:${productPath}`).digest('hex').slice(0, 12)}`,
   );
-  const dirs = { raw: resolve(root, 'raw', productPath), drawn: resolve(root, 'drawn', productPath) };
+  const dirs = {
+    raw: resolve(root, 'raw', productPath),
+    drawn: resolve(root, 'drawn', productPath),
+    drawnRoot: resolve(root, 'drawn'),
+    productPath,
+  };
 
   if (existsSync(root)) return dirs;
 
@@ -73,7 +222,28 @@ const productAtCommitOf = (options: { top: string; commit: string; productDir: s
     });
   }
 
-  rebaseOutsideImports({ dir: resolve(scratch, 'drawn', productPath), from: productDir });
+  const outside = outsideFilesAtCommitOf({
+    top,
+    commit,
+    productPath,
+    sources: entries.flatMap(({ path }, index) =>
+      SOURCE_FILE.test(path) ? [{ path, source: (blobs[index] ?? Buffer.alloc(0)).toString('utf8') }] : [],
+    ),
+  });
+
+  for (const [path, blob] of outside.files) {
+    const file = resolve(scratch, 'drawn', path);
+
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, blob);
+  }
+
+  pointMissingImportsAtWorkingTree({
+    top,
+    drawnRoot: resolve(scratch, 'drawn'),
+    productPath,
+    reached: outside.reached,
+  });
 
   try {
     renameSync(scratch, root);
@@ -107,10 +277,12 @@ export const editOldBaseOf = (options: { product: ResolvedProduct; sketch: Sketc
 
   if (variant !== EDIT_OLD || !isEditSketch(sketch)) return product;
 
-  let at: { raw: string; drawn: string };
+  let at: ReturnType<typeof productAtCommitOf>;
+  let top: string;
 
   try {
-    const top = gitTopOf(product.dir);
+    top = gitTopOf(product.dir);
+
     const commit = oldCommitOf(top, sketch);
 
     if (!commit) return product;
@@ -125,7 +297,13 @@ export const editOldBaseOf = (options: { product: ResolvedProduct; sketch: Sketc
     const current = now.get(partKeyOf(file));
     const raw = resolve(at.raw, relative(at.drawn, dirname(file.file)));
 
-    if (current && current.origin !== 'base' && sameFolder(dirname(current.file), raw)) return current;
+    if (
+      current &&
+      current.origin !== 'base' &&
+      sameFolder(dirname(current.file), raw) &&
+      outsideImportsUnchanged({ top, drawnRoot: at.drawnRoot, productPath: at.productPath, dir: dirname(file.file) })
+    )
+      return current;
 
     return {
       ...file,

@@ -1,5 +1,5 @@
 import { TypecheckResult } from '../../typecheck';
-import { isEditOldBaseFile } from './edit-old-base';
+import { isEditOldBaseFile } from './edit-old-base-folder';
 import { ruleProblemsOf } from '../check-system';
 import { Problem } from '../problem';
 import { relative } from 'path';
