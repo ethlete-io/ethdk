@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { spawnSync } from 'child_process';
 import { resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -22,6 +23,7 @@ const bootstrap = (
   query = '',
   failedImports = 0,
   rejection?: string,
+  part?: string,
 ): Result => {
   const result = spawnSync(
     process.execPath,
@@ -40,6 +42,7 @@ const bootstrap = (
         FRAME_QUERY: query,
         FRAME_FAILED_IMPORTS: String(failedImports),
         ...(rejection ? { FRAME_REJECT: rejection } : {}),
+        ...(part ? { FRAME_PART: part } : {}),
       },
     },
   );
@@ -123,5 +126,31 @@ describe('design frame bootstrap', { timeout: 30_000 }, () => {
 
     expect(result.error).toContain('Failed to fetch dynamically imported module');
     expect(result.imports).toBe(6);
+  });
+
+  it('draws every state of a part into one table laid out by its grid with `sheet`', () => {
+    const result = bootstrap('resolve', undefined, '&sheet', 0, undefined, 'components/button');
+    const sheet = document.createElement('div');
+
+    sheet.innerHTML = result.body;
+    const rows = [...sheet.querySelectorAll('tbody tr')].map((row) =>
+      [...row.children].map((cell) => cell.textContent),
+    );
+
+    expect(result.error).toBeNull();
+    expect([...sheet.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['', 'rest', 'hover']);
+    expect(rows).toEqual([
+      ['primary', 'P', 'P'],
+      ['secondary', 'S', ''],
+      ['small', 's', ''],
+    ]);
+    expect(sheet.querySelector('[data-et-sheet-state="primary-hover"] button')?.getAttribute('data-force')).toBe(
+      'hover',
+    );
+    expect(result.styles.filter((style) => style.includes('.button'))).toEqual([
+      '.button.hover{}',
+      expect.stringContaining('.button{}'),
+    ]);
+    expect(result.messages.at(-2)).toMatchObject({ type: 'design-explore:height', variant: 'sheet' });
   });
 });

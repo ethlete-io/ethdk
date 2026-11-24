@@ -21,7 +21,7 @@ const intervals = [];
 const context = createContext({
   document: dom.window.document,
   location: {
-    search: `?product=probe&part=components/slow&state=default${process.env.FRAME_QUERY ?? ''}`,
+    search: `?product=probe&part=${process.env.FRAME_PART ?? 'components/slow'}&state=default${process.env.FRAME_QUERY ?? ''}`,
     href: 'http://localhost/frame.html',
   },
   URLSearchParams,
@@ -92,6 +92,24 @@ const modules = {
             default: { states: { default: {} }, render: () => ({ body: '<b>Ready</b>', styles: '.part{}' }) },
           };
         },
+        'components/button': async () => ({
+          default: {
+            states: {
+              primary: { label: 'P' },
+              'primary-hover': { label: 'P', force: 'hover' },
+              secondary: { label: 'S' },
+              small: { label: 's' },
+            },
+            grid: {
+              columns: ['rest', 'hover'],
+              rows: { primary: { rest: 'primary', hover: 'primary-hover' }, secondary: { rest: 'secondary' } },
+            },
+            render: ({ label, force }) => ({
+              body: `<button${force ? ` data-force="${force}"` : ''}>${label}</button>`,
+              styles: force ? '.button.hover{}' : '.button{}',
+            }),
+          },
+        }),
       },
     },
     sketchParts: {},
@@ -99,11 +117,15 @@ const modules = {
     sketchTokens: {},
   },
 };
-const source = ts.transpileModule(readFileSync(process.argv[2], 'utf8'), {
-  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
-}).outputText;
-const entry = new SourceTextModule(source, { context });
+const transpiled = (file) =>
+  ts.transpileModule(readFileSync(file, 'utf8'), {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
+  }).outputText;
+const entry = new SourceTextModule(transpiled(process.argv[2]), { context });
 await entry.link((specifier) => {
+  if (specifier === './frame-sheet')
+    return new SourceTextModule(transpiled(new URL(specifier + '.ts', `file://${process.argv[2]}`)), { context });
+
   const exports = modules[specifier];
   return new SyntheticModule(
     Object.keys(exports),

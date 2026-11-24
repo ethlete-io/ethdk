@@ -11,6 +11,7 @@ import { drawState, Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { paintFill } from './frame-fill';
 import { fitRoot } from './frame-fit';
+import { sheetLayoutOf, sheetMarkupOf, SHEET_STYLES } from './frame-sheet';
 import { pinScheme } from './frame-scheme';
 import { watchSurfaces } from './frame-surfaces';
 import surfaceInteractiveCss from './surface-interactive.css?inline';
@@ -25,7 +26,8 @@ const params = new URLSearchParams(location.search);
 const slug = params.get('call') ?? '';
 const product = params.get('product');
 const partKey = params.get('part') ?? '';
-let key = (product ? params.get('state') : params.get('variant')) ?? '';
+const sheet = product !== null && params.has('sheet');
+let key = sheet ? 'sheet' : ((product ? params.get('state') : params.get('variant')) ?? '');
 const sketch = product ? params.get('sketch') : null;
 const sketchVariant = params.get('variant') ?? '';
 const fit = product !== null && params.has('fit');
@@ -199,14 +201,19 @@ const composed = async (name: string) => {
 let composing: Promise<void> | null = null;
 let ngStylesStart: (() => void) | null = null;
 
+const partLoadOf = (name: string) =>
+  sketch ? sketchParts[name]?.[sketch]?.[sketchVariant]?.[partKey] : parts[name]?.[partKey];
+
+const failMissingPart = (name: string) =>
+  failMissing(
+    sketch
+      ? `design-explore: variant "${sketchVariant}" of the sketch on ${sketch} in product "${name}" has no part "${partKey}"`
+      : `design-explore: product "${name}" has no part "${partKey}"`,
+  );
+
 const drawPart = async (name: string): Promise<Drawing | null> => {
-  const load = sketch ? sketchParts[name]?.[sketch]?.[sketchVariant]?.[partKey] : parts[name]?.[partKey];
-  if (!load)
-    return failMissing(
-      sketch
-        ? `design-explore: variant "${sketchVariant}" of the sketch on ${sketch} in product "${name}" has no part "${partKey}"`
-        : `design-explore: product "${name}" has no part "${partKey}"`,
-    );
+  const load = partLoadOf(name);
+  if (!load) return failMissingPart(name);
 
   const loadProps = propsSketch ? sketchParts[name]?.[propsSketch]?.[propsVariant]?.[partKey] : load;
   if (!loadProps)
@@ -228,6 +235,33 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
     return await drawState(part as Part<unknown>, holder.states[key]);
   } catch (error) {
     return fail(`design-explore: state "${key}" of "${partKey}" failed\n${messageOf(error)}`);
+  }
+};
+
+/** Draws every state of the part into one table laid out by its `grid`, for the `sheet` param. */
+const drawSheet = async (name: string): Promise<Drawing | null> => {
+  const load = partLoadOf(name);
+  if (!load) return failMissingPart(name);
+
+  try {
+    composing ??= composed(name);
+    await composing;
+
+    const part = (await retried(load)).default as Part<unknown>;
+    const states = Object.keys(part.states);
+    const [first] = states;
+
+    if (first === undefined) return failMissing(`design-explore: part "${partKey}" has no state`);
+
+    const { styles } = await drawState(part, part.states[first]);
+    const markupOf = stateMarkupOf({ part, states: part.states }, styles);
+    const bodies = Object.fromEntries(
+      await Promise.all(states.map((state) => markupOf(state).then((body) => [state, body] as const))),
+    );
+
+    return { body: sheetMarkupOf(sheetLayoutOf(states, part.grid), bodies), styles: `${SHEET_STYLES}${styles}` };
+  } catch (error) {
+    return fail(`design-explore: sheet of "${partKey}" failed\n${messageOf(error)}`);
   }
 };
 
@@ -484,7 +518,7 @@ const runPartRules = (drawn: NonNullable<typeof drawnPart>, styles: string) =>
 // macOS WebKit can loop in module evaluation when a frame with top-level await is removed.
 const drawKey = async () => {
   const tokenStyles = product ? await tokensOf(product) : null;
-  const loaded = await (product ? drawPart(product) : drawCall());
+  const loaded = await (product ? (sheet ? drawSheet(product) : drawPart(product)) : drawCall());
   const undo: (() => void)[] = [];
 
   if (loaded) {
@@ -563,7 +597,8 @@ const drawFrame = async () => {
     .map((name): [string, string] => [name, root.getAttribute(name) ?? '']);
   const undo = await drawKey();
 
-  if (product && !flowTo && !motionName) Object.assign(window, { etSwitchState: switchStateOf(rootAttributes, undo) });
+  if (product && !sheet && !flowTo && !motionName)
+    Object.assign(window, { etSwitchState: switchStateOf(rootAttributes, undo) });
 
   const place = () => {
     applyEmbed(frameElement, root);
