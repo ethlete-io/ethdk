@@ -8,7 +8,7 @@ const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 
 
 process.env['DE_PORT'] ??= '4477';
 
-const VIEW = { systemProduct: 'studio', systemEntry: 'pages/system' };
+const VIEW = { systemProduct: 'studio', systemEntry: 'components/zoom-chip' };
 const DOWN_MS = 3000;
 const PAINT_TIMEOUT_MS = 120000;
 const RECOVERY_MS = 60000;
