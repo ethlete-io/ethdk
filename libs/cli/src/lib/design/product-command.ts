@@ -105,7 +105,7 @@ export const setProductBase = (options: { target: string; name: string; base: st
 /**
  * `et design product new <name> [--base <path|@ethlete/components>] [--from-project <name>] [--colors light|dark|both] [--accent <#hex>]` writes the
  * product's `config.json` entry and its empty layer folders. `--colors` and `--accent` start its colors foundation
- * with those surfaces and that primary colour. `et design product set <name> --base <path|@ethlete/components|none>`
+ * with those surfaces and that primary colour; `--colors` defaults to both. `et design product set <name> --base <path|@ethlete/components|none>`
  * changes the base of an existing product.
  */
 export const designProduct = (options: { target: string; argv: string[]; invocation: string }) => {
@@ -155,7 +155,7 @@ export const designProduct = (options: { target: string; argv: string[]; invocat
   const base = args.values['--base'] ?? null;
   const fromProject = args.values['--from-project'] ?? null;
 
-  const colors = args.values['--colors'] ?? null;
+  const colors = args.values['--colors'] ?? 'both';
   const accent = args.values['--accent'] ?? null;
 
   const refused = createProduct({ target, name, base, fromProject, colors, accent });

@@ -41,8 +41,7 @@ describe('designProduct', () => {
     const target = make();
 
     run(target, 'new', 'shop');
-    for (const layer of ['foundations', 'components', 'elements', 'pages'])
-      rmdirSync(join(target, DESIGN_DIR, 'shop', layer));
+    for (const layer of ['components', 'elements', 'pages']) rmdirSync(join(target, DESIGN_DIR, 'shop', layer));
 
     expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['shop'] })).toBe(0);
   }, 60_000);
@@ -142,6 +141,19 @@ describe('designProduct', () => {
     expect(readConfig(target)?.products?.['tomflix']?.schemes).toEqual(['dark']);
     expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['tomflix'] })).toBe(0);
   }, 60_000);
+
+  it('starts both surfaces without --colors, so no grey placeholder is left', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+
+    expect(run(target, 'new', 'shop')).toBe(0);
+
+    const css = readFileSync(join(target, DESIGN_DIR, 'shop', 'foundations', 'colors', 'colors.css'), 'utf8');
+
+    expect(css).toContain('.et-surface--light');
+    expect(css).toContain('.et-surface--dark');
+    expect(readConfig(target)?.products?.['shop']?.schemes).toBeUndefined();
+  });
 
   it('starts both surfaces with the accent, and refuses an unknown colour base or accent', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
