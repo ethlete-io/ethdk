@@ -1839,6 +1839,40 @@ describe('sketchRowsOf', () => {
     expect(shownSketchRowsOf({ listed: rows, open: true }).find((row) => row.key === 'a')?.shots).toHaveLength(16);
   });
 
+  it('folds a state into its rest only at the widths it draws like rest', () => {
+    const card = part({ layer: 'elements', name: 'title-card', states: ['film', 'film-hover'], widths: [168, 112] });
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product([card]),
+      part: card,
+      sketch: sketch({
+        target: 'elements/title-card',
+        layer: 'elements',
+        name: 'title-card',
+        variants: ['a'],
+        targets: [
+          {
+            variant: 'a',
+            states: ['film', 'film-hover'],
+            widths: [168, 112],
+            unchanged: [],
+            sameAsRestAtSizes: { 'film-hover': { rest: 'film', sizes: ['168'] } },
+          },
+        ],
+      }),
+      variants: ['a'],
+      epoch: 1,
+      revision: 1,
+    });
+    const variant = shownSketchRowsOf({ listed: rows }).find((row) => row.key === 'a');
+
+    expect(variant?.shots.map((shot) => [shot.state, shot.restOf ?? []])).toEqual([
+      ['film · 112', []],
+      ['film · 168', ['film-hover']],
+      ['film-hover · 112', []],
+    ]);
+  });
+
   it('draws an element sketch state at every width the element declares, desktop as well as mobile', () => {
     const hero = part({ layer: 'elements', name: 'hero', states: ['knight', 'dune'], widths: [1440, 390] });
     const rows = sketchRowsOf({

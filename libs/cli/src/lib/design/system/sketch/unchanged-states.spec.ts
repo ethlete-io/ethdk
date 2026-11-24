@@ -13,6 +13,7 @@ import {
   forgetUnchangedStates,
   keptComparisonOf,
   keptSameAsRestOf,
+  sameAsRestAtSizesOf,
   sameAsRestOf,
   SketchPartLoader,
   unchangedForFoldOf,
@@ -533,6 +534,10 @@ describe('sameAsRestOf', () => {
 
     expect(same['film-hover']).toBeUndefined();
     expect(same['film-active']).toBe('film');
+    expect((await sameAsRestAtSizesOf({ product, sketch, variant: 'a', load, pictureOf }))['film-hover']).toEqual({
+      rest: 'film',
+      sizes: ['168'],
+    });
   });
 
   it('folds the title card to its rest and focus columns in the sketch view', async () => {

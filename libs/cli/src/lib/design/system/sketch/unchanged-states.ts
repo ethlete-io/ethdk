@@ -38,7 +38,9 @@ type Kept = { unchanged: string[]; drawn: DrawnPart[]; changes: Record<string, C
 
 const cache = new Map<string, Kept>();
 
-type KeptRests = { same: Record<string, string>; drawn: DrawnPart[] };
+export type RestAtSizes = Record<string, { rest: string; sizes: string[] }>;
+
+type KeptRests = { same: Record<string, string>; atSizes: RestAtSizes; drawn: DrawnPart[] };
 
 const restCache = new Map<string, KeptRests>();
 
@@ -381,15 +383,21 @@ const drawsLikeRest = async (options: {
     pictureOf({ product, part: key, state: drawn, ...frame, sketch, params: new URLSearchParams(), priority: 'low' });
 
   try {
+    const frames = framesOf(part, presets);
     const pairs = await Promise.all(
-      framesOf(part, presets).map(async (frame) => {
+      frames.map(async (frame) => {
         const [before, after] = await Promise.all([draw(rest, frame), draw(state, frame)]);
 
         return (await comparePixelPair(before.png, after.png)).same;
       }),
     );
+    const sizeOf = (frame: (typeof frames)[number]) =>
+      frame.preset ?? (frame.width === null ? null : String(frame.width));
+    const sizes = [...new Set(frames.map(sizeOf))].filter(
+      (size): size is string => size !== null && frames.every((frame, index) => sizeOf(frame) !== size || pairs[index]),
+    );
 
-    return { result: pairs.every(Boolean) ? 'same' : 'different' } as const;
+    return { result: pairs.every(Boolean) ? 'same' : 'different', sizes } as const;
   } catch {
     return { result: 'failed' } as const;
   }
@@ -415,34 +423,33 @@ const restKeyOf = (options: KeptOptions) => {
 export const keptSameAsRestOf = async (options: KeptOptions): Promise<Record<string, string> | null> =>
   restCache.get(restKeyOf(options))?.same ?? null;
 
-/**
- * Each state of the grid of the part `variant` draws that renders the same as its row's `rest` state, in every
- * width, preset and interaction of the part, with that rest state: the same markup and styles, or with `pictureOf` the same
- * pixels in the default theme. Kept by source hashes like `unchangedForFoldOf`; `forgetUnchangedStates` drops them.
- */
-export const sameAsRestOf = async (options: {
+/** The states `sameAsRestAtSizesOf` found drawn like their rest state at some sizes only, or `null` while none is kept. */
+export const keptSameAsRestAtSizesOf = async (options: KeptOptions): Promise<RestAtSizes | null> =>
+  restCache.get(restKeyOf(options))?.atSizes ?? null;
+
+const restComparisonOf = async (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   variant: string;
   load: SketchPartLoader;
   pictureOf?: PictureOf;
   part?: string;
-}): Promise<Record<string, string>> => {
+}): Promise<{ same: Record<string, string>; atSizes: RestAtSizes }> => {
   const { product, sketch, variant, load, pictureOf, part: compared = partKeyOf(sketch) } = options;
   const overlaid = overlaySketch({ product, sketch, variant });
   const drawnPart = overlaid.parts.find((part) => partKeyOf(part) === compared);
 
-  if (!drawnPart) return {};
+  if (!drawnPart) return { same: {}, atSizes: {} };
 
   const key = restKeyOf({ product, sketch, variant, pictured: !!pictureOf, part: compared });
-  const known = restCache.get(key)?.same;
+  const known = restCache.get(key);
 
   if (known) return known;
 
   const on = { target: sketch.target, variant };
   const after = await renderedOf(() => load({ file: drawnPart.file, product: product.name, sketch: on }));
 
-  if (!after) return {};
+  if (!after) return { same: {}, atSizes: {} };
 
   const rests = [...restStatesOf(after.part.grid, new Set(after.states.keys()))];
   const presets = drawnPart.layer === 'pages' ? Object.keys(product.presets) : null;
@@ -470,9 +477,33 @@ export const sameAsRestOf = async (options: {
   );
   const same = Object.fromEntries(rests.filter((_, index) => compares[index]?.result === 'same'));
 
-  if (compares.some((entry) => entry.result === 'failed')) return same;
-  if (restCache.size >= CACHE_LIMIT) restCache.delete(restCache.keys().next().value ?? '');
-  restCache.set(key, { same, drawn: [{ product: product.name, part: compared, sketch: on }] });
+  const atSizes: RestAtSizes = Object.fromEntries(
+    rests.flatMap(([state, rest], index) => {
+      const compared = compares[index];
+      const sizes = compared && 'sizes' in compared && compared.result === 'different' ? compared.sizes : [];
 
-  return same;
+      return sizes.length > 0 ? [[state, { rest, sizes }]] : [];
+    }),
+  );
+
+  if (compares.some((entry) => entry.result === 'failed')) return { same, atSizes };
+  if (restCache.size >= CACHE_LIMIT) restCache.delete(restCache.keys().next().value ?? '');
+  restCache.set(key, { same, atSizes, drawn: [{ product: product.name, part: compared, sketch: on }] });
+
+  return { same, atSizes };
 };
+
+/**
+ * Each state of the grid of the part `variant` draws that renders the same as its row's `rest` state, in every
+ * width, preset and interaction of the part, with that rest state: the same markup and styles, or with `pictureOf` the same
+ * pixels in the default theme. Kept by source hashes like `unchangedForFoldOf`; `forgetUnchangedStates` drops them.
+ */
+export const sameAsRestOf = async (options: Parameters<typeof restComparisonOf>[0]) =>
+  (await restComparisonOf(options)).same;
+
+/**
+ * Each state `sameAsRestOf` keeps because it differs from its rest state at some size, with the sizes (preset names
+ * or widths) where it draws the same as that rest state in every interaction. Those cells need no frame of their own.
+ */
+export const sameAsRestAtSizesOf = async (options: Parameters<typeof restComparisonOf>[0]) =>
+  (await restComparisonOf(options)).atSizes;

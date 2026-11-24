@@ -1467,14 +1467,22 @@ export const sketchRowsOf = ({
 
           const change = key === CURRENT ? undefined : target?.crops?.[state];
           const sameAsRest = Object.entries(target?.sameAsRest ?? {});
-          const restOf = sameAsRest.filter(([, rest]) => rest === state).map(([folded]) => folded);
+          const atSizes = Object.entries(target?.sameAsRestAtSizes ?? {}).filter(
+            ([, { sizes: equal }]) => size !== null && equal.includes(size),
+          );
+          const restOf = [
+            ...sameAsRest.filter(([, rest]) => rest === state).map(([folded]) => folded),
+            ...atSizes.filter(([, { rest }]) => rest === state).map(([folded]) => folded),
+          ];
 
           return {
             state: sizes.length > 1 ? `${state} · ${size}` : state,
             changed: !drawnHere ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
             ...(change ? { change } : {}),
             ...(inherited.has(state) ? { inherited: true as const } : {}),
-            ...(sameAsRest.some(([folded]) => folded === state) ? { sameAsRest: true } : {}),
+            ...(sameAsRest.some(([folded]) => folded === state) || atSizes.some(([folded]) => folded === state)
+              ? { sameAsRest: true }
+              : {}),
             ...(restOf.length > 0 ? { restOf } : {}),
             src: partFrameUrl({ ...address, ...(size === null ? { fit: true } : {}) }),
             picture: partShotUrl({ ...address, preset: sized.preset, width: sized.width }),

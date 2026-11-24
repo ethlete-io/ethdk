@@ -74,7 +74,14 @@ import {
 } from './system/sketch/sketch';
 import { noChangedStateLinesOf } from './system/sketch/no-visible-change';
 import { partKeyOf } from './system/resolve-product';
-import { keptComparisonOf, keptSameAsRestOf, sameAsRestOf, unchangedForFoldOf } from './system/sketch/unchanged-states';
+import {
+  keptComparisonOf,
+  keptSameAsRestAtSizesOf,
+  keptSameAsRestOf,
+  sameAsRestAtSizesOf,
+  sameAsRestOf,
+  unchangedForFoldOf,
+} from './system/sketch/unchanged-states';
 import { shotFramesOf } from './system/sketch/shot-frames';
 import { SketchVariant } from './system/system-modules';
 
@@ -319,10 +326,12 @@ const keptOf = async (options: {
 }) => {
   const kept = options.problem ? null : await keptComparisonOf(options);
   const rests = options.problem ? null : await keptSameAsRestOf(options);
+  const restSizes = options.problem ? null : await keptSameAsRestAtSizesOf(options);
 
   return {
     ...(kept ? { unchanged: kept.unchanged, crops: kept.changes } : {}),
     ...(rests ? { sameAsRest: rests } : {}),
+    ...(restSizes && Object.keys(restSizes).length > 0 ? { sameAsRestAtSizes: restSizes } : {}),
   };
 };
 
@@ -340,8 +349,14 @@ const comparedOf = async (options: {
   const unchanged = await unchangedForFoldOf(options);
   const kept = await keptComparisonOf({ ...options, pictured: !!options.pictureOf });
   const sameAsRest = await sameAsRestOf(options);
+  const sameAsRestAtSizes = await sameAsRestAtSizesOf(options);
 
-  return { unchanged, sameAsRest, ...(kept ? { crops: kept.changes } : {}) };
+  return {
+    unchanged,
+    sameAsRest,
+    ...(Object.keys(sameAsRestAtSizes).length > 0 ? { sameAsRestAtSizes } : {}),
+    ...(kept ? { crops: kept.changes } : {}),
+  };
 };
 
 const partTargetsOf = async ({
