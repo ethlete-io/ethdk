@@ -1,0 +1,79 @@
+@layer base {
+  :root,
+  .et-surface--dark {
+    --et-surface-background: 20 17 15;
+    --et-surface-color: 245 240 233;
+    --et-surface-color-muted: 178 169 158;
+    --et-surface-color-subtle: 140 131 121;
+    --et-surface-border: 62 55 49;
+    --et-surface-interaction: 38 33 30;
+    --et-surface-interaction-hover: 46 40 36;
+    --et-surface-interaction-focus: 54 47 42;
+    --et-surface-interaction-active: 64 56 50;
+    --et-surface-interaction-disabled: 30 26 24;
+    --et-surface-type: dark;
+    --et-surface-elevation: 0;
+    --et-shadow-color-rgb: 8 6 5;
+    color-scheme: dark;
+  }
+
+  :root {
+    --et-color-primary: 224 164 82;
+    --et-color-primary-hover: 236 182 106;
+    --et-color-primary-focus: 236 182 106;
+    --et-color-primary-active: 204 145 64;
+    --et-color-primary-disabled: 98 84 66;
+    --et-color-on-primary: 28 19 10;
+    --et-color-on-primary-hover: 28 19 10;
+    --et-color-on-primary-focus: 28 19 10;
+    --et-color-on-primary-active: 28 19 10;
+    --et-color-on-primary-disabled: 58 50 42;
+    --et-color-primary-ink: 240 190 120;
+    --et-color-primary-ink-hover: 248 206 146;
+    --et-color-primary-ink-focus: 248 206 146;
+    --et-color-primary-ink-active: 226 172 100;
+    --et-color-primary-ink-disabled: 124 112 98;
+  }
+
+  :root,
+  :where([class*='et-surface--']) {
+    --et-surface-background-rgb: var(--et-surface-background);
+    --et-surface-background-solid: rgb(var(--et-surface-background-rgb));
+    --et-surface-color-rgb: var(--et-surface-color);
+    --et-surface-color-solid: rgb(var(--et-surface-color-rgb));
+    --et-surface-color-muted-rgb: var(--et-surface-color-muted);
+    --et-surface-color-muted-solid: rgb(var(--et-surface-color-muted-rgb));
+    --et-surface-color-subtle-rgb: var(--et-surface-color-subtle);
+    --et-surface-color-subtle-solid: rgb(var(--et-surface-color-subtle-rgb));
+    --et-surface-border-rgb: var(--et-surface-border);
+    --et-surface-border-solid: rgb(var(--et-surface-border-rgb));
+    --et-surface-interaction-rgb: var(--et-surface-interaction);
+    --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
+    --et-surface-interaction-hover-rgb: var(--et-surface-interaction-hover);
+    --et-surface-interaction-hover-solid: rgb(var(--et-surface-interaction-hover-rgb));
+    --et-surface-interaction-focus-rgb: var(--et-surface-interaction-focus);
+    --et-surface-interaction-focus-solid: rgb(var(--et-surface-interaction-focus-rgb));
+    --et-surface-interaction-active-rgb: var(--et-surface-interaction-active);
+    --et-surface-interaction-active-solid: rgb(var(--et-surface-interaction-active-rgb));
+    --et-surface-interaction-disabled-rgb: var(--et-surface-interaction-disabled);
+    --et-surface-interaction-disabled-solid: rgb(var(--et-surface-interaction-disabled-rgb));
+  }
+
+  :root,
+  :where([class*='et-color--']) {
+    --et-theme-color-primary-rgb: var(--et-color-primary);
+    --et-theme-color-primary-opacity: 1;
+    --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
+    --et-theme-color-primary: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
+    --et-theme-color-on-primary-rgb: var(--et-color-on-primary);
+    --et-theme-color-on-primary-opacity: 1;
+    --et-theme-color-on-primary-solid: rgb(
+      var(--et-theme-color-on-primary-rgb) / var(--et-theme-color-on-primary-opacity)
+    );
+    --et-theme-color-on-primary: rgb(var(--et-theme-color-on-primary-rgb) / var(--et-theme-color-on-primary-opacity));
+    --et-theme-color-ink-rgb: var(--et-color-primary-ink, var(--et-color-primary));
+    --et-theme-color-ink-opacity: 1;
+    --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
+    --et-theme-color-ink: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
+  }
+}

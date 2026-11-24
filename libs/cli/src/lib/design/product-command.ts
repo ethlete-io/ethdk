@@ -61,6 +61,7 @@ export const createProduct = (options: {
   else entry.presets = { phone: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } };
 
   if (colors === 'light' || colors === 'dark') entry.schemes = [colors];
+  if (accent) entry.accent = accent;
 
   const configPath = configPathOf(target);
 
@@ -84,11 +85,13 @@ export const createProduct = (options: {
   return null;
 };
 
-/**
- * Sets or, with `none`, removes the `base` of a declared product in `config.json`; answers with why it refused, or null.
- */
-export const setProductBase = (options: { target: string; name: string; base: string }): string | null => {
-  const { target, name, base } = options;
+const setProductKey = (options: {
+  target: string;
+  name: string;
+  key: 'base' | 'accent';
+  value: string;
+}): string | null => {
+  const { target, name, key, value } = options;
   const config: DesignConfig = readConfig(target) ?? {};
   const entry = config.products?.[name];
 
@@ -96,8 +99,8 @@ export const setProductBase = (options: { target: string; name: string; base: st
     return `NO PRODUCT "${name}" - config.json declares ${Object.keys(config.products ?? {}).join(', ') || 'none'}.`;
   }
 
-  const { base: _previous, ...rest } = entry;
-  const next: DesignProduct = base === 'none' ? rest : { ...rest, base };
+  const { [key]: _previous, ...rest } = entry;
+  const next: DesignProduct = value === 'none' ? rest : { ...rest, [key]: value };
 
   writeDesignFile(configPathOf(target), jsonLayoutOf({ ...config, products: { ...config.products, [name]: next } }));
 
@@ -105,16 +108,35 @@ export const setProductBase = (options: { target: string; name: string; base: st
 };
 
 /**
+ * Sets or, with `none`, removes the `base` of a declared product in `config.json`; answers with why it refused, or null.
+ */
+export const setProductBase = (options: { target: string; name: string; base: string }): string | null =>
+  setProductKey({ target: options.target, name: options.name, key: 'base', value: options.base });
+
+/**
+ * Sets or, with `none`, removes the chosen `accent` of a declared product in `config.json`; answers with why it refused, or null.
+ */
+export const setProductAccent = (options: { target: string; name: string; accent: string }): string | null => {
+  const { accent } = options;
+
+  if (accent !== 'none' && !isHexColor(accent))
+    return `BAD ACCENT "${accent}" - use a hex colour like #e50914, or none.`;
+
+  return setProductKey({ target: options.target, name: options.name, key: 'accent', value: accent });
+};
+
+/**
  * `et design product new <name> [--base <path|@ethlete/components>] [--from-project <name>] [--colors light|dark|both] [--accent <#hex>]` writes the
  * product's `config.json` entry and its empty layer folders. `--colors` and `--accent` start its colors foundation
- * with those surfaces and that primary colour; `--colors` defaults to both. `et design product set <name> --base <path|@ethlete/components|none>`
- * changes the base of an existing product.
+ * with those surfaces and that primary colour, and the accent is recorded as the product's binding primary; `--colors` defaults to both.
+ * `et design product set <name> --base <path|@ethlete/components|none>` changes the base of an existing product, `--accent <#hex|none>` its accent.
  */
 export const designProduct = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const usage = [
     `USAGE ${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>] [--colors light|dark|both] [--accent <#hex>]`,
     `      ${invocation} product set <name> --base <path|@ethlete/components|none>`,
+    `      ${invocation} product set <name> --accent <#hex|none>`,
   ].join('\n');
   const args = argsOf(argv, { values: ['--base', '--from-project', '--colors', '--accent'], switches: [] });
 
@@ -134,14 +156,17 @@ export const designProduct = (options: { target: string; argv: string[]; invocat
 
   if (verb === 'set') {
     const base = args.values['--base'];
+    const accent = args.values['--accent'];
 
-    if (!base || Object.keys(args.values).length > 1) {
+    if ((!base && !accent) || Object.keys(args.values).length > 1) {
       console.error(usage);
 
       return 1;
     }
 
-    const refused = setProductBase({ target, name, base });
+    const refused = base
+      ? setProductBase({ target, name, base })
+      : setProductAccent({ target, name, accent: accent ?? '' });
 
     if (refused) {
       console.error(refused);
@@ -149,7 +174,8 @@ export const designProduct = (options: { target: string; argv: string[]; invocat
       return 1;
     }
 
-    console.log(base === 'none' ? `${name} inherits from no base.` : `${name} inherits from ${base}.`);
+    if (base) console.log(base === 'none' ? `${name} inherits from no base.` : `${name} inherits from ${base}.`);
+    else console.log(accent === 'none' ? `${name} has no chosen accent.` : `${name} keeps ${accent} as its primary.`);
 
     return 0;
   }

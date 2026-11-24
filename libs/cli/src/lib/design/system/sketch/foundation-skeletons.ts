@@ -22,7 +22,7 @@ export const COLOR_SCHEMES: readonly ColorScheme[] = ['light', 'dark', 'both'];
 /** True for a `#rgb` or `#rrggbb` hex colour. */
 export const isHexColor = (value: string) => /^#([\da-f]{3}|[\da-f]{6})$/iu.test(value);
 
-const rgbOf = (hex: string) => {
+export const rgbOf = (hex: string) => {
   const pairs =
     hex.length === 4
       ? [...hex.slice(1)].map((digit) => digit + digit)

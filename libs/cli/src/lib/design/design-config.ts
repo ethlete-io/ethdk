@@ -70,6 +70,8 @@ export type DesignProduct = DesignProject & {
   /** The language sketch round and variant notes are written in; `sketch check` warns on a note in another one. */
   noteLanguage?: DesignNoteLanguage;
   base?: string;
+  /** The `#hex` accent chosen at `product new`; `et design check` and `et design lint` refuse a foundations `--et-color-primary` of another colour. */
+  accent?: string;
   /** The product's logo, an svg or png path from the checkout root; the Studio rail draws it, and falls back to initials when missing or unreadable. */
   logo?: string;
   presets?: Record<string, DesignPreset>;

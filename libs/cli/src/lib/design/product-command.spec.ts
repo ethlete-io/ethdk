@@ -9,6 +9,7 @@ import { checkSystem } from './system/check-system';
 import { resolveProduct } from './system/resolve-product';
 import { configPathOf, DESIGN_DIR, readConfig } from './design-config';
 import { designProduct, newProductAnswer, productBaseAnswer } from './product-command';
+import { designLint } from './lint-command';
 
 const make = () => mkdtempSync(join(tmpdir(), 'cli-design-product-'));
 
@@ -141,6 +142,42 @@ describe('designProduct', () => {
     expect(readConfig(target)?.products?.['tomflix']?.schemes).toEqual(['dark']);
     expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['tomflix'] })).toBe(0);
   }, 60_000);
+
+  // The accent chosen at the start binds: it stays the primary, and another colour may only be an extra variant next to it.
+  it('refuses the brass primary of client run 1029 on a product started with the accent #e50914', () => {
+    const out: string[] = [];
+
+    vi.spyOn(console, 'log').mockImplementation((line: string) => void out.push(line));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const target = make();
+
+    expect(run(target, 'new', 'tomflix', '--colors', 'dark', '--accent', '#e50914')).toBe(0);
+    expect(readConfig(target)?.products?.['tomflix']?.accent).toBe('#e50914');
+
+    const css = join(target, DESIGN_DIR, 'tomflix', 'foundations', 'colors', 'colors.css');
+
+    writeFileSync(css, readFileSync(join(__dirname, '__fixtures__/client-run-1029-colors/colors.css'), 'utf8'));
+
+    expect(designLint({ target, argv: [css], invocation: 'et design' })).toBe(1);
+    expect(out).toContainEqual(
+      expect.stringMatching(
+        /^ACCENT-PRIMARY .*colors\.css: --et-color-primary is 224 164 82, but tomflix was started with the accent #e50914 \(229 9 20\) - set --et-color-primary to 229 9 20; show another colour only as an extra variant/u,
+      ),
+    );
+  }, 60_000);
+
+  it('records, changes and drops the accent of an existing product with product set', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const target = make();
+
+    expect(run(target, 'new', 'shop')).toBe(0);
+    expect(run(target, 'set', 'shop', '--accent', 'red')).toBe(1);
+    expect(run(target, 'set', 'shop', '--accent', '#fc0')).toBe(0);
+    expect(readConfig(target)?.products?.['shop']?.accent).toBe('#fc0');
+    expect(run(target, 'set', 'shop', '--accent', 'none')).toBe(0);
+    expect(readConfig(target)?.products?.['shop']?.accent).toBeUndefined();
+  });
 
   it('starts both surfaces without --colors, so no grey placeholder is left', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
