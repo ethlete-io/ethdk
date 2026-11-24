@@ -956,6 +956,48 @@ const eventLog = (startedAt = Date.now()) => {
   };
 };
 
+let streamTimeline = eventLog();
+let writeSeen = false;
+let awaitingListing = false;
+
+const markWrite = (what) => {
+  writeSeen = true;
+  awaitingListing = true;
+  streamTimeline.add('wrote', what);
+};
+
+const watchStream = (page) => {
+  streamTimeline = eventLog();
+  writeSeen = false;
+  awaitingListing = false;
+
+  const pathOf = (request) => new URL(request.url()).pathname;
+  const onRequest = (request) => {
+    if (pathOf(request) === '/__design/comment-events') streamTimeline.add('stream request', request.url());
+    else if (awaitingListing && pathOf(request) === '/__design/sketches') {
+      awaitingListing = false;
+      streamTimeline.add('first listing request after the write', request.url());
+    }
+  };
+  const onResponse = (response) => {
+    if (pathOf(response.request()) === '/__design/comment-events')
+      streamTimeline.add('stream response', response.url());
+  };
+
+  page.on('request', onRequest);
+  page.on('response', onResponse);
+
+  return () => {
+    page.off('request', onRequest);
+    page.off('response', onResponse);
+  };
+};
+
+const streamLines = async (result) =>
+  (result.ok && !process.env.FORCE_FAIL) || !writeSeen
+    ? result
+    : { ...result, detail: `${result.detail}${await streamTimeline.lines()}` };
+
 const settled = async (page, selector) => {
   await listingAnswered(page);
   await settleLayout({
@@ -2351,6 +2393,7 @@ const CASES = [
         const file = join(commentsDir, `${id}.json`);
 
         mkdirSync(commentsDir, { recursive: true });
+        markWrite(`${id}.json`);
         writeFileSync(
           file,
           JSON.stringify({ state: 'part', size: 'desktop', createdAt: '2026-11-01T10:00:00.000Z', ...comment }),
@@ -5120,6 +5163,7 @@ const CASES = [
         for (const target of targets.slice(0, 2)) {
           copyPart(join(studio, target), join(sketchDir, 'a', target));
         }
+        markWrite('sketch.json');
         writeFileSync(
           join(sketchDir, 'sketch.json'),
           JSON.stringify({
@@ -5965,6 +6009,8 @@ const work = async () => {
         heldListings.startJob();
         listingCounts.requested = 0;
 
+        const unwatch = watchStream(page);
+
         try {
           result = await Promise.race([
             runCase(page, studioUrl, designPort, PAGES[job.target], CASES[job.case]),
@@ -5984,6 +6030,9 @@ const work = async () => {
 
           result = { ok: false, detail: `${String(error).split('\n')[0]}${cause}${at ? ` at ${at}` : ''}` };
         }
+
+        unwatch();
+        result = await streamLines(result);
 
         if (!CASES[job.case].open && !CASES[job.case].listingMayPend) result = heldListings.check(result);
 
