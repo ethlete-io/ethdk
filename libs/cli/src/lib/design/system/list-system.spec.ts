@@ -559,10 +559,19 @@ describe('gridReportOf', () => {
   it('names each empty cell of a row that draws a state in another column', () => {
     expect(
       gridReportOf(
-        { columns: ['rest', 'active'], rows: { row: { rest: 'a', active: 'b' }, selected: { rest: 'c' }, none: {} } },
-        ['a', 'b', 'c', 'd'],
+        {
+          columns: ['rest', 'hover', 'active'],
+          rows: { row: { rest: 'a', hover: 'b', active: 'c' }, selected: { rest: 'd', hover: 'e' }, none: {} },
+        },
+        ['a', 'b', 'c', 'd', 'e'],
       )?.line,
-    ).toBe('grid 3 rows x 2 columns, leaves out d; draws no selected active');
+    ).toBe('grid 3 rows x 3 columns, draws no selected active');
+  });
+
+  it('does not report the interactions of a rest-only row after the first as undrawn', () => {
+    const grid = { columns: ['rest', 'hover'], rows: { base: { rest: 'a', hover: 'b' }, content: { rest: 'c' } } };
+
+    expect(gridReportOf(grid, ['a', 'b', 'c'])?.line).toBe('grid 2 rows x 2 columns ok');
   });
 
   it('warns of rows that fill some interaction columns but skip others, and leaves rest-only rows alone', () => {

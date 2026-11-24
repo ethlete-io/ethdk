@@ -75,8 +75,10 @@ export const gridReportOf = (
   );
   const left = states.filter((state) => !cellsOf.has(state));
   const size = `grid ${countOf(rows.length, 'row')} x ${countOf(columns.length, 'column')}`;
-  const empty = rows.flatMap(([row, cells]) =>
-    isRecord(cells) && columns.some((column) => typeof cells[column] === 'string')
+  const empty = rows.flatMap(([row, cells], index) =>
+    isRecord(cells) &&
+    columns.some((column) => typeof cells[column] === 'string') &&
+    !(index > 0 && typeof cells['rest'] === 'string' && Object.keys(cells).every((cell) => cell === 'rest'))
       ? columns.filter((column) => typeof cells[column] !== 'string').map((column) => `${row} ${column}`)
       : [],
   );
