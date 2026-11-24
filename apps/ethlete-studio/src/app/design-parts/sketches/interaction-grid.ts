@@ -69,3 +69,12 @@ export const gridScaleOf = ({ room, columns, heads }: { room: number; columns: n
 
   return low;
 };
+
+export const STACK_BELOW_SCALE = 0.45;
+
+/**
+ * Whether the variants stack below each other: side by side, in `room`, they would draw below `STACK_BELOW_SCALE`.
+ * Takes the same `columns` and `heads` as `gridScaleOf`; without column heads pass a 0 per column.
+ */
+export const variantsStackedOf = ({ room, columns, heads }: { room: number; columns: number[]; heads: number[] }) =>
+  columns.length > 1 && gridScaleOf({ room, columns, heads }) < STACK_BELOW_SCALE;

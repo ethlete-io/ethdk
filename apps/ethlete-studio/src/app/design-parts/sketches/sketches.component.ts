@@ -83,7 +83,7 @@ import {
   matrixWidthFit,
   shortLabelOf,
 } from './matrix-blocks';
-import { gridColumnWidthOf, gridScaleOf, interactionGridOf } from './interaction-grid';
+import { gridColumnWidthOf, gridScaleOf, interactionGridOf, variantsStackedOf } from './interaction-grid';
 import { cropGroupsOf, magnifyTextOf, SketchCropGroup, SketchCropReason } from './sketch-crops';
 import {
   SKETCH_CURRENT,
@@ -308,6 +308,7 @@ export class SketchesComponent {
   private stages = viewChildren('stage', { read: ElementRef<HTMLElement> });
   private sections = viewChildren('section', { read: ElementRef<HTMLElement> });
   private columnHeadParts = viewChildren('columnHeadPart', { read: ElementRef<HTMLElement> });
+  private lineHeads = viewChildren('lineHeads', { read: ElementRef<HTMLElement> });
   private cells = viewChildren(VariantCellComponent);
   private takes = viewChildren('take', { read: ElementRef<HTMLElement> });
   private head = viewChild.required(SketchHeadComponent);
@@ -538,7 +539,13 @@ export class SketchesComponent {
 
     return this.shownRows().filter((row) => !same.includes(row));
   });
-  protected sideBySide = computed(() => !this.transposed() && this.listMeasured() && this.changedRows().length > 1);
+  private stackedFit = signal(false);
+  protected stacked = computed(
+    () => this.stackedFit() && !this.transposed() && this.listMeasured() && this.changedRows().length > 1,
+  );
+  protected sideBySide = computed(
+    () => !this.transposed() && this.listMeasured() && this.changedRows().length > 1 && !this.stackedFit(),
+  );
   protected sameKeys = computed(
     () =>
       new Set(
@@ -697,7 +704,17 @@ export class SketchesComponent {
       this.fitElements = elements;
 
       untracked(() => {
-        if (refit) this.fitAt.set({ scale: this.fitScaleOf(dom), fonts: this.fontLoads() });
+        if (refit) {
+          const stacked = this.stackedOf(dom);
+
+          if (stacked !== this.stackedFit()) {
+            this.stackedFit.set(stacked);
+
+            return;
+          }
+
+          this.fitAt.set({ scale: this.fitScaleOf(dom), fonts: this.fontLoads() });
+        }
 
         const applied = { scale: this.scale(), note: this.noteSize(), label: this.labelFont() };
         const appliedKey = JSON.stringify(applied);
@@ -944,6 +961,16 @@ export class SketchesComponent {
     return true;
   }
 
+  protected stackedGridRowOf(block: number | undefined) {
+    const lines = this.grid()?.lines.length;
+
+    if (block === undefined || lines === undefined || !this.stacked()) return null;
+
+    const span = 2 + lines * 2;
+
+    return `${block * span + 1} / span ${span}`;
+  }
+
   private shownRowsOf(open: boolean) {
     return shownSketchRowsOf({ listed: this.listedRows(), hidden: this.hiddenWithdrawnRows(), open });
   }
@@ -1138,14 +1165,6 @@ export class SketchesComponent {
     const room = list.clientWidth - (span - stageWidths) - gaps;
 
     if (this.grid()) {
-      const parts = this.columnHeadParts()
-        .map(({ nativeElement }) => nativeElement)
-        .filter((part) => shown[0]?.contains(part));
-      const headOf = (index: number) =>
-        Math.max(
-          0,
-          ...parts.filter((part) => part.dataset['skHeadColumn'] === `${index}`).map((part) => part.offsetWidth),
-        );
       const lead = first.parentElement
         ? first.getBoundingClientRect().left - first.parentElement.getBoundingClientRect().left
         : 0;
@@ -1154,7 +1173,7 @@ export class SketchesComponent {
       const scale = gridScaleOf({
         room: room - lead - FIT_PADDING,
         columns: widths,
-        heads: Array.from({ length: columns }, (_, index) => headOf(index)),
+        heads: this.headWidthsOf(shown[0], columns),
       });
 
       return Math.max(scale, MATRIX_MIN_COLUMN / Math.max(1, ...widths));
@@ -1165,16 +1184,75 @@ export class SketchesComponent {
     return room / frames;
   }
 
-  private gridFit(scale: number, { columns, list, sections, stages, frames }: FitDom) {
+  private headWidthsOf(stage: HTMLElement | undefined, columns: number) {
+    const parts = this.columnHeadParts()
+      .map(({ nativeElement }) => nativeElement)
+      .filter((part) => stage?.contains(part));
+
+    return Array.from({ length: columns }, (_, index) =>
+      Math.max(
+        0,
+        ...parts.filter((part) => part.dataset['skHeadColumn'] === `${index}`).map((part) => part.offsetWidth),
+      ),
+    );
+  }
+
+  private variantRoomOf(
+    { list, sections }: Pick<FitDom, 'list' | 'sections'>,
+    { count, columns }: { count: number; columns: number },
+  ) {
+    const section = sections[0];
+
+    if (!section) return list.clientWidth;
+
+    const style = getComputedStyle(section);
+    const chrome = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    const gap = section.parentElement ? parseFloat(getComputedStyle(section.parentElement).columnGap) || 0 : 0;
+    const lead = this.grid() ? (this.lineHeads()[0]?.nativeElement.offsetWidth ?? 0) + gap : 0;
+
+    return (
+      list.clientWidth - FIT_PADDING - lead - count * (chrome + (columns - 1) * this.columnGap()) - (count - 1) * gap
+    );
+  }
+
+  private stackedOf(dom: FitDom) {
+    const rows = this.changedRows();
+
+    if (this.transposed() || rows.length < 2) return false;
+
+    const grid = !!this.grid();
+
+    return variantsStackedOf({
+      room: this.variantRoomOf(dom, { count: rows.length, columns: dom.columns }),
+      columns: rows.map((row) => (grid ? gridColumnWidthOf(row) : row.width)),
+      heads: grid ? this.headWidthsOf(dom.stages[0], dom.columns) : Array.from({ length: dom.columns }, () => 0),
+    });
+  }
+
+  private stackedGridFit(dom: FitDom) {
+    const widest = Math.max(1, ...this.changedRows().map((row) => gridColumnWidthOf(row)));
+    const scale = gridScaleOf({
+      room: this.variantRoomOf(dom, { count: 1, columns: dom.columns }),
+      columns: [widest],
+      heads: this.headWidthsOf(dom.stages[0], dom.columns),
+    });
+
+    return Math.max(scale, MATRIX_MIN_COLUMN / widest);
+  }
+
+  private gridFit(scale: number, dom: FitDom) {
+    const { columns, list, sections, stages, frames } = dom;
     const stage = stages[0];
     const side = this.sideBySide();
     const changed = sections.slice(0, this.changedRows().length);
     const widthFit = side
       ? this.sideBySideWidthFit({ columns, list, sections: changed, stages })
-      : stage
-        ? (stage.clientWidth - (columns - 1) * COLUMN_GAP) / (columns * this.widest())
-        : 1;
-    const groups = side ? changed.map((section) => [section]) : [sections.slice(0, 2)];
+      : this.stacked() && this.grid()
+        ? this.stackedGridFit(dom)
+        : stage
+          ? (stage.clientWidth - (columns - 1) * COLUMN_GAP) / (columns * this.widest())
+          : 1;
+    const groups = side || this.stacked() ? changed.map((section) => [section]) : [sections.slice(0, 2)];
     const heightFits = groups.flatMap((measured) => {
       const first = measured[0];
       const last = measured.at(-1);
