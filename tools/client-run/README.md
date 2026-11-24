@@ -20,7 +20,7 @@ copied into the sandbox home as `~/alter-katalog`. The image set `~/bilder-von-t
 `trap-titles.json`: each shows a trap 46 B draws, with the 46 B fields (no poster, versions, novelty) laid over the
 catalog.
 
-The start setup is `tools/scripts/clean-slate-run/overlays/tomflix` plus `et design product new tomflix --base @ethlete/components --from-project tomflix --colors dark --accent #e50914`, run and committed in the copy: the run starts on a dark colour base.
+The start setup is `tools/scripts/clean-slate-run/overlays/tomflix` plus `et design product new tomflix --base @ethlete/components --from-project tomflix --colors dark --accent <the accent of the 46 B catalog>`, run and committed in the copy: the run starts on a dark colour base.
 
 ## When it runs
 

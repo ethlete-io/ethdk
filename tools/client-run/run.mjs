@@ -4,6 +4,7 @@ import { closeSync, cpSync, existsSync, mkdirSync, openSync, readFileSync } from
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { referenceAccentOf } from './accent.mjs';
 import { writeImageSet } from './image-set.mjs';
 
 const USAGE = `usage: yarn client-run [--source <tomflix>] [--reference <old design>] [--out <dir>] [--sdk <built sdk copy>] [--titles <n>] [--model <m>]
@@ -116,7 +117,7 @@ run(
   [
     'node_modules/@ethlete/cli/src/index.js',
     ...['design', 'product', 'new', 'tomflix', '--base', '@ethlete/components', '--from-project', 'tomflix'],
-    ...['--colors', 'dark', '--accent', '#e50914'],
+    ...['--colors', 'dark', '--accent', referenceAccentOf(resolve(values.reference))],
   ],
   { cwd: target },
 );
