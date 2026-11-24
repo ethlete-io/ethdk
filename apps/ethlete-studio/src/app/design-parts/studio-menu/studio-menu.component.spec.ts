@@ -62,6 +62,11 @@ const openMenu = async (options: {
   return { fixture, events, rows, row, serverMenu };
 };
 
+const dialogButton = (text: string) =>
+  [...document.querySelectorAll<HTMLElement>('ethlete-remove-project-dialog button')].find(
+    (button) => button.textContent?.trim() === text,
+  ) as HTMLElement;
+
 describe('StudioMenuComponent', () => {
   it('lists the projects apart from the actions, the server as a submenu and removal last', async () => {
     const { rows } = await openMenu({ project: 'b', projects: ['a', 'b', 'c', 'd'] });
@@ -203,13 +208,38 @@ describe('StudioMenuComponent', () => {
     expect(row('Projekt entfernen')?.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('emits the removal of the open project', async () => {
+  // Removal without a confirm must fail: a click on the row alone never removes the root.
+  it('does not remove the open project before the dialog is confirmed', async () => {
     const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a', 'b'] });
 
     row('Projekt entfernen')?.click();
     await fixture.whenStable();
 
+    expect(events).toEqual([]);
+    expect(document.body.textContent).toContain('a aus der Liste entfernen? Der Ordner bleibt.');
+  });
+
+  it('removes the open project once the dialog is confirmed', async () => {
+    const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a', 'b'] });
+
+    row('Projekt entfernen')?.click();
+    await fixture.whenStable();
+    dialogButton('Entfernen').click();
+    await fixture.whenStable();
+
     expect(events).toEqual(['removeProject']);
+  });
+
+  it('keeps the project when the dialog is cancelled', async () => {
+    const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a', 'b'] });
+
+    row('Projekt entfernen')?.click();
+    await fixture.whenStable();
+    dialogButton('Abbrechen').click();
+    await fixture.whenStable();
+
+    expect(events).toEqual([]);
+    expect(document.body.textContent).not.toContain('Der Ordner bleibt.');
   });
 
   it('checks the open project', async () => {

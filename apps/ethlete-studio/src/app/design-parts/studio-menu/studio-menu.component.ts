@@ -51,6 +51,10 @@ export class StudioMenuComponent {
   protected runEntries = computed(() => this.entries().filter((entry) => entry.run));
   protected runShown = computed(() => this.runEntries().some((entry) => entry.id === this.project()));
 
+  protected projectName = computed(
+    () => this.entries().find((entry) => entry.id === this.project())?.name ?? this.project(),
+  );
+
   protected statusLabel = computed(() => `${this.LABELS.designServer} · ${this.LABELS.serverStatus[this.server()]}`);
 
   protected items = computed(() =>

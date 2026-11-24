@@ -130,7 +130,7 @@
       <et-menu-separator />
       <button
         [disabled]="busy() || projects().length < 2"
-        (activate)="removeProject.emit()"
+        (activate)="dialogs.confirmRemove(projectName(), removeProject.emit.bind(removeProject))"
         et-menu-item
         type="button"
         variant="destructive"

@@ -40,6 +40,13 @@ export const STUDIO_MENU_LABELS = {
   about: 'Über Studio',
 } as const;
 
+export const REMOVE_PROJECT_DIALOG_LABELS = {
+  title: 'Projekt entfernen',
+  question: (name: string) => `${name} aus der Liste entfernen? Der Ordner bleibt.`,
+  confirm: 'Entfernen',
+  cancel: 'Abbrechen',
+} as const;
+
 export const ABOUT_DIALOG_LABELS = {
   title: 'Über Studio',
   close: 'Schließen',
