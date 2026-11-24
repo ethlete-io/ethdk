@@ -1,6 +1,6 @@
 import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { START_LABELS, StartAccent, StartColors } from '../../i18n/start-labels';
+import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/start-labels';
 
 @Component({
   selector: 'ethlete-start',
@@ -77,11 +77,30 @@ import { START_LABELS, StartAccent, StartColors } from '../../i18n/start-labels'
               }
             </div>
           </div>
+          <div class="flex flex-col items-center gap-space-2">
+            <p class="m-0 text-et-surface font-ui-strong text-ui-sm">{{ LABELS.baseQuestion }}</p>
+            <div [attr.aria-label]="LABELS.baseQuestion" class="flex flex-wrap justify-center gap-space-2" role="group">
+              @for (item of BASES; track item) {
+                <button
+                  [pressed]="base() === item"
+                  (click)="base.set(item)"
+                  et-button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                >
+                  {{ LABELS.bases[item] }}
+                </button>
+              }
+            </div>
+          </div>
           <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
-            {{ LABELS.prompt({ repo: name, colors: colors(), accent: accentItem() }) }}
+            {{ LABELS.prompt({ repo: name, colors: colors(), accent: accentItem(), base: base() }) }}
           </p>
           <button
-            (click)="copyPrompt.emit(LABELS.prompt({ repo: name, colors: colors(), accent: accentItem() }))"
+            (click)="
+              copyPrompt.emit(LABELS.prompt({ repo: name, colors: colors(), accent: accentItem(), base: base() }))
+            "
             et-button
             type="button"
             variant="outline"
@@ -143,6 +162,7 @@ export class StartComponent {
   public busy = input(false, { transform: booleanAttribute });
   public colors = model<StartColors>('both');
   public accent = model<string>(START_LABELS.accents[0].name);
+  public base = model<StartBase | undefined>();
   public openRepo = output();
   public otherRepo = output();
   public copyPrompt = output<string>();
@@ -155,4 +175,5 @@ export class StartComponent {
 
   protected readonly LABELS = START_LABELS;
   protected readonly COLORS: readonly StartColors[] = ['light', 'dark', 'both'];
+  protected readonly BASES: readonly StartBase[] = ['sdk', 'own'];
 }

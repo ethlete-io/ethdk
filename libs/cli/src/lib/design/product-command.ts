@@ -83,13 +83,37 @@ export const createProduct = (options: {
 };
 
 /**
+ * Sets or, with `none`, removes the `base` of a declared product in `config.json`; answers with why it refused, or null.
+ */
+export const setProductBase = (options: { target: string; name: string; base: string }): string | null => {
+  const { target, name, base } = options;
+  const config: DesignConfig = readConfig(target) ?? {};
+  const entry = config.products?.[name];
+
+  if (!entry) {
+    return `NO PRODUCT "${name}" - config.json declares ${Object.keys(config.products ?? {}).join(', ') || 'none'}.`;
+  }
+
+  const { base: _previous, ...rest } = entry;
+  const next: DesignProduct = base === 'none' ? rest : { ...rest, base };
+
+  writeDesignFile(configPathOf(target), jsonLayoutOf({ ...config, products: { ...config.products, [name]: next } }));
+
+  return null;
+};
+
+/**
  * `et design product new <name> [--base <path|@ethlete/components>] [--from-project <name>] [--colors light|dark|both] [--accent <#hex>]` writes the
  * product's `config.json` entry and its empty layer folders. `--colors` and `--accent` start its colors foundation
- * with those surfaces and that primary colour.
+ * with those surfaces and that primary colour. `et design product set <name> --base <path|@ethlete/components|none>`
+ * changes the base of an existing product.
  */
 export const designProduct = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const usage = `USAGE ${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>] [--colors light|dark|both] [--accent <#hex>]`;
+  const usage = [
+    `USAGE ${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>] [--colors light|dark|both] [--accent <#hex>]`,
+    `      ${invocation} product set <name> --base <path|@ethlete/components|none>`,
+  ].join('\n');
   const args = argsOf(argv, { values: ['--base', '--from-project', '--colors', '--accent'], switches: [] });
 
   if (typeof args === 'string') {
@@ -100,10 +124,32 @@ export const designProduct = (options: { target: string; argv: string[]; invocat
 
   const [verb, name] = args.positional;
 
-  if (verb !== 'new' || !name || args.positional.length > 2) {
+  if ((verb !== 'new' && verb !== 'set') || !name || args.positional.length > 2) {
     console.error(usage);
 
     return 1;
+  }
+
+  if (verb === 'set') {
+    const base = args.values['--base'];
+
+    if (!base || Object.keys(args.values).length > 1) {
+      console.error(usage);
+
+      return 1;
+    }
+
+    const refused = setProductBase({ target, name, base });
+
+    if (refused) {
+      console.error(refused);
+
+      return 1;
+    }
+
+    console.log(base === 'none' ? `${name} inherits from no base.` : `${name} inherits from ${base}.`);
+
+    return 0;
   }
 
   const base = args.values['--base'] ?? null;

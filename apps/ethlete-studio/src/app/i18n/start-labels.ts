@@ -1,6 +1,13 @@
 export type StartColors = 'light' | 'dark' | 'both';
 
+export type StartBase = 'sdk' | 'own';
+
 export type StartAccent = { name: string; hex: string };
+
+const PROMPT_BASE: Record<StartBase, string> = {
+  sdk: ' Es erbt vom Ethlete SDK (@ethlete/components).',
+  own: ' Es erbt nicht vom Ethlete SDK.',
+};
 
 const PROMPT_COLORS: Record<StartColors, string> = { light: 'heller', dark: 'dunkler', both: 'heller und dunkler' };
 
@@ -24,8 +31,20 @@ export const START_LABELS = {
     { name: 'Blau', hex: '#2563eb' },
     { name: 'Violett', hex: '#7c3aed' },
   ],
-  prompt: ({ repo, colors, accent }: { repo: string; colors: StartColors; accent: StartAccent }) =>
-    `Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App, mit ${PROMPT_COLORS[colors]} Farb-Grundlage und dem Akzent ${accent.name} (${accent.hex}).`,
+  baseQuestion: 'Ethlete SDK',
+  bases: { sdk: 'Erbt vom SDK', own: 'Eigenständig' },
+  prompt: ({
+    repo,
+    colors,
+    accent,
+    base,
+  }: {
+    repo: string;
+    colors: StartColors;
+    accent: StartAccent;
+    base?: StartBase;
+  }) =>
+    `Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App, mit ${PROMPT_COLORS[colors]} Farb-Grundlage und dem Akzent ${accent.name} (${accent.hex}).${base ? PROMPT_BASE[base] : ''}`,
   copyPrompt: 'Prompt kopieren',
   knownRepos: 'Zuletzt geöffnet',
 } as const;

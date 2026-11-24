@@ -163,6 +163,27 @@ describe('designProduct', () => {
     expect(readConfig(target)?.products?.['app']).toBeUndefined();
   });
 
+  it('sets the SDK as base of an existing product, removes it with none, and refuses an unknown product', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const target = make();
+
+    run(target, 'new', 'tomflix', '--colors', 'dark');
+
+    expect(run(target, 'set', 'tomflix', '--base', '@ethlete/components')).toBe(0);
+    expect(readConfig(target)?.products?.['tomflix']).toMatchObject({ base: '@ethlete/components', schemes: ['dark'] });
+
+    expect(run(target, 'set', 'tomflix', '--base', 'none')).toBe(0);
+    expect(readConfig(target)?.products?.['tomflix']).not.toHaveProperty('base');
+
+    const before = readFileSync(configPathOf(target), 'utf8');
+
+    expect(run(target, 'set', 'shop', '--base', '@ethlete/components')).toBe(1);
+    expect(run(target, 'set', 'tomflix')).toBe(1);
+    expect(run(target, 'set', 'tomflix', '--base', '@ethlete/components', '--colors', 'dark')).toBe(1);
+    expect(readFileSync(configPathOf(target), 'utf8')).toBe(before);
+  });
+
   it('refuses an unknown flag and creates nothing', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const target = make();

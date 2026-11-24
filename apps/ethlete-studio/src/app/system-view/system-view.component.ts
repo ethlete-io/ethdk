@@ -86,6 +86,7 @@ import { InventoryViewComponent } from './inventory-view.component';
 import { RememberedTreeScrollDirective } from './remembered-tree-scroll.directive';
 import { COMMAND_PALETTE_LABELS, SHELL_LABELS, DESIGN_SERVER_LABELS } from '../i18n/shell-labels';
 import { SYSTEM_LABELS, TREE_ROW_LABELS } from '../i18n/system-labels';
+import { START_LABELS, StartBase, StartColors } from '../i18n/start-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { createExceptionStore } from './exception-store';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
@@ -164,6 +165,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
 
     @if (startPage(); as start) {
       <ethlete-start
+        [(colors)]="startColors"
+        [(accent)]="startAccent"
+        [(base)]="startBase"
         [repo]="start.repo"
         [repos]="projects()"
         [busy]="busy()"
@@ -1223,6 +1227,10 @@ export class SystemViewComponent {
 
     return this.section() === 'Sketches' && !this.call() && this.sketchList() !== null && this.sketches().length === 0;
   });
+
+  protected startColors = signal<StartColors>('both');
+  protected startAccent = signal<string>(START_LABELS.accents[0].name);
+  protected startBase = signal<StartBase | undefined>(undefined);
 
   protected startPage = computed(() => {
     if (!this.project()) return { repo: undefined };

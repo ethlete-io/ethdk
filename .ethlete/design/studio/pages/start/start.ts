@@ -1,11 +1,20 @@
 import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
 import { studioMark } from '@system/foundations/logo';
-import { START_LABELS, StartColors } from '../../../../../apps/ethlete-studio/src/app/i18n/start-labels';
+import { START_LABELS, StartBase, StartColors } from '../../../../../apps/ethlete-studio/src/app/i18n/start-labels';
 
-type Props = { repo?: string; repos?: string[]; busy?: boolean; colors?: StartColors; accent?: string };
+type Props = {
+  repo?: string;
+  repos?: string[];
+  busy?: boolean;
+  colors?: StartColors;
+  accent?: string;
+  base?: StartBase;
+};
 
 const COLORS: StartColors[] = ['light', 'dark', 'both'];
+
+const BASES: StartBase[] = ['sdk', 'own'];
 
 const header = (other: string, repo?: string) =>
   html`<header class="flex items-center gap-space-3 p-space-4">
@@ -60,7 +69,7 @@ const noProducts = (copy: string, repo: string, known: string[], questions: stri
   );
 
 export default definePart<Props>({
-  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it asks for the colour base (Hell, Dunkel or Beides, Beides by default) and the accent (five named swatches, Rot by default) as outline toggle buttons, and gives an example prompt for the agent that carries both answers, and a copy button; Studio text names no CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331). When Studio knows other repos, both cards list them under Zuletzt geöffnet as small outline buttons that switch without a folder dialog (ADR 0419).',
+  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it asks for the colour base (Hell, Dunkel or Beides, Beides by default) and the accent (five named swatches, Rot by default) as outline toggle buttons, then whether the product inherits from the Ethlete SDK (Erbt vom SDK or Eigenständig, none pressed by default: without an answer the prompt says nothing about a base), and gives an example prompt for the agent that carries the answers, and a copy button; Studio text names no CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331). When Studio knows other repos, both cards list them under Zuletzt geöffnet as small outline buttons that switch without a folder dialog (ADR 0419).',
   madeBy: ['claude-opus-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/start/start.component.ts' },
   widths: [1440],
@@ -70,6 +79,7 @@ export default definePart<Props>({
     'no-repo-known': { repos: ['ethlete-sdk', 'tomflix'] },
     'no-products-known': { repo: 'tomflix', repos: ['ethlete-sdk', 'tomflix', 'fifagg-frontend'] },
     'no-products-dark': { repo: 'tomflix', colors: 'dark', accent: 'Rot' },
+    'no-products-sdk': { repo: 'tomflix', colors: 'dark', accent: 'Rot', base: 'sdk' },
   },
   describe: {
     'no-repo':
@@ -82,8 +92,10 @@ export default definePart<Props>({
       'A repo without products and two other known repos: check the Zuletzt geöffnet row below Prompt kopieren, without the current repo.',
     'no-products-dark':
       'Tomflix answered Dunkel and Rot: check that only those two toggles are pressed and the prompt asks for a dunkler Farb-Grundlage with Akzent Rot.',
+    'no-products-sdk':
+      'Tomflix also answered Erbt vom SDK: check that Dunkel, Rot and Erbt vom SDK are pressed and the prompt ends with Es erbt vom Ethlete SDK (@ethlete/components).',
   },
-  render: async ({ repo, repos = [], busy, colors = 'both', accent: accentName }) => {
+  render: async ({ repo, repos = [], busy, colors = 'both', accent: accentName, base }) => {
     const accent = START_LABELS.accents.find((item) => item.name === accentName) ?? START_LABELS.accents[0];
     const schemeButtons = await Promise.all(
       COLORS.map((scheme) =>
@@ -106,6 +118,16 @@ export default definePart<Props>({
         }),
       ),
     );
+    const baseButtons = await Promise.all(
+      BASES.map((item) =>
+        button.render({
+          label: START_LABELS.bases[item],
+          variant: 'outline',
+          size: 'sm',
+          pressed: item === base,
+        }),
+      ),
+    );
     const questions =
       question(
         START_LABELS.colorsQuestion,
@@ -114,6 +136,10 @@ export default definePart<Props>({
       question(
         START_LABELS.accentQuestion,
         accentButtons.map((rendered) => rendered.body),
+      ) +
+      question(
+        START_LABELS.baseQuestion,
+        baseButtons.map((rendered) => rendered.body),
       );
 
     const open = await button.render({ label: START_LABELS.openRepo, variant: 'filled', loading: busy });
@@ -141,7 +167,7 @@ export default definePart<Props>({
         ${header(other.body, repo)}
         ${
           repo
-            ? noProducts(copy.body, repo, known, questions, START_LABELS.prompt({ repo, colors, accent }))
+            ? noProducts(copy.body, repo, known, questions, START_LABELS.prompt({ repo, colors, accent, base }))
             : noRepo(open.body, known)
         }
       </div>`,

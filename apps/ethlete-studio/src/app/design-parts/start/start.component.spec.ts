@@ -62,7 +62,7 @@ describe('StartComponent', () => {
     const pressed = [...element.querySelectorAll('[aria-pressed="true"]')].map((node) => node.textContent?.trim());
     const groups = [...element.querySelectorAll('[role="group"]')].map((group) => group.getAttribute('aria-label'));
 
-    expect(groups).toEqual(['Farb-Grundlage', 'Akzent']);
+    expect(groups).toEqual(['Farb-Grundlage', 'Akzent', 'Ethlete SDK']);
     expect(pressed).toEqual(['Dunkel', 'Blau']);
     expect(copied).toEqual([
       'Lege in tomflix das Produkt shop an, für das Design-System der Shop-App, mit dunkler Farb-Grundlage und dem Akzent Blau (#2563eb).',
@@ -77,6 +77,27 @@ describe('StartComponent', () => {
 
     expect(pressed).toEqual(['Beides', 'Rot']);
     expect(element.textContent).toContain('mit heller und dunkler Farb-Grundlage und dem Akzent Rot (#e50914).');
+  });
+
+  it('asks whether the product inherits from the SDK and says nothing about a base without an answer', async () => {
+    const { fixture, element, button } = await render('tomflix');
+    const copied: string[] = [];
+
+    fixture.componentInstance.copyPrompt.subscribe((prompt) => copied.push(prompt));
+    expect(element.textContent).not.toContain('erbt');
+
+    button('Erbt vom SDK')?.click();
+    await fixture.whenStable();
+    button('Prompt kopieren')?.click();
+    button('Eigenständig')?.click();
+    await fixture.whenStable();
+    button('Prompt kopieren')?.click();
+
+    expect(copied.map((prompt) => prompt.slice(prompt.indexOf('(#e50914).') + 10))).toEqual([
+      ' Es erbt vom Ethlete SDK (@ethlete/components).',
+      ' Es erbt nicht vom Ethlete SDK.',
+    ]);
+    expect(fixture.componentInstance.base()).toBe('own');
   });
 
   it('turns Repo öffnen into a busy button that takes no click while busy', async () => {
