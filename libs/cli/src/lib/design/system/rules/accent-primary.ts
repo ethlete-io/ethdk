@@ -1,7 +1,7 @@
 import { cssBlocksOf, declarationValueOf } from '../css-source';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
-import { isHexColor, rgbOf } from '../sketch/foundation-skeletons';
+import { isHexColor, rgbOf } from '../sketch/colors-skeleton';
 
 export const ACCENT_PRIMARY_RULE = 'ACCENT-PRIMARY';
 

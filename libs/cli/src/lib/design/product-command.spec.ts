@@ -138,8 +138,64 @@ describe('designProduct', () => {
     expect(css).not.toContain('prefers-color-scheme');
     expect(css).toContain('--et-color-primary: 229 9 20;');
     expect(css).toContain('--et-color-on-primary: 255 255 255;');
-    expect(ts).toContain("states: { dark: { surface: 'dark' } }");
+    expect(ts).toContain("'surface-dark': { group: 'surface', surface: 'dark' }");
+    expect(ts).not.toContain('surface-light');
     expect(readConfig(target)?.products?.['tomflix']?.schemes).toEqual(['dark']);
+    expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['tomflix'] })).toBe(0);
+  }, 60_000);
+
+  it('derives each surface and accent state of the tomflix colors foundation of client run 1109, in the layout of the SDK colours page', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+
+    expect(run(target, 'new', 'tomflix', '--colors', 'dark', '--accent', '#e50914')).toBe(0);
+
+    const dir = join(target, DESIGN_DIR, 'tomflix', 'foundations', 'colors');
+    const css = readFileSync(join(dir, 'colors.css'), 'utf8');
+    const ts = readFileSync(join(dir, 'colors.ts'), 'utf8');
+    const valueOf = (token: string) => new RegExp(`--et-${token}: ([\\d ]+);`, 'u').exec(css)?.[1] ?? '';
+    const distinct = (tokens: string[]) => new Set(tokens.map(valueOf)).size;
+    const luminanceOf = (rgb: string) => {
+      const [r = 0, g = 0, b = 0] = rgb.split(' ').map((channel) => {
+        const c = Number(channel) / 255;
+
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      });
+
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const ratioOf = (text: string, on: string) => {
+      const [high = 0, low = 0] = [luminanceOf(valueOf(text)), luminanceOf(valueOf(on))].sort((x, y) => y - x);
+
+      return (high + 0.05) / (low + 0.05);
+    };
+
+    expect(css).not.toContain('128 128 128');
+    expect(valueOf('color-primary')).toBe('229 9 20');
+    expect(distinct(['color-primary', 'color-primary-hover', 'color-primary-active', 'color-primary-disabled'])).toBe(
+      4,
+    );
+    expect(valueOf('color-primary-focus')).toBe(valueOf('color-primary-hover'));
+    expect(valueOf('color-on-primary-disabled')).not.toBe(valueOf('color-on-primary'));
+    expect(
+      distinct([
+        'surface-color',
+        'surface-color-muted',
+        'surface-color-subtle',
+        'surface-border',
+        'surface-interaction-hover',
+        'surface-interaction-disabled',
+      ]),
+    ).toBe(6);
+
+    for (const text of ['surface-color', 'surface-color-muted', 'color-primary-ink'])
+      expect(ratioOf(text, 'surface-background')).toBeGreaterThanOrEqual(4.5);
+
+    for (const state of ['', '-hover', '-active'])
+      expect(ratioOf(`color-on-primary${state}`, `color-primary${state}`)).toBeGreaterThanOrEqual(4.5);
+
+    expect(ts).toContain('measureContrastPairs');
+    expect(ts).toMatch(/'surface-dark'[\s\S]*'accent-dark'[\s\S]*'contrast-dark'/u);
     expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['tomflix'] })).toBe(0);
   }, 60_000);
 

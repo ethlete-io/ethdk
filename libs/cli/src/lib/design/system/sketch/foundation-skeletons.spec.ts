@@ -97,7 +97,7 @@ describe('foundation skeletons', () => {
     writeFileSync(
       css,
       readFileSync(css, 'utf8')
-        .replace('--et-surface-border: 128 128 128;', '--et-surface-border: 200 200 200;')
+        .replace(/--et-surface-border: [\d ]+;/u, '--et-surface-border: 200 200 200;')
         .replace(
           '--et-color-primary: 128 128 128;',
           '--et-color-primary: 128 128 128;\n    --et-color-secondary: 64 64 64;',

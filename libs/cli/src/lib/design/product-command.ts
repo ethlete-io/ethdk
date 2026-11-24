@@ -6,7 +6,7 @@ import { jsonLayoutOf } from './json-layout';
 import { configPathOf, DesignConfig, DesignProduct, readConfig } from './design-config';
 import { isBuiltInBase } from './system/base';
 import { argsOf } from './system/sketch/cli-args';
-import { COLOR_SCHEMES, ColorScheme, colorsSkeletonOf, isHexColor } from './system/sketch/foundation-skeletons';
+import { COLOR_SCHEMES, ColorScheme, colorsSkeletonOf, isHexColor } from './system/sketch/colors-skeleton';
 import { LAYERS } from './system/layers';
 import { productDirOf } from './system/product';
 
