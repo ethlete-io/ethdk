@@ -44,6 +44,7 @@ export type PictureOf = (options: {
   params: URLSearchParams;
   fresh?: boolean;
   priority?: DrawPriority;
+  signal?: AbortSignal;
 }) => Promise<SourcedPicture>;
 
 /**

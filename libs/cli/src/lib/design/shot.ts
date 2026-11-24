@@ -1,3 +1,4 @@
+import { fromEvent, take } from 'rxjs';
 import { createHash } from 'crypto';
 import { IncomingMessage, ServerResponse } from 'http';
 import { isAbsolute } from 'path';
@@ -507,7 +508,22 @@ export const createPartShooter = (options: {
   const board = createShotBoard();
   const drawQueue = options.queue ?? createDrawQueue({ ...options, board });
   const shooter = shooters++;
-  const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture>; drawing?: { startedAt: number | null } }>();
+  const cache = new Map<
+    string,
+    {
+      drawn: Drawn;
+      shot: Promise<Picture>;
+      drawing?: { startedAt: number | null };
+      waiting?: { wants: DrawWant[]; queued: Promise<Picture> | null };
+    }
+  >();
+  const joinKept = (
+    kept: { shot: Promise<Picture>; waiting?: { wants: DrawWant[]; queued: Promise<Picture> | null } },
+    want: DrawWant,
+  ) => {
+    kept.waiting?.wants.push(want);
+    drawQueue.join(kept.waiting?.queued ?? kept.shot, want);
+  };
   const drawStarts = new WeakMap<Picture, number>();
   const motions = new Map<string, { drawn: Drawn; pictures: Promise<MotionPictures> }>();
   const boxes = new Map<string, Promise<ChangedBox[]>>();
@@ -680,7 +696,7 @@ export const createPartShooter = (options: {
 
     if (kept?.drawing && options.fresh) {
       options.onSource?.('drawn');
-      drawQueue.join(kept.shot, options.want);
+      joinKept(kept, options.want);
 
       return kept.shot;
     }
@@ -689,7 +705,7 @@ export const createPartShooter = (options: {
       recordCache(true);
       options.onSource?.('memory');
 
-      drawQueue.join(kept.shot, options.want);
+      joinKept(kept, options.want);
 
       return kept.shot;
     }
@@ -717,8 +733,9 @@ export const createPartShooter = (options: {
 
     const search = options.search.toString();
     const drawing: { startedAt: number | null } = { startedAt: null };
+    const waiting: { wants: DrawWant[]; queued: Promise<Picture> | null } = { wants: [options.want], queued: null };
     const drawHere = () =>
-      drawQueue.run((browser) => {
+      (waiting.queued = drawQueue.run((browser) => {
         const gone = options.gone?.();
         const startedAt = performance.now();
 
@@ -743,7 +760,7 @@ export const createPartShooter = (options: {
 
               return picture;
             });
-      }, options.want);
+      }, waiting.wants));
 
     const { address } = options;
     const shared = address && !options.fresh ? store : undefined;
@@ -768,7 +785,7 @@ export const createPartShooter = (options: {
         })
       : drawHere();
 
-    cache.set(key, { drawn: options.drawn, shot, ...(waits ? {} : { drawing }) });
+    cache.set(key, { drawn: options.drawn, shot, ...(waits ? { waiting } : { drawing }) });
     shot.then(
       (picture) => {
         if (cache.get(key)?.shot === shot) {
@@ -1061,15 +1078,23 @@ export const createPartShooter = (options: {
     /**
      * Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds. The default
      * `priority: 'high'` draws it ahead of every shot asked with `priority=low`; `'low'` queues it behind the shots the
-     * board shows.
+     * board shows. Once `signal` aborts, the drawing leaves the queue unless it started or another ask still waits.
      */
     pictureOf: ({
       priority = 'high',
+      signal,
       ...options
-    }: PartAddress & { params: URLSearchParams; fresh?: boolean; priority?: DrawPriority }) => {
+    }: PartAddress & { params: URLSearchParams; fresh?: boolean; priority?: DrawPriority; signal?: AbortSignal }) => {
       let source: ShotSource | undefined;
+      const want: DrawWant = {
+        priority,
+        ...(signal && {
+          onWithdraw: (withdraw: () => void) =>
+            signal.aborted ? withdraw() : fromEvent(signal, 'abort').pipe(take(1)).subscribe(withdraw),
+        }),
+      };
 
-      return partShotOf({ ...options, want: { priority }, onSource: (from) => (source = from) }).then((picture) => ({
+      return partShotOf({ ...options, want, onSource: (from) => (source = from) }).then((picture) => ({
         ...picture,
         source,
         drawnAt: drawStarts.get(picture) ?? null,

@@ -408,7 +408,7 @@ export const createDrawQueue = (options: {
   };
 
   return {
-    run: <T>(draw: (browser: Browser) => Promise<T>, want: DrawPriority | DrawWant = 'high') => {
+    run: <T>(draw: (browser: Browser) => Promise<T>, want: DrawPriority | DrawWant | DrawWant[] = 'high') => {
       const ticket = ledger?.ask();
       const asked = performance.now();
       const signal = runSignal();
@@ -443,7 +443,15 @@ export const createDrawQueue = (options: {
       drawn.catch(() => undefined);
       entries.set(drawn, entry);
       waiting.push(entry);
-      add(entry, typeof want === 'string' ? { priority: want } : want);
+
+      const wants = typeof want === 'string' ? [{ priority: want }] : Array.isArray(want) ? want : [want];
+
+      // Every want joins before any withdraws, so one already withdrawn does not drop the drawing the others wait for.
+      for (const each of wants) {
+        see(each);
+        entry.wants.add(each);
+      }
+      for (const each of wants) each.onWithdraw?.(() => withdraw(entry, each));
       next();
 
       return drawn;

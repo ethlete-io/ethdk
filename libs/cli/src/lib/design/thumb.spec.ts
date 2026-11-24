@@ -200,6 +200,13 @@ describe('createThumbnailer', () => {
 });
 
 describe('createDrawQueue', () => {
+  it('draws a job asked with several wants while one of them still waits, even if another withdrew at once', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const withdrawn = { priority: 'low' as const, onWithdraw: (withdraw: () => void) => withdraw() };
+
+    await expect(queue.run(async () => 'drawn', [withdrawn, { priority: 'low' }])).resolves.toBe('drawn');
+  });
+
   it('leaves no unhandled rejection when a draw nobody awaits is aborted with its run', async () => {
     const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
     const unhandled = vi.fn();

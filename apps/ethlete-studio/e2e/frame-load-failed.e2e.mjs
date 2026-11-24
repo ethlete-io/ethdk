@@ -31,6 +31,9 @@ const PAGE_TARGET = 'pages/sketches';
 const PAGE_SKETCH_VIEW = { systemProduct: 'studio', systemEntry: `sketch:${PAGE_TARGET}` };
 const PAGE_VARIANTS = { a: 'red', b: 'green', c: 'blue' };
 const DRAWN_TIMEOUT_MS = 180000;
+const CHANGE_SETTLE_MS = 1000;
+const QUEUED_TIMEOUT_MS = 30000;
+const QUEUED_BEFORE_ABANDON = 50;
 const SILENT_PAGE = '<!doctype html><html><body></body></html>';
 
 const checkout = mkdtempSync(join(tmpdir(), 'studio-frame-load-failed-e2e-'));
@@ -281,6 +284,39 @@ const everyPageFrameDraws = async (context) => {
   };
 };
 
+const queueOf = async (designPort) => (await fetch(`http://[::1]:${designPort}/__design/queue`)).json();
+
+const abandonedListingLeavesQueue = async (context) => {
+  const { page, designPort } = context;
+
+  await page.goto('about:blank');
+  appendFileSync(join(checkout, UNRELATED_PART), '\n');
+  await page.waitForTimeout(CHANGE_SETTLE_MS);
+
+  const asker = new AbortController();
+  const listing = fetch(`http://[::1]:${designPort}/__design/sketches?product=studio`, { signal: asker.signal }).catch(
+    () => undefined,
+  );
+  const deadline = Date.now() + QUEUED_TIMEOUT_MS;
+  let queued = (await queueOf(designPort)).queued;
+
+  while (queued < QUEUED_BEFORE_ABANDON && Date.now() < deadline) {
+    await page.waitForTimeout(100);
+    queued = (await queueOf(designPort)).queued;
+  }
+
+  asker.abort();
+  await listing;
+  await page.waitForTimeout(CHANGE_SETTLE_MS);
+
+  const left = (await queueOf(designPort)).queued;
+
+  return {
+    ok: queued >= QUEUED_BEFORE_ABANDON && left === 0,
+    detail: `drawings queued when the listing was abandoned ${queued}, still queued ${CHANGE_SETTLE_MS} ms later ${left}`,
+  };
+};
+
 const CASES = [
   { name: 'a frame that sends no frame message shows the failed load', run: silentFrame },
   {
@@ -290,6 +326,10 @@ const CASES = [
   {
     name: 'a sketch variant whose module fails shows a render error, no Übernehmen, and recovers on the next change',
     run: failedSketchModule,
+  },
+  {
+    name: 'a sketch listing abandoned after a change to a part the sketch imports leaves no drawing queued',
+    run: abandonedListingLeavesQueue,
   },
 ];
 
