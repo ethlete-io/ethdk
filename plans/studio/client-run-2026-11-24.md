@@ -82,5 +82,5 @@ Checkout `/home/tom/dev/client-runs/2026-11-24-1642/tomflix`, Projekt `tomflix`,
 
 - Gesamt: nichts passt zu 46 B. Hauptursache: Start mit festem Rot `--accent #e50914` statt Akzent aus 46 B (in B687).
 - Logo: nur ein Abschnitt `mark`, Agent gibt auf (LOGO-SECTION-Blocker). Variante a zeigt eine Lücke zwischen „T“ und „OMFLIX“.
-- Button: beim Laden nur Beschreibungen und „vergleicht 50 Zustände …“, dann ein Raster mit vielen „Lädt“-Zellen. Aktuell, a, b, c stapeln untereinander (Regel unter 45 %), obwohl jeder Frame klein ist: alles im Bild erst bei 2 % Zoom. Stapeln ist für breite Frames, nicht für kleine (B676).
+- Button: beim Laden nur Beschreibungen und „vergleicht 50 Zustände …“, dann ein Raster mit vielen „Lädt“-Zellen. Zu viele Frames: 16 Zeilen × 4 Zustände × Aktuell, a, b, c, rund 200 für einen Button. Das Bild bei 2 % Zoom zeigt nur die Menge (Korrektur des Menschen).
 - Colors: Spalte „Aktuell“ hat nur den Kopf und keine Frames; Frames der Varianten sind bei Fit nicht lesbar (B676).
