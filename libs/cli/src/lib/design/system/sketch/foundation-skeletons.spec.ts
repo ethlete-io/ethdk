@@ -148,6 +148,13 @@ describe('foundation skeletons', () => {
     expect(block).toMatch(/background:\s*rgb\(var\(--logo-bg\)\)/u);
   });
 
+  it('draws the ink swatch label in the on-colour, not the page background, so it reads on the ink swatch', () => {
+    const css = foundationSkeletonOf('foundations/logo')?.files['logo.css'] ?? '';
+    const block = /\.logo-panel\[data-surface='ink'\]\s*\{([^}]*)\}/u.exec(css)?.[1] ?? '';
+
+    expect(block).toMatch(/(?<!-)color:\s*rgb\(var\(--logo-on-accent\)\)/u);
+  });
+
   it('writes texts that stand alone, without a look', () => {
     const texts = PARTS.flatMap(({ name }) => {
       const skeleton = foundationSkeletonOf(`foundations/${name}`);

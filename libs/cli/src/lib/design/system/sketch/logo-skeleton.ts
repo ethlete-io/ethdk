@@ -283,7 +283,7 @@ const logoCss = `@layer components {
 
   .logo-panel[data-surface='ink'] {
     background: rgb(var(--logo-ink));
-    color: rgb(var(--logo-bg));
+    color: rgb(var(--logo-on-accent));
   }
 
   .logo-wrong {
