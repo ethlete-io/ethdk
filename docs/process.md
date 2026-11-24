@@ -20,7 +20,7 @@ How the doc session and the builder work. A process change edits this page.
 - A fix counts only with a test that fails without it on the reported real case, and a shot of that case.
 - Without both, the report says "not verified" and the commit is not a `fix`.
 - A finding says "Suspect:" until a bite or a measurement proves the cause, then "Cause:".
-- No smoke run, e2e or Studio check in pre-commit or pre-push.
+- No smoke run, e2e or Studio check in pre-commit or pre-push. A subagent that changes a Studio view runs the e2e cases of that view (`--case`, at most about 5 min, in the background) before it reports done; the full suite stays in CI.
 
 ## Fixes
 
