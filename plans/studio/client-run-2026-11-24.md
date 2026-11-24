@@ -13,8 +13,15 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
 - Variante a: im Einzelbild sehen `logo` und `logo-focus-visible` (ebenso `fallback`) gleich aus, im Bogen trägt focus-visible einen Ring. Verdacht: der Einzel-Shot schneidet auf die Inhaltsbox und verliert den äußeren Fokus-Ring.
 - Rückfall ohne Logo (John Williams) zeigt den Titel als Text: wie bestellt, kein Befund.
 
+## Zweiter Prüflauf (Prüfer mit Bild-, Text-, Rahmen- und Baum-Check, SDK mit e9e2a06a4)
+
+`yarn client-run --judge ~/dev/client-runs/2026-11-24-0056 --sdk <Scratch mit e9e2a06a4>`: 6 Befunde statt 21.
+
+- Befund 1 (schwarze 48x48-Einzelbilder von b und c) ist weg: b und c zeichnen jetzt 200 bzw. 360 breit, kein leerer Zustand mehr.
+- Varianten a, b und c: `logo` und `logo-focus-visible` (ebenso `fallback`) sehen im Einzelbild gleich aus, auch in b und c. Verdacht: der Einzel-Shot schneidet auf die Inhaltsbox und verliert den äußeren Fokus-Ring (Befund 5, jetzt in allen drei Varianten).
+- Kein fehlendes Bild, kein abgeschnittener Text, kein Inhalt über den Rahmen, Baum zeigt den bestellten Sketch mit 3 Varianten: kein Befund.
+
 ## Offen (nächste Schritte)
 
-- Prüfer: Fehl-Bilder (`<img>` ohne Datei) und kaputten Text erkennen; abgeschnittene Rahmen; Baum (`/__design/system`) gegen Sketch-Ziele prüfen.
-- 48x48-Befund auf dem echten Fall nachstellen (Spec rot ohne Fix), erst dann Fix.
-- Cron/Builder-Start: `yarn client-run` braucht ohne `--sdk` einen Scratch-Bau (`yarn scratch:checkout` + `nx build cli agent-rules`), ca. 5 min.
+- Zeitplan: Zeile für `crontab -e` in `tools/client-run/README.md`; der Mensch trägt sie ein.
+- Prüfer: Scrollleiste in einem Element der Zelle (nur die Seiten-Scrollleiste wird erkannt; kein echter Fall als Vorlage).

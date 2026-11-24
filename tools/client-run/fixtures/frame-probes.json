@@ -1,0 +1,591 @@
+{
+  "probes": {
+    "b-logo": {
+      "probe": {
+        "viewport": {
+          "width": 200,
+          "height": 800
+        },
+        "page": {
+          "width": 200,
+          "height": 800
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 292
+        },
+        "boxes": [
+          {
+            "element": "div.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 200,
+              "height": 292
+            }
+          },
+          {
+            "element": "a.tf-title-card.relative",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 184,
+              "height": 276
+            }
+          },
+          {
+            "element": "img.tf-title-card-poster.absolute",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 184,
+              "height": 276
+            }
+          },
+          {
+            "element": "span.tf-title-card-scrim.absolute",
+            "box": {
+              "x": 8,
+              "y": 133,
+              "width": 184,
+              "height": 151
+            }
+          },
+          {
+            "element": "span.flex.h-12",
+            "box": {
+              "x": 20,
+              "y": 197,
+              "width": 160,
+              "height": 48
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "box": {
+              "x": 56,
+              "y": 229,
+              "width": 88,
+              "height": 16
+            }
+          },
+          {
+            "element": "span.tf-title-card-meta",
+            "box": {
+              "x": 67,
+              "y": 253,
+              "width": 66,
+              "height": 20
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.tf-title-card-poster.absolute",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/b/assets/dune-part-two-2024-hintergrund.webp",
+            "complete": true,
+            "naturalWidth": 1000,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 184,
+              "height": 276
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "src": "/bilder-von-tom/dune-part-two-2024-logo.png",
+            "complete": true,
+            "naturalWidth": 0,
+            "box": {
+              "x": 56,
+              "y": 229,
+              "width": 88,
+              "height": 16
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.tf-title-card-meta",
+            "text": "2024 · Film",
+            "box": {
+              "x": 67,
+              "y": 253,
+              "width": 66,
+              "height": 20
+            },
+            "textBox": {
+              "x": 67,
+              "y": 253,
+              "width": 66,
+              "height": 18
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 66,
+              "height": 20
+            },
+            "client": {
+              "width": 66,
+              "height": 20
+            },
+            "clippers": [
+              {
+                "element": "a.tf-title-card.relative",
+                "box": {
+                  "x": 8,
+                  "y": 8,
+                  "width": 184,
+                  "height": 276
+                }
+              }
+            ]
+          }
+        ],
+        "scrollers": []
+      },
+      "failedImages": ["/bilder-von-tom/dune-part-two-2024-logo.png"]
+    },
+    "c-fallback-narrow": {
+      "probe": {
+        "viewport": {
+          "width": 120,
+          "height": 800
+        },
+        "page": {
+          "width": 120,
+          "height": 800
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 75
+        },
+        "boxes": [
+          {
+            "element": "div.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 120,
+              "height": 75
+            }
+          },
+          {
+            "element": "a.tf-title-card.relative",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 104,
+              "height": 59
+            }
+          },
+          {
+            "element": "img.tf-title-card-poster.absolute",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 104,
+              "height": 59
+            }
+          },
+          {
+            "element": "span.tf-title-card-scrim.absolute",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 104,
+              "height": 59
+            }
+          },
+          {
+            "element": "span.flex.h-14",
+            "box": {
+              "x": 24,
+              "y": 8,
+              "width": 26,
+              "height": 47
+            }
+          },
+          {
+            "element": "span.tf-title-card-text.line-clamp-2",
+            "box": {
+              "x": 24,
+              "y": 16,
+              "width": 26,
+              "height": 38
+            }
+          },
+          {
+            "element": "span.tf-title-card-meta.shrink-0",
+            "box": {
+              "x": 66,
+              "y": 35,
+              "width": 30,
+              "height": 20
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.tf-title-card-poster.absolute",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/c/assets/john-williams-live-in-vienna-2020-hintergrund.webp",
+            "complete": true,
+            "naturalWidth": 1000,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 104,
+              "height": 59
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.tf-title-card-text.line-clamp-2",
+            "text": "John Williams: Live in Vienna",
+            "box": {
+              "x": 24,
+              "y": 16,
+              "width": 26,
+              "height": 38
+            },
+            "textBox": {
+              "x": 24,
+              "y": 14,
+              "width": 72,
+              "height": 99
+            },
+            "clips": true,
+            "ellipsis": false,
+            "scroll": {
+              "width": 72,
+              "height": 97
+            },
+            "client": {
+              "width": 26,
+              "height": 38
+            },
+            "clippers": [
+              {
+                "element": "a.tf-title-card.relative",
+                "box": {
+                  "x": 8,
+                  "y": 8,
+                  "width": 104,
+                  "height": 59
+                }
+              }
+            ]
+          },
+          {
+            "element": "span.tf-title-card-meta.shrink-0",
+            "text": "2020",
+            "box": {
+              "x": 66,
+              "y": 35,
+              "width": 30,
+              "height": 20
+            },
+            "textBox": {
+              "x": 66,
+              "y": 35,
+              "width": 30,
+              "height": 18
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 30,
+              "height": 20
+            },
+            "client": {
+              "width": 30,
+              "height": 20
+            },
+            "clippers": [
+              {
+                "element": "a.tf-title-card.relative",
+                "box": {
+                  "x": 8,
+                  "y": 8,
+                  "width": 104,
+                  "height": 59
+                }
+              }
+            ]
+          }
+        ],
+        "scrollers": []
+      },
+      "failedImages": []
+    },
+    "a-logo": {
+      "probe": {
+        "viewport": {
+          "width": 200,
+          "height": 800
+        },
+        "page": {
+          "width": 200,
+          "height": 800
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 380
+        },
+        "boxes": [
+          {
+            "element": "div.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 200,
+              "height": 380
+            }
+          },
+          {
+            "element": "a.tf-title-card.flex",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 184,
+              "height": 364
+            }
+          },
+          {
+            "element": "img.tf-title-card-poster.aspect-2/3",
+            "box": {
+              "x": 16,
+              "y": 16,
+              "width": 168,
+              "height": 252
+            }
+          },
+          {
+            "element": "span.flex.h-12",
+            "box": {
+              "x": 16,
+              "y": 280,
+              "width": 168,
+              "height": 48
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "box": {
+              "x": 20,
+              "y": 280,
+              "width": 160,
+              "height": 48
+            }
+          },
+          {
+            "element": "span.tf-title-card-meta.px-1",
+            "box": {
+              "x": 16,
+              "y": 340,
+              "width": 168,
+              "height": 24
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.tf-title-card-poster.aspect-2/3",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/a/assets/dune-part-two-2024-plakat.webp",
+            "complete": true,
+            "naturalWidth": 400,
+            "box": {
+              "x": 16,
+              "y": 16,
+              "width": 168,
+              "height": 252
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/a/assets/dune-part-two-2024-logo.png",
+            "complete": true,
+            "naturalWidth": 500,
+            "box": {
+              "x": 20,
+              "y": 280,
+              "width": 160,
+              "height": 48
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.tf-title-card-meta.px-1",
+            "text": "2024 · Film",
+            "box": {
+              "x": 16,
+              "y": 340,
+              "width": 168,
+              "height": 24
+            },
+            "textBox": {
+              "x": 20,
+              "y": 340,
+              "width": 66,
+              "height": 18
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 168,
+              "height": 24
+            },
+            "client": {
+              "width": 168,
+              "height": 24
+            },
+            "clippers": []
+          }
+        ],
+        "scrollers": []
+      },
+      "failedImages": []
+    },
+    "a-logo-40": {
+      "probe": {
+        "viewport": {
+          "width": 40,
+          "height": 800
+        },
+        "page": {
+          "width": 50,
+          "height": 800
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 40,
+          "height": 179
+        },
+        "boxes": [
+          {
+            "element": "div.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 40,
+              "height": 179
+            }
+          },
+          {
+            "element": "a.tf-title-card.flex",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 24,
+              "height": 163
+            }
+          },
+          {
+            "element": "img.tf-title-card-poster.aspect-2/3",
+            "box": {
+              "x": 16,
+              "y": 16,
+              "width": 8,
+              "height": 12
+            }
+          },
+          {
+            "element": "span.flex.h-12",
+            "box": {
+              "x": 16,
+              "y": 40,
+              "width": 8,
+              "height": 48
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "box": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 0
+            }
+          },
+          {
+            "element": "span.tf-title-card-meta.px-1",
+            "box": {
+              "x": 16,
+              "y": 100,
+              "width": 8,
+              "height": 63
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.tf-title-card-poster.aspect-2/3",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/a/assets/dune-part-two-2024-plakat.webp",
+            "complete": true,
+            "naturalWidth": 400,
+            "box": {
+              "x": 16,
+              "y": 16,
+              "width": 8,
+              "height": 12
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/a/assets/dune-part-two-2024-logo.png",
+            "complete": true,
+            "naturalWidth": 500,
+            "box": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 0
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.tf-title-card-meta.px-1",
+            "text": "2024 · Film",
+            "box": {
+              "x": 16,
+              "y": 100,
+              "width": 8,
+              "height": 63
+            },
+            "textBox": {
+              "x": 20,
+              "y": 100,
+              "width": 30,
+              "height": 57
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 34,
+              "height": 63
+            },
+            "client": {
+              "width": 8,
+              "height": 63
+            },
+            "clippers": []
+          }
+        ],
+        "scrollers": []
+      },
+      "failedImages": []
+    }
+  }
+}

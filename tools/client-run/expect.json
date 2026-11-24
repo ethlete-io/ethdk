@@ -1,0 +1,3 @@
+{
+  "sketches": [{ "label": "Titelkarte", "match": "title|titel|card|karte|tile|kachel", "variants": [2, 3] }]
+}

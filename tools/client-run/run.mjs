@@ -7,7 +7,7 @@ import { parseArgs } from 'node:util';
 import { writeImageSet } from './image-set.mjs';
 
 const USAGE = `usage: yarn client-run [--source <tomflix>] [--out <dir>] [--sdk <built sdk copy>] [--titles <n>] [--model <m>]
-       yarn client-run --judge <run dir>     judge an earlier run again`;
+       yarn client-run --judge <run dir> [--sdk <built sdk copy>]     judge an earlier run again, with that sdk's cli`;
 
 const here = import.meta.dirname;
 const repo = resolve(here, '../..');
@@ -77,11 +77,12 @@ const runAgent = ({ runDir, target, model }) => {
   return result.status;
 };
 
-const judge = async (options) => (await import('./judge.mjs')).judgeRun(options);
+const expected = JSON.parse(readFileSync(join(here, 'expect.json'), 'utf8'));
+const judge = async (options) => (await import('./judge.mjs')).judgeRun({ expected, ...options });
 
 if (values.judge) {
   const runDir = resolve(values.judge);
-  await judge({ runDir, target: join(runDir, 'tomflix') });
+  await judge({ runDir, target: join(runDir, 'tomflix'), sdk: values.sdk && resolve(values.sdk) });
   process.exit(0);
 }
 
@@ -119,3 +120,4 @@ console.log(`client-run: image set of ${entries.length} titles, ${entries.filter
 const status = runAgent({ runDir, target, model: values.model });
 console.log(`client-run: agent exited ${status}`);
 await judge({ runDir, target });
+if (!values.sdk) run('node', [join(repo, 'tools/scripts/scratch-checkout.mjs'), '--remove', sdk]);

@@ -1,14 +1,18 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join } from 'node:path';
+import { chromium } from 'playwright';
+import { frameFindingsOf, probeFrame } from './frame-probe.mjs';
 import { decodePng, differenceOf, inkOf } from './png.mjs';
 import { leftRefusalsOf, readTranscript } from './transcript.mjs';
+import { treeFindingsOf } from './tree-check.mjs';
 
 const EMPTY_INK = 0.004;
 const SAME = 0;
 const MAX_SHOTS = 150;
 const SHOT_TIMEOUT_MS = 240_000;
+const FRAME_HEIGHT = 800;
 
 const progress = (line) => console.error(`client-run judge: ${line}`);
 
@@ -53,16 +57,30 @@ const statesOf = async (base, query) => {
   return listed ? listed[1].split(', ') : { problem: text.trim().slice(0, 200) };
 };
 
+/** Opens the frame a shot of `view` draws, at the width the shot came out, and probes what it shows. */
+const probeView = async ({ base, browser, view, width }) => {
+  const page = await browser.newPage({ viewport: { width, height: FRAME_HEIGHT } });
+  try {
+    const { product, part, state, sketch, variant } = view;
+    const search = new URLSearchParams({ product, part, state, ...(sketch ? { sketch, variant } : {}) });
+    return await probeFrame({ page, url: `${base}/frame.html?${search}` });
+  } finally {
+    await page.close();
+  }
+};
+
 /** What Studio shows for a run: the product parts and the sketch variants, each state as a picture. */
-const collectShots = async ({ base, shotsDir }) => {
+const collectShots = async ({ base, shotsDir, browser }) => {
   const products = await json(`${base}/__design/system`);
   const shots = [];
   const views = [];
+  const allSketches = [];
   for (const product of products) {
     for (const part of product.parts.filter((p) => p.origin !== 'base'))
       for (const state of part.states) views.push({ product: product.name, part: `${part.layer}/${part.name}`, state });
     const { sketches } = await json(`${base}/__design/sketches?product=${encodeURIComponent(product.name)}`);
     for (const sketch of sketches) {
+      allSketches.push(sketch);
       shots.push({ kind: 'sketch', product: product.name, sketch });
       for (const part of sketch.targetParts ?? [sketch.target])
         for (const variant of sketch.variants) {
@@ -95,18 +113,23 @@ const collectShots = async ({ base, shotsDir }) => {
     );
     writeFileSync(file, png);
     progress(`shot ${file.split('/').pop()}`);
-    shots.push({ ...view, file, note: answer.headers.get('x-et-note'), picture: decodePng(png) });
+    const picture = decodePng(png);
+    const frame = await probeView({ base, browser, view, width: picture.width }).catch((error) => ({
+      error: String(error).slice(0, 200),
+    }));
+    shots.push({ ...view, file, note: answer.headers.get('x-et-note'), picture, frame });
   }
-  return { shots, skipped: Math.max(views.length - MAX_SHOTS, 0) };
+  return { shots, sketches: allSketches, skipped: Math.max(views.length - MAX_SHOTS, 0) };
 };
 
 const where = (shot) =>
   `${shot.part}${shot.variant ? ` Variante ${shot.variant}` : ''}${shot.state ? `, Zustand ${shot.state}` : ''}`;
 
 /** The findings a human would notice in Studio, from the collected shots and the agent's transcript. */
-export const findingsOf = ({ shots, refusals, result }) => {
+export const findingsOf = ({ shots, refusals, result, tree = [] }) => {
   const findings = [];
   const add = (seen, cause, file) => findings.push({ seen, cause, file });
+  for (const { seen, cause } of tree) add(seen, cause);
   for (const shot of shots) {
     if (shot.kind === 'sketch') {
       const { sketch } = shot;
@@ -127,6 +150,9 @@ export const findingsOf = ({ shots, refusals, result }) => {
         'Zustand zeichnet nichts Sichtbares.',
         shot.file,
       );
+    if (shot.frame?.error) add(`${where(shot)}: Rahmen nicht prüfbar.`, shot.frame.error);
+    else if (shot.frame)
+      for (const { seen, cause } of frameFindingsOf(shot.frame)) add(`${where(shot)}: ${seen}`, cause, shot.file);
   }
   const drawn = shots.filter((shot) => shot.picture);
   const groups = Map.groupBy(drawn, (shot) => `${shot.sketch ?? ''}|${shot.part}`);
@@ -193,30 +219,42 @@ const markdownOf = ({ runDir, findings, skipped, result }) =>
   ].join('\n');
 
 /** Starts a design server of its own on the run's copy, judges what Studio would show, and writes `findings.md`. */
-export const judgeRun = async ({ runDir, target }) => {
+export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] } }) => {
   const shotsDir = join(runDir, 'shots');
   mkdirSync(shotsDir, { recursive: true });
   const transcriptFile = join(runDir, 'transcript.jsonl');
   const transcript = existsSync(transcriptFile)
     ? readTranscript(readFileSync(transcriptFile, 'utf8'))
     : { calls: [], result: null };
-  const server = await startServer(target, openSync(join(runDir, 'judge-server.log'), 'w'));
+  // The record names a pid of the agent's sandbox; a server started on the copy would stop that pid on the host.
+  rmSync(join(target, 'tmp/design-resident/process.json'), { force: true });
+  if (sdk) {
+    rmSync(join(target, 'node_modules/@ethlete/cli'), { recursive: true, force: true });
+    cpSync(join(sdk, 'dist/libs/cli'), join(target, 'node_modules/@ethlete/cli'), { recursive: true });
+  }
+  const browser = await chromium.launch();
+  const server = await startServer(target, openSync(join(runDir, 'judge-server.log'), 'w')).catch(async (error) => {
+    await browser.close();
+    throw error;
+  });
   try {
-    const { shots, skipped } = await collectShots({ base: server.base, shotsDir });
+    const { shots, sketches, skipped } = await collectShots({ base: server.base, shotsDir, browser });
     writeFileSync(
       join(runDir, 'shots.json'),
-      JSON.stringify(
-        shots.map(({ picture, ...shot }) => shot),
-        null,
-        1,
-      ),
+      JSON.stringify(shots, (key, value) => (key === 'picture' ? undefined : value), 1),
     );
-    const findings = findingsOf({ shots, refusals: leftRefusalsOf(transcript), result: transcript.result });
+    const findings = findingsOf({
+      shots,
+      refusals: leftRefusalsOf(transcript),
+      result: transcript.result,
+      tree: treeFindingsOf({ expected, sketches }),
+    });
     const markdown = markdownOf({ runDir, findings, skipped, result: transcript.result });
     writeFileSync(join(runDir, 'findings.md'), markdown);
     console.log(markdown);
     return findings;
   } finally {
+    await browser.close();
     server.stop();
   }
 };
