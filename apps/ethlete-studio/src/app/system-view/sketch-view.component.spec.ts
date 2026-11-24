@@ -243,6 +243,35 @@ describe('SketchViewComponent', () => {
     expect(shots.filter((shot) => shot.width === undefined).map((shot) => shot.height)).toEqual([191, 191, 191]);
   });
 
+  it('sizes each measured cell of a fitted part at its own width, so its picture is as tall as its cell', async () => {
+    const states = ['mark', 'clear-space', 'misuse'];
+    const logo = {
+      ...SKETCH,
+      targets: SKETCH.variants.map((variant) => ({ variant, states, interactions: [], unchanged: [] })),
+    } satisfies ListedSketch;
+    const { fixture, root } = await render(logo, noComments, { ...CARD, states });
+    const sizes: Record<string, [number, number]> = { mark: [320, 320], 'clear-space': [265, 304], misuse: [342, 304] };
+
+    for (const [state, [width, height]] of Object.entries(sizes)) {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          source: root.querySelector<HTMLIFrameElement>(`iframe[data-variant="a"][data-state="${state}"]`)!
+            .contentWindow,
+          data: { type: 'design-explore:height', height, width, viewport: { width: 342, height } },
+        }),
+      );
+      await settle(fixture);
+    }
+
+    const row = fixture.componentInstance['rows']().find(({ key }) => key === 'a')!;
+
+    expect(row.shots.map((shot) => [shot.state, shot.width ?? row.width, shot.height])).toEqual([
+      ['mark', 320, 320],
+      ['clear-space', 265, 304],
+      ['misuse', 342, 304],
+    ]);
+  });
+
   it('keeps the live frames while a zoom gesture runs and updates them once it rests', async () => {
     vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(100);
     vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(50);
