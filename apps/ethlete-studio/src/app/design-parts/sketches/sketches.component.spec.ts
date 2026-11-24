@@ -739,6 +739,34 @@ describe('SketchesComponent', () => {
     expect(world?.classList.contains('min-w-full')).toBe(false);
   });
 
+  it('stacks the variants of wide frames when the matrix would draw them below 45 % (tomflix colors at 1440 px)', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? 1076 : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? 1000 : 0;
+    });
+    const variant = (key: string): SketchRow => ({
+      key,
+      note: '',
+      width: 992,
+      shots: [
+        { state: 'dark', changed: true, height: 1000 },
+        { state: 'preview', changed: true, height: 671 },
+      ],
+    });
+    const rows = [
+      { key: 'current', note: '', width: 992, shots: [{ state: 'dark', changed: false, height: 1000 }] },
+      ...['a', 'b', 'c'].map(variant),
+    ];
+    const fixture = await render({ part: 'foundations/colors', rows, camera: 'fit' });
+    const root: HTMLElement = fixture.nativeElement;
+
+    expect(fixture.componentInstance.transposed()).toBe(false);
+    expect(root.querySelector('[data-sk-matrix]')).toBeNull();
+    expect(root.querySelectorAll('[data-sk-changed] [data-sk-row]')).toHaveLength(4);
+  });
+
   describe('matrix blocks', () => {
     beforeEach(() => {
       vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
@@ -1527,7 +1555,7 @@ describe('SketchesComponent', () => {
       ];
 
       vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
-        return this.hasAttribute('data-sk-rows') ? 1100 : 0;
+        return this.hasAttribute('data-sk-rows') ? 3900 : 0;
       });
 
       const root: HTMLElement = (await render({ rows, camera: '100' })).nativeElement;
@@ -1694,7 +1722,7 @@ describe('SketchesComponent', () => {
     width = 1200;
     observers.forEach((notify) => notify());
     await fixture.whenStable();
-    expect(before).toContain('33');
+    expect(before).toContain('50');
     expect(chip()).toContain('100');
   });
   it.each([

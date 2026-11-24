@@ -1,3 +1,5 @@
+import { STACK_BELOW_SCALE } from './interaction-grid';
+
 export const MATRIX_COLUMN_GAP = 24;
 
 export const MATRIX_MIN_COLUMN = 28;
@@ -119,6 +121,30 @@ export const matrixBlocksOf = (
   }
 
   return best;
+};
+
+/**
+ * Whether wide frames leave the matrix and stack their variants instead: the matrix, one column per variant, would draw
+ * below `STACK_BELOW_SCALE` in `room`, and a variant row, one column per state, would reach it.
+ */
+export const variantsLeaveMatrixOf = ({
+  room,
+  frameWidth,
+  variants,
+  states,
+}: {
+  room: number;
+  frameWidth: number;
+  variants: number;
+  states: number;
+}) => {
+  if (variants < 2 || frameWidth <= 0) return false;
+
+  const matrix =
+    (room - MATRIX_GUTTER_ESTIMATE - variants * MATRIX_COLUMN_GAP - MATRIX_PADDING) / (variants * frameWidth);
+  const stacked = (room - MATRIX_PADDING - (states - 1) * MATRIX_COLUMN_GAP) / (Math.max(1, states) * frameWidth);
+
+  return matrix < STACK_BELOW_SCALE && stacked >= STACK_BELOW_SCALE;
 };
 
 export const shortLabelOf = (label: string) =>

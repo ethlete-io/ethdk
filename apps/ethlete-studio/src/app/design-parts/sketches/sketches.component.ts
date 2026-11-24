@@ -82,6 +82,7 @@ import {
   matrixBlocksOf,
   matrixWidthFit,
   shortLabelOf,
+  variantsLeaveMatrixOf,
 } from './matrix-blocks';
 import { gridColumnWidthOf, gridScaleOf, interactionGridOf, variantsStackedOf } from './interaction-grid';
 import { cropGroupsOf, magnifyTextOf, SketchCropGroup, SketchCropReason } from './sketch-crops';
@@ -439,43 +440,6 @@ export class SketchesComponent {
   private sizedWidest = computed(() =>
     Math.max(0, ...this.shownRows().flatMap((row) => (row.sized === false ? [] : [row.width]))),
   );
-  private fitTransposed = computed(
-    () =>
-      this.listWidth() > 0 &&
-      this.sizedWidest() > this.listWidth() / TRANSPOSE_SHARE &&
-      (this.grid() === null || cropGroupsOf(this.shownRows()).length > 0) &&
-      !this.shownRows().some((row) => row.perLine),
-  );
-  // A user zoom holds the layout: a width change from the panel or the viewport would swap rows and columns under the camera.
-  public transposed = linkedSignal<{ zoom: FrameZoom; measured: boolean; widest: number; fit: boolean }, boolean>({
-    source: () => ({
-      zoom: this.canvas.zoom(),
-      measured: this.listMeasured(),
-      widest: this.sizedWidest(),
-      fit: this.fitTransposed(),
-    }),
-    computation: ({ zoom, measured, widest, fit }, previous) =>
-      zoom === 'fit' ||
-      !measured ||
-      previous === undefined ||
-      previous.source.zoom !== zoom ||
-      !previous.source.measured ||
-      previous.source.widest !== widest
-        ? fit
-        : previous.value,
-  });
-  private cropGroups = computed(() => (this.transposed() ? cropGroupsOf(this.shownRows()) : []));
-  protected screenMode = computed(() => this.cropGroups().length > 0);
-  protected groupOfState = computed(
-    () => new Map(this.cropGroups().flatMap((group) => group.states.map((state) => [state, group] as const))),
-  );
-  private matrixStates = computed(() => {
-    const groups = this.groupOfState();
-
-    return [...new Set(this.shownRows().flatMap((row) => row.shots.map((shot) => shot.state)))].filter(
-      (state) => (groups.get(state)?.states[0] ?? state) === state,
-    );
-  });
   private atFit = computed(() => this.canvas.zoom() === 'fit');
   private fitScale = computed(() => this.fitAt()?.scale ?? 1);
   protected scale = computed(() => {
@@ -483,7 +447,6 @@ export class SketchesComponent {
 
     return zoom === 'fit' ? this.fitScale() : zoom;
   });
-
   // A user zoom holds the fit the labels were sized at: a new fit from a wider viewport would resize the gutter and head
   // columns and move every frame on screen.
   private noteFit = linkedSignal<{ zoom: FrameZoom; fit: { scale: number; fonts: number } | null }, number>({
@@ -508,8 +471,8 @@ export class SketchesComponent {
         ? 'failed'
         : this.status(),
   );
-  public drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
 
+  public drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
   private sameRowsSource = computed(() => ({
     part: this.part(),
     rows: this.shownRows(),
@@ -538,6 +501,50 @@ export class SketchesComponent {
     const same = this.sameRows();
 
     return this.shownRows().filter((row) => !same.includes(row));
+  });
+  private fitTransposed = computed(
+    () =>
+      this.listWidth() > 0 &&
+      this.sizedWidest() > this.listWidth() / TRANSPOSE_SHARE &&
+      (this.grid() === null || cropGroupsOf(this.shownRows()).length > 0) &&
+      !this.shownRows().some((row) => row.perLine) &&
+      !variantsLeaveMatrixOf({
+        room: this.listWidth(),
+        frameWidth: this.sizedWidest(),
+        variants: this.changedRows().length,
+        states: this.stageStates().length,
+      }),
+  );
+  // A user zoom holds the layout: a width change from the panel or the viewport would swap rows and columns under the camera.
+  public transposed = linkedSignal<{ zoom: FrameZoom; measured: boolean; widest: number; fit: boolean }, boolean>({
+    source: () => ({
+      zoom: this.canvas.zoom(),
+      measured: this.listMeasured(),
+      widest: this.sizedWidest(),
+      fit: this.fitTransposed(),
+    }),
+    computation: ({ zoom, measured, widest, fit }, previous) =>
+      zoom === 'fit' ||
+      !measured ||
+      previous === undefined ||
+      previous.source.zoom !== zoom ||
+      !previous.source.measured ||
+      previous.source.widest !== widest
+        ? fit
+        : previous.value,
+  });
+  private cropGroups = computed(() => (this.transposed() ? cropGroupsOf(this.shownRows()) : []));
+
+  protected screenMode = computed(() => this.cropGroups().length > 0);
+  protected groupOfState = computed(
+    () => new Map(this.cropGroups().flatMap((group) => group.states.map((state) => [state, group] as const))),
+  );
+  private matrixStates = computed(() => {
+    const groups = this.groupOfState();
+
+    return [...new Set(this.shownRows().flatMap((row) => row.shots.map((shot) => shot.state)))].filter(
+      (state) => (groups.get(state)?.states[0] ?? state) === state,
+    );
   });
   private stackedFit = signal(false);
   protected stacked = computed(
@@ -708,9 +715,12 @@ export class SketchesComponent {
           const stacked = this.stackedOf(dom);
 
           if (stacked !== this.stackedFit()) {
+            const side = this.sideBySide();
+
             this.stackedFit.set(stacked);
 
-            return;
+            // The effect runs again only through `sideBySide`; without a layout change this run has to fit.
+            if (this.sideBySide() !== side) return;
           }
 
           this.fitAt.set({ scale: this.fitScaleOf(dom), fonts: this.fontLoads() });
