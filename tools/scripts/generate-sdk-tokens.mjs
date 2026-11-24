@@ -213,7 +213,10 @@ body {
 
 const header =
   '/* Generated from libs/core/design/theme-css.ts by tools/scripts/generate-sdk-tokens.mjs. Rerun: yarn sdk:tokens */';
-const faces = relative(dirname(file), resolve(root, '.ethlete/design/studio/foundations/type/faces.css'));
+const faces = relative(dirname(file), resolve(root, '.ethlete/design/sdk/foundations/colors/faces.css')).replace(
+  /^(?!\.)/,
+  './',
+);
 const source = `${header}\n@import '${faces}';\n${withElevatedFill(withSchemeInk(withShadowColor(withoutUtilityColors(themeCss({ surfaceThemes, colorThemes })))))}\n${BASE}`;
 const formatted = await format(source, { ...(await resolveConfig(file)), filepath: file });
 

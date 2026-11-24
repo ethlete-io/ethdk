@@ -1,4 +1,4 @@
-@import './faces.css';
+@import '../../../sdk/foundations/colors/faces.css';
 
 :root {
   font-size: 62.5%;

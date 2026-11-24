@@ -1,5 +1,5 @@
 /* Generated from libs/core/design/theme-css.ts by tools/scripts/generate-sdk-tokens.mjs. Rerun: yarn sdk:tokens */
-@import '../../../studio/foundations/type/faces.css';
+@import './faces.css';
 
 @layer base {
   .et-surface--default-light,
