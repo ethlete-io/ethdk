@@ -29,4 +29,24 @@ describe('treeFindingsOf', () => {
       'Sketch components/title-card zeigt 3 Varianten, bestellt waren 2.',
     ]);
   });
+
+  describe('an ordered base part', () => {
+    const realParts = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures/system-parts.json'), 'utf8'));
+    const button = { target: 'components/button', name: 'button', variants: ['a', 'b'] };
+    const order = { label: 'Button', match: 'button', base: true };
+    const findingsFor = (origin) =>
+      treeFindingsOf({
+        expected: { sketches: [order] },
+        sketches: [button],
+        parts: realParts.map((part) => ({ ...part, origin })),
+      }).map((f) => f.cause);
+
+    it('reports a sketch on a product-own copy and names the override command', () => {
+      assert.deepEqual(findingsFor('product'), ['Richtig: et design sketch new components/button --override.']);
+    });
+
+    it('accepts a sketch that overrides the SDK part', () => {
+      assert.deepEqual(findingsFor('overridden'), []);
+    });
+  });
 });

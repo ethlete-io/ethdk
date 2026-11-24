@@ -2,7 +2,7 @@
   "sketches": [
     { "label": "Farben", "match": "colou?r|farbe" },
     { "label": "Marken-Logo", "match": "logo|brand|marke" },
-    { "label": "Button", "match": "button" },
+    { "label": "Button", "match": "button", "base": true },
     { "label": "App Shell", "match": "shell|app-frame|rahmen" },
     { "label": "Hero", "match": "hero" },
     { "label": "Titelkarte", "match": "title-card|titelkarte|card|karte|tile|kachel", "variants": [2, 3] }

@@ -76,7 +76,9 @@ const collectShots = async ({ base, shotsDir, browser }) => {
   const shots = [];
   const views = [];
   const allSketches = [];
+  const allParts = [];
   for (const product of products) {
+    allParts.push(...product.parts);
     for (const part of product.parts.filter((p) => p.origin !== 'base'))
       for (const state of part.states) views.push({ product: product.name, part: `${part.layer}/${part.name}`, state });
     const { sketches } = await json(`${base}/__design/sketches?product=${encodeURIComponent(product.name)}`);
@@ -120,7 +122,7 @@ const collectShots = async ({ base, shotsDir, browser }) => {
     }));
     shots.push({ ...view, file, note: answer.headers.get('x-et-note'), picture, frame });
   }
-  return { shots, sketches: allSketches, skipped: Math.max(views.length - MAX_SHOTS, 0) };
+  return { shots, sketches: allSketches, parts: allParts, skipped: Math.max(views.length - MAX_SHOTS, 0) };
 };
 
 const where = (shot) =>
@@ -239,7 +241,7 @@ export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] 
     throw error;
   });
   try {
-    const { shots, sketches, skipped } = await collectShots({ base: server.base, shotsDir, browser });
+    const { shots, sketches, parts, skipped } = await collectShots({ base: server.base, shotsDir, browser });
     writeFileSync(
       join(runDir, 'shots.json'),
       JSON.stringify(shots, (key, value) => (key === 'picture' ? undefined : value), 1),
@@ -248,7 +250,7 @@ export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] 
       shots,
       refusals: leftRefusalsOf(transcript),
       result: transcript.result,
-      tree: treeFindingsOf({ expected, sketches }),
+      tree: treeFindingsOf({ expected, sketches, parts }),
     });
     const markdown = markdownOf({ runDir, findings, skipped, result: transcript.result });
     writeFileSync(join(runDir, 'findings.md'), markdown);
