@@ -12,24 +12,19 @@ const tokenOf = (css: string, name: string) => {
 const darkCss = () => colorsSkeletonOf({ scheme: 'dark', accent: TOMFLIX_ACCENT }).files['colors.css'] ?? '';
 
 describe('colors skeleton interaction states', () => {
-  it('steps the surface tint on black as far as the SDK does and keeps hover, focus and active apart', () => {
+  it('steps the surface tint on black as far as the SDK does', () => {
     const css = darkCss();
-    const [rest, hover, focus, active] = ['', '-hover', '-focus', '-active'].map((state) =>
-      tokenOf(css, `--et-surface-interaction${state}`),
-    );
+    const [rest, hover] = ['', '-hover'].map((state) => tokenOf(css, `--et-surface-interaction${state}`));
 
     expect(rest).toBeLessThanOrEqual(160);
     expect((hover ?? 0) - (rest ?? 0)).toBeGreaterThanOrEqual(0.23 * 255);
-    expect(new Set([rest, hover, focus, active]).size).toBe(4);
   });
 
-  it('derives a distinct accent focus state', () => {
+  it('gives focus the hover value in surface and accent', () => {
     const css = darkCss();
-    const [hover, focus, active] = ['-hover', '-focus', '-active'].map((state) =>
-      tokenOf(css, `--et-color-primary${state}`),
-    );
 
-    expect(focus).not.toBe(hover);
-    expect(focus).not.toBe(active);
+    // The SDK uses one value for hover and focus.
+    for (const name of ['--et-surface-interaction', '--et-color-primary', '--et-color-primary-ink'])
+      expect(tokenOf(css, `${name}-focus`)).toBe(tokenOf(css, `${name}-hover`));
   });
 });

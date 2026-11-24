@@ -175,16 +175,16 @@ describe('designProduct', () => {
     expect(distinct(['color-primary', 'color-primary-hover', 'color-primary-active', 'color-primary-disabled'])).toBe(
       4,
     );
-    expect(distinct(['color-primary-hover', 'color-primary-focus', 'color-primary-active'])).toBe(3);
+    expect(valueOf('color-primary-focus')).toBe(valueOf('color-primary-hover'));
     expect(
       distinct([
         'surface-interaction',
         'surface-interaction-hover',
-        'surface-interaction-focus',
         'surface-interaction-active',
         'surface-interaction-disabled',
       ]),
-    ).toBe(5);
+    ).toBe(4);
+    expect(valueOf('surface-interaction-focus')).toBe(valueOf('surface-interaction-hover'));
     expect(Number(valueOf('surface-interaction').split(' ')[0])).toBeLessThanOrEqual(160);
     expect(valueOf('color-on-primary-disabled')).not.toBe(valueOf('color-on-primary'));
     expect(
