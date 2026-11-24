@@ -4,7 +4,7 @@ import { join } from 'node:path';
 export const STANDALONE_PAGE = 'Standalone';
 
 export const STANDALONE_FILES = [
-  { file: 'frame-load-failed.e2e.mjs', takesBuilt: true },
+  { file: 'frame-load-failed.e2e.mjs', takesBuilt: true, ownShard: true },
   { file: 'frame-scrollbar.e2e.mjs', takesBuilt: false },
   { file: 'server-restart.e2e.mjs', takesBuilt: true },
 ];
@@ -15,7 +15,13 @@ export const standaloneJobsOf = ({ only, pageGroups } = {}) =>
     ({ file }) =>
       (!only || only.split('|').some((part) => file.includes(part))) &&
       (!pageGroups || pageGroups.includes(STANDALONE_PAGE)),
-  ).map(({ file, takesBuilt }) => ({ page: STANDALONE_PAGE, name: file, file, takesBuilt, ownShard: false }));
+  ).map(({ file, takesBuilt, ownShard = false }) => ({
+    page: STANDALONE_PAGE,
+    name: file,
+    file,
+    takesBuilt,
+    ownShard,
+  }));
 
 /** Runs one standalone job as its own node process and resolves to a canvas.e2e result row. */
 export const runStandalone = (job, { built, port, env = process.env }) =>
