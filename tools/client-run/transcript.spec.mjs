@@ -58,3 +58,15 @@ describe('leftRefusalsOf', () => {
     assert.deepEqual(leftRefusalsOf(readTranscript(excerpt)), []);
   });
 });
+
+describe('leftRefusalsOf, a call cut off by the run', () => {
+  it('does not count a call whose agent was stopped as a refusal (run 1642)', () => {
+    const transcript = readTranscript(
+      readFileSync(join(import.meta.dirname, 'fixtures/transcript-1642-cut-off-call.jsonl'), 'utf8'),
+    );
+
+    assert.equal(transcript.calls.length, 1);
+    assert.equal(transcript.calls[0].failed, true);
+    assert.deepEqual(leftRefusalsOf(transcript), []);
+  });
+});

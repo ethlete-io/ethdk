@@ -1,3 +1,4 @@
+const INTERRUPT = /^\[Request interrupted by user/;
 const FAILED = /^Exit code [1-9]/m;
 
 const textOf = (content) =>
@@ -30,6 +31,7 @@ export const readTranscript = (text) => {
   const calls = new Map();
   const ordered = [];
   let result = null;
+  let rejected = null;
   for (const event of events) {
     if (event.type === 'result')
       result = { text: event.result ?? '', isError: !!event.is_error, turns: event.num_turns };
@@ -51,7 +53,9 @@ export const readTranscript = (text) => {
         const call = calls.get(part.tool_use_id);
         call.output = textOf(part.content);
         call.failed = !!part.is_error || FAILED.test(call.output);
+        rejected = call;
       }
+      if (part.type === 'text' && INTERRUPT.test(part.text ?? '') && rejected) rejected.interrupted = true;
     }
   }
   return { calls: ordered, result };
@@ -60,5 +64,8 @@ export const readTranscript = (text) => {
 /** The design calls that failed or refused and that no later call of the same command passed: what the agent left. */
 export const leftRefusalsOf = ({ calls }) =>
   calls.filter(
-    (call, i) => call.failed && !calls.slice(i + 1).some((later) => later.key === call.key && later.failed === false),
+    (call, i) =>
+      call.failed &&
+      !call.interrupted &&
+      !calls.slice(i + 1).some((later) => later.key === call.key && later.failed === false),
   );
