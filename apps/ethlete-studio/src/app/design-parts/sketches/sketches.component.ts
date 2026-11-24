@@ -118,6 +118,10 @@ const statesOf = (rows: readonly SketchRow[]) => [
   ...new Set(rows.flatMap((row) => row.shots.map((shot) => shot.state))),
 ];
 
+const gridStatesOf = (rows: readonly SketchRow[]) => [
+  ...new Set(rows.flatMap((row) => row.shots.flatMap((shot) => [shot.state, ...(shot.restOf ?? [])]))),
+];
+
 const EDIT_ROW_LABELS: Record<string, string> = {
   old: SKETCHES_LABELS.editOld,
   new: SKETCHES_LABELS.editNew,
@@ -418,7 +422,7 @@ export class SketchesComponent {
   protected stageStates = computed(() => statesOf(this.shownRows()));
   protected discardable = computed(() => !this.isEdit());
   protected grid = computed(() =>
-    this.shownRows().some((row) => row.perLine) ? null : interactionGridOf(this.stageStates()),
+    this.shownRows().some((row) => row.perLine) ? null : interactionGridOf(gridStatesOf(this.shownRows())),
   );
   public columns = computed(() => {
     const grid = this.grid();

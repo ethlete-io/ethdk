@@ -241,6 +241,46 @@ describe('SketchesComponent', () => {
     ).not.toContain('rest');
   });
 
+  it('marks a focus-visible state every variant folds into rest as = rest, not as an empty cell', async () => {
+    const bases = ['default', 'series', 'fallback'];
+    const sameAsRest: Record<string, Record<string, string>> = {
+      a: { 'default-focus-visible': 'default', 'series-focus-visible': 'series' },
+      b: { 'default-focus-visible': 'default', 'series-focus-visible': 'series', 'fallback-focus-visible': 'fallback' },
+      c: { 'default-focus-visible': 'default', 'series-focus-visible': 'series', 'fallback-focus-visible': 'fallback' },
+    };
+    const variant = (key: string): SketchRow => ({
+      key,
+      note: key,
+      width: 264,
+      shots: bases
+        .flatMap((base) => [base, `${base}-hover`, `${base}-focus-visible`])
+        .map((state) => {
+          const restOf = Object.entries(sameAsRest[key]!)
+            .filter(([, rest]) => rest === state)
+            .map(([folded]) => folded);
+
+          return {
+            state,
+            changed: true,
+            height: 392,
+            ...(sameAsRest[key]![state] ? { sameAsRest: true } : {}),
+            ...(restOf.length > 0 ? { restOf } : {}),
+          };
+        }),
+    });
+    const root: HTMLElement = (await render({ rows: ['a', 'b', 'c'].map(variant), camera: '100' })).nativeElement;
+
+    for (const key of ['a', 'b', 'c']) {
+      expect(
+        [...root.querySelectorAll(`[data-sk-row="${key}"] [data-sk-folded-cell]`)].map((cell) => [
+          cell.getAttribute('data-sk-folded-cell'),
+          textOf(cell),
+        ]),
+      ).toEqual(Object.keys(sameAsRest[key]!).map((state) => [state, LABELS.foldedToRest]));
+    }
+    expect(root.querySelector('[data-sk-row="a"] [data-sk-state="fallback-focus-visible"]')).not.toBeNull();
+  });
+
   it('folds every state no variant is known to change while a compare is pending, and shows all from the toggle', async () => {
     const rows: SketchRow[] = [
       ...ROWS.slice(0, 1).map((row) => ({
