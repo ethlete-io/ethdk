@@ -8,6 +8,10 @@ export type DesignServerAction = 'start' | 'restart' | 'stop';
 
 export type DesignServerStatus = 'running' | 'stale' | 'stopped';
 
+const folderNameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+
+const parentNameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).slice(-3, -1).join('/');
+
 type ServerRow = DesignServerAction | 'reload';
 
 const SERVER_ROWS: Record<DesignServerStatus, ServerRow[]> = {
@@ -44,6 +48,16 @@ export class StudioMenuComponent {
   public openHelp = output();
 
   protected readonly LABELS = STUDIO_MENU_LABELS;
+
+  protected entries = computed(() => {
+    const names = this.projects().map(folderNameOf);
+
+    return this.projects().map((id, index) => ({
+      id,
+      name: names[index],
+      hint: names.filter((name) => name === names[index]).length > 1 ? parentNameOf(id) : '',
+    }));
+  });
 
   protected statusLabel = computed(() => `${this.LABELS.designServer} · ${this.LABELS.serverStatus[this.server()]}`);
 

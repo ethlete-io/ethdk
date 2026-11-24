@@ -20,6 +20,7 @@ class SystemViewStubComponent {
   public frameRevisions = input<unknown>(null);
   public project = input('');
   public projects = input<string[]>([]);
+  public roots = input<string[]>([]);
   public busy = input(false);
   public serverStale = input(false);
   public reload = output();

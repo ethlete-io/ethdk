@@ -82,6 +82,19 @@ describe('createCheckouts', () => {
     expect(picks).toEqual(['C:\\Users\\user\\dev\\alpha', '/dev/beta']);
   });
 
+  it('opens the second of two checkouts that share a folder name by its path', async () => {
+    const run = '/dev/client-runs/0056/tomflix';
+    const { checkouts, picks } = await mount(keeping([run, '/dev/tomflix']), '');
+
+    checkouts.chooseByName('/dev/tomflix');
+    expect(checkouts.current()).toBe('/dev/tomflix');
+
+    checkouts.chooseByName(run);
+    expect(checkouts.current()).toBe(run);
+    expect(checkouts.roots()).toEqual([run, '/dev/tomflix']);
+    expect(picks).toEqual([run, '/dev/tomflix', run]);
+  });
+
   it('keeps the folder picked in the OS dialog and opens it', async () => {
     const added: unknown[] = [];
     const { checkouts, picks } = await mount(

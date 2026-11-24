@@ -75,8 +75,8 @@ type ShownProducts = { product: string; products: string[]; logos: Record<string
           product: shownProducts().product,
           products: shownProducts().products,
           logos: shownProducts().logos,
-          project: projectName(),
-          projects: checkouts.names(),
+          project: checkout(),
+          projects: checkouts.roots(),
           panel: serverPanel(),
           server: serverDown() ? (serverCrash() ? 'crashed' : 'stopped') : serverSilent() ? 'unanswered' : 'starting',
           serverUrl: serverUrl(),
@@ -99,6 +99,7 @@ type ShownProducts = { product: string; products: string[]; logos: Record<string
         [frameRevisions]="frameRevisions()"
         [project]="projectName()"
         [projects]="checkouts.names()"
+        [roots]="checkouts.roots()"
         [busy]="menuBusy()"
         [serverStale]="serverStale()"
         (projectChange)="checkouts.chooseByName($event)"

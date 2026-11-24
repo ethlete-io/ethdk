@@ -102,8 +102,9 @@ export const createCheckouts = ({ remembered, pick, openRequests$ = designOpenRe
     current: current.asReadonly(),
     adding: adding.asReadonly(),
     names: computed(() => held().roots.map(folderNameOf)),
-    chooseByName: (name: string) => {
-      const checkout = held().roots.find((root) => folderNameOf(root) === name);
+    roots: computed(() => held().roots),
+    chooseByName: (nameOrPath: string) => {
+      const checkout = held().roots.find((root) => root === nameOrPath || folderNameOf(root) === nameOrPath);
 
       if (checkout) choose(checkout);
     },

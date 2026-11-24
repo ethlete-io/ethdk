@@ -79,6 +79,32 @@ describe('StudioMenuComponent', () => {
     ]);
   });
 
+  describe('two projects with the same folder name', () => {
+    const run = '/home/tom/dev/client-runs/2026-11-24-0056/tomflix';
+    const own = '/home/tom/dev/tomflix';
+
+    const checked = () =>
+      [...document.querySelectorAll<HTMLElement>('[role="menuitemradio"]')].map((item) =>
+        item.getAttribute('aria-checked'),
+      );
+
+    it('checks only the shown one and tells them apart', async () => {
+      const { rows } = await openMenu({ project: own, projects: [run, own] });
+
+      expect(checked()).toEqual(['false', 'true']);
+      expect(rows().slice(1, 3)).toEqual(['tomflixclient-runs/2026-11-24-0056', 'tomflixtom/dev']);
+    });
+
+    it('emits the path of the one picked', async () => {
+      const { fixture, events } = await openMenu({ project: own, projects: [run, own] });
+
+      document.querySelectorAll<HTMLElement>('[role="menuitemradio"]')[0]?.click();
+      await fixture.whenStable();
+
+      expect(events).toEqual([`project:${run}`]);
+    });
+  });
+
   it('names a stale server and offers the restart first', async () => {
     const { rows } = await openMenu({ project: 'a', projects: ['a'], server: 'stale' });
 

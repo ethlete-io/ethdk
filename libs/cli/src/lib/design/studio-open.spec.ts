@@ -60,6 +60,22 @@ describe('et design studio open', () => {
     expect(out.lines.join('\n')).toContain('Studio now shows');
   });
 
+  it('refuses inside a client run sandbox and writes no request', async () => {
+    const checksDir = fresh();
+    const out = capture();
+
+    vi.stubEnv('CLEAN_SLATE_SANDBOX', '1');
+
+    const code = await run(['open'], checkoutWithDesign(), checksDir);
+
+    vi.unstubAllEnvs();
+    out.restore();
+
+    expect(code).toBe(1);
+    expect(out.lines.join('\n')).toContain('A client run does not add checkouts');
+    expect(readdirSync(checksDir)).toEqual([]);
+  });
+
   it('refuses a folder with no design work and asks Studio nothing', async () => {
     const checksDir = fresh();
     const out = capture();

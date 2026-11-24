@@ -405,6 +405,7 @@ export class SystemViewComponent {
   public checkout = input('');
   public project = input('');
   public projects = input<string[]>([]);
+  public roots = input<string[]>([]);
   public busy = input(false);
   public serverStale = input(false);
 
@@ -1188,8 +1189,8 @@ export class SystemViewComponent {
     products: this.productNames(),
     sdk: sdkOf(this.product()?.base ?? null),
     logos: this.productLogos(),
-    project: this.project(),
-    projects: this.projects(),
+    project: this.roots().length ? this.checkout() : this.project(),
+    projects: this.roots().length ? this.roots() : this.projects(),
     panel: this.panel(),
     busy: this.busy(),
     serverStale: this.serverStale(),

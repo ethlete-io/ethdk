@@ -61,10 +61,15 @@
     <et-menu [attr.aria-label]="LABELS.panel" class="box-border w-62 text-ui-md [--et-menu-max-height:80vh]">
       <et-menu-radio-group [value]="project()" (valueChange)="selectProject($event)">
         <et-menu-group-label>{{ LABELS.project }}</et-menu-group-label>
-        @for (name of projects(); track name) {
-          <et-menu-radio-item [value]="name" [disabled]="busy() && name !== project()" closeOnActivate>{{
-            name
-          }}</et-menu-radio-item>
+        @for (entry of entries(); track entry.id) {
+          <et-menu-radio-item [value]="entry.id" [disabled]="busy() && entry.id !== project()" closeOnActivate>
+            <span class="flex min-w-0 flex-col">
+              <span class="truncate">{{ entry.name }}</span>
+              @if (entry.hint) {
+                <span class="truncate text-et-surface-muted text-ui-sm">{{ entry.hint }}</span>
+              }
+            </span>
+          </et-menu-radio-item>
         }
       </et-menu-radio-group>
       <button [disabled]="busy()" (activate)="openProject.emit()" et-menu-item type="button">

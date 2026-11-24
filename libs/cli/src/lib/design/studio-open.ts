@@ -74,6 +74,14 @@ export const designStudio = async (options: {
     return 1;
   }
 
+  if (process.env['CLEAN_SLATE_SANDBOX']) {
+    console.error(
+      failedText('A client run does not add checkouts to the human Studio. Show the result through its shots instead.'),
+    );
+
+    return 1;
+  }
+
   const checkout = dir ? resolve(dir) : target;
 
   if (!existsSync(configPathOf(checkout))) {
