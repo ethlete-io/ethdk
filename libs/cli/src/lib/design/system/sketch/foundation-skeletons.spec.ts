@@ -140,6 +140,14 @@ describe('foundation skeletons', () => {
     expect(family).toContain('system-ui');
   });
 
+  it('draws the logo sections in the product text colour on its background, so a dark product has no white titles on the white frame', () => {
+    const css = foundationSkeletonOf('foundations/logo')?.files['logo.css'] ?? '';
+    const block = /\.logo-section\s*\{([^}]*)\}/u.exec(css)?.[1] ?? '';
+
+    expect(block).toMatch(/(?<!-)color:\s*rgb\(var\(--logo-fg\)\)/u);
+    expect(block).toMatch(/background:\s*rgb\(var\(--logo-bg\)\)/u);
+  });
+
   it('writes texts that stand alone, without a look', () => {
     const texts = PARTS.flatMap(({ name }) => {
       const skeleton = foundationSkeletonOf(`foundations/${name}`);
