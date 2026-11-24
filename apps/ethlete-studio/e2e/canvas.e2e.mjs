@@ -1398,9 +1398,7 @@ const CASES = [
           { cwd: checkout },
         );
 
-        const picked = await ask('sketch-decision', { kind: 'pick', variant: 'a' });
-
-        return picked.ok ? ask('sketch-merge', {}) : picked;
+        return ask('sketch-decision', { kind: 'pick', variant: 'a' });
       }),
   },
   {
