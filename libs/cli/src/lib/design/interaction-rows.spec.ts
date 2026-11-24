@@ -65,3 +65,27 @@ describe('interactionRows', () => {
     expect(hovered.interaction).toBe('hover');
   });
 });
+
+describe('interactionRows restOnly type', () => {
+  it('takes a plain row-name list with and without explicit type arguments', () => {
+    type Interaction = 'hover' | 'focus-visible';
+    const force = (props: { n: number }, interaction: Interaction) => ({ ...props, interaction });
+    const explicit = interactionRows<{ n: number }, 'default' | 'series', Interaction>(
+      { default: { n: 1 }, series: { n: 2 } },
+      { interactions: ['hover', 'focus-visible'], force, restOnly: ['series'] },
+    );
+    const inferred = interactionRows(
+      { default: { n: 1 }, series: { n: 2 } },
+      { interactions: ['hover'], force: (props, interaction) => ({ ...props, interaction }), restOnly: ['series'] },
+    );
+
+    expect(Object.keys(explicit.states)).toEqual(['default', 'default-hover', 'default-focus-visible', 'series']);
+    expect(Object.keys(inferred.states)).toEqual(['default', 'default-hover', 'series']);
+
+    interactionRows<{ n: number }, 'default' | 'series', Interaction>(
+      { default: { n: 1 }, series: { n: 2 } },
+      // @ts-expect-error a restOnly name must be a row
+      { interactions: ['hover'], force, restOnly: ['nope'] },
+    );
+  });
+});

@@ -1,7 +1,12 @@
-export type InteractionRowsOptions<TProps, TInteraction extends string, TRest extends string = never> = {
+export type InteractionRowsOptions<
+  TProps,
+  TInteraction extends string,
+  TRest extends string = never,
+  TRow extends string = TRest,
+> = {
   interactions: readonly TInteraction[];
   force: (props: TProps, interaction: TInteraction) => TProps;
-  restOnly?: readonly TRest[];
+  restOnly?: readonly (TRest | NoInfer<TRow>)[];
 };
 
 type RowState<TRow extends string, TInteraction extends string, TRest extends string> =
@@ -24,7 +29,7 @@ export const interactionRows = <
   const TRest extends TRow = never,
 >(
   rows: Record<TRow, TProps>,
-  { interactions, force, restOnly = [] }: InteractionRowsOptions<TProps, TInteraction, TRest>,
+  { interactions, force, restOnly = [] }: InteractionRowsOptions<TProps, TInteraction, TRest, TRow>,
 ) => {
   const entries = Object.entries(rows) as [TRow, TProps][];
   const interactionsOf = (row: TRow, props: TProps) =>
