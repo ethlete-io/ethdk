@@ -2,19 +2,31 @@ import { TypecheckResult } from '../../typecheck';
 import { isEditOldBaseFile } from './edit-old-base-folder';
 import { ruleProblemsOf } from '../check-system';
 import { Problem } from '../problem';
-import { relative } from 'path';
+import { dirname, relative } from 'path';
+import { partDependenciesOf } from '../imports';
+import { LAYERS } from '../layers';
+import { partFilesOf } from '../product';
+import { existsSync, readFileSync } from 'fs';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { goneSketchCommentWarningsOf } from '../rules/stale-comment';
 import { typecheckProduct, typecheckProductAsync } from '../system-tsconfig';
 import { duplicateClassWarningsOf } from './duplicate-class';
 import { mergedLayoutProblemsOf } from './merged-layout';
-import { overlaySketch, SketchedProduct } from './overlay';
+import { lentVariantOf, openSketchesDrawingOf, overlaySketch, SketchedProduct } from './overlay';
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
 import { stateNamesOf, stateSourcesOf, withMadeBy, withNote } from './part-definition';
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
-import { leftoverSketchFoldersOf, listSketches, Sketch, sketchFolderOf, SketchRound, variantDirOf } from './sketch';
+import {
+  leftoverSketchFoldersOf,
+  listSketches,
+  rejectionOf,
+  Sketch,
+  sketchFolderOf,
+  SketchRound,
+  variantDirOf,
+} from './sketch';
 
 /** `problems` are the ones a variant brings in; `before` are the ones the product already has, which do not fail the variant. */
 export type VariantProblems = { sketch: Sketch; variant: string; problems: Problem[]; before: Problem[] };
@@ -86,6 +98,88 @@ const changedUntouchedStatesOf = (options: {
     });
 };
 
+const COMPOSITIONS = new Set<string>(LAYERS.filter((layer) => layer === 'elements' || layer === 'pages'));
+
+const contentOf = (part: { file: string; css?: string | null }) =>
+  [part.file, part.css].map((file) => (file && existsSync(file) ? readFileSync(file, 'utf8') : '')).join('\0');
+
+const differingSubPartsOf = (sketch: Sketch): Map<string, Problem[]> => {
+  const problems = new Map<string, Problem[]>();
+
+  if (isEditSketch(sketch) || !sketch.targets.every((key) => COMPOSITIONS.has(key.split('/')[0] ?? '')))
+    return problems;
+
+  const live = sketch.variants.filter((variant) => !rejectionOf(sketch, variant));
+  const held = new Map(
+    live.map((variant) => [
+      variant,
+      new Map(
+        partFilesOf(variantDirOf(sketch, variant))
+          .parts.filter((part) => !sketch.targets.includes(partKeyOf(part)))
+          .map((part) => [partKeyOf(part), part] as const),
+      ),
+    ]),
+  );
+  const used = new Set(
+    live.flatMap((variant) =>
+      partFilesOf(variantDirOf(sketch, variant))
+        .parts.filter((part) => sketch.targets.includes(partKeyOf(part)))
+        .flatMap((part) =>
+          partDependenciesOf({ ...part, origin: 'product', source: readFileSync(part.file, 'utf8'), cssSource: null }),
+        )
+        .map(partKeyOf),
+    ),
+  );
+  const keys = new Set([...held.values()].flatMap((parts) => [...parts.keys()]).filter((key) => used.has(key)));
+
+  for (const key of keys) {
+    const contents = new Set(
+      live.map((variant) => {
+        const part = held.get(variant)?.get(key);
+
+        return part ? contentOf(part) : null;
+      }),
+    );
+
+    if (contents.size < 2) continue;
+
+    for (const variant of live)
+      problems.set(variant, [
+        ...(problems.get(variant) ?? []),
+        {
+          rule: 'SKETCH',
+          file: held.get(variant)?.get(key)?.file ?? variantDirOf(sketch, variant),
+          message: `the variants of ${sketch.target} differ in ${key} - a composition's variants differ only in arrangement: change ${key} in a sketch of its own and import it as @system/${key}`,
+        },
+      ]);
+  }
+
+  return problems;
+};
+
+const unlentPartsOf = (sketch: Sketch, overlaid: SketchedProduct): Problem[] => {
+  const has = new Set(overlaid.parts.map(partKeyOf));
+  const held = overlaid.parts.filter((part) => overlaid.sketched.includes(partKeyOf(part)));
+  const missing = new Set(
+    held
+      .flatMap((part) => partDependenciesOf(part))
+      .map(partKeyOf)
+      .filter((key) => !has.has(key)),
+  );
+
+  return openSketchesDrawingOf(sketch, missing).flatMap(({ part, sketch: other }) =>
+    lentVariantOf(other)
+      ? []
+      : [
+          {
+            rule: 'SKETCH',
+            file: sketch.dir,
+            message: `${part} is new in the open sketch on ${other.target}, which recommends no variant - run design sketch recommend ${other.target} --variant <key> --by <model id>`,
+          },
+        ],
+  );
+};
+
 /** The rule problems of each variant of a sketch laid over the product, and the states it drops from a part. */
 export const variantProblemsOf = (options: {
   product: ResolvedProduct;
@@ -97,8 +191,14 @@ export const variantProblemsOf = (options: {
     (options.productProblems ?? ruleProblemsOf(options.product)).map((problem) => keyOf(options.product.dir, problem)),
   );
 
+  const differing = differingSubPartsOf(options.sketch);
+
   return options.sketch.variants.map((variant) => {
     const overlaid = overlaySketch({ ...options, variant });
+    const lentDirs = overlaid.parts
+      .filter((part) => overlaid.borrowed.some((entry) => entry.part === partKeyOf(part)))
+      .map((part) => dirname(part.file));
+    const isLent = (problem: Problem) => lentDirs.some((dir) => !relative(dir, problem.file).startsWith('..'));
     const round = options.sketch.rounds.find((entry) => entry.key === options.sketch.variantInfo[variant]?.round);
     const variantDir = variantDirOf(options.sketch, variant);
     const laidOver = ruleProblemsOf(overlaid);
@@ -115,7 +215,7 @@ export const variantProblemsOf = (options: {
       carriedWasThere.has(problem) ||
       isEditOldBaseFile(problem.file) ||
       had.has(keyOf(relative(variantDir, problem.file).startsWith('..') ? options.product.dir : variantDir, problem));
-    const found = [...laidOver, ...carried.map(({ problem }) => problem)];
+    const found = [...laidOver, ...carried.map(({ problem }) => problem)].filter((problem) => !isLent(problem));
     const target = overlaid.parts.find((part) => partKeyOf(part) === partKeyOf(options.sketch));
     const metadataProblem: Problem[] =
       target && (withNote(target.source, '') === null || withMadeBy(target.source, ['author']) === null)
@@ -134,6 +234,8 @@ export const variantProblemsOf = (options: {
       problems: [
         ...found.filter((problem) => !wasThere(problem)),
         ...metadataProblem,
+        ...(differing.get(variant) ?? []),
+        ...unlentPartsOf(options.sketch, overlaid),
         ...(isEditSketch(options.sketch) && variant === EDIT_OLD
           ? []
           : [

@@ -6,11 +6,13 @@ import { ASSET_URL, assetFileOf, ASSETS_PREFIX } from './assets';
 import { classifyImport, productSharedDirsOf, sharedFileOf as sharedFileIn } from './imports';
 import { productDirOf } from './product';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
-import { overlaySketch } from './sketch/overlay';
+import { overlaySketch, SketchedProduct } from './sketch/overlay';
 import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch, variantSharedDirOf } from './sketch/sketch';
 
 const PRODUCT_QUERY = 'design-product';
 const SKETCH_QUERY = 'design-sketch';
+
+const isSketched = (product: ResolvedProduct): product is SketchedProduct => 'borrowed' in product;
 const VARIANT_QUERY = 'design-variant';
 const STYLESHEET_FILE = /\.css$/u;
 
@@ -67,7 +69,7 @@ export const fileOfModuleId = (id: string) => id.split('?')[0] ?? id;
 export const createSystemModules = (options: { target: string; config: DesignConfig; sketchesRoot?: string }) => {
   const { target, config, sketchesRoot } = options;
   const resolved = new Map<string, ResolvedProduct>();
-  const sketched = new Map<string, ResolvedProduct | null>();
+  const sketched = new Map<string, SketchedProduct | null>();
 
   const productOf = (name: string) => {
     const entry = config.products?.[name];
@@ -136,6 +138,13 @@ export const createSystemModules = (options: { target: string; config: DesignCon
 
   const partOf = (options: { product: string; part: string; sketch?: SketchVariant | null }) =>
     drawnOf(options.product, options.sketch)?.parts.find((part) => partKeyOf(part) === options.part) ?? null;
+
+  const drawingSketchOf = (options: { product: string; part: string; sketch: SketchVariant | null }) => {
+    const drawn = options.sketch ? drawnOf(options.product, options.sketch) : null;
+    const lent = drawn && isSketched(drawn) ? drawn.borrowed.find((entry) => entry.part === options.part) : undefined;
+
+    return lent ? { target: lent.sketch, variant: lent.variant } : options.sketch;
+  };
 
   const tokenStylesheetsOf = (options: { product: string; sketch?: SketchVariant | null }) => {
     const { product, sketch } = options;
@@ -230,16 +239,19 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     if (imported.kind === 'part' && imported.stylesheet) {
       const css = partOf({ product: name, part: partKeyOf(imported), sketch })?.css;
       const query = specifier.split('?')[1];
+      const drawing = drawingSketchOf({ product: name, part: partKeyOf(imported), sketch });
 
-      return css ? stylesheetModuleIdOf({ file: css, query, product: name, sketch }) : null;
+      return css ? stylesheetModuleIdOf({ file: css, query, product: name, sketch: drawing }) : null;
     }
 
     const file =
       imported.kind === 'fixtures'
         ? drawnOf(name, sketch)?.fixtures
         : partOf({ product: name, part: partKeyOf(imported), sketch })?.file;
+    const drawing =
+      imported.kind === 'part' ? drawingSketchOf({ product: name, part: partKeyOf(imported), sketch }) : sketch;
 
-    return file ? productModuleIdOf({ file, product: name, sketch }) : null;
+    return file ? productModuleIdOf({ file, product: name, sketch: drawing }) : null;
   };
 
   const ownerOf = (drawn: ResolvedProduct, file: string) => {

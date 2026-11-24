@@ -138,6 +138,8 @@ export type SketchFile = {
   portAfterMerge?: SketchPortMark;
   mergeHold?: SketchMergeHold;
   autoMergeForecast?: SketchAutoMergeForecast;
+  /** The variant the agent recommends; a sketch of another part that imports a new target of this one draws it from this variant until the user picks. */
+  recommended?: string;
 };
 
 export type SketchCreatedBy = { cmd: string; session?: string };
@@ -637,6 +639,8 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
     return `${file}: mergeHold must be { reason, at }`;
   if (parsed.autoMergeForecast !== undefined && !isAutoMergeForecast(parsed.autoMergeForecast))
     return `${file}: autoMergeForecast must be { merges, reason?, contents, at }`;
+  if (parsed.recommended !== undefined && (typeof parsed.recommended !== 'string' || !parsed.recommended))
+    return `${file}: recommended must be a variant key`;
   if (parsed.createdBy !== undefined && !isCreatedBy(parsed.createdBy))
     return `${file}: createdBy must be { cmd: string, session?: string }`;
   if (parsed.baselineTree !== undefined && (typeof parsed.baselineTree !== 'string' || !parsed.baselineTree))
@@ -768,6 +772,7 @@ const sketchFileOf = (sketch: Sketch): SketchFile => ({
   ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
   ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
   ...(sketch.autoMergeForecast ? { autoMergeForecast: sketch.autoMergeForecast } : {}),
+  ...(sketch.recommended ? { recommended: sketch.recommended } : {}),
 });
 
 type Fields = Record<string, unknown>;

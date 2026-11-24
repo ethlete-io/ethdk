@@ -38,6 +38,7 @@ import {
   unchangedMergedOf,
   isEditSketch,
 } from './merged-parts';
+import { overlaySketch } from './overlay';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
 import { CleanCopy, cleanCopyOf, contentsBelow } from './clean-copy';
@@ -482,6 +483,11 @@ export const mergeRefusalOf = (options: { product: ResolvedProduct; sketch: Sket
   const pick = pickOf(sketch);
 
   if (typeof pick === 'string') return pick;
+
+  const lent = overlaySketch({ product, sketch, variant: pick.variant }).borrowed;
+
+  if (lent.length > 0)
+    return `${sketch.target} variant ${pick.variant} uses ${lent.map(({ part, sketch: from }) => `${part} from the open sketch on ${from}`).join(', ')} - merge that sketch first`;
 
   return rejectedProblemOf(sketch, pick.variant);
 };

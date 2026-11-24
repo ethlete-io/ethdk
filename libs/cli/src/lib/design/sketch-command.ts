@@ -152,6 +152,7 @@ export const SKETCH_USAGE = [
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch withdraw <layer>/<name> --variant <key> [--reason <text>] --by <model id> [--product <name>]',
+  'sketch recommend <layer>/<name> --variant <key> --by <model id> [--product <name>]',
 ];
 
 const FLAG_HELP: Record<string, string> = {
@@ -177,7 +178,8 @@ const FLAG_HELP: Record<string, string> = {
   '--drops': 'the states the round drops on purpose, a comma list',
   '--asks':
     "the states the round asks its question in, a comma list; ready refuses two variants that differ in one by under 2 % of the frame (default: the states the round's variants add, else the states they change)",
-  '--variant': 'the variant the command is about; on merge, the only live variant of a sketch with no pick',
+  '--variant':
+    'the variant the command is about; on merge, the only live variant of a sketch with no pick; on recommend, the variant other sketches draw a new part of this one in',
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
   '--decided-by':
@@ -236,6 +238,7 @@ const WRITES = new Set([
   'pick',
   'merge',
   'discard',
+  'recommend',
   ...VERDICTS,
 ]);
 
@@ -2359,6 +2362,25 @@ const withdrawnVariant = (context: Context, { sketch }: { product: ResolvedProdu
   return 0;
 };
 
+const recommended = (context: Context) =>
+  withSketch(context, ({ sketch }) => {
+    const variant = context.args.values['--variant'];
+
+    if (context.args.positional.length !== 1 || !variant)
+      return fail('usage: sketch recommend <layer>/<name> --variant <key> --by <model id> [--product <name>]');
+    if (!sketch.variants.includes(variant))
+      return fail(`${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`);
+    if (rejectionOf(sketch, variant))
+      return fail(`${sketch.target} variant ${variant} is rejected - recommend a live one`);
+
+    writeSketchFile({ ...sketch, recommended: variant }, { base: sketch });
+    console.log(
+      `${sketch.target} recommends variant ${variant}: a sketch that imports a new part of it draws variant ${variant} until the user picks`,
+    );
+
+    return 0;
+  });
+
 const COMMANDS: Record<string, (context: Context) => number | Promise<number>> = {
   new: created,
   variant: varied,
@@ -2381,6 +2403,7 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   reject: judged('reject'),
   reopen: judged('reopen'),
   withdraw: withdrawn,
+  recommend: recommended,
 };
 
 /** The value flags and switches the usage line of a sketch command names. */
