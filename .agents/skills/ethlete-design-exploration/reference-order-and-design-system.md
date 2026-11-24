@@ -36,6 +36,9 @@ not a component.
 When each of several cases is drawn at rest and in the same interactions, build the states and their grid with
 `interactionRows(rows, { interactions: ['hover', 'active'], force: (props, interaction) => ({ ...props, interaction }) })`
 from `@design-system` and spread the result into `definePart`; never write those states and the grid by hand.
+Draw the interactions once, on the first row. A row that only changes content, such as a badge, a longer title or a
+missing logo, is drawn only at rest: name it in `restOnly: ['series']` (with explicit type arguments, also as the fourth one). `sketch ready` refuses a content row whose
+interactions look the same as the first row's as `INTERACTION-REPEAT`.
 `sketch check` prints `grid <rows> x <columns> ok`, or the states the grid leaves out; a state in two cells
 fails it as `GRID`, in `design check` too.
 Interaction states (a state name whose last word is hover, focus, pressed, active or selected, such as `row-hover`) live only on a control
