@@ -74,7 +74,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
         controlState: async () => [],
         droppedProps: async () => [],
         actionLost: async () => [],
-        pageStateInner: async () => [],
+        stateInner: async () => [],
         shoot: async () => ({ states: {}, shots: [] }),
       },
       record: (request) =>
@@ -114,7 +114,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
         controlState: async () => [],
         droppedProps: async () => [],
         actionLost: async () => [],
-        pageStateInner: async () => [],
+        stateInner: async () => [],
         shoot: async () => ({ states: {}, shots: [] }),
       },
       record: (request) =>
@@ -152,7 +152,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
         controlState: async () => [],
         droppedProps: async () => [],
         actionLost: async () => [],
-        pageStateInner: async () => [],
+        stateInner: async () => [],
       },
     });
 
@@ -179,7 +179,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
         controlState: async () => [],
         droppedProps: async () => [],
         actionLost: async () => [],
-        pageStateInner: async () => [],
+        stateInner: async () => [],
       },
     });
 
@@ -434,7 +434,7 @@ describe('NO-VISIBLE-CHANGE in the slow run', { timeout: 60_000 }, () => {
           controlState: async () => [],
           droppedProps: async () => [],
           actionLost: async () => [],
-          pageStateInner: async () => [],
+          stateInner: async () => [],
           shoot: async () => ({ states: {}, shots: [] }),
           noVisibleChange: async ({ sketches }) =>
             sketches.map((entry) => {
@@ -485,7 +485,7 @@ describe('the app specs of a slow run', { timeout: 60_000 }, () => {
         controlState: async () => [],
         droppedProps: async () => [],
         actionLost: async () => [],
-        pageStateInner: async () => [],
+        stateInner: async () => [],
         shoot: async () => ({ states: {}, shots: [] }),
       },
     });

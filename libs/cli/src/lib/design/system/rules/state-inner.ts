@@ -1,7 +1,7 @@
 import { DesignConfig } from '../../design-config';
 import { WarmDraw } from '../../warm-draw';
 import { PartModuleLoader, withPartLoader } from '../action-lost';
-import { PAGE_STATE_INNER_RULE } from '../build-ready-contract';
+import { STATE_INNER_RULE } from '../build-ready-contract';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 
@@ -9,6 +9,7 @@ const TOKEN =
   /<!--[\s\S]*?-->|<\/?([a-zA-Z][\w:-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*(\/?)>/u;
 const PART_ATTRIBUTE = /\sdata-et-part\s*=\s*"([^"]*)"/u;
 const SLOT_ATTRIBUTE = /\sdata-et-slot\s*=\s*"([^"]*)"/u;
+const CONTROL_ATTRIBUTE = /\sdata-et-control\s*=\s*"([^"]*)"/u;
 const VOID = new Set([
   'area',
   'base',
@@ -33,11 +34,28 @@ type Owned = { page: string; instances: Instance[] };
 const keysOf = (attributes: string, pattern: RegExp) =>
   pattern.exec(attributes)?.[1]?.split(/\s+/u).filter(Boolean) ?? [];
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+/** The part each control of `controls` takes its interactions from, by control id. */
+const controlPartsOf = (controls: unknown): Record<string, string> =>
+  Object.fromEntries(
+    isRecord(controls)
+      ? Object.entries(controls).flatMap(([id, control]) =>
+          isRecord(control) && typeof control['part'] === 'string' ? [[id, control['part']]] : [],
+        )
+      : [],
+  );
+
 /**
- * `markup` split by owner: the page's own markup, with a placeholder where each embedded part instance starts, and
- * the markup each instance draws itself. Markup a host passes into a part (`data-et-slot`) belongs to that host.
+ * `markup` split by owner: the part's own markup, with a placeholder where each embedded part instance starts, and
+ * the markup each instance draws itself. An element marked `data-et-part`, or a control whose entry in
+ * `controlParts` names a part, starts an instance. Markup a host passes into a part (`data-et-slot`) belongs to that
+ * host.
  */
-const ownedOf = (markup: string, own: string): Owned => {
+const ownedOf = (
+  markup: string,
+  { own, controlParts }: { own: string; controlParts: Record<string, string> },
+): Owned => {
   const instances: Instance[] = [];
   const open: number[] = [];
   let page = '';
@@ -68,7 +86,9 @@ const ownedOf = (markup: string, own: string): Owned => {
     const tag = name.toLowerCase();
     const leaf = VOID.has(tag) || selfClosing === '/';
     const slots = keysOf(attributes, SLOT_ATTRIBUTE);
-    const parts = keysOf(attributes, PART_ATTRIBUTE);
+    const marked = keysOf(attributes, PART_ATTRIBUTE);
+    const controlPart = controlParts[keysOf(attributes, CONTROL_ATTRIBUTE)[0] ?? ''];
+    const parts = marked.length === 0 && controlPart ? [controlPart] : marked;
     let owner = current;
 
     while (owner >= 0 && slots.includes(instances[owner]?.key ?? '')) owner = instances[owner]?.parent ?? -1;
@@ -109,13 +129,20 @@ const chainOf = (instances: Instance[], index: number) => {
 };
 
 /**
- * The key of the one embedded part whose drawn markup holds every difference between the page markup `base` and
- * `state`, when the page's own markup, the markup it passes into its parts included, is the same in both; `null`
- * otherwise. Of nested parts it names the innermost one that holds them all.
+ * The key of the one embedded part whose drawn markup holds every difference between the markup `base` and `state`
+ * of the part `own`, when its own markup, the markup it passes into its parts included, is the same in both; `null`
+ * otherwise. Of nested parts it names the innermost one that holds them all. `controlParts` maps a control id to the
+ * part it takes its interactions from.
  */
-export const innerOnlyPartOf = (options: { own: string; base: string; state: string }): string | null => {
-  const base = ownedOf(options.base, options.own);
-  const state = ownedOf(options.state, options.own);
+export const innerOnlyPartOf = (options: {
+  own: string;
+  base: string;
+  state: string;
+  controlParts?: Record<string, string>;
+}): string | null => {
+  const owner = { own: options.own, controlParts: options.controlParts ?? {} };
+  const base = ownedOf(options.base, owner);
+  const state = ownedOf(options.state, owner);
 
   if (base.page !== state.page || base.instances.length !== state.instances.length) return null;
 
@@ -127,8 +154,6 @@ export const innerOnlyPartOf = (options: { own: string; base: string; state: str
 
   return holder === undefined ? null : (state.instances[holder]?.key ?? null);
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
 const bodyOf = async (render: (props: unknown) => unknown, props: unknown) => {
   const drawn = await Promise.resolve()
@@ -176,7 +201,7 @@ const changesUnseenProp = async (options: {
 export type InnerOnlyState = { state: string; base: string; part: string };
 
 /**
- * The states of a page definition that differ only inside one embedded part from the default state (the first) or
+ * The states of a part definition that differ only inside one embedded part from the default state (the first) or
  * from another state whose props they all repeat, each with that state and the part.
  */
 export const innerOnlyStatesOf = async (options: { own: string; definition: unknown }): Promise<InnerOnlyState[]> => {
@@ -191,6 +216,7 @@ export const innerOnlyStatesOf = async (options: { own: string; definition: unkn
   for (const [state, props] of states) bodies.set(state, await bodyOf(render, props));
 
   const [first] = states;
+  const controlParts = controlPartsOf(definition['controls']);
 
   const found: InnerOnlyState[] = [];
 
@@ -205,7 +231,7 @@ export const innerOnlyStatesOf = async (options: { own: string; definition: unkn
       if (base === state || !baseBody || baseBody === body || (base !== first?.[0] && !repeatsProps(props, baseProps)))
         continue;
 
-      const part = innerOnlyPartOf({ own, base: baseBody, state: body });
+      const part = innerOnlyPartOf({ own, base: baseBody, state: body, controlParts });
 
       if (!part) continue;
       if (isRecord(props) && isRecord(baseProps) && (await changesUnseenProp({ render, props, baseProps, baseBody })))
@@ -219,8 +245,8 @@ export const innerOnlyStatesOf = async (options: { own: string; definition: unkn
   return found;
 };
 
-/** A PAGE-STATE-INNER problem for each state of `parts` that changes only one inner part, by {@link innerOnlyStatesOf}. */
-export const pageStateInnerOf = async (options: {
+/** A STATE-INNER problem for each state of `parts` that changes only one inner part, by {@link innerOnlyStatesOf}. */
+export const stateInnerOf = async (options: {
   load: PartModuleLoader;
   product: ResolvedProduct;
   parts: ResolvedPart[];
@@ -234,22 +260,25 @@ export const pageStateInnerOf = async (options: {
 
     for (const { state, base, part: inner } of await innerOnlyStatesOf({ own, definition }))
       problems.push({
-        rule: PAGE_STATE_INNER_RULE,
+        rule: STATE_INNER_RULE,
         file: part.file,
         at: state,
         states: [state],
-        message: `state "${state}" differs from "${base}" only inside ${inner}: make it a state of ${inner} and drop it from ${own}, which draws ${inner} in its default`,
+        message: `state "${state}" differs from "${base}" only inside ${inner}: add the state in ${inner} and drop it from ${own}, which draws ${inner} in its default`,
       });
   }
 
   return problems;
 };
 
-/** Whether PAGE-STATE-INNER checks `part`: an own page of its product. */
-export const checksPageStates = (part: ResolvedPart) => part.layer === 'pages' && part.origin !== 'base';
+const EMBEDS_PART = /@system\/(?:components|elements|pages)\/|\bpart\s*:\s*['"`](?:components|elements)\//u;
 
-/** `PAGE-STATE-INNER` for the own pages of `product`, or of `part` / `parts` only, loading each state's markup without a browser. */
-export const pageStateInnerProblemsOf = async (options: {
+/** Whether STATE-INNER checks `part`: an own page, or an own part of any layer that embeds a part or names one for a control. */
+export const checksInnerStates = (part: ResolvedPart) =>
+  part.origin !== 'base' && (part.layer === 'pages' || EMBEDS_PART.test(part.source));
+
+/** `STATE-INNER` for the own parts of `product`, or of `part` / `parts` only, loading each state's markup without a browser. */
+export const stateInnerProblemsOf = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
@@ -259,12 +288,12 @@ export const pageStateInnerProblemsOf = async (options: {
 }): Promise<Problem[]> => {
   const parts = options.product.parts.filter(
     (part) =>
-      checksPageStates(part) &&
+      checksInnerStates(part) &&
       (!options.part || partKeyOf(part) === options.part) &&
       (!options.parts || options.parts.includes(partKeyOf(part))),
   );
 
   if (parts.length === 0) return [];
 
-  return withPartLoader(options, (load) => pageStateInnerOf({ load, product: options.product, parts }));
+  return withPartLoader(options, (load) => stateInnerOf({ load, product: options.product, parts }));
 };

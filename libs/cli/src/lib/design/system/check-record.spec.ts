@@ -17,7 +17,7 @@ const runners: Partial<SlowRunners> = {
   controlState: async () => [],
   droppedProps: async () => [],
   actionLost: async () => [],
-  pageStateInner: async () => [],
+  stateInner: async () => [],
   shoot: async () => ({ states: {}, shots: [] }),
 };
 

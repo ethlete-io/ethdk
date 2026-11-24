@@ -6,7 +6,7 @@ import { DesignConfig } from '../design-config';
 import { noVisibleChangeProblems } from '../ready-shots';
 import { createRunDraw } from '../warm-draw';
 import { actionLostProblemsOf } from './action-lost';
-import { pageStateInnerProblemsOf } from './rules/page-state-inner';
+import { stateInnerProblemsOf } from './rules/state-inner';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { contrastPairProblemsOf } from './contrast-pairs';
 import {
@@ -15,7 +15,7 @@ import {
   CONTRAST_PAIR_RULE,
   CONTROL_STATE_RULE,
   DROPPED_PROP_RULE,
-  PAGE_STATE_INNER_RULE,
+  STATE_INNER_RULE,
   SDK_ERROR_RULE,
 } from './build-ready-contract';
 import { shootStates, ShootStates } from './compare-command';
@@ -70,7 +70,7 @@ export type SlowRunners = {
   droppedProps: typeof droppedPropProblemsOf;
   pageProps: typeof pagePropTakerOf;
   actionLost: typeof actionLostProblemsOf;
-  pageStateInner: typeof pageStateInnerProblemsOf;
+  stateInner: typeof stateInnerProblemsOf;
   noVisibleChange: (options: {
     target: string;
     config: DesignConfig;
@@ -94,7 +94,7 @@ const defaultRunners: SlowRunners = {
   droppedProps: (options) => droppedPropProblemsOf(options),
   pageProps: (options) => pagePropTakerOf(options),
   actionLost: actionLostProblemsOf,
-  pageStateInner: pageStateInnerProblemsOf,
+  stateInner: stateInnerProblemsOf,
   noVisibleChange: async ({ target, config, product, sketches }) => {
     const run = createRunDraw(target);
 
@@ -260,12 +260,12 @@ export const runSlowChecks = async (options: {
       ),
     );
 
-  if (ruled(PAGE_STATE_INNER_RULE).length > 0)
+  if (ruled(STATE_INNER_RULE).length > 0)
     merge(
       results,
       byPart(
-        await timedPhase('slow page-state-inner', () =>
-          runners.pageStateInner({ target, config, product, parts: ruled(PAGE_STATE_INNER_RULE) }),
+        await timedPhase('slow state-inner', () =>
+          runners.stateInner({ target, config, product, parts: ruled(STATE_INNER_RULE) }),
         ),
       ),
     );

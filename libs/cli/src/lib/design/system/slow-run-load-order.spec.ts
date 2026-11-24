@@ -45,7 +45,7 @@ describe('the slow runner loaded the way the CLI loads it', { timeout: 60_000 },
           controlState: async () => [],
           contrastPairs: async () => [],
           actionLost: async () => [],
-          pageStateInner: async () => [],
+          stateInner: async () => [],
         },
       }),
     ).resolves.toBeInstanceOf(Map);

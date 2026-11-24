@@ -1,6 +1,8 @@
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 import { ResolvedPart, ResolvedProduct } from '../resolve-product';
-import { innerOnlyPartOf, innerOnlyStatesOf, pageStateInnerOf } from './page-state-inner';
+import { checksInnerStates, innerOnlyPartOf, innerOnlyStatesOf, stateInnerOf } from './state-inner';
 
 const OWN = 'pages/home';
 
@@ -92,7 +94,7 @@ describe('innerOnlyStatesOf', () => {
   });
 
   it('places each hit at its state', async () => {
-    const problems = await pageStateInnerOf({
+    const problems = await stateInnerOf({
       load: async () => ({ default: definition }),
       product: { name: 'app-a' } as ResolvedProduct,
       parts: [{ file: '/p/home.ts', layer: 'pages', name: 'home', origin: 'product' } as ResolvedPart],
@@ -101,5 +103,36 @@ describe('innerOnlyStatesOf', () => {
     expect(problems.map(({ at, states }) => ({ at, states }))).toEqual([
       { at: 'paused-open', states: ['paused-open'] },
     ]);
+  });
+});
+
+describe('an App Shell drawing the hover of its search button', () => {
+  const drawn = (state: string) =>
+    readFileSync(resolve(__dirname, '__fixtures__/shell-inner-hover', `${state}.html`), 'utf8');
+  const shell = {
+    states: { startseite: {}, 'search-hover': { hover: 'search' }, 'nav-hover': { hover: 'nav' } },
+    controls: {
+      'shell-top-nav': { kind: 'row', input: ['pointer', 'keyboard'] },
+      'shell-search': { kind: 'button', part: 'components/button' },
+    },
+    render: ({ hover }: { hover?: string }) => ({
+      body: drawn(hover === 'search' ? 'search-hover' : hover === 'nav' ? 'nav-hover' : 'startseite'),
+    }),
+  };
+
+  it('names the part of the control that holds the only difference, and keeps the hover of its own links', async () => {
+    expect(await innerOnlyStatesOf({ own: 'elements/shell', definition: shell })).toEqual([
+      { state: 'search-hover', base: 'startseite', part: 'components/button' },
+    ]);
+  });
+
+  it('checks an own part of any layer that embeds a part', () => {
+    const source = "controls: { 'shell-search': { kind: 'button', part: 'components/button' } }";
+
+    expect(checksInnerStates({ layer: 'elements', origin: 'product', source } as ResolvedPart)).toBe(true);
+    expect(checksInnerStates({ layer: 'components', origin: 'base', source } as ResolvedPart)).toBe(false);
+    expect(checksInnerStates({ layer: 'components', origin: 'product', source: 'controls: {}' } as ResolvedPart)).toBe(
+      false,
+    );
   });
 });
