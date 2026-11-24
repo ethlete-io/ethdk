@@ -1,4 +1,4 @@
-export const shardShareOf = (queue, shard, keyOf) => {
+export const shardShareOf = (queue, shard, keyOf, weights = {}) => {
   const own = queue.filter((job) => job.ownShard);
   const rest = queue.filter((job) => !job.ownShard);
 
@@ -10,11 +10,18 @@ export const shardShareOf = (queue, shard, keyOf) => {
   if (ownShards && shard.index >= firstOwn) return ownShards === own.length ? [own[shard.index - firstOwn]] : own;
 
   const count = shard.count - ownShards;
-  const slot = Object.fromEntries(
-    Object.values(Object.groupBy(rest, (job) => job.page)).flatMap((jobs) => jobs.map((job, at) => [keyOf(job), at])),
-  );
+  const known = rest.map((job) => weights[keyOf(job)]).filter((weight) => weight !== undefined);
+  const fallback = known.length ? known.toSorted((a, b) => a - b)[known.length >> 1] : 1;
+  const weightOf = (job) => weights[keyOf(job)] ?? fallback;
+  const loads = Array.from({ length: count }, () => 0);
+  const shardOf = new Map();
 
-  return rest
-    .toSorted((a, b) => slot[keyOf(a)] - slot[keyOf(b)])
-    .filter((_, at) => Math.min(at % (2 * count), 2 * count - 1 - (at % (2 * count))) === shard.index - 1);
+  for (const job of rest.toSorted((a, b) => weightOf(b) - weightOf(a) || (keyOf(a) < keyOf(b) ? -1 : 1))) {
+    const lightest = loads.indexOf(Math.min(...loads));
+
+    loads[lightest] += weightOf(job);
+    shardOf.set(job, lightest);
+  }
+
+  return rest.filter((job) => shardOf.get(job) === shard.index - 1);
 };

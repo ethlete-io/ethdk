@@ -29,6 +29,7 @@ import { copyPart } from './copy-part.mjs';
 import { shootProducts } from './product-matrix.mjs';
 import { settleLayout } from './settle-wait.mjs';
 import { shardShareOf } from './shard-share.mjs';
+import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
 import { FRAME, measureZoom, ZOOM_BUDGET } from './zoom-budget.mjs';
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
 import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
@@ -6013,7 +6014,12 @@ const lead = async () => {
   const loadAtStart = loadavg()[0];
   const skippedPerf = perfOnly ? 0 : CASES.filter((testCase) => testCase.perf).length;
 
-  if (shard) queue.splice(0, queue.length, ...shardShareOf(queue, shard, keyOf));
+  if (shard)
+    queue.splice(
+      0,
+      queue.length,
+      ...shardShareOf(queue, shard, keyOf, JSON.parse(readFileSync(SHARD_WEIGHTS_FILE, 'utf8'))),
+    );
   const quiet = (job) => !!job && !!CASES[job.case].quiet;
 
   queue.sort((a, b) => quiet(a) - quiet(b) || (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));

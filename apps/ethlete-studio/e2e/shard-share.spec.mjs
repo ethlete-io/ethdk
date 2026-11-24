@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { shardShareOf } from './shard-share.mjs';
+import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
 
 const keyOf = (job) => `${job.page} :: ${job.name}`;
 const jobsOf = (page, names) => names.map((name) => ({ page, name, ownShard: name === 'heavy' }));
@@ -22,13 +26,46 @@ test('an ownShard job runs alone in the last shard and the others deal over the 
   assert.ok(shares[0].length && shares[1].length);
 });
 
-test('without an ownShard job every shard deals the jobs back and forth per page', () => {
-  const queue = jobsOf('System', ['a', 'b', 'c', 'd', 'e']);
+test('every shard gets about the same measured time, not the same count', () => {
+  const queue = jobsOf('System', ['slow', 'a', 'b', 'c', 'd']);
+  const weights = { 'System :: slow': 40, 'System :: a': 10, 'System :: b': 10, 'System :: c': 10, 'System :: d': 10 };
 
-  assert.deepEqual(sharesOf(queue, 2), [
-    ['System :: a', 'System :: d', 'System :: e'],
-    ['System :: b', 'System :: c'],
-  ]);
+  assert.deepEqual(
+    Array.from({ length: 2 }, (_, at) => shardShareOf(queue, { index: at + 1, count: 2 }, keyOf, weights).map(keyOf)),
+    [['System :: slow'], ['System :: a', 'System :: b', 'System :: c', 'System :: d']],
+  );
+});
+
+test('a job without a weight counts as the median weight', () => {
+  const queue = jobsOf('System', ['new', 'a', 'b', 'c']);
+  const weights = { 'System :: a': 30, 'System :: b': 5, 'System :: c': 5 };
+  const shares = Array.from({ length: 2 }, (_, at) =>
+    shardShareOf(queue, { index: at + 1, count: 2 }, keyOf, weights).map(keyOf),
+  );
+
+  assert.deepEqual(shares, [['System :: a'], ['System :: new', 'System :: b', 'System :: c']]);
+});
+
+test('the real case list splits into shards within 10 % of the mean measured time', () => {
+  const runner = fileURLToPath(new URL('./canvas.e2e.mjs', import.meta.url));
+  const weights = JSON.parse(readFileSync(SHARD_WEIGHTS_FILE, 'utf8'));
+  const loads = [1, 2, 3, 4, 5, 6].map((index) =>
+    execFileSync(process.execPath, [runner, '--list'], {
+      encoding: 'utf8',
+      env: { ...process.env, STUDIO_E2E_SHARD: `${index}/8` },
+    })
+      .trim()
+      .split('\n')
+      .slice(1)
+      .map((line) => line.replace(/^\s*[\d.]+s {2}(\S+)\s+/, '$1 :: '))
+      .reduce((sum, key) => sum + (weights[key] ?? 0), 0),
+  );
+  const mean = loads.reduce((sum, load) => sum + load, 0) / loads.length;
+
+  assert.ok(
+    Math.max(...loads) <= mean * 1.1,
+    `shard loads ${loads.map((load) => load.toFixed(0)).join(' ')} s, mean ${mean.toFixed(0)} s`,
+  );
 });
 
 test('each ownShard job runs alone in one of the last shards', () => {
