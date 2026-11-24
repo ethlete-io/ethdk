@@ -23,6 +23,10 @@ Compute by ssh: `ethlete-mac`, Windows "rack" `trbor@192.168.1.115` (never shut 
 - Commit with `git commit -- <paths>`: code, spec, changeset; the message holds what was built, verified and not verified.
 - In a bite or throwaway worktree, commit only with `git -C <worktree> commit`.
 - Push with `yarn push` once the running CI run on `next` has finished; fix what pre-push reports.
+- Never wait in the foreground, for CI or for a subagent. One background watcher holds the push until CI ends;
+  meanwhile take the next slice or restart. A restart does not wait for subagents: their results land in
+  `.claude/handoffs/agent-results/`.
+- A slice that changes Studio behaviour updates the e2e fixtures it breaks in the same commit.
 - A defect from before your change: one sentence to the doc session, then go on.
 
 ## Talk
