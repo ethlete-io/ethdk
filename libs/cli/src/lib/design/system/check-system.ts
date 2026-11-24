@@ -96,6 +96,8 @@ import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
 import { listPartsWithoutDataStatesOf } from './rules/data-states';
 import { logoPartsWithoutSectionsOf } from './rules/logo-sections';
+import { placeholderStatesOf } from './rules/placeholder-state';
+import { stillMotionStatesOf } from './rules/still-motion';
 import { startVariantTypechecks, typecheckVariant, typecheckVariantAsync, variantKeyOf } from './sketch/check-sketches';
 import { MERGED_FILE } from './sketch/merged-parts';
 import { keepHeldStamps, withStampsInMemory } from './stamp-files';
@@ -127,6 +129,8 @@ const RULES = [
   badWidthsOf,
   listPartsWithoutDataStatesOf,
   logoPartsWithoutSectionsOf,
+  placeholderStatesOf,
+  stillMotionStatesOf,
   badLinksOf,
   unlinkedNamesOf,
   statesNotInComponentOf,
