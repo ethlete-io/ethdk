@@ -157,6 +157,7 @@ type Frame = {
   checker: boolean;
   pan: Pan | null;
   boxes: boolean;
+  textless: boolean;
 };
 
 type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
@@ -314,6 +315,15 @@ export const dependencyFilesOf = (modules: Iterable<ImportingModule>, imports: S
  * a region whose children the host did not pass into that part through props. A region belongs to the innermost
  * marked part around it that its markup was not passed into through props.
  */
+const STRIP_TEXT_SCRIPT = `(() => {
+  const root = document.querySelector('#root');
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const texts = [];
+  while (walker.nextNode()) texts.push(walker.currentNode);
+  for (const node of texts) node.textContent = '';
+  root.style.width = 'max-content';
+})()`;
+
 export const emptySlotsScriptOf = (part: string, fill: string | null = null) => `(() => {
   const keysOf = (element, name) => (element.getAttribute(name) ?? '').split(' ').filter(Boolean);
   const ownerOf = (slot) => {
@@ -549,7 +559,7 @@ export const createPartShooter = (options: {
         },
         limit: { ms: loadScaledMs(DRAW_LIMIT_MS), what: `the draw of frame.html?${frame.search}` },
         // The shooter number keeps a page another shooter left on its drawing, of another server or edit, from being lent as booted.
-        ...(frame.checker ? {} : { boot: `${shooter}.${edits} ${bootKeyOf(frame.search)}` }),
+        ...(frame.checker || frame.textless ? {} : { boot: `${shooter}.${edits} ${bootKeyOf(frame.search)}` }),
       },
       async (page, booted) => {
         const state = new URLSearchParams(frame.search).get('state');
@@ -561,6 +571,7 @@ export const createPartShooter = (options: {
 
         if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots, frame.slotFill));
         if (frame.pan) await page.evaluate(panScriptOf(frame.pan));
+        if (frame.textless) await page.evaluate(STRIP_TEXT_SCRIPT);
 
         const overlay = page.locator('vite-error-overlay');
 
@@ -690,7 +701,17 @@ export const createPartShooter = (options: {
     const scale = scaleOf(options.params);
     const crop = cropOf(options.params.get('clip')) ?? null;
     const scheme = schemeOf(options.params);
-    const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale, crop, scheme]);
+    const textless = options.params.get('textless') === '1';
+    const key = JSON.stringify([
+      ...options.key,
+      theme.surface,
+      theme.color,
+      theme.fill,
+      scale,
+      crop,
+      scheme,
+      ...(textless ? ['textless'] : []),
+    ]);
     const entry = cache.get(key);
     const kept = !options.fresh || entry?.drawing?.startedAt === null ? entry : undefined;
 
@@ -755,6 +776,7 @@ export const createPartShooter = (options: {
               checker: options.checker ?? false,
               pan: options.pan ?? null,
               boxes: options.boxes ?? false,
+              textless,
             }).then((picture) => {
               drawStarts.set(picture, startedAt);
 

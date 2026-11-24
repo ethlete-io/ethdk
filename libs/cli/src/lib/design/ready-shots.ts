@@ -13,6 +13,7 @@ import { variantChangesOf, variantLoadProblemsOf } from './system/sketch/no-visi
 import { Problem } from './system/problem';
 import { noVisibleChangeProblemsOf } from './system/rules/no-visible-change';
 import { restLikeStateWarningsOf } from './system/sketch/rest-like-states';
+import { textOnlyStateWarningsOf } from './system/sketch/text-only-states';
 import { sampleMarkDriftLinesOf } from './system/sketch/sample-mark-drift';
 import { Sketch } from './system/sketch/sketch';
 import { stateInnerLinesOf } from './system/sketch/state-inner-lines';
@@ -123,17 +124,22 @@ export const aktuellPlaceholderWarnings = async (options: SketchShots): Promise<
   }
 };
 
-/** Shoots the sketch on a render server; one warning per state that draws like its rest state, see `restLikeStateWarningsOf`. */
+/**
+ * Shoots the sketch on a render server; one warning per state that draws like its rest state, see `restLikeStateWarningsOf`,
+ * and one per group of states that differ only in their text, see `textOnlyStateWarningsOf`.
+ */
 export const restLikeStateWarnings = async (options: SketchShots): Promise<string[]> => {
   try {
-    return await drawingOn(options, (drawing) =>
-      restLikeStateWarningsOf({
+    return await drawingOn(options, async (drawing) => {
+      const shared = {
         product: options.product,
         sketch: options.sketch,
         pictureOf: shooterOf(options, drawing).pictureOf,
         load: loaderOf(drawing.server),
-      }),
-    );
+      };
+
+      return [...(await restLikeStateWarningsOf(shared)), ...(await textOnlyStateWarningsOf(shared))];
+    });
   } catch (error) {
     return [couldNotRender(options.sketch, error)];
   }
