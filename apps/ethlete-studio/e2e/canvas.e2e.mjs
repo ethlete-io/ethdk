@@ -6014,23 +6014,24 @@ const lead = async () => {
   const loadAtStart = loadavg()[0];
   const skippedPerf = perfOnly ? 0 : CASES.filter((testCase) => testCase.perf).length;
 
-  if (shard)
-    queue.splice(
-      0,
-      queue.length,
-      ...shardShareOf(queue, shard, keyOf, JSON.parse(readFileSync(SHARD_WEIGHTS_FILE, 'utf8'))),
-    );
+  const shardWeights = shard ? JSON.parse(readFileSync(SHARD_WEIGHTS_FILE, 'utf8')) : {};
+
+  if (shard) queue.splice(0, queue.length, ...shardShareOf(queue, shard, keyOf, shardWeights));
+  const unweighted = shard ? queue.filter((job) => !job.ownShard && shardWeights[keyOf(job)] === undefined).length : 0;
   const quiet = (job) => !!job && !!CASES[job.case].quiet;
 
   queue.sort((a, b) => quiet(a) - quiet(b) || (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
 
   const shardLabel = shard ? ` (shard ${shard.index}/${shard.count})` : '';
+  const unweightedNote = unweighted
+    ? `, ${unweighted} case(s) without a CI weight in ${SHARD_WEIGHTS_FILE.split('/').pop()} split by the median`
+    : '';
 
   if (listOnly) {
     const knownMs = queue.reduce((sum, job) => sum + (known[keyOf(job)] ?? 0), 0);
 
     console.log(
-      `${queue.length} of ${matched} cases${shardLabel}, ${seconds(knownMs).trim()} by the last local timings:`,
+      `${queue.length} of ${matched} cases${shardLabel}, ${seconds(knownMs).trim()} by the last local timings${unweightedNote}:`,
     );
     for (const job of queue) {
       const undelayed = delayPicturesMs && CASES[job.case].delayPictures === false ? '  [pictures not delayed]' : '';
@@ -6085,7 +6086,7 @@ const lead = async () => {
       for (const child of children) child.send({ type: 'built' });
     });
     console.log(
-      `[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)${perfOnly ? ' (perf only)' : skippedPerf ? `, ${skippedPerf} perf case(s) skipped (--perf runs them)` : ''}${slowedNote}`,
+      `[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)${perfOnly ? ' (perf only)' : skippedPerf ? `, ${skippedPerf} perf case(s) skipped (--perf runs them)` : ''}${slowedNote}${unweightedNote}`,
     );
     console.log(`Running ${total} test${total === 1 ? '' : 's'} using ${workers} worker${workers === 1 ? '' : 's'}`);
 
