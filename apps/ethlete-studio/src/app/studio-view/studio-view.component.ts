@@ -466,9 +466,13 @@ export class StudioViewComponent {
 
     this.serverStopping.set(true);
 
-    designServerStop$(handOver.checkout)
+    designServerState$(checkout)
       .pipe(
-        switchMap(() => designServerState$(checkout)),
+        switchMap((state) =>
+          state.port === handOver.port
+            ? designServerStop$(handOver.checkout).pipe(switchMap(() => designServerState$(checkout)))
+            : of(state),
+        ),
         tap((state) => {
           if (checkout !== this.checkout()) return;
 

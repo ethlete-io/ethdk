@@ -715,6 +715,54 @@ describe('StudioViewComponent', () => {
     expect(served).toBe('/other');
   });
 
+  it('keeps its own server of the project before running when the switched project uses another port', async () => {
+    const portOf = (checkout?: string) => (checkout === CHECKOUT ? 4500 : 4501);
+    const served = new Map<number, string>([[4500, CHECKOUT]]);
+    const stateOf = (checkout?: string) => ({
+      ...RUNNING,
+      port: portOf(checkout),
+      listening: served.get(portOf(checkout)) === checkout,
+      managed: served.get(portOf(checkout)) === checkout,
+    });
+
+    vi.stubGlobal('fetch', (url: string) => {
+      const root = served.get(Number(new URL(url).port));
+
+      return root
+        ? Promise.resolve(new Response(JSON.stringify({ projectRoot: root, pid: 1 }), { status: 200 }))
+        : Promise.reject(new TypeError('refused'));
+    });
+    stubHost({
+      design_roots: () => ({ search: '', roots: [CHECKOUT, '/other'] }),
+      design_server_state: ({ checkout }) =>
+        checkout === CHECKOUT
+          ? stateOf(checkout)
+          : new Promise((resolve) => setTimeout(() => resolve(stateOf(checkout)), 300)),
+      design_server_stop: ({ checkout }) => {
+        served.delete(portOf(checkout));
+
+        return stateOf(checkout);
+      },
+      design_server_start: ({ checkout }) => {
+        served.set(portOf(checkout), checkout ?? '');
+
+        return stateOf(checkout);
+      },
+    });
+
+    const fixture = await mount();
+
+    system(fixture)?.projectChange.emit('other');
+    await settle(fixture);
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    await settle(fixture);
+
+    expect(sent.some((call) => call.command === 'design_server_stop')).toBe(false);
+    expect(served.get(4500)).toBe(CHECKOUT);
+    expect(served.get(4501)).toBe('/other');
+    expect(system(fixture)?.checkout()).toBe('/other');
+  });
+
   it('shows no system view while the port of the checkout serves a project Studio did not start', async () => {
     vi.stubGlobal('fetch', () =>
       Promise.resolve(new Response(JSON.stringify({ projectRoot: '/somewhere/else', pid: 1 }), { status: 200 })),
