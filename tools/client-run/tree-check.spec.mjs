@@ -9,8 +9,13 @@ const expected = JSON.parse(readFileSync(join(import.meta.dirname, 'expect.json'
 const seenOf = (order) => treeFindingsOf({ expected: { sketches: [order] }, sketches }).map((f) => f.seen);
 
 describe('treeFindingsOf', () => {
-  it('finds the ordered title card in the tree of the 2026-11-24 run', () => {
-    assert.deepEqual(treeFindingsOf({ expected, sketches }), []);
+  it('finds the title card of the 2026-11-24 run and reports each other ordered part as missing', () => {
+    assert.deepEqual(
+      treeFindingsOf({ expected, sketches }).map((finding) => finding.seen),
+      ['Farben', 'Marken-Logo', 'Button', 'App Shell', 'Hero'].map(
+        (label) => `Im Baum fehlt der bestellte Sketch „${label}“.`,
+      ),
+    );
   });
 
   it('reports an ordered sketch the tree does not show', () => {
