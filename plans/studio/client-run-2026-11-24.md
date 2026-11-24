@@ -35,7 +35,7 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
 ## Lauf 2026-11-24-1029 (Brennpunkt-Auftrag, Start dunkel mit Akzent #e50914, 12 min, 14 Befunde)
 
 - Farb-Grundlage dunkel kam an: „Kinosaal“ ist fast schwarz mit heller Schrift (B690 bewiesen).
-- Suspect: der Agent ignoriert den Start-Akzent. Er nimmt Messing und schreibt „Rot habe ich bewusst nicht genommen“. Die Antwort des Menschen beim Start ist bindend; nichts im Werkzeug sagt ihm das.
+- Suspect: der Agent ignoriert den Start-Akzent. Er nimmt Messing und schreibt „Rot habe ich bewusst nicht genommen“. Rot ist die gespielte Startantwort des Laufs (00f552e0f), nicht die Wahl des Menschen. Entscheidung Mensch 24.11.: der Start-Akzent ist bindend; eine andere Farbe darf der Agent nur als zusätzliche Variante neben dem gewählten Akzent zeigen. Nichts im Werkzeug sagt ihm das.
 - Suspect Fehlalarm: 10 Befunde „Text abgeschnitten“ (Titelkarte b und c, ohne Logo, 2 px zu niedrig) und 1 „Text läuft aus dem Kasten“ (Farben, h1 3 px). Die Bilder zeigen keinen sichtbaren Schnitt. Der Prüfer misst die Glyphen-Box, nicht die Tinte.
 - Button a: hover gleich wie default (B697, schwacher Zustand; die Live-Prüfung meldete es dem Agenten nicht).
 - Hero und App Shell blieben „in progress“: der Agent wartet auf den übernommenen Button und das Logo. Suspect: der Auftrag bestellt Teile, die von nicht gewählten Teilen abhängen.
