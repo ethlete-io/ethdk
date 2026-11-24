@@ -25,3 +25,8 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
 
 - Zeitplan: Zeile für `crontab -e` in `tools/client-run/README.md`; der Mensch trägt sie ein.
 - Prüfer: Scrollleiste in einem Element der Zelle (nur die Seiten-Scrollleiste wird erkannt; kein echter Fall als Vorlage).
+
+## Lauf 2026-11-24-0130 (voller Lauf, SDK von HEAD fffdff6d5, 296 s, 9 Befunde)
+
+- Alle drei Varianten, je Film, Serie und ohne Logo: der Prüfer meldet `*-focus-visible` als gleich wie der Ruhezustand, die Einzelbilder zeigen aber einen deutlichen weißen Ring um die Karte (Dune a, Knight c geprüft). Verdacht: der Gleichheits-Vergleich des Prüfers schneidet auf die Inhaltsbox und ignoriert den äußeren Fokus-Ring, derselbe Schnitt wie in Befund 5 des ersten Laufs; alle 9 Befunde sind Fehlalarme.
+- Sonst nichts: kein fehlendes Bild, kein abgeschnittener Text, Baum zeigt die bestellten 3 Varianten; schwarze 48x48-Bilder sind weg.
