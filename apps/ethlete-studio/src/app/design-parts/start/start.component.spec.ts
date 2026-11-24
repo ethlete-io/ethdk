@@ -2,7 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { StartComponent } from './start.component';
 
-const render = async (repo?: string, busy = false, repos: string[] = []) => {
+const render = async (repo?: string, busy = false, repos: string[] = [], repoPath?: string) => {
   TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
 
   const fixture = TestBed.createComponent(StartComponent);
@@ -10,6 +10,7 @@ const render = async (repo?: string, busy = false, repos: string[] = []) => {
   fixture.componentRef.setInput('repo', repo);
   fixture.componentRef.setInput('busy', busy);
   fixture.componentRef.setInput('repos', repos);
+  fixture.componentRef.setInput('repoPath', repoPath);
   await fixture.whenStable();
 
   const element = fixture.nativeElement as HTMLElement;
@@ -145,6 +146,24 @@ describe('StartComponent', () => {
 
     expect(noRepo.element.textContent).toContain('Zuletzt geöffnet');
     expect(noRepo.button('tomflix')?.disabled).toBe(true);
+  });
+
+  it('keeps three same-name roots apart by path and tells the runs by date and time', async () => {
+    const own = '/home/tom/dev/tomflix';
+    const early = '/home/tom/dev/client-runs/2026-11-24-0056/tomflix';
+    const late = '/home/tom/dev/client-runs/2026-11-24-1109/tomflix';
+    const { fixture, element } = await render('tomflix', false, [early, late, own, '/home/tom/dev/ethlete-sdk'], own);
+    const picked: string[] = [];
+    const labels = () => [...element.querySelectorAll<HTMLButtonElement>('button')].map((b) => b.textContent?.trim());
+
+    fixture.componentInstance.projectChange.subscribe((path) => picked.push(path));
+    element.querySelectorAll<HTMLButtonElement>('button')[labels().indexOf('tomflix24.11. 11:09')]?.click();
+
+    expect(labels()).toContain('tomflix24.11. 00:56');
+    expect(labels()).toContain('tomflix24.11. 11:09');
+    expect(labels()).toContain('ethlete-sdk');
+    expect(labels()).not.toContain('tomflix');
+    expect(picked).toEqual([late]);
   });
 
   it('shows no label without known repos', async () => {

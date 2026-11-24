@@ -53,11 +53,17 @@ const openMenu = async (options: {
     [...document.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemradio"]')].find(
       (candidate) => candidate.textContent?.trim().replace(/\s+/g, ' ') === text,
     );
-  return { fixture, events, rows, row };
+  const serverMenu = async () => {
+    [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+      .find((candidate) => candidate.textContent?.trim().startsWith('Design-Server ·'))
+      ?.click();
+    await fixture.whenStable();
+  };
+  return { fixture, events, rows, row, serverMenu };
 };
 
 describe('StudioMenuComponent', () => {
-  it('lists the projects, the server actions and the help rows in design order', async () => {
+  it('lists the projects apart from the actions, the server as a submenu and removal last', async () => {
     const { rows } = await openMenu({ project: 'b', projects: ['a', 'b', 'c', 'd'] });
 
     expect(rows()).toEqual([
@@ -68,19 +74,62 @@ describe('StudioMenuComponent', () => {
       'd',
       'Projekt öffnen…',
       'Checkouts suchen…',
-      'Projekt entfernen',
       'Design-Server · läuft',
-      'Neu laden',
-      'Design-Server neu starten',
-      'Design-Server stoppen',
+      'Projekt entfernen',
       'Tastenkürzel',
       'Hilfe',
       'Über Studio',
     ]);
   });
 
+  it('marks the removal as dangerous', async () => {
+    const { row } = await openMenu({ project: 'b', projects: ['a', 'b'] });
+
+    expect(row('Projekt entfernen')?.getAttribute('variant')).toBe('destructive');
+  });
+
+  it('opens the server rows in a submenu', async () => {
+    const { fixture, rows, row } = await openMenu({ project: 'a', projects: ['a'] });
+
+    row('Design-Server · läuft')?.click();
+    await fixture.whenStable();
+
+    expect(rows()).toContain('Neu laden');
+    expect(rows()).toContain('Design-Server neu starten');
+    expect(rows()).toContain('Design-Server stoppen');
+  });
+
+  describe('client runs', () => {
+    const own = '/home/tom/dev/tomflix';
+    const early = '/home/tom/dev/client-runs/2026-11-24-0056/tomflix';
+    const late = '/home/tom/dev/client-runs/2026-11-24-1109/tomflix';
+
+    it('keeps them out of the project list and names each run in a submenu', async () => {
+      const { fixture, rows, row } = await openMenu({ project: own, projects: [early, own, late] });
+
+      expect(rows().slice(0, 4)).toEqual(['Projekt', 'tomflix', 'Kunden-Läufe', 'Projekt öffnen…']);
+
+      row('Kunden-Läufe')?.click();
+      await fixture.whenStable();
+
+      expect(rows()).toContain('tomflix24.11. 00:56');
+      expect(rows()).toContain('tomflix24.11. 11:09');
+    });
+
+    it('emits the path of the run picked', async () => {
+      const { fixture, events, row } = await openMenu({ project: own, projects: [early, own, late] });
+
+      row('Kunden-Läufe')?.click();
+      await fixture.whenStable();
+      row('tomflix24.11. 11:09')?.click();
+      await fixture.whenStable();
+
+      expect(events).toEqual([`project:${late}`]);
+    });
+  });
+
   describe('two projects with the same folder name', () => {
-    const run = '/home/tom/dev/client-runs/2026-11-24-0056/tomflix';
+    const run = '/home/tom/work/tomflix';
     const own = '/home/tom/dev/tomflix';
 
     const checked = () =>
@@ -92,7 +141,7 @@ describe('StudioMenuComponent', () => {
       const { rows } = await openMenu({ project: own, projects: [run, own] });
 
       expect(checked()).toEqual(['false', 'true']);
-      expect(rows().slice(1, 3)).toEqual(['tomflixclient-runs/2026-11-24-0056', 'tomflixtom/dev']);
+      expect(rows().slice(1, 3)).toEqual(['tomflixtom/work', 'tomflixtom/dev']);
     });
 
     it('emits the path of the one picked', async () => {
@@ -106,28 +155,26 @@ describe('StudioMenuComponent', () => {
   });
 
   it('names a stale server and offers the restart first', async () => {
-    const { rows } = await openMenu({ project: 'a', projects: ['a'], server: 'stale' });
+    const { rows, serverMenu } = await openMenu({ project: 'a', projects: ['a'], server: 'stale' });
 
-    expect(rows().slice(-7)).toEqual([
-      'Design-Server · veraltet',
-      'Design-Server neu starten',
-      'Neu laden',
-      'Design-Server stoppen',
-      'Tastenkürzel',
-      'Hilfe',
-      'Über Studio',
-    ]);
+    await serverMenu();
+
+    expect(rows().slice(-3)).toEqual(['Design-Server neu starten', 'Neu laden', 'Design-Server stoppen']);
   });
 
   it('names a stopped server and offers no reload', async () => {
-    const { rows } = await openMenu({ project: 'a', projects: ['a'], server: 'stopped' });
+    const { rows, serverMenu } = await openMenu({ project: 'a', projects: ['a'], server: 'stopped' });
+
+    await serverMenu();
 
     expect(rows()).toContain('Design-Server · gestoppt');
     expect(rows()).not.toContain('Neu laden');
   });
 
   it('emits the reload and the scan, and keeps the reload enabled while an action runs', async () => {
-    const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a'], busy: true });
+    const { fixture, events, row, serverMenu } = await openMenu({ project: 'a', projects: ['a'], busy: true });
+
+    await serverMenu();
 
     expect(row('Neu laden')?.getAttribute('aria-disabled')).not.toBe('true');
     expect(row('Checkouts suchen…')?.getAttribute('aria-disabled')).toBe('true');
@@ -173,13 +220,15 @@ describe('StudioMenuComponent', () => {
   });
 
   it('offers only the start while the server is stopped', async () => {
-    const { row } = await openMenu({ project: 'a', projects: ['a'], server: 'stopped' });
+    const { row, serverMenu } = await openMenu({ project: 'a', projects: ['a'], server: 'stopped' });
+
+    await serverMenu();
 
     expect(row('Design-Server starten')).toBeDefined();
     expect(row('Design-Server stoppen')).toBeUndefined();
   });
 
-  it('emits another project, open project and a server action', async () => {
+  it('emits another project and open project', async () => {
     const { fixture, events, row } = await openMenu({ project: 'a', projects: ['a', 'b'] });
 
     row('b')?.click();
@@ -187,9 +236,18 @@ describe('StudioMenuComponent', () => {
     fixture.componentInstance.open.set(true);
     await fixture.whenStable();
     row('Projekt öffnen…')?.click();
-    row('Design-Server stoppen')?.click();
 
-    expect(events).toEqual(['project:b', 'openProject', 'server:stop']);
+    expect(events).toEqual(['project:b', 'openProject']);
+  });
+
+  it('emits a server action from the submenu', async () => {
+    const { fixture, events, row, serverMenu } = await openMenu({ project: 'a', projects: ['a', 'b'] });
+
+    await serverMenu();
+    row('Design-Server stoppen')?.click();
+    await fixture.whenStable();
+
+    expect(events).toEqual(['server:stop']);
   });
 
   it('emits nothing when the open project is chosen again', async () => {
@@ -207,8 +265,8 @@ describe('StudioMenuComponent', () => {
 
     expect(rows()).not.toContain('Einstellungen');
     expect(rows()).not.toContain('Erscheinungsbild');
-    expect(document.querySelectorAll('[aria-haspopup="menu"][role="menuitem"]')).toHaveLength(0);
-    expect(document.querySelectorAll('et-menu-separator')).toHaveLength(2);
+    expect(rows()).not.toContain('Kunden-Läufe');
+    expect(document.querySelectorAll('[aria-haspopup="menu"][role="menuitem"]')).toHaveLength(1);
   });
 
   it('opens the dialogs and emits help, also while an action runs', async () => {
@@ -237,12 +295,17 @@ describe('StudioMenuComponent', () => {
   });
 
   it('keeps the mark with blinking eyes in the busy tile and disables every action row', async () => {
-    const { fixture, events, row } = await openMenu({ project: 'b', projects: ['a', 'b', 'c'], busy: true });
+    const { fixture, events, row, serverMenu } = await openMenu({
+      project: 'b',
+      projects: ['a', 'b', 'c'],
+      busy: true,
+    });
     const root = (fixture.nativeElement as HTMLElement).querySelector('[etMenu]');
     const trigger = root?.querySelector('button');
 
     row('a')?.click();
     row('Projekt öffnen…')?.click();
+    await serverMenu();
     row('Design-Server neu starten')?.click();
     await fixture.whenStable();
 

@@ -28,6 +28,7 @@ export const STUDIO_MENU_LABELS = {
   trigger: 'Studio-Menü',
   panel: 'Studio',
   project: 'Projekt',
+  clientRuns: 'Kunden-Läufe',
   openProject: 'Projekt öffnen…',
   scan: 'Checkouts suchen…',
   removeProject: 'Projekt entfernen',

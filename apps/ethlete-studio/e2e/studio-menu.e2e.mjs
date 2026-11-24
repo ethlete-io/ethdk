@@ -94,9 +94,15 @@ const results = await withStudio(
       rows.push({ state: name, ok });
       console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` - ${detail}` : ''}`);
     };
-    const pick = async (label) => {
+    const pick = async (label, submenu) => {
       await page.click(TRIGGER);
       await page.waitForSelector('et-menu[aria-label="Studio"]');
+
+      if (submenu) {
+        await page.getByRole('menuitem', { name: submenu }).click();
+        await page.waitForSelector('et-menu[aria-label="Design-Server"]');
+      }
+
       await page.getByRole('menuitem', { name: label, exact: true }).click();
       await page.waitForTimeout(400);
     };
@@ -145,7 +151,7 @@ const results = await withStudio(
     await page.evaluate(() => {
       window.__hostCalls = [];
     });
-    await pick('Neu laden');
+    await pick('Neu laden', /^Design-Server · (läuft|veraltet)$/);
     const reloadCalls = await page.evaluate(() => window.__hostCalls);
     check(
       'row Neu laden reads the project and the server again',
@@ -159,7 +165,7 @@ const results = await withStudio(
     check(
       'the menu names the server state and offers Checkouts suchen…',
       menuRows.some((label) => label.trim() === 'Checkouts suchen…') &&
-        (await page.locator('.et-menu-group-label', { hasText: /^Design-Server · (läuft|veraltet)$/ }).count()) === 1,
+        menuRows.some((label) => /^Design-Server · (läuft|veraltet)$/.test(label.trim())),
       menuRows.join('|'),
     );
     await page.keyboard.press('Escape');

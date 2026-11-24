@@ -2,15 +2,12 @@ import { booleanAttribute, Component, computed, input, model, output, ViewEncaps
 import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 import { STUDIO_MENU_LABELS, DESIGN_SERVER_LABELS } from '../../i18n/shell-labels';
+import { projectEntriesOf } from './project-entries';
 import { injectStudioMenuDialogs } from './studio-menu-dialogs';
 
 export type DesignServerAction = 'start' | 'restart' | 'stop';
 
 export type DesignServerStatus = 'running' | 'stale' | 'stopped';
-
-const folderNameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
-
-const parentNameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).slice(-3, -1).join('/');
 
 type ServerRow = DesignServerAction | 'reload';
 
@@ -49,15 +46,10 @@ export class StudioMenuComponent {
 
   protected readonly LABELS = STUDIO_MENU_LABELS;
 
-  protected entries = computed(() => {
-    const names = this.projects().map(folderNameOf);
-
-    return this.projects().map((id, index) => ({
-      id,
-      name: names[index],
-      hint: names.filter((name) => name === names[index]).length > 1 ? parentNameOf(id) : '',
-    }));
-  });
+  public entries = computed(() => projectEntriesOf(this.projects()));
+  protected ownEntries = computed(() => this.entries().filter((entry) => !entry.run));
+  protected runEntries = computed(() => this.entries().filter((entry) => entry.run));
+  protected runShown = computed(() => this.runEntries().some((entry) => entry.id === this.project()));
 
   protected statusLabel = computed(() => `${this.LABELS.designServer} · ${this.LABELS.serverStatus[this.server()]}`);
 

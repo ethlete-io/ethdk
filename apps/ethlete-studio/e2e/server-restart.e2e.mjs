@@ -111,6 +111,7 @@ const result = await withStudio(
     const epochBefore = await epochOf(page);
 
     await page.click('ethlete-studio-menu button[aria-label="Studio-Menü"]');
+    await page.getByRole('menuitem', { name: /^Design-Server ·/ }).click();
     await page.getByRole('menuitem', { name: 'Neu starten' }).click();
     await restartDesign(DOWN_MS);
     await waitFor(async () => {

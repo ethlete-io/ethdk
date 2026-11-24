@@ -1,5 +1,6 @@
 import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
+import { projectEntriesOf } from '../studio-menu/project-entries';
 import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/start-labels';
 
 @Component({
@@ -111,16 +112,21 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
           @if (others().length) {
             <p class="m-0 text-et-surface-muted text-ui-sm">{{ LABELS.knownRepos }}</p>
             <div class="flex flex-wrap justify-center gap-space-2">
-              @for (name of others(); track name) {
+              @for (other of others(); track other.id) {
                 <button
                   [disabled]="busy()"
-                  (click)="projectChange.emit(name)"
+                  (click)="projectChange.emit(other.id)"
                   et-button
                   type="button"
                   variant="outline"
                   size="sm"
                 >
-                  {{ name }}
+                  <span class="flex min-w-0 flex-col items-center">
+                    <span class="truncate">{{ other.name }}</span>
+                    @if (other.hint) {
+                      <span class="truncate text-et-surface-muted text-ui-sm">{{ other.hint }}</span>
+                    }
+                  </span>
                 </button>
               }
             </div>
@@ -134,16 +140,21 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
           @if (others().length) {
             <p class="m-0 text-et-surface-muted text-ui-sm">{{ LABELS.knownRepos }}</p>
             <div class="flex flex-wrap justify-center gap-space-2">
-              @for (name of others(); track name) {
+              @for (other of others(); track other.id) {
                 <button
                   [disabled]="busy()"
-                  (click)="projectChange.emit(name)"
+                  (click)="projectChange.emit(other.id)"
                   et-button
                   type="button"
                   variant="outline"
                   size="sm"
                 >
-                  {{ name }}
+                  <span class="flex min-w-0 flex-col items-center">
+                    <span class="truncate">{{ other.name }}</span>
+                    @if (other.hint) {
+                      <span class="truncate text-et-surface-muted text-ui-sm">{{ other.hint }}</span>
+                    }
+                  </span>
                 </button>
               }
             </div>
@@ -158,6 +169,7 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
 })
 export class StartComponent {
   public repo = input<string | undefined>();
+  public repoPath = input<string | undefined>();
   public repos = input<readonly string[]>([]);
   public busy = input(false, { transform: booleanAttribute });
   public colors = model<StartColors>('both');
@@ -171,7 +183,9 @@ export class StartComponent {
   protected accentItem = computed<StartAccent>(
     () => START_LABELS.accents.find((item) => item.name === this.accent()) ?? START_LABELS.accents[0],
   );
-  protected others = computed(() => this.repos().filter((name) => name !== this.repo()));
+  protected others = computed(() =>
+    projectEntriesOf(this.repos()).filter((entry) => entry.id !== (this.repoPath() ?? this.repo())),
+  );
 
   protected readonly LABELS = START_LABELS;
   protected readonly COLORS: readonly StartColors[] = ['light', 'dark', 'both'];

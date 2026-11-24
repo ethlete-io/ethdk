@@ -59,9 +59,9 @@
   </button>
   <ng-template etMenuSurface>
     <et-menu [attr.aria-label]="LABELS.panel" class="box-border w-62 text-ui-md [--et-menu-max-height:80vh]">
+      <et-menu-group-label>{{ LABELS.project }}</et-menu-group-label>
       <et-menu-radio-group [value]="project()" (valueChange)="selectProject($event)">
-        <et-menu-group-label>{{ LABELS.project }}</et-menu-group-label>
-        @for (entry of entries(); track entry.id) {
+        @for (entry of ownEntries(); track entry.id) {
           <et-menu-radio-item [value]="entry.id" [disabled]="busy() && entry.id !== project()" closeOnActivate>
             <span class="flex min-w-0 flex-col">
               <span class="truncate">{{ entry.name }}</span>
@@ -72,22 +72,71 @@
           </et-menu-radio-item>
         }
       </et-menu-radio-group>
+      @if (runEntries().length) {
+        <div etMenu placement="right-start">
+          <button
+            [attr.aria-label]="LABELS.clientRuns"
+            [attr.data-current]="runShown() || null"
+            class="data-current:font-ui-strong"
+            etMenuTrigger
+            et-menu-item
+            type="button"
+          >
+            {{ LABELS.clientRuns }}
+          </button>
+          <ng-template etMenuSurface>
+            <et-menu
+              [attr.aria-label]="LABELS.clientRuns"
+              class="box-border w-62 text-ui-md [--et-menu-max-height:80vh]"
+            >
+              <et-menu-radio-group [value]="project()" (valueChange)="selectProject($event)">
+                @for (entry of runEntries(); track entry.id) {
+                  <et-menu-radio-item [value]="entry.id" [disabled]="busy() && entry.id !== project()" closeOnActivate>
+                    <span class="flex min-w-0 flex-col">
+                      <span class="truncate">{{ entry.name }}</span>
+                      <span class="truncate text-et-surface-muted text-ui-sm">{{ entry.run }}</span>
+                    </span>
+                  </et-menu-radio-item>
+                }
+              </et-menu-radio-group>
+            </et-menu>
+          </ng-template>
+        </div>
+      }
+      <et-menu-separator />
       <button [disabled]="busy()" (activate)="openProject.emit()" et-menu-item type="button">
         {{ LABELS.openProject }}
       </button>
       <button [disabled]="busy()" (activate)="scanProjects.emit()" et-menu-item type="button">
         {{ LABELS.scan }}
       </button>
-      <button [disabled]="busy() || projects().length < 2" (activate)="removeProject.emit()" et-menu-item type="button">
+      <div etMenu placement="right-start">
+        <button etMenuTrigger et-menu-item type="button">{{ statusLabel() }}</button>
+        <ng-template etMenuSurface>
+          <et-menu [attr.aria-label]="LABELS.designServer" class="box-border w-62 text-ui-md">
+            @for (item of items(); track item.row) {
+              <button
+                [disabled]="busy() && item.row !== 'reload'"
+                (activate)="runRow(item.row)"
+                et-menu-item
+                type="button"
+              >
+                {{ item.label }}
+              </button>
+            }
+          </et-menu>
+        </ng-template>
+      </div>
+      <et-menu-separator />
+      <button
+        [disabled]="busy() || projects().length < 2"
+        (activate)="removeProject.emit()"
+        et-menu-item
+        type="button"
+        variant="destructive"
+      >
         {{ LABELS.removeProject }}
       </button>
-      <et-menu-separator />
-      <et-menu-group-label>{{ statusLabel() }}</et-menu-group-label>
-      @for (item of items(); track item.row) {
-        <button [disabled]="busy() && item.row !== 'reload'" (activate)="runRow(item.row)" et-menu-item type="button">
-          {{ item.label }}
-        </button>
-      }
       <et-menu-separator />
       <button (activate)="dialogs.shortcuts()" et-menu-item type="button">{{ LABELS.shortcuts }}</button>
       <button (activate)="openHelp.emit()" et-menu-item type="button">{{ LABELS.help }}</button>

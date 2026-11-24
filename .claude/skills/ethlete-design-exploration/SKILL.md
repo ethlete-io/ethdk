@@ -68,7 +68,8 @@ user reads and decides in Ethlete Studio. The tool is `et design`, from `@ethlet
 In the SDK checkout, `yarn design` builds the CLI before each call; in a check-and-shot loop,
 build once and call `node dist/libs/cli/src/index.js design`.
 Ask the user, then run `et design studio open` to show your checkout in Studio. If it is not
-running, the user opens it; run again.
+running, the user opens it; run again. In a client run (`CLEAN_SLATE_SANDBOX` is set) the
+command refuses: a run must not write the user's Studio roots, so the user opens the run's checkout.
 
 ```
 .ethlete/design/
