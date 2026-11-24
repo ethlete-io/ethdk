@@ -552,18 +552,7 @@ export class SketchesComponent {
       (state) => (groups.get(state)?.states[0] ?? state) === state,
     );
   });
-  private unsizedRows = computed(() => {
-    const states = this.transposed() ? new Set(this.matrixStates()) : null;
-
-    return (
-      this.listMeasured() &&
-      this.shownRows().some(
-        (row) =>
-          row.sized === false ||
-          row.shots.some((shot) => shot.sized === false && (states === null || states.has(shot.state))),
-      )
-    );
-  });
+  private unsizedRows = computed(() => this.listMeasured() && this.shownRows().some((row) => row.sized === false));
   private sizingHeld = toSignal(
     toObservable(this.unsizedRows).pipe(
       distinctUntilChanged(),

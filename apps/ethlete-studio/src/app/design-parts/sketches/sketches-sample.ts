@@ -12,7 +12,6 @@ export type SketchShot = {
   changed: boolean | null;
   height: number;
   width?: number;
-  sized?: false;
   change?: SketchChange;
   sameAsRest?: boolean;
   /** The states this row folds as drawn like this rest state. */

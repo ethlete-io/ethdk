@@ -331,51 +331,6 @@ describe('SketchViewComponent', () => {
     ]);
   });
 
-  it('holds a first open hidden until every shown state reported a size (tomflix shell-app at 1440 px)', async () => {
-    const states = ['desktop', 'phone'];
-    const variants = ['a', 'b', 'c'];
-    const shellApp = {
-      target: 'elements/shell-app',
-      status: 'ready',
-      createdAt: '2026-11-24T10:00:00Z',
-      product: 'web',
-      layer: 'elements',
-      name: 'shell-app',
-      dir: 'shell-app',
-      variants,
-      problems: [],
-      targets: variants.map((variant) => ({ variant, states, interactions: [], unchanged: [] })),
-    } satisfies ListedSketch;
-    const { fixture, root } = await render(shellApp, noComments, {
-      ...CARD,
-      layer: 'elements',
-      name: 'shell-app',
-      states,
-    });
-    const report = async (state: string, width: number, height: number) => {
-      for (const variant of ['current', ...variants])
-        window.dispatchEvent(
-          new MessageEvent('message', {
-            source: root.querySelector<HTMLIFrameElement>(`iframe[data-variant="${variant}"][data-state="${state}"]`)!
-              .contentWindow,
-            data: { type: 'design-explore:height', height, width, viewport: { width, height } },
-          }),
-        );
-      await settle(fixture);
-    };
-    const held = () => root.querySelector('[data-sk-sizing]') !== null;
-
-    expect(held()).toBe(true);
-
-    await report('desktop', 1472, 672);
-
-    expect(held()).toBe(true);
-
-    await report('phone', 422, 876);
-
-    expect(held()).toBe(false);
-  });
-
   it('keeps the live frames while a zoom gesture runs and updates them once it rests', async () => {
     vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(100);
     vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(50);
