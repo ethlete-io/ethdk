@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { vi } from 'vitest';
+import { CANVAS_LABELS } from '../../../i18n/canvas-labels';
 import { THEMES } from '../../../../themes';
 import { FrameCell, FrameGrid } from '../canvas-frame';
 import {
@@ -499,6 +500,8 @@ describe('CanvasFrameGridComponent', () => {
         await flush(1500);
 
         expect(host.querySelectorAll('[data-shot-slow]').length).toBe(3);
+        // B695: the slow pill reads its text from the labels file, in German.
+        expect(host.querySelector('[data-shot-slow]')?.textContent?.trim()).toBe(CANVAS_LABELS.rendering);
 
         host.querySelectorAll('img')[0]?.dispatchEvent(new Event('load'));
         await flush(20);

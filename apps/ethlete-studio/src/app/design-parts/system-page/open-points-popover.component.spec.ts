@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
+import { EXCEPTIONS_LABELS } from '../../i18n/shell-labels';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
 import { OpenPointTarget, PartException } from './system-page-sample';
 
@@ -78,7 +79,13 @@ describe('OpenPointsPopoverComponent', () => {
     fixture.componentInstance.approveException.subscribe((rule) => approved.push(rule));
 
     expect(element.querySelector('h3')?.textContent?.replace(/\s+/g, '')).toBe('Ausnahmen3');
-    expect(element.textContent).toContain('wieder offen');
+    // B695: a reopened exception reads open like any other; the human only approves it.
+    expect([...element.querySelectorAll('[data-exception-state]')].map((badge) => badge.textContent?.trim())).toEqual([
+      EXCEPTIONS_LABELS.pending,
+      EXCEPTIONS_LABELS.pending,
+      EXCEPTIONS_LABELS.pending,
+    ]);
+    expect('reopened' in EXCEPTIONS_LABELS).toBe(false);
 
     const buttons = [...element.querySelectorAll<HTMLButtonElement>('button')].filter(
       (button) => button.textContent?.trim() === 'Freigeben',

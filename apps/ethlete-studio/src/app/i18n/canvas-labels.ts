@@ -5,6 +5,7 @@ export const CANVAS_LABELS = {
   unanswered: 'Der Design-Server antwortet nicht.',
   reload: 'Neu laden',
   renderFailed: 'Zeichnen fehlgeschlagen',
+  rendering: 'Wird gerendert',
   notDrawn: 'nicht gezeichnet',
   restOnly: 'Nur Ruhezustand',
   noFrameMessage: 'Die Seite hat keine Frame-Nachricht gesendet.',

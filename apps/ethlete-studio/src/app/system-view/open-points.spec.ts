@@ -284,14 +284,14 @@ describe('buildReadyStatusOf', () => {
     ).toEqual({ state: 'blocked', blockers: [{ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' }] });
   });
 
-  it('reads a product without a harness as checking, without a harness blocker', () => {
-    // B695: a missing harness is a note for the developer in the CLI output, not a blocker the human reads.
+  it('reads a product without a harness as blocked, without a harness blocker', () => {
+    // B695: a missing harness is a note for the developer in the CLI output, but the part is still not build-ready.
     expect(
       buildReadyStatusOf({
         points: [],
         buildReady: { ready: false, blockers: [{ kind: 'no-harness', text: 'the product has no harness' }] },
       }),
-    ).toEqual({ state: 'checking' });
+    ).toEqual({ state: 'blocked', blockers: [] });
   });
 
   it('counts no comment that waits on the agent and no sketch the agent fixes as a blocker', () => {

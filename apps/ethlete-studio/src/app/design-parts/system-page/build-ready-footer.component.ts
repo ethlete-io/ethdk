@@ -75,11 +75,11 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
             {{ LABELS.openEditSketch }}
           </button>
         }
-        @if (current.state === 'blocked' && !blockersOpen()) {
+        @if (current.state === 'blocked' && blockerCount() > 0 && !blockersOpen()) {
           <ng-container *ngTemplateOutlet="reasons" />
         }
       </div>
-      @if (current.state === 'blocked' && blockersOpen()) {
+      @if (current.state === 'blocked' && blockerCount() > 0 && blockersOpen()) {
         <div class="-mx-space-2 mt-space-1">
           <ng-container *ngTemplateOutlet="reasons" />
         </div>

@@ -125,7 +125,8 @@ const ruleBlockerOf = (blocker: BuildReadyBlocker): BuildBlocker => ({
 
 /**
  * The build-ready status the chip popover shows: blocked as soon as one blocker is definite, even while a slow check
- * runs; checking while only a pending check or a missing check record is left. A blocked status lists each definite
+ * runs; checking while only a pending check or a missing check record is left. A product without a harness is
+ * blocked without a listed blocker, since its app checks never run. A blocked status lists each definite
  * blocker, with a direct edit as its own kind and the open points in Studio's words.
  */
 export const buildReadyStatusOf = (answer: PartOpenPoints): BuildReadyStatus => {
@@ -138,7 +139,10 @@ const statusOf = ({ points: all, buildReady }: PartOpenPoints): BuildReadyStatus
   if (buildReady.ready) return { state: 'ready' };
   const points = all.filter(isShown);
   const others = buildReady.blockers.filter((blocker) => !HIDDEN_BLOCKERS.has(blocker.kind));
-  if (others.length === 0 && points.length === 0) return { state: 'checking' };
+  if (others.length === 0 && points.length === 0)
+    return buildReady.blockers.some(({ kind }) => kind === 'no-harness')
+      ? { state: 'blocked', blockers: [] }
+      : { state: 'checking' };
 
   const pointBlockers: BuildBlocker[] = points.map((point) =>
     isListed(point)

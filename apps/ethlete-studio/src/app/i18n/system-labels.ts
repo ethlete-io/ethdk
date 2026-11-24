@@ -56,7 +56,7 @@ export const BUILD_READY_LABELS = {
   ready: 'Baubereit',
   checking: 'Wird geprüft',
   developer: 'Entwickler-Part',
-  blocked: (count: number) => `Nicht baubereit (${count})`,
+  blocked: (count: number) => (count > 0 ? `Nicht baubereit (${count})` : 'Nicht baubereit'),
   reasons: 'Gründe',
   openEditSketch: 'Sketch öffnen',
   groups: {
@@ -84,7 +84,7 @@ export const SYSTEM_TREE_LABELS = {
   wireframes: 'Wireframes',
   sketches: 'Sketches',
   rejected: 'abgelehnt',
-  withdrawn: 'vom Agent zurückgezogen',
+  withdrawn: 'Zurückgezogen',
   drawing: 'wird gezeichnet …',
   variantBy: (variant: string, authors: string) => `${variant} von ${authors}`,
   newInSketch: (state: string | undefined, has: string[]) =>
@@ -98,7 +98,7 @@ export const SYSTEM_TREE_LABELS = {
   reasonBy: (by: string) => `, Grund von ${by}`,
   rejectedWith: (reason: string) => `Abgelehnt: ${reason}`,
   rejectedLabel: 'Abgelehnt',
-  withdrawnWith: (reason: string) => `Vom Agent zurückgezogen: ${reason}`,
-  withdrawnLabel: 'Vom Agent zurückgezogen',
+  withdrawnWith: (reason: string) => `Zurückgezogen: ${reason}`,
+  withdrawnLabel: 'Zurückgezogen',
   rejectedBy: (by: string, reasonBy: string) => `von ${by}${reasonBy}`,
 } as const;

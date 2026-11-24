@@ -26,6 +26,7 @@ import {
   TreeEntry,
   treeOf,
 } from './system-tree';
+import { SYSTEM_TREE_LABELS } from '../i18n/system-labels';
 import { FrameRevisions, NO_FRAME_REVISIONS, frameRevisionsWith, revisionOf } from '../studio-view/frame-revisions';
 
 const SESSION = `&session=${SHOT_SESSION}`;
@@ -1611,9 +1612,13 @@ describe('picking a variant', () => {
 
     expect(columnOf('a')?.label).toContain('abgelehnt');
     expect(columnOf('a')?.note).toContain('Abgelehnt: zu laut');
-    expect(columnOf('b')?.label).toContain('vom Agent zurückgezogen');
+    expect(columnOf('b')?.label).toContain(SYSTEM_TREE_LABELS.withdrawn);
     expect(columnOf('b')?.label).not.toContain('abgelehnt');
-    expect(columnOf('b')?.note).toContain('Vom Agent zurückgezogen: identisch mit a (von model-x)');
+    expect(columnOf('b')?.note).toContain(`${SYSTEM_TREE_LABELS.withdrawnWith('identisch mit a')} (von model-x)`);
+    // B695: a withdrawn variant reads withdrawn, without naming the agent, in its tag and its tooltip.
+    expect(SYSTEM_TREE_LABELS.withdrawn).toBe(SYSTEM_TREE_LABELS.withdrawnLabel);
+    expect(SYSTEM_TREE_LABELS.withdrawnWith('x')).toBe(`${SYSTEM_TREE_LABELS.withdrawnLabel}: x`);
+    expect(SYSTEM_TREE_LABELS.withdrawnLabel).not.toMatch(/agent/i);
   });
 
   it('leaves out a variant its agent withdrew when asked to, and shows it again once reopened', () => {

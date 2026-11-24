@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection, reflectComponentType } from '@angular/c
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
+import { BUILD_READY_LABELS } from '../../i18n/system-labels';
 import { BuildBlocker, BuildReadyFooterComponent, BuildReadyStatus } from './build-ready-footer.component';
 
 const withTooltip = (root: Element | null | undefined, text: string) =>
@@ -67,6 +68,14 @@ describe('BuildReadyFooterComponent', () => {
     const { element, toggle } = await render({ state: 'checking' });
 
     expect(element.textContent).toContain('Wird geprüft');
+    expect(toggle()).toBeNull();
+  });
+
+  it('reads not build-ready without a count or Gründe toggle when no blocker is listed', async () => {
+    const { element, toggle } = await render({ state: 'blocked', blockers: [] });
+
+    expect(element.querySelector('et-badge')?.textContent?.trim()).toBe(BUILD_READY_LABELS.blocked(0));
+    expect(BUILD_READY_LABELS.blocked(0)).not.toContain('(');
     expect(toggle()).toBeNull();
   });
 

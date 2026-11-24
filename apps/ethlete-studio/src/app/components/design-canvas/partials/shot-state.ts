@@ -110,7 +110,7 @@ export class ShotStateDirective {
         data-shot-slow
       >
         <i class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></i>
-        Rendering
+        {{ LABELS.rendering }}
       </span>
     }
   `,

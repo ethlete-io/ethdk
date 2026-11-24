@@ -95,9 +95,7 @@ const SHOWN_LINES = 3;
                   <span class="min-w-0 flex-1 font-code text-ui-xs break-all text-et-surface">{{
                     exception.rule
                   }}</span>
-                  <et-badge [variant]="exception.reopened ? 'tonal' : 'outline'" size="sm">
-                    {{ exception.reopened ? EXCEPTION_LABELS.reopened : EXCEPTION_LABELS.pending }}
-                  </et-badge>
+                  <et-badge variant="outline" size="sm" data-exception-state>{{ EXCEPTION_LABELS.pending }}</et-badge>
                 </span>
                 <span class="flex items-center gap-space-2">
                   <span class="min-w-0 flex-1 text-et-surface-muted">{{ exception.reason }}</span>

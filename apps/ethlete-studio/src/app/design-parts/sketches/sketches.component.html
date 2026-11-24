@@ -392,9 +392,7 @@
         <span class="font-code text-ui-sm text-et-surface">{{ row.label ?? LABELS.variant(row.key) }}</span>
       }
       @if (row.model; as model) {
-        <span
-          [etTooltip]="LABELS.modelTitle(model.id, model.when)"
-          class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
+        <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted" data-sk-model
           ><svg [agent]="model.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ model.short }}</span
         >
       }

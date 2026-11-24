@@ -34,7 +34,6 @@ export const SKETCHES_LABELS = {
   withdrawnToggle: (count: number) => `Zurückgezogene (${count})`,
   fitHint: 'Doppelklick zum Einpassen',
   current: 'Aktuell',
-  modelTitle: (id: string, when?: string) => [id, when].filter(Boolean).join(' · '),
   unchanged: 'unverändert',
   stateSeparator: ' · ',
   sameAsRest: (states: readonly string[]) => `${states.join(', ')} = rest`,

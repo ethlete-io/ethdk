@@ -183,16 +183,13 @@ const pointLines = ({ icon: name, lines }: PointGroup) => {
 const exceptionGroup = async () => {
   const approve = await button.render({ label: EXCEPTIONS_LABELS.approve, variant: 'outline', size: 'xs' });
   const open = await badge.render({ badges: [{ label: 'offen', variant: 'outline', size: 'sm' }] });
-  const reopened = await badge.render({
-    badges: [{ label: EXCEPTIONS_LABELS.reopened, variant: 'tonal', size: 'sm' }],
-  });
   const rows = buttonExceptions
     .map(
-      ({ rule, reason, reopened: again }) =>
+      ({ rule, reason }) =>
         html`<li class="flex flex-col gap-space-1 px-space-3 py-space-2">
           <span class="flex items-center gap-space-2">
             <span class="min-w-0 flex-1 font-code text-ui-xs break-all text-et-surface">${rule}</span>
-            ${again ? reopened.body : open.body}
+            ${open.body}
           </span>
           <span class="flex items-center gap-space-2">
             <span class="min-w-0 flex-1 text-et-surface-muted">${reason}</span>
@@ -212,7 +209,7 @@ const exceptionGroup = async () => {
         ${rows}
       </ul>
     </section>`,
-    styles: approve.styles + open.styles + reopened.styles,
+    styles: approve.styles + open.styles,
   };
 };
 

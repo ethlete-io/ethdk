@@ -132,7 +132,6 @@ export const SHELL_LABELS = {
 
 export const EXCEPTIONS_LABELS = {
   toggle: 'Ausnahmen',
-  reopened: 'wieder offen',
   pending: 'offen',
   approve: 'Freigeben',
 } as const;

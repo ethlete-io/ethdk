@@ -5,17 +5,10 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
-import { SYSTEM_LABELS } from '../../i18n/system-labels';
+import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../../i18n/system-labels';
 import { SketchesComponent, foldedStatesOf } from './sketches.component';
 import { matrixBlocksOf } from './matrix-blocks';
 import { SKETCH_EDIT_SAMPLE, SKETCH_PINS, SketchComment, SketchRow } from './sketches-sample';
-
-const withTooltip = (root: Element | null | undefined, text: string) =>
-  [...(root?.querySelectorAll<HTMLElement>('[aria-describedby]') ?? [])].find((element) =>
-    (element.getAttribute('aria-describedby') ?? '')
-      .split(' ')
-      .some((id) => document.getElementById(id)?.textContent?.trim() === text),
-  ) ?? null;
 
 const LABELS = SKETCHES_LABELS;
 
@@ -335,20 +328,16 @@ describe('SketchesComponent', () => {
     expect(root.querySelectorAll('[data-sk-merge]').length).toBe(1);
   });
 
-  it('shows the short model name with the full id and time as its tooltip', async () => {
-    const root: HTMLElement = (await render({})).nativeElement;
-    const model = withTooltip(root.querySelector('[data-sk-row="x"]'), 'claude-sonnet-5-5 · 01.11. 09:00');
-
-    expect(textOf(model)).toBe('Sonnet 5.5');
-  });
-
   // The human wants the model icon and name in the variant label; keep it.
-  it('shows the model icon and name beside the variant label', async () => {
+  it('shows the model icon and name beside the variant label, without a tooltip', async () => {
     const root: HTMLElement = (await render({})).nativeElement;
-    const model = withTooltip(root.querySelector('[data-sk-row="x"]'), 'claude-sonnet-5-5 · 01.11. 09:00');
+    const model = root.querySelector('[data-sk-row="x"] [data-sk-model]');
 
     expect(model?.querySelector('svg[ethlete-agent-logo]')).not.toBeNull();
     expect(textOf(model)).toBe('Sonnet 5.5');
+    // B695: the model id and time are agent metadata, so the model name has no tooltip.
+    expect(model?.hasAttribute('aria-describedby')).toBe(false);
+    expect('modelTitle' in SKETCHES_LABELS).toBe(false);
   });
 
   it('hides withdrawn variants behind Zurückgezogene (n) and marks them in place of Übernehmen when shown', async () => {
@@ -379,9 +368,9 @@ describe('SketchesComponent', () => {
     expect(changes).toEqual(['shown']);
     expect(shownKeys()).toEqual(['current', 'x', 'y', 'z']);
     expect(textOf(root.querySelector('[data-sk-row="y"] [data-sk-withdrawn]'))).toBe(
-      'Vom Agent zurückgezogen: Zu breit für die Leiste',
+      SYSTEM_TREE_LABELS.withdrawnWith('Zu breit für die Leiste'),
     );
-    expect(textOf(root.querySelector('[data-sk-row="z"] [data-sk-withdrawn]'))).toBe('Vom Agent zurückgezogen');
+    expect(textOf(root.querySelector('[data-sk-row="z"] [data-sk-withdrawn]'))).toBe(SYSTEM_TREE_LABELS.withdrawnLabel);
     expect(root.querySelector('[data-sk-row="y"] [data-sk-merge]')).toBeNull();
     expect(root.querySelector('[data-sk-row="x"] [data-sk-merge]')).not.toBeNull();
     expect(root.querySelector('[data-sk-row="x"] [data-sk-withdrawn]')).toBeNull();

@@ -18,6 +18,10 @@ const settled: StudioCodeState = {
 describe('codeNoticeOf', () => {
   it('asks for nothing while Studio runs the latest commit of every part', () => {
     expect(codeNoticeOf(settled, A)).toBeNull();
+  });
+
+  it('shows no code notice outside dev mode, where the host answers no code state', () => {
+    // B695: the code-changed hints are developer state and show only in a debug build of the host.
     expect(codeNoticeOf(null, A)).toBeNull();
   });
 
