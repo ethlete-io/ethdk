@@ -3,7 +3,12 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './design-config';
-import { aktuellPlaceholderWarnings, identicalRenderLines, variantChangesShown } from './ready-shots';
+import {
+  aktuellPlaceholderWarnings,
+  identicalRenderLines,
+  restLikeStateWarnings,
+  variantChangesShown,
+} from './ready-shots';
 import { designSketch } from './sketch-command';
 import { renderIssuesOf } from './system/render-check';
 import { WarmDraw } from './warm-draw';
@@ -13,6 +18,7 @@ vi.mock('./ready-shots', () => {
 
   return {
     aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
+    restLikeStateWarnings: vi.fn(async (): Promise<string[]> => []),
     identicalRenderLines,
     sketchRenderLines: vi.fn(async (options: object) => ({
       refusals: await identicalRenderLines(options),
@@ -90,6 +96,7 @@ const sketched = async () => {
 const shotWarms = () => [
   ...vi.mocked(aktuellPlaceholderWarnings).mock.calls.map(([options]) => options.warm),
   ...vi.mocked(identicalRenderLines).mock.calls.map(([options]) => options.warm),
+  ...vi.mocked(restLikeStateWarnings).mock.calls.map(([options]) => options.warm),
   ...vi.mocked(variantChangesShown).mock.calls.map(([options]) => options.warm),
 ];
 
@@ -102,6 +109,7 @@ describe('sketch check', { timeout: 120_000 }, () => {
 
     vi.mocked(aktuellPlaceholderWarnings).mockClear();
     vi.mocked(identicalRenderLines).mockClear();
+    vi.mocked(restLikeStateWarnings).mockClear();
     vi.mocked(variantChangesShown).mockClear();
     vi.mocked(renderIssuesOf).mockClear();
 
@@ -109,7 +117,7 @@ describe('sketch check', { timeout: 120_000 }, () => {
 
     const warms = shotWarms();
 
-    expect(warms).toHaveLength(3);
+    expect(warms).toHaveLength(4);
     expect(new Set(warms).size).toBe(1);
     expect(warms[0]).toMatchObject({ server: warm.server, queue: warm.queue, perRun: true });
     expect(vi.mocked(renderIssuesOf).mock.calls[0]?.[0].warm).toBe(warm);
@@ -120,13 +128,14 @@ describe('sketch check', { timeout: 120_000 }, () => {
 
     vi.mocked(aktuellPlaceholderWarnings).mockClear();
     vi.mocked(identicalRenderLines).mockClear();
+    vi.mocked(restLikeStateWarnings).mockClear();
     vi.mocked(variantChangesShown).mockClear();
 
     await designSketch({ target, argv: ['check', ID, '--product', 'acme'], invocation: 'et design' });
 
     const warms = shotWarms();
 
-    expect(warms).toHaveLength(3);
+    expect(warms).toHaveLength(4);
     expect(new Set(warms).size).toBe(1);
     expect(warms[0]?.perRun).toBe(true);
   });

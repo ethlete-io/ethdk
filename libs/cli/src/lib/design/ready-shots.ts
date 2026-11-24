@@ -12,6 +12,7 @@ import {
 import { variantChangesOf, variantLoadProblemsOf } from './system/sketch/no-visible-change';
 import { Problem } from './system/problem';
 import { noVisibleChangeProblemsOf } from './system/rules/no-visible-change';
+import { restLikeStateWarningsOf } from './system/sketch/rest-like-states';
 import { sampleMarkDriftLinesOf } from './system/sketch/sample-mark-drift';
 import { Sketch } from './system/sketch/sketch';
 import { VariantChange } from './system/sketch/viewed-shots';
@@ -107,6 +108,22 @@ export const aktuellPlaceholderWarnings = async (options: SketchShots): Promise<
     );
   } catch (error) {
     return [`ready will refuse: ${couldNotRender(options.sketch, error)}`];
+  }
+};
+
+/** Shoots the sketch on a render server; one warning per state that draws like its rest state, see `restLikeStateWarningsOf`. */
+export const restLikeStateWarnings = async (options: SketchShots): Promise<string[]> => {
+  try {
+    return await drawingOn(options, (drawing) =>
+      restLikeStateWarningsOf({
+        product: options.product,
+        sketch: options.sketch,
+        pictureOf: shooterOf(options, drawing).pictureOf,
+        load: loaderOf(drawing.server),
+      }),
+    );
+  } catch (error) {
+    return [couldNotRender(options.sketch, error)];
   }
 };
 

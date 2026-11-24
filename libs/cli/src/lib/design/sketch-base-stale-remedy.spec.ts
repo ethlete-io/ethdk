@@ -13,6 +13,7 @@ import { gitExec } from '../git-test-env.fixtures';
 
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
+  restLikeStateWarnings: vi.fn(async (): Promise<string[]> => []),
   identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
   sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
   sketchRenderLines: vi.fn(async () => ({ refusals: [] as string[], warnings: [] as string[] })),

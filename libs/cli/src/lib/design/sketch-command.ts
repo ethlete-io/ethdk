@@ -41,6 +41,7 @@ import {
   identicalRenderLines,
   identicalRenders,
   sampleMarkDriftLines,
+  restLikeStateWarnings,
   sketchRenderLines,
   variantChangesShown,
   variantsThatDoNotLoad,
@@ -2063,6 +2064,9 @@ const checkedShots = async (
 
       refuse(renders.refusals);
       renders.warnings.forEach((warning) => console.warn(warning));
+      (
+        await timedPhase('rest-like', () => restLikeStateWarnings({ target, config, product, sketch, warm: shots }))
+      ).forEach((warning) => console.warn(warning));
       refuse(
         await timedPhase('changes-shot', () =>
           noChangedStateLines({ product, sketch, target, config, warm: shots, args: context.args }),

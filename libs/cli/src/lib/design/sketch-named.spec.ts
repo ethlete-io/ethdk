@@ -11,6 +11,7 @@ vi.mock('./ready-shots', () => {
 
   return {
     aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
+    restLikeStateWarnings: vi.fn(async (): Promise<string[]> => []),
     identicalRenderLines,
     sketchRenderLines: vi.fn(async (options: object) => ({
       refusals: await identicalRenderLines(options),
