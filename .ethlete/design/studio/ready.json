@@ -777,18 +777,7 @@
     "pid": 2178669
   },
   "elements/canvas-frames": {
-    "actions": [
-      "active",
-      "emit:columnToggle",
-      "emit:fit",
-      "emit:groupSwitch",
-      "emit:openChange",
-      "emit:reload",
-      "emit:zoomIn",
-      "emit:zoomOut",
-      "emit:zoomReset",
-      "selected"
-    ],
+    "actions": ["active", "emit:columnToggle", "emit:groupSwitch", "emit:openChange", "emit:reload", "selected"],
     "at": "2026-11-23T18:03:48.755Z"
   },
   "elements/part-tree": {

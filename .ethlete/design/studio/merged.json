@@ -89,10 +89,10 @@
     "at": "2026-11-22T14:53:22.326Z"
   },
   "elements/canvas-frames": {
-    "hash": "b2153089c7e8799f",
+    "hash": "601c27ea2b4350be",
     "variant": "new",
-    "decidedBy": "builder",
-    "at": "2026-11-23T11:44:44.722Z"
+    "decidedBy": "user",
+    "at": "2026-11-24T09:21:48.977Z"
   },
   "elements/part-tree": {
     "hash": "1f197d3699ffc33b",
