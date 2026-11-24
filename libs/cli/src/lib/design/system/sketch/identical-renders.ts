@@ -64,7 +64,9 @@ const drawingOf = async (options: {
 };
 
 const sameInEveryState = (drawn: Drawn, other: Drawn) =>
-  drawn.states.size > 0 && [...drawn.states].every(([state, { hash }]) => other.states.get(state)?.hash === hash);
+  drawn.states.size > 0 &&
+  drawn.states.size === other.states.size &&
+  [...drawn.states].every(([state, { hash }]) => other.states.get(state)?.hash === hash);
 
 const samePixels = async (boxOf: BoxOf, pair: [DrawnState, DrawnState]) =>
   (await boxOf(pair[0].shot, pair[1].shot)).length === 0;

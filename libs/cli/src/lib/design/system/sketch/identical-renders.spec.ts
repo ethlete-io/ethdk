@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync } from 'fs';
+import { cpSync, mkdtempSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -222,5 +222,24 @@ describe('identicalRenderLinesOf', () => {
       expect.stringContaining('elements/hero variant c draws the same pixels as variant b in every state'),
       'elements/hero variant a was not compared: it failed to load (boom)',
     ]);
+  });
+
+  it('counts a state that only one variant draws as a visible difference, as in the sketch-status-badge edit', async () => {
+    const { product, sketch } = acme(['old', 'new']);
+    const badgeLoad: SketchPartLoader = async ({ sketch: drawn }) => {
+      const source = readFileSync(
+        join(__dirname, '__fixtures__', 'sketch-status-badge-edit', `${drawn?.variant ?? 'product'}.ts.txt`),
+        'utf8',
+      );
+      const block = /states: \{([^}]*\}[^}]*)*?\n {2}\}/.exec(source)?.[0] ?? '';
+      const states = Object.fromEntries([...block.matchAll(/^ {4}(\w+):/gm)].map(([, state]) => [state, {}]));
+
+      return { default: { note: 'n', states, render: () => ({ body: '', styles: '' }) } };
+    };
+    const pictureOf: PictureOf = async ({ state }) => ({ png: Buffer.from(state), marks: [] });
+
+    expect(await identicalRenderLinesOf({ product, sketch, load: badgeLoad, pictureOf, boxOf })).not.toContainEqual(
+      expect.stringContaining('as variant old'),
+    );
   });
 });
