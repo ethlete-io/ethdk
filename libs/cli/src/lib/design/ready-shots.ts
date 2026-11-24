@@ -15,6 +15,7 @@ import { noVisibleChangeProblemsOf } from './system/rules/no-visible-change';
 import { restLikeStateWarningsOf } from './system/sketch/rest-like-states';
 import { textOnlyStateWarningsOf } from './system/sketch/text-only-states';
 import { sampleMarkDriftLinesOf } from './system/sketch/sample-mark-drift';
+import { samePictureStateWarningsOf } from './system/sketch/same-picture-states';
 import { weakStateWarningsOf } from './system/sketch/weak-states';
 import { Sketch } from './system/sketch/sketch';
 import { stateInnerLinesOf } from './system/sketch/state-inner-lines';
@@ -139,7 +140,8 @@ export const aktuellPlaceholderWarnings = async (options: SketchShots): Promise<
 
 /**
  * Shoots the sketch on a render server; one warning per state that draws like its rest state, see `restLikeStateWarningsOf`,
- * one per state that barely differs from it, see `weakStateWarningsOf`, and one per group of states that differ only in
+ * one per state that barely differs from it, see `weakStateWarningsOf`, one per pair of states that render the same
+ * picture, see `samePictureStateWarningsOf`, and one per group of states that differ only in
  * their text, see `textOnlyStateWarningsOf`.
  */
 export const restLikeStateWarnings = async (options: SketchShots): Promise<string[]> => {
@@ -155,6 +157,7 @@ export const restLikeStateWarnings = async (options: SketchShots): Promise<strin
       return [
         ...(await restLikeStateWarningsOf(shared)),
         ...(await weakStateWarningsOf(shared)),
+        ...(await samePictureStateWarningsOf(shared)),
         ...(await textOnlyStateWarningsOf(shared)),
       ];
     });
@@ -163,17 +166,19 @@ export const restLikeStateWarnings = async (options: SketchShots): Promise<strin
   }
 };
 
-/** Shoots the sketch on a render server; see `weakStateWarningsOf`. */
+/** Shoots the sketch on a render server; see `weakStateWarningsOf` and `samePictureStateWarningsOf`. */
 export const weakStateWarnings = async (options: SketchShots): Promise<string[]> => {
   try {
-    return await drawingOn(options, (drawing) =>
-      weakStateWarningsOf({
+    return await drawingOn(options, async (drawing) => {
+      const shared = {
         product: options.product,
         sketch: options.sketch,
         pictureOf: shooterOf(options, drawing).pictureOf,
         load: loaderOf(drawing.server),
-      }),
-    );
+      };
+
+      return [...(await weakStateWarningsOf(shared)), ...(await samePictureStateWarningsOf(shared))];
+    });
   } catch (error) {
     return [couldNotRender(options.sketch, error)];
   }
