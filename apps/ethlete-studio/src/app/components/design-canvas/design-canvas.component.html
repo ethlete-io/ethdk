@@ -137,7 +137,7 @@
       [style.height.px]="placed.height"
       [attr.data-unsized]="placed.unsized || null"
       (click)="select(placed.frame.id, $event)"
-      (dblclick)="activateAndFocus(placed.frame.id)"
+      (dblclick)="activate(placed.frame.id)"
       (heightChange)="storeHeight(placed.frame.id, $event)"
       (widthChange)="storeWidth(placed.frame.id, $event)"
       (escapeKeydown)="leaveActiveFrame()"

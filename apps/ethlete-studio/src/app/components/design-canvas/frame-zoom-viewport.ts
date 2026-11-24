@@ -12,6 +12,7 @@ export type FrameZoomViewportOptions = {
   preview: (shown: FrameZoomPreview | null, settle: () => void) => void;
   show: (target: CameraTarget, frame: HTMLElement | null) => void;
   select: (frame: HTMLElement) => void;
+  activate: (frame: HTMLElement) => void;
   afterRender: (write: () => void) => void;
 };
 
@@ -233,7 +234,7 @@ export const mountFrameZoomViewport = (options: FrameZoomViewportOptions) => {
       const frame = frameOf(event.target) ?? pressed;
 
       settle();
-      if (frame) options.show({ kind: 'focused' }, frame);
+      if (frame) options.activate(frame);
     },
     { signal },
   );

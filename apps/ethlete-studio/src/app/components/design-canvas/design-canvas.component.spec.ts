@@ -697,7 +697,7 @@ describe('DesignCanvasComponent', () => {
     expect(liveIds()).toEqual([]);
   });
 
-  it('makes a double-clicked frame live, marks it, and ends it on Esc from the frame', async () => {
+  it('makes a double-clicked frame live without moving the camera, marks it, and ends it on Esc from the frame', async () => {
     const frames = [
       { ...FITTED, width: 320, height: 200 },
       { ...FITTED, id: 'other', width: 320, height: 200 },
@@ -705,11 +705,13 @@ describe('DesignCanvasComponent', () => {
     const fixture = await render(frames);
     const [first, second] = fixture.debugElement.queryAll(By.directive(CanvasFrameComponent));
     const isLive = (frame = first) => (frame?.nativeElement as HTMLElement).hasAttribute('data-active');
+    const camera = fixture.componentInstance.camera();
 
     first?.triggerEventHandler('dblclick', new MouseEvent('dblclick'));
     await fixture.whenStable();
 
     expect(isLive()).toBe(true);
+    expect(fixture.componentInstance.camera()).toEqual(camera);
     expect(first?.nativeElement.querySelector('[data-live-badge]')).not.toBeNull();
 
     second?.triggerEventHandler('dblclick', new MouseEvent('dblclick'));

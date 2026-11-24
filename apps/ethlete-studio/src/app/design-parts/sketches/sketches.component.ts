@@ -600,6 +600,7 @@ export class SketchesComponent {
         },
         show: (target, frame) => this.show(target, frame),
         select: (frame) => this.selectedFrame.set(frame.dataset['skFrame'] ?? null),
+        activate: (frame) => this.frameActivate.emit(frame.dataset['skFrame'] ?? null),
         afterRender: (write) => afterNextRender({ write }, { injector: this.injector }),
       });
 

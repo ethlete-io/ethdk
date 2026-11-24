@@ -719,6 +719,9 @@ const moved = (before, after, by) =>
   near(after.camera.x - before.camera.x, by.x) &&
   near(after.camera.y - before.camera.y, by.y);
 
+const unmoved = (before, after) =>
+  moved(before, after, { x: 0, y: 0 }) && Math.abs(after.camera.zoom - before.camera.zoom) < 0.001;
+
 const describe = (before, after) =>
   before?.camera && after?.camera
     ? `camera ${before.camera.x.toFixed(1)},${before.camera.y.toFixed(1)}@${before.camera.zoom.toFixed(3)} -> ${after.camera.x.toFixed(1)},${after.camera.y.toFixed(1)}@${after.camera.zoom.toFixed(3)}`
@@ -3961,24 +3964,17 @@ const CASES = [
     },
   },
   {
-    name: 'double-click focuses a frame',
+    name: 'double-click leaves the viewport unchanged',
     run: async (page, state) => {
       if (!state.frame) return { ok: false, detail: 'no frame point' };
+      const before = await probe(page);
+
       await page.mouse.dblclick(state.frame.x, state.frame.y);
       await settle(page);
       const after = await probe(page);
-      const frame = after.frames[state.frame.index];
-      const { view } = after;
-      const within =
-        frame.left >= view.left - 2 &&
-        frame.right <= view.right + 2 &&
-        frame.top >= view.top - 2 &&
-        frame.bottom <= view.bottom + 2;
-      const fills =
-        (frame.right - frame.left) / (view.right - view.left) > 0.6 ||
-        (frame.bottom - frame.top) / (view.bottom - view.top) > 0.6;
+      const still = unmoved(before, after);
 
-      return { ok: within && fills, detail: `${describe(state, after)} within=${within} fills=${fills}` };
+      return { ok: still, detail: describe(before, after) };
     },
   },
   {
@@ -3986,6 +3982,8 @@ const CASES = [
     pages: ['System'],
     run: async (page, state) => {
       if (!state.frame) return { ok: false, detail: 'no frame point' };
+      const before = await probe(page);
+
       await page.mouse.dblclick(state.frame.x, state.frame.y);
       await settle(page);
       const live = await readUntil(
@@ -4002,6 +4000,8 @@ const CASES = [
           }),
         (live) => live.active && live.interactive,
       );
+      const after = await probe(page);
+      const still = unmoved(before, after);
 
       await page.keyboard.press('Escape');
       await settle(page);
@@ -4036,8 +4036,8 @@ const CASES = [
       const pansAfterSwitch = await panAfter(centre);
 
       return {
-        ok: live.active && live.interactive && ended && pansAfterEsc && pansAfterSwitch,
-        detail: `active=${live.active} interactive=${live.interactive} endedByEsc=${ended} pansAfterEsc=${pansAfterEsc} pansAfterSwitch=${pansAfterSwitch}`,
+        ok: live.active && live.interactive && still && ended && pansAfterEsc && pansAfterSwitch,
+        detail: `${describe(before, after)} active=${live.active} interactive=${live.interactive} endedByEsc=${ended} pansAfterEsc=${pansAfterEsc} pansAfterSwitch=${pansAfterSwitch}`,
       };
     },
   },
@@ -4046,6 +4046,8 @@ const CASES = [
     pages: ['Sketches'],
     run: async (page, state) => {
       if (!state.frame) return { ok: false, detail: 'no frame point' };
+      const before = await probe(page);
+
       await page.mouse.dblclick(state.frame.x, state.frame.y);
       await settle(page);
       const liveOf = () =>
@@ -4058,14 +4060,16 @@ const CASES = [
           };
         });
       const live = await readUntil(page, liveOf, (found) => found.interactive);
+      const after = await probe(page);
+      const still = unmoved(before, after);
 
       await page.keyboard.press('Escape');
       await settle(page);
       const ended = await readUntil(page, liveOf, (found) => !found.interactive);
 
       return {
-        ok: live.interactive && !ended.interactive,
-        detail: `interactive=${live.interactive} afterEsc=${ended.interactive}`,
+        ok: live.interactive && still && !ended.interactive,
+        detail: `${describe(before, after)} interactive=${live.interactive} afterEsc=${ended.interactive}`,
       };
     },
   },

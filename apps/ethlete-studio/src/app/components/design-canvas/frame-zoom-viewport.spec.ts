@@ -12,6 +12,8 @@ const mount = () => {
   let camera: Camera = { x: 40, y: 20, zoom: 1 };
   let preview: FrameZoomPreview | null = null;
   const moves: Camera[] = [];
+  const shown: string[] = [];
+  const activated: HTMLElement[] = [];
   const viewport = boxed(document.createElement('div'), () => new DOMRect(100, 50, 800, 600));
   const content = boxed(document.createElement('div'), () => new DOMRect(100 + camera.x, 50 + camera.y, 800, 600));
   const frame = boxed(document.createElement('div'), () => {
@@ -37,8 +39,9 @@ const mount = () => {
       moves.push(next);
     },
     preview: (shown) => (preview = shown),
-    show: () => undefined,
+    show: (target) => shown.push(target.kind),
     select: () => undefined,
+    activate: (pressed) => activated.push(pressed),
     afterRender: (write) => write(),
   });
   const wheel = (clientX: number, clientY: number, deltaY = -100) =>
@@ -46,7 +49,7 @@ const mount = () => {
       new WheelEvent('wheel', { clientX, clientY, deltaY, ctrlKey: true, bubbles: true, cancelable: true }),
     );
 
-  return { stop, wheel, moves, frame, preview: () => preview, viewport };
+  return { stop, wheel, moves, shown, activated, frame, preview: () => preview, viewport };
 };
 
 describe('mountFrameZoomViewport', () => {
@@ -108,6 +111,17 @@ describe('mountFrameZoomViewport', () => {
 
     expect(preview()).toBeNull();
     expect(moves.at(-1)?.zoom).toBeLessThan(0.25);
+    stop();
+  });
+
+  it('makes a double-clicked frame live without moving the camera', () => {
+    const { moves, shown, activated, frame, stop } = mount();
+
+    frame.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+    expect(activated).toEqual([frame]);
+    expect(moves).toEqual([]);
+    expect(shown).toEqual([]);
     stop();
   });
 });

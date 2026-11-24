@@ -936,11 +936,6 @@ export class DesignCanvasComponent {
     this.show({ kind: 'focused' });
   }
 
-  protected activateAndFocus(id: string) {
-    this.activate(id);
-    this.show({ kind: 'focused' });
-  }
-
   protected storeHeight(id: string, height: number) {
     this.storeMeasure(id, { height });
   }
