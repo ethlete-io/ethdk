@@ -22,7 +22,7 @@ export const trapFindingsOf = ({ expected, shots }) => {
         const variants = missing.map(([variant]) => variant);
         findings.push({
           seen: `${order.label} (${sketch}${byVariant.size > 1 ? `, Variante ${variants.join(', ')}` : ''}): Falle „${trap.name}“ hat keinen Zustand.`,
-          cause: `Kein Zustand zeigt ${describe(trap)}; das alte Design (46 B) zeigt sie.`,
+          cause: `Das alte Design zeigt „${trap.name}“ (${trap.source}); kein Zustand des Sketches zeigt es.`,
         });
       }
     }
@@ -43,13 +43,3 @@ const covers = (trap, view) => {
     ...(probe.images ?? []).map((image) => image.src.split('/').pop()),
   ].some((seen) => shows.test(seen));
 };
-
-const describe = (trap) =>
-  [
-    trap.shows && `/${trap.shows}/`,
-    trap.state && `einen Zustand /${trap.state}/`,
-    trap.maxWidth !== undefined && `höchstens ${trap.maxWidth} px Breite`,
-    trap.minWidth !== undefined && `mindestens ${trap.minWidth} px Breite`,
-  ]
-    .filter(Boolean)
-    .join(' oder ');
