@@ -7,6 +7,7 @@ import { frameFindingsOf } from './frame-probe.mjs';
 // Probes of the 2026-11-24-0056 title card on a copy of the run: variant b with the logo path an agent would
 // write for `~/bilder-von-tom`, variant c at 120 px, variant a at 40 px and as the agent left it. The `title-card-film`
 // probes are the human's tomflix title card (state film, 112 and 168 px) in a cell that follows the reported height.
+// `card-fixed-height-168` is the card of apps/ethlete-studio/e2e/fixtures/frame-scrollbar in a 168x120 cell.
 const { probes } = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures/frame-probes.json'), 'utf8'));
 const seenOf = (name) => frameFindingsOf(probes[name]).map((finding) => finding.seen);
 
@@ -33,5 +34,11 @@ describe('frameFindingsOf', () => {
   it('reports the scrollbar a cell keeps when the frame measured its height with the scrollbar', () => {
     assert.deepEqual(seenOf('title-card-film-168'), ['Der Rahmen zeigt eine Scrollleiste.']);
     assert.ok(seenOf('title-card-film-112').includes('Der Rahmen zeigt eine Scrollleiste.'));
+  });
+
+  it('reports content taller than a fixed-height frame that hides its scrollbar', () => {
+    assert.deepEqual(seenOf('card-fixed-height-168'), [
+      'Inhalt ist höher als der Rahmen (168x120) und wird abgeschnitten.',
+    ]);
   });
 });

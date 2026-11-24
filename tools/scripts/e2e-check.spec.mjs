@@ -98,6 +98,14 @@ test('the canvas e2e file itself runs every view, another e2e file only itself',
   assert.deepEqual(mapChanged([`${e2e}/page-switch.e2e.mjs`]).suites, ['page-switch']);
 });
 
+test('the design frame page and the frame-scrollbar fixture run the frame-scrollbar e2e', () => {
+  assert.deepEqual(mapChanged(['libs/cli/design/web/frame.html']).suites, ['frame-scrollbar']);
+  assert.deepEqual(
+    mapChanged(['apps/ethlete-studio/e2e/fixtures/frame-scrollbar/.ethlete/design/app-a/elements/card/card.ts']).suites,
+    ['frame-scrollbar'],
+  );
+});
+
 test('a canvas view suite runs canvas.e2e with --view', () => {
   assert.deepEqual(suiteInvocation('canvas-flow'), {
     script: 'apps/ethlete-studio/e2e/canvas.e2e.mjs',

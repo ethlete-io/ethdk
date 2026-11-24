@@ -928,6 +928,134 @@
         ]
       },
       "failedImages": []
+    },
+    "card-fixed-height-168": {
+      "probe": {
+        "viewport": {
+          "width": 168,
+          "height": 120
+        },
+        "page": {
+          "width": 168,
+          "height": 292
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 168,
+          "height": 292
+        },
+        "boxes": [
+          {
+            "element": "div.card",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 168,
+              "height": 292
+            }
+          },
+          {
+            "element": "img.card-poster",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 168,
+              "height": 252
+            }
+          },
+          {
+            "element": "p.card-line",
+            "box": {
+              "x": 0,
+              "y": 252,
+              "width": 168,
+              "height": 20
+            }
+          },
+          {
+            "element": "p.card-line",
+            "box": {
+              "x": 0,
+              "y": 272,
+              "width": 168,
+              "height": 20
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.card-poster",
+            "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22300%22%3E%3Crect%20width%3D%22200%22%20height%3D%22300%22%20fill%3D%22%23456%22%2F%3E%3C%2Fsvg%3E",
+            "complete": true,
+            "naturalWidth": 200,
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 168,
+              "height": 252
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "p.card-line",
+            "text": "Card title",
+            "box": {
+              "x": 0,
+              "y": 252,
+              "width": 168,
+              "height": 20
+            },
+            "textBox": {
+              "x": 0,
+              "y": 254,
+              "width": 56,
+              "height": 16
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 168,
+              "height": 20
+            },
+            "client": {
+              "width": 168,
+              "height": 20
+            },
+            "clippers": []
+          },
+          {
+            "element": "p.card-line",
+            "text": "2024 · Item",
+            "box": {
+              "x": 0,
+              "y": 272,
+              "width": 168,
+              "height": 20
+            },
+            "textBox": {
+              "x": 0,
+              "y": 274,
+              "width": 71,
+              "height": 16
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 168,
+              "height": 20
+            },
+            "client": {
+              "width": 168,
+              "height": 20
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": []
+      },
+      "failedImages": []
     }
   }
 }

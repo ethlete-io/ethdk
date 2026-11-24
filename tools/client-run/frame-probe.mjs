@@ -166,7 +166,9 @@ export const frameFindingsOf = ({ probe, failedImages = [] }) => {
       }.`,
     );
   const spill = probe.boxes.filter(({ box }) => shown(box) && outside(box, probe.root) > SLACK);
-  if (spill.length || probe.page.width > probe.viewport.width + SLACK)
+  const wide = probe.page.width > probe.viewport.width + SLACK;
+  const tall = probe.page.height > probe.viewport.height + SLACK;
+  if (spill.length || wide)
     add(
       `Inhalt ist größer als der Rahmen (${probe.root.width}x${probe.root.height}) und wird abgeschnitten.`,
       spill.length
@@ -176,6 +178,11 @@ export const frameFindingsOf = ({ probe, failedImages = [] }) => {
             .join('; ')}.`
         : `Seite ist ${probe.page.width} px breit.`,
     );
+  else if (tall)
+    add(
+      `Inhalt ist höher als der Rahmen (${probe.viewport.width}x${probe.viewport.height}) und wird abgeschnitten.`,
+      `Seite ist ${probe.page.height} px hoch.`,
+    );
   return findings;
 };
 
@@ -183,21 +190,24 @@ const IMAGE = /\.(png|jpe?g|webp|avif|gif|svg)(\?|$)/i;
 
 const START_HEIGHT = 150;
 
-const cellPageOf = (url, width) => `<!doctype html>
-<body style="margin: 0">
-  <iframe id="cell" style="display: block; border: 0; width: ${width}px; height: ${START_HEIGHT}px" src="${url}"></iframe>
-  <script>
+const FOLLOW_HEIGHT = `<script>
     addEventListener('message', ({ data }) => {
       if (data?.type === 'design-explore:height') document.getElementById('cell').style.height = data.height + 'px';
     });
-  </script>
+  </script>`;
+
+const cellPageOf = (url, width, height) => `<!doctype html>
+<body style="margin: 0">
+  <iframe id="cell" style="display: block; border: 0; width: ${width}px; height: ${height ?? START_HEIGHT}px" src="${url}"></iframe>
+  ${height ? '' : FOLLOW_HEIGHT}
 </body>`;
 
 /**
- * Opens the frame of one state the way a Studio cell shows it, `width` wide and as high as the frame reports, and
+ * Opens the frame of one state the way a Studio cell shows it, `width` wide and as high as the frame reports (or a
+ * fixed `height`, as a cell of a part drawn at a preset height), and
  * returns its probe and failed image requests. Launch the browser with scrollbars shown (`ignoreDefaultArgs: ['--hide-scrollbars']`).
  */
-export const probeFrame = async ({ page, url, width }) => {
+export const probeFrame = async ({ page, url, width, height }) => {
   const failedImages = [];
   const failed = (requestUrl) => {
     if (IMAGE.test(requestUrl)) failedImages.push(new URL(requestUrl).pathname);
@@ -211,7 +221,7 @@ export const probeFrame = async ({ page, url, width }) => {
   page.on('response', onResponse);
   page.on('requestfailed', onFailed);
   try {
-    await page.setContent(cellPageOf(url, width), { waitUntil: 'load', timeout: 120_000 });
+    await page.setContent(cellPageOf(url, width, height), { waitUntil: 'load', timeout: 120_000 });
     const cell = await (await page.$('#cell')).contentFrame();
     await cell.waitForFunction("document.getElementById('root')?.childElementCount > 0", null, { timeout: 60_000 });
     await cell

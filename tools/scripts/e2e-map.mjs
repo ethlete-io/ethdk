@@ -35,6 +35,8 @@ export const STUDIO_MAP = [
   { glob: 'apps/ethlete-studio/src/host/design.ts', suites: ['server-restart', 'frame-load-failed', ...ALL_CANVAS] },
   { glob: 'apps/ethlete-studio/src/host/design-events.ts', suites: ['server-restart'] },
   { glob: 'apps/ethlete-studio/src/host/window.ts', suites: ['studio-menu'] },
+  { glob: 'libs/cli/design/web/frame.html', suites: ['frame-scrollbar'] },
+  { glob: 'apps/ethlete-studio/e2e/fixtures/frame-scrollbar/**', suites: ['frame-scrollbar'] },
 ];
 
 export const COMPONENTS_GLOB = 'libs/components/**';
