@@ -134,7 +134,7 @@ export const variantCell = (props: Props) => {
         }"
         ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span
         >${same ? SKETCHES_LABELS.unchanged : ''}</span
-      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-same-as-rest>${SKETCHES_LABELS.sameAsRest(sameAsRest)}</span>` : ''}</span
+      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-same-as-rest>${sameAsRest.join(', ')} = ${state}</span>` : ''}</span
     >
     ${frame(props)}
   </div>`;
@@ -153,7 +153,7 @@ const crop = {
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
-  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a rest cell names the states folded as drawn like it (hover, active = rest). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; the host places comment pins on their point in the shot through the overlay slot.',
+  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a base-state cell names the states folded as drawn like it after its own state name (hover, active = default). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; the host places comment pins on their point in the shot through the overlay slot.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [240],
   states: {
@@ -180,7 +180,7 @@ export default definePart({
     unchanged:
       'A state the variant leaves as it was; check that the whole cell is dimmed and the label reads hover · unverändert.',
     'same-as-rest':
-      'A rest cell standing in for the folded states the variant draws the same; check that hover, active = rest follows default, muted.',
+      'A base-state cell standing in for the folded states the variant draws the same; check that hover, active = default follows default, muted.',
     cropped:
       'A cell cropped to its change; check the magnified Speichern fills the frame and the accent crop mark frames it.',
     stacked:
