@@ -5,7 +5,8 @@ type FrameSize = { width?: number; height?: number };
 
 /**
  * The size of each shot of `rows` by its `<row> <state>` key: the frame the design server lists for it (`frames`),
- * with every side a live frame reported (`live`) over it. An inherited state takes the product's frame.
+ * with every side a live frame reported (`live`) over it. An inherited state takes the product's frame. A row takes
+ * listed frames only when the list holds one for each of its shots.
  */
 export const shotSizesOf = ({
   rows,
@@ -19,11 +20,11 @@ export const shotSizesOf = ({
   live: Record<string, FrameSize>;
 }): Record<string, FrameSize> => {
   const listed: Record<string, FrameSize> = Object.fromEntries(
-    rows.flatMap((row) =>
-      row.shots.flatMap((shot) => {
+    rows.flatMap((row) => {
+      const found = row.shots.map((shot) => {
         const variant = row.key === CURRENT || shot.inherited ? null : row.key;
         const { state, size } = shot.place;
-        const found = frames.find(
+        const entry = frames.find(
           (entry) =>
             entry.part === part &&
             entry.variant === variant &&
@@ -31,9 +32,11 @@ export const shotSizesOf = ({
             (size === undefined || entry.preset === size || entry.width === Number(size)),
         );
 
-        return found ? [[`${row.key} ${shot.state}`, found.frame] as const] : [];
-      }),
-    ),
+        return entry ? ([`${row.key} ${shot.state}`, entry.frame] as const) : null;
+      });
+
+      return found.every((entry) => entry !== null) ? found : [];
+    }),
   );
 
   return {

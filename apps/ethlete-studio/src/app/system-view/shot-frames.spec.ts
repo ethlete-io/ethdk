@@ -28,12 +28,18 @@ describe('shotSizesOf', () => {
       { key: CURRENT, width: null, shots: [shotOf('default')] },
       { key: 'a', width: null, shots: [shotOf('default'), shotOf('old', undefined, true), shotOf('new')] },
     ];
-    const frames = [frameOf(null, 'default', 120), frameOf(null, 'old', 110), frameOf('a', 'default', 151)];
+    const frames = [
+      frameOf(null, 'default', 120),
+      frameOf(null, 'old', 110),
+      frameOf('a', 'default', 151),
+      frameOf('a', 'new', 140),
+    ];
 
     expect(shotSizesOf({ rows, part: 'components/title-card', frames, live: {} })).toEqual({
       'current default': { width: 120, height: 200 },
       'a default': { width: 151, height: 200 },
       'a old': { width: 110, height: 200 },
+      'a new': { width: 140, height: 200 },
     });
   });
 
@@ -50,5 +56,21 @@ describe('shotSizesOf', () => {
     expect(
       shotSizesOf({ rows, part: 'components/title-card', frames, live: { 'a default · 768': { height: 90 } } }),
     ).toEqual({ 'a default · 320': { width: 320, height: 200 }, 'a default · 768': { width: 768, height: 90 } });
+  });
+
+  it('takes no listed frame for a row the listing misses a shot of, so the row waits for its live frames', () => {
+    const rows: SketchRowOf[] = [
+      { key: CURRENT, width: null, shots: [shotOf('reset'), shotOf('reset-focus-visible')] },
+      { key: 'a', width: null, shots: [shotOf('reset'), shotOf('reset-focus-visible')] },
+    ];
+    const frames = [frameOf(null, 'reset', 202), frameOf('a', 'reset', 202), frameOf('a', 'reset-focus-visible', 230)];
+
+    expect(
+      shotSizesOf({ rows, part: 'components/title-card', frames, live: { 'current reset': { height: 62 } } }),
+    ).toEqual({
+      'current reset': { height: 62 },
+      'a reset': { width: 202, height: 200 },
+      'a reset-focus-visible': { width: 230, height: 200 },
+    });
   });
 });
