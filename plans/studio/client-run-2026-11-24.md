@@ -31,3 +31,12 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
 
 - Alle drei Varianten, je Film, Serie und ohne Logo: der Prüfer meldet `*-focus-visible` als gleich wie der Ruhezustand, die Einzelbilder zeigen aber einen deutlichen weißen Ring um die Karte (Dune a, Knight c geprüft). Ursache: dieselbe wie Befund 5 (Alpha nicht verglichen, kein Schnitt). Nach dem Fix meldet der Prüfer auf einer Kopie des Laufs 0 statt 9 Befunde (36 Bilder, kein Fehler); andere echte Befunde hatte der Lauf nicht.
 - Sonst nichts: kein fehlendes Bild, kein abgeschnittener Text, Baum zeigt die bestellten 3 Varianten; schwarze 48x48-Bilder sind weg.
+
+## Lauf 2026-11-24-1029 (Brennpunkt-Auftrag, Start dunkel mit Akzent #e50914, 12 min, 14 Befunde)
+
+- Farb-Grundlage dunkel kam an: „Kinosaal“ ist fast schwarz mit heller Schrift (B690 bewiesen).
+- Suspect: der Agent ignoriert den Start-Akzent. Er nimmt Messing und schreibt „Rot habe ich bewusst nicht genommen“. Die Antwort des Menschen beim Start ist bindend; nichts im Werkzeug sagt ihm das.
+- Suspect Fehlalarm: 10 Befunde „Text abgeschnitten“ (Titelkarte b und c, ohne Logo, 2 px zu niedrig) und 1 „Text läuft aus dem Kasten“ (Farben, h1 3 px). Die Bilder zeigen keinen sichtbaren Schnitt. Der Prüfer misst die Glyphen-Box, nicht die Tinte.
+- Button a: hover gleich wie default (B697, schwacher Zustand; die Live-Prüfung meldete es dem Agenten nicht).
+- Hero und App Shell blieben „in progress“: der Agent wartet auf den übernommenen Button und das Logo. Suspect: der Auftrag bestellt Teile, die von nicht gewählten Teilen abhängen.
+- Keine eigene Schrift: der Agent konnte keine herunterladen.
