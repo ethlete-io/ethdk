@@ -158,6 +158,7 @@ type Frame = {
   pan: Pan | null;
   boxes: boolean;
   textless: boolean;
+  titleless: boolean;
 };
 
 type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
@@ -325,6 +326,32 @@ const STRIP_TEXT_SCRIPT = `(() => {
   while (walker.nextNode()) texts.push(walker.currentNode);
   for (const node of texts) node.textContent = '';
   root.style.width = 'max-content';
+})()`;
+
+/**
+ * Hides the text and every title image in place, so the layout and every other pixel stay as drawn. A title image is
+ * an image drawn on a larger one, or one with alt text that is neither the largest image nor has one drawn on it.
+ */
+const HIDE_TITLES_SCRIPT = `(() => {
+  const root = document.querySelector('#root');
+  const images = [...root.querySelectorAll('img')].map((image) => ({ image, box: image.getBoundingClientRect() }));
+  const areaOf = (box) => box.width * box.height;
+  const covers = (outer, inner) =>
+    outer.left <= inner.left && outer.top <= inner.top && outer.right >= inner.right && outer.bottom >= inner.bottom;
+  const lies = (inner, outer) => inner !== outer && areaOf(outer.box) > areaOf(inner.box) && covers(outer.box, inner.box);
+  const largest = Math.max(0, ...images.map(({ box }) => areaOf(box)));
+
+  for (const entry of images) {
+    const onPicture = images.some((other) => lies(entry, other));
+    const picture = areaOf(entry.box) === largest || images.some((other) => lies(other, entry));
+    const titled = (entry.image.getAttribute('alt') ?? '').trim() !== '';
+
+    if (onPicture || (titled && !picture)) entry.image.style.setProperty('opacity', '0', 'important');
+  }
+
+  const style = document.createElement('style');
+  style.textContent = '#root, #root * { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; caret-color: transparent !important; transition: none !important; } #root [role="img"][aria-label]:not(img) { opacity: 0 !important; }';
+  root.append(style);
 })()`;
 
 export const emptySlotsScriptOf = (part: string, fill: string | null = null) => `(() => {
@@ -562,7 +589,9 @@ export const createPartShooter = (options: {
         },
         limit: { ms: loadScaledMs(DRAW_LIMIT_MS), what: `the draw of frame.html?${frame.search}` },
         // The shooter number keeps a page another shooter left on its drawing, of another server or edit, from being lent as booted.
-        ...(frame.checker || frame.textless ? {} : { boot: `${shooter}.${edits} ${bootKeyOf(frame.search)}` }),
+        ...(frame.checker || frame.textless || frame.titleless
+          ? {}
+          : { boot: `${shooter}.${edits} ${bootKeyOf(frame.search)}` }),
       },
       async (page, booted) => {
         const state = new URLSearchParams(frame.search).get('state');
@@ -575,6 +604,7 @@ export const createPartShooter = (options: {
         if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots, frame.slotFill));
         if (frame.pan) await page.evaluate(panScriptOf(frame.pan));
         if (frame.textless) await page.evaluate(STRIP_TEXT_SCRIPT);
+        if (frame.titleless) await page.evaluate(HIDE_TITLES_SCRIPT);
 
         const overlay = page.locator('vite-error-overlay');
 
@@ -694,6 +724,7 @@ export const createPartShooter = (options: {
       cropOf(params.get('clip')) ?? null,
       schemeOf(params),
       ...(params.get('textless') === '1' ? ['textless'] : []),
+      ...(params.get('titleless') === '1' ? ['titleless'] : []),
     ]);
   };
 
@@ -738,6 +769,7 @@ export const createPartShooter = (options: {
     const crop = cropOf(options.params.get('clip')) ?? null;
     const scheme = schemeOf(options.params);
     const textless = options.params.get('textless') === '1';
+    const titleless = options.params.get('titleless') === '1';
     const key = pictureKeyOf(options.key, options.params);
     const entry = cache.get(key);
     const kept = !options.fresh || entry?.drawing?.startedAt === null ? entry : undefined;
@@ -804,6 +836,7 @@ export const createPartShooter = (options: {
               pan: options.pan ?? null,
               boxes: options.boxes ?? false,
               textless,
+              titleless,
             }).then((picture) => {
               drawStarts.set(picture, startedAt);
 
