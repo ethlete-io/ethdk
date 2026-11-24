@@ -30,7 +30,7 @@ How the doc session and the builder work. A process change edits this page.
 
 ## Git
 
-- CI is the only push gate; the builder pushes after each finished row at once, never after a wait for CI. It watches CI in the background and works on.
+- CI is the only push gate; while a CI run is in progress, pushes wait and the builder works on; it watches CI only in the background, never in the foreground.
 - `git commit -- <paths>`; never amend, stash or rewrite history.
 - What was built lives in the commit message, not in a plan file.
 
