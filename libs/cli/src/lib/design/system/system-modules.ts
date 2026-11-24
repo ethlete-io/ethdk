@@ -12,7 +12,7 @@ import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch, variantShar
 const PRODUCT_QUERY = 'design-product';
 const SKETCH_QUERY = 'design-sketch';
 
-const isSketched = (product: ResolvedProduct): product is SketchedProduct => 'borrowed' in product;
+export const isSketched = (product: ResolvedProduct): product is SketchedProduct => 'borrowed' in product;
 const VARIANT_QUERY = 'design-variant';
 const STYLESHEET_FILE = /\.css$/u;
 

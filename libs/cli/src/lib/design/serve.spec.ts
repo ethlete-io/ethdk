@@ -28,7 +28,18 @@ import {
   terminalPortLine,
 } from './serve';
 import { resolveProduct } from './system/resolve-product';
-import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
+import {
+  createSketch,
+  findSketch,
+  markSketchReady,
+  parseTarget,
+  Sketch,
+  SKETCH_FILE,
+  SketchTarget,
+  variantDirOf,
+  writeSketchFile,
+} from './system/sketch/sketch';
+import { tomflixShellAndTabBar } from './open-sub-part.fixtures';
 import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 import { gitExec } from '../git-test-env.fixtures';
@@ -1326,6 +1337,61 @@ describe('the design server for sketches and comments', () => {
     expect(system).toMatch(
       /"b": \{[^}]*"elements\/hero": \(\) => import\("[^"]*acme\/elements\/hero\/hero\.ts\?design-product=acme&design-sketch=components%2Fcard&design-variant=b"\)/,
     );
+  });
+
+  // `sketch recommend components/tab-bar --variant a` while the server runs: the tomflix shell sketch redraws with tab bar a.
+  it('draws the part an open sketch lends in the variant it recommends now, and redraws the sketches that borrow it', async () => {
+    const { target, shell, tabBar } = tomflixShellAndTabBar({ recommend: 'b' });
+
+    targets.push(target);
+
+    const { plugin, handlers, watchers } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+    const shellIdOf = (variant: string) =>
+      productModuleIdOf({
+        file: resolve(variantDirOf(shell, variant), 'elements/shell-app/shell-app.ts'),
+        product: 'tomflix',
+        sketch: { target: shell.target, variant },
+      });
+    const lentId = () => plugin?.resolveId('@system/components/tab-bar', shellIdOf('a'));
+    const tabBarIdOf = (variant: string) =>
+      productModuleIdOf({
+        file: resolve(variantDirOf(tabBar, variant), 'components/tab-bar/tab-bar.ts'),
+        product: 'tomflix',
+        sketch: { target: tabBar.target, variant },
+      });
+
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+
+    expect(lentId()).toBe(tabBarIdOf('b'));
+
+    const recommended = findSketch({
+      productDir: join(target, DESIGN_DIR, 'tomflix'),
+      product: 'tomflix',
+      sketch: parseTarget('components/tab-bar') as SketchTarget,
+    }) as Sketch;
+
+    writeSketchFile({ ...recommended, recommended: 'a' }, { base: recommended });
+    watchers.get('change')?.(join(tabBar.dir, SKETCH_FILE));
+
+    expect(lentId()).toBe(tabBarIdOf('a'));
+    expect(written.filter((chunk) => chunk.startsWith('event: parts'))).toEqual([
+      `event: parts\ndata: ${JSON.stringify({
+        revision: 1,
+        all: false,
+        parts: ['a', 'b'].flatMap((variant) =>
+          ['components/tab-bar', 'elements/shell-app'].map((part) => ({
+            product: 'tomflix',
+            part,
+            sketch: { target: shell.target, variant },
+          })),
+        ),
+      })}\n\n`,
+    ]);
   });
 
   it("registers each product's tokens stylesheet as it resolves it, and each sketch variant's", async () => {

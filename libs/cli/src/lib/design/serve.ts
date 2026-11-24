@@ -90,7 +90,7 @@ import { removeOldShotFolders } from './old-shot-folders';
 import { createShotStore, SHOT_STORE_DIR, StoredAddress } from './shot-store';
 import { sharedDirsOf } from './system/imports';
 import { REGISTRY_SLICE_PATH } from './system/served-cache';
-import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
+import { ALL_PARTS, borrowingPartsOf, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { installCrashLog } from './crash-log';
 import { serverIdentityOf } from './server-identity';
 import { buildStampOf, STAMP_PATH } from './stamp';
@@ -875,6 +875,30 @@ const designExplore = ({
         void delay(REBUILD_SETTLE_MS, undefined, { signal: settling.signal }).then(redrawRebuilt, () => undefined);
       };
 
+      const redrawBorrowers = (file: string) => {
+        const lending = {
+          system,
+          product: relative(designRoot, resolve(file)).split(sep)[0] ?? '',
+          dir: dirname(file),
+        };
+        const before = borrowingPartsOf(lending);
+
+        if (!before) return;
+
+        system.forget();
+
+        const parts = new Map(
+          [...before, ...(borrowingPartsOf(lending) ?? [])].map((drawn) => [JSON.stringify(drawn), drawn]),
+        );
+
+        if (parts.size === 0) return;
+
+        unresolveParts();
+        reload(`${VIRTUAL}/env`);
+        reload(`${VIRTUAL}/system`);
+        redraw({ all: false, parts: [...parts.values()] });
+      };
+
       const refresh = (file: string) => {
         if (isPackageFile(file)) return;
         if (resolve(file) === configPath) return reloadConfig();
@@ -886,7 +910,7 @@ const designExplore = ({
         signalLists(file);
 
         if (isCallFile({ callsRoot, file })) return reload(VIRTUAL);
-        if (isDecisionFile(file)) return;
+        if (isDecisionFile(file)) return basename(file) === SKETCH_FILE ? redrawBorrowers(file) : undefined;
         if (isInside(callsRoot, file) || ![designRoot, ...baseDirs].some((dir) => isInside(dir, file))) return;
 
         system.forget();
@@ -905,6 +929,8 @@ const designExplore = ({
 
         forgetCalls(file);
         signalLists(file);
+        if (basename(file) === SKETCH_FILE && isSketchFile(designRoot, file)) return redrawBorrowers(file);
+
         const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? [], stylesheetImports);
 
         redraw(changedPartsOf({ target, config, system, file, dependents }), isSystemFile(file));

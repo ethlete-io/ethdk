@@ -5,6 +5,7 @@ import { isLayer } from './system/layers';
 import { partKeyOf } from './system/resolve-product';
 import {
   fileOfModuleId,
+  isSketched,
   productOfModuleId,
   sketchOfModuleId,
   SketchVariant,
@@ -98,6 +99,25 @@ export const changedPartsOf = (options: {
   }
 
   return { all: false, parts: [...parts.values()] };
+};
+
+/**
+ * The parts drawn in every sketch variant of `product` that borrows a part from the open sketch in `dir`, or
+ * `null` when that sketch has no target the product lacks, so it lends nothing.
+ */
+export const borrowingPartsOf = (options: { system: SystemModules; product: string; dir: string }) => {
+  const { system, product, dir } = options;
+  const lender = system.sketchesOf(product).find((sketch) => resolve(sketch.dir) === resolve(dir));
+  const held = new Set(system.productOf(product)?.parts.map(partKeyOf) ?? []);
+
+  if (!lender || lender.targets.every((key) => held.has(key))) return null;
+
+  return drawnSystemsOf(system, product).flatMap((sketch) => {
+    const drawn = sketch ? system.drawnOf(product, sketch) : null;
+    const borrows = !!drawn && isSketched(drawn) && drawn.borrowed.some((entry) => entry.sketch === lender.target);
+
+    return borrows ? partsDrawnIn({ system, product, sketch }) : [];
+  });
 };
 
 const partFolderOf = (segments: string[]) => {
