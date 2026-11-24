@@ -1,4 +1,4 @@
-import { Component, ElementRef, input, model, output, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, computed, ElementRef, input, model, output, viewChild, ViewEncapsulation } from '@angular/core';
 import { BADGE_IMPORTS, BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, MENU_IMPORTS, SWITCH_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
@@ -63,6 +63,15 @@ export class SketchHeadComponent {
 
   protected readonly LABELS = SKETCHES_LABELS;
   protected readonly SYSTEM_LABELS = SYSTEM_LABELS;
+
+  protected hasLead = computed(
+    () =>
+      ['paused', 'waiting', 'failed', 'drawing'].includes(this.status()) ||
+      this.autoMerge() ||
+      this.agent() !== null ||
+      this.port() !== null ||
+      this.withdrawnCount() > 0,
+  );
 
   protected selectRound(value: unknown) {
     if (typeof value === 'string' && value !== this.round()) this.roundChange.emit(value);

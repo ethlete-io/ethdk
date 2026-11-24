@@ -9,7 +9,9 @@
 }
 <div
   [attr.aria-label]="LABELS.toolbar"
-  class="flex max-w-full items-center gap-space-2 rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg py-space-1 ps-space-3 pe-space-1 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
+  [class.ps-space-3]="hasLead()"
+  [class.ps-space-1]="!hasLead()"
+  class="flex max-w-full items-center gap-space-2 rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg py-space-1 pe-space-1 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
   role="toolbar"
   data-sk-toolbar
 >
@@ -95,7 +97,9 @@
       <et-label>{{ LABELS.withdrawnToggle(withdrawnCount()) }}</et-label>
     </et-choice-field>
   }
-  <span class="mx-space-1 h-5 w-px flex-none bg-et-surface-border" aria-hidden="true"></span>
+  @if (hasLead()) {
+    <span class="mx-space-1 h-5 w-px flex-none bg-et-surface-border" aria-hidden="true" data-sk-divider></span>
+  }
   <div [(open)]="roundsOpen" class="flex" etMenu placement="top" data-sk-round>
     <button
       [attr.aria-label]="LABELS.roundSelect"

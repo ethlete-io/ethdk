@@ -22,7 +22,7 @@ const OPUS = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' as cons
     [readyReason]="readyReason()"
     [discardable]="discardable()"
     [listError]="listError()"
-    [withdrawnCount]="3"
+    [withdrawnCount]="withdrawnCount()"
     [rounds]="rounds"
     (discard)="discards = discards + 1"
     (retry)="retries = retries + 1"
@@ -41,6 +41,7 @@ class HostComponent {
   withdrawn = signal<SketchWithdrawn>('hidden');
   commentMode = signal(false);
   commentable = true;
+  withdrawnCount = signal(3);
   picked: string[] = [];
   rounds = [
     { value: 'r1', label: 'Runde 1' },
@@ -152,6 +153,19 @@ describe('SketchHeadComponent', () => {
     expect(root.querySelector('header')).toBeNull();
     expect(root.querySelector('et-select')).toBeNull();
     expect(root.querySelector('.text-ui-lg')).toBeNull();
+  });
+
+  // B714: a status outside paused/waiting/failed/drawing leaves nothing before the divider.
+  it('draws no lone divider and a symmetric padding when nothing precedes it', async () => {
+    const { fixture, root, host } = await setup();
+
+    host.status.set('not-ready');
+    host.withdrawnCount.set(0);
+    fixture.componentRef.changeDetectorRef.detectChanges();
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-sk-divider]')).toBeNull();
+    expect(root.querySelector('[data-sk-toolbar]')?.classList.contains('ps-space-3')).toBe(false);
   });
 
   // Decision human 23.11. (B703): Kommentar is an icon button in the floating toolbar and still toggles comment mode.
