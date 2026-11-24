@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
-import { recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
+import { actionFailuresOf, recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { openPointsOf, PartOpenPointsAnswer } from './open-points-runner';
 import { resolveProduct } from './resolve-product';
 import { SlowRunners } from './slow-run';
@@ -67,6 +67,48 @@ describe('the check record of a part-scoped design check', { timeout: 60_000 }, 
     });
 
     expect(buildReadyOf()).toEqual({ ready: true });
+  });
+
+  it('counts the failed actions of a part it left without a record, so the check does not call the part clean', async () => {
+    const { target, config, product } = staleChip();
+    const part = 'components/chip';
+    const failures = [
+      'drawing button "Sucheninstudio,Titlebar" (19.) pointer focus FAILED locator.click: Timeout 15000ms exceeded.',
+      'comments-mode button "Kommentarzuareset" FAILED the design draws no element of this name - it draws button "Kommentarzua" in components/comment-target, button "Kommentarzub" in components/comment-target: the accessible names differ',
+    ];
+
+    const results = await recordCheckedBuildReady({
+      target,
+      config,
+      product: product(),
+      parts: [part],
+      settle: [part],
+      inputs: { pointsOf: () => [], problemsOf: () => [] },
+      runners,
+      actionsOf: async () => failures,
+      declaredActionsOf: async () => [],
+    });
+
+    expect(actionFailuresOf({ product: product(), recorded: results })).toEqual([{ part, failures }]);
+  });
+
+  it('counts no failed action for a part whose record holds', async () => {
+    const { target, config, product } = staleChip();
+    const part = 'components/chip';
+
+    const results = await recordCheckedBuildReady({
+      target,
+      config,
+      product: product(),
+      parts: [part],
+      settle: [part],
+      inputs: { pointsOf: () => [], problemsOf: () => [] },
+      runners,
+      actionsOf: async () => [],
+      declaredActionsOf: async () => [],
+    });
+
+    expect(actionFailuresOf({ product: product(), recorded: results })).toEqual([]);
   });
 
   it('leaves a whole-product check pending and names the commands that settle it', async () => {

@@ -23,7 +23,7 @@ import { openPointsText, PartOpenPoints } from './open-points';
 import { doneParts, gitDiffFilesOf } from './part-task';
 import { actionsRerunOf, dropPartRecord, READY_FILE, readyPartsOf } from './part-ready';
 import { BuildReadyInputs } from './part-build-ready';
-import { recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
+import { actionFailuresOf, recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { partActionFailuresOf } from './actions-command';
 import { APP_CODE, renderFindingsOf, tallyKeyOf, withFoundRules } from './render-findings';
 import { ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
@@ -348,6 +348,8 @@ type CheckOptions = {
 };
 
 const PRODUCT_LEVEL = PRODUCT_PART_KEY;
+
+const ACTION_FAILED_RULE = 'ACTION-FAILED';
 
 const tallyOf = (tally: Tally | undefined, at: { product: string; part: string }) => {
   const { product, part } = at;
@@ -760,6 +762,12 @@ const printProductOpenPoints = async (
     ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
     onRecordDropped: (line: string) => console.log(line),
   });
+
+  for (const { part, failures } of actionFailuresOf({ product, recorded })) {
+    const counted = tallyOf(options.tally, { product: name, part });
+
+    if (counted) counted.problems.push(...failures.map(() => ACTION_FAILED_RULE));
+  }
 
   for (const [part] of recorded) {
     const warnings = timedPhase('open-points unjudged', () => unjudgedStateWarningsOf({ product, parts: [part] }));

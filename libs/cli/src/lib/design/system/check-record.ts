@@ -1,6 +1,8 @@
 import { DesignConfig } from '../design-config';
 import { timedPhase } from '../phase-timing';
+import { BuildReady } from './build-ready-contract';
 import { recordBuildReady } from './part-build-ready';
+import { readyMarkOf } from './part-ready';
 import { ResolvedProduct } from './resolve-product';
 import { slowProblemsOf } from './slow-checks';
 import { runSlowChecks, SlowRunners } from './slow-run';
@@ -28,6 +30,16 @@ export const recordCheckedBuildReady = async (
     recordBuildReady({ product, by: 'et design check', cmd: 'check', ...record }),
   );
 };
+
+/** The failed actions of each recorded part the check left without a holding record. */
+export const actionFailuresOf = (options: { product: ResolvedProduct; recorded: Map<string, BuildReady> }) =>
+  [...options.recorded].flatMap(([part, verdict]) => {
+    const failures = verdict.ready
+      ? []
+      : verdict.blockers.filter((blocker) => blocker.kind === 'action').map((blocker) => blocker.text);
+
+    return failures.length > 0 && readyMarkOf({ product: options.product, part }) === null ? [{ part, failures }] : [];
+  });
 
 /** The line `design check` prints when parts of a product still wait for their slow rules, naming the commands that settle them. */
 export const slowWaitingLineOf = (options: { product: string; count: number }) =>
