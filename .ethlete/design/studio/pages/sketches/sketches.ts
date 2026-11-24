@@ -1,6 +1,5 @@
 import { definePart, drawing, html, withAction } from '@design-system';
 import {
-  commentButton,
   commentDraftAt,
   commentLayer,
   commentList,
@@ -52,7 +51,7 @@ import {
 } from './shared/sketch-rows';
 import { SKETCH_POINTS, openLabel } from './shared/open-points';
 import { type Withdrawn, isWithdrawn, visibleRows, withdrawnCount, withdrawnMark } from './shared/withdrawn';
-import { type MultiTargets, MULTI_PART, targetsOf } from './shared/multi-part';
+import { type MultiTargets, targetsOf } from './shared/multi-part';
 import { type Camera } from 'ethlete-studio/canvas';
 import {
   type ChangeGroup,
@@ -370,13 +369,14 @@ const confirmDialog = async (kind: ConfirmKind, part: string, variant: string) =
       })
     : await anchoredDialog.render({
         label: SKETCHES_LABELS.discardConfirm.label,
+        placement: 'top',
         anchor: '[data-sk-discard]',
         content,
       });
   return {
     body: html`<div
-      class="absolute top-full ${merge ? 'left-0' : 'right-0'} z-10 mt-2.5"
-      style="transform: translate3d(0, 0, 0)"
+      class="absolute ${merge ? 'top-full left-0 mt-2.5' : 'bottom-full left-1/2 mb-2.5'} z-10"
+      style="transform: translate3d(${merge ? '0' : '-50%'}, 0, 0)"
     >
       ${dialog.body}
     </div>`,
@@ -872,7 +872,8 @@ export default definePart<Props>({
       'A comment draft on a cell; check that the draft card sits beside its pin and does not cover a numbered pin.',
     'merge-confirm':
       'Übernehmen of b asks first; check the confirmation dialog anchored to the button with Bestätigen.',
-    'discard-confirm': 'Verwerfen asks first; check the confirmation dialog under Verwerfen in the header.',
+    'discard-confirm':
+      'Verwerfen asks first; check the confirmation dialog above the Verwerfen icon in the floating toolbar.',
   },
   groups: [
     {
@@ -1003,9 +1004,6 @@ export default definePart<Props>({
       rows.map(async (row) => [row.key, await variantComments(row.key, comments)] as const),
     );
     const list = comments ? commentList(VARIANT_THREADS, comments === 'listed' ? 0 : -1) : undefined;
-    const commentToggle = comments
-      ? await commentButton({ on: comments !== 'listed', action: comments === 'listed' ? 'comments-mode' : 'comments' })
-      : undefined;
     const view: View = {
       ...(comments ? { comments: Object.fromEntries(layers.map(([key, layer]) => [key, layer.body])) } : {}),
       selected,
@@ -1034,18 +1032,20 @@ export default definePart<Props>({
         : shown.map((row) => gridRow(part, row, view)).join('') + sameRows(part, same, view, sameOpen);
     const folded = screen ? UNCHANGED_COUNT : hidden.length;
     const head = await sketchHead({
-      title: multi ? MULTI_PART.title : screen ? SCREEN_KEY : part.key,
       round: ROUNDS[screen ? 'screen' : kind],
       status,
       readyReason,
       autoMerge,
       discardable: kind !== 'edit' || !!screen,
       retry: !!listError,
-      commentToggle: commentToggle?.body,
+      comment: comments
+        ? { on: comments !== 'listed', action: comments === 'listed' ? 'comments-mode' : 'comments' }
+        : undefined,
       discardDialog: confirm === 'discard' ? dialog?.body : undefined,
       agent: run,
       port,
       withdrawn: hiddenCount > 0 ? { count: hiddenCount, shown: withdrawn === 'shown' } : undefined,
+      class: 'absolute bottom-space-3 left-1/2 z-3 max-w-[calc(100%-40rem)] -translate-x-1/2',
     });
     const toggle = await disclosurePart.render({ label: '', body: '', open: false });
     const parts = { body: '', styles: '' };
@@ -1053,9 +1053,9 @@ export default definePart<Props>({
       class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
       data-sketches-page
     >
-      ${head.body} ${parts.body}
+      ${parts.body}
       <div
-        class="relative -mr-space-5 -mb-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border min-h-0 flex-1 overflow-clip border-t border-et-surface-border pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+        class="relative -m-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border min-h-0 flex-1 overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
       >
         ${canvasViewport({
           class: 'size-full',
@@ -1082,7 +1082,7 @@ export default definePart<Props>({
           </div>`,
         })}
       </div>
-      ${chip.body}
+      ${head.body} ${chip.body}
     </div>`;
 
     const menu = await studioMenu({ open: false });
@@ -1117,7 +1117,6 @@ export default definePart<Props>({
         (dialog?.styles ?? '') +
         parts.styles +
         (list?.styles ?? '') +
-        (commentToggle?.styles ?? '') +
         layers.map(([, layer]) => layer.styles).join('') +
         rowStyles +
         variantCellStyles +

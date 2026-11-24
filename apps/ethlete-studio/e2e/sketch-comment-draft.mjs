@@ -1,6 +1,6 @@
-/** Clicks Kommentar in the sketch head, then the first drawn frame of a variant, and reports what comment mode showed. */
+/** Clicks Kommentar in the floating sketch toolbar, then the first drawn frame of a variant, and reports what comment mode showed. */
 export const placeSketchDraft = async (page, timeout = 30_000) => {
-  const toggle = page.locator('ethlete-sketches [data-sk-head] button[et-button]', { hasText: /^\s*Kommentar\s*$/ });
+  const toggle = page.locator('ethlete-sketches [data-sk-toolbar] button[data-sk-comment]');
 
   await toggle.click({ timeout });
   await page.waitForTimeout(300);

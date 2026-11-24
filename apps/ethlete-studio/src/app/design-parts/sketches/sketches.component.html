@@ -47,30 +47,8 @@
     class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
     data-sketches-page
   >
-    <ethlete-sketch-head
-      [(reasonOpen)]="reasonOpen"
-      [(commentMode)]="commentMode"
-      [(withdrawn)]="withdrawn"
-      [heading]="heading() ?? part()"
-      [status]="shownStatus()"
-      [readyReason]="readyReason()"
-      [hold]="hold()"
-      [autoMerge]="autoMerge()"
-      [error]="errorInRow() ? null : error()"
-      [commentable]="comments() !== null"
-      [discardable]="discardable()"
-      [listError]="!!listError()"
-      [rounds]="rounds()"
-      [round]="round()"
-      [agent]="agent()"
-      [port]="port()"
-      [withdrawnCount]="withdrawnCount()"
-      (roundChange)="roundChange.emit($event)"
-      (retry)="retry.emit()"
-      (discard)="askDiscard()"
-    />
     <div
-      class="relative -mr-space-5 -mb-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border min-h-0 flex-1 overflow-clip border-t border-et-surface-border pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+      class="relative -m-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border min-h-0 flex-1 overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
     >
       <ethlete-canvas-viewport
         #list
@@ -257,6 +235,29 @@
         </div>
       </ethlete-canvas-viewport>
     </div>
+    <ethlete-sketch-head
+      [(reasonOpen)]="reasonOpen"
+      [(roundsOpen)]="roundsOpen"
+      [(commentMode)]="commentMode"
+      [(withdrawn)]="withdrawn"
+      [status]="shownStatus()"
+      [readyReason]="readyReason()"
+      [hold]="hold()"
+      [autoMerge]="autoMerge()"
+      [error]="errorInRow() ? null : error()"
+      [commentable]="comments() !== null"
+      [discardable]="discardable()"
+      [listError]="!!listError()"
+      [rounds]="rounds()"
+      [round]="round()"
+      [agent]="agent()"
+      [port]="port()"
+      [withdrawnCount]="withdrawnCount()"
+      (roundChange)="roundChange.emit($event)"
+      (retry)="retry.emit()"
+      (discard)="askDiscard()"
+      class="absolute bottom-space-3 left-1/2 z-3 max-w-[calc(100%-40rem)] -translate-x-1/2"
+    />
     <ethlete-zoom-chip
       [percent]="percent()"
       (zoomOut)="zoomOut()"

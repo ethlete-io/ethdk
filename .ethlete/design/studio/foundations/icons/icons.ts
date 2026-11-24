@@ -18,6 +18,8 @@ import search from '@assets/icons/search.svg?raw';
 import minimize from '@assets/icons/minimize.svg?raw';
 import maximize from '@assets/icons/maximize.svg?raw';
 import close from '@assets/icons/close.svg?raw';
+import history from '@assets/icons/history.svg?raw';
+import trash from '@assets/icons/trash.svg?raw';
 
 export type IconName =
   | 'chevron-right'
@@ -38,7 +40,9 @@ export type IconName =
   | 'search'
   | 'minimize'
   | 'maximize'
-  | 'close';
+  | 'close'
+  | 'history'
+  | 'trash';
 
 const icons: Record<IconName, string> = {
   'chevron-right': chevronRight,
@@ -60,6 +64,8 @@ const icons: Record<IconName, string> = {
   minimize,
   maximize,
   close,
+  history,
+  trash,
 };
 
 export const iconNames = Object.keys(icons) as IconName[];

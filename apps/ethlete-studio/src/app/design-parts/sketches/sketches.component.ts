@@ -240,7 +240,6 @@ export class SketchesComponent {
   public restoredCamera = input<Camera | null>(null);
   public selected = input<string | undefined>(undefined);
   public part = input('components/title-bar');
-  public heading = input<string | null>(null);
   public rows = input<SketchRow[]>(SKETCH_ROWS);
   public fresh = input(false);
   public empty = input(false, { transform: booleanAttribute });
@@ -328,6 +327,7 @@ export class SketchesComponent {
     return this.restoredCamera() ?? (typeof camera === 'object' ? camera : { x: 0, y: 0, zoom: zoomOf(camera) });
   });
   protected reasonOpen = linkedSignal(this.reason);
+  protected roundsOpen = signal(false);
   protected selectedFrame = signal<string | null>(null);
   private confirmRow = signal<string | null>(null);
   private confirmRef: { close: () => void } | null = null;

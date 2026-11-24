@@ -1,13 +1,6 @@
 import { Component, ElementRef, input, model, output, viewChild, ViewEncapsulation } from '@angular/core';
-import {
-  BADGE_IMPORTS,
-  BUTTON_IMPORTS,
-  CHOICE_FIELD_IMPORTS,
-  FORM_FIELD_IMPORTS,
-  SELECT_IMPORTS,
-  SWITCH_IMPORTS,
-} from '@ethlete/components';
-import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
+import { BADGE_IMPORTS, BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, MENU_IMPORTS, SWITCH_IMPORTS } from '@ethlete/components';
+import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
@@ -30,24 +23,22 @@ import {
     BADGE_IMPORTS,
     BUTTON_IMPORTS,
     CHOICE_FIELD_IMPORTS,
-    FORM_FIELD_IMPORTS,
-    SELECT_IMPORTS,
+    MENU_IMPORTS,
     SWITCH_IMPORTS,
     ProvideColorDirective,
     AgentLogoComponent,
     HoldTriggerComponent,
     SketchStatusBadgeComponent,
   ],
+  hostDirectives: [AutoSurfaceDirective],
   host: {
-    class: 'relative flex flex-col gap-space-2',
-    'data-sk-head': '',
+    class: 'flex flex-col items-center gap-space-2',
   },
 })
 export class SketchHeadComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   protected warningTheme = injectSemanticColorTheme('warning');
   protected successTheme = injectSemanticColorTheme('success');
-  public heading = input('');
   public status = input<SketchStatus>('waiting');
   public readyReason = input<string | null>(null);
   public hold = input.required<SketchHold>();
@@ -62,6 +53,7 @@ export class SketchHeadComponent {
   public port = input<SketchMergePort | null>(null);
   public withdrawnCount = input(0);
   public reasonOpen = model(false);
+  public roundsOpen = model(false);
   public commentMode = model(false);
   public withdrawn = model<SketchWithdrawn>('hidden');
   public roundChange = output<string>();
@@ -73,6 +65,6 @@ export class SketchHeadComponent {
   protected readonly SYSTEM_LABELS = SYSTEM_LABELS;
 
   protected selectRound(value: unknown) {
-    if (typeof value === 'string') this.roundChange.emit(value);
+    if (typeof value === 'string' && value !== this.round()) this.roundChange.emit(value);
   }
 }

@@ -123,23 +123,15 @@ describe('SketchesComponent', () => {
     ).toHaveLength(0);
   });
 
-  it('heads a sketch with the part key, or with its title when it has one', async () => {
-    const headOf = (root: HTMLElement) => textOf(root.querySelector('header > span'));
-    const plain: HTMLElement = (await render({ camera: '100', rows: ROWS, part: 'elements/variant-cell@x' }))
+  // Decision human 23.11. (B703): the title (e.g. "Entwurf 46 B") goes away, neither the part key nor a round title shows.
+  it('shows no sketch title, neither the part key nor a round title', async () => {
+    const root: HTMLElement = (await render({ camera: '100', rows: ROWS, part: 'elements/variant-cell@x' }))
       .nativeElement;
+    const page = root.querySelector('[data-sketches-page]');
 
-    expect(headOf(plain)).toBe('elements/variant-cell@x');
-
-    const titled: HTMLElement = (
-      await render({
-        camera: '100',
-        rows: ROWS,
-        part: 'pages/sketches@x',
-        heading: 'Ein langer Rundentitel für vier Teile',
-      })
-    ).nativeElement;
-
-    expect(headOf(titled)).toBe('Ein langer Rundentitel für vier Teile');
+    expect(page?.querySelector('header')).toBeNull();
+    expect(page?.querySelector('.text-ui-lg.font-ui-strong')).toBeNull();
+    expect(textOf(page?.querySelector('[data-sk-toolbar]') ?? null)).not.toContain('elements/variant-cell@x');
   });
 
   it('names the sample pin after the design sample author', async () => {
@@ -506,9 +498,7 @@ describe('SketchesComponent', () => {
     const started: unknown[] = [];
 
     fixture.componentInstance.commentStart.subscribe((place) => started.push(place));
-    [...root.querySelectorAll<HTMLElement>('header button')]
-      .find((button) => textOf(button) === SYSTEM_LABELS.comment)
-      ?.click();
+    root.querySelector<HTMLElement>(`[data-sk-toolbar] button[aria-label="${SYSTEM_LABELS.comment}"]`)?.click();
     await fixture.whenStable();
 
     expect(fixture.componentInstance.commentMode()).toBe(true);
@@ -531,14 +521,15 @@ describe('SketchesComponent', () => {
 
   // A sketch forecast to merge itself shows a mark in the Studio header.
   it('shows the auto-merge mark in the header only when the forecast says the sketch merges itself', async () => {
-    const mark = (root: HTMLElement) => root.querySelector('header [data-sk-auto-merge]');
+    const mark = (root: HTMLElement) => root.querySelector('[data-sk-toolbar] [data-sk-auto-merge]');
 
     expect(textOf(mark((await render({ autoMerge: true, status: 'drawing' })).nativeElement))).toBe(LABELS.autoMerge);
     expect(mark((await render({ status: 'drawing' })).nativeElement)).toBeNull();
   });
 
   it('offers Verwerfen on a sketch, but not on the old/new sketch of a direct edit', async () => {
-    const buttons = (root: HTMLElement) => [...root.querySelectorAll('header button')].map(textOf);
+    const buttons = (root: HTMLElement) =>
+      [...root.querySelectorAll('[data-sk-toolbar] button')].map((button) => button.getAttribute('aria-label'));
 
     expect(buttons((await render({ part: 'components/card' })).nativeElement)).toContain(LABELS.discard);
     const edit: HTMLElement = (await render({ part: 'components/card@edit' })).nativeElement;
@@ -550,9 +541,9 @@ describe('SketchesComponent', () => {
   it('discards only after the confirm, and Abbrechen keeps the sketch', async () => {
     const fixture = await render({ part: 'components/card' });
     const discarded = vi.fn();
-    const discardButton = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('header button'),
-    ].find((button) => textOf(button) === LABELS.discard);
+    const discardButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      `[data-sk-toolbar] button[aria-label="${LABELS.discard}"]`,
+    );
     const open = async () => {
       discardButton?.click();
       await fixture.whenStable();
@@ -594,7 +585,7 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = (await render({ rows, status: 'drawing', drawn: 'x', camera: '100' })).nativeElement;
     const row = root.querySelector('[data-sk-row="x"]');
 
-    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.drawing);
+    expect(textOf(root.querySelector('[data-sk-toolbar]'))).toContain(LABELS.status.drawing);
     expect(row?.querySelector('[data-sk-placeholder-row]')).toBeNull();
     expect(row?.querySelector('[data-sk-stage]')).not.toBeNull();
     expect(textOf(row)).toContain(LABELS.drawingMark);
@@ -1215,7 +1206,7 @@ describe('SketchesComponent', () => {
     const waiting: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
     const notReady: HTMLElement = (await render({ camera: '100', status: 'not-ready' })).nativeElement;
 
-    expect(textOf(waiting.querySelector('header et-badge'))).toBe(LABELS.status.waiting);
+    expect(textOf(waiting.querySelector('[data-sk-toolbar] et-badge'))).toBe(LABELS.status.waiting);
     expect(textOf(waiting.querySelector('[data-sk-row="x"] button'))).toBe(LABELS.merge);
     expect(notReady.querySelector('[data-sk-row="x"] button')).toBeNull();
   });
@@ -1259,8 +1250,8 @@ describe('SketchesComponent', () => {
       })
     ).nativeElement;
 
-    expect(textOf(root.querySelector('header et-badge'))).toBe(LABELS.status.failed);
-    expect(textOf(root.querySelector('header [data-sk-failed]'))).toBe('x · default: boom is not defined');
+    expect(textOf(root.querySelector('[data-sk-toolbar] et-badge'))).toBe(LABELS.status.failed);
+    expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-failed]'))).toBe('x · default: boom is not defined');
     expect(root.querySelector('[data-sk-merge]')).toBeNull();
   });
 
@@ -1302,13 +1293,13 @@ describe('SketchesComponent', () => {
     ).nativeElement;
 
     expect(textOf(picked.querySelector('[data-sk-row="x"] [data-sk-merge-error]'))).toBe('zoom-chip changed');
-    expect(picked.querySelector('header [role="alert"]')).toBeNull();
+    expect(picked.querySelector('ethlete-sketch-head [role="alert"]')).toBeNull();
 
     const unpicked: HTMLElement = (await render({ camera: '100', status: 'waiting', error: 'zoom-chip changed' }))
       .nativeElement;
 
     expect(unpicked.querySelector('[data-sk-merge-error]')).toBeNull();
-    expect(textOf(unpicked.querySelector('header [role="alert"]'))).toBe('zoom-chip changed');
+    expect(textOf(unpicked.querySelector('ethlete-sketch-head [role="alert"]'))).toBe('zoom-chip changed');
   });
 
   it('opens at a restored camera and selects a clicked frame', async () => {
@@ -1642,10 +1633,18 @@ describe('SketchesComponent', () => {
     expect(fixture.componentInstance.transposed()).toBe(flips);
   });
 
-  it('draws the head above the rows', async () => {
+  // Decision human 23.11. (B703): the sketch head goes away completely; the canvas starts at the top and a toolbar floats at its bottom.
+  it('draws no head above the rows and floats the toolbar at the bottom of the canvas', async () => {
     const root: HTMLElement = (await render({ camera: '100' })).nativeElement;
+    const page = root.querySelector('[data-sketches-page]')!;
+    const toolbar = page.querySelector('ethlete-sketch-head')!;
 
-    expect(root.querySelector('[data-sk-head] + div [data-sk-rows]')).not.toBeNull();
+    expect(page.firstElementChild?.querySelector('[data-sk-rows]')).not.toBeNull();
+    expect(page.querySelector('[data-sk-head]')).toBeNull();
+    expect(toolbar.parentElement).toBe(page);
+    expect(toolbar.classList).toContain('absolute');
+    expect(toolbar.classList).toContain('bottom-space-3');
+    expect(toolbar.querySelector('[role="toolbar"]')).not.toBeNull();
   });
 
   it('shows a running agent with its model and marks the sketch as drawing', async () => {
@@ -1655,7 +1654,7 @@ describe('SketchesComponent', () => {
 
     expect([...(line?.children ?? [])].map(textOf)).toEqual(['', 'Haiku 5.5', LABELS.drawingMark, '· seit 9 Min']);
     expect(line?.querySelector('.animate-pulse')).not.toBeNull();
-    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.drawing);
+    expect(textOf(root.querySelector('[data-sk-toolbar]'))).toContain(LABELS.status.drawing);
   });
 
   it('shows a failed agent run without the pulse and keeps the sketch status', async () => {
@@ -1667,8 +1666,8 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = (await render({ camera: '100', status: 'waiting', agent })).nativeElement;
 
     expect(root.querySelector('[data-sk-agent] .animate-pulse')).toBeNull();
-    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.waiting);
-    expect(textOf(root.querySelector('header'))).not.toContain(LABELS.status.drawing);
+    expect(textOf(root.querySelector('[data-sk-toolbar]'))).toContain(LABELS.status.waiting);
+    expect(textOf(root.querySelector('[data-sk-toolbar]'))).not.toContain(LABELS.status.drawing);
   });
 
   it('shows the port after a merge with every merged part and marks the sketch as drawing', async () => {
@@ -1680,6 +1679,6 @@ describe('SketchesComponent', () => {
       LABELS.mergePort(port.merged),
       '· seit 5 Min',
     ]);
-    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.drawing);
+    expect(textOf(root.querySelector('[data-sk-toolbar]'))).toContain(LABELS.status.drawing);
   });
 });

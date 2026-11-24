@@ -75,6 +75,7 @@ export const SKETCHES_LABELS = {
     ago: (minutes: number) => `vor ${spanOf(minutes)}`,
   },
   roundSelect: 'Runde',
+  toolbar: 'Sketch',
   round: (number: number, title: string) => [`Runde ${number}`, title].filter(Boolean).join(' · '),
 } as const;
 

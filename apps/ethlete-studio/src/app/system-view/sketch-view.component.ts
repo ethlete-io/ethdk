@@ -81,15 +81,7 @@ import {
   retriedSrcOf,
   sketchFrameRetriesWith,
 } from './sketch-frame-retries';
-import {
-  CURRENT,
-  partKeyOf,
-  sketchHeadTitleOf,
-  sketchMatrixOf,
-  sketchRoundsOf,
-  sketchRowsOf,
-  sketchUsingPagesOf,
-} from './system-tree';
+import { CURRENT, partKeyOf, sketchMatrixOf, sketchRoundsOf, sketchRowsOf, sketchUsingPagesOf } from './system-tree';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { keptRead$ } from './kept-read';
 import { sketchPointGroupsOf } from './open-points';
@@ -242,7 +234,6 @@ const scrollOf = (data: unknown) =>
       [(draftText)]="commentStore.draftText"
       [(confirm)]="confirm"
       [part]="sketch().target"
-      [heading]="heading()"
       [rows]="rows()"
       [fresh]="!part()"
       [autoMerge]="sketch().autoMergeForecast?.merges === true"
@@ -469,8 +460,6 @@ export class SketchViewComponent {
   });
 
   public shownRoundKey = computed(() => this.shownRounds().find((round) => round.open)?.key ?? '');
-
-  protected heading = computed(() => sketchHeadTitleOf(this.sketch(), this.shownRoundKey()));
 
   private matrix = computed(() =>
     sketchMatrixOf({

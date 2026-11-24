@@ -1,41 +1,42 @@
 import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html, withAction } from '@design-system';
 import badge from '@system/components/badge';
+import { iconButton, iconButtonStyles } from '@ethlete/components/design/button';
 import button from '@system/components/button';
-import { commentButton } from '@system/components/comment-flow';
-import select from '@system/components/select';
+import menu from '@system/components/menu';
+import { icon } from '@system/foundations/icons';
 import switchPart from '@system/components/switch';
 import { holdTrigger, holdTriggerStyles } from '@system/components/hold-trigger';
 import { type SketchBadgeStatus, sketchStatusBadge } from '@system/components/sketch-status-badge';
 import { AGENT_RUNS, type AgentProgress, HOLD, modelName, toggleHold } from './sketch-status';
 
 export { AGENT_RUNS, type AgentProgress, type AgentRun, modelName, OPUS, SOL } from './sketch-status';
-import styles from './sketch-head.css?inline';
 import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
-import { BUILD_READY_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
+import { BUILD_READY_LABELS, SYSTEM_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 export type SketchHeadStatus = SketchBadgeStatus;
 
 export type MergePort = 'one' | 'two';
 
 export type SketchHead = {
-  title: string;
   round: string;
+  rounds?: string[];
+  roundsOpen?: boolean;
   status?: SketchHeadStatus;
   readyReason?: string;
   autoMerge?: boolean;
   discardable?: boolean;
   error?: string;
   retry?: boolean;
-  commentToggle?: string;
+  comment?: { on: boolean; action?: string };
   discardDialog?: string;
   agent?: AgentProgress;
   port?: MergePort;
   withdrawn?: { count: number; shown: boolean };
+  class?: string;
 };
 
 const ROUND = 'Runde 1 · Reset control: SDK button or own part';
-const TITLE = 'components/zoom-chip';
 const SECOND_ROUND = 'Runde 2 · Port nach dem Merge';
 
 const MERGE_PORTS: Record<MergePort, { merged: string[]; since: string }> = {
@@ -108,44 +109,87 @@ const portLine = (port: MergePort) =>
     <span>· ${MERGE_PORTS[port].since}</span>
   </span>`;
 
+const trayClass =
+  'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))';
+
+const roundMenu = async (rounds: string[], open: boolean) => {
+  const trigger = iconButton({
+    icon: icon('history', { cls: 'et-icon' }),
+    ariaLabel: SKETCHES_LABELS.roundSelect,
+    size: 'sm',
+    variant: 'transparent',
+    color: 'surface',
+  });
+  const panel = open
+    ? await menu.render({
+        rows: [
+          {
+            kind: 'radio-group',
+            label: SKETCHES_LABELS.roundSelect,
+            items: rounds.map((label, index) => ({ kind: 'radio', label, checked: index === 0 })),
+          },
+        ],
+      })
+    : undefined;
+  return {
+    body: html`<div class="relative flex" data-sk-round>
+      ${withAction(control(trigger, 'round'), 'emit:roundChange')}
+      ${
+        panel
+          ? html`<div class="absolute bottom-full left-1/2 mb-space-2 w-80 -translate-x-1/2" data-sk-round-menu>
+              ${panel.body}
+            </div>`
+          : ''
+      }
+    </div>`,
+    styles: panel?.styles ?? '',
+  };
+};
+
 export const sketchHead = async ({
-  title,
   round,
+  rounds = [round],
+  roundsOpen = false,
   status = 'waiting',
   readyReason,
   autoMerge = false,
   discardable = true,
   error,
   retry = false,
-  commentToggle = '',
+  comment,
   discardDialog = '',
   agent,
   port,
   withdrawn,
+  class: hostClass = '',
 }: SketchHead) => {
   const autoTag = autoMerge ? await tonal(SKETCHES_LABELS.autoMerge) : undefined;
   const shown = (agent && !agent.failed) || port ? 'drawing' : status;
   const state = await statusMarkup(shown, readyReason);
-  const discard = await button.render({
-    label: SKETCHES_LABELS.discard,
-    variant: 'transparent',
+  const discard = iconButton({
+    icon: icon('trash', { cls: 'et-icon' }),
+    ariaLabel: SKETCHES_LABELS.discard,
     size: 'sm',
+    variant: 'transparent',
     color: 'danger',
   });
+  const commentToggle = comment
+    ? iconButton({
+        icon: icon('comment', { cls: 'et-icon' }),
+        ariaLabel: SYSTEM_LABELS.comment,
+        size: 'sm',
+        variant: 'transparent',
+        color: 'surface',
+        pressed: comment.on,
+      }).replace('<button ', '<button data-sk-comment ')
+    : '';
   const reload = await button.render({
     label: SKETCHES_LABELS.reload,
     variant: 'outline',
     color: 'surface',
     size: 'sm',
   });
-  const picker = await select.render({
-    label: '',
-    size: 'sm',
-    variant: 'ghost',
-    clearable: false,
-    value: 'round-1',
-    options: [{ value: 'round-1', label: round }],
-  });
+  const picker = await roundMenu(rounds, roundsOpen);
   const toggle = withdrawn
     ? ((await switchPart.render({
         label: `Zurückgezogene (${withdrawn.count})`,
@@ -153,45 +197,46 @@ export const sketchHead = async ({
         checked: withdrawn.shown,
       })) as { body: string; styles: string })
     : undefined;
-  const body = html`<div class="relative flex flex-col gap-space-2" data-sk-head>
-    <header class="relative z-3 flex items-center gap-space-3">
-      <span class="text-ui-lg font-ui-strong">${title}</span>
+  const body = html`<div class="flex flex-col items-center gap-space-2 ${hostClass}" data-et-surface-auto>
+    ${
+      error
+        ? html`<p
+            class="m-0 max-w-5xl px-space-3 py-space-2 text-ui-xs text-et-theme-ink ${trayClass}"
+            data-et-semantic-color="error"
+            role="alert"
+            data-sk-head-error
+          >
+            ${error}
+          </p>`
+        : ''
+    }
+    <div
+      class="flex max-w-full items-center gap-space-2 py-space-1 ps-space-3 pe-space-1 font-ui ${trayClass}"
+      role="toolbar"
+      aria-label="${SKETCHES_LABELS.toolbar}"
+      data-sk-toolbar
+    >
       ${state.body}
       ${
         autoTag
           ? html`<span class="flex w-fit" data-et-semantic-color="success" data-sk-auto-merge>${autoTag.body}</span>`
           : ''
       }
-      <span class="flex-1"></span>
-      <span class="w-56 flex-none" data-sk-view-toggle-room></span>
-      ${
-        error
-          ? html`<p
-              class="m-0 text-ui-xs text-et-theme-ink"
-              data-et-semantic-color="error"
-              role="alert"
-              data-sk-head-error
-            >
-              ${error}
-            </p>`
-          : ''
-      }
-      ${
-        !discardable
-          ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
-              >${SKETCHES_LABELS.editHint}</span
-            >`
-          : commentToggle +
-            (retry ? withAction(control(reload.body, 'retry'), 'emit:retry') : '') +
-            html`<span class="relative flex" data-sk-discard
-              >${withAction(control(discard.body, 'discard'), 'emit:discard')}${discardDialog}</span
-            >`
-      }
-    </header>
-    <div class="zr-picker relative z-2 flex items-center gap-space-4">
-      ${withAction(picker.body, { action: 'emit:roundChange', on: '.et-select-trigger' })}
       ${agent ? agentLine(agent) : ''} ${port ? portLine(port) : ''}
       ${toggle ? withAction(control(toggle.body, 'withdrawn'), { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
+      <span class="mx-space-1 h-5 w-px flex-none bg-et-surface-border" aria-hidden="true"></span>
+      ${picker.body}
+      ${discardable && comment ? withAction(control(commentToggle, 'comment'), comment.action ?? 'emit:commentMode') : ''}
+      ${discardable && retry ? withAction(control(reload.body, 'retry'), 'emit:retry') : ''}
+      ${
+        discardable
+          ? html`<span class="relative flex" data-sk-discard
+              >${withAction(control(discard, 'discard'), 'emit:discard')}${discardDialog}</span
+            >`
+          : html`<span class="pe-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
+              >${SKETCHES_LABELS.editHint}</span
+            >`
+      }
     </div>
   </div>`;
   return {
@@ -199,18 +244,16 @@ export const sketchHead = async ({
     styles:
       (autoTag?.styles ?? '') +
       state.styles +
-      discard.styles +
+      iconButtonStyles +
       reload.styles +
       picker.styles +
       (toggle?.styles ?? '') +
-      holdTriggerStyles +
-      styles,
+      holdTriggerStyles,
     setup: toggleHold,
   };
 };
 
-type Props = Omit<SketchHead, 'title' | 'round' | 'commentToggle' | 'retry'> & {
-  title?: string;
+type Props = Omit<SketchHead, 'round' | 'comment' | 'retry' | 'class'> & {
   round?: string;
   commentable?: boolean;
   listError?: boolean;
@@ -220,7 +263,7 @@ const MERGE_ERROR = 'components/zoom-chip hat sich seit dem Sketch geändert. La
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/sketch-head/sketch-head.component.ts',
-  note: 'The head of the Sketches page: part key, status and actions in the top row, and the round picker with the agent line and the withdrawn switch under that.',
+  note: 'The floating toolbar at the bottom of the Sketches canvas: status, agent line and withdrawn switch, then the round menu, Kommentar and Verwerfen as icon buttons.',
   madeBy: ['claude-opus-5-5'],
   widths: [1200],
   states: {
@@ -232,22 +275,25 @@ export default definePart({
     paused: { status: 'paused' },
     'port-one': { port: 'one' },
     'port-two': { port: 'two' },
+    rounds: { rounds: [ROUND, SECOND_ROUND], roundsOpen: true },
   },
   groups: [
-    { label: 'Runde', states: ['plain', 'edit'] },
+    { label: 'Runde', states: ['plain', 'edit', 'rounds'] },
     { label: 'Status', states: ['paused'] },
     { label: 'Agent', states: ['agent', 'port-one', 'port-two'] },
     { label: 'Aktionen', states: ['comments-retry'] },
     { label: 'Fehler', states: ['error'] },
   ],
   describe: {
-    plain: 'A round; check the picker one row under the head row and the withdrawn switch beside it.',
+    plain:
+      'A round; check one floating toolbar with no title: the status, the withdrawn switch, then the history and Verwerfen icon buttons.',
+    rounds: 'The round menu open; check the et-menu above the history button with the shown round checked.',
     agent:
       'An agent drawing the round; check the zeichnet badge and the pulsing agent line with the model, zeichnet and its time beside the picker.',
     edit: 'A direct edit; check the Auto-Merge tag and the edit hint in place of Verwerfen.',
     error: 'A merge that failed outside the rows; check the server reason in the error colour before Verwerfen.',
     'comments-retry':
-      'A commentable sketch whose listing failed; check Kommentar, then Erneut laden, then Verwerfen in the head row.',
+      'A commentable sketch whose listing failed; check the Kommentar icon, then Erneut laden, then the Verwerfen icon.',
     paused: 'A paused sketch; check the Pausiert badge, which opens the hold reason on click.',
     'port-one':
       'The agent porting after one merge; check Agent portiert nach Merge von with the merged part beside the picker.',
@@ -259,15 +305,20 @@ export default definePart({
     comment: { kind: 'button', part: 'components/button' },
     retry: { kind: 'button', part: 'components/button' },
     discard: { kind: 'button', part: 'components/button' },
+    round: { kind: 'button', part: 'components/button' },
     withdrawn: { kind: 'button', part: 'components/switch' },
   },
-  render: async ({ title = TITLE, round = ROUND, commentable = false, listError = false, ...head }: Props) => {
-    const toggle = commentable ? await commentButton({ on: false, action: 'comments' }) : undefined;
-    const {
-      body,
-      styles: css,
-      setup,
-    } = await sketchHead({ title, round, commentToggle: toggle?.body, retry: listError, ...head });
-    return drawing({ body, styles: css + (toggle?.styles ?? ''), setup: [setup] });
+  render: async ({ round = ROUND, commentable = false, listError = false, ...head }: Props) => {
+    const { body, styles, setup } = await sketchHead({
+      round,
+      comment: commentable ? { on: false, action: 'comments' } : undefined,
+      retry: listError,
+      ...head,
+    });
+    return drawing({
+      body: head.roundsOpen ? html`<div class="pt-40">${body}</div>` : body,
+      styles,
+      setup: [setup],
+    });
   },
 });

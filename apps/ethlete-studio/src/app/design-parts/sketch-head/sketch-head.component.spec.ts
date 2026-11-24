@@ -13,6 +13,8 @@ const OPUS = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' as cons
   imports: [SketchHeadComponent],
   template: `<ethlete-sketch-head
     [(withdrawn)]="withdrawn"
+    [(commentMode)]="commentMode"
+    [commentable]="commentable"
     [hold]="hold"
     [agent]="agent()"
     [reasonOpen]="reasonOpen()"
@@ -24,8 +26,8 @@ const OPUS = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' as cons
     [rounds]="rounds"
     (discard)="discards = discards + 1"
     (retry)="retries = retries + 1"
+    (roundChange)="picked.push($event)"
     round="r1"
-    heading="pages/home"
   />`,
 })
 class HostComponent {
@@ -37,6 +39,9 @@ class HostComponent {
   discardable = signal(true);
   listError = signal(true);
   withdrawn = signal<SketchWithdrawn>('hidden');
+  commentMode = signal(false);
+  commentable = true;
+  picked: string[] = [];
   rounds = [
     { value: 'r1', label: 'Runde 1' },
     { value: 'r2', label: 'Runde 2' },
@@ -74,14 +79,12 @@ describe('SketchHeadComponent', () => {
 
     const text = root.textContent ?? '';
 
-    expect(root.querySelector('header')?.textContent).toContain('pages/home');
-    expect(root.querySelector('header et-badge')).toBeNull();
+    expect(root.querySelector('[data-sk-toolbar] et-badge')).toBeNull();
     expect(text).not.toContain('Noch nicht bereit');
     expect(text).not.toContain('Grund unbekannt');
     expect(text).not.toContain('SHOT-NOT-VIEWED');
     expect(text).not.toContain('Letzte Änderung');
     expect(root.querySelector('[data-sk-not-ready], [data-sk-question]')).toBeNull();
-    expect(root.querySelector('header')?.nextElementSibling?.querySelector('et-select')).not.toBeNull();
   });
 
   // The human wants the model icon and name in the agent line; keep it.
@@ -141,13 +144,66 @@ describe('SketchHeadComponent', () => {
     expect(root.querySelector('[data-sk-edit-hint]')?.textContent?.trim()).toBe(SKETCHES_LABELS.editHint);
   });
 
-  // The round picker is a ghost select with a selected round and no clear button.
-  it('shows the round picker as a ghost select without a clear button', async () => {
+  // Decision human 23.11. (B703): the head goes away completely, so the part draws no header, title or round select.
+  it('draws a floating toolbar without a header, a title or a round select', async () => {
     const { root } = await setup();
-    const field = root.querySelector('et-form-field')!;
 
-    expect(field.getAttribute('data-variant')).toBe('ghost');
-    expect(field.querySelector('et-select')?.textContent).toContain('Runde 1');
-    expect(field.querySelector('.et-input-clear')).toBeNull();
+    expect(root.querySelector('[role="toolbar"][data-sk-toolbar]')).not.toBeNull();
+    expect(root.querySelector('header')).toBeNull();
+    expect(root.querySelector('et-select')).toBeNull();
+    expect(root.querySelector('.text-ui-lg')).toBeNull();
+  });
+
+  // Decision human 23.11. (B703): Kommentar is an icon button in the floating toolbar and still toggles comment mode.
+  it('toggles comment mode with the Kommentar icon button', async () => {
+    const { fixture, root, host } = await setup();
+    const comment = root.querySelector<HTMLElement>('[data-sk-comment]')!;
+
+    expect(comment.classList).toContain('et-icon-button');
+    expect(comment.getAttribute('aria-label')).toBe('Kommentar');
+    expect(comment.textContent?.trim()).toBe('');
+
+    comment.click();
+    await fixture.whenStable();
+
+    expect(host.commentMode()).toBe(true);
+    expect(comment.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  // Decision human 23.11. (B703): Verwerfen is an icon button in the floating toolbar and still emits the discard.
+  it('emits discard from the Verwerfen icon button', async () => {
+    const { fixture, root, host } = await setup();
+    const discard = root.querySelector<HTMLElement>('[data-sk-discard] button')!;
+
+    expect(discard.classList).toContain('et-icon-button');
+    expect(discard.getAttribute('aria-label')).toBe(SKETCHES_LABELS.discard);
+    expect(discard.textContent?.trim()).toBe('');
+
+    discard.click();
+    await fixture.whenStable();
+
+    expect(host.discards).toBe(1);
+  });
+
+  // Decision human 23.11. (B703): the round choice is a history icon button that opens an et-menu to switch the round.
+  it('opens the round menu from the history icon button and switches the round', async () => {
+    const { fixture, root, host } = await setup();
+    const trigger = root.querySelector<HTMLElement>('[data-sk-round] button')!;
+
+    expect(trigger.classList).toContain('et-icon-button');
+    expect(trigger.getAttribute('aria-label')).toBe(SKETCHES_LABELS.roundSelect);
+
+    trigger.click();
+    await fixture.whenStable();
+
+    const items = [...document.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
+
+    expect(items.map((item) => item.textContent?.trim())).toEqual(['Runde 1', 'Runde 2']);
+    expect(items[0]?.getAttribute('aria-checked')).toBe('true');
+
+    items[1]?.click();
+    await fixture.whenStable();
+
+    expect(host.picked).toEqual(['r2']);
   });
 });
