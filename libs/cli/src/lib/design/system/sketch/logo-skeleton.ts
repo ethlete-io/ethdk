@@ -133,6 +133,7 @@ const logoCss = `@layer components {
     --logo-bg: var(--et-surface-background, 255 255 255);
     --logo-fg: var(--et-surface-color, 0 0 0);
     --logo-line: var(--et-surface-border, 200 200 200);
+    font-family: var(--default-font-family, system-ui, sans-serif);
     display: flex;
     flex-direction: column;
     align-items: flex-start;

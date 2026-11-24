@@ -132,6 +132,14 @@ describe('foundation skeletons', () => {
     expect(stateNamesOf(ts)).toEqual(expect.arrayContaining(LOGO_SECTIONS));
   });
 
+  it('sets the logo sections in a sans stack, so a product with no font draws no serif titles', () => {
+    const css = foundationSkeletonOf('foundations/logo')?.files['logo.css'] ?? '';
+    const family = /\.logo-section\s*\{[^}]*?font-family:\s*([^;]+);/u.exec(css)?.[1] ?? '';
+
+    expect(family).toMatch(/sans-serif\s*\)?$/u);
+    expect(family).toContain('system-ui');
+  });
+
   it('writes texts that stand alone, without a look', () => {
     const texts = PARTS.flatMap(({ name }) => {
       const skeleton = foundationSkeletonOf(`foundations/${name}`);
