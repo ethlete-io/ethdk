@@ -175,7 +175,17 @@ describe('designProduct', () => {
     expect(distinct(['color-primary', 'color-primary-hover', 'color-primary-active', 'color-primary-disabled'])).toBe(
       4,
     );
-    expect(valueOf('color-primary-focus')).toBe(valueOf('color-primary-hover'));
+    expect(distinct(['color-primary-hover', 'color-primary-focus', 'color-primary-active'])).toBe(3);
+    expect(
+      distinct([
+        'surface-interaction',
+        'surface-interaction-hover',
+        'surface-interaction-focus',
+        'surface-interaction-active',
+        'surface-interaction-disabled',
+      ]),
+    ).toBe(5);
+    expect(Number(valueOf('surface-interaction').split(' ')[0])).toBeLessThanOrEqual(160);
     expect(valueOf('color-on-primary-disabled')).not.toBe(valueOf('color-on-primary'));
     expect(
       distinct([
@@ -191,7 +201,7 @@ describe('designProduct', () => {
     for (const text of ['surface-color', 'surface-color-muted', 'color-primary-ink'])
       expect(ratioOf(text, 'surface-background')).toBeGreaterThanOrEqual(4.5);
 
-    for (const state of ['', '-hover', '-active'])
+    for (const state of ['', '-hover', '-focus', '-active'])
       expect(ratioOf(`color-on-primary${state}`, `color-primary${state}`)).toBeGreaterThanOrEqual(4.5);
 
     expect(ts).toContain('measureContrastPairs');

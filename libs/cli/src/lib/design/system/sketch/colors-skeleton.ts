@@ -73,7 +73,8 @@ const accentStatesOf = (accent: Rgb, page: Rgb) => {
   const hover = onColour === WHITE ? mix([accent, BLACK], 0.15) : mix([accent, WHITE], 0.3);
   const active = onColour === WHITE ? mix([accent, BLACK], 0.3) : mix([accent, BLACK], 0.22);
   const disabled = mix([accent, page], 0.55);
-  const fills = [accent, hover, hover, active, disabled];
+  const focus = mix([hover, active], 0.5);
+  const fills = [accent, hover, focus, active, disabled];
   const onFills = [onColour, onColour, onColour, onColour, mix([onColour, disabled], 0.5)];
 
   return [
@@ -87,7 +88,7 @@ const inkStatesOf = (accent: Rgb, { background, text }: Surface) => {
   const inks = [
     ink,
     mix([ink, text], 0.25),
-    mix([ink, text], 0.25),
+    mix([ink, text], 0.35),
     mix([ink, text], 0.45),
     mix([ink, background], 0.5),
   ];
@@ -99,11 +100,11 @@ const SURFACE_STEPS: [string, number][] = [
   ['color-muted', 0.7],
   ['color-subtle', 0.56],
   ['border', 0.2],
-  ['interaction', 0.7],
+  ['interaction', 0.62],
   ['interaction-hover', 0.86],
-  ['interaction-focus', 0.86],
+  ['interaction-focus', 0.93],
   ['interaction-active', 1],
-  ['interaction-disabled', 0.32],
+  ['interaction-disabled', 0.27],
 ];
 
 const SURFACE_ALIASES = ['background', 'color', 'color-muted', 'color-subtle', 'border'].concat(
