@@ -16,6 +16,8 @@ const ECHO_MS = 5_000;
 
 const DESK_INPUT: ReadonlySet<string> = new Set(['window-focus', 'input-active']);
 
+type AwayStretch = TimeWindow & { resumed: boolean };
+
 /**
  * The stretches the notifier said nobody was watching, from the transitions that open and close them.
  *
@@ -23,8 +25,10 @@ const DESK_INPUT: ReadonlySet<string> = new Set(['window-focus', 'input-active']
  * restarted app never sends the resume. A second `idle-start` or `lock` while it is open says the same,
  * so the `idle-end` after that closes only the second stretch. An agent prompt cannot end it, since a
  * prompt from the phone lies inside an away stretch.
+ *
+ * `resumed` is false on a stretch only the desk input closed: the app stopped watching somewhere inside it.
  */
-const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
+const awayStretches = (events: readonly CollectedEvent[]): AwayStretch[] => {
   const transitions = events
     .filter((event) => event.source === 'idle' && (LEAVING.has(event.kind) || RETURNING.has(event.kind)))
     .sort((a, b) => a.at.getTime() - b.at.getTime());
@@ -33,7 +37,7 @@ const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
     .map((event) => event.at)
     .sort((a, b) => a.getTime() - b.getTime());
   const backAfter = (left: Date) => deskInput.find((at) => at.getTime() > left.getTime() + ECHO_MS);
-  const away: TimeWindow[] = [];
+  const away: AwayStretch[] = [];
 
   let left: Date | undefined;
 
@@ -42,7 +46,7 @@ const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
       const back = left && backAfter(left);
 
       if (left && back && back < event.at) {
-        away.push({ from: left, to: back });
+        away.push({ from: left, to: back, resumed: false });
         left = event.at;
       }
 
@@ -50,14 +54,28 @@ const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
       continue;
     }
 
-    if (left) away.push({ from: left, to: event.at });
+    if (left) away.push({ from: left, to: event.at, resumed: true });
     left = undefined;
   }
 
-  if (left) away.push({ from: left, to: backAfter(left) ?? NEVER_CAME_BACK });
+  if (left) {
+    const back = backAfter(left);
+
+    away.push(back ? { from: left, to: back, resumed: false } : { from: left, to: NEVER_CAME_BACK, resumed: true });
+  }
 
   return away;
 };
+
+/**
+ * The away stretches the app stopped watching in: no `idle-end` or `unlock` closed them, the person's
+ * next desk input did, because a restarted app never sends the resume. Nothing here says the person was
+ * away in them, so a prompt they typed inside one is theirs, wherever they typed it.
+ */
+export const unwatchedAwayStretches = (events: readonly CollectedEvent[]): TimeWindow[] =>
+  awayStretches(events)
+    .filter((stretch) => !stretch.resumed)
+    .map(({ from, to }) => ({ from, to }));
 
 /**
  * The stretches a person was demonstrably at this machine, each instant widened by `graceMs`.
@@ -77,6 +95,9 @@ const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
  * edge. Without the wall, the first window of the afternoon would answer for the last quarter hour of
  * the lunch break it came back from.
  *
+ * A prompt the person typed inside a stretch the app stopped watching in is a person after all: see
+ * {@link unwatchedAwayStretches}.
+ *
  * `elsewhere` is where a person was at another machine of the user's, from {@link peerAttendance}. An
  * away stretch holds only where every machine was away, so the part of it a person spent at another
  * machine is no wall.
@@ -94,14 +115,20 @@ export const attendedAt = (options: {
     from: stretch.from.getTime(),
     to: stretch.to.getTime(),
   }));
+  const unwatched = stretches.filter((stretch) => !stretch.resumed);
+  const inside = (at: number, within: readonly TimeWindow[]) =>
+    within.some((stretch) => at > stretch.from.getTime() && at < stretch.to.getTime());
+  const isTyped = (event: CollectedEvent) => event.kind === 'agent-prompt' && event.askedBy !== 'machine';
   const instants = options.events
+    .filter((event) => event.source === 'window' || event.source === 'idle' || isTyped(event))
     .filter((event) => {
-      if (event.source === 'window' || event.source === 'idle') return true;
+      const at = event.at.getTime();
 
-      return event.kind === 'agent-prompt' && event.askedBy !== 'machine';
+      if (isTyped(event) && inside(at, unwatched)) return true;
+
+      return !away.some((stretch) => at > stretch.from && at < stretch.to);
     })
-    .map((event) => event.at.getTime())
-    .filter((at) => !away.some((stretch) => at > stretch.from && at < stretch.to));
+    .map((event) => event.at.getTime());
 
   return mergeWindows(
     instants.map((at) => ({

@@ -1,0 +1,3839 @@
+{
+  "events": [
+    {
+      "at": "2026-11-23T23:40:39.760Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-23T23:40:41.994Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-23T23:40:45.625Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-2"
+    },
+    {
+      "at": "2026-11-23T23:40:47.477Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-3",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-23T23:40:51.806Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-4"
+    },
+    {
+      "at": "2026-11-23T23:40:53.244Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-5",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-23T23:41:29.705Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-6"
+    },
+    {
+      "at": "2026-11-23T23:41:45.279Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": "terminal"
+    },
+    {
+      "at": "2026-11-23T23:41:45.348Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": "Timetrack"
+    },
+    {
+      "at": "2026-11-23T23:41:53.936Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": "terminal"
+    },
+    {
+      "at": "2026-11-23T23:42:11.459Z",
+      "source": "input",
+      "kind": "input-idle"
+    },
+    {
+      "at": "2026-11-23T23:43:18.447Z",
+      "source": "input",
+      "kind": "input-active"
+    },
+    {
+      "at": "2026-11-23T23:43:50.669Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-12"
+    },
+    {
+      "at": "2026-11-23T23:43:53.089Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": "terminal"
+    },
+    {
+      "at": "2026-11-23T23:44:10.918Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": "terminal"
+    },
+    {
+      "at": "2026-11-23T23:44:34.096Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-15"
+    },
+    {
+      "at": "2026-11-23T23:45:13.675Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-16"
+    },
+    {
+      "at": "2026-11-23T23:47:03.285Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-17"
+    },
+    {
+      "at": "2026-11-23T23:47:52.084Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-18"
+    },
+    {
+      "at": "2026-11-23T23:47:57.254Z",
+      "source": "input",
+      "kind": "input-idle"
+    },
+    {
+      "at": "2026-11-23T23:47:57.254Z",
+      "source": "idle",
+      "kind": "idle-start"
+    },
+    {
+      "at": "2026-11-23T23:50:03.672Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-21",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-23T23:50:33.248Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-23T23:52:13.474Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-23T23:52:15.376Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-24",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:00:02.821Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-25",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:00:15.863Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:00:15.938Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:00:19.055Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-28",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:10:47.697Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:10:49.924Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-30",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:13:55.601Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:13:58.064Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-32",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:20:04.125Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-33",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:20:28.712Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:25:55.741Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:25:57.632Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-36",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:30:00.413Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-37",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:30:01.108Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:30:03.887Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-39",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:35:28.707Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:41:00.391Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:41:06.798Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-42",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:50:41.319Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:50:45.817Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-44",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:53:47.884Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:53:49.969Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-46",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T00:54:03.169Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T00:54:11.397Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-48",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:00:06.744Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-49",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:00:08.761Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:00:08.799Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:00:11.933Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-52",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:10:00.318Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-53",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:10:14.132Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:16:44.071Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:16:47.373Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-56",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:20:44.648Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:20:47.254Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-58",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:29:15.374Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:29:17.243Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-60",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:30:02.951Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-61",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:30:12.991Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:36:06.599Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:36:09.593Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-64",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:39:36.589Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:39:39.560Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-66",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:40:01.967Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-67",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:40:28.153Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:40:36.072Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:40:37.444Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-70",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:50:09.679Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-71",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T01:50:29.395Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:51:48.827Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T01:51:51.104Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-74",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:00:09.502Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-75",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:00:32.472Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:08:32.224Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:08:34.438Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-78",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:10:01.869Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-79",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:10:39.583Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:17:40.887Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:17:43.526Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-82",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:20:01.981Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-83",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:20:44.241Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:30:02.269Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-85",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:30:27.232Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:37:12.645Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:37:14.339Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-88",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:40:12.557Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:40:16.918Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-90",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:41:49.857Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:41:52.548Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-92",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:50:26.967Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:50:28.564Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-94",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:58:24.940Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:58:28.408Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-96",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T02:58:57.598Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T02:59:04.370Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-98",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T03:00:00.796Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T03:00:03.041Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-100",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T03:10:18.395Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-101",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T03:10:55.038Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T03:20:02.163Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-103",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T03:20:08.940Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T03:35:12.907Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T03:35:14.853Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-106",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T03:40:42.962Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T03:40:44.432Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-108",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T03:51:40.334Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T03:51:42.292Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-110",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T03:54:24.137Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T03:54:26.731Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-112",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T04:00:10.593Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T04:00:12.455Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-114",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T04:01:48.976Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T04:01:50.750Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-116",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T04:10:40.315Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T04:10:42.024Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-118",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T04:17:25.930Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T04:17:29.071Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-120",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T04:20:03.258Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-121",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T04:20:11.901Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T04:26:01.400Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T04:26:03.116Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-124",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T04:30:01.594Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-125",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T04:30:18.963Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T04:40:09.756Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-127",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T04:40:13.942Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T04:47:02.328Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T04:47:05.209Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-130",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:04:11.207Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:04:15.141Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-132",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:05:01.064Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:05:09.048Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-134",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:05:31.018Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:05:32.696Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-136",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:10:02.502Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-137",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:10:04.404Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:20:00.995Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-139",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:20:03.709Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:30:02.535Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-141",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:31:07.876Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:38:02.041Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:38:05.171Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-144",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:38:39.223Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:38:45.548Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-146",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:42:06.624Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:42:15.685Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-148",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T05:50:02.585Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T05:50:04.998Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-150",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T06:00:00.882Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T06:00:02.820Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-152",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T06:05:22.995Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T06:05:24.791Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-154",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T06:11:33.984Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T06:11:37.398Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-156",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T06:20:09.990Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-157",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T06:20:10.124Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T06:36:21.390Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T06:36:24.352Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-160",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T06:39:34.731Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T06:39:39.009Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-162",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T06:40:00.305Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-163",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T07:05:25.702Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T07:05:31.814Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-165",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T07:33:01.580Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T07:33:07.690Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-167",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T07:33:20.814Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T07:33:22.930Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-169",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T07:33:38.949Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T07:33:45.735Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-171",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T07:40:08.383Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T07:40:08.383Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-173",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T07:40:24.100Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T07:40:26.162Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-175",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T07:50:57.641Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T07:51:09.611Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-177",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:00:02.011Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-178",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:00:49.105Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:02:12.288Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:02:14.270Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-181",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:10:22.810Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:10:25.275Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-183",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:14:56.596Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:14:59.052Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-185",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:20:01.563Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-186",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:20:47.946Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:30:05.736Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-188",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:30:12.742Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:30:18.038Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:30:20.373Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-191",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:31:57.000Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-192"
+    },
+    {
+      "at": "2026-11-24T08:36:02.386Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-193"
+    },
+    {
+      "at": "2026-11-24T08:36:50.540Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-194"
+    },
+    {
+      "at": "2026-11-24T08:37:40.922Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-195"
+    },
+    {
+      "at": "2026-11-24T08:38:40.988Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-196"
+    },
+    {
+      "at": "2026-11-24T08:40:13.079Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:40:13.079Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-198"
+    },
+    {
+      "at": "2026-11-24T08:40:14.554Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-199",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:40:21.090Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:40:22.754Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-201",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:41:09.673Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-202"
+    },
+    {
+      "at": "2026-11-24T08:42:35.362Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-203"
+    },
+    {
+      "at": "2026-11-24T08:43:27.754Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-204"
+    },
+    {
+      "at": "2026-11-24T08:44:34.261Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-205"
+    },
+    {
+      "at": "2026-11-24T08:45:07.253Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-206"
+    },
+    {
+      "at": "2026-11-24T08:46:19.788Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-207"
+    },
+    {
+      "at": "2026-11-24T08:47:08.073Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-9",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:47:11.762Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-9",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-209",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:47:31.087Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-210"
+    },
+    {
+      "at": "2026-11-24T08:49:45.980Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-211"
+    },
+    {
+      "at": "2026-11-24T08:50:07.392Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-10",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:50:09.154Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-213",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:50:15.919Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-10",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-214",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:50:43.783Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-9",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:50:45.942Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-216"
+    },
+    {
+      "at": "2026-11-24T08:50:46.999Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-9",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-217",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:50:48.894Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:51:01.597Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-11",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:51:09.184Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-11",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-220",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:52:34.956Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-221"
+    },
+    {
+      "at": "2026-11-24T08:52:59.877Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-222"
+    },
+    {
+      "at": "2026-11-24T08:56:05.300Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-223"
+    },
+    {
+      "at": "2026-11-24T08:56:22.459Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-12",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:56:22.918Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-13",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:56:24.716Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-12",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-226",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:56:45.361Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-227"
+    },
+    {
+      "at": "2026-11-24T08:56:51.219Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-14",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T08:56:57.616Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-14",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-229",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T08:58:15.219Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-230"
+    },
+    {
+      "at": "2026-11-24T08:58:57.468Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-231"
+    },
+    {
+      "at": "2026-11-24T09:00:12.715Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-12",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:00:14.737Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-12",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-233",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:01:41.539Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:01:41.539Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-235"
+    },
+    {
+      "at": "2026-11-24T09:01:43.810Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-236",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:02:51.857Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-237"
+    },
+    {
+      "at": "2026-11-24T09:03:44.774Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-238"
+    },
+    {
+      "at": "2026-11-24T09:03:56.839Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-239"
+    },
+    {
+      "at": "2026-11-24T09:04:56.722Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-240"
+    },
+    {
+      "at": "2026-11-24T09:07:46.581Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:07:52.526Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-242",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:10:05.860Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-12",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-243",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:10:33.033Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-12",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:17:39.368Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:17:43.690Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-246",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:20:52.110Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-12",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:20:55.417Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-12",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-248",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:26:42.723Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:26:47.915Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-250",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:27:05.048Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:27:07.346Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-252",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:28:58.761Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-253"
+    },
+    {
+      "at": "2026-11-24T09:30:02.445Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-254",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:30:44.172Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:31:23.408Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:31:23.408Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-257"
+    },
+    {
+      "at": "2026-11-24T09:31:24.807Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-258",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:32:24.091Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-259"
+    },
+    {
+      "at": "2026-11-24T09:33:14.243Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-260"
+    },
+    {
+      "at": "2026-11-24T09:35:20.093Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-261"
+    },
+    {
+      "at": "2026-11-24T09:40:26.777Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-262",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:40:26.916Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:40:37.934Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:40:45.691Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-265",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:42:42.737Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-266"
+    },
+    {
+      "at": "2026-11-24T09:43:07.988Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-267"
+    },
+    {
+      "at": "2026-11-24T09:44:21.480Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-268"
+    },
+    {
+      "at": "2026-11-24T09:49:02.058Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-269"
+    },
+    {
+      "at": "2026-11-24T09:49:49.481Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-270"
+    },
+    {
+      "at": "2026-11-24T09:50:02.300Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-271",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:50:04.557Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:50:04.557Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-273",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T09:50:34.424Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T09:50:47.550Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-275"
+    },
+    {
+      "at": "2026-11-24T09:52:09.644Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-276"
+    },
+    {
+      "at": "2026-11-24T09:52:44.246Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-277"
+    },
+    {
+      "at": "2026-11-24T09:53:08.082Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-278"
+    },
+    {
+      "at": "2026-11-24T09:53:55.003Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-279"
+    },
+    {
+      "at": "2026-11-24T10:00:03.367Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-280",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T10:00:11.832Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-16",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T10:00:51.985Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T10:00:55.330Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-283",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T10:03:58.710Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "askedBy": "human",
+      "provider": "claude-code",
+      "promptId": "prompt-284"
+    },
+    {
+      "at": "2026-11-24T10:09:29.331Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-17",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T10:09:36.638Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-17",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-286",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T10:10:06.854Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-17",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-287",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T10:10:36.808Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-17",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T10:13:53.587Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T10:13:56.277Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-15",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-290",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T10:20:14.370Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "sessionId": "session-17",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main",
+      "provider": "claude-code",
+      "model": "claude-opus-5-5",
+      "turnId": "turn-291",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    },
+    {
+      "at": "2026-11-24T10:20:18.586Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-17",
+      "cwd": "/home/human/dev/app-a",
+      "workedIn": "/home/human/dev/app-a",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-24T10:21:21.297Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": "terminal"
+    },
+    {
+      "at": "2026-11-24T10:21:21.324Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": "Timetrack"
+    },
+    {
+      "at": "2026-11-24T10:21:35.402Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": "terminal"
+    }
+  ]
+}

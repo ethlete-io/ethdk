@@ -115,6 +115,14 @@ describe('attendedAt', () => {
   it('does not end an idle stretch no idle-end closed at a prompt a person gave from afar', () => {
     expect(present([idleStart(30), prompt(60, 'human'), focus(120)])).toEqual([
       { from: AT(15), to: AT(30) },
+      { from: AT(45), to: AT(75) },
+      { from: AT(120), to: AT(135) },
+    ]);
+  });
+
+  it('keeps a prompt inside an idle stretch an idle-end closed out of attendance', () => {
+    expect(present([idleStart(30), prompt(60, 'human'), idleEnd(120)])).toEqual([
+      { from: AT(15), to: AT(30) },
       { from: AT(120), to: AT(135) },
     ]);
   });

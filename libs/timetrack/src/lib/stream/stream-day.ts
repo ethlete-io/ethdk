@@ -19,6 +19,7 @@ import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
 import { TimetrackProjectRoots, workPathsOf, workPathsSplit } from '../model/work-path';
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
+import { unwatchedAwayStretches } from '../rows/attended';
 import { BookedRemoteWindow } from '../rows/remote-booking';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
@@ -1194,8 +1195,13 @@ const streamOrigin = (options: {
   const turns = usage.filter((turn) => turn.provider !== TIMETRACK_PROVIDER);
 
   const inputs = events.filter((event) => event.source === 'input');
-  const originAt = promptOriginReader({ events: inputs, now: config.now, elsewhere: options.elsewhere });
+  const liveOriginAt = promptOriginReader({ events: inputs, now: config.now, elsewhere: options.elsewhere });
   const settledOriginAt = promptOriginReader({ events: inputs, elsewhere: options.elsewhere });
+  // `now` stands for an app watching the seat. Behind a restart it did not, and the live day must read
+  // the prompts there as the settled one will.
+  const unwatched = unwatchedAwayStretches(events);
+  const originAt = (at: Date) =>
+    unwatched.some((stretch) => at > stretch.from && at < stretch.to) ? settledOriginAt(at) : liveOriginAt(at);
   // A remote prompt the user has not come back from yet would reopen presence, which the idle-end
   // that later closes the stretch takes back. Left out, the live day reads as the settled one will.
   const awaitingReturn = new Set(
