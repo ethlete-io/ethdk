@@ -138,7 +138,9 @@ import { flows } from '@shared/flow-data';
 An asset (a mark, logo, icon, picture or font) is one file in `.ethlete/design/<product>/assets/`,
 never a copy inlined into parts. A part imports it as `@assets/<file>`: the default import is a URL
 for `<img src>`; an SVG that must follow tokens (`currentColor`, `var(--accent)`) imports with
-`?raw` and goes inline, for example `@assets/icons/<name>.svg?raw`. A stylesheet, the product's
+`?raw` and goes inline, for example `@assets/icons/<name>.svg?raw`. A picture with the title baked in
+(a poster, key art) gets `data-et-carries-title` on its `<img>`; `sketch check` warns when a heading or an
+`<img>` with alt text draws the title again next to it. A backdrop without the title gets no marker. A stylesheet, the product's
 `styles.css` or a part's, uses `url('@assets/<file>')`, for example in an `@font-face`. A foundation
 part may wrap an asset in a named export. A product finds its base product's assets too. A sketch
 variant adds or changes an asset in its own `<variant>/assets/` folder (`sketch new` and `sketch variant`
