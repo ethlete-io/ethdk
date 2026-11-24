@@ -984,8 +984,38 @@ const listedIdsOf = (response, ids) =>
     (error) => `unreadable body: ${String(error).split('\n')[0]}`,
   );
 
-const watchStream = (page) => {
+const watchServerEvents = (designPort) => {
+  const abort = new AbortController();
+  let pending = '';
+
+  fetch(`http://[::1]:${designPort}/__design/comment-events`, { signal: abort.signal })
+    .then(async (response) => {
+      const decoder = new TextDecoder();
+
+      streamTimeline.add('own stream opened', response.url, String(response.status));
+      for await (const chunk of response.body) {
+        pending += decoder.decode(chunk, { stream: true });
+
+        const frames = pending.split('\n\n');
+
+        pending = frames.pop() ?? '';
+        for (const frame of frames) {
+          const name = /^event: (.+)$/mu.exec(frame)?.[1];
+
+          if (name === 'comments' && writeSeen) streamTimeline.add('server comments event', response.url, 'own stream');
+        }
+      }
+    })
+    .catch((error) => {
+      if (!abort.signal.aborted) streamTimeline.add('own stream failed', `http://[::1]:${designPort}/`, String(error));
+    });
+
+  return () => abort.abort();
+};
+
+const watchStream = (page, designPort) => {
   streamTimeline = eventLog();
+  const unwatchServerEvents = watchServerEvents(designPort);
   writeSeen = false;
   awaitingListing = false;
   writtenIds = [];
@@ -1011,6 +1041,7 @@ const watchStream = (page) => {
   page.on('response', onResponse);
 
   return () => {
+    unwatchServerEvents();
     page.off('request', onRequest);
     page.off('response', onResponse);
   };
@@ -6040,7 +6071,7 @@ const work = async () => {
         heldListings.startJob();
         listingCounts.requested = 0;
 
-        const unwatch = watchStream(page);
+        const unwatch = watchStream(page, designPort);
 
         try {
           result = await Promise.race([
