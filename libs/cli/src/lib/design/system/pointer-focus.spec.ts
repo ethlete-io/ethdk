@@ -252,4 +252,45 @@ describe('probePointerFocus', () => {
 
     expect(await probePointerFocus({ open, settle: async () => undefined })).toBeNull();
   }, 30_000);
+
+  const draftOver = (draft: string) => async () => {
+    const page = await browser!.newPage();
+
+    await page.setContent(`<div style="display: flex; gap: 24px; padding: 16px">
+        <div style="position: relative; width: 200px; height: 60px">
+          <div style="position: absolute; left: 60px; top: 20px; z-index: 20; ${draft}; background: white">
+            <textarea aria-label="Kommentar"></textarea>
+          </div>
+        </div>
+        <div style="position: relative; width: 200px; height: 60px">
+          <div style="position: absolute; inset: 0; z-index: 2">
+            <div role="button" tabindex="0" aria-label="Kommentar zu b fit-active" style="position: absolute; inset: 0"></div>
+          </div>
+        </div>
+      </div>`);
+
+    return { page, locator: page.getByRole('button'), close: () => page.close() };
+  };
+
+  it('clicks the part of a comment target a draft card leaves free', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const probes = await probePointerFocus({
+      open: draftOver('width: 300px; height: 40px'),
+      settle: async () => undefined,
+    });
+
+    expect(probes?.click?.focused).toBe(true);
+  }, 30_000);
+
+  it('skips a comment target a draft card covers all over', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const probes = await probePointerFocus({
+      open: draftOver('width: 500px; height: 80px; top: 0; left: 0'),
+      settle: async () => undefined,
+    });
+
+    expect(probes).toBeNull();
+  }, 30_000);
 });

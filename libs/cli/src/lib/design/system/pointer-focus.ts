@@ -221,10 +221,37 @@ export type PointerFocusProbes = {
   keyboard: { before: RingStyle; probe: RingProbe } | null;
 };
 
+const POINTER_REACH_STEPS = 6;
+
+const pointerReachOf = (element: Element, steps: number) => {
+  const box = element.getBoundingClientRect();
+  const fractions = [0.5, ...Array.from({ length: steps }, (_, index) => (index + 0.5) / steps)];
+  const page = element.ownerDocument.documentElement;
+  const reaches = (x: number, y: number) => {
+    const hit =
+      x >= 0 && y >= 0 && x < page.clientWidth && y < page.clientHeight
+        ? element.ownerDocument.elementFromPoint(x, y)
+        : null;
+
+    return hit !== null && element.contains(hit);
+  };
+
+  for (const fy of fractions)
+    for (const fx of fractions) {
+      const x = box.width * fx;
+      const y = box.height * fy;
+
+      if (reaches(box.left + x, box.top + y)) return { x, y };
+    }
+
+  return null;
+};
+
 /**
  * Probes an element in two fresh pages: `open` returns the locator of the element on a freshly loaded page. The click
- * is a real mouse click at its centre after Tab presses that leave focus elsewhere, because a script focus after a pointer press paints the ring only when the last input was a key; keyboard focus follows a Shift press so the browser treats it as keyboard
- * focus. It answers `null` for an element no pointer reaches (computed `pointer-events: none`).
+ * is a real mouse click after Tab presses that leave focus elsewhere, because a script focus after a pointer press paints the ring only when the last input was a key; keyboard focus follows a Shift press so the browser treats it as keyboard
+ * focus. The click lands on a point of the element nothing covers; it answers `null` for an element no pointer reaches
+ * (`pointer-events: none`, or covered all over).
  */
 export const probePointerFocus = async (options: {
   open: () => Promise<{ page: Page; locator: Locator; close: () => Promise<void> }>;
@@ -235,16 +262,14 @@ export const probePointerFocus = async (options: {
   let clickThenKey: RingProbe | null = null;
 
   try {
-    const unreachable = await clicked.locator.evaluate(
-      (element) => getComputedStyle(element).pointerEvents === 'none',
-      undefined,
-      { timeout: DRAW_TIMEOUT_MS },
-    );
+    await clicked.locator.scrollIntoViewIfNeeded({ timeout: DRAW_TIMEOUT_MS });
 
-    if (unreachable) return null;
+    const position = await clicked.locator.evaluate(pointerReachOf, POINTER_REACH_STEPS, { timeout: DRAW_TIMEOUT_MS });
+
+    if (position === null) return null;
 
     await tabAwayFrom(clicked.page, clicked.locator);
-    await clicked.locator.click({ timeout: DRAW_TIMEOUT_MS });
+    await clicked.locator.click({ position, timeout: DRAW_TIMEOUT_MS });
     await options.settle(clicked.page);
     click = await ringProbeOrNullOf(clicked.locator);
     if (click) clickThenKey = await readRingAfterKey({ ...clicked, settle: options.settle });
