@@ -96,11 +96,8 @@ const wantOf = (params: URLSearchParams, response: ServerResponse): DrawWant => 
   };
 };
 
-const schemeOf = (params: URLSearchParams) => {
-  const scheme = params.get('scheme');
-
-  return scheme === 'dark' || scheme === 'light' ? scheme : null;
-};
+/** Playwright starts a context in `light`, so an ask without `scheme` shares the picture of a `scheme=light` ask. */
+const schemeOf = (params: URLSearchParams): 'dark' | 'light' => (params.get('scheme') === 'dark' ? 'dark' : 'light');
 
 /** Whether a `--scheme` value is absent or one the frame pins. */
 export const isSchemeFlag = (value: string | undefined) => value === undefined || value === 'light' || value === 'dark';

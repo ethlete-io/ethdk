@@ -150,7 +150,20 @@ const cellsOf = async (page, variant) => {
       const text = (await frame?.evaluate(() => (document.body?.innerText ?? '').trim()).catch(() => '')) ?? '';
       const failed = text.startsWith('design-explore:');
 
-      return { key, failed, error: failed ? text.split('\n').at(-1) : '', drawn: !failed && (picture || !!text) };
+      const state = await cell.evaluate((element) => {
+        const image = element.querySelector('img[data-shot-picture]');
+        const frames = element.querySelectorAll('iframe').length;
+
+        return `${image ? (image.classList.contains('hidden') ? 'picture failed' : image.complete ? 'picture empty' : 'picture loading') : 'no picture'}, ${frames} frame(s)`;
+      });
+
+      return {
+        key,
+        failed,
+        error: failed ? text.split('\n').at(-1) : '',
+        drawn: !failed && (picture || !!text),
+        state,
+      };
     }),
   );
 };
@@ -241,19 +254,30 @@ const everyPageFrameDraws = async (context) => {
     .filter((target) => target.error)
     .map((target) => `${target.variant}: ${target.error}`);
 
+  const drawnTotal = async () => (await (await fetch(`http://[::1]:${designPort}/__design/queue`)).json()).drawnTotal;
+  const drawnByListing = await drawnTotal();
   await openView(context, PAGE_SKETCH_VIEW);
 
   const cells = await drawnCells(page, { timeout: DRAWN_TIMEOUT_MS, rows: Object.keys(PAGE_VARIANTS) });
+  const redrawn = (await drawnTotal()) - drawnByListing;
   const drawn = cells.filter((cell) => cell.drawn).length;
   const failed = cells.filter((cell) => cell.failed).map((cell) => `${cell.key}: ${cell.error}`);
   const missing = Object.keys(PAGE_VARIANTS).filter(
     (variant) => !cells.some((cell) => cell.key.startsWith(`${variant} `)),
   );
   const badge = (await page.locator('[data-sk-render-error]').allTextContents()).join(' ').trim();
+  const undrawn = cells.filter((cell) => !cell.drawn && !cell.failed).map((cell) => `${cell.key} (${cell.state})`);
 
   return {
-    ok: !unloaded.length && cells.length > 0 && drawn === cells.length && !failed.length && !missing.length && !badge,
-    detail: `${drawn}/${cells.length} cells drawn, variants without a cell ${missing.length}${missing.length ? ': ' + missing.join(', ') : ''}, badge "${badge}", failed ${failed.length}${failed.length ? ': ' + failed.slice(0, 4).join('; ') : ''}, unloaded variants ${unloaded.length}${unloaded.length ? ': ' + unloaded.join('; ').slice(0, 300) : ''}`,
+    ok:
+      !redrawn &&
+      !unloaded.length &&
+      cells.length > 0 &&
+      drawn === cells.length &&
+      !failed.length &&
+      !missing.length &&
+      !badge,
+    detail: `${drawn}/${cells.length} cells drawn, variants without a cell ${missing.length}${missing.length ? ': ' + missing.join(', ') : ''}, badge "${badge}", failed ${failed.length}${failed.length ? ': ' + failed.slice(0, 4).join('; ') : ''}, unloaded variants ${unloaded.length}${unloaded.length ? ': ' + unloaded.join('; ').slice(0, 300) : ''}, pictures drawn again after the listing compared them ${redrawn}${undrawn.length ? `, undrawn: ${undrawn.slice(0, 8).join('; ')}` : ''}`,
   };
 };
 

@@ -230,7 +230,7 @@ describe('createPartShooter', () => {
     const shot = await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&surface=dark');
 
     expect(shot).toMatchObject({ status: 200, type: 'image/png' });
-    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 390, height: 844 } });
+    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 390, height: 844 }, colorScheme: 'light' });
     expect(drawnUrls()[0]).toBe(
       'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&surface=dark',
     );
@@ -376,7 +376,7 @@ describe('createPartShooter', () => {
     const shot = await ask(shots, 'product=acme&part=components/card&state=long&width=480');
 
     expect(shot).toMatchObject({ status: 200, type: 'image/png' });
-    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 480, height: 800 } });
+    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 480, height: 800 }, colorScheme: 'light' });
     expect(new URL(drawnUrls()[0] ?? '').searchParams.has('fit')).toBe(false);
     expect(screenshot).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'png', clip: { x: 10, y: 20, width: 200, height: 80 } }),
@@ -920,9 +920,13 @@ describe('createPartShooter', () => {
     const part = 'product=acme&part=components/card&state=long';
 
     expect(await ask(shots, `${part}&scale=3`)).toMatchObject({ status: 200 });
-    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 3 });
+    expect(newContext).toHaveBeenLastCalledWith({
+      viewport: { width: 1280, height: 800 },
+      deviceScaleFactor: 3,
+      colorScheme: 'light',
+    });
     expect(await ask(shots, part)).toMatchObject({ status: 200 });
-    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 } });
+    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 }, colorScheme: 'light' });
 
     for (const scale of ['0', '5', '1.5', 'big']) {
       const answer = await ask(shots, `${part}&scale=${scale}`);
@@ -948,6 +952,16 @@ describe('createPartShooter', () => {
       'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&fit=',
       'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&fit=',
     ]);
+  });
+
+  it('answers an ask without a colour scheme with the picture of the light one', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    expect(await ask(shots, part)).toMatchObject({ status: 200 });
+    expect(await ask(shots, `${part}&scheme=light`)).toMatchObject({ status: 200 });
+
+    expect(drawnUrls()).toHaveLength(1);
   });
 
   it('draws a part and a call on a transparent page in either colour scheme, as a live frame does', async () => {
@@ -1253,7 +1267,7 @@ describe('createPartShooter for a call', () => {
     const shot = await ask(shots, 'call=acme/login&variant=a&width=1280&color=brand');
 
     expect(shot).toMatchObject({ status: 200, type: 'image/png' });
-    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 1280, height: 800 } });
+    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 1280, height: 800 }, colorScheme: 'light' });
     expect(drawnUrls()[0]).toBe('http://localhost:1/frame.html?call=acme%2Flogin&variant=a&color=brand');
     expect(screenshot).toHaveBeenCalledWith(expect.objectContaining({ fullPage: true, type: 'png' }));
   });
