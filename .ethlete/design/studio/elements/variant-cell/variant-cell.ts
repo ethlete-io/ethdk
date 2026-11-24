@@ -19,12 +19,12 @@ type Props = {
   shown?: number;
   crop?: string;
   mark?: { left: number; top: number; width: number; height: number };
-  stacked?: boolean;
+  stacked?: string[];
   selected?: boolean;
   overlay?: string;
 };
 
-const STACK_INSETS = [32, 64];
+const STACK_INSETS = [6, 12];
 
 export const variantCellStyles = styles + loaderStyles;
 
@@ -56,24 +56,24 @@ const frame = ({
   shown = height,
   crop,
   mark,
-  stacked = false,
+  stacked = [],
   selected = false,
   same = false,
   overlay = '',
 }: Props) => {
   const sized = shown === undefined ? '' : `--sk-shown: ${shown}px`;
-  const stackBars = STACK_INSETS.map(
+  const stackEdges = STACK_INSETS.map(
     (inset) =>
       html`<div
-        class="h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
-        style="margin-inline: ${inset}px"
+        class="rounded-b-control-sm bg-et-surface-bg sk-fit"
+        style="height: 5px; margin-inline: ${inset}px"
         data-sk-crop-stack
       ></div>`,
   ).join('');
-  return html`<div class="relative row-start-2 flex min-w-0 flex-col self-start ${stacked ? 'sk-fit' : ''}">
+  return html`<div class="relative row-start-2 flex min-w-0 flex-col self-start">
     <div class="contents" ${slot('overlay')}>${overlay}</div>
     <div
-      class="relative w-(--sk-frame) overflow-clip ${shown === undefined ? '' : '@container-size'} [overflow-clip-margin:8px] ${stacked ? 'z-1' : 'sk-fit'} ${
+      class="relative w-(--sk-frame) overflow-clip ${shown === undefined ? '' : '@container-size'} [overflow-clip-margin:8px] sk-fit ${stacked.length > 0 ? 'z-1' : ''} ${
         shown === undefined ? '' : 'h-[calc(var(--sk-shown)*var(--sk-scale))]'
       } ${same ? 'opacity-50' : ''}"
       style="${sized}"
@@ -107,12 +107,12 @@ const frame = ({
       <span class="pointer-events-none absolute inset-0" data-frame-border></span>
     </div>
     ${
-      stacked
-        ? html`<div style="height: calc(${STACK_INSETS.length * 20}px * var(--sk-scale))"></div>
-            <div class="absolute top-0 left-0 origin-top-left scale-(--sk-scale)" style="width: ${width}px">
-              <div style="height: ${shown ?? 0}px"></div>
-              ${stackBars}
-            </div>`
+      stacked.length > 0
+        ? html`${stackEdges}<span
+              class="mt-space-1 w-(--sk-frame) font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere"
+              data-sk-stack-states
+              >${SKETCHES_LABELS.stackedStates(stacked)}</span
+            >`
         : ''
     }
   </div>`;
@@ -134,7 +134,7 @@ export const variantCell = (props: Props) => {
         }"
         ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span
         >${same ? SKETCHES_LABELS.unchanged : ''}</span
-      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-same-as-rest>${sameAsRest.join(', ')} = ${state}</span>` : ''}</span
+      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-same-as-rest>${SKETCHES_LABELS.sameAsRest(sameAsRest, state)}</span>` : ''}</span
     >
     ${frame(props)}
   </div>`;
@@ -153,7 +153,7 @@ const crop = {
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
-  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a base-state cell names the states folded as drawn like it after its own state name (hover, active = default). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two short bars under the frame; the host places comment pins on their point in the shot through the overlay slot.',
+  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a base-state cell names the states folded as drawn like it after its own state name (hover, active = default). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two card edges under the frame like a stack and the names of the folded states below (+ active, focus-visible); the host places comment pins on their point in the shot through the overlay slot.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [240],
   states: {
@@ -163,7 +163,7 @@ export default definePart({
     loading: { ...base, state: 'active', loading: true, shown: 120 },
     'loading-small': { ...base, state: 'focus-visible', loading: true, height: 16, shown: 16 },
     cropped: { ...base, state: 'hover', ...crop },
-    stacked: { ...base, state: 'hover', ...crop, stacked: true },
+    stacked: { ...base, state: 'hover', ...crop, stacked: ['active', 'focus-visible'] },
     pinned: {
       ...base,
       overlay: [
@@ -184,7 +184,7 @@ export default definePart({
     cropped:
       'A cell cropped to its change; check the magnified Speichern fills the frame and the accent crop mark frames it.',
     stacked:
-      'A cropped cell standing for a group of states; check the two shorter bars under the frame that read as a stack.',
+      'A cropped cell standing for a group of states; check the two card edges under the frame read as a stack and + active, focus-visible names the folded states below it.',
     pinned:
       'A cell with two comment pins; check that each pin point sits on its spot in the shot and the selected pin shows the accent fill.',
     'loading-small':

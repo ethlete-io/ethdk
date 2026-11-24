@@ -595,12 +595,11 @@
     [loading]="loadingShots().has(key)"
     [frameKey]="key"
     [width]="item.width ?? row.width"
-    [rowWidth]="row.width"
     [height]="item.height"
     [shown]="shownHeightOf(row, item)"
     [crop]="cropTransform"
     [mark]="mark"
-    [stacked]="!!cropTransform && !!mark && (groupOfState().get(item.state)?.states?.length ?? 0) > 1"
+    [stacked]="cropTransform && mark ? foldedOf(item.state) : []"
     [selected]="key === selectedFrame()"
   >
     <ng-container ngProjectAs="[overlay]">

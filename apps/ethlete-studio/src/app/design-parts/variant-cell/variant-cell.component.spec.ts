@@ -39,7 +39,7 @@ describe('VariantCellComponent', () => {
   it('names the folded states it stands in for beside the state name', async () => {
     const cell = await setup({ state: 'film', width: 168, height: 250, sameAsRest: ['film-hover', 'film-active'] });
 
-    expect(cell.querySelector('[data-sk-same-as-rest]')?.textContent).toBe('film-hover, film-active = rest');
+    expect(cell.querySelector('[data-sk-same-as-rest]')?.textContent).toBe('film-hover, film-active = film');
   });
 
   it('shows no rest note while it stands in for no folded state', async () => {
@@ -88,7 +88,7 @@ describe('VariantCellComponent', () => {
     expect(cell.querySelector('[data-frame-border]')?.className).not.toContain('outline');
   });
 
-  it('draws the crop mark and the stack bars for a cropped group', async () => {
+  it('draws the crop mark, the stack edges and the folded state names for a cropped group', async () => {
     const cell = await setup({
       state: 'a',
       width: 200,
@@ -96,13 +96,21 @@ describe('VariantCellComponent', () => {
       shown: 40,
       crop: 'scale(2)',
       mark: { left: 1, top: 2, width: 30, height: 20 },
-      stacked: true,
-      rowWidth: 200,
+      scale: 0.5,
+      stacked: ['title-hover', 'title-focus-visible'],
     });
 
     expect(cell.querySelector('[data-sk-frame]')?.hasAttribute('data-sk-cropped')).toBe(true);
     expect(cell.querySelector('[data-sk-crop-mark]')).not.toBeNull();
     expect(cell.querySelectorAll('[data-sk-crop-stack]').length).toBe(2);
+    expect(cell.querySelector('[data-sk-stack-states]')?.textContent).toBe('+ title-hover, title-focus-visible');
+    expect(cell.querySelector<HTMLElement>('[data-sk-stack-states]')?.style.width).toBe('100px');
+  });
+
+  it('draws no stack for a cropped cell that stands for no other state', async () => {
+    const cell = await setup({ state: 'a', width: 200, height: 100, crop: 'scale(2)' });
+
+    expect(cell.querySelector('[data-sk-crop-stack], [data-sk-stack-states]')).toBeNull();
   });
 
   it('hides the label row when the labels are too small', async () => {

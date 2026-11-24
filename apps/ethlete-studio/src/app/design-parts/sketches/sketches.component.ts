@@ -817,6 +817,10 @@ export class SketchesComponent {
     return `${this.matrixTop() + 1 + states.indexOf(state) * 2} / span 2`;
   }
 
+  protected foldedOf(state: string) {
+    return (this.groupOfState().get(state)?.states ?? []).filter((folded) => folded !== state);
+  }
+
   protected croppedOf(state: string) {
     const group = this.groupOfState().get(state);
 

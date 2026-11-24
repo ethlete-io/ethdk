@@ -279,8 +279,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     class: extra,
     ...props
   }) => ({
-    scale: 0.5,
-    rowWidth: props['width'],
+    scale: 1,
     ...props,
     class: `${typeof extra === 'string' ? extra : ''} w-60`,
   }),

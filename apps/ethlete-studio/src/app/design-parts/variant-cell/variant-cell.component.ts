@@ -39,24 +39,22 @@ export class VariantCellComponent {
   public loading = input(false);
   public frameKey = input('');
   public width = input(0);
-  public rowWidth = input(0);
   public height = input<number>();
   public shown = input<number>();
   public crop = input<string | null>(null);
   public mark = input<VariantCellMark | null>(null);
-  public stacked = input(false);
+  public stacked = input<readonly string[]>([]);
   public selected = input(false);
   public frameRef = viewChild<ElementRef<HTMLElement>>('frame');
   public labelRowRef = viewChild<ElementRef<HTMLElement>>('labelRow');
   public stateLabelRef = viewChild<ElementRef<HTMLElement>>('stateLabel');
 
   protected readonly LABELS = SKETCHES_LABELS;
-  protected readonly STACK_INSETS = [32, 64];
+  protected readonly STACK_INSETS = [6, 12];
 
   protected dimmed = computed(() => this.same() || this.inherited());
   protected note = computed(() => (this.inherited() ? this.LABELS.fromSdk : this.same() ? this.LABELS.unchanged : ''));
   protected frameWidth = computed(() => this.width() * this.scale());
   protected shownHeight = computed(() => this.shown() ?? this.height() ?? 0);
-  protected frameClass = computed(() => (this.stacked() ? 'z-1' : FRAME_RING));
-  protected wrapperClass = computed(() => (this.stacked() ? FRAME_RING : ''));
+  protected frameClass = computed(() => (this.stacked().length > 0 ? `z-1 ${FRAME_RING}` : FRAME_RING));
 }

@@ -19,11 +19,11 @@
       [style.font-size.px]="labelFont()"
       class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere"
       data-sk-same-as-rest
-      >{{ LABELS.sameAsRest(sameAsRest()) }}</span
+      >{{ LABELS.sameAsRest(sameAsRest(), state()) }}</span
     >
   }
 </span>
-<div [class]="wrapperClass()" class="relative row-start-2 flex min-w-0 flex-col self-start">
+<div class="relative row-start-2 flex min-w-0 flex-col self-start">
   <ng-content select="[overlay]" />
   <div
     #frame
@@ -79,21 +79,20 @@
     }
     <span class="pointer-events-none absolute inset-0" data-frame-border></span>
   </div>
-  @if (stacked()) {
-    <div [style.height.px]="STACK_INSETS.length * 20 * scale()"></div>
-    <div
-      [style.width.px]="rowWidth()"
-      [style.transform]="'scale(' + scale() + ')'"
-      class="absolute top-0 left-0 origin-top-left"
+  @if (stacked().length > 0) {
+    @for (inset of STACK_INSETS; track inset) {
+      <div
+        [style.margin-inline.px]="inset"
+        class="h-[5px] rounded-b-control-sm bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+        data-sk-crop-stack
+      ></div>
+    }
+    <span
+      [style.font-size.px]="labelFont()"
+      [style.width.px]="frameWidth()"
+      class="mt-space-1 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere"
+      data-sk-stack-states
+      >{{ LABELS.stackedStates(stacked()) }}</span
     >
-      <div [style.height.px]="shownHeight()"></div>
-      @for (inset of STACK_INSETS; track inset) {
-        <div
-          [style.margin-inline.px]="inset"
-          class="h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
-          data-sk-crop-stack
-        ></div>
-      }
-    </div>
   }
 </div>

@@ -1557,7 +1557,7 @@ describe('SketchesComponent', () => {
       expect(root.querySelectorAll('[data-sk-state="moved"] [data-sk-crop-stack]')).toHaveLength(0);
     });
 
-    it('draws the crop matrix like the screen design: no first change, no fold column, scaled stack edges', async () => {
+    it('draws the crop matrix like the screen design: no first change, no fold column, named stack', async () => {
       const root: HTMLElement = (await render({ rows: cropRows, camera: '100' })).nativeElement;
       const frame = root.querySelector<HTMLElement>('[data-sk-frame="x open"]');
       const edges = root.querySelector('[data-sk-state="open"] [data-sk-crop-stack]')?.parentElement;
@@ -1565,17 +1565,22 @@ describe('SketchesComponent', () => {
       expect(root.querySelector('[data-sk-first-change]')).toBeNull();
       expect(root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns).not.toMatch(/auto$/);
       expect(frame?.parentElement?.classList.contains('self-start')).toBe(true);
-      expect(edges?.style.transform).toBe('scale(1)');
+      expect(edges).toBe(frame?.parentElement);
+      expect(root.querySelector('[data-sk-state="open"] [data-sk-stack-states]')?.textContent).toMatch(/^\+ \S/);
+      expect(root.querySelector('[data-sk-state="open"] [data-sk-stack-states]')?.textContent).not.toContain('open');
+      expect(root.querySelector('[data-sk-state="moved"] [data-sk-stack-states]')).toBeNull();
     });
 
-    it('draws the stack edges below a shot-high spacer in one scaled box under the frame, like the screen design', async () => {
+    it('draws the stack edges and the folded state names in flow under the frame, at the frame width', async () => {
       const root: HTMLElement = (await render({ rows: cropRows, camera: '100' })).nativeElement;
       const frame = root.querySelector<HTMLElement>('[data-sk-frame="x open"]');
       const edges = root.querySelector('[data-sk-state="open"] [data-sk-crop-stack]')?.parentElement;
 
       expect(frame?.classList.contains('z-1')).toBe(true);
-      expect(edges?.classList.contains('absolute')).toBe(true);
-      expect((edges?.firstElementChild as HTMLElement | null)?.style.height).toBe(frame?.style.height);
+      expect(edges?.classList.contains('absolute')).toBe(false);
+      expect(root.querySelector<HTMLElement>('[data-sk-state="open"] [data-sk-stack-states]')?.style.width).toBe(
+        frame?.style.width,
+      );
       expect(root.querySelector('[data-sk-matrix]')?.parentElement?.classList.contains('min-w-full')).toBe(true);
     });
 
