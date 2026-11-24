@@ -12,6 +12,16 @@ test('splits template literals around placeholders and drops short ones', () => 
   assert.deepEqual(literalsOf("a: (f: string) => `Kommentar zu ${f} danach`, b: 'ja'"), ['Kommentar zu', 'danach']);
 });
 
+test('skips a quoted object key, which names data, not label text', () => {
+  assert.deepEqual(
+    literalsOf(
+      "    'needs rebase': 'Teile haben sich seit dem Entwurf geändert. Bitte deinen Agenten, ihn zu aktualisieren.',",
+    ),
+    ['Teile haben sich seit dem Entwurf geändert. Bitte deinen Agenten, ihn zu aktualisieren.'],
+  );
+  assert.deepEqual(literalsOf("    'rebase not committed':"), []);
+});
+
 test('keeps only removed texts that no longer exist in the file', () => {
   const diff = [
     '--- a/x',

@@ -22,6 +22,7 @@ const labelsTextOf = (paths, prefix) =>
 
 export const literalsOf = (line) =>
   [...line.matchAll(LITERAL)]
+    .filter((match) => !/^\s*\??:/.test(line.slice(match.index + match[0].length)))
     .flatMap((match) => (match[1] ?? match[2] ?? match[3]).split(/\$\{[^}]*\}/))
     .map((text) => text.trim())
     .filter((text) => text.length >= MIN_LENGTH);
