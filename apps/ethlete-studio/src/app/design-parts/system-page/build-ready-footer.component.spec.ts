@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, reflectComponentType } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
@@ -95,35 +95,11 @@ describe('BuildReadyFooterComponent', () => {
     expect(element.textContent).not.toContain('Sketch öffnen');
   });
 
-  it('shows the agent progress beside the status with its detail as the tooltip', async () => {
-    const { fixture, element } = await render({ state: 'ready' });
-
-    fixture.componentRef.setInput('agent', { state: 'working', doing: 'prüft', detail: 'compare für pressed' });
-    await fixture.whenStable();
-
-    const badge = withTooltip(element, 'compare für pressed');
-
-    expect(badge?.textContent?.trim()).toBe('Agent prüft');
-
-    fixture.componentRef.setInput('agent', { state: 'failed', detail: 'tsc bricht ab' });
-    await fixture.whenStable();
-
-    expect(withTooltip(element, 'tsc bricht ab')?.textContent?.trim()).toBe('Agent fehlgeschlagen');
-  });
-
-  // The agent progress also names a waiting and an interrupted agent.
-  it('shows the waiting and the interrupted agent beside the status', async () => {
-    const { fixture, element } = await render({ state: 'ready' });
-
-    fixture.componentRef.setInput('agent', { state: 'waiting', detail: 'wartet auf Tom' });
-    await fixture.whenStable();
-
-    expect(withTooltip(element, 'wartet auf Tom')?.textContent?.trim()).toBe('Agent wartet');
-
-    fixture.componentRef.setInput('agent', { state: 'interrupted', detail: 'abgebrochen' });
-    await fixture.whenStable();
-
-    expect(withTooltip(element, 'abgebrochen')?.textContent?.trim()).toBe('Agent unterbrochen');
+  it('takes no agent progress', () => {
+    // B695: the agent's run state is no action of the human, so the footer has no input for it.
+    expect(reflectComponentType(BuildReadyFooterComponent)?.inputs.map(({ propName }) => propName)).not.toContain(
+      'agent',
+    );
   });
 
   it('emits the direct edit from Sketch öffnen beside the status while the reasons stay closed', async () => {

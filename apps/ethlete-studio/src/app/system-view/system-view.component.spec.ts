@@ -239,7 +239,8 @@ describe('SystemViewComponent on a reload', () => {
         return json({
           points: [
             { kind: 'missing-motion', from: 'rest', to: 'hover' },
-            { kind: 'open-comment', comment: 'c-1', state: 'hover', answered: false },
+            { kind: 'open-comment', comment: 'c-1', state: 'hover', answered: true },
+            { kind: 'open-comment', comment: 'c-2', state: 'focus', answered: false },
           ],
           buildReady: { ready: false, blockers: [{ kind: 'stale-record', text: 'no check record' }] },
         });
@@ -257,7 +258,7 @@ describe('SystemViewComponent on a reload', () => {
     );
 
     expect(asked).toContain('http://localhost:4402/__design/open-points?product=web&part=elements%2Frating');
-    expect(chip?.textContent?.trim()).toBe('3 offen');
+    expect(chip?.textContent?.trim()).toBe('2 offen');
     expect(document.querySelector('ethlete-open-points-popover')).toBeNull();
 
     chip?.click();
@@ -267,16 +268,16 @@ describe('SystemViewComponent on a reload', () => {
       [...line.querySelectorAll('span')].map((span) => span.textContent?.trim()),
     );
 
+    // B695: the comment waiting on the agent and the missing check record do not list.
     expect(lines).toEqual([
-      ['Wartet auf den Agenten', 'hover'],
-      ['Kein Prüfergebnis zum aktuellen Design - der Agent hat es noch nicht geprüft', 'stale-record'],
+      ['Beantwortet, wartet auf dich', 'hover'],
       ['rest → hover', 'motion'],
     ]);
 
     const rows = document.querySelectorAll<HTMLButtonElement>('ethlete-open-points-popover [data-open-point-target]');
 
     expect([...rows].map((row) => row.textContent?.trim())).toEqual([
-      'Wartet auf den Agentenhover',
+      'Beantwortet, wartet auf dichhover',
       'rest → hovermotion',
     ]);
 

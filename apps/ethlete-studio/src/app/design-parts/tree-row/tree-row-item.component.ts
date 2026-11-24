@@ -20,10 +20,7 @@ export type TreeRow = {
   hint?: string;
 };
 
-const STATUS_TITLE: Record<TreeRowStatus, string> = {
-  'in-progress': TREE_ROW_LABELS.sketchInProgress,
-  ready: TREE_ROW_LABELS.sketchReady,
-};
+const STATUS_TITLE: Partial<Record<TreeRowStatus, string>> = { ready: TREE_ROW_LABELS.sketchReady };
 
 const STATUS_CLASS: Record<TreeRowStatus, string> = { 'in-progress': 'text-et-surface-muted', ready: 'text-et-theme' };
 
@@ -87,7 +84,7 @@ const SELECTED_CLASS =
       </span>
     }
     @if (row.status) {
-      <span [class]="'flex flex-none ' + STATUS_CLASS[row.status]" [etTooltip]="STATUS_TITLE[row.status]">
+      <span [class]="'flex flex-none ' + STATUS_CLASS[row.status]" [etTooltip]="STATUS_TITLE[row.status] ?? null">
         <svg
           width="12"
           height="12"

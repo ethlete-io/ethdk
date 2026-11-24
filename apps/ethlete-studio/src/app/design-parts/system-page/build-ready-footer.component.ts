@@ -21,9 +21,6 @@ export type BuildReadyStatus = (
   { state: 'ready' } | { state: 'blocked'; blockers: BuildBlocker[] } | { state: 'checking' }
 ) & { developer?: string[] };
 
-export type AgentProgress =
-  { state: 'working'; doing: string; detail: string } | { state: 'waiting' | 'interrupted' | 'failed'; detail: string };
-
 type BlockerIcon = 'pencil' | 'warning' | 'grid' | 'error' | 'flow' | 'up-down';
 
 const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
@@ -71,25 +68,6 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
               <et-badge variant="outline" size="sm">{{ LABELS.developer }}</et-badge>
             </div>
           </span>
-        }
-        @if (agent(); as progress) {
-          @if (progress.state === 'failed') {
-            <span [etProvideColor]="errorTheme()" [etTooltip]="progress.detail" class="flex">
-              <div class="flex flex-wrap items-center">
-                <et-badge variant="tonal" size="sm">{{ LABELS.agent.failed }}</et-badge>
-              </div>
-            </span>
-          } @else {
-            <span [etTooltip]="progress.detail" class="flex">
-              <div class="flex flex-wrap items-center">
-                <et-badge variant="outline" size="sm">
-                  {{
-                    progress.state === 'working' ? LABELS.agent.working(progress.doing) : LABELS.agent[progress.state]
-                  }}
-                </et-badge>
-              </div>
-            </span>
-          }
         }
         <span class="ms-auto"></span>
         @if (directEdit(); as edit) {
@@ -187,9 +165,7 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
 })
 export class BuildReadyFooterComponent {
   protected warningTheme = injectSemanticColorTheme('warning');
-  protected errorTheme = injectSemanticColorTheme('error');
   public status = input.required<BuildReadyStatus>();
-  public agent = input<AgentProgress | null>(null);
   public blockersOpen = model(false);
 
   public openEditSketch = output<BuildBlocker>();

@@ -67,33 +67,3 @@ export const developerReasons = [
 ];
 
 export const developerLabel = BUILD_READY_LABELS.developer;
-
-export type AgentProgress =
-  | { state: 'working'; doing: string; detail: string }
-  | { state: 'waiting'; detail: string }
-  | { state: 'interrupted'; detail: string }
-  | { state: 'failed'; detail: string };
-
-export type AgentState = AgentProgress['state'];
-
-export const agentSamples: Record<AgentState, AgentProgress> = {
-  working: { state: 'working', doing: 'behebt', detail: 'APP-SPEC in button.component.spec.ts' },
-  waiting: { state: 'waiting', detail: 'auf deine Antwort im Kommentar zu outline' },
-  interrupted: { state: 'interrupted', detail: 'Sitzung beendet, bevor hover fertig war' },
-  failed: { state: 'failed', detail: 'tsc meldet 2 Fehler in system.ts' },
-};
-
-export const agentLabel = (progress: AgentProgress) =>
-  progress.state === 'working'
-    ? `Agent ${progress.doing}`
-    : progress.state === 'waiting'
-      ? BUILD_READY_LABELS.agent.waiting
-      : progress.state === 'interrupted'
-        ? BUILD_READY_LABELS.agent.interrupted
-        : BUILD_READY_LABELS.agent.failed;
-
-export const agentOnReadyPart: AgentProgress = {
-  state: 'working',
-  doing: 'zeichnet',
-  detail: 'einen Sketch für den Zustand pressed',
-};

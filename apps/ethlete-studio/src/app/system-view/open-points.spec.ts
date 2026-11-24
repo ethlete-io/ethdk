@@ -2,6 +2,7 @@ import { buildReadyStatusOf, openPointGroupsOf, sketchPointGroupsOf } from './op
 
 describe('openPointGroupsOf', () => {
   it('groups the points by icon in the popover order, with the texts of the System page design', () => {
+    // B695: a comment waiting on the agent and a missing check record are no action of the human, so neither lists.
     expect(
       openPointGroupsOf({
         points: [
@@ -36,18 +37,11 @@ describe('openPointGroupsOf', () => {
       },
       {
         icon: 'comment',
-        lines: [
-          { text: 'Wartet auf den Agenten', detail: 'outline', target: { kind: 'comment', comment: 'a' } },
-          { text: 'Beantwortet, wartet auf dich', detail: 'filled', target: { kind: 'comment', comment: 'b' } },
-        ],
+        lines: [{ text: 'Beantwortet, wartet auf dich', detail: 'filled', target: { kind: 'comment', comment: 'b' } }],
       },
       {
         icon: 'error',
         lines: [
-          {
-            text: 'Kein Prüfergebnis zum aktuellen Design - der Agent hat es noch nicht geprüft',
-            detail: 'stale-record',
-          },
           {
             text: 'elements/icon ist noch nicht baubereit',
             detail: 'elements/icon',
@@ -62,8 +56,8 @@ describe('openPointGroupsOf', () => {
     ]);
   });
 
-  // A sketch rule problem is listed as an error that names the rule.
-  it('lists a rule problem of a sketch variant as an error that names the rule', () => {
+  it('lists no rule problem and no stale base of a sketch', () => {
+    // B695: the agent fixes a sketch rule problem and rebases a stale sketch, so the human sees neither.
     expect(
       openPointGroupsOf({
         points: [
@@ -74,21 +68,11 @@ describe('openPointGroupsOf', () => {
             rule: 'UTILITY-CSS',
             message: 'display: flex outside foundations',
           },
+          { kind: 'stale-sketch-base', sketch: 'rating', changed: ['pages/system'] },
         ],
         buildReady: { ready: true },
       }),
-    ).toEqual([
-      {
-        icon: 'error',
-        lines: [
-          {
-            text: 'Sketch-Regel verletzt: UTILITY-CSS',
-            detail: 'c',
-            target: { kind: 'sketch', sketch: 'rating', variant: 'c' },
-          },
-        ],
-      },
-    ]);
+    ).toEqual([]);
   });
 
   it('lists a direct edit with the blockers, with its edit sketch or without one', () => {
@@ -116,7 +100,6 @@ describe('openPointGroupsOf', () => {
             detail: 'components/tree-row@edit',
             target: { kind: 'edit-sketch', target: 'components/tree-row@edit' },
           },
-          { text: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen', detail: 'pending' },
         ],
       },
     ]);
@@ -138,7 +121,7 @@ describe('openPointGroupsOf', () => {
       },
     }).flatMap((group) => group.lines);
 
-    expect(lines).toHaveLength(5);
+    expect(lines).toHaveLength(4);
     expect(lines.filter((line) => line.target)).toEqual([]);
   });
 
@@ -185,10 +168,11 @@ describe('openPointGroupsOf blockers', () => {
   const linesOf = (blocker: { kind: string; text: string; part?: string }) =>
     openPointGroupsOf({ points: [], buildReady: { ready: false, blockers: [blocker] } })[0]?.lines;
 
-  it('translates a pending slow check', () => {
-    expect(linesOf({ kind: 'pending', text: 'the slow checks have not run on the current inputs' })).toEqual([
-      { text: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen', detail: 'pending' },
-    ]);
+  it('lists no pending slow check, no missing check record and no missing harness', () => {
+    // B695: the agent runs the checks and the CLI reports a missing harness, so the human sees none of them.
+    expect(linesOf({ kind: 'pending', text: 'the slow checks have not run on the current inputs' })).toBeUndefined();
+    expect(linesOf({ kind: 'stale-record', text: 'no check record' })).toBeUndefined();
+    expect(linesOf({ kind: 'no-harness', text: 'the product has no harness' })).toBeUndefined();
   });
 
   it('keeps the CLI text of a kind without a label', () => {
@@ -300,16 +284,27 @@ describe('buildReadyStatusOf', () => {
     ).toEqual({ state: 'blocked', blockers: [{ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' }] });
   });
 
-  it('reads a product without a harness as blocked, not checking', () => {
+  it('reads a product without a harness as checking, without a harness blocker', () => {
+    // B695: a missing harness is a note for the developer in the CLI output, not a blocker the human reads.
     expect(
       buildReadyStatusOf({
         points: [],
         buildReady: { ready: false, blockers: [{ kind: 'no-harness', text: 'the product has no harness' }] },
       }),
-    ).toEqual({
-      state: 'blocked',
-      blockers: [{ kind: 'problem', text: 'Kein Harness - ohne Harness in config.json laufen die App-Prüfungen nie' }],
-    });
+    ).toEqual({ state: 'checking' });
+  });
+
+  it('counts no comment that waits on the agent and no sketch the agent fixes as a blocker', () => {
+    // B695: the human cannot act on these points, so the status reads checking instead of blocked.
+    expect(
+      buildReadyStatusOf({
+        points: [
+          { kind: 'open-comment', comment: 'a', state: 'outline', answered: false },
+          { kind: 'stale-sketch-base', sketch: 'system', changed: ['pages/system'] },
+        ],
+        buildReady: { ready: false, blockers: [{ kind: 'pending', text: 'slow checks running' }] },
+      }),
+    ).toEqual({ state: 'checking' });
   });
 
   it('lists a direct edit as its own blocker, the open points in Studio words and the rule blockers by kind', () => {
@@ -343,7 +338,8 @@ describe('buildReadyStatusOf', () => {
 });
 
 describe('sketchPointGroupsOf', () => {
-  it('lists a stale base of a ready sketch as an error that opens the sketch', () => {
+  it('lists the unmerged sketch without its stale base', () => {
+    // B695: the agent rebases a stale sketch, so only the unmerged sketch lists.
     expect(
       sketchPointGroupsOf({
         points: [
@@ -357,16 +353,6 @@ describe('sketchPointGroupsOf', () => {
       {
         icon: 'grid',
         lines: [{ text: 'Sketch noch nicht gemergt', detail: 'sketch', target: { kind: 'sketch', sketch: 'system' } }],
-      },
-      {
-        icon: 'error',
-        lines: [
-          {
-            text: 'Braucht Rebase vor dem Merge: pages/system geändert',
-            detail: 'sketch',
-            target: { kind: 'sketch', sketch: 'system' },
-          },
-        ],
       },
     ]);
   });

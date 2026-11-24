@@ -11,14 +11,22 @@ const LABELS = SYSTEM_LABELS;
 
 const ICONS: OpenPointIcon[] = ['grid', 'comment', 'error', 'flow'];
 
-type ListedPoint = Exclude<OpenPoint, { kind: 'direct-edit' }>;
+type ListedPoint = Exclude<OpenPoint, { kind: 'direct-edit' | 'sketch-problem' | 'stale-sketch-base' }>;
+
+const isListed = (point: OpenPoint): point is ListedPoint =>
+  point.kind !== 'direct-edit' &&
+  point.kind !== 'sketch-problem' &&
+  point.kind !== 'stale-sketch-base' &&
+  (point.kind !== 'open-comment' || point.answered === true);
+
+const isShown = (point: OpenPoint) => point.kind === 'direct-edit' || isListed(point);
+
+const HIDDEN_BLOCKERS = new Set<BuildReadyBlocker['kind']>(['stale-record', 'pending', 'no-harness']);
 
 const ICON_OF: Record<ListedPoint['kind'], OpenPointIcon> = {
   'missing-state': 'grid',
   redraw: 'grid',
   'unmerged-sketch': 'grid',
-  'sketch-problem': 'error',
-  'stale-sketch-base': 'error',
   'open-comment': 'comment',
   'missing-motion': 'flow',
 };
@@ -42,25 +50,13 @@ const lineOf = (point: ListedPoint): OpenPointLine => {
       return { text: LABELS.builtPlaceholder, detail: point.state, target: { kind: 'state', state: point.state } };
     case 'open-comment':
       return {
-        text: point.answered ? LABELS.commentAnswered : LABELS.commentWaiting,
+        text: LABELS.commentAnswered,
         detail: point.state,
         target: { kind: 'comment', comment: point.comment },
       };
     case 'unmerged-sketch':
       return {
         text: point.decision === 'pick' ? LABELS.sketchPicked : LABELS.sketchOpen,
-        detail: 'sketch',
-        target: { kind: 'sketch', sketch: point.sketch },
-      };
-    case 'sketch-problem':
-      return {
-        text: LABELS.sketchProblem(point.rule),
-        detail: point.variant,
-        target: { kind: 'sketch', sketch: point.sketch, variant: point.variant },
-      };
-    case 'stale-sketch-base':
-      return {
-        text: LABELS.sketchStaleBase(point.changed),
         detail: 'sketch',
         target: { kind: 'sketch', sketch: point.sketch },
       };
@@ -75,12 +71,6 @@ const lineOf = (point: ListedPoint): OpenPointLine => {
 
 const blockerTextOf = (blocker: BuildReadyBlocker) => {
   switch (blocker.kind) {
-    case 'stale-record':
-      return LABELS.recordStale;
-    case 'pending':
-      return LABELS.slowChecksPending;
-    case 'no-harness':
-      return LABELS.noHarness;
     case 'embedded':
       return blocker.part ? LABELS.embeddedNotReady(blocker.part) : blocker.text;
     default:
@@ -101,7 +91,7 @@ const blockerLinesOf = ({ buildReady }: PartOpenPoints): OpenPointLine[] =>
   buildReady.ready
     ? []
     : buildReady.blockers
-        .filter((blocker) => blocker.kind !== 'open-point')
+        .filter((blocker) => blocker.kind !== 'open-point' && !HIDDEN_BLOCKERS.has(blocker.kind))
         .map((blocker) =>
           blocker.part
             ? { text: blockerTextOf(blocker), detail: blocker.part, target: { kind: 'part', part: blocker.part } }
@@ -116,7 +106,8 @@ export const openPointGroupsOf = (answer: PartOpenPoints): OpenPointGroup[] =>
   ICONS.flatMap((icon) => {
     const lines = [
       ...answer.points
-        .filter((point): point is ListedPoint => point.kind !== 'direct-edit' && iconOf(point) === icon)
+        .filter(isListed)
+        .filter((point) => iconOf(point) === icon)
         .map(lineOf),
       ...(icon === 'error' ? [...directEditLinesOf(answer), ...blockerLinesOf(answer)] : []),
     ];
@@ -143,15 +134,16 @@ export const buildReadyStatusOf = (answer: PartOpenPoints): BuildReadyStatus => 
   return answer.developer ? { ...status, developer: answer.developer } : status;
 };
 
-const statusOf = ({ points, buildReady }: PartOpenPoints): BuildReadyStatus => {
+const statusOf = ({ points: all, buildReady }: PartOpenPoints): BuildReadyStatus => {
   if (buildReady.ready) return { state: 'ready' };
-  const others = buildReady.blockers.filter((blocker) => blocker.kind !== 'stale-record' && blocker.kind !== 'pending');
+  const points = all.filter(isShown);
+  const others = buildReady.blockers.filter((blocker) => !HIDDEN_BLOCKERS.has(blocker.kind));
   if (others.length === 0 && points.length === 0) return { state: 'checking' };
 
   const pointBlockers: BuildBlocker[] = points.map((point) =>
-    point.kind === 'direct-edit'
-      ? { kind: 'direct-edit', text: LABELS.directEdit }
-      : { kind: 'open-point', text: lineOf(point).text },
+    isListed(point)
+      ? { kind: 'open-point', text: lineOf(point).text }
+      : { kind: 'direct-edit', text: LABELS.directEdit },
   );
   const blockers: BuildBlocker[] = [
     ...(pointBlockers.length > 0
@@ -165,7 +157,7 @@ const statusOf = ({ points, buildReady }: PartOpenPoints): BuildReadyStatus => {
   return { state: 'blocked', blockers };
 };
 
-const SKETCH_KINDS = new Set<OpenPoint['kind']>(['unmerged-sketch', 'sketch-problem', 'stale-sketch-base']);
+const SKETCH_KINDS = new Set<OpenPoint['kind']>(['unmerged-sketch']);
 
 /** The open points a sketch brings to its target, grouped like the chip popover lists them. */
 export const sketchPointGroupsOf = ({ points }: PartOpenPoints): OpenPointGroup[] =>

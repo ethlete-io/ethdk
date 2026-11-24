@@ -5,15 +5,7 @@ import badge from '@system/components/badge';
 import button from '@system/components/button';
 import { disclosure } from '@system/components/disclosure';
 import disclosureStyles from '@system/components/disclosure.css?inline';
-import {
-  agentLabel,
-  blockerGroupsOf,
-  blockerIcon,
-  developerLabel,
-  statusLabel,
-  type AgentProgress,
-  type BuildReady,
-} from './shared/build-ready';
+import { blockerGroupsOf, blockerIcon, developerLabel, statusLabel, type BuildReady } from './shared/build-ready';
 import { BUILD_READY_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 const check = SDK_ICONS.find((each) => each.name === 'et-check');
@@ -34,17 +26,6 @@ const statusBadge = async (status: BuildReady) => {
       status.state === 'blocked'
         ? html`<span class="flex" data-et-semantic-color="warning">${drawn.body}</span>`
         : html`<span class="flex">${drawn.body}</span>`,
-    styles: drawn.styles,
-  };
-};
-
-const agentBadge = async (agent: AgentProgress) => {
-  const failed = agent.state === 'failed';
-  const drawn = await badge.render({
-    badges: [{ label: agentLabel(agent), variant: failed ? 'tonal' : 'outline', size: 'sm' }],
-  });
-  return {
-    body: html`<span class="flex" ${failed ? 'data-et-semantic-color="error"' : ''}>${drawn.body}</span>`,
     styles: drawn.styles,
   };
 };
@@ -95,14 +76,8 @@ const openEditSketch = async (status: BuildReady) => {
   return { body: control(withAction(open.body, 'emit:openEditSketch'), 'open-edit-sketch'), styles: open.styles };
 };
 
-export const buildReadyView = async (
-  status: BuildReady,
-  agent: AgentProgress | undefined,
-  open: boolean,
-  developer?: string[],
-) => {
+export const buildReadyView = async (status: BuildReady, open: boolean, developer?: string[]) => {
   const state = await statusBadge(status);
-  const working = agent ? await agentBadge(agent) : undefined;
   const list = await blockerList(status);
   const edit = await openEditSketch(status);
   const mark = developer ? await developerBadge(developer) : undefined;
@@ -121,13 +96,12 @@ export const buildReadyView = async (
     before: '',
     footer: html`<footer class="border-t border-(--et-surface-border-solid) px-space-3 py-space-2">
       <div class="flex items-center gap-space-2">
-        ${state.body}${mark?.body ?? ''}${working?.body ?? ''}
+        ${state.body}${mark?.body ?? ''}
         <span class="ms-auto"></span>
         ${edit.body}${status.state === 'blocked' && !open ? reasons : ''}
       </div>
       ${status.state === 'blocked' && open ? html`<div class="-mx-space-2 mt-space-1">${reasons}</div>` : ''}
     </footer>`,
-    styles:
-      state.styles + (mark?.styles ?? '') + (working?.styles ?? '') + list.styles + edit.styles + disclosureStyles,
+    styles: state.styles + (mark?.styles ?? '') + list.styles + edit.styles + disclosureStyles,
   };
 };

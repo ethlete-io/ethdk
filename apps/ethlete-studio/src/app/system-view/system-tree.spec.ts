@@ -18,7 +18,6 @@ import {
   pickedPartKeyOf,
   sketchLabelOf,
   multiPartTargetsOf,
-  PENDING_LABEL,
   sketchScopedTo,
   sketchHeadTitleOf,
   sketchMatrixOf,
@@ -1259,7 +1258,7 @@ describe('sketchMatrixOf', () => {
     expect(ready.frames.some((frame) => frame.column === 'b')).toBe(true);
   });
 
-  it('keeps a fresh report drawing and draws the frames of a report 30 minutes old with a note in its head', () => {
+  it('keeps a fresh report drawing and draws the frames of a report 30 minutes old', () => {
     const report = { message: 'variant b, phone', updatedAt: '2026-10-27T12:00:00Z', variant: 'b' };
     const at = (time: string) =>
       sketchMatrixOf({ ...source, part: part(), sketch: sketch({ report }), now: Date.parse(time) });
@@ -1272,11 +1271,11 @@ describe('sketchMatrixOf', () => {
       drawing: true,
     });
     expect(fresh.frames.some((frame) => frame.column === 'b')).toBe(false);
+    // B695: a silent agent is the host's concern, so the head carries no note about the missing report.
     expect(silent.columns.find((column) => column.key === 'b')).toEqual({
       key: 'b',
       label: 'b',
       drawing: false,
-      note: 'Seit 30 Minuten kein Bericht',
     });
     expect(silent.frames.some((frame) => frame.column === 'b')).toBe(true);
   });
@@ -1501,26 +1500,16 @@ describe('sketchMatrixOf', () => {
       expect(matrix.frames.map((frame) => frame.row)).toEqual(['current default', 'current disabled']);
     });
 
-    it('marks every frame of the newest round pending until the sketch is ready', () => {
+    it('marks no frame of a sketch in progress as pending', () => {
       const drawing = sketchMatrixOf({
         ...source,
         part: part(),
         sketch: { ...rounded, status: 'in progress' },
         openRounds: { r1: true, r2: true },
       });
-      const ready = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: true, r2: true } });
 
-      expect(drawing.frames.map((frame) => [frame.column, frame.pending])).toEqual([
-        ['current', undefined],
-        ['current', undefined],
-        ['c', PENDING_LABEL],
-        ['c', PENDING_LABEL],
-        ['a', undefined],
-        ['a', undefined],
-        ['b', undefined],
-        ['b', undefined],
-      ]);
-      expect(ready.frames.some((frame) => frame.pending !== undefined)).toBe(false);
+      // B695: the human only waits while the agent draws, so the frames carry no drawing label.
+      expect(drawing.frames.some((frame) => 'pending' in frame)).toBe(false);
     });
 
     it('offers only the interactions of the part and of open rounds', () => {

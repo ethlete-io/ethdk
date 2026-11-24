@@ -21,7 +21,6 @@ export const buttonPoints: PartOpenPoints = {
   points: [
     { kind: 'missing-state', control: null },
     { kind: 'contrast', state: 'tonal', path: 'label' },
-    { kind: 'open-comment', comment: '20261030T145229Z-6541', state: 'outline', answered: false },
     { kind: 'open-comment', comment: '20261031T102204Z-1180', state: 'filled', answered: true },
     { kind: 'unlinked' },
     ...motions.map(([from, to]): OpenPoint => ({ kind: 'missing-motion', from, to })),
@@ -52,7 +51,7 @@ const lineOf = (point: OpenPoint): PointLine => {
       return { text: `${point.path} liegt unter der Kontrastregel`, detail: point.state };
     case 'open-comment':
       return {
-        text: point.answered ? SYSTEM_LABELS.commentAnswered : SYSTEM_LABELS.commentWaiting,
+        text: SYSTEM_LABELS.commentAnswered,
         detail: point.state,
       };
     case 'unlinked':
@@ -65,7 +64,9 @@ const lineOf = (point: OpenPoint): PointLine => {
 /** The points of a part grouped by kind, in the order `design check` lists them. */
 export const groupsOf = ({ points }: PartOpenPoints): PointGroup[] =>
   KINDS.flatMap(({ kind, ...rest }) => {
-    const lines = points.filter((point) => point.kind === kind).map(lineOf);
+    const lines = points
+      .filter((point) => point.kind === kind && (point.kind !== 'open-comment' || point.answered))
+      .map(lineOf);
     return lines.length > 0 ? [{ kind, ...rest, lines }] : [];
   });
 

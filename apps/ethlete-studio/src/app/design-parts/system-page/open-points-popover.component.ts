@@ -3,12 +3,7 @@ import { Component, computed, input, model, output, ViewEncapsulation } from '@a
 import { BADGE_IMPORTS, BUTTON_IMPORTS } from '@ethlete/components';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { EXCEPTIONS_LABELS } from '../../i18n/shell-labels';
-import {
-  AgentProgress,
-  BuildBlocker,
-  BuildReadyFooterComponent,
-  BuildReadyStatus,
-} from './build-ready-footer.component';
+import { BuildBlocker, BuildReadyFooterComponent, BuildReadyStatus } from './build-ready-footer.component';
 import { OpenPointGroup, OpenPointTarget, PartException } from './system-page-sample';
 
 const SHOWN_LINES = 3;
@@ -125,7 +120,6 @@ const SHOWN_LINES = 3;
         <ethlete-build-ready-footer
           [(blockersOpen)]="blockersOpen"
           [status]="status"
-          [agent]="agent()"
           (openEditSketch)="openEditSketch.emit($event)"
         />
       }
@@ -183,7 +177,6 @@ export class OpenPointsPopoverComponent {
   public missingShots = input(0);
   public dividers = input(true);
   public buildReady = input<BuildReadyStatus | null>(null);
-  public agent = input<AgentProgress | null>(null);
   public blockersOpen = model(false);
   public openEditSketch = output<BuildBlocker>();
   public approveException = output<string>();

@@ -897,9 +897,6 @@ export const sketchStateKeyOf = ({
 
 const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
 
-/** The label over each frame of a variant the agent may still change. */
-export const PENDING_LABEL = SYSTEM_TREE_LABELS.pending;
-
 /** The first author and "+N" for the rest, or `null` without authors. */
 export const authorsLabelOf = (authors: string[]) =>
   authors.length === 0 ? null : authors.length === 1 ? authors[0] : `${authors[0]} +${authors.length - 1}`;
@@ -984,13 +981,12 @@ const rowKeyIn = (section: string | undefined, key: string) => (section === unde
  * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant. With
  * several rounds or a titled one, each round is its own band, newest on top: an open round has its variant
  * columns under a round group, with the current column in the topmost open band, and a folded round is one
- * row head without frames. When no visible row has a frame of the current part, the first unchanged row is open by default. While the sketch is in progress, every frame of a variant in the newest round is
- * pending. With
+ * row head without frames. When no visible row has a frame of the current part, the first unchanged row is open by default. With
  * `ALL` interactions, one row per state and interaction - state by state, each in Studio order - else one
  * row per state in the picked interaction; the current states come first, then any state only a variant
  * has. Every cell has the one picked size. A column that lacks a row's state or interaction gets an empty
  * cell there. A variant the agent reports drawing while the sketch is in progress gets a column without
- * frames, until the report is 30 minutes old: then it draws, and its head notes that no report came. Below
+ * frames, until the report is 30 minutes old: then it draws. Below
  * it all, an `in context` band has a row per page that uses the target: that page with each column swapped in.
  */
 export const sketchMatrixOf = ({
@@ -1034,7 +1030,6 @@ export const sketchMatrixOf = ({
   const newestFirst = [...rounds].reverse().filter((round) => round.variants.length > 0);
   const firstOpen = newestFirst.find((round) => round.open);
   const currentSection = !roundsGrouped ? undefined : firstOpen ? roundColumnKeyOf(firstOpen.key) : CURRENT;
-  const pending = new Set(sketch.status === 'in progress' ? (rounds.at(-1)?.variants ?? []) : []);
   const variantColumnOf = (variant: string) => {
     const target = targetOf(variant);
     const problems = sketch.problems?.find((entry) => entry.variant === variant)?.problems ?? [];
@@ -1042,11 +1037,7 @@ export const sketchMatrixOf = ({
     const authors = sketch.variantInfo?.[variant]?.authors ?? [];
     const rejected = rejectedLabelOf(sketch, variant);
     const named = [variant, authorsLabelOf(authors), rejected?.tag].filter(Boolean).join(' · ');
-    const note = [
-      rejected && `${rejected.text} (${rejected.by})`,
-      sketch.variantInfo?.[variant]?.note,
-      silent && variant === reported && SYSTEM_TREE_LABELS.noReport,
-    ]
+    const note = [rejected && `${rejected.text} (${rejected.by})`, sketch.variantInfo?.[variant]?.note]
       .filter(Boolean)
       .join('\n\n');
 
@@ -1204,7 +1195,6 @@ export const sketchMatrixOf = ({
         label: cell.label,
         ...rowOf(row, column.key),
         column: column.key,
-        ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
         ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),
         screenshot: partShotUrl({
           ...address,
@@ -1300,7 +1290,6 @@ export const sketchMatrixOf = ({
               id: `${IN_CONTEXT} ${column.key} ${key}`,
               row: `${IN_CONTEXT} ${key}`,
               column: contextColumnKeyOf(column.key),
-              ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
               ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),
             },
           ]

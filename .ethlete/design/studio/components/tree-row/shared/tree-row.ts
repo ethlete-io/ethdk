@@ -1,6 +1,7 @@
 import { control } from '@ethlete/components/design/control';
 import { forceInteraction, interactionRows } from '@design-system';
 import { icon } from '@system/foundations/icons';
+import { TREE_ROW_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 type RowInteraction = 'hover' | 'focus-visible' | 'active';
 
@@ -25,7 +26,7 @@ const chevron = (open: boolean) => icon(open ? 'chevron-down' : 'chevron-right')
 
 const bubble = icon('comment', { size: 12 });
 
-const WARNING_TEXT = 'Teile haben sich seit dem Entwurf geändert. Bitte deinen Agenten, ihn zu aktualisieren.';
+const WARNING_TEXT = TREE_ROW_LABELS.warnings['changed since ready'];
 const warningIcon = icon('warning', { size: 12 });
 
 const statusIcon = {

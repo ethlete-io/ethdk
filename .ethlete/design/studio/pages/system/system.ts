@@ -22,15 +22,11 @@ import {
 } from './shared/open-points';
 import { buttonExceptions, callView } from './shared/capabilities';
 import {
-  agentOnReadyPart,
-  agentSamples,
   directEditBlocker,
   embeddedBlocker,
   manyBlockers,
   slowRules,
   hardcodedColourBlocker,
-  type AgentProgress,
-  type AgentState,
   type BuildReady,
   developerReasons,
 } from './shared/build-ready';
@@ -223,14 +219,13 @@ const exceptionGroup = async () => {
 const popover = async (
   open: PartOpenPoints,
   status: BuildReady,
-  agent: AgentProgress | undefined,
   withExceptions: boolean,
   blockersOpen: boolean,
   developer: boolean,
 ) => {
   const groups = groupsOf(open);
   const exceptions = withExceptions ? await exceptionGroup() : undefined;
-  const build = await buildReadyView(status, agent, blockersOpen, developer ? developerReasons : undefined);
+  const build = await buildReadyView(status, blockersOpen, developer ? developerReasons : undefined);
   const list = groups.length
     ? html`<ul class="m-0 p-0 py-space-1 list-none divide-y divide-(--et-surface-border-solid)">
         ${groups.map((group) => `<li><ul class="m-0 p-0 py-space-1 list-none">${pointLines(group)}</ul></li>`).join('')}
@@ -329,11 +324,10 @@ export default definePart<{
   thread?: number;
   build?: 'one-blocker' | 'checking' | 'blocked-checking' | 'direct-edit';
   blockersOpen?: boolean;
-  agent?: AgentState;
   call?: 'open' | 'transferred';
   developer?: boolean;
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft only while slow rules run and no blocker is definite: as soon as one blocker is definite the badge reads Nicht baubereit, even while a slow rule still runs, ADR 0270) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. Steht statt eines Teils ein Hinweis auf der Fläche (Design-Server nicht gestartet, Lesefehler), zeigt sie eine Karte wie die leere Seite: ein Icon, ein kurzer Titel und darunter der Hinweis; keine Rahmen, kein Chip, keine Kommentar-Taste. A legacy call has no header bar: its headline and slug sit top left on the canvas, and top right, where a part shows Kommentar and the open-points chip, the surface and colour theme switches and Als übertragen markieren, which turns into an übertragen badge. A part with 12 or more states opens on the states with an open comment and folds the rest behind a pill at the bottom centre of the canvas: "13 weitere Zustände eingeklappt" and the disclosure Alle Zustände zeigen, which shows every state and leaves only the disclosure, open, in the pill. When no state or every state has an open comment, nothing folds.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft only while slow rules run and no blocker is definite: as soon as one blocker is definite the badge reads Nicht baubereit, even while a slow rule still runs, ADR 0270); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. Steht statt eines Teils ein Hinweis auf der Fläche (Design-Server nicht gestartet, Lesefehler), zeigt sie eine Karte wie die leere Seite: ein Icon, ein kurzer Titel und darunter der Hinweis; keine Rahmen, kein Chip, keine Kommentar-Taste. A legacy call has no header bar: its headline and slug sit top left on the canvas, and top right, where a part shows Kommentar and the open-points chip, the surface and colour theme switches and Als übertragen markieren, which turns into an übertragen badge. A part with 12 or more states opens on the states with an open comment and folds the rest behind a pill at the bottom centre of the canvas: "13 weitere Zustände eingeklappt" and the disclosure Alle Zustände zeigen, which shows every state and leaves only the disclosure, open, in the pill. When no state or every state has an open comment, nothing folds.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6', 'design check'],
   implements: {
     route: '/',
@@ -377,12 +371,8 @@ export default definePart<{
       ],
     },
     {
-      label: 'Agent',
-      states: ['agent-working', 'agent-working-ready', 'agent-waiting', 'agent-interrupted'],
-    },
-    {
       label: 'Fehler',
-      states: ['listing-error', 'send-error', 'send-rejected', 'agent-failed', 'agent-failed-ready'],
+      states: ['listing-error', 'send-error', 'send-rejected'],
     },
   ],
   states: {
@@ -426,12 +416,6 @@ export default definePart<{
     'direct-edit': { build: 'direct-edit', blockersOpen: true },
     'direct-edit-closed': { build: 'direct-edit' },
     'blockers-open': { blockersOpen: true },
-    'agent-working': { agent: 'working' },
-    'agent-working-ready': { nothingOpen: true, agent: 'working' },
-    'agent-failed': { agent: 'failed' },
-    'agent-failed-ready': { nothingOpen: true, agent: 'failed' },
-    'agent-waiting': { agent: 'waiting' },
-    'agent-interrupted': { agent: 'interrupted' },
     'developer-part': { nothingOpen: true, developer: true },
     'developer-part-blocked': { developer: true, blockersOpen: true },
     call: { call: 'open' },
@@ -471,12 +455,6 @@ export default definePart<{
     'direct-edit': 'A direct edit with the blockers open; check the grouped reasons and Sketch öffnen.',
     'direct-edit-closed': 'A direct edit with the blockers closed; check the badge and Gründe in the footer.',
     'blockers-open': 'The blockers grouped by kind; check every group heading and its entries.',
-    'agent-working': 'The agent fixing open points; check the Agent behebt badge beside the build status.',
-    'agent-working-ready': 'The agent working on a ready part; check that Baubereit and Agent behebt both show.',
-    'agent-failed': 'The agent failed; check the Agent fehlgeschlagen badge in the error colour and its detail title.',
-    'agent-failed-ready': 'The agent failed on a ready part; check that Baubereit stays beside the error badge.',
-    'agent-waiting': 'The agent waiting; check the Agent wartet badge.',
-    'agent-interrupted': 'The agent interrupted; check the Agent unterbrochen badge.',
     'developer-part':
       'A ready developer part; check the Entwickler-Part mark beside Baubereit and that its reasons can be read.',
     'developer-part-blocked':
@@ -520,7 +498,6 @@ export default definePart<{
     thread,
     build,
     blockersOpen = false,
-    agent,
     call,
     developer = false,
   }) => {
@@ -654,16 +631,7 @@ export default definePart<{
               : clear
                 ? { state: 'ready' }
                 : { state: 'blocked', blockers: manyBlockers(points.points.length + exceptionCount) };
-    const dialog = closed
-      ? undefined
-      : await popover(
-          points,
-          status,
-          agent === undefined ? undefined : clear && agent === 'working' ? agentOnReadyPart : agentSamples[agent],
-          exceptionCount > 0,
-          blockersOpen,
-          developer,
-        );
+    const dialog = closed ? undefined : await popover(points, status, exceptionCount > 0, blockersOpen, developer);
     const list = comments ? commentList(PART_THREADS, selected) : undefined;
     const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({

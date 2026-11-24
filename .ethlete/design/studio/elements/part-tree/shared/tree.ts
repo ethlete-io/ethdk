@@ -1,6 +1,6 @@
 import { interactionRows, type Interaction } from '@design-system';
 import type { Row } from '@system/components/tree-row';
-import { SYSTEM_TREE_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
+import { SYSTEM_TREE_LABELS, TREE_ROW_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 type RowInteraction = Extract<Interaction, 'hover' | 'active' | 'focus-visible'>;
 
@@ -54,9 +54,7 @@ export const partRows = (part: TreePart, depth: number): Row[] => {
       ...(host ? { expanded: open } : {}),
       selected: part.selected === true,
       ...(part.interaction ? { interaction: part.interaction } : {}),
-      ...(part.warns
-        ? { warning: ['Teile haben sich seit dem Entwurf geändert. Bitte deinen Agenten, ihn zu aktualisieren.'] }
-        : {}),
+      ...(part.warns ? { warning: [TREE_ROW_LABELS.warnings['changed since ready']] } : {}),
       ...(part.layer ? { layer: part.layer } : {}),
     },
     ...(open ? (part.nested ?? []).flatMap((child) => partRows(child, depth + 1)) : []),

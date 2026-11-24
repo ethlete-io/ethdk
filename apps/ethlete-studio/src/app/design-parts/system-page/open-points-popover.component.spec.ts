@@ -98,7 +98,7 @@ describe('OpenPointsPopoverComponent', () => {
       {
         icon: 'comment',
         lines: [
-          { text: 'Wartet auf den Agenten', detail: 'outline', target: { kind: 'comment', comment: 'c1' } },
+          { text: 'Beantwortet, wartet auf dich', detail: 'outline', target: { kind: 'comment', comment: 'c1' } },
           { text: 'Keine Controls deklariert', detail: 'controls' },
         ],
       },
@@ -109,7 +109,7 @@ describe('OpenPointsPopoverComponent', () => {
     const button = rows[0]?.querySelector<HTMLButtonElement>('button[type="button"]');
 
     expect(rows.length).toBe(2);
-    expect(button?.textContent).toContain('Wartet auf den Agenten');
+    expect(button?.textContent).toContain('Beantwortet, wartet auf dich');
     expect(rows[1]?.querySelector('button')).toBeNull();
     expect(rows[1]?.textContent).toContain('Keine Controls deklariert');
 

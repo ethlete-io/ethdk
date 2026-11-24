@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
+import { TREE_ROW_LABELS } from '../../i18n/system-labels';
 import { PartTree, PartTreeComponent, PartTreeLayer } from './part-tree.component';
 
 const withTooltip = (root: Element | null | undefined, text: string) =>
@@ -167,7 +168,9 @@ describe('PartTreeComponent', () => {
       'leaf',
       'part',
     ]);
-    expect(withTooltip(element, 'Entwurf in Arbeit')).not.toBeNull();
+    // B695: a sketch in progress only waits on the agent, so its status icon has no tooltip; a ready one keeps it.
+    expect(withTooltip(element, TREE_ROW_LABELS.sketchReady)).not.toBeNull();
+    expect(element.querySelectorAll('[aria-describedby]')).toHaveLength(1);
     expect(rowsOf(element)[7]?.getAttribute('aria-current')).toBe('true');
 
     rowsOf(element)[2]?.click();

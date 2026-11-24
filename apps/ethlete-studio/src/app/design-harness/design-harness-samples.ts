@@ -8,8 +8,6 @@ import { SHELL_LABELS } from '../i18n/shell-labels';
 import { CANVAS_LIVE_REST_MS } from '../components/design-canvas/design-canvas.component';
 import { FRAME_UNREPORTED_PAINT_MS } from '../components/design-canvas/frame-paint';
 import {
-  AGENT_ON_READY_PART_SAMPLE,
-  AGENT_SAMPLES,
   buildReadySampleOf,
   DEVELOPER_REASONS_SAMPLE,
   BuildReadySample,
@@ -402,19 +400,13 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ? { ...props, selectedId: opened.id, thread: inboxThreadSampleOf(opened), replyText: opened.text ?? '' }
       : props;
   },
-  'pages/system': ({ build, agent, call, listingError, folded, comments, developer, thread, ...props }) => {
+  'pages/system': ({ build, call, listingError, folded, comments, developer, thread, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;
     const openCount = OPEN_POINTS_SAMPLE.reduce((sum, group) => sum + group.lines.length, exceptions.length);
-    const agentState = agent as keyof typeof AGENT_SAMPLES | undefined;
 
     return {
       exceptions,
       ...props,
-      agent: agentState
-        ? props['nothingOpen'] && agentState === 'working'
-          ? AGENT_ON_READY_PART_SAMPLE
-          : AGENT_SAMPLES[agentState]
-        : null,
       listingError: listingError ? LISTING_ERROR_SAMPLE : null,
       call: call ? { ...LEGACY_CALL_SAMPLE, transferred: call === 'transferred' } : null,
       themeSwitches: call ? THEME_SWITCHES_SAMPLE : [],

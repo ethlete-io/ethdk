@@ -22,7 +22,7 @@ import {
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { defer, EMPTY, finalize, switchMap, tap } from 'rxjs';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
-import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
+import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
 import { OpenPointGroup, OpenPointTarget, PartException } from './system-page-sample';
 
@@ -89,7 +89,6 @@ export class OpenPointsChipComponent {
   public groups = input.required<OpenPointGroup[]>();
   public exceptions = input<PartException[]>([]);
   public buildReady = input<BuildReadyStatus | null>(null);
-  public agent = input<AgentProgress | null>(null);
   public missingShots = input(0);
   public dividers = input(true, { transform: booleanAttribute });
   public popoverOrigin = input<HTMLElement | null>(null);
@@ -139,7 +138,6 @@ export class OpenPointsChipComponent {
                     inputBinding('missingShots', this.missingShots),
                     inputBinding('dividers', this.dividers),
                     inputBinding('buildReady', this.buildReady),
-                    inputBinding('agent', this.agent),
                     twoWayBinding('blockersOpen', this.blockersOpen),
                     outputBinding<BuildBlocker>('openEditSketch', (blocker) => this.openEditSketch.emit(blocker)),
                     outputBinding<string>('approveException', (rule) => this.approveException.emit(rule)),

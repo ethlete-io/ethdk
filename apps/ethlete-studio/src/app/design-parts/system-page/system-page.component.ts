@@ -20,7 +20,7 @@ import { ShellSection } from '../shell-main/shell-main.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { DisclosureComponent } from '../disclosure/disclosure.component';
 import { SystemEmptyComponent } from './system-empty.component';
-import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
+import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { CommentListComponent } from '../comment-flow/comment-list.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { CommentTargetComponent } from '../comment-target/comment-target.component';
@@ -320,7 +320,6 @@ export const FRAME_HEAD_CLASS =
             [groups]="groups()"
             [exceptions]="openExceptions()"
             [buildReady]="buildReady()"
-            [agent]="agent()"
             [missingShots]="missingShots()"
             (openPoint)="openPoint.emit($event)"
             (openEditSketch)="openEditSketch.emit($event)"
@@ -413,7 +412,6 @@ export class SystemPageComponent {
   public openPoints = input(OPEN_POINTS_SAMPLE);
   public exceptions = input<PartException[]>([]);
   public buildReady = input<BuildReadyStatus | null>(null);
-  public agent = input<AgentProgress | null>(null);
   public call = input<LegacyCall | null>(null);
   public themeSwitches = input<ThemeSwitch[]>([]);
   public blockersOpen = model(false);

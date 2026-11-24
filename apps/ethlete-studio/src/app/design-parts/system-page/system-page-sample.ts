@@ -1,7 +1,7 @@
 import { CommentThread, ThreadMessage } from '../comment-flow/thread-card.component';
 import { InboxComment } from '../inbox/inbox-sample';
 import { PartTree, PartTreeLayer, PartTreeSketch } from '../part-tree/part-tree.component';
-import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
+import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 
 export type OpenPointIcon = 'grid' | 'warning' | 'comment' | 'error' | 'flow';
 
@@ -90,7 +90,7 @@ export const OPEN_POINTS_SAMPLE: OpenPointGroup[] = [
   {
     icon: 'comment',
     lines: [
-      { text: 'Wartet auf den Agenten', detail: 'outline' },
+      { text: 'Beantwortet, wartet auf dich', detail: 'outline' },
       { text: 'Beantwortet, wartet auf dich', detail: 'filled' },
     ],
   },
@@ -145,19 +145,6 @@ export const DEVELOPER_REASONS_SAMPLE = [
   'injiziert den Service CommandPaletteStore (title-search.component.ts)',
   'routet: nutzt routerLink (title-search.component.html)',
 ];
-
-export const AGENT_SAMPLES: Record<AgentProgress['state'], AgentProgress> = {
-  working: { state: 'working', doing: 'behebt', detail: 'APP-SPEC in button.component.spec.ts' },
-  waiting: { state: 'waiting', detail: 'auf deine Antwort im Kommentar zu outline' },
-  interrupted: { state: 'interrupted', detail: 'Sitzung beendet, bevor hover fertig war' },
-  failed: { state: 'failed', detail: 'tsc meldet 2 Fehler in system.ts' },
-};
-
-export const AGENT_ON_READY_PART_SAMPLE: AgentProgress = {
-  state: 'working',
-  doing: 'zeichnet',
-  detail: 'einen Sketch für den Zustand pressed',
-};
 
 export type LegacyCall = { slug: string; headline: string; transferred: boolean };
 
