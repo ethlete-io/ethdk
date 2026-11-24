@@ -176,6 +176,9 @@ export type PartMark = { parts: string[]; x: number; y: number; width: number; h
 /** Where a shot response's picture came from: the disk store, the in-memory cache or a fresh draw. */
 export type ShotSource = 'disk' | 'memory' | 'drawn';
 
+/** A picture asked with `kept` that is not kept, so answering it would need a draw. */
+export class NotKeptError extends Error {}
+
 export const TEXT_AMBIENT_PROPERTIES = [
   'fontFamily',
   'fontSize',
@@ -679,6 +682,39 @@ export const createPartShooter = (options: {
     fill: params.get('fill') ?? '',
   });
 
+  const pictureKeyOf = (frameKey: unknown[], params: URLSearchParams) => {
+    const theme = themeOf(params);
+
+    return JSON.stringify([
+      ...frameKey,
+      theme.surface,
+      theme.color,
+      theme.fill,
+      scaleOf(params),
+      cropOf(params.get('clip')) ?? null,
+      schemeOf(params),
+      ...(params.get('textless') === '1' ? ['textless'] : []),
+    ]);
+  };
+
+  const keptPictureOf = async (
+    options: PartAddress & { params: URLSearchParams },
+  ): Promise<{ picture: Picture; source: ShotSource } | null> => {
+    const frame = partFrameOf({ system, ...options });
+
+    if (frame instanceof ThumbMissingError) return null;
+
+    const key = pictureKeyOf(frame.key, options.params);
+    const drawn = await Promise.race([cache.get(key)?.shot ?? null, null]).catch(() => null);
+
+    if (drawn) return { picture: drawn, source: 'memory' };
+
+    const { product, part, sketch, props } = options;
+    const stored = store?.read(key, { product, part, sketch, props: props ?? null });
+
+    return stored ? { picture: stored, source: 'disk' } : null;
+  };
+
   const cached = (options: {
     key: unknown[];
     drawn: Drawn;
@@ -702,16 +738,7 @@ export const createPartShooter = (options: {
     const crop = cropOf(options.params.get('clip')) ?? null;
     const scheme = schemeOf(options.params);
     const textless = options.params.get('textless') === '1';
-    const key = JSON.stringify([
-      ...options.key,
-      theme.surface,
-      theme.color,
-      theme.fill,
-      scale,
-      crop,
-      scheme,
-      ...(textless ? ['textless'] : []),
-    ]);
+    const key = pictureKeyOf(options.key, options.params);
     const entry = cache.get(key);
     const kept = !options.fresh || entry?.drawing?.startedAt === null ? entry : undefined;
 
@@ -1101,12 +1128,27 @@ export const createPartShooter = (options: {
      * Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds. The default
      * `priority: 'high'` draws it ahead of every shot asked with `priority=low`; `'low'` queues it behind the shots the
      * board shows. Once `signal` aborts, the drawing leaves the queue unless it started or another ask still waits.
+     * `kept` answers only a picture drawn before, from memory or disk, and draws nothing: it rejects with a `NotKeptError` when none is kept.
      */
     pictureOf: ({
       priority = 'high',
       signal,
+      kept = false,
       ...options
-    }: PartAddress & { params: URLSearchParams; fresh?: boolean; priority?: DrawPriority; signal?: AbortSignal }) => {
+    }: PartAddress & {
+      params: URLSearchParams;
+      fresh?: boolean;
+      priority?: DrawPriority;
+      signal?: AbortSignal;
+      kept?: boolean;
+    }): Promise<Picture & { source?: ShotSource; drawnAt: number | null }> => {
+      if (kept)
+        return keptPictureOf(options).then((found) => {
+          if (!found) throw new NotKeptError(`design-explore: no kept picture of ${options.part} ${options.state}`);
+
+          return { ...found.picture, source: found.source, drawnAt: null };
+        });
+
       let source: ShotSource | undefined;
       const want: DrawWant = {
         priority,

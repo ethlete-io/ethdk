@@ -21,6 +21,7 @@ type Listed = {
     addedSkips: { variant: string; part: string; classes: string }[];
     readyRefusal: { lines: string[] } | null;
     targets?: { variant: string; unchanged?: string[]; crops?: Record<string, { box: unknown }> }[];
+    shotFrames?: { variant: string | null; state: string; frame: { width: number; height: number } }[];
   }[];
 };
 
@@ -105,6 +106,32 @@ describe('the sketch listing tiers', () => {
 
     expect(boxesOf(await listing(target, '', load, { pictureOf }))).toEqual([box, box]);
     expect(boxesOf(await listing(target, '&unchanged=no', load, { pictureOf }))).toEqual([box, box]);
+  });
+
+  it('lists the size of the kept picture of each shot in the quick listing, and draws none for it', async () => {
+    const target = acme();
+    const load = async () => ({ default: { note: 'n', states: { one: {}, two: {} }, render: () => ({ body: 'x' }) } });
+    const pictureOf = vi.fn<PictureOf>(async ({ sketch, state, kept }) => {
+      if (!kept) throw new Error('drew a picture');
+      if (state === 'two' && sketch?.variant === 'b') throw new Error('not kept');
+
+      const width = sketch ? (sketch.variant === 'a' ? 30 : 40) : 20;
+
+      return { png: encodePng({ width, height: 10, data: Buffer.alloc(width * 10 * 4, 255) }), marks: [] };
+    });
+    const framesOf = (listed: Listed) =>
+      listed.sketches[0]?.shotFrames?.map(
+        ({ variant, state, frame }) => `${variant} ${state} ${frame.width}x${frame.height}`,
+      );
+
+    expect(framesOf(await listing(target, '&unchanged=no', load, { pictureOf }))).toEqual([
+      'null one 20x10',
+      'null two 20x10',
+      'a one 30x10',
+      'a two 30x10',
+      'b one 40x10',
+    ]);
+    expect(framesOf(await listing(target, '&unchanged=no&targets=no', load, { pictureOf }))).toBeUndefined();
   });
 
   it('lists a variant that draws no changed state as a NO-CHANGED-STATE problem of the sketch', async () => {

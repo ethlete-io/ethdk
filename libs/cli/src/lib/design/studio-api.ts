@@ -75,6 +75,7 @@ import {
 import { noChangedStateLinesOf } from './system/sketch/no-visible-change';
 import { partKeyOf } from './system/resolve-product';
 import { keptComparisonOf, keptSameAsRestOf, sameAsRestOf, unchangedForFoldOf } from './system/sketch/unchanged-states';
+import { shotFramesOf } from './system/sketch/shot-frames';
 import { SketchVariant } from './system/system-modules';
 
 export const SKETCHES_PATH = '/__design/sketches';
@@ -371,7 +372,7 @@ const partTargetsOf = async ({
         })
       : null;
 
-  return inTurns({ items: sketch.variants, signal }, async (variant) => {
+  const targets = await inTurns({ items: sketch.variants, signal }, async (variant) => {
     const file = overlaySketch({ product, sketch, variant }).parts.find((entry) => partKeyOf(entry) === part)?.file;
 
     if (!file || !load)
@@ -407,6 +408,15 @@ const partTargetsOf = async ({
       ...(problem ? { error: problem } : {}),
     };
   });
+  const drawn = [
+    ...(current && !current.problem ? [{ ...current, variant: null }] : []),
+    ...targets.filter((entry) => !('error' in entry)),
+  ];
+
+  return {
+    targets,
+    frames: pictureOf ? await shotFramesOf({ product, sketch, part, drawn, pictureOf }) : [],
+  };
 };
 
 const targetsOf = async (options: {
@@ -416,17 +426,21 @@ const targetsOf = async (options: {
   pictureOf?: PictureOf;
   signal?: AbortSignal;
   compare: boolean;
-}) =>
-  withEditUnchanged(
-    options.sketch,
-    (
-      await inTurns({ items: options.sketch.targets, signal: options.signal }, (part) =>
-        partTargetsOf({ ...options, part }),
-      )
-    ).flat(),
+}) => {
+  const parts = await inTurns({ items: options.sketch.targets, signal: options.signal }, (part) =>
+    partTargetsOf({ ...options, part }),
   );
 
-type ListedTarget = Awaited<ReturnType<typeof targetsOf>>[number];
+  return {
+    targets: withEditUnchanged(
+      options.sketch,
+      parts.flatMap(({ targets }) => targets),
+    ),
+    shotFrames: parts.flatMap(({ frames }) => frames),
+  };
+};
+
+type ListedTarget = Awaited<ReturnType<typeof targetsOf>>['targets'][number];
 
 const noChangedStateProblemsOf = ({ sketch, targets }: { sketch: Sketch; targets: ListedTarget[] }) => {
   const changes = sketch.variants.flatMap((variant) => {
@@ -509,7 +523,8 @@ const listingOf = async ({
   });
 
   const listedSketches = await oneTurnEach({ items: sketches, signal }, (sketch, index) => {
-    const targets = sketchTargets[index] ?? null;
+    const listedTargets = sketchTargets[index] ?? null;
+    const targets = listedTargets?.targets ?? null;
     const unchanged = checked && targets ? noChangedStateProblemsOf({ sketch, targets }) : [];
     const variants = checked?.variants.filter((entry) => entry.target === sketch.target) ?? [];
 
@@ -538,7 +553,7 @@ const listingOf = async ({
             })),
           }
         : {}),
-      ...(targets ? { targets } : {}),
+      ...(listedTargets ? { targets: listedTargets.targets, shotFrames: listedTargets.shotFrames } : {}),
       report: readSketchReport({ checkout: target, sketch }),
     };
   });
@@ -592,7 +607,8 @@ const startedListing = ({
  * draws the same as the product now (`unchanged`), where each state it draws differently differs from the product's
  * picture (`crops`, by state: picture size, box, pixel count and regions), the states it adds and drops and its part note when that differs
  * from the product's (`changes`), for a part inherited from the base the base states it does not draw (`inherited`), and the live report
- * of the agent (`report`, `null` when none runs). `&sketch=<layer>/<name>@<sketch>` answers that sketch alone, compared, without
+ * of the agent (`report`, `null` when none runs), and with `targets` the size of each shot's picture drawn before (`shotFrames`, by part,
+ * variant, `null` for the product, state and preset or width) so a client can size its cells before a shot loads. `&sketch=<layer>/<name>@<sketch>` answers that sketch alone, compared, without
  * `problems`: no rule check, so it answers before a full listing. `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
  * while a full listing's comparison of the same sources is kept: no rule check, no pictures. `&targets=no` also leaves out `targets`: no part module loads.
  * A listing asked while the same one runs gets that one's answer, unless `detachRunningListings` ran since it started; it stops when every client that asked for it has closed its request.

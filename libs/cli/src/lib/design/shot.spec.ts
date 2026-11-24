@@ -8,7 +8,7 @@ import { changedPartsOf } from './changed-parts';
 import { createDrawLedger } from './draw-ledger';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
-import { createPartShooter, dependentIdsOf } from './shot';
+import { createPartShooter, dependentIdsOf, NotKeptError } from './shot';
 import { createShotStore } from './shot-store';
 import { createDrawQueue, DRAWS_AT_ONCE, ShotUnprocessableError } from './thumb';
 import { createSketch, parseTarget } from './system/sketch/sketch';
@@ -893,6 +893,28 @@ describe('createPartShooter', () => {
     expect(drawnUrls()).toHaveLength(1);
     expect(first.ledger.report()).toMatchObject({ drawnTotal: 1, waitedTotal: 0 });
     expect(second.ledger.report()).toMatchObject({ drawnTotal: 0, waitedTotal: 1 });
+  });
+
+  it('answers a picture drawn before from memory or disk without drawing, and refuses one never drawn', async () => {
+    const { first, second } = sharingShooters();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams({ scheme: 'light' }),
+      kept: true,
+    };
+
+    await ask(first.shots, 'product=acme&part=components/card&state=long&epoch=1&session=s&scheme=light&priority=low');
+
+    await expect(first.shots.pictureOf({ ...address, state: 'long' })).resolves.toMatchObject({ source: 'memory' });
+    await expect(second.shots.pictureOf({ ...address, state: 'long' })).resolves.toMatchObject({ source: 'disk' });
+    await expect(second.shots.pictureOf({ ...address, state: 'short' })).rejects.toBeInstanceOf(NotKeptError);
+    expect(drawnUrls()).toHaveLength(1);
+    expect(second.ledger.report()).toMatchObject({ drawnTotal: 0 });
   });
 
   it('draws a shot itself when the shooter it waited for failed to draw it', async () => {
