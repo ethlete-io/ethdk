@@ -492,6 +492,8 @@ export type ListedSketch = {
   problems?: { variant: string; problems: SystemProblem[] }[];
   /** Each target part as each variant draws it, the first target's entries first. Missing from an `@ethlete/cli` older than the sketch matrix, and from its quick list before the one that lists them. */
   targets?: SketchTarget[];
+  /** The size of each shot's picture the design server keeps, so a cell is sized before it loads. Missing from the names-only list and from an `@ethlete/cli` older than it. */
+  shotFrames?: ShotFrame[];
   /** What the agent draws right now, `null` when it reports nothing. */
   report?: SketchReport | null;
   /** The model ids that reported on each variant, in the order of their first report, and the round of each variant. Missing in old data. */
@@ -536,6 +538,16 @@ export const rejectionOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: s
 
 /** A round of a sketch: `note` says what it shows, `lost` why its variants lost once a newer round runs. */
 export type SketchRound = { key: string; title: string; note: string; lost?: string };
+
+/** The size of the picture of one state of a target part as the product (`variant: null`) or one variant draws it. */
+export type ShotFrame = {
+  part: string;
+  variant: string | null;
+  state: string;
+  preset: string | null;
+  width: number | null;
+  frame: { width: number; height: number };
+};
 
 export type SketchTarget = {
   /** Missing from an `@ethlete/cli` older than sketches with several targets. */

@@ -82,6 +82,7 @@ import {
   sketchFrameRetriesWith,
 } from './sketch-frame-retries';
 import { CURRENT, partKeyOf, sketchMatrixOf, sketchRoundsOf, sketchRowsOf, sketchUsingPagesOf } from './system-tree';
+import { shotSizesOf } from './shot-frames';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { keptRead$ } from './kept-read';
 import { sketchPointGroupsOf } from './open-points';
@@ -673,7 +674,12 @@ export class SketchViewComponent {
 
   protected rows = computed<SketchRow[]>(() => {
     const sketch = this.sketch();
-    const measured = this.measured();
+    const measured = shotSizesOf({
+      rows: this.sketchRows(),
+      part: sketchPartOf(sketch),
+      frames: sketch.shotFrames,
+      live: this.measured(),
+    });
     const pictures = this.pictureSizes();
     const sizes = Object.entries(measured);
     const tallestOf = (state?: string) =>
