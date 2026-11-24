@@ -7,16 +7,32 @@ import { Problem } from './problem';
 /** A product folder together with its entry in the `config.json` that declares it. */
 export type ProductSource = { name: string; dir: string; config: DesignProduct; configFile: string };
 
-const BUILT_IN_BASES: Record<string, string> = {
-  '@ethlete/components': 'systems/ethlete-components',
+const BUILT_IN_BASES: Record<string, { installed: string; fallback: string }> = {
+  '@ethlete/components': {
+    installed: 'node_modules/@ethlete/components/design/sdk',
+    fallback: 'systems/ethlete-components',
+  },
 };
 
 export const isBuiltInBase = (base: string) => base in BUILT_IN_BASES;
 
+const installedAbove = (dir: string, installed: string): string | null => {
+  const candidate = resolve(dir, installed);
+
+  if (existsSync(candidate)) return candidate;
+
+  const parent = dirname(dir);
+
+  return parent === dir ? null : installedAbove(parent, installed);
+};
+
+/** The folder of `base`: for a built-in base the design system its installed package ships, else the CLI's own stand-in. */
 export const baseDirOf = (options: { target: string; base: string }) => {
   const builtIn = BUILT_IN_BASES[options.base];
 
-  return builtIn ? resolve(assetRoot(), builtIn) : resolve(options.target, options.base);
+  if (!builtIn) return resolve(options.target, options.base);
+
+  return installedAbove(resolve(options.target), builtIn.installed) ?? resolve(assetRoot(), builtIn.fallback);
 };
 
 const configFileAbove = (dir: string): string | null => {
