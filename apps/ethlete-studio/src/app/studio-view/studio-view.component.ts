@@ -84,7 +84,7 @@ const NO_PRODUCTS: ShownProducts = { checkout: null, product: '', products: [], 
     @if (serverDown() || serverStarting()) {
       <ethlete-shell-page
         [shell]="{
-          product: shownProducts().product,
+          product: shownProducts().product || projectName(),
           products: shownProducts().products,
           logos: shownProducts().logos,
           project: checkout(),

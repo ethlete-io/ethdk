@@ -392,7 +392,7 @@ describe('StudioViewComponent', () => {
     }
   });
 
-  it('names no product of the project before while the switched project builds', async () => {
+  it('names the switched project, no product of the project before, while the switched project builds', async () => {
     const roots = () => ({ search: '', roots: [CHECKOUT, '/other'] });
 
     stubHost({ design_roots: roots });
@@ -417,7 +417,7 @@ describe('StudioViewComponent', () => {
     const shell = fixture.debugElement.query(By.directive(ShellPageComponent)).componentInstance as ShellPageComponent;
 
     expect(shell.shell().server).toBe('starting');
-    expect(shell.shell().product).toBe('');
+    expect(shell.shell().product).toBe('other');
     expect(shell.shell().products).toEqual([]);
   });
 

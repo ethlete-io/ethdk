@@ -10,7 +10,7 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import { THEMES } from '../../themes';
 import { START_LABELS } from '../i18n/start-labels';
 import { SHELL_LABELS } from '../i18n/shell-labels';
-import { SYSTEM_LABELS } from '../i18n/system-labels';
+import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../i18n/system-labels';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
@@ -157,6 +157,38 @@ describe('SystemViewComponent on a reload', () => {
     expect(fixture.componentInstance['selectedKey']()).toBeNull();
     expect(fixture.componentInstance['cameraKey']()).toBeNull();
     expect(rememberedView().systemEntry).toBe('sketch:elements/rating');
+  });
+
+  it('shows no read error, no call tree and the project name while the products of a switched project are listed', async () => {
+    const call = (slug: string): ListedCall => ({
+      slug,
+      project: slug.split('/')[0] ?? '',
+      eyebrow: '',
+      headline: slug,
+      stage: null,
+      legacy: true,
+      transferred: false,
+      closed: null,
+      frameWidth: 1200,
+      variants: [],
+    });
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/calls'))
+        return json([call('design-tool/06-shell'), call('sandbox/00-stat-tile'), call('timetrack/kerbe/09-gutter')]);
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemEntry: 'design-tool/06-shell' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.textContent).not.toContain(SYSTEM_LABELS.readFailed);
+    expect(element.textContent).not.toContain(SYSTEM_TREE_LABELS.legacy);
+    expect(element.textContent).not.toContain('design-tool');
+    expect(fixture.debugElement.query(By.directive(ShellSystemPickerComponent))?.componentInstance.product()).toBe(
+      'ethlete-sdk',
+    );
   });
 
   it('keeps the camera of a sketch while the sketches are still being listed', async () => {

@@ -287,7 +287,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [listingError]="listingError()"
         [call]="callPage()"
         [themeSwitches]="themeSwitches()"
-        [noted]="canvasNote() !== null"
+        [noted]="!!canvasNote()"
         [noteTitle]="noteTitle()"
         [noteHint]="canvasNote() ?? ''"
         [empty]="canvasNote() === null && !partShown"
@@ -473,7 +473,9 @@ export class SystemViewComponent {
     { initialValue: null },
   );
 
-  public products = computed(() => this.reading()?.products ?? []);
+  private productsRead = computed(() => this.reading()?.checkout === this.checkout());
+
+  public products = computed(() => (this.productsRead() ? (this.reading()?.products ?? []) : []));
 
   private callReloads = signal(0);
 
@@ -630,15 +632,17 @@ export class SystemViewComponent {
   );
 
   private tree = computed(() =>
-    withFlowGroup(
-      treeOf(this.product()?.parts ?? [], {
-        product: this.product(),
-        calls: this.calls(),
-        sketches: this.sketches(),
-        comments: this.commentStore.comments(),
-      }),
-      this.flowList() ?? [],
-    ),
+    this.productsRead()
+      ? withFlowGroup(
+          treeOf(this.product()?.parts ?? [], {
+            product: this.product(),
+            calls: this.calls(),
+            sketches: this.sketches(),
+            comments: this.commentStore.comments(),
+          }),
+          this.flowList() ?? [],
+        )
+      : [],
   );
 
   private flow = computed(
@@ -845,7 +849,7 @@ export class SystemViewComponent {
 
     const read = this.reading();
 
-    if (!read) return '';
+    if (!read || !this.productsRead()) return '';
     if (read.error) return read.error;
     if (this.sketchShown() || this.flowShown() || this.awaitingPicked()) return '';
     return null;
@@ -1188,7 +1192,7 @@ export class SystemViewComponent {
 
   protected pageShell = computed<PageShell>(() => ({
     tree: this.partTree(),
-    product: this.product()?.name ?? '',
+    product: this.product()?.name ?? this.project(),
     products: this.productNames(),
     sdk: sdkOf(this.product()?.base ?? null),
     logos: this.productLogos(),
