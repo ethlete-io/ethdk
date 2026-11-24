@@ -530,7 +530,7 @@ const shotStoreOf = (options: {
   const { target, config, system, stylesheetImports, dir, salt, moduleById } = options;
   const drawnSystemsOf = (address: StoredAddress) => [
     ...new Map(
-      [address.sketch, address.props].map((sketch) => [JSON.stringify(sketch ?? null), sketch ?? null]),
+      [address.sketch, address.props ?? address.sketch].map((sketch) => [JSON.stringify(sketch), sketch]),
     ).values(),
   ];
 

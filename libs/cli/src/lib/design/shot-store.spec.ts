@@ -14,13 +14,14 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { assetRoot } from './package-root';
-import { DESIGN_DIR } from './design-config';
+import { DESIGN_DIR, readConfig } from './design-config';
 import { workRootOf } from './work-root';
 import { serveDesign } from './serve';
 import { withRunSignal } from './run-abort';
 import { createShotStore, SHOT_STORE_DIR } from './shot-store';
 import { COMMENT_EVENTS_PATH } from './studio-api';
-import { productModuleIdOf } from './system/system-modules';
+import { createSketch, parseTarget } from './system/sketch/sketch';
+import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 type Handler = (request: IncomingMessage, response: ServerResponse) => void;
 
@@ -167,7 +168,7 @@ const start = async (target: string, graph = new Map<string, FakeModule>()) => {
     ssrLoadModule: async () => ({ default: { states: { long: {} } } }),
   });
 
-  const shot = () =>
+  const shot = (query = SHOT) =>
     new Promise<{ status: number; body: unknown; source: string | undefined }>((done) => {
       const headers: Record<string, string> = {};
       const response = {
@@ -177,7 +178,7 @@ const start = async (target: string, graph = new Map<string, FakeModule>()) => {
         end: (body: unknown) => done({ status: response.statusCode, body, source: headers['x-design-shot'] }),
       };
 
-      handlers.get('/__design/shot')?.({ url: `/?${SHOT}` } as IncomingMessage, response as unknown as ServerResponse);
+      handlers.get('/__design/shot')?.({ url: `/?${query}` } as IncomingMessage, response as unknown as ServerResponse);
     });
 
   const events = () => {
@@ -286,6 +287,33 @@ describe('the shots a design server keeps on disk', () => {
     await (await start(target)).shot();
 
     expect(screenshot).toHaveBeenCalledTimes(2);
+  });
+
+  it('serves a shot of a part only a sketch variant holds, which a former server drew', async () => {
+    const { target, files } = acme();
+    const system = createSystemModules({ target, config: readConfig(target) ?? {} });
+    const product = system.productOf('acme');
+    const parsed = parseTarget('components/title-card');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a'] });
+
+    const sketch = { target: 'components/title-card', variant: 'a' };
+    const file = system.partOf({ product: 'acme', part: 'components/title-card', sketch })?.file;
+
+    if (!file) throw new Error('the sketch holds no components/title-card');
+
+    const graph = graphOf(files);
+    const id = productModuleIdOf({ file, product: 'acme', sketch });
+
+    graph.set(id, { id, file, importers: new Set(), importedModules: new Set() });
+
+    const query = 'product=acme&part=components/title-card&state=long&sketch=components/title-card&variant=a';
+
+    expect((await (await start(target, graph)).shot(query)).source).toBe('drawn');
+    await vi.waitFor(() => expect(storedIn(target)).toHaveLength(1));
+    expect((await (await start(target)).shot(query)).source).toBe('disk');
   });
 });
 
