@@ -453,12 +453,18 @@ const SKETCH_CSS = {
   a: 'sketches/elements-shell-main/a/elements/shell-main/shell-main.css',
 };
 
+// A stacked sketch at Fit can draw its fold buttons below the canvas, where no pointer click reaches them.
+const pressOffCamera = async (button) => {
+  await button.evaluate((element) => element.focus({ preventScroll: true }));
+  await button.page().keyboard.press('Enter');
+};
+
 const showAllStates = async (page) => {
   const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
 
   await button.waitFor({ timeout: FULL_COMPARE_MS });
   if ((await button.count()) && (await button.getAttribute('aria-expanded')) !== 'true') {
-    await button.click();
+    await pressOffCamera(button);
     await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
   }
 };
@@ -5116,7 +5122,7 @@ const CASES = [
         const collapsedListings = await refresh(original.trimEnd() + '\n\n');
         const collapsed = await changes('collapsed');
 
-        await page.locator('[data-sk-same] button').first().click();
+        await pressOffCamera(page.locator('[data-sk-same] button').first());
         await settle(page);
         await page.evaluate(() => {
           window.__sameFrames = [
