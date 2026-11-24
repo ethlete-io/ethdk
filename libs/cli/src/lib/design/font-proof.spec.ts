@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
+import { availableParallelism } from 'os';
 import { resolve } from 'path';
 import { chromium, type Browser, type CDPSession, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -13,6 +14,7 @@ import { facesInUse, openFrame, switchFrame } from './thumb';
 const TARGET = resolve(__dirname, '../../../../..');
 const RED_FILE = resolve(__dirname, 'font-proof-red.json');
 const SHOWN_PER_ENTRY = 5;
+const PAGES = Math.min(4, availableParallelism());
 const UNDRAWN_TEXT = new Set(['STYLE', 'SCRIPT', 'TITLE', 'NOSCRIPT', 'TEMPLATE']);
 
 type Property = 'faces' | 'text' | 'undrawn';
@@ -136,14 +138,17 @@ describe('fonts of every committed design part', () => {
   afterAll(() => browser?.close());
 
   it('fails exactly the parts the committed red list names', async (context) => {
-    if (!browser) return context.skip('no browser');
+    const open = browser;
+
+    if (!open) return context.skip('no browser');
 
     const cwd = process.cwd();
     const config = readConfig(TARGET) ?? {};
     const server = await createDesignServer({ target: TARGET, config, listen: true, port: 0 });
     const system = createSystemModules({ target: TARGET, config });
     const measured: Measured[] = [];
-    const seconds: string[] = [];
+    const busy = new Map<string, number>();
+    const started = Date.now();
 
     try {
       await server.listen();
@@ -154,61 +159,81 @@ describe('fonts of every committed design part', () => {
 
       const base = reachableBaseOf(address);
 
-      for (const product of system.products()) {
+      const work = system
+        .products()
+        .flatMap((product) => (system.productOf(product)?.parts ?? []).map((part) => ({ product, part })));
+      const queue = [...work];
+
+      const measurePart = async (page: Page, session: CDPSession, { product, part }: (typeof work)[number]) => {
         const started = Date.now();
-        const page = await browser.newPage();
+        const key = partKeyOf(part);
+        const module = (await server.ssrLoadModule(productModuleIdOf({ file: part.file, product, sketch: null }))) as {
+          default?: { states?: Record<string, unknown> };
+        };
+        const states = Object.keys(module.default?.states ?? {});
+        const faces = new Set<string>();
+        const text = new Map<string, string>();
+        const undrawn = new Set<string>();
+
+        for (const [index, state] of states.entries()) {
+          if (index === 0 || !(await switchFrame(page, state)))
+            await openFrame(page, `${base}/frame.html?${new URLSearchParams({ product, part: key, state, fit: '' })}`);
+
+          await settleFrames(page);
+
+          const why = (await page.evaluate(undrawnOf)) as string | null;
+
+          if (why !== null) {
+            undrawn.add(`${state}: ${why}`);
+            continue;
+          }
+
+          (await facesOf(page)).forEach((face) => faces.add(face));
+          (await systemFontsOf(session)).forEach((line, path) => text.set(path, line));
+        }
+
+        busy.set(product, (busy.get(product) ?? 0) + Date.now() - started);
+
+        if (states.length === 0) throw new Error(`${product} ${key} has no state to draw`);
+        if (undrawn.size > 0)
+          measured.push({ product, part: key, property: 'undrawn', count: undrawn.size, details: [...undrawn] });
+        if (faces.size > 0)
+          measured.push({ product, part: key, property: 'faces', count: faces.size, details: [...faces] });
+        if (text.size > 0)
+          measured.push({ product, part: key, property: 'text', count: text.size, details: [...text.values()] });
+      };
+
+      const drain = async () => {
+        const page = await open.newPage();
         const session = await page.context().newCDPSession(page);
 
         try {
-          for (const part of system.productOf(product)?.parts ?? []) {
-            const key = partKeyOf(part);
-            const module = (await server.ssrLoadModule(
-              productModuleIdOf({ file: part.file, product, sketch: null }),
-            )) as { default?: { states?: Record<string, unknown> } };
-            const states = Object.keys(module.default?.states ?? {});
-            const faces = new Set<string>();
-            const text = new Map<string, string>();
-            const undrawn = new Set<string>();
-
-            for (const [index, state] of states.entries()) {
-              if (index === 0 || !(await switchFrame(page, state)))
-                await openFrame(
-                  page,
-                  `${base}/frame.html?${new URLSearchParams({ product, part: key, state, fit: '' })}`,
-                );
-
-              await settleFrames(page);
-
-              const why = (await page.evaluate(undrawnOf)) as string | null;
-
-              if (why !== null) {
-                undrawn.add(`${state}: ${why}`);
-                continue;
-              }
-
-              (await facesOf(page)).forEach((face) => faces.add(face));
-              (await systemFontsOf(session)).forEach((line, path) => text.set(path, line));
-            }
-
-            if (states.length === 0) throw new Error(`${product} ${key} has no state to draw`);
-            if (undrawn.size > 0)
-              measured.push({ product, part: key, property: 'undrawn', count: undrawn.size, details: [...undrawn] });
-            if (faces.size > 0)
-              measured.push({ product, part: key, property: 'faces', count: faces.size, details: [...faces] });
-            if (text.size > 0)
-              measured.push({ product, part: key, property: 'text', count: text.size, details: [...text.values()] });
-          }
+          for (let item = queue.shift(); item; item = queue.shift()) await measurePart(page, session, item);
+        } catch (error) {
+          queue.length = 0;
+          throw error;
         } finally {
           await page.close();
-          seconds.push(`${product} ${Math.round((Date.now() - started) / 1000)} s`);
         }
-      }
+      };
+
+      const failed = (await Promise.allSettled(Array.from({ length: Math.min(PAGES, work.length) }, drain))).find(
+        (result) => result.status === 'rejected',
+      );
+
+      if (failed) throw failed.reason;
     } finally {
       await server.close();
       process.chdir(cwd);
     }
 
-    console.log(`font proof: ${measured.length} red entries, ${seconds.join(', ')}`);
+    console.log(
+      `font proof: ${measured.length} red entries, ${Math.round((Date.now() - started) / 1000)} s on ${PAGES} pages, ${[
+        ...busy,
+      ]
+        .map(([product, ms]) => `${product} ${Math.round(ms / 1000)} s`)
+        .join(', ')}`,
+    );
     if (process.env['FONT_PROOF_WRITE'])
       writeFileSync(
         RED_FILE,
