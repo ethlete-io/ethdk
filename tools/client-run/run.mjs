@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync } from 'node:fs';
+import { closeSync, cpSync, existsSync, mkdirSync, openSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { writeImageSet } from './image-set.mjs';
 
-const USAGE = `usage: yarn client-run [--source <tomflix>] [--out <dir>] [--sdk <built sdk copy>] [--titles <n>] [--model <m>]
+const USAGE = `usage: yarn client-run [--source <tomflix>] [--reference <old design>] [--out <dir>] [--sdk <built sdk copy>] [--titles <n>] [--model <m>]
        yarn client-run --judge <run dir> [--sdk <built sdk copy>]     judge an earlier run again, with that sdk's cli`;
 
 const here = import.meta.dirname;
@@ -18,6 +18,7 @@ const { values } = parseArgs({
   options: {
     source: { type: 'string', default: join(homedir(), 'dev/tomflix') },
     catalog: { type: 'string' },
+    reference: { type: 'string', default: join(homedir(), 'dev/tomflix-clean-home/alter-katalog') },
     out: { type: 'string', default: join(homedir(), 'dev/client-runs') },
     sdk: { type: 'string' },
     titles: { type: 'string', default: '12' },
@@ -140,6 +141,7 @@ const entries = writeImageSet({
   out: join(`${target}-home`, 'bilder-von-tom'),
   count: Number(values.titles),
 });
+cpSync(resolve(values.reference), join(`${target}-home`, 'alter-katalog'), { recursive: true });
 console.log(`client-run: image set of ${entries.length} titles, ${entries.filter((e) => !e.logo).length} without logo`);
 
 const status = runAgent({ runDir, target, model: values.model });

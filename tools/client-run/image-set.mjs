@@ -1,32 +1,61 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-/** Picks `count` titles from a tomflix catalog folder (`www/titles/*.json`): the newest with a title logo, plus one without. */
-export const pickTitles = (titles, count) => {
+const TRAPS = JSON.parse(readFileSync(join(import.meta.dirname, 'trap-titles.json'), 'utf8'));
+
+/**
+ * Picks the titles of `traps` (the hot-spot traps of the old Tomflix design, call 46 B) from a tomflix catalog
+ * folder (`www/titles/*.json`), then fills up to `count` with the newest titles with a title logo, plus one without.
+ * Each picked trap title carries its trap fields in `trap`.
+ */
+export const pickTitles = (titles, count, traps = TRAPS) => {
   const usable = titles
     .filter((t) => t.posterLarge && t.poster && t.backdrop && t.path)
     .sort((a, b) => b.year - a.year || a.title.localeCompare(b.title));
-  const withLogo = usable.filter((t) => logoOf(t)).slice(0, Math.max(count - 1, 1));
-  const withoutLogo = usable.find((t) => !logoOf(t));
-  return withoutLogo ? [...withLogo, withoutLogo] : withLogo;
+  const picked = traps.flatMap((trap) => {
+    const title = usable.find((t) => t.title === trap.title);
+    return title ? [{ ...title, trap }] : [];
+  });
+  const rest = usable.filter((t) => !picked.some((p) => p.title === t.title));
+  const free = Math.max(count - picked.length, 0);
+  const withLogo = rest.filter((t) => logoOf(t)).slice(0, Math.max(free - 1, 0));
+  const withoutLogo = picked.some((t) => !logoOf(t)) ? undefined : rest.find((t) => !logoOf(t));
+  return [...picked, ...withLogo, ...(withoutLogo ? [withoutLogo] : [])];
 };
 
 const logoOf = (title) => [title.logo, title.logoEn].find((file) => file && !file.startsWith('mock'));
 
 const slugOf = (title) => title.path.replace(/\/$/, '').split('/').pop();
 
-/** One entry of `katalog.json`: the files the image set holds for a title, `logo: null` when it has none. */
+/**
+ * One entry of `katalog.json`: the files the image set holds for a title, `logo: null` when it has none and
+ * `plakat: null` when it has no poster.
+ */
 export const entryOf = (title) => {
   const slug = slugOf(title);
   const logo = logoOf(title);
+  const { trap = {} } = title;
+  const poster = trap.poster !== false;
+  const series = title.kind === 'series';
   return {
     title: title.title,
     year: title.year,
     kind: title.kind,
     genres: title.genres ?? [],
     runtimeMinutes: title.runtimeMinutes ?? null,
-    plakat: `${slug}-plakat.webp`,
-    plakatKlein: `${slug}-plakat-klein.webp`,
+    certification: title.certification ?? null,
+    versions: trap.versions ?? title.versions ?? [],
+    isNew: trap.isNew ?? false,
+    ...(series
+      ? {
+          seasonCount: trap.seasonCount ?? title.seasonCount ?? null,
+          episodeCount: trap.episodeCount ?? title.episodeCount ?? null,
+          newContent: trap.newContent ?? null,
+          ...(trap.addedEpisodeCount ? { addedEpisodeCount: trap.addedEpisodeCount } : {}),
+        }
+      : {}),
+    plakat: poster ? `${slug}-plakat.webp` : null,
+    plakatKlein: poster ? `${slug}-plakat-klein.webp` : null,
     hintergrund: `${slug}-hintergrund.webp`,
     logo: logo ? `${slug}-logo.png` : null,
   };
@@ -43,8 +72,10 @@ export const writeImageSet = ({ catalog, out, count }) => {
   mkdirSync(out, { recursive: true });
   const entries = picked.map((title) => {
     const entry = entryOf(title);
-    copyFileSync(join(images, title.posterLarge), join(out, entry.plakat));
-    copyFileSync(join(images, title.poster), join(out, entry.plakatKlein));
+    if (entry.plakat) {
+      copyFileSync(join(images, title.posterLarge), join(out, entry.plakat));
+      copyFileSync(join(images, title.poster), join(out, entry.plakatKlein));
+    }
     copyFileSync(join(images, title.backdrop), join(out, entry.hintergrund));
     const logo = logoOf(title);
     if (logo && existsSync(join(images, logo))) copyFileSync(join(images, logo), join(out, entry.logo));
