@@ -224,7 +224,7 @@ export type PointerFocusProbes = {
 /**
  * Probes an element in two fresh pages: `open` returns the locator of the element on a freshly loaded page. The click
  * is a real mouse click at its centre after Tab presses that leave focus elsewhere, because a script focus after a pointer press paints the ring only when the last input was a key; keyboard focus follows a Shift press so the browser treats it as keyboard
- * focus.
+ * focus. It answers `null` for an element no pointer reaches (computed `pointer-events: none`).
  */
 export const probePointerFocus = async (options: {
   open: () => Promise<{ page: Page; locator: Locator; close: () => Promise<void> }>;
@@ -235,6 +235,14 @@ export const probePointerFocus = async (options: {
   let clickThenKey: RingProbe | null = null;
 
   try {
+    const unreachable = await clicked.locator.evaluate(
+      (element) => getComputedStyle(element).pointerEvents === 'none',
+      undefined,
+      { timeout: DRAW_TIMEOUT_MS },
+    );
+
+    if (unreachable) return null;
+
     await tabAwayFrom(clicked.page, clicked.locator);
     await clicked.locator.click({ timeout: DRAW_TIMEOUT_MS });
     await options.settle(clicked.page);

@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   focusMarkedOf,
   pointerFocusVerdictOf,
+  probePointerFocus,
   readRingProbe,
   RING_PROBE_TIMEOUT_MS,
   RingProbe,
@@ -222,3 +223,33 @@ describe('tabAwayFrom', () => {
     expect(active).not.toBe('checked');
   });
 }, 30_000);
+
+describe('probePointerFocus', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it('skips an element no pointer reaches, as a button in a scaled preview cell', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const open = async () => {
+      const page = await browser!.newPage();
+
+      await page.setContent(`<div class="relative overflow-clip">
+          <div style="pointer-events: none; transform: scale(0.25); transform-origin: top left" data-sk-fit-inner>
+            <div class="relative"><button aria-label="Suchen in studio, Title bar">Suchen</button></div>
+          </div>
+        </div>`);
+
+      return { page, locator: page.locator('button'), close: () => page.close() };
+    };
+
+    expect(await probePointerFocus({ open, settle: async () => undefined })).toBeNull();
+  }, 30_000);
+});
