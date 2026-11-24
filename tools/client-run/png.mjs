@@ -73,13 +73,15 @@ const near = (rgba, i, color) =>
 export const inkOf = ({ width, height, rgba }) => {
   const counts = new Map();
   for (let i = 0; i < width * height * 4; i += 16) {
-    const key = ((rgba[i] >> 3) << 10) | ((rgba[i + 1] >> 3) << 5) | (rgba[i + 2] >> 3);
+    const key = ((rgba[i + 3] >> 3) << 15) | ((rgba[i] >> 3) << 10) | ((rgba[i + 1] >> 3) << 5) | (rgba[i + 2] >> 3);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   const [top] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+  const alpha = ((top >> 15) & 31) << 3;
   const background = [((top >> 10) & 31) << 3, ((top >> 5) & 31) << 3, (top & 31) << 3];
   let ink = 0;
-  for (let i = 0; i < width * height * 4; i += 4) if (!near(rgba, i, background)) ink++;
+  for (let i = 0; i < width * height * 4; i += 4)
+    if (!near(rgba, i, background) || Math.abs(rgba[i + 3] - alpha) > NEAR) ink++;
   return ink / (width * height);
 };
 

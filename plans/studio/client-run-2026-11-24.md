@@ -11,6 +11,7 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
 - Variante a: Dune-Logo blass und klein unter dem Plakat, der Titel steht doppelt (Plakat trägt ihn schon). Verdacht: der Auftrag nennt das Plakat-Motiv nicht, das Werkzeug meldet doppelte Titel nicht.
 - Varianten b und c: orangefarbenes Logo auf weißem Verlauf kaum lesbar. Verdacht: kein Kontrast-Check für Bild-auf-Bild (Logo auf Hintergrund).
 - Variante a: im Einzelbild sehen `logo` und `logo-focus-visible` (ebenso `fallback`) gleich aus, im Bogen trägt focus-visible einen Ring. Ursache (gemessen am Lauf 0130): der Shot enthält den Ring, er schneidet nichts ab. Der Ring ist deckend schwarz (`0,0,0,255`) auf durchsichtigem Grund (`0,0,0,0`), und `differenceOf` in `tools/client-run/png.mjs` verglich nur RGB, nicht Alpha: Unterschied 0. Fix: `differenceOf` vergleicht auch Alpha; Spec mit dem echten Dune-Paar aus Lauf 0130 (`png.spec.mjs`).
+  Dasselbe Alpha-Loch hatte `inkOf` (Leer-Check): deckend schwarzer Inhalt auf Durchsichtigkeit zählte als leer. Gemessen: jede Karte aus Lauf 0130 hat auch helle Pixel (Ink 0,28 bis 0,64), kein echter Fehlalarm; der Spec beschneidet darum den reinen Ring-Streifen des Dune-Fokus-Shots. Fix: `inkOf` zählt auch Alpha; Prüfer auf Kopie des Laufs weiter 0 Befunde.
 - Rückfall ohne Logo (John Williams) zeigt den Titel als Text: wie bestellt, kein Befund.
 
 ## Zweiter Prüflauf (Prüfer mit Bild-, Text-, Rahmen- und Baum-Check, SDK mit e9e2a06a4)

@@ -20,6 +20,19 @@ describe('inkOf', () => {
     assert.ok(inkOf(fixture('logo-accent-shot.png')) > 0.05);
     assert.equal(inkOf(fixture('empty-variant-shot.png')), 0);
   });
+
+  it('reads the opaque black focus ring on a transparent background as ink', () => {
+    const shot = fixture('title-card-film-focus-visible-shot.png');
+    const [left, top, width, height] = [0, 60, 24, 240];
+    const rgba = new Uint8Array(width * height * 4);
+    for (let y = 0; y < height; y++)
+      rgba.set(
+        shot.rgba.subarray(((top + y) * shot.width + left) * 4, ((top + y) * shot.width + left + width) * 4),
+        y * width * 4,
+      );
+
+    assert.ok(inkOf({ width, height, rgba }) > 0.05);
+  });
 });
 
 describe('differenceOf', () => {
