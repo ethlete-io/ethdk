@@ -31,6 +31,7 @@ class SystemViewStubComponent {
   public productNames = signal<string[]>([]);
   public productLogos = signal<Record<string, string | null>>({});
   public productName = signal('');
+  public productsCheckout = signal<string | null>(null);
 }
 
 class FakeEventSource {
@@ -374,6 +375,7 @@ describe('StudioViewComponent', () => {
 
       system(fixture)?.productName.set('studio');
       system(fixture)?.productNames.set(['sdk', 'studio']);
+      system(fixture)?.productsCheckout.set(CHECKOUT);
       await settle(fixture);
       current = stopped;
       vi.advanceTimersByTime(3000);
@@ -388,6 +390,35 @@ describe('StudioViewComponent', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('names no product of the project before while the switched project builds', async () => {
+    const roots = () => ({ search: '', roots: [CHECKOUT, '/other'] });
+
+    stubHost({ design_roots: roots });
+
+    const fixture = await mount();
+
+    system(fixture)?.productName.set('tomflix');
+    system(fixture)?.productNames.set(['tomflix']);
+    system(fixture)?.productsCheckout.set(CHECKOUT);
+    await settle(fixture);
+
+    stubHost({
+      design_roots: roots,
+      design_project: () => ({ ...PROJECT, port: 4403 }),
+      design_server_state: ({ checkout }) =>
+        checkout === '/other' ? { ...RUNNING, port: 4403, listening: false, phase: 'app-build' } : RUNNING,
+      design_server_start: () => new Promise(() => undefined),
+    });
+    system(fixture)?.projectChange.emit('other');
+    await settle(fixture);
+
+    const shell = fixture.debugElement.query(By.directive(ShellPageComponent)).componentInstance as ShellPageComponent;
+
+    expect(shell.shell().server).toBe('starting');
+    expect(shell.shell().product).toBe('');
+    expect(shell.shell().products).toEqual([]);
   });
 
   it('shows the crash the exited design server wrote with a Restart', async () => {

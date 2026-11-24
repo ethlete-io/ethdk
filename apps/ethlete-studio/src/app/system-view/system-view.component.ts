@@ -110,7 +110,7 @@ import { ListedFlow, flowChanges$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 
-type Reading = { products: ListedProduct[]; error: string | null };
+type Reading = { products: ListedProduct[]; error: string | null; checkout: string };
 
 const SDK_BASE = '@ethlete/components';
 
@@ -453,17 +453,18 @@ export class SystemViewComponent {
     toObservable(
       computed(() => ({
         port: this.port(),
+        checkout: this.checkout(),
         epoch: this.epoch(),
         revision: this.productsRevision(),
         reloads: this.listingReloads(),
       })),
     ).pipe(
-      switchMap(({ port }) =>
+      switchMap(({ port, checkout }) =>
         port
           ? listedSystem$(port).pipe(
-              map((products): Reading => ({ products, error: null })),
+              map((products): Reading => ({ products, error: null, checkout })),
               catchError((error: unknown) =>
-                of<Reading>({ products: [], error: error instanceof Error ? error.message : String(error) }),
+                of<Reading>({ products: [], error: error instanceof Error ? error.message : String(error), checkout }),
               ),
             )
           : of(null),
@@ -536,6 +537,7 @@ export class SystemViewComponent {
     return port && product ? { port, product, revision: this.productsRevision() } : null;
   });
 
+  public productsCheckout = computed(() => this.reading()?.checkout ?? null);
   public productNames = computed(() => this.products().map((listed) => listed.name));
   public productLogos = computed(() => Object.fromEntries(this.products().map((listed) => [listed.name, listed.logo])));
 

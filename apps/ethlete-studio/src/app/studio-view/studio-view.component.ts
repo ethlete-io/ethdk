@@ -69,7 +69,14 @@ export type StartPhaseReading = { phase: NonNullable<ServerState['phase']>; phas
 const messageLinesOf = (error: unknown) =>
   (error instanceof Error ? error.message : typeof error === 'string' ? error : String(error)).split('\n');
 
-type ShownProducts = { product: string; products: string[]; logos: Record<string, string | null | undefined> };
+type ShownProducts = {
+  checkout: string | null;
+  product: string;
+  products: string[];
+  logos: Record<string, string | null | undefined>;
+};
+
+const NO_PRODUCTS: ShownProducts = { checkout: null, product: '', products: [], logos: {} };
 
 @Component({
   selector: 'ethlete-studio-view',
@@ -139,16 +146,29 @@ export class StudioViewComponent {
 
   public frameRevisions = signal(NO_FRAME_REVISIONS);
 
-  protected shownProducts = toSignal(
+  private lastProducts = toSignal(
     toObservable(
-      computed(() => {
+      computed((): ShownProducts | null => {
         const view = this.systemView();
 
-        return view ? { product: view.productName(), products: view.productNames(), logos: view.productLogos() } : null;
+        return view
+          ? {
+              checkout: view.productsCheckout(),
+              product: view.productName(),
+              products: view.productNames(),
+              logos: view.productLogos(),
+            }
+          : null;
       }),
     ).pipe(filter((shown): shown is ShownProducts => !!shown && shown.products.length > 0)),
-    { initialValue: { product: '', products: [], logos: {} } as ShownProducts },
+    { initialValue: NO_PRODUCTS },
   );
+
+  protected shownProducts = computed(() => {
+    const shown = this.lastProducts();
+
+    return shown.checkout === this.checkout() ? shown : NO_PRODUCTS;
+  });
 
   public startPhase = toSignal(
     toObservable(this.serverBusy).pipe(
