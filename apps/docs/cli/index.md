@@ -780,6 +780,10 @@ target. A part opts in with `sample: { id: 'sample', marks: ['same', 'look'] }`:
 prop `sample` is identified by that value, and its `marks` props must be equal in every state of the host. A host state
 that shows another sample passes another id. The line names the part, the id, both states and the differing marks.
 
+`sketch ready` also refuses (`STATE-INNER`) a state of a target that differs from the default state, or from a state
+whose props it repeats, only inside one embedded part, such as a shell state that only hovers its search button. The
+line names the state and the part, and asks to add the state in that part instead.
+
 The agent that drew such a variant takes it out of the open set with `et design sketch withdraw <part> --variant <key>
 --by <model id>`. It refuses unless `--by` is a model id (not `designer`) that drew the variant, and the variant draws
 the same pixels as a sibling variant in its first changed state. `sketch.json` keeps it as a rejection with the status
@@ -789,7 +793,7 @@ nor a model id (`claude-…`, `gpt-…`, `gemini-…`, `codex-…`).
 
 `sketch check` skips a withdrawn or rejected variant and prints one `NOTE <target> <variant>: withdrawn, not checked` (or `rejected, not checked`) line for it. `sketch check` fails on the same `UNUSED` problems. It warns of every other reason `sketch ready` would refuse that
 does not depend on the sketch's status, as `ready will refuse: <reason>` lines, and still passes: a variant that does
-not load, an open point a live variant adds, a running round without a note, a sample whose marks drift, and a variant that adds nothing visible
+not load, an open point a live variant adds, a running round without a note, a sample whose marks drift, a state that changes only an inner part, and a variant that adds nothing visible
 or that the sketch view shows like another. Its last line then reads `check ok - ready will refuse <count> (see
 above)`. A hold and an already `ready` sketch are refused only by `sketch ready`.
 

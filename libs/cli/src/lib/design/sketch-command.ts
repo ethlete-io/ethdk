@@ -43,6 +43,7 @@ import {
   sampleMarkDriftLines,
   restLikeStateWarnings,
   sketchRenderLines,
+  stateInnerLines,
   variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -979,6 +980,16 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
     return readyRefused(
       { product, sketch },
       `${drifts.join('\n')}\n${sketch.target} draws one sample with different marks - align them before ready`,
+    );
+
+  const inner = await timedPhase('state-inner', () =>
+    stateInnerLines({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
+  );
+
+  if (inner.length > 0)
+    return readyRefused(
+      { product, sketch },
+      `${inner.join('\n')}\n${sketch.target} draws a state of an inner part - move it into that part before ready`,
     );
 
   const shots = { target: context.target, config: context.config, product, sketch, warm: context.warm };
@@ -2058,6 +2069,7 @@ const checkedShots = async (
       refuse(
         await timedPhase('mark-drift', () => sampleMarkDriftLines({ target, config, product, sketch, warm: shots })),
       );
+      refuse(await timedPhase('state-inner', () => stateInnerLines({ target, config, product, sketch, warm: shots })));
       const renders = await timedPhase('identical', () =>
         sketchRenderLines({ target, config, product, sketch, warm: shots }),
       );

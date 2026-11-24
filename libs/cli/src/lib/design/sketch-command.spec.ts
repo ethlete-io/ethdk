@@ -8,6 +8,7 @@ import {
   identicalRenderLines,
   identicalRenders,
   sampleMarkDriftLines,
+  stateInnerLines,
   variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -42,6 +43,7 @@ vi.mock('./ready-shots', () => {
     })),
     identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
     sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
+    stateInnerLines: vi.fn(async (): Promise<string[]> => []),
     variantChangesShown: vi.fn(async (): Promise<VariantChange[] | string> => [
       { variant: 'a', changed: 1, change: 'variant a changes default' },
     ]),
@@ -853,6 +855,40 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines).toContain(`ready will refuse: ${drift}`);
+    expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
+  });
+
+  it('refuses ready while a state changes only an inner part, and check warns of it', async () => {
+    const target = acme();
+    const lines = output();
+    const inner =
+      'STATE-INNER components/button a components/button: state "hover" differs from "default" only inside components/icon: add the state in components/icon and drop it from components/button, which draws components/icon in its default';
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    vi.mocked(stateInnerLines).mockResolvedValueOnce([inner]);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toBe(
+      `${inner}\ncomponents/button draws a state of an inner part - move it into that part before ready`,
+    );
+
+    vi.mocked(stateInnerLines).mockResolvedValueOnce([inner]);
+    lines.length = 0;
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(`ready will refuse: ${inner}`);
     expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
   });
 

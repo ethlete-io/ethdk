@@ -15,6 +15,7 @@ import { noVisibleChangeProblemsOf } from './system/rules/no-visible-change';
 import { restLikeStateWarningsOf } from './system/sketch/rest-like-states';
 import { sampleMarkDriftLinesOf } from './system/sketch/sample-mark-drift';
 import { Sketch } from './system/sketch/sketch';
+import { stateInnerLinesOf } from './system/sketch/state-inner-lines';
 import { VariantChange } from './system/sketch/viewed-shots';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { DesignServer, Drawing, drawingOn, loadingOn, WarmDraw } from './warm-draw';
@@ -70,6 +71,17 @@ export const sampleMarkDriftLines = async (options: SketchShots): Promise<string
   try {
     return await loadingOn(options, (server) =>
       sampleMarkDriftLinesOf({ product: options.product, sketch: options.sketch, load: loaderOf(server) }),
+    );
+  } catch (error) {
+    return [couldNotRender(options.sketch, error)];
+  }
+};
+
+/** Renders each target of each live variant on a render server; see `stateInnerLinesOf`. */
+export const stateInnerLines = async (options: SketchShots): Promise<string[]> => {
+  try {
+    return await loadingOn(options, (server) =>
+      stateInnerLinesOf({ product: options.product, sketch: options.sketch, load: loaderOf(server) }),
     );
   } catch (error) {
     return [couldNotRender(options.sketch, error)];

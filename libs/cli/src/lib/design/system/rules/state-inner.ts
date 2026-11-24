@@ -245,6 +245,10 @@ export const innerOnlyStatesOf = async (options: { own: string; definition: unkn
   return found;
 };
 
+/** Why `state` of the part `own` breaks STATE-INNER, and how to fix it. */
+export const stateInnerMessageOf = ({ own, state, base, part }: InnerOnlyState & { own: string }) =>
+  `state "${state}" differs from "${base}" only inside ${part}: add the state in ${part} and drop it from ${own}, which draws ${part} in its default`;
+
 /** A STATE-INNER problem for each state of `parts` that changes only one inner part, by {@link innerOnlyStatesOf}. */
 export const stateInnerOf = async (options: {
   load: PartModuleLoader;
@@ -264,7 +268,7 @@ export const stateInnerOf = async (options: {
         file: part.file,
         at: state,
         states: [state],
-        message: `state "${state}" differs from "${base}" only inside ${inner}: add the state in ${inner} and drop it from ${own}, which draws ${inner} in its default`,
+        message: stateInnerMessageOf({ own, state, base, part: inner }),
       });
   }
 
