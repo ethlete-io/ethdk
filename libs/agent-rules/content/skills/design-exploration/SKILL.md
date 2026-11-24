@@ -91,7 +91,8 @@ the Legacy tab as reference for moving them into a product, with no picks and no
   of another variant. Two to four variants, each with its cost; run `sketch check` before `sketch ready`.
 - **Never run `sketch merge` or `sketch discard`, and never pick a variant, unless your role has its own picks; discarding the mood sketch is the one exception.** Studio merges on the user's
   click. After a pick or discard, do not merge. Run `sketch reject` or `reopen` only when the user did.
-- Mark a sketch `ready` only when no change waits on anything; otherwise `sketch hold`.
+- Mark a sketch `ready` only when no change waits on anything; otherwise `sketch hold`. The pick of another
+  sketch is not a wait: draw with the part as merged now.
 - Every write command takes `--by <model id>`. **Never guess your id**: use the one your prompt names, or ask
   before you write.
 - `design check` opens an edit sketch for a direct edit of a merged part; the user picks in Studio. Remove a part only with `et design part remove`, never `git rm`.

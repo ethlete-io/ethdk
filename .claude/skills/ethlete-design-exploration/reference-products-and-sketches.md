@@ -184,6 +184,10 @@ merge queue: ask first, make the change, then mark it `ready`. Record the wait w
 `et design sketch hold <layer>/<name> --until "<what it waits on>" --by <model id>` (a `ready` sketch goes back
 in progress) and `sketch release` it once the change is in.
 
+The pick of another sketch is not a wait. A sketch that uses a part another open sketch changes draws that part
+as merged now, and goes `ready`. When the user merges the other sketch, the next design commit rebases this one.
+A hold on it leaves the user nothing to choose until the other pick.
+
 ### Your model id: `--by`
 
 Every command that writes takes `--by <model id>` and fails without it: `sketch new`, `variant`, `report`,
