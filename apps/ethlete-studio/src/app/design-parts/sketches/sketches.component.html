@@ -314,7 +314,7 @@
           </span>
         }
       }
-      @if (row.shots.length > 0 || (row.key === CURRENT && stageStates().length > 0)) {
+      @if (row.shots.length > 0 || ((row.key === CURRENT || isEdit()) && stageStates().length > 0)) {
         <div
           #stage
           [style.grid-template-columns]="gridOf(row)"

@@ -363,7 +363,7 @@ export class SketchesComponent {
   protected errorInRow = computed(
     () => this.error() !== null && this.rows().some((row) => row.key === this.selected() && row.key !== SKETCH_CURRENT),
   );
-  private isEdit = computed(() => this.part().endsWith('@edit'));
+  protected isEdit = computed(() => this.part().endsWith('@edit'));
   private listedRows = computed(
     () => {
       const edit = this.isEdit();

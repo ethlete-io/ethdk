@@ -1060,6 +1060,18 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="old"]')).not.toBeNull();
   });
 
+  it('keeps the placeholder in new of an @edit sketch when the only state left after the fold is one new drops', async () => {
+    const same = ROWS[0]!.shots.map((shot) => ({ ...shot, changed: false }));
+    const rows: SketchRow[] = [
+      { ...ROWS[1]!, key: 'new', shots: same },
+      { ...ROWS[1]!, key: 'old', shots: [...same, { state: 'selected', changed: true, height: 90 }] },
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rows, part: 'elements/variant-cell@edit' })).nativeElement;
+
+    expect(root.querySelector('[data-sk-row="new"] [data-sk-missing][data-sk-state="selected"]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-row="old"] [data-sk-state="selected"]:not([data-sk-missing])')).not.toBeNull();
+  });
+
   it('folds the states neither old nor new of an @edit sketch changes', () => {
     const rows = SKETCH_EDIT_SAMPLE.rows;
     const changed = new Set(rows.flatMap((row) => row.shots.filter((shot) => shot.changed).map((shot) => shot.state)));
