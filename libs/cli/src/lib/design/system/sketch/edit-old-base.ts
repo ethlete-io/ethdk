@@ -11,6 +11,7 @@ import { isEditSketch } from './merged-parts';
 import { rebaseOutsideImports, Sketch } from './sketch';
 
 export const EDIT_OLD = 'old';
+export const EDIT_NEW = 'new';
 
 const EDIT_OLD_BASE_FOLDER = join('node_modules', '.cache', 'ethlete-design', 'edit-old-base');
 

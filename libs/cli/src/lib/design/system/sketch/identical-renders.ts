@@ -3,10 +3,12 @@ import { PictureOf } from '../../merge-compare';
 import { DRAWS_AT_ONCE } from '../../thumb';
 import { BoxOf } from '../../variant-diff';
 import { inOrderAtOnce } from '../in-order-at-once';
+import { EDIT_NEW } from './edit-old-base';
 import { alikePairLinesOf, lookAlikeWarningsOf } from './look-alike';
 import { readPartModule } from '../list-system';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
+import { isEditSketch } from './merged-parts';
 import { overlaySketch } from './overlay';
 import { rejectionOf, Sketch } from './sketch';
 import { framesOf, SketchPartLoader } from './unchanged-states';
@@ -144,16 +146,26 @@ const refusalsOf = async (options: {
 };
 
 /**
+ * The renders of `sketch` that refuse it: all but the `new` variant of an edit sketch drawing like the product's part,
+ * which it is by construction.
+ */
+export const refusingRendersOf = (sketch: Pick<Sketch, 'target' | 'layer' | 'name'>, renders: IdenticalRender[]) =>
+  isEditSketch(sketch)
+    ? renders.filter((render) => !(render.variant === EDIT_NEW && render.everyState && render.sibling === null))
+    : renders;
+
+/**
  * One line per live variant of the sketch that draws every state of a target pixel for pixel like another live
  * variant, or like the product's part when the sketch has more than one live variant. Of two variants that draw
  * alike in every state, only the later one is named. A variant that fails to load is named as not compared. A lone variant like the product is a change without a visible
- * difference, which `sketch ready` merges on its own, so it is never named. A state that fails to draw counts as
+ * difference, which `sketch ready` merges on its own, so it is never named; nor is the `new` variant of an edit sketch
+ * drawing like the product. A state that fails to draw counts as
  * different. Any other variant is named when its first changed state, in its own state order, draws like the first
  * changed state of an earlier variant. "Changed" and "draws like" there are the pixel diff of `design shot` (`boxOf`),
  * at the frame a shot draws: the first preset or width, no interaction.
  */
 export const identicalRenderLinesOf = async (options: Parameters<typeof identicalRendersOf>[0]): Promise<string[]> =>
-  (await identicalRendersOf(options)).map((render) => render.line);
+  refusingRendersOf(options.sketch, await identicalRendersOf(options)).map((render) => render.line);
 
 /**
  * The variants `identicalRenderLinesOf` names, each with the sibling variant it draws like in its first changed state

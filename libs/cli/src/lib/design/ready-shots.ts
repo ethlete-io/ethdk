@@ -3,7 +3,12 @@ import { createPartShooter } from './shot';
 import { DesignConfig } from './design-config';
 import { ResolvedProduct } from './system/resolve-product';
 import { aktuellPlaceholderWarningsOf } from './system/sketch/aktuell-placeholders';
-import { IdenticalRender, identicalRendersOf, sketchRendersOf } from './system/sketch/identical-renders';
+import {
+  IdenticalRender,
+  identicalRendersOf,
+  refusingRendersOf,
+  sketchRendersOf,
+} from './system/sketch/identical-renders';
 import { variantChangesOf, variantLoadProblemsOf } from './system/sketch/no-visible-change';
 import { Problem } from './system/problem';
 import { noVisibleChangeProblemsOf } from './system/rules/no-visible-change';
@@ -123,7 +128,7 @@ export const identicalRenderLines = async (options: SketchShots): Promise<string
       });
     });
 
-    return [...renders.identical.map((render) => render.line), ...renders.alike];
+    return [...refusingRendersOf(options.sketch, renders.identical).map((render) => render.line), ...renders.alike];
   } catch (error) {
     return [couldNotRender(options.sketch, error)];
   }
@@ -166,7 +171,10 @@ export const sketchRenderLines = async (options: SketchShots): Promise<{ refusal
     });
 
     return {
-      refusals: [...renders.identical.map((render) => render.line), ...renders.alike],
+      refusals: [
+        ...refusingRendersOf(options.sketch, renders.identical).map((render) => render.line),
+        ...renders.alike,
+      ],
       warnings: renders.lookAlike,
     };
   } catch (error) {

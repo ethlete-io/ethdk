@@ -23,10 +23,10 @@ import {
   variantSharedDirOf,
   writeSketchFile,
 } from './sketch';
-import { EDIT_OLD } from './edit-old-base';
+import { EDIT_NEW, EDIT_OLD } from './edit-old-base';
 
 export { EDIT_OLD };
-const NEW = 'new';
+const NEW = EDIT_NEW;
 const EDIT_ROUND_TITLE = 'Direkte Änderung';
 const EDIT_VARIANT_NOTES = { [EDIT_OLD]: 'der zuletzt gemergte Stand', [NEW]: 'die Änderung außerhalb eines Sketches' };
 

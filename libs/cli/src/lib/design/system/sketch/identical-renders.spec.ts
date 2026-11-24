@@ -11,13 +11,17 @@ import { identicalRenderLinesOf } from './identical-renders';
 import { createSketch, Sketch } from './sketch';
 import { SketchPartLoader } from './unchanged-states';
 
-const acme = (variants: string[]) => {
+const acme = (variants: string[], name?: string) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-identical-'));
 
   cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
 
   const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
-  const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants }) as Sketch;
+  const sketch = createSketch({
+    product,
+    sketch: { layer: 'elements', name: 'hero', sketch: name },
+    variants,
+  }) as Sketch;
 
   return { product, sketch };
 };
@@ -224,11 +228,11 @@ describe('identicalRenderLinesOf', () => {
     ]);
   });
 
-  it('counts a state that only one variant draws as a visible difference, as in the sketch-status-badge edit', async () => {
-    const { product, sketch } = acme(['old', 'new']);
-    const badgeLoad: SketchPartLoader = async ({ sketch: drawn }) => {
+  const badgeLoadOf =
+    (fileOf: (variant: string | undefined) => string): SketchPartLoader =>
+    async ({ sketch: drawn }) => {
       const source = readFileSync(
-        join(__dirname, '__fixtures__', 'sketch-status-badge-edit', `${drawn?.variant ?? 'product'}.ts.txt`),
+        join(__dirname, '__fixtures__', 'sketch-status-badge-edit', `${fileOf(drawn?.variant)}.ts.txt`),
         'utf8',
       );
       const block = /states: \{([^}]*\}[^}]*)*?\n {2}\}/.exec(source)?.[0] ?? '';
@@ -236,10 +240,29 @@ describe('identicalRenderLinesOf', () => {
 
       return { default: { note: 'n', states, render: () => ({ body: '', styles: '' }) } };
     };
-    const pictureOf: PictureOf = async ({ state }) => ({ png: Buffer.from(state), marks: [] });
+  const badgeLoad = badgeLoadOf((variant) => variant ?? 'product');
+  const pictureOf: PictureOf = async ({ state }) => ({ png: Buffer.from(state), marks: [] });
+
+  it('counts a state that only one variant draws as a visible difference, as in the sketch-status-badge edit', async () => {
+    const { product, sketch } = acme(['old', 'new']);
 
     expect(await identicalRenderLinesOf({ product, sketch, load: badgeLoad, pictureOf, boxOf })).not.toContainEqual(
       expect.stringContaining('as variant old'),
     );
+  });
+
+  it('accepts the new variant of an edit sketch drawing like the product, as in the sketch-status-badge edit', async () => {
+    const { product, sketch } = acme(['new', 'old'], 'edit');
+
+    expect(await identicalRenderLinesOf({ product, sketch, load: badgeLoad, pictureOf, boxOf })).toEqual([]);
+  });
+
+  it('still names the old variant of an edit sketch that draws like the new one', async () => {
+    const { product, sketch } = acme(['new', 'old'], 'edit');
+    const load = badgeLoadOf((variant) => (variant === 'old' ? 'new' : (variant ?? 'product')));
+
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf, boxOf })).toEqual([
+      'elements/hero@edit variant old draws the same pixels as variant new in every state (drawing, waiting, paused, failed) - it adds nothing visible: withdraw it with `sketch withdraw elements/hero@edit --variant old --by <model id>` or redraw it',
+    ]);
   });
 });

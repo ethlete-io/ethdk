@@ -68,6 +68,7 @@ import { journaled, openJournalOf } from './system/write-journal';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf, editHoldsOf } from './system/sketch/edit-sketch';
+import { refusingRendersOf } from './system/sketch/identical-renders';
 import { isEditSketch, MERGED_FILE, recordMerged, untilSketchOf } from './system/sketch/merged-parts';
 import { noVerdictLineOf } from './system/no-verdict';
 import { renderFindingsOf } from './system/render-findings';
@@ -985,7 +986,7 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
 
     const renders = await identicalRenders(shots);
 
-    return editHoldsOf(sketch, renders) ? null : renders.map((render) => render.line);
+    return editHoldsOf(sketch, renders) ? null : refusingRendersOf(sketch, renders).map((render) => render.line);
   });
 
   if (identical === null) return heldEdit(context, { product, sketch });
