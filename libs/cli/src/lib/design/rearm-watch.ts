@@ -4,9 +4,9 @@ import { dirname, join, relative, sep } from 'node:path';
 export type RearmWatch = { close: () => void };
 
 /**
- * Calls `onFile` for every file that changes in a directory of `dirs`, also after it or a parent up to `root` is
- * deleted and recreated. Works around the chokidar 3.6 bundled in Vite 8, which keeps the old watch handle of a
- * recreated directory (https://github.com/paulmillr/chokidar/issues/1510); remove once Vite's watcher handles it.
+ * Watches each directory in `dirs` directly and calls `onFile` for every file that changes in it, also after the
+ * directory or one of its parents up to `root` is deleted and recreated. A watcher that follows the path through
+ * Vite's chokidar keeps the inode of the deleted directory and never sees the new one.
  */
 export const watchRecreatedDirs = (options: {
   root: string;
