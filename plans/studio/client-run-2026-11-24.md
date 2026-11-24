@@ -77,3 +77,10 @@ Checkout `/home/tom/dev/client-runs/2026-11-24-1642/tomflix`, Projekt `tomflix`,
 - Bekannt (B734): jeder Button-Sketch scheitert an TYPE-ERROR im SDK-Baustein (ButtonProps `disabled`).
 - Bekannt (B699/B697): Button a/b/c, Zustände filled/pressed/danger (je rest, hover, focus-visible) zeigen dasselbe Bild, nur der Text ist anders.
 - Folge des Abbruchs: App Shell, Hero, Titelkarte fehlen im Baum; button, colors, logo stehen auf „in progress“.
+
+### Mensch in Studio (1642, 17 Uhr)
+
+- Gesamt: nichts passt zu 46 B. Hauptursache: Start mit festem Rot `--accent #e50914` statt Akzent aus 46 B (in B687).
+- Logo: nur ein Abschnitt `mark`, Agent gibt auf (LOGO-SECTION-Blocker). Variante a zeigt eine Lücke zwischen „T“ und „OMFLIX“.
+- Button: beim Laden nur Beschreibungen und „vergleicht 50 Zustände …“, dann ein Raster mit vielen „Lädt“-Zellen. Aktuell, a, b, c stapeln untereinander (Regel unter 45 %), obwohl jeder Frame klein ist: alles im Bild erst bei 2 % Zoom. Stapeln ist für breite Frames, nicht für kleine (B676).
+- Colors: Spalte „Aktuell“ hat nur den Kopf und keine Frames; Frames der Varianten sind bei Fit nicht lesbar (B676).
