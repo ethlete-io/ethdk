@@ -196,9 +196,18 @@
               }
             </div>
           } @else if (listMeasured()) {
-            @for (row of changedRows(); track row.key) {
-              <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row }" />
-            }
+            <div
+              [class.flex-col]="!sideBySide()"
+              [class.items-stretch]="!sideBySide()"
+              [class.items-start]="sideBySide()"
+              [attr.data-sk-side-by-side]="sideBySide() ? '' : null"
+              class="flex gap-space-2"
+              data-sk-changed
+            >
+              @for (row of changedRows(); track row.key) {
+                <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row }" />
+              }
+            </div>
             @if (sameRows().length > 0) {
               <section
                 [attr.data-open]="sameOpen() ? '' : null"
@@ -292,7 +301,7 @@
     [class.gap-space-5]="!headHidden()"
     class="grid grid-cols-[minmax(0,1fr)] rounded-control-md p-space-3 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
   >
-    <div class="min-w-0" data-sk-head-row>
+    <div [class.min-w-full]="sideBySide()" [class.w-0]="sideBySide()" class="min-w-0" data-sk-head-row>
       <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
     </div>
     <div [class.opacity-60]="IS_WITHDRAWN(row)" class="relative min-w-0">

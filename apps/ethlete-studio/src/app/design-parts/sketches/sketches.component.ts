@@ -526,6 +526,7 @@ export class SketchesComponent {
 
     return this.shownRows().filter((row) => !same.includes(row));
   });
+  protected sideBySide = computed(() => !this.transposed() && this.listMeasured() && this.changedRows().length > 1);
   protected sameKeys = computed(
     () =>
       new Set(
@@ -654,6 +655,7 @@ export class SketchesComponent {
         matrixRows: this.matrixRows().map((row) => row.key),
         blocks: this.matrixBlocks().length,
         transposed: this.transposed(),
+        sideBySide: this.sideBySide(),
         columns: this.columns(),
         atFit: this.atFit(),
         sizes: dom.frameSizes,
@@ -1076,32 +1078,62 @@ export class SketchesComponent {
     });
   }
 
+  private sideBySideWidthFit({
+    columns,
+    list,
+    sections,
+    stages,
+  }: Pick<FitDom, 'columns' | 'list' | 'sections' | 'stages'>) {
+    const first = sections[0];
+    const last = sections.at(-1);
+
+    if (!first || !last) return 1;
+
+    const span = last.getBoundingClientRect().right - first.getBoundingClientRect().left;
+    const stageWidths = stages
+      .filter((stage) => sections.some((section) => section.contains(stage)))
+      .reduce((sum, stage) => sum + stage.clientWidth, 0);
+    const frames = this.changedRows().reduce((sum, row) => sum + row.width * columns, 0);
+    const gaps = sections.length * (columns - 1) * COLUMN_GAP;
+
+    return (list.clientWidth - (span - stageWidths) - gaps) / frames;
+  }
+
   private gridFit(scale: number, { columns, list, sections, stages, frames }: FitDom) {
     const stage = stages[0];
-    const widthFit = stage ? (stage.clientWidth - (columns - 1) * COLUMN_GAP) / (columns * this.widest()) : 1;
-    const measured = sections.slice(0, 2);
-    const first = measured[0];
-    const last = measured.at(-1);
+    const side = this.sideBySide();
+    const changed = sections.slice(0, this.changedRows().length);
+    const widthFit = side
+      ? this.sideBySideWidthFit({ columns, list, sections: changed, stages })
+      : stage
+        ? (stage.clientWidth - (columns - 1) * COLUMN_GAP) / (columns * this.widest())
+        : 1;
+    const groups = side ? changed.map((section) => [section]) : [sections.slice(0, 2)];
+    const heightFits = groups.flatMap((measured) => {
+      const first = measured[0];
+      const last = measured.at(-1);
 
-    if (!first || !last) return Math.min(1, widthFit);
+      if (!first || !last) return [];
 
-    const lines = new Map<number, number>();
+      const lines = new Map<number, number>();
 
-    for (const frame of frames) {
-      if (!measured.some((section) => section.contains(frame))) continue;
+      for (const frame of frames) {
+        if (!measured.some((section) => section.contains(frame))) continue;
 
-      const box = frame.getBoundingClientRect();
-      const top = Math.round(box.top);
+        const box = frame.getBoundingClientRect();
+        const top = Math.round(box.top);
 
-      lines.set(top, Math.max(lines.get(top) ?? 0, box.height));
-    }
+        lines.set(top, Math.max(lines.get(top) ?? 0, box.height));
+      }
 
-    const framesHeight = [...lines.values()].reduce((sum, height) => sum + height, 0);
-    const total = last.getBoundingClientRect().bottom - first.getBoundingClientRect().top;
-    const room = list.clientHeight - FIT_PADDING - (total - framesHeight);
-    const heightFit = framesHeight > 0 && room > 0 ? (room * scale) / framesHeight : Infinity;
+      const framesHeight = [...lines.values()].reduce((sum, height) => sum + height, 0);
+      const total = last.getBoundingClientRect().bottom - first.getBoundingClientRect().top;
+      const room = list.clientHeight - FIT_PADDING - (total - framesHeight);
 
-    return Math.min(1, widthFit, heightFit);
+      return [framesHeight > 0 && room > 0 ? (room * scale) / framesHeight : Infinity];
+    });
+
+    return Math.min(1, widthFit, ...heightFits);
   }
 
   private shownZoom() {

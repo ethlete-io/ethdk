@@ -123,6 +123,21 @@ describe('SketchesComponent', () => {
     ).toHaveLength(0);
   });
 
+  it.each([
+    ['three changed variants', ['a', 'b', 'c'], true],
+    ['a single changed variant', ['a'], false],
+  ] as const)('lays %s side by side only when there is more than one', async (_, keys, side) => {
+    const changed = keys.map((key) => ({ ...ROWS[1]!, key, width: 100 }));
+    const root: HTMLElement = (await render({ rows: changed, camera: '100' })).nativeElement;
+    const list = root.querySelector('[data-sk-changed]');
+
+    expect(
+      [...root.querySelectorAll('[data-sk-changed] > [data-sk-row]')].map((row) => row.getAttribute('data-sk-row')),
+    ).toEqual(keys);
+    expect(list?.hasAttribute('data-sk-side-by-side')).toBe(side);
+    expect(list?.classList.contains('flex-col')).toBe(!side);
+  });
+
   // Decision human 23.11. (B703): the title (e.g. "Entwurf 46 B") goes away, neither the part key nor a round title shows.
   it('shows no sketch title, neither the part key nor a round title', async () => {
     const root: HTMLElement = (await render({ camera: '100', rows: ROWS, part: 'elements/variant-cell@x' }))
@@ -936,7 +951,7 @@ describe('SketchesComponent', () => {
   });
 
   it('keeps the note and the state names at 12 px or more down to fit', async () => {
-    const fixture = await render({ camera: { zoom: 2, x: 0, y: 0 } });
+    const fixture = await render({ rows: [ROWS[1]!], camera: { zoom: 2, x: 0, y: 0 } });
     const root: HTMLElement = fixture.nativeElement;
     const sizes = () => [
       root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-note]')?.style.fontSize,
