@@ -13,6 +13,7 @@ const SAME = 0;
 const MAX_SHOTS = 150;
 const SHOT_TIMEOUT_MS = 240_000;
 const FRAME_HEIGHT = 800;
+const PAGE_MARGIN = 40;
 
 const progress = (line) => console.error(`client-run judge: ${line}`);
 
@@ -59,11 +60,11 @@ const statesOf = async (base, query) => {
 
 /** Opens the frame a shot of `view` draws, at the width the shot came out, and probes what it shows. */
 const probeView = async ({ base, browser, view, width }) => {
-  const page = await browser.newPage({ viewport: { width, height: FRAME_HEIGHT } });
+  const page = await browser.newPage({ viewport: { width: width + PAGE_MARGIN, height: FRAME_HEIGHT } });
   try {
     const { product, part, state, sketch, variant } = view;
     const search = new URLSearchParams({ product, part, state, ...(sketch ? { sketch, variant } : {}) });
-    return await probeFrame({ page, url: `${base}/frame.html?${search}` });
+    return await probeFrame({ page, url: `${base}/frame.html?${search}`, width });
   } finally {
     await page.close();
   }
@@ -232,7 +233,7 @@ export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] 
     rmSync(join(target, 'node_modules/@ethlete/cli'), { recursive: true, force: true });
     cpSync(join(sdk, 'dist/libs/cli'), join(target, 'node_modules/@ethlete/cli'), { recursive: true });
   }
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] });
   const server = await startServer(target, openSync(join(runDir, 'judge-server.log'), 'w')).catch(async (error) => {
     await browser.close();
     throw error;

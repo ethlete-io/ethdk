@@ -1,6 +1,6 @@
 /**
  * Reads, in the drawn frame of one state, what a human would see broken: images that did not load, text cut off
- * or running out of its box, and content larger than the frame (cut off, or a scrollbar in the cell).
+ * or running out of its box, content larger than the frame, and a scrollbar on the page or on an element in it.
  * Runs in the page; returns plain data so `frameFindingsOf` can judge it without a browser.
  */
 export const PROBE_SCRIPT = `(() => {
@@ -68,6 +68,32 @@ export const PROBE_SCRIPT = `(() => {
     });
   }
   const page = document.scrollingElement;
+  const px = (value) => parseFloat(value) || 0;
+  const scrollbars = [];
+  const pageBars = { vertical: innerWidth - page.clientWidth, horizontal: innerHeight - page.clientHeight };
+  if (pageBars.vertical > 0 || pageBars.horizontal > 0)
+    scrollbars.push({
+      element: 'html',
+      bars: pageBars,
+      scroll: { width: page.scrollWidth, height: page.scrollHeight },
+      client: { width: page.clientWidth, height: page.clientHeight },
+    });
+  for (const el of all) {
+    const style = getComputedStyle(el);
+    if (!/auto|scroll/.test(style.overflowX + ' ' + style.overflowY)) continue;
+    const bars = {
+      vertical: el.offsetWidth - el.clientWidth - px(style.borderLeftWidth) - px(style.borderRightWidth),
+      horizontal: el.offsetHeight - el.clientHeight - px(style.borderTopWidth) - px(style.borderBottomWidth),
+    };
+    const overflows = el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+    if (bars.vertical > 0 || bars.horizontal > 0 || overflows)
+      scrollbars.push({
+        element: nameOf(el),
+        bars,
+        scroll: { width: el.scrollWidth, height: el.scrollHeight },
+        client: { width: el.clientWidth, height: el.clientHeight },
+      });
+  }
   return {
     viewport: { width: innerWidth, height: innerHeight },
     page: { width: page.scrollWidth, height: page.scrollHeight },
@@ -75,6 +101,7 @@ export const PROBE_SCRIPT = `(() => {
     boxes: all.map((el) => ({ element: nameOf(el), box: visibleOf(el) })),
     images,
     texts,
+    scrollbars,
   };
 })()`;
 
@@ -129,6 +156,15 @@ export const frameFindingsOf = ({ probe, failedImages = [] }) => {
         `Text ragt ${outside(text.textBox, clipper.box)} px über ${clipper.element} hinaus, das überlaufenden Inhalt versteckt.`,
       );
   }
+  for (const bar of probe.scrollbars ?? [])
+    add(
+      `${bar.element === 'html' ? 'Der Rahmen' : bar.element} zeigt eine Scrollleiste.`,
+      `${bar.element} ist ${bar.client.width}x${bar.client.height} groß, der Inhalt ${bar.scroll.width}x${bar.scroll.height}${
+        bar.scroll.width <= bar.client.width && bar.scroll.height <= bar.client.height
+          ? ', er passt hinein und die Leiste bleibt trotzdem'
+          : ''
+      }.`,
+    );
   const spill = probe.boxes.filter(({ box }) => shown(box) && outside(box, probe.root) > SLACK);
   if (spill.length || probe.page.width > probe.viewport.width + SLACK)
     add(
@@ -145,8 +181,23 @@ export const frameFindingsOf = ({ probe, failedImages = [] }) => {
 
 const IMAGE = /\.(png|jpe?g|webp|avif|gif|svg)(\?|$)/i;
 
-/** Opens the frame of one state the way the shot route draws it and returns its probe and failed image requests. */
-export const probeFrame = async ({ page, url }) => {
+const START_HEIGHT = 150;
+
+const cellPageOf = (url, width) => `<!doctype html>
+<body style="margin: 0">
+  <iframe id="cell" style="display: block; border: 0; width: ${width}px; height: ${START_HEIGHT}px" src="${url}"></iframe>
+  <script>
+    addEventListener('message', ({ data }) => {
+      if (data?.type === 'design-explore:height') document.getElementById('cell').style.height = data.height + 'px';
+    });
+  </script>
+</body>`;
+
+/**
+ * Opens the frame of one state the way a Studio cell shows it, `width` wide and as high as the frame reports, and
+ * returns its probe and failed image requests. Launch the browser with scrollbars shown (`ignoreDefaultArgs: ['--hide-scrollbars']`).
+ */
+export const probeFrame = async ({ page, url, width }) => {
   const failedImages = [];
   const failed = (requestUrl) => {
     if (IMAGE.test(requestUrl)) failedImages.push(new URL(requestUrl).pathname);
@@ -160,13 +211,15 @@ export const probeFrame = async ({ page, url }) => {
   page.on('response', onResponse);
   page.on('requestfailed', onFailed);
   try {
-    await page.goto(url, { waitUntil: 'load', timeout: 120_000 });
-    await page.waitForFunction("document.getElementById('root')?.childElementCount > 0", null, { timeout: 60_000 });
-    await page
+    await page.setContent(cellPageOf(url, width), { waitUntil: 'load', timeout: 120_000 });
+    const cell = await (await page.$('#cell')).contentFrame();
+    await cell.waitForFunction("document.getElementById('root')?.childElementCount > 0", null, { timeout: 60_000 });
+    await cell
       .waitForFunction('[...document.images].every((image) => image.complete)', null, { timeout: 15_000 })
       .catch(() => undefined);
     await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
-    return { probe: await page.evaluate(PROBE_SCRIPT), failedImages: [...new Set(failedImages)] };
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+    return { probe: await cell.evaluate(PROBE_SCRIPT), failedImages: [...new Set(failedImages)] };
   } finally {
     page.off('response', onResponse);
     page.off('requestfailed', onFailed);

@@ -5,7 +5,8 @@ import { describe, it } from 'node:test';
 import { frameFindingsOf } from './frame-probe.mjs';
 
 // Probes of the 2026-11-24-0056 title card on a copy of the run: variant b with the logo path an agent would
-// write for `~/bilder-von-tom`, variant c at 120 px, variant a at 40 px and as the agent left it.
+// write for `~/bilder-von-tom`, variant c at 120 px, variant a at 40 px and as the agent left it. The `title-card-film`
+// probes are the human's tomflix title card (state film, 112 and 168 px) in a cell that follows the reported height.
 const { probes } = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures/frame-probes.json'), 'utf8'));
 const seenOf = (name) => frameFindingsOf(probes[name]).map((finding) => finding.seen);
 
@@ -27,5 +28,10 @@ describe('frameFindingsOf', () => {
       'Text „2024 · Film“ läuft aus seinem Kasten.',
       'Inhalt ist größer als der Rahmen (40x179) und wird abgeschnitten.',
     ]);
+  });
+
+  it('reports the scrollbar a cell keeps when the frame measured its height with the scrollbar', () => {
+    assert.deepEqual(seenOf('title-card-film-168'), ['Der Rahmen zeigt eine Scrollleiste.']);
+    assert.ok(seenOf('title-card-film-112').includes('Der Rahmen zeigt eine Scrollleiste.'));
   });
 });

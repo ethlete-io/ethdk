@@ -586,6 +586,348 @@
         "scrollers": []
       },
       "failedImages": []
+    },
+    "title-card-film-112": {
+      "probe": {
+        "viewport": {
+          "width": 112,
+          "height": 181
+        },
+        "page": {
+          "width": 97,
+          "height": 181
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 97,
+          "height": 181
+        },
+        "boxes": [
+          {
+            "element": "div.bg-et-surface-bg.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 97,
+              "height": 181
+            }
+          },
+          {
+            "element": "a.tf-title-card.block",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 81,
+              "height": 165
+            }
+          },
+          {
+            "element": "span.relative.block",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 81,
+              "height": 122
+            }
+          },
+          {
+            "element": "img.block.size-full",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 81,
+              "height": 122
+            }
+          },
+          {
+            "element": "span.block.pt-2",
+            "box": {
+              "x": 8,
+              "y": 130,
+              "width": 81,
+              "height": 43
+            }
+          },
+          {
+            "element": "span.block.truncate",
+            "box": {
+              "x": 8,
+              "y": 138,
+              "width": 81,
+              "height": 15
+            }
+          },
+          {
+            "element": "span.mt-1.block",
+            "box": {
+              "x": 8,
+              "y": 157,
+              "width": 81,
+              "height": 16
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.block.size-full",
+            "src": "/@fs/tmp/b676/tomflix/.ethlete/design/tomflix/assets/ab-durch-die-hecke-2006-plakat-klein.webp",
+            "complete": true,
+            "naturalWidth": 200,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 81,
+              "height": 122
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.block.truncate",
+            "text": "Ab durch die Hecke",
+            "box": {
+              "x": 8,
+              "y": 138,
+              "width": 81,
+              "height": 15
+            },
+            "textBox": {
+              "x": 8,
+              "y": 137,
+              "width": 113,
+              "height": 17
+            },
+            "clips": true,
+            "ellipsis": true,
+            "scroll": {
+              "width": 113,
+              "height": 16
+            },
+            "client": {
+              "width": 81,
+              "height": 15
+            },
+            "clippers": []
+          },
+          {
+            "element": "span.mt-1.block",
+            "text": "2006",
+            "box": {
+              "x": 8,
+              "y": 157,
+              "width": 81,
+              "height": 16
+            },
+            "textBox": {
+              "x": 8,
+              "y": 157,
+              "width": 25,
+              "height": 15
+            },
+            "clips": true,
+            "ellipsis": true,
+            "scroll": {
+              "width": 81,
+              "height": 16
+            },
+            "client": {
+              "width": 81,
+              "height": 16
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": [
+          {
+            "element": "html",
+            "bars": {
+              "vertical": 15,
+              "horizontal": 0
+            },
+            "scroll": {
+              "width": 97,
+              "height": 181
+            },
+            "client": {
+              "width": 97,
+              "height": 181
+            }
+          }
+        ]
+      },
+      "failedImages": []
+    },
+    "title-card-film-168": {
+      "probe": {
+        "viewport": {
+          "width": 168,
+          "height": 265
+        },
+        "page": {
+          "width": 153,
+          "height": 265
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 153,
+          "height": 265
+        },
+        "boxes": [
+          {
+            "element": "div.bg-et-surface-bg.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 153,
+              "height": 265
+            }
+          },
+          {
+            "element": "a.tf-title-card.block",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 137,
+              "height": 249
+            }
+          },
+          {
+            "element": "span.relative.block",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 137,
+              "height": 206
+            }
+          },
+          {
+            "element": "img.block.size-full",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 137,
+              "height": 206
+            }
+          },
+          {
+            "element": "span.block.pt-2",
+            "box": {
+              "x": 8,
+              "y": 214,
+              "width": 137,
+              "height": 43
+            }
+          },
+          {
+            "element": "span.block.truncate",
+            "box": {
+              "x": 8,
+              "y": 222,
+              "width": 137,
+              "height": 15
+            }
+          },
+          {
+            "element": "span.mt-1.block",
+            "box": {
+              "x": 8,
+              "y": 241,
+              "width": 137,
+              "height": 16
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.block.size-full",
+            "src": "/@fs/tmp/b676/tomflix/.ethlete/design/tomflix/assets/ab-durch-die-hecke-2006-plakat-klein.webp",
+            "complete": true,
+            "naturalWidth": 200,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 137,
+              "height": 206
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.block.truncate",
+            "text": "Ab durch die Hecke",
+            "box": {
+              "x": 8,
+              "y": 222,
+              "width": 137,
+              "height": 15
+            },
+            "textBox": {
+              "x": 8,
+              "y": 221,
+              "width": 113,
+              "height": 17
+            },
+            "clips": true,
+            "ellipsis": true,
+            "scroll": {
+              "width": 137,
+              "height": 16
+            },
+            "client": {
+              "width": 137,
+              "height": 15
+            },
+            "clippers": []
+          },
+          {
+            "element": "span.mt-1.block",
+            "text": "2006",
+            "box": {
+              "x": 8,
+              "y": 241,
+              "width": 137,
+              "height": 16
+            },
+            "textBox": {
+              "x": 8,
+              "y": 241,
+              "width": 25,
+              "height": 15
+            },
+            "clips": true,
+            "ellipsis": true,
+            "scroll": {
+              "width": 137,
+              "height": 16
+            },
+            "client": {
+              "width": 137,
+              "height": 16
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": [
+          {
+            "element": "html",
+            "bars": {
+              "vertical": 15,
+              "horizontal": 0
+            },
+            "scroll": {
+              "width": 153,
+              "height": 265
+            },
+            "client": {
+              "width": 153,
+              "height": 265
+            }
+          }
+        ]
+      },
+      "failedImages": []
     }
   }
 }
