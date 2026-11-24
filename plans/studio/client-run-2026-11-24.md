@@ -66,3 +66,14 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
 - Entscheidung Mensch 24.11. (Bild: Studio-Menü, Untermenü „Kunden-Läufe“): das Untermenü erscheint nur für Pfade unter `client-runs/JJJJ-MM-TT-HHMM/` (`project-entries.ts:8`), andere sehen es nicht. Das Lauf-Skript trägt jeden neuen Lauf selbst ein (B687).
 - Batch 62 (Logo-Punkte): Kopien meldet der Prüfer e23a4e81d; Bewegung ohne Bewegung und Platzhalter lehnt `sketch check` und `sketch ready` ab, f81e860c0 (auf einer Kopie von 1109: alter cli ließ a, b, c durch, neuer lehnt alle drei ab). Offen: Bild größer als Frame (B721), Kopien im Gerüst selbst (B722). Nicht verifiziert: neuer Kunden-Lauf mit den neuen Prüfungen.
 - Feedback des Menschen 24.11. (Bilder: foundations/colors): (1) colors ist schon gemergt, flache Tabelle, alle Flächen 128 128 128, alle primary-Zustände gleich; (2) die Varianten nutzen denselben Tabellen-Aufbau, nicht den der SDK-Farbseite (Flächen-Karten, Akzent-Zustände, Kontrast) - B725; (3) Spalte „px in 1 Stelle … Ganzer Screen“ ist Käse - B676; (4) Projektwechsel zeigt „tomflix“ beim Bau des SDK - B723.
+
+## Lauf 2026-11-24-1642 (erster Lauf gegen 46 B, SDK 5f093b0b8 ohne B705-Teilstand; 20 Befunde, 27 Bilder nicht geprüft)
+
+Checkout `/home/tom/dev/client-runs/2026-11-24-1642/tomflix`, Projekt `tomflix`, Bericht im Lauf-Ordner. Der Lauf trägt sich noch nicht in Studio ein (B687, run.mjs-Schritt offen). Der Agent hielt nach Farben, Logo und halbem Button an.
+
+- Neu: `sketch_check` lehnt den Logo-Sketch ab (LOGO-SECTION: eine Logo-Variante braucht schon vor der Wahl alle sechs Abschnitte); die Regeln sagen, diese kommen erst nach der Wahl. Folge von f81e860c0 (Platzhalter abgelehnt), Widerspruch zur Regel. Logo bleibt „in progress“.
+- Neu: Start mit `--accent #e50914` lehnt Türkis als Hauptakzent ab; 46 B nutzt Türkis. Lauf-Start und Referenz widersprechen sich, Farben bleiben „in progress“.
+- Neu: ein `design check` des Agenten wurde in der Sandbox abgelehnt („The user doesn't want to proceed…“); Verdacht: Rechte der Sandbox, nicht das Werkzeug.
+- Bekannt (B734): jeder Button-Sketch scheitert an TYPE-ERROR im SDK-Baustein (ButtonProps `disabled`).
+- Bekannt (B699/B697): Button a/b/c, Zustände filled/pressed/danger (je rest, hover, focus-visible) zeigen dasselbe Bild, nur der Text ist anders.
+- Folge des Abbruchs: App Shell, Hero, Titelkarte fehlen im Baum; button, colors, logo stehen auf „in progress“.
