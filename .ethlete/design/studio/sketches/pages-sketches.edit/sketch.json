@@ -1,6 +1,6 @@
 {
   "target": "pages/sketches@edit",
-  "status": "ready",
+  "status": "in progress",
   "createdAt": "2026-11-23T15:32:37.058Z",
   "createdBy": {
     "cmd": "design check --product studio --part pages/sketches",
@@ -89,28 +89,28 @@
     "components/toolbar": "b62bb6c1539dbdd4",
     "components/tooltip": "4defd5665eab5f5f",
     "components/tree": "e15213fac4751487",
-    "components/tree-row": "9992f42343511c64",
+    "components/tree-row": "a831f03c88024f59",
     "components/update-dialog": "63ad322093769a56",
     "components/zoom-chip": "99a38ecebede39be",
     "elements/canvas-frames": "b2153089c7e8799f",
-    "elements/part-tree": "9be5f6720decae3f",
+    "elements/part-tree": "cb9aa016a48c9f96",
     "elements/shell-main": "e819f34d77ea3e58",
     "elements/studio-menu": "52e34e78cf208413",
     "elements/variant-cell": "ceed5cf0d7edbc2c",
     "pages/flows": "5f9d41e1be7d2953",
     "pages/inbox": "9fe9d1c9a513990c",
     "pages/inventory": "bb84266858a56467",
-    "pages/sketches": "8cd5e87e509700bc",
+    "pages/sketches": "aabc644d87b1284e",
     "pages/start": "c64a95d26c294b69",
-    "pages/system": "1726d8b674da3ca2",
+    "pages/system": "d01a86a323fe0006",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "743b982411df5de7a6e4e8ce0f5616a1ad219c9e",
+  "baselineTree": "02a78c8b6ee36256e4875a6f4ce1b422448cc510",
   "editOldCommit": "d8492dcb79f1da179209c873501f20ed0f32caf3",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "9a0a7a3b22f8b030",
     "pages/sketches/shared/multi-part.ts": "baa5ef7f1cd1fb1c",
-    "pages/sketches/shared/open-points.ts": "bdac23f08046b221",
+    "pages/sketches/shared/open-points.ts": "8032ea3aa0074441",
     "pages/sketches/shared/sketch-rows.ts": "79ac1cba1559433b",
     "pages/sketches/shared/sketch-status.ts": "e2a224398dad3c07",
     "pages/sketches/shared/withdrawn.ts": "ddbc2375f9aafde4"
@@ -133,9 +133,5 @@
       "round": "r1",
       "note": "der zuletzt gemergte Stand"
     }
-  },
-  "readyContent": {
-    "new": "d26d28fc1157b2da",
-    "old": "7340e082741e19cd"
   }
 }
