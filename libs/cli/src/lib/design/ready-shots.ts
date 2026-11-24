@@ -17,7 +17,6 @@ import { textOnlyStateWarningsOf } from './system/sketch/text-only-states';
 import { sampleMarkDriftLinesOf } from './system/sketch/sample-mark-drift';
 import { samePictureStateWarningsOf } from './system/sketch/same-picture-states';
 import { weakStateWarningsOf } from './system/sketch/weak-states';
-import { duplicatedTitleWarningsOf } from './system/sketch/duplicated-title';
 import { imageTextWarningsOf } from './system/sketch/image-text';
 import { Sketch } from './system/sketch/sketch';
 import { stateInnerLinesOf } from './system/sketch/state-inner-lines';
@@ -144,7 +143,7 @@ export const aktuellPlaceholderWarnings = async (options: SketchShots): Promise<
  * Shoots the sketch on a render server; one warning per state that draws like its rest state, see `restLikeStateWarningsOf`,
  * one per state that barely differs from it, see `weakStateWarningsOf`, one per pair of states that render the same
  * picture, see `samePictureStateWarningsOf`, one per group of states that differ only in their text, see
- * `textOnlyStateWarningsOf`, one per target with text that does not read, see `imageTextWarningsOf`, and one per target that draws a title next to a poster, see `duplicatedTitleWarningsOf`.
+ * `textOnlyStateWarningsOf`, and one per target with text that does not read, see `imageTextWarningsOf`.
  */
 export const restLikeStateWarnings = async (options: SketchShots): Promise<string[]> => {
   try {
@@ -162,7 +161,6 @@ export const restLikeStateWarnings = async (options: SketchShots): Promise<strin
         ...(await samePictureStateWarningsOf(shared)),
         ...(await textOnlyStateWarningsOf(shared)),
         ...(await imageTextWarningsOf(shared)),
-        ...(await duplicatedTitleWarningsOf(shared)),
       ];
     });
   } catch (error) {
