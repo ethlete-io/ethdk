@@ -257,7 +257,7 @@ export const prepareShots = async (part: SketchPart) => {
 
 const unchanged = (row: Row, state: string) => !isBase(row) && !row.changed.includes(state);
 
-export const cell = (part: SketchPart, row: Row, state: string, place = '', pending = false) =>
+export const cell = (part: SketchPart, row: Row, state: string, place = '', pending = false, overlay = '') =>
   variantCell({
     state,
     width: part.width,
@@ -266,14 +266,20 @@ export const cell = (part: SketchPart, row: Row, state: string, place = '', pend
     same: !pending && unchanged(row, state),
     place,
     sample: pending ? undefined : `${part.sample ?? part.key} ${row.key} ${state}${isSame(row) ? ' unchanged' : ''}`,
+    overlay,
   });
 
-export const wrapStage = (part: SketchPart, row: Row, pending = false) =>
+export const wrapStage = (
+  part: SketchPart,
+  row: Row,
+  pending = false,
+  overlayOf: (state: string) => string = () => '',
+) =>
   html`<div
     class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),minmax(var(--sk-frame),max-content))] gap-x-6 **:data-sk-label:w-0 **:data-sk-label:min-w-full gap-y-space-3"
     data-sk-stage
   >
-    ${part.states.map((state) => cell(part, row, state, '', pending)).join('')}
+    ${part.states.map((state) => cell(part, row, state, '', pending, overlayOf(state))).join('')}
   </div>`;
 
 export const wrapColumns = (part: SketchPart) =>

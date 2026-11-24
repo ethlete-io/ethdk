@@ -124,6 +124,7 @@ type View = {
   points: string;
   confirm?: string;
   comments?: Record<string, string>;
+  commentTargets?: boolean;
 };
 
 const DRAWN: RowKey = 'b';
@@ -200,6 +201,11 @@ const missingCell = (row: Row, state: string) =>
     </div>
   </div>`;
 
+const cellTargetOf = (row: Row, state: string, view: View) =>
+  view.commentTargets && row.key !== 'current'
+    ? html`<div class="absolute inset-0 z-2">${commentLayer(`${row.key} ${state}`, 'comments-draft')}</div>`
+    : '';
+
 const stageOf = (part: SketchPart, row: Row, view: View) =>
   view.added || view.wideState
     ? html`<div
@@ -213,11 +219,11 @@ const stageOf = (part: SketchPart, row: Row, view: View) =>
               ? missingCell(row, state)
               : state === WIDE.state
                 ? measuredCell(part, row, state, view.comparing)
-                : cell(part, row, state, '', view.comparing),
+                : cell(part, row, state, '', view.comparing, cellTargetOf(row, state, view)),
           )
           .join('')}
       </div>`
-    : wrapStage(part, row, view.comparing);
+    : wrapStage(part, row, view.comparing, (state) => cellTargetOf(row, state, view));
 
 const multiSketchOf = (multi: MultiTargets, status: SketchStatus) => ({
   open: true,
@@ -709,7 +715,6 @@ const variantComments = async (row: string, phase: CommentPhase | undefined) => 
   if (!phase) return { body: '', styles: '' };
   const own = VARIANT_THREADS.filter((thread) => thread.row === row);
   const pins = commentPins(own, phase === 'listed' ? own.findIndex((thread) => thread === VARIANT_THREADS[0]) : -1);
-  const target = phase !== 'listed' && row !== 'current' ? commentLayer(row, 'comments-draft') : '';
   const drafting = phase === 'draft' && row === 'b';
   const draft = drafting
     ? await commentDraftAt('top-[40%] left-[calc(30%+var(--space-6))] z-20', {
@@ -717,7 +722,7 @@ const variantComments = async (row: string, phase: CommentPhase | undefined) => 
       })
     : undefined;
   return {
-    body: target + pins + (drafting ? draftPin(COMMENT_DRAFT_AT) : '') + (draft?.body ?? ''),
+    body: pins + (drafting ? draftPin(COMMENT_DRAFT_AT) : '') + (draft?.body ?? ''),
     styles: draft?.styles ?? '',
   };
 };
@@ -1011,6 +1016,7 @@ export default definePart<Props>({
     const list = comments ? commentList(VARIANT_THREADS, comments === 'listed' ? 0 : -1) : undefined;
     const view: View = {
       ...(comments ? { comments: Object.fromEntries(layers.map(([key, layer]) => [key, layer.body])) } : {}),
+      ...(comments && comments !== 'listed' ? { commentTargets: true } : {}),
       selected,
       status,
       errored,
