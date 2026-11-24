@@ -55,3 +55,7 @@ alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief
   - Viele Frames sind exakte Kopien: anatomy, clear-space, colour-variants, misuse und motion zeigen dasselbe T mit einem Titel. Kein Aufbau, kein Schutzraum, keine Farbvariante, keine falsche Verwendung. Ziel verfehlt.
   - motion bewegt sich nicht.
   - Der Agent schrieb selbst „Aufbau, Schutzraum und Mindestgröße sind vorerst nur Platzhalter“ (findings.md:53); das Werkzeug ließ die Variante trotzdem fertig zur Wahl werden.
+- Feedback des Menschen 24.11. (Bild: elements/app-shell Variante a, desktop und phone):
+  - Entscheidung Mensch 24.11.: die Shell ist nur Zusammensetzung. Suchkapsel, Reiter-Leiste und Avatar werden eigene Teile unter `components/`; der Agent legt sie an, wenn die Shell sie braucht (wie nötige Foundations). Die Shell zeigt nur Anordnung und Seiten-Zustände (gescrollt, Leiste versteckt, aktiver Reiter); Hover und Fokus zeigen die Teile. Der Auftrag bleibt bei sechs Teilen.
+  - Befund: der Inhaltsbereich ist in beiden Breiten leer und schwarz; die Shell zeigt nicht, wie sie mit Inhalt wirkt.
+  - Befund: die Chips „A–Z“ und „Filter“ sind dunkelrot auf Schwarz, kaum lesbar.
