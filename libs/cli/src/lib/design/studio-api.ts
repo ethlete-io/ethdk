@@ -39,7 +39,7 @@ import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
 import { openSketchListingOf } from './system/sketch/check-sketches';
-import { holdTargetEndOf } from './system/sketch/merged-parts';
+import { holdTargetEndOf, isEditSketch } from './system/sketch/merged-parts';
 import { staleBaseOf } from './system/sketch/stale-base';
 import { rebaseUncommittedOf } from './system/sketch/rebase-uncommitted';
 import { recordedReadyRefusalOf } from './system/sketch/ready-refusal';
@@ -47,6 +47,8 @@ import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
 import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
+import { editVariantInfoOf, withEditUnchanged } from './system/sketch/edit-summary';
+import { EDIT_NEW } from './system/sketch/edit-old-base';
 import { discardSketch, mergeRefusalOf } from './system/sketch/merge';
 import { mergeInWorker } from './system/sketch/merge-runner';
 import { DrawStates } from './system/accepted-pictures';
@@ -405,11 +407,14 @@ const targetsOf = async (options: {
   signal?: AbortSignal;
   compare: boolean;
 }) =>
-  (
-    await inTurns({ items: options.sketch.targets, signal: options.signal }, (part) =>
-      partTargetsOf({ ...options, part }),
-    )
-  ).flat();
+  withEditUnchanged(
+    options.sketch,
+    (
+      await inTurns({ items: options.sketch.targets, signal: options.signal }, (part) =>
+        partTargetsOf({ ...options, part }),
+      )
+    ).flat(),
+  );
 
 type ListedTarget = Awaited<ReturnType<typeof targetsOf>>[number];
 
@@ -421,6 +426,7 @@ const noChangedStateProblemsOf = ({ sketch, targets }: { sketch: Sketch; targets
     );
 
     if (rejectionOf(sketch, variant) || drawn.length === 0 || !compared) return [];
+    if (isEditSketch(sketch) && variant === EDIT_NEW) return [];
 
     const changed = drawn.flatMap((entry) =>
       entry.states.filter((state) => !('unchanged' in entry && entry.unchanged?.includes(state))),
@@ -499,6 +505,7 @@ const listingOf = async ({
 
     return {
       ...sketchOf({ sketch, target }),
+      ...(isEditSketch(sketch) ? { variantInfo: editVariantInfoOf({ product, sketch, targets }) } : {}),
       staleBase: sketch.decision?.kind === 'discard' ? null : staleBaseOf({ product, sketch }),
       rebaseUncommitted: rebaseUncommitted.get(sketch.dir) ?? null,
       addedSkips: sketch.decision ? [] : addedSkipsOf({ product, sketch }),
