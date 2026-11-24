@@ -43,3 +43,37 @@ const covers = (trap, view) => {
     ...(probe.images ?? []).map((image) => image.src.split('/').pop()),
   ].some((seen) => shows.test(seen));
 };
+
+/**
+ * Reports each state of a part with `logoWhereExists` that shows an image of a title whose `katalog.json` entry has a
+ * logo, without that logo image.
+ */
+export const logoFindingsOf = ({ expected, shots, katalog }) => {
+  const logos = new Map(
+    katalog.filter((entry) => entry.logo).map((entry) => [entry.logo.replace(/-logo\.png$/, ''), entry]),
+  );
+  const findings = [];
+  for (const order of expected.sketches ?? []) {
+    if (!order.logoWhereExists) continue;
+    const match = new RegExp(order.match, 'i');
+    const missing = Map.groupBy(
+      shots
+        .filter((shot) => shot.sketch && shot.state && match.test(shot.sketch))
+        .flatMap((view) => {
+          const files = (view.frame?.probe?.images ?? []).map((image) => image.src.split('/').pop());
+          return [...new Set(files.map((file) => file.replace(/-(plakat|plakat-klein|hintergrund)\.\w+$/, '')))]
+            .filter((slug) => logos.has(slug) && !files.includes(logos.get(slug).logo))
+            .map((slug) => ({ view, title: logos.get(slug).title }));
+        }),
+      ({ view, title }) => `${view.sketch}|${view.variant}|${title}`,
+    );
+    for (const hits of missing.values()) {
+      const { view, title } = hits[0];
+      findings.push({
+        seen: `${order.label} (${view.sketch}, Variante ${view.variant}): „${title}“ zeigt den Titel ohne sein Logo-Bild (${hits.map((hit) => hit.view.state).join(', ')}).`,
+        cause: `Der Auftrag will den Titel als Logo-Bild, Text nur als Rückfall; für „${title}“ liegt ein Logo in \`~/bilder-von-tom\`.`,
+      });
+    }
+  }
+  return findings;
+};

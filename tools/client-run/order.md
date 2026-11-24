@@ -7,7 +7,8 @@ Unser altes Design liegt in `~/alter-katalog`. Ich hätte gern diese Teile davon
 - Button, aufgebaut auf dem Button des SDK, keine eigene Kopie
 - App Shell
 - Hero
-- Titelkarte, in zwei bis drei Varianten zur Wahl
+- Titelkarte, in zwei bis drei Varianten zur Wahl. Neu gegenüber dem alten Design: der Titel steht als Logo-Bild auf
+  der Karte, Text nur als Rückfall, wenn ein Titel kein Logo hat.
 
 Die Bilder liegen in `~/bilder-von-tom`, die Liste in `~/bilder-von-tom/katalog.json`.
 

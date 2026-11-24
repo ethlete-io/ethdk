@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 import { frameFindingsOf, probeFrame } from './frame-probe.mjs';
 import { decodePng, differenceOf, inkOf } from './png.mjs';
 import { leftRefusalsOf, readTranscript } from './transcript.mjs';
-import { trapFindingsOf } from './trap-check.mjs';
+import { logoFindingsOf, trapFindingsOf } from './trap-check.mjs';
 import { treeFindingsOf } from './tree-check.mjs';
 
 const EMPTY_INK = 0.004;
@@ -222,6 +222,11 @@ const markdownOf = ({ runDir, findings, skipped, result }) =>
     '',
   ].join('\n');
 
+const katalogOf = (target) => {
+  const file = join(`${target}-home`, 'bilder-von-tom/katalog.json');
+  return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
+};
+
 /** Starts a design server of its own on the run's copy, judges what Studio would show, and writes `findings.md`. */
 export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] } }) => {
   const shotsDir = join(runDir, 'shots');
@@ -251,7 +256,11 @@ export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] 
       shots,
       refusals: leftRefusalsOf(transcript),
       result: transcript.result,
-      tree: [...treeFindingsOf({ expected, sketches, parts }), ...trapFindingsOf({ expected, shots })],
+      tree: [
+        ...treeFindingsOf({ expected, sketches, parts }),
+        ...trapFindingsOf({ expected, shots }),
+        ...logoFindingsOf({ expected, shots, katalog: katalogOf(target) }),
+      ],
     });
     const markdown = markdownOf({ runDir, findings, skipped, result: transcript.result });
     writeFileSync(join(runDir, 'findings.md'), markdown);
