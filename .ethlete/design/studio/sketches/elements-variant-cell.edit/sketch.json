@@ -1,6 +1,6 @@
 {
   "target": "elements/variant-cell@edit",
-  "status": "ready",
+  "status": "in progress",
   "createdAt": "2026-11-24T08:42:44.560Z",
   "createdBy": {
     "cmd": "design __resident --checkout .",
@@ -106,11 +106,18 @@
     "fixtures.ts": "909089fbef7b8f34"
   },
   "baselineTree": "1384ba3b627047bc32b9d41bc7b5e427a8cf52de",
+  "editOldCommit": "7452d1328aec0dbcfe61a30bfdb04cb855a5a028",
   "rounds": [
     {
       "key": "r1",
       "title": "Direkte Änderung",
-      "note": "elements/variant-cell wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den zuletzt gemergten Stand oder die Änderung"
+      "note": "elements/variant-cell wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den zuletzt gemergten Stand oder die Änderung",
+      "lost": "r1 zeigte nur den B698-Unterschied (selected); beide Stände tragen rest über jeder Zelle, eine halb skalierte Demo, einen Ausschnitt neben dem Text und einen leeren Lade-Frame"
+    },
+    {
+      "key": "r2",
+      "title": "Lesbare Zellen",
+      "note": "Die Zelle in echter Größe: echte Zustandsnamen, Ausschnitt auf dem Text, Spinner im kleinen Lade-Frame"
     }
   ],
   "variantInfo": {
@@ -123,11 +130,12 @@
       "authors": ["design check"],
       "round": "r1",
       "note": "der zuletzt gemergte Stand"
+    },
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Die Zelle in echter Größe mit echten Zustandsnamen; der Ausschnitt trifft Speichern und der kleine Lade-Frame zeigt den Spinner. Kostet nichts am Zell-Renderer, nur die Demo ändert sich."
     }
   },
-  "readyContent": {
-    "new": "065cc394356af21f",
-    "old": "427607e0b169dcfa"
-  },
-  "editOldCommit": "7452d1328aec0dbcfe61a30bfdb04cb855a5a028"
+  "recommended": "a"
 }
