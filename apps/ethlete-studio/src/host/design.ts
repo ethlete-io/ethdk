@@ -727,6 +727,17 @@ export const discardSketch$ = (address: SketchAddress): Observable<void> =>
     map(() => undefined),
   );
 
+/** Makes `product` inherit from the Ethlete SDK, or with `none` from no base. */
+export const setProductBase$ = (options: {
+  port: number;
+  product: string;
+  base: '@ethlete/components' | 'none';
+}): Observable<void> =>
+  designAnswer$<unknown>(
+    `http://localhost:${options.port}/__design/product-base`,
+    postJson({ name: options.product, base: options.base }),
+  ).pipe(map(() => undefined));
+
 /** A frame's size: a preset name, a width in CSS pixels, or `fitted` to its content. */
 export type FrameSize = string | number;
 

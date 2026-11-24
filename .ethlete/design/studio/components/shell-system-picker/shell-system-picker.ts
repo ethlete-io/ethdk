@@ -21,6 +21,7 @@ type OptionInteraction = 'hover' | 'focus-visible';
 type Props = {
   product?: string;
   products?: string[];
+  sdk?: 'sdk' | 'own' | null;
   open?: boolean;
   interaction?: PickerInteraction;
   option?: OptionInteraction | 'selected';
@@ -45,7 +46,27 @@ const MANY_PRODUCTS = [
   'fan-app',
 ];
 
-const systemRows = (product: string, products: string[], option?: Props['option'], keyboard = false): MenuMockRow[] => {
+const sdkRows = (sdk: 'sdk' | 'own'): MenuMockRow[] => [
+  { kind: 'separator' },
+  {
+    kind: 'radio-group',
+    label: SHELL_LABELS.sdkQuestion,
+    items: (['sdk', 'own'] as const).map((choice) => ({
+      kind: 'radio' as const,
+      label: SHELL_LABELS.sdkChoices[choice],
+      checked: choice === sdk,
+      attributes: `${MENU_ITEM} data-et-action="${choice === sdk ? 'closed' : 'emit:sdkChange'}"`,
+    })),
+  },
+];
+
+const systemRows = (
+  product: string,
+  products: string[],
+  sdk: Props['sdk'],
+  option?: Props['option'],
+  keyboard = false,
+): MenuMockRow[] => {
   const hovered = option && option !== 'selected' ? option : undefined;
 
   return [
@@ -66,6 +87,7 @@ const systemRows = (product: string, products: string[], option?: Props['option'
         };
       }),
     },
+    ...(sdk ? sdkRows(sdk) : []),
   ];
 };
 
@@ -95,9 +117,9 @@ export const shellSystemPicker = (
 };
 
 export const shellSystemPickerMenu = async (
-  { product = 'studio', products = PRODUCTS, option }: Props = {},
+  { product = 'studio', products = PRODUCTS, sdk = null, option }: Props = {},
   keyboard = false,
-) => menu.render({ rows: systemRows(product, products, option, keyboard) });
+) => menu.render({ rows: systemRows(product, products, sdk, option, keyboard) });
 
 const force = (props: Props, interaction: PickerInteraction) => ({ ...props, interaction });
 
@@ -112,7 +134,7 @@ const openRows = interactionRows<Props, 'open', PickerInteraction>(
 );
 
 export default definePart({
-  note: 'The design-system choice in the shell panel head: product name and an up-down chevron; it opens an SDK menu of the design systems below it, the open one checked. SDK transparent button: SDK hover, press, focus ring and its 120 ms fade. SDK does not fit alone: no et-button size gives the control-md height with space-2 padding, a start-aligned truncating ui-lg label, so the trigger keeps its own classes.',
+  note: 'The design-system choice in the shell panel head: product name and an up-down chevron; it opens an SDK menu of the design systems below it, the open one checked, and for a product on the Ethlete SDK or on no base an Ethlete SDK group whose pick sets that base. SDK transparent button: SDK hover, press, focus ring and its 120 ms fade. SDK does not fit alone: no et-button size gives the control-md height with space-2 padding, a start-aligned truncating ui-lg label, so the trigger keeps its own classes.',
   implements: 'apps/ethlete-studio/src/app/design-parts/shell-system-picker/shell-system-picker.component.ts',
   madeBy: ['claude-opus-5-5'],
   states: {
@@ -122,6 +144,8 @@ export default definePart({
     'system.option-focus-visible': { open: true, option: 'focus-visible' },
     'system.option-selected': { open: true, option: 'selected' },
     'open-scrolls': { open: true, products: MANY_PRODUCTS },
+    'open-sdk': { open: true, sdk: 'sdk' },
+    'open-own': { open: true, sdk: 'own' },
   },
   describe: {
     closed:
@@ -142,6 +166,10 @@ export default definePart({
       'The menu with no row highlighted; check that only the check mark on studio marks the open design system.',
     'open-scrolls':
       'The open menu with more design systems than fit under its height cap; check that the menu scrolls inside its own border with studio checked at the top.',
+    'open-sdk':
+      'The open menu of a product that inherits from the Ethlete SDK; check that below a separator the Ethlete SDK group checks Erbt vom SDK.',
+    'open-own':
+      'The open menu of a product that inherits from nothing; check that the Ethlete SDK group checks Eigenständig.',
   },
   scrolls: ['open-scrolls'],
   grid: { columns: closedRows.grid.columns, rows: { ...closedRows.grid.rows, ...openRows.grid.rows } },

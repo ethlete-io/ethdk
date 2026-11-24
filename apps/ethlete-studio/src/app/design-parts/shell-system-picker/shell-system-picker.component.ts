@@ -2,6 +2,10 @@ import { Component, input, model, output, ViewEncapsulation } from '@angular/cor
 import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { SHELL_LABELS } from '../../i18n/shell-labels';
 
+export type ProductSdk = 'sdk' | 'own';
+
+const SDK_CHOICES: readonly ProductSdk[] = ['sdk', 'own'];
+
 @Component({
   selector: 'ethlete-shell-system-picker',
   template: `
@@ -50,6 +54,17 @@ import { SHELL_LABELS } from '../../i18n/shell-labels';
                 <et-menu-radio-item [value]="name" closeOnActivate>{{ name }}</et-menu-radio-item>
               }
             </et-menu-radio-group>
+            @if (sdk(); as current) {
+              <et-menu-separator />
+              <et-menu-radio-group [value]="current" (valueChange)="selectSdk($event)">
+                <et-menu-group-label>{{ LABELS.sdkQuestion }}</et-menu-group-label>
+                @for (choice of SDK_CHOICES; track choice) {
+                  <et-menu-radio-item [value]="choice" closeOnActivate>{{
+                    LABELS.sdkChoices[choice]
+                  }}</et-menu-radio-item>
+                }
+              </et-menu-radio-group>
+            }
           </et-menu>
         </div>
       </ng-template>
@@ -61,12 +76,19 @@ import { SHELL_LABELS } from '../../i18n/shell-labels';
 export class ShellSystemPickerComponent {
   public product = input('studio');
   public products = input<string[]>([]);
+  public sdk = input<ProductSdk | null>(null);
   public open = model(false);
   public productChange = output<string>();
+  public sdkChange = output<ProductSdk>();
 
   protected readonly LABELS = SHELL_LABELS;
+  protected readonly SDK_CHOICES = SDK_CHOICES;
 
   protected selectProduct(value: unknown) {
     if (typeof value === 'string' && value !== this.product()) this.productChange.emit(value);
+  }
+
+  protected selectSdk(value: unknown) {
+    if ((value === 'sdk' || value === 'own') && value !== this.sdk()) this.sdkChange.emit(value);
   }
 }

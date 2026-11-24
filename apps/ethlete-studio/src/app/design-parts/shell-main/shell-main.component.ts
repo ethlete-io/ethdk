@@ -7,7 +7,7 @@ import { TitleBarComponent } from '../../components/title-bar/title-bar.componen
 import { DESIGN_SERVER_LABELS, SHELL_LABELS } from '../../i18n/shell-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
 import { ShellResizeHandleComponent } from '../shell-resize-handle/shell-resize-handle.component';
-import { ShellSystemPickerComponent } from '../shell-system-picker/shell-system-picker.component';
+import { ProductSdk, ShellSystemPickerComponent } from '../shell-system-picker/shell-system-picker.component';
 import { railLetters } from './rail-letters';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
@@ -50,6 +50,7 @@ export class ShellMainComponent {
   public section = input<ShellSection>('System');
   public product = input('studio');
   public products = input(['studio', 'timetrack', 'docs']);
+  public sdk = input<ProductSdk | null>(null);
   public logos = input<Record<string, string | null | undefined>>({});
   public panel = input<'open' | 'hidden'>('open');
   public systemPicker = model<'open' | 'closed'>('closed');
@@ -65,6 +66,7 @@ export class ShellMainComponent {
   public sideWidth = model<number>(SIDE_WIDTH.rest);
   public sectionChange = output<ShellSection>();
   public productChange = output<string>();
+  public sdkChange = output<ProductSdk>();
   public collapse = output();
   public restartServer = output();
   public minimizeRequest = output();

@@ -69,7 +69,7 @@ import {
   sketchMergeAnswer,
 } from './studio-api';
 import { forceInteractionsPlugin } from './force-interactions';
-import { newProductAnswer, PRODUCT_PATH } from './product-command';
+import { newProductAnswer, PRODUCT_BASE_PATH, PRODUCT_PATH, productBaseAnswer } from './product-command';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf, renderPackageDirsOf, renderPackagesOf } from './render-packages';
 import { partMarksTransform } from './part-marks';
@@ -1025,6 +1025,16 @@ const designExplore = ({
           });
 
           return { status: 200, body: products };
+        }),
+      );
+      vite.middlewares.use(
+        PRODUCT_BASE_PATH,
+        answer(async (_url, { request }) => {
+          const set = await productBaseAnswer({ target, request });
+
+          if (set.status === 200) reloadConfig();
+
+          return set;
         }),
       );
       vite.middlewares.use(

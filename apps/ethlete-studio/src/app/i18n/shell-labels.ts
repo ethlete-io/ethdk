@@ -118,6 +118,8 @@ export const UPDATE_DIALOG_LABELS = {
 
 export const SHELL_LABELS = {
   designSystem: 'Design-System',
+  sdkQuestion: 'Ethlete SDK',
+  sdkChoices: { sdk: 'Erbt vom SDK', own: 'Eigenständig' },
   preset: 'Voreinstellung',
   startServer: 'Starte den Design-Server, um das Design-System zu sehen.',
   noParts: 'Dieses Produkt hat noch keine Teile.',

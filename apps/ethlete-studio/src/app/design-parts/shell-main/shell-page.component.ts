@@ -6,6 +6,7 @@ import { openHelp$ } from '../../../host/about';
 import { injectUpdateCheck } from '../../update-check';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
 import { DesignServerAction, DesignServerStatus, StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { ProductSdk } from '../shell-system-picker/shell-system-picker.component';
 import { ServerCrash, ShellMainComponent, ShellSection, StartPhase } from './shell-main.component';
 import { railLogos } from './rail-logos';
 import { clampSideWidth, SIDE_WIDTH } from './side-width';
@@ -13,6 +14,7 @@ import { clampSideWidth, SIDE_WIDTH } from './side-width';
 export type ShellState = {
   product: string;
   products: string[];
+  sdk?: ProductSdk | null;
   logos?: Record<string, string | null | undefined>;
   project: string;
   projects: string[];
@@ -30,6 +32,7 @@ export type ShellAction =
   | { kind: 'collapse' }
   | { kind: 'section'; section: ShellSection }
   | { kind: 'product'; name: string }
+  | { kind: 'sdk'; choice: ProductSdk }
   | { kind: 'project'; name: string }
   | { kind: 'openProject' }
   | { kind: 'scan' }
@@ -55,6 +58,7 @@ export const SHELL_SAMPLE: ShellState = {
       [section]="section()"
       [product]="shell().product"
       [products]="shell().products"
+      [sdk]="shell().sdk ?? null"
       [logos]="shell().logos ?? {}"
       [panel]="shell().panel"
       [server]="screen()"
@@ -70,6 +74,7 @@ export const SHELL_SAMPLE: ShellState = {
       (collapse)="action.emit({ kind: 'collapse' })"
       (sectionChange)="action.emit({ kind: 'section', section: $event })"
       (productChange)="action.emit({ kind: 'product', name: $event })"
+      (sdkChange)="action.emit({ kind: 'sdk', choice: $event })"
       (restartServer)="action.emit({ kind: 'server', action: 'restart' })"
       (minimizeRequest)="run(minimizeWindow$())"
       (maximizeRequest)="run(toggleMaximizeWindow$())"

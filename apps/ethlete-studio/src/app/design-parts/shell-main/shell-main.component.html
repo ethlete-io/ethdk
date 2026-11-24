@@ -243,9 +243,11 @@
           <ethlete-shell-system-picker
             [product]="product()"
             [products]="products()"
+            [sdk]="sdk()"
             [open]="systemPicker() === 'open'"
             (openChange)="setSystemPicker($event)"
             (productChange)="productChange.emit($event)"
+            (sdkChange)="sdkChange.emit($event)"
             class="contents"
           />
           <ethlete-shell-collapse (collapse)="collapse.emit()" />

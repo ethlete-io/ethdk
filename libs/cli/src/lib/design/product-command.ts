@@ -12,6 +12,8 @@ import { productDirOf } from './system/product';
 
 export const PRODUCT_PATH = '/__design/product';
 
+export const PRODUCT_BASE_PATH = '/__design/product-base';
+
 const FROM_PROJECT_KEYS = ['styles', 'head', 'providers', 'themes'] as const;
 
 /**
@@ -227,4 +229,26 @@ export const newProductAnswer = async (options: { target: string; request: Incom
   if (refused) return { status: refused.startsWith('PRODUCT EXISTS') ? 409 : 400, body: { error: refused } };
 
   return { status: 201, body: { name } };
+};
+
+/**
+ * POST `/__design/product-base` with `{ name, base }` sets the base of an existing product as `et design product set` does;
+ * `none` removes it. Answers 200 with `{ name, base }`, or 400 with `{ error }`.
+ */
+export const productBaseAnswer = async (options: { target: string; request: IncomingMessage }) => {
+  const { target, request } = options;
+
+  if (request.method !== 'POST') return { status: 405, body: { error: 'POST only' } };
+
+  const body = await jsonBodyOf(request);
+  const name = typeof body?.['name'] === 'string' ? body['name'] : '';
+  const base = typeof body?.['base'] === 'string' ? body['base'] : '';
+
+  if (!name || !base) return { status: 400, body: { error: 'A name and a base are required.' } };
+
+  const refused = setProductBase({ target, name, base });
+
+  if (refused) return { status: 400, body: { error: refused } };
+
+  return { status: 200, body: { name, base } };
 };

@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkSystem } from './system/check-system';
 import { resolveProduct } from './system/resolve-product';
 import { configPathOf, DESIGN_DIR, readConfig } from './design-config';
-import { designProduct, newProductAnswer } from './product-command';
+import { designProduct, newProductAnswer, productBaseAnswer } from './product-command';
 
 const make = () => mkdtempSync(join(tmpdir(), 'cli-design-product-'));
 
@@ -240,6 +240,31 @@ describe('designProduct', () => {
     expect(readConfig(target)?.products?.['shop']?.schemes).toBeUndefined();
   });
 
+  it('sets and removes the SDK base of an existing product over POST', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+
+    run(target, 'new', 'tomflix', '--colors', 'dark');
+
+    expect(await postBase(target, { name: 'tomflix', base: '@ethlete/components' })).toEqual({
+      status: 200,
+      body: { name: 'tomflix', base: '@ethlete/components' },
+    });
+    expect(readConfig(target)?.products?.['tomflix']).toMatchObject({ base: '@ethlete/components', schemes: ['dark'] });
+
+    expect(await postBase(target, { name: 'tomflix', base: 'none' })).toMatchObject({ status: 200 });
+    expect(readConfig(target)?.products?.['tomflix']).not.toHaveProperty('base');
+
+    const before = readFileSync(configPathOf(target), 'utf8');
+
+    expect(await postBase(target, { name: 'shop', base: 'none' })).toMatchObject({
+      status: 400,
+      body: { error: expect.stringContaining('NO PRODUCT') },
+    });
+    expect(await postBase(target, { name: 'tomflix' })).toMatchObject({ status: 400 });
+    expect(readFileSync(configPathOf(target), 'utf8')).toBe(before);
+  });
+
   it('refuses over POST a name that exists, an unknown base and a GET', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const target = make();
@@ -268,6 +293,14 @@ describe('designProduct', () => {
 
 const post = (target: string, body: unknown) =>
   newProductAnswer({
+    target,
+    request: Object.assign(Readable.from([Buffer.from(JSON.stringify(body))]), {
+      method: 'POST',
+    }) as unknown as IncomingMessage,
+  });
+
+const postBase = (target: string, body: unknown) =>
+  productBaseAnswer({
     target,
     request: Object.assign(Readable.from([Buffer.from(JSON.stringify(body))]), {
       method: 'POST',

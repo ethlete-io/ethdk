@@ -17,6 +17,7 @@ import { FlowViewComponent } from './flow-view.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { SystemViewComponent } from './system-view.component';
 import { PageShellAction } from './page-shell';
+import { ShellSystemPickerComponent } from '../design-parts/shell-system-picker/shell-system-picker.component';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
 
@@ -296,6 +297,41 @@ describe('SystemViewComponent on a reload', () => {
     fixture.componentInstance['runShellAction']({ kind: 'server', action: 'restart' });
 
     expect(actions).toEqual(['restart']);
+  });
+
+  it('writes the SDK choice of the picker for the shown product and reads the system again', async () => {
+    const posts: { url: string; body: unknown }[] = [];
+    let systemReads = 0;
+
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      if (url.includes('/__design/product-base')) {
+        posts.push({ url, body: JSON.parse(String(init?.body)) });
+
+        return json({ name: 'web', base: '@ethlete/components' });
+      }
+      if (url.includes('/__design/system')) {
+        systemReads++;
+
+        return json([PRODUCT]);
+      }
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({});
+    const picker = fixture.debugElement.query(By.directive(ShellSystemPickerComponent))
+      .componentInstance as ShellSystemPickerComponent;
+    const reads = systemReads;
+
+    expect(picker.sdk()).toBe('own');
+
+    picker.sdkChange.emit('sdk');
+    await settle(fixture);
+
+    expect(posts).toEqual([
+      { url: 'http://localhost:4402/__design/product-base', body: { name: 'web', base: '@ethlete/components' } },
+    ]);
+    expect(systemReads).toBe(reads + 1);
   });
 
   it('draws the shell with the product on the rail and the tree in the side panel', async () => {

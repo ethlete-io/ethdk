@@ -20,7 +20,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { BUTTON_IMPORTS, TreeNode } from '@ethlete/components';
 import { PartTree, PartTreeComponent, PartTreePart } from '../design-parts/part-tree/part-tree.component';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
-import { EMPTY, catchError, debounceTime, finalize, from, map, of, scan, switchMap } from 'rxjs';
+import { EMPTY, catchError, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
 import {
   ListedCall,
   ListedComment,
@@ -29,6 +29,7 @@ import {
   listedCalls$,
   designStatusChanges$,
   listedSystem$,
+  setProductBase$,
   sketchPartOf,
   transferCall$,
 } from '../../host/design';
@@ -74,6 +75,7 @@ import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component
 import { StartComponent } from '../design-parts/start/start.component';
 import { foldedStatesOf, lookStatesOf } from '../design-parts/system-page/folded-states';
 import { ShellSection } from '../design-parts/shell-main/shell-main.component';
+import { ProductSdk } from '../design-parts/shell-system-picker/shell-system-picker.component';
 import { inboxCommentOf, inboxPartOf, inboxThreadOf, writerOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
@@ -109,6 +111,10 @@ import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 
 type Reading = { products: ListedProduct[]; error: string | null };
+
+const SDK_BASE = '@ethlete/components';
+
+const sdkOf = (base: string | null): ProductSdk | null => (base === SDK_BASE ? 'sdk' : base === null ? 'own' : null);
 
 /** A product switch keeps the old read until the new product answers; that read must not show. */
 const itemsOf = <T>(read: { product: string; items: T[] } | null, product: string | undefined) =>
@@ -1180,6 +1186,7 @@ export class SystemViewComponent {
     tree: this.partTree(),
     product: this.product()?.name ?? '',
     products: this.productNames(),
+    sdk: sdkOf(this.product()?.base ?? null),
     logos: this.productLogos(),
     project: this.project(),
     projects: this.projects(),
@@ -1503,6 +1510,8 @@ export class SystemViewComponent {
         return this.pickSection(action.section);
       case 'product':
         return this.pickProduct(action.name);
+      case 'sdk':
+        return this.setSdk(action.choice);
       case 'project':
         return this.projectChange.emit(action.name);
       case 'openProject':
@@ -1574,6 +1583,22 @@ export class SystemViewComponent {
 
   protected reloadListing() {
     this.listingReloads.update((value) => value + 1);
+  }
+
+  public setSdk(choice: ProductSdk) {
+    const port = this.port();
+    const product = this.product()?.name;
+
+    if (!port || !product) return;
+
+    setProductBase$({ port, product, base: choice === 'sdk' ? SDK_BASE : 'none' })
+      .pipe(
+        tap(() => this.reloadListing()),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- designAnswer$ logs the refusal to the host
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   protected markTransferred(slug: string) {
