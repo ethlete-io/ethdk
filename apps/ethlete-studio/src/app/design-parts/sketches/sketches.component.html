@@ -196,14 +196,33 @@
               }
             </div>
           } @else if (listMeasured()) {
+            @let lines = grid();
             <div
-              [class.flex-col]="!sideBySide()"
-              [class.items-stretch]="!sideBySide()"
-              [class.items-start]="sideBySide()"
+              [class.flex-col]="!sideBySide() && !lines"
+              [class.items-stretch]="!sideBySide() && !lines"
+              [class.items-start]="sideBySide() && !lines"
+              [class.grid]="!!lines"
+              [class.flex]="!lines"
+              [style.grid-template-columns]="lines ? 'repeat(' + (changedRows().length + 1) + ', max-content)' : null"
+              [style.grid-template-rows]="lines ? 'repeat(' + (2 + lines.lines.length * 2) + ', auto)' : null"
               [attr.data-sk-side-by-side]="sideBySide() ? '' : null"
-              class="flex gap-space-2"
+              [attr.data-sk-grid]="lines ? '' : null"
+              class="gap-space-2"
               data-sk-changed
             >
+              @if (lines) {
+                <div class="row-span-full grid grid-rows-subgrid" data-sk-line-heads>
+                  @for (line of lines.lines; track line.base; let index = $index) {
+                    <span
+                      [style.grid-row]="3 + index * 2 + ' / span 2'"
+                      [style.font-size.px]="labelFont()"
+                      class="self-center pr-space-1 font-code leading-[1.35] whitespace-nowrap text-et-surface"
+                      data-sk-line-head
+                      >{{ line.base }}</span
+                    >
+                  }
+                </div>
+              }
               @for (row of changedRows(); track row.key) {
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row }" />
               }
@@ -299,12 +318,20 @@
     [attr.data-sk-head-hidden]="headHidden() ? '' : null"
     [class.gap-space-2]="headHidden()"
     [class.gap-space-5]="!headHidden()"
+    [class.row-span-full]="!!grid()"
+    [class.grid-rows-subgrid]="!!grid()"
     class="grid grid-cols-[minmax(0,1fr)] rounded-control-md p-space-3 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
   >
     <div [class.min-w-full]="sideBySide()" [class.w-0]="sideBySide()" class="min-w-0" data-sk-head-row>
       <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
     </div>
-    <div [class.opacity-60]="IS_WITHDRAWN(row)" class="relative min-w-0">
+    <div
+      [class.opacity-60]="IS_WITHDRAWN(row)"
+      [class.grid]="!!grid()"
+      [style.grid-row]="grid() ? '2 / -1' : null"
+      [class.grid-rows-subgrid]="!!grid()"
+      class="relative min-w-0"
+    >
       @if (unplacedCommentsOf(row); as unplaced) {
         @if (unplaced.length > 0) {
           <span class="absolute top-0 left-0 z-10 flex">
@@ -317,40 +344,95 @@
       @if (row.shots.length > 0 || ((row.key === CURRENT || isEdit()) && stageStates().length > 0)) {
         <div
           #stage
+          [attr.data-sk-stage-row]="row.key"
           [style.grid-template-columns]="gridOf(row)"
-          [style.column-gap.px]="COLUMN_GAP"
+          [style.column-gap.px]="columnGap()"
+          [class.row-span-full]="!!grid()"
+          [class.grid-rows-subgrid]="!!grid()"
           class="grid min-w-0 gap-y-space-3"
           data-sk-stage
         >
-          @for (state of stageStates(); track part() + ' ' + state) {
-            @if (shotOf(row, state); as item) {
-              <ng-container
-                *ngTemplateOutlet="cellTemplate; context: { $implicit: row, item, column: null, line: null }"
-              />
-            } @else {
-              <div
-                [attr.data-sk-state]="state"
-                [attr.data-sk-variant]="row.key"
-                class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
-                data-sk-missing
+          @if (grid(); as lines) {
+            @for (name of lines.interactions; track name; let column = $index) {
+              <span
+                [style.grid-column]="column + 1"
+                [style.font-size.px]="labelFont()"
+                class="row-start-1 self-end font-code leading-[1.35] text-et-surface-muted"
+                data-sk-column-head
               >
-                <span
-                  [class.hidden]="labelSize() === null"
-                  class="row-start-1 flex w-0 min-w-full items-center"
-                  data-sk-label
-                  ><span
-                    [style.font-size.px]="labelFont()"
-                    class="min-w-0 font-code leading-[1.35] text-et-surface-muted wrap-anywhere"
-                    >{{ state }}</span
-                  ></span
-                >
+                @for (part of headPartsOf(name); track $index) {
+                  <span #columnHeadPart [attr.data-sk-head-column]="column" class="inline-block whitespace-nowrap">{{
+                    part
+                  }}</span>
+                }
+              </span>
+            }
+            @for (line of lines.lines; track line.base; let index = $index) {
+              @for (state of line.states; track $index; let column = $index) {
+                @if (state !== null) {
+                  @if (shotOf(row, state); as item) {
+                    <ng-container
+                      *ngTemplateOutlet="
+                        cellTemplate;
+                        context: { $implicit: row, item, column: column + 1, line: gridLineOf(index) }
+                      "
+                    />
+                  } @else if (restOfIn(row, state)) {
+                    <span
+                      [style.grid-column]="column + 1"
+                      [style.grid-row]="gridLineOf(index)"
+                      [style.font-size.px]="labelFont()"
+                      [attr.data-sk-folded-cell]="state"
+                      class="self-center font-code leading-[1.35] whitespace-nowrap text-et-surface-muted"
+                      >{{ LABELS.foldedToRest }}</span
+                    >
+                  } @else {
+                    <div
+                      [style.grid-column]="column + 1"
+                      [style.grid-row]="gridLineOf(index)"
+                      [style.width.px]="row.width * scale()"
+                      [style.height.px]="stateHeightOf(state) * scale()"
+                      [attr.data-sk-state]="state"
+                      [attr.data-sk-variant]="row.key"
+                      [attr.title]="row.key === CURRENT ? LABELS.newInSketch : LABELS.missingInVariant"
+                      class="box-border self-end rounded-control-sm border border-dashed border-(--et-surface-border-solid)"
+                      data-sk-missing
+                    ></div>
+                  }
+                }
+              }
+            }
+          } @else {
+            @for (state of stageStates(); track part() + ' ' + state) {
+              @if (shotOf(row, state); as item) {
+                <ng-container
+                  *ngTemplateOutlet="cellTemplate; context: { $implicit: row, item, column: null, line: null }"
+                />
+              } @else {
                 <div
-                  [style.width.px]="row.width * scale()"
-                  class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
+                  [attr.data-sk-state]="state"
+                  [attr.data-sk-variant]="row.key"
+                  class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
+                  data-sk-missing
                 >
-                  {{ row.key === CURRENT ? LABELS.newInSketch : LABELS.missingInVariant }}
+                  <span
+                    [class.hidden]="labelSize() === null"
+                    class="row-start-1 flex w-0 min-w-full items-center"
+                    data-sk-label
+                    ><span
+                      [style.font-size.px]="labelFont()"
+                      class="min-w-0 font-code leading-[1.35] text-et-surface-muted wrap-anywhere"
+                      >{{ state }}</span
+                    ></span
+                  >
+                  <div
+                    [style.width.px]="row.width * scale()"
+                    class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
+                  >
+                    {{ row.key === CURRENT ? LABELS.newInSketch : LABELS.missingInVariant }}
+                  </div>
                 </div>
-              </div>
+              }
             }
           }
         </div>
@@ -489,10 +571,10 @@
     [scale]="scale()"
     [labelFont]="labelFont()"
     [labelHidden]="labelSize() === null"
-    [stateHidden]="transposed()"
+    [stateHidden]="transposed() || !!grid()"
     [same]="isSame(row, item.changed)"
     [inherited]="!!item.inherited"
-    [sameAsRest]="statesOpen() ? [] : (item.restOf ?? [])"
+    [sameAsRest]="statesOpen() || grid() ? [] : (item.restOf ?? [])"
     [loading]="loadingShots().has(key)"
     [frameKey]="key"
     [width]="item.width ?? row.width"

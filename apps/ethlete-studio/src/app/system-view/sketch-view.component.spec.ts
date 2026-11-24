@@ -243,6 +243,32 @@ describe('SketchViewComponent', () => {
     expect(shots.filter((shot) => shot.width === undefined).map((shot) => shot.height)).toEqual([191, 191, 191]);
   });
 
+  it('draws a picture narrower than its cell at its own size, so every cell shows the part at one scale', async () => {
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(71);
+    vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(71);
+
+    const drawn = {
+      ...SKETCH,
+      targets: SKETCH.variants.map((variant) => ({
+        variant,
+        states: ['icon-filled'],
+        interactions: [],
+        unchanged: [],
+      })),
+    } satisfies ListedSketch;
+    const { fixture, root } = await render(drawn, noComments, { ...CARD, widths: [111] });
+
+    root.querySelectorAll('img[data-shot-picture]').forEach((picture) => picture.dispatchEvent(new Event('load')));
+    await settle(fixture);
+
+    const rows = fixture.componentInstance['rows']() as { width: number; shots: { height: number }[] }[];
+
+    expect(rows.map((row) => [row.width, ...row.shots.map((shot) => shot.height)])).toEqual(rows.map(() => [111, 71]));
+    expect(
+      [...root.querySelectorAll('img[data-shot-picture]')].every((picture) => !picture.classList.contains('w-full')),
+    ).toBe(true);
+  });
+
   it('sizes each measured cell of a fitted part at its own width, so its picture is as tall as its cell', async () => {
     const states = ['mark', 'clear-space', 'misuse'];
     const logo = {

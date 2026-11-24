@@ -189,6 +189,58 @@ describe('SketchesComponent', () => {
     expect(names).toEqual(['save', 'save-hover', 'save-active']);
   });
 
+  it('lays the title card states out as one interaction grid, aligned across variants, each name once', async () => {
+    const bases = ['default', 'series', 'fallback'];
+    const variant = (key: string, folds: boolean): SketchRow => ({
+      key,
+      note: key,
+      width: 264,
+      shots: bases.flatMap((base) => [
+        {
+          state: base,
+          changed: true,
+          height: 392,
+          ...(folds ? { restOf: [`${base}-focus-visible`] } : {}),
+        },
+        { state: `${base}-hover`, changed: true, height: 392 },
+        ...(folds ? [] : [{ state: `${base}-focus-visible`, changed: true, height: 392 }]),
+      ]),
+    });
+    const root: HTMLElement = (
+      await render({ rows: [variant('a', false), variant('b', true), variant('c', true)], camera: '100' })
+    ).nativeElement;
+    const placeOf = (key: string, state: string) => {
+      const cell = root.querySelector<HTMLElement>(
+        `[data-sk-row="${key}"] [data-sk-state="${state}"], [data-sk-row="${key}"] [data-sk-folded-cell="${state}"]`,
+      );
+
+      return [cell?.style.gridRow, cell?.style.gridColumn];
+    };
+    const states = bases.flatMap((base) => [base, `${base}-hover`, `${base}-focus-visible`]);
+
+    expect([...root.querySelectorAll('[data-sk-line-head]')].map(textOf)).toEqual(bases);
+    expect([...root.querySelectorAll('[data-sk-row="a"] [data-sk-column-head]')].map(textOf)).toEqual([
+      'rest',
+      'hover',
+      'focus-visible',
+    ]);
+    for (const key of ['b', 'c']) {
+      expect(states.map((state) => placeOf(key, state))).toEqual(states.map((state) => placeOf('a', state)));
+      expect(
+        [...root.querySelectorAll(`[data-sk-row="${key}"] [data-sk-folded-cell]`)].map((cell) => [
+          cell.getAttribute('data-sk-folded-cell'),
+          textOf(cell),
+        ]),
+      ).toEqual(bases.map((base) => [`${base}-focus-visible`, LABELS.foldedToRest]));
+    }
+    expect(new Set(states.map((state) => placeOf('a', state).join())).size).toBe(states.length);
+    expect(
+      [...root.querySelectorAll('[data-sk-label-text]')].map((label) =>
+        textOf(label.querySelector(':scope > span:not(.hidden)')),
+      ),
+    ).not.toContain('rest');
+  });
+
   it('folds every state no variant is known to change while a compare is pending, and shows all from the toggle', async () => {
     const rows: SketchRow[] = [
       ...ROWS.slice(0, 1).map((row) => ({

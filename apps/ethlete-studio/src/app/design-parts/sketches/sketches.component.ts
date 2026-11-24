@@ -83,6 +83,7 @@ import {
   matrixWidthFit,
   shortLabelOf,
 } from './matrix-blocks';
+import { gridColumnWidthOf, gridScaleOf, interactionGridOf } from './interaction-grid';
 import { cropGroupsOf, magnifyTextOf, SketchCropGroup, SketchCropReason } from './sketch-crops';
 import {
   SKETCH_CURRENT,
@@ -132,6 +133,8 @@ const MAX_COLUMNS = 4;
 const TRANSPOSE_SHARE = 4;
 
 const COLUMN_GAP = MATRIX_COLUMN_GAP;
+
+const GRID_COLUMN_GAP = 8;
 
 const FOCUS_PADDING = 24;
 
@@ -304,6 +307,7 @@ export class SketchesComponent {
 
   private stages = viewChildren('stage', { read: ElementRef<HTMLElement> });
   private sections = viewChildren('section', { read: ElementRef<HTMLElement> });
+  private columnHeadParts = viewChildren('columnHeadPart', { read: ElementRef<HTMLElement> });
   private cells = viewChildren(VariantCellComponent);
   private takes = viewChildren('take', { read: ElementRef<HTMLElement> });
   private head = viewChild.required(SketchHeadComponent);
@@ -411,7 +415,14 @@ export class SketchesComponent {
   public shownRows = computed(() => this.shownRowsOf(this.statesOpen()));
   protected stageStates = computed(() => statesOf(this.shownRows()));
   protected discardable = computed(() => !this.isEdit());
+  protected grid = computed(() =>
+    this.shownRows().some((row) => row.perLine) ? null : interactionGridOf(this.stageStates()),
+  );
   public columns = computed(() => {
+    const grid = this.grid();
+
+    if (grid) return grid.interactions.length;
+
     const rows = this.shownRows();
     const widest = Math.max(1, ...rows.map((row) => row.width));
     const most = Math.max(1, this.stageStates().length);
@@ -431,6 +442,7 @@ export class SketchesComponent {
     () =>
       this.listWidth() > 0 &&
       this.sizedWidest() > this.listWidth() / TRANSPOSE_SHARE &&
+      (this.grid() === null || cropGroupsOf(this.shownRows()).length > 0) &&
       !this.shownRows().some((row) => row.perLine),
   );
   // A user zoom holds the layout: a width change from the panel or the viewport would swap rows and columns under the camera.
@@ -576,6 +588,8 @@ export class SketchesComponent {
   protected percent = computed(() => {
     return Math.round((this.canvas.preview()?.zoom ?? this.shownZoom()) * 100);
   });
+  protected columnGap = computed(() => (this.grid() ? GRID_COLUMN_GAP : COLUMN_GAP));
+
   constructor() {
     afterRenderEffect(() => {
       const kind = this.confirm();
@@ -735,8 +749,33 @@ export class SketchesComponent {
       .subscribe();
   }
 
-  protected gridOf(row: SketchRow) {
-    return `repeat(${this.columns()}, minmax(${row.width * this.scale()}px, max-content))`;
+  protected gridLineOf(index: number) {
+    return `${2 + index * 2} / span 2`;
+  }
+
+  protected stateHeightOf(state: string) {
+    return Math.max(
+      0,
+      ...this.shownRows()
+        .flatMap((row) => row.shots.filter((shot) => shot.state === state))
+        .map((shot) => shot.height),
+    );
+  }
+
+  protected headPartsOf(name: string) {
+    return name.split(/(?<=-)/);
+  }
+
+  protected restOfIn(row: SketchRow, state: string) {
+    return row.shots.some((shot) => shot.restOf?.includes(state));
+  }
+
+  protected gridOf(row: SketchRow, scale = this.scale()) {
+    if (this.grid()) {
+      return `repeat(${this.columns()}, minmax(${gridColumnWidthOf(row) * scale}px, min-content))`;
+    }
+
+    return `repeat(${this.columns()}, minmax(${row.width * scale}px, max-content))`;
   }
 
   protected shotOf(row: SketchRow, state: string) {
@@ -1064,8 +1103,11 @@ export class SketchesComponent {
     for (const row of labelRows) this.renderer.toggleClass(row, 'hidden', this.labelsHiddenAt({ scale, label }));
     for (const stage of stages) {
       const inner = frames.find((frame) => stage.contains(frame))?.firstElementChild;
+      const row = this.grid() ? this.shownRows().find((shown) => shown.key === stage.dataset['skStageRow']) : undefined;
 
-      if (inner instanceof HTMLElement) {
+      if (row) {
+        setStyle(stage, { gridTemplateColumns: this.gridOf(row, scale) });
+      } else if (inner instanceof HTMLElement) {
         setStyle(stage, {
           gridTemplateColumns: `repeat(${columns}, minmax(${parseFloat(inner.style.width) * scale}px, max-content))`,
         });
@@ -1090,13 +1132,37 @@ export class SketchesComponent {
     if (!first || !last) return 1;
 
     const span = last.getBoundingClientRect().right - first.getBoundingClientRect().left;
-    const stageWidths = stages
-      .filter((stage) => sections.some((section) => section.contains(stage)))
-      .reduce((sum, stage) => sum + stage.clientWidth, 0);
-    const frames = this.changedRows().reduce((sum, row) => sum + row.width * columns, 0);
-    const gaps = sections.length * (columns - 1) * COLUMN_GAP;
+    const shown = stages.filter((stage) => sections.some((section) => section.contains(stage)));
+    const stageWidths = shown.reduce((sum, stage) => sum + stage.clientWidth, 0);
+    const gaps = sections.length * (columns - 1) * this.columnGap();
+    const room = list.clientWidth - (span - stageWidths) - gaps;
 
-    return (list.clientWidth - (span - stageWidths) - gaps) / frames;
+    if (this.grid()) {
+      const parts = this.columnHeadParts()
+        .map(({ nativeElement }) => nativeElement)
+        .filter((part) => shown[0]?.contains(part));
+      const headOf = (index: number) =>
+        Math.max(
+          0,
+          ...parts.filter((part) => part.dataset['skHeadColumn'] === `${index}`).map((part) => part.offsetWidth),
+        );
+      const lead = first.parentElement
+        ? first.getBoundingClientRect().left - first.parentElement.getBoundingClientRect().left
+        : 0;
+
+      const widths = this.changedRows().map((row) => gridColumnWidthOf(row));
+      const scale = gridScaleOf({
+        room: room - lead - FIT_PADDING,
+        columns: widths,
+        heads: Array.from({ length: columns }, (_, index) => headOf(index)),
+      });
+
+      return Math.max(scale, MATRIX_MIN_COLUMN / Math.max(1, ...widths));
+    }
+
+    const frames = this.changedRows().reduce((sum, row) => sum + row.width * columns, 0);
+
+    return room / frames;
   }
 
   private gridFit(scale: number, { columns, list, sections, stages, frames }: FitDom) {

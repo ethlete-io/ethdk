@@ -48,6 +48,7 @@ export const SKETCHES_LABELS = {
   pendingFailed: (count: number) =>
     count === 1 ? 'Vergleich von 1 Zustand fehlgeschlagen' : `Vergleich von ${count} Zuständen fehlgeschlagen`,
   newInSketch: 'neu in der Skizze',
+  foldedToRest: '= rest',
   missingInVariant: 'fehlt in dieser Variante',
   showAllStates: 'Alle Zustände zeigen',
   wholeScreen: 'Ganzer Screen',

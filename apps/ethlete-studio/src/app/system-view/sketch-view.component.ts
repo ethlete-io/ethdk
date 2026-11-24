@@ -300,7 +300,7 @@ const scrollOf = (data: unknown) =>
               [src]="shown"
               [alt]="key"
               [class.opacity-0]="paintedShots().has(key)"
-              class="absolute inset-x-0 top-0 block w-full"
+              class="absolute top-0 left-0 block max-w-full"
             />
           }
           <img
@@ -311,7 +311,7 @@ const scrollOf = (data: unknown) =>
             [class.hidden]="failedPictures().has(picture)"
             (load)="pictureLoaded({ key, picture, event: $event })"
             (error)="pictureFailed(picture)"
-            class="block w-full"
+            class="block max-w-full"
             data-shot-picture
           />
         }
@@ -406,7 +406,7 @@ export class SketchViewComponent {
     return nearShotsOf({ cells, viewport: rectOf(canvas) });
   });
 
-  private pictureRatios = signal<Record<string, number>>({});
+  private pictureSizes = signal<Record<string, { width: number; height: number }>>({});
 
   private safeUrls = new Map<string, SafeResourceUrl>();
 
@@ -674,7 +674,7 @@ export class SketchViewComponent {
   protected rows = computed<SketchRow[]>(() => {
     const sketch = this.sketch();
     const measured = this.measured();
-    const ratios = this.pictureRatios();
+    const pictures = this.pictureSizes();
     const sizes = Object.entries(measured);
     const tallestOf = (state?: string) =>
       widestOf(
@@ -714,7 +714,7 @@ export class SketchViewComponent {
         ...(row.perLine ? { perLine: row.perLine } : {}),
         sized: known !== undefined,
         shots: row.shots.map(({ state, changed, change, width: presetWidth, height: presetHeight, ...shot }) => {
-          const ratio = ratios[`${row.key} ${state}`];
+          const picture = pictures[`${row.key} ${state}`];
           const measured = sizeOf(state)?.width;
           const measuredWidth = measured === undefined || row.width === null ? measured : Math.max(measured, width);
           const shownWidth = presetWidth ?? (presetHeight === undefined ? (measuredWidth ?? width) : width);
@@ -733,7 +733,9 @@ export class SketchViewComponent {
             height:
               (presetHeight === undefined ? undefined : Math.max(presetHeight, sizeOf(state)?.height ?? 0)) ??
               sizeOf(state)?.height ??
-              (ratio ? Math.round(ratio * shownWidth) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
+              (picture
+                ? Math.round((picture.height * Math.min(picture.width, shownWidth)) / picture.width)
+                : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
           };
         }),
       };
@@ -1096,9 +1098,11 @@ export class SketchViewComponent {
 
     if (naturalWidth > 0 && this.loadedPictures().get(key) !== picture)
       this.loadedPictures.update((loaded) => new Map(loaded).set(key, picture));
-    if (naturalWidth === 0 || this.pictureRatios()[key] === naturalHeight / naturalWidth) return;
+    const known = this.pictureSizes()[key];
 
-    this.pictureRatios.update((ratios) => ({ ...ratios, [key]: naturalHeight / naturalWidth }));
+    if (naturalWidth === 0 || (known?.width === naturalWidth && known.height === naturalHeight)) return;
+
+    this.pictureSizes.update((sizes) => ({ ...sizes, [key]: { width: naturalWidth, height: naturalHeight } }));
   }
 
   private focusPart(part: string) {
