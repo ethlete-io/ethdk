@@ -3,8 +3,10 @@ import {
   commentDraftAt,
   commentLayer,
   commentList,
+  commentPins,
   draftPin,
   type CommentPhase,
+  type PlacedThread,
   withCommentList,
 } from '@system/components/comment-flow';
 import anchoredDialog from '@system/components/anchored-dialog';
@@ -124,7 +126,6 @@ type View = {
   confirm?: string;
   comments?: Record<string, string>;
   commentTargets?: boolean;
-  selectedPin?: number;
 };
 
 const DRAWN: RowKey = 'b';
@@ -217,28 +218,6 @@ const cellTargetOf = (row: Row, state: string, view: View) =>
     ? html`<div class="absolute inset-0 z-2">${commentLayer(`${row.key} ${state}`, 'comments-draft')}</div>`
     : '';
 
-const cellPinAt = (thread: RowThread, selected: boolean) =>
-  html`<span
-    class="absolute z-10 flex -translate-y-full"
-    style="left: calc(${thread.point.x}px * var(--sk-scale)); top: calc(${thread.point.y}px * var(--sk-scale))"
-    >${commentPinMark({
-      author: thread.author,
-      ...(thread.agent ? { agent: thread.agent } : { initials: thread.initials }),
-      count: thread.replies + 1,
-      ...(selected ? { selected: true } : {}),
-    })}</span
-  >`;
-
-const cellPinsOf = (row: Row, state: string, view: View) =>
-  view.selectedPin === undefined
-    ? ''
-    : VARIANT_THREADS.filter((thread) => thread.row === row.key && thread.state === state)
-        .map((thread) => cellPinAt(thread, VARIANT_THREADS.indexOf(thread) === view.selectedPin))
-        .join('');
-
-const cellOverlayOf = (row: Row, state: string, view: View) =>
-  cellTargetOf(row, state, view) + cellPinsOf(row, state, view);
-
 const stageOf = (part: SketchPart, row: Row, view: View) =>
   view.added || view.wideState
     ? html`<div
@@ -252,11 +231,11 @@ const stageOf = (part: SketchPart, row: Row, view: View) =>
               ? missingCell(row, state)
               : state === WIDE.state
                 ? measuredCell(part, row, state, view.comparing)
-                : cell(part, row, state, '', view.comparing, cellOverlayOf(row, state, view)),
+                : cell(part, row, state, '', view.comparing, cellTargetOf(row, state, view)),
           )
           .join('')}
       </div>`
-    : wrapStage(part, row, view.comparing, (state) => cellOverlayOf(row, state, view));
+    : wrapStage(part, row, view.comparing, (state) => cellTargetOf(row, state, view));
 
 const multiSketchOf = (multi: MultiTargets, status: SketchStatus) => ({
   open: true,
@@ -702,12 +681,12 @@ const screenWorld = async (view: View, mode: ScreenMode) => {
 const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : camera === '100' ? 1 : camera.zoom);
 const startOf = (camera: Props['camera']) => (typeof camera === 'object' ? { x: camera.x, y: camera.y } : undefined);
 
-type RowThread = Parameters<typeof commentList>[0][number] & { row: string; point: { x: number; y: number } };
+type RowThread = PlacedThread & { row: string };
 
 const VARIANT_THREADS: RowThread[] = [
   {
     row: 'a',
-    point: { x: 44, y: 16 },
+    at: 'left-[18%] top-[30%]',
     author: 'human',
     initials: 'H',
     when: 'vor 20 Min',
@@ -718,7 +697,7 @@ const VARIANT_THREADS: RowThread[] = [
   },
   {
     row: 'b',
-    point: { x: 128, y: 26 },
+    at: 'left-[52%] top-[55%]',
     author: 'Claude',
     initials: 'C',
     agent: 'claude',
@@ -735,6 +714,8 @@ const COMMENT_DRAFT_AT = 'left-[30%] top-[40%]';
 
 const variantComments = async (row: string, phase: CommentPhase | undefined) => {
   if (!phase) return { body: '', styles: '' };
+  const own = VARIANT_THREADS.filter((thread) => thread.row === row);
+  const pins = commentPins(own, phase === 'listed' ? own.findIndex((thread) => thread === VARIANT_THREADS[0]) : -1);
   const drafting = phase === 'draft' && row === 'b';
   const draft = drafting
     ? await commentDraftAt('top-[40%] left-[calc(30%+var(--space-6))] z-20', {
@@ -742,7 +723,7 @@ const variantComments = async (row: string, phase: CommentPhase | undefined) => 
       })
     : undefined;
   return {
-    body: (drafting ? draftPin(COMMENT_DRAFT_AT) : '') + (draft?.body ?? ''),
+    body: pins + (drafting ? draftPin(COMMENT_DRAFT_AT) : '') + (draft?.body ?? ''),
     styles: draft?.styles ?? '',
   };
 };
@@ -1032,7 +1013,6 @@ export default definePart<Props>({
     const view: View = {
       ...(comments ? { comments: Object.fromEntries(layers.map(([key, layer]) => [key, layer.body])) } : {}),
       ...(comments && comments !== 'listed' ? { commentTargets: true } : {}),
-      ...(comments ? { selectedPin: comments === 'listed' ? 0 : -1 } : {}),
       selected,
       status,
       errored,
