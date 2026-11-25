@@ -106,7 +106,7 @@
     "at": "2026-11-25T14:45:22.636Z"
   },
   "elements/shell-main": {
-    "hash": "29c179aede91fa85",
+    "hash": "e819f34d77ea3e58",
     "variant": "new",
     "decidedBy": "plan: ADR 0305",
     "at": "2026-11-20T16:01:35.799Z",
