@@ -6,7 +6,7 @@ import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchRow } from '../design-parts/sketches/sketches-sample';
 import { LISTING_ERROR_SAMPLE } from '../design-parts/system-page/system-page-sample';
 import { DESIGN_HARNESS_SAMPLES } from './design-harness-samples';
-import { sampleStepper } from './sample-product';
+import { sampleBar, samplePage, sampleStepper } from './sample-product';
 
 const sketchesOf = (props: Record<string, unknown>) => {
   const sample = DESIGN_HARNESS_SAMPLES['pages/sketches'];
@@ -145,5 +145,23 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
 
     expect(count).toMatch(/bg-et-surface-interaction\/\d+/);
     expect(count).not.toMatch(/bg-et-surface-interaction(?![/\w-])/);
+  });
+
+  it('draws each Farn plant with its own shape', () => {
+    const page = samplePage('1', true);
+    const drawingOf = (plant: string) =>
+      new RegExp(`data-farn-plant="${plant}"[^>]*>([\\s\\S]*?</svg\\s*>)`).exec(page)?.[1];
+    const drawings = ['Monstera', 'Calathea', 'Geigenfeige', 'Zamioculcas', 'Pilea'].map(drawingOf);
+
+    expect(drawings.every(Boolean)).toBe(true);
+    expect(new Set(drawings).size).toBe(drawings.length);
+  });
+
+  it('draws the search field as a translucent field with an icon and a placeholder', () => {
+    const search = /<span[^>]*data-farn-search[\s\S]*?<\/span/.exec(sampleBar('member'))?.[0] ?? '';
+
+    expect(search).toContain('<svg');
+    expect(search).toContain('Pflanzen suchen');
+    expect(search).not.toMatch(/bg-et-surface-interaction(?![/\w-])/);
   });
 });

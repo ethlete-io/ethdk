@@ -45,7 +45,7 @@ const emptyBasket = `<span class="flex h-8 items-center rounded-full px-space-3 
 
 const accountOf = (who: string) =>
   who === 'member'
-    ? `<span class="flex items-center gap-space-2 text-ui-sm text-et-surface"><span class="flex size-7 items-center justify-center rounded-full bg-et-surface-interaction text-ui-xs font-ui-medium">LM</span>Lena</span>`
+    ? `<span class="flex items-center gap-space-2 text-ui-sm text-et-surface"><span class="flex size-7 items-center justify-center rounded-full bg-et-theme/20 text-ui-xs font-ui-medium text-et-theme-ink">LM</span>Lena</span>`
     : who === 'checkout'
       ? `<span class="flex items-center gap-space-2 text-ui-sm text-et-surface-muted"><span class="text-et-surface">Korb</span>·<span>Lieferung</span>·<span>Zahlung</span></span>`
       : `<span class="text-ui-sm text-et-surface">Anmelden</span>`;
@@ -55,7 +55,7 @@ export const sampleBar = (state: string, fluid = false) => {
   const [who = 'guest', basket] = state.split('-');
 
   return `<div
-  class="box-border flex h-12 ${fluid ? 'w-full' : 'w-360'} items-center ${fluid ? 'gap-space-4 px-space-4 md:gap-space-8 md:px-space-6' : 'gap-space-8 px-space-6'} bg-et-surface-bg text-et-surface shadow-[inset_0_-1px_0_var(--et-surface-border-solid)]"
+  class="box-border flex h-12 ${fluid ? 'w-full' : 'w-360'} items-center ${fluid ? 'gap-space-4 px-space-4 md:gap-8 md:px-space-6' : 'gap-8 px-space-6'} bg-et-surface-bg text-et-surface shadow-[inset_0_-1px_0_var(--et-surface-border-solid)]"
   data-farn-bar
 >
   ${mark}
@@ -63,9 +63,10 @@ export const sampleBar = (state: string, fluid = false) => {
     ><span class="text-et-surface">Pflanzen</span><span>Töpfe</span><span>Pflege</span><span>Geschenke</span></span
   >
   <span
-    class="ml-auto ${fluid ? 'hidden md:flex' : 'flex'} h-8 w-2xl items-center gap-space-2 rounded-full bg-et-surface-interaction px-space-4 text-ui-sm text-et-surface-muted"
+    class="ml-auto ${fluid ? 'hidden md:flex' : 'flex'} h-9 w-2xl items-center gap-space-2 rounded-full bg-et-surface-interaction/8 px-space-4 text-ui-sm text-et-surface-muted inset-ring inset-ring-et-surface-border"
     data-farn-search
-    ><span class="size-2.5 rounded-full shadow-[0_0_0_1.5px_currentColor]"></span>Monstera, Farn, Kaktus …</span
+    ><svg viewBox="0 0 16 16" class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5" /><path d="m10.5 10.5 3 3" /></svg
+    >Pflanzen suchen</span
   >
   ${accountOf(who)} ${basket ? basketPill(who === 'checkout' ? 3 : 2) : emptyBasket}
 </div>`;
@@ -113,19 +114,141 @@ export const sampleStepper = (state: string) => {
 </div>`;
 };
 
-const plantArt = (
-  size: string,
-) => `<span class="relative flex ${size} items-end justify-center overflow-hidden rounded-control-md bg-et-theme/10">
-  <span class="absolute bottom-[38%] left-[30%] block h-[34%] w-[22%] -rotate-30 rounded-tl-full rounded-br-full bg-et-theme"></span>
-  <span class="absolute bottom-[44%] left-[46%] block h-[40%] w-[24%] rotate-20 rounded-tl-full rounded-br-full bg-et-theme-ink"></span>
-  <span class="absolute bottom-[36%] left-[54%] block h-[26%] w-[18%] rotate-60 rounded-tl-full rounded-br-full bg-et-theme/70"></span>
-  <span class="relative mb-[10%] block h-[26%] w-[34%] rounded-t-sm rounded-b-[40%] bg-et-surface-border"></span>
-</span>`;
+type Leaf = {
+  x?: number;
+  y?: number;
+  length?: number;
+  width?: number;
+  angle: number;
+  scale?: number;
+  tone: string;
+}
 
-const card = (name: string, price: string) => `<span class="flex flex-col gap-space-2">
-  ${plantArt('h-50 w-full')}
+const blade = ({ x = 100, y = 132, length = 20, width = 7, angle, tone }: Leaf) =>
+  `<path d="M0 0C${width} ${-length * 0.25} ${width} ${-length * 0.75} 0 ${-length}C${-width} ${-length * 0.75} ${-width} ${-length * 0.25} 0 0Z" transform="translate(${x} ${y}) rotate(${angle})" class="${tone}" />`;
+
+const stem = (x: number, y: number) =>
+  `<path d="M100 132Q${(100 + x) / 2} ${y + 24} ${x} ${y}" fill="none" stroke-width="2" class="stroke-et-theme-ink/70" />`;
+
+const monsteraLeaf = ({ x = 100, y = 132, length = 60, angle, tone }: Leaf) => {
+  const slits = [
+    [0.22, 0.5, 0.12],
+    [0.45, 0.55, 0.14],
+    [0.68, 0.5, 0.12],
+  ]
+    .flatMap(([at = 0, edge = 0, inner = 0]) =>
+      [1, -1].map((side) => `M${side * edge * length} ${-at * length}L${side * inner * length} ${-at * length + 7}`),
+    )
+    .join('');
+  const cut = `farn-monstera-cut-${length}`;
+
+  return `<g transform="translate(${x} ${y}) rotate(${angle})"><mask id="${cut}"><rect x="${-length}" y="${-length * 1.2}" width="${length * 2}" height="${length * 1.4}" fill="white" /><path d="${slits}" stroke-width="3.5" stroke="black" /></mask><path d="M0 0C${length * 0.55} ${-length * 0.05} ${length * 0.6} ${-length * 0.8} 0 ${-length}C${-length * 0.6} ${-length * 0.8} ${-length * 0.55} ${-length * 0.05} 0 0Z" mask="url(#${cut})" class="${tone}" /></g>`;
+};
+
+const calatheaLeaf = ({ length = 60, angle, tone }: Leaf) => {
+  const stripes = [0.25, 0.45, 0.65]
+    .flatMap((at) => [1, -1].map((side) => `M0 ${-at * length}l${side * length * 0.16} ${-length * 0.08}`))
+    .join('');
+
+  return `<g transform="translate(100 132) rotate(${angle})"><path d="M0 0V-16" stroke-width="2" class="stroke-et-theme-ink/70" /><g transform="translate(0 -16)"><path d="M0 0C${length * 0.3} ${-length * 0.1} ${length * 0.32} ${-length * 0.85} 0 ${-length}C${-length * 0.32} ${-length * 0.85} ${-length * 0.3} ${-length * 0.1} 0 0Z" class="${tone}" /><path d="M0 -3V${-length + 4}${stripes}" fill="none" stroke-width="2.5" stroke-linecap="round" class="stroke-et-theme-ink" /></g></g>`;
+};
+
+const fiddleLeaf = ({ x = 100, y = 132, angle, scale = 1, tone }: Leaf) =>
+  `<path d="M0 0C6 -6 4 -18 12 -28C20 -40 14 -52 0 -50C-14 -52 -20 -40 -12 -28C-4 -18 -6 -6 0 0Z" transform="translate(${x} ${y}) rotate(${angle}) scale(${scale})" class="${tone}" />`;
+
+const zamioStem = ({ length = 90, angle, tone }: Leaf) => {
+  const leaflets = [0.45, 0.65, 0.85]
+    .flatMap((at) => [55, -55].map((tilt) => blade({ x: 0, y: -at * length, angle: tilt, tone })))
+    .join('');
+
+  return `<g transform="translate(100 132) rotate(${angle})"><path d="M0 0V${-length}" stroke-width="2.5" class="stroke-et-theme-ink/70" />${leaflets}${blade({ x: 0, y: -length, angle: 0, tone })}</g>`;
+};
+
+const PILEA_COINS = [
+  { x: 70, y: 112, r: 11, tone: 'fill-et-theme/80' },
+  { x: 56, y: 84, r: 15, tone: 'fill-et-theme' },
+  { x: 80, y: 56, r: 17, tone: 'fill-et-theme-ink' },
+  { x: 108, y: 42, r: 19, tone: 'fill-et-theme' },
+  { x: 138, y: 64, r: 16, tone: 'fill-et-theme-ink' },
+  { x: 148, y: 98, r: 13, tone: 'fill-et-theme/80' },
+  { x: 124, y: 104, r: 12, tone: 'fill-et-theme' },
+];
+
+const PLANT_DRAWINGS: Record<string, string> = {
+  Monstera: [
+    stem(122, 100),
+    stem(74, 92),
+    stem(100, 80),
+    monsteraLeaf({ x: 122, y: 100, length: 56, angle: 48, tone: 'fill-et-theme/70' }),
+    monsteraLeaf({ x: 74, y: 92, length: 62, angle: -40, tone: 'fill-et-theme' }),
+    monsteraLeaf({ x: 100, y: 80, length: 70, angle: 6, tone: 'fill-et-theme-ink' }),
+  ].join(''),
+  Calathea: [
+    calatheaLeaf({ angle: -62, length: 52, tone: 'fill-et-theme/80' }),
+    calatheaLeaf({ angle: 58, length: 52, tone: 'fill-et-theme/80' }),
+    calatheaLeaf({ angle: -32, length: 64, tone: 'fill-et-theme' }),
+    calatheaLeaf({ angle: 30, length: 64, tone: 'fill-et-theme' }),
+    calatheaLeaf({ angle: 0, length: 76, tone: 'fill-et-theme' }),
+  ].join(''),
+  Geigenfeige: [
+    '<path d="M100 134C98 112 104 88 100 62" fill="none" stroke-width="4" stroke-linecap="round" class="stroke-et-surface-subtle" />',
+    fiddleLeaf({ y: 124, angle: -64, scale: 0.85, tone: 'fill-et-theme/70' }),
+    fiddleLeaf({ x: 101, y: 112, angle: 60, scale: 0.95, tone: 'fill-et-theme/70' }),
+    fiddleLeaf({ x: 102, y: 98, angle: -46, scale: 1.05, tone: 'fill-et-theme' }),
+    fiddleLeaf({ x: 101, y: 86, angle: 44, scale: 1.05, tone: 'fill-et-theme' }),
+    fiddleLeaf({ y: 72, angle: -18, tone: 'fill-et-theme-ink' }),
+    fiddleLeaf({ y: 64, angle: 16, scale: 0.95, tone: 'fill-et-theme-ink' }),
+  ].join(''),
+  Zamioculcas: [
+    zamioStem({ angle: -22, length: 80, tone: 'fill-et-theme/70' }),
+    zamioStem({ angle: 22, length: 86, tone: 'fill-et-theme' }),
+    zamioStem({ angle: 0, length: 104, tone: 'fill-et-theme-ink' }),
+  ].join(''),
+  Pilea: [
+    ...PILEA_COINS.map(({ x, y }) => stem(x, y)),
+    ...PILEA_COINS.map(
+      ({ x, y, r, tone }) =>
+        `<circle cx="${x}" cy="${y}" r="${r}" class="${tone}" /><circle cx="${x}" cy="${y}" r="2" class="fill-et-surface-bg/40" />`,
+    ),
+  ].join(''),
+};
+
+const SPIKY_PLANT = [
+  blade({ length: 78, width: 9, angle: -22, tone: 'fill-et-theme/70' }),
+  blade({ length: 84, width: 9, angle: 20, tone: 'fill-et-theme/70' }),
+  blade({ length: 96, width: 10, angle: -9, tone: 'fill-et-theme' }),
+  blade({ length: 90, width: 10, angle: 8, tone: 'fill-et-theme-ink' }),
+  blade({ length: 104, width: 10, angle: 0, tone: 'fill-et-theme' }),
+].join('');
+
+const plantArt = (name: string, size: string) => `<span
+  class="flex ${size} items-center justify-center overflow-hidden rounded-control-md bg-et-theme/10"
+  data-farn-plant="${name}"
+  ><svg viewBox="0 0 200 200" class="aspect-square h-full" aria-hidden="true"
+    ><circle cx="100" cy="92" r="72" class="fill-et-theme/8" />${PLANT_DRAWINGS[name] ?? SPIKY_PLANT}<rect
+      x="66"
+      y="128"
+      width="68"
+      height="10"
+      rx="3"
+      class="fill-et-surface-border"
+    /><path d="M70 138H130L124 182Q100 188 76 182Z" class="fill-et-surface-border/70" /></svg
+></span>`;
+
+const card = ({
+  name,
+  price,
+  art,
+}: {
+  name: string;
+  price: string;
+  art: string;
+}) => `<span class="flex flex-col gap-space-2">
+  ${plantArt(name, art)}
   <span class="flex items-baseline justify-between text-ui-md text-et-surface"><span class="font-ui-medium">${name}</span><span class="text-et-surface-muted">${price}</span></span>
 </span>`;
+
+const PERKS = ['Versand in 2 Tagen', '30 Tage Anwachsgarantie', 'Pflegekarte inklusive'];
 
 /** A Farn shop page, 1440 × 900 px, featuring the plant the state's number picks. */
 export const samplePage = (state: string, fluid = false) => {
@@ -135,17 +258,23 @@ export const samplePage = (state: string, fluid = false) => {
 
   return `<div class="box-border flex ${fluid ? 'min-h-225 w-full' : 'h-225 w-360'} flex-col overflow-hidden bg-et-surface-bg text-et-surface" data-farn-page="${state}">
   ${sampleBar('member', fluid)}
-  <div class="flex ${fluid ? 'flex-col items-stretch md:flex-row md:items-center' : 'items-center'} ${fluid ? 'gap-space-6 p-space-6 md:gap-space-12 md:px-space-16 md:py-space-12' : 'gap-space-12 px-space-16 py-space-12'}">
-    <span class="flex flex-1 flex-col gap-space-4">
-      <span class="text-ui-sm font-ui-medium text-et-theme-ink">Pflanze der Woche</span>
-      <span class="text-h1">${plant}</span>
-      <span class="max-w-md text-ui-md text-et-surface-muted">Robust, dankbar und in drei Topfgrößen lieferbar. Mit Pflegekarte und Erde aus der Gärtnerei in Bremen.</span>
-      <span class="flex items-center gap-space-4">${sampleStepper('count')}<span class="text-ui-md text-et-surface-muted">ab 24 €</span></span>
-    </span>
-    ${plantArt(fluid ? 'h-60 w-full md:h-90 md:w-3xl' : 'h-90 w-3xl')}
-  </div>
-  <div class="grid ${fluid ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-4'} gap-space-6 ${fluid ? 'px-space-6 pb-space-6 md:px-space-16' : 'px-space-16'}">
-    ${others.map((name, step) => card(name, `${18 + step * 6} €`)).join('')}
+  <div class="mx-auto flex w-full max-w-320 flex-col ${fluid ? 'gap-space-7 px-space-6 pb-space-6 md:gap-10 md:px-16 md:pb-12' : 'gap-10 px-16'}">
+    <div class="grid ${fluid ? 'gap-space-6 pt-space-6 md:grid-cols-2 md:items-center md:gap-16 md:pt-12' : 'grid-cols-2 items-center gap-16 pt-12'}" data-farn-hero>
+      <span class="flex flex-col gap-space-5">
+        <span class="w-fit rounded-full bg-et-theme/15 px-space-3 py-space-1 text-ui-xs font-ui-medium text-et-theme-ink">Pflanze der Woche</span>
+        <span class="${fluid ? 'text-h1 md:text-[5.6rem]/[1.05]' : 'text-[5.6rem]/[1.05]'} font-ui-strong tracking-tight">${plant}</span>
+        <span class="max-w-xl text-ui-lg text-et-surface-muted">Robust, dankbar und in drei Topfgrößen lieferbar. Mit Pflegekarte und Erde aus der Gärtnerei in Bremen.</span>
+        <span class="flex items-center gap-space-4">${sampleStepper('count')}<span class="text-ui-md text-et-surface-muted">ab <span class="font-ui-medium text-et-surface">24 €</span></span></span>
+        <span class="flex flex-wrap gap-x-space-5 gap-y-space-2 text-ui-sm text-et-surface-muted">${PERKS.map((perk) => `<span class="flex items-center gap-space-2">${leaf('size-2.5', 'bg-et-theme')}${perk}</span>`).join('')}</span>
+      </span>
+      ${plantArt(plant, fluid ? 'h-60 w-full md:h-100' : 'h-100 w-full')}
+    </div>
+    <div class="flex flex-col gap-space-4">
+      <span class="flex items-baseline justify-between"><span class="text-ui-lg font-ui-strong">Beliebt diese Woche</span><span class="text-ui-sm font-ui-medium text-et-theme-ink">Alle Pflanzen</span></span>
+      <div class="grid ${fluid ? 'grid-cols-2 gap-space-4 md:grid-cols-4 md:gap-space-6' : 'grid-cols-4 gap-space-6'}">
+        ${others.map((name, step) => card({ name, price: `${18 + step * 6} €`, art: fluid ? 'h-40 w-full md:h-50' : 'h-50 w-full' })).join('')}
+      </div>
+    </div>
   </div>
 </div>`;
 };
