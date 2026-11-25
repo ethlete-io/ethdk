@@ -72,6 +72,7 @@ import { SLIDER_EXAMPLES } from './slider';
 import { STREAM_EXAMPLES } from './stream';
 import { TABLE_EXAMPLES } from './table';
 import { TABS_EXAMPLES } from './tabs';
+import { THEMING_EXAMPLES } from './theming';
 import { TEXT_INPUTS_EXAMPLES } from './text-inputs';
 import { TIME_PICKER_EXAMPLES } from './time-picker';
 import { TIMELINE_EXAMPLES } from './timeline';
@@ -168,6 +169,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...STREAM_EXAMPLES,
   ...TABLE_EXAMPLES,
   ...TABS_EXAMPLES,
+  ...THEMING_EXAMPLES,
   ...TEXT_INPUTS_EXAMPLES,
   ...TIME_PICKER_EXAMPLES,
   ...TIMELINE_EXAMPLES,

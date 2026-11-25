@@ -9,6 +9,22 @@
 The SDK defines **no** themes. Names like `brand`, `danger` or `dark-elevated` used below are just what this repo's Storybook registers - your app picks its own. Semantic behavior is addressed via the theme `type` (e.g. `type: 'error'`), never by name.
 :::
 
+## Levels in action
+
+The demo nests the root surface, a surface on it, and a card on that, and opens an overlay from the card at the
+top level. Every level shows its theme name and its five values as the browser resolves them, and holds the same
+components, so hover and pressed show on each level without any setting. The switches change the scheme, the tone
+(`etProvideColor`), and "hover = next level".
+
+@example theming/theming-levels 1900px
+
+"Hover = next level" sets the accordion hover token to the background of elevation 1 on the root, the way an app does
+it today. On the surface level that is the background itself, so the hover disappears there.
+
+The dark levels the demo renders, as this docs app registers them:
+
+<<< @/../docs-examples/src/app/surface-themes.ts#dark-levels
+
 ## Registering themes
 
 Define your themes in plain TypeScript files, register them at bootstrap, and generate the CSS from the same files:

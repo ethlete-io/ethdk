@@ -50,6 +50,49 @@ export const LIGHT_ELEVATED_SURFACE: SurfaceTheme = {
   border: '229 229 229',
 };
 
+export const LIGHT_ELEVATED_2_SURFACE: SurfaceTheme = {
+  name: 'light-elevated-2',
+  type: 'light',
+  elevation: 2,
+  colorThemeVariants: LIGHT_COLOR_THEME_VARIANTS,
+  interactionColor: {
+    color: {
+      default: '115 115 115',
+      hover: '64 64 64',
+      focus: '64 64 64',
+      active: '23 23 23',
+      disabled: '180 180 180',
+    },
+  },
+  background: '244 244 245',
+  color: '23 23 23',
+  colorMuted: '82 82 82',
+  colorSubtle: '161 161 161',
+  border: '220 220 223',
+};
+
+export const LIGHT_ELEVATED_3_SURFACE: SurfaceTheme = {
+  name: 'light-elevated-3',
+  type: 'light',
+  elevation: 3,
+  colorThemeVariants: LIGHT_COLOR_THEME_VARIANTS,
+  interactionColor: {
+    color: {
+      default: '115 115 115',
+      hover: '64 64 64',
+      focus: '64 64 64',
+      active: '23 23 23',
+      disabled: '180 180 180',
+    },
+  },
+  background: '236 236 238',
+  color: '23 23 23',
+  colorMuted: '82 82 82',
+  colorSubtle: '140 140 140',
+  border: '212 212 216',
+};
+
+// #region dark-levels
 export const DARK_SURFACE: SurfaceTheme = {
   name: 'dark',
   type: 'dark',
@@ -130,10 +173,13 @@ export const DARK_ELEVATED_3_SURFACE: SurfaceTheme = {
   colorSubtle: '115 115 115',
   border: '110 110 110',
 };
+// #endregion dark-levels
 
 export const SURFACE_THEMES = [
   LIGHT_SURFACE,
   LIGHT_ELEVATED_SURFACE,
+  LIGHT_ELEVATED_2_SURFACE,
+  LIGHT_ELEVATED_3_SURFACE,
   DARK_SURFACE,
   DARK_ELEVATED_SURFACE,
   DARK_ELEVATED_2_SURFACE,
