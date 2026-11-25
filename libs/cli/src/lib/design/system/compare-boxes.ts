@@ -14,13 +14,14 @@ const FRAMED_PANE = '[data-et-projected] [data-et-part]';
 type PageRect = { left: number; top: number; right: number; bottom: number };
 
 /**
- * A page script answering, in page pixels, the root element `root` (a script expression) finds, grown over its
+ * A page script answering, in page pixels, the root element `root` (a script expression) finds, together with the
+ * visible elements after it when it finds an array, grown over their
  * absolutely or fixed positioned descendants as far as the overflow boxes that clip them, and each outermost visible
  * `panes` element grown over its visible content; an element that is or holds a pane never grows the root.
  * Null without a root.
  */
 export const compareBoxesScriptOf = (options: { root: string; panes: string }) => `(() => {
-  const root = ${options.root};
+  const [root, ...siblings] = [${options.root}].flat().filter(Boolean);
 
   if (!root) return null;
 
@@ -45,7 +46,7 @@ export const compareBoxesScriptOf = (options: { root: string; panes: string }) =
     let rect = edgesOf(element.getBoundingClientRect());
     let escaping = true;
 
-    for (let ancestor = element.parentElement; ancestor && ancestor !== root; ancestor = ancestor.parentElement) {
+    for (let ancestor = element.parentElement; ancestor && !roots.includes(ancestor); ancestor = ancestor.parentElement) {
       const style = getComputedStyle(ancestor);
 
       if (escaping && holdsAbsolute(style)) escaping = false;
@@ -71,7 +72,9 @@ export const compareBoxesScriptOf = (options: { root: string; panes: string }) =
     bottom: Math.max(...rects.map((rect) => rect.bottom)),
   });
   const page = (rect) => ({ left: rect.left + scrollX, top: rect.top + scrollY, right: rect.right + scrollX, bottom: rect.bottom + scrollY });
-  const outOfFlow = [...root.querySelectorAll('*')]
+  const roots = [root, ...siblings.filter((sibling) => !holdsPane(sibling) && visible(edgesOf(sibling.getBoundingClientRect())))];
+  const outOfFlow = roots
+    .flatMap((element) => [...element.querySelectorAll('*')])
     .filter((element) => !holdsPane(element))
     .map((element) => ({ element, style: getComputedStyle(element) }))
     .filter(({ style }) => ['absolute', 'fixed'].includes(style.position) && !fillsViewport(style))
@@ -90,14 +93,17 @@ export const compareBoxesScriptOf = (options: { root: string; panes: string }) =
     );
 
   return {
-    root: page(union([edgesOf(root.getBoundingClientRect()), ...outOfFlow])),
+    root: page(union([...roots.map((element) => edgesOf(element.getBoundingClientRect())), ...outOfFlow])),
     panes: paneBoxes.map(page),
   };
 })()`;
 
-/** The page script that finds the design picture's root: the element marked as the root of `part`, else the frame root. */
+/**
+ * The page script that finds the design picture's root: the element marked as the root of `part`, followed by the other
+ * top-level elements of its drawing when it is drawn straight into the frame root, else the frame root.
+ */
 export const designRootOf = (part: string | null) =>
-  `([...document.querySelectorAll('#root [data-et-part]')].find((element) => element.getAttribute('data-et-part').split(' ').includes(${JSON.stringify(part ?? '')})) ?? document.getElementById('root'))`;
+  `((marked) => marked?.parentElement?.id === 'root' ? [marked, ...[...marked.parentElement.children].filter((element) => element !== marked)] : marked ?? document.getElementById('root'))([...document.querySelectorAll('#root [data-et-part]')].find((element) => element.getAttribute('data-et-part').split(' ').includes(${JSON.stringify(part ?? '')})))`;
 
 const boxIn = (rect: PageRect, clip: PictureBox): PictureBox => {
   const left = Math.max(0, Math.round(rect.left - clip.x));
