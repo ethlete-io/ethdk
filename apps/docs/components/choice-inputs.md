@@ -506,6 +506,11 @@ underline thickness and the baseline rule. The accent sits in the underline rath
 than the label, hovering an unselected segment warms its label without filling it,
 and the press does not scale the segment - all as a tab bar behaves.
 
+It also reads five of the [optional tab tokens](/components/tabs#theming), so a
+restyle set on a common ancestor reaches both rows: `--et-tab-text-transform`,
+`--et-tab-font-weight`, `--et-tab-letter-spacing`, `--et-tab-line-height` and
+`--et-tab-inactive-color`.
+
 @example choice-inputs/segmented-button-group-tabs 220px
 
 ::: warning It is still a selection control
