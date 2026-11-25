@@ -20,6 +20,7 @@ import { editDiscardRefusalOf } from './sketch/edit-sketch';
 import { Sketch, readSketch } from './sketch/sketch';
 import { changedOutsideSketchOf, directEditsOf, readMerged, recordMerged } from './sketch/merged-parts';
 import { gitExec } from '../../git-test-env.fixtures';
+import { withStampsInCache } from './stamp-files';
 
 const CHIP = 'components/chip';
 
@@ -51,6 +52,9 @@ const commitChip = (target: string, chip: string) => {
 };
 
 const cacheOf = (target: string) => join(target, '.ethlete/cache/app-a/pictures.json');
+
+const trackedMergedOf = (dir: string) =>
+  JSON.parse(readFileSync(join(dir, 'merged.json'), 'utf8')) as Record<string, string>;
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 const editSketchIn = (dir: string) => {
@@ -334,6 +338,30 @@ describe('autoAcceptOf', () => {
       expect(variants).not.toContain('old');
       expect(readMerged(dir)[CHIP]).toBe(partHashOf({ product: productOf(target), dir: dirname(chip) }));
       expect(existsSync(join(dir, 'sketches'))).toBe(false);
+    });
+
+    it('records an edit HEAD holds into the tracked merged.json when only the stamp cache holds its hash', async () => {
+      const { target, dir, chip } = checkout();
+      const product = productOf(target);
+
+      recordMerged({ product, parts: [CHIP] });
+      writeFileSync(
+        join(dir, 'rebase-uncommitted.json'),
+        JSON.stringify({ 'components-chip.edit': { commit: 'abc1234' } }),
+      );
+      commitAll(target);
+
+      const before = readMerged(dir)[CHIP];
+
+      writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+      commitAll(target);
+      await withStampsInCache(async () => recordMerged({ product: productOf(target), parts: [CHIP] }));
+
+      const now = partHashOf({ product: productOf(target), dir: dirname(chip) });
+
+      expect(trackedMergedOf(dir)[CHIP]).toBe(before);
+      expect(settleCommittedEdits({ target, product: productOf(target), parts: [CHIP] })).toEqual([CHIP]);
+      expect(trackedMergedOf(dir)[CHIP]).toBe(now);
     });
 
     it('compares an edit on top of a committed edit with HEAD when no commit holds the merged hash', async () => {

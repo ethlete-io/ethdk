@@ -8,6 +8,7 @@ import { designStatus } from './status';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, decideSketch, markSketchReady, Sketch } from './system/sketch/sketch';
 import { originOf } from './system/write-origin';
+import { withStampsInCache, writeStampFile } from './system/stamp-files';
 
 vi.mock('./push-status', () => ({
   pushStatusOf: () => ({ base: 'origin/next', unpushed: 0 }),
@@ -58,7 +59,7 @@ afterEach(() => {
 });
 
 describe('design status and uncommitted design state', () => {
-  it('names each ready mark that differs from HEAD, one line per part', () => {
+  it('names each ready mark that differs from HEAD, one line per part', async () => {
     const target = committedAcme();
 
     writeReady(target, {
@@ -76,6 +77,14 @@ describe('design status and uncommitted design state', () => {
 
     expect(statusLines(target)).toEqual([
       'READY UNCOMMITTED acme pages/home: the mark HEAD holds is gone - commit `ready.json` of acme with git to keep the removal',
+    ]);
+
+    await withStampsInCache(async () =>
+      writeStampFile(join(productDirOf(target), 'ready.json'), { 'pages/home': { hash: 'h4', at } }),
+    );
+
+    expect(statusLines(target)).toEqual([
+      'READY UNCOMMITTED acme pages/home: the mark HEAD holds is gone, the stamp cache holds a new one - run `design ready pages/home --product acme` to commit it (takes minutes)',
     ]);
   });
 

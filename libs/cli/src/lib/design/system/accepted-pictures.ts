@@ -316,7 +316,7 @@ const leftStaleEditLinesOf = (product: ResolvedProduct, parts: string[] | undefi
 
 /**
  * Settles each direct edit of a merged part, or of `parts`, that HEAD already holds: records its hash in `merged.json`
- * and deletes its edit sketch, open or picked, unless the part contradicts its pick (`pickContradictsPart`). Answers the parts it settled. With `writesTracked: false` it records
+ * and deletes its edit sketch, open or picked, unless the part contradicts its pick (`pickContradictsPart`). Answers the parts it settled. A hash only the stamp cache holds counts as unrecorded. With `writesTracked: false` it records
  * nothing and deletes only an edit sketch git does not track and no comment is on. `held` gets each settled part with
  * its part hash; `lines` gets a STALE EDIT SKETCH line per edit sketch whose part HEAD holds, deleted or left.
  */
@@ -332,7 +332,7 @@ export const settleCommittedEdits = (options: {
   const writesTracked = options.writesTracked ?? true;
   const sketches = editSketchesOf(product, isOpenOrPickedEditSketch);
   const contradicted = new Set(editSketchesOf(product, (sketch) => pickContradictsPart(product, sketch)).keys());
-  const candidates = new Set([...changedOutsideSketchOf(product), ...sketches.keys()]);
+  const candidates = new Set([...changedOutsideSketchOf(product, { tracked: writesTracked }), ...sketches.keys()]);
   const settled = product.parts.filter((resolved) => {
     const part = partKeyOf(resolved);
 

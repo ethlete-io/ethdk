@@ -118,7 +118,8 @@ const diskStampTextOf = (file: string) => {
   return cached.base === tracked ? cached.text : overlaidTextOf(cached, tracked);
 };
 
-const writeTrackedStamp = (file: string, value: unknown) => {
+const writeTrackedStamp = (options: { file: string; value: unknown; keys: readonly string[] }) => {
+  const { file, value, keys } = options;
   const tracked = trackedTextOf(file);
   const seen = diskStampTextOf(file);
 
@@ -128,10 +129,21 @@ const writeTrackedStamp = (file: string, value: unknown) => {
     return;
   }
 
+  const written = entriesOf(JSON.stringify(value));
   const next = changedEntriesOn({ from: seen, to: JSON.stringify(value), onto: tracked });
+  const onto = next ?? entriesOf(tracked);
+  const staleInTracked = keys.filter((key) => !sameEntry(onto[key], written[key]));
 
-  if (next !== null) writeChangedFile(file, sortedTextOf(next));
+  for (const key of staleInTracked) {
+    if (written[key] === undefined) delete onto[key];
+    else onto[key] = written[key];
+  }
+
+  if (next !== null || staleInTracked.length > 0) writeChangedFile(file, sortedTextOf(onto));
 };
+
+/** The text of a stamp file as git tracks it, without the entries the stamp cache holds over it. */
+export const readTrackedStampText = (file: string): string | null => trackedTextOf(resolve(file));
 
 const sameJson = (text: string | null, value: unknown) => {
   try {
@@ -211,7 +223,11 @@ export const keepHeldStamps = (name: string, keys: readonly string[] | 'all') =>
  * Writes `value` as a stamp file, or keeps it in memory inside `withStampsInMemory`, or in the cache inside
  * `withStampsInCache`.
  */
-export const writeStampFile = (file: string, value: unknown) => {
+export const writeStampFile = (file: string, value: unknown) => writeStampEntries({ file, value, keys: [] });
+
+/** `writeStampFile`, where a tracked write also writes each entry of `keys` the stamp cache already holds. */
+export const writeStampEntries = (options: { file: string; value: unknown; keys: readonly string[] }) => {
+  const { file, value, keys } = options;
   const held = inMemory.getStore();
 
   if (held) {
@@ -220,5 +236,5 @@ export const writeStampFile = (file: string, value: unknown) => {
 
     held.set(key, { base, text: JSON.stringify(value) });
   } else if (inCache.getStore()) withProductLock(dirname(file), () => writeCachedStamp(resolve(file), value));
-  else withProductLock(dirname(file), () => writeTrackedStamp(resolve(file), value));
+  else withProductLock(dirname(file), () => writeTrackedStamp({ file: resolve(file), value, keys }));
 };

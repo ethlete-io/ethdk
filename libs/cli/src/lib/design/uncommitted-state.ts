@@ -4,6 +4,7 @@ import { readConfig } from './design-config';
 import { gitStatusOf } from './git-reader';
 import { READY_FILE } from './system/part-ready';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
+import { readStampText } from './system/stamp-files';
 import { oneProductOf } from './system/sketch/cli-args';
 import {
   isOpenOrPickedEditSketch,
@@ -38,6 +39,7 @@ const isMark = (entry: { hash?: unknown } | undefined) => typeof entry?.hash ===
 const readyLinesOf = (product: ResolvedProduct) => {
   const file = `${product.dir}/${READY_FILE}`;
   const now = entriesOf(existsSync(file) ? readFileSync(file, 'utf8') : null);
+  const cached = entriesOf(readStampText(file));
   const head = entriesOf(gitIn(product.dir, ['show', `HEAD:./${READY_FILE}`]));
   const prefix = (part: string, what: string) => `READY UNCOMMITTED ${product.name} ${part}: ${what}`;
   const line = (part: string, what: string) =>
@@ -49,7 +51,12 @@ const readyLinesOf = (product: ResolvedProduct) => {
     const [before, after] = [head[part], now[part]];
 
     if (isMark(after) && !isMark(before)) return [line(part, 'marked ready, HEAD has no mark')];
-    if (!isMark(after) && isMark(before)) return [removal(part, 'the mark HEAD holds is gone')];
+    if (!isMark(after) && isMark(before))
+      return [
+        isMark(cached[part])
+          ? line(part, 'the mark HEAD holds is gone, the stamp cache holds a new one')
+          : removal(part, 'the mark HEAD holds is gone'),
+      ];
     if (isMark(after) && JSON.stringify(after) !== JSON.stringify(before))
       return [line(part, 'the mark differs from HEAD')];
     if (before !== undefined && JSON.stringify(after) !== JSON.stringify(before))

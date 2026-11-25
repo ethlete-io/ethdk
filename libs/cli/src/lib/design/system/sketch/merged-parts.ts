@@ -3,7 +3,7 @@ import { dirname, resolve } from 'path';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { withProductLock } from '../product-lock';
-import { readStampText, writeStampFile } from '../stamp-files';
+import { readStampText, readTrackedStampText, writeStampEntries } from '../stamp-files';
 import { partHashesHold, partHashHolds, partHashOf } from './baseline';
 import { heldEditsOf } from './held-edits';
 import { findSketch, listSketches, parseTarget, Sketch, SketchHold, variantDirOf } from './sketch';
@@ -38,8 +38,8 @@ const entryOf = (value: unknown): MergedEntry | null => {
   return { hash: record['hash'], decision: decisionOf(record), ...(typeof note === 'string' ? { note } : {}) };
 };
 
-const readEntries = (productDir: string): Record<string, MergedEntry> => {
-  const text = readStampText(mergedFileOf(productDir));
+const readEntries = (productDir: string, tracked = false): Record<string, MergedEntry> => {
+  const text = (tracked ? readTrackedStampText : readStampText)(mergedFileOf(productDir));
 
   if (text === null) return {};
 
@@ -60,7 +60,12 @@ const readEntries = (productDir: string): Record<string, MergedEntry> => {
   }
 };
 
-const writeEntries = (productDir: string, entries: Record<string, MergedEntry>) => {
+const writeEntries = (options: {
+  productDir: string;
+  entries: Record<string, MergedEntry>;
+  keys?: readonly string[];
+}) => {
+  const { productDir, entries, keys = [] } = options;
   const sorted = Object.entries(entries)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([part, { hash, decision, note }]) => [
@@ -68,12 +73,12 @@ const writeEntries = (productDir: string, entries: Record<string, MergedEntry>) 
       decision || note ? { hash, ...decision, ...(note ? { note } : {}) } : hash,
     ]);
 
-  writeStampFile(mergedFileOf(productDir), Object.fromEntries(sorted));
+  writeStampEntries({ file: mergedFileOf(productDir), value: Object.fromEntries(sorted), keys });
 };
 
 /** The content hash of each part, its folder and the assets it imports, as its last sketch merge left it, under the part key. */
-export const readMerged = (productDir: string): Record<string, string> =>
-  Object.fromEntries(Object.entries(readEntries(productDir)).map(([part, { hash }]) => [part, hash]));
+export const readMerged = (productDir: string, options?: { tracked?: boolean }): Record<string, string> =>
+  Object.fromEntries(Object.entries(readEntries(productDir, options?.tracked)).map(([part, { hash }]) => [part, hash]));
 
 /** The pick the part's last sketch merge took, or `null` for a part merged before picks were recorded. */
 export const readMergeDecision = (productDir: string, part: string): MergeDecision | null =>
@@ -106,7 +111,7 @@ export const recordMerged = (options: { product: HashedProduct; parts: string[];
       };
     }
 
-    writeEntries(productDir, entries);
+    writeEntries({ productDir, entries, keys: parts });
   });
 };
 
@@ -121,7 +126,7 @@ export const forgetMerged = (options: { productDir: string; parts: string[] }) =
 
     for (const part of parts) delete entries[part];
 
-    writeEntries(productDir, entries);
+    writeEntries({ productDir, entries });
   });
 };
 
@@ -178,10 +183,11 @@ export const sketchedPartsOf = (product: ResolvedProduct) =>
 
 /**
  * The merged parts of a product whose files changed since their last sketch merge, while no open
- * sketch holds them. A merge of a sketch on the part records its new state and clears it.
+ * sketch holds them. A merge of a sketch on the part records its new state and clears it. With `tracked`, a hash
+ * only the stamp cache holds does not count as recorded.
  */
-export const changedOutsideSketchOf = (product: ResolvedProduct): string[] => {
-  const merged = readMerged(product.dir);
+export const changedOutsideSketchOf = (product: ResolvedProduct, options?: { tracked?: boolean }): string[] => {
+  const merged = readMerged(product.dir, options);
   const recorded = product.parts.filter((part) => part.origin !== 'base' && merged[partKeyOf(part)] !== undefined);
   const holds = partHashesHold(
     product,
@@ -252,7 +258,7 @@ export const recordMergeReason = (options: {
       note,
     };
 
-    writeEntries(product.dir, entries);
+    writeEntries({ productDir: product.dir, entries });
   });
 };
 
