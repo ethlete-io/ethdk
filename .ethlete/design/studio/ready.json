@@ -994,10 +994,6 @@
     "cmd": "ready",
     "pid": 2432228
   },
-  "elements/variant-cell": {
-    "actions": ["emit:pinToggle"],
-    "at": "2026-11-24T02:16:44.184Z"
-  },
   "foundations/agent-logos": {
     "hash": "d4f785b87245bd87",
     "files": {
@@ -1669,14 +1665,10 @@
       "comments-draft",
       "comments-mode",
       "emit:activate",
-      "emit:close",
       "emit:collapse",
       "emit:discard",
       "emit:expandedChange",
-      "emit:fit",
-      "emit:maximize",
       "emit:merge",
-      "emit:minimize",
       "emit:openChange",
       "emit:pick",
       "emit:pinToggle",
@@ -1690,9 +1682,6 @@
       "emit:sideWidthChange",
       "emit:statesToggle",
       "emit:withdrawnToggle",
-      "emit:zoomIn",
-      "emit:zoomOut",
-      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "opens:components/update-dialog",

@@ -1,6 +1,5 @@
 import { definePart, drawing, html, slot } from '@design-system';
 import { loaderStyles, spinner } from '@ethlete/components/design/loader';
-import { commentPinMark } from '@system/components/comment-pin';
 import styles from './variant-cell.css?inline';
 import { CANVAS_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/canvas-labels';
 import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
@@ -38,14 +37,6 @@ const loadingBadge = html`<span
 
 const pending = (height?: number) =>
   html`<div class="${height === undefined ? 'h-30' : 'h-full'}" aria-busy="true" data-loading></div>`;
-
-const pinAt = (pin: { x: number; y: number; initials?: string; selected?: boolean }) =>
-  html`<span
-    class="absolute z-10 flex -translate-y-full"
-    style="left: calc(${pin.x}px * var(--sk-scale)); top: calc(${pin.y}px * var(--sk-scale))"
-    data-sk-pin
-    >${commentPinMark({ author: 'Hanna', initials: pin.initials ?? 'H', selected: pin.selected })}</span
-  >`;
 
 const frame = ({
   width,
@@ -164,15 +155,6 @@ export default definePart({
     'loading-small': { ...base, state: 'focus-visible', loading: true, height: 16, shown: 16 },
     cropped: { ...base, state: 'hover', ...crop },
     stacked: { ...base, state: 'hover', ...crop, stacked: ['active', 'focus-visible'] },
-    pinned: {
-      ...base,
-      overlay: [
-        { x: 60, y: 30 },
-        { x: 180, y: 90, selected: true },
-      ]
-        .map(pinAt)
-        .join(''),
-    },
   },
   describe: {
     changed:
@@ -185,8 +167,6 @@ export default definePart({
       'A cell cropped to its change; check the magnified Speichern fills the frame and the accent crop mark frames it.',
     stacked:
       'A cropped cell standing for a group of states; check the two card edges under the frame read as a stack and + active, focus-visible names the folded states below it.',
-    pinned:
-      'A cell with two comment pins; check that each pin point sits on its spot in the shot and the selected pin shows the accent fill.',
     'loading-small':
       'A loading cell whose frame is 16px tall; check that only the spinner shows, with no Lädt text, and nothing leaves the frame.',
     loading:

@@ -114,10 +114,11 @@
     "at": "2026-11-22T17:25:49.061Z"
   },
   "elements/variant-cell": {
-    "hash": "4a9eea018d21a691",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-24T16:02:55.435Z"
+    "hash": "e05b7ad3d2573d2b",
+    "variant": "a",
+    "decidedBy": "plan: plans/QUEUE.md B741 Q2",
+    "at": "2026-11-25T12:53:06.657Z",
+    "note": "merged without a pick: allowed by plans/QUEUE.md B741 Q2"
   },
   "foundations/agent-logos": {
     "hash": "a7da916151a12f97",
@@ -166,10 +167,11 @@
     "at": "2026-11-21T03:22:49.823Z"
   },
   "pages/sketches": {
-    "hash": "88c2d6dd05e366f1",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-24T09:03:41.900Z"
+    "hash": "df02c8a526651641",
+    "variant": "a",
+    "decidedBy": "plan: plans/QUEUE.md B741 Q2",
+    "at": "2026-11-25T12:53:06.657Z",
+    "note": "merged without a pick: allowed by plans/QUEUE.md B741 Q2"
   },
   "pages/start": {
     "hash": "414940d2e574c435",
