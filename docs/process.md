@@ -41,7 +41,7 @@ How the doc session and the builder work. A process change edits this page.
 
 - A decision of the human becomes a test with a one-sentence comment, or a tool: a live check while the agent writes, or a generator for the base of a sketch the agent then extends. No ADRs.
 - Before a question to the human, search the tests and this page. A repeated question is a defect.
-- Every question has a recommendation. How a thing looks is never a question: the builder builds its pick. A sketch without a visible change needs no pick: the builder merges it.
+- Every question has a recommendation. How a thing looks is never a question: the builder builds its pick, checks its shot, and merges the ready sketch itself; the human reviews the merged state and asks for changes.
 
 ## Rules about rules
 
