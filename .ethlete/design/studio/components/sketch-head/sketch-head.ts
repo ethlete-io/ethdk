@@ -15,9 +15,11 @@ import { BUILD_READY_LABELS, SYSTEM_LABELS } from '../../../../../apps/ethlete-s
 
 export type SketchHeadStatus = SketchBadgeStatus;
 
+export type SketchHeadRound = { value: string; label: string };
+
 export type SketchHead = {
   round: string;
-  rounds?: string[];
+  rounds?: SketchHeadRound[];
   roundsOpen?: boolean;
   status?: SketchHeadStatus;
   autoMerge?: boolean;
@@ -52,7 +54,7 @@ const statusMarkup = async (status: SketchHeadStatus) => {
 const trayClass =
   'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))';
 
-const roundMenu = async (rounds: string[], open: boolean) => {
+const roundMenu = async (rounds: SketchHeadRound[], open: boolean) => {
   const trigger = iconButton({
     icon: icon('history', { cls: 'et-icon' }),
     ariaLabel: SKETCHES_LABELS.roundSelect,
@@ -66,7 +68,7 @@ const roundMenu = async (rounds: string[], open: boolean) => {
           {
             kind: 'radio-group',
             label: SKETCHES_LABELS.roundSelect,
-            items: rounds.map((label, index) => ({ kind: 'radio', label, checked: index === 0 })),
+            items: rounds.map(({ label }, index) => ({ kind: 'radio', label, checked: index === 0 })),
           },
         ],
       })
@@ -88,7 +90,7 @@ const roundMenu = async (rounds: string[], open: boolean) => {
 
 export const sketchHead = async ({
   round,
-  rounds = [round],
+  rounds = [{ value: round, label: round }],
   roundsOpen = false,
   status = 'waiting',
   autoMerge = false,
@@ -194,7 +196,7 @@ export default definePart({
     error: { error: MERGE_ERROR },
     'comments-retry': { commentable: true, listError: true },
     paused: { status: 'paused' },
-    rounds: { rounds: [ROUND, SECOND_ROUND], roundsOpen: true },
+    rounds: { rounds: [ROUND, SECOND_ROUND].map((label) => ({ value: label, label })), roundsOpen: true },
   },
   groups: [
     { label: 'Runde', states: ['plain', 'edit', 'rounds'] },
