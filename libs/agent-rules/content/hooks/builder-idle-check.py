@@ -8,8 +8,9 @@ has open rows owned by `Builder` without a wait reason, the stop is blocked and
 the reason names those rows, so the turn goes on.
 
 Running work comes from the transcript: every background Bash, Monitor and
-async Agent start, minus every task-notification and every TaskStop for it. An
-agent that "is waiting on its own background work" has handed back, so it counts as done.
+async Agent start, minus every task-notification and every TaskStop for it. A
+notification that says the agent "is waiting on its own background work" does not end it: the
+agent has not handed back yet and notifies again when it does.
 
 A row waits when its `Stand` cell contains "wartet auf" or "Offen nur:"
 (case-insensitive). Rows owned by anyone else are skipped.
@@ -58,6 +59,7 @@ SERVER_COMMAND = re.compile(
 CI_POLL = re.compile(r"\b(?:gh\s+run\s+(?:view|list)|glab\s+ci\s+(?:status|list|get))\b")
 LOOP = re.compile(r"\b(?:while|until|for)\b")
 NOTIFICATION = re.compile(r"<task-notification>(.*?)</task-notification>", re.S)
+WAITING_SUMMARY = re.compile(r"<summary>[^<]*is waiting on its own background work")
 NOTIFICATION_IDS = re.compile(r"<(?:task-id|tool-use-id)>([^<]+)</(?:task-id|tool-use-id)>")
 LINE_HINTS = ("tool_use", "task-notification", "builder", "doc-agent", "resume")
 
@@ -108,7 +110,8 @@ def read_transcript(path):
             if not any(hint in raw for hint in LINE_HINTS):
                 continue
             for chunk in NOTIFICATION.findall(raw.replace("\\n", "\n")):
-                state["done"].update(NOTIFICATION_IDS.findall(chunk))
+                if not WAITING_SUMMARY.search(chunk):
+                    state["done"].update(NOTIFICATION_IDS.findall(chunk))
             try:
                 line = json.loads(raw)
             except ValueError:

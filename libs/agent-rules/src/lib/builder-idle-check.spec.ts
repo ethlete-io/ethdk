@@ -67,6 +67,10 @@ describe('builder-idle-check', () => {
     expect(runHook({ transcript: 'subagent-running' })).toBeNull();
   });
 
+  it('stays silent while a subagent is waiting on its own background work', () => {
+    expect(runHook({ transcript: 'subagent-waiting-on-background' })).toBeNull();
+  });
+
   it('blocks when only a CI watcher still runs, and names the watcher', () => {
     const result = runHook({ transcript: 'watcher-only' });
 
