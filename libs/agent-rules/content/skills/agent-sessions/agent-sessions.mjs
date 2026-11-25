@@ -218,7 +218,9 @@ const ENV_WORD = /^[A-Za-z_][A-Za-z0-9_]*=/;
 const CONFIG_WORD = 'CLAUDE_CONFIG_DIR=';
 const callerConfigDir = () => resolve(process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude'));
 const configDirOf = (words) => words.find((word) => word.startsWith(CONFIG_WORD))?.slice(CONFIG_WORD.length);
+const callerIsAgent = () => Boolean(process.env.CLAUDECODE || process.env.CLAUDE_CONFIG_DIR);
 const configMismatch = (words) => {
+  if (!callerIsAgent()) return false;
   const given = configDirOf(words);
   return given !== undefined && resolve(given) !== callerConfigDir();
 };

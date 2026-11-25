@@ -1575,6 +1575,17 @@ describe('agent-sessions', () => {
     expect(existsSync(log)).toBe(false);
   });
 
+  it('lets a human shell without CLAUDECODE and CLAUDE_CONFIG_DIR run claude2', () => {
+    const result = run(
+      ['run', 'claude2', 'env', 'CLAUDE_CONFIG_DIR=/home/human/.claude-second', 'claude', '--dry-run'],
+      undefined,
+      { CLAUDECODE: '', CLAUDE_CONFIG_DIR: '' },
+    );
+
+    expect(result.stderr).not.toContain('Refused');
+    expect(result.stdout).toContain("'env' 'CLAUDE_CONFIG_DIR=/home/human/.claude-second' 'claude'");
+  });
+
   it('refuses run when the command sets another CLAUDE_CONFIG_DIR than the caller', () => {
     const result = run(['run', 'claude', 'env', 'CLAUDE_CONFIG_DIR=/other', 'claude'], undefined, {
       CLAUDE_CONFIG_DIR: '/mine',
