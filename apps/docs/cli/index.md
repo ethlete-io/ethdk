@@ -420,6 +420,8 @@ on the same product or parts, so it writes the same check record, and exits 1 on
   a redrawn variant leaves the app to match it. Any other branch: draw its sketch by hand.
 - `COMPARE` and `SDK-ERROR` compare a part implemented at its current design with its design, and report an SDK error
   the harness page logs.
+- `APP-ERROR` reports, once per state, the first other error the harness page throws or logs with `console.error`,
+  such as Angular's `NG0950` for a required input the state does not pass. A failed resource load is not one.
 
 Each part's result is stored in `node_modules/.cache/ethlete-design/<product>/slow-checks.json` with the hash of its
 inputs: its design, its app files and their specs, and the live spec. A part whose stored result is missing

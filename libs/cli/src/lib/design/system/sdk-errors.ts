@@ -43,3 +43,33 @@ export const watchSdkErrors = (page: ErrorPage) => {
     return lines.length === 0 ? null : `${where} logged SDK errors:\n${lines.map((line) => `  ${line}`).join('\n')}`;
   };
 };
+
+const NETWORK_NOISE = /^Failed to load resource\b/;
+
+const appErrorLineOf = (text: string) => {
+  const line =
+    text
+      .split('\n')
+      .find((candidate) => candidate.trim() !== '')
+      ?.trim() ?? '';
+
+  return line === '' || NETWORK_NOISE.test(line) || sdkErrorLineOf(text) ? null : line;
+};
+
+/**
+ * The first line of each distinct uncaught error or `console.error` on `page` that is not an SDK error; a failed
+ * resource load is left to the network.
+ */
+export const watchAppErrorLines = (page: ErrorPage) => {
+  const found = new Set<string>();
+  const collect = (text: string) => {
+    const line = appErrorLineOf(text);
+
+    if (line) found.add(line);
+  };
+
+  page.on('console', (message) => message.type() === 'error' && collect(message.text()));
+  page.on('pageerror', (error) => collect(error.message));
+
+  return () => [...found];
+};

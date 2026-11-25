@@ -27,6 +27,9 @@ export const COMPARE_RULE = 'COMPARE';
 /** The rule of a slow problem from the harness SDK-error watch; it blocks as `sdk-error`. */
 export const SDK_ERROR_RULE = 'SDK-ERROR';
 
+/** The rule of a slow problem from an app error on a harness page that is not an SDK error. */
+export const APP_ERROR_RULE = 'APP-ERROR';
+
 /** The draw rules, which load or draw each part's states. */
 export const CONTROL_STATE_RULE = 'CONTROL-STATE';
 

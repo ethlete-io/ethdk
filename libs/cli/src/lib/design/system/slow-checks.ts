@@ -10,6 +10,7 @@ import {
   DROPPED_PROP_RULE,
   STATE_INNER_RULE,
   SDK_ERROR_RULE,
+  APP_ERROR_RULE,
   SlowProblemsOf,
   STATE_NO_SOURCE_RULE,
   STATE_UNDESIGNED_RULE,
@@ -48,7 +49,9 @@ export const isDrawRule = (rule: string) =>
 /** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
 export const isSlowRule = (rule: string) =>
   isDrawRule(rule) ||
-  [APP_SPEC_RULE, UNCOVERED_REGION_RULE, COMPARE_RULE, SDK_ERROR_RULE, NO_VISIBLE_CHANGE_RULE].includes(rule);
+  [APP_SPEC_RULE, UNCOVERED_REGION_RULE, COMPARE_RULE, SDK_ERROR_RULE, APP_ERROR_RULE, NO_VISIBLE_CHANGE_RULE].includes(
+    rule,
+  );
 
 const DECLARES_CONTROLS = /\bcontrols\s*:/u;
 
@@ -64,7 +67,7 @@ export type SlowEntry = { hash: string; problems: Problem[]; at: string; unjudge
 
 export type SlowCache = Record<string, SlowEntry>;
 
-const SLOW_RESULT_FORMAT = 'states';
+const SLOW_RESULT_FORMAT = 'app-errors';
 
 const SPEC_SIBLING = /\.(?:ts|html|css)$/u;
 
@@ -225,8 +228,8 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
       : []),
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE] : []),
-    ...(component !== null && current ? [COMPARE_RULE, SDK_ERROR_RULE] : []),
-    ...(designOnly || panesOnly ? [COMPARE_RULE] : []),
+    ...(component !== null && current ? [COMPARE_RULE, SDK_ERROR_RULE, APP_ERROR_RULE] : []),
+    ...(designOnly || panesOnly ? [COMPARE_RULE, APP_ERROR_RULE] : []),
     ...(context.judged.has(key) ? [NO_VISIBLE_CHANGE_RULE] : []),
   ];
 

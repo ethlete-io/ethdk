@@ -36,6 +36,7 @@ import { baseCheckoutOf, baseCommitOf, gitOrNull } from './base-checkout';
 import {
   compareFrameOf,
   dialogFrameOf,
+  AppErrorsError,
   DroppedPropsError,
   harnessDriveOf,
   harnessPropsOf,
@@ -102,7 +103,7 @@ export type StateShot =
       regions?: { design: Region[]; app: Region[] };
       boxes?: { design: CompareBoxes; app: CompareBoxes };
     }
-  | { state: string; width?: number; problem: string; undrivable?: true; missingPanes?: true };
+  | { state: string; width?: number; problem: string; undrivable?: true; missingPanes?: true; appError?: true };
 
 /** A live app shot of one state with its measured regions, or the reason it failed. */
 export type AppShots = Map<string, { app: Buffer; regions: Region[] } | string>;
@@ -146,11 +147,13 @@ export const COMPARE_SHOTS_AT_ONCE = 8;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-type AppShot = { app: Buffer; boxes?: CompareBoxes } | { problem: string; undrivable?: true; missingPanes?: true };
+type AppShot =
+  { app: Buffer; boxes?: CompareBoxes } | { problem: string; undrivable?: true; missingPanes?: true; appError?: true };
 
 /** @internal The failed state a harness shot's error stands for; rethrows any error that fails the whole compare. */
 export const appShotProblemOf = (error: unknown): AppShot => {
   if (error instanceof MissingPanesError) return { problem: error.message, missingPanes: true };
+  if (error instanceof AppErrorsError) return { problem: error.message, appError: true };
   if (error instanceof DroppedPropsError || error instanceof LookMissError || error instanceof AppFontError)
     return { problem: error.message };
   if (error instanceof UndrivableError) return { problem: error.message, undrivable: true };

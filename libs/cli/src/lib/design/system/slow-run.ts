@@ -17,8 +17,9 @@ import {
   DROPPED_PROP_RULE,
   STATE_INNER_RULE,
   SDK_ERROR_RULE,
+  APP_ERROR_RULE,
 } from './build-ready-contract';
-import { shootStates, ShootStates } from './compare-command';
+import { shootStates, ShootStates, StateShot } from './compare-command';
 import { appFilesOf } from './app-files';
 import { HarnessServer, startHarnessServer, StartHarnessServer } from './harness-server';
 import { derivedLinksOf, writeDerivedLinks } from './derived-links';
@@ -144,9 +145,15 @@ export const comparedProblemsOf = async (options: {
 
   if (typeof shot === 'string') return [problemOf(shot)];
 
+  const appErrorOf = (state: StateShot): Problem[] =>
+    'problem' in state && state.appError
+      ? [{ rule: APP_ERROR_RULE, file: options.file, message: `${options.part} ${state.state}: ${state.problem}` }]
+      : [];
+
   if (options.designOnly || options.panesOnly)
     return shot.shots.flatMap((state): Problem[] => {
       if (!('problem' in state)) return [];
+      if (state.appError) return appErrorOf(state);
       if (state.missingPanes) return [problemOf(`${state.state}: ${state.problem}`)];
 
       return options.designOnly && state.undrivable
@@ -159,7 +166,7 @@ export const comparedProblemsOf = async (options: {
     });
 
   return shot.shots.flatMap((state): Problem[] => {
-    if ('problem' in state) return [problemOf(`${state.state}: ${state.problem}`)];
+    if ('problem' in state) return state.appError ? appErrorOf(state) : [problemOf(`${state.state}: ${state.problem}`)];
 
     const compared = shotCompareOf(state);
 

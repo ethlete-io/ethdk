@@ -18,7 +18,7 @@ import {
   PointerOpen,
 } from './part-compare';
 import { HarnessRefusedError, waitForHarnessHost } from './harness-host-wait';
-import { watchSdkErrors } from './sdk-errors';
+import { watchAppErrorLines, watchSdkErrors } from './sdk-errors';
 import { PANE_COUNT_TIMEOUT_MS, settledPanesOf } from './settled-panes';
 import { FrozenAnimation, freezeAnimationsScriptOf } from './frozen-animations';
 
@@ -59,6 +59,12 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 export class HarnessError extends Error {}
 
 export class UndrivableError extends HarnessError {}
+
+export class AppErrorsError extends Error {}
+
+/** @internal The problem of a state whose harness page threw or logged errors that are not SDK errors. */
+export const appErrorsProblemOf = (lines: readonly string[]) =>
+  `the app logged an error: ${lines[0] ?? ''}${lines.length > 1 ? ` (and ${lines.length - 1} more)` : ''}`;
 
 export class DroppedPropsError extends Error {}
 
@@ -389,6 +395,7 @@ type DrivenHarness = {
   timeout: number;
   step: <T>(name: string, run: () => Promise<T>) => Promise<T>;
   sdkErrors: ReturnType<typeof watchSdkErrors>;
+  appErrors: ReturnType<typeof watchAppErrorLines>;
   forcedTargets: { interaction: string; element: ReturnType<Page['locator']> }[];
 };
 
@@ -410,6 +417,7 @@ const drivenHarnessOf = async <T>(options: HarnessDrive, use: (driven: DrivenHar
   try {
     const page = await context.newPage();
     const sdkErrors = watchSdkErrors(page);
+    const appErrors = watchAppErrorLines(page);
     const host = page.locator(HARNESS_HOST_SELECTOR).first();
 
     await step('load', async () => {
@@ -430,6 +438,10 @@ const drivenHarnessOf = async <T>(options: HarnessDrive, use: (driven: DrivenHar
           `the harness page ${url} mounted no part that renders into ${HARNESS_HOST_SELECTOR} within ${timeout} ms`,
         );
       });
+    }).catch((error: unknown) => {
+      const lines = appErrors();
+
+      throw lines.length > 0 ? new AppErrorsError(appErrorsProblemOf(lines)) : error;
     });
 
     if (width)
@@ -524,7 +536,7 @@ const drivenHarnessOf = async <T>(options: HarnessDrive, use: (driven: DrivenHar
 
     if (options.forcesInFrames) await forceStylesOf(page);
 
-    return await use({ page, host, room, timeout, step, sdkErrors, forcedTargets });
+    return await use({ page, host, room, timeout, step, sdkErrors, appErrors, forcedTargets });
   } finally {
     await context.close();
   }
@@ -551,7 +563,7 @@ const APP_BOXES_SCRIPT = compareBoxesScriptOf({
  * a `size` without panes has none.
  */
 export const boxedHarnessShotOf = (options: HarnessDrive): Promise<{ png: Buffer; boxes: CompareBoxes | null }> =>
-  drivenHarnessOf(options, async ({ page, host, room, timeout, step, sdkErrors, forcedTargets }) => {
+  drivenHarnessOf(options, async ({ page, host, room, timeout, step, sdkErrors, appErrors, forcedTargets }) => {
     const { url } = options;
 
     if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0) {
@@ -568,6 +580,10 @@ export const boxedHarnessShotOf = (options: HarnessDrive): Promise<{ png: Buffer
       const sdkProblem = sdkErrors(`the harness page ${url}`);
 
       if (sdkProblem) throw new HarnessError(sdkProblem);
+
+      const appLines = appErrors();
+
+      if (appLines.length > 0) throw new AppErrorsError(appErrorsProblemOf(appLines));
 
       return { png, boxes: null };
     }
@@ -621,6 +637,10 @@ export const boxedHarnessShotOf = (options: HarnessDrive): Promise<{ png: Buffer
     const sdkProblem = sdkErrors(`the harness page ${url}`);
 
     if (sdkProblem) throw new HarnessError(sdkProblem);
+
+    const appLines = appErrors();
+
+    if (appLines.length > 0) throw new AppErrorsError(appErrorsProblemOf(appLines));
 
     return { png, boxes };
   });
