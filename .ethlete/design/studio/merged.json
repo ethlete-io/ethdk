@@ -57,10 +57,10 @@
     "at": "2026-11-22T16:18:06.211Z"
   },
   "components/sketch-status-badge": {
-    "hash": "039357aecaa92571",
-    "variant": "new",
+    "hash": "e4aaa89cc71adb50",
+    "variant": "a",
     "decidedBy": "claude-opus-5-5",
-    "at": "2026-11-25T22:51:18.849Z"
+    "at": "2026-11-25T23:32:29.768Z"
   },
   "components/title-bar": {
     "hash": "8bc950b3b56727f7",
