@@ -271,7 +271,13 @@
                 class="flex items-center gap-space-3"
               >
                 <span class="text-ui-sm text-et-surface-muted">{{ foldLabel() }}</span>
-                <ethlete-disclosure [(open)]="statesOpen" [label]="LABELS.showAllStates" hug size="xs" />
+                <ethlete-disclosure
+                  [(open)]="statesOpen"
+                  [label]="LABELS.showAllStates"
+                  (openChange)="showListTop()"
+                  hug
+                  size="xs"
+                />
               </span>
             </section>
           }

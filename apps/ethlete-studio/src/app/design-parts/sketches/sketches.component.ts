@@ -955,6 +955,11 @@ export class SketchesComponent {
     this.userCamera$.next(null);
   }
 
+  protected showListTop() {
+    if (this.atFit()) this.fit();
+    else this.move({ ...this.canvas.pan(), y: 0, zoom: this.shownZoom() });
+  }
+
   protected zoomReset() {
     this.zoomTo(1);
   }

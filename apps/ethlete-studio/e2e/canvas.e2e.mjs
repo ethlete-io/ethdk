@@ -3002,6 +3002,49 @@ const CASES = [
     },
   },
   {
+    name: 'showing all states after a wheel down to the fold toggle keeps frames on screen',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
+      const canvas = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+
+      await button.waitFor({ timeout: FULL_COMPARE_MS });
+      for (let wheel = 0; wheel < 20; wheel++) {
+        const box = await button.boundingBox();
+
+        if (box && box.y > canvas.y && box.y + box.height < canvas.y + canvas.height - 80) break;
+        await wheelCanvas(page, 300);
+        await settle(page);
+      }
+
+      const box = await button.boundingBox();
+
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+
+      const shown = await page.evaluate(
+        ({ CANVAS, FRAME }) => {
+          const canvas = document.querySelector(`ethlete-sketch-view :is(${CANVAS})`);
+          const view = canvas.getBoundingClientRect();
+
+          return [...canvas.querySelectorAll(FRAME)].filter((frame) => {
+            const rect = frame.getBoundingClientRect();
+
+            return rect.bottom > view.top && rect.top < view.bottom && rect.right > view.left && rect.left < view.right;
+          }).length;
+        },
+        { CANVAS, FRAME },
+      );
+      const zoom = await page.locator('ethlete-sketch-view ethlete-zoom-chip').first().textContent();
+
+      return {
+        ok: shown > 0,
+        detail: `${shown} frames on screen after the toggle, zoom ${zoom.replace(/\s+/gu, ' ')}`,
+      };
+    },
+  },
+  {
     name: 'every live sketch frame sits at 0/0, fills its cell and paints its picture',
     pages: ['Sketches'],
     labels: ['Large'],
