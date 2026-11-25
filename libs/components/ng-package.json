@@ -42,6 +42,11 @@
       "output": "./src/lib/button"
     },
     {
+      "glob": "spinner-sweep-dashes.ts",
+      "input": "src/lib/loader/spinner",
+      "output": "./src/lib/loader/spinner"
+    },
+    {
       "glob": "{icon-definition,*-icon,*-icons}.ts",
       "input": "src/lib/icon/headless",
       "output": "./src/lib/icon/headless"
