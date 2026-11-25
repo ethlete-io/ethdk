@@ -3176,11 +3176,7 @@ const CASES = [
       });
 
       return {
-        ok:
-          shown.text === 'Wartet auf deine Wahl' &&
-          shown.pills === 0 &&
-          shown.dot > 0 &&
-          shown.background === 'rgba(0, 0, 0, 0)',
+        ok: shown.text === 'Wahl' && shown.pills === 0 && shown.dot > 0 && shown.background === 'rgba(0, 0, 0, 0)',
         detail: `status "${shown.text}", pills in the bar ${shown.pills}, dot ${shown.dot}px, background ${shown.background}`,
       };
     },
@@ -3234,12 +3230,7 @@ const CASES = [
           );
 
         return {
-          ok:
-            busy.loading &&
-            busy.discard === true &&
-            busy.bar === 'true' &&
-            busy.status === 'Wird übernommen' &&
-            cleared,
+          ok: busy.loading && busy.discard === true && busy.bar === 'true' && busy.status === 'Übernahme' && cleared,
           detail: `while the merge runs: Übernehmen loading ${busy.loading}, Verwerfen disabled ${busy.discard}, bar aria-busy ${busy.bar}, bar status "${busy.status}"; busy cleared after the answer ${cleared}`,
         };
       } finally {

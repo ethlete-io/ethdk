@@ -3,7 +3,15 @@ import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
 export type SketchBadgeStatus =
-  'drawing' | 'waiting' | 'paused' | 'failed' | 'merging' | 'awaitingApproval' | 'awaitingSubParts' | 'approved';
+  | 'drawing'
+  | 'waiting'
+  | 'paused'
+  | 'failed'
+  | 'merging'
+  | 'autoMerge'
+  | 'awaitingApproval'
+  | 'awaitingSubParts'
+  | 'approved';
 
 const LABELS = SKETCHES_LABELS.status;
 
@@ -13,6 +21,7 @@ const DOT: Record<SketchBadgeStatus, string> = {
   paused: 'bg-et-surface-muted',
   failed: 'bg-(--et-theme-color-primary-solid)',
   merging: 'bg-(--et-theme-color-primary-solid) animate-pulse',
+  autoMerge: 'bg-(--et-theme-color-primary-solid)',
   awaitingApproval: 'bg-(--et-theme-color-primary-solid)',
   awaitingSubParts: 'bg-(--et-theme-color-primary-solid)',
   approved: 'bg-(--et-theme-color-primary-solid)',
@@ -28,7 +37,7 @@ const DOT: Record<SketchBadgeStatus, string> = {
       class="flex w-fit items-center gap-space-2 text-ui-sm font-ui-medium whitespace-nowrap"
     >
       <span
-        [etProvideColor]="approved() ? successTheme() : null"
+        [etProvideColor]="succeeded() ? successTheme() : null"
         [class]="dot()"
         class="size-2 flex-none rounded-full"
         data-sk-status-dot
@@ -46,7 +55,7 @@ export class SketchStatusBadgeComponent {
 
   public status = input<SketchBadgeStatus>('waiting');
   protected failed = computed(() => this.status() === 'failed');
-  protected approved = computed(() => this.status() === 'approved');
+  protected succeeded = computed(() => ['approved', 'autoMerge'].includes(this.status()));
   protected label = computed(() => LABELS[this.status()]);
   protected dot = computed(() => DOT[this.status()]);
 }

@@ -39,6 +39,7 @@ describe('SketchStatusBadgeComponent', () => {
       'paused',
       'failed',
       'merging',
+      'autoMerge',
     ]);
   });
 

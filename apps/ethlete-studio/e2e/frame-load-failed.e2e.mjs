@@ -238,7 +238,7 @@ const failedSketchModule = async (context) => {
 
   return {
     ok:
-      badge === 'Render fehlgeschlagen' &&
+      badge === 'Fehler' &&
       mergeWhileFailed === 0 &&
       failedBefore.all > 0 &&
       failedBefore.failed === failedBefore.all &&

@@ -17,6 +17,7 @@ const HOLD = { until: 'B1', since: 'seit 1 Min' };
     [hold]="hold"
     [reasonOpen]="reasonOpen()"
     [status]="status()"
+    [autoMerge]="autoMerge()"
     [subSketch]="subSketch()"
     [approved]="approved()"
     [subSketchesOpen]="subSketchesOpen()"
@@ -34,6 +35,7 @@ class HostComponent {
   hold = HOLD;
   reasonOpen = signal(false);
   status = signal<SketchStatus>('waiting');
+  autoMerge = signal(false);
   subSketch = signal(false);
   approved = signal(false);
   subSketchesOpen = signal(false);
@@ -70,9 +72,41 @@ const setup = async () => {
 };
 
 describe('SketchHeadComponent', () => {
+  // Human decision B728: the bar holds controls and one status, a dot and one short word.
+  it('shows at most one status of one word in the bar', async () => {
+    const { fixture, root, host } = await setup();
+    const shown: string[][] = [];
+
+    for (const status of ['waiting', 'drawing', 'failed', 'paused', 'not-ready'] as const) {
+      for (const autoMerge of [false, true]) {
+        for (const [subSketch, approved, subSketchesOpen] of [
+          [false, false, false],
+          [true, false, false],
+          [true, true, false],
+          [false, false, true],
+        ] as const) {
+          host.status.set(status);
+          host.autoMerge.set(autoMerge);
+          host.subSketch.set(subSketch);
+          host.approved.set(approved);
+          host.subSketchesOpen.set(subSketchesOpen);
+          await fixture.whenStable();
+          shown.push(
+            [...root.querySelectorAll('[data-sk-toolbar] :is([data-sk-status], et-badge)')].map(
+              (badge) => badge.textContent?.trim() ?? '',
+            ),
+          );
+        }
+      }
+    }
+
+    expect(shown.filter((texts) => texts.length > 1 || texts.some((text) => !/^\S+$/.test(text)))).toEqual([]);
+    expect(Object.values(SKETCHES_LABELS.status).filter((label) => !/^\S+$/.test(label))).toEqual([]);
+  });
+
   it.each([
-    [false, false, 'Wartet auf deine Wahl'],
-    [true, false, 'Wartet auf Freigabe'],
+    [false, false, 'Wahl'],
+    [true, false, 'Freigabe'],
     [true, true, 'Freigegeben'],
   ] as const)('names a waiting sketch (sub-sketch %s, approved %s) %s', async (subSketch, approved, label) => {
     const { fixture, root, host } = await setup();
@@ -84,15 +118,13 @@ describe('SketchHeadComponent', () => {
     expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(label);
   });
 
-  it('names a parent whose sub-sketches are open Wartet auf Freigabe der Unterteile', async () => {
+  it('names a parent whose sub-sketches are open Unterteile', async () => {
     const { fixture, root, host } = await setup();
 
     host.subSketchesOpen.set(true);
     await fixture.whenStable();
 
-    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
-      'Wartet auf Freigabe der Unterteile',
-    );
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe('Unterteile');
   });
 
   // The human decided Studio does not show the new or not-ready badges, the not-ready reason, the last

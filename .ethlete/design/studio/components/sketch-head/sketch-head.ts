@@ -1,6 +1,5 @@
 import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html, withAction } from '@design-system';
-import badge from '@system/components/badge';
 import { iconButton, iconButtonStyles } from '@ethlete/components/design/button';
 import button from '@system/components/button';
 import menu from '@system/components/menu';
@@ -33,9 +32,6 @@ export type SketchHead = {
 
 const ROUND = 'Runde 1 · Reset control: SDK button or own part';
 const SECOND_ROUND = 'Runde 2 · Port nach dem Merge';
-
-const tonal = async (label: string) =>
-  (await badge.render({ badges: [{ label, variant: 'tonal', size: 'sm' }] })) as { body: string; styles: string };
 
 const statusMarkup = async (status: SketchHeadStatus) => {
   const tag = await sketchStatusBadge(status);
@@ -104,8 +100,7 @@ export const sketchHead = async ({
   withdrawn,
   class: hostClass = '',
 }: SketchHead) => {
-  const autoTag = autoMerge ? await tonal(SKETCHES_LABELS.autoMerge) : undefined;
-  const state = await statusMarkup(status);
+  const state = await statusMarkup(autoMerge && ['drawing', 'waiting'].includes(status) ? 'autoMerge' : status);
   const discard = iconButton({
     icon: icon('trash', { cls: 'et-icon' }),
     ariaLabel: SKETCHES_LABELS.discard,
@@ -157,11 +152,6 @@ export const sketchHead = async ({
       data-sk-toolbar
     >
       ${state.body}
-      ${
-        autoTag
-          ? html`<span class="flex w-fit" data-et-semantic-color="success" data-sk-auto-merge>${autoTag.body}</span>`
-          : ''
-      }
       ${toggle ? withAction(control(toggle.body, 'withdrawn'), { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       <span class="mx-space-1 h-5 w-px flex-none bg-et-surface-border" aria-hidden="true"></span>
       ${picker.body}
@@ -179,13 +169,7 @@ export const sketchHead = async ({
   return {
     body,
     styles:
-      (autoTag?.styles ?? '') +
-      state.styles +
-      iconButtonStyles +
-      reload.styles +
-      picker.styles +
-      (toggle?.styles ?? '') +
-      holdTriggerStyles,
+      state.styles + iconButtonStyles + reload.styles + picker.styles + (toggle?.styles ?? '') + holdTriggerStyles,
     setup: toggleHold,
   };
 };
@@ -225,7 +209,7 @@ export default definePart({
     rounds: 'The round menu open; check the et-menu above the history button with the shown round checked.',
     agent:
       'An agent drawing the round; check the zeichnet badge as the only text, with no model, time or round line beside it.',
-    edit: 'A direct edit; check the Auto-Merge tag and the edit hint in place of Verwerfen.',
+    edit: 'A direct edit; check Automatisch as the only status, and no Verwerfen.',
     error: 'A merge that failed outside the rows; check the server reason in the error colour before Verwerfen.',
     'comments-retry':
       'A commentable sketch whose listing failed; check the Kommentar icon, then Erneut laden, then the Verwerfen icon.',

@@ -1,10 +1,10 @@
 import { Component, computed, ElementRef, input, model, output, viewChild, ViewEncapsulation } from '@angular/core';
-import { BADGE_IMPORTS, BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, MENU_IMPORTS, SWITCH_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, MENU_IMPORTS, SWITCH_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { HoldTriggerComponent } from '../hold-trigger/hold-trigger.component';
-import { SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status-badge.component';
+import { SketchBadgeStatus, SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status-badge.component';
 import { SketchHold, SketchRound, SketchStatus, SketchWithdrawn } from '../sketches/sketches-sample';
 
 @Component({
@@ -12,7 +12,6 @@ import { SketchHold, SketchRound, SketchStatus, SketchWithdrawn } from '../sketc
   templateUrl: './sketch-head.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [
-    BADGE_IMPORTS,
     BUTTON_IMPORTS,
     CHOICE_FIELD_IMPORTS,
     MENU_IMPORTS,
@@ -28,7 +27,6 @@ import { SketchHold, SketchRound, SketchStatus, SketchWithdrawn } from '../sketc
 })
 export class SketchHeadComponent {
   protected errorTheme = injectSemanticColorTheme('error');
-  protected successTheme = injectSemanticColorTheme('success');
   public status = input<SketchStatus>('waiting');
   public hold = input.required<SketchHold>();
   public autoMerge = input(false);
@@ -55,20 +53,26 @@ export class SketchHeadComponent {
   protected readonly LABELS = SKETCHES_LABELS;
   protected readonly SYSTEM_LABELS = SYSTEM_LABELS;
 
-  protected hasLead = computed(
-    () =>
-      ['paused', 'waiting', 'failed', 'drawing'].includes(this.status()) ||
-      this.autoMerge() ||
-      this.withdrawnCount() > 0,
-  );
-
-  protected waitingBadge = computed(() => {
+  private waitingBadge = computed<SketchBadgeStatus>(() => {
     if (this.busy()) return 'merging';
     if (this.subSketchesOpen()) return 'awaitingSubParts';
+    if (this.autoMerge()) return 'autoMerge';
     if (!this.subSketch()) return 'waiting';
 
     return this.approved() ? 'approved' : 'awaitingApproval';
   });
+
+  protected badge = computed<SketchBadgeStatus | null>(() => {
+    const status = this.status();
+
+    if (status === 'paused' || status === 'failed') return status;
+    if (status === 'waiting') return this.waitingBadge();
+    if (this.autoMerge()) return 'autoMerge';
+
+    return status === 'drawing' ? 'drawing' : null;
+  });
+
+  protected hasLead = computed(() => this.badge() !== null || this.withdrawnCount() > 0);
 
   protected selectRound(value: unknown) {
     if (typeof value === 'string' && value !== this.round()) this.roundChange.emit(value);

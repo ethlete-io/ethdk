@@ -749,7 +749,6 @@ export default definePart<Props>({
     paused: { camera: 'fit', status: 'paused' },
     failed: { camera: 'fit', status: 'failed', errored: ['b'], failures: FAILED_REASONS },
     'new-part': { camera: 'fit', fresh: true },
-    'auto-merge': { camera: 'fit', status: 'drawing', autoMerge: true },
     'narrow-part': { camera: 'fit', part: 'narrow' },
     'sticky-names': { camera: { zoom: 0.8, x: -1700, y: -260 } },
     comparing: { camera: 'fit', comparing: true },
@@ -807,9 +806,7 @@ export default definePart<Props>({
       'A variant still drawing; check the zeichnet badge in the header, that Übernehmen is missing, and that the drawing variant shows its frames live like a finished one.',
     paused: 'A paused sketch; check the Pausiert badge in the header.',
     failed:
-      'Variant b failed to render; check the Render fehlgeschlagen badge in the toolbar, Render fehlgeschlagen: default: and the error in the head of row b in the error colour, and no Übernehmen in any row.',
-    'auto-merge':
-      'A sketch that sketch ready would merge by itself; check the auto-merge mark beside the status in the header.',
+      'Variant b failed to render; check the Fehler badge in the toolbar, Render fehlgeschlagen: default: and the error in the head of row b in the error colour, and no Übernehmen in any row.',
     'new-part': 'A sketch of a new part; check that there is no Aktuell row and the neu badge shows.',
     'narrow-part':
       'A narrow part as one row per variant; check the state grid with its names and the cell widths that follow each measured state.',
@@ -896,7 +893,7 @@ export default definePart<Props>({
     },
     {
       label: 'Status',
-      states: ['drawing', 'paused', 'auto-merge', 'sketch-only-points', 'sketch-only-points-open', 'live'],
+      states: ['drawing', 'paused', 'sketch-only-points', 'sketch-only-points-open', 'live'],
     },
     {
       label: 'Agent und Runden',

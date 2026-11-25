@@ -7,6 +7,8 @@ const spanOf = (minutes: number) => {
   return days === 1 ? '1 Tag' : `${days} Tagen`;
 };
 
+const AUTO_MERGE = 'Automatisch';
+
 export const SKETCHES_LABELS = {
   none: 'Noch keine Skizzen.',
   emptyTitle: 'Keine offenen Skizzen',
@@ -82,17 +84,18 @@ export const SKETCHES_LABELS = {
   notRebuild: (of: string, difference: string) => `nicht ${of}: ${difference}`,
   drawingVariant: 'zeichnet diese Variante',
   drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',
-  autoMerge: 'Übernimmt sich selbst',
+  autoMerge: AUTO_MERGE,
   waitsOnSubSketches: (open: readonly string[]) => `Wartet auf Freigabe: ${open.join(', ')}`,
   status: {
     drawing: 'zeichnet',
-    waiting: 'Wartet auf deine Wahl',
-    awaitingApproval: 'Wartet auf Freigabe',
-    awaitingSubParts: 'Wartet auf Freigabe der Unterteile',
+    waiting: 'Wahl',
+    awaitingApproval: 'Freigabe',
+    awaitingSubParts: 'Unterteile',
     approved: 'Freigegeben',
     paused: 'Pausiert',
-    failed: 'Render fehlgeschlagen',
-    merging: 'Wird übernommen',
+    failed: 'Fehler',
+    merging: 'Übernahme',
+    autoMerge: AUTO_MERGE,
   },
   holdUntil: (until: string) => `Wartet auf ${until}`,
   rowFailed: (reason: string) => `Render fehlgeschlagen: ${reason}`,

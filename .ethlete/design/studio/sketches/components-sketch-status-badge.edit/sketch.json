@@ -106,28 +106,28 @@
     "fixtures.ts": "909089fbef7b8f34"
   },
   "baselineTree": "9231adcb57e14ec1747ab7efe5c97498e1cdc7c2",
+  "editOldCommit": "3133602825291bf816b0324f4d784f591a45a88b",
   "rounds": [
     {
       "key": "r1",
       "title": "Direkte Änderung",
-      "note": "components/sketch-status-badge wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den zuletzt gemergten Stand oder die Änderung"
+      "note": "components/sketch-status-badge wurde direkt geändert und sieht anders aus - behalte die Änderung oder den zuletzt übernommenen Stand"
     }
   ],
   "variantInfo": {
     "new": {
       "authors": ["design check"],
       "round": "r1",
-      "note": "die Änderung außerhalb eines Sketches"
+      "note": "Direkt geändert"
     },
     "old": {
       "authors": ["design check"],
       "round": "r1",
-      "note": "der zuletzt gemergte Stand"
+      "note": "Zuletzt übernommen"
     }
   },
   "readyContent": {
     "new": "03decce02c91b3dc",
     "old": "bd09d4b8cb9e952d"
-  },
-  "editOldCommit": "1bef8b24bcf0448dd0fe4a0d43e76c9618a46318"
+  }
 }

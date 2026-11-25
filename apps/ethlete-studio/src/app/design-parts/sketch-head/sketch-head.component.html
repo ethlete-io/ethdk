@@ -16,38 +16,26 @@
   role="toolbar"
   data-sk-toolbar
 >
-  @switch (status()) {
-    @case ('paused') {
-      <span class="flex min-w-0 items-center gap-space-2">
-        <ethlete-hold-trigger
-          [content]="holdContent"
-          [reason]="holdReason"
-          [open]="reasonOpen()"
-          (openChange)="reasonOpen.set($event)"
-        />
-      </span>
-      <ng-template #holdContent><ethlete-sketch-status-badge status="paused" /></ng-template>
-      <ng-template #holdReason>
-        <span class="font-ui-medium text-et-surface">{{ LABELS.holdUntil(hold().until) }}</span>
-        <span>· {{ hold().since }}</span>
-      </ng-template>
-    }
-    @case ('waiting') {
-      <ethlete-sketch-status-badge [status]="waitingBadge()" />
-    }
-    @case ('failed') {
-      <ethlete-sketch-status-badge status="failed" data-sk-render-error />
-    }
-    @case ('drawing') {
-      <ethlete-sketch-status-badge status="drawing" />
-    }
-  }
-  @if (autoMerge()) {
-    <span [etProvideColor]="successTheme()" class="flex w-fit" data-sk-auto-merge>
-      <div class="flex flex-wrap items-center">
-        <et-badge variant="tonal" size="sm">{{ LABELS.autoMerge }}</et-badge>
-      </div>
+  @if (status() === 'paused') {
+    <span class="flex min-w-0 items-center gap-space-2">
+      <ethlete-hold-trigger
+        [content]="holdContent"
+        [reason]="holdReason"
+        [open]="reasonOpen()"
+        (openChange)="reasonOpen.set($event)"
+      />
     </span>
+    <ng-template #holdContent><ethlete-sketch-status-badge status="paused" /></ng-template>
+    <ng-template #holdReason>
+      <span class="font-ui-medium text-et-surface">{{ LABELS.holdUntil(hold().until) }}</span>
+      <span>· {{ hold().since }}</span>
+    </ng-template>
+  } @else if (badge(); as badge) {
+    <ethlete-sketch-status-badge
+      [status]="badge"
+      [attr.data-sk-auto-merge]="badge === 'autoMerge' || null"
+      [attr.data-sk-render-error]="badge === 'failed' || null"
+    />
   }
   @if (withdrawnCount() > 0) {
     <et-choice-field size="sm" color="brand" data-sk-withdrawn-toggle>
