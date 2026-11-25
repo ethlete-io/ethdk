@@ -227,6 +227,20 @@ describe('CanvasFrameGridComponent', () => {
     expect(host.querySelector('[data-grid-cell]')?.classList).toContain('place-items-center');
   });
 
+  it('gives each cell of a one-column table sheet its content width (tomflix colors, B676)', async () => {
+    const widths = { 'surface-dark': 638, 'accent-dark': 638, 'contrast-dark': 3116 };
+    const host = await renderGrid({
+      columns: ['rest'],
+      rows: Object.keys(widths),
+      cells: Object.entries(widths).map(([row, width]) => ({ ...cellAt(row, 'rest'), width })),
+      sheet: 'table',
+    });
+    const gridCells = [...host.querySelectorAll('[data-grid-cell]')];
+
+    expect(gridCells).toHaveLength(3);
+    expect(gridCells.every((cell) => cell.classList.contains('justify-self-start'))).toBe(true);
+  });
+
   it('leaves out the group of a table sheet without rows', async () => {
     const host = await renderGrid({ columns, rows: [], cells: [], sheet: 'table' });
 

@@ -331,6 +331,7 @@ export class CanvasFrameCellComponent {
                 <div
                   [class.grid]="sheet.centered"
                   [class.place-items-center]="sheet.centered"
+                  [class.justify-self-start]="sheet.contentWidth"
                   [class]="backdropOf(scheme)"
                   class="p-space-3 ring-1"
                   data-grid-cell
@@ -594,6 +595,7 @@ export class CanvasFrameGridComponent {
     return {
       first,
       centered: sheet === 'table',
+      contentWidth: sheet === 'table' && columns.length === 1,
       interactive: rows.filter((row) => !restOnly(row)),
       packed: Array.from({ length: Math.ceil(rest.length / perLine) }, (_, line) =>
         rest.slice(line * perLine, (line + 1) * perLine),
