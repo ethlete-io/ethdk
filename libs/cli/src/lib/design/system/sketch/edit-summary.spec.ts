@@ -1,11 +1,6 @@
-import { execFileSync } from 'child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
-import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 import { shownSketchRowsOf } from '../../sketch-frame-set';
-import { commitAll, git, initGitRepo } from '../git-repo.fixtures';
-import { editCommitsOf, editNoteOf, editStatesOf, withEditUnchanged } from './edit-summary';
+import { editNoteOf, editStatesOf, withEditUnchanged } from './edit-summary';
 import { Sketch } from './sketch';
 
 const PART = 'elements/variant-cell';
@@ -64,60 +59,18 @@ describe('editStatesOf', () => {
 });
 
 describe('editNoteOf', () => {
-  it('names the commit and the differing states', () => {
+  it('names the differing states in the words of the cells, without a commit', () => {
     expect(
       editNoteOf({
-        note: 'die Änderung außerhalb eines Sketches',
-        commits: [{ hash: 'e9b96c84d', subject: 'fix(repo): Drop the selection ring' }],
-        states: { removed: ['selected'], added: [], redrawn: [] },
+        note: 'Direkt geändert',
+        states: { removed: ['selected'], added: ['merging'], redrawn: ['drawing'] },
       }),
-    ).toBe(
-      'die Änderung außerhalb eines Sketches: e9b96c84d fix(repo): Drop the selection ring · Unterschied: selected entfernt',
+    ).toBe('Direkt geändert · Entfällt: selected · Neu: merging · Anders: drawing');
+  });
+
+  it('is the bare note when no state differs', () => {
+    expect(editNoteOf({ note: 'Direkt geändert', states: { removed: [], added: [], redrawn: [] } })).toBe(
+      'Direkt geändert',
     );
-  });
-
-  it('says an edit is not committed yet when no commit changed the part', () => {
-    expect(editNoteOf({ note: 'die Änderung', commits: [], states: { removed: [], added: [], redrawn: [] } })).toBe(
-      'die Änderung: noch nicht committet',
-    );
-  });
-});
-
-describe('editCommitsOf', () => {
-  it('answers the commits after the old stand that changed the part folder', () => {
-    const repo = mkdtempSync(join(tmpdir(), 'edit-summary-'));
-    const partDir = join(repo, 'elements/variant-cell');
-
-    mkdirSync(partDir, { recursive: true });
-    writeFileSync(join(partDir, 'variant-cell.ts'), 'a');
-    initGitRepo(repo, 'old stand');
-    const since = String(git(repo, 'rev-parse', 'HEAD')).trim();
-    writeFileSync(join(repo, 'other.ts'), 'b');
-    commitAll(repo, 'touch another file');
-    writeFileSync(join(partDir, 'variant-cell.ts'), 'c');
-    commitAll(repo, 'fix: drop selected');
-
-    expect(editCommitsOf({ partDir, since }).map((commit) => commit.subject)).toEqual(['fix: drop selected']);
-    expect(editCommitsOf({ partDir, since: undefined })).toEqual([]);
-  });
-
-  const root = resolve(__dirname, '../../../../../../..');
-  const known = (() => {
-    try {
-      execFileSync('git', ['cat-file', '-e', '7452d1328aec0dbcfe61a30bfdb04cb855a5a028^{commit}'], { cwd: root });
-
-      return true;
-    } catch {
-      return false;
-    }
-  })();
-
-  it.skipIf(!known)('names e9b96c84d for the studio variant-cell edit', () => {
-    const commits = editCommitsOf({
-      partDir: join(root, '.ethlete/design/studio/elements/variant-cell'),
-      since: '7452d1328aec0dbcfe61a30bfdb04cb855a5a028',
-    });
-
-    expect(commits.map((commit) => commit.hash.slice(0, 9))).toContain('e9b96c84d');
   });
 });

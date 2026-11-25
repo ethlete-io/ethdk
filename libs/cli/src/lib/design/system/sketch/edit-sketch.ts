@@ -28,12 +28,12 @@ import { EDIT_NEW, EDIT_OLD } from './edit-old-base';
 export { EDIT_OLD };
 const NEW = EDIT_NEW;
 const EDIT_ROUND_TITLE = 'Direkte Änderung';
-const EDIT_VARIANT_NOTES = { [EDIT_OLD]: 'der zuletzt gemergte Stand', [NEW]: 'die Änderung außerhalb eines Sketches' };
+const EDIT_VARIANT_NOTES = { [EDIT_OLD]: 'Zuletzt übernommen', [NEW]: 'Direkt geändert' };
 
 const editRoundNoteOf = (part: string) =>
-  `${part} wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den zuletzt gemergten Stand oder die Änderung`;
+  `${part} wurde direkt geändert und sieht anders aus - behalte die Änderung oder den zuletzt übernommenen Stand`;
 const newOnlyRoundNoteOf = (part: string) =>
-  `${part} wurde außerhalb eines Sketches geändert und der zuletzt gemergte Stand ist nicht mehr zu finden - wähle die Änderung oder setze sie zurück`;
+  `${part} wurde direkt geändert und der zuletzt übernommene Stand fehlt - behalte die Änderung oder setze sie zurück`;
 
 export const EDIT_OLD_NOT_FOUND = 'EDIT-OLD-NOT-FOUND';
 

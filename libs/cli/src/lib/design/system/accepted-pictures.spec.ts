@@ -678,10 +678,10 @@ describe('autoAcceptOf', () => {
 
       expect(rounds[0]).toMatchObject({
         title: 'Direkte Änderung',
-        note: `${CHIP} wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den zuletzt gemergten Stand oder die Änderung`,
+        note: `${CHIP} wurde direkt geändert und sieht anders aus - behalte die Änderung oder den zuletzt übernommenen Stand`,
       });
-      expect(variantInfo.new.note).toBe('die Änderung außerhalb eines Sketches');
-      expect(variantInfo.old.note).toBe('der zuletzt gemergte Stand');
+      expect(variantInfo.new.note).toBe('Direkt geändert');
+      expect(variantInfo.old.note).toBe('Zuletzt übernommen');
     });
   });
 
