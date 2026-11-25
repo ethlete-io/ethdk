@@ -89,23 +89,24 @@
     "components/toolbar": "b62bb6c1539dbdd4",
     "components/tooltip": "4defd5665eab5f5f",
     "components/tree": "e15213fac4751487",
-    "components/tree-row": "d6ae59e4cc005908",
+    "components/tree-row": "b9948bc4274ccbeb",
     "components/update-dialog": "63ad322093769a56",
     "components/zoom-chip": "99a38ecebede39be",
     "elements/canvas-frames": "83996f406e8834f2",
-    "elements/part-tree": "cb9aa016a48c9f96",
+    "elements/part-tree": "25dc8e0384f4c2b1",
     "elements/shell-main": "e819f34d77ea3e58",
     "elements/studio-menu": "52e34e78cf208413",
     "elements/variant-cell": "4a8ccbb62a83fd4f",
     "pages/flows": "5f9d41e1be7d2953",
     "pages/inbox": "9fe9d1c9a513990c",
     "pages/inventory": "bb84266858a56467",
-    "pages/sketches": "5115de394bbd5ca8",
+    "pages/sketches": "f8f43d7d59c6a76a",
     "pages/start": "414940d2e574c435",
     "pages/system": "40ad5ffbd085dc6a",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "5261cac17916bc33be18d26dde78812f0b13e73f",
+  "baselineTree": "d2a5bb0f3be1fab25da98bd988adeeff12e0bd03",
+  "editOldCommit": "9e852b32fbba7768f7c2224af05ee066726b8ce6",
   "sharedBase": {
     "pages/system/shared/build-ready.ts": "7f8a75a45586230d",
     "pages/system/shared/capabilities.ts": "48d892e5e4b404fe",
@@ -135,6 +136,5 @@
   "readyContent": {
     "new": "24310e22bccec0f1",
     "old": "45c03f60b9f83c5d"
-  },
-  "editOldCommit": "9e852b32fbba7768f7c2224af05ee066726b8ce6"
+  }
 }
