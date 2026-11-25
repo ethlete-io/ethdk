@@ -1,5 +1,42 @@
 # @ethlete/cli
 
+## 3.0.0-next.46
+
+### Minor Changes
+
+- `et design sketch check` warns when a state draws a title next to an `<img data-et-carries-title>`, a picture with the title baked in.
+- `design sketch approve` approves a variant of a sub-sketch, and every merge of a sub-sketch is refused with the name of its parent. Studio shows "Freigeben" in place of "Übernehmen" on a sub-sketch.
+- `design sketch check` now also catches an element a variant draws in an existing part's root class or tag under another prefix (`<span class="tsh-badge">Serie</span>` for `et-badge`) as an inline rebuild, and checks only parts the drawing layer may embed.
+- The sketch check fails a variant that draws an existing part inline (`<span>${FIXTURE.badge}</span>` beside the SDK badge) unless it embeds the part or the target states the difference.
+- A parent sketch merges together with its sub-sketches once every one is approved; until then each merge path refuses it.
+- A pick of a sketch variant with marked sub-parts opens one sub-sketch per sub-part instead of merging, and Studio shows them under their parent sketch.
+- Picking another variant of a parent sketch now discards the sub-sketches it no longer marks, after a confirmation in `sketch pick` (`--discard-sub-sketches`) and in Studio.
+- Marked sub-parts may differ between composition variants, a name match with an existing part needs `--not-rebuild-of` and a stated difference, a mark change reopens a ready sketch, and Studio shows the marks at the variant header.
+- `sketch sub-part` marks a new part a variant builds as a sub-part, and the sketch check rejects a new part, marked or not, that rebuilds an existing project or SDK part.
+
+### Patch Changes
+
+- `design check` records each state's picture size in pictures.json, so a sketch cell without a kept picture starts at its final size.
+- A sketch cell whose picture an older picture code drew from the same files starts at that picture's size, so variant rows and page presets keep their first width after a cli update.
+- The design server no longer misses a new comment file when a Tailwind stylesheet transform lists it as a dependency.
+- A sketch cell shows its final width from the first paint instead of resizing as its frames load.
+- A `design check` that counts an `ACTION-FAILED` finding now exits 1.
+- A slow rule that fails while a part-scoped `design check` settles the part now blocks it with that problem and fails the check, instead of reading as pending and clean.
+- The generated colors foundation steps the surface interaction tint like the SDK does on a dark ground (rest 158 instead of 179 on black) and gives surface and accent focus the hover value, like the SDK.
+- The sketch check warns when a state draws a title its picture already carries, or text on a picture below 3:1 contrast.
+- The frame bootstrap spec fixture serves `virtual:design-explore/frame`, so the spec links again.
+- `et design sketch check` also measures a logo or text on a flat surface, not only on a picture, and warns below the same 3:1 bar, with a lighter-logo or backing-plate fix for a small one.
+- `et design product new --colors` registers an error and a warning colour theme, so a danger button no longer falls back to the accent.
+- A parent sketch merge now also writes each approved sub-sketch's `shared/` and asset changes, and refuses when two of its sketches change the same file.
+- A parent sketch merge no longer refuses a new `shared/` file that only an approved sub-sketch's part imports.
+- A product on the `@ethlete/components` base draws under its `foundations/colors` again when the package is not installed; the CLI's stand-in base now declares that token part too.
+- `et design studio open` keeps a queued request in a folder that survives a reboot (`~/.local/state/ethlete-studio/open-requests` on Linux, `~/Library/Application Support/ethlete-studio/open-requests` on macOS, `%LOCALAPPDATA%\ethlete-studio\open-requests` on Windows) instead of the temp folder, and Studio reads it from there at its next start.
+- `et design studio open` keeps its request when Studio is not running and exits 3 (queued); Studio adds the checkout at its next start and drops requests older than 7 days or whose checkout lost its design config.
+- `design check --rules --base` now tells a part without an implemented record to run `check --part` first, then `task <part> --verify`, and says that an open point of the check blocks the record.
+- `design check --rules --base` now tells a part without an implemented record to run `task <part> --verify`, the only command that records it; plain `compare <part>` records nothing.
+- `design check --rules --base` fails with `IMPLEMENTATION-UNCOMPARED` on an app file in the range that the component of a part without an `implemented.json` record reaches, until `compare <part>` records it.
+- `sketch check` warns when a state uses an `et-color--<name>` class that no foundation of the product defines, and names the defined ones, instead of letting it fall back to the accent silently.
+
 ## 3.0.0-next.45
 
 ### Minor Changes
