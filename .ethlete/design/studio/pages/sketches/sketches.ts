@@ -497,11 +497,11 @@ const gutter = (states: string[], top: number, block: number, offset: number) =>
 
 const rowLabelOf = (row: Row) => row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key);
 
-const shortLabelOf = (label: string) =>
-  label
-    .split(/\s+/)
-    .map((word) => (/^\d+$/.test(word) ? word : word.charAt(0)))
-    .join('');
+const shortLabelOf = (label: string) => {
+  const [, word, number = ''] = /^(\S+)(?:\s+(\d+))?$/.exec(label.trim()) ?? [];
+
+  return word ? `${word.charAt(0)}${number}` : label;
+};
 
 const column = (part: SketchPart, states: string[], row: Row, at: number, top: number, view: View, block = 0) => {
   const head = html`<section
@@ -511,7 +511,7 @@ const column = (part: SketchPart, states: string[], row: Row, at: number, top: n
     ${row.key === view.selected ? ' data-selected' : ''}
   >
     <span
-      class="${block > 0 ? 'inline-flex whitespace-nowrap px-1' : 'hidden in-data-sk-head-hidden:inline-flex max-w-full truncate px-space-2'} items-center rounded-full py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+      class="${block > 0 ? 'inline-flex max-w-full truncate px-1' : 'hidden in-data-sk-head-hidden:inline-flex max-w-full truncate px-space-2'} items-center rounded-full py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
       data-sk-head-tag
       >${block > 0 ? shortLabelOf(rowLabelOf(row)) : rowLabelOf(row)}</span
     >

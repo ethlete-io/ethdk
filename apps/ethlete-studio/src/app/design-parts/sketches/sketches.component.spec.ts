@@ -1001,6 +1001,21 @@ describe('SketchesComponent', () => {
       ).toBe(true);
     });
 
+    it('names the later blocks of an @edit sketch with readable tags, not initials', async () => {
+      const [newSide, oldSide] = manyOf(30, 900);
+      const rows = [
+        { ...newSide, key: 'new' },
+        { ...oldSide, key: 'old' },
+      ] as SketchRow[];
+      const root: HTMLElement = (
+        await render({ rows, camera: 'fit', part: 'components/tree-row@edit', status: 'waiting' })
+      ).nativeElement;
+      const tags = [...root.querySelectorAll('[data-sk-matrix] [data-sk-row] [data-sk-head-tag]')].map(textOf);
+
+      expect(tags.length).toBeGreaterThan(0);
+      expect(new Set(tags)).toEqual(new Set([LABELS.editNew, LABELS.editOld]));
+    });
+
     it('keeps few states in one block', async () => {
       const root: HTMLElement = (await render({ rows: manyOf(5, 40), camera: 'fit' })).nativeElement;
       const few: HTMLElement = (await render({ rows: manyOf(3, 100), camera: 'fit' })).nativeElement;

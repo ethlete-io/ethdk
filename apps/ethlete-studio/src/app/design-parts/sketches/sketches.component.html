@@ -158,7 +158,7 @@
                       <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
                     } @else {
                       <span
-                        class="inline-flex items-center rounded-full px-1 py-0.5 text-ui-xs font-ui-medium whitespace-nowrap text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                        class="inline-flex max-w-full items-center truncate rounded-full px-1 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
                         data-sk-head-tag
                         >{{ SHORT_LABEL_OF(row.label ?? (row.key === CURRENT ? LABELS.current : row.key)) }}</span
                       >
