@@ -807,6 +807,7 @@ export default definePart<Props>({
     'change-crop': { camera: 'fit', part: 'narrow', screen: 'crop' },
     'change-crop-whole': { camera: 'fit', part: 'narrow', screen: 'whole' },
     'many-states-wrap': { camera: 'fit', part: 'many' },
+    'farn-page': { camera: { zoom: 0.6, x: 0, y: 0 }, part: 'many' },
     'multi-part': { camera: 'fit', part: 'narrow', multi: 'three' },
     'multi-part-many': { camera: 'fit', part: 'narrow', multi: 'many' },
     comments: { camera: 'fit', part: 'narrow', comments: 'listed' },
@@ -882,6 +883,8 @@ export default definePart<Props>({
       'A round showing a cropped screen; check the Runde 2 · Port nach dem Merge picker and the cropped cells.',
     'change-crop-whole':
       'The same round showing the whole screen; check that the full frame fits each cell without cutting it.',
+    'farn-page':
+      'The whole Farn sample shop page in the first state frame; check the bar, the featured plant and the four cards fit without clipping.',
     'many-states-wrap':
       'A part with 30 wide states in a 1100 px list; check that Einpassen stops at frames 160 px wide, shows the states in one block in state order with the full variant heads and Übernehmen, and the list scrolls to the rest.',
     'multi-part': 'A sketch over three parts; check that each part shows its own block of state rows with its name.',
@@ -909,6 +912,7 @@ export default definePart<Props>({
         'narrow-wide-state',
         'sticky-names',
         'many-states-wrap',
+        'farn-page',
         'multi-part',
         'multi-part-many',
       ],

@@ -7,7 +7,6 @@ import { canvasFrame, canvasFrameStyles, canvasView, fitTransform, stateGrid } f
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
-import { samplePage } from '../../../../../apps/ethlete-studio/src/app/design-harness/sample-product';
 import { manyStatesView, stepperGrid } from './shared/many-states';
 import { FOLDED_SAMPLE, foldedStatesPill } from './shared/folded-states';
 import disclosureStyles from '@system/components/disclosure.css?inline';
@@ -310,7 +309,6 @@ export default definePart<{
   noted?: boolean;
   noteHint?: string;
   manyStates?: boolean;
-  farnPage?: boolean;
   folded?: boolean;
   nothingOpen?: boolean;
   closed?: boolean;
@@ -335,7 +333,7 @@ export default definePart<{
   groups: [
     {
       label: 'Übersicht',
-      states: ['part', 'many-states', 'farn-page', 'many-states-folded', 'fit', 'points-closed', 'nothing-open'],
+      states: ['part', 'many-states', 'many-states-folded', 'fit', 'points-closed', 'nothing-open'],
     },
     {
       label: 'Leer und Hinweise',
@@ -380,7 +378,6 @@ export default definePart<{
     'listing-error': { listingError: true },
     'canvas-note': { noted: true, noteHint: CANVAS_NOTE },
     'many-states': { manyStates: true },
-    'farn-page': { farnPage: true },
     'many-states-folded': { closed: true, comments: true, folded: true },
     fit: { fit: true },
     'points-closed': { closed: true },
@@ -429,8 +426,6 @@ export default definePart<{
     'canvas-note':
       'A note instead of a part; check the card with its icon, title and the hint, and that no chip or comment button shows.',
     'many-states': 'A part with many states; check that only the states with an open comment open and the rest fold.',
-    'farn-page':
-      'The whole Farn sample shop page at the frame width; check the bar, the featured plant and the four cards fit without clipping.',
     'many-states-folded':
       'The folded states; check the pill at the bottom centre with the count and Alle Zustände zeigen.',
     fit: 'The canvas fitted to its frame; check that the frame sits centred with room at the top.',
@@ -488,7 +483,6 @@ export default definePart<{
     noted,
     noteHint = '',
     manyStates,
-    farnPage,
     folded = false,
     nothingOpen: clear,
     closed,
@@ -521,10 +515,6 @@ export default definePart<{
         setup: menu.setup,
         styles: shell.styles + menu.styles + tree.styles + canvasFrameStyles + view.styles,
       });
-    }
-
-    if (farnPage) {
-      return drawing({ body: samplePage('1', true), styles: '' });
     }
 
     if (manyStates) {
