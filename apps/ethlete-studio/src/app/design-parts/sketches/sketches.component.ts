@@ -415,7 +415,9 @@ export class SketchesComponent {
   protected foldLabel = computed(() => {
     const count = this.foldedStates().size;
 
-    if (this.pendingStates().size === 0) return this.LABELS.foldedStates(count);
+    if (this.pendingStates().size === 0) {
+      return this.statesOpen() ? this.LABELS.openStates(count) : this.LABELS.foldedStates(count);
+    }
 
     return this.listError() ? this.LABELS.pendingFailed(count) : this.LABELS.pendingStates(count);
   });

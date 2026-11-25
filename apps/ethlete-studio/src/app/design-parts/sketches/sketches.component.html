@@ -273,7 +273,7 @@
                 <span class="text-ui-sm text-et-surface-muted">{{ foldLabel() }}</span>
                 <ethlete-disclosure
                   [(open)]="statesOpen"
-                  [label]="LABELS.showAllStates"
+                  [label]="statesOpen() ? LABELS.hideStates : LABELS.showAllStates"
                   (openChange)="showListTop()"
                   hug
                   size="xs"

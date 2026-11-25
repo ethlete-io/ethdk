@@ -45,6 +45,8 @@ export const SKETCHES_LABELS = {
   sameVariants: (names: string[]) => `Unverändert: ${names.map((name) => name.replace(/ /g, '\u00A0')).join(', ')}`,
   foldedStates: (count: number) =>
     count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`,
+  openStates: (count: number) =>
+    count === 1 ? '1 unveränderter Zustand ausgeklappt' : `${count} unveränderte Zustände ausgeklappt`,
   pendingStates: (count: number) => (count === 1 ? 'vergleicht 1 Zustand …' : `vergleicht ${count} Zustände …`),
   pendingFailed: (count: number) =>
     count === 1 ? 'Vergleich von 1 Zustand fehlgeschlagen' : `Vergleich von ${count} Zuständen fehlgeschlagen`,
@@ -52,6 +54,7 @@ export const SKETCHES_LABELS = {
   foldedToRest: '= rest',
   missingInVariant: 'fehlt in dieser Variante',
   showAllStates: 'Alle Zustände zeigen',
+  hideStates: 'Zustände einklappen',
   wholeScreen: 'Ganzer Screen',
   cropScreen: 'Ausschnitt',
   sameCrop: (count: number) => `${count} Zustände, gleicher Ausschnitt`,

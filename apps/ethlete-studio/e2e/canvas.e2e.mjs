@@ -3102,6 +3102,57 @@ const CASES = [
     },
   },
   {
+    name: 'the fold bar and its button name the open state after showing all states (B740)',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const bar = page.locator('[data-sk-folded]').first();
+      const button = bar.getByRole('button').first();
+      const canvas = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+      const read = async () => ({
+        text: ((await bar.locator('.text-ui-sm').first().textContent()) ?? '').replace(/\s+/gu, ' ').trim(),
+        button: ((await button.textContent()) ?? '').replace(/\s+/gu, ' ').trim(),
+      });
+
+      await button.waitFor({ timeout: FULL_COMPARE_MS });
+      for (let wheel = 0; wheel < 20; wheel++) {
+        const box = await button.boundingBox();
+
+        if (box && box.y > canvas.y && box.y + box.height < canvas.y + canvas.height - 80) break;
+        await wheelCanvas(page, 300);
+        await settle(page);
+      }
+
+      const before = await read();
+      const box = await button.boundingBox();
+
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+
+      const after = await read();
+      const count = /^(\d+) unveränderte/u.exec(before.text)?.[1];
+
+      for (let wheel = 0; wheel < 40; wheel++) {
+        const barBox = await bar.boundingBox();
+
+        if (barBox && barBox.y > canvas.y + 100 && barBox.y + barBox.height < canvas.y + canvas.height - 100) break;
+        await wheelCanvas(page, barBox && barBox.y < canvas.y ? -300 : 300);
+        await settle(page);
+      }
+      await page.screenshot({ path: join(root, '.claude/handoffs/agent-results/b740c-open-label.png') });
+
+      return {
+        ok:
+          before.text.endsWith('eingeklappt') &&
+          before.button === 'Alle Zustände zeigen' &&
+          after.text.includes('ausgeklappt') &&
+          after.text.startsWith(count ?? '?') &&
+          after.button === 'Zustände einklappen',
+        detail: `before "${before.text}" / "${before.button}", after "${after.text}" / "${after.button}"`,
+      };
+    },
+  },
+  {
     name: 'every live sketch frame sits at 0/0, fills its cell and paints its picture',
     pages: ['Sketches'],
     labels: ['Large'],
