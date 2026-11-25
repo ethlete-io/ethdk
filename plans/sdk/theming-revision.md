@@ -169,7 +169,7 @@ Stellen, die SDK-Apps an etwa 770, fifagg an 1; Auto-Migration im selben Durchga
 Kein neuer Token-Name hat je ein Kanal-Tripel bedeutet; damit entfällt der Spike „welcher Name
 überlebt“ aus Schritt 1.
 
-**Direktiven (Vorschlag vom 26.11., Bestätigung durch Tom offen):** Eine App kennt danach zwei.
+**Direktiven (Tom, 26.11.: „ja das passt“):** Eine App kennt danach zwei.
 
 | Heute                                                                   | Danach                                                                                                                             | Vorkommen ✔ (ohne Specs)                          |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
@@ -182,6 +182,25 @@ Kein neuer Token-Name hat je ein Kanal-Tripel bedeutet; damit entfällt der Spik
 Vom Builder vor dem Umbau zu belegen: `etAutoSurface` bindet `ProvideSurfaceDirective` schon als
 Host-Direktive ✔ und hat einen Input `surfaceProvider`; ob beide ohne Verhaltensänderung in einer
 Direktive aufgehen, zeigt die bestehende Spec-Suite.
+
+**Interne `…Interactive`-Direktiven (Vorschlag vom 26.11., Bestätigung durch Tom offen): das
+Muster entfällt ganz (S10).** Heute hängt eine Direktive eine Klasse an, und ein globales Sheet
+tauscht je Zustand den **Wert** von `--et-theme-color-primary-*` auf dem Element ✔. Die Komponente
+schreibt `background: var(…-solid)` einmal und bekommt Hover und Gedrückt geschenkt. Der Preis:
+der Zustand steckt in einer vererbenden Variable und läuft in alle Nachfahren. Zwei ausgelieferte
+Fehler sind in den Kommentaren der Direktiven dokumentiert ✔, und drei Hilfs-Direktiven
+(`Container`, `Exclude`, `HasFocus`) existieren nur, um dieses Auslaufen zu flicken ✔.
+
+Danach: Der Zustand steht dort, wo er gemalt wird. Das Theme liefert jeden Zustand unter eigenem
+Namen (`--et-tone-fill`, `--et-tone-fill-hover`, `--et-tone-fill-active` …), der Generator löst
+die Rückfälle (kein Hover-Wert → Grundwert) einmal auf, statt sie in bis zu sechsfach
+verschachtelten `var()`-Ketten im Sheet zu tragen ✔. Die Komponente schreibt
+`&:hover { background: var(--et-tone-fill-hover); }`. Das sind etwa drei Zeilen je Komponente
+(22 Nutzer von `etColorInteractive`, 2 Container, 4 Exclude, 1 HasFocus), dafür entfallen vier
+Direktiven, 147 Zeilen Sheet und die Fehlerklasse. Label-Hover (Container) und Fokus im Rahmen
+(HasFocus) werden gewöhnliche Selektoren im CSS der Komponente. Werte bleiben gleich; das ist
+kein Eingriff in die Rampe (Umfang). Vom Builder zu belegen: jedes Theme liefert alle Zustände,
+auch zur Laufzeit gesetzte Farben („Offering colors to a user“).
 
 Was daraus folgt:
 
@@ -357,3 +376,4 @@ Entschieden:
   Wortliste S9, jeder Name in einem Satz erklärbar.
 - (26.11., Tom) Das Konzept „Color“ heißt künftig `tone` („ja tone ist gut“). `accent` verworfen
   (Material-Assoziation primary vs. accent). Flächen-Textfarbe wird `--et-surface-text`.
+- (26.11., Tom) Direktiven für Apps: `etSurface` und `etTone`; der Rest intern oder gestrichen.
