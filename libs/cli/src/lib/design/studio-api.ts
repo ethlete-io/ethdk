@@ -4,7 +4,15 @@ import { IncomingMessage } from 'http';
 import { relative } from 'path';
 import { journaledAsync } from './system/write-journal';
 import { MERGE_WAIT_MS } from './system/sketch/merge-step';
-import { approveSubSketch, openSubSketches, pickOpensSubSketches } from './system/sketch/sub-sketches';
+import {
+  approveSubSketch,
+  openSubSketches,
+  pickOpensSubSketches,
+  subSketchChangeOf,
+  subSketchDiscardRefusalOf,
+  subSketchesOf,
+  unapprovedSubSketchesRefusalOf,
+} from './system/sketch/sub-sketches';
 import { fromEvent, take } from 'rxjs';
 import { setImmediate } from 'timers/promises';
 import { repoInvocation } from '../invocation';
@@ -547,6 +555,7 @@ const listingOf = async ({
 
     return {
       ...sketchOf({ sketch, target }),
+      ...(sketch.subSketches?.length ? { openSubSketches: subSketchesOf({ product, sketch }).open } : {}),
       ...(isEditSketch(sketch) ? { variantInfo: editVariantInfoOf({ product, sketch, targets }) } : {}),
       staleBase: sketch.decision?.kind === 'discard' ? null : staleBaseOf({ product, sketch }),
       rebaseUncommitted: rebaseUncommitted.get(sketch.dir) ?? null,
@@ -758,6 +767,16 @@ const mergeAnswerOf = async (options: {
   pick?: Extract<SketchDecisionInput, { kind: 'pick' }>;
 }) => {
   const { asked, product, sketch, note, pick } = options;
+  const waiting = unapprovedSubSketchesRefusalOf({ product, sketch });
+
+  if (waiting !== null)
+    return refusal({
+      status: 422,
+      reason: 'sub-sketches-open',
+      message: waiting,
+      extra: { findings: subSketchesOf({ product, sketch }).open },
+    });
+
   const refused = mergeRefusalOf({
     product,
     sketch: pick ? { ...sketch, decision: { ...pick, decidedAt: new Date().toISOString() } } : sketch,
@@ -811,8 +830,10 @@ const userNameOf = (dir: string) => {
  * POST `?product=&sketch=`, body `{ kind: 'pick', variant, comment? }`, `{ kind: 'discard', comment? }`, or a verdict
  * by the designer on one variant: `{ kind: 'reject' | 'reopen', variant, reason? }` or `{ kind: 'reason', variant, reason }`.
  * A pick merges the variant at once and answers as `sketch-merge` does; a refused merge leaves no pick. A pick of a variant
- * that marks sub-parts opens one sketch per sub-part instead and answers `{ merged: [], subSketches }`; the same pick again
- * merges the parent with its sub-sketches once each is approved. The others are
+ * that marks sub-parts opens one sketch per sub-part instead and answers `{ merged: [], subSketches, discarded }`; the same
+ * pick again merges the parent with its sub-sketches once each is approved, or answers 422 with reason `sub-sketches-open`
+ * and the open ones as `findings`. A pick of another variant that would discard sub-sketches answers 409 with reason
+ * `discards-sub-sketches` unless the body has `discardSubSketches: true`. The others are
  * written into sketch.json.
  */
 export const sketchDecisionAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
@@ -836,14 +857,26 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, product, 
         : { kind, variant, reason: reason ?? '', by: 'designer' };
 
   if (decision.kind === 'pick' && pickOpensSubSketches(sketch, variant)) {
+    const unconfirmed = body?.['discardSubSketches'] === true ? null : subSketchDiscardRefusalOf(sketch, variant);
+
+    if (unconfirmed)
+      return refusal({
+        status: 409,
+        reason: 'discards-sub-sketches',
+        message: unconfirmed,
+        extra: { findings: subSketchChangeOf(sketch, variant).discards },
+      });
+
     const opened = await journaledAsync(
       { productDir: product.dir, root: asked.target, label: `pick of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
-      () => openSubSketches({ product, sketch, pick: decision }),
+      () => openSubSketches({ checkout: asked.target, product, sketch, pick: decision, discardSubSketches: true }),
     );
 
-    return typeof opened === 'string'
-      ? failure(422, opened)
-      : { status: 200, body: { merged: [], subSketches: opened.subSketches } };
+    if (typeof opened === 'string') return failure(422, opened);
+    if (opened.subSketches.length === 0)
+      return mergeAnswerOf({ asked, product, sketch: opened.sketch, pick: decision });
+
+    return { status: 200, body: { merged: [], subSketches: opened.subSketches, discarded: opened.discarded } };
   }
 
   if (decision.kind === 'pick') return mergeAnswerOf({ asked, product, sketch, pick: decision });

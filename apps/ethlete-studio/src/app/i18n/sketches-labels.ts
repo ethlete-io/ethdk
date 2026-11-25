@@ -28,6 +28,14 @@ export const SKETCHES_LABELS = {
     note: 'Die übrigen Varianten der Skizze gehen verloren.',
     confirm: 'Übernehmen',
   },
+  repickConfirm: {
+    label: 'Wahl ändern',
+    question: (variant: string, part: string) => `${variant} in ${part} statt der bisherigen Wahl übernehmen?`,
+    note: 'Die verworfenen Unterteil-Skizzen gehen verloren, auch freigegebene.',
+    confirm: 'Wahl ändern',
+    discards: 'Verwirft',
+    keeps: 'Behält',
+  },
   approveConfirm: {
     label: 'Variante freigeben',
     question: (variant: string, part: string) => `${variant} in ${part} freigeben?`,
@@ -76,10 +84,12 @@ export const SKETCHES_LABELS = {
   drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',
   mergePort: (merged: readonly string[]) => `Agent portiert nach Merge von ${merged.join(', ')}`,
   autoMerge: 'Übernimmt sich selbst',
+  waitsOnSubSketches: (open: readonly string[]) => `Wartet auf Freigabe: ${open.join(', ')}`,
   status: {
     drawing: 'zeichnet',
     waiting: 'Wartet auf deine Wahl',
     awaitingApproval: 'Wartet auf Freigabe',
+    awaitingSubParts: 'Wartet auf Freigabe der Unterteile',
     approved: 'Freigegeben',
     paused: 'Pausiert',
     failed: 'Render fehlgeschlagen',

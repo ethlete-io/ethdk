@@ -45,6 +45,7 @@ export class SketchHeadComponent {
   public autoMerge = input(false);
   public subSketch = input(false);
   public approved = input(false);
+  public subSketchesOpen = input(false);
   public error = input<string | null>(null);
   public commentable = input(false);
   public discardable = input(true);
@@ -78,6 +79,7 @@ export class SketchHeadComponent {
 
   protected waitingBadge = computed(() => {
     if (this.busy()) return 'merging';
+    if (this.subSketchesOpen()) return 'awaitingSubParts';
     if (!this.subSketch()) return 'waiting';
 
     return this.approved() ? 'approved' : 'awaitingApproval';

@@ -151,7 +151,7 @@ export const SKETCH_USAGE = [
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> [--ported <variant>] --by <model id> [--product <name>]',
   'sketch rebase-open --commit <rev> [--product <name>] [--json]',
-  'sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
+  'sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> [--discard-sub-sketches] --by <model id> [--product <name>]',
   'sketch approve <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <role>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
@@ -200,6 +200,8 @@ const FLAG_HELP: Record<string, string> = {
   '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
   '--json': 'print JSON',
   '--remove': 'on sub-part: drop the mark of each named part',
+  '--discard-sub-sketches':
+    'on pick of another variant than the picked one: confirm that the sub-sketches the new variant does not mark are discarded',
   '--not-rebuild-of':
     'on sub-part: the existing part (<holder>:<name>, e.g. sdk:slider) the one named sub-part, or the target for markup it draws inline, is not a rebuild of; <difference> states what it is that the existing part is not',
   '--fix': "write the variants in the checkout's Prettier format first",
@@ -2197,27 +2199,12 @@ const picked = (context: Context) =>
 
     const pick = { kind: 'pick' as const, variant, comment: words, ...originOf('designer') };
 
-    if (pickOpensSubSketches(sketch, variant)) {
-      const opened = journaled(
-        { productDir: product.dir, root: context.target, label: `pick of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
-        () => openSubSketches({ product, sketch, pick }),
-      );
-
-      if (typeof opened === 'string') return fail(opened);
-
-      console.log(
-        `picked ${sketch.target} variant ${opened.variant}; its sub-parts are open as sketches: ${opened.subSketches.join(', ')}`,
-      );
-
-      return 0;
-    }
-
-    const pickNow = async () => {
+    const pickNow = async (picking: Sketch) => {
       const afterMerge = await embedderCheckAroundMerge({
         target: context.target,
         config: context.config,
         product,
-        sketch,
+        sketch: picking,
         variant,
       });
       const result = timedPhase('merge', () =>
@@ -2225,7 +2212,7 @@ const picked = (context: Context) =>
           target: context.target,
           config: context.config,
           product,
-          sketch,
+          sketch: picking,
           by: authorOf(context.args) ?? undefined,
           pick,
         }),
@@ -2235,14 +2222,38 @@ const picked = (context: Context) =>
 
       await afterMerge();
       console.log(
-        `picked and merged ${sketch.target} variant ${result.variant} into ${product.name}: ${result.parts.join(', ')}`,
+        `picked and merged ${picking.target} variant ${result.variant} into ${product.name}: ${result.parts.join(', ')}`,
       );
       await printPortItems({ target: context.target, config: context.config, product, parts: result.parts });
 
       return 0;
     };
 
-    return pickNow();
+    if (!pickOpensSubSketches(sketch, variant)) return pickNow(sketch);
+
+    const opened = journaled(
+      { productDir: product.dir, root: context.target, label: `pick of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
+      () =>
+        openSubSketches({
+          checkout: context.target,
+          product,
+          sketch,
+          pick,
+          discardSubSketches: context.args.flags.has('--discard-sub-sketches'),
+        }),
+    );
+
+    if (typeof opened === 'string') return fail(opened);
+    if (opened.discarded.length > 0) console.log(`discarded the sub-sketches ${opened.discarded.join(', ')}`);
+    if (opened.discarded.length > 0 && opened.kept.length > 0)
+      console.log(`kept the sub-sketches ${opened.kept.join(', ')}`);
+    if (opened.subSketches.length === 0) return pickNow(opened.sketch);
+
+    console.log(
+      `picked ${sketch.target} variant ${opened.variant}; its sub-parts are open as sketches: ${opened.subSketches.join(', ')}`,
+    );
+
+    return 0;
   });
 
 const approvedSub = (context: Context) =>

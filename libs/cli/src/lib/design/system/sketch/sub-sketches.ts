@@ -1,15 +1,18 @@
 import { existsSync, readFileSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
+import { addressSketchComments, resolveSketchEndComments } from '../comments/comment';
 import { productSharedDirsOf, SHARED_FOLDER, sharedFileOf } from '../imports';
 import { ResolvedProduct } from '../resolve-product';
 import { sketchSharedFilesOf } from './merge-shared';
 import {
+  clearSketchReport,
   createSketch,
   decideSketch,
   findSketch,
   parseTarget,
   rejectedProblemOf,
+  removeSketchDir,
   Sketch,
   SketchApproval,
   SketchDecisionInput,
@@ -26,28 +29,71 @@ export const subPartsOfPick = (sketch: Sketch, variant: string) => sketch.varian
 const SUB_SKETCH_VARIANT = 'a';
 
 /**
+ * What a pick of `variant` does to the sub-sketches an earlier pick of another variant opened: `discards` those the
+ * variant does not mark, approved ones too, `keeps` those it marks again, and `opens` its marks without one.
+ */
+export const subSketchChangeOf = (sketch: Sketch, variant: string) => {
+  const open = sketch.subSketches ?? [];
+  const marks = subPartsOfPick(sketch, variant);
+
+  return {
+    discards: open.filter((key) => !marks.includes(key)),
+    keeps: open.filter((key) => marks.includes(key)),
+    opens: marks.filter((key) => !open.includes(key)),
+  };
+};
+
+/** Why a pick of `variant` may not discard sub-sketches without the designer's confirmation, or `null`. */
+export const subSketchDiscardRefusalOf = (sketch: Sketch, variant: string) => {
+  const { discards, keeps } = subSketchChangeOf(sketch, variant);
+
+  return discards.length > 0
+    ? `a pick of ${sketch.target} variant ${variant} discards the sub-sketches ${discards.join(', ')}${keeps.length > 0 ? ` and keeps ${keeps.join(', ')}` : ''} - pick again with --discard-sub-sketches to confirm`
+    : null;
+};
+
+const closeSubSketch = (options: { checkout: string; product: ResolvedProduct; key: string; parent: string }) => {
+  const parsed = parseTarget(options.key);
+  const sub =
+    typeof parsed === 'string'
+      ? null
+      : findSketch({ productDir: options.product.dir, product: options.product.name, sketch: parsed });
+
+  if (sub === null || typeof sub === 'string') return;
+
+  resolveSketchEndComments({ sketch: sub, note: `resolved by the new pick of ${options.parent}` });
+  addressSketchComments({ sketch: sub, reason: 'discard' });
+  removeSketchDir(sub.dir);
+  clearSketchReport({ checkout: options.checkout, sketch: sub });
+};
+
+/**
  * Records the pick of a variant that marks sub-parts and opens one sketch per sub-part, with one variant seeded from
  * the picked variant's part folder and `parent` naming `sketch`; `sketch` records them in `subSketches` and stays
- * unmerged. Answers why not before any write. Run it inside a journal: a throw after the first write undoes them all.
+ * unmerged. A pick of another variant than the picked one closes the sub-sketches it does not mark (only with
+ * `discardSubSketches`), keeps those it marks again and opens the rest. Answers why not before any write. Run it inside
+ * a journal: a throw after the first write undoes them all.
  */
 export const openSubSketches = (options: {
+  checkout: string;
   product: ResolvedProduct;
   sketch: Sketch;
   pick: Extract<SketchDecisionInput, { kind: 'pick' }>;
-}): { variant: string; subSketches: string[] } | string => {
+  discardSubSketches?: boolean;
+}): { variant: string; subSketches: string[]; discarded: string[]; kept: string[]; sketch: Sketch } | string => {
   const { product, sketch, pick } = options;
   const { variant } = pick;
+  const picked = sketch.decision?.kind === 'pick' ? sketch.decision.variant : null;
   const open = sketch.subSketches ?? [];
 
-  if (open.length > 0) {
-    const picked = sketch.decision?.kind === 'pick' ? sketch.decision.variant : null;
+  if (open.length > 0 && picked === variant) return { variant, subSketches: open, discarded: [], kept: open, sketch };
 
-    return picked === variant
-      ? { variant, subSketches: open }
-      : `${sketch.target} was picked as variant ${picked} and has the sub-sketches ${open.join(', ')} - a new pick would discard them, which is not possible yet`;
-  }
+  const { discards, keeps, opens } = subSketchChangeOf(sketch, variant);
+  const unconfirmed = options.discardSubSketches ? null : subSketchDiscardRefusalOf(sketch, variant);
 
-  const parts = subPartsOfPick(sketch, variant).map((key) => ({ key, parsed: parseTarget(key) }));
+  if (unconfirmed) return unconfirmed;
+
+  const parts = opens.map((key) => ({ key, parsed: parseTarget(key) }));
   const sources = parts.map(({ key, parsed }) => {
     if (typeof parsed === 'string') return `${sketch.target} variant ${variant} marks ${key}: ${parsed}`;
 
@@ -67,9 +113,11 @@ export const openSubSketches = (options: {
 
   if (typeof decided === 'string') return decided;
 
+  for (const key of discards) closeSubSketch({ checkout: options.checkout, product, key, parent: sketch.target });
+
   const shared = existsSync(sharedDirOf(sketch)) ? sharedDirOf(sketch) : null;
   const author = sketch.variantInfo[variant]?.authors?.[0];
-  const subSketches = (sources as { target: SketchTarget; folder: string }[]).map(({ target, folder }) => {
+  const opened = (sources as { target: SketchTarget; folder: string }[]).map(({ target, folder }) => {
     const created = createSketch({
       product,
       sketch: target,
@@ -84,10 +132,12 @@ export const openSubSketches = (options: {
 
     return created.target;
   });
+  const subSketches = [...keeps, ...opened];
+  const next: Sketch = { ...decided, subSketches };
 
-  writeSketchFile({ ...decided, subSketches }, { base: decided, sets: ['subSketches'] });
+  writeSketchFile(next, { base: decided, sets: ['subSketches'] });
 
-  return { variant, subSketches };
+  return { variant, subSketches, discarded: discards, kept: keeps, sketch: next };
 };
 
 /** Whether a pick of `variant` opens sub-sketches, or meets those another variant's pick opened, instead of merging. */
@@ -223,7 +273,8 @@ export const approveSubSketch = (options: {
 
   if (!sketch.parent)
     return `${sketch.target} is not a sub-sketch - only a sketch a parent's pick opened is approved; pick and merge it instead`;
-  if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - a variant is approved once it is ready`;
+  if (sketch.status !== 'ready')
+    return `${sketch.target} is ${sketch.status} - mark it ready first (design sketch ready ${sketch.target}), then approve a variant`;
   if (!sketch.variants.includes(variant))
     return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
 

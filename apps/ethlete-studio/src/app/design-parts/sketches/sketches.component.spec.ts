@@ -537,6 +537,35 @@ describe('SketchesComponent', () => {
     expect(merged).toEqual(['x']);
   });
 
+  it('lists the sub-sketches a pick of another variant discards and keeps before it emits merge', async () => {
+    const fixture = await render({
+      part: 'components/zoom-chip',
+      repicks: { x: { discards: ['components/zoom-hint'], keeps: ['components/zoom-dots'] } },
+    });
+    const merged: string[] = [];
+
+    fixture.componentInstance.merge.subscribe((variant) => merged.push(variant));
+    [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')]
+      .find((button) => textOf(button) === LABELS.merge)
+      ?.click();
+    await fixture.whenStable();
+
+    const dialog = [...document.querySelectorAll<HTMLElement>('[role="alertdialog"]')].at(-1);
+    const lists = [...(dialog?.querySelectorAll('[data-sk-confirm-list]') ?? [])].map((list) =>
+      [...list.querySelectorAll('span')].map(textOf),
+    );
+
+    expect(textOf(dialog)).toContain(LABELS.repickConfirm.note);
+    expect(lists).toEqual([
+      [LABELS.repickConfirm.discards, 'components/zoom-hint'],
+      [LABELS.repickConfirm.keeps, 'components/zoom-dots'],
+    ]);
+
+    [...document.querySelectorAll<HTMLElement>('[data-sk-confirm]')].at(-1)?.click();
+    await fixture.whenStable();
+    expect(merged).toEqual(['x']);
+  });
+
   it('opens the confirm a bound confirm names and clears it once the dialog closes', async () => {
     const fixture = await render({ part: 'components/card', confirm: 'discard' });
     const dialog = [...document.querySelectorAll<HTMLElement>('[role="alertdialog"]')].at(-1);

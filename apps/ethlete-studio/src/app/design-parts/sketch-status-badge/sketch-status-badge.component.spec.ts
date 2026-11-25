@@ -34,6 +34,7 @@ describe('SketchStatusBadgeComponent', () => {
       'drawing',
       'waiting',
       'awaitingApproval',
+      'awaitingSubParts',
       'approved',
       'paused',
       'failed',

@@ -139,6 +139,27 @@ describe('PartTreeComponent', () => {
     expect(withTooltip(approved, TREE_ROW_LABELS.sketchReady)).toBeNull();
   });
 
+  it('titles a sub-sketch row that waits on its approval Wartet auf Freigabe, not Entwurf fertig', async () => {
+    const element = (
+      await render([], {
+        sketches: {
+          open: true,
+          items: [
+            {
+              part: 'studio-menu',
+              status: 'in-progress',
+              nested: [{ name: 'about-dialog', status: 'awaiting-approval' }],
+            },
+          ],
+        },
+      })
+    ).nativeElement as HTMLElement;
+    const [, , waiting] = rowsOf(element);
+
+    expect(withTooltip(waiting, TREE_ROW_LABELS.sketchAwaitingApproval)).not.toBeNull();
+    expect(withTooltip(waiting, TREE_ROW_LABELS.sketchReady)).toBeNull();
+  });
+
   it('shows a part hint as the tooltip of the full name and draws no tag', async () => {
     const element = (
       await render([

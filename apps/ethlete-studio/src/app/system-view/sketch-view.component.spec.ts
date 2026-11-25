@@ -6,7 +6,7 @@ import { SKETCHES_LABELS, MERGE_LABELS } from '../i18n/sketches-labels';
 import { SYSTEM_LABELS } from '../i18n/system-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
-import { SketchViewComponent, frameFitsCell, liveShotsOf, nearShotsOf } from './sketch-view.component';
+import { repicksOf, SketchViewComponent, frameFitsCell, liveShotsOf, nearShotsOf } from './sketch-view.component';
 import { undecidedShotsOf } from './undecided-shots';
 
 const PRODUCT: ListedProduct = { name: 'web', base: null, presets: {}, parts: [], problems: [] };
@@ -824,6 +824,59 @@ describe('SketchViewComponent', () => {
 
     expect(completed).toEqual([]);
     expect(decided).toBe(1);
+  });
+
+  it('names the open sub-sketches in German when the parent pick waits on them', async () => {
+    const { fixture, root } = await render(SKETCH, (url) =>
+      url.includes('/__design/sketch-decision')
+        ? Promise.resolve(
+            new Response(
+              JSON.stringify({
+                error: 'components/card waits on its sub-sketches components/card-badge - approve each',
+                reason: 'sub-sketches-open',
+                findings: ['components/card-badge'],
+              }),
+              { status: 422 },
+            ),
+          )
+        : noComments(url),
+    );
+
+    await confirmed(mergeButtons(root)[0], fixture);
+    await settle(fixture);
+
+    expect(root.querySelector('[data-sk-merge-error]')?.textContent?.trim()).toBe(
+      'Wartet auf Freigabe: components/card-badge',
+    );
+  });
+
+  it('sends the discard confirmation on a pick of another variant and lists what it discards and keeps', async () => {
+    const bodies: unknown[] = [];
+    const parent: ListedSketch = {
+      ...SKETCH,
+      decision: { kind: 'pick', variant: 'a', decidedAt: '2026-11-25T10:00:00Z' },
+      subSketches: ['components/card-badge', 'components/card-dots'],
+      variantInfo: { b: { subParts: ['components/card-dots'] } },
+    };
+
+    expect(repicksOf(parent)).toEqual({
+      b: { discards: ['components/card-badge'], keeps: ['components/card-dots'] },
+    });
+
+    const { fixture } = await render(parent, (url, init) => {
+      if (url.includes('/__design/sketch-decision')) {
+        bodies.push(JSON.parse(String(init?.body)));
+
+        return json({ merged: [], subSketches: ['components/card-dots'] });
+      }
+
+      return noComments(url);
+    });
+
+    fixture.componentInstance['merge']('b');
+    await settle(fixture);
+
+    expect(bodies).toEqual([{ kind: 'pick', variant: 'b', discardSubSketches: true }]);
   });
 
   it('ignores a second merge while one runs', async () => {

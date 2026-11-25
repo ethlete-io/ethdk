@@ -21,6 +21,7 @@ const OPUS = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' as cons
     [status]="status()"
     [subSketch]="subSketch()"
     [approved]="approved()"
+    [subSketchesOpen]="subSketchesOpen()"
     [readyReason]="readyReason()"
     [discardable]="discardable()"
     [listError]="listError()"
@@ -39,6 +40,7 @@ class HostComponent {
   status = signal<SketchStatus>('waiting');
   subSketch = signal(false);
   approved = signal(false);
+  subSketchesOpen = signal(false);
   readyReason = signal<string | null>(null);
   discardable = signal(true);
   listError = signal(true);
@@ -85,6 +87,17 @@ describe('SketchHeadComponent', () => {
     await fixture.whenStable();
 
     expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(label);
+  });
+
+  it('names a parent whose sub-sketches are open Wartet auf Freigabe der Unterteile', async () => {
+    const { fixture, root, host } = await setup();
+
+    host.subSketchesOpen.set(true);
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
+      'Wartet auf Freigabe der Unterteile',
+    );
   });
 
   // The human decided Studio does not show the new or not-ready badges, the not-ready reason, the last

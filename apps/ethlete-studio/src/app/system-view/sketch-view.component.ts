@@ -40,6 +40,7 @@ import {
   ListedPart,
   ListedProduct,
   ListedSketch,
+  DesignRefusalError,
   MergeNeedsRebaseError,
   SketchAddress,
   discardSketch$,
@@ -60,6 +61,7 @@ import {
   SketchCommentPlace,
   SketchConfirm,
   SketchPin,
+  SketchRepick,
   SketchRow,
   SketchStatus,
   SketchWithdrawn,
@@ -233,6 +235,23 @@ const scrollOf = (data: unknown) =>
     ? { scrollY: data.y, ...('x' in data && typeof data.x === 'number' ? { scrollX: data.x } : {}) }
     : null;
 
+/** Per variant other than the picked one: the sub-sketches its pick would discard and keep, when it discards any. */
+export const repicksOf = (sketch: ListedSketch): Record<string, SketchRepick> => {
+  const open = sketch.subSketches ?? [];
+  const picked = sketch.decision?.kind === 'pick' ? sketch.decision.variant : null;
+
+  return Object.fromEntries(
+    sketch.variants.flatMap((variant) => {
+      const marks = sketch.variantInfo?.[variant]?.subParts ?? [];
+      const discards = open.filter((key) => !marks.includes(key));
+
+      return variant === picked || discards.length === 0
+        ? []
+        : [[variant, { discards, keeps: open.filter((key) => marks.includes(key)) }]];
+    }),
+  );
+};
+
 @Component({
   selector: 'ethlete-sketch-view',
   template: `
@@ -250,6 +269,8 @@ const scrollOf = (data: unknown) =>
       [merging]="busy() === 'merge'"
       [subSketch]="!!sketch().parent"
       [approved]="sketch().approved?.variant ?? null"
+      [subSketchesOpen]="(sketch().openSubSketches?.length ?? 0) > 0"
+      [repicks]="repicks()"
       [status]="sketchStatus()"
       [readyReason]="readyReason()"
       [hold]="held()"
@@ -829,6 +850,8 @@ export class SketchViewComponent {
     this.renderState().state === 'failed' ? SKETCHES_LABELS.agentRun.errors(this.renderState().errors) : null,
   );
 
+  protected repicks = computed(() => repicksOf(this.sketch()));
+
   protected sketchStatus = computed<SketchStatus>(() => {
     if (this.drawnVariant() !== null) return 'drawing';
     if (this.sketch().hold) return 'paused';
@@ -1098,13 +1121,17 @@ export class SketchViewComponent {
     this.mergeError.set(null);
     this.run(
       'merge',
-      pickSketch$(address, variant).pipe(
+      pickSketch$(address, { variant, discardSubSketches: variant in this.repicks() }).pipe(
         tap(({ subSketches }) => {
           if (subSketches.length === 0) this.mergeComplete.emit(address.sketch);
         }),
         catchError((error: unknown) => {
           this.mergeError.set(
-            error instanceof MergeNeedsRebaseError ? MERGE_LABELS.needsRebase(error.changed) : refusalMessageOf(error),
+            error instanceof MergeNeedsRebaseError
+              ? MERGE_LABELS.needsRebase(error.changed)
+              : error instanceof DesignRefusalError && error.reason === 'sub-sketches-open'
+                ? SKETCHES_LABELS.waitsOnSubSketches(error.findings)
+                : refusalMessageOf(error),
           );
 
           return of(null);

@@ -3,7 +3,7 @@ import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
 export type SketchBadgeStatus =
-  'drawing' | 'waiting' | 'paused' | 'failed' | 'merging' | 'awaitingApproval' | 'approved';
+  'drawing' | 'waiting' | 'paused' | 'failed' | 'merging' | 'awaitingApproval' | 'awaitingSubParts' | 'approved';
 
 const LABELS = SKETCHES_LABELS.status;
 
@@ -14,6 +14,7 @@ const DOT: Record<SketchBadgeStatus, string> = {
   failed: 'bg-(--et-theme-color-primary-solid)',
   merging: 'bg-(--et-theme-color-primary-solid) animate-pulse',
   awaitingApproval: 'bg-(--et-theme-color-primary-solid)',
+  awaitingSubParts: 'bg-(--et-theme-color-primary-solid)',
   approved: 'bg-(--et-theme-color-primary-solid)',
 };
 

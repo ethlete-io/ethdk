@@ -99,6 +99,7 @@ import {
   SketchCommentDraft,
   SketchCommentPlace,
   SketchConfirm,
+  SketchRepick,
   SketchHold,
   SketchMergePort,
   SketchPin,
@@ -256,6 +257,8 @@ export class SketchesComponent {
   public merging = input(false);
   public subSketch = input(false);
   public approved = input<string | null>(null);
+  public subSketchesOpen = input(false);
+  public repicks = input<Record<string, SketchRepick>>({});
   public status = input<SketchStatus>('waiting');
   public openPoints = input<OpenPointGroup[]>([]);
   public pointsClosed = model(true);
@@ -1033,16 +1036,27 @@ export class SketchesComponent {
     if (!kind || !target) return;
 
     const { origin, row } = target;
+    const repick = kind === 'merge' && row ? (this.repicks()[row.key] ?? null) : null;
     const { label, question, note, confirm } =
       kind === 'discard'
         ? this.LABELS.discardConfirm
         : this.subSketch()
           ? this.LABELS.approveConfirm
-          : this.LABELS.mergeConfirm;
+          : repick
+            ? this.LABELS.repickConfirm
+            : this.LABELS.mergeConfirm;
     const text: SketchConfirmText = {
       question: row ? question(row.label ?? this.LABELS.variant(row.key), this.part()) : question(this.part(), ''),
       note,
       confirm,
+      ...(repick
+        ? {
+            lists: [
+              { label: this.LABELS.repickConfirm.discards, items: repick.discards },
+              ...(repick.keeps.length > 0 ? [{ label: this.LABELS.repickConfirm.keeps, items: repick.keeps }] : []),
+            ],
+          }
+        : {}),
     };
     const ref = this.overlay.open(SketchConfirmComponent, {
       origin,
@@ -1052,7 +1066,7 @@ export class SketchesComponent {
       strategies: anchoredDialogOverlayStrategy(kind === 'merge' ? { placement: 'bottom-start' } : undefined),
       bindings: [
         inputBinding('text', () => text),
-        inputBinding('destructive', () => kind === 'discard'),
+        inputBinding('destructive', () => kind === 'discard' || repick !== null),
         outputBinding('confirm', () => {
           ref.close();
           if (row) this.merge.emit(row.key);

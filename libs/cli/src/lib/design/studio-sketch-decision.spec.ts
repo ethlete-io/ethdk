@@ -6,7 +6,7 @@ import { Readable } from 'stream';
 import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { designSketch } from './sketch-command';
-import { sketchApproveAnswer, sketchDecisionAnswer, sketchMergeAnswer } from './studio-api';
+import { sketchApproveAnswer, sketchDecisionAnswer, sketchesAnswer, sketchMergeAnswer } from './studio-api';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, findSketch, markSketchReady, parseTarget } from './system/sketch/sketch';
 
@@ -69,7 +69,48 @@ const withMarkedSlider = (sketchDir: string) => {
   );
 };
 
-const subSketchDirOf = (target: string) => join(target, DESIGN_DIR, 'acme/sketches/components-hero-slider');
+const subSketchDirOf = (target: string, name = 'hero-slider') =>
+  join(target, DESIGN_DIR, `acme/sketches/components-${name}`);
+
+const withTwoMarkedVariants = (sketchDir: string) => {
+  const file = join(sketchDir, 'sketch.json');
+  const sketch = JSON.parse(readFileSync(file, 'utf8')) as { variantInfo: Record<string, object> };
+  const marks = { a: ['hero-slider', 'hero-caption'], b: ['hero-slider', 'hero-dots', 'hero-badge'] };
+
+  for (const [variant, names] of Object.entries(marks))
+    for (const name of names) {
+      mkdirSync(join(sketchDir, variant, 'components', name), { recursive: true });
+      writeFileSync(
+        join(sketchDir, variant, 'components', name, `${name}.ts`),
+        SLIDER.replace('acme-hero-slider', `acme-${name}`),
+      );
+    }
+
+  writeFileSync(
+    file,
+    JSON.stringify({
+      ...sketch,
+      variantInfo: Object.fromEntries(
+        Object.entries(marks).map(([variant, names]) => [
+          variant,
+          { ...sketch.variantInfo[variant], subParts: names.map((name) => `components/${name}`) },
+        ]),
+      ),
+    }),
+  );
+};
+
+const markSubReady = (target: string, name: string) => {
+  const sub = findSketch({
+    productDir: join(target, DESIGN_DIR, 'acme'),
+    product: 'acme',
+    sketch: { layer: 'components', name },
+  });
+
+  if (sub === null || typeof sub === 'string') throw new Error(`no sub-sketch: ${sub}`);
+
+  markSketchReady({ checkout: target, sketch: sub });
+};
 
 const readJson = (file: string) => JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
 
@@ -81,11 +122,11 @@ const merge = (target: string, sketch = 'elements/hero') =>
     signal: new AbortController().signal,
   });
 
-const pick = (target: string, variant: string, sketch = 'elements/hero') =>
+const pick = (target: string, variant: string, sketch = 'elements/hero', extra: Record<string, unknown> = {}) =>
   sketchDecisionAnswer({
     target,
     url: new URL(`http://localhost/?product=acme&sketch=${sketch}`),
-    request: Object.assign(Readable.from([JSON.stringify({ kind: 'pick', variant })]), {
+    request: Object.assign(Readable.from([JSON.stringify({ kind: 'pick', variant, ...extra })]), {
       method: 'POST',
     }) as unknown as IncomingMessage,
     signal: new AbortController().signal,
@@ -257,8 +298,7 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
     expect(readJson(join(subSketchDirOf(target), 'sketch.json'))).toMatchObject({ parent: 'elements/hero' });
   });
 
-  // Decision B726: a pick that would leave the sub-sketches behind is refused until slice 6 lets the pick change.
-  it('refuses a pick of another variant while the sub-sketches are open', async () => {
+  it('refuses a pick of another variant that discards sub-sketches without the confirmation and names them', async () => {
     const { target, sketchDir } = readied();
 
     withMarkedSlider(sketchDir);
@@ -267,9 +307,123 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
     const before = readFileSync(join(sketchDir, 'sketch.json'), 'utf8');
     const answer = await pick(target, 'a');
 
-    expect(answer.status).toBe(422);
+    expect(answer).toMatchObject({
+      status: 409,
+      body: { reason: 'discards-sub-sketches', findings: ['components/hero-slider'] },
+    });
     expect(readFileSync(join(sketchDir, 'sketch.json'), 'utf8')).toBe(before);
+    expect(existsSync(subSketchDirOf(target))).toBe(true);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
+  });
+
+  it('discards the approved and the open sub-sketches the new variant does not mark, keeps the shared one and opens its new one', async () => {
+    const { target, sketchDir } = readied(withTwoMarkedVariants);
+
+    await pick(target, 'b');
+    markSubReady(target, 'hero-dots');
+    await approve(target, 'a', 'components/hero-dots');
+
+    const answer = await pick(target, 'a', 'elements/hero', { discardSubSketches: true });
+
+    expect(answer).toMatchObject({
+      status: 200,
+      body: {
+        merged: [],
+        subSketches: ['components/hero-slider', 'components/hero-caption'],
+        discarded: ['components/hero-dots', 'components/hero-badge'],
+      },
+    });
+    expect(readJson(join(sketchDir, 'sketch.json'))).toMatchObject({
+      decision: { kind: 'pick', variant: 'a' },
+      subSketches: ['components/hero-slider', 'components/hero-caption'],
+    });
+    expect(existsSync(subSketchDirOf(target, 'hero-dots'))).toBe(false);
+    expect(existsSync(subSketchDirOf(target, 'hero-badge'))).toBe(false);
+    expect(readJson(join(subSketchDirOf(target), 'sketch.json'))).toMatchObject({ parent: 'elements/hero' });
+    expect(readJson(join(subSketchDirOf(target, 'hero-caption'), 'sketch.json'))).toMatchObject({
+      parent: 'elements/hero',
+    });
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
+  });
+
+  it('merges a re-picked variant that marks no sub-part once its sub-sketches are discarded', async () => {
+    const { target, sketchDir } = readied();
+
+    withMarkedSlider(sketchDir);
+    await pick(target, 'b');
+
+    const answer = await pick(target, 'a', 'elements/hero', { discardSubSketches: true });
+
+    expect(answer).toMatchObject({ status: 200, body: { merged: expect.arrayContaining(['elements/hero']) } });
+    expect(existsSync(subSketchDirOf(target))).toBe(false);
+    expect(readJson(join(target, DESIGN_DIR, 'acme/merged.json'))).toMatchObject({ 'elements/hero': { variant: 'a' } });
+  });
+
+  it('needs --discard-sub-sketches on sketch pick of another variant and prints what it discards and keeps', async () => {
+    const logs = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { target, sketchDir } = readied(withTwoMarkedVariants);
+    const repick = ['pick', 'elements/hero', '--variant', 'a', '--decided-by', 'human in chat: a after all'];
+
+    await pick(target, 'b');
+
+    const refused = await sketchCommand(target, repick);
+
+    expect(refused).not.toBe(0);
+    expect(errors.mock.calls.flat().join('\n')).toContain(
+      'discards the sub-sketches components/hero-dots, components/hero-badge and keeps components/hero-slider',
+    );
+    expect(existsSync(subSketchDirOf(target, 'hero-dots'))).toBe(true);
+
+    expect(await sketchCommand(target, [...repick, '--discard-sub-sketches'])).toBe(0);
+
+    const printed = logs.mock.calls.flat().join('\n');
+
+    expect(printed).toContain('discarded the sub-sketches components/hero-dots, components/hero-badge');
+    expect(printed).toContain('kept the sub-sketches components/hero-slider');
+    expect(existsSync(subSketchDirOf(target, 'hero-dots'))).toBe(false);
+    expect(readJson(join(sketchDir, 'sketch.json'))).toMatchObject({ decision: { variant: 'a' } });
+  });
+
+  it('answers the open sub-sketches as findings when the parent pick again waits on them', async () => {
+    const { target } = await withReadySubSketch();
+
+    expect(await pick(target, 'b')).toMatchObject({
+      status: 422,
+      body: { reason: 'sub-sketches-open', findings: ['components/hero-slider'] },
+    });
+  });
+
+  it('lists the sub-sketches of a parent that are not approved yet', async () => {
+    const { target } = readied(withTwoMarkedVariants);
+
+    await pick(target, 'b');
+    markSubReady(target, 'hero-dots');
+    await approve(target, 'a', 'components/hero-dots');
+
+    const answer = await sketchesAnswer({
+      target,
+      url: new URL('http://localhost/__design/sketches?product=acme&unchanged=no&targets=no'),
+      request: { method: 'GET' } as IncomingMessage,
+      load: () => new Promise(() => undefined),
+    });
+    const listed = (answer.body as { sketches: { target: string; openSubSketches?: string[] }[] }).sketches;
+
+    expect(listed.find(({ target }) => target === 'elements/hero')?.openSubSketches).toEqual([
+      'components/hero-slider',
+      'components/hero-badge',
+    ]);
+  });
+
+  it('refuses sketch approve on a sub-sketch in progress and names sketch ready', async () => {
+    const { target } = readied(withMarkedSlider);
+
+    await pick(target, 'b');
+
+    expect(await approve(target, 'a')).toMatchObject({ status: 422 });
+    expect(JSON.stringify((await approve(target, 'a')).body)).toContain(
+      'mark it ready first (design sketch ready components/hero-slider)',
+    );
   });
 
   // Decision B726: a sub-sketch is approved, never merged; the approval waits on the sub-sketch for its parent's merge.

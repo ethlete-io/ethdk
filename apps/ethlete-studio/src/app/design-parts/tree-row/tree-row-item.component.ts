@@ -3,7 +3,7 @@ import { Component, computed, input, output, ViewEncapsulation } from '@angular/
 import { injectSemanticColorTheme, ProvideColorDirective, SurfaceInteractiveDirective } from '@ethlete/core';
 import { TREE_ROW_LABELS } from '../../i18n/system-labels';
 
-export type TreeRowStatus = 'in-progress' | 'ready' | 'approved';
+export type TreeRowStatus = 'in-progress' | 'ready' | 'awaiting-approval' | 'approved';
 
 export type TreeRow = {
   label: string;
@@ -22,12 +22,14 @@ export type TreeRow = {
 
 const STATUS_TITLE: Partial<Record<TreeRowStatus, string>> = {
   ready: TREE_ROW_LABELS.sketchReady,
+  'awaiting-approval': TREE_ROW_LABELS.sketchAwaitingApproval,
   approved: TREE_ROW_LABELS.sketchApproved,
 };
 
 const STATUS_CLASS: Record<TreeRowStatus, string> = {
   'in-progress': 'text-et-surface-muted',
   ready: 'text-et-theme',
+  'awaiting-approval': 'text-et-theme',
   approved: 'text-et-theme',
 };
 

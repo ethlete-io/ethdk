@@ -131,6 +131,12 @@ const PALETTE_INVENTORY_KEY = 'inventory';
 
 const PALETTE_SERVER_ACTIONS: readonly DesignServerAction[] = ['restart', 'stop'];
 
+const subSketchStatusOf = (badges: readonly string[]) => {
+  if (badges.includes('approved')) return 'approved' as const;
+
+  return badges.includes('ready') ? ('awaiting-approval' as const) : ('in-progress' as const);
+};
+
 const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
 
 @Component({
@@ -1128,9 +1134,7 @@ export class SystemViewComponent {
       name: entry.name,
       ...marksOf(entry),
       ...(entry.layer ? { layer: entry.layer } : {}),
-      ...(entry.subSketch
-        ? { status: entry.badges.includes('approved') ? ('approved' as const) : ('in-progress' as const) }
-        : {}),
+      ...(entry.subSketch ? { status: subSketchStatusOf(entry.badges) } : {}),
       ...(entry.nested ? { open: open.has(entry.key), nested: entry.nested.map(partOf) } : {}),
     });
     const sectionOf = (section: TreeSection): PartTreePart => ({

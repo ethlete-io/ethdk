@@ -58,6 +58,8 @@ export type SketchCommentDraft = SketchCommentPlace & { author: string; initials
 
 export type SketchConfirm = 'merge' | 'discard';
 
+export type SketchRepick = { discards: string[]; keeps: string[] };
+
 export type SketchPin = {
   variant: string;
   author: string;

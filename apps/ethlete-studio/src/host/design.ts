@@ -536,6 +536,8 @@ export type ListedSketch = {
   parent?: string;
   /** The sketches its pick opened, one per marked sub-part; it does not merge while it has them. Missing from an `@ethlete/cli` older than it. */
   subSketches?: string[];
+  /** The sub-sketches in `subSketches` not approved yet. Missing from an `@ethlete/cli` older than it. */
+  openSubSketches?: string[];
   /** On a sub-sketch: the variant the designer approved for the merge of its parent. Missing from an `@ethlete/cli` older than it. */
   approved?: { variant: string; decidedAt: string };
 };
@@ -745,15 +747,16 @@ export const listedSketches$ = ({
 /**
  * Picks `variant` and merges it into the product in one step, and answers the merged parts. A refused merge leaves no
  * pick behind; a stale baseline fails with {@link MergeNeedsRebaseError}. A variant with marked sub-parts merges nothing
- * and answers the sub-sketches the pick opened.
+ * and answers the sub-sketches the pick opened. A pick of another variant than the picked one that discards sub-sketches
+ * needs `discardSubSketches`.
  */
 export const pickSketch$ = (
   address: SketchAddress,
-  variant: string,
+  pick: { variant: string; discardSubSketches?: boolean },
 ): Observable<{ merged: string[]; subSketches: string[] }> =>
   designAnswer$<{ merged: string[]; subSketches?: string[] }>(
     sketchUrl({ ...address, path: 'sketch-decision' }),
-    postJson({ kind: 'pick', variant }),
+    postJson({ kind: 'pick', variant: pick.variant, ...(pick.discardSubSketches ? { discardSubSketches: true } : {}) }),
   ).pipe(map(({ merged, subSketches = [] }) => ({ merged, subSketches })));
 
 /** Approves `variant` of a sub-sketch; it merges later together with its parent. */
