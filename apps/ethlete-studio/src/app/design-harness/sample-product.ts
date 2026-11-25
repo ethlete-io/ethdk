@@ -1,8 +1,10 @@
 /**
  * Farn, an invented plant shop: the content every frame of Studio's own sketch view shows, so a pin or a change
- * in a frame never reads as a change to Studio itself. Plain markup with Studio's theme tokens, shared by the
- * design parts and the harness.
+ * in a frame never reads as a change to Studio itself. Plain markup under Farn's own surface and colour theme, shared
+ * by the design parts and the harness.
  */
+
+export const FARN_SCOPE = 'et-surface--farn et-color--farn';
 
 export const SAMPLE_BAR_STATES = ['guest', 'guest-basket', 'member', 'member-basket', 'checkout', 'checkout-basket'];
 
@@ -55,7 +57,7 @@ export const sampleBar = (state: string, fluid = false) => {
   const [who = 'guest', basket] = state.split('-');
 
   return `<div
-  class="box-border flex h-12 ${fluid ? 'w-full' : 'w-360'} items-center ${fluid ? 'gap-space-4 px-space-4 md:gap-8 md:px-space-6' : 'gap-8 px-space-6'} bg-et-surface-bg text-et-surface shadow-[inset_0_-1px_0_var(--et-surface-border-solid)]"
+  class="${FARN_SCOPE} box-border flex h-12 ${fluid ? 'w-full' : 'w-360'} items-center ${fluid ? 'gap-space-4 px-space-4 md:gap-8 md:px-space-6' : 'gap-8 px-space-6'} bg-et-surface-bg text-et-surface shadow-[inset_0_-1px_0_var(--et-surface-border-solid)]"
   data-farn-bar
 >
   ${mark}
@@ -98,7 +100,7 @@ export const sampleStepper = (state: string) => {
   const disabled = interaction === 'disabled' ? 'opacity-40' : '';
 
   return `<div
-  class="box-border flex h-7.5 w-44 items-center overflow-hidden rounded-control-md bg-et-surface-bg text-ui-sm text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+  class="${FARN_SCOPE} box-border flex h-7.5 w-44 items-center overflow-hidden rounded-control-md bg-et-surface-bg text-ui-sm text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
   data-farn-stepper
 >
   <span class="flex h-full w-7.5 items-center justify-center text-et-surface-muted ${toneOf('minus')}" data-farn-minus>−</span>
@@ -122,7 +124,7 @@ type Leaf = {
   angle: number;
   scale?: number;
   tone: string;
-}
+};
 
 const blade = ({ x = 100, y = 132, length = 20, width = 7, angle, tone }: Leaf) =>
   `<path d="M0 0C${width} ${-length * 0.25} ${width} ${-length * 0.75} 0 ${-length}C${-width} ${-length * 0.75} ${-width} ${-length * 0.25} 0 0Z" transform="translate(${x} ${y}) rotate(${angle})" class="${tone}" />`;
@@ -256,7 +258,7 @@ export const samplePage = (state: string, fluid = false) => {
   const plant = PLANTS[index % PLANTS.length] ?? 'Monstera';
   const others = [1, 2, 3, 4].map((step) => PLANTS[(index + step) % PLANTS.length] ?? 'Pilea');
 
-  return `<div class="box-border flex ${fluid ? 'min-h-225 w-full' : 'h-225 w-360'} flex-col overflow-hidden bg-et-surface-bg text-et-surface" data-farn-page="${state}">
+  return `<div class="${FARN_SCOPE} box-border flex ${fluid ? 'min-h-225 w-full' : 'h-225 w-360'} flex-col overflow-hidden bg-et-surface-bg text-et-surface" data-farn-page="${state}">
   ${sampleBar('member', fluid)}
   <div class="mx-auto flex w-full max-w-320 flex-col ${fluid ? 'gap-space-7 px-space-6 pb-space-6 md:gap-10 md:px-16 md:pb-12' : 'gap-10 px-16'}">
     <div class="grid ${fluid ? 'gap-space-6 pt-space-6 md:grid-cols-2 md:items-center md:gap-16 md:pt-12' : 'grid-cols-2 items-center gap-16 pt-12'}" data-farn-hero>
@@ -281,7 +283,7 @@ export const samplePage = (state: string, fluid = false) => {
 
 /** One Farn pot-size tile, as a page row shows four of them. */
 export const samplePotTile = (size: string, price: string) =>
-  `<span class="flex items-baseline gap-space-2 text-ui-sm"><span class="text-et-surface">Ø ${size} cm</span><span class="text-et-surface-muted">${price}</span></span>`;
+  `<span class="${FARN_SCOPE} flex items-baseline gap-space-2 text-ui-sm"><span class="text-et-surface">Ø ${size} cm</span><span class="text-et-surface-muted">${price}</span></span>`;
 
 export const SAMPLE_POT_SIZES = [
   { size: '12', price: '18 €' },

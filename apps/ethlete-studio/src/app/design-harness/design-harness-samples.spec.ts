@@ -6,7 +6,11 @@ import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchRow } from '../design-parts/sketches/sketches-sample';
 import { LISTING_ERROR_SAMPLE } from '../design-parts/system-page/system-page-sample';
 import { DESIGN_HARNESS_SAMPLES } from './design-harness-samples';
-import { sampleBar, samplePage, sampleStepper } from './sample-product';
+import { FARN_SURFACE } from '../../farn-surface-themes';
+import { FARN_THEME } from '../../farn-themes';
+import { DARK_SURFACE } from '../../surface-themes';
+import { BRAND_THEME } from '../../themes';
+import { FARN_SCOPE, sampleBar, samplePage, sampleStepper, samplePotTile } from './sample-product';
 
 const sketchesOf = (props: Record<string, unknown>) => {
   const sample = DESIGN_HARNESS_SAMPLES['pages/sketches'];
@@ -163,5 +167,31 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     expect(search).toContain('<svg');
     expect(search).toContain('Pflanzen suchen');
     expect(search).not.toMatch(/bg-et-surface-interaction(?![/\w-])/);
+  });
+
+  it("puts every Farn root under the Farn surface and colour scope, not Studio's", () => {
+    const roots = [sampleBar('guest'), sampleStepper('count'), samplePage('1'), samplePotTile('12', '18 €')];
+
+    for (const root of roots) {
+      const classes = /class="([^"]*)"/.exec(root)?.[1] ?? '';
+
+      expect(classes).toContain(FARN_SCOPE);
+      expect(classes).not.toContain('et-surface--dark');
+      expect(classes).not.toContain('et-color--brand');
+    }
+
+    expect(FARN_SCOPE).toBe(`et-surface--${FARN_SURFACE.name} et-color--${FARN_THEME.name}`);
+  });
+
+  it('gives Farn its own surface and accent palette that shares no colour with Studio', () => {
+    const { background, color, border } = FARN_SURFACE;
+
+    expect(FARN_SURFACE.name).not.toBe(DARK_SURFACE.name);
+    expect(FARN_THEME.name).not.toBe(BRAND_THEME.name);
+    expect(background).not.toBe(DARK_SURFACE.background);
+    expect(color).not.toBe(DARK_SURFACE.color);
+    expect(border).not.toBe(DARK_SURFACE.border);
+    expect(FARN_THEME.primary.color.default).not.toBe(BRAND_THEME.primary.color.default);
+    expect(FARN_THEME.primary.inkColor?.default).not.toBe(BRAND_THEME.primary.inkColor?.default);
   });
 });

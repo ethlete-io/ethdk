@@ -4,6 +4,8 @@ import { provideNotificationManager } from '@ethlete/components';
 import { provideColorThemesWithTailwind4, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
 import { providePreferredScheme } from '../host/color-scheme';
 import { provideWindowChrome } from '../host/window';
+import { FARN_SURFACE } from '../farn-surface-themes';
+import { FARN_THEME } from '../farn-themes';
 import { SURFACE_THEMES } from '../surface-themes';
 import { THEMES } from '../themes';
 import { APP_ROUTES } from './app.routes';
@@ -14,8 +16,8 @@ export const appConfig: ApplicationConfig = {
     // The bundled app is served off `tauri://localhost` as static files, so a path route would 404
     // the moment the webview reloads on one.
     provideRouter(APP_ROUTES, withHashLocation()),
-    ...provideColorThemesWithTailwind4(THEMES),
-    ...provideSurfaceThemesWithTailwind4(SURFACE_THEMES),
+    ...provideColorThemesWithTailwind4([...THEMES, FARN_THEME]),
+    ...provideSurfaceThemesWithTailwind4([...SURFACE_THEMES, FARN_SURFACE]),
     providePreferredScheme(),
     provideWindowChrome(),
     ...provideNotificationManager(),

@@ -1,4 +1,4 @@
-@layer studio-tokens, theme, base, components, studio-sdk, utilities;
+@layer studio-tokens, studio-farn, theme, base, components, studio-sdk, utilities;
 
 @import 'tailwindcss' source('../');
 
@@ -11,6 +11,8 @@
 @import './styles/reset-colors.css';
 @import './styles/themes.css';
 @import './styles/surface-themes.css';
+@import './styles/farn-themes.css' layer(studio-farn);
+@import './styles/farn-surface-themes.css' layer(studio-farn);
 @import './styles/sdk-token-map.css' layer(studio-sdk);
 
 /* The sizes design compare passes as a part's class prop; no app template uses them. */
