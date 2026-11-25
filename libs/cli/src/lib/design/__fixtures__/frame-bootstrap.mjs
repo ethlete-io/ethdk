@@ -18,6 +18,8 @@ let imports = 0;
 let frames = 0;
 let now = 1_000_000;
 const intervals = [];
+// jsdom has no FontFaceSet.
+Object.defineProperty(dom.window.document, 'fonts', { value: { ready: Promise.resolve() } });
 const context = createContext({
   document: dom.window.document,
   location: {

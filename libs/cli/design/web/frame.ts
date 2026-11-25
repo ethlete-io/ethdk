@@ -609,6 +609,9 @@ const drawFrame = async () => {
   new MutationObserver(place).observe(root, { childList: true, subtree: true });
   new ResizeObserver(() => requestAnimationFrame(place)).observe(root);
   place();
+  // A size measured in the fallback font is reported first and replaced once the web font loads, so the cell that
+  // shows this frame would resize with no input.
+  await document.fonts.ready;
 
   const reported = new ResizeObserver(report);
 

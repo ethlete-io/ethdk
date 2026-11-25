@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ShotFrame } from '../../host/design';
-import { shotSizesOf } from './shot-frames';
+import { rowWidthOf, shotSizesOf } from './shot-frames';
 import { CURRENT, SketchRowOf } from './system-tree';
 
 const shotOf = (state: string, size?: string, inherited?: true) => ({
@@ -58,19 +58,23 @@ describe('shotSizesOf', () => {
     ).toEqual({ 'a default · 320': { width: 320, height: 200 }, 'a default · 768': { width: 768, height: 90 } });
   });
 
-  it('takes no listed frame for a row the listing misses a shot of, so the row waits for its live frames', () => {
-    const rows: SketchRowOf[] = [
-      { key: CURRENT, width: null, shots: [shotOf('reset'), shotOf('reset-focus-visible')] },
-      { key: 'a', width: null, shots: [shotOf('reset'), shotOf('reset-focus-visible')] },
-    ];
+  it('sizes a listed shot of the zoom-chip row the listing misses a shot of, and holds that row at the part width until every shot has one', () => {
+    const current: SketchRowOf = { key: CURRENT, width: null, shots: [shotOf('reset'), shotOf('reset-focus-visible')] };
+    const a: SketchRowOf = { key: 'a', width: null, shots: [shotOf('reset'), shotOf('reset-focus-visible')] };
+    const rows = [current, a];
     const frames = [frameOf(null, 'reset', 202), frameOf('a', 'reset', 202), frameOf('a', 'reset-focus-visible', 230)];
-
-    expect(
-      shotSizesOf({ rows, part: 'components/title-card', frames, live: { 'current reset': { height: 62 } } }),
-    ).toEqual({
-      'current reset': { height: 62 },
-      'a reset': { width: 202, height: 200 },
-      'a reset-focus-visible': { width: 230, height: 200 },
+    const listed = shotSizesOf({ rows, part: 'components/title-card', frames, live: {} });
+    const reported = shotSizesOf({
+      rows,
+      part: 'components/title-card',
+      frames,
+      live: { 'current reset': { width: 202, height: 62 }, 'current reset-focus-visible': { width: 228, height: 117 } },
     });
+
+    expect(listed['current reset']).toEqual({ width: 202, height: 200 });
+    expect(rowWidthOf({ row: current, sizes: listed, fallback: 230 })).toBe(230);
+    expect(rowWidthOf({ row: a, sizes: listed, fallback: 230 })).toBe(230);
+    expect(reported['current reset']?.width).toBe(listed['current reset']?.width);
+    expect(rowWidthOf({ row: current, sizes: reported, fallback: 230 })).toBe(228);
   });
 });

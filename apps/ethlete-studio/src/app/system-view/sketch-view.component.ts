@@ -82,7 +82,7 @@ import {
   sketchFrameRetriesWith,
 } from './sketch-frame-retries';
 import { CURRENT, partKeyOf, sketchMatrixOf, sketchRoundsOf, sketchRowsOf, sketchUsingPagesOf } from './system-tree';
-import { shotSizesOf } from './shot-frames';
+import { rowWidthOf, shotSizesOf } from './shot-frames';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { keptRead$ } from './kept-read';
 import { sketchPointGroupsOf } from './open-points';
@@ -732,7 +732,7 @@ export class SketchViewComponent {
       const sizeOf = (state: string) => measured[`${row.key} ${state}`];
       const when = sketch.report?.variant === row.key ? whenOf(sketch.report.updatedAt) : undefined;
 
-      const known = row.width ?? widestOf(row.shots.map((shot) => sizeOf(shot.state)?.width)) ?? partWidth;
+      const known = row.width ?? rowWidthOf({ row, sizes: measured, fallback: partWidth });
       const width = known ?? FALLBACK_SIZE.width;
 
       const rejection = row.key === CURRENT ? null : rejectionOf(sketch, row.key);
