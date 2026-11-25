@@ -447,12 +447,30 @@ export const autoAcceptOf = async (options: {
         ? `DIRECT EDIT ${product.name} ${part}: changed outside a sketch, no old/new sketch: ${sketch}`
         : `DIRECT EDIT ${product.name} ${part}: changed outside a sketch - pick old or new in sketch ${sketch.target}`,
     );
+  const openedNow = new Set<string>();
+  const closeAsDrawnBefore = (sketch: Sketch) => {
+    discardSketch({ target, sketch, author: 'design check' });
+
+    if (!openedNow.has(sketch.target) || !options.opened) return;
+
+    const prefix = `OPENED ${product.name} ${sketch.target}:`;
+    const kept = options.opened.filter((line) => !line.startsWith(prefix));
+
+    options.opened.splice(
+      0,
+      options.opened.length,
+      ...kept,
+      `CLOSED ${product.name} ${sketch.target}: draws as before`,
+    );
+  };
   const open = async (part: string) => {
     const result = await openEditSketch({ target, product, part, author: 'design check' });
     const sketch = typeof result === 'string' ? null : 'rule' in result ? result.sketch : result;
 
-    if (sketch)
+    if (sketch) {
+      openedNow.add(sketch.target);
       options.opened?.push(`OPENED ${product.name} ${sketch.target}: direct edit of ${part} - pick old or new`);
+    }
 
     return result;
   };
@@ -592,8 +610,7 @@ export const autoAcceptOf = async (options: {
       continue;
     }
 
-    if (sketch && (writesTracked || discardsUntracked(product, sketch)))
-      discardSketch({ target, sketch, author: 'design check' });
+    if (sketch && (writesTracked || discardsUntracked(product, sketch))) closeAsDrawnBefore(sketch);
 
     if (baseline) {
       lines.push(`HELD ${product.name} ${part}: changed outside a sketch, every state draws as before`);

@@ -244,6 +244,24 @@ describe('autoAcceptOf', () => {
     expect(directEditsOf(productOf(target))).toEqual([]);
   });
 
+  it('reports an edit sketch closed in the same run because every state draws as before, not opened', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw } = drawing({ default: 'a1', hover: 'b2' });
+    const opened: string[] = [];
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    writeFileSync(
+      join(dir, 'pictures.json'),
+      JSON.stringify({ [CHIP]: { review: { hash: readMerged(dir)[CHIP], states: { default: 'a1' } } } }),
+    );
+    appendFileSync(chip, '// edit inside a slot\n');
+
+    await autoAcceptOf({ target, config: {}, product: productOf(target), draw, writesTracked: false, opened });
+
+    expect(opened).toEqual([`CLOSED app-a ${CHIP}@edit: draws as before`]);
+    expect(existsSync(join(dir, 'sketches'))).toBe(false);
+  });
+
   it('compares a direct edit with the design at HEAD, not with go pictures of an older hash', async () => {
     const { target, dir, chip } = checkout();
     const { draw } = drawing({ default: 'a1', hover: 'b2' });
