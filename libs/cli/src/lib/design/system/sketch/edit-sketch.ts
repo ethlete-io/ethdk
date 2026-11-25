@@ -215,10 +215,84 @@ const editPathsOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
   );
 };
 
+type HeadRead = { tracked: string[]; changed: string[] } | null;
+
+let headSnapshot: Map<string, HeadRead> | null = null;
+
+/**
+ * Runs the synchronous `run` with one batched git read per repository (`ls-files` and `status`) answering every
+ * `headHoldsPart` and `tracksFileBelow` inside it, instead of one or two git processes each. Never wrap code that awaits:
+ * the snapshot would outlive the working tree it was read from.
+ */
+export const withHeadSnapshot = <T>(run: () => T): T => {
+  if (headSnapshot) return run();
+
+  headSnapshot = new Map();
+
+  try {
+    return run();
+  } finally {
+    headSnapshot = null;
+  }
+};
+
+const splitZ = (text: string) => text.split('\0').filter((entry) => entry !== '');
+
+const snapshotOf = (root: string): HeadRead => {
+  const cached = headSnapshot?.get(root);
+
+  if (cached !== undefined) return cached;
+
+  let read: HeadRead;
+
+  try {
+    const status = splitZ(git(root, ['--no-optional-locks', 'status', '--porcelain', '-z', '--untracked-files=all']));
+    const changed: string[] = [];
+
+    for (let index = 0; index < status.length; index++) {
+      const entry = status[index] ?? '';
+
+      changed.push(entry.slice(3));
+
+      if (entry[0] === 'R' || entry[0] === 'C' || entry[1] === 'R' || entry[1] === 'C') {
+        index++;
+        changed.push(status[index] ?? '');
+      }
+    }
+
+    read = { tracked: splitZ(git(root, ['ls-files', '-z'])), changed };
+  } catch {
+    read = null;
+  }
+
+  headSnapshot?.set(root, read);
+
+  return read;
+};
+
+const isBelow = (file: string, dir: string) => dir === '' || file === dir || file.startsWith(`${dir}/`);
+
+const posixOf = (path: string) => path.split(sep).join('/');
+
+const insideRoot = (path: string) => path !== '..' && !path.startsWith(`..${sep}`) && !isAbsolute(path);
+
 /** Whether HEAD holds the part as it is in the working tree: its folder is tracked and git sees no change in it, its product's `shared/` or its assets. */
 export const headHoldsPart = (product: ResolvedProduct, resolved: ResolvedPart) => {
   const root = repoRootOf(product);
-  const paths = editPathsOf(product, resolved).map((path) => `./${path}`);
+  const relatives = editPathsOf(product, resolved);
+
+  if (headSnapshot && relatives.every(insideRoot)) {
+    const snapshot = snapshotOf(root);
+    const dirs = relatives.map(posixOf);
+
+    return (
+      snapshot !== null &&
+      snapshot.tracked.some((file) => isBelow(file, dirs[0] ?? '')) &&
+      !snapshot.changed.some((file) => dirs.some((dir) => isBelow(file, dir)))
+    );
+  }
+
+  const paths = relatives.map((path) => `./${path}`);
 
   try {
     return (
@@ -233,9 +307,16 @@ export const headHoldsPart = (product: ResolvedProduct, resolved: ResolvedPart) 
 /** Whether git tracks a file below `dir`; answers `true` when git cannot tell. */
 export const tracksFileBelow = (product: ResolvedProduct, dir: string) => {
   const root = repoRootOf(product);
+  const below = relative(root, dir);
+
+  if (headSnapshot && insideRoot(below)) {
+    const snapshot = snapshotOf(root);
+
+    return snapshot === null || snapshot.tracked.some((file) => isBelow(file, posixOf(below)));
+  }
 
   try {
-    return git(root, ['ls-files', '--', `./${relative(root, dir)}`]) !== '';
+    return git(root, ['ls-files', '--', `./${below}`]) !== '';
   } catch {
     return true;
   }

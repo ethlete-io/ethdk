@@ -29,6 +29,7 @@ import {
   refreshEditOld,
   rewordEditNotes,
   tracksFileBelow,
+  withHeadSnapshot,
 } from './sketch/edit-sketch';
 import { discardSketch } from './sketch/merge';
 import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
@@ -305,17 +306,19 @@ const discardsUntracked = (product: ResolvedProduct, sketch: Sketch) =>
   commentsOnSketch({ productDir: product.dir, product: product.name, sketch }).length === 0;
 
 const leftStaleEditLinesOf = (product: ResolvedProduct, parts: string[] | undefined) =>
-  listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
-    typeof sketch !== 'string' &&
-    (!parts || parts.includes(partKeyOf(sketch))) &&
-    isStaleEditSketch(product, sketch) &&
-    !editAwaitsPick(product, sketch)
-      ? [
-          pickContradictsPart(product, sketch)
-            ? `STALE EDIT SKETCH ${product.name} ${sketch.target}: ${partKeyOf(sketch)} matches HEAD, but ${pickedEditRemedyOf(product, sketch)}`
-            : `STALE EDIT SKETCH ${product.name} ${sketch.target}: ${partKeyOf(sketch)} matches HEAD - discard it: sketch discard ${sketch.target} --product ${product.name} --by <model id>`,
-        ]
-      : [],
+  withHeadSnapshot(() =>
+    listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
+      typeof sketch !== 'string' &&
+      (!parts || parts.includes(partKeyOf(sketch))) &&
+      isStaleEditSketch(product, sketch) &&
+      !editAwaitsPick(product, sketch)
+        ? [
+            pickContradictsPart(product, sketch)
+              ? `STALE EDIT SKETCH ${product.name} ${sketch.target}: ${partKeyOf(sketch)} matches HEAD, but ${pickedEditRemedyOf(product, sketch)}`
+              : `STALE EDIT SKETCH ${product.name} ${sketch.target}: ${partKeyOf(sketch)} matches HEAD - discard it: sketch discard ${sketch.target} --product ${product.name} --by <model id>`,
+          ]
+        : [],
+    ),
   );
 
 /**
@@ -335,21 +338,28 @@ export const settleCommittedEdits = (options: {
 }) => {
   const { target, product } = options;
   const writesTracked = options.writesTracked ?? true;
-  const sketches = editSketchesOf(product, isOpenOrPickedEditSketch);
-  const kept = new Set(
-    editSketchesOf(product, (sketch) => pickContradictsPart(product, sketch) || editAwaitsPick(product, sketch)).keys(),
-  );
-  const candidates = new Set([...changedOutsideSketchOf(product, { tracked: writesTracked }), ...sketches.keys()]);
-  const settled = product.parts.filter((resolved) => {
-    const part = partKeyOf(resolved);
-
-    return (
-      candidates.has(part) &&
-      !kept.has(part) &&
-      resolved.origin !== 'base' &&
-      (!options.parts || options.parts.includes(part)) &&
-      headHoldsPart(product, resolved)
+  const { sketches, settled } = withHeadSnapshot(() => {
+    const sketches = editSketchesOf(product, isOpenOrPickedEditSketch);
+    const kept = new Set(
+      editSketchesOf(
+        product,
+        (sketch) => pickContradictsPart(product, sketch) || editAwaitsPick(product, sketch),
+      ).keys(),
     );
+    const candidates = new Set([...changedOutsideSketchOf(product, { tracked: writesTracked }), ...sketches.keys()]);
+    const settled = product.parts.filter((resolved) => {
+      const part = partKeyOf(resolved);
+
+      return (
+        candidates.has(part) &&
+        !kept.has(part) &&
+        resolved.origin !== 'base' &&
+        (!options.parts || options.parts.includes(part)) &&
+        headHoldsPart(product, resolved)
+      );
+    });
+
+    return { sketches, settled };
   });
 
   for (const resolved of settled) {
