@@ -1,5 +1,5 @@
 import { partDependenciesOf } from '../imports';
-import { isLayer, LAYER_USES } from '../layers';
+import { isLayer, LAYER_USES, mayUse } from '../layers';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { isEditSketch } from './merged-parts';
@@ -85,11 +85,57 @@ const valuePathOf = (value: string) => value.slice(2, -1).trim();
 const valueWordsOf = (value: string) =>
   wordsOf((valuePathOf(value).split('.').pop() ?? '').replace(/([a-z0-9])([A-Z])/gu, '$1-$2').toLowerCase());
 
+const CSS_CLASS = /(?<![\w-])\.([a-z][\w-]*)/gu;
+
+const ELEMENT = /(?<!\/)<([a-z][\w-]*)(\s[^<>]*)?>/gu;
+
+const CLASS_ATTRIBUTE = /\bclass="([^"]*)"/u;
+
+const NAME = /^[a-z][a-z0-9-]*$/u;
+
+const isPrefixed = (name: string, partName: string) =>
+  NAME.test(name) && name.split('-').length === partName.split('-').length + 1 && name.endsWith(`-${partName}`);
+
+const shapesOf = (match: RegExpExecArray | RegExpMatchArray) => {
+  const [, tag = '', attributes = ''] = match;
+
+  return [tag, ...(attributes.match(CLASS_ATTRIBUTE)?.[1] ?? '').split(/\s+/u)].map((name) => ({ tag, name }));
+};
+
+const rootShapesOf = (existing: ResolvedPart) =>
+  new Set(
+    [
+      ...[...(existing.cssSource ?? '').matchAll(CSS_CLASS)].map(([, name = '']) => name),
+      ...[...existing.source.matchAll(ELEMENT)].flatMap((match) => shapesOf(match).map(({ name }) => name)),
+    ].filter((name) => isPrefixed(name, existing.name)),
+  );
+
+const hasContent = (source: string, match: RegExpExecArray | RegExpMatchArray) =>
+  !(match[2] ?? '').trimEnd().endsWith('/') && !source.startsWith('</', (match.index ?? 0) + match[0].length);
+
 /**
- * The existing parts `part` draws inline: a component or element of `product` outside `targets` whose name ends the
- * name of a value `part` renders as the text of an element (`<span>${FIXTURE.badge}</span>` for `badge`), and which
- * `part` neither imports nor draws as an `et-` element. A bare imported value is another part's markup, not inline. Each
- * comes with the first value that matched it.
+ * The first element with content that `part` draws in the root shape of `existing`: a tag or class `existing` renders
+ * or styles (`et-badge`) under another prefix (`<span class="tsh-badge">`).
+ */
+const shapeRebuildOf = (part: ResolvedPart, existing: ResolvedPart) => {
+  const roots = rootShapesOf(existing);
+
+  if (roots.size === 0) return null;
+
+  const drawn = [...part.source.matchAll(ELEMENT)]
+    .filter((match) => hasContent(part.source, match))
+    .flatMap(shapesOf)
+    .find(({ name }) => !roots.has(name) && isPrefixed(name, existing.name));
+
+  return drawn ? (drawn.tag === drawn.name ? `<${drawn.tag}>` : `<${drawn.tag} class="${drawn.name}">`) : null;
+};
+
+/**
+ * The existing parts `part` draws inline: a component or element of `product` outside `targets`, in a layer `part` may
+ * use, whose name ends the name of a value `part` renders as the text of an element (`<span>${FIXTURE.badge}</span>`
+ * for `badge`), and which `part` neither imports nor draws as an `et-` element. A bare imported value is another part's markup, not inline. An
+ * element in the root shape of an existing part is inline too, whatever its text (`<span class="tsh-badge">Serie</span>`).
+ * Each comes with the first value or element that matched it.
  */
 export const inlineRebuildsOf = (options: { product: ResolvedProduct; targets: string[]; part: ResolvedPart }) => {
   const imported = importedNamesOf(options.part.source);
@@ -101,11 +147,14 @@ export const inlineRebuildsOf = (options: { product: ResolvedProduct; targets: s
     .filter(
       (existing) =>
         REUSABLE_LAYERS.has(existing.layer) &&
+        (!isLayer(options.part.layer) || mayUse({ from: options.part.layer, to: existing.layer })) &&
         !options.targets.includes(partKeyOf(existing)) &&
         partKeyOf(existing) !== partKeyOf(options.part),
     )
     .flatMap((existing) => {
-      const value = values.find((text) => endsWith(valueWordsOf(text), wordsOf(existing.name)));
+      const value =
+        values.find((text) => endsWith(valueWordsOf(text), wordsOf(existing.name))) ??
+        shapeRebuildOf(options.part, existing);
 
       return value && !embeds(options.part, existing) ? [{ existing, value }] : [];
     });

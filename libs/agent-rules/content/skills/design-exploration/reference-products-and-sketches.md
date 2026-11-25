@@ -93,7 +93,8 @@ builds without a mark, and every mark on an existing part. A new part whose name
 component or element (`hero-badges` and `badge`) must embed it, or state the difference:
 `sketch sub-part … <part> "<what it is that the other is not>" --not-rebuild-of sdk:badge`. The same holds
 for markup a variant draws inline: a value named like an existing part as an element's text
-(`<span>${FIXTURE.badge}</span>`) must become that part, or the target states the difference with itself as
+(`<span>${FIXTURE.badge}</span>`), or an element with content in an existing part's root class or tag under
+another prefix (`<span class="tsh-badge">Serie</span>` for `et-badge`), must become that part, or the target states the difference with itself as
 `<part>`. Never rename a part or value to dodge the match. Studio shows the marks at the variant header; a mark change on a ready
 sketch moves it back to in progress.
 

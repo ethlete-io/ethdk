@@ -47,6 +47,14 @@ const TOMFLIX_INLINE_BADGES = [
   '<span class="shrink-0 text-xs font-semibold text-et-surface-muted">${FIXTURE.badge}</span>',
 ].join('\n');
 
+const TOMFLIX_LITERAL_BADGE = [
+  '<div class="tsh-poster" style="--tsh-angle: 12deg">',
+  '  <span class="tsh-badge">Serie</span>',
+  '</div>',
+].join('\n');
+
+const TOMFLIX_CAPTION_TAGS = '<span class="text-et-theme-ink">Neu</span><span>Serie</span>';
+
 const tomflixHero = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-sub-part-'));
 
@@ -288,6 +296,32 @@ describe('a sub-part an exploration variant builds', () => {
     expect(hero.subPartLinesOfC()).toEqual([
       'variant c draws ${FIXTURE.badge} inline in elements/hero, whose name matches components/badge of sdk - embed @system/components/badge, or state the difference: design sketch sub-part elements/hero elements/hero --variant c --not-rebuild-of sdk:badge "<what it is that badge is not>" --by <model id>',
     ]);
+  });
+
+  it('rejects a literal badge the hero draws in the root shape of the SDK badge and names it', () => {
+    const hero = tomflixHero();
+
+    hero.buildInC('elements/hero', partSource(TOMFLIX_LITERAL_BADGE));
+
+    expect(hero.subPartLinesOfC()).toEqual([
+      'variant c draws <span class="tsh-badge"> inline in elements/hero, whose name matches components/badge of sdk - embed @system/components/badge, or state the difference: design sketch sub-part elements/hero elements/hero --variant c --not-rebuild-of sdk:badge "<what it is that badge is not>" --by <model id>',
+    ]);
+
+    hero.markInC([], [{ part: 'elements/hero', of: 'sdk:badge', difference: 'a poster corner tag, no pill' }]);
+    expect(hero.subPartLinesOfC()).toEqual([]);
+  });
+
+  it('accepts caption text, an empty element and a group in the badge class pattern', () => {
+    const hero = tomflixHero();
+
+    hero.buildInC(
+      'elements/hero',
+      partSource(
+        `${TOMFLIX_CAPTION_TAGS}<span class="tsh-badge"></span><span class="tsh-badges">${TOMFLIX_CAPTION_TAGS}</span>`,
+      ),
+    );
+
+    expect(hero.subPartLinesOfC()).toEqual([]);
   });
 
   // An inline rebuild has no part folder to mark, so the command records the stated difference on the target itself and the check accepts it.
