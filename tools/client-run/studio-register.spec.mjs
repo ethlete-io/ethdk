@@ -25,6 +25,14 @@ describe('registerInStudio', () => {
     assert.match(outcome.line, /Studio did not take the run \(exit 1\)/);
   });
 
+  it('tells a queued run apart from a registered one and keeps it green', () => {
+    const outcome = registrationOutcomeOf(3);
+
+    assert.equal(outcome.exitCode, 0);
+    assert.match(outcome.line, /Studio is not running - the run is queued and appears at the next Studio start/);
+    assert.notEqual(outcome.line, registrationOutcomeOf(0).line);
+  });
+
   it('keeps the run green when Studio took it', () => {
     assert.equal(registrationOutcomeOf(0).exitCode, 0);
   });

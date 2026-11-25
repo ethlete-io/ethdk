@@ -15,11 +15,21 @@ export const registerInStudio = ({ target, spawn = spawnSync }) => {
   return result.status;
 };
 
-/** The line and exit code of a run whose Studio registration ended with `status`: a run Studio did not take fails. */
-export const registrationOutcomeOf = (status) =>
-  status === 0
-    ? { line: 'client-run: registered in Studio', exitCode: 0 }
-    : {
-        line: `client-run: Studio did not take the run (exit ${status}); open Studio, then run \`et design studio open <run>/tomflix\``,
-        exitCode: 1,
-      };
+const QUEUED_EXIT = 3;
+
+/** The line and exit code of a run whose Studio registration ended with `status`: a queued run stays green, a run Studio refused fails. */
+export const registrationOutcomeOf = (status) => {
+  if (status === 0) return { line: 'client-run: registered in Studio', exitCode: 0 };
+
+  if (status === QUEUED_EXIT) {
+    return {
+      line: 'client-run: Studio is not running - the run is queued and appears at the next Studio start',
+      exitCode: 0,
+    };
+  }
+
+  return {
+    line: `client-run: Studio did not take the run (exit ${status}); open Studio, then run \`et design studio open <run>/tomflix\``,
+    exitCode: 1,
+  };
+};

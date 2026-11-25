@@ -128,7 +128,7 @@ const helpOf = (invocation: string) =>
     '',
     `${invocation} studio open [<dir>]`,
     '  Add a checkout (the current one by default) to the running Studio and switch Studio to it. Ask the human first.',
-    '  It never starts Studio: when Studio is not running it fails and says so, and the human opens Studio.',
+    '  It never starts Studio: when Studio is not running the request is kept 7 days and Studio adds the checkout at its next start.',
     '',
     `${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b] [--feature <name>]`,
     '  Write a call that renders at once: call.ts, fixture.ts and one variant file per key.',

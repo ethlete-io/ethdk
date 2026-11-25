@@ -89,18 +89,24 @@ describe('et design studio open', () => {
     expect(readdirSync(checksDir)).toEqual([]);
   });
 
-  it('fails clearly when Studio is not running, and leaves no request behind', async () => {
+  it('keeps its request for the next Studio start when Studio is not running', async () => {
     const checksDir = fresh();
+    const checkout = checkoutWithDesign();
     const out = capture();
 
-    const code = await run(['open'], checkoutWithDesign(), checksDir);
+    const code = await run(['open'], checkout, checksDir);
 
     out.restore();
 
-    expect(code).toBe(1);
-    expect(out.lines.join('\n')).toContain('Studio is not running');
-    expect(out.lines.join('\n')).toContain('open Studio');
-    expect(readdirSync(checksDir)).toEqual([]);
+    expect(code).toBe(3);
+    expect(out.lines.join('\n')).toContain('Studio is not running; it adds');
+    expect(out.lines.join('\n')).not.toContain('FAILED');
+
+    const kept = readdirSync(checksDir);
+
+    expect(kept).toHaveLength(1);
+    expect(kept[0]).toMatch(/\.open\.json$/);
+    expect(JSON.parse(readFileSync(join(checksDir, kept[0] ?? ''), 'utf8'))).toEqual({ checkout });
   });
 
   it('relays the refusal Studio answers with', async () => {

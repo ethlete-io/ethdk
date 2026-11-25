@@ -11,6 +11,9 @@ const REPLY_SUFFIX = '.opened.json';
 const DEFAULT_TIMEOUT_MS = 4000;
 const DEFAULT_POLL_MS = 50;
 
+/** Exit code of `studio open` when Studio is down and the request was kept: not a failure, not yet shown. */
+export const STUDIO_OPEN_QUEUED_EXIT = 3;
+
 type Reply = { ok: boolean; message: string };
 
 const wait = (ms: number) => firstValueFrom(timer(ms));
@@ -27,7 +30,7 @@ const replyOf = (path: string): Reply | null => {
 
 /**
  * Asks a running Studio to keep `checkout` and show it. The request is a file in the folder Studio watches
- * (`apps/ethlete-studio/src-tauri/src/studio_open.rs`); both sides must agree on the suffixes. No reply means no Studio.
+ * (`apps/ethlete-studio/src-tauri/src/studio_open.rs`); both sides must agree on the suffixes. No reply means no Studio: the request stays, and Studio adds the checkout when it next starts.
  */
 const requestOpen = async (options: { checkout: string; checksDir: string; timeoutMs: number; pollMs: number }) => {
   const { checkout, checksDir, timeoutMs, pollMs } = options;
@@ -44,14 +47,17 @@ const requestOpen = async (options: { checkout: string; checksDir: string; timeo
     for (;;) {
       const reply = replyOf(replyPath);
 
-      if (reply) return reply;
+      if (reply) {
+        rmSync(request, { force: true });
+
+        return reply;
+      }
 
       if (Date.now() >= deadline) return null;
 
       await wait(pollMs);
     }
   } finally {
-    rmSync(request, { force: true });
     rmSync(replyPath, { force: true });
   }
 };
@@ -102,9 +108,9 @@ export const designStudio = async (options: {
   });
 
   if (!reply) {
-    console.error(failedText('Studio is not running. Ask the human to open Studio, then run this command again.'));
+    console.log(`Studio is not running; it adds ${checkout} when it next starts (request kept 7 days).`);
 
-    return 1;
+    return STUDIO_OPEN_QUEUED_EXIT;
   }
 
   if (!reply.ok) {
