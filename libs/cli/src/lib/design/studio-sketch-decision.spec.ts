@@ -108,8 +108,11 @@ const sketchCommand = (target: string, argv: string[]) =>
     invocation: 'et design',
   });
 
-const withReadySubSketch = async () => {
-  const { target, sketchDir } = readied(withMarkedSlider);
+const withReadySubSketch = async (beforeReady?: (sketchDir: string) => void) => {
+  const { target, sketchDir } = readied((dir) => {
+    withMarkedSlider(dir);
+    beforeReady?.(dir);
+  });
 
   await pick(target, 'b');
 
@@ -126,16 +129,33 @@ const withReadySubSketch = async () => {
   return { target, sketchDir, subDir: subSketchDirOf(target) };
 };
 
-const withApprovedSubSketch = async () => {
-  const ready = await withReadySubSketch();
+const withApprovedSubSketch = async (
+  options: { beforeReady?: (sketchDir: string) => void; subEdit?: (subDir: string) => void } = {},
+) => {
+  const ready = await withReadySubSketch(options.beforeReady);
 
   writeFileSync(
     join(ready.subDir, 'a/components/hero-slider/hero-slider.ts'),
     SLIDER.replace('acme-hero-slider', 'acme-hero-slider-approved'),
   );
+  options.subEdit?.(ready.subDir);
   await approve(ready.target, 'a');
 
   return ready;
+};
+
+const productTokensOf = (target: string) => join(target, DESIGN_DIR, 'acme/shared/tokens.ts');
+
+const withProductTokens = (sketchDir: string) => {
+  const shared = join(sketchDir, '../../shared');
+
+  mkdirSync(shared, { recursive: true });
+  writeFileSync(join(shared, 'tokens.ts'), "export const accent = 'old';\n");
+};
+
+const writeIn = (dir: string, path: string, content: string) => {
+  mkdirSync(join(dir, path, '..'), { recursive: true });
+  writeFileSync(join(dir, path), content);
 };
 
 const productFileOf = (target: string, part: string) =>
@@ -372,5 +392,70 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
       'elements/hero': { variant: 'b' },
       'components/hero-slider': { variant: 'a' },
     });
+  });
+
+  // Decision B726: the parent merge writes an approved sub-sketch's shared/ and asset changes like a sketch merge does.
+  it("writes an approved sub-sketch's shared/ token edit on the parent merge", async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target } = await withApprovedSubSketch({
+      beforeReady: withProductTokens,
+      subEdit: (subDir) => writeIn(subDir, 'shared/tokens.ts', "export const accent = 'sub';\n"),
+    });
+
+    expect(await sketchCommand(target, ['merge', 'elements/hero'])).toBe(0);
+    expect(readFileSync(productTokensOf(target), 'utf8')).toMatch(/accent = .sub./);
+  });
+
+  it("writes an approved sub-sketch's new asset on the parent merge", async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target } = await withApprovedSubSketch({
+      subEdit: (subDir) => writeIn(subDir, 'a/assets/slide.svg', '<svg xmlns="http://www.w3.org/2000/svg"/>\n'),
+    });
+
+    expect(await sketchCommand(target, ['merge', 'elements/hero'])).toBe(0);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/assets/slide.svg'))).toBe(true);
+  });
+
+  // Decision B726: two sketches of one merge changing the same shared/ or asset file refuse it before any write.
+  const withClashingTokens = () =>
+    withApprovedSubSketch({
+      beforeReady: (sketchDir) => {
+        withProductTokens(sketchDir);
+        writeIn(sketchDir, 'shared/tokens.ts', "export const accent = 'parent';\n");
+      },
+      subEdit: (subDir) => writeIn(subDir, 'shared/tokens.ts', "export const accent = 'sub';\n"),
+    });
+
+  it('refuses the parent merge when it and a sub-sketch change the same shared/ file', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, sketchDir, subDir } = await withClashingTokens();
+
+    expect(await sketchCommand(target, ['merge', 'elements/hero'])).not.toBe(0);
+    expect(errors.mock.calls.flat().join('\n')).toContain(
+      'shared/tokens.ts is changed by elements/hero and components/hero-slider',
+    );
+    expect(readFileSync(productTokensOf(target), 'utf8')).toMatch(/accent = .old./);
+    expect(existsSync(sketchDir)).toBe(true);
+    expect(existsSync(subDir)).toBe(true);
+    expect(existsSync(productFileOf(target, 'components/hero-slider'))).toBe(false);
+  });
+
+  it('refuses the parent merge on the Studio pick route when it and a sub-sketch change the same shared/ file', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, sketchDir, subDir } = await withClashingTokens();
+    const answer = await pick(target, 'b');
+
+    expect(answer).toMatchObject({ status: 422 });
+    expect(JSON.stringify(answer.body)).toContain(
+      'shared/tokens.ts is changed by elements/hero and components/hero-slider',
+    );
+    expect(readFileSync(productTokensOf(target), 'utf8')).toMatch(/accent = .old./);
+    expect(existsSync(sketchDir)).toBe(true);
+    expect(existsSync(subDir)).toBe(true);
   });
 });

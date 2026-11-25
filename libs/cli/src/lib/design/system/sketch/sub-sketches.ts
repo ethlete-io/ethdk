@@ -1,6 +1,9 @@
-import { existsSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, readFileSync } from 'fs';
+import { relative, resolve, sep } from 'path';
+import { ASSETS_FOLDER, filesBelow } from '../assets';
+import { productSharedDirsOf, SHARED_FOLDER, sharedFileOf } from '../imports';
 import { ResolvedProduct } from '../resolve-product';
+import { sketchSharedFilesOf } from './merge-shared';
 import {
   createSketch,
   decideSketch,
@@ -124,6 +127,81 @@ export const unapprovedSubSketchesRefusalOf = (options: { product: ResolvedProdu
   return open.length > 0
     ? `${sketch.target} waits on its sub-sketches ${open.join(', ')} - approve each (design sketch approve <sub-sketch> --variant <key>), then merge ${sketch.target}: it writes them together`
     : null;
+};
+
+type ChangedFile = { path: string; file: string };
+
+const assetFilesOf = (variantDir: string) => {
+  const root = resolve(variantDir, ASSETS_FOLDER);
+
+  return new Map(filesBelow(root).map((file) => [relative(root, file), file]));
+};
+
+const sameFile = (a: string | null | undefined, b: string) =>
+  !!a && existsSync(a) && readFileSync(a).equals(readFileSync(b));
+
+const changedOf = (files: Map<string, string>, bases: ((path: string) => string | null | undefined)[]) =>
+  [...files]
+    .filter(([path, file]) => !bases.some((base) => sameFile(base(path), file)))
+    .map(([path, file]) => ({ path, file }));
+
+/**
+ * The `shared/` and `assets/` files each approved sub-sketch of `sketch` changes - those that differ from the
+ * product's and from the parent's - or which file two sketches of the merge change to different contents.
+ */
+export const subSketchFilesOf = (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+}): { sub: ApprovedSubSketch; shared: ChangedFile[]; assets: ChangedFile[] }[] | string => {
+  const { product, sketch, variant } = options;
+  const approved = subSketchesOf({ product, sketch }).approved;
+
+  if (approved.length === 0) return [];
+
+  const productShared = (path: string) => sharedFileOf({ dirs: productSharedDirsOf(product), path });
+  const productAsset = (path: string) =>
+    [product.dir, ...(product.base ? [product.base.dir] : [])]
+      .map((dir) => resolve(dir, ASSETS_FOLDER, path))
+      .find((file) => existsSync(file));
+  const parentShared = sketchSharedFilesOf(sketch, variant);
+  const parentAssets = assetFilesOf(variantDirOf(sketch, variant));
+  const subs = approved.map((sub) => ({
+    sub,
+    shared: changedOf(sketchSharedFilesOf(sub.sketch, sub.approval.variant), [
+      productShared,
+      (path) => parentShared.get(path),
+    ]),
+    assets: changedOf(assetFilesOf(variantDirOf(sub.sketch, sub.approval.variant)), [
+      productAsset,
+      (path) => parentAssets.get(path),
+    ]),
+  }));
+  const writers = [
+    {
+      target: sketch.target,
+      shared: changedOf(parentShared, [productShared]),
+      assets: changedOf(parentAssets, [productAsset]),
+    },
+    ...subs.map(({ sub, shared, assets }) => ({ target: sub.sketch.target, shared, assets })),
+  ];
+
+  for (const folder of [SHARED_FOLDER, ASSETS_FOLDER] as const) {
+    const byPath = new Map<string, { target: string; file: string }[]>();
+
+    for (const writer of writers)
+      for (const { path, file } of folder === SHARED_FOLDER ? writer.shared : writer.assets)
+        byPath.set(path, [...(byPath.get(path) ?? []), { target: writer.target, file }]);
+
+    for (const [path, changes] of byPath) {
+      const [first] = changes;
+
+      if (first && changes.some(({ file }) => !sameFile(first.file, file)))
+        return `${folder}/${path.split(sep).join('/')} is changed by ${changes.map(({ target }) => target).join(' and ')} - keep the change in one of them, then merge ${sketch.target}`;
+    }
+  }
+
+  return subs;
 };
 
 /** Why `sketch` may not merge on its own because a pick of its parent opened it, or `null`. */

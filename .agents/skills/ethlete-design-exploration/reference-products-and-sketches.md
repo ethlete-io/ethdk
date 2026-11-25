@@ -101,7 +101,8 @@ A pick of a variant with marked sub-parts merges nothing: it opens one sub-sketc
 that variant. Draw each to ready, and once the user approves it, record that with
 `sketch approve <sub-part> --variant <key> --decided-by <their words> --by <model id>`; a sub-sketch never
 merges on its own. The parent merge waits until every sub-sketch is approved and names the open ones;
-then one merge writes the parent and every approved sub-part, and closes the sub-sketches.
+then one merge writes the parent and every approved sub-part with its `shared/` and asset changes, and closes
+the sub-sketches. Two of them changing the same `shared/` or asset file refuse the merge, naming the file.
 
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems

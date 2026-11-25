@@ -42,12 +42,7 @@ import { overlaySketch } from './overlay';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
 import { CleanCopy, cleanCopyOf, contentsBelow } from './clean-copy';
-import {
-  ApprovedSubSketch,
-  subSketchesOf,
-  subSketchMergeRefusalOf,
-  unapprovedSubSketchesRefusalOf,
-} from './sub-sketches';
+import { subSketchFilesOf, subSketchMergeRefusalOf, unapprovedSubSketchesRefusalOf } from './sub-sketches';
 import {
   authorsOf,
   clearSketchReport,
@@ -57,6 +52,7 @@ import {
   Sketch,
   sketchesDirOf,
   variantDirOf,
+  variantSharedDirOf,
 } from './sketch';
 
 const replace = (entries: { from: string | null; to: string }[]) => {
@@ -496,6 +492,10 @@ export const mergeRefusalOf = (options: { product: ResolvedProduct; sketch: Sket
 
   if (typeof pick === 'string') return pick;
 
+  const clash = subSketchFilesOf({ product, sketch, variant: pick.variant });
+
+  if (typeof clash === 'string') return clash;
+
   const lent = overlaySketch({ product, sketch, variant: pick.variant }).borrowed;
 
   if (lent.length > 0)
@@ -513,14 +513,30 @@ export const rebaseOthersAfterMerge = (options: { target: string; product: Resol
     before: options.sketch.baseline ?? {},
   });
 
-const overlayApprovedSubSketches = (options: { into: string; subSketches: ApprovedSubSketch[] }) => {
-  for (const { sketch: sub, approval } of options.subSketches)
-    for (const part of partFilesOf(variantDirOf(sub, approval.variant)).parts) {
-      const into = resolve(options.into, part.layer, part.name);
+const overlayApprovedSubSketches = (options: {
+  into: { sketch: Sketch; variant: string };
+  subSketches: Exclude<ReturnType<typeof subSketchFilesOf>, string>;
+}) => {
+  const { sketch, variant } = options.into;
+  const variantDir = variantDirOf(sketch, variant);
+  const copyTo = (dir: string, files: { path: string; file: string }[]) => {
+    for (const { path, file } of files) {
+      mkdirSync(dirname(resolve(dir, path)), { recursive: true });
+      cpSync(file, resolve(dir, path));
+    }
+  };
+
+  for (const { sub, shared, assets } of options.subSketches) {
+    for (const part of partFilesOf(variantDirOf(sub.sketch, sub.approval.variant)).parts) {
+      const into = resolve(variantDir, part.layer, part.name);
 
       rmSync(into, { recursive: true, force: true });
       cpSync(dirname(part.file), into, { recursive: true });
     }
+
+    copyTo(variantSharedDirOf(sketch, variant), shared);
+    copyTo(resolve(variantDir, ASSETS_FOLDER), assets);
+  }
 };
 
 const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal => {
@@ -559,9 +575,13 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
     rmSync(sketchesDirOf(copied.dir), { recursive: true, force: true });
     cpSync(sketch.dir, copiedSketch.dir, { recursive: true });
 
-    const subSketches = subSketchesOf({ product, sketch }).approved;
+    const subSketchFiles = subSketchFilesOf({ product, sketch, variant });
 
-    overlayApprovedSubSketches({ into: variantDirOf(copiedSketch, variant), subSketches });
+    if (typeof subSketchFiles === 'string') return subSketchFiles;
+
+    const subSketches = subSketchFiles.map(({ sub }) => sub);
+
+    overlayApprovedSubSketches({ into: { sketch: copiedSketch, variant }, subSketches: subSketchFiles });
 
     const edited = editedPartDirOf({ product, sketch });
 
@@ -675,7 +695,8 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
  * replaces it there; the rest goes into the target's folder when the target imports it, with its `@shared/` imports made relative; any other part that imports it stops the merge. Otherwise the addressed comments on its variants, and those on the merged parts that have no sketch, are resolved, and the open ones on its variants are addressed, by `author` or the user. Refuses without a
  * pick, and when a part the variant replaces changed in the product since the sketch's baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase
  * would let it, the parts that changed (`[]` without a baseline). A parent merges only once each of its sub-sketches is approved,
- * and then writes each approved variant's parts too, records them with their approval and deletes the sub-sketches.
+ * and then writes each approved variant's parts, `shared/` and asset changes too, records them with their approval and deletes the
+ * sub-sketches; two of the sketches changing one `shared/` or asset file differently refuse the merge.
  */
 export const mergeSketch = (options: {
   target: string;
