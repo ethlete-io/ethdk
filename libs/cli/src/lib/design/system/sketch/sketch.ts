@@ -1858,6 +1858,7 @@ export const addVariant = (options: {
   mkdirSync(resolve(variantDirOf(sketch, variant), ASSETS_FOLDER), { recursive: true });
 
   const { decision: _decision, ...undecided } = sketch;
+  const source = sketch.variantInfo[from];
   const added: Sketch = {
     ...undecided,
     status: 'in progress',
@@ -1866,7 +1867,8 @@ export const addVariant = (options: {
       ...sketch.variantInfo,
       [variant]: {
         ...variantInfoOf({ round: runningRoundOf({ rounds }).key, author }),
-        ...(sketch.variantInfo[from]?.notRebuilds?.length ? { notRebuilds: sketch.variantInfo[from].notRebuilds } : {}),
+        ...(source?.subParts?.length ? { subParts: source.subParts } : {}),
+        ...(source?.notRebuilds?.length ? { notRebuilds: source.notRebuilds } : {}),
       },
     },
     variants: [...sketch.variants, variant].sort(),
