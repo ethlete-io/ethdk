@@ -50,6 +50,8 @@ export type MenuMockOptions = {
   id?: string;
   /** The app's default color theme name, as the menu syncs it from its trigger. */
   color?: string;
+  /** The color theme name the app registers for errors, e.g. `danger` in Storybook. */
+  errorColor?: string;
   /** A surface theme name the app registers, for the panel. Left out, the panel takes the surface one elevation above its parent. */
   surface?: string;
 };
@@ -74,7 +76,7 @@ const rowAttributes = (row: MenuMockRowState) =>
     row.active && row.activeSource && `data-active-source="${row.activeSource}"`,
   ].filter(Boolean);
 
-const menuItem = (row: MenuMockItem, submenuId: string) => {
+const menuItem = (row: MenuMockItem, { submenuId, errorColor }: { submenuId: string; errorColor?: string }) => {
   const attributes = [
     'et-menu-item',
     'type="button"',
@@ -82,7 +84,7 @@ const menuItem = (row: MenuMockItem, submenuId: string) => {
     ...rowAttributes(row),
     row.submenu && `aria-haspopup="menu" aria-expanded="${row.submenu === 'open'}"`,
     row.submenu === 'open' && `aria-controls="${submenuId}" data-menu-open="true"`,
-    'class="et-menu-item et-color--inherited"',
+    `class="et-menu-item et-color--${row.destructive && errorColor ? errorColor : 'inherited'}"`,
     `data-variant="${row.destructive ? 'destructive' : 'default'}"`,
   ].filter(Boolean);
   const icon = row.icon ? iconMarkup(row.icon) : '';
@@ -132,7 +134,7 @@ export const menu = (options: MenuMockOptions) => {
         return `<et-menu-${row.kind} class="et-menu-group et-menu-${row.kind}" role="group"${labelledBy}>${label}${row.items.map(selectionRow).join('')}</et-menu-${row.kind}>`;
       }
       default:
-        return menuItem(row, `et-menu-panel-${id}-${index}`);
+        return menuItem(row, { submenuId: `et-menu-panel-${id}-${index}`, errorColor: options.errorColor });
     }
   };
 
