@@ -195,9 +195,7 @@ export const studioMenu = async ({
         ${open ? '' : ' hidden'}
       >
         ${panel.body} ${arrowMarkup}
-        <div class="st-studio-submenu absolute left-full z-30 w-62" data-studio-submenu ${sub.body ? '' : ' hidden'}>
-          ${sub.body}
-        </div>
+        <div class="absolute left-full z-30 w-62" data-studio-submenu ${sub.body ? '' : ' hidden'}>${sub.body}</div>
       </div>
     </div>`,
     styles: arrow.styles + styles + logo.styles + buttonStyles + panel.styles + sub.styles,
