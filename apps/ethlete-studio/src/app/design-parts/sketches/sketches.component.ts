@@ -971,6 +971,14 @@ export class SketchesComponent {
     return reason ? SYSTEM_TREE_LABELS.withdrawnWith(reason) : SYSTEM_TREE_LABELS.withdrawnLabel;
   }
 
+  protected missingLabelOf(row: SketchRow) {
+    if (this.failures()[row.key] !== undefined) return SKETCHES_LABELS.status.failed;
+
+    return row.key === SKETCH_CURRENT
+      ? SKETCHES_LABELS.newInSketch
+      : SKETCHES_LABELS.removedIn(row.label ?? SKETCHES_LABELS.variant(row.key));
+  }
+
   protected isDrawn(row: SketchRow) {
     return row.key === this.drawnKey() || (this.status() === 'drawing' && row.drawing !== undefined);
   }

@@ -158,6 +158,54 @@ describe('SketchesComponent', () => {
     expect(stage?.querySelector('[data-sk-missing][data-sk-state="default"]')).not.toBeNull();
   });
 
+  describe('a side-by-side variant whose module failed to load (tomflix shell-app, B676)', () => {
+    const error =
+      "Cannot find module '@system/foundations/logo' imported from '/home/tom/dev/scratch-b750/tomflix/.ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.ts'";
+    const drawn = (key: string): SketchRow => ({
+      key,
+      note: '',
+      width: 75,
+      sized: true,
+      shots: [{ state: 'default', changed: true, height: 69, width: 75 }],
+    });
+    const renderFailed = async () =>
+      (
+        await render({
+          part: 'elements/shell-app',
+          rows: [{ key: 'a', note: '', width: 75, sized: true, shots: [] }, drawn('b'), drawn('c')],
+          errored: ['a'],
+          failures: { a: error },
+          fresh: true,
+          camera: '100',
+        })
+      ).nativeElement as HTMLElement;
+
+    it('marks its cells as failed, not as a state the variant dropped', async () => {
+      const root = await renderFailed();
+      const missing = root.querySelector<HTMLElement>('[data-sk-row="a"] [data-sk-missing][data-sk-state="default"]');
+
+      expect(missing?.querySelector('[data-sk-failed-cell]')?.textContent?.trim()).toBe(LABELS.status.failed);
+      expect(missing?.textContent).not.toContain(LABELS.removedIn(LABELS.variant('a')));
+    });
+
+    it('keeps its cells on the line of the other columns: the error clamps and the heads share one grid row', async () => {
+      const root = await renderFailed();
+      const list = root.querySelector<HTMLElement>('[data-sk-changed]');
+      const failed = root.querySelector<HTMLElement>('[data-sk-row="a"] [data-sk-row-failed]');
+
+      expect(failed?.classList.contains('line-clamp-3')).toBe(true);
+      expect(failed?.title).toBe(LABELS.rowFailed(error));
+      expect(list?.classList.contains('grid')).toBe(true);
+      expect(list?.classList.contains('grid-rows-[auto_auto]')).toBe(true);
+      for (const key of ['a', 'b', 'c']) {
+        const section = root.querySelector(`[data-sk-changed] > [data-sk-row="${key}"]`);
+
+        expect(section?.classList.contains('grid-rows-subgrid')).toBe(true);
+        expect(section?.classList.contains('row-span-2')).toBe(true);
+      }
+    });
+  });
+
   // Decision human 23.11. (B703): the title (e.g. "Entwurf 46 B") goes away, neither the part key nor a round title shows.
   it('shows no sketch title, neither the part key nor a round title', async () => {
     const root: HTMLElement = (await render({ camera: '100', rows: ROWS, part: 'elements/variant-cell@x' }))

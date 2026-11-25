@@ -211,9 +211,12 @@
             <div
               [class.flex-col]="!sideBySide() && !lines"
               [class.items-stretch]="!sideBySide() && !lines"
-              [class.items-start]="sideBySide() && !lines"
-              [class.grid]="!!lines"
-              [class.flex]="!lines"
+              [class.grid]="!!lines || sideBySide()"
+              [class.grid-flow-col]="sideBySide() && !lines"
+              [class.auto-cols-max]="sideBySide() && !lines"
+              [class.grid-rows-[auto_auto]]="sideBySide() && !lines"
+              [class.justify-start]="sideBySide() && !lines"
+              [class.flex]="!lines && !sideBySide()"
               [style.grid-template-columns]="
                 lines ? 'repeat(' + (stacked() ? 2 : changedRows().length + 1) + ', max-content)' : null
               "
@@ -343,6 +346,7 @@
   </div>
 </ethlete-shell-page>
 <ng-template #rowTemplate let-row let-block="block">
+  @let aligned = sideBySide() && !grid() && block !== undefined;
   <section
     #section
     [attr.data-sk-row]="row.key"
@@ -354,7 +358,8 @@
     [class.row-span-full]="!!grid() && stackedGridRowOf(block) === null"
     [style.grid-row]="stackedGridRowOf(block)"
     [style.grid-column]="stackedGridRowOf(block) === null ? null : 2"
-    [class.grid-rows-subgrid]="!!grid()"
+    [class.grid-rows-subgrid]="!!grid() || aligned"
+    [class.row-span-2]="aligned"
     class="grid grid-cols-[minmax(0,1fr)] rounded-control-md p-space-3 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
   >
     <div [class.min-w-full]="sideBySide()" [class.w-0]="sideBySide()" class="min-w-0" data-sk-head-row>
@@ -432,11 +437,8 @@
                       [style.height.px]="stateHeightOf(state) * scale()"
                       [attr.data-sk-state]="state"
                       [attr.data-sk-variant]="row.key"
-                      [attr.title]="
-                        row.key === CURRENT
-                          ? LABELS.newInSketch
-                          : LABELS.removedIn(row.label ?? LABELS.variant(row.key))
-                      "
+                      [attr.title]="missingLabelOf(row)"
+                      [attr.data-sk-failed-cell]="failures()[row.key] === undefined ? null : ''"
                       class="box-border self-end rounded-control-sm border border-dashed border-(--et-surface-border-solid)"
                       data-sk-missing
                     ></div>
@@ -467,14 +469,23 @@
                       >{{ state }}</span
                     ></span
                   >
-                  <div
-                    [style.width.px]="row.width * scale()"
-                    class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
-                  >
-                    {{
-                      row.key === CURRENT ? LABELS.newInSketch : LABELS.removedIn(row.label ?? LABELS.variant(row.key))
-                    }}
-                  </div>
+                  @if (failures()[row.key] === undefined) {
+                    <div
+                      [style.width.px]="row.width * scale()"
+                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
+                    >
+                      {{ missingLabelOf(row) }}
+                    </div>
+                  } @else {
+                    <div
+                      [style.width.px]="row.width * scale()"
+                      [etProvideColor]="errorTheme()"
+                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-et-theme p-space-2 text-center text-ui-xs text-et-theme-ink"
+                      data-sk-failed-cell
+                    >
+                      {{ missingLabelOf(row) }}
+                    </div>
+                  }
                 </div>
               }
             }
@@ -558,7 +569,8 @@
       @if (failures()[row.key]; as failure) {
         <span
           [etProvideColor]="errorTheme()"
-          class="text-ui-xs text-et-theme-ink wrap-anywhere"
+          [attr.title]="LABELS.rowFailed(failure)"
+          class="line-clamp-3 text-ui-xs text-et-theme-ink wrap-anywhere"
           role="alert"
           data-sk-row-failed
           >{{ LABELS.rowFailed(failure) }}</span
