@@ -33,6 +33,7 @@ const censusCells = (page, only = null) =>
         .filter(({ cell }) => only === null || cell.dataset['shot'] === only)
         .map(({ cell, index }) => {
           const box = cell.getBoundingClientRect();
+          const frame = cell.closest('[data-sk-frame]')?.getBoundingClientRect() ?? box;
           const img = cell.querySelector('img');
           const iframe = cell.querySelector('iframe');
 
@@ -49,6 +50,13 @@ const censusCells = (page, only = null) =>
               box.top < view.bottom &&
               box.right > view.left &&
               box.left < view.right,
+            frameTop: frame.top - view.top,
+            frameVisible:
+              frame.height > 0 &&
+              frame.bottom > view.top &&
+              frame.top < view.bottom &&
+              frame.right > view.left &&
+              frame.left < view.right,
             picture: !!img && img.complete && img.naturalWidth > 0 && showing(img),
             drawnPictureSrc: img?.src ?? null,
             pictureSrc: cell.querySelector('img[data-shot-picture]')?.src ?? null,

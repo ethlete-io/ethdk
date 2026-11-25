@@ -3689,7 +3689,7 @@ const CASES = [
       let top;
 
       for (const until = Date.now() + WAIT_MS; !top && Date.now() < until;) {
-        top = (await sketchCells(page)).filter((cell) => cell.visible).sort((a, b) => a.top - b.top)[0];
+        top = (await sketchCells(page)).filter((cell) => cell.frameVisible).sort((a, b) => a.frameTop - b.frameTop)[0];
         if (!top) await page.waitForTimeout(250);
       }
 
@@ -3714,7 +3714,7 @@ const CASES = [
 
       const gone = await cellOf(top.key);
 
-      if (gone?.visible) return { ok: false, detail: `${top.key} still visible after ${away} steps` };
+      if (gone?.frameVisible) return { ok: false, detail: `${top.key} still visible after ${away} steps` };
 
       try {
         writeFileSync(
@@ -6625,7 +6625,27 @@ const lead = async () => {
     );
     console.log(`Running ${total} test${total === 1 ? '' : 's'} using ${workers} worker${workers === 1 ? '' : 's'}`);
 
+    const startCase = (index, job) => {
+      busy.set(index, job);
+      if (firstCase) return;
+      firstCase = true;
+      console.log(`[canvas-e2e] first case starting at ${seconds(performance.now() - runStartedAt).trim()}`);
+    };
+    const runFileJob = async (index, job) => {
+      if (job.takesBuilt) await build;
+      record(job, await runStandalone(job, { built: built ?? scratch, port: await freePort() }));
+      busy.delete(index);
+    };
+
     const runWorker = async (index) => {
+      if (queue[0]?.file) {
+        const job = queue.shift();
+
+        startCase(index, job);
+        await runFileJob(index, job);
+        return true;
+      }
+
       const port = await freePort();
       const checkFixtures = index === 0 && !fixturesAsked;
 
@@ -6673,15 +6693,10 @@ const lead = async () => {
         }
         current = queue.shift();
         tookJob ||= !!current;
-        if (current) busy.set(index, current);
-        if (current && !firstCase) {
-          firstCase = true;
-          console.log(`[canvas-e2e] first case starting at ${seconds(performance.now() - runStartedAt).trim()}`);
-        }
+        if (current) startCase(index, current);
         if (current?.file) {
-          record(current, await runStandalone(current, { built: built ?? scratch, port: await freePort() }));
+          await runFileJob(index, current);
           current = undefined;
-          busy.delete(index);
           return giveJob();
         }
         child.send({ job: current ?? null });
