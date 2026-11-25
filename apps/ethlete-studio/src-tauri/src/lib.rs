@@ -251,10 +251,11 @@ pub fn run() {
     shutdown::exit_with_signal_code();
 }
 
-/// Workaround: tauri-runtime-cef calls `cef::shutdown` right after the last `OnBeforeClose`, while
-/// the closed Chrome-style browser may still wait for its deletion task; `CefShutdown` then crashes
-/// in `BrowserManagerService::Shutdown`. Pumps CEF the way its external-pump sample does before
-/// shutdown:
+/// Workaround: tauri-runtime-cef calls `cef::shutdown` right after the last `OnBeforeClose`
+/// (crates/tauri-runtime-cef/src/runtime.rs:3411 at tauri rev 9d1a5b176), before the closed
+/// Chrome-style browser's deletion task has run; `CefShutdown` then crashes in
+/// `BrowserManagerService::Shutdown`. Remove it once tauri-runtime-cef waits for the browser's
+/// destruction before `cef::shutdown`. Pumps CEF the way its external-pump sample does:
 /// https://github.com/chromiumembedded/cef/blob/master/tests/shared/browser/main_message_loop_external_pump_linux.cc
 fn drain_cef() {
     for _ in 0..10 {
