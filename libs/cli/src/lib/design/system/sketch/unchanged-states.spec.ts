@@ -269,7 +269,14 @@ describe('unchangedStatesOf', () => {
         expect(await keptComparisonOf({ product, sketch, variant: 'a', pictured: true })).toEqual({
           unchanged: [],
           changes: {
-            default: { width: 40, height: 20, box: { x: 30, y: 5, width: 4, height: 1 }, pixels: 4, regions: 1 },
+            default: {
+              width: 40,
+              height: 20,
+              box: { x: 30, y: 5, width: 4, height: 1 },
+              areas: [{ x: 30, y: 5, width: 4, height: 1 }],
+              pixels: 4,
+              regions: 1,
+            },
           },
         });
       });

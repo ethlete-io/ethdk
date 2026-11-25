@@ -24,6 +24,20 @@ describe('changeBoxOf', () => {
       box: { x: 20, y: 30, width: 135, height: 52 },
       pixels: 16,
       regions: 2,
+      areas: [
+        { x: 20, y: 30, width: 10, height: 1 },
+        { x: 150, y: 80, width: 5, height: 2 },
+      ],
+    });
+  });
+
+  it('joins regions closer than 16 pixels into one changed area, as the changed crops of a shot do', () => {
+    const before = pictureOf(200, 100);
+    const after = pictureOf(200, 100, [...strip(20, 30, 10), ...strip(40, 30, 10)]);
+
+    expect(changeBoxOf(before, after)).toMatchObject({
+      regions: 2,
+      areas: [{ x: 20, y: 30, width: 30, height: 1 }],
     });
   });
 

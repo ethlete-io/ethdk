@@ -56,7 +56,7 @@
         <div [class]="loading() ? 'invisible absolute inset-x-0 top-0' : 'contents'">
           <ng-content />
         </div>
-        @if (mark(); as box) {
+        @for (box of marks(); track $index) {
           <span
             [style.left.px]="box.left"
             [style.top.px]="box.top"

@@ -159,6 +159,9 @@ export const SKETCH_MERGE_PORTS: Record<'one' | 'two', SketchMergePort> = {
   two: { merged: ['components/sketch-status-badge', 'elements/variant-cell'], since: 'seit 1 Min' },
 };
 
+export const SKETCH_ROUND_NOTE =
+  'Kommentar-Pins stehen auf der Sketch-Seite in ihrer Zelle statt als eigener Zustand der Zelle.';
+
 export const SKETCH_ROUNDS: SketchRound[] = [{ value: 'round-1', label: 'Runde 1 · Suche und Update' }];
 
 export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'human', initials: 'TB', count: 1 }];
@@ -380,7 +383,13 @@ const SCREEN_CHANGES: { states: string[]; change: SketchChange }[] = [
       'agent-failed',
       'question-only',
     ],
-    change: { ...SCREEN, box: { x: 842, y: 371, width: 575, height: 45 }, pixels: 1358, regions: 3 },
+    change: {
+      ...SCREEN,
+      box: { x: 842, y: 371, width: 575, height: 45 },
+      pixels: 1358,
+      regions: 3,
+      areas: [842, 1041, 1240].map((x) => ({ x, y: 371, width: 176, height: 45 })),
+    },
   },
   {
     states: ['port-after-merge'],

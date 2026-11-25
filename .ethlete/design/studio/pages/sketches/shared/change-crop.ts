@@ -6,7 +6,7 @@ type Box = { x: number; y: number; width: number; height: number };
 
 type VariantReason = { variant: string; pixels: number; units: string };
 
-export type ChangeGroup = { states: string[]; box: Box; reasons: VariantReason[] };
+export type ChangeGroup = { states: string[]; box: Box; areas: Box[]; reasons: VariantReason[] };
 
 export const SCREEN_WIDTH = 1440;
 export const SCREEN_HEIGHT = 900;
@@ -32,11 +32,13 @@ export const GROUPS: ChangeGroup[] = [
       'question-only',
     ],
     box: { x: 842, y: 371, width: 575, height: 45 },
+    areas: [842, 1041, 1240].map((x) => ({ x, y: 371, width: 176, height: 45 })),
     reasons: [{ variant: 'Entwurf 1', pixels: 1358, units: '3 Stellen' }],
   },
   {
     states: ['port-after-merge'],
     box: { x: 300, y: 92, width: 420, height: 24 },
+    areas: [{ x: 300, y: 92, width: 420, height: 24 }],
     reasons: [{ variant: 'Entwurf 1', pixels: 2140, units: '1 Stelle' }],
   },
 ];
@@ -147,9 +149,9 @@ const markOf = (box: Box) =>
     style="left: ${box.x - 4}px; top: ${box.y - 4}px; width: ${box.width + 8}px; height: ${box.height + 8}px"
   ></span>`;
 
-export const markedScreen = (screen: string, box: Box) =>
+export const markedScreen = (screen: string, areas: Box[]) =>
   html`<div class="relative" style="width: ${SCREEN_WIDTH}px; height: ${SCREEN_HEIGHT}px">
-    ${screen}${markOf(box)}
+    ${screen}${areas.map(markOf).join('')}
   </div>`;
 
 export const cropShot = (screen: string, crop: Box) => {

@@ -17,7 +17,7 @@ type Props = {
   height?: number;
   shown?: number;
   crop?: string;
-  mark?: { left: number; top: number; width: number; height: number };
+  marks?: { left: number; top: number; width: number; height: number }[];
   stacked?: string[];
   selected?: boolean;
   overlay?: string;
@@ -46,7 +46,7 @@ const frame = ({
   height,
   shown = height,
   crop,
-  mark,
+  marks = [],
   stacked = [],
   selected = false,
   same = false,
@@ -83,15 +83,16 @@ const frame = ({
           style="${height === undefined ? '' : 'height: ' + height + 'px;'} ${crop ? 'transform: ' + crop : ''}"
         >
           <div class="contents" ${slot('shot')}>${loading ? pending(height) : shot}</div>
-          ${
-            mark
-              ? html`<span
+          ${marks
+            .map(
+              (mark) =>
+                html`<span
                   class="pointer-events-none absolute rounded-control-sm border-2 border-et-theme"
                   style="left: ${mark.left}px; top: ${mark.top}px; width: ${mark.width}px; height: ${mark.height}px"
                   data-sk-crop-mark
-                ></span>`
-              : ''
-          }
+                ></span>`,
+            )
+            .join('')}
         </div>
       </div>
       ${loading ? loadingBadge : ''}
@@ -139,12 +140,12 @@ const base: Props = { state: 'default', width: 240, height: 120, shot: demo };
 const crop = {
   shown: 60,
   crop: 'scale(2) translate(-60px, -45px)',
-  mark: { left: 72, top: 46, width: 96, height: 28 },
+  marks: [{ left: 72, top: 46, width: 96, height: 28 }],
 };
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
-  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a base-state cell names the states folded as drawn like it after its own state name (hover, active = default). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with the accent crop mark on it and, when it stands for a group of states, two card edges under the frame like a stack and the names of the folded states below (+ active, focus-visible); the host places comment pins on their point in the shot through the overlay slot.',
+  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a base-state cell names the states folded as drawn like it after its own state name (hover, active = default). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with an accent crop mark on each changed area and, when it stands for a group of states, two card edges under the frame like a stack and the names of the folded states below (+ active, focus-visible); the host places comment pins on their point in the shot through the overlay slot.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [240],
   states: {

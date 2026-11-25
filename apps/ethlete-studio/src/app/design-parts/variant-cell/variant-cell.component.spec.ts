@@ -95,13 +95,16 @@ describe('VariantCellComponent', () => {
       height: 100,
       shown: 40,
       crop: 'scale(2)',
-      mark: { left: 1, top: 2, width: 30, height: 20 },
+      marks: [
+        { left: 1, top: 2, width: 30, height: 20 },
+        { left: 60, top: 2, width: 30, height: 20 },
+      ],
       scale: 0.5,
       stacked: ['title-hover', 'title-focus-visible'],
     });
 
     expect(cell.querySelector('[data-sk-frame]')?.hasAttribute('data-sk-cropped')).toBe(true);
-    expect(cell.querySelector('[data-sk-crop-mark]')).not.toBeNull();
+    expect(cell.querySelectorAll('[data-sk-crop-mark]').length).toBe(2);
     expect(cell.querySelectorAll('[data-sk-crop-stack]').length).toBe(2);
     expect(cell.querySelector('[data-sk-stack-states]')?.textContent).toBe('+ title-hover, title-focus-visible');
     expect(cell.querySelector<HTMLElement>('[data-sk-stack-states]')?.style.width).toBe('100px');

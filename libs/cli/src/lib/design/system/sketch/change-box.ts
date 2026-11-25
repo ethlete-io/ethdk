@@ -1,5 +1,6 @@
 import { pixelsDiffer } from '../anti-alias';
 import { decodePng } from '../part-compare';
+import { ChangedBox, changedAreasOf } from '../../changed-areas';
 
 export type ChangeBox = {
   width: number;
@@ -7,25 +8,34 @@ export type ChangeBox = {
   box: { x: number; y: number; width: number; height: number };
   pixels: number;
   regions: number;
+  areas: ChangedBox[];
 };
 
 const REGION_CELL = 8;
 
-const regionsOf = (cells: Set<number>, columns: number) => {
-  const seen = new Set<number>();
-  let regions = 0;
+type Bounds = [left: number, top: number, right: number, bottom: number];
 
-  for (const start of cells) {
+const regionBoxesOf = (cells: Map<number, Bounds>, columns: number) => {
+  const seen = new Set<number>();
+  const boxes: ChangedBox[] = [];
+
+  for (const [start, first] of cells) {
     if (seen.has(start)) continue;
 
-    regions++;
     seen.add(start);
     const queue = [start];
+    let [left, top, right, bottom] = first;
 
     while (queue.length > 0) {
       const cell = queue.pop() ?? 0;
       const column = cell % columns;
       const row = (cell - column) / columns;
+      const [cellLeft, cellTop, cellRight, cellBottom] = cells.get(cell) ?? first;
+
+      left = Math.min(left, cellLeft);
+      top = Math.min(top, cellTop);
+      right = Math.max(right, cellRight);
+      bottom = Math.max(bottom, cellBottom);
 
       for (let dy = -1; dy <= 1; dy++)
         for (let dx = -1; dx <= 1; dx++) {
@@ -37,9 +47,11 @@ const regionsOf = (cells: Set<number>, columns: number) => {
           queue.push(next);
         }
     }
+
+    boxes.push({ x: left, y: top, width: right - left + 1, height: bottom - top + 1 });
   }
 
-  return regions;
+  return boxes;
 };
 
 /**
@@ -77,7 +89,7 @@ export const changeBoxOf = (before: Buffer, after: Buffer): ChangeBox | null => 
 
     const { width, height } = left;
     const columns = Math.ceil(width / REGION_CELL);
-    const cells = new Set<number>();
+    const cells = new Map<number, Bounds>();
     let pixels = 0;
     let top = height;
     let leftmost = width;
@@ -95,18 +107,28 @@ export const changeBoxOf = (before: Buffer, after: Buffer): ChangeBox | null => 
         bottom = Math.max(bottom, y);
         leftmost = Math.min(leftmost, x);
         rightmost = Math.max(rightmost, x);
-        cells.add(Math.floor(y / REGION_CELL) * columns + Math.floor(x / REGION_CELL));
+        const cell = Math.floor(y / REGION_CELL) * columns + Math.floor(x / REGION_CELL);
+        const bounds = cells.get(cell);
+
+        if (bounds) {
+          bounds[0] = Math.min(bounds[0], x);
+          bounds[2] = Math.max(bounds[2], x);
+          bounds[3] = y;
+        } else cells.set(cell, [x, y, x, y]);
       }
 
-    return pixels === 0
-      ? null
-      : {
-          width,
-          height,
-          box: { x: leftmost, y: top, width: rightmost - leftmost + 1, height: bottom - top + 1 },
-          pixels,
-          regions: regionsOf(cells, columns),
-        };
+    if (pixels === 0) return null;
+
+    const regions = regionBoxesOf(cells, columns);
+
+    return {
+      width,
+      height,
+      box: { x: leftmost, y: top, width: rightmost - leftmost + 1, height: bottom - top + 1 },
+      pixels,
+      regions: regions.length,
+      areas: changedAreasOf(regions),
+    };
   } catch {
     return null;
   }

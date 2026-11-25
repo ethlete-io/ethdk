@@ -42,7 +42,7 @@ export class VariantCellComponent {
   public height = input<number>();
   public shown = input<number>();
   public crop = input<string | null>(null);
-  public mark = input<VariantCellMark | null>(null);
+  public marks = input<readonly VariantCellMark[]>([]);
   public stacked = input<readonly string[]>([]);
   public selected = input(false);
   public frameRef = viewChild<ElementRef<HTMLElement>>('frame');

@@ -48,12 +48,21 @@
     data-sketches-page
   >
     <div
-      class="relative -m-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border min-h-0 flex-1 overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+      class="relative -m-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border flex min-h-0 flex-1 flex-col overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
     >
+      @if (roundNote(); as note) {
+        <p
+          [attr.title]="note"
+          class="m-0 shrink-0 truncate pt-space-3 text-ui-sm text-et-surface-muted"
+          data-sk-round-note
+        >
+          {{ note }}
+        </p>
+      }
       <ethlete-canvas-viewport
         #list
         [attr.data-sk-fit]="canvas.zoom() === 'fit' ? '' : null"
-        class="size-full [--st-shell-inset-left:0px]"
+        class="min-h-0 w-full flex-1 [--st-shell-inset-left:0px]"
         data-sk-rows
       >
         <div
@@ -66,15 +75,6 @@
           [style.will-change]="canvas.preview() ? 'transform' : null"
           class="flex origin-top-left flex-col gap-space-2 pb-16"
         >
-          @if (port(); as merge) {
-            <p
-              [style.font-size.px]="noteSize()"
-              class="m-0 leading-[1.35] text-et-surface-muted wrap-anywhere"
-              data-sk-round-note
-            >
-              {{ LABELS.mergePort(merge.merged) }}
-            </p>
-          }
           @if (transposed()) {
             <div
               #matrix
@@ -553,6 +553,15 @@
       data-sk-head-tag
       >{{ row.label ?? (row.key === CURRENT ? LABELS.current : row.key) }}</span
     >
+    @if (row.note) {
+      <p
+        [attr.title]="row.note"
+        class="m-0 mt-space-1 line-clamp-2 text-ui-xs text-et-surface-muted wrap-anywhere"
+        data-sk-tag-note
+      >
+        {{ row.note }}
+      </p>
+    }
   }
   <div [class.hidden]="headHidden()" class="flex min-w-0 flex-col gap-space-2">
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
@@ -650,7 +659,7 @@
 </ng-template>
 <ng-template #cellTemplate let-row let-item="item" let-column="column" let-line="line">
   @let cropTransform = cropTransformOf(row, item);
-  @let mark = markOf(row, item);
+  @let marks = marksOf(row, item);
   @let key = FRAME_KEY_OF(row, item.state);
   @let cellScale = lineScaleOf(item.state);
   <ethlete-variant-cell
@@ -672,8 +681,8 @@
     [height]="item.height"
     [shown]="shownHeightOf(row, item)"
     [crop]="cropTransform"
-    [mark]="mark"
-    [stacked]="cropTransform && mark ? foldedOf(item.state) : []"
+    [marks]="marks"
+    [stacked]="cropTransform && marks.length > 0 ? foldedOf(item.state) : []"
     [selected]="key === selectedFrame()"
   >
     <ng-container ngProjectAs="[overlay]">

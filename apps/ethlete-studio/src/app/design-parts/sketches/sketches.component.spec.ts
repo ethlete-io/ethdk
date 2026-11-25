@@ -1088,6 +1088,17 @@ describe('SketchesComponent', () => {
     expect(section?.hasAttribute('data-sk-head-hidden')).toBe(true);
   });
 
+  it('keeps the variant note readable under the tag of a hidden head', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') || this.hasAttribute('data-sk-stage') ? LIST_WIDTH : 0;
+    });
+    const root: HTMLElement = (await render({ camera: { zoom: 0.1, x: 0, y: 0 } })).nativeElement;
+    const note = root.querySelector<HTMLElement>('section[data-sk-row="x"] [data-sk-tag-note]');
+
+    expect(textOf(note)).toBe(ROWS[1]?.note);
+    expect(note?.classList).toContain('text-ui-xs');
+  });
+
   it('fits the matrix again when a font loads after the first fit', async () => {
     const wide = [...ROWS, ...['y', 'z'].map((key) => ({ ...ROWS[1]!, key }))].map((row) => ({ ...row, width: 4950 }));
     const fixture = await render({ rows: wide, camera: 'fit' });
@@ -1870,6 +1881,26 @@ describe('SketchesComponent', () => {
       ).toContain(`translate(${-crop.x}px, ${-crop.y}px)`);
     });
 
+    it('marks each changed area of a crop, not only the box around them all', async () => {
+      const areas = [
+        { x: 1200, y: 400, width: 100, height: 50 },
+        { x: 1450, y: 400, width: 100, height: 50 },
+        { x: 1700, y: 400, width: 100, height: 50 },
+      ];
+      const rows = cropRows.map((row) => ({
+        ...row,
+        shots: row.shots.map((shot) => (shot.change === change ? { ...shot, change: { ...change, areas } } : shot)),
+      }));
+      const root: HTMLElement = (await render({ rows, camera: '100' })).nativeElement;
+      const marks = [...root.querySelectorAll<HTMLElement>('[data-sk-state="open"] [data-sk-crop-mark]')];
+
+      expect(marks.map((mark) => [mark.style.left, mark.style.width])).toEqual([
+        ['1196px', '108px'],
+        ['1446px', '108px'],
+        ['1696px', '108px'],
+      ]);
+    });
+
     it('switches one crop group to the whole screen and back', async () => {
       const fixture = await render({ rows: cropRows, camera: '100' });
       const root: HTMLElement = fixture.nativeElement;
@@ -2111,6 +2142,21 @@ describe('SketchesComponent', () => {
     const plain: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
 
     expect(plain.querySelector('[data-sk-round-note]')).toBeNull();
+  });
+
+  it('shows the note of the shown round as one line above the canvas, not in the toolbar', async () => {
+    const note = 'Kommentar-Pins stehen auf der Sketch-Seite in ihrer Zelle statt als eigener Zustand der Zelle.';
+    const rounds = [
+      { value: 'r1', label: 'Runde 1 · Pins in der Zelle', note },
+      { value: 'r2', label: 'Runde 2 · Andere', note: 'Andere Notiz' },
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rounds, round: 'r1' })).nativeElement;
+    const notes = [...root.querySelectorAll<HTMLElement>('[data-sk-round-note]')];
+
+    expect(notes.map(textOf)).toEqual([note]);
+    expect(notes[0]?.closest('[data-sk-rows]')).toBeNull();
+    expect(notes[0]?.classList).toContain('truncate');
+    expect(textOf(root.querySelector('[data-sk-toolbar]'))).not.toContain(note);
   });
 
   it('keeps the sketch status for a failed agent run', async () => {

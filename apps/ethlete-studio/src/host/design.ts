@@ -601,6 +601,8 @@ export type SketchChange = {
   box: { x: number; y: number; width: number; height: number };
   pixels: number;
   regions: number;
+  /** One box per separate changed area. Missing from an `@ethlete/cli` older than this field. */
+  areas?: { x: number; y: number; width: number; height: number }[];
 };
 
 export type SketchTargetChanges = {

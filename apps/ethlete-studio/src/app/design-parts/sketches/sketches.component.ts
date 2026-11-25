@@ -522,6 +522,13 @@ export class SketchesComponent {
   });
   protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
+  protected roundNote = computed(() => {
+    const port = this.port();
+
+    if (port) return this.LABELS.mergePort(port.merged);
+
+    return this.rounds().find((round) => round.value === this.round())?.note || null;
+  });
   protected labelFont = computed(() =>
     textAt(LABEL_TEXT, { scale: Math.min(this.scale(), this.noteFit()), fit: this.noteFit() }),
   );
@@ -928,19 +935,19 @@ export class SketchesComponent {
     return `scale(${group.magnify}) translate(${-group.crop.x * unit}px, ${-group.crop.y * unit}px)`;
   }
 
-  protected markOf(row: SketchRow, item: SketchShot) {
+  protected marksOf(row: SketchRow, item: SketchShot) {
     const change = this.groupOfState().get(item.state) ? item.change : undefined;
 
-    if (!change) return null;
+    if (!change) return [];
 
     const unit = (item.width ?? row.width) / change.width;
 
-    return {
-      left: change.box.x * unit - 4,
-      top: change.box.y * unit - 4,
-      width: change.box.width * unit + 8,
-      height: change.box.height * unit + 8,
-    };
+    return (change.areas?.length ? change.areas : [change.box]).map((box) => ({
+      left: box.x * unit - 4,
+      top: box.y * unit - 4,
+      width: box.width * unit + 8,
+      height: box.height * unit + 8,
+    }));
   }
 
   protected locatorOf(group: SketchCropGroup) {
