@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use std::time::{Duration, SystemTime};
 
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
@@ -12,6 +13,7 @@ use crate::error::StudioResult;
 
 const REQUEST_SUFFIX: &str = ".open.json";
 const REPLY_SUFFIX: &str = ".opened.json";
+const KEEP_REQUESTS_FOR: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 
 #[derive(Deserialize)]
 struct Request {
@@ -65,6 +67,35 @@ fn pending(dir: &Path) -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
+/// Answers the requests a cli left while Studio was down. Every live one is added to the list; the newest one is
+/// the checkout to show. Requests past `KEEP_REQUESTS_FOR` and requests whose checkout lost its design config are
+/// deleted.
+fn answer_kept(dir: &Path, now: SystemTime, add: &impl Fn(&str) -> StudioResult<DesignRoots>) -> Option<String> {
+    let mut live: Vec<(SystemTime, PathBuf)> = Vec::new();
+
+    for request in pending(dir) {
+        let modified = std::fs::metadata(&request)
+            .and_then(|meta| meta.modified())
+            .unwrap_or(now);
+        let stale = now.duration_since(modified).is_ok_and(|age| age > KEEP_REQUESTS_FOR);
+        let gone = std::fs::read_to_string(&request)
+            .ok()
+            .and_then(|text| serde_json::from_str::<Request>(&text).ok())
+            .is_some_and(|parsed| !Path::new(&parsed.checkout).join(".ethlete/design/config.json").exists());
+
+        if stale || gone {
+            let _ = std::fs::remove_file(&request);
+        } else {
+            live.push((modified, request));
+        }
+    }
+
+    live.sort();
+
+    live.into_iter()
+        .fold(None, |shown, (_, request)| answer(&request, add).or(shown))
+}
+
 fn watch_requests(
     dir: &Path,
     add: impl Fn(&str) -> StudioResult<DesignRoots> + Send + 'static,
@@ -72,10 +103,8 @@ fn watch_requests(
 ) -> Result<RecommendedWatcher, String> {
     std::fs::create_dir_all(dir).map_err(|error| format!("Unable to create {}: {error}", dir.to_string_lossy()))?;
 
-    for request in pending(dir) {
-        if let Some(checkout) = answer(&request, &add) {
-            show(checkout);
-        }
+    if let Some(checkout) = answer_kept(dir, SystemTime::now(), &add) {
+        show(checkout);
     }
 
     let mut watcher = notify::recommended_watcher(move |event: notify::Result<notify::Event>| {
@@ -201,5 +230,87 @@ mod tests {
         }
 
         assert_eq!(*shown.lock().unwrap(), vec!["/dev/alpha".to_owned()]);
+    }
+
+    fn a_checkout(dir: &Path, name: &str) -> String {
+        let checkout = dir.join(name);
+
+        std::fs::create_dir_all(checkout.join(".ethlete/design")).unwrap();
+        std::fs::write(checkout.join(".ethlete/design/config.json"), "{}").unwrap();
+
+        checkout.to_string_lossy().into_owned()
+    }
+
+    fn aged(path: &Path, days: u64) {
+        let file = std::fs::File::options().write(true).open(path).unwrap();
+
+        file.set_modified(SystemTime::now() - Duration::from_secs(days * 24 * 60 * 60))
+            .unwrap();
+    }
+
+    #[test]
+    fn a_request_left_while_studio_was_down_is_kept_and_shown_at_start() {
+        let dir = a_dir("open-kept");
+        let checkout = a_checkout(&dir, "client-runs/2026-11-25-0236/tomflix");
+        let request = dir.join("one.open.json");
+        let added = StdMutex::new(Vec::new());
+
+        std::fs::write(&request, format!(r#"{{"checkout":"{checkout}"}}"#)).unwrap();
+
+        let shown = answer_kept(&dir, SystemTime::now(), &|path: &str| {
+            added.lock().unwrap().push(path.to_owned());
+            keeping(path)
+        });
+
+        assert_eq!(shown, Some(checkout.clone()));
+        assert_eq!(*added.lock().unwrap(), vec![checkout]);
+    }
+
+    #[test]
+    fn at_start_every_live_request_is_added_and_only_the_newest_is_shown() {
+        let dir = a_dir("open-newest");
+        let old = a_checkout(&dir, "old");
+        let new = a_checkout(&dir, "new");
+        let added = StdMutex::new(Vec::new());
+
+        std::fs::write(dir.join("a.open.json"), format!(r#"{{"checkout":"{new}"}}"#)).unwrap();
+        std::fs::write(dir.join("b.open.json"), format!(r#"{{"checkout":"{old}"}}"#)).unwrap();
+        aged(&dir.join("b.open.json"), 2);
+
+        let shown = answer_kept(&dir, SystemTime::now(), &|path: &str| {
+            added.lock().unwrap().push(path.to_owned());
+            keeping(path)
+        });
+
+        assert_eq!(shown, Some(new.clone()));
+        assert_eq!(added.lock().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn a_request_older_than_seven_days_is_dropped_at_start() {
+        let dir = a_dir("open-stale");
+        let checkout = a_checkout(&dir, "tomflix");
+        let request = dir.join("one.open.json");
+
+        std::fs::write(&request, format!(r#"{{"checkout":"{checkout}"}}"#)).unwrap();
+        aged(&request, 8);
+
+        assert_eq!(answer_kept(&dir, SystemTime::now(), &keeping), None);
+        assert!(!request.exists());
+    }
+
+    #[test]
+    fn a_request_whose_checkout_is_gone_is_dropped_at_start() {
+        let dir = a_dir("open-missing");
+        let request = dir.join("one.open.json");
+
+        std::fs::write(
+            &request,
+            r#"{"checkout":"/nonexistent/client-runs/2026-11-25-0236/tomflix"}"#,
+        )
+        .unwrap();
+
+        assert_eq!(answer_kept(&dir, SystemTime::now(), &keeping), None);
+        assert!(!request.exists());
     }
 }
