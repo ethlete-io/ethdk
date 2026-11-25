@@ -100,12 +100,13 @@
     "pages/flows": "5f9d41e1be7d2953",
     "pages/inbox": "9fe9d1c9a513990c",
     "pages/inventory": "bb84266858a56467",
-    "pages/sketches": "429a10d41b7c031b",
+    "pages/sketches": "98d345e2b54c251c",
     "pages/start": "414940d2e574c435",
     "pages/system": "0fba82d212ab2b06",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "ae1ad7e20d82a067145ae934e6d13f5023e1b513",
+  "baselineTree": "8b4c73de446350515b3455b0473e5b2879188b42",
+  "editOldCommit": "f842d82774fbfb4c923d3410327bfc0e29b934a1",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "fadf9069521ce905",
     "pages/sketches/shared/multi-part.ts": "03d5de67a5159fb3",
@@ -136,6 +137,5 @@
   "readyContent": {
     "new": "443798f3d37a2f58",
     "old": "49b841ab7aa2923c"
-  },
-  "editOldCommit": "f842d82774fbfb4c923d3410327bfc0e29b934a1"
+  }
 }
