@@ -865,6 +865,21 @@ const sketch = (overrides: Partial<ListedSketch> = {}): ListedSketch => ({
 });
 
 describe('sketches in the tree', () => {
+  // Decision B726: a sub-sketch a pick opened sits under its parent sketch with its layer, not as a sketch of its own row.
+  it('nests a sub-sketch under the sketch whose pick opened it', () => {
+    const [sketches] = treeOf([], {
+      sketches: [
+        sketch({ target: 'elements/hero', layer: 'elements', name: 'hero', subSketches: ['components/hero-slider'] }),
+        sketch({ target: 'components/hero-slider', name: 'hero-slider', parent: 'elements/hero' }),
+      ],
+    });
+
+    expect(sketches?.entries.map(({ key }) => key)).toEqual(['sketch:elements/hero']);
+    expect(sketches?.entries[0]?.nested).toMatchObject([
+      { key: 'sketch:components/hero-slider', name: 'hero-slider', layer: 'Components' },
+    ]);
+  });
+
   it('lists open sketches after the pages with their status, and badges the target part', () => {
     const tree = treeOf([part({ name: 'button' }), part({ name: 'card' })], {
       sketches: [

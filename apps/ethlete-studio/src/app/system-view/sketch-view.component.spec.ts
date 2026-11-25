@@ -756,6 +756,26 @@ describe('SketchViewComponent', () => {
     expect(completed).toEqual(['components/card']);
   });
 
+  // Decision B726: a pick that opens sub-sketches merges nothing, so the view stays on the parent and reloads the sketches.
+  it('stays on the sketch and reloads when the pick opens sub-sketches', async () => {
+    const { fixture, root } = await render(SKETCH, (url) =>
+      url.includes('/__design/sketch-decision')
+        ? json({ merged: [], subSketches: ['components/card-badge'] })
+        : noComments(url),
+    );
+    const completed: string[] = [];
+    let decided = 0;
+
+    fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
+    fixture.componentInstance.decide.subscribe(() => decided++);
+
+    await confirmed(mergeButtons(root)[0], fixture);
+    await settle(fixture);
+
+    expect(completed).toEqual([]);
+    expect(decided).toBe(1);
+  });
+
   it('ignores a second merge while one runs', async () => {
     const requests: string[] = [];
     const { fixture } = await render(SKETCH, (url) => {

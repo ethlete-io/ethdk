@@ -235,6 +235,27 @@ const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => 
   ],
 });
 
+const sketchLayerOf = (sketch: ListedSketch) => sketchPartOf(sketch).split('/')[0] ?? '';
+
+/** The entries of the sketches no listed sketch is the parent of, each with the entries of its sub-sketches as `nested`. */
+const sketchEntriesOf = (sketches: ListedSketch[], marks: CommentMarks) => {
+  const listed = new Set(sketches.map((sketch) => sketch.target));
+  const entryWith = (sketch: ListedSketch, host?: ListedSketch): TreeEntry => {
+    const own = sketchEntryOf(sketch, marks);
+    const entry =
+      host && sketchLayerOf(host) !== sketchLayerOf(sketch)
+        ? { ...own, layer: layerLabelOf(sketchLayerOf(sketch)) }
+        : own;
+    const nested = sketches
+      .filter((candidate) => candidate.parent === sketch.target && candidate !== sketch)
+      .map((candidate) => entryWith(candidate, sketch));
+
+    return nested.length > 0 ? { ...entry, nested } : entry;
+  };
+
+  return sketches.filter((sketch) => !sketch.parent || !listed.has(sketch.parent)).map((sketch) => entryWith(sketch));
+};
+
 export const callKeyOf = (slug: string) => `legacy:${slug}`;
 
 const callBadgesOf = (call: ListedCall): PartBadge[] =>
@@ -468,7 +489,7 @@ export const treeOf = (
         {
           key,
           label,
-          entries: sketches.map((sketch) => sketchEntryOf(sketch, sketchMarks)),
+          entries: sketchEntriesOf(sketches, sketchMarks),
         },
       ];
 

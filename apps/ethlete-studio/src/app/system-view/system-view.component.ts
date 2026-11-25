@@ -1152,9 +1152,12 @@ export class SystemViewComponent {
                 ...marksOf(entry),
                 status: entry.badges.includes('ready') ? ('ready' as const) : ('in-progress' as const),
                 open: open.has(entry.key),
-                nested: this.sketchTargets()
-                  .filter(({ sketch }) => sketch === entry.key)
-                  .map(({ key, part }) => ({ name: part, ...marksOf({ key, badges: [] }) })),
+                nested: [
+                  ...this.sketchTargets()
+                    .filter(({ sketch }) => sketch === entry.key)
+                    .map(({ key, part }) => ({ name: part, ...marksOf({ key, badges: [] }) })),
+                  ...(entry.nested ?? []).map(partOf),
+                ],
               })),
             },
           }

@@ -1089,7 +1089,9 @@ export class SketchViewComponent {
     this.run(
       'merge',
       pickSketch$(address, variant).pipe(
-        tap(() => this.mergeComplete.emit(address.sketch)),
+        tap(({ subSketches }) => {
+          if (subSketches.length === 0) this.mergeComplete.emit(address.sketch);
+        }),
         catchError((error: unknown) => {
           this.mergeError.set(
             error instanceof MergeNeedsRebaseError ? MERGE_LABELS.needsRebase(error.changed) : refusalMessageOf(error),

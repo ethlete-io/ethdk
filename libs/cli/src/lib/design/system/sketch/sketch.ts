@@ -150,6 +150,10 @@ export type SketchFile = {
   autoMergeForecast?: SketchAutoMergeForecast;
   /** The variant the agent recommends; a sketch of another part that imports a new target of this one draws it from this variant until the user picks. */
   recommended?: string;
+  /** The sketch whose pick opened this one for a sub-part the picked variant marked, `<layer>/<name>[@<sketch>]`. */
+  parent?: string;
+  /** The sketches the pick opened, one per marked sub-part of the picked variant; the sketch does not merge while it has them. */
+  subSketches?: string[];
 };
 
 export type SketchCreatedBy = { cmd: string; session?: string };
@@ -680,6 +684,10 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
     return `${file}: covers must be a list of <state> or <state>@<x>,<y>,<w>,<h>`;
   if (parsed.undesigned !== undefined && !isStringList(parsed.undesigned))
     return `${file}: undesigned must be a list of app template branches`;
+  if (parsed.parent !== undefined && (typeof parsed.parent !== 'string' || !parsed.parent))
+    return `${file}: parent must be the <layer>/<name> of a sketch`;
+  if (parsed.subSketches !== undefined && !isStringList(parsed.subSketches))
+    return `${file}: subSketches must be a list of <layer>/<name> sketch keys`;
 
   const rounds = parsed.rounds ?? [firstRoundOf({})];
   const running = runningRoundOf({ rounds }).key;
@@ -795,6 +803,8 @@ const sketchFileOf = (sketch: Sketch): SketchFile => ({
   ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
   ...(sketch.autoMergeForecast ? { autoMergeForecast: sketch.autoMergeForecast } : {}),
   ...(sketch.recommended ? { recommended: sketch.recommended } : {}),
+  ...(sketch.parent ? { parent: sketch.parent } : {}),
+  ...(sketch.subSketches && sketch.subSketches.length > 0 ? { subSketches: sketch.subSketches } : {}),
 });
 
 type Fields = Record<string, unknown>;

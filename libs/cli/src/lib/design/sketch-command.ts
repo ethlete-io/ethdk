@@ -69,6 +69,7 @@ import {
   printPortItems,
 } from './system/sketch/merge-step';
 import { journaled, openJournalOf } from './system/write-journal';
+import { openSubSketches, subPartsOfPick } from './system/sketch/sub-sketches';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { notRebuildsOf, subPartKeyProblemOf, subPartsOf } from './system/sketch/sub-parts';
 import { repoInvocation } from '../invocation';
@@ -2192,6 +2193,23 @@ const picked = (context: Context) =>
       );
     if (hasPersonName(words)) return fail(`--decided-by ${PERSON_NAME_REFUSAL}`);
 
+    const pick = { kind: 'pick' as const, variant, comment: words, ...originOf('designer') };
+
+    if (subPartsOfPick(sketch, variant).length > 0 || (sketch.subSketches?.length ?? 0) > 0) {
+      const opened = journaled(
+        { productDir: product.dir, root: context.target, label: `pick of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
+        () => openSubSketches({ product, sketch, pick }),
+      );
+
+      if (typeof opened === 'string') return fail(opened);
+
+      console.log(
+        `picked ${sketch.target} variant ${opened.variant}; its sub-parts are open as sketches: ${opened.subSketches.join(', ')}`,
+      );
+
+      return 0;
+    }
+
     const pickNow = async () => {
       const afterMerge = await embedderCheckAroundMerge({
         target: context.target,
@@ -2207,7 +2225,7 @@ const picked = (context: Context) =>
           product,
           sketch,
           by: authorOf(context.args) ?? undefined,
-          pick: { kind: 'pick', variant, comment: words, ...originOf('designer') },
+          pick,
         }),
       );
 

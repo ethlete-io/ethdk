@@ -532,6 +532,10 @@ export type ListedSketch = {
   autoMergeForecast?: { merges: boolean; reason?: string; at: string } | null;
   /** Why the last `sketch ready` of the running round refused the sketch, `null` without one or once ready. Missing from an `@ethlete/cli` older than it. */
   readyRefusal?: { lines: string[]; round: string; at: string } | null;
+  /** The sketch whose pick opened this one for a marked sub-part. Missing from an `@ethlete/cli` older than it. */
+  parent?: string;
+  /** The sketches its pick opened, one per marked sub-part; it does not merge while it has them. Missing from an `@ethlete/cli` older than it. */
+  subSketches?: string[];
 };
 
 /** The key of the sketch's first target part; `target` names the sketch, as `pages/flows@edit` does for a direct edit. */
@@ -738,13 +742,17 @@ export const listedSketches$ = ({
 
 /**
  * Picks `variant` and merges it into the product in one step, and answers the merged parts. A refused merge leaves no
- * pick behind; a stale baseline fails with {@link MergeNeedsRebaseError}.
+ * pick behind; a stale baseline fails with {@link MergeNeedsRebaseError}. A variant with marked sub-parts merges nothing
+ * and answers the sub-sketches the pick opened.
  */
-export const pickSketch$ = (address: SketchAddress, variant: string): Observable<string[]> =>
-  designAnswer$<{ merged: string[] }>(
+export const pickSketch$ = (
+  address: SketchAddress,
+  variant: string,
+): Observable<{ merged: string[]; subSketches: string[] }> =>
+  designAnswer$<{ merged: string[]; subSketches?: string[] }>(
     sketchUrl({ ...address, path: 'sketch-decision' }),
     postJson({ kind: 'pick', variant }),
-  ).pipe(map(({ merged }) => merged));
+  ).pipe(map(({ merged, subSketches = [] }) => ({ merged, subSketches })));
 
 /** Deletes the sketch with all its variants. */
 export const discardSketch$ = (address: SketchAddress): Observable<void> =>
