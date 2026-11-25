@@ -24,9 +24,11 @@ const mark = (control: string, interaction?: Interaction) =>
     .filter(Boolean)
     .join(' ');
 
+const errorColor = 'danger';
+
 const row = (action: Action, attributes: string) =>
-  `<button type="button" ${attributes} class="et-action-sheet-action et-surface-interactive et-focus-ring ${
-    action.destructive ? 'et-color--danger' : 'et-color--inherited'
+  `<button type="button" ${attributes} class="et-action-sheet-action et-surface-interactive et-focus-ring et-color--${
+    action.destructive ? errorColor : 'inherited'
   }"${action.destructive ? ' data-variant="destructive"' : ''}>${action.label}</button>`;
 
 const header = html`<div class="et-action-sheet-header">
