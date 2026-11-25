@@ -38,7 +38,16 @@ export type SketchDecision =
  * the key of its round, its note - what it is and what it costs - kept apart from the part's merged note, and the
  * `<layer>/<name>` keys of the new parts it builds that the agent marked as sub-parts.
  */
-export type SketchVariantInfo = { authors?: string[]; round?: string; note?: string; subParts?: string[] };
+/** What a marked sub-part `part` is that `of` (`<holder>:<name>`, e.g. `sdk:slider`), the existing part its name matches, is not. */
+export type SubPartDifference = { part: string; of: string; difference: string };
+
+export type SketchVariantInfo = {
+  authors?: string[];
+  round?: string;
+  note?: string;
+  subParts?: string[];
+  notRebuilds?: SubPartDifference[];
+};
 
 /** Who recorded a verdict on a variant: the designer, in Studio or with `--by designer`, or an agent. */
 export type SketchVerdictBy = 'designer' | 'agent';
@@ -397,6 +406,16 @@ const isStatus = (value: unknown): value is SketchStatus => SKETCH_STATUSES.incl
 const isAuthors = (value: unknown) =>
   value === undefined || (Array.isArray(value) && value.every((author) => typeof author === 'string' && author !== ''));
 
+const isNotRebuilds = (value: unknown) =>
+  value === undefined ||
+  (Array.isArray(value) &&
+    value.every(
+      (entry: Partial<SubPartDifference> | null) =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        [entry.part, entry.of, entry.difference].every((text) => typeof text === 'string' && text.trim() !== ''),
+    ));
+
 const isVariantInfo = (value: unknown): value is Record<string, SketchVariantInfo> =>
   typeof value === 'object' &&
   value !== null &&
@@ -408,7 +427,8 @@ const isVariantInfo = (value: unknown): value is Record<string, SketchVariantInf
       isAuthors((info as Partial<SketchVariantInfo>).authors) &&
       ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).round) &&
       ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).note) &&
-      isAuthors((info as Partial<SketchVariantInfo>).subParts),
+      isAuthors((info as Partial<SketchVariantInfo>).subParts) &&
+      isNotRebuilds((info as Partial<SketchVariantInfo>).notRebuilds),
   );
 
 const VERDICT_BY: readonly SketchVerdictBy[] = ['designer', 'agent'];
@@ -1390,8 +1410,22 @@ export const variantContentHashOf = (sketch: Sketch, variant: string) => {
   return hash.digest('hex').slice(0, 16);
 };
 
+const marksOf = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) => {
+  const { subParts = [], notRebuilds = [] } = sketch.variantInfo[variant] ?? {};
+
+  return subParts.length + notRebuilds.length === 0 ? null : JSON.stringify({ subParts, notRebuilds });
+};
+
+/** The hash `sketch ready` records for a variant: its content hash, and its sub-part marks when it has any. */
+const readyHashOf = (sketch: Sketch, variant: string) => {
+  const content = variantContentHashOf(sketch, variant);
+  const marks = marksOf(sketch, variant);
+
+  return marks === null ? content : createHash('sha256').update(`${content}\0${marks}`).digest('hex').slice(0, 16);
+};
+
 const readyContentOf = (sketch: Sketch) =>
-  Object.fromEntries(sketch.variants.map((variant) => [variant, variantContentHashOf(sketch, variant)]));
+  Object.fromEntries(sketch.variants.map((variant) => [variant, readyHashOf(sketch, variant)]));
 
 /** The variants of a ready sketch, not discarded, that changed since `sketch ready` judged them; reads only. */
 export const changedSinceReadyOf = (sketch: Sketch) => {
@@ -1399,7 +1433,7 @@ export const changedSinceReadyOf = (sketch: Sketch) => {
 
   const judged = sketch.readyContent;
 
-  return sketch.variants.filter((variant) => judged[variant] !== variantContentHashOf(sketch, variant));
+  return sketch.variants.filter((variant) => judged[variant] !== readyHashOf(sketch, variant));
 };
 
 /**
@@ -1415,7 +1449,7 @@ export const keepReadyThrough = (sketch: Sketch, rewrite: () => void) => {
 
   if (kept.length === 0) return;
 
-  const rehashed = Object.fromEntries(kept.map((variant) => [variant, variantContentHashOf(sketch, variant)]));
+  const rehashed = Object.fromEntries(kept.map((variant) => [variant, readyHashOf(sketch, variant)]));
 
   if (kept.every((variant) => rehashed[variant] === sketch.readyContent?.[variant])) return;
 
@@ -1429,7 +1463,7 @@ export const staleReadyRefusalOf = (sketch: Sketch) => {
 
   if (!variant || !judged) return null;
 
-  const now = variantContentHashOf(sketch, variant);
+  const now = readyHashOf(sketch, variant);
 
   return now === judged
     ? null
@@ -1446,6 +1480,22 @@ const readyCommitOf = (sketch: Sketch) => {
   return log.status === 0 && log.stdout.trim() !== '' ? log.stdout.trim() : null;
 };
 
+const marksEqualCommit = (sketch: Sketch, commit: string) => {
+  const shown = gitStatusOf(['show', `${commit}:./${SKETCH_FILE}`], { cwd: sketch.dir });
+
+  if (shown.status !== 0) return false;
+
+  try {
+    const then = JSON.parse(shown.stdout) as Pick<Sketch, 'variantInfo'>;
+
+    return sketch.variants.every(
+      (variant) => marksOf({ variantInfo: then.variantInfo ?? {} }, variant) === marksOf(sketch, variant),
+    );
+  } catch {
+    return false;
+  }
+};
+
 const equalsReadyCommit = (sketch: Sketch) => {
   const commit = readyCommitOf(sketch);
 
@@ -1455,7 +1505,7 @@ const equalsReadyCommit = (sketch: Sketch) => {
   const diff = gitStatusOf(['diff', '--quiet', commit, '--', ...paths], { cwd: sketch.dir });
   const untracked = gitStatusOf(['ls-files', '--others', '--exclude-standard', '--', ...paths], { cwd: sketch.dir });
 
-  return diff.status === 0 && untracked.status === 0 && untracked.stdout === '';
+  return diff.status === 0 && untracked.status === 0 && untracked.stdout === '' && marksEqualCommit(sketch, commit);
 };
 
 /**
@@ -1715,7 +1765,7 @@ const rehashedReadyOf = (sketch: Sketch, variants: true | readonly string[]) =>
     ? readyContentOf(sketch)
     : {
         ...sketch.readyContent,
-        ...Object.fromEntries(variants.map((variant) => [variant, variantContentHashOf(sketch, variant)])),
+        ...Object.fromEntries(variants.map((variant) => [variant, readyHashOf(sketch, variant)])),
       };
 
 /**

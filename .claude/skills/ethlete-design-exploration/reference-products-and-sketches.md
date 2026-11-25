@@ -86,6 +86,15 @@ draws that variant, or the user's pick once there is one, with no hint in Studio
 cannot merge before the sub-part does; the merge of the sub-part rebases the composition sketch onto
 the merged part.
 
+A new part one variant builds for its own arrangement (a hero's poster strip) is a marked sub-part:
+`sketch sub-part <target> <layer>/<name>[,…] --variant <key> --by <model id>` (`--remove` drops it).
+Marked sub-parts may differ between variants; the check fails every new part a composition variant
+builds without a mark, and every mark on an existing part. A new part whose name matches an existing
+component or element (`hero-badges` and `badge`) must embed it, or state the difference:
+`sketch sub-part … <part> "<what it is that the other is not>" --not-rebuild-of sdk:badge`. Never rename
+a part to dodge the match. Studio shows the marks at the variant header; a mark change on a ready
+sketch moves it back to in progress.
+
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. A part in a variant keeps every state the part has in the product: `sketch check`

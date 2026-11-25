@@ -20,10 +20,14 @@ export type SketchShot = {
   inherited?: true;
 };
 
+/** A new part a variant marks as its sub-part; `notRebuild` is the stated difference from the existing part its name matches. */
+export type SketchSubPart = { key: string; notRebuild?: { of: string; difference: string } };
+
 export type SketchRow = {
   key: string;
   label?: string;
   note: string;
+  subParts?: SketchSubPart[];
   model?: SketchModel;
   drawing?: true;
   width: number;

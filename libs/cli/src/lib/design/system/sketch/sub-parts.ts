@@ -2,16 +2,22 @@ import { partDependenciesOf } from '../imports';
 import { isLayer, LAYER_USES } from '../layers';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
+import { isEditSketch } from './merged-parts';
 import { SketchedProduct } from './overlay';
 import { Sketch, variantDirOf } from './sketch';
 
 const REUSABLE_LAYERS = new Set(['components', 'elements']);
+const COMPOSITION_LAYERS = new Set(['elements', 'pages']);
 
 /** The `<layer>/<name>` keys of the new parts `variant` builds that its agent marked as sub-parts. */
 export const subPartsOf = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) =>
   sketch.variantInfo[variant]?.subParts ?? [];
 
 /** Why a sketch on `targets` cannot mark `key` as a sub-part, or `null` when it can. */
+/** The stated differences of the sub-parts `variant` marks from the existing parts their names match. */
+export const notRebuildsOf = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) =>
+  sketch.variantInfo[variant]?.notRebuilds ?? [];
+
 export const subPartKeyProblemOf = (options: { targets: string[]; key: string }) => {
   const [layer = '', name = '', ...rest] = options.key.split('/');
 
@@ -54,8 +60,9 @@ export const rebuiltPartOf = (options: { product: ResolvedProduct; targets: stri
 };
 
 /**
- * The problems of the sub-parts of `variant`: a marked key that is no new part the variant builds, and every new part
- * it builds, marked or not, that rebuilds an existing part of the product or its base.
+ * The problems of the sub-parts of `variant`: a marked key that is no new part the variant builds; every new part whose
+ * name matches an existing part of the product or its base, unless it embeds that part or is marked with a stated
+ * difference; and, in a composition, every new part it does not mark.
  */
 export const subPartProblemsOf = (options: {
   product: ResolvedProduct;
@@ -92,22 +99,46 @@ export const subPartProblemsOf = (options: {
 
     return [];
   });
+  const marks = subPartsOf(sketch, variant);
   const rebuilt = built.flatMap((part): Problem[] => {
     const twin = rebuiltPartOf({ product, targets: sketch.targets, part });
 
     if (!twin) return [];
 
+    const key = partKeyOf(part);
     const holder = twin.origin === 'base' ? (product.base?.name ?? 'the base') : product.name;
+    const of = `${holder}:${twin.name}`;
+    const stated = notRebuildsOf(sketch, variant).some((entry) => entry.part === key && entry.of === of);
+
+    if (stated && marks.includes(key)) return [];
 
     return [
       {
         rule: 'SKETCH',
         file: part.file,
-        part: partKeyOf(part),
-        message: `variant ${variant} builds ${partKeyOf(part)}, a rebuild of ${partKeyOf(twin)} of ${holder} - embed @system/${partKeyOf(twin)} instead of building it again`,
+        part: key,
+        message: `variant ${variant} builds ${key}, whose name matches ${partKeyOf(twin)} of ${holder} - embed @system/${partKeyOf(twin)}, or state the difference: design sketch sub-part ${sketch.target} ${key} --variant ${variant} --not-rebuild-of ${of} "<what it is that ${twin.name} is not>" --by <model id>`,
       },
     ];
   });
 
-  return [...marked, ...rebuilt];
+  const rebuiltKeys = new Set(rebuilt.flatMap((problem) => problem.part ?? []));
+  const unmarked =
+    isEditSketch(sketch) || !sketch.targets.every((key) => COMPOSITION_LAYERS.has(key.split('/')[0] ?? ''))
+      ? []
+      : built
+          .filter(
+            (part) =>
+              !marks.includes(partKeyOf(part)) &&
+              !rebuiltKeys.has(partKeyOf(part)) &&
+              subPartKeyProblemOf({ targets: sketch.targets, key: partKeyOf(part) }) === null,
+          )
+          .map((part): Problem => ({
+            rule: 'SKETCH',
+            file: part.file,
+            part: partKeyOf(part),
+            message: `variant ${variant} builds ${partKeyOf(part)}, a new part it does not mark - mark it with design sketch sub-part ${sketch.target} ${partKeyOf(part)} --variant ${variant} --by <model id>`,
+          }));
+
+  return [...marked, ...rebuilt, ...unmarked];
 };

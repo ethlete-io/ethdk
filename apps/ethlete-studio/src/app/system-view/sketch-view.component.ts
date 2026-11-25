@@ -81,7 +81,15 @@ import {
   retriedSrcOf,
   sketchFrameRetriesWith,
 } from './sketch-frame-retries';
-import { CURRENT, partKeyOf, sketchMatrixOf, sketchRoundsOf, sketchRowsOf, sketchUsingPagesOf } from './system-tree';
+import {
+  CURRENT,
+  partKeyOf,
+  sketchMatrixOf,
+  sketchRoundsOf,
+  sketchRowsOf,
+  sketchUsingPagesOf,
+  variantSubPartsOf,
+} from './system-tree';
 import { rowWidthOf, shotSizesOf } from './shot-frames';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { keptRead$ } from './kept-read';
@@ -736,10 +744,12 @@ export class SketchViewComponent {
       const width = known ?? FALLBACK_SIZE.width;
 
       const rejection = row.key === CURRENT ? null : rejectionOf(sketch, row.key);
+      const subParts = row.key === CURRENT ? [] : variantSubPartsOf(sketch, row.key);
 
       return {
         key: row.key,
         note: row.key === CURRENT ? '' : (sketch.variantInfo?.[row.key]?.note ?? ''),
+        ...(subParts.length > 0 ? { subParts } : {}),
         ...(row.key === this.drawnVariant() || unreported.has(row.key) ? { drawing: true as const } : {}),
         ...(rejection?.status === 'withdrawn' ? { withdrawn: rejection.reason ?? '' } : {}),
         ...(author && agent

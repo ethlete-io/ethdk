@@ -949,6 +949,34 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-agent]')?.textContent).not.toContain('Variante b');
   });
 
+  // B726: the human sees at each variant which new parts it marks as sub-parts, by layer and name, with any stated difference.
+  it("shows a variant's marked sub-parts at its header", async () => {
+    const { root } = await render(
+      {
+        ...SKETCH,
+        variantInfo: {
+          b: {
+            subParts: ['components/hero-poster', 'components/hero-slider'],
+            notRebuilds: [
+              { part: 'components/hero-slider', of: 'sdk:slider', difference: 'poster carousel, no value input' },
+            ],
+          },
+        },
+      },
+      noComments,
+    );
+    const linesOf = (variant: string) =>
+      [...root.querySelectorAll(`[data-sk-row="${variant}"] [data-sk-sub-part]`)].map((line) =>
+        line.textContent?.replace(/\s+/gu, ' ').trim(),
+      );
+
+    expect(linesOf('b')).toEqual([
+      'components/hero-poster',
+      'components/hero-slider · nicht sdk:slider: poster carousel, no value input',
+    ]);
+    expect(linesOf('a')).toEqual([]);
+  });
+
   // B695: the agent's report text is not something the human acts on, so no drawing row repeats it.
   it('draws every in-progress variant live with the drawing mark and no report text, never as a placeholder', async () => {
     const updatedAt = new Date(Date.now() - 2 * 60_000).toISOString();

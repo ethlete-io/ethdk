@@ -63,6 +63,8 @@ export const SKETCHES_LABELS = {
   variantReason: (variant: string, reason: string) => `${variant}: ${reason}`,
   magnified: (factor: string) => ` · ${factor}× vergrößert`,
   drawingMark: 'zeichnet',
+  subParts: 'Unterteile',
+  notRebuild: (of: string, difference: string) => `nicht ${of}: ${difference}`,
   drawingVariant: 'zeichnet diese Variante',
   drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',
   mergePort: (merged: readonly string[]) => `Agent portiert nach Merge von ${merged.join(', ')}`,

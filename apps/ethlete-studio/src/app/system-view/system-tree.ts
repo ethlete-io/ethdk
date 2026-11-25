@@ -1416,6 +1416,17 @@ export type SketchRowOf = { key: string; width: number | null; perLine?: number;
  * answered yet; the current row changes nothing. A base state the variant of an inherited part does not draw shows
  * the part now, marked `inherited`.
  */
+/** The sub-parts `variant` marks, each with the difference it states from the existing part its name matches. */
+export const variantSubPartsOf = (sketch: Pick<ListedSketch, 'variantInfo'>, variant: string) => {
+  const { subParts = [], notRebuilds = [] } = sketch.variantInfo?.[variant] ?? {};
+
+  return subParts.map((key) => {
+    const stated = notRebuilds.find((entry) => entry.part === key);
+
+    return stated ? { key, notRebuild: { of: stated.of, difference: stated.difference } } : { key };
+  });
+};
+
 export const sketchRowsOf = ({
   port,
   product,

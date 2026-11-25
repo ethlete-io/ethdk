@@ -497,7 +497,16 @@ export type ListedSketch = {
   /** What the agent draws right now, `null` when it reports nothing. */
   report?: SketchReport | null;
   /** The model ids that reported on each variant, in the order of their first report, and the round of each variant. Missing in old data. */
-  variantInfo?: Record<string, { authors?: string[]; round?: string; note?: string }>;
+  variantInfo?: Record<
+    string,
+    {
+      authors?: string[];
+      round?: string;
+      note?: string;
+      subParts?: string[];
+      notRebuilds?: { part: string; of: string; difference: string }[];
+    }
+  >;
   /** Oldest first; the last one runs. Missing from an `@ethlete/cli` older than sketch rounds. */
   rounds?: SketchRound[];
   /** Per variant, every rejection it had, oldest first. Missing from an `@ethlete/cli` without variant rejection. */

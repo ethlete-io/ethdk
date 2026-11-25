@@ -6,7 +6,17 @@ import { DESIGN_DIR } from './design-config';
 import { designSketch } from './sketch-command';
 import { resolveProduct } from './system/resolve-product';
 import { variantProblemsOf } from './system/sketch/check-sketches';
-import { createSketch, findSketch, parseTarget, Sketch, variantDirOf, writeSketchFile } from './system/sketch/sketch';
+import {
+  changedSinceReadyOf,
+  createSketch,
+  findSketch,
+  parseTarget,
+  Sketch,
+  SubPartDifference,
+  variantContentHashOf,
+  variantDirOf,
+  writeSketchFile,
+} from './system/sketch/sketch';
 
 const SDK_BADGE = resolve(__dirname, '../../../../../.ethlete/design/sdk/components/badge');
 const INSTALLED = 'node_modules/@ethlete/components/design';
@@ -69,23 +79,27 @@ const tomflixHero = () => {
 
     return found;
   };
-  const buildInC = (key: string, source: string) =>
-    write(resolve(variantDirOf(hero, 'c'), `${key}/${key.split('/')[1]}.ts`), source);
-  const markInC = (subParts: string[]) => {
+  const buildIn = (variant: string, key: string, source: string) =>
+    write(resolve(variantDirOf(hero, variant), `${key}/${key.split('/')[1]}.ts`), source);
+  const buildInC = (key: string, source: string) => buildIn('c', key, source);
+  const markIn = (variant: string, subParts: string[], notRebuilds?: SubPartDifference[]) => {
     const sketch = reread();
+    const info = { ...sketch.variantInfo[variant], subParts, notRebuilds };
 
-    writeSketchFile(
-      { ...sketch, variantInfo: { ...sketch.variantInfo, c: { ...sketch.variantInfo['c'], subParts } } },
-      { base: sketch },
-    );
+    writeSketchFile({ ...sketch, variantInfo: { ...sketch.variantInfo, [variant]: info } }, { base: sketch });
   };
+  const markInC = (subParts: string[], notRebuilds?: SubPartDifference[]) => markIn('c', subParts, notRebuilds);
+  const linesOf = (variant: string) =>
+    variantProblemsOf({ product: product(), sketch: reread(), productProblems: [] })
+      .filter((entry) => entry.variant === variant)
+      .flatMap(({ problems }) => problems.map((problem) => problem.message));
   const subPartLinesOfC = () =>
     variantProblemsOf({ product: product(), sketch: reread(), productProblems: [] })
       .filter(({ variant }) => variant === 'c')
       .flatMap(({ problems }) => problems.map((problem) => problem.message))
       .filter((message) => message.includes('sub-part') || message.includes('rebuild'));
 
-  return { target, reread, buildInC, markInC, subPartLinesOfC };
+  return { target, reread, buildIn, buildInC, markIn, markInC, linesOf, subPartLinesOfC };
 };
 
 describe('a sub-part an exploration variant builds', () => {
@@ -98,19 +112,19 @@ describe('a sub-part an exploration variant builds', () => {
     hero.buildInC('components/hero-badges', partSource('<span class="tf-hero-badge">Neu</span>'));
 
     expect(hero.subPartLinesOfC()).toEqual([
-      'variant c builds components/hero-badges, a rebuild of components/badge of sdk - embed @system/components/badge instead of building it again',
+      'variant c builds components/hero-badges, whose name matches components/badge of sdk - embed @system/components/badge, or state the difference: design sketch sub-part elements/hero components/hero-badges --variant c --not-rebuild-of sdk:badge "<what it is that badge is not>" --by <model id>',
     ]);
   });
 
-  // The mark makes a new part a sub-part, but never a licence to rebuild one the product has.
-  it('rejects a marked rebuild of a project part and names it', () => {
+  // A mark alone is no licence to rebuild a part the product has: it needs a stated difference.
+  it('rejects a marked rebuild of a project part without a stated difference and names it', () => {
     const hero = tomflixHero();
 
     hero.buildInC('components/hero-rating', partSource('<span class="tf-hero-rating">4,5</span>'));
     hero.markInC(['components/hero-rating']);
 
     expect(hero.subPartLinesOfC()).toEqual([
-      'variant c builds components/hero-rating, a rebuild of components/rating of tomflix - embed @system/components/rating instead of building it again',
+      'variant c builds components/hero-rating, whose name matches components/rating of tomflix - embed @system/components/rating, or state the difference: design sketch sub-part elements/hero components/hero-rating --variant c --not-rebuild-of tomflix:rating "<what it is that rating is not>" --by <model id>',
     ]);
   });
 
@@ -153,5 +167,107 @@ describe('a sub-part an exploration variant builds', () => {
     expect(await sketch('sub-part', 'elements/hero', 'components/hero-slider', '--variant', 'c', '--remove')).toBe(0);
     expect(hero.reread().variantInfo['c']?.subParts).toBeUndefined();
     expect(lines).toContain('a sketch on elements/hero cannot embed a part of pages');
+  });
+  // A stated difference from the matched part accepts a marked sub-part whose name only resembles it; a difference from another part does not.
+  it('accepts a marked rebuild with a stated difference from the matched part', () => {
+    const hero = tomflixHero();
+
+    hero.buildInC('components/hero-rating', partSource('<span class="tf-hero-rating">4,5</span>'));
+    hero.markInC(
+      ['components/hero-rating'],
+      [{ part: 'components/hero-rating', of: 'sdk:badge', difference: 'a score, not a label' }],
+    );
+    expect(hero.subPartLinesOfC()).toHaveLength(1);
+
+    hero.markInC(
+      ['components/hero-rating'],
+      [{ part: 'components/hero-rating', of: 'tomflix:rating', difference: 'an age rating, not stars' }],
+    );
+    expect(hero.subPartLinesOfC()).toEqual([]);
+  });
+
+  // Variants of a composition may differ in a sub-part every variant that builds it marks, so an exploration can vary it.
+  it('lets the variants differ in a sub-part they all mark', () => {
+    const hero = tomflixHero();
+    const heroWithSlider = partSource(
+      '<section class="tf-hero"><tf-hero-slider></tf-hero-slider></section>',
+      "import '@system/components/hero-slider';",
+    );
+
+    for (const variant of ['a', 'b', 'c']) {
+      hero.buildIn(variant, 'elements/hero', heroWithSlider);
+      hero.buildIn(variant, 'components/hero-slider', partSource(`<div class="tf-hero-slider">${variant}</div>`));
+    }
+
+    expect(hero.linesOf('a').some((line) => line.includes('differ in components/hero-slider'))).toBe(true);
+
+    for (const variant of ['a', 'b', 'c']) hero.markIn(variant, ['components/hero-slider']);
+
+    expect(hero.linesOf('a').filter((line) => line.includes('hero-slider'))).toEqual([]);
+  });
+
+  // A composition variant that builds a new part without marking it names the command that marks it.
+  it('rejects an unmarked new part in a composition variant and names sketch sub-part', () => {
+    const hero = tomflixHero();
+
+    hero.buildInC('components/hero-poster', partSource('<img class="tf-hero-poster" alt="" />'));
+
+    expect(hero.subPartLinesOfC()).toEqual([
+      'variant c builds components/hero-poster, a new part it does not mark - mark it with design sketch sub-part elements/hero components/hero-poster --variant c --by <model id>',
+    ]);
+  });
+
+  // A ready sketch is final, so a changed mark moves it back to in progress, by the command and by a hand edit alike.
+  it('moves a ready sketch back to in progress when a mark changes', async () => {
+    const hero = tomflixHero();
+
+    hero.buildInC('components/hero-poster', partSource('<img class="tf-hero-poster" alt="" />'));
+
+    const readied = () => {
+      const sketch = hero.reread();
+      const readyContent = Object.fromEntries(
+        sketch.variants.map((variant) => [variant, variantContentHashOf(sketch, variant)]),
+      );
+
+      writeSketchFile({ ...sketch, status: 'ready', readyContent }, { base: sketch });
+    };
+
+    readied();
+    hero.markInC(['components/hero-poster']);
+    expect(changedSinceReadyOf(hero.reread())).toEqual(['c']);
+
+    hero.markInC([]);
+    readied();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    expect(
+      await designSketch({
+        target: hero.target,
+        argv: ['sub-part', 'elements/hero', 'components/hero-poster', '--variant', 'c', '--by', 'claude-opus-5-5'],
+        invocation: 'et design',
+      }),
+    ).toBe(0);
+    expect(hero.reread().status).toBe('in progress');
+  });
+
+  // The agent states the difference through the command, which keeps it with the mark and drops it on --remove.
+  it('records a stated difference with the mark', async () => {
+    const hero = tomflixHero();
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const sketch = (...argv: string[]) =>
+      designSketch({ target: hero.target, argv: [...argv, '--by', 'claude-opus-5-5'], invocation: 'et design' });
+    const slider = ['sub-part', 'elements/hero', 'components/hero-slider'];
+
+    expect(await sketch(...slider, '--variant', 'c', '--not-rebuild-of', 'sdk:slider')).toBe(1);
+    expect(
+      await sketch(...slider, 'poster carousel, no value input', '--variant', 'c', '--not-rebuild-of', 'sdk:slider'),
+    ).toBe(0);
+    expect(hero.reread().variantInfo['c']?.notRebuilds).toEqual([
+      { part: 'components/hero-slider', of: 'sdk:slider', difference: 'poster carousel, no value input' },
+    ]);
+    expect(await sketch(...slider, '--variant', 'c', '--remove')).toBe(0);
+    expect(hero.reread().variantInfo['c']?.notRebuilds).toBeUndefined();
   });
 });

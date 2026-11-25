@@ -16,7 +16,7 @@ import { lentVariantOf, openSketchesDrawingOf, overlaySketch, SketchedProduct } 
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
 import { stateNamesOf, stateSourcesOf, withMadeBy, withNote } from './part-definition';
-import { subPartProblemsOf } from './sub-parts';
+import { subPartProblemsOf, subPartsOf } from './sub-parts';
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
 import {
@@ -131,7 +131,11 @@ const differingSubPartsOf = (sketch: Sketch): Map<string, Problem[]> => {
         .map(partKeyOf),
     ),
   );
-  const keys = new Set([...held.values()].flatMap((parts) => [...parts.keys()]).filter((key) => used.has(key)));
+  const markedByAllHolders = (key: string) =>
+    live.every((variant) => !held.get(variant)?.has(key) || subPartsOf(sketch, variant).includes(key));
+  const keys = new Set(
+    [...held.values()].flatMap((parts) => [...parts.keys()]).filter((key) => used.has(key) && !markedByAllHolders(key)),
+  );
 
   for (const key of keys) {
     const contents = new Set(

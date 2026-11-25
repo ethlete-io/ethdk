@@ -70,7 +70,7 @@ import {
 } from './system/sketch/merge-step';
 import { journaled, openJournalOf } from './system/write-journal';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
-import { subPartKeyProblemOf, subPartsOf } from './system/sketch/sub-parts';
+import { notRebuildsOf, subPartKeyProblemOf, subPartsOf } from './system/sketch/sub-parts';
 import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf, editHoldsOf } from './system/sketch/edit-sketch';
 import { refusingRendersOf } from './system/sketch/identical-renders';
@@ -157,7 +157,7 @@ export const SKETCH_USAGE = [
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch withdraw <layer>/<name> --variant <key> [--reason <text>] --by <model id> [--product <name>]',
   'sketch recommend <layer>/<name> --variant <key> --by <model id> [--product <name>]',
-  'sketch sub-part <layer>/<name> <layer>/<name>[,<layer>/<name>…] --variant <key> [--remove] --by <model id> [--product <name>]',
+  'sketch sub-part <layer>/<name> <layer>/<name>[,<layer>/<name>…] [<difference>] --variant <key> [--not-rebuild-of <holder>:<name>] [--remove] --by <model id> [--product <name>]',
 ];
 
 const FLAG_HELP: Record<string, string> = {
@@ -198,6 +198,8 @@ const FLAG_HELP: Record<string, string> = {
   '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
   '--json': 'print JSON',
   '--remove': 'on sub-part: drop the mark of each named part',
+  '--not-rebuild-of':
+    'on sub-part: the existing part (<holder>:<name>, e.g. sdk:slider) the one named sub-part is not a rebuild of; <difference> states what it is that the existing part is not',
   '--fix': "write the variants in the checkout's Prettier format first",
   '--no-visible-change':
     'the sketch must change no pixel: its variants may draw every state like the product, and ready merges it by itself',
@@ -2418,10 +2420,15 @@ const recommended = (context: Context) =>
 const subPartsMarked = (context: Context) =>
   withSketch(context, ({ sketch }) => {
     const variant = context.args.values['--variant'];
-    const [, list] = context.args.positional;
+    const [, list, difference] = context.args.positional;
+    const of = context.args.values['--not-rebuild-of'];
+    const usage = `usage: ${SKETCH_USAGE.find((line) => line.startsWith('sketch sub-part '))}`;
 
-    if (context.args.positional.length !== 2 || !list || !variant)
-      return fail(`usage: ${SKETCH_USAGE.find((line) => line.startsWith('sketch sub-part '))}`);
+    if (context.args.positional.length !== (of ? 3 : 2) || !list || !variant) return fail(usage);
+    if (of && (!/^[a-z0-9-]+:[a-z0-9][a-z0-9-]*$/u.test(of) || !difference?.trim() || list.includes(',')))
+      return fail(
+        `--not-rebuild-of names one sub-part, the existing part as <holder>:<name> and the difference\n${usage}`,
+      );
     if (!sketch.variants.includes(variant))
       return fail(`${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`);
 
@@ -2434,14 +2441,36 @@ const subPartsMarked = (context: Context) =>
     const subParts = context.args.flags.has('--remove')
       ? had.filter((key) => !keys.includes(key))
       : [...new Set([...had, ...keys])].sort();
-    const info = { ...sketch.variantInfo[variant], subParts: subParts.length > 0 ? subParts : undefined };
+    const notRebuilds = [
+      ...notRebuildsOf(sketch, variant).filter(
+        (entry) => subParts.includes(entry.part) && !(of && keys.includes(entry.part)),
+      ),
+      ...(of && difference && !context.args.flags.has('--remove')
+        ? [{ part: keys[0] ?? '', of, difference: difference.trim() }]
+        : []),
+    ];
+    const info = {
+      ...sketch.variantInfo[variant],
+      subParts: subParts.length > 0 ? subParts : undefined,
+      notRebuilds: notRebuilds.length > 0 ? notRebuilds : undefined,
+    };
 
-    writeSketchFile({ ...sketch, variantInfo: { ...sketch.variantInfo, [variant]: info } }, { base: sketch });
+    const changed = JSON.stringify([had, notRebuildsOf(sketch, variant)]) !== JSON.stringify([subParts, notRebuilds]);
+    const { readyContent: _readyContent, mergeHold: _mergeHold, ...unready } = sketch;
+    const reopened = changed && sketch.status === 'ready';
+    const marked: Sketch = {
+      ...(reopened ? { ...unready, status: 'in progress' as const } : sketch),
+      variantInfo: { ...sketch.variantInfo, [variant]: info },
+    };
+
+    writeSketchFile(marked, { base: sketch });
+    if (reopened) console.log(`${sketch.target} was ready; its sub-part marks changed - back to in progress`);
     console.log(
       subParts.length > 0
         ? `${sketch.target} variant ${variant} marks the sub-parts ${subParts.join(', ')}`
         : `${sketch.target} variant ${variant} marks no sub-part`,
     );
+    for (const entry of notRebuilds) console.log(`  ${entry.part} is not ${entry.of}: ${entry.difference}`);
 
     return 0;
   });

@@ -153,9 +153,12 @@ describe('a composition sketch whose variants differ in a sub-part', () => {
     const differs =
       "the variants of elements/shell-app differ in components/tab-bar - a composition's variants differ only in arrangement: change components/tab-bar in a sketch of its own and import it as @system/components/tab-bar";
 
+    const unmarked = (variant: string) =>
+      `variant ${variant} builds components/tab-bar, a new part it does not mark - mark it with design sketch sub-part elements/shell-app components/tab-bar --variant ${variant} --by <model id>`;
+
     expect(messages).toEqual([
-      { variant: 'a', messages: [differs] },
-      { variant: 'b', messages: [differs] },
+      { variant: 'a', messages: [differs, unmarked('a')] },
+      { variant: 'b', messages: [differs, unmarked('b')] },
     ]);
   });
 });

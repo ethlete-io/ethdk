@@ -558,6 +558,21 @@
     >
       {{ row.note }}
     </p>
+    @if (row.subParts; as subParts) {
+      <div class="flex flex-col gap-space-1 text-ui-xs text-et-surface-muted" data-sk-sub-parts>
+        <span class="font-ui-medium">{{ LABELS.subParts }}</span>
+        <ul class="m-0 flex list-none flex-col gap-space-1 p-0">
+          @for (subPart of subParts; track subPart.key) {
+            <li class="wrap-anywhere" data-sk-sub-part>
+              <span class="font-code text-et-surface">{{ subPart.key }}</span>
+              @if (subPart.notRebuild; as stated) {
+                <span> · {{ LABELS.notRebuild(stated.of, stated.difference) }}</span>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
     @if (row.key !== CURRENT) {
       @if (IS_WITHDRAWN(row)) {
         <span
