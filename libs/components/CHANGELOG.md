@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0-next.100
+
+### Major Changes
+
+- Remove `--et-pip-window-z-index`: set the PiP window layer with `providePipWindowConfig({ overlayLayer })`, which sets its z-index and overlay layer together (default `2147483005`). The `pip-window-z-index` migration moves a literal value there and removes a rule it leaves empty.
+
+### Patch Changes
+
+- The design loader mock loads again from the published package: `spinner-sweep-dashes.ts` now ships next to it.
+- The package no longer ships the two Noto fallback fonts (about 650 KB) of the sdk design base; Studio keeps drawing its arrows and keyboard symbols in them.
+- The sdk design base ships a 6.5 KB Noto subset with the 12 `et-kbd` key glyphs (⌘ ⇧ ⌥ ↑ …), so they no longer fall back to a system font.
+- The PiP window now floats above overlays by default, and pressing it no longer closes an open sheet or dialog below it.
+- Bracket journey hover and pinning dim only the connector lines (`.et-bracket-svg path`) and the match cells. An SVG icon inside a match card, such as a VOD badge, keeps its full opacity.
+- The sdk design base ships its own faces.css and font files, so its colors sheet no longer imports a Studio file the package does not contain; Studio's type sheet imports the faces from the sdk.
+- Stop the indeterminate spinner from painting a stray dot opposite its arc at the shortest point of the sweep.
+
 ## 1.0.0-next.99
 
 ### Minor Changes
