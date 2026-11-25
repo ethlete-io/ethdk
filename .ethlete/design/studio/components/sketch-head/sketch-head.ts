@@ -17,11 +17,14 @@ export type SketchHeadStatus = SketchBadgeStatus;
 
 export type SketchHeadRound = { value: string; label: string };
 
+export type SketchHeadHold = { until: string; since: string };
+
 export type SketchHead = {
   round: string;
   rounds?: SketchHeadRound[];
   roundsOpen?: boolean;
   status?: SketchHeadStatus;
+  hold?: SketchHeadHold;
   autoMerge?: boolean;
   discardable?: boolean;
   error?: string;
@@ -35,7 +38,7 @@ export type SketchHead = {
 const ROUND = 'Runde 1 · Reset control: SDK button or own part';
 const SECOND_ROUND = 'Runde 2 · Port nach dem Merge';
 
-const statusMarkup = async (status: SketchHeadStatus) => {
+const statusMarkup = async (status: SketchHeadStatus, hold: SketchHeadHold) => {
   const tag = await sketchStatusBadge(status);
   if (status === 'paused') {
     return {
@@ -43,8 +46,8 @@ const statusMarkup = async (status: SketchHeadStatus) => {
       body: holdTrigger({
         content: tag.body,
         open: false,
-        reason: html`<span class="font-ui-medium text-et-surface">Wartet auf ${HOLD.until}</span>
-          <span>· ${HOLD.since}</span>`,
+        reason: html`<span class="font-ui-medium text-et-surface">Wartet auf ${hold.until}</span>
+          <span>· ${hold.since}</span>`,
       }),
     };
   }
@@ -68,14 +71,19 @@ const roundMenu = async (rounds: SketchHeadRound[], open: boolean) => {
           {
             kind: 'radio-group',
             label: SKETCHES_LABELS.roundSelect,
-            items: rounds.map(({ label }, index) => ({ kind: 'radio', label, checked: index === 0 })),
+            items: rounds.map(({ label }, index) => ({
+              kind: 'radio',
+              label,
+              checked: index === 0,
+              attributes: `data-et-action="${index === 0 ? 'emit:roundsOpenChange' : 'emit:roundChange'}"`,
+            })),
           },
         ],
       })
     : undefined;
   return {
     body: html`<div class="relative flex" data-sk-round>
-      ${withAction(control(trigger, 'round'), 'emit:roundChange')}
+      ${withAction(control(trigger.replace('<button ', `<button aria-expanded="${open}" `), 'round'), 'emit:roundsOpenChange')}
       ${
         panel
           ? html`<div class="absolute bottom-full left-1/2 mb-space-2 w-80 -translate-x-1/2" data-sk-round-menu>
@@ -93,6 +101,7 @@ export const sketchHead = async ({
   rounds = [{ value: round, label: round }],
   roundsOpen = false,
   status = 'waiting',
+  hold = HOLD,
   autoMerge = false,
   discardable = true,
   error,
@@ -102,7 +111,7 @@ export const sketchHead = async ({
   withdrawn,
   class: hostClass = '',
 }: SketchHead) => {
-  const state = await statusMarkup(autoMerge && ['drawing', 'waiting'].includes(status) ? 'autoMerge' : status);
+  const state = await statusMarkup(autoMerge && ['drawing', 'waiting'].includes(status) ? 'autoMerge' : status, hold);
   const discard = iconButton({
     icon: icon('trash', { cls: 'et-icon' }),
     ariaLabel: SKETCHES_LABELS.discard,
@@ -157,7 +166,7 @@ export const sketchHead = async ({
       ${toggle ? withAction(control(toggle.body, 'withdrawn'), { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       <span class="mx-space-1 h-5 w-px flex-none bg-et-surface-border" aria-hidden="true"></span>
       ${picker.body}
-      ${discardable && comment ? withAction(control(commentToggle, 'comment'), comment.action ?? 'emit:commentMode') : ''}
+      ${discardable && comment ? withAction(control(commentToggle, 'comment'), comment.action ?? 'emit:commentModeChange') : ''}
       ${discardable && retry ? withAction(control(reload.body, 'retry'), 'emit:retry') : ''}
       ${
         discardable
@@ -195,8 +204,12 @@ export default definePart({
     edit: { discardable: false, autoMerge: true, round: BUILD_READY_LABELS.groups['direct-edit'] },
     error: { error: MERGE_ERROR },
     'comments-retry': { commentable: true, listError: true },
-    paused: { status: 'paused' },
-    rounds: { rounds: [ROUND, SECOND_ROUND].map((label) => ({ value: label, label })), roundsOpen: true },
+    paused: { status: 'paused', hold: HOLD },
+    rounds: {
+      round: ROUND,
+      rounds: [ROUND, SECOND_ROUND].map((label) => ({ value: label, label })),
+      roundsOpen: true,
+    },
   },
   groups: [
     { label: 'Runde', states: ['plain', 'edit', 'rounds'] },
@@ -228,7 +241,7 @@ export default definePart({
   render: async ({ round = ROUND, commentable = false, listError = false, ...head }: Props) => {
     const { body, styles, setup } = await sketchHead({
       round,
-      comment: commentable ? { on: false, action: 'comments' } : undefined,
+      comment: commentable ? { on: false } : undefined,
       retry: listError,
       ...head,
     });
