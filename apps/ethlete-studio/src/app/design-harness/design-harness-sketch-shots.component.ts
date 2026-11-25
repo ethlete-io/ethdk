@@ -7,16 +7,19 @@ import {
   SKETCH_MANY_STATES,
   SKETCH_NARROW_SAMPLE,
   SKETCH_NEIGHBOURS_SAMPLE,
+  SKETCH_PHONE_STATES,
   SKETCH_ROWS,
   SKETCH_SCREEN_SAMPLE,
   SketchRow,
 } from '../design-parts/sketches/sketches-sample';
 import { SketchShotContext } from '../design-parts/sketches/sketches.component';
-import { SAMPLE_BAR_STATES, sampleBar, samplePage, sampleStepper } from './sample-product';
+import { SAMPLE_BAR_STATES, sampleBar, sampleNarrowPage, samplePage, sampleStepper } from './sample-product';
 
 const SCREEN_STATES = new Set(SKETCH_SCREEN_SAMPLE.rows.flatMap((row) => row.shots.map((shot) => shot.state)));
 
 const MANY_STATES = new Set(SKETCH_MANY_STATES);
+
+const PHONE_STATES = new Set(SKETCH_PHONE_STATES);
 
 const BAR_STATES = new Set(SAMPLE_BAR_STATES);
 
@@ -61,9 +64,11 @@ export class DesignHarnessSketchShotsComponent {
     if (known) return known;
     const markup = BAR_STATES.has(state)
       ? sampleBar(state)
-      : MANY_STATES.has(state)
-        ? samplePage(state)
-        : sampleStepper(SKETCH_DRAWN_AS[state] ?? state);
+      : PHONE_STATES.has(state)
+        ? sampleNarrowPage(state)
+        : MANY_STATES.has(state)
+          ? samplePage(state)
+          : sampleStepper(SKETCH_DRAWN_AS[state] ?? state);
     const safe = this.sanitizer.bypassSecurityTrustHtml(markup);
     this.drawn.set(state, safe);
     return safe;

@@ -303,6 +303,24 @@ export const SKETCH_MANY_SAMPLE = {
   } satisfies PartTree,
 };
 
+export const SKETCH_PHONE_STATES = ['phone-01', 'phone-02', 'phone-03'];
+
+export const SKETCH_PHONE_SAMPLE = {
+  part: 'components/plant-page',
+  rows: [
+    {
+      key: SKETCH_CURRENT,
+      label: 'Stand',
+      note: 'Gemergter Stand',
+      width: 390,
+      shots: shotsOf([], { height: () => 900, states: SKETCH_PHONE_STATES }),
+    },
+  ] satisfies SketchRow[],
+  looks: {} as Record<string, string>,
+  rounds: [{ value: 'round-1', label: 'Runde 1 · Schmale Seite' }] satisfies SketchRound[],
+  tree: SKETCH_MANY_SAMPLE.tree,
+};
+
 const MULTI_TARGETS = ['components/badge', 'components/sketch-status-badge', 'elements/variant-cell'];
 
 const MANY_TARGETS = [

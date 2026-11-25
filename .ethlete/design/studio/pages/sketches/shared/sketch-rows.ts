@@ -14,6 +14,7 @@ import {
   SAMPLE_STEPPER_STATES,
   SAMPLE_STEPPER_WIDTH,
   sampleBar,
+  sampleNarrowPage,
   samplePage,
   sampleStepper,
 } from '../../../../../../apps/ethlete-studio/src/app/design-harness/sample-product';
@@ -44,7 +45,7 @@ export type SketchPart = {
   render: (state: string) => Promise<Render>;
 };
 
-export type PartKind = 'wide' | 'narrow' | 'edit' | 'neighbours' | 'many';
+export type PartKind = 'wide' | 'narrow' | 'edit' | 'neighbours' | 'many' | 'phone';
 
 const OPUS: Omit<Model, 'when'> = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' };
 const SOL: Omit<Model, 'when'> = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' };
@@ -71,6 +72,14 @@ const narrowPart = (): SketchPart => ({
 const MANY_STATES = Array.from({ length: 30 }, (_, index) => `state-${String(index + 1).padStart(2, '0')}`);
 
 export const PARTS: Record<PartKind, SketchPart> = {
+  phone: {
+    key: 'components/plant-page',
+    width: 390,
+    height: 900,
+    states: ['phone-01', 'phone-02', 'phone-03'],
+    render: (state) => drawn(sampleNarrowPage(state)),
+    rows: [{ key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' }],
+  },
   many: {
     key: 'components/plant-page',
     width: 1440,

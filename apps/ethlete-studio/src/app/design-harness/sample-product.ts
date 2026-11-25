@@ -281,6 +281,9 @@ export const samplePage = (state: string, fluid = false) => {
 </div>`;
 };
 
+/** The Farn shop page below the md breakpoint, for a frame 390 px wide in a canvas that is itself wider. */
+export const sampleNarrowPage = (state: string) => samplePage(state, true).replace(/ md:[^\s"]+/g, '');
+
 /** One Farn pot-size tile, as a page row shows four of them. */
 export const samplePotTile = (size: string, price: string) =>
   `<span class="${FARN_SCOPE} flex items-baseline gap-space-2 text-ui-sm"><span class="text-et-surface">Ø ${size} cm</span><span class="text-et-surface-muted">${price}</span></span>`;

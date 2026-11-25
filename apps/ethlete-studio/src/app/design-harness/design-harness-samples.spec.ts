@@ -10,7 +10,7 @@ import { FARN_SURFACE } from '../../farn-surface-themes';
 import { FARN_THEME } from '../../farn-themes';
 import { DARK_SURFACE } from '../../surface-themes';
 import { BRAND_THEME } from '../../themes';
-import { FARN_SCOPE, sampleBar, samplePage, sampleStepper, samplePotTile } from './sample-product';
+import { FARN_SCOPE, sampleBar, sampleNarrowPage, samplePage, sampleStepper, samplePotTile } from './sample-product';
 
 const sketchesOf = (props: Record<string, unknown>) => {
   const sample = DESIGN_HARNESS_SAMPLES['pages/sketches'];
@@ -206,5 +206,14 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     expect(border).not.toBe(DARK_SURFACE.border);
     expect(FARN_THEME.primary.color.default).not.toBe(BRAND_THEME.primary.color.default);
     expect(FARN_THEME.primary.inkColor?.default).not.toBe(BRAND_THEME.primary.inkColor?.default);
+  });
+
+  it('draws the narrow page without any md: utility, account and basket right of the logo', () => {
+    const html = sampleNarrowPage('phone-01');
+
+    expect(html).not.toMatch(/\smd:/);
+    expect(html).toContain('data-farn-page="phone-01"');
+    expect(html).toMatch(/data-farn-search/);
+    expect(html).toMatch(/class="[^"]*\bhidden\b[^"]*"\s+data-farn-nav/);
   });
 });
