@@ -83,7 +83,7 @@
   }
 
   .et-bracket-host--journey-hover {
-    path,
+    .et-bracket-svg path,
     .et-bracket-element--match {
       opacity: 0.5;
     }
@@ -115,7 +115,7 @@
      distinction; a pin persists and is usually the answer to "where did they get to", which is worth
      pushing the rest of the bracket further back for. */
   .et-bracket-host--journey-focused {
-    path,
+    .et-bracket-svg path,
     .et-bracket-element--match {
       opacity: 0.25;
     }

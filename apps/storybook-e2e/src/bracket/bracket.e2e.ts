@@ -4,6 +4,7 @@ import { expectFocusVisible, focusedDescriptor, openStory, pressKey, settle, tap
 const STORY_ID = 'components-sports-bracket-prediction--interactive';
 const SLOT_SOURCES_STORY_ID = 'components-sports-bracket-prediction--slot-sources';
 const PARTICIPANT_FOCUS_STORY_ID = 'components-sports-bracket--participant-focus';
+const JOURNEY_ICON_STORY_ID = 'components-sports-bracket--journey-icon-in-card';
 const JOURNEY_FOCUSED = /et-bracket-host--journey-focused/;
 
 test.describe('bracket prediction / focus', () => {
@@ -219,6 +220,28 @@ test.describe('bracket prediction / journey highlight', () => {
 
     await expect(host).not.toHaveClass(/et-bracket-host--journey-hover/);
     await expect(root.locator('.et-bracket-journey-active')).toHaveCount(0);
+  });
+});
+
+test.describe('bracket journey highlight / icons in cards', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover');
+
+  test('dims the connector lines but leaves an SVG icon inside a card at full opacity', async ({ page }) => {
+    const root = await openStory(page, JOURNEY_ICON_STORY_ID);
+    const host = root.locator('.et-bracket-host');
+
+    await root.locator('et-match-card [data-participant-id]').first().hover();
+    await expect(host).toHaveClass(/et-bracket-host--journey-hover/);
+    await settle(page, 400);
+
+    const opacityOf = (selector: string) =>
+      root
+        .locator(selector)
+        .first()
+        .evaluate((el) => Number.parseFloat(getComputedStyle(el).opacity));
+
+    expect(await opacityOf('.et-sb-icon-match-icon path')).toBe(1);
+    expect(await opacityOf('.et-bracket-svg path:not(.et-bracket-journey-active)')).toBeCloseTo(0.5, 1);
   });
 });
 

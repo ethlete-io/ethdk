@@ -877,7 +877,8 @@ tournament. What gets lit depends on what you point at:
 Tabbing to a card that is a [link](#making-cells-navigate) previews both journeys the same way,
 via `:focus-visible`. All of it runs outside Angular on pointer events and adds
 `et-bracket-host--journey-hover` plus `et-bracket-journey-active` on each cell and connector on
-the path. Turn the whole thing off with `disableJourneyHighlight`.
+the path. The dimming reaches the connector lines (`.et-bracket-svg path`) and whole cells, never an
+SVG icon inside a card of its own. Turn the whole thing off with `disableJourneyHighlight`.
 
 ### Where a journey ends
 

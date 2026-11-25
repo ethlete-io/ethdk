@@ -24,7 +24,8 @@ import {
   BracketRoundSwissGroup,
   BracketSwissColors,
 } from '@ethlete/bracket';
-import { BracketMatchNormalizer } from '../bracket-card-context';
+import { BracketMatchNormalizer, createNormalizedBracketMatch } from '../bracket-card-context';
+import { MATCH_CARD_IMPORTS } from '../../match';
 import { BracketDataSource } from '../integrations/base';
 import {
   doubleEliminationBracketLayout,
@@ -89,6 +90,48 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
   public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
   public bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
   public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
+}
+
+/** Demo match card that carries an SVG icon, the way a VOD badge does. Not part of the library's public API. */
+@Component({
+  selector: 'et-sb-icon-match',
+  template: `
+    @if (normalizedMatch(); as match) {
+      <et-match-card [match]="match" class="et-sb-icon-match-card" size="compact" />
+
+      <svg class="et-sb-icon-match-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+        <path d="M4 6h10v12H4zM14 10l6-3v10l-6-3z" fill="currentColor" />
+      </svg>
+    }
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [MATCH_CARD_IMPORTS],
+  host: {
+    class: 'et-sb-icon-match-host',
+  },
+  styles: `
+    @layer components {
+      .et-sb-icon-match-host {
+        position: relative;
+        display: block;
+        inline-size: 100%;
+        block-size: 100%;
+      }
+
+      .et-sb-icon-match-icon {
+        position: absolute;
+        inset-block-start: 4px;
+        inset-inline-end: 4px;
+      }
+    }
+  `,
+})
+export class StorybookIconMatchComponent<TRoundData = unknown, TMatchData = unknown> {
+  public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
+  public bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
+  public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
+
+  protected normalizedMatch = createNormalizedBracketMatch(this.bracketMatch);
 }
 
 /**
@@ -272,6 +315,7 @@ export class StorybookBracketDensityComponent {
         [(focusedParticipantId)]="focusedParticipantId"
         [source]="source()"
         [matchNormalizer]="matchNormalizer()"
+        [matchComponent]="iconInCards() ? ICON_MATCH_COMPONENT : undefined"
         [finalMatchComponent]="customFinalCard() ? FINAL_MATCH_COMPONENT : undefined"
         [roundHeaderLevel]="roundHeaderLevel()"
         [columnWidth]="columnWidth()"
@@ -353,6 +397,7 @@ export class StorybookBracketComponent {
   public swissColors = input<BracketSwissColors | undefined>(undefined);
 
   /** Swap the shipped final card for the demo custom one, to show the override still works. */
+  public iconInCards = input(false, { transform: booleanAttribute });
   public customFinalCard = input(false, { transform: booleanAttribute });
   public roundHeaderLevel = input(3, { transform: numberAttribute });
 
@@ -393,6 +438,7 @@ export class StorybookBracketComponent {
       .filter((participant) => !!participant);
   });
 
+  protected readonly ICON_MATCH_COMPONENT = StorybookIconMatchComponent;
   protected readonly FINAL_MATCH_COMPONENT = StorybookFinalMatchComponent;
   protected readonly SECTION_TITLE_COMPONENT = StorybookSectionTitleComponent;
 }

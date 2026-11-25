@@ -41,6 +41,7 @@ export default {
     withParticipantList: { control: { type: 'boolean' } },
     showSectionTitles: { control: { type: 'boolean' } },
     customSectionTitle: { control: { type: 'boolean' } },
+    iconInCards: { control: { type: 'boolean' } },
     finalAlignment: {
       options: [BRACKET_FINAL_ALIGNMENT.UPPER, BRACKET_FINAL_ALIGNMENT.CENTER],
       control: { type: 'select' },
@@ -74,6 +75,7 @@ export default {
     withParticipantList: false,
     showSectionTitles: false,
     customSectionTitle: false,
+    iconInCards: false,
     finalAlignment: BRACKET_FINAL_ALIGNMENT.UPPER,
   },
 } as Meta<StorybookBracketComponent>;
@@ -283,6 +285,15 @@ export const ParticipantFocus = {
   args: {
     source: generateSingleEliminationBracket(8),
     withParticipantList: true,
+  },
+};
+
+/** A card with an SVG icon inside it: journey dimming reaches the connector lines, not the icon. */
+export const JourneyIconInCard = {
+  render: Template,
+  args: {
+    source: generateSingleEliminationBracket(8),
+    iconInCards: true,
   },
 };
 
