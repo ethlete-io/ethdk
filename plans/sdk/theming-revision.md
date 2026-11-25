@@ -1,7 +1,13 @@
 # Theming-Revision (B757)
 
-Stand: 26.11.2026. Status: **Entscheidungen gefallen, Bestätigung durch Tom offen.** Kein Builder-Start vor Abschluss der
-Entscheidungen in Abschnitt 6.
+Stand: 26.11.2026. Status: **Zielbild neu geschrieben, Bestätigung durch Tom offen.** Kein
+Builder-Start vorher.
+
+**Maßstab der Revision (Tom, 26.11.): Das System wird kleiner und erklärbar, nicht größer.** Ein
+Flicken für B-65 mit weiteren Tokens ist ausdrücklich nicht das Ziel. Öffentliche Namen dürfen
+brechen, wenn jede Änderung eine Auto-Migration in `et update` mitbringt und das Bild in fifagg
+gleich bleibt. Abschnitt 3 ist das Zielbild, 4 die Streichliste, 5 der Weg, 6 die Demo. Abschnitte
+0 bis 2 sind der Bestand, auf dem das beruht.
 
 Zahlen stammen aus drei Suchläufen (Sonnet-Subagenten) vom 25.11. Tragende Aussagen sind per
 Stichprobe an der Quelle geprüft und mit ✔ markiert; alle anderen Zahlen sind Größenordnungen.
@@ -129,175 +135,141 @@ Segmented, FAB), Akzent-Mix 12 bis 35 % (Tree, Chip, Bracket, Scheduler, Table),
 Zustand um ✔; Leser ist nur der Tabs-Text), reine Deckkraft, eine feste Farbe.
 „Nächste Ebene“ nutzt im SDK niemand; nur die Apps.
 
-## 3. Modelle für Interaktions-Flächen
+## 3. Zielbild: so funktioniert das System danach
 
-Gemeinsamer Rahmen: Das Modell entsteht einmal in `theme-css.ts` auf `:root` und jedem
-Surface-Scope. Komponenten lesen es nur noch. Namen sind Arbeitsnamen.
+Drei Begriffe, je ein Satz, je ein Namensraum. Mehr muss ein App-Entwickler nicht wissen.
 
-### Modell A: Zustandsschicht (durchscheinend, Stärke statt Farbe)
+| Begriff     | Was es ist                                                                                                 | Wie man es setzt                                           | Was man liest                                                                |
+| ----------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Fläche**  | Eine Ebene mit fünf Farben: Hintergrund, Text, Text gedämpft, Text schwach, Rahmen.                        | `etAutoSurface` (eine Ebene höher) oder `etProvideSurface` | `--et-surface-*`, **ein** Name je Wert, ein fertiger Farbwert                |
+| **Akzent**  | Eine Farbe für Hervorhebung: Farbe, Text darauf, Tinte.                                                    | `etProvideColor`                                           | `--et-color-*`, **ein** Name je Wert, ein fertiger Farbwert                  |
+| **Zustand** | Hover und Gedrückt sind eine durchscheinende Tönung über dem, was darunter liegt. Stellbar ist die Stärke. | nichts; Komponenten bringen ihre Stärke mit                | Apps: eine Utility für die Tönung, eine für „Hintergrund der nächsten Ebene“ |
 
-Ein Zustand ist eine durchscheinende Schicht der neutralen Tönungsfarbe der Fläche. Stellbar ist
-die **Stärke** (eine Zahl), nie die Farbe. Eine Zahl kann nicht mit der Fläche zusammenfallen.
+Was daraus folgt:
 
-```css
-.et-accordion-trigger:hover {
-  background: color-mix(
-    in srgb,
-    var(--et-surface-interaction-solid) var(--et-accordion-header-hover-strength, 7%),
-    transparent
-  );
-}
-```
+- **Ein Name pro Wert.** Heute hat jeder Wert drei bis fünf Namen (`--et-surface-background`,
+  `-rgb`, `-solid`; bei Akzenten `--et-color-primary`, `--et-theme-color-primary-rgb`, `-solid`,
+  unsuffigiert, `-opacity`). Danach genau einer, und er ist ein Farbwert, kein Kanal-Tripel.
+  Deckkraft entsteht mit `color-mix()` oder relativer Farbsyntax am Verbraucher.
+- **`interactionColor` wird in seine Rollen geteilt.** Das Theme nennt getrennt die Textfarbe
+  neutraler Bedienelemente (Leiter mit Zuständen) und die Tönungsquelle (eine Farbe, Default: die
+  Textfarbe der Fläche). Die reservierte Farbe `surface` leitet sich daraus ab und ist kein dritter
+  Zweck desselben Feldes mehr.
+- **Drei Direktiven für Apps**: `etAutoSurface`, `etProvideSurface`, `etProvideColor`.
+  `etSurfaceInteractive` entfällt (einziger SDK-Leser ist der Tabs-Text ✔; fifagg und fut nutzen
+  sie nicht ✔). `etColorInteractive` bleibt SDK-intern (fifagg 0, fut 0 ✔) und steht nicht mehr im
+  App-Teil der Doku.
+- **Zustände folgen einer Formregel, per Lint erzwungen**: eine Tönungsquelle, Stärke als Default
+  an der Komponente, am Verbraucher gemischt. Die heutigen Stärken je Komponente bleiben (sonst
+  ändert sich das Bild). Zustands-Tokens der Komponenten bekommen **ein** Namensmuster statt
+  heute vier (`-hover-background`, `-background-hover`, `-hover-fill`, `-hover-rgb`).
+- **B-65 ist ein Sonderfall der Regel, kein Zusatz.** Der Generator kennt die Ebenenleiter und
+  schreibt je Fläche den Hintergrund der nächsten Ebene. Eine App, die „Hover = nächste Ebene“
+  will, verweist darauf, auf dem Element der Komponente. Auf der obersten Ebene gibt es keinen
+  Nachfolger; dort greift die Tönung.
 
-Die Schicht wird **am Verbraucher** gemischt, nicht einmal je Scope: ein auf dem Scope
-vorgemischtes Token löst seine `var()` dort auf und sieht eine Stärke, die die Komponente setzt,
-nicht ✔ (CSS ersetzt `var()` am deklarierenden Element, vor der Vererbung). Die Komponente bringt
-ihre Stärke als Default mit (Accordion 7 / 14 %, Table 8 / 16 %). Deckende Stellen
-(Sticky-Zellen) mischen dieselbe Schicht über die tatsächlich gemalte Fläche, wie die Tabelle es
-heute tut ✔. Das Modell ist damit eine Formregel (eine Quelle, Stärke statt Farbe, per Lint
-erzwungen), kein neuer Token-Satz.
+Messzahlen (vorher → Ziel; „vorher“ am 26.11. gezählt ✔, Ziel ist Vorgabe für den Builder):
 
-- Funktioniert auf **jedem** Untergrund, auch auf einer von Hand gefärbten Karte ohne
-  Surface-Scope (fifagg: `bg-gg-dark-3` etwa 590-mal).
-- Aufwand: mittel. Etwa 51 CSS-Dateien, in vier Scheiben; im Generator nur der Ebenen-Baustein.
-- Bruch: Themes neu erzeugen nur für den Ebenen-Baustein. Die Stärken bleiben je Komponente, wie sie sind (Vorgabe unten).
-  Die farbigen Zustands-Tokens entfallen oder werden Stärken (entschieden: behalten); das trifft fifagg an etwa
-  10 Zeilen, fut an keiner.
-- Grenze: „Hover ist exakt die Farbe der nächsten Ebene“ geht nicht mehr pixelgenau, nur über
-  die Stärke angenähert.
+| Größe                                | Vorher                                                                       | Ziel                                  |
+| ------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------- |
+| Namen je Flächenwert                 | 3 (roh, `-rgb`, `-solid`)                                                    | 1                                     |
+| Namen je Akzentwert                  | bis 5                                                                        | 1                                     |
+| Rollen von `interactionColor`        | 3 in einem Feld                                                              | 1 je Feld                             |
+| Direktiven, die eine App kennen muss | 5 (+3 Helfer-Direktiven)                                                     | 3                                     |
+| Namensmuster für Zustands-Tokens     | 4                                                                            | 1                                     |
+| Alt-System                           | `legacy-theming.ts` 268 Zeilen, 3 veraltete Helfer, 2 veraltete Theme-Felder | 0                                     |
+| Doku `apps/docs/core/theming.md`     | 507 Zeilen, 14 Abschnitte                                                    | Modell auf einer Seite, Rest Referenz |
+| fifagg-Bildvergleich                 | –                                                                            | Differenz null außer B-65             |
 
-### Modell B: Nächste Ebene (deckend)
+## 4. Streichliste
 
-Hover ist der Hintergrund des Themes gleichen Typs mit `elevation + 1`, Gedrückt `+ 2`. Der
-Generator kennt alle Themes und schreibt den Wert je Scope fest.
+Jeder Punkt: was geht, wen es trifft (Vorkommen ✔ vom 26.11., generierte Dateien mitgezählt), wie
+`et update` es umschreibt.
 
-```css
-.et-surface--fifa-dark-raised {
-  --et-surface-hover-background-solid: rgb(31 41 55); /* fifa-dark-card */
-  --et-surface-pressed-background-solid: rgb(40 49 64); /* fifa-dark-float */
-}
-.et-accordion-trigger:hover {
-  background: var(--et-surface-hover-background-solid);
-}
-```
+| #   | Was geht                                                                                                  | Trifft (Vorkommen)                                                                                  | Migration                                                                                                                                     |
+| --- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | Flächen-Tokens `-rgb` und `-solid`; Roh-Tripel wird Farbwert                                              | SDK-Libs 937 / 31 / 124 (`-solid` / `-rgb` / roh in `rgb()`); fifagg 13 / 20 / 46; fut 58 / 20 / 49 | auto: Namen und `rgb(var(…) / a)`-Formen umschreiben; Themes neu erzeugen. Danach Prüfung: kein alter Name mehr, sonst bricht `et update` ab. |
+| S2  | Akzent-Tokens: `--et-theme-color-*` in allen Formen und das Roh-Tripel; es bleibt `--et-color-*`          | SDK-Libs 586 + 97 + 384; fifagg 22 + 9 + 474; fut 22 + 27 + 572                                     | wie S1                                                                                                                                        |
+| S3  | `interactionColor` als Sammelfeld; `--et-surface-interaction*`, `-on-interaction*`, `-interaction-ink*`   | Theme-Dateien (fifagg 6, fut 4 Themes); fut 5 Lesestellen + 25 Utilities                            | auto: Theme-Feld aufteilen, Token- und Utility-Namen umschreiben                                                                              |
+| S4  | `SurfaceInteractiveDirective`, ihr Sheet, die cli-Kopie des Sheets                                        | SDK-Libs 16, SDK-Apps 15; fifagg 0, fut 0                                                           | im Repo von Hand (Tabs lesen die Zustandsfarbe direkt); für Apps auto: Attribut entfernen, Hinweis je Fundstelle                              |
+| S5  | Vier Namensmuster der Zustands-Tokens                                                                     | etwa 55 Namen; fifagg setzt 22, fut 29                                                              | auto: umbenennen. Die Tokens nehmen weiter eine Farbe an; die Doku empfiehlt Stärke oder das Ebenen-Token statt fester Farbe.                 |
+| S6  | `legacy-theming.ts`, `inject{Error,Warning,Success}Theme`, `colorTheme`, `semanticColorThemes`            | fut 8 Stellen; SDK-Testhelfer (71 Specs), `apps/csp`                                                | auto: `inject*Theme` → `injectSemanticColorTheme(type)`; bestehende Migrationen `color-theme-variants`, `legacy-color-themes` auf required    |
+| S7  | Zweiter Schreibweg für Tokens (`colors-skeleton.ts`, `generate-studio-themes.mjs` schreiben Namen selbst) | nur Repo                                                                                            | keine; beide rufen `themeCss` auf                                                                                                             |
+| S8  | Fünf Helfer „welche Fläche“ und `SurfaceContextTracker` als öffentliche API                               | components 14, cdk 2; Apps 0                                                                        | `@internal` markieren, aus der Doku nehmen; kein Bruch im Verhalten                                                                           |
 
-- Trifft genau, was fifagg von Hand baut; deckend, also für Sticky-Zellen ohne Extra-Mix.
-- Aufwand: mittel, plus Sonderfälle: oberste Ebene hat keine nächste; Ebenen-Suche ist exakt
-  (Lücke in der Leiter = kein Zustand); in hellen Themes ist die nächste Ebene nicht verlässlich
-  „sichtbar anders“ (Storybook: 255 → 240 ist ein Sprung, fifagg dunkel 18 → 25 ein sehr kleiner).
-- Bruch: wie A, dazu ändert sich das Aussehen aller Defaults deutlich (deckend statt getönt).
-- Grenze: verschmilzt die zwei Achsen wieder. Eine gehoverte Zeile sieht aus wie eine Karte der
-  nächsten Ebene; ein Dialog der Ebene +1 über einer gehoverten Zeile hat dieselbe Farbe. Auf
-  Untergrund ohne Surface-Scope falsch.
+Nicht gestrichen, mit Grund:
 
-### Modell C: Zustände je Fläche im Theme deklariert (deckend, mit abgeleitetem Default)
+- **Die 24 Stärken** (7, 8, 10, 12 … %). Angleichen ändert das Bild. Eigene spätere Zeile.
+- **Akzent-Zustände und Fokus-Ring** (Umfangsentscheidung vom 26.11.). S2 benennt Akzent-Tokens
+  nur um; Werte und Rampen bleiben.
+- **`provideColorPalette`** (kategoriale Farben für Charts). Eigenes Thema.
+- **cdk.** Wartungsmodus, liest kein Surface-Token.
 
-Jedes Surface-Theme nennt seine Zustandsfarben selbst; fehlt die Angabe, leitet der Generator sie
-wie in A ab, aber deckend über den Hintergrund gemischt.
+## 5. Weg
 
-```ts
-{ name: 'fifa-dark-raised', elevation: 1, background: '25 34 45',
-  stateColor: { hover: '31 41 55', pressed: '40 49 64' } }
-```
+Jeder Schritt ist einzeln auslieferbar. „Beweis“ ist ein Test, der vor dem Schritt fehlschlägt.
+Nach jedem Schritt: `et update` in fifagg, Bildvergleich gegen die Aufnahme aus Schritt 0.
 
-```css
-.et-surface--fifa-dark-raised {
-  --et-surface-hover-background-solid: rgb(31 41 55);
-}
-```
-
-- Volle Kontrolle je Fläche; pixelgenau für Designs, die Zustandsfarben vorgeben.
-- Aufwand: wie B für das SDK; für Apps höher (fifagg 6, fut 4 Themes pflegen je 2 bis 3 Werte).
-- Bruch: wie A; ohne Angabe im Theme kein sichtbarer Unterschied zu A auf Surface-Scopes.
-- Grenze: deckend, also auf von Hand gefärbtem Untergrund falsch; die Farbe ist wieder absolut,
-  nur an der richtigen Stelle gepflegt. Ein falsch gepflegtes Theme kann B-65 wiederholen.
-
-### Vorgabe vom 26.11. (Tom): fifagg ändert sein Aussehen nicht
-
-Ziel ist ein funktionierendes System. fifagg darf sich optisch nicht ändern, ausgenommen sichtbare
-Fehler (B-65 ist einer). Folgen:
-
-- **Keine Vereinheitlichung der Stärken in dieser Revision.** Jede Komponente behält ihren
-  heutigen Wert (7, 8, 10, 12 … %) als eigenen Default. Das Modell legt die Form fest (welche
-  Quelle, welche Schicht, wo stellbar), nicht neue Zahlen. Eine gemeinsame Rampe wäre ein
-  späterer, eigener Schritt mit Zustimmung je App.
-- **A allein reicht nicht.** fifagg will im Accordion „Hover = Farbe der nächsten Ebene“
-  (gg-dark-2 / 3 / 4). Ein durchscheinender Mix trifft das nicht exakt: von 18 23 30 nach
-  25 34 45 bräuchte es je Kanal 5 %, 8 % und 10 % der Tönungsfarbe. Es braucht also einen
-  ebenen-relativen, deckenden Baustein aus B oder C.
-- **Beweis je Schritt zusätzlich:** Bildvergleich der fifagg-Oberfläche vor und nach dem
-  SDK-Update, Differenz null außer an den als Fehler benannten Stellen.
-
-### Empfehlung
-
-**A als Regel für die Defaults, dazu der Baustein aus B als Angebot für Apps.**
-
-- Defaults: durchscheinende Schicht wie in A, mit der heutigen Stärke je Komponente. Sichtbar
-  ändert sich nichts.
-- Der Generator schreibt je Scope (auch `:root`) zusätzlich den Hintergrund der nächsten Ebene
-  (Arbeitsname `--et-surface-raised-background-solid`). Eine App, die „Hover = nächste Ebene“
-  will, setzt das Komponenten-Token **auf dem Element der Komponente** auf dieses Token:
-  `.et-accordion-trigger { --et-accordion-header-hover-background: var(--et-surface-raised-background-solid); }`.
-  Eine Deklaration, kein Theme-Name, kein Schalter; der Trigger liest den Wert seiner eigenen
-  Umgebung. Auf `:root` gesetzt würde dieselbe Zeile den Wurzelwert in alle Flächen vererben ✔.
-- **Die Bildgleichheit für fifagg gilt nur bedingt** ✔. Heute: Inset (Ebene −1) erbt gg-dark-2,
-  also zwei Ebenen höher; eine allgemeine „+1“-Regel ergäbe dort die Farbe der Ebene 0. Float
-  (Ebene 3) hat keinen Nachfolger und erbt heute gg-dark-4, die eigene Farbe: das ist der Fehler
-  B-65. fifagg behält die drei Zeilen deshalb, bis ein Bildvergleich den Ersatz belegt. Was an
-  diesen beiden Rändern gelten soll, ist unten entschieden.
-- Kein Generator-Abbruch bei Farbgleichheit: der Generator kennt den tatsächlich gemalten
-  Untergrund nicht (von Hand gefärbte Karten, Sticky-Zellen). Die Messlatte aus Schritt 0 prüft
-  das im Browser.
-- C (Zustandsfarben je Fläche im Theme) bleibt als Ausbau möglich, falls ein Design Farben
-  verlangt, die keiner Ebene entsprechen.
+| #   | Schritt                                                                                                                                                                                                                                                | Beweis                                                                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | **Messlatte und Demo.** Die Demo-Seite aus Abschnitt 6 auf dem heutigen System; Playwright prüft auf ihr: Hover und Gedrückt unterscheiden sich auf jeder Ebene vom Ruhezustand. B-65 als Fall darin. Bildaufnahme der fifagg-Oberfläche als Referenz. | B-65-Fall rot, als erwartet-rot markiert sichtbar bis Schritt 3.                                                                              |
+| 1   | **Ein Name pro Wert** (S1, S2, S7). Generator schreibt die neuen Namen; SDK-CSS wird umgeschrieben; Migration für Apps.                                                                                                                                | Lint-Regel „kein alter Token-Name“ (rot bei allen Fundstellen, grün danach). Generator-Specs mit Fixtures aus echten fifagg- und fut-Dateien. |
+| 2   | **Rollen trennen** (S3, S4).                                                                                                                                                                                                                           | Spec auf `themeCss`; Generator-Spec mit den echten Theme-Dateien beider Apps; Tabs-Story in der Messlatte unverändert.                        |
+| 3   | **Zustände** (S5): Formregel in vier Scheiben (Listen, Tabelle und Zeilen, Formulare, Rest), Ebenen-Baustein im Generator, ein Namensmuster.                                                                                                           | Lint-Regel gegen handgemischte Zustände außerhalb der Form (rot bei 51 Dateien). B-65-Fall wird grün.                                         |
+| 4   | **Utilities für Apps**: Tönung und „Hintergrund der nächsten Ebene“.                                                                                                                                                                                   | Spec auf den `@theme`-Block; die Demo nutzt beide.                                                                                            |
+| 5   | **Alt-System raus** (S6, S8).                                                                                                                                                                                                                          | `removed-exports`-Prüfung; 71 Specs laufen ohne Legacy-Provider; Generator-Specs mit Fixtures aus fut.                                        |
+| 6   | **Doku und Regeln**: `theming.md` neu (Modell auf einer Seite, Demo oben, Referenz darunter), Skill `theming`, `libs/agent-rules/content` (dann `yarn agents:sync`).                                                                                   | Doku-Beispiele rendern in der Messlatte auf allen Ebenen.                                                                                     |
 
 Technische Festlegungen (meine, keine Rückfrage):
 
-- Tönungsquelle bleibt `--et-surface-interaction` (Default-Stufe). Kein neues Pflichtfeld im Theme.
-- Statische Tönungen (Skeleton, Track, Zebra, Rahmen) sind keine Zustände und bleiben unberührt.
-- cdk bekommt nichts (Wartungsmodus, liest kein Surface-Token).
-- Die Schicht wird am Verbraucher gemischt (siehe Modell A); App-Overrides stehen auf dem Element
-  der Komponente, nicht auf `:root`.
-- Aufräumen (Schritt 6) läuft als eigene Zeilen nach der Revision. Nichts in Schritt 0 bis 4 hängt
-  davon ab; nur „`SurfaceInteractiveDirective` vom Button“ wartet auf Schritt 2.
+- Welcher Name je Wert überlebt, entscheidet ein Spike am Anfang von Schritt 1. Kriterium: Eine
+  nicht migrierte Lesestelle muss laut scheitern (Lint oder `et update`-Prüfung), nie still eine
+  ungültige Farbe ergeben. Ein Name, der seinen Typ wechselt (Tripel → Farbwert), erfüllt das nur
+  mit der Prüfung aus S1.
+- Zustände werden am Verbraucher gemischt; App-Overrides stehen auf dem Element der Komponente,
+  nicht auf `:root` (ein auf `:root` gesetztes `var()` löst dort auf und vererbt den Wurzelwert ✔).
+- Kein Generator-Abbruch bei Farbgleichheit; die Messlatte prüft im Browser.
+- Schritt 1 und 2 sind reine Umbenennungen und zuerst dran: sie machen das System lesbar, bevor
+  jemand an Zuständen baut.
+- fifagg behält seine drei Accordion-Zeilen, bis der Bildvergleich den Ersatz belegt. Inset
+  (Ebene −1) nutzt fifagg nirgends ✔.
 
-## 4. Migrationsweg
+Abhängige Zeilen: **B756** (Tabs-Variante liest alle `et-tab`-Tokens) nach Schritt 3 (Namensmuster).
+**B759** ist unabhängig. Reihenfolge der Konsumenten: fifagg zuerst, fut danach (34 Releases
+zurück, muss ohnehin durch die älteren Migrationen).
 
-Jeder Schritt ist einzeln auslieferbar. „Beweis“ ist ein Test, der vor dem Schritt fehlschlägt.
+## 6. Demo auf der Doku-Seite (Tom, 26.11.)
 
-| #   | Schritt                                                                                                                                                                                                                                                                                                          | Migration für `et update`                                                                                                                         | Beweis (vorher rot, nachher grün)                                                                                                                               |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0   | **Messlatte.** Playwright-Suite in `apps/storybook-e2e`: jede interaktive Komponente auf jeder registrierten Ebene; prüft, dass sich der berechnete Hover- und Gedrückt-Hintergrund vom Ruhezustand unterscheidet. Dazu der B-65-Fall als Story: Accordion in einem Overlay, App-Override wie in fifagg.         | keine (nur Tests)                                                                                                                                 | Der B-65-Fall ist rot und bleibt bis Schritt 3 als erwartet-rot markiert sichtbar (deine Vorgabe: Lücke bleibt sichtbar).                                       |
-| 1   | **Ebenen-Baustein im Generator.** `theme-css.ts` schreibt den Hintergrund der nächsten Ebene auf `:root` und jeden Scope; `colors-skeleton.ts` und `generate-studio-themes.mjs` ziehen nach.                                                                                                                     | `surface-theme-regenerate` als wiederverwendbare manuelle Migration (Befehl steht im Kopf jeder generierten Datei).                               | Spec auf `surfaceThemeCss` (Token fehlt vorher). e2e: Token löst auf verschachtelten Flächen je Scope auf.                                                      |
-| 2   | **Komponenten folgen der Formregel** (eine Quelle, Stärke als Default am Verbraucher), vier Scheiben: Listen (Menu, Select, Cascader, Command-Palette, Tree), Tabelle und Zeilen (Table, Standings, Accordion), Formulare, Rest. Braucht kein neu erzeugtes Theme.                                               | keine (kein API-Bruch); Werte bleiben je Komponente gleich.                                                                                       | Neue Regel in `yarn lint:css-properties`: kein handgemischtes `--et-surface-interaction-solid` in einem Zustands-Selektor. Rot bei 51 Dateien, grün je Scheibe. |
-| 3   | **Farbige Zustands-Tokens** bleiben und nehmen weiter eine Farbe an; dazu je Komponente ein Stärke-Token; Doku empfiehlt keine feste Farbe mehr: Accordion, Select, Segmented, Table, Button outline/transparent, Pagination, Carousel, Scrollbar.                                                               | assistiert mit Scan: findet jedes gesetzte Token in CSS, SCSS, HTML und TS der App, nennt Datei und Zeile und den Ersatz.                         | Generator-Spec mit Fixture aus der echten fifagg-Datei `et-accordion.scss`. Der B-65-Fall aus Schritt 0 wird grün.                                              |
-| 4   | **Utilities für Apps**: `hover:bg-et-surface-state-hover` usw. aus dem `@theme`-Block; Doku-Warnung zu `hover:bg-et-surface-interaction-hover` wird zur Empfehlung des neuen Namens.                                                                                                                             | keine (additiv). Ersatz der App-eigenen Klassen (`hover:bg-gg-dark-3`) ist App-Arbeit, kein `et update`.                                          | Spec auf den `@theme`-Block; e2e-Story mit der Utility auf drei Ebenen.                                                                                         |
-| 5   | **Akzent-Zustände** (Ausgewählt, Gewählt): eine Rampe statt 0.08 / 0.12 / 0.16 und 12 bis 35 % (**nicht Teil der Revision**, Entscheidung vom 26.11.; eigene spätere Zeilen); handgesetztes `--et-color-primary-active` in Checkbox, Radio, Select-All streichen; Roh-Kanäle in 11 Komponenten-Dateien ersetzen. | keine, falls kein öffentliches Token fällt; sonst wie Schritt 3.                                                                                  | Lint-Regel gegen Roh-Kanäle (rot bei 11 Dateien). Messlatte aus Schritt 0 um „ausgewählt“ erweitert.                                                            |
-| 6   | **Entfernen**: veraltete `inject{Error,Warning,Success}Theme`, `colorTheme`, `semanticColorThemes`, `legacy-theming.ts`; Testhelfer auf den Tailwind-4-Provider; `SurfaceInteractiveDirective` vom Button; cli-Kopie des Sheets erzeugen statt pflegen.                                                          | auto: `inject*Theme` → `injectSemanticColorTheme(type)` (trifft fut an 8 Stellen); `color-theme-variants` und `legacy-color-themes` auf required. | Generator-Specs mit Fixtures aus fut. `removed-exports`-Prüfung in den Generatoren. 71 Specs laufen ohne Legacy-Provider.                                       |
-| 7   | **Doku und Regeln**: `apps/docs/core/theming.md`, Skill `theming`, `libs/agent-rules/content` (dann `yarn agents:sync`). Läuft in jedem Schritt mit; hier der Abschluss mit der Rollentrennung von `interactionColor`.                                                                                           | keine                                                                                                                                             | Doku-Beispiele (`apps/docs-examples`) rendern auf drei Ebenen in der Messlatte.                                                                                 |
+Eine Live-Demo in `apps/docs-examples`, oben in `apps/docs/core/theming.md` eingebettet. Sie zeigt
+das ganze System in Aktion und ist zugleich die Bühne der Messlatte aus Schritt 0.
 
-Abhängige Zeilen: **B756** (Tabs-Variante liest alle `et-tab`-Tokens) nach Schritt 3, weil dort
-die Namensregel für Zustands-Tokens fällt. **B759** (destructive im Design-Kit-Menü) ist
-unabhängig (Farb-Theme nach Typ) und wartet nicht.
+- **Ebenen ineinander**: Wurzel, darin eine Fläche, darin eine Karte, dazu ein Overlay auf der
+  obersten Ebene. Jede Ebene zeigt ihren Namen und ihre fünf Werte live.
+- **Dieselben Komponenten auf jeder Ebene**: Accordion, Menü, Tabellenzeile, Tabs, Buttons. So
+  sieht man, dass Hover und Gedrückt überall funktionieren, ohne dass jemand etwas einstellt.
+- **Schalter**: hell/dunkel, Akzent wechseln, „Hover = nächste Ebene“ ein/aus (der Baustein aus
+  Schritt 3, inklusive der obersten Ebene ohne Nachfolger).
+- **Der Code daneben**: die drei Direktiven und die Theme-Definition, die das Gezeigte erzeugen.
 
-Reihenfolge der Konsumenten: fifagg zuerst (nah am aktuellen Stand, hat den Fall), fut danach
-(34 Releases zurück, muss ohnehin durch die älteren Migrationen).
+Die Demo entsteht in Schritt 0 auf dem heutigen System und wird mit jedem Schritt einfacher; ihr
+Quelltext ist der Beleg, dass das System kleiner wird. Die Theme-Namen in der Demo gehören der
+Demo-App, nicht dem SDK.
 
-## 5. Risiken
+## 7. Risiken
 
-- Zwei Schreibwege für Tokens (`theme-css.ts` und `colors-skeleton.ts`): Schritt 1 muss beide
-  ändern, sonst zeigt Studio ein anderes Modell als die Apps.
-- Apps, die ihre Themes nicht neu erzeugen: Schritt 2 braucht kein neues Theme; nur der
-  Ebenen-Baustein fehlt ihnen, und den nutzt erst, wer ihn setzt.
-- fut liest `--et-surface-interaction-*` als Textfarbe (5 Lesestellen, 25 Utilities): diese
-  Namen bleiben unverändert.
-- Die Zählungen der Subagenten können Lücken haben (nicht einzeln geprüft: Sidebar, Navigation,
-  Stepper, Toggle, List). Schritt 0 findet sie, weil die Messlatte jede Story mit Zustand prüft.
+- **Größe von Schritt 1.** Über 2000 Fundstellen in den SDK-Libs, je rund 600 in fifagg und fut.
+  Rein mechanisch, aber die Migration muss jede Schreibform kennen (`rgb(var(…))`,
+  `rgb(var(…) / a)`, Tailwind-Konfiguration, SCSS-Funktionen). Deshalb Fixtures aus den echten
+  Apps und die Abbruch-Prüfung auf Reste.
+- **fut liegt 34 Releases zurück** und trifft alle Migrationen auf einmal.
+- **Die Zählungen können Lücken haben** (nicht einzeln geprüft: Sidebar, Navigation, Stepper,
+  Toggle, List). Die Messlatte findet sie.
+- **Pixelgleichheit beim Wechsel der Deckkraft-Schreibweise** (`rgb(tripel / a)` →
+  `color-mix()`): rechnerisch gleich, wird in Schritt 1 am Bildvergleich belegt, nicht angenommen.
 
-## 6. Entscheidungen
+## 8. Entscheidungen
 
-Offen: keine. Tom fand die Modellfrage zu abstrakt (26.11.); die vier restlichen Punkte sind
-technisch und von Fable entschieden (unten). Offen ist nur Toms Bestätigung der Zusammenfassung.
+Offen: Toms Bestätigung des Zielbilds (Abschnitte 3 bis 6).
 
 Entschieden:
 
@@ -305,28 +277,15 @@ Entschieden:
   ausgenommen sichtbare Fehler.
 - (vorab, Tom) Kein neues Token als schnelle Lösung; die Lücke bleibt bis zur Revision sichtbar;
   das SDK liefert keine Theme-Namen; kein ADR.
-- (26.11., technisch, Fable) Aufräumen (Schritt 6) als eigene Zeilen nach der Revision; Schicht am
-  Verbraucher gemischt; App-Override auf dem Element der Komponente; kein Generator-Abbruch bei
+- (26.11., Tom) Umfang: „nur neutrale ‚surface themes‘ zustände“. Akzent-Zustände, Akzent-Rampe
+  und Fokus-Ring sind nicht Teil der Revision.
+- (26.11., Tom) Ein Flicken, der nur Tokens anbaut, ist nicht das Ziel: „wir machen das system
+  was niemand versteht nur noch größer?“ Die Revision muss das System kleiner und verständlich
+  machen.
+- (26.11., Tom) Öffentliche Namen (Tokens, Direktiven, Theme-Felder) dürfen brechen, wenn jede
+  Änderung eine Auto-Migration in `et update` mitbringt und das Bild in fifagg gleich bleibt.
+- (26.11., Tom) Die Doku bekommt eine Demo, die das ganze Theming-System in Aktion zeigt.
+- (26.11., technisch, Fable) Zustände als durchscheinende Tönung mit Stärke je Komponente, am
+  Verbraucher gemischt; „Hintergrund der nächsten Ebene“ als Baustein für Apps; farbige
+  Zustands-Tokens nehmen weiter eine Farbe an; Utilities für Apps ja; kein Generator-Abbruch bei
   Farbgleichheit.
-- (26.11., Tom) Umfang: „nur neutrale ‚surface themes‘ zustände“. Die Revision deckt Hover und
-  Gedrückt der Surface-Themes ab. Akzent-Zustände (Ausgewählt, Gewählt), die Akzent-Rampe, das
-  handgesetzte `--et-color-primary-active` und der Fokus-Ring sind nicht Teil der Revision
-  (Schritt 5 entfällt hier und wird spätere eigene Zeilen). Meine Auslegung: das Ersetzen der
-  Surface-Roh-Kanäle in Komponenten-CSS per Lint bleibt drin, weil es Surface-Tokens betrifft und
-  optisch nichts ändert; die Messlatte aus Schritt 0 prüft nur Hover und Gedrückt.
-- (26.11., technisch, Fable) **Modell**: A als Regel für die Defaults (durchscheinende Schicht,
-  heutige Stärke je Komponente, per Lint erzwungen) plus das Token „Hintergrund der nächsten
-  Ebene“ als Baustein für Apps.
-- (26.11., technisch, Fable) **Ränder von „Hover = nächste Ebene“**: Das Token gilt für jede
-  Komponente, die ein Hintergrund-Token für Hover anbietet; die App entscheidet je Komponente.
-  Auf der obersten Ebene gibt es keinen Nachfolger: dort ist das Token nicht gesetzt, und der
-  `var()`-Fallback der Komponente (die durchscheinende Schicht) greift. Damit ist B-65 behoben.
-  Inset (Ebene −1) bekommt regulär Ebene 0; fifagg nutzt Inset nirgends ✔ (nur definiert), der
-  Unterschied zu heute ist dort also nicht sichtbar.
-- (26.11., technisch, Fable) **Farbige Zustands-Tokens bleiben** und nehmen weiter eine Farbe an:
-  der Baustein braucht genau das, und fifagg setzt sie zu Recht (Button outline/transparent auf
-  die Primärfarbe ✔). Kein Bruch, keine Migration in Schritt 3. Neu je Komponente ein
-  Stärke-Token; die Doku empfiehlt Stärke oder das Ebenen-Token statt `rgb(40 49 64)`.
-- (26.11., technisch, Fable) **Utilities für Apps: ja**, additiv (Schritt 4): eine Hover-Schicht
-  und der Hintergrund der nächsten Ebene als Tailwind-Utility. Ob fifagg seine etwa 180 Klassen
-  umstellt, ist App-Arbeit und nicht Teil der Revision.
