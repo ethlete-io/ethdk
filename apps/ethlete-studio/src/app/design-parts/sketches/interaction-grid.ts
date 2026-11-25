@@ -14,13 +14,25 @@ const splitOf = (state: string) => {
   return { base: state.slice(0, Math.max(0, state.length - interaction.length - 1)), interaction };
 };
 
+const restBaseBefore = (named: readonly { base: string; interaction: string }[], index: number) =>
+  named
+    .slice(0, index)
+    .reverse()
+    .find((entry) => entry.interaction === GRID_REST)?.base ??
+  named.find((entry) => entry.interaction === GRID_REST)?.base ??
+  '';
+
 /**
  * Lays states out as the interaction grid of the SDK pages: one line per base state in first-seen order, one column per
  * interaction in the order rest, hover, active, focus-visible, keeping only the columns a state fills. A state named
- * `<base>-<interaction>` goes to the line of `<base>`. Returns null when no state names an interaction.
+ * `<base>-<interaction>` goes to the line of `<base>`, a bare `<interaction>` to the line of the rest state listed
+ * before it. Returns null when no state names an interaction.
  */
 export const interactionGridOf = (states: readonly string[]): InteractionGrid | null => {
-  const split = states.map((state) => ({ state, ...splitOf(state) }));
+  const named = states.map((state) => ({ state, ...splitOf(state) }));
+  const split = named.map((entry, index) =>
+    entry.base === '' ? { ...entry, base: restBaseBefore(named, index) } : entry,
+  );
 
   if (split.every(({ interaction }) => interaction === GRID_REST)) return null;
 

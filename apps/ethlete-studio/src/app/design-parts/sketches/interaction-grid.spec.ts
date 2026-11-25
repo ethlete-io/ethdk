@@ -21,6 +21,26 @@ describe('interactionGridOf', () => {
     });
   });
 
+  it('puts the bare interaction states of tree-row@edit on the labelled leaf line', () => {
+    const grid = interactionGridOf([
+      'tree',
+      'leaf',
+      'hover',
+      'active',
+      'focus-visible',
+      'selected',
+      'selected-hover',
+      'selected-active',
+      'selected-focus-visible',
+      'mark-layer',
+      'group-closed',
+      'group-closed-hover',
+    ]);
+
+    expect(grid?.lines.map((line) => line.base)).toEqual(['tree', 'leaf', 'selected', 'mark-layer', 'group-closed']);
+    expect(grid?.lines[1]).toEqual({ base: 'leaf', states: ['leaf', 'hover', 'active', 'focus-visible'] });
+  });
+
   it('draws no grid when no state names an interaction', () => {
     expect(interactionGridOf(['mark', 'misuse'])).toBeNull();
   });
