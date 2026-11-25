@@ -1,5 +1,26 @@
 # ethlete-studio
 
+## 0.2.0-next.36
+
+### Patch Changes
+
+- A change crop in a sketch is sized by its shot width, so a shot narrower than its row gets a box as high as its picture.
+- A sketch variant that shows no state, side by side with others, keeps the width of a cell instead of collapsing to nothing, and a part whose variants list no state shows at once instead of staying blank.
+- A sketch variant that failed to render marks its cells as Fehler, and a long row error no longer pushes its cells below the other side-by-side variants.
+- A sketch view stays blank on its first open until a row reports its size, instead of showing a stack at 100 % and then jumping to the fit.
+- Each state line of the sketch matrix has its own scale: narrow shots fill the column instead of shrinking to the scale of the widest line.
+- A sketch drops the Aktuell row when no variant draws one of its states, so a new part shows no empty dashed boxes.
+- A one-column table sheet gives each cell its content width, so a narrow frame no longer sits in a box as wide as the widest.
+- The sketch bar shows one status of one word: Wahl, Freigabe, Unterteile, Fehler, Übernahme, and Automatisch in place of the separate auto-merge badge.
+- The sketches view names the merged parts that triggered a port run in a note above the rows, since the bar no longer does.
+- The sketch pick view shows the round note above the canvas, keeps variant notes at small zoom, and marks each changed area of a cropped state.
+- The sketch-head design part passes its rounds as `{ value, label }` objects like the app component, so the round menu radio items carry a value.
+- The sketch pick view keeps a variant that drops a state of Aktuell out of the "Unverändert" fold and marks the
+  dropped state as "entfällt in Variante a". The sketch bar no longer shows the "Kein Verwerfen" hint.
+- The sketch bar shows only its controls and one status; a variant that fails to render names its error in its own row head.
+- The sketch-head design part declares what the app does: the round button opens the round menu and a radio item changes the round, the Kommentar button fires `commentModeChange`, and the paused state passes its hold to the app.
+- The "Runde wählen" capability starts at the round menu trigger of the sketches page.
+
 ## 0.2.0-next.35
 
 ### Minor Changes
