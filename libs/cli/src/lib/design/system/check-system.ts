@@ -646,6 +646,7 @@ const printOpenPoints = async (
   },
 ) => {
   const { target, config, products, rendered } = options;
+  let actionFailures = 0;
 
   for (const name of products) {
     const entry = config.products?.[name];
@@ -660,8 +661,10 @@ const printOpenPoints = async (
             drawnFindingsFor({ ...options, product, rendered, completeness: options.completeness?.get(name) }),
           );
 
-    await timedPhase('open-points', () => printProductOpenPoints({ ...options, product, findings }));
+    actionFailures += await timedPhase('open-points', () => printProductOpenPoints({ ...options, product, findings }));
   }
+
+  return actionFailures;
 };
 
 const noHarnessLine = (product: string) =>
@@ -763,7 +766,9 @@ const printProductOpenPoints = async (
     onRecordDropped: (line: string) => console.log(line),
   });
 
-  for (const { part, failures } of actionFailuresOf({ product, recorded })) {
+  const actionFailures = actionFailuresOf({ product, recorded });
+
+  for (const { part, failures } of actionFailures) {
     const counted = tallyOf(options.tally, { product: name, part });
 
     if (counted) counted.problems.push(...failures.map(() => ACTION_FAILED_RULE));
@@ -808,6 +813,8 @@ const printProductOpenPoints = async (
   timedPhase('open-points stale', () => stalePartsOf({ product, only: options.part })).forEach((stale) =>
     console.log(staleLineOf(name, stale)),
   );
+
+  return actionFailures.reduce((count, { failures }) => count + failures.length, 0);
 };
 
 const notCheckedLineOf = (options: { product: string; parts: string; why: string }) =>
@@ -1138,8 +1145,8 @@ const checkProductTail = async (
  * render rule a drawing breaks, also when a static rule failed. A part that does not
  * draw, each state that does not draw, or every part without a browser, gets one `NOT CHECKED` line; without a browser it passes on the other checks.
  * It then lists the open points of each product's parts, with the missing states
- * of each component part as `design complete` draws them, the blockers `design ready` refuses on; they do not change
- * the exit code.
+ * of each component part as `design complete` draws them, the blockers `design ready` refuses on; of these, only a
+ * failed action of a part left without a record fails the exit code.
  */
 export const checkSystemRendered = async (
   options: CheckOptions & {
@@ -1404,9 +1411,7 @@ const checkSystemRenderedOn = async (
 
   const { code, rendered, busy, notDrawn, completeness } = await renderSystem(counted);
 
-  await printOpenPoints({ ...counted, rendered, busy, notDrawn, completeness });
-
-  let failed = 0;
+  let failed = await printOpenPoints({ ...counted, rendered, busy, notDrawn, completeness });
   let partsTotal = 0;
 
   for (const name of options.products) {

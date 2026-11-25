@@ -142,7 +142,7 @@ describe('a design check and the tracked stamp files', () => {
     120_000,
   );
 
-  it('counts each failed action of a part it left without a record as a finding', async () => {
+  it('counts each failed action of a part it left without a record as a finding that fails the check', async () => {
     const { target } = committedAcme();
     const dir = join(target, DESIGN_DIR, 'acme');
 
@@ -152,7 +152,19 @@ describe('a design check and the tracked stamp files', () => {
     mkdirSync(join(dir, 'components/chip'), { recursive: true });
     writeFileSync(
       join(dir, 'components/chip/chip.ts'),
-      "export default definePart({ implements: 'apps/app-a/src/chip.component.ts', controls: {}, describe: {}, states: {} });\n",
+      [
+        "import { definePart, drawing, html } from '@design-system';",
+        '',
+        'export default definePart({',
+        "  note: 'A chip.',",
+        "  implements: 'apps/app-a/src/chip.component.ts',",
+        '  controls: {},',
+        '  states: { default: {} },',
+        "  describe: { default: 'The chip.' },",
+        '  render: () => drawing({ body: html`<span>Chip</span>` }),',
+        '});',
+        '',
+      ].join('\n'),
     );
     writeFileSync(
       join(dir, 'ready.json'),
@@ -173,7 +185,7 @@ describe('a design check and the tracked stamp files', () => {
 
     const loaded = readConfig(target) ?? {};
 
-    await checkSystemRendered({
+    const exit = await checkSystemRendered({
       target,
       config: { ...loaded, products: { ...loaded.products, acme: { ...loaded.products?.['acme'], harness } } },
       products: ['acme'],
@@ -183,6 +195,8 @@ describe('a design check and the tracked stamp files', () => {
 
     expect(lines).toContain('PART acme components/chip: 2 problems (ACTION-FAILED)');
     expect(lines).toContain('ACTION-FAILED 2');
+    expect(lines).not.toContain('ok');
+    expect(exit).toBe(1);
   }, 120_000);
 
   it('names the edit sketch it opened in its summary', async () => {
