@@ -469,6 +469,22 @@ export class SketchesComponent {
     return Math.max(1, Math.min(MAX_COLUMNS, most, Math.floor(WRAP_WIDTH / widest)));
   });
   private widest = computed(() => Math.max(1, ...this.shownRows().map((row) => row.width)));
+  private frameStates = computed(
+    () =>
+      new Map(
+        this.shownRows().flatMap((row) => row.shots.map((shot) => [frameKeyOf(row, shot.state), shot.state] as const)),
+      ),
+  );
+  private lineWidths = computed(() => {
+    const widths = new Map<string, number>();
+
+    for (const row of this.shownRows()) {
+      for (const shot of row.shots)
+        widths.set(shot.state, Math.max(widths.get(shot.state) ?? 0, shot.width ?? row.width));
+    }
+
+    return widths;
+  });
   private listWidth = computed(() => this.listSize().client?.width ?? 0);
   protected listMeasured = computed(() => this.listWidth() > 0);
   private sizedWidest = computed(() =>
@@ -615,7 +631,9 @@ export class SketchesComponent {
       Math.max(
         0,
         ...rows.flatMap((row) =>
-          row.shots.filter((shot) => shot.state === state).map((shot) => this.shownHeightOf(row, shot)),
+          row.shots
+            .filter((shot) => shot.state === state)
+            .map((shot) => this.shownHeightOf(row, shot) * this.lineFactorOf(state)),
         ),
       ),
     );
@@ -875,6 +893,11 @@ export class SketchesComponent {
     );
   }
 
+  /** In the matrix every state line fills the column: a line of narrow shots scales up to it, never past 100 %. */
+  protected lineScaleOf(state: string, scale = this.scale()) {
+    return this.transposed() ? Math.min(scale * this.lineFactorOf(state), Math.max(1, scale)) : scale;
+  }
+
   protected shownHeightOf(row: SketchRow, item: SketchShot) {
     const crop = this.croppedOf(item.state)?.crop;
 
@@ -1034,6 +1057,12 @@ export class SketchesComponent {
     const span = 2 + lines * 2;
 
     return `${block * span + 1} / span ${span}`;
+  }
+
+  private lineFactorOf(state: string) {
+    const line = this.lineWidths().get(state);
+
+    return line ? this.widest() / line : 1;
   }
 
   private shownRowsOf(open: boolean) {
@@ -1221,10 +1250,14 @@ export class SketchesComponent {
         });
       }
     }
+    const states = this.frameStates();
+
     frames.forEach((frame, index) => {
       const size = frameSizes[index];
+      const state = states.get(frame.dataset['skFrame'] ?? '');
+      const line = state === undefined ? scale : this.lineScaleOf(state, scale);
 
-      if (size) setStyle(frame, { width: `${size.width * scale}px`, height: `${size.height * scale}px` });
+      if (size) setStyle(frame, { width: `${size.width * line}px`, height: `${size.height * line}px` });
     });
   }
 
@@ -1393,14 +1426,14 @@ export class SketchesComponent {
     if (!frame || !list.contains(frame)) return;
 
     const box = frame.getBoundingClientRect();
-    const zoom = this.shownZoom();
-
-    this.zoomTo(
-      Math.min(
-        (list.clientWidth - FOCUS_PADDING * 2) / (box.width / zoom),
-        (list.clientHeight - FOCUS_PADDING * 2) / (box.height / zoom),
-      ),
+    const state = this.frameStates().get(frame.dataset['skFrame'] ?? '');
+    const zoom = state === undefined ? this.shownZoom() : this.lineScaleOf(state, this.shownZoom());
+    const shown = Math.min(
+      (list.clientWidth - FOCUS_PADDING * 2) / (box.width / zoom),
+      (list.clientHeight - FOCUS_PADDING * 2) / (box.height / zoom),
     );
+
+    this.zoomTo(state === undefined || !this.transposed() || shown > 1 ? shown : shown / this.lineFactorOf(state));
     afterNextRender(
       {
         write: () => {

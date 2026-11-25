@@ -1695,6 +1695,37 @@ describe('SketchesComponent', () => {
       expect(gutter?.querySelector('[data-sk-screen-toggle]')).toBeNull();
     });
 
+    it('scales each state line of the matrix to the column (tomflix colors at 1440, B676)', async () => {
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute('data-sk-rows') ? 1440 : 0;
+      });
+      const row = (key: string): SketchRow => ({
+        key,
+        note: '',
+        width: 3116,
+        shots: [
+          { state: 'surface-dark', changed: key !== 'current', height: 646, width: 638 },
+          { state: 'accent-dark', changed: key !== 'current', height: 900, width: 638 },
+          { state: 'contrast-dark', changed: key !== 'current', height: 630 },
+        ],
+      });
+      const scale = 0.0629;
+      const fixture = await render({
+        rows: ['current', 'a', 'b', 'c'].map(row),
+        camera: { zoom: scale, x: 0, y: 0 },
+      });
+      const root: HTMLElement = fixture.nativeElement;
+      const widthOf = (frame: string) =>
+        parseFloat(root.querySelector<HTMLElement>(`[data-sk-frame="${frame}"]`)?.style.width ?? '0');
+
+      expect(fixture.componentInstance.transposed()).toBe(true);
+      for (const variant of ['current', 'a', 'b', 'c']) {
+        for (const state of ['surface-dark', 'accent-dark', 'contrast-dark']) {
+          expect(widthOf(`${variant} ${state}`)).toBeCloseTo(3116 * scale, 3);
+        }
+      }
+    });
+
     it('sizes the crop of a shot narrower than its row by the shot width (tomflix colors, B676)', async () => {
       const surface = { width: 638, height: 646, box: { x: 40, y: 40, width: 300, height: 200 }, regions: 1 };
       const variant = (key: string): SketchRow => ({

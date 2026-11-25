@@ -638,13 +638,14 @@
   @let cropTransform = cropTransformOf(row, item);
   @let mark = markOf(row, item);
   @let key = FRAME_KEY_OF(row, item.state);
+  @let cellScale = lineScaleOf(item.state);
   <ethlete-variant-cell
     [state]="item.state"
     [variant]="row.key"
     [changed]="item.changed ?? 'pending'"
     [column]="column"
     [line]="line"
-    [scale]="scale()"
+    [scale]="cellScale"
     [labelFont]="labelFont()"
     [labelHidden]="labelSize() === null"
     [stateHidden]="transposed() || !!grid()"
@@ -671,8 +672,8 @@
       }
       @for (comment of commentsOn(row, item.state); track comment.id) {
         <span
-          [style.left.px]="(comment.point?.x ?? 0) * scale()"
-          [style.top.px]="(comment.point?.y ?? 0) * scale()"
+          [style.left.px]="(comment.point?.x ?? 0) * cellScale"
+          [style.top.px]="(comment.point?.y ?? 0) * cellScale"
           class="absolute z-10 flex -translate-y-full"
         >
           <ng-container *ngTemplateOutlet="commentPinTemplate; context: { $implicit: comment }" />
@@ -680,8 +681,8 @@
       }
       @if (draftOn(row, item.state); as draft) {
         <span
-          [style.left.px]="(draft.point?.x ?? 0) * scale()"
-          [style.top.px]="(draft.point?.y ?? 0) * scale()"
+          [style.left.px]="(draft.point?.x ?? 0) * cellScale"
+          [style.top.px]="(draft.point?.y ?? 0) * cellScale"
           class="absolute z-10 flex -translate-y-full"
         >
           <ethlete-comment-pin [author]="draft.author" [initials]="draft.initials" [selected]="true" />
@@ -690,8 +691,8 @@
           [(text)]="draftText"
           [phase]="sendPhase()"
           [reason]="sendReason()"
-          [style.left]="'calc(' + (draft.point?.x ?? 0) * scale() + 'px + var(--space-6))'"
-          [style.top.px]="(draft.point?.y ?? 0) * scale()"
+          [style.left]="'calc(' + (draft.point?.x ?? 0) * cellScale + 'px + var(--space-6))'"
+          [style.top.px]="(draft.point?.y ?? 0) * cellScale"
           (send)="sendComment.emit($event)"
           (discard)="commentCancel.emit()"
           class="absolute z-20"
