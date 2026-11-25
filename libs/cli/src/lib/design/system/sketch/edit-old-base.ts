@@ -1,6 +1,16 @@
 import { createHash } from 'crypto';
 import { catFilesOf, git } from '../../git-reader';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'fs';
 import { dirname, join, posix as posixPath, relative, resolve, sep } from 'path';
 import { filesBelow } from '../assets';
 import { gitTopOf } from '../../git-top';
@@ -9,12 +19,21 @@ import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { isEditSketch } from './merged-parts';
 import { EDIT_OLD_BASE_FOLDER } from './edit-old-base-folder';
-import { relativeSpecifierOf, Sketch, SOURCE_FILE, sourceFilesIn } from './sketch';
+import { relativeSpecifierOf, Sketch } from './sketch';
 
 export const EDIT_OLD = 'old';
 export const EDIT_NEW = 'new';
 
-const CACHE_FORMAT = 2;
+const CACHE_FORMAT = 3;
+
+const FOLLOWED_FILE = /\.(?:ts|js|mjs|css)$/u;
+
+const followedFilesIn = (dir: string) =>
+  existsSync(dir)
+    ? (readdirSync(dir, { recursive: true }) as string[])
+        .filter((path) => FOLLOWED_FILE.test(path))
+        .map((path) => resolve(dir, path))
+    : [];
 
 const RELATIVE_SPECIFIER = /(['"])(\.{1,2}\/[^'"]+)\1/gu;
 
@@ -102,7 +121,7 @@ const outsideFilesAtCommitOf = (options: {
 
       files.set(path, blob);
 
-      return SOURCE_FILE.test(path) ? [{ path, source: blob.toString('utf8') }] : [];
+      return FOLLOWED_FILE.test(path) ? [{ path, source: blob.toString('utf8') }] : [];
     });
   }
 
@@ -117,7 +136,7 @@ const pointMissingImportsAtWorkingTree = (options: {
 }) => {
   const { top, drawnRoot, productPath, reached } = options;
 
-  for (const file of sourceFilesIn(drawnRoot)) {
+  for (const file of followedFilesIn(drawnRoot)) {
     const path = posix(relative(drawnRoot, file));
     const source = readFileSync(file, 'utf8');
     const rewritten = source.replace(RELATIVE_SPECIFIER, (...[match = '', quote = '', specifier = '']: string[]) => {
@@ -137,7 +156,7 @@ const isFile = (file: string) => statSync(file, { throwIfNoEntry: false })?.isFi
 const outsideImportsUnchanged = (options: { top: string; drawnRoot: string; productPath: string; dir: string }) => {
   const { top, drawnRoot, productPath } = options;
   const seen = new Set<string>();
-  const queue = sourceFilesIn(options.dir);
+  const queue = followedFilesIn(options.dir);
 
   for (let file = queue.pop(); file !== undefined; file = queue.pop()) {
     const path = posix(relative(drawnRoot, file));
@@ -157,7 +176,7 @@ const outsideImportsUnchanged = (options: { top: string; drawnRoot: string; prod
       const now = resolve(top, found);
 
       if (!isFile(now) || !readFileSync(old).equals(readFileSync(now))) return false;
-      if (SOURCE_FILE.test(found)) queue.push(old);
+      if (FOLLOWED_FILE.test(found)) queue.push(old);
     }
   }
 
@@ -227,7 +246,7 @@ const productAtCommitOf = (options: { top: string; commit: string; productDir: s
     commit,
     productPath,
     sources: entries.flatMap(({ path }, index) =>
-      SOURCE_FILE.test(path) ? [{ path, source: (blobs[index] ?? Buffer.alloc(0)).toString('utf8') }] : [],
+      FOLLOWED_FILE.test(path) ? [{ path, source: (blobs[index] ?? Buffer.alloc(0)).toString('utf8') }] : [],
     ),
   });
 

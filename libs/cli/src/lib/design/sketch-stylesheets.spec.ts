@@ -4,6 +4,10 @@ import { dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
+import { initGitRepo } from './system/git-repo.fixtures';
+import { resolveProduct } from './system/resolve-product';
+import { openEditSketch } from './system/sketch/edit-sketch';
+import { recordMerged } from './system/sketch/merged-parts';
 import { createSketch, Sketch, variantDirOf } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
@@ -186,6 +190,56 @@ describe('a product stylesheet drawn for a sketch variant', () => {
       /\n {6}"a": \(\) => Promise\.resolve\(\)\.then\(\(\) => import\("[^"]*acme\/styles\.css\?design-product=acme&design-sketch=foundations%2Fpalette&design-variant=a"\)\),\n/u,
     );
   });
+});
+
+describe('the old side of an edit sketch', () => {
+  it('draws a part stylesheet that changed since, with its import from another product, as the old commit held it', async () => {
+    const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-edit-old-faces-')));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    const styles = join(target, DESIGN_DIR, 'acme/styles.css');
+    const palette = join(target, DESIGN_DIR, 'acme/foundations/palette/palette.css');
+    const faces = join(target, DESIGN_DIR, 'sdk/foundations/colors/faces.css');
+    const config = readConfig(target) ?? {};
+
+    mkdirSync(dirname(faces), { recursive: true });
+    writeFileSync(faces, '.sdk-face { font-family: Old; }\n');
+    writeFileSync(palette, `@import '../../../sdk/foundations/colors/faces.css';\n${readFileSync(palette, 'utf8')}`);
+    writeFileSync(styles, "@import './foundations/palette/palette.css' layer(tokens);\n");
+    config.products = {
+      ...config.products,
+      acme: { ...config.products?.['acme'], styles: [`${DESIGN_DIR}/acme/styles.css`] },
+    };
+    writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify(config));
+
+    const product = () => resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+
+    recordMerged({ product: product(), parts: ['elements/hero'] });
+    initGitRepo(target, 'base');
+    writeFileSync(join(product().dir, 'elements', 'hero', 'hero.css'), '.acme-hero { padding: 0; }\n');
+
+    const sketch = (await openEditSketch({ target, product: product(), part: 'elements/hero' })) as Sketch;
+
+    writeFileSync(
+      palette,
+      `@import '../../../sdk/foundations/colors/symbol-faces.css';\n${readFileSync(palette, 'utf8')}`,
+    );
+    writeFileSync(join(dirname(faces), 'symbol-faces.css'), '.sdk-symbol { font-family: Symbol; }\n');
+    writeFileSync(faces, '.sdk-face { font-family: New; }\n');
+
+    const vite = await createDesignServer({ target, config, listen: false });
+
+    closing.push(() => vite.close());
+
+    const old = await vite.transformRequest(
+      productModuleIdOf({ file: styles, product: 'acme', sketch: { target: sketch.target, variant: 'old' } }),
+    );
+
+    expect(cssOf(old?.code ?? '')).toContain('.sdk-face{font-family:Old;}');
+    expect(old?.code).not.toContain('New');
+    expect(old?.code).not.toContain('Symbol');
+  }, 120_000);
 });
 
 describe('a design server that draws on after a variant changed', () => {
