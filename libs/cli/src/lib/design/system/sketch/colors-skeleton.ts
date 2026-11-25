@@ -68,10 +68,18 @@ const readableOn = ({ colour, background, toward }: { colour: Rgb; background: R
   return toward;
 };
 
+const SEMANTIC_THEMES: { type: 'error' | 'warning'; base: Rgb }[] = [
+  { type: 'error', base: [220, 38, 38] },
+  { type: 'warning', base: [217, 119, 6] },
+];
+
+const fillUnder = (fill: Rgb, onColour: Rgb) =>
+  readableOn({ colour: fill, background: onColour, toward: onColour === WHITE ? BLACK : WHITE });
+
 const accentStatesOf = (accent: Rgb, page: Rgb) => {
   const onColour = onColourOf(accent);
-  const hover = onColour === WHITE ? mix([accent, BLACK], 0.15) : mix([accent, WHITE], 0.3);
-  const active = onColour === WHITE ? mix([accent, BLACK], 0.3) : mix([accent, BLACK], 0.22);
+  const hover = fillUnder(onColour === WHITE ? mix([accent, BLACK], 0.15) : mix([accent, WHITE], 0.3), onColour);
+  const active = fillUnder(onColour === WHITE ? mix([accent, BLACK], 0.3) : mix([accent, BLACK], 0.22), onColour);
   const disabled = mix([accent, page], 0.55);
   const fills = [accent, hover, hover, active, disabled];
   const onFills = [onColour, onColour, onColour, onColour, mix([onColour, disabled], 0.5)];
@@ -131,6 +139,31 @@ const surfaceLinesOf = (surface: Surface, accent: Rgb) => [
   `color-scheme: ${surface.name};`,
 ];
 
+const semanticCssOf = (scheme: ColorScheme) =>
+  SEMANTIC_THEMES.flatMap(({ type, base }) => {
+    const theme = `.et-color--${type}`;
+    const own = (surface: Surface) => `.et-surface--${surface.name} ${theme},\n  .et-surface--${surface.name}${theme}`;
+    const fills = accentStatesOf(base, scheme === 'dark' ? DARK.background : LIGHT.background).map(
+      ([token, value]) => `--et-color-${token}: ${value};`,
+    );
+    const first = scheme === 'dark' ? DARK : LIGHT;
+    const lines = ['', ...block(theme, [`--et-color-theme-type: ${type};`, ...fills, ...inkStatesOf(base, first)])];
+
+    if (scheme !== 'both') return lines;
+
+    return [
+      ...lines,
+      '',
+      '  @media (prefers-color-scheme: dark) {',
+      ...block(theme, inkStatesOf(base, DARK)).map((line) => `  ${line}`),
+      '  }',
+      '',
+      ...block(own(LIGHT), inkStatesOf(base, LIGHT)),
+      '',
+      ...block(own(DARK), inkStatesOf(base, DARK)),
+    ];
+  });
+
 const surfacesCssOf = (scheme: ColorScheme, accent: Rgb) => {
   if (scheme === 'light') return block(':root,\n  .et-surface--light', surfaceLinesOf(LIGHT, accent));
   if (scheme === 'dark') return block(':root,\n  .et-surface--dark', surfaceLinesOf(DARK, accent));
@@ -157,6 +190,7 @@ const colorsCssOf = (scheme: ColorScheme, accent: Rgb) =>
         ([token, value]) => `--et-color-${token}: ${value};`,
       ),
     ),
+    ...semanticCssOf(scheme),
     '',
     ...block(
       ":root,\n  :where([class*='et-surface--'])",
@@ -194,9 +228,9 @@ const describeOf = (surfaces: string[]) =>
       `    'surface-${surface}':`,
       `      'The ${surface} surface: text, muted and subtle text on a card, the interaction tints in each state, and the shadow; check that the text steps stay apart and the tints read on the page.',`,
       `    'accent-${surface}':`,
-      `      'The accent on the ${surface} surface: the fill with its on-colour and the ink in rest, hover, focus, active and disabled; check that the states differ and disabled reads as disabled.',`,
+      `      'The accent on the ${surface} surface: the fill with its on-colour and the ink in rest, hover, focus, active and disabled, then the same for the error and warning colour themes; check that the states differ, disabled reads as disabled, and error and warning read apart from the accent.',`,
       `    'contrast-${surface}':`,
-      `      'The contrast ratios on the ${surface} surface: text, muted and subtle text, the on-colour on each fill, and the ink; check that each pair reaches AA.',`,
+      `      'The contrast ratios on the ${surface} surface: text, muted and subtle text, the on-colour on each fill, and the ink, for the accent and the error and warning colour themes; check that each pair reaches AA.',`,
     ])
     .join('\n');
 
@@ -211,6 +245,8 @@ type Surface = ${surfaces.map((surface) => `'${surface}'`).join(' | ')};
 type Props = { group: 'surface' | 'accent' | 'contrast'; surface: Surface };
 
 const STATE_ENDS = ['', '-hover', '-focus', '-active', '-disabled'];
+
+const THEMES = ['error', 'warning'];
 
 const AA = 4.5;
 
@@ -271,7 +307,7 @@ const surfacePanel = html\`<div class="colors-card">
     <span class="colors-elevation colors-shadow">Raised</span>
   </div>\`;
 
-const accentPanel = html\`<div class="colors-states">
+const fillsAndInks = html\`<div class="colors-states">
     \${STATE_ENDS.map(
       (end) =>
         html\`<span
@@ -292,8 +328,19 @@ const accentPanel = html\`<div class="colors-states">
     ).join('')}
   </div>\`;
 
-const pair = (label: string, text: string, on: string, surface: Surface) =>
-  html\`<div class="colors-pair-row">
+const accentPanel = [
+  fillsAndInks,
+  ...THEMES.map(
+    (theme) =>
+      html\`<div class="colors-theme et-color--\${theme}">
+        <h2 class="colors-title">Theme of type \${theme}: et-color--\${theme}</h2>
+        \${fillsAndInks}
+      </div>\`,
+  ),
+].join('');
+
+const pair = (label: string, text: string, on: string, surface: Surface, theme = '') =>
+  html\`<div class="colors-pair-row \${theme}">
     <span class="colors-pair" data-fill="\${on}" data-ink="\${text}">Aa</span>
     <span class="colors-pair-label">\${label}</span>
     <code class="colors-value">\${text} / \${on}</code>
@@ -301,7 +348,7 @@ const pair = (label: string, text: string, on: string, surface: Surface) =>
       class="colors-ratio"
       data-et-contrast="\${text} \${on}"
       data-et-contrast-needs="\${AA}"
-      data-et-contrast-theme="et-surface--\${surface}"
+      data-et-contrast-theme="\${[theme, \`et-surface--\${surface}\`].filter(Boolean).join(' on ')}"
     ></strong>
   </div>\`;
 
@@ -329,6 +376,27 @@ const contrastPanel = (surface: Surface) =>
       \`Ink on the \${surface} background\`,
       STATE_ENDS.filter((end) => end !== '-disabled').map((end) =>
         pair(labelOf(end), \`--et-color-primary-ink\${end}\`, '--et-surface-background', surface),
+      ),
+    ),
+    ...THEMES.map((theme) =>
+      pairTable(
+        \`Theme of type \${theme}\`,
+        STATE_ENDS.filter((end) => end !== '-disabled').flatMap((end) => [
+          pair(
+            \`on-colour \${labelOf(end)}\`,
+            \`--et-color-on-primary\${end}\`,
+            \`--et-color-primary\${end}\`,
+            surface,
+            \`et-color--\${theme}\`,
+          ),
+          pair(
+            \`ink \${labelOf(end)}\`,
+            \`--et-color-primary-ink\${end}\`,
+            '--et-surface-background',
+            surface,
+            \`et-color--\${theme}\`,
+          ),
+        ]),
       ),
     ),
   ].join('');
@@ -402,6 +470,7 @@ const STYLES = \`
   .colors-elevation { display: grid; place-items: center; width: 120px; height: 48px; border-radius: 6px; border: 0; font-size: 12px; }
   .colors-pairs { display: grid; grid-template-columns: 40px auto auto auto; gap: 6px 12px; align-items: center; }
   .colors-pair-row { display: contents; }
+  .colors-theme { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; border-top: 1px solid var(--et-surface-border-solid); }
   .colors-pair { display: grid; place-items: center; width: 40px; height: 28px; border-radius: 4px; border: 1px solid var(--et-surface-border-solid); font-size: 14px; font-weight: 600; }
   .colors-pair-label, .colors-ratio { font-size: 12px; white-space: nowrap; }
   .colors-ratio { font-variant-numeric: tabular-nums; }

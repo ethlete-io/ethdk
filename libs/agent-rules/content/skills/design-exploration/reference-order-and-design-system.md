@@ -105,7 +105,9 @@ stylesheet. Give a raised or floating area `data-et-auto-surface` and an interac
 `data-et-surface-interactive`, never a picked `et-surface--<name>` class: the frame resolves them by elevation like
 `etAutoSurface` and `etSurfaceInteractive`. Give a warning, error or success accent
 `data-et-semantic-color="<type>"`, never a picked `et-color--<name>` class: the frame resolves it by type like
-`injectSemanticColorTheme`. Read the theming skill of the SDK before the first colour in a drawing. `et design check` reports
+`injectSemanticColorTheme`. A generated colors foundation registers one theme per type, named after it
+(`et-color--error`, `et-color--warning`); an SDK drawing input that takes a theme name, like the button's `color`,
+takes that name, since no other name resolves. Read the theming skill of the SDK before the first colour in a drawing. `et design check` reports
 a denied class from the product's `deniedClasses` list in `config.json`.
 
 A part is one folder, `<product>/<layer>/<part>/`, with its drawing and states. Read the parts of

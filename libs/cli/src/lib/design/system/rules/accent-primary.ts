@@ -17,9 +17,18 @@ const declaredRgbOf = (value: string): number[] | null => {
   return channels.length === 3 && channels.every((channel) => /^\d{1,3}$/u.test(channel)) ? channels.map(Number) : null;
 };
 
+const SEMANTIC_THEME = /--et-color-theme-type\s*:\s*(success|warning|error)\s*(;|$)/u;
+
+const accentDeclarationsOf = (css: string) =>
+  [...css.replace(/\/\*[\s\S]*?\*\//gu, '').matchAll(/\{([^{}]*)\}/gu)]
+    .map(([, body = '']) => body)
+    .filter((body) => !SEMANTIC_THEME.test(body))
+    .flatMap((body) => cssBlocksOf(body).declarations);
+
 /**
  * A `--et-color-primary` in a foundations stylesheet of a product that recorded an `accent` at `product new`, whose
- * value is another colour than that accent; a product without `accent` passes.
+ * value is another colour than that accent; a product without `accent` and a colour theme with a `--et-color-theme-type`
+ * pass.
  */
 export const accentPrimariesOf = (product: ResolvedProduct): Problem[] => {
   const accent = product.config.accent;
@@ -31,8 +40,8 @@ export const accentPrimariesOf = (product: ResolvedProduct): Problem[] => {
   return product.parts
     .filter((part) => part.origin !== 'base' && part.layer === 'foundations' && part.css && part.cssSource)
     .flatMap((part) =>
-      cssBlocksOf(part.cssSource ?? '')
-        .declarations.filter((declaration) => PRIMARY.test(declaration))
+      accentDeclarationsOf(part.cssSource ?? '')
+        .filter((declaration) => PRIMARY.test(declaration))
         .flatMap((declaration): Problem[] => {
           const rgb = declaredRgbOf(declarationValueOf(declaration) ?? '');
 

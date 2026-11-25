@@ -209,6 +209,21 @@ describe('designProduct', () => {
     expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['tomflix'] })).toBe(0);
   }, 60_000);
 
+  it('starts the tomflix foundation of client run 1751 with an error and a warning theme, and passes the check', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+
+    expect(run(target, 'new', 'tomflix', '--colors', 'dark', '--accent', '#2dd4cc')).toBe(0);
+
+    const dir = join(target, DESIGN_DIR, 'tomflix', 'foundations', 'colors');
+    const css = readFileSync(join(dir, 'colors.css'), 'utf8');
+
+    expect(css).toMatch(/\.et-color--error \{\s*--et-color-theme-type: error;\s*--et-color-primary: 220 38 38;/u);
+    expect(css).toMatch(/\.et-color--warning \{\s*--et-color-theme-type: warning;/u);
+    expect(readFileSync(join(dir, 'colors.ts'), 'utf8')).toContain("const THEMES = ['error', 'warning'];");
+    expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['tomflix'] })).toBe(0);
+  }, 60_000);
+
   // The accent chosen at the start binds: it stays the primary, and another colour may only be an extra variant next to it.
   it('refuses the brass primary of client run 1029 on a product started with the accent #e50914', () => {
     const out: string[] = [];
