@@ -14,7 +14,7 @@ const DOT: Record<SketchBadgeStatus, string> = {
   failed: 'bg-(--et-theme-color-primary-solid)',
   merging: 'bg-(--et-theme-color-primary-solid) animate-pulse',
   awaitingApproval: 'bg-(--et-theme-color-primary-solid)',
-  approved: 'bg-et-surface-muted',
+  approved: 'bg-(--et-theme-color-primary-solid)',
 };
 
 @Component({
@@ -26,7 +26,13 @@ const DOT: Record<SketchBadgeStatus, string> = {
       [attr.data-sk-status]="status()"
       class="flex w-fit items-center gap-space-2 text-ui-sm font-ui-medium whitespace-nowrap"
     >
-      <span [class]="dot()" class="size-2 flex-none rounded-full"></span>{{ label() }}
+      <span
+        [etProvideColor]="approved() ? successTheme() : null"
+        [class]="dot()"
+        class="size-2 flex-none rounded-full"
+        data-sk-status-dot
+      ></span
+      >{{ label() }}
     </span>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -35,9 +41,11 @@ const DOT: Record<SketchBadgeStatus, string> = {
 })
 export class SketchStatusBadgeComponent {
   protected errorTheme = injectSemanticColorTheme('error');
+  protected successTheme = injectSemanticColorTheme('success');
 
   public status = input<SketchBadgeStatus>('waiting');
   protected failed = computed(() => this.status() === 'failed');
+  protected approved = computed(() => this.status() === 'approved');
   protected label = computed(() => LABELS[this.status()]);
   protected dot = computed(() => DOT[this.status()]);
 }

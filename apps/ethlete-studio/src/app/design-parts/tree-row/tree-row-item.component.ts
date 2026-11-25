@@ -3,7 +3,7 @@ import { Component, computed, input, output, ViewEncapsulation } from '@angular/
 import { injectSemanticColorTheme, ProvideColorDirective, SurfaceInteractiveDirective } from '@ethlete/core';
 import { TREE_ROW_LABELS } from '../../i18n/system-labels';
 
-export type TreeRowStatus = 'in-progress' | 'ready';
+export type TreeRowStatus = 'in-progress' | 'ready' | 'approved';
 
 export type TreeRow = {
   label: string;
@@ -20,9 +20,16 @@ export type TreeRow = {
   hint?: string;
 };
 
-const STATUS_TITLE: Partial<Record<TreeRowStatus, string>> = { ready: TREE_ROW_LABELS.sketchReady };
+const STATUS_TITLE: Partial<Record<TreeRowStatus, string>> = {
+  ready: TREE_ROW_LABELS.sketchReady,
+  approved: TREE_ROW_LABELS.sketchApproved,
+};
 
-const STATUS_CLASS: Record<TreeRowStatus, string> = { 'in-progress': 'text-et-surface-muted', ready: 'text-et-theme' };
+const STATUS_CLASS: Record<TreeRowStatus, string> = {
+  'in-progress': 'text-et-surface-muted',
+  ready: 'text-et-theme',
+  approved: 'text-et-theme',
+};
 
 const ROW_CLASS =
   'relative flex h-6 items-center font-ui gap-space-1 rounded-control-sm pr-space-2 pl-[calc(var(--space-1)+var(--depth,0)*1.6rem)] text-ui-md whitespace-nowrap outline-none cursor-default [transition:var(--transition-state)] hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]';
@@ -96,7 +103,7 @@ const SELECTED_CLASS =
           stroke-linejoin="round"
           aria-hidden="true"
         >
-          @if (row.status === 'ready') {
+          @if (row.status !== 'in-progress') {
             <path d="m3.5 8.5 3 3 6-7" />
           } @else {
             <path d="M10.5 3 13 5.5 6 12.5H3.5V10z" />

@@ -1129,7 +1129,7 @@ export class SystemViewComponent {
       ...marksOf(entry),
       ...(entry.layer ? { layer: entry.layer } : {}),
       ...(entry.subSketch
-        ? { status: entry.badges.includes('approved') ? ('ready' as const) : ('in-progress' as const) }
+        ? { status: entry.badges.includes('approved') ? ('approved' as const) : ('in-progress' as const) }
         : {}),
       ...(entry.nested ? { open: open.has(entry.key), nested: entry.nested.map(partOf) } : {}),
     });

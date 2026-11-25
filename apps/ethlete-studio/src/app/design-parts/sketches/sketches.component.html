@@ -470,16 +470,10 @@
   @let mergeOpen = status() === 'waiting';
   @let take = (mergeOpen || status() === 'drawing') && errored().length === 0 && !sameKeys().has(row.key);
   @let points = openPoints().length > 0 && row.key === selected();
-  @let approvedRow = subSketch() && row.key === approved();
-  @if (take || points || approvedRow) {
+  @let offer = take && !(subSketch() && row.key === approved());
+  @if (offer || points) {
     <span #pointsHead class="relative flex flex-wrap items-center gap-space-2">
-      @if (approvedRow) {
-        <span class="relative flex">
-          <button et-button type="button" variant="outline" size="sm" disabled data-sk-merge data-sk-approved>
-            {{ LABELS.approved }}
-          </button>
-        </span>
-      } @else if (take && mergeOpen) {
+      @if (offer && mergeOpen) {
         <span #take [attr.data-sk-take]="row.key" class="relative flex">
           <button
             [loading]="merging() && row.key === selected()"
@@ -494,7 +488,7 @@
             {{ subSketch() ? LABELS.approve : LABELS.merge }}
           </button>
         </span>
-      } @else if (take) {
+      } @else if (offer) {
         <span class="relative flex">
           <button et-button type="button" variant="outline" size="sm" disabled data-sk-merge>
             {{ subSketch() ? LABELS.approve : LABELS.merge }}

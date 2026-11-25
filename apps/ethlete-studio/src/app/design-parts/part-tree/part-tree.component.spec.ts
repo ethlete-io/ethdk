@@ -121,6 +121,24 @@ describe('PartTreeComponent', () => {
     expect(plain?.querySelector('svg')).toBeNull();
   });
 
+  it('marks an approved sub-sketch row with a check titled Freigegeben, not Entwurf fertig', async () => {
+    const element = (
+      await render([], {
+        sketches: {
+          open: true,
+          items: [
+            { part: 'studio-menu', status: 'in-progress', nested: [{ name: 'about-dialog', status: 'approved' }] },
+          ],
+        },
+      })
+    ).nativeElement as HTMLElement;
+    const [, , approved] = rowsOf(element);
+
+    expect(approved?.querySelector('.text-et-theme path[d="m3.5 8.5 3 3 6-7"]')).not.toBeNull();
+    expect(withTooltip(approved, TREE_ROW_LABELS.sketchApproved)).not.toBeNull();
+    expect(withTooltip(approved, TREE_ROW_LABELS.sketchReady)).toBeNull();
+  });
+
   it('shows a part hint as the tooltip of the full name and draws no tag', async () => {
     const element = (
       await render([

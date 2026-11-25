@@ -1169,7 +1169,7 @@ describe('SystemViewComponent on a merge', () => {
     const [item] = fixture.componentInstance['partTree']().sketches?.items ?? [];
 
     expect(item?.nested?.map(({ name, status }) => ({ name, status }))).toEqual([
-      { name: 'shortcuts-dialog', status: 'ready' },
+      { name: 'shortcuts-dialog', status: 'approved' },
     ]);
   });
 

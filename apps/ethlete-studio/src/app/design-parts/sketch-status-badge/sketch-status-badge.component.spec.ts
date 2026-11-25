@@ -30,7 +30,29 @@ describe('SketchStatusBadgeComponent', () => {
 
   // Decision: a pick in Studio is a merge, so there is no picked badge.
   it('has no picked status', () => {
-    expect(Object.keys(SKETCHES_LABELS.status)).toEqual(['drawing', 'waiting', 'paused', 'failed', 'merging']);
+    expect(Object.keys(SKETCHES_LABELS.status)).toEqual([
+      'drawing',
+      'waiting',
+      'awaitingApproval',
+      'approved',
+      'paused',
+      'failed',
+      'merging',
+    ]);
+  });
+
+  // Decision B726: an approval is a good state, so its dot takes the success tone, not the grey of a paused sketch.
+  it('puts the dot of an approved sub-sketch in the success colour theme', async () => {
+    const approved = await render('approved');
+    const dot = approved.querySelector<HTMLElement>('[data-sk-status-dot]');
+
+    TestBed.resetTestingModule();
+
+    const paused = (await render('paused')).querySelector<HTMLElement>('[data-sk-status-dot]');
+
+    expect(dot?.className).toContain('bg-(--et-theme-color-primary-solid)');
+    expect(dot?.className).toContain('et-color--success');
+    expect(paused?.className).not.toContain('et-color--success');
   });
 
   it('puts only the failed badge in the error colour theme', async () => {

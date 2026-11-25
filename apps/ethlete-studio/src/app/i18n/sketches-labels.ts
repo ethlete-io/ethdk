@@ -37,7 +37,6 @@ export const SKETCHES_LABELS = {
   confirm: { cancel: 'Abbrechen' },
   merge: 'Übernehmen',
   approve: 'Freigeben',
-  approved: 'Freigegeben',
   variant: (label: string) => `Variante ${label}`,
   withdrawnToggle: (count: number) => `Zurückgezogene (${count})`,
   fitHint: 'Doppelklick zum Einpassen',

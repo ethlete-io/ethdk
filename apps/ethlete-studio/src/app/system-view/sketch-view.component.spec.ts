@@ -794,15 +794,15 @@ describe('SketchViewComponent', () => {
     expect(decided).toBe(1);
   });
 
-  it('shows the approved variant of a sub-sketch as Freigegeben', async () => {
+  // Decision B726: the tree and the bar show an approval, so the approved variant's header offers no button.
+  it('offers no button on the approved variant of a sub-sketch', async () => {
     const { root } = await render(
       { ...SKETCH, parent: 'elements/hero', approved: { variant: 'a', decidedAt: '2026-11-25T08:00:00.000Z' } },
       noComments,
     );
-    const approved = buttonsLabelled(root, SKETCHES_LABELS.approved);
 
-    expect(approved).toHaveLength(1);
-    expect(approved[0]?.disabled).toBe(true);
+    expect(buttonsLabelled(root, SKETCHES_LABELS.status.approved)).toHaveLength(0);
+    expect(root.querySelectorAll('[data-sk-merge]')).toHaveLength(1);
     expect(buttonsLabelled(root, SKETCHES_LABELS.approve)).toHaveLength(1);
   });
 

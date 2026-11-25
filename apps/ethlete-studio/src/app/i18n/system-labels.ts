@@ -1,5 +1,6 @@
 export const TREE_ROW_LABELS = {
   sketchReady: 'Entwurf fertig',
+  sketchApproved: 'Freigegeben',
   sketchNeedsRebase: (parts: readonly string[]) =>
     parts.length === 0 ? 'Braucht Rebase: keine Baseline' : `Braucht Rebase: ${parts.join(', ')} geändert`,
   sketchRebaseUncommitted: (commit: string) => `Rebase nach ${commit} nicht committet`,
