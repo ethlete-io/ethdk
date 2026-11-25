@@ -378,6 +378,31 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(git('status', '--porcelain', '--', DESIGN_DIR).stdout).toBe('');
   });
 
+  it('undoes an auto-merge whose commit git refuses', async () => {
+    const target = acme();
+    const lines = output();
+    vi.spyOn(console, 'warn').mockImplementation((line) => void lines.push(String(line)));
+    const git = gitRepo(target);
+    const merged = join(target, DESIGN_DIR, 'acme/merged.json');
+    const sketchFile = join(target, DESIGN_DIR, 'acme/sketches/components-button/sketch.json');
+    const mergedBefore = existsSync(merged) ? readFileSync(merged, 'utf8') : null;
+
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, changed: 0, change: null })),
+    );
+    await sameButton(target);
+    expect(existsSync(sketchFile)).toBe(true);
+
+    writeFileSync(join(target, '.git/index.lock'), '');
+
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(0);
+    expect(lines.join('\n')).toContain('git refused the merge commit of components/button');
+    expect(lines).not.toContain('No visible change in any state: merged components/button automatically.');
+    expect(existsSync(merged) ? readFileSync(merged, 'utf8') : null).toBe(mergedBefore);
+    expect(existsSync(sketchFile)).toBe(true);
+    expect(git('log', '--format=%s').stdout.trim()).toBe('base');
+  });
+
   it('leaves its auto-merge uncommitted when a shared file was dirty before', async () => {
     const target = acme();
     const lines = output();

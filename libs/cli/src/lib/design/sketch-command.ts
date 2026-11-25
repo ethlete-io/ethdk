@@ -1204,7 +1204,7 @@ const cleanBesideSketch = (options: { target: string; product: ResolvedProduct; 
     .every((entry) => resolve(top, entry.slice(3)).startsWith(`${sketchDir}/`));
 };
 
-const committedMerge = (options: { target: string; product: ResolvedProduct; sketch: Sketch }) => {
+const committedMerge = (options: { target: string; product: ResolvedProduct; sketch: Sketch }): string | null => {
   const dirs = mergeDirsOf(options.product);
   const subject = `feat(repo): Merge ${options.sketch.target}, no visible change`;
   const top = gitIn(options.target, 'rev-parse', '--show-toplevel');
@@ -1221,10 +1221,11 @@ const committedMerge = (options: { target: string; product: ResolvedProduct; ske
   const added = gitIn(options.target, 'add', '--all', '--', ...dirs);
   const committed = added.status === 0 ? gitIn(options.target, 'commit', '-m', subject, '--', ...dirs) : added;
 
-  if (committed.status !== 0)
-    console.warn(`Could not commit the merge: ${(committed.stderr || committed.stdout).trim()}`);
+  if (committed.status === 0) return null;
 
-  return committed.status === 0;
+  gitIn(options.target, 'reset', '--quiet', '--', ...dirs);
+
+  return (committed.stderr || committed.stdout).trim() || `git exited with ${committed.status}`;
 };
 
 const recordAutoMergeForecast = ({ sketch, forecast }: { sketch: Sketch; forecast: true | string }) => {
@@ -1321,7 +1322,13 @@ export const mergedUnchanged = (options: {
       });
     },
     finish: () => {
-      committed = commit && committedMerge({ target, product, sketch });
+      if (!commit) return null;
+
+      const refused = committedMerge({ target, product, sketch });
+
+      committed = refused === null;
+
+      return refused;
     },
   });
 
