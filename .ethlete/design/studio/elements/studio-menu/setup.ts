@@ -1,9 +1,21 @@
 export const setupStudioMenu = (root: HTMLElement) => {
   const trigger = root.querySelector<HTMLButtonElement>('[data-studio-trigger]');
   const surface = root.querySelector<HTMLElement>('[data-studio-menu]');
-  const items = [...(surface?.querySelectorAll<HTMLButtonElement>('[role^="menuitem"]') ?? [])];
+  const submenu = root.querySelector<HTMLElement>('[data-studio-submenu]');
+  const submenuTrigger = root.querySelector<HTMLButtonElement>('[data-studio-submenu-trigger]');
+  const items = [...(surface?.querySelectorAll<HTMLButtonElement>('[role^="menuitem"]') ?? [])].filter(
+    (item) => !submenu?.contains(item),
+  );
 
   if (!trigger || !surface || !items.length) return;
+
+  const placeSubmenu = () => {
+    if (!submenu || !submenuTrigger || submenu.hidden || surface.hidden) return;
+    const panel = submenu.querySelector<HTMLElement>('.et-menu-body-content');
+    const inset = panel ? panel.getBoundingClientRect().top - submenu.getBoundingClientRect().top : 0;
+    submenu.style.top = `${submenuTrigger.getBoundingClientRect().top - surface.getBoundingClientRect().top - inset}px`;
+  };
+  placeSubmenu();
 
   const highlight = (item: HTMLButtonElement) => {
     for (const candidate of items) {
@@ -29,7 +41,11 @@ export const setupStudioMenu = (root: HTMLElement) => {
 
   root.addEventListener('click', (event) => {
     const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest('[data-studio-trigger]')) {
+    if (submenu && target?.closest('[data-studio-submenu-trigger]')) {
+      submenu.hidden = !submenu.hidden;
+      submenuTrigger?.setAttribute('aria-expanded', String(!submenu.hidden));
+      placeSubmenu();
+    } else if (target?.closest('[data-studio-trigger]')) {
       if (surface.hidden) open();
       else close();
     } else if (target?.closest('[data-studio-action]')) close();
