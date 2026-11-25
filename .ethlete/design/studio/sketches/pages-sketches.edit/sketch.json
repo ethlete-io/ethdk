@@ -100,17 +100,18 @@
     "pages/flows": "5f9d41e1be7d2953",
     "pages/inbox": "9fe9d1c9a513990c",
     "pages/inventory": "bb84266858a56467",
-    "pages/sketches": "995704216dc7c069",
+    "pages/sketches": "620ec76df713592b",
     "pages/start": "414940d2e574c435",
     "pages/system": "40ad5ffbd085dc6a",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "efc81f728e94141ac53a099844dcdea8afb7be87",
+  "baselineTree": "08c44d3ab9ad3fddaabc3ef7390f2de307f31780",
+  "editOldCommit": "89a92620a01b6d6cff8c4bb234d6c80e8d7787f7",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "f2efdae319f5b46c",
     "pages/sketches/shared/multi-part.ts": "03d5de67a5159fb3",
     "pages/sketches/shared/open-points.ts": "8032ea3aa0074441",
-    "pages/sketches/shared/sketch-rows.ts": "932ff8684244a720",
+    "pages/sketches/shared/sketch-rows.ts": "0199d7d15c142b70",
     "pages/sketches/shared/sketch-status.ts": "a570e2526a940079",
     "pages/sketches/shared/withdrawn.ts": "32632e34b0ca87e7"
   },
@@ -134,8 +135,7 @@
     }
   },
   "readyContent": {
-    "new": "b91bb63cd5b4a760",
-    "old": "15966ed87ba2c68f"
-  },
-  "editOldCommit": "89a92620a01b6d6cff8c4bb234d6c80e8d7787f7"
+    "new": "73c793d2f81aa937",
+    "old": "58214cd66bdce4b3"
+  }
 }

@@ -76,7 +76,7 @@ export const PARTS: Record<PartKind, SketchPart> = {
     key: 'components/plant-page',
     width: 390,
     height: 900,
-    states: ['state-01', 'state-02', 'state-03'],
+    states: ['phone-01', 'phone-02', 'phone-03'],
     render: (state) => drawn(sampleNarrowPage(state)),
     rows: [{ key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' }],
   },
