@@ -28,8 +28,10 @@ export const usedThemesIn = (markup: string) =>
 /** The sentence for a colour theme name no foundation defines, naming the ones that are defined. */
 export const unknownThemeSentenceOf = (unknown: string[], defined: string[]) =>
   `${unknown.map((name) => `et-color--${name}`).join(', ')}, which no foundation of the product defines, so ` +
-  `${unknown.length === 1 ? 'it draws' : 'they draw'} in the accent; defined: ${defined.length > 0 ? defined.join(', ') : 'none'} ` +
-  '- use one of them or add the theme to the colors foundation';
+  `${unknown.length === 1 ? 'it draws' : 'they draw'} in the accent; ` +
+  (defined.length > 0
+    ? `defined: ${defined.join(', ')} - use one of them or add the theme to the colors foundation`
+    : 'the product defines no named theme - add the theme to the colors foundation');
 
 /**
  * One warning per target of a live variant whose states use an `et-color--<name>` class no foundation of the variant's

@@ -60,7 +60,7 @@ describe('unknownThemeWarningsOf', () => {
 
     expect(warnings).toHaveLength(2);
     expect(warnings[0]).toContain('et-color--danger, which no foundation of the product defines');
-    expect(warnings[0]).toContain('defined: none');
+    expect(warnings[0]).toContain('the product defines no named theme - add the theme to the colors foundation');
   });
 
   it('names the defined themes', async () => {
