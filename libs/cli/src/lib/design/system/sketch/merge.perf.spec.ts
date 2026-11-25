@@ -8,8 +8,7 @@ import { calibrationMs, recordPerf, watchLongestBlock } from '../../../perf.fixt
 import { readConfig } from '../../design-config';
 import { sketchDecisionAnswer } from '../../studio-api';
 import { resolveProduct } from '../resolve-product';
-import { originOf } from '../write-origin';
-import { createSketch, decideSketch, markSketchReady, Sketch } from './sketch';
+import { createSketch, markSketchReady, Sketch } from './sketch';
 
 const readyPickedSketch = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-merge-perf-'));
