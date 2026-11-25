@@ -83,7 +83,7 @@ const { states, grid } = interactionRows(
 export default definePart({
   note: 'Decided rules only',
   consumerAction: 'its items are actions the consumer passes in',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'design check'],
   states: {
     menu: { rows: FULL },
     ...states,
@@ -114,7 +114,7 @@ export default definePart({
   frame: (body) => `<div class="menu-frame">${body}</div>`,
   render: ({ rows, forced }: Props) =>
     drawing({
-      body: menu({ rows: withForced(rows, forced), color: 'brand' }),
+      body: menu({ rows: withForced(rows, forced), color: 'brand', errorColor: 'danger' }),
       styles: [menuStyles, edge].join('\n'),
     }),
 });

@@ -101,7 +101,12 @@
   "components/loader": "ebcdf0bf50e1d1c5",
   "components/masonry": "354d8cb24417dfe6",
   "components/match": "2eeb75a692566927",
-  "components/menu": "7f6d6dc1ef781025",
+  "components/menu": {
+    "hash": "dbf2df2cfbfc1a8b",
+    "variant": "new",
+    "decidedBy": "claude-opus-5-5",
+    "at": "2026-11-25T22:47:49.349Z"
+  },
   "components/notification": {
     "hash": "8e433e652d5abc7c",
     "variant": "a",
