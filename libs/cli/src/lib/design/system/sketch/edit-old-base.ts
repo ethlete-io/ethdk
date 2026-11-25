@@ -185,7 +185,7 @@ const outsideImportsUnchanged = (options: { top: string; drawnRoot: string; prod
 
 const gitIn = (cwd: string, args: string[]) => git(args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 
-const oldCommitOf = (top: string, sketch: Sketch) => {
+export const oldCommitOf = (top: string, sketch: Pick<Sketch, 'editOldCommit' | 'createdAt'>) => {
   if (sketch.editOldCommit) return sketch.editOldCommit;
 
   try {

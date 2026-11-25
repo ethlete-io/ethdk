@@ -3,14 +3,14 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { readConfig } from '../../design-config';
-import { initGitRepo } from '../git-repo.fixtures';
+import { commitAll, initGitRepo } from '../git-repo.fixtures';
 import { importProblemsOf } from '../imports';
 import { typecheckVariant } from './check-sketches';
 import { partKeyOf, resolveProduct } from '../resolve-product';
-import { openEditSketch } from './edit-sketch';
+import { openEditSketch, refreshEditOld } from './edit-sketch';
 import { recordMerged } from './merged-parts';
 import { overlaySketch } from './overlay';
-import { Sketch } from './sketch';
+import { readSketch, Sketch } from './sketch';
 
 const resolveAppA = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
@@ -102,4 +102,26 @@ describe('the old side of an edit sketch', () => {
     expect(typecheckVariant({ target, product: resolveAppA(target), sketch, variant: 'old' })).toEqual({ kind: 'ok' });
     expect(importProblemsOf(overlaySketch({ product: resolveAppA(target), sketch, variant: 'old' }))).toEqual([]);
   }, 120_000);
+
+  it('keeps the old side on the commit it was taken from when a check redraws it over a later commit and an uncommitted change', async () => {
+    const { target, dir } = appA();
+    const css = join(dir, 'elements', 'hero', 'hero.css');
+    const ts = join(dir, 'elements', 'hero', 'hero.ts');
+    const mergedCss = readFileSync(css, 'utf8');
+
+    writeFileSync(css, '.acme-hero { padding: 0; }\n');
+
+    const sketch = (await openEditSketch({ target, product: resolveAppA(target), part: 'elements/hero' })) as Sketch;
+    const sketchFile = join(sketch.dir, 'sketch.json');
+    const editOldCommit = JSON.parse(readFileSync(sketchFile, 'utf8')).editOldCommit;
+
+    commitAll(target, 'the edit');
+    writeFileSync(ts, `${readFileSync(ts, 'utf8')}export const halfDone = true;\n`);
+
+    const open = readSketch({ product: 'acme', dir: sketch.dir }) as Sketch;
+
+    expect(refreshEditOld({ product: resolveAppA(target), sketch: open })).toBeNull();
+    expect(JSON.parse(readFileSync(sketchFile, 'utf8')).editOldCommit).toBe(editOldCommit);
+    expect(readFileSync(join(sketch.dir, 'old', 'elements', 'hero', 'hero.css'), 'utf8')).toBe(mergedCss);
+  });
 });

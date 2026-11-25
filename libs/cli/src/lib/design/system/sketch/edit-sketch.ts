@@ -23,7 +23,7 @@ import {
   variantSharedDirOf,
   writeSketchFile,
 } from './sketch';
-import { EDIT_NEW, EDIT_OLD } from './edit-old-base';
+import { EDIT_NEW, EDIT_OLD, oldCommitOf } from './edit-old-base';
 
 export { EDIT_OLD };
 const NEW = EDIT_NEW;
@@ -223,7 +223,10 @@ export const tracksFileBelow = (product: ResolvedProduct, dir: string) => {
   }
 };
 
-const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesign | EditOldNotFound | string => {
+const oldDesignOf = (
+  { product, resolved }: { product: ResolvedProduct; resolved: ResolvedPart },
+  commit = 'HEAD',
+): OldDesign | EditOldNotFound | string => {
   const part = partKeyOf(resolved);
 
   if (readMerged(product.dir)[part] === undefined) return `${part} has no merged hash - there is no old design to show`;
@@ -232,7 +235,7 @@ const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesig
   const partDir = relative(root, dirname(resolved.file));
 
   try {
-    const tree = blobsAt({ root, commit: 'HEAD', paths: [partDir] });
+    const tree = blobsAt({ root, commit, paths: [partDir] });
 
     if (tree.length > 0) {
       const blobs = catFilesOf(
@@ -294,7 +297,7 @@ const openedEditSketch = (options: {
 
   if (!resolved) return `product "${product.name}" has no part "${part}"`;
 
-  const old = oldDesignOf(product, resolved);
+  const old = oldDesignOf({ product, resolved });
 
   if (typeof old === 'string') return old;
   if (!(old instanceof Map)) {
@@ -337,14 +340,18 @@ const openedEditSketch = (options: {
 
   if (typeof created === 'string') return created;
 
-  writeOld({ sketch: created, resolved }, old);
+  writeOld(
+    { sketch: created, resolved, commit: git(repoRootOf(product), ['rev-parse', '--verify', 'HEAD']).trim() },
+    old,
+  );
 
   return markSketchReady({ checkout: target, sketch: created, author: options.author });
 };
 
 /**
- * Rewrites the `old` variant of an edit sketch from the part at HEAD, as `openEditSketch` finds it, so `old` draws against the sketch's `shared/` of
- * today, and its round and variant notes in today's wording. Answers why it cannot, else null.
+ * Rewrites the `old` variant of an edit sketch from the part at the commit it was taken from, never a later HEAD or the working
+ * tree, so `old` draws against the sketch's `shared/` of today, and its round and variant notes in today's wording. Answers why
+ * it cannot, else null.
  */
 export const refreshEditOld = ({
   product,
@@ -357,11 +364,12 @@ export const refreshEditOld = ({
 
   if (!resolved) return `product "${product.name}" has no part "${partKeyOf(sketch)}"`;
 
-  const old = oldDesignOf(product, resolved);
+  const commit = oldCommitOf(repoRootOf(product), sketch) ?? 'HEAD';
+  const old = oldDesignOf({ product, resolved }, commit);
 
   if (!(old instanceof Map)) return old;
 
-  writeOld({ sketch, resolved }, old);
+  writeOld({ sketch, resolved, commit: git(repoRootOf(product), ['rev-parse', '--verify', commit]).trim() }, old);
   rewordEditNotes(sketch);
 
   return null;
@@ -384,7 +392,10 @@ export const rewordEditNotes = (sketch: Sketch) => {
   if (JSON.stringify(reworded) !== JSON.stringify(sketch)) writeSketchFile(reworded, { base: sketch });
 };
 
-const writeOld = ({ sketch, resolved }: { sketch: Sketch; resolved: ResolvedPart }, files: Map<string, Buffer>) => {
+const writeOld = (
+  { sketch, resolved, commit }: { sketch: Sketch; resolved: ResolvedPart; commit: string },
+  files: Map<string, Buffer>,
+) => {
   const oldDir = resolve(sketch.dir, EDIT_OLD, resolved.layer, resolved.name);
 
   rmSync(oldDir, { recursive: true, force: true });
@@ -412,7 +423,5 @@ const writeOld = ({ sketch, resolved }: { sketch: Sketch; resolved: ResolvedPart
     rmSync(resolve(oldDir, SHARED_FOLDER), { recursive: true });
   }
 
-  const editOldCommit = git(partDir, ['rev-parse', '--verify', 'HEAD']).trim();
-
-  if (editOldCommit !== sketch.editOldCommit) writeSketchFile({ ...sketch, editOldCommit }, { base: sketch });
+  if (commit !== sketch.editOldCommit) writeSketchFile({ ...sketch, editOldCommit: commit }, { base: sketch });
 };
