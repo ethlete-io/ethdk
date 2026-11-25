@@ -454,6 +454,9 @@ const SKETCH_CSS = {
 };
 
 // A stacked sketch at Fit can draw its fold buttons below the canvas, where no pointer click reaches them.
+/** Übernehmen enables only once every mounted frame has reported; until then the sketch bar reads "zeichnet". */
+const MERGE_OPEN = '[data-sk-row="a"] [data-sk-merge]:enabled';
+
 const pressOffCamera = async (button) => {
   await button.evaluate((element) => element.focus({ preventScroll: true }));
   await button.page().keyboard.press('Enter');
@@ -3125,7 +3128,7 @@ const CASES = [
     run: async (page) => {
       const bar = page.locator('ethlete-sketch-view [data-sk-toolbar]').first();
 
-      await bar.waitFor({ timeout: FULL_COMPARE_MS });
+      await page.locator(MERGE_OPEN).first().waitFor({ timeout: FULL_COMPARE_MS });
       await settle(page);
       await bar.screenshot({ path: join(root, '.claude/handoffs/agent-results/b728-status-after.png') });
 
@@ -3165,7 +3168,7 @@ const CASES = [
       try {
         const button = page.locator('[data-sk-row="a"] [data-sk-merge]').first();
 
-        await button.waitFor({ timeout: FULL_COMPARE_MS });
+        await page.locator(MERGE_OPEN).first().waitFor({ timeout: FULL_COMPARE_MS });
         await pressOffCamera(button);
         await page.locator('[role="alertdialog"] [data-sk-confirm]').click({ timeout: WAIT_MS });
 
