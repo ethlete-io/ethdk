@@ -153,7 +153,8 @@ Prettier rewrites them and `check` reports drift on every run:
 ## Hooks
 
 Hooks run commands on the developer's machine, so none are emitted by default - opt in
-per hook:
+per hook. The one exception is [`design-live-check`](#design-live-check): a repo with
+`.ethlete/design/config.json` gets it without listing it.
 
 ```json
 {
@@ -240,6 +241,9 @@ It runs `et` the way the `ethlete-design` server in `.mcp.json` does, with `lint
 check flags an `et-surface--*` or `et-color--*` class outside foundations (`THEME-CLASS`: a part takes its
 surface from `data-et-auto-surface` and its colour from the inherited theme), and a page that calls
 `anchoredDialog()` while the product has a `components/anchored-dialog` part (`PAGE-ANCHORED-DIALOG`).
+
+`sync` registers it in every repo that has `.ethlete/design/config.json`, whether `hooks` lists it or not. A
+repo that adds its design system after the last `sync` gets it at the next one.
 
 Hooks can be turned off per machine - see the local config below.
 

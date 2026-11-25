@@ -36,7 +36,10 @@ export type SyncConfig = {
    * `AGENTS.md` marker block, and a second copy would load twice.
    */
   claudeMdImportsAgentsMd: boolean;
-  /** Opt-in agent hooks (they run commands on the developer's machine, so never default). */
+  /**
+   * Opt-in agent hooks (they run commands on the developer's machine, so never default), plus
+   * `DESIGN_SYSTEM_HOOKS` in a repo with a design system.
+   */
   hooks: string[];
   /** Opt-in git hooks, appended to the repo's own husky hooks. Same reason they never default. */
   gitHooks: string[];
@@ -283,6 +286,14 @@ const gitFlowVars = (gitFlow: GitFlowConfig): Record<string, string | string[]> 
   gitFlowSubPrefix: gitFlow.subPrefix,
 });
 
+const DESIGN_SYSTEM_HOOKS = ['design-live-check'];
+
+const resolveHooks = (root: string, configured: string[]) => {
+  if (!existsSync(join(root, '.ethlete/design/config.json'))) return configured;
+
+  return [...configured, ...DESIGN_SYSTEM_HOOKS.filter((hook) => !configured.includes(hook))];
+};
+
 export const loadConfig = (options: { root: string; targetOverride?: AgentTarget[] }): SyncConfig => {
   const { root, targetOverride } = options;
   const raw = readRawConfig(root);
@@ -306,7 +317,7 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     },
     exclude: raw.exclude ?? [],
     claudeMdImportsAgentsMd: raw.claudeMdImportsAgentsMd ?? false,
-    hooks: raw.hooks ?? [],
+    hooks: resolveHooks(root, raw.hooks ?? []),
     gitHooks: raw.gitHooks ?? [],
     mods: raw.mods ?? [],
     gitFlow,

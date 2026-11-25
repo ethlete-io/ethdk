@@ -1,8 +1,10 @@
 import { spawnSync } from 'child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CONFIG_FILE_NAME } from './config';
+import { sync } from './sync';
 
 const hookPath = resolve(__dirname, '../../content/hooks/design-live-check.py');
 
@@ -104,5 +106,74 @@ describe('design-live-check', () => {
       runHook({ root: repo({ localConfig: { disableHooks: ['design-live-check'] } }), file: CSS, content: '#fff' })
         .code,
     ).toBe(0);
+  });
+});
+
+describe('design-live-check in a synced design repo', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const syncedDesignRepo = () => {
+    const root = repo();
+
+    cpSync(
+      resolve(__dirname, '../../../../tools/scripts/clean-slate-run/overlays/tomflix/.ethlete/design/config.json'),
+      join(root, '.ethlete/design/config.json'),
+    );
+    writeFileSync(
+      join(root, CONFIG_FILE_NAME),
+      JSON.stringify({ targets: ['claude', 'codex'], hooks: ['context-warning', 'subagent-model-policy'] }),
+    );
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ dependencies: {} }));
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    sync({ root });
+
+    return root;
+  };
+
+  const postWriteCommandsOf = (root: string) => {
+    const settings = JSON.parse(readFileSync(join(root, '.claude/settings.json'), 'utf8')) as {
+      hooks?: Record<string, { matcher?: string; hooks: { command: string }[] }[]>;
+    };
+
+    return (settings.hooks?.['PostToolUse'] ?? [])
+      .filter((group) => new RegExp(`^(${group.matcher ?? '.*'})$`).test('Write'))
+      .flatMap((group) => group.hooks.map((hook) => hook.command));
+  };
+
+  it('runs on a design file write without the repo listing the hook', () => {
+    const root = syncedDesignRepo();
+    const [command] = postWriteCommandsOf(root);
+
+    expect(command).toContain('design-live-check.py');
+
+    writeFileSync(join(root, CSS), '.x { color: #fff; }');
+    const run = spawnSync('bash', ['-c', command ?? 'false'], {
+      cwd: root,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+      input: JSON.stringify({
+        cwd: root,
+        hook_event_name: 'PostToolUse',
+        tool_name: 'Write',
+        tool_input: { file_path: join(root, CSS) },
+      }),
+    });
+
+    expect(run.status).toBe(2);
+    expect(run.stderr).toContain('HARD-CODED-COLOUR');
+  });
+
+  it('stays off in a repo without a design system', () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-no-design-'));
+
+    writeFileSync(join(root, CONFIG_FILE_NAME), JSON.stringify({ targets: ['claude'], hooks: ['context-warning'] }));
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ dependencies: {} }));
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    sync({ root });
+
+    expect(postWriteCommandsOf(root)).toEqual([]);
   });
 });

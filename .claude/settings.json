@@ -27,6 +27,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ethlete/design-live-check.py\" --agent claude",
+            "timeout": 60
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
