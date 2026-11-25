@@ -371,7 +371,8 @@ files `git diff <base>` names, plus every part that embeds one, each as `--part`
 No CI job or Git hook runs this gate: the agent runs it with its design check and passes the range it is about to
 push. `et design compare --affected` (or
 `et design task <part> --verify <rev>`) compares and records the part again, which clears it. A part without a record
-has only `task <part> --verify`: `compare --affected` skips it and plain `compare` records nothing.
+has only `check --part <part>`, then `task <part> --verify`: `compare --affected` skips it and plain `compare`
+records nothing. An open point that the check names, such as a ready sketch that targets the part, blocks the record.
 
 `et design check` fails with `SAMPLE-DEFAULT` when an `input()` or `model()` of an app component that implements a part
 defaults to sample data, an `…_SAMPLE` or `…_ROWS` identifier. Known hits sit on lists in
