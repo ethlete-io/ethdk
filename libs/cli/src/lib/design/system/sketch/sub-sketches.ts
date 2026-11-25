@@ -6,13 +6,16 @@ import {
   decideSketch,
   findSketch,
   parseTarget,
+  rejectedProblemOf,
   Sketch,
+  SketchApproval,
   SketchDecisionInput,
   sharedDirOf,
   SketchTarget,
   variantDirOf,
   writeSketchFile,
 } from './sketch';
+import { WriteOrigin } from '../write-origin';
 
 /** The sub-parts the variant marks; a pick of a variant with any opens sub-sketches instead of merging. */
 export const subPartsOfPick = (sketch: Sketch, variant: string) => sketch.variantInfo[variant]?.subParts ?? [];
@@ -89,3 +92,38 @@ export const openSubSketchesRefusalOf = (sketch: Sketch) =>
   sketch.subSketches && sketch.subSketches.length > 0
     ? `${sketch.target} waits on its sub-sketches ${sketch.subSketches.join(', ')} - it merges together with them once they are approved`
     : null;
+
+/** Why `sketch` may not merge on its own because a pick of its parent opened it, or `null`. */
+export const subSketchMergeRefusalOf = (sketch: Sketch) =>
+  sketch.parent
+    ? `${sketch.target} is a sub-sketch of ${sketch.parent} and never merges on its own - approve a variant (design sketch approve ${sketch.target} --variant <key>), and it merges together with ${sketch.parent}`
+    : null;
+
+/**
+ * Records the designer's approval of `variant` on a sub-sketch in `approved`; the parent merges it later. Answers why
+ * not: a sketch without `parent`, one not ready, or a variant it lacks or rejected. Writes sketch.json.
+ */
+export const approveSubSketch = (options: {
+  sketch: Sketch;
+  approval: { variant: string; comment?: string } & WriteOrigin;
+}): Sketch | string => {
+  const { sketch, approval } = options;
+  const { variant } = approval;
+
+  if (!sketch.parent)
+    return `${sketch.target} is not a sub-sketch - only a sketch a parent's pick opened is approved; pick and merge it instead`;
+  if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - a variant is approved once it is ready`;
+  if (!sketch.variants.includes(variant))
+    return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
+
+  const rejected = rejectedProblemOf(sketch, variant);
+
+  if (rejected) return rejected;
+
+  const approved: SketchApproval = { ...approval, decidedAt: new Date().toISOString() };
+  const next: Sketch = { ...sketch, approved };
+
+  writeSketchFile(next, { base: sketch, sets: ['approved'] });
+
+  return next;
+};

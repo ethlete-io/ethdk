@@ -4,7 +4,7 @@ import { IncomingMessage } from 'http';
 import { relative } from 'path';
 import { journaledAsync } from './system/write-journal';
 import { MERGE_WAIT_MS } from './system/sketch/merge-step';
-import { openSubSketches, subPartsOfPick } from './system/sketch/sub-sketches';
+import { approveSubSketch, openSubSketches, subPartsOfPick } from './system/sketch/sub-sketches';
 import { fromEvent, take } from 'rxjs';
 import { setImmediate } from 'timers/promises';
 import { repoInvocation } from '../invocation';
@@ -92,6 +92,7 @@ export const SKETCH_CROP_PATH = '/__design/sketch-crop';
 export const STATE_DIFF_PATH = '/__design/state-diff';
 export const SKETCH_DECISION_PATH = '/__design/sketch-decision';
 export const SKETCH_MERGE_PATH = '/__design/sketch-merge';
+export const SKETCH_APPROVE_PATH = '/__design/sketch-approve';
 
 const SKETCH_DECISION_KINDS: readonly SketchDecisionInput['kind'][] = ['pick', 'discard', 'reject', 'reason', 'reopen'];
 export const SKETCH_DISCARD_PATH = '/__design/sketch-discard';
@@ -857,6 +858,31 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, product, 
   return typeof decided === 'string'
     ? failure(422, decided)
     : { status: 200, body: sketchOf({ sketch: decided, target: asked.target }) };
+});
+
+/**
+ * POST `?product=&sketch=`, body `{ variant, comment? }`: approves the variant of a sub-sketch, as `et design sketch approve`
+ * does, and answers the sketch as listed. A sketch without a parent answers 422.
+ */
+export const sketchApproveAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
+  const body = await bodyOf(asked.request);
+  const variant = textOf(body?.['variant']);
+  const comment = textOf(body?.['comment']);
+
+  if (!variant) return failure(400, 'an approve needs a variant');
+
+  const approved = await journaledAsync(
+    { productDir: product.dir, root: asked.target, label: `approve of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
+    () =>
+      approveSubSketch({
+        sketch,
+        approval: { variant, ...(comment ? { comment } : {}), ...originOf('designer', `POST ${SKETCH_APPROVE_PATH}`) },
+      }),
+  );
+
+  return typeof approved === 'string'
+    ? failure(422, approved)
+    : { status: 200, body: sketchOf({ sketch: approved, target: asked.target }) };
 });
 
 /**

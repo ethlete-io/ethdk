@@ -58,6 +58,7 @@ import {
   STATE_DIFF_PATH,
   SKETCH_DIFF_PATH,
   SKETCH_MERGE_PATH,
+  SKETCH_APPROVE_PATH,
   SKETCHES_PATH,
   sketchDecisionAnswer,
   sketchDiscardAnswer,
@@ -67,6 +68,7 @@ import {
   detachRunningListings,
   sketchesAnswer,
   sketchMergeAnswer,
+  sketchApproveAnswer,
 } from './studio-api';
 import { forceInteractionsPlugin } from './force-interactions';
 import { newProductAnswer, PRODUCT_BASE_PATH, PRODUCT_PATH, productBaseAnswer } from './product-command';
@@ -1133,6 +1135,7 @@ const designExplore = ({
       studio(STATE_DIFF_PATH, stateDiffAnswer);
       studio(SKETCH_DECISION_PATH, sketchDecisionAnswer);
       studio(SKETCH_MERGE_PATH, sketchMergeAnswer);
+      studio(SKETCH_APPROVE_PATH, sketchApproveAnswer);
       studio(SKETCH_DISCARD_PATH, sketchDiscardAnswer);
       studio(COMMENTS_PATH, commentsAnswer);
       studio(COMMENT_PATH, commentAnswer);

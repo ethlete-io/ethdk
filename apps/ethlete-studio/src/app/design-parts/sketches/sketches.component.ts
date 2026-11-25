@@ -254,6 +254,8 @@ export class SketchesComponent {
   public empty = input(false, { transform: booleanAttribute });
   public autoMerge = input(false);
   public merging = input(false);
+  public subSketch = input(false);
+  public approved = input<string | null>(null);
   public status = input<SketchStatus>('waiting');
   public openPoints = input<OpenPointGroup[]>([]);
   public pointsClosed = model(true);
@@ -1031,7 +1033,12 @@ export class SketchesComponent {
     if (!kind || !target) return;
 
     const { origin, row } = target;
-    const { label, question, note, confirm } = kind === 'merge' ? this.LABELS.mergeConfirm : this.LABELS.discardConfirm;
+    const { label, question, note, confirm } =
+      kind === 'discard'
+        ? this.LABELS.discardConfirm
+        : this.subSketch()
+          ? this.LABELS.approveConfirm
+          : this.LABELS.mergeConfirm;
     const text: SketchConfirmText = {
       question: row ? question(row.label ?? this.LABELS.variant(row.key), this.part()) : question(this.part(), ''),
       note,

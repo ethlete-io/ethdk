@@ -6,9 +6,9 @@ import { Readable } from 'stream';
 import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { designSketch } from './sketch-command';
-import { sketchDecisionAnswer, sketchMergeAnswer } from './studio-api';
+import { sketchApproveAnswer, sketchDecisionAnswer, sketchMergeAnswer } from './studio-api';
 import { resolveProduct } from './system/resolve-product';
-import { createSketch, markSketchReady, parseTarget } from './system/sketch/sketch';
+import { createSketch, findSketch, markSketchReady, parseTarget } from './system/sketch/sketch';
 
 const readied = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-studio-pick-'));
@@ -58,23 +58,59 @@ const subSketchDirOf = (target: string) => join(target, DESIGN_DIR, 'acme/sketch
 
 const readJson = (file: string) => JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
 
-const merge = (target: string) =>
+const merge = (target: string, sketch = 'elements/hero') =>
   sketchMergeAnswer({
     target,
-    url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
+    url: new URL(`http://localhost/?product=acme&sketch=${sketch}`),
     request: Object.assign(Readable.from(['{}']), { method: 'POST' }) as unknown as IncomingMessage,
     signal: new AbortController().signal,
   });
 
-const pick = (target: string, variant: string) =>
+const pick = (target: string, variant: string, sketch = 'elements/hero') =>
   sketchDecisionAnswer({
     target,
-    url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
+    url: new URL(`http://localhost/?product=acme&sketch=${sketch}`),
     request: Object.assign(Readable.from([JSON.stringify({ kind: 'pick', variant })]), {
       method: 'POST',
     }) as unknown as IncomingMessage,
     signal: new AbortController().signal,
   });
+
+const approve = (target: string, variant: string, sketch = 'components/hero-slider') =>
+  sketchApproveAnswer({
+    target,
+    url: new URL(`http://localhost/?product=acme&sketch=${sketch}`),
+    request: Object.assign(Readable.from([JSON.stringify({ variant })]), {
+      method: 'POST',
+    }) as unknown as IncomingMessage,
+    signal: new AbortController().signal,
+  });
+
+const sketchCommand = (target: string, argv: string[]) =>
+  designSketch({
+    target,
+    argv: [...argv, '--product', 'acme', '--by', 'claude-opus-5-5'],
+    invocation: 'et design',
+  });
+
+const withReadySubSketch = async () => {
+  const { target, sketchDir } = readied();
+
+  withMarkedSlider(sketchDir);
+  await pick(target, 'b');
+
+  const sub = findSketch({
+    productDir: join(target, DESIGN_DIR, 'acme'),
+    product: 'acme',
+    sketch: { layer: 'components', name: 'hero-slider' },
+  });
+
+  if (sub === null || typeof sub === 'string') throw new Error(`no sub-sketch: ${sub}`);
+
+  markSketchReady({ checkout: target, sketch: sub });
+
+  return { target, sketchDir, subDir: subSketchDirOf(target) };
+};
 
 describe('the Studio pick route', { timeout: 60_000 }, () => {
   // Decision: a pick in Studio is a merge; there is no picked-but-unmerged state.
@@ -184,6 +220,76 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
 
     expect(answer.status).toBe(422);
     expect(readFileSync(join(sketchDir, 'sketch.json'), 'utf8')).toBe(before);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
+  });
+
+  // Decision B726: a sub-sketch is approved, never merged; the approval waits on the sub-sketch for its parent's merge.
+  it('records the approval of a sub-sketch on sketch approve', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, subDir } = await withReadySubSketch();
+    const code = await sketchCommand(target, [
+      'approve',
+      'components/hero-slider',
+      '--variant',
+      'a',
+      '--decided-by',
+      'human in chat: slider ok',
+    ]);
+
+    expect(code).toBe(0);
+    expect(readJson(join(subDir, 'sketch.json'))).toMatchObject({
+      parent: 'elements/hero',
+      approved: { variant: 'a', comment: 'human in chat: slider ok', by: 'designer' },
+    });
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
+  });
+
+  it('records the approval of a sub-sketch on the Studio approve route', async () => {
+    const { target, subDir } = await withReadySubSketch();
+    const answer = await approve(target, 'a');
+
+    expect(answer).toMatchObject({ status: 200, body: { approved: { variant: 'a', by: 'designer' } } });
+    expect(readJson(join(subDir, 'sketch.json'))).toMatchObject({ approved: { variant: 'a' } });
+  });
+
+  // Decision B726: only a sketch a parent's pick opened is approved; any other sketch is picked and merged.
+  it('refuses sketch approve on a sketch without a parent', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const { target, sketchDir } = readied();
+    const before = readFileSync(join(sketchDir, 'sketch.json'), 'utf8');
+    const code = await sketchCommand(target, [
+      'approve',
+      'elements/hero',
+      '--variant',
+      'a',
+      '--decided-by',
+      'human in chat: a',
+    ]);
+
+    expect(code).not.toBe(0);
+    expect(readFileSync(join(sketchDir, 'sketch.json'), 'utf8')).toBe(before);
+    expect(await approve(target, 'a', 'elements/hero')).toMatchObject({ status: 422 });
+  });
+
+  // Decision B726: a sub-sketch merges only together with its parent, so every merge path refuses it and names the parent.
+  it('refuses a merge of a sub-sketch and names its parent', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { target, subDir } = await withReadySubSketch();
+    const named = 'is a sub-sketch of elements/hero';
+
+    const studioMerge = await merge(target, 'components/hero-slider');
+    const studioPick = await pick(target, 'a', 'components/hero-slider');
+    const code = await sketchCommand(target, ['merge', 'components/hero-slider']);
+
+    expect(studioMerge.status).toBe(422);
+    expect(JSON.stringify(studioMerge.body)).toContain(named);
+    expect(studioPick.status).toBe(422);
+    expect(JSON.stringify(studioPick.body)).toContain(named);
+    expect(code).not.toBe(0);
+    expect(errors.mock.calls.flat().join('\n')).toContain(named);
+    expect(readJson(join(subDir, 'sketch.json'))['decision']).toBeUndefined();
     expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
   });
 });

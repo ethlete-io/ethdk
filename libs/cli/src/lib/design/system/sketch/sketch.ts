@@ -33,6 +33,9 @@ export type SketchDecision =
   | ({ kind: 'pick'; variant: string; comment?: string; decidedAt: string } & Partial<WriteOrigin>)
   | ({ kind: 'discard'; comment?: string; decidedAt: string } & Partial<WriteOrigin>);
 
+/** The designer's approval of a sub-sketch's variant; the parent merges that variant together with its own pick. */
+export type SketchApproval = { variant: string; comment?: string; decidedAt: string } & Partial<WriteOrigin>;
+
 /**
  * What `sketch.json` knows about one variant: the model ids that reported on it, in the order of their first report,
  * the key of its round, its note - what it is and what it costs - kept apart from the part's merged note, and the
@@ -154,6 +157,8 @@ export type SketchFile = {
   parent?: string;
   /** The sketches the pick opened, one per marked sub-part of the picked variant; the sketch does not merge while it has them. */
   subSketches?: string[];
+  /** On a sub-sketch: the variant the designer approved for the merge of its parent. */
+  approved?: SketchApproval;
 };
 
 export type SketchCreatedBy = { cmd: string; session?: string };
@@ -688,6 +693,11 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
     return `${file}: parent must be the <layer>/<name> of a sketch`;
   if (parsed.subSketches !== undefined && !isStringList(parsed.subSketches))
     return `${file}: subSketches must be a list of <layer>/<name> sketch keys`;
+  if (
+    parsed.approved !== undefined &&
+    (typeof parsed.approved !== 'object' || parsed.approved === null || typeof parsed.approved.variant !== 'string')
+  )
+    return `${file}: approved must name the approved variant`;
 
   const rounds = parsed.rounds ?? [firstRoundOf({})];
   const running = runningRoundOf({ rounds }).key;
@@ -805,6 +815,7 @@ const sketchFileOf = (sketch: Sketch): SketchFile => ({
   ...(sketch.recommended ? { recommended: sketch.recommended } : {}),
   ...(sketch.parent ? { parent: sketch.parent } : {}),
   ...(sketch.subSketches && sketch.subSketches.length > 0 ? { subSketches: sketch.subSketches } : {}),
+  ...(sketch.approved ? { approved: sketch.approved } : {}),
 });
 
 type Fields = Record<string, unknown>;

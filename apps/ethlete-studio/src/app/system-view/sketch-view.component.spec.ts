@@ -131,10 +131,10 @@ const confirmed = async (button: HTMLButtonElement | undefined, fixture: Compone
 const discardConfirmed = (root: HTMLElement, fixture: ComponentFixture<unknown>) =>
   confirmed(buttonNamed(root, 'Verwerfen'), fixture);
 
-const mergeButtons = (root: HTMLElement) =>
-  [...root.querySelectorAll<HTMLButtonElement>('button')].filter(
-    (button) => button.textContent?.trim() === SKETCHES_LABELS.merge,
-  );
+const buttonsLabelled = (root: HTMLElement, label: string) =>
+  [...root.querySelectorAll<HTMLButtonElement>('button')].filter((button) => button.textContent?.trim() === label);
+
+const mergeButtons = (root: HTMLElement) => buttonsLabelled(root, SKETCHES_LABELS.merge);
 
 const LIST_WIDTH = 10000;
 
@@ -754,6 +754,56 @@ describe('SketchViewComponent', () => {
 
     expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' } });
     expect(completed).toEqual(['components/card']);
+  });
+
+  // Decision B726: a sub-sketch is approved, never merged, so it offers Freigeben in place of Übernehmen.
+  it('approves a variant of a sub-sketch with Freigeben', async () => {
+    const bodies: Record<string, unknown> = {};
+    const { fixture, root } = await render({ ...SKETCH, parent: 'elements/hero' }, (url, init) => {
+      const path = ['sketch-decision', 'sketch-merge', 'sketch-approve'].find((entry) =>
+        url.includes(`/__design/${entry}`),
+      );
+
+      if (!path) return noComments(url);
+
+      bodies[path] = JSON.parse(String(init?.body ?? '{}'));
+
+      return json({});
+    });
+    const completed: string[] = [];
+    let decided = 0;
+
+    fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
+    fixture.componentInstance.decide.subscribe(() => decided++);
+
+    expect(mergeButtons(root)).toHaveLength(0);
+    expect(buttonsLabelled(root, SKETCHES_LABELS.approve)).toHaveLength(2);
+
+    buttonsLabelled(root, SKETCHES_LABELS.approve)[0]?.click();
+    await settle(fixture);
+
+    const dialog = [...document.querySelectorAll('[role="alertdialog"]')].at(-1);
+
+    expect(dialog?.textContent).toContain(SKETCHES_LABELS.approveConfirm.question('Variante a', 'components/card'));
+
+    [...document.querySelectorAll<HTMLElement>('[data-sk-confirm]')].at(-1)?.click();
+    await settle(fixture);
+
+    expect(bodies).toEqual({ 'sketch-approve': { variant: 'a' } });
+    expect(completed).toEqual([]);
+    expect(decided).toBe(1);
+  });
+
+  it('shows the approved variant of a sub-sketch as Freigegeben', async () => {
+    const { root } = await render(
+      { ...SKETCH, parent: 'elements/hero', approved: { variant: 'a', decidedAt: '2026-11-25T08:00:00.000Z' } },
+      noComments,
+    );
+    const approved = buttonsLabelled(root, SKETCHES_LABELS.approved);
+
+    expect(approved).toHaveLength(1);
+    expect(approved[0]?.disabled).toBe(true);
+    expect(buttonsLabelled(root, SKETCHES_LABELS.approve)).toHaveLength(1);
   });
 
   // Decision B726: a pick that opens sub-sketches merges nothing, so the view stays on the parent and reloads the sketches.

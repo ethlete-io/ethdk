@@ -69,7 +69,7 @@ import {
   printPortItems,
 } from './system/sketch/merge-step';
 import { journaled, openJournalOf } from './system/write-journal';
-import { openSubSketches, subPartsOfPick } from './system/sketch/sub-sketches';
+import { approveSubSketch, openSubSketches, subPartsOfPick } from './system/sketch/sub-sketches';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { notRebuildsOf, subPartKeyProblemOf, subPartsOf } from './system/sketch/sub-parts';
 import { repoInvocation } from '../invocation';
@@ -152,6 +152,7 @@ export const SKETCH_USAGE = [
   'sketch rebase <layer>/<name> [--ported <variant>] --by <model id> [--product <name>]',
   'sketch rebase-open --commit <rev> [--product <name>] [--json]',
   'sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
+  'sketch approve <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <role>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
@@ -189,7 +190,7 @@ const FLAG_HELP: Record<string, string> = {
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
   '--decided-by':
-    "on pick: the designer's words that pick the variant and where they were said, e.g. 'human in chat: take b'; on merge: who picked the variant, as merged.json records it (default user); the role of who picked, e.g. human (never a person name; the command refuses one) - not with --allowed-by",
+    "on pick and approve: the designer's words that pick or approve the variant and where they were said, e.g. 'human in chat: take b'; on merge: who picked the variant, as merged.json records it (default user); the role of who picked, e.g. human (never a person name; the command refuses one) - not with --allowed-by",
   '--replace-note': "on merge: also write --note over each target part's note",
   '--reason':
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
@@ -245,6 +246,7 @@ const WRITES = new Set([
   'release',
   'rebase',
   'pick',
+  'approve',
   'merge',
   'discard',
   'recommend',
@@ -2243,6 +2245,27 @@ const picked = (context: Context) =>
     return pickNow();
   });
 
+const approvedSub = (context: Context) =>
+  withSketch(context, ({ product, sketch }) => {
+    const { '--variant': variant, '--decided-by': decidedBy } = context.args.values;
+    const words = decidedBy?.trim() ?? '';
+
+    if (context.args.positional.length !== 1 || !variant || !words)
+      return fail(`usage: ${SKETCH_USAGE.find((line) => line.startsWith('sketch approve '))}`);
+    if (hasPersonName(words)) return fail(`--decided-by ${PERSON_NAME_REFUSAL}`);
+
+    const approved = journaled(
+      { productDir: product.dir, root: context.target, label: `approve of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
+      () => approveSubSketch({ sketch, approval: { variant, comment: words, ...originOf('designer') } }),
+    );
+
+    if (typeof approved === 'string') return fail(approved);
+
+    console.log(`approved ${sketch.target} variant ${variant}; it merges together with ${sketch.parent}`);
+
+    return 0;
+  });
+
 const merged = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
     const {
@@ -2513,6 +2536,7 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   rebase: rebased,
   'rebase-open': rebasedAfterCommit,
   pick: picked,
+  approve: approvedSub,
   merge: merged,
   discard: discarded,
   target: targetAdded,

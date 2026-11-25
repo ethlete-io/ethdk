@@ -42,7 +42,7 @@ import { overlaySketch } from './overlay';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
 import { CleanCopy, cleanCopyOf, contentsBelow } from './clean-copy';
-import { openSubSketchesRefusalOf } from './sub-sketches';
+import { openSubSketchesRefusalOf, subSketchMergeRefusalOf } from './sub-sketches';
 import {
   authorsOf,
   clearSketchReport,
@@ -477,7 +477,9 @@ const commitOrderRefusalOf = (options: {
 /** Why `sketch` cannot be merged as it stands - not ready, no valid pick, or a rejected pick - or `null` when it can. */
 export const mergeRefusalOf = (options: { product: ResolvedProduct; sketch: Sketch }) => {
   const { product, sketch } = options;
+  const sub = subSketchMergeRefusalOf(sketch);
 
+  if (sub) return sub;
   if (sketch.status !== 'ready')
     return `${sketch.target} is ${sketch.status} - mark it ready before a merge: design sketch ready ${sketch.target} --by <model id> --product ${product.name}`;
 

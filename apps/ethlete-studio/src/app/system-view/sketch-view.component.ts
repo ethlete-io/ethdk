@@ -44,6 +44,7 @@ import {
   SketchAddress,
   discardSketch$,
   pickSketch$,
+  approveSketch$,
   rejectionOf,
   saveListWidth,
   sketchPartOf,
@@ -247,6 +248,8 @@ const scrollOf = (data: unknown) =>
       [fresh]="!part()"
       [autoMerge]="sketch().autoMergeForecast?.merges === true"
       [merging]="busy() === 'merge'"
+      [subSketch]="!!sketch().parent"
+      [approved]="sketch().approved?.variant ?? null"
       [status]="sketchStatus()"
       [readyReason]="readyReason()"
       [hold]="held()"
@@ -1084,6 +1087,13 @@ export class SketchViewComponent {
     if (this.busy()) return;
 
     this.taken.set(variant);
+
+    if (this.sketch().parent) {
+      this.run('merge', approveSketch$(address, variant));
+
+      return;
+    }
+
     this.merging.emit(true);
     this.mergeError.set(null);
     this.run(

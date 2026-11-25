@@ -536,6 +536,8 @@ export type ListedSketch = {
   parent?: string;
   /** The sketches its pick opened, one per marked sub-part; it does not merge while it has them. Missing from an `@ethlete/cli` older than it. */
   subSketches?: string[];
+  /** On a sub-sketch: the variant the designer approved for the merge of its parent. Missing from an `@ethlete/cli` older than it. */
+  approved?: { variant: string; decidedAt: string };
 };
 
 /** The key of the sketch's first target part; `target` names the sketch, as `pages/flows@edit` does for a direct edit. */
@@ -753,6 +755,12 @@ export const pickSketch$ = (
     sketchUrl({ ...address, path: 'sketch-decision' }),
     postJson({ kind: 'pick', variant }),
   ).pipe(map(({ merged, subSketches = [] }) => ({ merged, subSketches })));
+
+/** Approves `variant` of a sub-sketch; it merges later together with its parent. */
+export const approveSketch$ = (address: SketchAddress, variant: string): Observable<void> =>
+  designAnswer$<unknown>(sketchUrl({ ...address, path: 'sketch-approve' }), postJson({ variant })).pipe(
+    map(() => undefined),
+  );
 
 /** Deletes the sketch with all its variants. */
 export const discardSketch$ = (address: SketchAddress): Observable<void> =>

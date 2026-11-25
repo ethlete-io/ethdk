@@ -1,5 +1,5 @@
 {
-  "apiLevel": 11,
+  "apiLevel": 12,
   "routes": [
     "/__design/calls",
     "/__design/comment",
@@ -30,6 +30,7 @@
     "/__design/registry-slice",
     "/__design/render",
     "/__design/shot",
+    "/__design/sketch-approve",
     "/__design/sketch-crop",
     "/__design/sketch-decision",
     "/__design/sketch-diff",
