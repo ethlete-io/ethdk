@@ -18,6 +18,7 @@ import { DESIGN_DIR, readConfig } from './design-config';
 import { workRootOf } from './work-root';
 import { serveDesign } from './serve';
 import { withRunSignal } from './run-abort';
+import { blankPngOf } from './blank-png';
 import { createShotStore, SHOT_STORE_DIR } from './shot-store';
 import { COMMENT_EVENTS_PATH } from './studio-api';
 import { createSketch, parseTarget } from './system/sketch/sketch';
@@ -346,6 +347,21 @@ describe('the revision Studio keys a stored picture on', () => {
 describe('createShotStore', () => {
   const picture = { png: Buffer.from('png'), marks: [] };
   const address = { product: 'acme', part: 'components/card', sketch: null, props: null };
+
+  it('answers a picture of an older picture code only to readAnyCode, for the size of a tomflix hero variant', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
+    const input = join(dir, 'input.ts');
+    const storeOf = (code: string) =>
+      createShotStore({ dir, salt: '', code, checkout: dir, inputsOf: () => [input], scopeOf: () => '' });
+    const key = JSON.stringify(['part', 'tomflix', 'elements/hero', 'desktop', 'elements/hero', 'a', 'dark']);
+    const hero = { png: blankPngOf(1472, 554), marks: [] };
+
+    writeFileSync(input, 'one');
+    storeOf('older').write(key, { address, picture: hero });
+
+    expect(storeOf('newer').read(key, address)).toBeNull();
+    expect(storeOf('newer').readAnyCode(key, address)?.png).toEqual(hero.png);
+  });
 
   it('keeps no shot written after its run was aborted, so the next run draws it again', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));

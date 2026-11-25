@@ -730,6 +730,7 @@ export const createPartShooter = (options: {
 
   const keptPictureOf = async (
     options: PartAddress & { params: URLSearchParams },
+    anyCode = false,
   ): Promise<{ picture: Picture; source: ShotSource } | null> => {
     const frame = partFrameOf({ system, ...options });
 
@@ -741,7 +742,8 @@ export const createPartShooter = (options: {
     if (drawn) return { picture: drawn, source: 'memory' };
 
     const { product, part, sketch, props } = options;
-    const stored = store?.read(key, { product, part, sketch, props: props ?? null });
+    const address = { product, part, sketch, props: props ?? null };
+    const stored = anyCode ? store?.readAnyCode(key, address) : store?.read(key, address);
 
     return stored ? { picture: stored, source: 'disk' } : null;
   };
@@ -1162,6 +1164,7 @@ export const createPartShooter = (options: {
      * `priority: 'high'` draws it ahead of every shot asked with `priority=low`; `'low'` queues it behind the shots the
      * board shows. Once `signal` aborts, the drawing leaves the queue unless it started or another ask still waits.
      * `kept` answers only a picture drawn before, from memory or disk, and draws nothing: it rejects with a `NotKeptError` when none is kept.
+     * `kept: 'size'` also answers a picture an older picture code drew from the same files, for its size.
      */
     pictureOf: ({
       priority = 'high',
@@ -1173,10 +1176,10 @@ export const createPartShooter = (options: {
       fresh?: boolean;
       priority?: DrawPriority;
       signal?: AbortSignal;
-      kept?: boolean;
+      kept?: boolean | 'size';
     }): Promise<Picture & { source?: ShotSource; drawnAt: number | null }> => {
       if (kept)
-        return keptPictureOf(options).then((found) => {
+        return keptPictureOf(options, kept === 'size').then((found) => {
           if (!found) throw new NotKeptError(`design-explore: no kept picture of ${options.part} ${options.state}`);
 
           return { ...found.picture, source: found.source, drawnAt: null };

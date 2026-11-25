@@ -48,7 +48,7 @@ const sizesOf = ({ product, sketch, drawn }: { product: ResolvedProduct; sketch:
 /**
  * The frame size of each shot of `part` the sketch view shows, read from the pictures drawn before in the default
  * theme: one per state of the product's part and of each variant in `drawn`, at each preset of a page, else each
- * declared width, else fitted. A fitted shot of the product's part without a kept picture takes the size its record in
+ * declared width, else fitted. A picture an older picture code drew from the same files counts as kept. A fitted shot of the product's part without a kept picture takes the size its record in
  * pictures.json holds; any other shot without a kept picture is left out. Nothing is drawn.
  */
 export const shotFramesOf = async ({
@@ -85,7 +85,7 @@ export const shotFramesOf = async ({
         sketch: shot.variant === null ? null : { target: sketch.target, variant: shot.variant },
         interaction: null,
         params: new URLSearchParams({ scheme }),
-        kept: true,
+        kept: 'size',
       }).catch(() => null);
 
       if (picture) return [{ ...shot, frame: pngSizeOf(picture.png) }];

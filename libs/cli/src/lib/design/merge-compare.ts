@@ -45,8 +45,11 @@ export type PictureOf = (options: {
   fresh?: boolean;
   priority?: DrawPriority;
   signal?: AbortSignal;
-  /** Answers only a picture drawn before, from memory or disk, drawing nothing; rejects when none is kept. */
-  kept?: boolean;
+  /**
+   * Answers only a picture drawn before, from memory or disk, drawing nothing; rejects when none is kept. `'size'` also
+   * answers a picture an older picture code drew from the same files, whose size only is current.
+   */
+  kept?: boolean | 'size';
 }) => Promise<SourcedPicture>;
 
 /**

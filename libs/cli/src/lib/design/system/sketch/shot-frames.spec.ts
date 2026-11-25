@@ -94,4 +94,29 @@ describe('shotFramesOf', () => {
 
     expect((await framesOf(productOf())).map(({ state }) => state)).toEqual(['reset']);
   });
+
+  it('sizes each hero variant shot of the tomflix sketch from a picture an older picture code drew', async () => {
+    const { productOf } = checkout();
+    const hero = { target: 'elements/hero', layer: 'elements' } as Sketch;
+    const heights: Record<string, number> = { a: 554, b: 718, c: 640 };
+    const olderCode: PictureOf = async ({ kept, sketch: variant }) => {
+      if (kept !== 'size' || !variant) throw new Error('not kept');
+
+      return { png: blankPngOf(1472, heights[variant.variant] ?? 0) } as SourcedPicture;
+    };
+
+    const frames = await shotFramesOf({
+      product: productOf(),
+      sketch: hero,
+      part: 'elements/hero',
+      drawn: ['a', 'b', 'c'].map((variant) => ({ variant, states: ['desktop'] })),
+      pictureOf: olderCode,
+    });
+
+    expect(frames.map(({ variant, frame }) => [variant, frame])).toEqual([
+      ['a', { width: 1472, height: 554 }],
+      ['b', { width: 1472, height: 718 }],
+      ['c', { width: 1472, height: 640 }],
+    ]);
+  });
 });

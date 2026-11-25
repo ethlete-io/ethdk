@@ -25,6 +25,8 @@ export type StoredAddress = Pick<PartAddress, 'product' | 'part' | 'sketch' | 'p
 /** Pictures kept on disk across server restarts, each served only while every file it was drawn from is unchanged. */
 export type ShotStore = {
   read: (key: string, address: StoredAddress) => Picture | null;
+  /** Like `read`, also answering a picture an older picture code drew from the same files, whose size only is current. */
+  readAnyCode: (key: string, address: StoredAddress) => Picture | null;
   write: (key: string, drawn: { address: StoredAddress; picture: Picture }) => void;
   drop: (key: string) => void;
   /** Marks `key` as drawn by this process until `release`, or null while another live process draws it. */
@@ -46,6 +48,7 @@ type DrawLock = { pid: number; at: number; token: string };
 
 type Entry = {
   key: string;
+  code?: string;
   scope: string;
   inputs: [string, string | null][];
   png: string;
@@ -116,6 +119,8 @@ const realOf = (path: string) => {
 export const createShotStore = (options: {
   dir: string;
   salt: string;
+  /** The picture code a read entry must be drawn by; an `anyCode` read ignores it. */
+  code?: string;
   checkout: string;
   inputsOf: (address: StoredAddress) => string[] | null;
   scopeOf: (address: StoredAddress) => string;
@@ -123,6 +128,7 @@ export const createShotStore = (options: {
   pollMs?: number;
 }): ShotStore => {
   const { dir, salt, inputsOf, scopeOf } = options;
+  const code = options.code ?? '';
   const limit = options.limit ?? SHOT_STORE_LIMIT;
   const pollMs = options.pollMs ?? LOCK_POLL_MS;
   const hashes = new Map<string, { stamp: string; hash: string }>();
@@ -262,11 +268,12 @@ export const createShotStore = (options: {
     }
   };
 
-  const pictureOf = (name: string, wanted: { key: string; scope: string }): Picture | null => {
+  const pictureOf = (name: string, wanted: { key: string; scope: string; anyCode: boolean }): Picture | null => {
     try {
       const entry: unknown = JSON.parse(readFileSync(join(dir, name), 'utf8'));
 
       if (!isEntry(entry) || entry.key !== wanted.key || entry.scope !== wanted.scope) return null;
+      if (!wanted.anyCode && (entry.code ?? '') !== code) return null;
       if (entry.inputs.some(([file, hash]) => hashOf(file) !== hash)) return null;
 
       return {
@@ -281,13 +288,14 @@ export const createShotStore = (options: {
     }
   };
 
-  const read = (key: string, address: StoredAddress) => {
+  const readOf = ({ key, address, anyCode }: { key: string; address: StoredAddress; anyCode: boolean }) => {
     const scope = storedScopeOf(address);
 
     for (const name of variantsOf(key)) {
-      const picture = pictureOf(name, { key, scope });
+      const picture = pictureOf(name, { key, scope, anyCode });
 
       if (!picture) continue;
+      if (anyCode) return picture;
 
       const now = new Date();
 
@@ -348,8 +356,11 @@ export const createShotStore = (options: {
     }
   };
 
+  const read = (key: string, address: StoredAddress) => readOf({ key, address, anyCode: false });
+
   return {
     read,
+    readAnyCode: (key, address) => readOf({ key, address, anyCode: true }),
     write: (key, { address, picture }) => {
       try {
         const files = inputsOf(address);
@@ -360,10 +371,17 @@ export const createShotStore = (options: {
         const inputs = [...new Set(files.map(storedPathOf))]
           .sort()
           .map((file): [string, string | null] => [file, hashOf(file)]);
-        const variant = createHash('sha1').update(scope).update('\n').update(JSON.stringify(inputs)).digest('hex');
+        const variant = createHash('sha1')
+          .update(code)
+          .update('\n')
+          .update(scope)
+          .update('\n')
+          .update(JSON.stringify(inputs))
+          .digest('hex');
         const name = join(keyDirOf(key), `${variant}${ENTRY_SUFFIX}`);
         const entry: Entry = {
           key,
+          code,
           scope,
           inputs,
           png: picture.png.toString('base64'),

@@ -529,9 +529,10 @@ const shotStoreOf = (options: {
   stylesheetImports: StylesheetImports;
   dir: string;
   salt: string;
+  code: string;
   moduleById: (id: string) => ImportingModule | undefined;
 }) => {
-  const { target, config, system, stylesheetImports, dir, salt, moduleById } = options;
+  const { target, config, system, stylesheetImports, dir, salt, code, moduleById } = options;
   const drawnSystemsOf = (address: StoredAddress) => [
     ...new Map(
       [address.sketch, address.props ?? address.sketch].map((sketch) => [JSON.stringify(sketch), sketch]),
@@ -541,6 +542,7 @@ const shotStoreOf = (options: {
   return createShotStore({
     dir,
     salt,
+    code,
     checkout: target,
     inputsOf: (address) => {
       const { product, part } = address;
@@ -567,7 +569,7 @@ const shotStoreOf = (options: {
         ),
       ]);
 
-      // The snapshot folder is named after the server's pid, so its files are gone after a restart; the salt's asset hash covers them.
+      // The snapshot folder is named after the server's pid, so its files are gone after a restart; the picture code's asset hash covers them.
       const snapshots = [...new Set([dirname(assetRoot()), realpathSync(dirname(assetRoot()))])];
 
       return [
@@ -733,7 +735,8 @@ const designExplore = ({
                 system,
                 stylesheetImports,
                 dir: shotCacheDir,
-                salt: designPictureCodeOf(),
+                salt: '',
+                code: designPictureCodeOf(),
                 moduleById: (id) => vite.moduleGraph.getModuleById(id),
               }),
             }
@@ -1433,7 +1436,8 @@ export const createDesignServer = async (options: {
         system,
         stylesheetImports,
         dir,
-        salt: `${designPictureCodeOf()} ${salt}`,
+        salt,
+        code: designPictureCodeOf(),
         moduleById: (id) => server.moduleGraph.getModuleById(id),
       });
     },
