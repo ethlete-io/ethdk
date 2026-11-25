@@ -45,12 +45,12 @@ const basketPill = (count: number) =>
 
 const emptyBasket = `<span class="flex h-8 items-center rounded-full px-space-3 text-ui-sm text-et-surface-muted shadow-[0_0_0_1px_var(--et-surface-border-solid)]">Korb</span>`;
 
-const accountOf = (who: string) =>
+const accountOf = (who: string, place: string) =>
   who === 'member'
-    ? `<span class="flex items-center gap-space-2 text-ui-sm text-et-surface"><span class="flex size-7 items-center justify-center rounded-full bg-et-theme/20 text-ui-xs font-ui-medium text-et-theme-ink">LM</span>Lena</span>`
+    ? `<span class="${place} flex items-center gap-space-2 text-ui-sm text-et-surface"><span class="flex size-7 items-center justify-center rounded-full bg-et-theme/20 text-ui-xs font-ui-medium text-et-theme-ink">LM</span>Lena</span>`
     : who === 'checkout'
-      ? `<span class="flex items-center gap-space-2 text-ui-sm text-et-surface-muted"><span class="text-et-surface">Korb</span>·<span>Lieferung</span>·<span>Zahlung</span></span>`
-      : `<span class="text-ui-sm text-et-surface">Anmelden</span>`;
+      ? `<span class="${place} flex items-center gap-space-2 text-ui-sm text-et-surface-muted"><span class="text-et-surface">Korb</span>·<span>Lieferung</span>·<span>Zahlung</span></span>`
+      : `<span class="${place} text-ui-sm text-et-surface">Anmelden</span>`;
 
 /** Farn's top bar, 1440 px wide: wordmark, shop navigation, search, the account and the basket. */
 export const sampleBar = (state: string, fluid = false) => {
@@ -70,7 +70,7 @@ export const sampleBar = (state: string, fluid = false) => {
     ><svg viewBox="0 0 16 16" class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5" /><path d="m10.5 10.5 3 3" /></svg
     >Pflanzen suchen</span
   >
-  ${accountOf(who)} ${basket ? basketPill(who === 'checkout' ? 3 : 2) : emptyBasket}
+  ${accountOf(who, fluid ? 'ml-auto md:ml-0' : '')} ${basket ? basketPill(who === 'checkout' ? 3 : 2) : emptyBasket}
 </div>`;
 };
 

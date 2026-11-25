@@ -161,6 +161,19 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     expect(new Set(drawings).size).toBe(drawings.length);
   });
 
+  it('pushes the account and the basket to the right of the narrow Farn bar, where the search is hidden', () => {
+    const host = document.createElement('div');
+    host.innerHTML = sampleBar('member', true);
+    const bar = host.querySelector('[data-farn-bar]');
+    const search = bar?.querySelector('[data-farn-search]');
+    const account = search?.nextElementSibling;
+
+    expect(search?.classList.contains('hidden')).toBe(true);
+    expect(account?.textContent).toContain('Lena');
+    expect(account?.classList.contains('ml-auto')).toBe(true);
+    expect(account?.classList.contains('md:ml-0')).toBe(true);
+  });
+
   it('draws the search field as a translucent field with an icon and a placeholder', () => {
     const search = /<span[^>]*data-farn-search[\s\S]*?<\/span/.exec(sampleBar('member'))?.[0] ?? '';
 
