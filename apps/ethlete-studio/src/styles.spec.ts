@@ -1,5 +1,7 @@
 // @vitest-environment node
 import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const stylesPath = fileURLToPath(new URL('./styles.css', import.meta.url));
@@ -73,5 +75,20 @@ describe('styles.css', () => {
     expect(css).toMatch(
       /@layer studio-sdk\s*{[\s\S]*\.et-menu\s*{\s*--et-menu-item-height: var\(--control-md\);\s*--et-menu-item-font-size: var\(--text-md\);/,
     );
+  });
+
+  it('ships every @assets file the stylesheet loads, such as the Source Sans 3 face', () => {
+    const root = fileURLToPath(new URL('../../../', import.meta.url));
+    const project = JSON.parse(readFileSync(join(root, 'apps/ethlete-studio/project.json'), 'utf8')) as {
+      targets: { build: { options: { assets: { input: string; output: string }[] } } };
+    };
+    const inputs = project.targets.build.options.assets
+      .filter(({ output }) => output === '@assets')
+      .map(({ input }) => input);
+    const loaded = [...compileStyles().matchAll(/url\(['"]?@assets\/([^'")]+)/g)].map(([, path]) => path as string);
+    const missing = loaded.filter((path) => !inputs.some((input) => existsSync(join(root, input, path))));
+
+    expect(loaded).toContain('fonts/source-sans-3-latin-wght-normal.woff2');
+    expect(missing).toEqual([]);
   });
 });

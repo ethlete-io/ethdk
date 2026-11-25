@@ -36,6 +36,7 @@
         "tsConfig": "apps/ethlete-studio/tsconfig.app.json",
         "assets": [
           { "glob": "**/*", "input": ".ethlete/design/studio/assets", "output": "@assets" },
+          { "glob": "fonts/**/*", "input": ".ethlete/design/sdk/assets", "output": "@assets" },
           { "glob": "128x128.png", "input": "apps/timetrack/src-tauri/icons", "output": "@assets/timetrack" }
         ],
         "externalDependencies": ["@assets"],
