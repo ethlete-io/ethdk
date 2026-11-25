@@ -6322,11 +6322,22 @@ const drawsSince = (now, before) => ({
 });
 
 const work = async () => {
+  const steps = [];
+  let stepAt = performance.now();
+  const step = (name) => {
+    const now = performance.now();
+
+    steps.push(`${name} ${seconds(now - stepAt).trim()} @${loadavg()[0].toFixed(1)}`);
+    stepAt = now;
+  };
+
   checkout = prepareCheckout();
+  step('checkout');
   process.send({ type: 'checkout', checkout: realpathSync(checkout) });
 
   await withStudio(
     async ({ page, studioUrl, designPort }) => {
+      step('firstPage');
       page.setDefaultTimeout(WAIT_MS);
       const routes = trackRoutes(page);
 
@@ -6354,6 +6365,7 @@ const work = async () => {
       process.send({
         type: 'ready',
         ...draws,
+        steps,
         phases: {
           open: opened,
           fixtures: fixed - opened,
@@ -6415,7 +6427,7 @@ const work = async () => {
         process.send({ type: 'result', ok: result.ok, detail: result.detail, ms, ...drawsSince(draws, drawsBefore) });
       }
     },
-    { built, checkout, echoDesign: true, engine },
+    { built, checkout, echoDesign: true, engine, onStep: step },
   ).finally(() => rmSync(checkout, { recursive: true, force: true }));
 
   process.exit(0);
@@ -6703,6 +6715,8 @@ const lead = async () => {
               .map(([phase, ms]) => `${phase} ${seconds(ms).trim()}`)
               .join(', ')}, ${message.drawn ?? '?'} picture(s) drawn, ${message.waited ?? '?'} waited for`,
           );
+        if (message.type === 'ready' && message.steps)
+          console.log(`[canvas-e2e] worker ${index} open steps (load): ${message.steps.join(', ')}`);
         if (message.type === 'next') void giveJob();
         if (message.type === 'checkout') workerCheckout = message.checkout;
       });

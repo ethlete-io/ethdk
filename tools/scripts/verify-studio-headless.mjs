@@ -281,14 +281,24 @@ export const serveOnlyAnswer = (dir, answer, view) => async (request, response) 
  * stubbed desktop shell. Stops only
  * what it started. `built` serves an existing Studio build folder instead of building one. `restartDesign(downMs)` stops
  * the design server, leaves its port refused for `downMs`, and starts a new one; pin the port with DE_PORT to keep it.
- * `serveOnly: { view }` launches no browser: it serves the Studio build with the same shim, forwarding host commands over `POST /__host`,
+ * `onStep(name)` is called after each open step. `serveOnly: { view }` launches no browser: it serves the Studio build with the same shim, forwarding host commands over `POST /__host`,
  * and calls `run({ studioUrl, designPort })`. `chrome: { value, delayMs }` answers `window_chrome_watch` with `value` after `delayMs`, like the desktop shell does;
  * without it the stubbed shell sends no window chrome and Studio draws no title bar. `host(command, args, designPort)` answers
  * a host command first; `undefined` falls back to the single-checkout stub.
  */
 export const withStudio = async (
   run,
-  { checkout = root, build = true, built, chrome, echoDesign = false, engine = 'chromium', host, serveOnly } = {},
+  {
+    checkout = root,
+    build = true,
+    built,
+    chrome,
+    echoDesign = false,
+    engine = 'chromium',
+    host,
+    serveOnly,
+    onStep,
+  } = {},
 ) => {
   const startedAt = Date.now();
   const stamp = (phase) => console.log(phaseLine(phase, startedAt));
@@ -304,6 +314,7 @@ export const withStudio = async (
     if (build && !built) buildStudio(scratch, stamp);
 
     design = await startDesignServer(checkout, stamp, echoDesign);
+    onStep?.('designServer');
 
     const browserDir = join(built ?? scratch, 'browser');
     const app = serveStatic(
@@ -313,6 +324,7 @@ export const withStudio = async (
     );
     servers.push(app);
     const studioPort = await listen(app);
+    onStep?.('staticServer');
 
     if (serveOnly) return await run({ studioUrl: `http://[::1]:${studioPort}`, designPort: design.port });
 
@@ -322,7 +334,9 @@ export const withStudio = async (
       engine === 'webkit'
         ? await webkit.launch()
         : await chromium.launch({ args: ['--disable-features=LocalNetworkAccessChecks'] });
+    onStep?.('launch');
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    onStep?.('newPage');
     stamp(`${engine} launched`);
 
     await page.exposeFunction('__studioHost', async (command, args) => {
