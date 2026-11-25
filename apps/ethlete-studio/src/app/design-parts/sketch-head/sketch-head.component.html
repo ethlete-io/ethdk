@@ -11,6 +11,7 @@
   [attr.aria-label]="LABELS.toolbar"
   [class.ps-space-3]="hasLead()"
   [class.ps-space-1]="!hasLead()"
+  [attr.aria-busy]="busy() || null"
   class="flex max-w-full items-center gap-space-2 rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg py-space-1 pe-space-1 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
   role="toolbar"
   data-sk-toolbar
@@ -32,7 +33,7 @@
       </ng-template>
     }
     @case ('waiting') {
-      <ethlete-sketch-status-badge status="waiting" />
+      <ethlete-sketch-status-badge [status]="busy() ? 'merging' : 'waiting'" />
     }
     @case ('failed') {
       <span class="flex min-w-0 items-center gap-space-2">
@@ -141,6 +142,7 @@
   @if (commentable() && discardable()) {
     <button
       [pressed]="commentMode()"
+      [disabled]="busy()"
       [attr.aria-label]="SYSTEM_LABELS.comment"
       (click)="commentMode.set(!commentMode())"
       et-icon-button
@@ -175,6 +177,7 @@
     <span #discardAnchor class="relative flex" data-sk-discard>
       <button
         [color]="errorTheme()"
+        [disabled]="busy()"
         [attr.aria-label]="LABELS.discard"
         (click)="discard.emit()"
         et-icon-button

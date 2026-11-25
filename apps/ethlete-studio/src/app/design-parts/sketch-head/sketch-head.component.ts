@@ -46,6 +46,7 @@ export class SketchHeadComponent {
   public error = input<string | null>(null);
   public commentable = input(false);
   public discardable = input(true);
+  public busy = input(false);
   public listError = input(false);
   public rounds = input<SketchRound[]>([]);
   public round = input('');

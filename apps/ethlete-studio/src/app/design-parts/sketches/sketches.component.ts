@@ -253,6 +253,7 @@ export class SketchesComponent {
   public fresh = input(false);
   public empty = input(false, { transform: booleanAttribute });
   public autoMerge = input(false);
+  public merging = input(false);
   public status = input<SketchStatus>('waiting');
   public openPoints = input<OpenPointGroup[]>([]);
   public pointsClosed = model(true);

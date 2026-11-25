@@ -299,6 +299,7 @@
         [error]="errorInRow() ? null : error()"
         [commentable]="comments() !== null"
         [discardable]="discardable()"
+        [busy]="merging()"
         [listError]="!!listError()"
         [rounds]="rounds()"
         [round]="round()"
@@ -471,7 +472,16 @@
     <span #pointsHead class="relative flex flex-wrap items-center gap-space-2">
       @if (take && mergeOpen) {
         <span #take [attr.data-sk-take]="row.key" class="relative flex">
-          <button (click)="askMerge(row)" et-button type="button" variant="outline" size="sm" data-sk-merge>
+          <button
+            [loading]="merging() && row.key === selected()"
+            [disabled]="merging() && row.key !== selected()"
+            (click)="askMerge(row)"
+            et-button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-sk-merge
+          >
             {{ LABELS.merge }}
           </button>
         </span>
