@@ -44,8 +44,18 @@ export const allowedMergeOf = (options: { sketch: Sketch; variant: string; by?: 
 export const humanPickOf = (sketch: Sketch) =>
   sketch.decision?.kind === 'pick' && !isModelId(sketch.decision.by ?? '') ? sketch.decision.variant : undefined;
 
+/** The variant of a pick an agent recorded as its own with `sketch pick`; `merge --allowed-by` writes none. */
+export const agentPickOf = (sketch: Sketch) =>
+  sketch.decision?.kind === 'pick' && sketch.decision.agentPick && isModelId(sketch.decision.by ?? '')
+    ? sketch.decision.variant
+    : undefined;
+
+export const standingPickOf = (sketch: Sketch) => humanPickOf(sketch) ?? agentPickOf(sketch);
+
 const withoutAgentPickOf = (sketch: Sketch): Sketch =>
-  sketch.decision?.kind === 'pick' && humanPickOf(sketch) === undefined ? { ...sketch, decision: undefined } : sketch;
+  sketch.decision?.kind === 'pick' && standingPickOf(sketch) === undefined
+    ? { ...sketch, decision: undefined }
+    : sketch;
 
 export const editRefOf = (options: { target: string; sketch: Sketch; planRef: string }) =>
   options.sketch.target.endsWith('@edit') &&
@@ -99,7 +109,13 @@ export const mergeAndRecord = (options: {
           replaceNote,
           author: by,
           deferRebase: true,
-          ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : decidedBy ? { decidedBy } : {}),
+          ...(allowed
+            ? { decidedBy: `plan: ${allowed.planRef.trim()}` }
+            : decidedBy
+              ? { decidedBy }
+              : agentPickOf(sketch)
+                ? { decidedBy: sketch.decision?.by }
+                : {}),
         });
       },
       finish: (before, sketchDirs) => {
@@ -228,7 +244,7 @@ export const mergeStepOf = (options: {
   if (sketch.status !== 'ready')
     return `${sketch.target} is ${sketch.status} - mark it ready first: design sketch ready ${sketch.target} --by <model id> --product ${product.name}`;
 
-  const picked = humanPickOf(sketch);
+  const picked = standingPickOf(sketch);
   const allowed =
     variant !== undefined && picked === undefined
       ? { variant, planRef: note, editRef: editRefOf({ target, sketch, planRef: note }) }

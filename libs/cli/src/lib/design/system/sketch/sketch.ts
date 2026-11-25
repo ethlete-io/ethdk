@@ -30,7 +30,7 @@ export type SketchTarget = { layer: Layer; name: string; sketch?: string };
 
 /** What the user decided in Studio: a variant to merge, or the whole sketch to drop. */
 export type SketchDecision =
-  | ({ kind: 'pick'; variant: string; comment?: string; decidedAt: string } & Partial<WriteOrigin>)
+  | ({ kind: 'pick'; variant: string; comment?: string; agentPick?: true; decidedAt: string } & Partial<WriteOrigin>)
   | ({ kind: 'discard'; comment?: string; decidedAt: string } & Partial<WriteOrigin>);
 
 /** The designer's approval of a sub-sketch's variant; the parent merges that variant together with its own pick. */
@@ -1637,7 +1637,7 @@ export type SketchVariantVerdict =
   | { kind: 'reopen'; variant: string; reason?: string; by: SketchVerdictBy };
 
 export type SketchDecisionInput =
-  | ({ kind: 'pick'; variant: string; comment?: string } & WriteOrigin)
+  | ({ kind: 'pick'; variant: string; comment?: string; agentPick?: true } & WriteOrigin)
   | ({ kind: 'discard'; comment?: string } & WriteOrigin)
   | SketchVariantVerdict;
 

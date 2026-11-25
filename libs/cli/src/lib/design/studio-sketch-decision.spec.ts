@@ -275,7 +275,7 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
         'elements/hero',
         '--variant',
         'b',
-        '--decided-by',
+        '--mandate',
         'human in chat: b',
         '--product',
         'acme',
@@ -355,7 +355,7 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
     const logs = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { target, sketchDir } = readied(withTwoMarkedVariants);
-    const repick = ['pick', 'elements/hero', '--variant', 'a', '--decided-by', 'human in chat: a after all'];
+    const repick = ['pick', 'elements/hero', '--variant', 'a', '--mandate', 'human in chat: a after all'];
 
     await pick(target, 'b');
 

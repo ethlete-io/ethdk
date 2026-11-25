@@ -3263,7 +3263,7 @@ export default definePart({
           'components/button',
           '--variant',
           'b',
-          '--decided-by',
+          '--mandate',
           `${PERSON} in chat: b`,
           '--product',
           'acme',
@@ -3340,12 +3340,38 @@ export default definePart({
       const said = 'human in chat: nimm b';
 
       expect(
-        await write(target, 'pick', 'components/button', '--variant', 'b', '--decided-by', said, '--product', 'acme'),
+        await write(target, 'pick', 'components/button', '--variant', 'b', '--mandate', said, '--product', 'acme'),
       ).toBe(0);
       expect(lines.join('\n')).toContain('picked and merged components/button variant b into acme');
       expect(existsSync(sketchDir(target))).toBe(false);
       expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
-        'components/button': { variant: 'b', decidedBy: 'user' },
+        'components/button': { variant: 'b', decidedBy: 'claude-opus-5-5' },
+      });
+    });
+
+    it("records an agent pick as the agent's own, never as a person", async () => {
+      const { target } = await readied('a,b');
+      const mandate = 'chat: nimm b';
+
+      expect(
+        await write(target, 'pick', 'components/button', '--variant', 'b', '--mandate', mandate, '--product', 'acme'),
+      ).toBe(0);
+      const merged = readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8');
+
+      expect(JSON.parse(merged)).toMatchObject({ 'components/button': { variant: 'b', decidedBy: 'claude-opus-5-5' } });
+      expect(merged).not.toMatch(/human|"user"/u);
+    });
+
+    it('merges a stored agent pick made with sketch pick, which an allowed-by pick is not', async () => {
+      const { target } = await readied('a,b');
+      const file = join(sketchDir(target), 'sketch.json');
+      const sketch = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+      const decision = { kind: 'pick', variant: 'b', by: 'claude-opus-5-5', agentPick: true, decidedAt: 'now' };
+
+      writeFileSync(file, JSON.stringify({ ...sketch, decision }));
+      expect(await write(target, 'merge', 'components/button', '--product', 'acme')).toBe(0);
+      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
+        'components/button': { variant: 'b', decidedBy: 'claude-opus-5-5' },
       });
     });
 
@@ -3363,7 +3389,7 @@ export default definePart({
           'components/button',
           '--variant',
           'b',
-          '--decided-by',
+          '--mandate',
           'human: b',
           '--product',
           'acme',
@@ -3374,13 +3400,13 @@ export default definePart({
       expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
     });
 
-    it('refuses a pick of an unknown variant, and one without the words', async () => {
+    it('refuses a pick of an unknown variant, and one without a variant', async () => {
       const { target, lines } = await readied('a,b');
       const pick = (...argv: string[]) => write(target, 'pick', 'components/button', ...argv, '--product', 'acme');
 
-      expect(await pick('--variant', 'z', '--decided-by', 'human in chat: z')).toBe(1);
+      expect(await pick('--variant', 'z', '--mandate', 'human in chat: z')).toBe(1);
       expect(lines.pop()).toContain('has no variant "z"');
-      expect(await pick('--variant', 'a')).toBe(1);
+      expect(await pick()).toBe(1);
       expect(lines.pop()).toContain('usage: sketch pick');
       expect(JSON.parse(readFileSync(join(sketchDir(target), 'sketch.json'), 'utf8')).decision).toBeUndefined();
     });
@@ -3399,7 +3425,7 @@ export default definePart({
         'components/button',
         '--variant',
         'a',
-        '--decided-by',
+        '--mandate',
         'human in chat: a',
         '--product',
         'acme',

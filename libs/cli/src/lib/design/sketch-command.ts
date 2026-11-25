@@ -31,6 +31,7 @@ import {
   argsOf,
   authorOf,
   configOf,
+  isModelId,
   NEEDS_AUTHOR,
   oneProductOf,
   productNamesOf,
@@ -63,7 +64,7 @@ import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { embedderCheckAroundMerge } from './system/sketch/merge-embedders';
 import {
   editRefOf,
-  humanPickOf,
+  standingPickOf,
   journaledMergeOf,
   MERGE_WAIT_MS,
   mergeAndRecord,
@@ -152,7 +153,7 @@ export const SKETCH_USAGE = [
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> [--ported <variant>] --by <model id> [--product <name>]',
   'sketch rebase-open --commit <rev> [--product <name>] [--json]',
-  'sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> [--discard-sub-sketches] --by <model id> [--product <name>]',
+  'sketch pick <layer>/<name> --variant <key> [--mandate <quoted chat text>] [--discard-sub-sketches] --by <model id> [--product <name>]',
   'sketch approve <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <role>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
@@ -190,6 +191,8 @@ const FLAG_HELP: Record<string, string> = {
     'the variant the command is about; on merge, the only live variant of a sketch with no pick; on recommend, the variant other sketches draw a new part of this one in; on sub-part, the variant that builds the parts',
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
+  '--mandate':
+    "on pick: the quoted chat text that tells the agent to pick; the pick is recorded as the agent's own (--by), never as a person's",
   '--decided-by':
     "on pick and approve: the designer's words that pick or approve the variant and where they were said, e.g. 'human in chat: take b'; on merge: who picked the variant, as merged.json records it (default user); the role of who picked, e.g. human (never a person name; the command refuses one) - not with --allowed-by",
   '--replace-note': "on merge: also write --note over each target part's note",
@@ -2209,16 +2212,24 @@ const previewed = (context: Context) =>
 
 const picked = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
-    const { '--variant': variant, '--decided-by': decidedBy } = context.args.values;
-    const words = decidedBy?.trim() ?? '';
+    const { '--variant': variant, '--mandate': mandate } = context.args.values;
+    const author = authorOf(context.args);
+    const words = mandate?.trim() ?? '';
 
-    if (context.args.positional.length !== 1 || !variant || !words)
+    if (context.args.positional.length !== 1 || !variant || !author)
       return fail(
-        'usage: sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
+        'usage: sketch pick <layer>/<name> --variant <key> [--mandate <the quoted chat text that tells you to pick>] --by <model id> [--product <name>]',
       );
-    if (hasPersonName(words)) return fail(`--decided-by ${PERSON_NAME_REFUSAL}`);
+    if (!isModelId(author)) return fail(`--by "${author}" is not a model id: a pick here is the agent's own`);
+    if (hasPersonName(words)) return fail(`--mandate ${PERSON_NAME_REFUSAL}`);
 
-    const pick = { kind: 'pick' as const, variant, comment: words, ...originOf('designer') };
+    const pick = {
+      kind: 'pick' as const,
+      variant,
+      agentPick: true as const,
+      ...(words ? { comment: words } : {}),
+      ...originOf(author),
+    };
 
     const pickNow = async (picking: Sketch) => {
       const afterMerge = await embedderCheckAroundMerge({
@@ -2234,7 +2245,8 @@ const picked = (context: Context) =>
           config: context.config,
           product,
           sketch: picking,
-          by: authorOf(context.args) ?? undefined,
+          by: author,
+          decidedBy: author,
           pick,
         }),
       );
@@ -2323,7 +2335,7 @@ const merged = (context: Context) =>
 
     const by = authorOf(context.args) ?? undefined;
     const allowed =
-      flagVariant !== undefined && planRef !== undefined && humanPickOf(sketch) === undefined
+      flagVariant !== undefined && planRef !== undefined && standingPickOf(sketch) === undefined
         ? { variant: flagVariant, planRef, editRef: editRefOf({ target: context.target, sketch, planRef }) }
         : undefined;
     if (sketch.decision?.kind === 'pick' && sketch.decision.by && sketch.decision.by !== 'designer')
@@ -2337,7 +2349,7 @@ const merged = (context: Context) =>
         config: context.config,
         product,
         sketch,
-        variant: allowed?.variant ?? humanPickOf(sketch),
+        variant: allowed?.variant ?? standingPickOf(sketch),
       });
       const result = timedPhase('merge', () =>
         mergeAndRecord({
