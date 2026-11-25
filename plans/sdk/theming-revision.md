@@ -1,6 +1,6 @@
 # Theming-Revision (B757)
 
-Stand: 26.11.2026. Status: **Zielbild neu geschrieben, Bestätigung durch Tom offen.** Kein
+Stand: 26.11.2026. Status: **Entschieden (Tom, 26.11.), bereit für die Queue.** Kein
 Builder-Start vorher.
 
 **Maßstab der Revision (Tom, 26.11.): Das System wird kleiner und erklärbar, nicht größer.** Ein
@@ -354,9 +354,37 @@ Demo-App, nicht dem SDK.
 - **Pixelgleichheit beim Wechsel der Deckkraft-Schreibweise** (`rgb(tripel / a)` →
   `color-mix()`): rechnerisch gleich, wird in Schritt 1 am Bildvergleich belegt, nicht angenommen.
 
+## 7a. Nachträge: was die Umbenennung außerdem trifft
+
+Am 26.11. nach der Bestätigung geprüft („haben wir sonst noch was übersehen?“). Gehört in die
+Schritte, in denen es anfällt; keine neue Entscheidung nötig.
+
+- **Das Wort `color` steckt auch in der TS-API und den Generatoren**, nicht nur in Tokens:
+  `ColorTheme`, `provideColorThemes`, `colorThemeVariants`, `injectSemanticColorTheme`, Generator
+  `tailwind-4-color-theme`, CSS-Klasse `.et-color--<name>` ✔. Alles wird `tone` (Schritt 1, S9),
+  mit Auto-Migration. `provideColorPalette` (Chart-Farben) behält seinen Namen.
+- **Die reservierte Farbe `surface`** (`etProvideColor="surface"`) wird `etTone="neutral"`
+  (Arbeitsname): „Ton surface“ würde die zwei Begriffe wieder vermischen.
+- **cdk ist nicht unberührt**: 4 Dateien nutzen die alten Namen ✔. Wartungsmodus heißt hier
+  mitmigrieren, nicht umbauen. Ebenso query-devtools (6 Dateien ✔) und libs/cli (48 Dateien ✔:
+  Studio-Design-Sheets, Skeleton, Migrationen).
+- **Agent-Regeln und Skills schreiben die alten Namen vor** (`libs/agent-rules/content` 5 Dateien,
+  `.agents/skills` 4 ✔, dazu der generierte Block in `AGENTS.md`). Sie müssen **im selben Schritt**
+  wie die Umbenennung wechseln, nicht erst in Schritt 6, sonst schreiben Agenten am nächsten Tag
+  wieder alte Namen. Dasselbe gilt für die Lint-Regeln in `@ethlete/eslint-plugin`.
+- **Schatten- und Scrim-Farben** (`--et-shadow-color-rgb`, `--et-scrim-color-rgb` ✔) fehlen im
+  Bestand. Sie folgen der Regel „ein Name, ein Farbwert“ (Schritt 1).
+- **Schritt 1 ist eine Umbenennung über das ganze Repo** und kollidiert mit jeder parallelen
+  Agenten-Session. Er braucht ein Fenster, in dem sonst niemand an `libs/` schreibt, und läuft in
+  einem Zug (Migration auf das eigene Repo anwenden, dann von Hand nachziehen).
+- **Die eigene Migration zuerst am SDK-Repo beweisen**: Storybook, docs-examples, Studio und
+  Timetrack sind die ersten Konsumenten von `et update`, vor fifagg.
+- **Annahme: fifagg und fut sind die einzigen externen Konsumenten.** Gibt es weitere, brauchen
+  sie dieselbe Reihenfolge (Bildaufnahme, `et update`, Vergleich).
+
 ## 8. Entscheidungen
 
-Offen: Toms Bestätigung des gesamten Zielbilds (Abschnitte 3 bis 6).
+Offen: nichts. Tom hat das Zielbild am 26.11. bestätigt („passt“).
 
 Entschieden:
 
