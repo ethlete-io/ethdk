@@ -74,7 +74,12 @@
     "decidedBy": "user",
     "at": "2026-11-21T02:21:10.888Z"
   },
-  "components/tree-row": "bf7bd4857a66660a",
+  "components/tree-row": {
+    "hash": "b9948bc4274ccbeb",
+    "variant": "new",
+    "decidedBy": "user",
+    "at": "2026-11-25T14:48:44.615Z"
+  },
   "components/update-dialog": {
     "hash": "63ad322093769a56",
     "variant": "new",

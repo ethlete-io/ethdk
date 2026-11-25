@@ -102,10 +102,10 @@
     "pages/inventory": "bb84266858a56467",
     "pages/sketches": "f8f43d7d59c6a76a",
     "pages/start": "414940d2e574c435",
-    "pages/system": "40ad5ffbd085dc6a",
+    "pages/system": "7c8b56a05369bb87",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "d2a5bb0f3be1fab25da98bd988adeeff12e0bd03",
+  "baselineTree": "0eaa3b8388961dc35ae2a9fcce9ac24d232cf5f0",
   "editOldCommit": "9e852b32fbba7768f7c2224af05ee066726b8ce6",
   "sharedBase": {
     "pages/system/shared/build-ready.ts": "7f8a75a45586230d",
@@ -136,5 +136,14 @@
   "readyContent": {
     "new": "24310e22bccec0f1",
     "old": "45c03f60b9f83c5d"
+  },
+  "portAfterMerge": {
+    "merged": ["components/tree-row"],
+    "parts": ["pages/system"],
+    "reasons": [
+      "new: IMPORT .ethlete/design/studio/sketches/pages-system.edit/new/pages/system/system.ts: \"../../../../../apps/ethlete-studio/src/app/design-harness/sample-product\" leaves the part's folder - import another part as @system/<layer>/<name>",
+      "old: OWN-PART-IN-FRAME .ethlete/design/studio/sketches/pages-system.edit/old/shared/many-states.ts: line 11 draws components/tree-row across its states as frame content on the canvas - a frame shows an invented sample product, not a part of studio: render the sample's markup instead"
+    ],
+    "at": "2026-11-25T14:49:03.439Z"
   }
 }
