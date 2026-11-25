@@ -1,6 +1,7 @@
 import brandLoaderBase from '../src/lib/loader/brand-loader/brand-loader.component.css?inline';
 import progressBarBase from '../src/lib/loader/progress-bar/progress-bar.component.css?inline';
 import spinnerBase from '../src/lib/loader/spinner/spinner-styles.component.css?inline';
+import { spinnerSweepDashes } from '../src/lib/loader/spinner/spinner-sweep-dashes';
 
 const BASE_STROKE_WIDTH = 10;
 
@@ -88,17 +89,19 @@ export const spinner = (options: SpinnerMockOptions = {}) => {
   const strokePercent = (strokeWidth / diameter) * 100;
   const determinate = options.value !== undefined;
 
-  type Graphic = { graphic: string; circle?: string; offset?: number; hidden?: boolean };
+  type Graphic = { graphic: string; circle?: string; dash?: string; offset?: number; hidden?: boolean };
 
-  const svg = ({ graphic, circle, offset, hidden }: Graphic) => {
+  const svg = ({ graphic, circle, dash = `${circumference}px`, offset, hidden }: Graphic) => {
     const dashOffset = offset === undefined ? '' : ` stroke-dashoffset: ${offset}px;`;
-    const circleStyle = `style="stroke-dasharray: ${circumference}px;${dashOffset} stroke-width: ${strokePercent}%"`;
+    const circleStyle = `style="stroke-dasharray: ${dash};${dashOffset} stroke-width: ${strokePercent}%"`;
     const circleClass = circle ? ` class="${circle}"` : '';
 
     return `<svg viewBox="0 0 ${box} ${box}" class="${graphic}" xmlns="http://www.w3.org/2000/svg" focusable="false"${hidden ? ' aria-hidden="true"' : ''}><circle r="${radius}"${circleClass} cx="50%" cy="50%" ${circleStyle}></circle></svg>`;
   };
 
-  const circle = svg({ graphic: 'et-spinner-circle-graphic', offset: circumference / 2 });
+  const sweepDashes = spinnerSweepDashes(circumference);
+  const sweepCircle = (part: keyof typeof sweepDashes) =>
+    svg({ graphic: 'et-spinner-circle-graphic', ...sweepDashes[part] });
   const track = options.track
     ? `<div class="et-spinner-track-container" aria-hidden="true">${svg({ graphic: 'et-spinner-track-graphic', circle: 'et-spinner-track-circle' })}</div>`
     : '';
@@ -109,7 +112,7 @@ export const spinner = (options: SpinnerMockOptions = {}) => {
         offset: circumference - (clamp(options.value ?? 0) / 100) * circumference,
         hidden: true,
       })
-    : `<div class="et-spinner-indeterminate"><div class="et-spinner-indeterminate-container" aria-hidden="true"><div class="et-spinner-layer"><div class="et-spinner-circle-clipper et-spinner-circle-left">${circle}</div><div class="et-spinner-gap-patch">${circle}</div><div class="et-spinner-circle-clipper et-spinner-circle-right">${circle}</div></div></div></div>`;
+    : `<div class="et-spinner-indeterminate"><div class="et-spinner-indeterminate-container" aria-hidden="true"><div class="et-spinner-layer"><div class="et-spinner-circle-clipper et-spinner-circle-left">${sweepCircle('left')}</div><div class="et-spinner-gap-patch">${sweepCircle('gap')}</div><div class="et-spinner-circle-clipper et-spinner-circle-right">${sweepCircle('right')}</div></div></div></div>`;
 
   const classes = colorClasses('et-spinner', options.color) + (determinate ? ' et-spinner--determinate' : '');
   const attributes = [

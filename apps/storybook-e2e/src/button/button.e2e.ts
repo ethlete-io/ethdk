@@ -390,3 +390,96 @@ test.describe('button / loading look', () => {
     });
   }
 });
+
+const SWEEP_PERIOD_MS = 2800;
+const SWEEP_SAMPLES = 40;
+
+async function spinnerStray(page: Page, spinner: Locator, label: string): Promise<string | null> {
+  const clip = await spinner.boundingBox();
+  const stray = clip ? await strayPixels(page, await page.screenshot({ clip, animations: 'allow' })) : 0;
+
+  return stray > 0 ? `${label}: ${stray} px` : null;
+}
+
+async function strayPixels(page: Page, png: Buffer): Promise<number> {
+  return page.evaluate(async (base64) => {
+    const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${base64}`)).blob());
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const context = canvas.getContext('2d');
+
+    if (!context) throw new Error('No 2d context for the spinner frame');
+
+    context.drawImage(bitmap, 0, 0);
+    const { data, width, height } = context.getImageData(0, 0, bitmap.width, bitmap.height);
+    const painted = new Uint8Array(width * height);
+
+    for (let i = 0; i < width * height; i++) {
+      const diff = [0, 1, 2].reduce((sum, c) => sum + Math.abs((data[i * 4 + c] ?? 0) - (data[c] ?? 0)), 0);
+      painted[i] = diff > 60 ? 1 : 0;
+    }
+
+    const sizes: number[] = [];
+    const seen = new Uint8Array(width * height);
+
+    for (let start = 0; start < width * height; start++) {
+      if (!painted[start] || seen[start]) continue;
+
+      const stack = [start];
+      seen[start] = 1;
+      let size = 0;
+
+      for (let i = stack.pop(); i !== undefined; i = stack.pop()) {
+        const x = i % width;
+        const y = Math.floor(i / width);
+        size++;
+
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            const j = ny * width + nx;
+
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height || !painted[j] || seen[j]) continue;
+
+            seen[j] = 1;
+            stack.push(j);
+          }
+        }
+      }
+
+      sizes.push(size);
+    }
+
+    return sizes.reduce((sum, size) => sum + size, 0) - Math.max(0, ...sizes);
+  }, png.toString('base64'));
+}
+
+test.describe('button / loading spinner', () => {
+  test('the spinner paints nothing outside its arc at any phase of the sweep', async ({ page }) => {
+    test.setTimeout(120_000);
+    const root = await openStory(page, 'components-actions-button-surface--loading');
+    const spinners = root.locator("button[et-button][data-variant='filled'] .et-button-loader-spinner");
+    await expect(spinners.first()).toBeVisible();
+    await settle(page, 400);
+
+    const strays: (string | null)[] = [];
+    const count = await spinners.count();
+
+    for (let sample = 0; sample < SWEEP_SAMPLES; sample++) {
+      const time = (sample / SWEEP_SAMPLES) * SWEEP_PERIOD_MS;
+
+      await root.evaluate((el, at) => {
+        for (const animation of el.getAnimations({ subtree: true })) {
+          animation.pause();
+          animation.currentTime = at;
+        }
+      }, time);
+
+      for (let index = 0; index < count; index++) {
+        strays.push(await spinnerStray(page, spinners.nth(index), `spinner ${index} at ${Math.round(time)}ms`));
+      }
+    }
+
+    expect(strays.filter(Boolean)).toEqual([]);
+  });
+});

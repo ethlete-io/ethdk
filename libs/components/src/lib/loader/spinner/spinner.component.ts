@@ -12,6 +12,7 @@ import { injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import { clampProgress, progressOrNull } from '../clamp-progress';
 import { injectLoaderName } from '../inject-loader-name';
 import { SpinnerStylesComponent } from './spinner-styles.component';
+import { spinnerSweepDashes } from './spinner-sweep-dashes';
 
 const BASE_STROKE_WIDTH = 10;
 const DEFAULT_DIAMETER = 18;
@@ -30,7 +31,7 @@ const optionalNumber = (value: unknown) =>
 @Component({
   selector: 'et-spinner',
   template: `
-    <ng-template #circle>
+    <ng-template #circle let-dash="dash" let-offset="offset">
       <svg
         [attr.viewBox]="viewBox()"
         class="et-spinner-circle-graphic"
@@ -39,8 +40,8 @@ const optionalNumber = (value: unknown) =>
       >
         <circle
           [attr.r]="circleRadius()"
-          [style.stroke-dasharray.px]="strokeCircumference()"
-          [style.stroke-dashoffset.px]="strokeCircumference() / 2"
+          [style.stroke-dasharray]="dash"
+          [style.stroke-dashoffset.px]="offset"
           [style.stroke-width.%]="normalizedStrokeWidth()"
           cx="50%"
           cy="50%"
@@ -91,13 +92,13 @@ const optionalNumber = (value: unknown) =>
         <div class="et-spinner-indeterminate-container" aria-hidden="true">
           <div class="et-spinner-layer">
             <div class="et-spinner-circle-clipper et-spinner-circle-left">
-              <ng-container [ngTemplateOutlet]="circle" />
+              <ng-container [ngTemplateOutlet]="circle" [ngTemplateOutletContext]="sweepDashes().left" />
             </div>
             <div class="et-spinner-gap-patch">
-              <ng-container [ngTemplateOutlet]="circle" />
+              <ng-container [ngTemplateOutlet]="circle" [ngTemplateOutletContext]="sweepDashes().gap" />
             </div>
             <div class="et-spinner-circle-clipper et-spinner-circle-right">
-              <ng-container [ngTemplateOutlet]="circle" />
+              <ng-container [ngTemplateOutlet]="circle" [ngTemplateOutletContext]="sweepDashes().right" />
             </div>
           </div>
         </div>
@@ -170,6 +171,8 @@ export class SpinnerComponent {
   });
 
   protected strokeCircumference = computed(() => 2 * Math.PI * this.circleRadius());
+
+  protected sweepDashes = computed(() => spinnerSweepDashes(this.strokeCircumference()));
 
   protected clampedValue = computed(() => clampProgress(this.value() ?? 0));
 
