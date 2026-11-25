@@ -338,9 +338,8 @@ const MANY_TARGETS = [
   'pages/merge',
 ];
 
-/** A sketch with several parts on the narrow sample: its round title as head, its targets under it in the tree. */
+/** A sketch with several parts on the narrow sample: its targets under it in the tree. */
 export const sketchMultiSampleOf = (count: 'three' | 'many') => ({
-  heading: 'Kopf-Tags in einem Stil',
   tree: {
     sketches: {
       open: true,

@@ -1,5 +1,7 @@
+import { reflectComponentType } from '@angular/core';
 import { PartTree } from '../design-parts/part-tree/part-tree.component';
 import { cropGroupsOf } from '../design-parts/sketches/sketch-crops';
+import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchRow } from '../design-parts/sketches/sketches-sample';
 import { LISTING_ERROR_SAMPLE } from '../design-parts/system-page/system-page-sample';
 import { DESIGN_HARNESS_SAMPLES } from './design-harness-samples';
@@ -103,6 +105,13 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     expect(props['part']).toBe('components/many-states');
     expect((props['rows'] as SketchRow[]).map((row) => row.shots.length)).toEqual([30, 30, 30]);
     expect(tree.layers[0]?.parts.find(({ selected }) => selected)?.name).toBe('many-states');
+  });
+
+  it.each(['three', 'many'])('feeds the multi-part sample %s only inputs the sketches page declares', (multi) => {
+    const inputs = new Set(reflectComponentType(SketchesComponent)?.inputs.map(({ templateName }) => templateName));
+    const props = sketchesOf({ camera: 'fit', part: 'narrow', multi });
+
+    expect(Object.keys(props).filter((key) => !inputs.has(key))).toEqual([]);
   });
 
   it('turns the listing-error flag into the server reason', () => {
