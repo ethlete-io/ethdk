@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{Duration, SystemTime};
@@ -7,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use tauri::ipc::Channel;
 use tauri::State;
 
-use crate::call_status::checks_dir;
 use crate::design_roots::{add_root, DesignRoots};
 use crate::error::StudioResult;
 
@@ -24,6 +24,24 @@ struct Request {
 struct Reply {
     ok: bool,
     message: String,
+}
+
+/// The folder where `et design studio open` requests wait for Studio. It must survive a reboot, so it is not the temp
+/// folder, and it must match `openRequestsDirOf` in `libs/cli/src/lib/design/studio-open.ts`.
+fn open_requests_dir_of(os: &str, var: impl Fn(&str) -> Option<OsString>) -> PathBuf {
+    let set = |key: &str| var(key).filter(|value| !value.is_empty()).map(PathBuf::from);
+    let home = || set(if os == "windows" { "USERPROFILE" } else { "HOME" }).unwrap_or_default();
+    let base = match os {
+        "windows" => set("LOCALAPPDATA").unwrap_or_else(|| home().join("AppData").join("Local")),
+        "macos" => home().join("Library").join("Application Support"),
+        _ => set("XDG_STATE_HOME").unwrap_or_else(|| home().join(".local").join("state")),
+    };
+
+    base.join("ethlete-studio").join("open-requests")
+}
+
+fn open_requests_dir() -> PathBuf {
+    open_requests_dir_of(std::env::consts::OS, |key| std::env::var_os(key))
 }
 
 /// The watch over the request folder one window armed. Arming it again replaces the one before it.
@@ -140,7 +158,7 @@ pub fn design_open_watch(
 
     *slot = None;
     *slot = Some(watch_requests(
-        &checks_dir(),
+        &open_requests_dir(),
         move |checkout| add_root(&app, checkout),
         move |checkout| {
             let _ = requests.send(checkout);
@@ -156,6 +174,37 @@ mod tests {
     use crate::error::StudioError;
     use std::sync::{Arc, Mutex as StdMutex};
     use std::time::{Duration, Instant};
+
+    fn env_of<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<OsString> + 'a {
+        move |key| {
+            pairs
+                .iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| OsString::from(value))
+        }
+    }
+
+    #[test]
+    fn requests_wait_in_a_folder_that_survives_a_reboot_per_os() {
+        assert_eq!(
+            open_requests_dir_of("linux", env_of(&[("HOME", "/home/a")])),
+            PathBuf::from("/home/a/.local/state/ethlete-studio/open-requests")
+        );
+        assert_eq!(
+            open_requests_dir_of("linux", env_of(&[("HOME", "/home/a"), ("XDG_STATE_HOME", "/state")])),
+            PathBuf::from("/state/ethlete-studio/open-requests")
+        );
+        assert_eq!(
+            open_requests_dir_of("macos", env_of(&[("HOME", "/Users/a")])),
+            PathBuf::from("/Users/a/Library/Application Support/ethlete-studio/open-requests")
+        );
+        assert_eq!(
+            open_requests_dir_of("windows", env_of(&[("LOCALAPPDATA", "C:/Users/a/AppData/Local")])),
+            PathBuf::from("C:/Users/a/AppData/Local")
+                .join("ethlete-studio")
+                .join("open-requests")
+        );
+    }
 
     fn a_dir(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("ethlete-studio-{}-{name}", std::process::id()));

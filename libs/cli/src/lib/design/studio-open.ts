@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { randomUUID } from 'crypto';
-import { join, resolve } from 'path';
+import { homedir } from 'os';
+import { join, posix, resolve, win32 } from 'path';
 import { firstValueFrom, timer } from 'rxjs';
-import { checksDirOf } from './call-status-path';
 import { configPathOf } from './design-config';
 import { failedText } from './failure-line';
 
@@ -15,6 +15,24 @@ const DEFAULT_POLL_MS = 50;
 export const STUDIO_OPEN_QUEUED_EXIT = 3;
 
 type Reply = { ok: boolean; message: string };
+
+/**
+ * The folder where `studio open` requests wait for Studio. It must survive a reboot, so it is not the temp folder, and
+ * it must match `open_requests_dir` in `apps/ethlete-studio/src-tauri/src/studio_open.rs`.
+ */
+export const openRequestsDirOf = ({
+  platform = process.platform,
+  env = process.env,
+  home = homedir(),
+}: { platform?: NodeJS.Platform; env?: NodeJS.ProcessEnv; home?: string } = {}) => {
+  if (platform === 'win32')
+    return win32.join(env['LOCALAPPDATA'] || win32.join(home, 'AppData', 'Local'), 'ethlete-studio', 'open-requests');
+
+  if (platform === 'darwin')
+    return posix.join(home, 'Library', 'Application Support', 'ethlete-studio', 'open-requests');
+
+  return posix.join(env['XDG_STATE_HOME'] || posix.join(home, '.local', 'state'), 'ethlete-studio', 'open-requests');
+};
 
 const wait = (ms: number) => firstValueFrom(timer(ms));
 
@@ -32,13 +50,13 @@ const replyOf = (path: string): Reply | null => {
  * Asks a running Studio to keep `checkout` and show it. The request is a file in the folder Studio watches
  * (`apps/ethlete-studio/src-tauri/src/studio_open.rs`); both sides must agree on the suffixes. No reply means no Studio: the request stays, and Studio adds the checkout when it next starts.
  */
-const requestOpen = async (options: { checkout: string; checksDir: string; timeoutMs: number; pollMs: number }) => {
-  const { checkout, checksDir, timeoutMs, pollMs } = options;
+const requestOpen = async (options: { checkout: string; requestsDir: string; timeoutMs: number; pollMs: number }) => {
+  const { checkout, requestsDir, timeoutMs, pollMs } = options;
   const id = randomUUID();
-  const request = join(checksDir, `${id}${REQUEST_SUFFIX}`);
-  const replyPath = join(checksDir, `${id}${REPLY_SUFFIX}`);
+  const request = join(requestsDir, `${id}${REQUEST_SUFFIX}`);
+  const replyPath = join(requestsDir, `${id}${REPLY_SUFFIX}`);
 
-  mkdirSync(checksDir, { recursive: true });
+  mkdirSync(requestsDir, { recursive: true });
   writeFileSync(request, JSON.stringify({ checkout }));
 
   const deadline = Date.now() + timeoutMs;
@@ -67,7 +85,7 @@ export const designStudio = async (options: {
   target: string;
   argv: string[];
   invocation: string;
-  checksDir?: string;
+  requestsDir?: string;
   timeoutMs?: number;
   pollMs?: number;
 }) => {
@@ -102,7 +120,7 @@ export const designStudio = async (options: {
 
   const reply = await requestOpen({
     checkout,
-    checksDir: options.checksDir ?? checksDirOf(),
+    requestsDir: options.requestsDir ?? openRequestsDirOf(),
     timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     pollMs: options.pollMs ?? DEFAULT_POLL_MS,
   });
