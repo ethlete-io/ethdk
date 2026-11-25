@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { writeJsonFile } from '../../json-file';
 import { dirname, resolve } from 'path';
 import { chromiumOf } from '../browser';
+import { pngSizeOf } from '../contact-sheet';
 import { DesignConfig } from '../design-config';
 import { createPartShooter } from '../shot';
 import { yieldRun } from '../run-yield';
@@ -39,12 +40,21 @@ export const PICTURES_FILE = 'pictures.json';
 /** The sha16 of each state's picture, under the state name. */
 export type StatePictures = Record<string, string>;
 
+/** The size of each state's picture, fitted without the frame padding, under the state name. */
+export type StateSizes = Record<string, { width: number; height: number }>;
+
 /**
- * The pictures of a part's states at a hash, and `partHash`, the part hash `merged.json` keeps, they were drawn at.
- * Pictures without `slots` were drawn with slots emptied and cannot prove that slot content is unchanged, so they are
- * read as missing.
+ * The pictures of a part's states at a hash, and `partHash`, the part hash `merged.json` keeps, they were drawn at, with
+ * the size of each picture in `sizes`. Pictures without `slots` were drawn with slots emptied and cannot prove that slot
+ * content is unchanged, so they are read as missing.
  */
-export type AcceptedPictures = { hash: string; states: StatePictures; slots: true; partHash?: string };
+export type AcceptedPictures = {
+  hash: string;
+  states: StatePictures;
+  slots: true;
+  partHash?: string;
+  sizes?: StateSizes;
+};
 
 /** `record` is drawn at the part's design hash while it is merged and unchanged since. */
 export type PartPictures = { record?: AcceptedPictures };
@@ -52,6 +62,7 @@ export type PartPictures = { record?: AcceptedPictures };
 /**
  * Draws every state of each part as `design compare` draws its design side, and answers per part with the picture
  * hash of each state or why it could not be drawn. A state that differs from `expected` is drawn once more, fresh.
+ * `sizes` gets the size of each drawn picture per part.
  */
 export type DrawStates = (options: {
   target: string;
@@ -61,6 +72,7 @@ export type DrawStates = (options: {
   expected?: Record<string, StatePictures>;
   sketch?: SketchVariant;
   warm?: WarmDraw;
+  sizes?: Map<string, StateSizes>;
 }) => Promise<Map<string, StatePictures | string>>;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -69,13 +81,26 @@ const picturesFileOf = (dir: string) => resolve(productCacheDirOf(dir), PICTURES
 
 const committedPicturesFileOf = (dir: string) => resolve(dir, PICTURES_FILE);
 
+const isSizes = (value: unknown): value is StateSizes =>
+  !!value &&
+  typeof value === 'object' &&
+  !Array.isArray(value) &&
+  Object.values(value).every(
+    (size: unknown) =>
+      !!size &&
+      typeof size === 'object' &&
+      typeof (size as Record<string, unknown>)['width'] === 'number' &&
+      typeof (size as Record<string, unknown>)['height'] === 'number',
+  );
+
 const isAccepted = (value: unknown): value is AcceptedPictures => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, states, slots, partHash } = value as Record<string, unknown>;
+  const { hash, states, slots, partHash, sizes } = value as Record<string, unknown>;
 
   return (
     typeof hash === 'string' &&
+    (sizes === undefined || isSizes(sizes)) &&
     slots === true &&
     (partHash === undefined || typeof partHash === 'string') &&
     !!states &&
@@ -140,7 +165,16 @@ export const changedStatesOf = (before: StatePictures, now: StatePictures) =>
     .filter((state) => before[state] !== now[state])
     .sort((a, b) => a.localeCompare(b));
 
-export const drawStatePictures: DrawStates = async ({ target, config, product, parts, expected, sketch, warm }) => {
+export const drawStatePictures: DrawStates = async ({
+  target,
+  config,
+  product,
+  parts,
+  expected,
+  sketch,
+  warm,
+  sizes,
+}) => {
   const drawn = new Map<string, StatePictures | string>();
 
   if (parts.length === 0) return drawn;
@@ -157,7 +191,7 @@ export const drawStatePictures: DrawStates = async ({ target, config, product, p
       const pictures = createPartShooter({ target, base, system, queue });
 
       try {
-        await drawPartsWith({ server, system, pictures, product, parts, expected, sketch, drawn });
+        await drawPartsWith({ server, system, pictures, product, parts, expected, sketch, drawn, sizes });
       } finally {
         if (!warm) await pictures.close();
       }
@@ -178,6 +212,7 @@ const drawPartsWith = async (options: {
   expected?: Record<string, StatePictures>;
   sketch?: SketchVariant;
   drawn: Map<string, StatePictures | string>;
+  sizes?: Map<string, StateSizes>;
 }) => {
   const { server, system, pictures, product, parts, expected, sketch, drawn } = options;
 
@@ -206,25 +241,27 @@ const drawPartsWith = async (options: {
         default?: { states?: unknown };
       };
       const states = await drawnStateNamesOf(module.default, found?.cssSource ?? null);
-      const pictureOf = async (state: string, fresh: boolean) =>
-        sha16(
-          (
-            await pictures.pictureOf({
-              product: product.name,
-              part,
-              state,
-              preset: frame.preset,
-              width: null,
-              sketch: sketch ?? null,
-              interaction: null,
-              bare: true,
-              emptySlots: false,
-              checker: true,
-              params: new URLSearchParams(),
-              fresh,
-            })
-          ).png,
-        );
+      const sized: StateSizes = {};
+      const pictureOf = async (state: string, fresh: boolean) => {
+        const { png } = await pictures.pictureOf({
+          product: product.name,
+          part,
+          state,
+          preset: frame.preset,
+          width: null,
+          sketch: sketch ?? null,
+          interaction: null,
+          bare: true,
+          emptySlots: false,
+          checker: true,
+          params: new URLSearchParams(),
+          fresh,
+        });
+
+        sized[state] = pngSizeOf(png);
+
+        return sha16(png);
+      };
       if (states.length === 0) {
         drawn.set(part, `${part} has no states`);
         continue;
@@ -240,6 +277,7 @@ const drawPartsWith = async (options: {
       }
 
       drawn.set(part, hashes);
+      options.sizes?.set(part, sized);
     } catch (error) {
       drawn.set(part, messageOf(error));
     }
@@ -446,7 +484,7 @@ export const autoAcceptOf = async (options: {
         rewordEditNotes(editSketch);
         edits.push({ part: resolved, design, baseline: old, sketch: editSketch });
       } else heads.push({ part: resolved, design, sketch: editSketch, recheck: true });
-    } else if (!pictures.record || !designHolds(pictures.record.hash, designHash))
+    } else if (!pictures.record?.sizes || !designHolds(pictures.record.hash, designHash))
       records.push({ part: resolved, design, baseline: null });
   }
 
@@ -479,11 +517,17 @@ export const autoAcceptOf = async (options: {
 
   if (needs.length === 0) return lines;
 
+  const sizes = new Map<string, StateSizes>();
   const cached = new Map(
-    needs.flatMap(({ part }) => {
+    needs.flatMap(({ part, baseline }) => {
       const states = cache.read(part, partHashNowOf(part));
+      const sized = cache.sizesOf(part, partHashNowOf(part));
 
-      return states ? [[partKeyOf(part), states] as const] : [];
+      if (!states || (!sized && !baseline)) return [];
+
+      if (sized) sizes.set(partKeyOf(part), sized);
+
+      return [[partKeyOf(part), states] as const];
     }),
   );
   const toDraw = needs.filter(({ part }) => !cached.has(partKeyOf(part)));
@@ -496,6 +540,7 @@ export const autoAcceptOf = async (options: {
           config,
           product,
           warm,
+          sizes,
           parts: toDraw.map(({ part }) => partKeyOf(part)),
           expected: Object.fromEntries(
             edits.flatMap(({ part, baseline }) => (baseline ? [[partKeyOf(part), baseline.states]] : [])),
@@ -521,7 +566,8 @@ export const autoAcceptOf = async (options: {
       continue;
     }
 
-    if (!cached.has(part)) cache.write({ part: resolved, partHash: partHashNowOf(resolved), states });
+    if (!cached.has(part))
+      cache.write({ part: resolved, partHash: partHashNowOf(resolved), states, sizes: sizes.get(part) });
 
     const changed = baseline ? changedStatesOf(baseline.states, states) : [];
 
@@ -549,7 +595,12 @@ export const autoAcceptOf = async (options: {
     writePictures({
       dir: partOwnerOf({ product, part: resolved }).dir,
       part,
-      pictures: { hash: design, states, partHash: partHashNowOf(resolved) },
+      pictures: {
+        hash: design,
+        states,
+        partHash: partHashNowOf(resolved),
+        ...(sizes.has(part) ? { sizes: sizes.get(part) } : {}),
+      },
     });
   }
 

@@ -20,6 +20,7 @@ import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
 import { rootTokensOf, withTokenNames } from '../motion-tokens';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
+import { fitPadding } from 'virtual:design-explore/frame';
 import { parts, sketchParts, sketchTokens, tokens } from 'virtual:design-explore/system';
 
 const params = new URLSearchParams(location.search);
@@ -77,7 +78,7 @@ if (fill) paintFill(document.body, fill);
 const scheme = params.get('scheme');
 
 if (scheme === 'light' || scheme === 'dark') pinScheme(document, scheme);
-if (fit) fitRoot(root, { padded: !params.has('bare') });
+if (fit) fitRoot(root, { padding: params.has('bare') ? 0 : fitPadding });
 
 const markFailed = (message: string) => {
   errored = true;

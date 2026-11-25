@@ -2,12 +2,13 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
+import { blankPngOf } from '../blank-png';
 import { DESIGN_DIR } from '../design-config';
 import { drawStatePictures } from './accepted-pictures';
 import { resolveProduct } from './resolve-product';
 
 const pictureOf = vi.fn(async (options: { emptySlots: boolean }) => ({
-  png: Buffer.from(options.emptySlots ? 'slots emptied' : 'slots drawn'),
+  png: options.emptySlots ? blankPngOf(1, 1) : blankPngOf(2, 2),
 }));
 
 vi.mock('../browser', () => ({ chromiumOf: async () => true }));

@@ -68,15 +68,22 @@ const designHashOfChip = (target: string) => {
   return part ? designHashOf({ product, part }).hash : '';
 };
 
+const sizesOf = (states: StatePictures) =>
+  Object.fromEntries(Object.keys(states).map((state) => [state, { width: 170, height: 30 }]));
+
 const drawing = (initial: StatePictures) => {
   const calls: string[][] = [];
   const variants: (string | null)[] = [];
   const pictures: { now: StatePictures; head?: StatePictures } = { now: initial };
-  const draw: DrawStates = async ({ parts, sketch }) => {
+  const draw: DrawStates = async ({ parts, sketch, sizes }) => {
     calls.push(parts);
     variants.push(sketch?.variant ?? null);
 
-    return new Map(parts.map((part) => [part, { ...(sketch ? (pictures.head ?? pictures.now) : pictures.now) }]));
+    const drawn = sketch ? (pictures.head ?? pictures.now) : pictures.now;
+
+    for (const part of parts) sizes?.set(part, sizesOf(drawn));
+
+    return new Map(parts.map((part) => [part, { ...drawn }]));
   };
 
   return { draw, calls, variants, pictures };
@@ -101,8 +108,30 @@ describe('autoAcceptOf', () => {
         states: { default: 'a1', hover: 'b2' },
         slots: true,
         partHash: readMerged(dir)[CHIP],
+        sizes: { default: { width: 170, height: 30 }, hover: { width: 170, height: 30 } },
       },
     });
+    expect(await autoAccept(target, draw)).toEqual([]);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('draws a record kept without picture sizes once more, so the sketch view can size every shot it lists', async () => {
+    const { target, dir } = checkout();
+    const { draw, calls } = drawing({ default: 'a1', hover: 'b2' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    writePictures({
+      dir,
+      part: CHIP,
+      pictures: {
+        hash: designHashOfChip(target),
+        states: { default: 'a1', hover: 'b2' },
+        partHash: readMerged(dir)[CHIP],
+      },
+    });
+
+    expect(await autoAccept(target, draw)).toEqual([]);
+    expect(readPictures(dir)[CHIP]?.record?.sizes).toEqual(sizesOf({ default: 'a1', hover: 'b2' }));
     expect(await autoAccept(target, draw)).toEqual([]);
     expect(calls).toHaveLength(1);
   });

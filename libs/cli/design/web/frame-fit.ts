@@ -1,7 +1,7 @@
-/** Sizes the frame root to its content; `padded` keeps a 16 px margin around it, which a bare compare shot leaves out. */
-export const fitRoot = (root: HTMLElement, options: { padded: boolean }) => {
+/** Sizes the frame root to its content inside `padding` px; a bare compare shot passes 0. */
+export const fitRoot = (root: HTMLElement, options: { padding: number }) => {
   root.ownerDocument.documentElement.style.overflow = 'hidden';
   root.style.width = 'max-content';
 
-  if (options.padded) root.style.padding = '16px';
+  if (options.padding > 0) root.style.padding = `${options.padding}px`;
 };

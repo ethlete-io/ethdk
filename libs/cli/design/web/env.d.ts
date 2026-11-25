@@ -17,6 +17,11 @@ declare module 'virtual:design-explore/env' {
   }) => Promise<unknown>;
 }
 
+declare module 'virtual:design-explore/frame' {
+  /** The padding a fitted frame that is not bare keeps around its root on each side, in px. */
+  export const fitPadding: number;
+}
+
 declare module 'virtual:design-explore/system' {
   import type { Drawing } from '@design-explore';
 

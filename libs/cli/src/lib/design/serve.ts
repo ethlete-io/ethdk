@@ -142,6 +142,7 @@ import { timedPhase } from './phase-timing';
 import { watchModuleFetches } from './fetch-watch';
 import { skipCoveredAdds } from './covered-watch';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
+import { FRAME_FIT_PADDING } from './frame-fit-padding';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
 
@@ -631,7 +632,8 @@ const designExplore = ({
     name: 'design-explore',
     enforce: 'pre' as const,
     resolveId: (id: string, importer?: string) => {
-      if (id === VIRTUAL || id === `${VIRTUAL}/env` || id === `${VIRTUAL}/system`) return `\0${id}`;
+      if (id === VIRTUAL || id === `${VIRTUAL}/env` || id === `${VIRTUAL}/system` || id === `${VIRTUAL}/frame`)
+        return `\0${id}`;
 
       return (
         system.resolveId(id, importer) ??
@@ -642,6 +644,7 @@ const designExplore = ({
       if (id === `\0${VIRTUAL}`) return registry(target);
       if (id === `\0${VIRTUAL}/env`) return env({ target, config, system });
       if (id === `\0${VIRTUAL}/system`) return systemRegistry(system);
+      if (id === `\0${VIRTUAL}/frame`) return `export const fitPadding = ${FRAME_FIT_PADDING};`;
 
       return null;
     },

@@ -11,12 +11,15 @@ import { partInputsOf } from './sketch/baseline';
 
 type StatePictures = Record<string, string>;
 
-type Entry = { states: StatePictures; others: FileHashes };
+type StateSizes = Record<string, { width: number; height: number }>;
 
-/** The state pictures of the parts of one product, kept outside the checkout by part hash. */
+type Entry = { states: StatePictures; others: FileHashes; sizes?: StateSizes };
+
+/** The state pictures of the parts of one product, with the size of each picture, kept outside the checkout by part hash. */
 export type PartPictureCache = {
   read: (part: ResolvedPart, partHash: string) => StatePictures | null;
-  write: (entry: { part: ResolvedPart; partHash: string; states: StatePictures }) => void;
+  sizesOf: (part: ResolvedPart, partHash: string) => StateSizes | null;
+  write: (entry: { part: ResolvedPart; partHash: string; states: StatePictures; sizes?: StateSizes }) => void;
 };
 
 const isEntry = (value: unknown): value is Entry => {
@@ -68,31 +71,35 @@ export const createPartPictureCache = (options: {
     return Object.fromEntries(Object.entries(designHashOf({ product, part }).files).filter(([path]) => !own.has(path)));
   };
 
+  const entryOf = (part: ResolvedPart, partHash: string) => {
+    let entry: unknown;
+
+    try {
+      entry = JSON.parse(readFileSync(fileOf(part, partHash), 'utf8'));
+    } catch {
+      return null;
+    }
+
+    if (!isEntry(entry)) return null;
+
+    const others = entry.others;
+    const paths = Object.keys(others);
+    const now = fileHashesOf(
+      root,
+      paths.map((path) => resolve(root, path)),
+    );
+
+    return paths.every((path) => now[path] === others[path]) ? entry : null;
+  };
+
   return {
-    read: (part, partHash) => {
-      let entry: unknown;
-
-      try {
-        entry = JSON.parse(readFileSync(fileOf(part, partHash), 'utf8'));
-      } catch {
-        return null;
-      }
-
-      if (!isEntry(entry)) return null;
-
-      const paths = Object.keys(entry.others);
-      const now = fileHashesOf(
-        root,
-        paths.map((path) => resolve(root, path)),
-      );
-
-      return paths.every((path) => now[path] === entry.others[path]) ? entry.states : null;
-    },
-    write: ({ part, partHash, states }) => {
+    read: (part, partHash) => entryOf(part, partHash)?.states ?? null,
+    sizesOf: (part, partHash) => entryOf(part, partHash)?.sizes ?? null,
+    write: ({ part, partHash, states, sizes }) => {
       const file = fileOf(part, partHash);
 
       mkdirSync(dirname(file), { recursive: true });
-      writeDesignFile(file, JSON.stringify({ states, others: othersOf(part) }));
+      writeDesignFile(file, JSON.stringify({ states, ...(sizes ? { sizes } : {}), others: othersOf(part) }));
     },
   };
 };

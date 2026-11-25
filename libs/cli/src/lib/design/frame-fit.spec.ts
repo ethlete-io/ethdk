@@ -12,7 +12,7 @@ describe('fitRoot', () => {
   it('sizes the root to its content inside a padding', () => {
     const { page, root } = rootOf();
 
-    fitRoot(root as unknown as HTMLElement, { padded: true });
+    fitRoot(root as unknown as HTMLElement, { padding: 16 });
 
     expect(page.style).toEqual({ overflow: 'hidden' });
     expect(root.style).toEqual({ width: 'max-content', padding: '16px' });
@@ -21,7 +21,7 @@ describe('fitRoot', () => {
   it('leaves the padding out for a bare root', () => {
     const { root } = rootOf();
 
-    fitRoot(root as unknown as HTMLElement, { padded: false });
+    fitRoot(root as unknown as HTMLElement, { padding: 0 });
 
     expect(root.style).toEqual({ width: 'max-content' });
   });

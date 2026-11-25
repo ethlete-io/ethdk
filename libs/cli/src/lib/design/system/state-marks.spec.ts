@@ -45,6 +45,7 @@ const checkout = () => {
 
 const cacheOf = (pictures: Record<string, Record<string, string>>): PartPictureCache => ({
   read: (part: ResolvedPart, partHash: string) => pictures[`${partKeyOf(part)} ${partHash}`] ?? null,
+  sizesOf: () => null,
   write: () => undefined,
 });
 
