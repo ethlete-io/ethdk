@@ -1,6 +1,6 @@
 {
   "target": "components/sketch-status-badge",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-25T23:19:45.132Z",
   "createdBy": {
     "cmd": "design sketch new components/sketch-status-badge --variants a --round Status-Symbol --note Der Status als Symbol fester Breite, mit Toggletip für die Details; kein Wort, kein Breitensprung. --by claude-sonnet-5-5 --product studio",
@@ -118,5 +118,20 @@
       "authors": ["claude-sonnet-5-5"],
       "round": "r1"
     }
+  },
+  "readyContent": {
+    "a": "e91de31af9453d0e"
+  },
+  "mergeHold": {
+    "reason": "variant a changes drawing, waiting, awaiting-approval, awaiting-sub-parts, approved, paused, failed, merging, auto-merge, toggletip-open",
+    "at": "2026-11-25T23:26:54.630Z"
+  },
+  "autoMergeForecast": {
+    "merges": false,
+    "reason": "variant a changes drawing, waiting, awaiting-approval, awaiting-sub-parts, approved, paused, failed, merging, auto-merge, toggletip-open",
+    "contents": {
+      "a": "e91de31af9453d0e"
+    },
+    "at": "2026-11-25T23:26:54.304Z"
   }
 }
