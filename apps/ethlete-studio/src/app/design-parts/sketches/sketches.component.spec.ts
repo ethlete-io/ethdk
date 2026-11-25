@@ -1350,6 +1350,29 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="old"] [data-sk-state="selected"]:not([data-sk-missing])')).not.toBeNull();
   });
 
+  it('reads entfällt in the matrix cell of a state new of an @edit sketch drops', async () => {
+    const rows: SketchRow[] = [
+      { key: 'new', note: '', width: 4000, shots: [{ state: 'default', changed: true, height: 300 }] },
+      {
+        key: 'old',
+        note: '',
+        width: 4000,
+        shots: [
+          { state: 'default', changed: true, height: 300 },
+          { state: 'round-note', changed: true, height: 300 },
+        ],
+      },
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rows, part: 'pages/sketches@edit' })).nativeElement;
+
+    expect(root.querySelector('[data-sk-matrix]')).not.toBeNull();
+    expect(
+      textOf(
+        root.querySelector('[data-sk-matrix] [data-sk-missing][data-sk-variant="new"][data-sk-state="round-note"]'),
+      ),
+    ).toBe(LABELS.removed);
+  });
+
   it('folds the states neither old nor new of an @edit sketch changes', () => {
     const rows = SKETCH_EDIT_SAMPLE.rows;
     const changed = new Set(rows.flatMap((row) => row.shots.filter((shot) => shot.changed).map((shot) => shot.state)));

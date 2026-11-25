@@ -984,6 +984,12 @@ export class SketchesComponent {
       : SKETCHES_LABELS.removedIn(row.label ?? SKETCHES_LABELS.variant(row.key));
   }
 
+  protected matrixMissingLabelOf(row: SketchRow) {
+    if (this.failures()[row.key] !== undefined) return SKETCHES_LABELS.status.failed;
+
+    return row.key === SKETCH_CURRENT || row.key === 'old' ? SKETCHES_LABELS.newInSketch : SKETCHES_LABELS.removed;
+  }
+
   protected isDrawn(row: SketchRow) {
     return row.key === this.drawnKey() || (this.status() === 'drawing' && row.drawing !== undefined);
   }

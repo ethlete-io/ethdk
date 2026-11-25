@@ -70,6 +70,7 @@ export const SKETCHES_LABELS = {
   foldedToRest: '= rest',
   missingInVariant: 'fehlt in dieser Variante',
   removedIn: (variant: string) => `entfällt in ${variant}`,
+  removed: 'entfällt',
   showAllStates: 'Alle Zustände zeigen',
   hideStates: 'Zustände einklappen',
   wholeScreen: 'Ganzer Screen',
