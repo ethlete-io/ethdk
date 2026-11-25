@@ -64,6 +64,15 @@
           [style.will-change]="canvas.preview() ? 'transform' : null"
           class="flex origin-top-left flex-col gap-space-2 pb-16"
         >
+          @if (port(); as merge) {
+            <p
+              [style.font-size.px]="noteSize()"
+              class="m-0 leading-[1.35] text-et-surface-muted wrap-anywhere"
+              data-sk-round-note
+            >
+              {{ LABELS.mergePort(merge.merged) }}
+            </p>
+          }
           @if (transposed()) {
             <div
               #matrix

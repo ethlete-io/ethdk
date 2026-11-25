@@ -1962,6 +1962,19 @@ describe('SketchesComponent', () => {
     }
   });
 
+  it('names the merged parts in the note of the port round, once', async () => {
+    const port = { merged: ['components/a', 'elements/c'], since: 'seit 5 Min' };
+    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', port })).nativeElement;
+    const notes = [...root.querySelectorAll('[data-sk-round-note]')];
+
+    expect(notes.map(textOf)).toEqual([LABELS.mergePort(port.merged)]);
+    expect(textOf(notes[0])).toContain('components/a, elements/c');
+
+    const plain: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
+
+    expect(plain.querySelector('[data-sk-round-note]')).toBeNull();
+  });
+
   it('keeps the sketch status for a failed agent run', async () => {
     const agent = {
       by: { short: 'Haiku 5.5', id: 'claude-haiku-5-5', agent: 'claude' },
