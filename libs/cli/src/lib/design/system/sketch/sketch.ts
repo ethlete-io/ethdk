@@ -35,9 +35,10 @@ export type SketchDecision =
 
 /**
  * What `sketch.json` knows about one variant: the model ids that reported on it, in the order of their first report,
- * the key of its round, and its note - what it is and what it costs - kept apart from the part's merged note.
+ * the key of its round, its note - what it is and what it costs - kept apart from the part's merged note, and the
+ * `<layer>/<name>` keys of the new parts it builds that the agent marked as sub-parts.
  */
-export type SketchVariantInfo = { authors?: string[]; round?: string; note?: string };
+export type SketchVariantInfo = { authors?: string[]; round?: string; note?: string; subParts?: string[] };
 
 /** Who recorded a verdict on a variant: the designer, in Studio or with `--by designer`, or an agent. */
 export type SketchVerdictBy = 'designer' | 'agent';
@@ -406,7 +407,8 @@ const isVariantInfo = (value: unknown): value is Record<string, SketchVariantInf
       info !== null &&
       isAuthors((info as Partial<SketchVariantInfo>).authors) &&
       ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).round) &&
-      ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).note),
+      ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).note) &&
+      isAuthors((info as Partial<SketchVariantInfo>).subParts),
   );
 
 const VERDICT_BY: readonly SketchVerdictBy[] = ['designer', 'agent'];

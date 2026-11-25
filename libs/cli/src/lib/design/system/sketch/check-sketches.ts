@@ -16,6 +16,7 @@ import { lentVariantOf, openSketchesDrawingOf, overlaySketch, SketchedProduct } 
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
 import { stateNamesOf, stateSourcesOf, withMadeBy, withNote } from './part-definition';
+import { subPartProblemsOf } from './sub-parts';
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
 import {
@@ -236,6 +237,7 @@ export const variantProblemsOf = (options: {
         ...metadataProblem,
         ...(differing.get(variant) ?? []),
         ...unlentPartsOf(options.sketch, overlaid),
+        ...subPartProblemsOf({ ...options, variant, overlaid }),
         ...(isEditSketch(options.sketch) && variant === EDIT_OLD
           ? []
           : [

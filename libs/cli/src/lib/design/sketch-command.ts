@@ -70,6 +70,7 @@ import {
 } from './system/sketch/merge-step';
 import { journaled, openJournalOf } from './system/write-journal';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
+import { subPartKeyProblemOf, subPartsOf } from './system/sketch/sub-parts';
 import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf, editHoldsOf } from './system/sketch/edit-sketch';
 import { refusingRendersOf } from './system/sketch/identical-renders';
@@ -156,6 +157,7 @@ export const SKETCH_USAGE = [
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch withdraw <layer>/<name> --variant <key> [--reason <text>] --by <model id> [--product <name>]',
   'sketch recommend <layer>/<name> --variant <key> --by <model id> [--product <name>]',
+  'sketch sub-part <layer>/<name> <layer>/<name>[,<layer>/<name>…] --variant <key> [--remove] --by <model id> [--product <name>]',
 ];
 
 const FLAG_HELP: Record<string, string> = {
@@ -182,7 +184,7 @@ const FLAG_HELP: Record<string, string> = {
   '--asks':
     "the states the round asks its question in, a comma list; ready refuses two variants that differ in one by under 2 % of the frame (default: the states the round's variants add, else the states they change)",
   '--variant':
-    'the variant the command is about; on merge, the only live variant of a sketch with no pick; on recommend, the variant other sketches draw a new part of this one in',
+    'the variant the command is about; on merge, the only live variant of a sketch with no pick; on recommend, the variant other sketches draw a new part of this one in; on sub-part, the variant that builds the parts',
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
   '--decided-by':
@@ -195,6 +197,7 @@ const FLAG_HELP: Record<string, string> = {
   '--reopen': 'on report or ready: move a ready sketch back to in progress; a picked one keeps its pick',
   '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
   '--json': 'print JSON',
+  '--remove': 'on sub-part: drop the mark of each named part',
   '--fix': "write the variants in the checkout's Prettier format first",
   '--no-visible-change':
     'the sketch must change no pixel: its variants may draw every state like the product, and ready merges it by itself',
@@ -242,6 +245,7 @@ const WRITES = new Set([
   'merge',
   'discard',
   'recommend',
+  'sub-part',
   ...VERDICTS,
 ]);
 
@@ -2411,6 +2415,37 @@ const recommended = (context: Context) =>
     return 0;
   });
 
+const subPartsMarked = (context: Context) =>
+  withSketch(context, ({ sketch }) => {
+    const variant = context.args.values['--variant'];
+    const [, list] = context.args.positional;
+
+    if (context.args.positional.length !== 2 || !list || !variant)
+      return fail(`usage: ${SKETCH_USAGE.find((line) => line.startsWith('sketch sub-part '))}`);
+    if (!sketch.variants.includes(variant))
+      return fail(`${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`);
+
+    const keys = [...new Set(list.split(',').map((key) => key.trim()))].filter(Boolean);
+    const invalid = keys.flatMap((key) => subPartKeyProblemOf({ targets: sketch.targets, key }) ?? []);
+
+    if (invalid.length > 0) return fail(invalid.join('\n'));
+
+    const had = subPartsOf(sketch, variant);
+    const subParts = context.args.flags.has('--remove')
+      ? had.filter((key) => !keys.includes(key))
+      : [...new Set([...had, ...keys])].sort();
+    const info = { ...sketch.variantInfo[variant], subParts: subParts.length > 0 ? subParts : undefined };
+
+    writeSketchFile({ ...sketch, variantInfo: { ...sketch.variantInfo, [variant]: info } }, { base: sketch });
+    console.log(
+      subParts.length > 0
+        ? `${sketch.target} variant ${variant} marks the sub-parts ${subParts.join(', ')}`
+        : `${sketch.target} variant ${variant} marks no sub-part`,
+    );
+
+    return 0;
+  });
+
 const COMMANDS: Record<string, (context: Context) => number | Promise<number>> = {
   new: created,
   variant: varied,
@@ -2434,6 +2469,7 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   reopen: judged('reopen'),
   withdraw: withdrawn,
   recommend: recommended,
+  'sub-part': subPartsMarked,
 };
 
 /** The value flags and switches the usage line of a sketch command names. */
