@@ -19,7 +19,7 @@ How the doc session and the builder work. A process change edits this page.
 
 - A fix counts only with a test that fails without it on the reported real case, and a shot of that case.
 - Without both, the report says "not verified" and the commit is not a `fix`.
-- Shots are proof for the doc session only. The human looks at a design in Studio, and no image is sent. A pick the human states in chat is merged by the builder; the doc session never tells the human where to click. If Studio cannot show a design, that is a Studio defect and gets a row.
+- Shots are proof for the doc session only. The human looks at a design in Studio: the doc session names the part, state or sketch to open there and sends no image. If Studio cannot show it, that is a Studio defect and gets a row.
 - A finding says "Suspect:" until a bite or a measurement proves the cause, then "Cause:".
 - No smoke run, e2e or Studio check in pre-commit or pre-push. A subagent that changes a Studio view runs the e2e cases of that view (`--case`, at most about 5 min, in the background) and `yarn studio:classes:check` before it reports done; the full suite stays in CI.
 
