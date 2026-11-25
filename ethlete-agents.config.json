@@ -37,8 +37,14 @@
     "subagent-model-policy",
     "background-design-commands",
     "git-safety",
-    "builder-idle-check"
+    "builder-idle-check",
+    "away-mode"
   ],
+  "awayMode": {
+    "skills": ["doc-agent"],
+    "thresholdMinutes": 15,
+    "reportCommand": "node dist/libs/agent-rules/src/index.js report"
+  },
   "report": { "planFiles": ["plans/QUEUE.md"] },
   "mods": ["e2e-progress", "status-line"]
 }
