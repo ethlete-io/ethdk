@@ -36,6 +36,24 @@ describe('migrate-pip-window-z-index', () => {
     expect(tasks).toEqual([]);
   });
 
+  it('removes a rule left empty by the removal and keeps the other rules', async () => {
+    const tree = createTree({
+      [APP_CONFIG]: appConfig,
+      [STYLES]: 'body {\n  margin: 0;\n}\n\n:root {\n  --et-pip-window-z-index: 5000;\n}\n\na {\n  color: red;\n}\n',
+    });
+
+    await migratePipWindowZIndex(tree, { skipFormat: true });
+
+    expect(tree.read(STYLES, 'utf-8')).toBe('body {\n  margin: 0;\n}\n\na {\n  color: red;\n}\n');
+    expect(tree.read(APP_CONFIG, 'utf-8')).toContain('providePipWindowConfig({ overlayLayer: 5000 })');
+  });
+
+  it('removes the only rule of a file', () => {
+    const { next } = scanPipWindowZIndexInFile(STYLES, ':root { --et-pip-window-z-index: 5000; }\n');
+
+    expect(next).toBe('');
+  });
+
   it('reports a declaration it cannot move, and one in a template', () => {
     const scss = scanPipWindowZIndexInFile('apps/shop/src/styles.scss', ':root {\n  --et-pip-window-z-index: $pip;\n}');
     const html = scanPipWindowZIndexInFile(

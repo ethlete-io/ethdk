@@ -17,6 +17,8 @@ export type PipWindowZIndexScan = {
 const STYLESHEET = /\.(css|scss|sass|less)$/;
 const SCANNED = /\.(css|scss|sass|less|html|ts)$/;
 const LITERAL_DECLARATION = /^[ \t]*--et-pip-window-z-index[ \t]*:[ \t]*(-?\d+)[ \t]*;?[ \t]*(?:\r?\n|$)/gm;
+const SOLE_DECLARATION_RULE =
+  /^[ \t]*[^{}\n;]+\{\s*--et-pip-window-z-index[ \t]*:[ \t]*(-?\d+)[ \t]*;?\s*\}[ \t]*(?:\r?\n|$)(?:[ \t]*\r?\n)*/gm;
 const COMPONENTS_IMPORT = /import\s*\{([^}]*)\}\s*from\s*['"]@ethlete\/components['"]/g;
 const APP_CONFIG_MARKER = /\bApplicationConfig\b|\bbootstrapApplication\(/;
 
@@ -46,11 +48,12 @@ export const scanPipWindowZIndexInFile = (file: string, content: string): PipWin
   let next: string | null = null;
 
   if (STYLESHEET.test(file)) {
-    const removed = content.replace(LITERAL_DECLARATION, (_, value: string) => {
+    const collect = (_: string, value: string) => {
       values.push(Number(value));
 
       return '';
-    });
+    };
+    const removed = content.replace(SOLE_DECLARATION_RULE, collect).replace(LITERAL_DECLARATION, collect);
 
     if (values.length > 0) next = removed;
   }
