@@ -384,8 +384,15 @@ Schritte, in denen es anfällt; keine neue Entscheidung nötig.
   einem Zug (Migration auf das eigene Repo anwenden, dann von Hand nachziehen).
 - **Die eigene Migration zuerst am SDK-Repo beweisen**: Storybook, docs-examples, Studio und
   Timetrack sind die ersten Konsumenten von `et update`, vor fifagg.
-- **Annahme: fifagg und fut sind die einzigen externen Konsumenten.** Gibt es weitere, brauchen
-  sie dieselbe Reihenfolge (Bildaufnahme, `et update`, Vergleich).
+- **Konsumenten (Tom, 26.11.):** fifagg und fut sind nicht die einzigen. Die meisten Projekte
+  nutzen noch das alte Theming (`@ethlete/theming` und die Laufzeit-Themes); dafür gibt es schon
+  Migrationen. Sie migrieren „eins nach dem anderen“ weiter: alt → heutiger Stand → Zielbild.
+  Folgen für den Builder: Die neuen Migrationen hängen sich **hinter** die bestehenden
+  (`legacy-color-themes`, `color-theme-variants`, `surface-interaction-swatch`) und setzen deren
+  Ergebnis voraus. Jede bestehende Migration bleibt lauffähig, auch nachdem Schritt 5
+  `legacy-theming.ts` entfernt hat: sie darf dann nur Namen schreiben, die die Folgemigration
+  kennt. Beweis: ein Ketten-Spec, der ein Fixture auf dem alten Stand durch alle Migrationen bis
+  zum Zielbild schickt. fifagg bleibt die Bildreferenz, weil es dem heutigen Stand am nächsten ist.
 
 ## 8. Entscheidungen
 
@@ -416,3 +423,5 @@ Entschieden:
 - (26.11., Tom) Direktiven für Apps: `etSurface` und `etTone`; der Rest intern oder gestrichen.
 - (26.11., Tom) Die internen `…Interactive`-Direktiven entfallen (S10); Zustände stehen im CSS
   der Komponente, das Theme liefert jeden Zustand unter eigenem Namen.
+- (26.11., Tom) Die meisten Projekte nutzen noch das alte Theming; sie migrieren über die
+  bestehenden Migrationen schrittweise weiter bis zum Zielbild.
