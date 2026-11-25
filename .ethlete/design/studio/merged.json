@@ -114,11 +114,10 @@
     "at": "2026-11-22T17:25:49.061Z"
   },
   "elements/variant-cell": {
-    "hash": "e05b7ad3d2573d2b",
-    "variant": "a",
-    "decidedBy": "plan: plans/QUEUE.md B741 Q2",
-    "at": "2026-11-25T12:53:06.657Z",
-    "note": "merged without a pick: allowed by plans/QUEUE.md B741 Q2"
+    "hash": "4a8ccbb62a83fd4f",
+    "variant": "new",
+    "decidedBy": "user",
+    "at": "2026-11-25T13:15:15.517Z"
   },
   "foundations/agent-logos": {
     "hash": "a7da916151a12f97",
