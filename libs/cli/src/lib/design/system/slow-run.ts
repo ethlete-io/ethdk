@@ -175,8 +175,8 @@ export const comparedProblemsOf = async (options: {
 };
 
 /**
- * Runs the slow rules - the draw rules, then `APP-SPEC`, `UNCOVERED-REGION`,
- * compare and the SDK-error watch against one harness app - on the product's parts that have one, or on `parts`, one browser at a time, and
+ * Runs the slow rules - the draw rules, then `UNCOVERED-REGION`, compare and the SDK-error watch against one
+ * harness app, then `APP-SPEC` - on the product's parts that have one, or on `parts`, one browser at a time, and
  * stores each part's problems at the inputs it had when the run started.
  */
 export const runSlowChecks = async (options: {
@@ -309,39 +309,35 @@ export const runSlowChecks = async (options: {
   }
 
   if (harness && keys.length + (whole ? 1 : 0) > 0) {
-    const specsApplied =
-      harness.specs && (ruled(APP_SPEC_RULE).length > 0 || whole)
-        ? (() => {
-            const specsConfig = harness.specs;
-            const parts = ruled(APP_SPEC_RULE).map((part) => {
-              const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
-              const component = found ? linkedComponentOf(found) : null;
+    const specsConfig = ruled(APP_SPEC_RULE).length > 0 || whole ? harness.specs : undefined;
+    const runSpecs = specsConfig
+      ? () => {
+          const parts = ruled(APP_SPEC_RULE).map((part) => {
+            const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
+            const component = found ? linkedComponentOf(found) : null;
 
-              return { part, files: component === null ? [] : Object.keys(appFilesOf({ root, component })) };
+            return { part, files: component === null ? [] : Object.keys(appFilesOf({ root, component })) };
+          });
+
+          return runners
+            .specs({
+              root,
+              config: specsConfig,
+              files: whole
+                ? [harness.app]
+                : specSeedsOf({
+                    root,
+                    files: parts.flatMap(({ files }) => files),
+                    shared: harness.shared ?? [],
+                  }),
+            })
+            .then((failures) => {
+              if (typeof failures === 'string')
+                results.set(PRODUCT_PART, [{ rule: APP_SPEC_RULE, file: specsConfig, message: failures }]);
+              else merge(results, appSpecProblemsOf({ parts, failures }));
             });
-
-            return runners
-              .specs({
-                root,
-                config: specsConfig,
-                files: whole
-                  ? [harness.app]
-                  : specSeedsOf({
-                      root,
-                      files: parts.flatMap(({ files }) => files),
-                      shared: harness.shared ?? [],
-                    }),
-              })
-              .then((failures) => () => {
-                if (typeof failures === 'string')
-                  results.set(PRODUCT_PART, [{ rule: APP_SPEC_RULE, file: specsConfig, message: failures }]);
-                else merge(results, appSpecProblemsOf({ parts, failures }));
-              });
-          })()
-        : undefined;
-
-    specsApplied?.catch(() => undefined);
-
+        }
+      : undefined;
     const harnessResults = new Map<string, Problem[]>();
     const server: HarnessServer | string = await timedPhase('slow harness-start', () =>
       runners.start({ target, product }),
@@ -420,7 +416,7 @@ export const runSlowChecks = async (options: {
       }
     }
 
-    (await timedPhase('slow specs-wait', () => specsApplied))?.();
+    if (runSpecs) await timedPhase('slow specs', runSpecs);
     merge(results, harnessResults);
   }
 
