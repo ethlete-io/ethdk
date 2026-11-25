@@ -379,7 +379,7 @@
     "pid": 3320625
   },
   "components/comment-row": {
-    "hash": "cb3ef346603a0c41",
+    "hash": "3f23b0cbdfbe3e0a",
     "files": {
       ".ethlete/design/studio/assets/agent-copilot.svg": "35296642ce7e586e",
       ".ethlete/design/studio/assets/agent-cursor.svg": "db3d10445d26c40a",
@@ -399,6 +399,7 @@
       ".ethlete/design/studio/assets/icons/error.svg": "2d3285675d3b2d19",
       ".ethlete/design/studio/assets/icons/flow.svg": "453c012e8a063e82",
       ".ethlete/design/studio/assets/icons/grid.svg": "0325b982baf41f85",
+      ".ethlete/design/studio/assets/icons/history.svg": "cef602f8b60fb720",
       ".ethlete/design/studio/assets/icons/inbox.svg": "e661f5cf4c65c1c9",
       ".ethlete/design/studio/assets/icons/maximize.svg": "743f8061df8f16f7",
       ".ethlete/design/studio/assets/icons/minimize.svg": "1bc111272e357d8d",
@@ -407,22 +408,23 @@
       ".ethlete/design/studio/assets/icons/pencil.svg": "61f6ed00cf70bfc1",
       ".ethlete/design/studio/assets/icons/reply.svg": "34c9698a4d28d7b0",
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
+      ".ethlete/design/studio/assets/icons/trash.svg": "0f5ab0eb80a1d5fe",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/components/comment-row/comment-row.css": "f82037c1d733d503",
-      ".ethlete/design/studio/components/comment-row/comment-row.ts": "ee45b0cc4566f57b",
+      ".ethlete/design/studio/components/comment-row/comment-row.ts": "d413b9565cc0c96c",
       ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "c3e7f5a1b72e91a5",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "731104f3cc24d3c9",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "f8377ad44ac52418",
+    "app": "144e557d8b7a7b6b",
     "actions": ["emit:pick"],
     "builder": "designer",
-    "at": "2026-11-20T10:48:30.748Z",
+    "at": "2026-11-24T11:51:49.823Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2243123
+    "pid": 3325560
   },
   "components/comment-target": {
     "hash": "4d209cda9a09f8f1",
