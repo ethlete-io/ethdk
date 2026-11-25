@@ -414,7 +414,7 @@ export class SketchesComponent {
     () =>
       new Set(
         this.listedRows().flatMap((row) =>
-          row.shots.flatMap((shot) => (shot.changed === null && !isBaseRow(row) ? [shot.state] : [])),
+          row.shots.flatMap((shot) => (shot.changed === null && row.key !== SKETCH_CURRENT ? [shot.state] : [])),
         ),
       ),
   );
@@ -934,9 +934,9 @@ export class SketchesComponent {
   }
 
   protected marksOf(row: SketchRow, item: SketchShot) {
-    const change = this.groupOfState().get(item.state) ? item.change : undefined;
+    const { change } = item;
 
-    if (!change) return [];
+    if (!change || row.key === SKETCH_CURRENT) return [];
 
     const unit = (item.width ?? row.width) / change.width;
 
@@ -996,6 +996,10 @@ export class SketchesComponent {
 
   protected isSame(row: SketchRow, unchanged: boolean | null) {
     return !isBaseRow(row) && unchanged === false && !this.isPending(row) && !this.isDrawn(row);
+  }
+
+  protected isEditSide(row: SketchRow) {
+    return row.key === 'old' || row.key === 'new';
   }
 
   protected isPending(row: SketchRow) {

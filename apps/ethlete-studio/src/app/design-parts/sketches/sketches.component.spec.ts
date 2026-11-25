@@ -1412,6 +1412,42 @@ describe('SketchesComponent', () => {
     expect(rowOf('old')?.querySelector('[data-sk-merge]')).not.toBeNull();
   });
 
+  it('puts no compare hint in the heads of an @edit sketch while old is compared', async () => {
+    const pending = (row: SketchRow) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) });
+    const rows = [
+      { ...pending(ROWS[1] as SketchRow), key: 'new' },
+      { ...pending(ROWS[1] as SketchRow), key: 'old' },
+    ];
+    const root: HTMLElement = (
+      await render({ camera: '100', rows, part: 'components/tree-row@edit', status: 'waiting' })
+    ).nativeElement;
+
+    // Tom's decision: the view shows only the final compare, so an edit side's head carries no load hint.
+    expect(root.querySelector('[data-sk-row="old"] [data-sk-comparing]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="new"] [data-sk-comparing]')).toBeNull();
+  });
+
+  it('marks the changed area on both sides of tree-row@edit', async () => {
+    const change = { width: 280, height: 46, box: { x: 240, y: 14, width: 18, height: 18 }, pixels: 120, regions: 1 };
+    const side = (key: string): SketchRow => ({
+      key,
+      note: '',
+      width: 280,
+      shots: ['mark-layer', 'selected-layer'].map((state) => ({ state, changed: true, height: 46, change })),
+    });
+    const root: HTMLElement = (
+      await render({
+        camera: '100',
+        rows: [side('new'), side('old')],
+        part: 'components/tree-row@edit',
+        status: 'waiting',
+      })
+    ).nativeElement;
+    const marksOf = (key: string) => root.querySelectorAll(`[data-sk-frame^="${key} "] [data-sk-crop-mark]`).length;
+
+    expect([marksOf('new'), marksOf('old')]).toEqual([2, 2]);
+  });
+
   it('keeps a folded variant folded while a quick listing knows nothing about its compare', async () => {
     const same: SketchRow = {
       key: 'y',

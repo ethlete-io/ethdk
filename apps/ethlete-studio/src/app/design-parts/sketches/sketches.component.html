@@ -615,7 +615,7 @@
             data-sk-compare-failed
             >{{ LABELS.compareFailed(message) }}</span
           >
-        } @else {
+        } @else if (!isEditSide(row)) {
           <span class="text-ui-xs whitespace-nowrap text-et-surface-muted" data-sk-comparing>{{
             LABELS.comparing
           }}</span>
