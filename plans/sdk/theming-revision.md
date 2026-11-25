@@ -396,6 +396,14 @@ Schritte, in denen es anfällt; keine neue Entscheidung nötig.
   diesem Plan stammen aus `fut-frontend` und sind nicht nach App getrennt. fifagg bleibt die
   Bildreferenz, weil es dem heutigen Stand am nächsten ist; die Hub-App ist die zweite.
 
+**Bildvergleich (Tom, 26.11.):** fifagg hat eine visuelle e2e-Test-Suite. Sie ist der Bildvergleich
+dieses Plans: überall, wo „Bildaufnahme“ oder „Bildvergleich“ steht, ist diese Suite gemeint,
+keine eigene Aufnahme. Vor Schritt 0 läuft sie einmal auf dem unveränderten Stand als Referenz,
+nach jedem Schritt mit `et update` erneut, und am Ende als Abnahme. Erwartete Abweichung: nur
+B-65. Vom Builder zu klären (nicht nachgelesen): wie die Suite gestartet wird, ob sie Hover-
+und Gedrückt-Zustände und Overlays abdeckt, und ob die Hub-App in fut etwas Vergleichbares hat.
+Was die Suite nicht abdeckt, prüft die Messlatte auf der Demo-Seite.
+
 ## 8. Entscheidungen
 
 Offen: nichts. Tom hat das Zielbild am 26.11. bestätigt („passt“).
