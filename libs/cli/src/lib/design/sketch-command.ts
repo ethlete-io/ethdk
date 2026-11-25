@@ -199,7 +199,7 @@ const FLAG_HELP: Record<string, string> = {
   '--json': 'print JSON',
   '--remove': 'on sub-part: drop the mark of each named part',
   '--not-rebuild-of':
-    'on sub-part: the existing part (<holder>:<name>, e.g. sdk:slider) the one named sub-part is not a rebuild of; <difference> states what it is that the existing part is not',
+    'on sub-part: the existing part (<holder>:<name>, e.g. sdk:slider) the one named sub-part, or the target for markup it draws inline, is not a rebuild of; <difference> states what it is that the existing part is not',
   '--fix': "write the variants in the checkout's Prettier format first",
   '--no-visible-change':
     'the sketch must change no pixel: its variants may draw every state like the product, and ready merges it by itself',
@@ -2433,17 +2433,21 @@ const subPartsMarked = (context: Context) =>
       return fail(`${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`);
 
     const keys = [...new Set(list.split(',').map((key) => key.trim()))].filter(Boolean);
-    const invalid = keys.flatMap((key) => subPartKeyProblemOf({ targets: sketch.targets, key }) ?? []);
+    const states = of !== undefined && keys.length === 1 && sketch.targets.includes(keys[0] ?? '');
+    const invalid = states ? [] : keys.flatMap((key) => subPartKeyProblemOf({ targets: sketch.targets, key }) ?? []);
 
     if (invalid.length > 0) return fail(invalid.join('\n'));
 
     const had = subPartsOf(sketch, variant);
-    const subParts = context.args.flags.has('--remove')
-      ? had.filter((key) => !keys.includes(key))
-      : [...new Set([...had, ...keys])].sort();
+    const subParts = states
+      ? had
+      : context.args.flags.has('--remove')
+        ? had.filter((key) => !keys.includes(key))
+        : [...new Set([...had, ...keys])].sort();
     const notRebuilds = [
       ...notRebuildsOf(sketch, variant).filter(
-        (entry) => subParts.includes(entry.part) && !(of && keys.includes(entry.part)),
+        (entry) =>
+          (subParts.includes(entry.part) || sketch.targets.includes(entry.part)) && !(of && keys.includes(entry.part)),
       ),
       ...(of && difference && !context.args.flags.has('--remove')
         ? [{ part: keys[0] ?? '', of, difference: difference.trim() }]

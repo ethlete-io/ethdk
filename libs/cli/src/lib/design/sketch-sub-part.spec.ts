@@ -39,6 +39,14 @@ export default definePart<Props>({
 });
 `;
 
+const TOMFLIX_INLINE_BADGES = [
+  '<span class="flex items-center gap-2 text-xs text-et-surface-muted"',
+  '  ><span class="size-[5px] rounded-full bg-et-theme"></span>${FIXTURE.badge}</span',
+  '>',
+  '<span class="text-xs font-semibold text-et-theme-ink">${FIXTURE.badge}</span>',
+  '<span class="shrink-0 text-xs font-semibold text-et-surface-muted">${FIXTURE.badge}</span>',
+].join('\n');
+
 const tomflixHero = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-sub-part-'));
 
@@ -269,5 +277,58 @@ describe('a sub-part an exploration variant builds', () => {
     ]);
     expect(await sketch(...slider, '--variant', 'c', '--remove')).toBe(0);
     expect(hero.reread().variantInfo['c']?.notRebuilds).toBeUndefined();
+  });
+
+  // The tomflix hero drew its badges as inline spans with no part of their own (lines 35, 58 and 79 of the reported kit.ts), so the check reads the target's own markup.
+  it('rejects a badge the hero draws inline and names the SDK badge', () => {
+    const hero = tomflixHero();
+
+    hero.buildInC('elements/hero', partSource(TOMFLIX_INLINE_BADGES));
+
+    expect(hero.subPartLinesOfC()).toEqual([
+      'variant c draws ${FIXTURE.badge} inline in elements/hero, whose name matches components/badge of sdk - embed @system/components/badge, or state the difference: design sketch sub-part elements/hero elements/hero --variant c --not-rebuild-of sdk:badge "<what it is that badge is not>" --by <model id>',
+    ]);
+  });
+
+  // An inline rebuild has no part folder to mark, so the command records the stated difference on the target itself and the check accepts it.
+  it('accepts an inline rebuild in the target with a stated difference', async () => {
+    const hero = tomflixHero();
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    hero.buildInC('elements/hero', partSource(TOMFLIX_INLINE_BADGES));
+
+    const stated = await designSketch({
+      target: hero.target,
+      argv: [
+        ...['sub-part', 'elements/hero', 'elements/hero', 'a plain caption, no pill'],
+        ...['--variant', 'c', '--not-rebuild-of', 'sdk:badge', '--by', 'claude-opus-5-5'],
+      ],
+      invocation: 'et design',
+    });
+
+    expect(stated).toBe(0);
+    expect(hero.reread().variantInfo['c']).toMatchObject({
+      notRebuilds: [{ part: 'elements/hero', of: 'sdk:badge', difference: 'a plain caption, no pill' }],
+    });
+    expect(hero.reread().variantInfo['c']?.subParts).toBeUndefined();
+    expect(hero.subPartLinesOfC()).toEqual([]);
+  });
+
+  // A value in an attribute, inside the embedded et-badge, or imported whole from another part is no inline rebuild.
+  it('accepts a matching value in an attribute, inside the embedded part or imported whole', () => {
+    const hero = tomflixHero();
+
+    hero.buildInC('elements/hero', partSource('<img alt="${FIXTURE.badge}" src="x.png" />'));
+    expect(hero.subPartLinesOfC()).toEqual([]);
+
+    hero.buildInC('elements/hero', partSource('<et-badge>${FIXTURE.badge}</et-badge>'));
+    expect(hero.subPartLinesOfC()).toEqual([]);
+
+    hero.buildInC(
+      'elements/hero',
+      partSource('<div>${liveBadge}</div>', "import { liveBadge } from '@system/elements/canvas-frames';"),
+    );
+    expect(hero.subPartLinesOfC()).toEqual([]);
   });
 });

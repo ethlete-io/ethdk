@@ -13,11 +13,11 @@ const COMPOSITION_LAYERS = new Set(['elements', 'pages']);
 export const subPartsOf = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) =>
   sketch.variantInfo[variant]?.subParts ?? [];
 
-/** Why a sketch on `targets` cannot mark `key` as a sub-part, or `null` when it can. */
-/** The stated differences of the sub-parts `variant` marks from the existing parts their names match. */
+/** The stated differences of the sub-parts `variant` marks, or of its targets, from the existing parts they match. */
 export const notRebuildsOf = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) =>
   sketch.variantInfo[variant]?.notRebuilds ?? [];
 
+/** Why a sketch on `targets` cannot mark `key` as a sub-part, or `null` when it can. */
 export const subPartKeyProblemOf = (options: { targets: string[]; key: string }) => {
   const [layer = '', name = '', ...rest] = options.key.split('/');
 
@@ -57,6 +57,58 @@ export const rebuiltPartOf = (options: { product: ResolvedProduct; targets: stri
       .filter((existing) => endsWith(words, wordsOf(existing.name)) && !embeds(options.part, existing))
       .sort((a, b) => b.name.length - a.name.length)[0] ?? null
   );
+};
+
+const TEXT_VALUE = /(?<=<\/?[a-z][\w-]*(?:\s[^<>]*)?>[^<>`]*)\$\{\s*[\w$]+(?:\??\.[\w$]+)*\s*\}/gu;
+
+const IMPORT = /import\s+(?:type\s+)?([\w$\s{},*]+?)\s+from\s/gu;
+
+const importedNamesOf = (source: string) =>
+  new Set(
+    [...source.matchAll(IMPORT)].flatMap(([, names = '']) =>
+      names
+        .replace(/[{}]/gu, ',')
+        .split(',')
+        .map(
+          (name) =>
+            name
+              .trim()
+              .split(/\s+as\s+/u)
+              .pop() ?? '',
+        )
+        .filter(Boolean),
+    ),
+  );
+
+const valuePathOf = (value: string) => value.slice(2, -1).trim();
+
+const valueWordsOf = (value: string) =>
+  wordsOf((valuePathOf(value).split('.').pop() ?? '').replace(/([a-z0-9])([A-Z])/gu, '$1-$2').toLowerCase());
+
+/**
+ * The existing parts `part` draws inline: a component or element of `product` outside `targets` whose name ends the
+ * name of a value `part` renders as the text of an element (`<span>${FIXTURE.badge}</span>` for `badge`), and which
+ * `part` neither imports nor draws as an `et-` element. A bare imported value is another part's markup, not inline. Each
+ * comes with the first value that matched it.
+ */
+export const inlineRebuildsOf = (options: { product: ResolvedProduct; targets: string[]; part: ResolvedPart }) => {
+  const imported = importedNamesOf(options.part.source);
+  const values = [...options.part.source.matchAll(TEXT_VALUE)]
+    .map(([value]) => value)
+    .filter((value) => !imported.has(valuePathOf(value)));
+
+  return options.product.parts
+    .filter(
+      (existing) =>
+        REUSABLE_LAYERS.has(existing.layer) &&
+        !options.targets.includes(partKeyOf(existing)) &&
+        partKeyOf(existing) !== partKeyOf(options.part),
+    )
+    .flatMap((existing) => {
+      const value = values.find((text) => endsWith(valueWordsOf(text), wordsOf(existing.name)));
+
+      return value && !embeds(options.part, existing) ? [{ existing, value }] : [];
+    });
 };
 
 /**
@@ -122,6 +174,28 @@ export const subPartProblemsOf = (options: {
     ];
   });
 
+  const inline = held
+    .filter((part) => sketch.targets.includes(partKeyOf(part)) || builtKeys.has(partKeyOf(part)))
+    .flatMap((part) =>
+      inlineRebuildsOf({ product, targets: sketch.targets, part }).flatMap(({ existing: twin, value }): Problem[] => {
+        const key = partKeyOf(part);
+        const holder = twin.origin === 'base' ? (product.base?.name ?? 'the base') : product.name;
+        const of = `${holder}:${twin.name}`;
+        const stated = notRebuildsOf(sketch, variant).some((entry) => entry.part === key && entry.of === of);
+
+        if (stated && (sketch.targets.includes(key) || marks.includes(key))) return [];
+
+        return [
+          {
+            rule: 'SKETCH',
+            file: part.file,
+            part: key,
+            message: `variant ${variant} draws ${value} inline in ${key}, whose name matches ${partKeyOf(twin)} of ${holder} - embed @system/${partKeyOf(twin)}, or state the difference: design sketch sub-part ${sketch.target} ${key} --variant ${variant} --not-rebuild-of ${of} "<what it is that ${twin.name} is not>" --by <model id>`,
+          },
+        ];
+      }),
+    );
+
   const rebuiltKeys = new Set(rebuilt.flatMap((problem) => problem.part ?? []));
   const unmarked =
     isEditSketch(sketch) || !sketch.targets.every((key) => COMPOSITION_LAYERS.has(key.split('/')[0] ?? ''))
@@ -140,5 +214,5 @@ export const subPartProblemsOf = (options: {
             message: `variant ${variant} builds ${partKeyOf(part)}, a new part it does not mark - mark it with design sketch sub-part ${sketch.target} ${partKeyOf(part)} --variant ${variant} --by <model id>`,
           }));
 
-  return [...marked, ...rebuilt, ...unmarked];
+  return [...marked, ...rebuilt, ...inline, ...unmarked];
 };

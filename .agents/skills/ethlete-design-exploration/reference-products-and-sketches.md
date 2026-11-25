@@ -91,8 +91,10 @@ A new part one variant builds for its own arrangement (a hero's poster strip) is
 Marked sub-parts may differ between variants; the check fails every new part a composition variant
 builds without a mark, and every mark on an existing part. A new part whose name matches an existing
 component or element (`hero-badges` and `badge`) must embed it, or state the difference:
-`sketch sub-part … <part> "<what it is that the other is not>" --not-rebuild-of sdk:badge`. Never rename
-a part to dodge the match. Studio shows the marks at the variant header; a mark change on a ready
+`sketch sub-part … <part> "<what it is that the other is not>" --not-rebuild-of sdk:badge`. The same holds
+for markup a variant draws inline: a value named like an existing part as an element's text
+(`<span>${FIXTURE.badge}</span>`) must become that part, or the target states the difference with itself as
+`<part>`. Never rename a part or value to dodge the match. Studio shows the marks at the variant header; a mark change on a ready
 sketch moves it back to in progress.
 
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
