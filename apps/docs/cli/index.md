@@ -368,7 +368,8 @@ files `git diff <base>` names, plus every part that embeds one, each as `--part`
 `et design check --product <name> --rules --base <rev|range>` also fails with `IMPLEMENTATION-UNCOMPARED` on each file
 `git diff <base>` names that the app component of an implemented part reaches and that changed since the part's
 `implemented.json` record, or that the app component of a part without such a record reaches, and names the part.
-CI passes the pushed range. `et design compare --affected` (or
+No CI job or Git hook runs this gate: the agent runs it with its design check and passes the range it is about to
+push. `et design compare --affected` (or
 `et design task <part> --verify <rev>`) compares and records the part again, which clears it. A part without a record
 has only `task <part> --verify`: `compare --affected` skips it and plain `compare` records nothing.
 
