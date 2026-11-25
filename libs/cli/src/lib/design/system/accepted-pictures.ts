@@ -587,6 +587,11 @@ export const autoAcceptOf = async (options: {
       continue;
     }
 
+    if (sketch && editAwaitsPick(product, sketch)) {
+      opened(part, sketch);
+      continue;
+    }
+
     if (sketch && (writesTracked || discardsUntracked(product, sketch)))
       discardSketch({ target, sketch, author: 'design check' });
 
