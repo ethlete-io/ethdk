@@ -1,18 +1,19 @@
 {
   "components/about-dialog": {
-    "hash": "bb7388ab1256e213",
+    "hash": "5822709954c2a23c",
     "files": {
       ".ethlete/design/studio/assets/studio-app-icon.svg": "d1927cc46bc95568",
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
       ".ethlete/design/studio/components/about-dialog/about-dialog.css": "571bc94b03d98975",
       ".ethlete/design/studio/components/about-dialog/about-dialog.ts": "716bbe423f0e9b67",
-      ".ethlete/design/studio/foundations/logo/logo.ts": "a9407f950ba5d840",
-      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "1e3ce8197b176a38",
+      ".ethlete/design/studio/foundations/logo/logo.css": "e2f2bd7b79651d04",
+      ".ethlete/design/studio/foundations/logo/logo.ts": "4922f4ee3a0cb4a8",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "38d9825716a871ae",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/dialog.ts": "424aeadd7dbf0dad",
       "libs/components/design/icon.ts": "829a95253b948ba9",
-      "libs/components/design/loader.ts": "e05586c3d6f1de74",
+      "libs/components/design/loader.ts": "a8538f112abe508b",
       "libs/components/src/lib/button/button-properties-styles.component.css": "8cda9b48a805c82c",
       "libs/components/src/lib/button/button.component.css": "23b972531d7ef9c5",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
@@ -24,6 +25,7 @@
       "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "8ee58ff3f1f8390e",
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "ed988a595c1ca18f",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "781633d6ac0b70d9",
+      "libs/components/src/lib/loader/spinner/spinner-sweep-dashes.ts": "bf8174b68972079b",
       "libs/components/src/lib/overlay/alert-dialog/alert-dialog.component.css": "634bf293291cc8a7",
       "libs/components/src/lib/overlay/overlay-container.component.css": "68455f1f6f6ce18e",
       "libs/components/src/lib/overlay/overlay-main-styles.component.css": "a141c3135515466d",
@@ -32,13 +34,13 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "86c7eef5dbeddc7f",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "e52765c5a323da05"
     },
-    "app": "13145a1c00c78b6f",
+    "app": "e26a50a2cb7637b2",
     "actions": ["emit:close"],
     "builder": "designer",
-    "at": "2026-11-22T15:58:05.924Z",
+    "at": "2026-11-25T11:26:51.597Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1616614
+    "pid": 3312604
   },
   "components/canvas-viewport": {
     "hash": "9d5645c6324847d2",
