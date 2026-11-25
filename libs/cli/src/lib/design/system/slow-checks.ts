@@ -82,23 +82,26 @@ export const slowCacheFileOf = (product: ResolvedProduct) => {
 export const blockingSlowProblemsOf = (product: ResolvedProduct, problems: Problem[]) =>
   withoutWaitingUndesigned(product, unbaselinedProblemsOf(product, problems));
 
-export const readSlowCache = (product: ResolvedProduct): SlowCache => {
+/** Every stored slow result, failing ones included: the design server's slow runner replays a failure at unchanged inputs instead of running it again. */
+export const readStoredSlowResults = (product: ResolvedProduct): SlowCache => {
   try {
     const parsed = JSON.parse(readFileSync(slowCacheFileOf(product), 'utf8')) as unknown;
 
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-
-    return Object.fromEntries(
-      Object.entries(parsed as SlowCache).filter(
-        ([, entry]) => blockingSlowProblemsOf(product, entry.problems).length === 0,
-      ),
-    );
+    return !parsed || typeof parsed !== 'object' || Array.isArray(parsed) ? {} : (parsed as SlowCache);
   } catch {
     return {};
   }
 };
 
-/** Stores the passing parts of `hashes` and drops the failing ones, so a failure is run again instead of replayed; baselined and waiting problems do not fail a part. */
+/** The stored slow results that pass; a failing one counts as missing, so `design check` runs it again. */
+export const readSlowCache = (product: ResolvedProduct): SlowCache =>
+  Object.fromEntries(
+    Object.entries(readStoredSlowResults(product)).filter(
+      ([, entry]) => blockingSlowProblemsOf(product, entry.problems).length === 0,
+    ),
+  );
+
+/** Stores the result of every part of `hashes` at its hash, failing ones included. */
 export const writeSlowResults = (options: {
   product: ResolvedProduct;
   hashes: Record<string, string>;
@@ -106,18 +109,12 @@ export const writeSlowResults = (options: {
   unjudged?: Map<string, UnjudgedState[]>;
 }) => {
   const file = slowCacheFileOf(options.product);
-  const cache = readSlowCache(options.product);
+  const cache = readStoredSlowResults(options.product);
   const at = new Date().toISOString();
 
   for (const [part, hash] of Object.entries(options.hashes)) {
     const unjudged = options.unjudged?.get(part) ?? [];
-
     const problems = options.results.get(part) ?? [];
-
-    if (blockingSlowProblemsOf(options.product, problems).length > 0) {
-      delete cache[part];
-      continue;
-    }
 
     cache[part] = { hash, problems, at, ...(unjudged.length > 0 ? { unjudged } : {}) };
   }

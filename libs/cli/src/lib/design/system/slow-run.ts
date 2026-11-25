@@ -45,7 +45,7 @@ import { changedOutsideSketchOf } from './sketch/merged-parts';
 import {
   linkedComponentOf,
   PRODUCT_PART,
-  readSlowCache,
+  readStoredSlowResults,
   isSlowRule,
   slowInputsOf,
   UnjudgedState,
@@ -569,7 +569,7 @@ export const startSlowRunner = (options: {
         if (!entry.harness) continue;
 
         const product = resolveProduct({ target: options.target, name, config: entry });
-        const cache = readSlowCache(product);
+        const cache = readStoredSlowResults(product);
         const stale = Object.entries(slowInputsOf({ product })).filter(
           ([part, { hash }]) => cache[part]?.hash !== hash,
         );

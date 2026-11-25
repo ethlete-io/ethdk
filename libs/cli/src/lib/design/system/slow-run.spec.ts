@@ -90,6 +90,60 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     expect(readyOf(dir)['components/chip']).toMatchObject({ by: 'et design serve', cmd: 'serve' });
   });
 
+  it('replays a failing part at unchanged inputs on later polls and reruns it once its inputs change', async () => {
+    const { target, dir, config: plain } = staleChip();
+    const config = {
+      ...plain,
+      products: { acme: { ...plain.products.acme, harness: { ...harness, specs: 'vitest.config.mts' } } },
+    };
+    const lines: string[] = [];
+    let specRuns = 0;
+    const runner = startSlowRunner({
+      target,
+      configOf: () => config,
+      log: (line) => lines.push(line),
+      intervalMs: 3_600_000,
+      runners: {
+        specs: async () => {
+          specRuns++;
+
+          return [];
+        },
+        start: async () => ({ url: 'http://app', stop: async () => undefined }),
+        live: async () => [],
+        controlState: async () => [],
+        droppedProps: async () => [
+          { rule: 'DROPPED-PROP', file: join(dir, CHIP, 'chip.ts'), message: 'submenu is dropped' },
+        ],
+        actionLost: async () => [],
+        stateInner: async () => [],
+        shoot: async () => ({ states: {}, shots: [] }),
+      },
+      record: async () => undefined,
+    });
+
+    await runner.poll();
+    await runner.poll();
+
+    const firstRuns = specRuns;
+
+    expect(firstRuns).toBeGreaterThan(0);
+    expect(lines.filter((line) => line.includes(CHIP))).not.toEqual([]);
+
+    await runner.poll();
+    await runner.poll();
+    await runner.poll();
+
+    expect(specRuns).toBe(firstRuns);
+
+    writeFileSync(join(target, 'apps/acme/src/chip.component.ts'), '@Component({})\nexport class Chip { a = 1; }\n');
+    await runner.poll();
+    await runner.poll();
+    runner.stop();
+
+    expect(specRuns).toBeGreaterThan(firstRuns);
+  });
+
   it('writes no tracked file through a serve slow run, the legacy upgrade of design check and design status', async () => {
     const { target, dir, config, product } = staleChip();
     const legacy = partHashOf({ product: product(), dir: join(dir, CHIP) });
