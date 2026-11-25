@@ -3,10 +3,13 @@ import { execFileSync } from 'node:child_process';
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertCompleteBuild } from '../../libs/cli/scripts/move-into-place.mts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const built = resolve(root, 'dist/libs/cli');
 const runtime = resolve(root, 'dist/apps/ethlete-studio/cli-runtime');
+
+assertCompleteBuild(built, built);
 
 const manifest = JSON.parse(readFileSync(resolve(built, 'package.json'), 'utf8'));
 
@@ -36,6 +39,8 @@ execFileSync('npm', ['install', '--omit=dev', '--omit=peer', '--no-audit', '--no
   shell: process.platform === 'win32',
 });
 
-cpSync(built, resolve(runtime, 'node_modules/@ethlete/cli'), { recursive: true });
+const runtimeCli = resolve(runtime, 'node_modules/@ethlete/cli');
+cpSync(built, runtimeCli, { recursive: true });
+assertCompleteBuild(runtimeCli, runtimeCli);
 
 console.log(`design runtime written to ${runtime}`);

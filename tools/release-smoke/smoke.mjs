@@ -4,7 +4,8 @@
  * against it, then serves that build and loads its pages in headless Chromium.
  *
  * Fails on a build error, a page error, a console error, a request storm (more than `--storm` identical
- * requests within `--window` ms, the endless-loop class) or a main thread that stops answering.
+ * requests within `--window` ms, the endless-loop class), a main thread that stops answering, or a built CLI
+ * (`dist/libs/cli`, Studio's `cli-runtime`) with a relative require that does not resolve.
  * The app's installed `node_modules/@ethlete/*` are moved aside and restored afterwards, also on failure
  * and Ctrl-C; a backup left by a killed run is restored on the next start.
  *
@@ -31,6 +32,7 @@ import { request as httpsRequest } from 'node:https';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertCompleteBuild } from '../../libs/cli/scripts/move-into-place.mts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const sdkRoot = resolve(here, '../..');
@@ -336,8 +338,8 @@ restoreAll();
 
 const libs = [...new Set(apps.flatMap((name) => config[name].libs))];
 if (!skipSdkBuild) {
-  console.log(`Building the SDK: ${libs.join(', ')}`);
-  const code = await run('npx', ['nx', 'run-many', '-t', 'build', '-p', libs.join(',')], {
+  console.log(`Building the SDK: ${[...libs, 'cli'].join(', ')}`);
+  const code = await run('npx', ['nx', 'run-many', '-t', 'build', '-p', [...libs, 'cli'].join(',')], {
     cwd: sdkRoot,
     env: { ...process.env, NX_NO_CLOUD: 'true', NX_TUI: 'false' },
   });
@@ -350,6 +352,16 @@ const missingDist = libs.filter((lib) => !existsSync(join(sdkRoot, 'dist/libs', 
 if (missingDist.length) {
   console.error(`✖ release smoke: no build output for ${missingDist.join(', ')} in dist/libs`);
   process.exit(1);
+}
+
+const studioCli = join(sdkRoot, 'dist/apps/ethlete-studio/cli-runtime/node_modules/@ethlete/cli');
+for (const dir of [join(sdkRoot, 'dist/libs/cli'), ...(existsSync(studioCli) ? [studioCli] : [])]) {
+  try {
+    assertCompleteBuild(dir, dir);
+  } catch (error) {
+    console.error(`✖ release smoke: ${error.message}`);
+    process.exit(1);
+  }
 }
 
 const results = [];
