@@ -21,9 +21,9 @@ describe('relatedSpecArgsOf', () => {
 });
 
 describe('specFailuresOf', () => {
-  it('names each failed spec with its failed tests, or the load error of a spec that did not run', () => {
+  it('names each failed spec with its failed tests and why each failed, or the load error of a spec that did not run', () => {
     expect(specFailuresOf({ root: '/tmp/s3cap', report })).toEqual([
-      { file: 'src/chip.spec.ts', failed: ['chip draws'] },
+      { file: 'src/chip.spec.ts', failed: ['chip draws (AssertionError: expected 1 to be 2 // Object.is equality)'] },
       { file: 'src/tag.spec.ts', failed: ["Cannot find module './missing' imported from /tmp/s3cap/src/tag.spec.ts"] },
     ]);
   });
@@ -42,7 +42,11 @@ describe('appSpecProblemsOf', () => {
     });
 
     expect(problems.get('components/chip')).toEqual([
-      { rule: 'APP-SPEC', file: 'src/chip.spec.ts', message: 'fails: chip draws' },
+      {
+        rule: 'APP-SPEC',
+        file: 'src/chip.spec.ts',
+        message: 'fails: chip draws (AssertionError: expected 1 to be 2 // Object.is equality)',
+      },
     ]);
     expect(problems.get('pages/home')).toBeUndefined();
   });

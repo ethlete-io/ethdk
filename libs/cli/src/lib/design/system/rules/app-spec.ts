@@ -7,7 +7,7 @@ import { Problem } from '../problem';
 
 export const APP_SPEC_RULE = 'APP-SPEC';
 
-/** A spec file vitest ran and the names of its failed tests, or why the file failed as a whole. */
+/** A spec file vitest ran and its failed tests, each with the first line of its error, or why the file failed as a whole. */
 export type SpecFailure = { file: string; failed: string[] };
 
 /** Runs the specs related to `files` with the vitest config `config`, or answers why they did not run. */
@@ -22,7 +22,7 @@ type VitestJson = {
     name: string;
     status: string;
     message?: string;
-    assertionResults?: { fullName: string; status: string }[];
+    assertionResults?: { fullName: string; status: string; failureMessages?: string[] }[];
   }[];
 };
 
@@ -37,7 +37,11 @@ export const specFailuresOf = (options: { root: string; report: string }): SpecF
     .map((result) => {
       const failed = (result.assertionResults ?? [])
         .filter((assertion) => assertion.status === 'failed')
-        .map((assertion) => assertion.fullName);
+        .map((assertion) => {
+          const reason = assertion.failureMessages?.[0]?.split('\n')[0]?.trim();
+
+          return reason ? `${assertion.fullName} (${reason})` : assertion.fullName;
+        });
 
       return {
         file: toRepoPath(options.root, result.name),
