@@ -24,7 +24,7 @@ const sketchRows = (items: OpenSketch[]): Row[] =>
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/part-tree/part-tree.component.ts',
   note: 'A dense, quiet tree of the product parts only, no states: the Sketches group with the open sketches on top, then the layers with their parts, a part that belongs to a host one level under it, and the collapsed Legacy group with its projects and calls at the bottom. Every group and host remembers open or closed; a warning mark on a part that needs a look and no counts anywhere.',
-  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   widths: [232],
   states: treeStates,
   describe: {

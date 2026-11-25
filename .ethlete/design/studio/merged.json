@@ -95,10 +95,10 @@
     "at": "2026-11-24T09:21:48.977Z"
   },
   "elements/part-tree": {
-    "hash": "1f197d3699ffc33b",
-    "variant": "a",
+    "hash": "25dc8e0384f4c2b1",
+    "variant": "new",
     "decidedBy": "user",
-    "at": "2026-11-13T10:17:15.531Z"
+    "at": "2026-11-25T14:45:22.636Z"
   },
   "elements/shell-main": {
     "hash": "29c179aede91fa85",
