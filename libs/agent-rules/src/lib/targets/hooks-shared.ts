@@ -57,6 +57,12 @@ export const KNOWN_HOOKS: Record<string, HookDefinition> = {
     timeout: 60,
     agents: ['claude'],
   },
+  'builder-idle-check': {
+    events: [{ event: 'Stop' }],
+    file: 'builder-idle-check.py',
+    timeout: 10,
+    agents: ['claude'],
+  },
   'git-safety': {
     events: [{ event: 'PreToolUse', matcher: 'Bash' }],
     file: 'git-safety.py',

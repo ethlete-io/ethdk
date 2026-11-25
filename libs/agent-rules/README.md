@@ -374,6 +374,14 @@ Available hooks:
   user knows whether the task is judgment-heavy. A fork and an agent type whose own
   definition sets a model both pass untouched, because `model` would change nothing there.
 
+- **`builder-idle-check`** (Claude Code only) - a `Stop` hook for the builder session (the
+  one that ran the `builder-agent` skill or `/handoff resume builder-...`). When a turn ends
+  with no subagent and no background command running - a CI watcher (`gh run watch`, a
+  `gh run view` poll loop) or a dev server does not count - while `plans/QUEUE.md` has open
+  rows owned by `Builder` without a wait reason, it blocks the stop and names those rows. A
+  row waits when its `Stand` cell contains "wartet auf" or "Offen nur:". It fires once per
+  idle stop chain (`stop_hook_active` passes).
+
 Hooks can be turned off per machine - see the local config below.
 
 ## Mods (Claude Code)
