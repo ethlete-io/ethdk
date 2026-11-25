@@ -36,14 +36,7 @@
       <ethlete-sketch-status-badge [status]="waitingBadge()" />
     }
     @case ('failed') {
-      <span class="flex min-w-0 items-center gap-space-2">
-        <ethlete-sketch-status-badge status="failed" data-sk-render-error />
-        @if (readyReason(); as reason) {
-          <span class="line-clamp-2 max-w-80 min-w-0 text-ui-sm text-et-surface-muted" data-sk-failed>{{
-            reason
-          }}</span>
-        }
-      </span>
+      <ethlete-sketch-status-badge status="failed" data-sk-render-error />
     }
     @case ('drawing') {
       <ethlete-sketch-status-badge status="drawing" />
@@ -54,42 +47,6 @@
       <div class="flex flex-wrap items-center">
         <et-badge variant="tonal" size="sm">{{ LABELS.autoMerge }}</et-badge>
       </div>
-    </span>
-  }
-  @if (agent(); as run) {
-    <span
-      [etProvideColor]="run.failure ? errorTheme() : undefined"
-      class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-muted"
-      data-sk-agent
-    >
-      <span
-        [class.animate-pulse]="!run.failure"
-        class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
-      ></span>
-      <span class="inline-flex items-center gap-space-1"
-        ><svg [agent]="run.by.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ run.by.short }}</span
-      >
-      <span
-        [class]="run.failure ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'"
-        class="font-ui-medium"
-        >{{ run.failure ?? LABELS.drawingMark }}</span
-      >
-      @if (run.since) {
-        <span>· {{ run.since }}</span>
-      }
-    </span>
-  }
-  @if (port(); as merge) {
-    <span
-      class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-muted"
-      data-sk-merge-port
-    >
-      <span
-        [etProvideColor]="warningTheme()"
-        class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
-      ></span>
-      <span class="truncate font-ui-medium text-et-surface">{{ LABELS.mergePort(merge.merged) }}</span>
-      <span>· {{ merge.since }}</span>
     </span>
   }
   @if (withdrawnCount() > 0) {

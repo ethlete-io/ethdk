@@ -82,7 +82,6 @@ export const SKETCHES_LABELS = {
   notRebuild: (of: string, difference: string) => `nicht ${of}: ${difference}`,
   drawingVariant: 'zeichnet diese Variante',
   drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',
-  mergePort: (merged: readonly string[]) => `Agent portiert nach Merge von ${merged.join(', ')}`,
   autoMerge: 'Übernimmt sich selbst',
   waitsOnSubSketches: (open: readonly string[]) => `Wartet auf Freigabe: ${open.join(', ')}`,
   status: {
@@ -96,6 +95,7 @@ export const SKETCHES_LABELS = {
     merging: 'Wird übernommen',
   },
   holdUntil: (until: string) => `Wartet auf ${until}`,
+  rowFailed: (reason: string) => `Render fehlgeschlagen: ${reason}`,
   since: (minutes: number) => `seit ${spanOf(minutes)}`,
   agentRun: {
     failed: (round: number | null) => (round === null ? 'Runde fehlgeschlagen' : `Runde ${round} fehlgeschlagen`),

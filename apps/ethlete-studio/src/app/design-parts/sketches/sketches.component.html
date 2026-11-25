@@ -296,7 +296,6 @@
         [subSketch]="subSketch()"
         [approved]="approved() !== null"
         [subSketchesOpen]="subSketchesOpen()"
-        [readyReason]="readyReason()"
         [hold]="hold()"
         [autoMerge]="autoMerge()"
         [error]="errorInRow() ? null : error()"
@@ -306,8 +305,6 @@
         [listError]="!!listError()"
         [rounds]="rounds()"
         [round]="round()"
-        [agent]="agent()"
-        [port]="port()"
         [withdrawnCount]="withdrawnCount()"
         (roundChange)="roundChange.emit($event)"
         (retry)="retry.emit()"
@@ -545,6 +542,15 @@
       @if (row.model; as model) {
         <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted" data-sk-model
           ><svg [agent]="model.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ model.short }}</span
+        >
+      }
+      @if (failures()[row.key]; as failure) {
+        <span
+          [etProvideColor]="errorTheme()"
+          class="text-ui-xs text-et-theme-ink wrap-anywhere"
+          role="alert"
+          data-sk-row-failed
+          >{{ LABELS.rowFailed(failure) }}</span
         >
       }
       @if (isPending(row)) {

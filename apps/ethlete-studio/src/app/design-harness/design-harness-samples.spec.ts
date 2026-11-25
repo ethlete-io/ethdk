@@ -50,7 +50,7 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     expect(props['part']).toBe('pages/sketches');
     expect(props['screen']).toBeUndefined();
     expect(props['wholeScreens']).toEqual([]);
-    expect(groups.map((group) => group.states.length)).toEqual([12, 1]);
+    expect(groups.map((group) => group.states.length)).toEqual([10, 1]);
     expect(groups[0]?.crop).toEqual({ x: 818, y: 347, width: 622, height: 93 });
   });
 

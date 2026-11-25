@@ -378,8 +378,6 @@ const SCREEN_CHANGES: { states: string[]; change: SketchChange }[] = [
       'all-unchanged',
       'withdrawn-hidden',
       'withdrawn-shown',
-      'agent-round',
-      'agent-variant',
       'agent-failed',
       'question-only',
     ],

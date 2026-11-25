@@ -1,19 +1,11 @@
 import { Component, computed, ElementRef, input, model, output, viewChild, ViewEncapsulation } from '@angular/core';
 import { BADGE_IMPORTS, BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, MENU_IMPORTS, SWITCH_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
-import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { HoldTriggerComponent } from '../hold-trigger/hold-trigger.component';
 import { SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status-badge.component';
-import {
-  SketchAgentRun,
-  SketchHold,
-  SketchMergePort,
-  SketchRound,
-  SketchStatus,
-  SketchWithdrawn,
-} from '../sketches/sketches-sample';
+import { SketchHold, SketchRound, SketchStatus, SketchWithdrawn } from '../sketches/sketches-sample';
 
 @Component({
   selector: 'ethlete-sketch-head',
@@ -26,7 +18,6 @@ import {
     MENU_IMPORTS,
     SWITCH_IMPORTS,
     ProvideColorDirective,
-    AgentLogoComponent,
     HoldTriggerComponent,
     SketchStatusBadgeComponent,
   ],
@@ -37,10 +28,8 @@ import {
 })
 export class SketchHeadComponent {
   protected errorTheme = injectSemanticColorTheme('error');
-  protected warningTheme = injectSemanticColorTheme('warning');
   protected successTheme = injectSemanticColorTheme('success');
   public status = input<SketchStatus>('waiting');
-  public readyReason = input<string | null>(null);
   public hold = input.required<SketchHold>();
   public autoMerge = input(false);
   public subSketch = input(false);
@@ -53,8 +42,6 @@ export class SketchHeadComponent {
   public listError = input(false);
   public rounds = input<SketchRound[]>([]);
   public round = input('');
-  public agent = input<SketchAgentRun | null>(null);
-  public port = input<SketchMergePort | null>(null);
   public withdrawnCount = input(0);
   public reasonOpen = model(false);
   public roundsOpen = model(false);
@@ -72,8 +59,6 @@ export class SketchHeadComponent {
     () =>
       ['paused', 'waiting', 'failed', 'drawing'].includes(this.status()) ||
       this.autoMerge() ||
-      this.agent() !== null ||
-      this.port() !== null ||
       this.withdrawnCount() > 0,
   );
 

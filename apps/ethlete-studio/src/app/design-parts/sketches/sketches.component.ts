@@ -272,7 +272,7 @@ export class SketchesComponent {
   public drawn = input<string | null>(SKETCH_DRAWN);
   public hold = input<SketchHold>(SKETCH_HOLD);
   public reason = input(false);
-  public readyReason = input<string | null>(null);
+  public failures = input<Readonly<Record<string, string>>>({});
   public agent = input<SketchAgentRun | null>(null);
   public port = input<SketchMergePort | null>(null);
   public rounds = input(SKETCH_ROUNDS);

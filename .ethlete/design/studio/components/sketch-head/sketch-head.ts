@@ -8,7 +8,7 @@ import { icon } from '@system/foundations/icons';
 import switchPart from '@system/components/switch';
 import { holdTrigger, holdTriggerStyles } from '@system/components/hold-trigger';
 import { type SketchBadgeStatus, sketchStatusBadge } from '@system/components/sketch-status-badge';
-import { AGENT_RUNS, type AgentProgress, HOLD, modelName, toggleHold } from './sketch-status';
+import { HOLD, toggleHold } from './sketch-status';
 
 export { AGENT_RUNS, type AgentProgress, type AgentRun, modelName, OPUS, SOL } from './sketch-status';
 import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
@@ -16,22 +16,17 @@ import { BUILD_READY_LABELS, SYSTEM_LABELS } from '../../../../../apps/ethlete-s
 
 export type SketchHeadStatus = SketchBadgeStatus;
 
-export type MergePort = 'one' | 'two';
-
 export type SketchHead = {
   round: string;
   rounds?: string[];
   roundsOpen?: boolean;
   status?: SketchHeadStatus;
-  readyReason?: string;
   autoMerge?: boolean;
   discardable?: boolean;
   error?: string;
   retry?: boolean;
   comment?: { on: boolean; action?: string };
   discardDialog?: string;
-  agent?: AgentProgress;
-  port?: MergePort;
   withdrawn?: { count: number; shown: boolean };
   class?: string;
 };
@@ -39,15 +34,10 @@ export type SketchHead = {
 const ROUND = 'Runde 1 · Reset control: SDK button or own part';
 const SECOND_ROUND = 'Runde 2 · Port nach dem Merge';
 
-const MERGE_PORTS: Record<MergePort, { merged: string[]; since: string }> = {
-  one: { merged: ['components/button'], since: 'seit 1 Min' },
-  two: { merged: ['components/sketch-status-badge', 'elements/variant-cell'], since: 'seit 1 Min' },
-};
-
 const tonal = async (label: string) =>
   (await badge.render({ badges: [{ label, variant: 'tonal', size: 'sm' }] })) as { body: string; styles: string };
 
-const statusMarkup = async (status: SketchHeadStatus, readyReason?: string) => {
+const statusMarkup = async (status: SketchHeadStatus) => {
   const tag = await sketchStatusBadge(status);
   if (status === 'paused') {
     return {
@@ -60,54 +50,8 @@ const statusMarkup = async (status: SketchHeadStatus, readyReason?: string) => {
       }),
     };
   }
-  if (status === 'failed') {
-    return {
-      styles: tag.styles,
-      body: html`<span class="flex min-w-0 items-center gap-space-2"
-        >${tag.body}
-        ${
-          readyReason
-            ? html`<span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-failed
-                >${readyReason}</span
-              >`
-            : ''
-        }</span
-      >`,
-    };
-  }
   return { styles: tag.styles, body: html`<span class="flex items-center gap-space-2">${tag.body}</span>` };
 };
-
-const agentLine = (run: AgentProgress) =>
-  html`<span
-    class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
-    data-sk-agent
-    ${run.failed ? 'data-et-semantic-color="error"' : ''}
-  >
-    <span
-      class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid) ${run.failed ? '' : 'animate-pulse'}"
-    ></span>
-    ${modelName(run.by)}
-    <span class="font-ui-medium ${run.failed ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'}"
-      >${run.failed ? run.task : SKETCHES_LABELS.drawingMark}</span
-    >
-    <span>· ${run.since}</span>
-  </span>`;
-
-const portLine = (port: MergePort) =>
-  html`<span
-    class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
-    data-sk-merge-port
-  >
-    <span
-      class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
-      data-et-semantic-color="warning"
-    ></span>
-    <span class="truncate font-ui-medium text-et-surface"
-      >Agent portiert nach Merge von ${MERGE_PORTS[port].merged.join(', ')}</span
-    >
-    <span>· ${MERGE_PORTS[port].since}</span>
-  </span>`;
 
 const trayClass =
   'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))';
@@ -151,21 +95,17 @@ export const sketchHead = async ({
   rounds = [round],
   roundsOpen = false,
   status = 'waiting',
-  readyReason,
   autoMerge = false,
   discardable = true,
   error,
   retry = false,
   comment,
   discardDialog = '',
-  agent,
-  port,
   withdrawn,
   class: hostClass = '',
 }: SketchHead) => {
   const autoTag = autoMerge ? await tonal(SKETCHES_LABELS.autoMerge) : undefined;
-  const shown = (agent && !agent.failed) || port ? 'drawing' : status;
-  const state = await statusMarkup(shown, readyReason);
+  const state = await statusMarkup(status);
   const discard = iconButton({
     icon: icon('trash', { cls: 'et-icon' }),
     ariaLabel: SKETCHES_LABELS.discard,
@@ -222,7 +162,6 @@ export const sketchHead = async ({
           ? html`<span class="flex w-fit" data-et-semantic-color="success" data-sk-auto-merge>${autoTag.body}</span>`
           : ''
       }
-      ${agent ? agentLine(agent) : ''} ${port ? portLine(port) : ''}
       ${toggle ? withAction(control(toggle.body, 'withdrawn'), { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       <span class="mx-space-1 h-5 w-px flex-none bg-et-surface-border" aria-hidden="true"></span>
       ${picker.body}
@@ -261,24 +200,22 @@ const MERGE_ERROR = 'components/zoom-chip hat sich seit dem Sketch geändert. La
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/sketch-head/sketch-head.component.ts',
-  note: 'The floating toolbar at the bottom of the Sketches canvas: status, agent line and withdrawn switch, then the round menu, Kommentar and Verwerfen as icon buttons.',
+  note: 'The floating toolbar at the bottom of the Sketches canvas: one status (dot and word) and the withdrawn switch, then the round menu, Kommentar and Verwerfen as icon buttons. Model, failure and round text live on the rows, never here.',
   madeBy: ['claude-opus-5-5'],
   widths: [1200],
   states: {
     plain: { withdrawn: { count: 2, shown: false } },
-    agent: { round: SECOND_ROUND, agent: AGENT_RUNS.round },
+    agent: { round: SECOND_ROUND, status: 'drawing' },
     edit: { discardable: false, autoMerge: true, round: BUILD_READY_LABELS.groups['direct-edit'] },
     error: { error: MERGE_ERROR },
     'comments-retry': { commentable: true, listError: true },
     paused: { status: 'paused' },
-    'port-one': { port: 'one' },
-    'port-two': { port: 'two' },
     rounds: { rounds: [ROUND, SECOND_ROUND], roundsOpen: true },
   },
   groups: [
     { label: 'Runde', states: ['plain', 'edit', 'rounds'] },
     { label: 'Status', states: ['paused'] },
-    { label: 'Agent', states: ['agent', 'port-one', 'port-two'] },
+    { label: 'Agent', states: ['agent'] },
     { label: 'Aktionen', states: ['comments-retry'] },
     { label: 'Fehler', states: ['error'] },
   ],
@@ -287,16 +224,12 @@ export default definePart({
       'A round; check one floating toolbar with no title: the status, the withdrawn switch, then the history and Verwerfen icon buttons.',
     rounds: 'The round menu open; check the et-menu above the history button with the shown round checked.',
     agent:
-      'An agent drawing the round; check the zeichnet badge and the pulsing agent line with the model, zeichnet and its time beside the picker.',
+      'An agent drawing the round; check the zeichnet badge as the only text, with no model, time or round line beside it.',
     edit: 'A direct edit; check the Auto-Merge tag and the edit hint in place of Verwerfen.',
     error: 'A merge that failed outside the rows; check the server reason in the error colour before Verwerfen.',
     'comments-retry':
       'A commentable sketch whose listing failed; check the Kommentar icon, then Erneut laden, then the Verwerfen icon.',
     paused: 'A paused sketch; check the Pausiert badge, which opens the hold reason on click.',
-    'port-one':
-      'The agent porting after one merge; check Agent portiert nach Merge von with the merged part beside the picker.',
-    'port-two':
-      'The agent porting after two merges; check that the longer port line stays on one line beside the picker.',
   },
   controls: {
     hold: { kind: 'button', part: 'components/hold-trigger' },

@@ -28,8 +28,6 @@ export const GROUPS: ChangeGroup[] = [
       'all-unchanged',
       'withdrawn-hidden',
       'withdrawn-shown',
-      'agent-round',
-      'agent-variant',
       'agent-failed',
       'question-only',
     ],

@@ -272,7 +272,7 @@ export const repicksOf = (sketch: ListedSketch): Record<string, SketchRepick> =>
       [subSketchesOpen]="(sketch().openSubSketches?.length ?? 0) > 0"
       [repicks]="repicks()"
       [status]="sketchStatus()"
-      [readyReason]="readyReason()"
+      [failures]="renderFailures()"
       [hold]="held()"
       [agent]="agentRun()"
       [port]="mergePort()"
@@ -846,9 +846,25 @@ export class SketchViewComponent {
     return { merged: mark.merged, since: Number.isNaN(at) ? '' : SKETCHES_LABELS.since(minutesSince(at)) };
   });
 
-  protected readyReason = computed(() =>
-    this.renderState().state === 'failed' ? SKETCHES_LABELS.agentRun.errors(this.renderState().errors) : null,
-  );
+  protected renderFailures = computed(() => {
+    const { state, errors } = this.renderState();
+
+    if (state !== 'failed') return {};
+
+    return Object.fromEntries(
+      this.sketchRows().flatMap(({ key }) => {
+        const lines = errors.flatMap((line) =>
+          line.startsWith(`${key} · `)
+            ? [line.slice(key.length + 3)]
+            : line.startsWith(`${key}: `)
+              ? [line.slice(key.length + 2)]
+              : [],
+        );
+
+        return lines.length > 0 ? [[key, SKETCHES_LABELS.agentRun.errors(lines)]] : [];
+      }),
+    );
+  });
 
   protected repicks = computed(() => repicksOf(this.sketch()));
 

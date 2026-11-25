@@ -13,7 +13,7 @@ import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
 import { icon } from '@system/foundations/icons';
 import { commentPinMark } from '@system/components/comment-pin';
-import { type MergePort, type SketchHeadStatus, sketchHead } from '@system/components/sketch-head';
+import { type SketchHeadStatus, sketchHead } from '@system/components/sketch-head';
 import { variantCell, variantCellStyles } from '@system/elements/variant-cell';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
@@ -80,7 +80,7 @@ type Props = {
   camera: 'fit' | '100' | Camera;
   selected?: RowKey;
   status?: SketchStatus;
-  readyReason?: string;
+  failures?: Partial<Record<RowKey, string>>;
   errored?: RowKey[];
   fresh?: boolean;
   autoMerge?: boolean;
@@ -96,7 +96,7 @@ type Props = {
   sameOpen?: boolean;
   withdrawn?: Withdrawn;
   agent?: AgentRun;
-  port?: MergePort;
+  port?: 'one' | 'two';
   points?: boolean;
   pointsOpen?: boolean;
   screen?: ScreenMode;
@@ -112,6 +112,7 @@ type View = {
   selected?: RowKey;
   status: SketchStatus;
   errored: RowKey[];
+  failures: Partial<Record<RowKey, string>>;
   comparing: boolean;
   listError?: string;
   retry: string;
@@ -134,10 +135,19 @@ const LIST_HEIGHT = 720;
 const LIST_VIEWPORT = { width: LIST_WIDTH, height: LIST_HEIGHT };
 
 const LIST_ERROR = 'missing build: pages/sketches';
-const FAILED_REASON = 'b · default: boom is not defined';
+const FAILED_REASONS = { b: 'default: boom is not defined' };
 const failedMark = (reason: string) =>
   html`<span class="text-ui-xs text-et-theme-ink" data-et-semantic-color="error" role="alert" data-sk-compare-failed
     >Vergleich fehlgeschlagen: ${reason}</span
+  >`;
+
+const rowFailedMark = (reason: string) =>
+  html`<span
+    class="text-ui-xs text-et-theme-ink wrap-anywhere"
+    data-et-semantic-color="error"
+    role="alert"
+    data-sk-row-failed
+    >${SKETCHES_LABELS.rowFailed(reason)}</span
   >`;
 
 const RESET_STATES = ['reset', 'reset-hover', 'reset-active', 'reset-focus-visible'];
@@ -410,7 +420,9 @@ const headOf = (row: Row, view: View) => {
   const mergeFailed = view.error && row.key === view.selected ? errorText(view.error) : '';
   const action = drawn ? drawingMark : withPoints + mergeFailed;
   const failed = view.listError ? failedMark(view.listError) : comparingMark;
-  const mark = view.comparing && row.key !== 'current' ? failed : '';
+  const renderFailure = view.failures[row.key];
+  const mark =
+    (renderFailure ? rowFailedMark(renderFailure) : '') + (view.comparing && row.key !== 'current' ? failed : '');
   if (isWithdrawn(row, view.withdrawn)) return rowHead(row, withdrawnMark, mark);
   return rowHead(row, action, mark) + (drawn || view.comments ? '' : pinFor(row));
 };
@@ -735,7 +747,7 @@ export default definePart<Props>({
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
     drawing: { camera: 'fit', status: 'drawing' },
     paused: { camera: 'fit', status: 'paused' },
-    failed: { camera: 'fit', status: 'failed', errored: ['b'], readyReason: FAILED_REASON },
+    failed: { camera: 'fit', status: 'failed', errored: ['b'], failures: FAILED_REASONS },
     'new-part': { camera: 'fit', fresh: true },
     'auto-merge': { camera: 'fit', status: 'drawing', autoMerge: true },
     'narrow-part': { camera: 'fit', part: 'narrow' },
@@ -762,9 +774,7 @@ export default definePart<Props>({
     'unchanged-matrix-open': { camera: { zoom: 0.2, x: -4000, y: 0 }, same: ['b', 'c'], sameOpen: true },
     'withdrawn-hidden': { camera: 'fit', part: 'narrow', withdrawn: 'hidden' },
     'withdrawn-shown': { camera: 'fit', part: 'narrow', withdrawn: 'shown' },
-    'agent-round': { camera: 'fit', part: 'narrow', agent: 'round' },
-    'agent-variant': { camera: 'fit', part: 'narrow', agent: 'variant' },
-    'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed' },
+    'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed', errored: ['b'], failures: FAILED_REASONS },
     'sketch-only-points': { camera: 'fit', part: 'narrow', fresh: true, selected: 'b', points: true },
     'sketch-only-points-open': {
       camera: 'fit',
@@ -797,7 +807,7 @@ export default definePart<Props>({
       'A variant still drawing; check the zeichnet badge in the header, that Übernehmen is missing, and that the drawing variant shows its frames live like a finished one.',
     paused: 'A paused sketch; check the Pausiert badge in the header.',
     failed:
-      'Variant b failed to render; check Render fehlgeschlagen in the error colour with b · default: and the error, and no Übernehmen in any row.',
+      'Variant b failed to render; check the Render fehlgeschlagen badge in the toolbar, Render fehlgeschlagen: default: and the error in the head of row b in the error colour, and no Übernehmen in any row.',
     'auto-merge':
       'A sketch that sketch ready would merge by itself; check the auto-merge mark beside the status in the header.',
     'new-part': 'A sketch of a new part; check that there is no Aktuell row and the neu badge shows.',
@@ -841,12 +851,8 @@ export default definePart<Props>({
     'withdrawn-hidden': 'A variant the agent withdrew, hidden; check the switch to show it and that its row is gone.',
     'withdrawn-shown':
       'The withdrawn variant shown; check its faded row and Vom Agent zurückgezogen with the reason in its head.',
-    'agent-round':
-      'An agent drawing a new round; check the pulsing dot, the model, zeichnet and its time beside the picker.',
-    'agent-variant':
-      'An agent drawing one variant; check the agent line with the model and zeichnet beside the picker and the zeichnet badge.',
     'agent-failed':
-      'A failed agent run; check that the dot stops pulsing and the failed round turns to the error colour.',
+      'A failed agent run; check the failure in the error colour in the head of row b, and no model, round or failure text in the toolbar.',
     'sketch-only-points':
       'A new part with open points after Übernehmen on b; check the open-points chip beside Übernehmen in the head of b.',
     'sketch-only-points-open':
@@ -894,7 +900,7 @@ export default definePart<Props>({
     },
     {
       label: 'Agent und Runden',
-      states: ['agent-round', 'agent-variant', 'change-crop', 'change-crop-whole'],
+      states: ['change-crop', 'change-crop-whole'],
     },
     {
       label: 'Vergleich',
@@ -927,7 +933,7 @@ export default definePart<Props>({
     camera,
     selected,
     status = 'waiting',
-    readyReason,
+    failures = {},
     errored = [],
     fresh = false,
     autoMerge = false,
@@ -1008,6 +1014,7 @@ export default definePart<Props>({
       selected,
       status,
       errored,
+      failures,
       comparing,
       listError,
       retry,
@@ -1032,8 +1039,7 @@ export default definePart<Props>({
     const folded = screen ? UNCHANGED_COUNT : hidden.length;
     const head = await sketchHead({
       round: ROUNDS[screen ? 'screen' : kind],
-      status,
-      readyReason,
+      status: (run && !run.failed) || port ? 'drawing' : status,
       autoMerge,
       discardable: kind !== 'edit' || !!screen,
       retry: !!listError,
@@ -1041,8 +1047,6 @@ export default definePart<Props>({
         ? { on: comments !== 'listed', action: comments === 'listed' ? 'comments-mode' : 'comments' }
         : undefined,
       discardDialog: confirm === 'discard' ? dialog?.body : undefined,
-      agent: run,
-      port,
       withdrawn: hiddenCount > 0 ? { count: hiddenCount, shown: withdrawn === 'shown' } : undefined,
       class: 'absolute bottom-space-3 left-1/2 z-3 max-w-[calc(100%-40rem)] -translate-x-1/2',
     });

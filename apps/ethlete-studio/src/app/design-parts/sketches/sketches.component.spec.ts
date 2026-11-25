@@ -708,9 +708,7 @@ describe('SketchesComponent', () => {
   });
 
   it('offers no merge while the sketch is not ready', async () => {
-    const root: HTMLElement = (
-      await render({ camera: '100', status: 'not-ready', readyReason: 'elements/x a: a long refusal line' })
-    ).nativeElement;
+    const root: HTMLElement = (await render({ camera: '100', status: 'not-ready' })).nativeElement;
 
     expect(root.querySelector('[data-sk-merge]')).toBeNull();
   });
@@ -1443,12 +1441,16 @@ describe('SketchesComponent', () => {
         status: 'waiting',
         rows: [...ROWS, y],
         errored: ['x'],
-        readyReason: 'x · default: boom is not defined',
+        failures: { x: 'default: boom is not defined' },
       })
     ).nativeElement;
 
     expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-status]'))).toBe(LABELS.status.failed);
-    expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-failed]'))).toBe('x · default: boom is not defined');
+    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-row-failed]'))).toBe(
+      LABELS.rowFailed('default: boom is not defined'),
+    );
+    expect(root.querySelector('[data-sk-row="y"] [data-sk-row-failed]')).toBeNull();
+    expect(textOf(root.querySelector('[data-sk-toolbar]'))).not.toContain('boom is not defined');
     expect(root.querySelector('[data-sk-merge]')).toBeNull();
   });
 
@@ -1876,38 +1878,32 @@ describe('SketchesComponent', () => {
     expect(toolbar.querySelector('[role="toolbar"]')).not.toBeNull();
   });
 
-  it('shows a running agent with its model and marks the sketch as drawing', async () => {
+  it('marks the sketch as drawing for a running agent or a port, with no model or port text in the toolbar', async () => {
     const agent = { by: { short: 'Haiku 5.5', id: 'claude-haiku-5-5', agent: 'claude' }, since: 'seit 9 Min' };
-    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', agent })).nativeElement;
-    const line = root.querySelector('[data-sk-agent]');
+    const port = { merged: ['components/a'], since: 'seit 5 Min' };
 
-    expect([...(line?.children ?? [])].map(textOf)).toEqual(['', 'Haiku 5.5', LABELS.drawingMark, '· seit 9 Min']);
-    expect(line?.querySelector('.animate-pulse')).not.toBeNull();
-    expect(textOf(root.querySelector('[data-sk-toolbar]'))).toContain(LABELS.status.drawing);
+    for (const inputs of [{ agent }, { port }]) {
+      const root: HTMLElement = (await render({ camera: '100', status: 'waiting', ...inputs })).nativeElement;
+      const toolbar = textOf(root.querySelector('[data-sk-toolbar]'));
+
+      expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-status]'))).toBe(LABELS.status.drawing);
+      expect(toolbar).not.toContain('Haiku 5.5');
+      expect(toolbar).not.toContain('components/a');
+      expect(toolbar).not.toContain('seit');
+    }
   });
 
-  it('shows a failed agent run without the pulse and keeps the sketch status', async () => {
+  it('keeps the sketch status for a failed agent run', async () => {
     const agent = {
       by: { short: 'Haiku 5.5', id: 'claude-haiku-5-5', agent: 'claude' },
       since: 'vor 1 Min',
       failure: 'Runde 3 fehlgeschlagen',
     };
     const root: HTMLElement = (await render({ camera: '100', status: 'waiting', agent })).nativeElement;
+    const toolbar = textOf(root.querySelector('[data-sk-toolbar]'));
 
-    expect(root.querySelector('[data-sk-agent] .animate-pulse')).toBeNull();
-    expect(textOf(root.querySelector('[data-sk-toolbar]'))).toContain(LABELS.status.waiting);
-    expect(textOf(root.querySelector('[data-sk-toolbar]'))).not.toContain(LABELS.status.drawing);
-  });
-
-  it('shows the port after a merge with every merged part and marks the sketch as drawing', async () => {
-    const port = { merged: ['components/a', 'components/b', 'elements/c'], since: 'seit 5 Min' };
-    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', port })).nativeElement;
-
-    expect([...(root.querySelector('[data-sk-merge-port]')?.children ?? [])].map(textOf)).toEqual([
-      '',
-      LABELS.mergePort(port.merged),
-      '· seit 5 Min',
-    ]);
-    expect(textOf(root.querySelector('[data-sk-toolbar]'))).toContain(LABELS.status.drawing);
+    expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-status]'))).toBe(LABELS.status.waiting);
+    expect(toolbar).not.toContain('Runde 3 fehlgeschlagen');
+    expect(toolbar).not.toContain('Haiku 5.5');
   });
 });

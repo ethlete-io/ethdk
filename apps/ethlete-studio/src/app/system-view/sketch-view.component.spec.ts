@@ -1052,8 +1052,7 @@ describe('SketchViewComponent', () => {
     expect(buttonNamed(ready.root, SKETCHES_LABELS.merge)).toBeDefined();
   });
 
-  // The human decided Studio does not show the agent's task or step in the agent line.
-  it('shows the agent line from the drawing report: the model, zeichnet and since when', async () => {
+  it('shows only zeichnet in the toolbar while the drawing report runs: no model, task or time', async () => {
     const updatedAt = new Date(Date.now() - 7 * 60_000).toISOString();
     const { root } = await render(
       {
@@ -1064,12 +1063,15 @@ describe('SketchViewComponent', () => {
       },
       noComments,
     );
-    const parts = [...(root.querySelector('[data-sk-agent]')?.children ?? [])].map((part) => part.textContent?.trim());
+    const toolbar = root.querySelector('[data-sk-toolbar]')?.textContent ?? '';
 
-    expect(parts).toEqual(['', 'Sonnet 5.5', SKETCHES_LABELS.drawingMark, `· ${SKETCHES_LABELS.since(7)}`]);
-    expect(root.querySelector('[data-sk-agent] svg[ethlete-agent-logo]')).not.toBeNull();
-    expect(root.querySelector('[data-sk-agent]')?.textContent).not.toContain('baut Runde 3');
-    expect(root.querySelector('[data-sk-agent]')?.textContent).not.toContain('Variante b');
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
+      SKETCHES_LABELS.status.drawing,
+    );
+    expect(root.querySelector('[data-sk-toolbar] svg[ethlete-agent-logo]')).toBeNull();
+    expect(toolbar).not.toContain('Sonnet 5.5');
+    expect(toolbar).not.toContain(SKETCHES_LABELS.since(7));
+    expect(toolbar).not.toContain('baut Runde 3');
   });
 
   // B726: the human sees at each variant which new parts it marks as sub-parts, by layer and name, with any stated difference.
@@ -1171,8 +1173,10 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(drawing.root.querySelector('[data-sk-agent]')?.textContent).toContain(SKETCHES_LABELS.drawingMark);
-    expect(drawing.root.querySelector('[data-sk-agent]')?.textContent).not.toContain('Zustand reset-hover');
+    expect(drawing.root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
+      SKETCHES_LABELS.status.drawing,
+    );
+    expect(drawing.root.querySelector('[data-sk-toolbar]')?.textContent).not.toContain('Zustand reset-hover');
     drawing.fixture.destroy();
 
     const stalled = await render(
@@ -1188,34 +1192,38 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(stalled.root.querySelector('[data-sk-agent]')).toBeNull();
+    expect(stalled.root.querySelector('[data-sk-toolbar]')?.textContent).not.toContain('Opus 5.5');
   });
 
-  it('shows a failed agent line and a failed head naming the round and the load error of each variant', async () => {
+  // B728: the human's paused sketch bar read "Pausiert, Opus 5.5, Runde 1 fehlgeschlagen"; the failure moves to the rows.
+  it('keeps a paused bar to its status and names the load error in the head of each failed variant', async () => {
     const updatedAt = new Date(Date.now() - 50 * 60_000).toISOString();
     const { root } = await render(
       {
         ...SKETCH,
         decision: undefined,
+        hold: { until: 'B99', by: 'claude-opus-5-5', heldAt: updatedAt },
         targets: [
           { variant: 'a', states: ['default'], interactions: [], error: 'tsc failed' },
-          { variant: 'b', states: ['default'], interactions: [], error: 'tsc failed' },
+          { variant: 'b', states: ['default'], interactions: [], error: 'tsc failed\nsecond line' },
         ],
         report: { message: 'baut', updatedAt, variant: 'b', author: 'claude-opus-5-5' },
       },
       noComments,
     );
-    const line = root.querySelector('[data-sk-agent]')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-    const labels = SKETCHES_LABELS.agentRun;
+    const toolbar = root.querySelector('[data-sk-toolbar]')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
-    expect(line).toContain('Opus 5.5');
-    expect(line).not.toContain('tsc failed');
-    expect(line).toContain(labels.ago(50));
-    expect(line).toMatch(/Runde (\d+ )?fehlgeschlagen/);
     expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
-      SKETCHES_LABELS.status.failed,
+      SKETCHES_LABELS.status.paused,
     );
-    expect(root.querySelector('[data-sk-toolbar] [data-sk-failed]')?.textContent?.trim()).toBe('a: tsc failed (+1)');
+    expect(toolbar).not.toContain('Opus 5.5');
+    expect(toolbar).not.toMatch(/Runde (\d+ )?fehlgeschlagen/);
+    expect(toolbar).not.toContain('tsc failed');
+    expect(root.querySelector('[data-sk-toolbar] svg[ethlete-agent-logo]')).toBeNull();
+    for (const variant of ['a', 'b'])
+      expect(root.querySelector(`[data-sk-row="${variant}"] [data-sk-row-failed]`)?.textContent?.trim()).toBe(
+        SKETCHES_LABELS.rowFailed('tsc failed'),
+      );
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
   });
 
@@ -1245,10 +1253,10 @@ describe('SketchViewComponent', () => {
     const variant = failing.dataset['variant'];
 
     expect(badge()).toBe(status.failed);
-    expect(root.querySelector('[data-sk-toolbar] [data-sk-failed]')?.textContent?.trim()).toBe(
-      `${variant} · default: boom is not defined`,
+    expect(root.querySelector(`[data-sk-row="${variant}"] [data-sk-row-failed]`)?.textContent?.trim()).toBe(
+      SKETCHES_LABELS.rowFailed('default: boom is not defined'),
     );
-    expect(root.querySelector('[data-sk-agent]')?.textContent).not.toContain('boom is not defined');
+    expect(root.querySelector('[data-sk-toolbar]')?.textContent).not.toContain('boom is not defined');
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
 
     await report(failing);
@@ -1257,13 +1265,7 @@ describe('SketchViewComponent', () => {
     expect(buttonNamed(root, SKETCHES_LABELS.merge)?.disabled).toBe(false);
   });
 
-  it('shows no agent line while nothing draws and every variant rendered', async () => {
-    const { root } = await render({ ...SKETCH, decision: undefined, report: null }, noComments);
-
-    expect(root.querySelector('[data-sk-agent]')).toBeNull();
-  });
-
-  it('shows the port line from the port mark: the merged parts and since when', async () => {
+  it('shows the port after a merge as zeichnet, without the merged parts or the time in the toolbar', async () => {
     const at = new Date(Date.now() - 4 * 60_000).toISOString();
     const { root } = await render(
       {
@@ -1274,24 +1276,13 @@ describe('SketchViewComponent', () => {
       },
       noComments,
     );
-    const parts = [...(root.querySelector('[data-sk-merge-port]')?.children ?? [])].map((part) =>
-      part.textContent?.trim(),
+    const toolbar = root.querySelector('[data-sk-toolbar]')?.textContent ?? '';
+
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
+      SKETCHES_LABELS.status.drawing,
     );
-
-    expect(parts).toEqual([
-      '',
-      SKETCHES_LABELS.mergePort(['elements/hero', 'elements/card']),
-      `· ${SKETCHES_LABELS.since(4)}`,
-    ]);
-  });
-
-  it('shows no port line without a port mark, even while the base is stale', async () => {
-    const { root } = await render(
-      { ...SKETCH, decision: undefined, report: null, staleBase: ['elements/hero'] },
-      noComments,
-    );
-
-    expect(root.querySelector('[data-sk-merge-port]')).toBeNull();
+    expect(toolbar).not.toContain('elements/hero');
+    expect(toolbar).not.toContain(SKETCHES_LABELS.since(4));
   });
 
   // Decision: a pick in Studio is a merge, so a recorded pick shows no picked state.
