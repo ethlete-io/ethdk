@@ -44,6 +44,8 @@ vi.mock('./design-harness-parts', () => ({
     'pages/frame': () => Promise.resolve(FakeFrameComponent),
     'pages/bad': () => Promise.resolve(FakeChipComponent),
     'components/chip-dialog': () => Promise.resolve(FakeChipComponent),
+    'components/disclosure': () =>
+      import('../design-parts/disclosure/disclosure.component').then((m) => m.DisclosureComponent),
   },
 }));
 
@@ -117,6 +119,18 @@ describe('DesignHarnessComponent', () => {
     const element = await render(`?part=components%2Fchip&state=a&props=${props}`);
 
     expect(element.querySelector('ethlete-fake-chip')?.className).toBe('relative h-56');
+  });
+
+  it('sets no input the part component lacks, as the interaction a disclosure state forces', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const props = encodeURIComponent(
+      JSON.stringify({ label: '2 states of pages/inbox without visible change', open: false, interaction: 'hover' }),
+    );
+    const element = await render(`?part=components%2Fdisclosure&state=rest-hover&props=${props}`);
+
+    expect(element.querySelector('ethlete-disclosure')?.textContent).toContain('2 states of pages/inbox');
+    expect(errors).not.toHaveBeenCalled();
+    errors.mockRestore();
   });
 
   it('fits the host to its content, and fills the viewport with it for a page layout', async () => {

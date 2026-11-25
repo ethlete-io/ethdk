@@ -78,6 +78,9 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
   );
 };
 
+const declaredInputsOf = (component: Type<unknown>) =>
+  new Set(reflectComponentType(component)?.inputs.map(({ templateName }) => templateName));
+
 const dialogOf = (search: string) => {
   const part = new URLSearchParams(search).get('part') ?? '';
 
@@ -160,6 +163,7 @@ export class DesignHarnessComponent {
         }
 
         const ref = outlet.createComponent(state.component, { injector });
+        const declared = declaredInputsOf(state.component);
 
         inputs.forEach(([name, value]) => {
           if (name === 'class') {
@@ -172,7 +176,7 @@ export class DesignHarnessComponent {
             return;
           }
 
-          ref.setInput(name, value);
+          if (declared.has(name)) ref.setInput(name, value);
         });
 
         this.recordOutputs({ component: state.component, instance: ref.instance as Record<string, unknown>, emits });
@@ -192,7 +196,7 @@ export class DesignHarnessComponent {
     const stage = dialog.stage ? outlet.createComponent(dialog.stage, { injector }) : null;
 
     const mirror = reflectComponentType(component);
-    const declared = new Set(mirror?.inputs.map(({ templateName }) => templateName));
+    const declared = declaredInputsOf(component);
     const bindings: Binding[] = [
       ...inputs.filter(([name]) => declared.has(name)).map(([name, value]) => inputBinding(name, () => value)),
       ...(mirror?.outputs ?? []).map(({ templateName }) =>
