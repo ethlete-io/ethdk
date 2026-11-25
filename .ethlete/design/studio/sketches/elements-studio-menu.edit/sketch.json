@@ -94,7 +94,7 @@
     "elements/canvas-frames": "83996f406e8834f2",
     "elements/part-tree": "25dc8e0384f4c2b1",
     "elements/shell-main": "e819f34d77ea3e58",
-    "elements/studio-menu": "eabb5879d7c041b1",
+    "elements/studio-menu": "e8a9da5a01a737fc",
     "elements/variant-cell": "4a8ccbb62a83fd4f",
     "pages/flows": "5f9d41e1be7d2953",
     "pages/inbox": "9fe9d1c9a513990c",
@@ -104,7 +104,7 @@
     "pages/system": "40ad5ffbd085dc6a",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "ac3def4a48287458b8d1fd14e5ae01d7e6652411",
+  "baselineTree": "b8b86a012adffdb579a8eac2e3a2a47cdc62a26c",
   "editOldCommit": "317e2e0ea56a8db2d615e85974673d6a53dabdbf",
   "sharedBase": {
     "elements/studio-menu/shared/studio-menu-rows.ts": "3f70df901a125036"
@@ -132,6 +132,10 @@
     "new": "8027b210d28754d9",
     "old": "04308360a8b74be4"
   },
+  "mergeHold": {
+    "reason": "variant new changes closed, closed-hover, closed-active, closed-focus-visible, open, open-hover, open-active, open-focus-visible, studio-menu.server, studio-menu.stale, studio-menu.stopped, studio-menu.option-hover, studio-menu.option-focus-visible, studio-menu.option-active, studio-menu.busy, studio-menu.busy-open, studio-menu.busy-server, studio-menu.busy-focus-visible, studio-menu.busy-open-focus-visible; variant old changes open, open-hover, open-active, open-focus-visible, studio-menu.stale, studio-menu.stopped, studio-menu.option-hover, studio-menu.option-focus-visible, studio-menu.option-active, studio-menu.busy-open, studio-menu.busy-open-focus-visible",
+    "at": "2026-11-25T17:35:29.870Z"
+  },
   "autoMergeForecast": {
     "merges": false,
     "reason": "variant new changes closed, closed-hover, closed-active, closed-focus-visible, open, open-hover, open-active, open-focus-visible, studio-menu.server, studio-menu.stale, studio-menu.stopped, studio-menu.option-hover, studio-menu.option-focus-visible, studio-menu.option-active, studio-menu.busy, studio-menu.busy-open, studio-menu.busy-server, studio-menu.busy-focus-visible, studio-menu.busy-open-focus-visible; variant old changes open, open-hover, open-active, open-focus-visible, studio-menu.stale, studio-menu.stopped, studio-menu.option-hover, studio-menu.option-focus-visible, studio-menu.option-active, studio-menu.busy-open, studio-menu.busy-open-focus-visible",
@@ -140,9 +144,5 @@
       "old": "04308360a8b74be4"
     },
     "at": "2026-11-25T17:30:11.395Z"
-  },
-  "mergeHold": {
-    "reason": "variant new changes closed, closed-hover, closed-active, closed-focus-visible, open, open-hover, open-active, open-focus-visible, studio-menu.server, studio-menu.stale, studio-menu.stopped, studio-menu.option-hover, studio-menu.option-focus-visible, studio-menu.option-active, studio-menu.busy, studio-menu.busy-open, studio-menu.busy-server, studio-menu.busy-focus-visible, studio-menu.busy-open-focus-visible; variant old changes open, open-hover, open-active, open-focus-visible, studio-menu.stale, studio-menu.stopped, studio-menu.option-hover, studio-menu.option-focus-visible, studio-menu.option-active, studio-menu.busy-open, studio-menu.busy-open-focus-visible",
-    "at": "2026-11-25T17:35:29.870Z"
   }
 }
