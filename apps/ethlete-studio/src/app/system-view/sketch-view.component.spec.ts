@@ -294,7 +294,9 @@ describe('SketchViewComponent', () => {
     root.querySelectorAll('img[data-shot-picture]').forEach((picture) => picture.dispatchEvent(new Event('load')));
     await settle(fixture);
 
-    const rows = fixture.componentInstance['rows']() as { width: number; shots: { height: number }[] }[];
+    const rows = (
+      fixture.componentInstance['rows']() as { key: string; width: number; shots: { height: number }[] }[]
+    ).filter((row) => row.key !== 'current');
 
     expect(rows.map((row) => [row.width, ...row.shots.map((shot) => shot.height)])).toEqual(rows.map(() => [111, 71]));
     expect(

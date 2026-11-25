@@ -390,9 +390,16 @@ export class SketchesComponent {
   private listedRows = computed(
     () => {
       const edit = this.isEdit();
+      const variantStates = new Set(
+        this.rows().flatMap((row) =>
+          row.key === SKETCH_CURRENT ? [] : row.shots.flatMap((shot) => (shot.inherited ? [] : [shot.state])),
+        ),
+      );
+      const sharesAState = (row: SketchRow) =>
+        variantStates.size === 0 || row.shots.some((shot) => variantStates.has(shot.state));
       const rows = this.rows().filter(
         (row) =>
-          !((this.fresh() || edit) && row.key === SKETCH_CURRENT) &&
+          !((this.fresh() || edit || !sharesAState(row)) && row.key === SKETCH_CURRENT) &&
           (this.withdrawn() === 'shown' || !isWithdrawn(row)),
       );
 

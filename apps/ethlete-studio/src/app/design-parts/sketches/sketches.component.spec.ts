@@ -656,6 +656,37 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="current"]')).toBeNull();
   });
 
+  it('drops the current row when no variant draws one of its states (tomflix button over the SDK button, B676)', async () => {
+    const sizes = { abspielen: 204, 'mehr-infos': 212, filter: 108 };
+    const base = ['filled', 'filled-hover', 'outline', 'outline-hover'];
+    const drawn = Object.entries(sizes).flatMap(([name, width]) =>
+      ['', '-hover', '-focus-visible', '-active', '-disabled'].map((suffix) => ({
+        state: `${name}${suffix}`,
+        changed: true,
+        height: 108,
+        width,
+      })),
+    );
+    const inherited = base.map((state) => ({ state, changed: false, height: 108, inherited: true as const }));
+    const rows: SketchRow[] = [
+      {
+        key: 'current',
+        note: '',
+        width: 212,
+        shots: base.map((state) => ({
+          state,
+          changed: false,
+          height: 108,
+        })),
+      },
+      ...['a', 'b', 'c'].map((key) => ({ key, note: '', width: 212, shots: [...drawn, ...inherited] })),
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rows })).nativeElement;
+
+    expect(root.querySelectorAll('[data-sk-frame^="a "]')).toHaveLength(15);
+    expect(root.querySelector('[data-sk-variant="current"], [data-sk-row="current"]')).toBeNull();
+  });
+
   // A sketch forecast to merge itself shows a mark in the Studio header.
   it('shows the auto-merge mark in the header only when the forecast says the sketch merges itself', async () => {
     const mark = (root: HTMLElement) => root.querySelector('[data-sk-toolbar] [data-sk-auto-merge]');
