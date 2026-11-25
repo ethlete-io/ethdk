@@ -308,6 +308,62 @@ describe('transitive part hash', () => {
   });
 });
 
+describe('IMPLEMENTATION-UNCOMPARED on a part without an implemented record', () => {
+  const SKETCHES = 'pages/sketches';
+  const FOLDER = 'apps/ethlete-studio/src/app/design-parts/sketches';
+
+  it('fails check --rules --base on the template and a sibling file its component reaches', () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-stale-parts-sketches-'));
+    const write = (path: string, source: string) => {
+      mkdirSync(dirname(join(target, path)), { recursive: true });
+      writeFileSync(join(target, path), source);
+    };
+
+    write(
+      `${DESIGN_DIR}/studio/pages/sketches/sketches.ts`,
+      `export default definePart({ implements: { route: '/', component: '${FOLDER}/sketches.component.ts' }, states: { default: {} } });\n`,
+    );
+    write(`${DESIGN_DIR}/config.json`, JSON.stringify({ products: { studio: {} } }));
+    write(
+      `${FOLDER}/sketches.component.ts`,
+      [
+        "import { cropGroupsOf } from './sketch-crops';",
+        "@Component({ templateUrl: './sketches.component.html' })",
+        'export class SketchesComponent { groups = cropGroupsOf; }',
+        '',
+      ].join('\n'),
+    );
+    write(`${FOLDER}/sketches.component.html`, '<div></div>\n');
+    write(`${FOLDER}/sketch-crops.ts`, 'export const cropGroupsOf = () => [];\n');
+    write(`${FOLDER}/sketches-sample.ts`, 'export const SAMPLE = 1;\n');
+    gitExec(['init', '-q'], { cwd: target });
+    commitAt(target, '2026-11-23T00:00:00Z');
+    appendFileSync(join(target, `${FOLDER}/sketches.component.html`), '<span></span>\n');
+    appendFileSync(join(target, `${FOLDER}/sketch-crops.ts`), 'export const whole = true;\n');
+    appendFileSync(join(target, `${FOLDER}/sketches-sample.ts`), '// not reached\n');
+    commitAt(target, '2026-11-24T00:00:00Z');
+
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    checkRules({
+      target,
+      config: { products: { studio: {} } },
+      products: ['studio'],
+      base: 'HEAD~1..HEAD',
+      invocation: 'et design',
+    });
+    const lines = errors.mock.calls.map(([line]) => String(line)).filter((line) => line.startsWith('IMPLEMENTATION-'));
+    vi.restoreAllMocks();
+
+    const message = `${SKETCHES} implements it and has no implemented record - run et design compare ${SKETCHES} --product studio to compare and record it`;
+
+    expect(lines).toEqual([
+      `IMPLEMENTATION-UNCOMPARED ${FOLDER}/sketch-crops.ts: ${message}`,
+      `IMPLEMENTATION-UNCOMPARED ${FOLDER}/sketches.component.html: ${message}`,
+    ]);
+  });
+});
+
 describe('implements link', () => {
   const ICON = 'elements/icon';
   const iconFile = (dir: string) => join(dir, 'elements/icon/icon.ts');

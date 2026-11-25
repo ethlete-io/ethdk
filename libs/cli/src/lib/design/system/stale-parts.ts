@@ -126,8 +126,9 @@ export const allComparePartsOf = (product: ResolvedProduct) => {
 export const UNCOMPARED_RULE = 'IMPLEMENTATION-UNCOMPARED';
 
 /**
- * One problem per file in `changed` that an implemented part's app component reaches and that moved since the part's
- * implemented record, so an app edit cannot land without a fresh compare. A part in the implementation baseline passes
+ * One problem per file in `changed` that a part's app component reaches and that moved since the part's implemented
+ * record, or that the component of a part without an implemented record reaches, so an app edit cannot land without a
+ * fresh compare. A part in the implementation baseline passes
  * while each such file still has its pinned hash; an entry added to the baseline, or whose part is no longer
  * uncompared, is a problem too; with `onlyChanged`, only while the baseline file is in `changed`. Prints each baseline
  * entry.
@@ -153,16 +154,22 @@ export const uncomparedAppProblemsOf = (options: {
 
     return { part, record: readImplemented(partOwnerOf({ product, part: resolved }).dir)[part] };
   };
-  const driftOf = (resolved: ResolvedPart) => {
-    const { part, record } = recordOf(resolved);
-
-    return { part, record, drifted: record ? changedAppFilesOf({ product, part, record }) : [] };
-  };
-  const pinOf = (resolved: ResolvedPart, drifted: string[]) => {
+  const appOf = (resolved: ResolvedPart) => {
     const component = linkedComponentOf(resolved.source);
 
-    return component === null ? {} : driftPinOf(drifted, appFilesOf({ root, component }));
+    return component === null ? {} : appFilesOf({ root, component });
   };
+  const driftOf = (resolved: ResolvedPart) => {
+    const { part, record } = recordOf(resolved);
+    const drifted = record
+      ? changedAppFilesOf({ product, part, record })
+      : resolved.layer === 'foundations'
+        ? []
+        : Object.keys(appOf(resolved)).sort((a, b) => a.localeCompare(b));
+
+    return { part, record, drifted };
+  };
+  const pinOf = (resolved: ResolvedPart, drifted: string[]) => driftPinOf(drifted, appOf(resolved));
 
   const checksBaseline = !options.onlyChanged || changed.has(relative(root, baselineFile).split(sep).join('/'));
   const added = (checksBaseline ? addedBaselineEntriesOf({ file: baselineFile }) : []).map((part) =>
@@ -181,7 +188,7 @@ export const uncomparedAppProblemsOf = (options: {
   const uncompared = own.flatMap((resolved) => {
     const { record } = recordOf(resolved);
 
-    if (!record?.app || !Object.keys(record.app).some((file) => changed.has(file))) return [];
+    if (record && (!record.app || !Object.keys(record.app).some((file) => changed.has(file)))) return [];
 
     const { part, drifted } = driftOf(resolved);
     const entry = baseline[part];
@@ -196,8 +203,14 @@ export const uncomparedAppProblemsOf = (options: {
         message: `${
           entry
             ? `changed since ${part} was baselined for finding ${entry.finding}`
-            : `changed since ${part} was recorded as implemented (${record.at})`
-        } - run ${invocation} compare --affected --product ${product.name} to compare and record every affected part`,
+            : record
+              ? `changed since ${part} was recorded as implemented (${record.at})`
+              : `${part} implements it and has no implemented record`
+        } - ${
+          record
+            ? `run ${invocation} compare --affected --product ${product.name} to compare and record every affected part`
+            : `run ${invocation} compare ${part} --product ${product.name} to compare and record it`
+        }`,
       }));
   });
 
