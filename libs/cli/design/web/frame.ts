@@ -9,6 +9,7 @@ import {
 } from '../define-call';
 import { drawState, Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
+import { keptFacesOf } from './frame-faces';
 import { paintFill } from './frame-fill';
 import { fitRoot } from './frame-fit';
 import { sheetLayoutOf, sheetMarkupOf, SHEET_STYLES } from './frame-sheet';
@@ -516,6 +517,8 @@ const runPartRules = (drawn: NonNullable<typeof drawnPart>, styles: string) =>
     failed: (error) => showSetupError(`design-explore: switch of part "${partKey}" failed\n${messageOf(error)}`),
   });
 
+const keptFaces = keptFacesOf(document);
+
 // macOS WebKit can loop in module evaluation when a frame with top-level await is removed.
 const drawKey = async () => {
   const tokenStyles = product ? await tokensOf(product) : null;
@@ -523,19 +526,16 @@ const drawKey = async () => {
   const undo: (() => void)[] = [];
 
   if (loaded) {
-    if (tokenStyles !== null) {
+    const sheets = keptFaces([...(tokenStyles === null ? [] : [tokenStyles]), await forced(loaded.styles ?? '')]);
+
+    for (const sheet of sheets) {
       const style = document.createElement('style');
 
-      style.textContent = tokenStyles;
+      style.textContent = sheet;
       document.head.append(style);
       undo.push(() => style.remove());
     }
 
-    const style = document.createElement('style');
-
-    style.textContent = await forced(loaded.styles ?? '');
-    document.head.append(style);
-    undo.push(() => style.remove());
     const error = mountDrawing(root, loaded);
 
     undo.push(watchSurfaces(root, surfaceInteractiveCss));

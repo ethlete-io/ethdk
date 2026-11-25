@@ -125,7 +125,7 @@ const transpiled = (file) =>
   }).outputText;
 const entry = new SourceTextModule(transpiled(process.argv[2]), { context });
 await entry.link((specifier) => {
-  if (specifier === './frame-sheet')
+  if (specifier === './frame-sheet' || specifier === './frame-faces')
     return new SourceTextModule(transpiled(new URL(specifier + '.ts', `file://${process.argv[2]}`)), { context });
 
   if (specifier === 'virtual:design-explore/frame')

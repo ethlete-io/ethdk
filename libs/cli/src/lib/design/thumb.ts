@@ -71,18 +71,23 @@ const frameWidthOf = (slug: string) => `(async (slug) => {
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
 // A part that measures its layout as it mounts measures the fallback font while a web font still loads, so a fresh
-// load drew other pixels than a switch into the same state. A draw during which a face loaded runs again.
+// load drew other pixels than a switch into the same state. A draw during which a face loaded runs again: one still
+// loading after it, or one not loaded before it. A face the draw removed does not count.
 const drawnOnLoadedFontsOf = (options: { state: string; switching: boolean }) => `(async ({ state, switching }) => {
   const drawn = () => document.querySelector('#root > :not(style)') !== null;
-  const loaded = () => [...document.fonts].filter((face) => face.status === 'loaded').length;
+  const loaded = () => new Set([...document.fonts]
+    .filter((face) => face.status === 'loaded')
+    .map((face) => [face.family, face.weight, face.style, face.stretch, face.unicodeRange].join('|')));
   if (typeof window.etSwitchState !== 'function') return !switching && drawn();
-  let before = switching ? loaded() : 0;
+  let before = switching ? loaded() : new Set();
   if (switching) await window.etSwitchState(state);
   for (let pass = 0; pass < 3 && drawn(); pass++) {
     document.documentElement.getBoundingClientRect();
+    const loading = [...document.fonts].some((face) => face.status === 'loading');
     await document.fonts.ready;
-    if (loaded() === before) break;
-    before = loaded();
+    const after = loaded();
+    if (!loading && [...after].every((face) => before.has(face))) break;
+    before = after;
     await window.etSwitchState(state);
   }
   return drawn();
