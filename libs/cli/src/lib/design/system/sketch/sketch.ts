@@ -34,7 +34,12 @@ export type SketchDecision =
   | ({ kind: 'discard'; comment?: string; decidedAt: string } & Partial<WriteOrigin>);
 
 /** The designer's approval of a sub-sketch's variant; the parent merges that variant together with its own pick. */
-export type SketchApproval = { variant: string; comment?: string; decidedAt: string } & Partial<WriteOrigin>;
+export type SketchApproval = {
+  variant: string;
+  comment?: string;
+  agentPick?: true;
+  decidedAt: string;
+} & Partial<WriteOrigin>;
 
 /**
  * What `sketch.json` knows about one variant: the model ids that reported on it, in the order of their first report,

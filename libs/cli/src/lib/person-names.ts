@@ -5,7 +5,7 @@ const KNOWN = new Set<string>(hashes);
 
 const hash = (word: string) => createHash('sha256').update(word).digest('hex').slice(0, 16);
 
-/** True when the text holds a person-name word or camel-case part, which `--decided-by` refuses. */
+/** True when the text holds a person-name word or camel-case part, which `--mandate` refuses. */
 export const hasPersonName = (text: string) =>
   (text.match(/\p{L}+/gu) ?? []).some((token) =>
     token

@@ -637,7 +637,11 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
         recordMerged({
           product,
           parts: sub.targets.filter((key) => productKeys.includes(key)),
-          decision: { variant: approval.variant, decidedBy: 'user', at: approval.decidedAt },
+          decision: {
+            variant: approval.variant,
+            decidedBy: approval.agentPick && approval.by ? approval.by : 'user',
+            at: approval.decidedAt,
+          },
         });
 
       if (product.base && baseKeys.length > 0) {

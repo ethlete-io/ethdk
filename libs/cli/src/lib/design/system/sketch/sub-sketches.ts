@@ -266,7 +266,7 @@ export const subSketchMergeRefusalOf = (sketch: Sketch) =>
  */
 export const approveSubSketch = (options: {
   sketch: Sketch;
-  approval: { variant: string; comment?: string } & WriteOrigin;
+  approval: { variant: string; comment?: string; agentPick?: true } & WriteOrigin;
 }): Sketch | string => {
   const { sketch, approval } = options;
   const { variant } = approval;

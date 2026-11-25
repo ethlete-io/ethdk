@@ -154,8 +154,8 @@ export const SKETCH_USAGE = [
   'sketch rebase <layer>/<name> [--ported <variant>] --by <model id> [--product <name>]',
   'sketch rebase-open --commit <rev> [--product <name>] [--json]',
   'sketch pick <layer>/<name> --variant <key> [--mandate <quoted chat text>] [--discard-sub-sketches] --by <model id> [--product <name>]',
-  'sketch approve <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
-  'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <role>] --by <model id> [--product <name>]',
+  'sketch approve <layer>/<name> --variant <key> [--mandate <quoted chat text>] --by <model id> [--product <name>]',
+  'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
@@ -192,9 +192,7 @@ const FLAG_HELP: Record<string, string> = {
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
   '--mandate':
-    "on pick: the quoted chat text that tells the agent to pick; the pick is recorded as the agent's own (--by), never as a person's",
-  '--decided-by':
-    "on pick and approve: the designer's words that pick or approve the variant and where they were said, e.g. 'human in chat: take b'; on merge: who picked the variant, as merged.json records it (default user); the role of who picked, e.g. human (never a person name; the command refuses one) - not with --allowed-by",
+    "on pick and approve: the quoted chat text that tells the agent to pick or approve; recorded as the agent's own (--by), never as a person's",
   '--replace-note': "on merge: also write --note over each target part's note",
   '--reason':
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
@@ -2291,16 +2289,22 @@ const picked = (context: Context) =>
 
 const approvedSub = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
-    const { '--variant': variant, '--decided-by': decidedBy } = context.args.values;
-    const words = decidedBy?.trim() ?? '';
+    const { '--variant': variant, '--mandate': mandate } = context.args.values;
+    const author = authorOf(context.args);
+    const words = mandate?.trim() ?? '';
 
-    if (context.args.positional.length !== 1 || !variant || !words)
+    if (context.args.positional.length !== 1 || !variant || !author)
       return fail(`usage: ${SKETCH_USAGE.find((line) => line.startsWith('sketch approve '))}`);
-    if (hasPersonName(words)) return fail(`--decided-by ${PERSON_NAME_REFUSAL}`);
+    if (!isModelId(author)) return fail(`--by "${author}" is not a model id: an approve here is the agent's own`);
+    if (hasPersonName(words)) return fail(`--mandate ${PERSON_NAME_REFUSAL}`);
 
     const approved = journaled(
       { productDir: product.dir, root: context.target, label: `approve of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
-      () => approveSubSketch({ sketch, approval: { variant, comment: words, ...originOf('designer') } }),
+      () =>
+        approveSubSketch({
+          sketch,
+          approval: { variant, agentPick: true, ...(words ? { comment: words } : {}), ...originOf(author) },
+        }),
     );
 
     if (typeof approved === 'string') return fail(approved);
@@ -2312,12 +2316,7 @@ const approvedSub = (context: Context) =>
 
 const merged = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
-    const {
-      '--note': note,
-      '--variant': flagVariant,
-      '--allowed-by': planRef,
-      '--decided-by': decidedBy,
-    } = context.args.values;
+    const { '--note': note, '--variant': flagVariant, '--allowed-by': planRef } = context.args.values;
 
     const replaceNote = context.args.flags.has('--replace-note');
 
@@ -2328,10 +2327,6 @@ const merged = (context: Context) =>
       return fail(
         '--variant and --allowed-by go together: name the only live variant and the plan that allows the merge',
       );
-
-    if (decidedBy !== undefined && (decidedBy.trim() === '' || planRef !== undefined))
-      return fail('--decided-by needs a name and does not go with --allowed-by, which records the plan');
-    if (decidedBy !== undefined && hasPersonName(decidedBy)) return fail(`--decided-by ${PERSON_NAME_REFUSAL}`);
 
     const by = authorOf(context.args) ?? undefined;
     const allowed =
@@ -2360,7 +2355,6 @@ const merged = (context: Context) =>
           note,
           replaceNote,
           by,
-          decidedBy: decidedBy?.trim(),
           allowed,
         }),
       );

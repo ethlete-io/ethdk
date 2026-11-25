@@ -3222,36 +3222,17 @@ export default definePart({
       });
     });
 
-    it('records --decided-by as who picked the variant, and refuses it with --allowed-by', async () => {
-      const { target, lines } = await readied('a,b');
+    it('refuses --decided-by on merge and records no role', async () => {
+      const { target } = await readied('a,b');
       const file = join(sketchDir(target), 'sketch.json');
       const sketch = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
 
       writeFileSync(file, JSON.stringify({ ...sketch, decision: { kind: 'pick', variant: 'a', decidedAt: 'now' } }));
-      expect(
-        write(
-          target,
-          'merge',
-          'components/button',
-          '--decided-by',
-          'human',
-          '--allowed-by',
-          PLAN,
-          '--variant',
-          'a',
-          '--product',
-          'acme',
-        ),
-      ).toBe(1);
-      expect(lines.pop()).toContain('does not go with --allowed-by');
-      expect(await write(target, 'merge', 'components/button', '--decided-by', 'human', '--product', 'acme')).toBe(0);
-      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
-        'components/button': { variant: 'a', decidedBy: 'human' },
-      });
+      expect(await write(target, 'merge', 'components/button', '--decided-by', 'human', '--product', 'acme')).toBe(2);
+      expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
     });
 
-    // A person name in --decided-by is refused before any write.
-    it('refuses a person name in --decided-by on merge and pick before any write', async () => {
+    it('refuses a person name in --mandate on pick before any write', async () => {
       const { target, lines } = await readied('a,b');
       const file = join(sketchDir(target), 'sketch.json');
       const before = readFileSync(file, 'utf8');
@@ -3272,9 +3253,6 @@ export default definePart({
       expect(lines.pop()).toContain('"human"');
       expect(readFileSync(file, 'utf8')).toBe(before);
 
-      expect(await write(target, 'merge', 'components/button', '--decided-by', PERSON, '--product', 'acme')).toBe(1);
-      expect(lines.pop()).toContain('"human"');
-      expect(readFileSync(file, 'utf8')).toBe(before);
       expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
     });
 

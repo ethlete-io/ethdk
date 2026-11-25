@@ -428,16 +428,30 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
       'components/hero-slider',
       '--variant',
       'a',
-      '--decided-by',
-      'human in chat: slider ok',
+      '--mandate',
+      'in chat: slider ok',
+      '--by',
+      'claude-opus-5-5',
     ]);
 
     expect(code).toBe(0);
     expect(readJson(join(subDir, 'sketch.json'))).toMatchObject({
       parent: 'elements/hero',
-      approved: { variant: 'a', comment: 'human in chat: slider ok', by: 'designer' },
+      approved: { variant: 'a', comment: 'in chat: slider ok', by: 'claude-opus-5-5', agentPick: true },
     });
     expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
+  });
+
+  it('refuses --decided-by on sketch approve', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const { target, subDir } = await withReadySubSketch();
+    const before = readFileSync(join(subDir, 'sketch.json'), 'utf8');
+
+    expect(
+      await sketchCommand(target, ['approve', 'components/hero-slider', '--variant', 'a', '--decided-by', 'human']),
+    ).not.toBe(0);
+    expect(readFileSync(join(subDir, 'sketch.json'), 'utf8')).toBe(before);
   });
 
   it('records the approval of a sub-sketch on the Studio approve route', async () => {
@@ -454,14 +468,7 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
 
     const { target, sketchDir } = readied();
     const before = readFileSync(join(sketchDir, 'sketch.json'), 'utf8');
-    const code = await sketchCommand(target, [
-      'approve',
-      'elements/hero',
-      '--variant',
-      'a',
-      '--decided-by',
-      'human in chat: a',
-    ]);
+    const code = await sketchCommand(target, ['approve', 'elements/hero', '--variant', 'a', '--by', 'claude-opus-5-5']);
 
     expect(code).not.toBe(0);
     expect(readFileSync(join(sketchDir, 'sketch.json'), 'utf8')).toBe(before);

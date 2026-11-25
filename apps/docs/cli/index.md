@@ -837,12 +837,11 @@ recorded before this merge, for example in a merge that was refused. `sketch reb
 `Merge <target> variant <key> into <product>` commit since the pick holds it, and prints a `DROPPED` line. A designer's
 pick stays.
 
-`sketch merge --decided-by <role>` records who picked the variant in `merged.json` (`user` without it): give it the role,
-for example `human`. Both `merge` and `pick` refuse a person name in `--decided-by` (exit 1). It does not go with `--allowed-by`, which records the plan.
-
-`et design sketch pick <layer>/<name> --variant <key> --decided-by "<the words and where they were said>" --by <model>`
-merges the variant the designer picked outside Studio, for example in chat, at once: the pick (`by: designer`, the words
+`et design sketch pick <layer>/<name> --variant <key> [--mandate "<quoted chat text>"] --by <model id>`
+merges the variant at once on the agent's own authority: the pick (`agentPick: true`, `by` the model id, the mandate
 as its comment) and the merge are one journaled step, so a refused merge prints its reason, exits 1 and leaves no pick.
+`sketch approve` takes the same `--mandate` and `--by` and records the approval of a sub-sketch as the agent's own.
+No agent command takes a role or a person name; only Studio's own pick and approve actions record the designer.
 An interrupted one is finished or undone by the next CLI call or server start. It refuses an unknown or rejected variant
 and a sketch that is not ready.
 
