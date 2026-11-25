@@ -40,14 +40,14 @@ describe('provideTabsConfig', () => {
   });
 
   it('applies the provided defaults', () => {
-    expect(setup(provideTabsConfig({ activeUnderline: false, underlineWidth: 'label' }))).toEqual({
-      underline: 'false',
+    expect(setup(provideTabsConfig({ underlineWidth: 'label' }))).toEqual({
+      underline: 'true',
       width: 'label',
     });
   });
 
   it('lets explicit inputs win over the provider', () => {
-    const result = setup(provideTabsConfig({ activeUnderline: false, underlineWidth: 'label' }), {
+    const result = setup(provideTabsConfig({ underlineWidth: 'label' }), {
       activeUnderline: signal<boolean | undefined>(true),
       underlineWidth: signal<TabUnderlineWidth | undefined>('tab'),
     });

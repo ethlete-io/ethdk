@@ -51,6 +51,11 @@
       "schema": "./migrate-pip-window-z-index/schema.json",
       "description": "Move --et-pip-window-z-index into providePipWindowConfig and report the sites it cannot move"
     },
+    "migrate-tabs-active-underline": {
+      "factory": "./migrate-tabs-active-underline/migration",
+      "schema": "./migrate-tabs-active-underline/schema.json",
+      "description": "Remove the activeUnderline option from provideTabsConfig calls"
+    },
     "migrate-youtube-player-slot-directive": {
       "factory": "./migrate-youtube-player-slot-directive/migration",
       "schema": "./migrate-youtube-player-slot-directive/schema.json",

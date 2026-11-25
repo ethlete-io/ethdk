@@ -110,7 +110,7 @@ Content tabs: `--et-tab-group-gap` / `--et-tab-group-header-gap` (`0px`), `--et-
 
 Underneath, all of those default from **one shared scale** that `size` drives - `--et-tab-padding-inline`, `--et-tab-padding-block`, `--et-tab-font-size`, `--et-tab-underline-size`, `--et-tab-underline-radius` and `--et-tab-baseline-opacity`. Retheming the scale moves content tabs, nav tabs and a [segmented button group in its tabs variant](/components/choice-inputs#segmented-tabs) together; the per-component tokens above still win where you want one of them to differ.
 
-Both flavors also read these optional tokens, unset by default:
+Both flavors, and the segmented button group's tabs variant (font weight, text transform, letter spacing, line height and inactive colour), also read these optional tokens, unset by default:
 
 | Token                              | Default when unset               | What it changes                                         |
 | ---------------------------------- | -------------------------------- | ------------------------------------------------------- |
@@ -127,13 +127,13 @@ Both flavors also read these optional tokens, unset by default:
 
 ### Defaults for the whole app
 
-`provideTabsConfig` sets `activeUnderline` and `underlineWidth` for every tab group and nav tabs bar; an input on a bar wins over it.
+`provideTabsConfig` sets `underlineWidth` for every tab group and nav tabs bar; an input on a bar wins over it.
 
 ```ts
-providers: [provideTabsConfig({ activeUnderline: false, underlineWidth: 'label' })];
+providers: [provideTabsConfig({ underlineWidth: 'label' })];
 ```
 
-With the underline off, tell the active tab apart by colour, e.g. `--et-tab-active-color: var(--et-theme-color-primary-solid)` with `--et-tab-inactive-color: #fff` on the bar.
+With `[activeUnderline]="false"` on a bar, tell the active tab apart by colour, e.g. `--et-tab-active-color: var(--et-theme-color-primary-solid)` with `--et-tab-inactive-color: #fff` on the bar.
 
 ## Error codes
 

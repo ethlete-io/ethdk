@@ -74,7 +74,7 @@ export class TabBarDirective {
     return typeof value === 'boolean' ? { enabled: value } : value;
   });
   /** @internal */
-  public activeUnderlineResolved = computed(() => this.activeUnderline() ?? this.config.activeUnderline ?? true);
+  public activeUnderlineResolved = computed(() => this.activeUnderline() ?? true);
   /** @internal */
   public underlineWidthResolved = computed(
     () => this.underlineWidth() ?? this.config.underlineWidth ?? TAB_UNDERLINE_WIDTHS.TAB,

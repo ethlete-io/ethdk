@@ -492,7 +492,7 @@ describe('tabs scenarios', () => {
 
 describe('tabs config scenarios', () => {
   const scenario = useScenario({
-    providers: [provideTabsConfig({ activeUnderline: false, underlineWidth: 'label' })],
+    providers: [provideTabsConfig({ underlineWidth: 'label' })],
   });
 
   beforeEach(() => {
@@ -508,14 +508,11 @@ describe('tabs config scenarios', () => {
     s.tick();
     s.flush();
 
-    expect(TestBed.runInInjectionContext(() => injectTabsConfig())).toEqual({
-      activeUnderline: false,
-      underlineWidth: 'label',
-    });
+    expect(TestBed.runInInjectionContext(() => injectTabsConfig())).toEqual({ underlineWidth: 'label' });
 
     const bar = query('[data-active-underline]', host);
 
-    expect(bar.getAttribute('data-active-underline')).toBe('false');
+    expect(bar.getAttribute('data-active-underline')).toBe('true');
     expect(bar.getAttribute('data-underline-width')).toBe('label');
   });
 });

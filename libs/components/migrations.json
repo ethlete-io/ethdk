@@ -188,6 +188,15 @@
       "description": "Move --et-pip-window-z-index, which is removed, into providePipWindowConfig({ overlayLayer }), and report the sites that need it by hand.",
       "generator": "@ethlete/components:migrate-pip-window-z-index",
       "docs": "/components/stream"
+    },
+    {
+      "name": "tabs-active-underline",
+      "version": "1.0.0-next.101",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove activeUnderline from provideTabsConfig, which is removed: the active underline is always on.",
+      "generator": "@ethlete/components:migrate-tabs-active-underline",
+      "docs": "/components/tabs"
     }
   ]
 }
