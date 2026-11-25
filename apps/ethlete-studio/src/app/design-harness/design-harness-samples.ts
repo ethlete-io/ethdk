@@ -208,19 +208,18 @@ const DIFF_CELL_SIZE = { width: 196, height: 96 };
 
 const DIFF_INTERACTIONS = ['rest', 'hover', 'active', 'focus-visible'];
 
+const DIFF_ROWS = ['count', 'add'] as const;
+
 const DIFF_BOXES = {
-  trigger: { x: 8, y: 8, width: 120, height: 28 },
-  openTrigger: { x: 8, y: 8, width: 168, height: 28 },
+  count: { x: 38, y: 8, width: 28, height: 30 },
+  add: { x: 96, y: 8, width: 88, height: 30 },
 };
 
 const diffUrlOf = (box: (typeof DIFF_BOXES)[keyof typeof DIFF_BOXES]) =>
   `data:application/json,${encodeURIComponent(JSON.stringify({ box, frame: DIFF_CELL_SIZE }))}`;
 
-const diffBoxOf = (open: boolean, interaction: string) => {
-  if (interaction === 'rest') return null;
-
-  return open ? DIFF_BOXES.openTrigger : DIFF_BOXES.trigger;
-};
+const diffBoxOf = (row: (typeof DIFF_ROWS)[number], interaction: string) =>
+  interaction === 'rest' ? null : DIFF_BOXES[row];
 
 const diffFramesOf = (part: string) => [
   {
@@ -230,10 +229,10 @@ const diffFramesOf = (part: string) => [
     grid: {
       sheet: 'table',
       columns: DIFF_INTERACTIONS,
-      rows: ['closed', 'open'],
-      cells: ['closed', 'open'].flatMap((row) =>
+      rows: [...DIFF_ROWS],
+      cells: DIFF_ROWS.flatMap((row) =>
         DIFF_INTERACTIONS.map((interaction) => {
-          const box = diffBoxOf(row === 'open', interaction);
+          const box = diffBoxOf(row, interaction);
 
           return {
             id: `${part}-${row}-${interaction}`,
@@ -303,7 +302,18 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     projects: SHELL_SAMPLE.projects,
     ...props,
   }),
-  'elements/canvas-frames': ({ zoom, class: extra, part, states: _states, mark, heads, diff, ...props }) => {
+  'elements/canvas-frames': ({
+    zoom,
+    class: extra,
+    part,
+    states: _states,
+    target: _target,
+    interaction: _interaction,
+    mark,
+    heads,
+    diff,
+    ...props
+  }) => {
     const scale = parseFloat(String(zoom ?? '100%')) / 100;
     const id = String(part);
     const kind = (mark ?? 'rest') as keyof typeof CANVAS_FRAME_SOURCES;
@@ -312,7 +322,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...props,
       class: `${typeof extra === 'string' ? extra : ''} min-h-120`,
       ...(diff
-        ? { frames: diffFramesOf('hold-trigger') }
+        ? { frames: diffFramesOf('quantity-stepper') }
         : heads === 'open' || heads === 'folded'
           ? roundsOf(id, heads)
           : { frames: [{ id, label: id, ...CANVAS_FRAME_SOURCES[kind] }] }),

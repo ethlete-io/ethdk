@@ -7,7 +7,7 @@ import { canvasFrame, canvasFrameStyles, canvasView, fitTransform, stateGrid } f
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
-import { manyStatesView, treeRowGrid } from './shared/many-states';
+import { manyStatesView, stepperGrid } from './shared/many-states';
 import { FOLDED_SAMPLE, foldedStatesPill } from './shared/folded-states';
 import disclosureStyles from '@system/components/disclosure.css?inline';
 import { icon, type IconName } from '@system/foundations/icons';
@@ -518,7 +518,7 @@ export default definePart<{
     }
 
     if (manyStates) {
-      return manyStatesView(await treeRowGrid());
+      return manyStatesView(stepperGrid());
     }
 
     if (listingError) {

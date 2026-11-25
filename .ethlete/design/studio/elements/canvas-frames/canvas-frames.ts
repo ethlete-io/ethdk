@@ -20,7 +20,7 @@ import {
   type GridHeads,
   type RoundSample,
 } from './shared/canvas-marks';
-import { diffGrid, diffGridStyles } from './shared/diff-grid';
+import { diffGrid } from './shared/diff-grid';
 export { liveBadge } from './shared/canvas-marks';
 import styles from './canvas-frames.css?inline';
 import { SYSTEM_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
@@ -238,7 +238,7 @@ const gridOf = async (part: string, heads: GridHeads) =>
 
 const ZOOM = { kind: 'button', part: 'components/zoom-chip' } as const;
 
-const diffFrame = async () => canvasFrame('hold-trigger', stateGrid(await diffGrid(), { cellWidth: '196px' }));
+const diffFrame = () => canvasFrame('quantity-stepper', stateGrid(diffGrid(), { cellWidth: '196px' }));
 
 const defaultFrames: Props = {
   part: 'button',
@@ -259,7 +259,7 @@ export default definePart({
       from: 'default',
       to: 'diff-mark',
       reason:
-        'The difference mark is drawn on the hold-trigger sample, a different part than the button sample of the other states; no step leads from one to the other.',
+        'The difference mark is drawn on the quantity-stepper sample, a different part than the button sample of the other states; no step leads from one to the other.',
     },
     {
       from: 'default',
@@ -693,7 +693,7 @@ export default definePart({
     'round-folded':
       'A folded round at 75 %; check the one narrow column with the round note and that the other rounds stay open.',
     'diff-mark':
-      'The hold-trigger frame with the automatic difference mark; check that every state in an interaction dims everything but the region that differs from the rest state of its row, draws no outline, and both rest cells are dimmed whole.',
+      'The quantity-stepper frame with the automatic difference mark; check that every state in an interaction dims everything but the region that differs from the rest state of its row, draws no outline, and both rest cells are dimmed whole.',
   },
   controls: {
     button: { kind: 'button', part: 'components/button' },
@@ -707,7 +707,7 @@ export default definePart({
   },
   render: async ({ class: extra, part, states, zoom, target, interaction, mark, heads, diff }: Props) => {
     const frames = diff
-      ? await diffFrame()
+      ? diffFrame()
       : heads
         ? await gridOf(part, heads)
         : await markedFrame(part, await buttonGrid(states), mark);
@@ -723,7 +723,7 @@ export default definePart({
         extra,
         true,
       ),
-      styles: diff ? canvasFrameStyles + diffGridStyles : canvasFrameStyles,
+      styles: canvasFrameStyles,
     });
   },
 });

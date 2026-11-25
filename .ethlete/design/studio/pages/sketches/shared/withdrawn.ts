@@ -6,7 +6,7 @@ export type Withdrawn = 'hidden' | 'shown' | 'menu';
 
 const WITHDRAWN: { key: RowKey; reason: string } = {
   key: 'b',
-  reason: 'Halbfett macht die Prozentzahl breiter, der Chip springt beim Zoomen um 4 px',
+  reason: 'Halbfett macht die Anzahl breiter, der Stepper springt bei zweistelligen Mengen um 4 px',
 };
 
 export const isWithdrawn = (row: Row, withdrawn?: Withdrawn) => withdrawn !== undefined && row.key === WITHDRAWN.key;

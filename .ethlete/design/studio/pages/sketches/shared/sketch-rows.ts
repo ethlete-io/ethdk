@@ -1,8 +1,6 @@
 import { html, withAction } from '@design-system';
 import button from '@system/components/button';
 import { panInsideRoom } from '@system/components/canvas-viewport';
-import titleBar from '@system/components/title-bar';
-import zoomChip from '@system/components/zoom-chip';
 import { variantCell } from '@system/elements/variant-cell';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 import {
@@ -11,6 +9,14 @@ import {
   matrixBlocksOf,
   matrixWidthFit,
 } from '../../../../../../apps/ethlete-studio/src/app/design-parts/sketches/matrix-blocks';
+import {
+  SAMPLE_BAR_STATES,
+  SAMPLE_STEPPER_STATES,
+  SAMPLE_STEPPER_WIDTH,
+  sampleBar,
+  samplePage,
+  sampleStepper,
+} from '../../../../../../apps/ethlete-studio/src/app/design-harness/sample-product';
 import { SKETCHES_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 
 export type RowKey = 'current' | 'old' | 'new' | 'a' | 'b' | 'c';
@@ -43,50 +49,34 @@ export type PartKind = 'wide' | 'narrow' | 'edit' | 'neighbours' | 'many';
 const OPUS: Omit<Model, 'when'> = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' };
 const SOL: Omit<Model, 'when'> = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' };
 
-const WIDE_STATES = ['linux-close', 'linux-close-update', 'windows', 'windows-update', 'macos', 'macos-update'];
+const WIDE_STATES = SAMPLE_BAR_STATES;
 
-type TitleBarProps = Parameters<typeof titleBar.render>[0];
-type ZoomChipProps = Parameters<typeof zoomChip.render>[0];
-
-const titleBarStates = titleBar.states as Record<string, TitleBarProps>;
-const zoomChipStates = zoomChip.states as Record<string, ZoomChipProps>;
-
-const STEADY = ['fit-hover', 'fit-active', 'fit-focus-visible'];
-const NARROW_STATES = Object.keys(zoomChipStates).filter((name) => name.startsWith('reset') || name.startsWith('fit'));
+const STEADY = ['add-hover', 'add-active', 'add-focus-visible'];
+const NARROW_STATES = SAMPLE_STEPPER_STATES.filter((name) => name.startsWith('count') || name.startsWith('add'));
 
 const isBase = (row: Row) => row.key === 'current' || row.key === 'old' || row.key === 'new';
 
-const placeholderChip = async (state: string) => {
-  const drawn = (await zoomChip.render(zoomChipStates[state] as ZoomChipProps)) as Render;
-  return { ...drawn, body: html`<div class="contents [&_.et-tooltip-mock-frame]:hidden">${drawn.body}</div>` };
-};
+const drawn = (body: string): Promise<Render> => Promise.resolve({ body, styles: '' });
+
+const stepper = (state: string) => drawn(sampleStepper(state));
 
 const narrowPart = (): SketchPart => ({
-  key: 'components/zoom-chip',
-  width: 176,
+  key: 'components/quantity-stepper',
+  width: SAMPLE_STEPPER_WIDTH,
   states: NARROW_STATES,
-  render: placeholderChip,
+  render: stepper,
   rows: [],
 });
 
 const MANY_STATES = Array.from({ length: 30 }, (_, index) => `state-${String(index + 1).padStart(2, '0')}`);
 
-const manyPage = async (state: string): Promise<Render> => ({
-  body: html`<div
-    class="box-border flex h-225 w-360 items-center justify-center bg-et-surface-bg font-code text-ui-lg text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
-  >
-    ${state}
-  </div>`,
-  styles: '',
-});
-
 export const PARTS: Record<PartKind, SketchPart> = {
   many: {
-    key: 'components/many-states',
+    key: 'components/plant-page',
     width: 1440,
     height: 900,
     states: MANY_STATES,
-    render: manyPage,
+    render: (state) => drawn(samplePage(state)),
     rows: [
       { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
       {
@@ -108,41 +98,41 @@ export const PARTS: Record<PartKind, SketchPart> = {
     ],
   },
   wide: {
-    key: 'components/title-bar',
+    key: 'components/shop-bar',
     width: 1440,
     states: WIDE_STATES,
-    render: async (state) => (await titleBar.render(titleBarStates[state] as TitleBarProps)) as Render,
+    render: (state) => drawn(sampleBar(state)),
     rows: [
       { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
       {
         key: 'a',
         label: 'Entwurf 1',
-        note: 'Update als schmaler Button direkt neben der Suche, die Suche wird dafür schmaler; ohne Update bleibt die Leiste wie heute.',
+        note: 'Mit gefülltem Korb wird die Suche schmaler, damit der Korb Platz hat; mit leerem Korb bleibt die Leiste wie heute.',
         model: { ...OPUS, when: '02.11. 10:14' },
-        changed: ['linux-close-update', 'windows-update', 'macos-update'],
-        look: '[&_.w-2xl]:w-55',
+        changed: WIDE_STATES.filter((name) => name.endsWith('-basket')),
+        look: '**:data-farn-search:w-55',
       },
       {
         key: 'b',
         label: 'Entwurf 2',
-        note: 'Leiste 40 px hoch, damit Suche und Fensterknöpfe mehr Luft haben; kostet 8 px Höhe in jeder Ansicht.',
+        note: 'Leiste 56 px hoch, damit Suche und Korb mehr Luft haben; kostet 8 px Höhe auf jeder Seite.',
         model: { ...SOL, when: '02.11. 10:21' },
         changed: [...WIDE_STATES],
-        look: '[&_.st-title-bar]:h-10',
+        look: '**:data-farn-bar:h-14',
       },
       {
         key: 'c',
         label: 'Entwurf 3',
-        note: 'Unter macOS rückt die Suche nach links an die Ampel, Linux und Windows bleiben gleich.',
+        note: 'Im Checkout fällt die Shop-Navigation weg, Gast und Mitglied sehen die Leiste wie heute.',
         model: { ...OPUS, when: '02.11. 10:30' },
-        changed: ['macos', 'macos-update'],
-        look: '[&_.st-title-bar]:grid-cols-[auto_1fr_auto]',
+        changed: WIDE_STATES.filter((name) => name.startsWith('checkout')),
+        look: '**:data-farn-nav:invisible',
       },
     ],
   },
   edit: {
     ...narrowPart(),
-    key: 'components/zoom-chip@edit',
+    key: 'components/quantity-stepper@edit',
     rows: [
       {
         key: 'old',
@@ -154,60 +144,55 @@ export const PARTS: Record<PartKind, SketchPart> = {
       {
         key: 'new',
         label: SKETCHES_LABELS.editNew,
-        note: 'Direkte Änderung: Prozentzahl in Halbfett.',
-        changed: NARROW_STATES.filter((name) => name.startsWith('reset')),
+        note: 'Direkte Änderung: Anzahl in Halbfett.',
+        changed: NARROW_STATES.filter((name) => name.startsWith('count')),
         look: '',
       },
     ],
   },
   neighbours: {
-    key: 'components/zoom-chip',
+    ...narrowPart(),
     sample: 'neighbours',
-    width: 176,
-    states: Object.keys(zoomChipStates),
-    render: placeholderChip,
+    states: SAMPLE_STEPPER_STATES,
     rows: [
       { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
       {
         key: 'a',
         label: 'Entwurf 1',
-        note: 'Die Prozentzahl färbt sich beim Überfahren des Reset-Knopfs.',
+        note: 'Die Anzahl färbt sich beim Überfahren des Zählers.',
         model: { ...OPUS, when: '02.11. 11:02' },
-        changed: ['reset-hover'],
-        look: '[&_[data-camera-reset]_button]:text-et-theme',
+        changed: ['count-hover'],
+        look: '**:data-farn-count:text-et-theme',
       },
       {
         key: 'b',
         label: 'Entwurf 2',
-        note: 'Der Einpassen-Knopf zeigt beim Drücken und beim Fokus einen Rand.',
+        note: 'Der Korb-Knopf wird beim Drücken und beim Fokus zur Pille.',
         model: { ...SOL, when: '02.11. 11:09' },
-        changed: ['fit-active', 'fit-focus-visible'],
-        look: '[&_[data-camera-fit]_button]:rounded-full',
+        changed: ['add-active', 'add-focus-visible'],
+        look: '**:data-farn-add:rounded-full',
       },
     ],
   },
   narrow: {
-    key: 'components/zoom-chip',
-    width: 176,
-    states: NARROW_STATES,
-    render: placeholderChip,
+    ...narrowPart(),
     rows: [
       { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
       {
         key: 'a',
         label: 'Entwurf 1',
-        note: 'Chip als Pille, die Knöpfe rücken enger zusammen.',
+        note: 'Korb-Knopf als Pille, mit Luft zum Zähler.',
         model: { ...OPUS, when: '02.11. 11:02' },
-        changed: NARROW_STATES.filter((name) => name.startsWith('fit') && !STEADY.includes(name)),
-        look: '**:data-canvas-zoom:rounded-full',
+        changed: NARROW_STATES.filter((name) => name.startsWith('add') && !STEADY.includes(name)),
+        look: '**:data-farn-add:rounded-full',
       },
       {
         key: 'b',
         label: 'Entwurf 2',
-        note: 'Prozentzahl in Halbfett, damit der Zoom auf einen Blick lesbar ist.',
+        note: 'Anzahl in Halbfett, damit die Menge auf einen Blick lesbar ist.',
         model: { ...SOL, when: '02.11. 11:09' },
-        changed: NARROW_STATES.filter((name) => name.startsWith('reset')),
-        look: '[&_[data-camera-reset]_button]:font-ui-strong',
+        changed: NARROW_STATES.filter((name) => name.startsWith('count')),
+        look: '**:data-farn-count:font-ui-strong',
       },
     ],
   },

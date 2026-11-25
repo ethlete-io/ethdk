@@ -1,31 +1,25 @@
 import { drawing, html, slot } from '@design-system';
-import treeRow from '@system/components/tree-row';
 import partTree from '@system/elements/part-tree';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import type { StateGridDrawing } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
+import {
+  SAMPLE_STEPPER_WIDTH,
+  sampleStepper,
+} from '../../../../../../apps/ethlete-studio/src/app/design-harness/sample-product';
 
-type StateName = keyof typeof treeRow.states;
+const STEPPER_COLUMNS = ['rest', 'hover', 'active', 'focus-visible'];
 
-const drawState = async (state: StateName) => (await treeRow.render(treeRow.states[state])).body;
+const STEPPER_ROWS = ['minus', 'count', 'plus', 'add'];
 
-export const treeRowGrid = async (): Promise<StateGridDrawing> => {
-  const grid = treeRow.grid ?? { columns: [], rows: {} };
-  const columns = [...grid.columns];
-  const rows = await Promise.all(
-    Object.entries(grid.rows).map(async ([label, byColumn]) => ({
-      label,
-      cells: await Promise.all(
-        columns.map((column) => {
-          const state = (byColumn as Record<string, StateName | undefined>)[column];
-          return state ? drawState(state) : Promise.resolve(undefined);
-        }),
-      ),
-    })),
-  );
-  return { columns, rows };
-};
+export const stepperGrid = (): StateGridDrawing => ({
+  columns: STEPPER_COLUMNS,
+  rows: STEPPER_ROWS.map((target) => ({
+    label: target,
+    cells: STEPPER_COLUMNS.map((column) => sampleStepper(column === 'rest' ? target : `${target}-${column}`)),
+  })),
+});
 
 const treeSelected = {
   layers: [
@@ -37,7 +31,7 @@ const treeSelected = {
         { name: 'button', leaf: true },
         { name: 'form-field' },
         { name: 'select', warns: true },
-        { name: 'tree-row', selected: true, states: [{ name: 'grid' }, { name: 'tree' }] },
+        { name: 'quantity-stepper', selected: true, states: [{ name: 'grid' }, { name: 'stepper' }] },
       ],
     },
     { title: 'Elements', open: false, parts: [] },
@@ -47,11 +41,14 @@ const treeSelected = {
 
 export const manyStatesView = async (grid: StateGridDrawing) => {
   const tree = await partTree.render(treeSelected);
-  const rowDrawing = await treeRow.render(treeRow.states.tree);
   const canvas = await canvasView(
     [
       canvasFrame('grid', html`<div ${slot('shot')}>${stateGrid(grid)}</div>`),
-      canvasFrame('tree', html`<div style="width: 280px" ${slot('shot')}>${rowDrawing.body}</div>`, '280'),
+      canvasFrame(
+        'stepper',
+        html`<div style="width: ${SAMPLE_STEPPER_WIDTH}px" ${slot('shot')}>${sampleStepper('count')}</div>`,
+        `${SAMPLE_STEPPER_WIDTH}`,
+      ),
     ],
     '75%',
     {},
@@ -69,6 +66,6 @@ export const manyStatesView = async (grid: StateGridDrawing) => {
   return drawing({
     body: shell.body,
     setup: menu.setup,
-    styles: shell.styles + menu.styles + tree.styles + rowDrawing.styles + canvasFrameStyles,
+    styles: shell.styles + menu.styles + tree.styles + canvasFrameStyles,
   });
 };

@@ -1,5 +1,10 @@
 import { html, slot } from '@design-system';
-import zoomChip from '@system/components/zoom-chip';
+import {
+  SAMPLE_CATEGORIES,
+  SAMPLE_PLANT_ROWS,
+  SAMPLE_POT_SIZES,
+  samplePotTile,
+} from '../../../../../../apps/ethlete-studio/src/app/design-harness/sample-product';
 import { type Row } from '@shared/sketch-rows';
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -15,7 +20,7 @@ const CELL_WIDTH = 176;
 const CELL_HEIGHT = 45;
 const CELL_GAP = 23;
 
-export const SCREEN_KEY = 'pages/sketches';
+export const SCREEN_KEY = 'pages/plants';
 
 export const GROUPS: ChangeGroup[] = [
   {
@@ -50,7 +55,7 @@ export const SCREEN_ROWS: Row[] = [
   {
     key: 'a',
     label: 'Entwurf 1',
-    note: 'Port nach dem Merge als Zeile unter dem Kopf; die Zellen der Probe tragen die Pillenform.',
+    note: 'Versandhinweis als Zeile unter dem Kopf; die Topfgrößen tragen die Pillenform.',
     model: { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude', when: '04.11. 09:12' },
     changed: GROUPS.flatMap((group) => group.states),
     look: '',
@@ -81,35 +86,27 @@ export const reasonLinesOf = (group: ChangeGroup) => {
 
 export const zoomTextOf = (crop: Box) => `${magnifyOf(crop).toFixed(1).replace('.', ',')}×`;
 
-const CHIP_STATES = ['fit', 'fit-hover', 'fit-active', 'fit-focus-visible'] as const;
-
-type ChipProps = Parameters<typeof zoomChip.render>[0];
-
-const chipOf = async (name: string) => {
-  const states = zoomChip.states as Record<string, ChipProps>;
-  return (await zoomChip.render(states[name] as ChipProps)) as { body: string; styles: string };
-};
-
-const cellAt = (x: number, y: number, chip: string, round: boolean) =>
+const cellAt = (x: number, y: number, tile: string, round: boolean) =>
   html`<div
     class="absolute flex items-center justify-center shadow-[0_0_0_1px_var(--et-surface-border-solid)] ${
-      round ? 'rounded-full **:data-canvas-zoom:rounded-full' : 'rounded-control-sm'
+      round ? 'rounded-full' : 'rounded-control-sm'
     }"
     style="left: ${x}px; top: ${y}px; width: ${CELL_WIDTH}px; height: ${CELL_HEIGHT}px"
   >
-    ${chip}
+    ${tile}
   </div>`;
 
-const rowAt = (y: number, label: string, note: string, chips: string[], round: boolean) =>
+const rowAt = (y: number, label: string, note: string, tiles: string[], round: boolean) =>
   html`<div class="absolute" style="left: 300px; top: ${y}px; width: 300px">
-      <div class="font-code text-ui-sm text-et-surface">${label}</div>
+      <div class="text-ui-sm font-ui-medium text-et-surface">${label}</div>
       <p class="m-0 mt-space-1 text-ui-sm text-et-surface-muted">${note}</p>
     </div>
-    ${chips.map((chip, index) => cellAt(643 + index * (CELL_WIDTH + CELL_GAP), y, chip, round && index > 0)).join('')}`;
+    ${tiles.map((tile, index) => cellAt(643 + index * (CELL_WIDTH + CELL_GAP), y, tile, round && index > 0)).join('')}`;
 
-export const screenOf = async (state: string, changed: boolean) => {
-  const chips = await Promise.all(CHIP_STATES.map(chipOf));
-  const bodies = chips.map((chip) => chip.body);
+const ROW_TOPS = [200, 371, 540];
+
+export const screenOf = (state: string, changed: boolean) => {
+  const tiles = SAMPLE_POT_SIZES.map(({ size, price }) => samplePotTile(size, price));
   const port = GROUPS[1]?.states.includes(state) ?? false;
   const cells = GROUPS[0]?.states.includes(state) ?? false;
   const body = html`<div
@@ -121,26 +118,27 @@ export const screenOf = async (state: string, changed: boolean) => {
   >
     <div class="absolute inset-y-0 left-0 w-65 shadow-[1px_0_0_var(--et-surface-border-solid)]">
       <div class="flex flex-col gap-space-2 p-space-5 text-ui-sm text-et-surface-muted">
-        <span class="text-et-surface">components</span><span>button</span><span>title-bar</span
-        ><span class="text-et-surface">zoom-chip</span><span>tooltip</span>
+        ${SAMPLE_CATEGORIES.map((name, index) =>
+          index === 0 ? html`<span class="text-et-surface">${name}</span>` : html`<span>${name}</span>`,
+        ).join('')}
       </div>
     </div>
     <div class="absolute flex items-center gap-space-3" style="left: 300px; top: 40px">
-      <span class="text-ui-lg font-ui-strong">components/zoom-chip</span>
+      <span class="text-ui-lg font-ui-strong">Topfgrößen</span>
       <span class="text-ui-sm text-et-surface-muted">${state}</span>
     </div>
     ${
       port && changed
         ? html`<div class="absolute text-ui-sm text-et-surface" style="left: 300px; top: 92px">
-            Übernommen: components/button · seit 1 Min
+            Versandkostenfrei ab 50 € · Lieferung morgen
           </div>`
         : ''
     }
-    ${rowAt(200, 'Stand', 'Gemergter Stand', bodies, false)}
-    ${rowAt(371, 'Entwurf 1', 'Chip als Pille, die Knöpfe rücken enger zusammen.', bodies, cells && changed)}
-    ${rowAt(540, 'Entwurf 2', 'Prozentzahl in Halbfett.', bodies, false)}
+    ${SAMPLE_PLANT_ROWS.map((plant, index) =>
+      rowAt(ROW_TOPS[index] ?? 0, plant.name, plant.note, tiles, index === 1 && cells && changed),
+    ).join('')}
   </div>`;
-  return { body, styles: chips[0]?.styles ?? '' };
+  return { body, styles: '' };
 };
 
 const markOf = (box: Box) =>

@@ -430,6 +430,17 @@ const headOf = (row: Row, view: View) => {
   return rowHead(row, action, mark) + (drawn || view.comments ? '' : pinFor(row));
 };
 
+const tagNoteOf = (row: Row) =>
+  row.note
+    ? html`<p
+        class="m-0 mt-space-1 hidden text-ui-xs text-et-surface-muted wrap-anywhere in-data-sk-head-hidden:line-clamp-2"
+        title="${row.note}"
+        data-sk-tag-note
+      >
+        ${row.note}
+      </p>`
+    : '';
+
 const gridRow = (part: SketchPart, row: Row, view: View) => {
   return html`<section
     class="sk-row grid grid-cols-[minmax(0,1fr)] gap-space-5 rounded-control-md p-space-3 in-data-sk-head-hidden:gap-space-2"
@@ -442,6 +453,7 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
         data-sk-head-tag
         >${row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key)}</span
       >
+      ${tagNoteOf(row)}
       <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
     </div>
     <div class="relative min-w-0 ${isWithdrawn(row, view.withdrawn) ? 'opacity-60' : ''}">
@@ -500,7 +512,7 @@ const column = (part: SketchPart, states: string[], row: Row, at: number, top: n
       data-sk-head-tag
       >${block > 0 ? shortLabelOf(rowLabelOf(row)) : rowLabelOf(row)}</span
     >
-    ${block > 0 ? '' : html`<div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>`}
+    ${block > 0 ? '' : tagNoteOf(row) + html`<div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>`}
   </section>`;
   const cells = states
     .map((state, index) =>
@@ -578,6 +590,7 @@ const screenHead = (row: Row, at: number, view: View) =>
       data-sk-head-tag
       >${row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key)}</span
     >
+    ${tagNoteOf(row)}
     <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
   </section>`;
 
@@ -644,7 +657,7 @@ const screenGutter = (group: ChangeGroup, line: number, whole: boolean, buttons:
 const shotsOf = async (group: ChangeGroup, whole: boolean) => {
   const state = group.states[0] ?? '';
   const [before, after] = await Promise.all([screenOf(state, false), screenOf(state, true)]);
-  const marked = markedScreen(after.body, group.box);
+  const marked = markedScreen(after.body, group.areas);
   if (whole) return { current: before.body, changed: marked };
   const crop = cropOf(group.box);
   const stack = group.states.length > 1 ? stackEdges : '';
@@ -1053,6 +1066,7 @@ export default definePart<Props>({
       withdrawn: hiddenCount > 0 ? { count: hiddenCount, shown: withdrawn === 'shown' } : undefined,
       class: 'absolute bottom-space-3 left-1/2 z-3 max-w-[calc(100%-40rem)] -translate-x-1/2',
     });
+    const shownRoundNote = port ? SKETCHES_LABELS.mergePort(PORT_MERGED[port]) : '';
     const toggle = await disclosurePart.render({ label: '', body: '', open: false });
     const parts = { body: '', styles: '' };
     const content = html`<div
@@ -1061,10 +1075,21 @@ export default definePart<Props>({
     >
       ${parts.body}
       <div
-        class="relative -m-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border min-h-0 flex-1 overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+        class="relative -m-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border flex min-h-0 flex-1 flex-col overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
       >
+        ${
+          shownRoundNote
+            ? html`<p
+                class="m-0 shrink-0 truncate pt-space-3 text-ui-sm text-et-surface-muted"
+                title="${shownRoundNote}"
+                data-sk-round-note
+              >
+                ${shownRoundNote}
+              </p>`
+            : ''
+        }
         ${canvasViewport({
-          class: 'size-full',
+          class: 'min-h-0 w-full flex-1',
           attrs: 'data-sk-rows',
           body: html`<div
             class="flex flex-col gap-space-2 pb-16 ${transposed ? 'w-max' : ''}"
@@ -1073,13 +1098,6 @@ export default definePart<Props>({
             data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
             data-blocks="${screen || !transposed ? 1 : blockSizesOf(part, columns, LIST_VIEWPORT).length}"
           >
-            ${
-              port
-                ? html`<p class="m-0 text-ui-xs leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-round-note>
-                    ${SKETCHES_LABELS.mergePort(PORT_MERGED[port])}
-                  </p>`
-                : ''
-            }
             ${world}
             ${
               folded > 0

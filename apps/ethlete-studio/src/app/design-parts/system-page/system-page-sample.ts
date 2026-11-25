@@ -75,7 +75,7 @@ export const MANY_STATES_LAYERS: PartTreeLayer[] = [
       { name: 'button' },
       { name: 'form-field' },
       { name: 'select', warns: true },
-      { name: 'tree-row', selected: true },
+      { name: 'quantity-stepper', selected: true },
     ],
   },
   { title: 'Elements', open: false, parts: [] },

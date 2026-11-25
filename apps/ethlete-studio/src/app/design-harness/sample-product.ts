@@ -77,7 +77,7 @@ const stepperTone = (interaction: string) =>
     : interaction === 'active'
       ? 'bg-et-surface-border'
       : interaction === 'focus-visible'
-        ? 'ring-2 ring-et-theme ring-inset'
+        ? 'inset-ring-2 inset-ring-et-theme'
         : '';
 
 const addTone = (interaction: string) =>
@@ -86,7 +86,7 @@ const addTone = (interaction: string) =>
     : interaction === 'active'
       ? 'bg-et-theme-active'
       : interaction === 'focus-visible'
-        ? 'bg-et-theme ring-2 ring-et-surface ring-inset'
+        ? 'bg-et-theme inset-ring-2 inset-ring-et-surface'
         : 'bg-et-theme';
 
 /** Farn's quantity stepper with the add button, 176 × 30 px; a state names its target and interaction, as `count-hover`. */
@@ -142,7 +142,7 @@ export const samplePage = (state: string) => {
       <span class="max-w-md text-ui-md text-et-surface-muted">Robust, dankbar und in drei Topfgrößen lieferbar. Mit Pflegekarte und Erde aus der Gärtnerei in Bremen.</span>
       <span class="flex items-center gap-space-4">${sampleStepper('count')}<span class="text-ui-md text-et-surface-muted">ab 24 €</span></span>
     </span>
-    ${plantArt('h-90 w-120')}
+    ${plantArt('h-90 w-3xl')}
   </div>
   <div class="grid grid-cols-4 gap-space-6 px-space-16">
     ${others.map((name, step) => card(name, `${18 + step * 6} €`)).join('')}

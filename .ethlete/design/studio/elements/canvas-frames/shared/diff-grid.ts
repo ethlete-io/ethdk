@@ -1,9 +1,11 @@
 import { html, slot } from '@design-system';
-import holdTriggerPart, { holdTriggerStyles } from '@system/components/hold-trigger';
+import { sampleStepper } from '../../../../../../apps/ethlete-studio/src/app/design-harness/sample-product';
 
 type Interaction = 'rest' | 'hover' | 'active' | 'focus-visible';
 
-type Cell = { open: boolean; interaction: Interaction };
+type Target = 'count' | 'add';
+
+type Cell = { target: Target; interaction: Interaction };
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -11,16 +13,16 @@ const REST: Interaction = 'rest';
 
 const interactions: Interaction[] = ['rest', 'hover', 'active', 'focus-visible'];
 
+const targets: Target[] = ['count', 'add'];
+
 const CELL = { width: 196, height: 96 };
 
-const TRIGGER: Box = { x: 8, y: 8, width: 120, height: 28 };
+const REGIONS: Record<Target, Box> = {
+  count: { x: 38, y: 8, width: 28, height: 30 },
+  add: { x: 96, y: 8, width: 88, height: 30 },
+};
 
-const OPEN_TRIGGER: Box = { ...TRIGGER, width: 168 };
-
-const content = html`<span class="text-ui-sm text-et-surface-muted">Pausiert</span>`;
-const reason = html`<span class="font-ui-medium text-et-surface">Wartet auf ADR 0331</span>`;
-
-const regionOf = (cell: Cell) => (cell.interaction === REST ? undefined : cell.open ? OPEN_TRIGGER : TRIGGER);
+const regionOf = (cell: Cell) => (cell.interaction === REST ? undefined : REGIONS[cell.target]);
 
 const insetOf = (edge: number) => `${edge}px`;
 
@@ -34,13 +36,8 @@ const markOf = (box: Box) =>
     ></div>
   </div>`;
 
-const drawCell = async (cell: Cell) => {
-  const { body } = await holdTriggerPart.render({
-    content,
-    reason,
-    open: cell.open,
-    interaction: cell.interaction === 'rest' ? undefined : cell.interaction,
-  });
+const drawCell = (cell: Cell) => {
+  const body = sampleStepper(cell.interaction === REST ? cell.target : `${cell.target}-${cell.interaction}`);
   const region = regionOf(cell);
 
   return html`<div
@@ -52,16 +49,11 @@ const drawCell = async (cell: Cell) => {
   </div>`;
 };
 
-/** The states of components/hold-trigger as a state grid of framed part stills, each state in an interaction dimmed outside the region it changes against the rest state of its row, a rest state dimmed whole. */
-export const diffGrid = async () => ({
+/** The quantity stepper of the sample product as a state grid of framed part stills, each state in an interaction dimmed outside the region it changes against the rest state of its row, a rest state dimmed whole. */
+export const diffGrid = () => ({
   columns: interactions,
-  rows: await Promise.all(
-    [false, true].map(async (open) => ({
-      label: open ? 'open' : 'closed',
-      cells: await Promise.all(interactions.map((interaction) => drawCell({ open, interaction }))),
-    })),
-  ),
+  rows: targets.map((target) => ({
+    label: target,
+    cells: interactions.map((interaction) => drawCell({ target, interaction })),
+  })),
 });
-
-/** The CSS the cells of `diffGrid` need on top of the canvas frame styles. */
-export const diffGridStyles = holdTriggerStyles;

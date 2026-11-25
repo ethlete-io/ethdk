@@ -151,10 +151,14 @@ const rowFailedMark = (reason: string) =>
     >${SKETCHES_LABELS.rowFailed(reason)}</span
   >`;
 
-const PORT_MERGED = { one: ['components/zoom-chip'], two: ['components/zoom-chip', 'elements/part-tree'] };
+const PORT_MERGED = {
+  one: ['components/quantity-stepper'],
+  two: ['components/quantity-stepper', 'components/shop-bar'],
+};
 
-const RESET_STATES = ['reset', 'reset-hover', 'reset-active', 'reset-focus-visible'];
-const MERGE_ERROR = 'components/zoom-chip hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.';
+const COUNT_STATES = ['count', 'count-hover', 'count-active', 'count-focus-visible'];
+const MERGE_ERROR =
+  'components/quantity-stepper hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.';
 
 const errorText = (reason: string) =>
   html`<p class="m-0 text-ui-xs text-et-theme-ink" data-et-semantic-color="error" role="alert" data-sk-merge-error>
@@ -171,23 +175,22 @@ const pendingFailedLabel = (count: number) =>
 
 type Added = { state: string; in: RowKey[] };
 
-const ADDED: Added = { state: 'fit-disabled', in: ['a'] };
+const ADDED: Added = { state: 'add-disabled', in: ['a'] };
 
 const withAdded = (part: SketchPart): SketchPart => ({
   ...part,
   states: [...part.states, ADDED.state],
-  render: (state) => part.render(state === ADDED.state ? 'fit' : state),
   rows: part.rows.map((row) => (ADDED.in.includes(row.key) ? { ...row, changed: [...row.changed, ADDED.state] } : row)),
 });
 
-const WIDE: Added = { state: 'reset-focus-tooltip', in: ['b'] };
+const WIDE: Added = { state: 'count-focus-tooltip', in: ['b'] };
 
 const MEASURED_WIDTH = 197;
 
 const withWideState = (part: SketchPart): SketchPart => ({
   ...part,
   states: [...part.states, WIDE.state],
-  render: (state) => part.render(state === WIDE.state ? 'reset-focus-visible' : state),
+  render: (state) => part.render(state === WIDE.state ? 'count-focus-visible' : state),
   rows: part.rows.map((row) => (WIDE.in.includes(row.key) ? { ...row, changed: [...row.changed, WIDE.state] } : row)),
 });
 
@@ -268,8 +271,8 @@ const treeOf = (key: string, multi: MultiTargets | undefined, status: SketchStat
         title: 'Pages',
         open: true,
         parts: [
-          { name: 'system', leaf: true },
-          ...(key === SCREEN_KEY ? [{ name: 'sketches', leaf: true, selected: true }] : []),
+          { name: 'shop', leaf: true },
+          ...(key === SCREEN_KEY ? [{ name: SCREEN_KEY.replace('pages/', ''), leaf: true, selected: true }] : []),
         ],
       },
     ],
@@ -278,8 +281,8 @@ const treeOf = (key: string, multi: MultiTargets | undefined, status: SketchStat
 const pagePin = commentPinMark(pinProps(PAGE_PIN));
 
 const ROUNDS: Record<PartKind | 'screen', string> = {
-  wide: 'Runde 1 · Suche und Update',
-  narrow: 'Runde 1 · Reset control: SDK button or own part',
+  wide: 'Runde 1 · Suche und Korb',
+  narrow: 'Runde 1 · Korb-Knopf und Anzahl',
   neighbours: 'Runde 3 · Nachbarschaft einer Änderung',
   edit: BUILD_READY_LABELS.groups['direct-edit'],
   many: 'Runde 1 · Viele Zustände',
@@ -705,8 +708,8 @@ const VARIANT_THREADS: RowThread[] = [
     initials: 'H',
     when: 'vor 20 Min',
     part: 'Entwurf 1',
-    state: 'fit-hover',
-    text: 'Die Pille wirkt hier zu eng, die Knöpfe kleben aneinander.',
+    state: 'add-hover',
+    text: 'Die Pille wirkt hier zu eng, sie klebt am Zähler.',
     replies: 1,
   },
   {
@@ -717,8 +720,8 @@ const VARIANT_THREADS: RowThread[] = [
     agent: 'claude',
     when: 'vor 4 Min',
     part: 'Entwurf 2',
-    state: 'reset-hover',
-    text: 'Halbfett liest sich besser. Soll Entwurf 1 die Zahl auch so bekommen?',
+    state: 'count-hover',
+    text: 'Halbfett liest sich besser. Soll Entwurf 1 die Anzahl auch so bekommen?',
     replies: 2,
     unread: true,
   },
@@ -733,7 +736,7 @@ const variantComments = async (row: string, phase: CommentPhase | undefined) => 
   const drafting = phase === 'draft' && row === 'b';
   const draft = drafting
     ? await commentDraftAt('top-[40%] left-[calc(30%+var(--space-6))] z-20', {
-        text: 'Der Reset-Knopf braucht hier mehr Luft zur Prozentzahl.',
+        text: 'Der Korb-Knopf braucht hier mehr Luft zur Anzahl.',
       })
     : undefined;
   return {
@@ -771,7 +774,7 @@ export default definePart<Props>({
     'comparing-narrow': { camera: 'fit', part: 'narrow', comparing: true },
     'no-sketches': { camera: 'fit', empty: true },
     'list-error': { camera: 'fit', part: 'narrow', comparing: true, listError: LIST_ERROR },
-    'compare-pending': { camera: 'fit', part: 'narrow', comparing: true, known: [...RESET_STATES] },
+    'compare-pending': { camera: 'fit', part: 'narrow', comparing: true, known: [...COUNT_STATES] },
     'compare-answered': { camera: 'fit', part: 'narrow' },
     neighbourhood: { camera: 'fit', part: 'neighbours' },
     'added-state': { camera: 'fit', part: 'narrow', added: true },

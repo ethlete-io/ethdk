@@ -202,10 +202,10 @@ export const FRAME_HEAD_CLASS =
           </figure>
           <figure [class]="FRAME_CLASS">
             <figcaption [class]="FRAME_HEAD_CLASS">
-              {{ LABELS.frameTree }}<span class="text-et-surface-muted tabular-nums">280</span>
+              {{ LABELS.frameStepper }}<span class="text-et-surface-muted tabular-nums">176</span>
             </figcaption>
-            <div class="w-md">
-              <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'tree' }" />
+            <div class="w-44">
+              <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'stepper' }" />
             </div>
           </figure>
         </ethlete-canvas-frames>

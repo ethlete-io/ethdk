@@ -51,7 +51,7 @@ export const SYSTEM_LABELS = {
   commentModeOr: 'oder',
   commentModeEnds: 'beendet',
   frameGrid: 'grid',
-  frameTree: 'tree',
+  frameStepper: 'stepper',
 } as const;
 
 export const BUILD_READY_LABELS = {

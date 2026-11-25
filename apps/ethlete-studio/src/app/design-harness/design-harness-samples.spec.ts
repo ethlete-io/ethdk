@@ -1,4 +1,5 @@
 import { reflectComponentType } from '@angular/core';
+import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { PartTree } from '../design-parts/part-tree/part-tree.component';
 import { cropGroupsOf } from '../design-parts/sketches/sketch-crops';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
@@ -15,7 +16,7 @@ const sketchesOf = (props: Record<string, unknown>) => {
 };
 
 describe('DESIGN_HARNESS_SAMPLES', () => {
-  it('feeds the diff-mark state the hold-trigger grid whose interaction cells carry a difference against their row rest', () => {
+  it('feeds the diff-mark state the quantity-stepper grid whose interaction cells carry a difference against their row rest', () => {
     const sample = DESIGN_HARNESS_SAMPLES['elements/canvas-frames'];
 
     if (!sample) throw new Error('no elements/canvas-frames sample');
@@ -31,10 +32,27 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
 
     expect(props).not.toHaveProperty('diff');
     expect(Object.keys(diffs)).toHaveLength(8);
-    expect(diffs['closed · rest']).toBeNull();
-    expect(diffs['closed · hover']).toMatchObject({ y: 8 });
-    expect(diffs['open · rest']).toBeNull();
-    expect(diffs['open · hover']).toEqual({ x: 8, y: 8, width: 168, height: 28 });
+    expect(diffs['count · rest']).toBeNull();
+    expect(diffs['count · hover']).toMatchObject({ y: 8 });
+    expect(diffs['add · rest']).toBeNull();
+    expect(diffs['add · hover']).toEqual({ x: 96, y: 8, width: 88, height: 30 });
+  });
+
+  it('binds only design-canvas inputs in the zoom-chip hover states of elements/canvas-frames', () => {
+    const sample = DESIGN_HARNESS_SAMPLES['elements/canvas-frames'];
+
+    if (!sample) throw new Error('no elements/canvas-frames sample');
+
+    const inputs = new Set(reflectComponentType(DesignCanvasComponent)?.inputs.map(({ templateName }) => templateName));
+    const props = sample({
+      part: 'button',
+      states: ['filled', 'outline', 'tonal'],
+      zoom: '25%',
+      target: 'out',
+      interaction: 'hover',
+    });
+
+    expect(Object.keys(props).filter((key) => key !== 'class' && !inputs.has(key))).toEqual([]);
   });
 
   it('feeds elements/shell-main the rail products its design draws', () => {
@@ -49,7 +67,7 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     const props = sketchesOf({ camera: 'fit', part: 'narrow', screen: 'crop' });
     const groups = cropGroupsOf(props['rows'] as SketchRow[]);
 
-    expect(props['part']).toBe('pages/sketches');
+    expect(props['part']).toBe('pages/plants');
     expect(props['screen']).toBeUndefined();
     expect(props['wholeScreens']).toEqual([]);
     expect(groups.map((group) => group.states.length)).toEqual([10, 1]);
@@ -70,18 +88,18 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     expect(() => sketchesOf({ part: 'narrow', port: 'nope' })).toThrow('port=nope');
   });
 
-  it('keeps the narrow chip sample when no screen is set', () => {
-    expect(sketchesOf({ part: 'narrow' })['part']).toBe('components/zoom-chip');
+  it('keeps the narrow stepper sample when no screen is set', () => {
+    expect(sketchesOf({ part: 'narrow' })['part']).toBe('components/quantity-stepper');
   });
 
-  it('feeds the edit part an @edit chip sample with the rows old and new', () => {
+  it('feeds the edit part an @edit stepper sample with the rows old and new', () => {
     const props = sketchesOf({ camera: 'fit', part: 'edit' });
 
-    expect(props['part']).toBe('components/zoom-chip@edit');
+    expect(props['part']).toBe('components/quantity-stepper@edit');
     expect((props['rows'] as SketchRow[]).map((row) => row.key)).toEqual(['old', 'new']);
   });
 
-  it('refuses a part prop it has no sample for instead of drawing the title-bar rows', () => {
+  it('refuses a part prop it has no sample for instead of drawing the shop-bar rows', () => {
     expect(() => sketchesOf({ camera: 'fit', part: 'unknown' })).toThrow(
       'no sample for prop part=unknown of part pages/sketches',
     );
@@ -91,10 +109,10 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     const tree = sketchesOf({ part: 'edit' })['tree'] as PartTree;
 
     expect(tree.layers[0]?.parts.map(({ name, selected }) => (selected ? `${name}*` : name))).toEqual([
-      'many-states',
-      'title-bar',
-      'zoom-chip@edit*',
-      'zoom-chip',
+      'plant-page',
+      'shop-bar',
+      'quantity-stepper@edit*',
+      'quantity-stepper',
     ]);
   });
 
@@ -102,9 +120,9 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
     const props = sketchesOf({ camera: 'fit', part: 'many' });
     const tree = props['tree'] as PartTree;
 
-    expect(props['part']).toBe('components/many-states');
+    expect(props['part']).toBe('components/plant-page');
     expect((props['rows'] as SketchRow[]).map((row) => row.shots.length)).toEqual([30, 30, 30]);
-    expect(tree.layers[0]?.parts.find(({ selected }) => selected)?.name).toBe('many-states');
+    expect(tree.layers[0]?.parts.find(({ selected }) => selected)?.name).toBe('plant-page');
   });
 
   it.each(['three', 'many'])('feeds the multi-part sample %s only inputs the sketches page declares', (multi) => {

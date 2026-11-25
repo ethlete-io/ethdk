@@ -1,4 +1,5 @@
 import { SketchChange } from '../../../host/design';
+import { SAMPLE_BAR_HEIGHT, SAMPLE_BAR_STATES, SAMPLE_STEPPER_HEIGHT } from '../../design-harness/sample-product';
 import { AgentLogoName } from '../../icons/agent-logos';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { PartTree } from '../part-tree/part-tree.component';
@@ -69,15 +70,9 @@ export type SketchPin = {
   resolved?: boolean;
 };
 
-export type SketchTitleBar = {
-  os: 'linux' | 'windows' | 'macos';
-  right: ('minimize' | 'maximize' | 'close')[];
-  update: boolean;
-};
-
 export const SKETCH_CURRENT = 'current';
 
-const STATES = ['linux-close', 'linux-close-update', 'windows', 'windows-update', 'macos', 'macos-update'];
+const STATES = SAMPLE_BAR_STATES;
 
 const OPUS = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' } as const;
 const SOL = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' } as const;
@@ -85,7 +80,7 @@ const SOL = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' } as const
 const shotsOf = (
   changed: string[],
   {
-    height = () => 32,
+    height = () => SAMPLE_BAR_HEIGHT,
     states = STATES,
   }: { height?: (changed: boolean, state: string) => number; states?: string[] } = {},
 ): SketchShot[] =>
@@ -100,48 +95,33 @@ export const SKETCH_ROWS: SketchRow[] = [
   {
     key: 'a',
     label: 'Entwurf 1',
-    note: 'Update als schmaler Button direkt neben der Suche, die Suche wird dafür schmaler; ohne Update bleibt die Leiste wie heute.',
+    note: 'Mit gefülltem Korb wird die Suche schmaler, damit der Korb Platz hat; mit leerem Korb bleibt die Leiste wie heute.',
     model: { ...OPUS, when: '02.11. 10:14' },
     width: 1440,
-    shots: shotsOf(['linux-close-update', 'windows-update', 'macos-update']),
+    shots: shotsOf(STATES.filter((state) => state.endsWith('-basket'))),
   },
   {
     key: 'b',
     label: 'Entwurf 2',
-    note: 'Leiste 40 px hoch, damit Suche und Fensterknöpfe mehr Luft haben; kostet 8 px Höhe in jeder Ansicht.',
+    note: 'Leiste 56 px hoch, damit Suche und Korb mehr Luft haben; kostet 8 px Höhe auf jeder Seite.',
     model: { ...SOL, when: '02.11. 10:21' },
     width: 1440,
-    shots: shotsOf(STATES, { height: (changed) => (changed ? 40 : 32) }),
+    shots: shotsOf(STATES, { height: (changed) => (changed ? 56 : SAMPLE_BAR_HEIGHT) }),
   },
   {
     key: 'c',
     label: 'Entwurf 3',
-    note: 'Unter macOS rückt die Suche nach links an die Ampel, Linux und Windows bleiben gleich.',
+    note: 'Im Checkout fällt die Shop-Navigation weg, Gast und Mitglied sehen die Leiste wie heute.',
     model: { ...OPUS, when: '02.11. 10:30' },
     width: 1440,
-    shots: shotsOf(['macos', 'macos-update']),
+    shots: shotsOf(STATES.filter((state) => state.startsWith('checkout'))),
   },
 ];
 
-type TitleBarLayout = Omit<SketchTitleBar, 'update'>;
-
-const LINUX_CLOSE: TitleBarLayout = { os: 'linux', right: ['close'] };
-const WINDOWS: TitleBarLayout = { os: 'windows', right: ['minimize', 'maximize', 'close'] };
-const MACOS: TitleBarLayout = { os: 'macos', right: [] };
-
-export const SKETCH_TITLE_BARS: Record<string, SketchTitleBar> = {
-  'linux-close': { ...LINUX_CLOSE, update: false },
-  'linux-close-update': { ...LINUX_CLOSE, update: true },
-  windows: { ...WINDOWS, update: false },
-  'windows-update': { ...WINDOWS, update: true },
-  macos: { ...MACOS, update: false },
-  'macos-update': { ...MACOS, update: true },
-};
-
 export const SKETCH_LOOKS: Record<string, string> = {
-  a: '[&_.w-2xl]:w-55',
-  b: '[&_.st-title-bar]:h-10',
-  c: '[&_.st-title-bar]:grid-cols-[auto_1fr_auto]',
+  a: '**:data-farn-search:w-55',
+  b: '**:data-farn-bar:h-14',
+  c: '**:data-farn-nav:invisible',
 };
 
 export const SKETCH_DRAWN = 'b';
@@ -159,11 +139,11 @@ export const SKETCH_MERGE_PORTS: Record<'one' | 'two', SketchMergePort> = {
   two: { merged: ['components/sketch-status-badge', 'elements/variant-cell'], since: 'seit 1 Min' },
 };
 
-export const SKETCH_ROUNDS: SketchRound[] = [{ value: 'round-1', label: 'Runde 1 · Suche und Update' }];
+export const SKETCH_ROUNDS: SketchRound[] = [{ value: 'round-1', label: 'Runde 1 · Suche und Korb' }];
 
 export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'human', initials: 'TB', count: 1 }];
 
-const SKETCH_COMPONENTS = ['many-states', 'title-bar', 'zoom-chip@edit', 'zoom-chip'];
+const SKETCH_COMPONENTS = ['plant-page', 'shop-bar', 'quantity-stepper@edit', 'quantity-stepper'];
 
 const componentsLayerOf = (selected?: string) => ({
   title: 'Components',
@@ -172,76 +152,72 @@ const componentsLayerOf = (selected?: string) => ({
 });
 
 export const SKETCH_TREE: PartTree = {
-  layers: [componentsLayerOf('title-bar'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
+  layers: [componentsLayerOf('shop-bar'), { title: 'Pages', open: true, parts: [{ name: 'shop' }] }],
 };
 
 const CHIP_STATES = [
-  'reset',
-  'reset-hover',
-  'reset-active',
-  'reset-focus-visible',
-  'fit',
-  'fit-hover',
-  'fit-active',
-  'fit-focus-visible',
+  'count',
+  'count-hover',
+  'count-active',
+  'count-focus-visible',
+  'add',
+  'add-hover',
+  'add-active',
+  'add-focus-visible',
 ];
 
-const CHIP_HEIGHT = 30;
+const CHIP_HEIGHT = SAMPLE_STEPPER_HEIGHT;
 
 const chipShotsOf = (changed: string[]) => shotsOf(changed, { height: () => CHIP_HEIGHT, states: CHIP_STATES });
 
 export const SKETCH_WITHDRAWN = {
   key: 'b',
-  reason: 'Halbfett macht die Prozentzahl breiter, der Chip springt beim Zoomen um 4 px',
+  reason: 'Halbfett macht die Anzahl breiter, der Stepper springt bei zweistelligen Mengen um 4 px',
 };
 
 export const SKETCH_NARROW_SAMPLE = {
-  part: 'components/zoom-chip',
+  part: 'components/quantity-stepper',
   rows: [
     { key: SKETCH_CURRENT, label: 'Stand', note: 'Gemergter Stand', width: 176, shots: chipShotsOf([]) },
     {
       key: 'a',
       label: 'Entwurf 1',
-      note: 'Chip als Pille, die Knöpfe rücken enger zusammen.',
+      note: 'Korb-Knopf als Pille, mit Luft zum Zähler.',
       model: { ...OPUS, when: '02.11. 11:02' },
       width: 176,
-      shots: chipShotsOf(CHIP_STATES.filter((state) => state === 'fit')),
+      shots: chipShotsOf(CHIP_STATES.filter((state) => state === 'add')),
     },
     {
       key: 'b',
       label: 'Entwurf 2',
-      note: 'Prozentzahl in Halbfett, damit der Zoom auf einen Blick lesbar ist.',
+      note: 'Anzahl in Halbfett, damit die Menge auf einen Blick lesbar ist.',
       model: { ...SOL, when: '02.11. 11:09' },
       width: 176,
-      shots: chipShotsOf(CHIP_STATES.filter((state) => state.startsWith('reset'))),
+      shots: chipShotsOf(CHIP_STATES.filter((state) => state.startsWith('count'))),
     },
   ] satisfies SketchRow[],
-  looks: { a: '**:data-canvas-zoom:rounded-full', b: '[&_[data-camera-reset]_button]:font-ui-strong' } as Record<
-    string,
-    string
-  >,
-  rounds: [{ value: 'round-1', label: 'Runde 1 · Reset control: SDK button or own part' }] satisfies SketchRound[],
+  looks: { a: '**:data-farn-add:rounded-full', b: '**:data-farn-count:font-ui-strong' } as Record<string, string>,
+  rounds: [{ value: 'round-1', label: 'Runde 1 · Korb-Knopf und Anzahl' }] satisfies SketchRound[],
   tree: {
-    layers: [componentsLayerOf('zoom-chip'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
+    layers: [componentsLayerOf('quantity-stepper'), { title: 'Pages', open: true, parts: [{ name: 'shop' }] }],
   } satisfies PartTree,
 };
 
 /** A state only variant a of the narrow sample draws, so Current and variant b lack it. */
-export const SKETCH_ADDED_STATE = { state: 'fit-disabled', in: ['a'], height: CHIP_HEIGHT };
+export const SKETCH_ADDED_STATE = { state: 'add-disabled', in: ['a'], height: CHIP_HEIGHT };
 
-const WIDE_DRAWN_AS = 'reset-focus-visible';
+const WIDE_DRAWN_AS = 'count-focus-visible';
 
-/** A state of variant b of the narrow sample measured wider than the zoom chip. */
+/** A state of variant b of the narrow sample measured wider than the stepper. */
 export const SKETCH_WIDE_STATE = {
-  state: 'reset-focus-tooltip',
+  state: 'count-focus-tooltip',
   key: 'b',
   width: 197,
   height: CHIP_HEIGHT,
 };
 
-/** The chip state the harness draws for a narrow sample state no chip state names. */
+/** The stepper state the harness draws for a narrow sample state no stepper state names. */
 export const SKETCH_DRAWN_AS: Record<string, string> = {
-  [SKETCH_ADDED_STATE.state]: 'fit',
   [SKETCH_WIDE_STATE.state]: WIDE_DRAWN_AS,
 };
 
@@ -253,18 +229,18 @@ export const SKETCH_NEIGHBOURS_SAMPLE = {
     CURRENT_ROW,
     {
       ...VARIANT_A_ROW,
-      note: 'Die Prozentzahl färbt sich beim Überfahren des Reset-Knopfs.',
-      shots: chipShotsOf(['reset-hover']),
+      note: 'Die Anzahl färbt sich beim Überfahren des Zählers.',
+      shots: chipShotsOf(['count-hover']),
     },
     {
       ...VARIANT_B_ROW,
-      note: 'Der Einpassen-Knopf zeigt beim Drücken und beim Fokus einen Rand.',
-      shots: chipShotsOf(['fit-active', 'fit-focus-visible']),
+      note: 'Der Korb-Knopf wird beim Drücken und beim Fokus zur Pille.',
+      shots: chipShotsOf(['add-active', 'add-focus-visible']),
     },
   ] satisfies SketchRow[],
   looks: {
-    a: '[&_[data-camera-reset]_button]:text-et-theme',
-    b: '[&_[data-camera-fit]_button]:rounded-full',
+    a: '**:data-farn-count:text-et-theme',
+    b: '**:data-farn-add:rounded-full',
   } as Record<string, string>,
   rounds: [{ value: 'round-3', label: 'Runde 3 · Nachbarschaft einer Änderung' }] satisfies SketchRound[],
   round: 'round-3',
@@ -272,21 +248,21 @@ export const SKETCH_NEIGHBOURS_SAMPLE = {
 
 export const SKETCH_EDIT_SAMPLE = {
   ...SKETCH_NARROW_SAMPLE,
-  part: 'components/zoom-chip@edit',
+  part: 'components/quantity-stepper@edit',
   rows: [
     { key: 'old', note: 'Stand vor der direkten Änderung', width: 176, shots: chipShotsOf([]) },
     {
       key: 'new',
-      note: 'Direkte Änderung: Prozentzahl in Halbfett.',
+      note: 'Direkte Änderung: Anzahl in Halbfett.',
       width: 176,
-      shots: chipShotsOf(CHIP_STATES.filter((state) => state.startsWith('reset'))),
+      shots: chipShotsOf(CHIP_STATES.filter((state) => state.startsWith('count'))),
     },
   ] satisfies SketchRow[],
   looks: {} as Record<string, string>,
   rounds: [{ value: 'edit', label: 'Direkte Änderung' }] satisfies SketchRound[],
   round: 'edit',
   tree: {
-    layers: [componentsLayerOf('zoom-chip@edit'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
+    layers: [componentsLayerOf('quantity-stepper@edit'), { title: 'Pages', open: true, parts: [{ name: 'shop' }] }],
   } satisfies PartTree,
 };
 
@@ -300,7 +276,7 @@ const MANY_WIDTH = 1440;
 const manyShotsOf = (changed: string[]) => shotsOf(changed, { height: () => 900, states: SKETCH_MANY_STATES });
 
 export const SKETCH_MANY_SAMPLE = {
-  part: 'components/many-states',
+  part: 'components/plant-page',
   rows: [
     { key: SKETCH_CURRENT, label: 'Stand', note: 'Gemergter Stand', width: MANY_WIDTH, shots: manyShotsOf([]) },
     {
@@ -323,7 +299,7 @@ export const SKETCH_MANY_SAMPLE = {
   looks: { a: '[&_div]:text-et-theme', b: '[&_div]:font-ui-strong' } as Record<string, string>,
   rounds: [{ value: 'round-1', label: 'Runde 1 · Viele Zustände' }] satisfies SketchRound[],
   tree: {
-    layers: [componentsLayerOf('many-states'), { title: 'Pages', open: true, parts: [{ name: 'system' }] }],
+    layers: [componentsLayerOf('plant-page'), { title: 'Pages', open: true, parts: [{ name: 'shop' }] }],
   } satisfies PartTree,
 };
 
@@ -420,13 +396,13 @@ const screenShotsOf = (changed: boolean): SketchShot[] => [
 ];
 
 export const SKETCH_SCREEN_SAMPLE = {
-  part: 'pages/sketches',
+  part: 'pages/plants',
   rows: [
     { key: SKETCH_CURRENT, label: 'Stand', note: 'Gemergter Stand', width: SCREEN.width, shots: screenShotsOf(false) },
     {
       key: 'a',
       label: 'Entwurf 1',
-      note: 'Port nach dem Merge als Zeile unter dem Kopf; die Zellen der Probe tragen die Pillenform.',
+      note: 'Versandhinweis als Zeile unter dem Kopf; die Topfgrößen tragen die Pillenform.',
       model: { ...OPUS, when: '04.11. 09:12' },
       width: SCREEN.width,
       shots: screenShotsOf(true),
@@ -440,7 +416,7 @@ export const SKETCH_SCREEN_SAMPLE = {
       {
         title: 'Pages',
         open: true,
-        parts: [{ name: 'system' }, { name: 'sketches', selected: true }],
+        parts: [{ name: 'shop' }, { name: 'plants', selected: true }],
       },
     ],
   } satisfies PartTree,
@@ -451,28 +427,28 @@ export const SKETCH_COMMENTS_SAMPLE: SketchComment[] = [
   {
     id: 'sk-c1',
     variant: 'a',
-    shot: 'reset',
+    shot: 'count',
     point: { x: 188.9123, y: 6.3613 },
     author: 'human',
     initials: 'H',
     when: 'vor 20 Min',
     part: 'Entwurf 1',
-    state: 'fit-hover',
-    text: 'Die Pille wirkt hier zu eng, die Knöpfe kleben aneinander.',
+    state: 'add-hover',
+    text: 'Die Pille wirkt hier zu eng, sie klebt am Zähler.',
     replies: 1,
   },
   {
     id: 'sk-c2',
     variant: 'b',
-    shot: 'reset-active',
+    shot: 'count-active',
     point: { x: 146.6426, y: 44.5806 },
     author: 'Claude',
     initials: 'C',
     agent: 'claude',
     when: 'vor 4 Min',
     part: 'Entwurf 2',
-    state: 'reset-hover',
-    text: 'Halbfett liest sich besser. Soll Entwurf 1 die Zahl auch so bekommen?',
+    state: 'count-hover',
+    text: 'Halbfett liest sich besser. Soll Entwurf 1 die Anzahl auch so bekommen?',
     replies: 2,
     unread: true,
   },
@@ -480,10 +456,10 @@ export const SKETCH_COMMENTS_SAMPLE: SketchComment[] = [
 
 export const SKETCH_COMMENT_DRAFT_SAMPLE: SketchCommentDraft = {
   variant: 'b',
-  shot: 'reset',
+  shot: 'count',
   point: { x: 316.1871, y: 22.4194 },
   author: 'human',
   initials: 'H',
 };
 
-export const SKETCH_COMMENT_DRAFT_TEXT = 'Der Reset-Knopf braucht hier mehr Luft zur Prozentzahl.';
+export const SKETCH_COMMENT_DRAFT_TEXT = 'Der Korb-Knopf braucht hier mehr Luft zur Anzahl.';

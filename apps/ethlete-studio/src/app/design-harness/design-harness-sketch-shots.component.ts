@@ -1,5 +1,5 @@
-import { Component, TemplateRef, viewChild, ViewEncapsulation } from '@angular/core';
-import { TitleBarComponent } from '../components/title-bar/title-bar.component';
+import { Component, inject, TemplateRef, viewChild, ViewEncapsulation } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import {
   SKETCH_DRAWN_AS,
   SKETCH_LOOKS,
@@ -9,17 +9,18 @@ import {
   SKETCH_NEIGHBOURS_SAMPLE,
   SKETCH_ROWS,
   SKETCH_SCREEN_SAMPLE,
-  SKETCH_TITLE_BARS,
   SketchRow,
 } from '../design-parts/sketches/sketches-sample';
 import { SketchShotContext } from '../design-parts/sketches/sketches.component';
-import { ZoomChipComponent, ZoomControl, ZoomInteraction } from '../design-parts/zoom-chip/zoom-chip.component';
+import { SAMPLE_BAR_STATES, sampleBar, samplePage, sampleStepper } from './sample-product';
 
 const SCREEN_STATES = new Set(SKETCH_SCREEN_SAMPLE.rows.flatMap((row) => row.shots.map((shot) => shot.state)));
 
 const MANY_STATES = new Set(SKETCH_MANY_STATES);
 
-const chipSampleOf = (row: SketchRow) =>
+const BAR_STATES = new Set(SAMPLE_BAR_STATES);
+
+const stepperSampleOf = (row: SketchRow) =>
   SKETCH_NEIGHBOURS_SAMPLE.rows.some((candidate) => candidate.key === row.key && candidate.note === row.note)
     ? SKETCH_NEIGHBOURS_SAMPLE
     : SKETCH_NARROW_SAMPLE;
@@ -32,40 +33,20 @@ const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: stri
   template: `
     <ng-template #shot let-row let-state="state">
       <div [class]="lookOf(row, state)">
-        @if (TITLE_BARS[state]; as bar) {
-          <ethlete-title-bar
-            [os]="bar.os"
-            [right]="bar.right"
-            [update]="bar.update"
-            product="studio"
-            part="Title bar"
-          />
-        } @else if (MANY_STATES.has(state)) {
-          <div
-            class="box-border flex h-225 w-360 items-center justify-center bg-et-surface-bg font-code text-ui-lg text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
-          >
-            {{ state }}
-          </div>
-        } @else if (screenHeightOf(row, state); as height) {
+        @if (screenHeightOf(row, state); as height) {
           <div [style.width.px]="row.width" [style.height.px]="height" class="bg-et-surface-bg"></div>
         } @else {
-          @let force = chipForceOf(state);
-          <ethlete-zoom-chip
-            [percent]="100"
-            [target]="force?.target ?? null"
-            [interaction]="force?.interaction ?? null"
-          />
+          <div [innerHTML]="sampleOf(state)" class="contents"></div>
         }
       </div>
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [TitleBarComponent, ZoomChipComponent],
 })
 export class DesignHarnessSketchShotsComponent {
+  private sanitizer = inject(DomSanitizer);
   private shot = viewChild.required<TemplateRef<SketchShotContext>>('shot');
-  protected readonly TITLE_BARS = SKETCH_TITLE_BARS;
-  protected readonly MANY_STATES = MANY_STATES;
+  private drawn = new Map<string, SafeHtml>();
 
   public templates() {
     return { shot: this.shot() };
@@ -75,21 +56,25 @@ export class DesignHarnessSketchShotsComponent {
     return SCREEN_STATES.has(state) ? row.shots.find((shot) => shot.state === state)?.height : null;
   }
 
-  protected chipForceOf(state: string) {
-    const [, target, interaction] =
-      /^(out|reset|in|fit)-(hover|active|focus-visible)$/.exec(SKETCH_DRAWN_AS[state] ?? state) ?? [];
-
-    return target && interaction
-      ? { target: target as ZoomControl, interaction: interaction as ZoomInteraction }
-      : null;
+  protected sampleOf(state: string) {
+    const known = this.drawn.get(state);
+    if (known) return known;
+    const markup = BAR_STATES.has(state)
+      ? sampleBar(state)
+      : MANY_STATES.has(state)
+        ? samplePage(state)
+        : sampleStepper(SKETCH_DRAWN_AS[state] ?? state);
+    const safe = this.sanitizer.bypassSecurityTrustHtml(markup);
+    this.drawn.set(state, safe);
+    return safe;
   }
 
   protected lookOf(row: SketchRow, state: string) {
-    const sample = Object.hasOwn(SKETCH_TITLE_BARS, state)
+    const sample = BAR_STATES.has(state)
       ? { rows: SKETCH_ROWS, looks: SKETCH_LOOKS }
       : MANY_STATES.has(state)
         ? SKETCH_MANY_SAMPLE
-        : chipSampleOf(row);
+        : stepperSampleOf(row);
     const shot = row.shots.find((candidate) => candidate.state === state);
     const changed =
       shot?.changed === true || (shot?.changed === null && changedIn(sample.rows, { key: row.key, state }));

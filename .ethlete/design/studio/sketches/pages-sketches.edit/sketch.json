@@ -1,10 +1,9 @@
 {
   "target": "pages/sketches@edit",
   "status": "ready",
-  "createdAt": "2026-11-25T13:06:43.045Z",
+  "createdAt": "2026-11-25T13:46:53.493Z",
   "createdBy": {
-    "cmd": "design check --product studio --part pages/sketches",
-    "session": "builder"
+    "cmd": ""
   },
   "baseline": {
     "foundations/agent-logos": "ccc98287c90bcd10",
@@ -89,10 +88,10 @@
     "components/toolbar": "b62bb6c1539dbdd4",
     "components/tooltip": "4defd5665eab5f5f",
     "components/tree": "e15213fac4751487",
-    "components/tree-row": "a831f03c88024f59",
+    "components/tree-row": "d6ae59e4cc005908",
     "components/update-dialog": "63ad322093769a56",
     "components/zoom-chip": "99a38ecebede39be",
-    "elements/canvas-frames": "601c27ea2b4350be",
+    "elements/canvas-frames": "83996f406e8834f2",
     "elements/part-tree": "cb9aa016a48c9f96",
     "elements/shell-main": "e819f34d77ea3e58",
     "elements/studio-menu": "52e34e78cf208413",
@@ -100,20 +99,19 @@
     "pages/flows": "5f9d41e1be7d2953",
     "pages/inbox": "9fe9d1c9a513990c",
     "pages/inventory": "bb84266858a56467",
-    "pages/sketches": "98d345e2b54c251c",
+    "pages/sketches": "5115de394bbd5ca8",
     "pages/start": "414940d2e574c435",
-    "pages/system": "0fba82d212ab2b06",
+    "pages/system": "40ad5ffbd085dc6a",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "8b4c73de446350515b3455b0473e5b2879188b42",
-  "editOldCommit": "f842d82774fbfb4c923d3410327bfc0e29b934a1",
+  "baselineTree": "2687cfd44f91c8de18c980d0c7a3e034d38e86ae",
   "sharedBase": {
-    "pages/sketches/shared/change-crop.ts": "fadf9069521ce905",
+    "pages/sketches/shared/change-crop.ts": "f2efdae319f5b46c",
     "pages/sketches/shared/multi-part.ts": "03d5de67a5159fb3",
     "pages/sketches/shared/open-points.ts": "8032ea3aa0074441",
-    "pages/sketches/shared/sketch-rows.ts": "1ec9ff8aabd12b1d",
+    "pages/sketches/shared/sketch-rows.ts": "64b6c5f649236ba1",
     "pages/sketches/shared/sketch-status.ts": "a570e2526a940079",
-    "pages/sketches/shared/withdrawn.ts": "ddbc2375f9aafde4"
+    "pages/sketches/shared/withdrawn.ts": "32632e34b0ca87e7"
   },
   "rounds": [
     {
@@ -135,7 +133,8 @@
     }
   },
   "readyContent": {
-    "new": "443798f3d37a2f58",
-    "old": "49b841ab7aa2923c"
-  }
+    "new": "09ca2c4a9011796b",
+    "old": "65aa28deb6e0aed3"
+  },
+  "editOldCommit": "df612994fb34b7b7e4ce1a5fd3a4208728e3d7cc"
 }
