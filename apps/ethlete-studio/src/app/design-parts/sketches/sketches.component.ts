@@ -491,6 +491,19 @@ export class SketchesComponent {
     Math.max(0, ...this.shownRows().flatMap((row) => (row.sized === false ? [] : [row.width]))),
   );
   private atFit = computed(() => this.canvas.zoom() === 'fit');
+  private firstRowSized = computed(
+    () =>
+      this.errored().length > 0 ||
+      Object.keys(this.failures()).length > 0 ||
+      this.shownRows().some((row) => row.sized !== false && row.shots.length > 0),
+  );
+  // Holds only the first layout of a part: a later size loss (a zoom, a refused picture) must not hide a shown view.
+  private partSizedSource = computed(() => ({ part: this.part(), sized: this.firstRowSized() }));
+  private partSized = linkedSignal<{ part: string; sized: boolean }, boolean>({
+    source: this.partSizedSource,
+    computation: ({ part, sized }, previous) => sized || (previous?.source.part === part && previous.value),
+  });
+  protected sizing = computed(() => !this.partSized());
   private fitScale = computed(() => this.fitAt()?.scale ?? 1);
   protected scale = computed(() => {
     const zoom = this.canvas.zoom();

@@ -1695,6 +1695,35 @@ describe('SketchesComponent', () => {
       expect(gutter?.querySelector('[data-sk-screen-toggle]')).toBeNull();
     });
 
+    it('holds the first layout of a part until a row reports its size (tomflix hero at 1440, B676)', async () => {
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute('data-sk-rows') ? 1440 : 0;
+      });
+      const shots = ['dune', 'no-logo', 'series'].flatMap((state) => [
+        { state, changed: true, height: 844, width: 390 },
+        { state, changed: true, height: 680, width: 1440 },
+      ]);
+      const rowsOf = (sized: boolean, shown: boolean): SketchRow[] =>
+        ['a', 'b', 'c'].map((key) => ({ key, note: '', width: 1440, perLine: 2, sized, shots: shown ? shots : [] }));
+      const fixture = await render({ part: 'elements/hero', rows: rowsOf(false, false), camera: 'fit' });
+      const root: HTMLElement = fixture.nativeElement;
+      const held = () => root.querySelector('[data-sk-rows] > [data-sk-sizing]') !== null;
+      const show = async (rows: SketchRow[]) => {
+        fixture.componentRef.setInput('rows', rows);
+        await fixture.whenStable();
+      };
+
+      expect(held()).toBe(true);
+      await show(rowsOf(true, false));
+      expect(held()).toBe(true);
+      await show(rowsOf(false, true));
+      expect(held()).toBe(true);
+      await show(rowsOf(true, true));
+      expect(held()).toBe(false);
+      await show(rowsOf(false, true));
+      expect(held()).toBe(false);
+    });
+
     it('scales each state line of the matrix to the column (tomflix colors at 1440, B676)', async () => {
       vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
         return this.hasAttribute('data-sk-rows') ? 1440 : 0;
