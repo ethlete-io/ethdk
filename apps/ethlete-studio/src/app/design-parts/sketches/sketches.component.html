@@ -626,7 +626,7 @@
   }
 </ng-template>
 <ng-template #cellTemplate let-row let-item="item" let-column="column" let-line="line">
-  @let cropTransform = cropTransformOf(row, item.state);
+  @let cropTransform = cropTransformOf(row, item);
   @let mark = markOf(row, item);
   @let key = FRAME_KEY_OF(row, item.state);
   <ethlete-variant-cell

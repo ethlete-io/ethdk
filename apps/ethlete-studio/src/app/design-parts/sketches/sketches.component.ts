@@ -871,15 +871,15 @@ export class SketchesComponent {
   protected shownHeightOf(row: SketchRow, item: SketchShot) {
     const crop = this.croppedOf(item.state)?.crop;
 
-    return crop ? (row.width * crop.height) / crop.width : item.height;
+    return crop ? ((item.width ?? row.width) * crop.height) / crop.width : item.height;
   }
 
-  protected cropTransformOf(row: SketchRow, state: string) {
-    const group = this.croppedOf(state);
+  protected cropTransformOf(row: SketchRow, item: SketchShot) {
+    const group = this.croppedOf(item.state);
 
     if (!group) return null;
 
-    const unit = row.width / group.change.width;
+    const unit = (item.width ?? row.width) / group.change.width;
 
     return `scale(${group.magnify}) translate(${-group.crop.x * unit}px, ${-group.crop.y * unit}px)`;
   }
@@ -889,7 +889,7 @@ export class SketchesComponent {
 
     if (!change) return null;
 
-    const unit = row.width / change.width;
+    const unit = (item.width ?? row.width) / change.width;
 
     return {
       left: change.box.x * unit - 4,

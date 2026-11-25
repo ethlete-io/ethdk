@@ -8,6 +8,7 @@ import { COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
 import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../../i18n/system-labels';
 import { SketchesComponent, foldedStatesOf } from './sketches.component';
 import { matrixBlocksOf } from './matrix-blocks';
+import { cropOf } from './sketch-crops';
 import { SKETCH_EDIT_SAMPLE, SKETCH_PINS, SketchComment, SketchRow } from './sketches-sample';
 
 const LABELS = SKETCHES_LABELS;
@@ -1661,6 +1662,43 @@ describe('SketchesComponent', () => {
       expect(textOf(gutter)).toBe('dark');
       expect(gutter?.querySelector('[data-sk-crop-locator]')).toBeNull();
       expect(gutter?.querySelector('[data-sk-screen-toggle]')).toBeNull();
+    });
+
+    it('sizes the crop of a shot narrower than its row by the shot width (tomflix colors, B676)', async () => {
+      const surface = { width: 638, height: 646, box: { x: 40, y: 40, width: 300, height: 200 }, regions: 1 };
+      const variant = (key: string): SketchRow => ({
+        key,
+        note: '',
+        width: 3116,
+        shots: [
+          { state: 'surface-dark', changed: true, height: 646, width: 638, change: { ...surface, pixels: 5000 } },
+          { state: 'contrast-dark', changed: false, height: 630 },
+        ],
+      });
+      const rows: SketchRow[] = [
+        {
+          key: 'current',
+          note: '',
+          width: 3116,
+          shots: [
+            { state: 'surface-dark', changed: false, height: 646, width: 638 },
+            { state: 'contrast-dark', changed: false, height: 630 },
+          ],
+        },
+        variant('a'),
+        variant('b'),
+      ];
+
+      const root: HTMLElement = (await render({ rows, camera: '100' })).nativeElement;
+      const frame = root.querySelector<HTMLElement>('[data-sk-frame="a surface-dark"]');
+      const crop = cropOf(surface, surface.box);
+      const scale = parseFloat(frame?.style.width ?? '0') / 638;
+
+      expect(frame?.hasAttribute('data-sk-cropped')).toBe(true);
+      expect(parseFloat(frame?.style.height ?? '0')).toBeCloseTo(((638 * crop.height) / crop.width) * scale, 3);
+      expect(
+        root.querySelector<HTMLElement>('[data-sk-frame="a surface-dark"] [data-sk-fit-inner] > div')?.style.transform,
+      ).toContain(`translate(${-crop.x}px, ${-crop.y}px)`);
     });
 
     it('switches one crop group to the whole screen and back', async () => {
