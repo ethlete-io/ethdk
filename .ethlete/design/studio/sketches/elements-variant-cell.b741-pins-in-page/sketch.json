@@ -131,18 +131,18 @@
     }
   },
   "readyContent": {
-    "a": "13b569345027f27d"
-  },
-  "mergeHold": {
-    "reason": "variant a changes pages/sketches comments, comments-mode, comments-draft",
-    "at": "2026-11-25T03:59:04.828Z"
+    "a": "9265eb0f4cf36e83"
   },
   "autoMergeForecast": {
     "merges": false,
     "reason": "variant a changes pages/sketches comments, comments-mode, comments-draft",
     "contents": {
-      "a": "13b569345027f27d"
+      "a": "9265eb0f4cf36e83"
     },
-    "at": "2026-11-25T03:59:04.539Z"
+    "at": "2026-11-25T12:40:24.315Z"
+  },
+  "mergeHold": {
+    "reason": "variant a changes pages/sketches comments, comments-mode, comments-draft",
+    "at": "2026-11-25T12:43:26.013Z"
   }
 }
