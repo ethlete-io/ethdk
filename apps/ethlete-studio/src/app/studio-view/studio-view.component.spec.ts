@@ -122,6 +122,16 @@ const settle = async (fixture: ComponentFixture<StudioViewComponent>) => {
   }
 };
 
+// A 0 ms timer set during a fake tick lands 1 ms later, so a render scheduled by the last timer of an
+// advance sits on the faked setTimeout and rAF, and whenStable alone never settles.
+const advanceUntilStable = async (fixture: ComponentFixture<StudioViewComponent>, ms: number) => {
+  await vi.advanceTimersByTimeAsync(ms);
+
+  for (let round = 0; round < 10 && !fixture.isStable(); round++) await vi.advanceTimersByTimeAsync(1);
+
+  await fixture.whenStable();
+};
+
 const element = (fixture: ComponentFixture<StudioViewComponent>) => fixture.nativeElement as HTMLElement;
 
 const system = (fixture: ComponentFixture<StudioViewComponent>) =>
@@ -568,13 +578,11 @@ describe('StudioViewComponent', () => {
       const fixture = TestBed.createComponent(StudioViewComponent);
 
       fixture.autoDetectChanges();
-      await vi.advanceTimersByTimeAsync(10);
-      await fixture.whenStable();
+      await advanceUntilStable(fixture, 10);
 
       expect(element(fixture).textContent).toContain('seit 0 s');
 
-      await vi.advanceTimersByTimeAsync(5000);
-      await fixture.whenStable();
+      await advanceUntilStable(fixture, 5000);
 
       expect(element(fixture).textContent).toContain('Design-Server startet');
       expect(element(fixture).textContent).toContain('seit 5 s');
@@ -618,8 +626,7 @@ describe('StudioViewComponent', () => {
 
       localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT }));
       fixture.autoDetectChanges();
-      await vi.advanceTimersByTimeAsync(10);
-      await fixture.whenStable();
+      await advanceUntilStable(fixture, 10);
 
       expect(element(fixture).textContent).toContain('Design-Server startet');
       expect(system(fixture)).toBeUndefined();
@@ -627,8 +634,7 @@ describe('StudioViewComponent', () => {
       expect(probed.filter((url) => url.includes('/__design/system'))).toEqual([]);
 
       answer = () => Promise.resolve(new Response('[]', { status: 200 }));
-      await vi.advanceTimersByTimeAsync(1000);
-      await fixture.whenStable();
+      await advanceUntilStable(fixture, 1000);
 
       expect(system(fixture)?.port()).toBe(4402);
     } finally {
@@ -648,14 +654,12 @@ describe('StudioViewComponent', () => {
 
       localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT }));
       fixture.autoDetectChanges();
-      await vi.advanceTimersByTimeAsync(10);
-      await fixture.whenStable();
+      await advanceUntilStable(fixture, 10);
 
       expect(element(fixture).textContent).toContain('Design-Server startet');
 
       answer = () => Promise.resolve(new Response('[]', { status: 200 }));
-      await vi.advanceTimersByTimeAsync(10_000);
-      await fixture.whenStable();
+      await advanceUntilStable(fixture, 10_000);
 
       expect(system(fixture)?.port()).toBe(4402);
     } finally {
@@ -675,22 +679,19 @@ describe('StudioViewComponent', () => {
 
       localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT }));
       fixture.autoDetectChanges();
-      await vi.advanceTimersByTimeAsync(29_000);
-      await fixture.whenStable();
+      await advanceUntilStable(fixture, 29_000);
 
       expect(element(fixture).textContent).toContain('Design-Server startet');
       expect(element(fixture).textContent).not.toContain('antwortet nicht');
 
-      await vi.advanceTimersByTimeAsync(1500);
-      await fixture.whenStable();
+      await advanceUntilStable(fixture, 1500);
 
       expect(element(fixture).textContent).toContain('Design-Server antwortet nicht: http://localhost:4402');
       expect(button(element(fixture), 'Neu starten')).toBeDefined();
       expect(system(fixture)).toBeUndefined();
 
       answer = () => Promise.resolve(new Response('[]', { status: 200 }));
-      await vi.advanceTimersByTimeAsync(10_000);
-      await fixture.whenStable();
+      await advanceUntilStable(fixture, 10_000);
 
       expect(element(fixture).textContent).not.toContain('antwortet nicht');
       expect(system(fixture)?.port()).toBe(4402);
