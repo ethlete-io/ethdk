@@ -56,6 +56,13 @@ describe('variantsStackedOf', () => {
     expect(variantsStackedOf(titleCard)).toBe(false);
   });
 
+  it('stacks two zoom chip variants whose 8 columns at the 160 px floor would run past the list', () => {
+    const chip = { room: 1040, columns: [230, 230], heads: [28, 35, 42, 49], minColumn: 160 };
+
+    expect(gridScaleOf(chip)).toBeGreaterThan(0.45);
+    expect(variantsStackedOf(chip)).toBe(true);
+  });
+
   it('never stacks a single variant', () => {
     expect(variantsStackedOf({ room: 100, columns: [400], heads: [30] })).toBe(false);
   });

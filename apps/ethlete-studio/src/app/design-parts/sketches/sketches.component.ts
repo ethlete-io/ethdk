@@ -1258,6 +1258,7 @@ export class SketchesComponent {
       room: this.variantRoomOf(dom, { count: rows.length, columns: dom.columns }),
       columns: rows.map((row) => (grid ? gridColumnWidthOf(row) : row.width)),
       heads: grid ? this.headWidthsOf(dom.stages[0], dom.columns) : Array.from({ length: dom.columns }, () => 0),
+      minColumn: grid ? MATRIX_MIN_COLUMN : 0,
     });
   }
 

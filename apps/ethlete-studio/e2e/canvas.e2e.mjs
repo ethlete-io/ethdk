@@ -3004,8 +3004,8 @@ const CASES = [
   {
     name: 'Fit of all states stops at readable 160 px frames and the list scrolls to the rest',
     pages: ['Sketches'],
-    labels: ['Large'],
-    run: async (page) => {
+    labels: ['Large', 'Chip'],
+    run: async (page, state, target) => {
       const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
       const canvas = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
       const framesOf = () =>
@@ -3025,6 +3025,23 @@ const CASES = [
           },
           { CANVAS, FRAME },
         );
+
+      if (target.label === 'Chip') {
+        await listingAnswered(page);
+        await page.getByRole('button', { name: 'Einpassen' }).first().click();
+        await settle(page);
+        await settled(page, FRAME);
+
+        const fitted = await framesOf();
+
+        if (process.env['STUDIO_E2E_FIT_SHOTS'])
+          await page.screenshot({ path: join(process.env['STUDIO_E2E_FIT_SHOTS'], 'fit-chip.png') });
+
+        return {
+          ok: fitted.narrowest >= 150 && fitted.cut === 0,
+          detail: `narrowest frame ${fitted.narrowest} px, ${fitted.cut} of ${fitted.total} frames cut at the right`,
+        };
+      }
 
       await button.waitFor({ timeout: FULL_COMPARE_MS });
       for (let wheel = 0; wheel < 20; wheel++) {
