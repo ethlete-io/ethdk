@@ -1346,6 +1346,9 @@ const withEditSketch = async (page, designPort, run) => {
       { cwd: checkout, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, ETHLETE_DESIGN_PHASES: '1' } },
     );
     phase(`check (slowest: ${slowestPhasesOf(check.stderr ?? '')})`);
+    // Only after the check: a check settles a committed direct edit without a sketch, and the sketch listing
+    // offers the pick only once git holds the edit.
+    git('commit', '-qm', 'canvas e2e edit', '--', file);
     await page.evaluate(
       ({ checkout, part }) =>
         localStorage.setItem(
@@ -1486,7 +1489,7 @@ const CASES = [
 
         return {
           ok: restored && oldPick.opened === EDIT_PART,
-          detail: `${shownDetail}, old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, part opened after the merge: ${oldPick.opened}, ${phaseLine()}`,
+          detail: `${shownDetail}, old restored the design byte-identical to the base commit: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, part opened after the merge: ${oldPick.opened}, ${phaseLine()}`,
         };
       }),
   },
