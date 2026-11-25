@@ -139,17 +139,17 @@ Zustand um ✔; Leser ist nur der Tabs-Text), reine Deckkraft, eine feste Farbe.
 
 Drei Begriffe, je ein Satz, je ein Namensraum. Mehr muss ein App-Entwickler nicht wissen.
 
-| Begriff     | Was es ist                                                                                                 | Wie man es setzt                                           | Was man liest                                                                |
-| ----------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **Fläche**  | Eine Ebene mit fünf Farben: Hintergrund, Text, Text gedämpft, Text schwach, Rahmen.                        | `etAutoSurface` (eine Ebene höher) oder `etProvideSurface` | `--et-surface-*`, **ein** Name je Wert, ein fertiger Farbwert                |
-| **Akzent**  | Eine Farbe für Hervorhebung: Farbe, Text darauf, Tinte.                                                    | `etProvideColor`                                           | `--et-color-*`, **ein** Name je Wert, ein fertiger Farbwert                  |
-| **Zustand** | Hover und Gedrückt sind eine durchscheinende Tönung über dem, was darunter liegt. Stellbar ist die Stärke. | nichts; Komponenten bringen ihre Stärke mit                | Apps: eine Utility für die Tönung, eine für „Hintergrund der nächsten Ebene“ |
+| Begriff     | Was es ist                                                                                                 | Wie man es setzt                                       | Was man liest                                                                |
+| ----------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| **Fläche**  | Eine Ebene mit fünf Farben: Hintergrund, Text, Text gedämpft, Text schwach, Rahmen.                        | `etSurface` (eine Ebene höher) oder `etSurface="name"` | `--et-surface-*`, **ein** Name je Wert, ein fertiger Farbwert                |
+| **Ton**     | Die Farbe, in der eine Komponente auftritt: Füllung, Text darauf, Text.                                    | `etTone="name"`                                        | `--et-tone-*`, **ein** Name je Wert, ein fertiger Farbwert                   |
+| **Zustand** | Hover und Gedrückt sind eine durchscheinende Tönung über dem, was darunter liegt. Stellbar ist die Stärke. | nichts; Komponenten bringen ihre Stärke mit            | Apps: eine Utility für die Tönung, eine für „Hintergrund der nächsten Ebene“ |
 
 **Wörter (Tom, 26.11.): Das zweite Konzept heißt `tone`, nicht mehr `color`.** Ein Ton ist die
 Farbe, in der eine Komponente auftritt (`brand`, `danger`, eine Teamfarbe; Vorbild: Polaris,
 Sanity UI). `accent` ist verworfen (Material: zweite Farbe neben `primary`), `color` ebenfalls
 („super unbeschreibend“, und `--et-surface-color` meint die Textfarbe). Wo dieser Plan weiter
-unten noch „Akzent“ oder `--et-color-*` als Zielname schreibt, gilt diese Tabelle:
+unten noch „Ton“ oder `--et-color-*` als Zielname schreibt, gilt diese Tabelle:
 
 | Heute                                     | Danach                                   |
 | ----------------------------------------- | ---------------------------------------- |
@@ -183,7 +183,7 @@ Vom Builder vor dem Umbau zu belegen: `etAutoSurface` bindet `ProvideSurfaceDire
 Host-Direktive ✔ und hat einen Input `surfaceProvider`; ob beide ohne Verhaltensänderung in einer
 Direktive aufgehen, zeigt die bestehende Spec-Suite.
 
-**Interne `…Interactive`-Direktiven (Vorschlag vom 26.11., Bestätigung durch Tom offen): das
+**Interne `…Interactive`-Direktiven (Tom, 26.11.: ja): das
 Muster entfällt ganz (S10).** Heute hängt eine Direktive eine Klasse an, und ein globales Sheet
 tauscht je Zustand den **Wert** von `--et-theme-color-primary-*` auf dem Element ✔. Die Komponente
 schreibt `background: var(…-solid)` einmal und bekommt Hover und Gedrückt geschenkt. Der Preis:
@@ -205,16 +205,16 @@ auch zur Laufzeit gesetzte Farben („Offering colors to a user“).
 Was daraus folgt:
 
 - **Jeder Name sagt, wofür die Farbe gebraucht wird** (Tom, 26.11.: „wirre wörter wie ink“).
-  Ein Akzent hat heute `color`, `onColor`, `inkColor` in bis zu drei Paletten
+  Ein Ton hat heute `color`, `onColor`, `inkColor` in bis zu drei Paletten
   (`primary`, `secondary`, `tertiary`). `secondary` und `tertiary` nutzt keine App ✔ (fifagg 0,
-  fut 0); ohne sie sagt auch `primary` nichts mehr. Danach hat ein Akzent drei Werte mit
+  fut 0); ohne sie sagt auch `primary` nichts mehr. Danach hat ein Ton drei Werte mit
   sprechenden Namen (Arbeitsnamen):
 
-  | Heute                         | Danach   | Bedeutung in einem Satz                                                         |
-  | ----------------------------- | -------- | ------------------------------------------------------------------------------- |
-  | `color`, `--et-color-primary` | `fill`   | Der Akzent als Fläche (gefüllter Button).                                       |
-  | `onColor`, `on-primary`       | `onFill` | Text und Icons **auf** dieser Fläche.                                           |
-  | `inkColor`, `-ink`            | `text`   | Der Akzent als Text oder Rahmen auf der normalen Fläche (Outline-Button, Link). |
+  | Heute                         | Danach   | Bedeutung in einem Satz                                                      |
+  | ----------------------------- | -------- | ---------------------------------------------------------------------------- |
+  | `color`, `--et-color-primary` | `fill`   | Der Ton als Fläche (gefüllter Button).                                       |
+  | `onColor`, `on-primary`       | `onFill` | Text und Icons **auf** dieser Fläche.                                        |
+  | `inkColor`, `-ink`            | `text`   | Der Ton als Text oder Rahmen auf der normalen Fläche (Outline-Button, Link). |
 
   `text` gibt es, weil eine Füllfarbe als Schrift oft zu wenig Kontrast hat (helles Gelb auf
   Weiß); fehlt die Angabe, gilt `fill`. Dieser eine Satz steht in der Doku neben dem Namen.
@@ -223,17 +223,15 @@ Was daraus folgt:
   `interaction`, `on-interaction`, `interaction-ink`).
 
 - **Ein Name pro Wert.** Heute hat jeder Wert drei bis fünf Namen (`--et-surface-background`,
-  `-rgb`, `-solid`; bei Akzenten `--et-color-primary`, `--et-theme-color-primary-rgb`, `-solid`,
+  `-rgb`, `-solid`; bei Tonen `--et-color-primary`, `--et-theme-color-primary-rgb`, `-solid`,
   unsuffigiert, `-opacity`). Danach genau einer, und er ist ein Farbwert, kein Kanal-Tripel.
   Deckkraft entsteht mit `color-mix()` oder relativer Farbsyntax am Verbraucher.
 - **`interactionColor` wird in seine Rollen geteilt.** Das Theme nennt getrennt die Textfarbe
   neutraler Bedienelemente (Leiter mit Zuständen) und die Tönungsquelle (eine Farbe, Default: die
   Textfarbe der Fläche). Die reservierte Farbe `surface` leitet sich daraus ab und ist kein dritter
   Zweck desselben Feldes mehr.
-- **Drei Direktiven für Apps**: `etAutoSurface`, `etProvideSurface`, `etProvideColor`.
-  `etSurfaceInteractive` entfällt (einziger SDK-Leser ist der Tabs-Text ✔; fifagg und fut nutzen
-  sie nicht ✔). `etColorInteractive` bleibt SDK-intern (fifagg 0, fut 0 ✔) und steht nicht mehr im
-  App-Teil der Doku.
+- **Zwei Direktiven für Apps** (`etSurface`, `etTone`), keine Direktive schaltet mehr unsichtbar
+  Farben um (Tabellen oben).
 - **Zustände folgen einer Formregel, per Lint erzwungen**: eine Tönungsquelle, Stärke als Default
   an der Komponente, am Verbraucher gemischt. Die heutigen Stärken je Komponente bleiben (sonst
   ändert sich das Bild). Zustands-Tokens der Komponenten bekommen **ein** Namensmuster statt
@@ -245,17 +243,18 @@ Was daraus folgt:
 
 Messzahlen (vorher → Ziel; „vorher“ am 26.11. gezählt ✔, Ziel ist Vorgabe für den Builder):
 
-| Größe                                | Vorher                                                                       | Ziel                                  |
-| ------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------- |
-| Namen je Flächenwert                 | 3 (roh, `-rgb`, `-solid`)                                                    | 1                                     |
-| Namen je Akzentwert                  | bis 5                                                                        | 1                                     |
-| Paletten je Akzent                   | 3 (`primary`, `secondary`, `tertiary`), zwei davon ungenutzt                 | 1                                     |
-| Rollen von `interactionColor`        | 3 in einem Feld                                                              | 1 je Feld                             |
-| Direktiven, die eine App kennen muss | 5 (+3 Helfer-Direktiven)                                                     | 3                                     |
-| Namensmuster für Zustands-Tokens     | 4                                                                            | 1                                     |
-| Alt-System                           | `legacy-theming.ts` 268 Zeilen, 3 veraltete Helfer, 2 veraltete Theme-Felder | 0                                     |
-| Doku `apps/docs/core/theming.md`     | 507 Zeilen, 14 Abschnitte                                                    | Modell auf einer Seite, Rest Referenz |
-| fifagg-Bildvergleich                 | –                                                                            | Differenz null außer B-65             |
+| Größe                                          | Vorher                                                                       | Ziel                                  |
+| ---------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------- |
+| Namen je Flächenwert                           | 3 (roh, `-rgb`, `-solid`)                                                    | 1                                     |
+| Namen je Tonwert                               | bis 5                                                                        | 1                                     |
+| Paletten je Ton                                | 3 (`primary`, `secondary`, `tertiary`), zwei davon ungenutzt                 | 1                                     |
+| Rollen von `interactionColor`                  | 3 in einem Feld                                                              | 1 je Feld                             |
+| Direktiven, die eine App kennen muss           | 5 (+3 Helfer-Direktiven)                                                     | 2                                     |
+| Direktiven, die Farben per Variable umschalten | 5, dazu 147 + 40 Zeilen Sheet                                                | 0                                     |
+| Namensmuster für Zustands-Tokens               | 4                                                                            | 1                                     |
+| Alt-System                                     | `legacy-theming.ts` 268 Zeilen, 3 veraltete Helfer, 2 veraltete Theme-Felder | 0                                     |
+| Doku `apps/docs/core/theming.md`               | 507 Zeilen, 14 Abschnitte                                                    | Modell auf einer Seite, Rest Referenz |
+| fifagg-Bildvergleich                           | –                                                                            | Differenz null außer B-65             |
 
 ## 4. Streichliste
 
@@ -265,7 +264,7 @@ Jeder Punkt: was geht, wen es trifft (Vorkommen ✔ vom 26.11., generierte Datei
 | #   | Was geht                                                                                                  | Trifft (Vorkommen)                                                                                  | Migration                                                                                                                                     |
 | --- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | S1  | Flächen-Tokens `-rgb` und `-solid`; Roh-Tripel wird Farbwert                                              | SDK-Libs 937 / 31 / 124 (`-solid` / `-rgb` / roh in `rgb()`); fifagg 13 / 20 / 46; fut 58 / 20 / 49 | auto: Namen und `rgb(var(…) / a)`-Formen umschreiben; Themes neu erzeugen. Danach Prüfung: kein alter Name mehr, sonst bricht `et update` ab. |
-| S2  | Akzent-Tokens: `--et-theme-color-*` in allen Formen und das Roh-Tripel; es bleibt `--et-color-*`          | SDK-Libs 586 + 97 + 384; fifagg 22 + 9 + 474; fut 22 + 27 + 572                                     | wie S1                                                                                                                                        |
+| S2  | Ton-Tokens: `--et-theme-color-*` in allen Formen und das Roh-Tripel; es bleibt `--et-tone-*`              | SDK-Libs 586 + 97 + 384; fifagg 22 + 9 + 474; fut 22 + 27 + 572                                     | wie S1                                                                                                                                        |
 | S3  | `interactionColor` als Sammelfeld; `--et-surface-interaction*`, `-on-interaction*`, `-interaction-ink*`   | Theme-Dateien (fifagg 6, fut 4 Themes); fut 5 Lesestellen + 25 Utilities                            | auto: Theme-Feld aufteilen, Token- und Utility-Namen umschreiben                                                                              |
 | S4  | `SurfaceInteractiveDirective`, ihr Sheet, die cli-Kopie des Sheets                                        | SDK-Libs 16, SDK-Apps 15; fifagg 0, fut 0                                                           | im Repo von Hand (Tabs lesen die Zustandsfarbe direkt); für Apps auto: Attribut entfernen, Hinweis je Fundstelle                              |
 | S5  | Vier Namensmuster der Zustands-Tokens                                                                     | etwa 55 Namen; fifagg setzt 22, fut 29                                                              | auto: umbenennen. Die Tokens nehmen weiter eine Farbe an; die Doku empfiehlt Stärke oder das Ebenen-Token statt fester Farbe.                 |
@@ -278,13 +277,18 @@ Dazu **S9**: Wortliste. `ink` → `text`, `color`/`primary` → `fill`, `onColor
 271), und die Paletten `secondary` und `tertiary` entfallen (SDK-Libs 9 / 6, Apps 0). Migration
 auto, zusammen mit S2 in einem Durchgang, damit jede Datei nur einmal angefasst wird.
 
+Dazu **S10** (Tom, 26.11.): `etColorInteractive`, `…Container`, `…Exclude`, `…HasFocus` und ihr
+Sheet entfallen. Trifft nur das SDK (22 / 2 / 4 / 1 Nutzer in components; Apps 0 bis 1). Die
+Komponenten schreiben ihre Zustände aus und lesen `--et-tone-fill-hover` usw.; der Generator löst
+die Rückfälle auf. Migration für Apps: auto, Attribut entfernen und Fundstelle melden.
+
 Die Urteile in den Tabellen der Abschnitte 1 und 2 stammen aus der Triage vom 25.11.; wo sie dem
 Zielbild widersprechen, gilt das Zielbild.
 
 Nicht gestrichen, mit Grund:
 
 - **Die 24 Stärken** (7, 8, 10, 12 … %). Angleichen ändert das Bild. Eigene spätere Zeile.
-- **Akzent-Zustände und Fokus-Ring** (Umfangsentscheidung vom 26.11.). S2 benennt Akzent-Tokens
+- **Ton-Zustände und Fokus-Ring** (Umfangsentscheidung vom 26.11.). S2 benennt Ton-Tokens
   nur um; Werte und Rampen bleiben.
 - **`provideColorPalette`** (kategoriale Farben für Charts). Eigenes Thema.
 - **cdk.** Wartungsmodus, liest kein Surface-Token.
@@ -299,7 +303,7 @@ Nach jedem Schritt: `et update` in fifagg, Bildvergleich gegen die Aufnahme aus 
 | 0   | **Messlatte und Demo.** Die Demo-Seite aus Abschnitt 6 auf dem heutigen System; Playwright prüft auf ihr: Hover und Gedrückt unterscheiden sich auf jeder Ebene vom Ruhezustand. B-65 als Fall darin. Bildaufnahme der fifagg-Oberfläche als Referenz. | B-65-Fall rot, als erwartet-rot markiert sichtbar bis Schritt 3.                                                                              |
 | 1   | **Ein Name pro Wert, sprechende Wörter** (S1, S2, S7, S9). Generator schreibt die neuen Namen; SDK-CSS wird umgeschrieben; Migration für Apps.                                                                                                         | Lint-Regel „kein alter Token-Name“ (rot bei allen Fundstellen, grün danach). Generator-Specs mit Fixtures aus echten fifagg- und fut-Dateien. |
 | 2   | **Rollen trennen** (S3, S4).                                                                                                                                                                                                                           | Spec auf `themeCss`; Generator-Spec mit den echten Theme-Dateien beider Apps; Tabs-Story in der Messlatte unverändert.                        |
-| 3   | **Zustände** (S5): Formregel in vier Scheiben (Listen, Tabelle und Zeilen, Formulare, Rest), Ebenen-Baustein im Generator, ein Namensmuster.                                                                                                           | Lint-Regel gegen handgemischte Zustände außerhalb der Form (rot bei 51 Dateien). B-65-Fall wird grün.                                         |
+| 3   | **Zustände** (S5, S10): Formregel in vier Scheiben (Listen, Tabelle und Zeilen, Formulare, Rest), Ebenen-Baustein im Generator, ein Namensmuster.                                                                                                      | Lint-Regel gegen handgemischte Zustände außerhalb der Form (rot bei 51 Dateien). B-65-Fall wird grün.                                         |
 | 4   | **Utilities für Apps**: Tönung und „Hintergrund der nächsten Ebene“.                                                                                                                                                                                   | Spec auf den `@theme`-Block; die Demo nutzt beide.                                                                                            |
 | 5   | **Alt-System raus** (S6, S8).                                                                                                                                                                                                                          | `removed-exports`-Prüfung; 71 Specs laufen ohne Legacy-Provider; Generator-Specs mit Fixtures aus fut.                                        |
 | 6   | **Doku und Regeln**: `theming.md` neu (Modell auf einer Seite, Demo oben, Referenz darunter), Skill `theming`, `libs/agent-rules/content` (dann `yarn agents:sync`).                                                                                   | Doku-Beispiele rendern in der Messlatte auf allen Ebenen.                                                                                     |
@@ -330,7 +334,7 @@ das ganze System in Aktion und ist zugleich die Bühne der Messlatte aus Schritt
   obersten Ebene. Jede Ebene zeigt ihren Namen und ihre fünf Werte live.
 - **Dieselben Komponenten auf jeder Ebene**: Accordion, Menü, Tabellenzeile, Tabs, Buttons. So
   sieht man, dass Hover und Gedrückt überall funktionieren, ohne dass jemand etwas einstellt.
-- **Schalter**: hell/dunkel, Akzent wechseln, „Hover = nächste Ebene“ ein/aus (der Baustein aus
+- **Schalter**: hell/dunkel, Ton wechseln, „Hover = nächste Ebene“ ein/aus (der Baustein aus
   Schritt 3, inklusive der obersten Ebene ohne Nachfolger).
 - **Der Code daneben**: die drei Direktiven und die Theme-Definition, die das Gezeigte erzeugen.
 
@@ -352,7 +356,7 @@ Demo-App, nicht dem SDK.
 
 ## 8. Entscheidungen
 
-Offen: Toms Bestätigung des Zielbilds (Abschnitte 3 bis 6).
+Offen: Toms Bestätigung des gesamten Zielbilds (Abschnitte 3 bis 6).
 
 Entschieden:
 
@@ -360,7 +364,7 @@ Entschieden:
   ausgenommen sichtbare Fehler.
 - (vorab, Tom) Kein neues Token als schnelle Lösung; die Lücke bleibt bis zur Revision sichtbar;
   das SDK liefert keine Theme-Namen; kein ADR.
-- (26.11., Tom) Umfang: „nur neutrale ‚surface themes‘ zustände“. Akzent-Zustände, Akzent-Rampe
+- (26.11., Tom) Umfang: „nur neutrale ‚surface themes‘ zustände“. Ton-Zustände, Ton-Rampe
   und Fokus-Ring sind nicht Teil der Revision.
 - (26.11., Tom) Ein Flicken, der nur Tokens anbaut, ist nicht das Ziel: „wir machen das system
   was niemand versteht nur noch größer?“ Die Revision muss das System kleiner und verständlich
@@ -377,3 +381,5 @@ Entschieden:
 - (26.11., Tom) Das Konzept „Color“ heißt künftig `tone` („ja tone ist gut“). `accent` verworfen
   (Material-Assoziation primary vs. accent). Flächen-Textfarbe wird `--et-surface-text`.
 - (26.11., Tom) Direktiven für Apps: `etSurface` und `etTone`; der Rest intern oder gestrichen.
+- (26.11., Tom) Die internen `…Interactive`-Direktiven entfallen (S10); Zustände stehen im CSS
+  der Komponente, das Theme liefert jeden Zustand unter eigenem Namen.
