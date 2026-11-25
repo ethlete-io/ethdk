@@ -7,7 +7,8 @@ import { appFilesOf } from './app-files';
 import { checkRules } from './check-system';
 import { addedBaselineEntriesOf, IMPLEMENTATION_BASELINE_FILE } from './implementation-baseline';
 import { writePartRecord } from './part-ready';
-import { markImplemented } from './part-task';
+import { IMPLEMENTED_FILE, markImplemented } from './part-task';
+import { pruneDeletedAppFiles } from './prune-deleted-app-files';
 import { resolveProduct } from './resolve-product';
 import { originOf } from './write-origin';
 import { gitExec } from '../../git-test-env.fixtures';
@@ -150,16 +151,16 @@ describe('implementation baseline', () => {
     appendFileSync(join(target, BADGE_HTML), '<i></i>\n');
     writeBaseline({ [CHIP]: chip() });
 
-    expect(addedBaselineEntriesOf({ file: baselineFile })).toEqual([]);
+    expect(addedBaselineEntriesOf({ file: baselineFile, root: target })).toEqual([]);
 
     commit();
     writeBaseline({ [CHIP]: chip(), [BADGE]: badge() });
 
-    expect(addedBaselineEntriesOf({ file: baselineFile })).toEqual([BADGE]);
+    expect(addedBaselineEntriesOf({ file: baselineFile, root: target })).toEqual([BADGE]);
 
     commit();
 
-    expect(addedBaselineEntriesOf({ file: baselineFile })).toEqual([BADGE]);
+    expect(addedBaselineEntriesOf({ file: baselineFile, root: target })).toEqual([BADGE]);
 
     const { status, problems } = run(target);
 
@@ -170,13 +171,13 @@ describe('implementation baseline', () => {
 
     writeBaseline({ [BADGE]: badge() });
 
-    expect(addedBaselineEntriesOf({ file: baselineFile })).toEqual([BADGE]);
+    expect(addedBaselineEntriesOf({ file: baselineFile, root: target })).toEqual([BADGE]);
 
     writeBaseline({});
     commit();
     writeBaseline({ [CHIP]: chip() });
 
-    expect(addedBaselineEntriesOf({ file: baselineFile })).toEqual([CHIP]);
+    expect(addedBaselineEntriesOf({ file: baselineFile, root: target })).toEqual([CHIP]);
     expect(JSON.parse(readFileSync(baselineFile, 'utf8'))).toEqual({ [CHIP]: chip() });
   });
 
@@ -189,8 +190,39 @@ describe('implementation baseline', () => {
     appendFileSync(join(target, CHIP_HTML), '<u></u>\n');
     writeBaseline({ [CHIP]: { finding: '495', app: { [CHIP_HTML]: hashOf(CHIP_HTML) } } });
 
-    expect(addedBaselineEntriesOf({ file: baselineFile })).toEqual([CHIP]);
+    expect(addedBaselineEntriesOf({ file: baselineFile, root: target })).toEqual([CHIP]);
     rmSync(baselineFile);
-    expect(addedBaselineEntriesOf({ file: baselineFile })).toEqual([]);
+    expect(addedBaselineEntriesOf({ file: baselineFile, root: target })).toEqual([]);
+  });
+
+  it('drops an app file gone from disk from both records, and the baseline entry stays committed', () => {
+    const { target, commit, writeBaseline, baselineFile, hashOf } = checkout();
+    const productDir = join(target, DESIGN_DIR, 'app-a');
+    const implementedFile = join(productDir, IMPLEMENTED_FILE);
+    const LABELS = 'apps/a/i18n/labels.ts';
+    const implemented = JSON.parse(readFileSync(implementedFile, 'utf8'));
+
+    implemented[CHIP].app[LABELS] = '2cc8f112ebebb222';
+    implemented[CHIP].files[LABELS] = '2cc8f112ebebb222';
+    writeFileSync(implementedFile, `${JSON.stringify(implemented, null, 2)}\n`);
+    appendFileSync(join(target, CHIP_HTML), '<b></b>\n');
+    writeBaseline({
+      [CHIP]: { finding: '495', app: { [CHIP_HTML]: hashOf(CHIP_HTML), [LABELS]: '4ae3614d0439e66e' } },
+    });
+    commit();
+
+    expect(pruneDeletedAppFiles({ root: target, productDir })).toEqual([
+      `${DESIGN_DIR}/app-a/${IMPLEMENTED_FILE}: ${CHIP} - ${LABELS}`,
+      `${DESIGN_DIR}/app-a/${IMPLEMENTATION_BASELINE_FILE}: ${CHIP} - ${LABELS}`,
+    ]);
+    expect(readFileSync(implementedFile, 'utf8')).not.toContain(LABELS);
+    expect(JSON.parse(readFileSync(baselineFile, 'utf8'))).toEqual({
+      [CHIP]: { finding: '495', app: { [CHIP_HTML]: hashOf(CHIP_HTML) } },
+    });
+
+    commit();
+
+    expect(addedBaselineEntriesOf({ file: baselineFile, root: target })).toEqual([]);
+    expect(pruneDeletedAppFiles({ root: target, productDir })).toEqual([]);
   });
 });

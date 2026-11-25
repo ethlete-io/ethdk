@@ -50,12 +50,25 @@ export const driftPinOf = (drifted: string[], now: FileHashes): FileHashes =>
 
 export const baselineLineOf = (part: string, entry: BaselineEntry) => `baselined: ${part} - finding ${entry.finding}`;
 
-const keyOf = (part: string, entry: BaselineEntry) =>
-  JSON.stringify([part, entry.finding, Object.entries(entry.app).sort(([a], [b]) => a.localeCompare(b))]);
+const keyOf = ({ part, entry, exists }: { part: string; entry: BaselineEntry; exists: (path: string) => boolean }) =>
+  JSON.stringify([
+    part,
+    entry.finding,
+    Object.entries(entry.app)
+      .filter(([path]) => exists(path))
+      .sort(([a], [b]) => a.localeCompare(b)),
+  ]);
 
-/** The parts of the baseline `file` whose entry is not in every committed version of it (see `addedBaselineNamesOf`). */
-export const addedBaselineEntriesOf = (options: { file: string }) =>
-  addedBaselineNamesOf({
+/**
+ * The parts of the baseline `file` whose entry is not in every committed version of it (see `addedBaselineNamesOf`).
+ * An app file gone from `root` is no part of an entry, so dropping it keeps the entry.
+ */
+export const addedBaselineEntriesOf = (options: { file: string; root: string }) => {
+  const exists = (path: string) => existsSync(resolve(options.root, path));
+
+  return addedBaselineNamesOf({
     file: options.file,
-    identitiesOf: (text) => Object.entries(entriesOf(text)).map(([part, entry]) => [part, keyOf(part, entry)]),
+    identitiesOf: (text) =>
+      Object.entries(entriesOf(text)).map(([part, entry]) => [part, keyOf({ part, entry, exists })]),
   });
+};

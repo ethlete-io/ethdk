@@ -9,6 +9,7 @@ import { argsOf } from './system/sketch/cli-args';
 import { COLOR_SCHEMES, ColorScheme, colorsSkeletonOf, isHexColor } from './system/sketch/colors-skeleton';
 import { LAYERS } from './system/layers';
 import { productDirOf } from './system/product';
+import { pruneDeletedAppFiles } from './system/prune-deleted-app-files';
 
 export const PRODUCT_PATH = '/__design/product';
 
@@ -137,6 +138,7 @@ export const designProduct = (options: { target: string; argv: string[]; invocat
     `USAGE ${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>] [--colors light|dark|both] [--accent <#hex>]`,
     `      ${invocation} product set <name> --base <path|@ethlete/components|none>`,
     `      ${invocation} product set <name> --accent <#hex|none>`,
+    `      ${invocation} product prune <name>`,
   ].join('\n');
   const args = argsOf(argv, { values: ['--base', '--from-project', '--colors', '--accent'], switches: [] });
 
@@ -148,10 +150,27 @@ export const designProduct = (options: { target: string; argv: string[]; invocat
 
   const [verb, name] = args.positional;
 
-  if ((verb !== 'new' && verb !== 'set') || !name || args.positional.length > 2) {
+  if ((verb !== 'new' && verb !== 'set' && verb !== 'prune') || !name || args.positional.length > 2) {
     console.error(usage);
 
     return 1;
+  }
+
+  if (verb === 'prune') {
+    const productDir = productDirOf({ target, product: name });
+
+    if (Object.keys(args.values).length > 0 || !existsSync(productDir)) {
+      console.error(usage);
+
+      return 1;
+    }
+
+    const dropped = pruneDeletedAppFiles({ root: target, productDir });
+
+    dropped.forEach((line) => console.log(`dropped: ${line}`));
+    console.log(`${dropped.length} deleted app file entries dropped from ${name}.`);
+
+    return 0;
   }
 
   if (verb === 'set') {

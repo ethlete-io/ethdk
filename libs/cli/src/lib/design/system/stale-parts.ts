@@ -172,7 +172,7 @@ export const uncomparedAppProblemsOf = (options: {
   const pinOf = (resolved: ResolvedPart, drifted: string[]) => driftPinOf(drifted, appOf(resolved));
 
   const checksBaseline = !options.onlyChanged || changed.has(relative(root, baselineFile).split(sep).join('/'));
-  const added = (checksBaseline ? addedBaselineEntriesOf({ file: baselineFile }) : []).map((part) =>
+  const added = (checksBaseline ? addedBaselineEntriesOf({ file: baselineFile, root }) : []).map((part) =>
     baselineProblem(`${part} was added to the baseline - it may only shrink`),
   );
   const removable = Object.entries(checksBaseline ? baseline : {})
