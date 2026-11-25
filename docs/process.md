@@ -26,6 +26,7 @@ How the doc session and the builder work. A process change edits this page.
 ## Fixes
 
 - Fix the cause. A new check, gate, hook, cache or lock is never the default fix.
+- Automatic work must not wait on a manual approval. If a permission check denies a step, nobody routes around it: the row parks with the denial text, and the doc session plans a tool change that makes the step transparent.
 - Two failed repairs: revert to the last good state.
 - Red CI is first, before every other row.
 
