@@ -312,7 +312,7 @@ per hook in the config:
 
 ```json
 {
-  "hooks": ["context-warning", "subagent-model-policy", "background-design-commands", "git-safety"]
+  "hooks": ["context-warning", "subagent-model-policy", "background-design-commands", "git-safety", "away-mode"]
 }
 ```
 
@@ -381,6 +381,16 @@ Available hooks:
   rows owned by `Builder` without a wait reason, it blocks the stop and names those rows. A
   row waits when its `Stand` cell contains "wartet auf" or "Offen nur:". It fires once per
   idle stop chain (`stop_hook_active` passes).
+
+- **`away-mode`** (Claude Code only) - switches an interactive session into "user is away" mode
+  on its own. Opt in with `"awayMode": { "skills": ["my-skill"], "thresholdMinutes": 15 }` in the
+  config (the local config overrides it); a session is tracked once a prompt starts with
+  `/my-skill`. When a prompt that is not typed by a human (mailbox, cross-session, task
+  notification, restart) arrives after the threshold without typed input, the hook tells the
+  agent the user is away; the next typed prompt tells it the user is back. A typed `afk` marks
+  the session away at once. With `"reportCommand": "<cli> report"` inside `awayMode`, the back
+  message also carries that command's table since the last typed input (dropped when it fails or
+  takes over 10 s). State is kept in `.git/ethlete/away/`.
 
 Hooks can be turned off per machine - see the local config below.
 

@@ -45,6 +45,12 @@ export const KNOWN_HOOKS: Record<string, HookDefinition> = {
     timeout: 10,
     agents: ['claude'],
   },
+  'away-mode': {
+    events: [{ event: 'UserPromptSubmit' }],
+    file: 'away-mode.py',
+    timeout: 10,
+    agents: ['claude'],
+  },
   'background-design-commands': {
     events: [{ event: 'PreToolUse', matcher: 'Bash' }],
     file: 'background-design-commands.py',
