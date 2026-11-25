@@ -224,6 +224,7 @@ type MergeOptions = {
   author?: string;
   decidedBy?: string;
   deferRebase?: boolean;
+  subTargets?: string[];
 };
 
 type CheckedMerge = {
@@ -243,7 +244,7 @@ const checkedMergeOf = (options: MergeOptions & { variant: string }): string | M
 
   if (problems.length > 0) return problems.map((problem) => `${problem.file}: ${problem.message}`).join('\n');
 
-  const shared = sharedPlanOf({ sketch, variant, parts, product });
+  const shared = sharedPlanOf({ sketch, variant, parts, product, subTargets: options.subTargets });
 
   if (typeof shared === 'string') return shared;
 
@@ -597,6 +598,7 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
       product: copied,
       sketch: copiedSketch,
       variant,
+      subTargets: subSketches.flatMap(({ sketch: sub }) => sub.targets),
     });
 
     if (typeof checked === 'string') return checked;

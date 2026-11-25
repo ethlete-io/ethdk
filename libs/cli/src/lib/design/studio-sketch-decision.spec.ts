@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -457,5 +457,49 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
     expect(readFileSync(productTokensOf(target), 'utf8')).toMatch(/accent = .old./);
     expect(existsSync(sketchDir)).toBe(true);
     expect(existsSync(subDir)).toBe(true);
+  });
+
+  // Decision B726: every part the parent merge writes, sub-parts included, takes a new shared/ file into the product.
+  it('merges a new shared/ file that only the approved sub-part imports', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target } = await withApprovedSubSketch({
+      subEdit: (subDir) => {
+        writeIn(subDir, 'shared/slide-tokens.ts', 'export const slide = 1;\n');
+        appendFileSync(
+          join(subDir, 'a/components/hero-slider/hero-slider.ts'),
+          "\nimport { slide } from '@shared/slide-tokens';\nexport const slideCount = slide;\n",
+        );
+      },
+    });
+
+    expect(await sketchCommand(target, ['merge', 'elements/hero'])).toBe(0);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/components/hero-slider/shared/slide-tokens.ts'))).toBe(true);
+  });
+
+  it('still refuses a shared/ file that no part of the merge imports', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target } = await withApprovedSubSketch({
+      beforeReady: (sketchDir) => {
+        writeIn(sketchDir, 'shared/hero-tokens.ts', 'export const hero = 1;\n');
+        appendFileSync(
+          join(sketchDir, 'b/elements/hero/hero.ts'),
+          "\nimport { hero } from '@shared/hero-tokens';\nexport const heroSize = hero;\n",
+        );
+      },
+      subEdit: (subDir) => {
+        writeIn(subDir, 'shared/slide-tokens.ts', 'export const slide = 1;\n');
+        writeIn(subDir, 'shared/unused.ts', 'export const unused = 1;\n');
+        appendFileSync(
+          join(subDir, 'a/components/hero-slider/hero-slider.ts'),
+          "\nimport { slide } from '@shared/slide-tokens';\nexport const slideCount = slide;\n",
+        );
+      },
+    });
+
+    expect(await sketchCommand(target, ['merge', 'elements/hero'])).not.toBe(0);
+    expect(errors.mock.calls.flat().join('\n')).toContain('unused.ts');
   });
 });

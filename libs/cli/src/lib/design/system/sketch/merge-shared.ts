@@ -86,17 +86,19 @@ export const sharedPlanOf = (options: {
   variant: string;
   parts: PartFile[];
   product: SharedProduct & { parts: PartFile[] };
+  subTargets?: string[];
 }): { carry: { targetDir: string; paths: string[] }[] } | string => {
   const { sketch, variant, parts, product } = options;
+  const mergeTargets = [...sketch.targets, ...(options.subTargets ?? [])];
   const importers = sharedImportersOf(product, parts);
-  const others = importers.filter((part) => !sketch.targets.includes(partKeyOf(part)));
-  const takers = sketch.targets.join(', ');
+  const others = importers.filter((part) => !mergeTargets.includes(partKeyOf(part)));
+  const takers = mergeTargets.join(', ');
 
   if (others.length > 0)
-    return `${others.map(partKeyOf).join(', ')} import ${SHARED_PREFIX} - only ${takers} take${sketch.targets.length > 1 ? '' : 's'} the sketch's ${SHARED_FOLDER}/ into the product; move that code into the part`;
+    return `${others.map(partKeyOf).join(', ')} import ${SHARED_PREFIX} - only ${takers} take${mergeTargets.length > 1 ? '' : 's'} the sketch's ${SHARED_FOLDER}/ into the product; move that code into the part`;
 
   const dirs = sketchSharedDirsOf(sketch, variant);
-  const targets = parts.filter((part) => sketch.targets.includes(partKeyOf(part)));
+  const targets = parts.filter((part) => mergeTargets.includes(partKeyOf(part)));
   const reached = targets.map((part) => reachedSharedOf({ dirs, partDir: dirname(part.file), product }));
   const unreached = [...sketchSharedFilesOf(sketch, variant).keys()].filter(
     (path) => !inProductShared(product, path) && !reached.some((paths) => paths.has(path)),
