@@ -75,7 +75,8 @@ export const slowCacheFileOf = (product: ResolvedProduct) => {
   return join(root, 'node_modules', '.cache', 'ethlete-design', product.name, sha16(root), 'slow-checks.json');
 };
 
-const blockingSlowProblemsOf = (product: ResolvedProduct, problems: Problem[]) =>
+/** The problems of a slow result that fail its part: neither baselined nor waiting for an undesigned state. */
+export const blockingSlowProblemsOf = (product: ResolvedProduct, problems: Problem[]) =>
   withoutWaitingUndesigned(product, unbaselinedProblemsOf(product, problems));
 
 export const readSlowCache = (product: ResolvedProduct): SlowCache => {

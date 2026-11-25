@@ -728,6 +728,7 @@ const printProductOpenPoints = async (
       ),
     );
 
+  let slowFailures = 0;
   const recorded = await recordCheckedBuildReady({
     target,
     config,
@@ -764,6 +765,10 @@ const printProductOpenPoints = async (
         }),
     ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
     onRecordDropped: (line: string) => console.log(line),
+    onSlowProblems: (part, problems) => {
+      slowFailures += problems.length;
+      tallyOf(options.tally, { product: name, part })?.problems.push(...problems.map(({ rule }) => rule));
+    },
   });
 
   const actionFailures = actionFailuresOf({ product, recorded });
@@ -814,7 +819,7 @@ const printProductOpenPoints = async (
     console.log(staleLineOf(name, stale)),
   );
 
-  return actionFailures.reduce((count, { failures }) => count + failures.length, 0);
+  return slowFailures + actionFailures.reduce((count, { failures }) => count + failures.length, 0);
 };
 
 const notCheckedLineOf = (options: { product: string; parts: string; why: string }) =>
@@ -1146,7 +1151,7 @@ const checkProductTail = async (
  * draw, each state that does not draw, or every part without a browser, gets one `NOT CHECKED` line; without a browser it passes on the other checks.
  * It then lists the open points of each product's parts, with the missing states
  * of each component part as `design complete` draws them, the blockers `design ready` refuses on; of these, only a
- * failed action of a part left without a record fails the exit code.
+ * failed action of a part left without a record and a slow rule that fails in the check fail the exit code.
  */
 export const checkSystemRendered = async (
   options: CheckOptions & {

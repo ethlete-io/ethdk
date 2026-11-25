@@ -111,6 +111,36 @@ describe('the check record of a part-scoped design check', { timeout: 60_000 }, 
     expect(actionFailuresOf({ product: product(), recorded: results })).toEqual([]);
   });
 
+  it('blocks a part on the slow problem the check found, instead of leaving it pending', async () => {
+    const { target, config, product } = staleChip();
+    const part = 'components/chip';
+    const problem = {
+      rule: 'DROPPED-PROP',
+      file: join(target, DESIGN_DIR, 'acme/components/chip/chip.ts'),
+      message: 'the app drops the prop label',
+    };
+    const found: [string, string[]][] = [];
+
+    const results = await recordCheckedBuildReady({
+      target,
+      config,
+      product: product(),
+      parts: [part],
+      settle: [part],
+      inputs: { pointsOf: () => [], problemsOf: () => [] },
+      runners: { ...runners, droppedProps: async () => [problem] },
+      actionsOf: async () => [],
+      declaredActionsOf: async () => [],
+      onSlowProblems: (at, problems) => found.push([at, problems.map(({ rule }) => rule)]),
+    });
+
+    expect(results.get(part)).toMatchObject({
+      ready: false,
+      blockers: [{ kind: 'problem', text: 'DROPPED-PROP: the app drops the prop label' }],
+    });
+    expect(found).toEqual([[part, ['DROPPED-PROP']]]);
+  });
+
   it('leaves a whole-product check pending and names the commands that settle it', async () => {
     const { target, config, product } = staleChip();
     const part = 'components/chip';
