@@ -160,7 +160,7 @@
       "label": "Runde wählen",
       "place": {
         "part": "pages/sketches",
-        "action": "emit:roundChange"
+        "action": "emit:roundsOpenChange"
       },
       "confirmed": true
     },
