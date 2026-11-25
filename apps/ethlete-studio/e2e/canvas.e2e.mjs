@@ -6775,6 +6775,7 @@ const lead = async () => {
   console.log('\nTime per case, slowest first:');
   for (const row of rows.toSorted((a, b) => (b.ms ?? 0) - (a.ms ?? 0))) {
     console.log(`${seconds(row.ms ?? 0)}  ${row.page.padEnd(9)} ${row.name}`);
+    for (const part of row.cases ?? []) console.log(`${seconds(part.ms)}  ${''.padEnd(9)}   ${part.name}`);
   }
 
   if (keepTimings) {

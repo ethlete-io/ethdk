@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runOrderOf, shardShareOf } from './shard-share.mjs';
 import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
-import { STANDALONE_FILES, STANDALONE_PAGE } from './standalone-jobs.mjs';
+import { casesOf, STANDALONE_FILES, STANDALONE_PAGE } from './standalone-jobs.mjs';
 
 const keyOf = (job) => `${job.page} :: ${job.name}`;
 const jobsOf = (page, names) => names.map((name) => ({ page, name, ownShard: name === 'heavy' }));
@@ -123,4 +123,27 @@ test('without local timings, the real shard 1 starts its heaviest CI-weighted jo
   const heaviest = keys.toSorted((a, b) => (weights[b] ?? 0) - (weights[a] ?? 0))[0];
 
   assert.equal(runOrderOf(queue, (job) => job.key, { weights })[0].key, heaviest);
+});
+
+test('a standalone file reports the time of each of its cases, from the verdict lines of CI run 45594276033', () => {
+  const verdicts = [
+    'PASS  27.0s  a frame that sends no frame message shows the failed load: banner "Laden fehlgeschlagen. Die Seite wurde geladen, hat aber keine Frame-Nachricht gesendet. Neu laden", reload buttons 1, marked frames 1',
+    'PASS  192.7s  a sketch view of a page with many states draws every frame without a render error: frames 52',
+    'PASS  26.9s  a sketch variant whose module fails shows a render error, no Übernehmen, and recovers on the next change: error shown',
+    'PASS  8.6s  a sketch listing abandoned after a change to a part the sketch imports leaves no drawing queued: drawings queued when the listing was abandoned 4, still queued 1500 ms later 0',
+    'PASS  link click in a live frame: opened',
+  ];
+
+  assert.deepEqual(
+    casesOf(verdicts).map(({ ms, name }) => [Math.round(ms), name]),
+    [
+      [27000, 'a frame that sends no frame message shows the failed load'],
+      [192700, 'a sketch view of a page with many states draws every frame without a render error'],
+      [
+        26900,
+        'a sketch variant whose module fails shows a render error, no Übernehmen, and recovers on the next change',
+      ],
+      [8600, 'a sketch listing abandoned after a change to a part the sketch imports leaves no drawing queued'],
+    ],
+  );
 });

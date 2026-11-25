@@ -24,6 +24,14 @@ export const standaloneJobsOf = ({ only, pageGroups } = {}) =>
     ownShard,
   }));
 
+/** The timed cases of a standalone file, from its `PASS  12.3s  name: detail` verdict lines. */
+export const casesOf = (verdicts) =>
+  verdicts.flatMap((line) => {
+    const match = /^(PASS|FAIL)\s+([\d.]+)s\s+(.+?):\s/.exec(`${line} `);
+
+    return match ? [{ ok: match[1] === 'PASS', ms: Number(match[2]) * 1000, name: match[3] }] : [];
+  });
+
 /** Runs one standalone job as its own node process and resolves to a canvas.e2e result row. */
 export const runStandalone = (job, { built, port, env = process.env }) =>
   new Promise((done) => {
@@ -47,6 +55,7 @@ export const runStandalone = (job, { built, port, env = process.env }) =>
         ok: code === 0,
         detail: code === 0 ? verdicts.join(' | ') : `exited with ${code}\n${output.slice(-3000)}`,
         ms: performance.now() - startedAt,
+        cases: casesOf(verdicts),
       });
     });
   });
