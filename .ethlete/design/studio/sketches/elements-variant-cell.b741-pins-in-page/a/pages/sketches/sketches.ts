@@ -143,9 +143,10 @@ const failedMark = (reason: string) =>
 
 const rowFailedMark = (reason: string) =>
   html`<span
-    class="text-ui-xs text-et-theme-ink wrap-anywhere"
+    class="line-clamp-3 text-ui-xs text-et-theme-ink wrap-anywhere"
     data-et-semantic-color="error"
     role="alert"
+    title="${SKETCHES_LABELS.rowFailed(reason)}"
     data-sk-row-failed
     >${SKETCHES_LABELS.rowFailed(reason)}</span
   >`;
