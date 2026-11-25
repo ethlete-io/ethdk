@@ -32,6 +32,7 @@ How the doc session and the builder work. A process change edits this page.
 
 - CI is the only push gate; while a CI run is in progress, pushes wait and the builder works on. Nobody waits in the foreground for CI or a subagent.
 - `git commit -- <paths>`; never amend, stash or rewrite history.
+- The doc session merges the prerelease PR twice a day, at midday and in the evening, when CI on `next` is green. A hotfix release may go out at any time when it unblocks a consumer.
 - What was built lives in the commit message, not in a plan file.
 
 ## Decisions

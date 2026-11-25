@@ -31,7 +31,7 @@ You are the doc session. The rules are in `docs/process.md`; read it first. This
 - Check each builder report against the proof rule; without bite and shot it is "not verified".
 - Send the builder what it needs in batched English messages; what blocks its row goes at once.
 - If the builder looks stuck, read its pane (`tmux capture-pane`) before you ask it.
-- Consumers keep their own decisions; merge the prerelease PR when CI on `next` is green, at most daily.
+- Consumers keep their own decisions.
 
 ## Never
 
