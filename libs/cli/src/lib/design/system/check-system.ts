@@ -69,6 +69,7 @@ import { kitOutsidePagesOf } from './rules/kit-outside-pages';
 import { inlineUiInPageProblemsOf, inlineUiInPageWarningsOf } from './rules/inline-ui-in-page';
 import { inlineSvgsOf } from './rules/inline-svg';
 import { ownCanvasesOf } from './rules/own-canvas';
+import { ownPartsInFramesOf } from './rules/own-part-in-frame';
 import { directEditPendingOf } from './rules/direct-edit-pending';
 import { topLevelAwaitsOf } from './rules/top-level-await';
 import { badSkipsOf } from './rules/skips';
@@ -139,6 +140,7 @@ const RULES = [
   compositionWithInteractionsOf,
   kitOutsidePagesOf,
   ownCanvasesOf,
+  ownPartsInFramesOf,
   inlineUiInPageProblemsOf,
   flowProblemsOf,
   badSvgAssetsOf,

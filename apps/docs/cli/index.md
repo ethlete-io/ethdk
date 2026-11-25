@@ -339,6 +339,9 @@ their name are components and pass. Off when the flag is left out.
 A product that names its one canvas, `"canvas": { "part": "components/canvas-viewport", "zoom": "components/zoom-chip" }`,
 fails `et design check` with `OWN-CANVAS` on a part that draws the `zoom` part but reaches the canvas `part` neither
 itself nor through a part it imports: it pans a canvas box of its own. Off when the key is left out.
+The same key turns on `OWN-PART-IN-FRAME`: a part that reaches the canvas part fails on reading the `states` of
+another of the product's own parts, since those states would become frame content. The frames of a design tool's
+own sketch view show an invented sample product instead.
 
 A product that sets `"commandText": "deny"` fails `et design check` with `COMMAND-TEXT` on command text (`npx`, `nx`,
 `yarn`, a `--flag`, a `NAME=value`) in the visible text of its drawings or of its harness app templates. Off when
