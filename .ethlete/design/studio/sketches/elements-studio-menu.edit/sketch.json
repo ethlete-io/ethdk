@@ -17,7 +17,7 @@
     "components/about-dialog": "d45d4fe793365011",
     "components/accent-on-light": "567fbf4fe2fcb819",
     "components/accordion": "2de81b9e2cf77053",
-    "components/action-sheet": "8736a8998dad6413",
+    "components/action-sheet": "0118dbb118c869d2",
     "components/anchored-dialog": "207928c8819bd1f2",
     "components/avatar": "bd30d4506ee6b573",
     "components/badge": "0fbbe4a2f0404285",
@@ -54,7 +54,7 @@
     "components/loader": "ebcdf0bf50e1d1c5",
     "components/masonry": "80232b6f6dc4efb4",
     "components/match": "e527fd3e2b200181",
-    "components/menu": "0d09cdabc2d98c84",
+    "components/menu": "dbf2df2cfbfc1a8b",
     "components/notification": "4c05d9b1c663a743",
     "components/otp-input": "7bfae50f6e645adc",
     "components/pagination": "22474efd4ebda89a",
@@ -104,7 +104,7 @@
     "pages/system": "40ad5ffbd085dc6a",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "b8b86a012adffdb579a8eac2e3a2a47cdc62a26c",
+  "baselineTree": "3b3ff788b43093eeec41a4d830b297a87d489079",
   "editOldCommit": "317e2e0ea56a8db2d615e85974673d6a53dabdbf",
   "sharedBase": {
     "elements/studio-menu/shared/studio-menu-rows.ts": "3f70df901a125036"
