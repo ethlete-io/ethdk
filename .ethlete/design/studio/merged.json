@@ -171,11 +171,10 @@
     "at": "2026-11-21T03:22:49.823Z"
   },
   "pages/sketches": {
-    "hash": "cba2d3971341f4f4",
-    "variant": "a",
-    "decidedBy": "plan: plans/QUEUE.md B741 Q2",
-    "at": "2026-11-25T12:53:06.657Z",
-    "note": "merged without a pick: allowed by plans/QUEUE.md B741 Q2"
+    "hash": "620ec76df713592b",
+    "variant": "new",
+    "decidedBy": "claude-opus-5-5",
+    "at": "2026-11-25T23:32:00.731Z"
   },
   "pages/start": {
     "hash": "414940d2e574c435",
