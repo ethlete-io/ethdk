@@ -204,7 +204,7 @@ pick; it refuses while the decision is a discard (the user picks a variant first
 goes on the running round: what it showed and why its variants lost. Older variants stay pickable.
 The command prints the notes of the previous round. Fix a round's title or note later with `sketch round <layer>/<name> <round> --title … --note … --by <model id>`; `sketch list` shows each sketch's rounds.
 Letters continue across rounds (r1: a, b; r2: c, d). `sketch variant <layer>/<name> c,d --from a` adds
-several variants at once; with `--round` they all start the new round. A new round answers the comments on the
+several variants at once; with `--round` they all start the new round. On a new part, the round after the pick of a base variant draws its interactions (see `INTERACTION-ROUND`). A new round answers the comments on the
 `--from` variant and marks them "addressed in round" with the new round's key. A variant without `--round` fails while the sketch has open comments and lists them: a variant that answers a comment starts a new round. Draw the combined
 variant and mark the sketch `ready` again. `sketch new --round <title> --note <text>` names
 round 1 and sets its note; `--round` without `--note` fails. `sketch ready` refuses while the running round has no note; set it with `sketch round`.

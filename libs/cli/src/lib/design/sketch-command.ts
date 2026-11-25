@@ -46,6 +46,7 @@ import {
   weakStateWarnings,
   stateInnerLines,
   interactionRepeatLines,
+  interactionRoundLines,
   variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -1007,6 +1008,16 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
     return readyRefused(
       { product, sketch },
       `${inner.join('\n')}\n${sketch.target} draws a state of an inner part - move it into that part before ready`,
+    );
+
+  const rounded = await timedPhase('interaction-round', () =>
+    interactionRoundLines({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
+  );
+
+  if (rounded.length > 0)
+    return readyRefused(
+      { product, sketch },
+      `${rounded.join('\n')}\n${sketch.target} draws the wrong states for its round of a new part - fix them before ready`,
     );
 
   const repeated = await timedPhase('interaction-repeat', () =>
@@ -2114,6 +2125,11 @@ const checkedShots = async (
         await timedPhase('mark-drift', () => sampleMarkDriftLines({ target, config, product, sketch, warm: shots })),
       );
       refuse(await timedPhase('state-inner', () => stateInnerLines({ target, config, product, sketch, warm: shots })));
+      refuse(
+        await timedPhase('interaction-round', () =>
+          interactionRoundLines({ target, config, product, sketch, warm: shots }),
+        ),
+      );
       refuse(
         await timedPhase('interaction-repeat', () =>
           interactionRepeatLines({ target, config, product, sketch, warm: shots }),

@@ -23,6 +23,7 @@ import { unknownThemeWarningsOf } from './system/sketch/unknown-theme';
 import { Sketch } from './system/sketch/sketch';
 import { stateInnerLinesOf } from './system/sketch/state-inner-lines';
 import { interactionRepeatLinesOf } from './system/sketch/interaction-repeat-lines';
+import { interactionRoundLinesOf } from './system/sketch/interaction-round';
 import { VariantChange } from './system/sketch/viewed-shots';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { DesignServer, Drawing, drawingOn, loadingOn, WarmDraw } from './warm-draw';
@@ -100,6 +101,16 @@ export const interactionRepeatLines = async (options: SketchShots): Promise<stri
   try {
     return await loadingOn(options, (server) =>
       interactionRepeatLinesOf({ product: options.product, sketch: options.sketch, load: loaderOf(server) }),
+    );
+  } catch (error) {
+    return [couldNotRender(options.sketch, error)];
+  }
+};
+
+export const interactionRoundLines = async (options: SketchShots): Promise<string[]> => {
+  try {
+    return await loadingOn(options, (server) =>
+      interactionRoundLinesOf({ product: options.product, sketch: options.sketch, load: loaderOf(server) }),
     );
   } catch (error) {
     return [couldNotRender(options.sketch, error)];

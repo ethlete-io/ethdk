@@ -10,6 +10,7 @@ import {
   sampleMarkDriftLines,
   stateInnerLines,
   interactionRepeatLines,
+  interactionRoundLines,
   weakStateWarnings,
   variantChangesShown,
   variantsThatDoNotLoad,
@@ -47,6 +48,7 @@ vi.mock('./ready-shots', () => {
     sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
     stateInnerLines: vi.fn(async (): Promise<string[]> => []),
     interactionRepeatLines: vi.fn(async (): Promise<string[]> => []),
+    interactionRoundLines: vi.fn(async (): Promise<string[]> => []),
     weakStateWarnings: vi.fn(async (): Promise<string[]> => []),
     variantChangesShown: vi.fn(async (): Promise<VariantChange[] | string> => [
       { variant: 'a', changed: 1, change: 'variant a changes default' },
@@ -960,6 +962,39 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines).toContain(`ready will refuse: ${repeated}`);
     expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
+  });
+
+  it('refuses ready while a new part draws the wrong states for its round, and check warns of it', async () => {
+    const target = acme();
+    const lines = output();
+    const rounded =
+      'INTERACTION-ROUND components/button a components/button: the first round of a new part draws only rest';
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    vi.mocked(interactionRoundLines).mockResolvedValueOnce([rounded]);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toBe(
+      `${rounded}\ncomponents/button draws the wrong states for its round of a new part - fix them before ready`,
+    );
+
+    vi.mocked(interactionRoundLines).mockResolvedValueOnce([rounded]);
+    lines.length = 0;
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(`ready will refuse: ${rounded}`);
   });
 
   it('warns in ready of a state that barely differs from its rest state', async () => {

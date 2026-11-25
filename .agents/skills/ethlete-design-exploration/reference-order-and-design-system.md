@@ -39,6 +39,11 @@ from `@design-system` and spread the result into `definePart`; never write those
 Draw the interactions once, on the first row. A row that only changes content, such as a badge, a longer title or a
 missing logo, is drawn only at rest: name it in `restOnly: ['series']`. `sketch ready` refuses a content row whose
 interactions look the same as the first row's as `INTERACTION-REPEAT`.
+The first sketch of a new part draws every variant only at rest, one state per content. Once the user picks a base
+variant, open a second round from it (`sketch variant <layer>/<name> <key> --from <picked> --round <title> --note <why>`)
+and draw hover, active, focus-visible and disabled there, for that variant only. `sketch ready` refuses interactions in
+round 1 of a new part, and a missing one in a later round, as `INTERACTION-ROUND`; drop an interaction the part cannot
+have with `sketch round <layer>/<name> <round> --drops <interaction>`.
 `sketch check` prints `grid <rows> x <columns> ok`, or the states the grid leaves out; a state in two cells
 fails it as `GRID`, in `design check` too.
 Interaction states (a state name whose last word is hover, focus, pressed, active or selected, such as `row-hover`) live only on a control
