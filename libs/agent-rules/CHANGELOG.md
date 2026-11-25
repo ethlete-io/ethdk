@@ -1,5 +1,13 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.46
+
+### Patch Changes
+
+- The `builder-idle-check` hook no longer counts a subagent as done when it stopped to wait on its own background work.
+- A failed `et design sketch check` now ends with a line telling the agent to fix the cause in its variant files and draw every variant, and the design-exploration guide says a stub variant is not done.
+- `sketch ready` refuses interactions in round 1 of a new part and demands them in the round after the pick (`INTERACTION-ROUND`).
+
 ## 0.1.0-next.45
 
 ### Minor Changes

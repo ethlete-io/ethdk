@@ -1,5 +1,24 @@
 # @ethlete/cli
 
+## 3.0.0-next.47
+
+### Minor Changes
+
+- `sketch ready` refuses interactions in round 1 of a new part and demands them in the round after the pick (`INTERACTION-ROUND`).
+
+### Patch Changes
+
+- The sketch pick view shows the round note above the canvas, keeps variant notes at small zoom, and marks each changed area of a cropped state.
+- The design check reports an error a harness page throws or logs with `console.error` as an `APP-ERROR` finding of its state, such as Angular's NG0950 for a required input the state does not pass.
+- The pick view of a direct edit names its rows and differing states in the words of a designer, without commit hashes or commit subjects.
+- The old side of an edit sketch draws a part stylesheet that changed since with its own `@import`s, also those of another product, as the old commit held them, instead of failing the frame with Tailwind's "Can't resolve".
+- A design frame's error text, and Vite's build error overlay in a frame, now wrap to the frame width and grow the frame instead of being cut off.
+- A sketch can now use a base part that another open sketch overrides, such as a product button over the SDK button, drawn from that sketch's recommended variant.
+- A failed `et design sketch check` now ends with a line telling the agent to fix the cause in its variant files and draw every variant, and the design-exploration guide says a stub variant is not done.
+- `design sketch variant --from` now carries the `notRebuilds` of the copied variant over to the new one.
+- `design sketch variant --from` now carries the `subParts` of the copied variant over to the new one.
+- A design frame keeps its loaded `@font-face` rules when it switches to another state, so a switch draws the state once instead of up to three times.
+
 ## 3.0.0-next.46
 
 ### Minor Changes
