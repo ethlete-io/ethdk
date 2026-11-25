@@ -69,6 +69,14 @@ export const Tabs: Story = {
   },
 };
 
+export const TabsRestyledWithTokens: Story = {
+  args: {
+    variant: 'tabs',
+    label: 'View',
+    tokens: '--et-tab-text-transform: uppercase; --et-tab-letter-spacing: 0.12em; --et-tab-font-weight: 700;',
+  },
+};
+
 export const LongLabel: Story = {
   args: {
     overflow: 'truncate',
