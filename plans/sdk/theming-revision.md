@@ -147,6 +147,24 @@ Drei Begriffe, je ein Satz, je ein Namensraum. Mehr muss ein App-Entwickler nich
 
 Was daraus folgt:
 
+- **Jeder Name sagt, wofür die Farbe gebraucht wird** (Tom, 26.11.: „wirre wörter wie ink“).
+  Ein Akzent hat heute `color`, `onColor`, `inkColor` in bis zu drei Paletten
+  (`primary`, `secondary`, `tertiary`). `secondary` und `tertiary` nutzt keine App ✔ (fifagg 0,
+  fut 0); ohne sie sagt auch `primary` nichts mehr. Danach hat ein Akzent drei Werte mit
+  sprechenden Namen (Arbeitsnamen):
+
+  | Heute                         | Danach   | Bedeutung in einem Satz                                                         |
+  | ----------------------------- | -------- | ------------------------------------------------------------------------------- |
+  | `color`, `--et-color-primary` | `fill`   | Der Akzent als Fläche (gefüllter Button).                                       |
+  | `onColor`, `on-primary`       | `onFill` | Text und Icons **auf** dieser Fläche.                                           |
+  | `inkColor`, `-ink`            | `text`   | Der Akzent als Text oder Rahmen auf der normalen Fläche (Outline-Button, Link). |
+
+  `text` gibt es, weil eine Füllfarbe als Schrift oft zu wenig Kontrast hat (helles Gelb auf
+  Weiß); fehlt die Angabe, gilt `fill`. Dieser eine Satz steht in der Doku neben dem Namen.
+  Dieselbe Regel gilt für jedes andere Wort im System: ein Name, der sich nicht in einem Satz
+  erklären lässt, wird umbenannt oder gestrichen (Prüfliste in Schritt 1: `muted` / `subtle`,
+  `interaction`, `on-interaction`, `interaction-ink`).
+
 - **Ein Name pro Wert.** Heute hat jeder Wert drei bis fünf Namen (`--et-surface-background`,
   `-rgb`, `-solid`; bei Akzenten `--et-color-primary`, `--et-theme-color-primary-rgb`, `-solid`,
   unsuffigiert, `-opacity`). Danach genau einer, und er ist ein Farbwert, kein Kanal-Tripel.
@@ -174,6 +192,7 @@ Messzahlen (vorher → Ziel; „vorher“ am 26.11. gezählt ✔, Ziel ist Vorga
 | ------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------- |
 | Namen je Flächenwert                 | 3 (roh, `-rgb`, `-solid`)                                                    | 1                                     |
 | Namen je Akzentwert                  | bis 5                                                                        | 1                                     |
+| Paletten je Akzent                   | 3 (`primary`, `secondary`, `tertiary`), zwei davon ungenutzt                 | 1                                     |
 | Rollen von `interactionColor`        | 3 in einem Feld                                                              | 1 je Feld                             |
 | Direktiven, die eine App kennen muss | 5 (+3 Helfer-Direktiven)                                                     | 3                                     |
 | Namensmuster für Zustands-Tokens     | 4                                                                            | 1                                     |
@@ -197,6 +216,14 @@ Jeder Punkt: was geht, wen es trifft (Vorkommen ✔ vom 26.11., generierte Datei
 | S7  | Zweiter Schreibweg für Tokens (`colors-skeleton.ts`, `generate-studio-themes.mjs` schreiben Namen selbst) | nur Repo                                                                                            | keine; beide rufen `themeCss` auf                                                                                                             |
 | S8  | Fünf Helfer „welche Fläche“ und `SurfaceContextTracker` als öffentliche API                               | components 14, cdk 2; Apps 0                                                                        | `@internal` markieren, aus der Doku nehmen; kein Bruch im Verhalten                                                                           |
 
+Dazu **S9**: Wortliste. `ink` → `text`, `color`/`primary` → `fill`, `onColor`/`on-primary` →
+`onFill` (Vorkommen ✔: `ink` SDK-Libs 564, fifagg 379, fut 366; `on-primary`/`onColor` 436 / 310 /
+271), und die Paletten `secondary` und `tertiary` entfallen (SDK-Libs 9 / 6, Apps 0). Migration
+auto, zusammen mit S2 in einem Durchgang, damit jede Datei nur einmal angefasst wird.
+
+Die Urteile in den Tabellen der Abschnitte 1 und 2 stammen aus der Triage vom 25.11.; wo sie dem
+Zielbild widersprechen, gilt das Zielbild.
+
 Nicht gestrichen, mit Grund:
 
 - **Die 24 Stärken** (7, 8, 10, 12 … %). Angleichen ändert das Bild. Eigene spätere Zeile.
@@ -213,7 +240,7 @@ Nach jedem Schritt: `et update` in fifagg, Bildvergleich gegen die Aufnahme aus 
 | #   | Schritt                                                                                                                                                                                                                                                | Beweis                                                                                                                                        |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0   | **Messlatte und Demo.** Die Demo-Seite aus Abschnitt 6 auf dem heutigen System; Playwright prüft auf ihr: Hover und Gedrückt unterscheiden sich auf jeder Ebene vom Ruhezustand. B-65 als Fall darin. Bildaufnahme der fifagg-Oberfläche als Referenz. | B-65-Fall rot, als erwartet-rot markiert sichtbar bis Schritt 3.                                                                              |
-| 1   | **Ein Name pro Wert** (S1, S2, S7). Generator schreibt die neuen Namen; SDK-CSS wird umgeschrieben; Migration für Apps.                                                                                                                                | Lint-Regel „kein alter Token-Name“ (rot bei allen Fundstellen, grün danach). Generator-Specs mit Fixtures aus echten fifagg- und fut-Dateien. |
+| 1   | **Ein Name pro Wert, sprechende Wörter** (S1, S2, S7, S9). Generator schreibt die neuen Namen; SDK-CSS wird umgeschrieben; Migration für Apps.                                                                                                         | Lint-Regel „kein alter Token-Name“ (rot bei allen Fundstellen, grün danach). Generator-Specs mit Fixtures aus echten fifagg- und fut-Dateien. |
 | 2   | **Rollen trennen** (S3, S4).                                                                                                                                                                                                                           | Spec auf `themeCss`; Generator-Spec mit den echten Theme-Dateien beider Apps; Tabs-Story in der Messlatte unverändert.                        |
 | 3   | **Zustände** (S5): Formregel in vier Scheiben (Listen, Tabelle und Zeilen, Formulare, Rest), Ebenen-Baustein im Generator, ein Namensmuster.                                                                                                           | Lint-Regel gegen handgemischte Zustände außerhalb der Form (rot bei 51 Dateien). B-65-Fall wird grün.                                         |
 | 4   | **Utilities für Apps**: Tönung und „Hintergrund der nächsten Ebene“.                                                                                                                                                                                   | Spec auf den `@theme`-Block; die Demo nutzt beide.                                                                                            |
@@ -289,3 +316,5 @@ Entschieden:
   Verbraucher gemischt; „Hintergrund der nächsten Ebene“ als Baustein für Apps; farbige
   Zustands-Tokens nehmen weiter eine Farbe an; Utilities für Apps ja; kein Generator-Abbruch bei
   Farbgleichheit.
+- (26.11., Tom) Wörter wie `ink` versteht niemand; das System muss transparenter werden. Folge:
+  Wortliste S9, jeder Name in einem Satz erklärbar.
