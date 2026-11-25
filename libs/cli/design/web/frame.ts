@@ -10,6 +10,7 @@ import {
 import { drawState, Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { keptFacesOf } from './frame-faces';
+import { paintFailure } from './frame-failure';
 import { paintFill } from './frame-fill';
 import { fitRoot } from './frame-fit';
 import { sheetLayoutOf, sheetMarkupOf, SHEET_STYLES } from './frame-sheet';
@@ -117,14 +118,7 @@ const fail = (message: string) => {
   if (building) return showBuilding(building);
 
   markFailed(message);
-
-  const text = document.createElement('pre');
-
-  text.textContent = message;
-  text.style.margin = '0';
-  text.style.whiteSpace = 'pre-wrap';
-  root.replaceChildren(text);
-  root.setAttribute('style', 'padding:16px;font:14px monospace;color:#f0a0a0;background:#1a1414');
+  paintFailure(root, message);
 
   return null;
 };
@@ -145,7 +139,7 @@ const showSetupError = (message: string) => {
   banner.textContent = message;
   banner.setAttribute(
     'style',
-    'position:fixed;top:0;left:0;right:0;z-index:2147483647;margin:0;padding:16px;white-space:pre-wrap;font:14px monospace;color:#f0a0a0;background:#1a1414',
+    'position:fixed;top:0;left:0;right:0;z-index:2147483647;margin:0;padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;font:14px monospace;color:#f0a0a0;background:#1a1414',
   );
   document.body.append(banner);
   banners.push(banner);
