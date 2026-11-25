@@ -1134,7 +1134,7 @@ export class SystemViewComponent {
     const partOf = (entry: TreeEntry): PartTreePart => ({
       name: entry.name,
       ...marksOf(entry),
-      ...(entry.layer ? { layer: entry.layer } : {}),
+      ...(entry.layer ? { layer: entry.layer, layerKey: entry.layerKey } : {}),
       ...(entry.subSketch ? { status: subSketchStatusOf(entry.badges) } : {}),
       ...(entry.nested ? { open: open.has(entry.key), nested: entry.nested.map(partOf) } : {}),
     });

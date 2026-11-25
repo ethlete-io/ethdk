@@ -17,6 +17,7 @@ export type TreeRow = {
   status?: TreeRowStatus;
   comments?: number;
   layer?: string;
+  layerKey?: string;
   hint?: string;
 };
 
@@ -24,6 +25,13 @@ const STATUS_TITLE: Partial<Record<TreeRowStatus, string>> = {
   ready: TREE_ROW_LABELS.sketchReady,
   'awaiting-approval': TREE_ROW_LABELS.sketchAwaitingApproval,
   approved: TREE_ROW_LABELS.sketchApproved,
+};
+
+const LAYER_ICON: Record<string, string> = {
+  foundations: 'M2.5 12.5h11M4 9.5h8M5.5 6.5h5',
+  elements: 'M8 3.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z',
+  components: 'M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z',
+  pages: 'M4 2.5h5l3 3v8H4zM9 2.5v3h3',
 };
 
 const STATUS_CLASS: Record<TreeRowStatus, string> = {
@@ -67,7 +75,31 @@ const SELECTED_CLASS =
     </span>
     <span [etTooltip]="row.hint ?? null" class="min-w-0 flex-1 overflow-hidden text-ellipsis">{{ row.label }}</span>
     @if (row.layer) {
-      <span [class]="'flex-none text-ui-xs ' + accentClass()">{{ row.layer }}</span>
+      @let layerIcon = row.layerKey ? LAYER_ICON[row.layerKey] : undefined;
+      @if (layerIcon) {
+        <span
+          [class]="'flex flex-none ' + accentClass()"
+          [attr.aria-label]="row.layer"
+          [etTooltip]="row.layer"
+          role="img"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path [attr.d]="layerIcon" />
+          </svg>
+        </span>
+      } @else {
+        <span [class]="'flex-none text-ui-xs ' + accentClass()">{{ row.layer }}</span>
+      }
     }
     @if (row.warning) {
       <span
@@ -158,6 +190,7 @@ export class TreeRowItemComponent {
 
   protected readonly STATUS_TITLE = STATUS_TITLE;
   protected readonly STATUS_CLASS = STATUS_CLASS;
+  protected readonly LAYER_ICON = LAYER_ICON;
   protected readonly OPEN_COMMENTS_LABEL = TREE_ROW_LABELS.openComments;
 
   protected accentClass = computed(() => (this.item().selected ? 'text-et-theme-ink' : 'text-et-surface-muted'));

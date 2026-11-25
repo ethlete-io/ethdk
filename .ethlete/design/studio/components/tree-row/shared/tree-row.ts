@@ -1,5 +1,9 @@
 import { control } from '@ethlete/components/design/control';
-import { forceInteraction, interactionRows } from '@design-system';
+import { forceInteraction, interactionRows, svgAsset } from '@design-system';
+import foundations from '@assets/icons/layer-foundations.svg?raw';
+import elements from '@assets/icons/layer-elements.svg?raw';
+import components from '@assets/icons/layer-components.svg?raw';
+import pages from '@assets/icons/layer-pages.svg?raw';
 import { icon } from '@system/foundations/icons';
 import { TREE_ROW_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
@@ -16,6 +20,7 @@ export type Row = {
   status?: 'in-progress' | 'ready';
   comments?: number;
   layer?: string;
+  layerKey?: string;
   interaction?: RowInteraction;
   action?: string;
 };
@@ -33,6 +38,17 @@ const statusIcon = {
   'in-progress': icon('pencil', { size: 12 }),
   ready: icon('check', { size: 12 }),
 };
+
+const layerIcons: Record<string, string> = { foundations, elements, components, pages };
+
+const layerIcon = (svg: string) => svgAsset(svg, { size: 12, attrs: { 'aria-hidden': 'true' } });
+
+const layerMark = ({ layer, layerKey }: Row, accent: string) =>
+  !layer
+    ? ''
+    : layerKey && layerIcons[layerKey]
+      ? `<span class="flex flex-none ${accent}" role="img" aria-label="${layer}" title="${layer}">${layerIcon(layerIcons[layerKey])}</span>`
+      : `<span class="flex-none text-ui-xs ${accent}">${layer}</span>`;
 
 const dot = (inert?: boolean) =>
   `<span class="st-trow-dot box-border ${inert ? '' : 'bg-current'}"${inert ? ' data-inert' : ''}></span>`;
@@ -59,7 +75,7 @@ const rowMarkup = (r: Row) => {
       >
         <span class="st-trow-lead flex flex-none items-center justify-center ${accent}">${lead(r)}</span>
         <span class="flex-1 min-w-0 overflow-hidden text-ellipsis">${r.label}</span>
-        ${r.layer ? `<span class="flex-none text-ui-xs ${accent}">${r.layer}</span>` : ''}
+        ${layerMark(r, accent)}
         ${r.warning ? `<span class="flex flex-none text-et-theme" data-et-semantic-color="warning" title="${r.warning.join(' ')}">${warningIcon}</span>` : ''}
         ${r.status ? `<span class="flex flex-none ${statusClass[r.status]}">${statusIcon[r.status]}</span>` : ''}
         ${r.comments ? `<span class="flex flex-none items-center gap-0.5 ${accent} text-(length:--text-xs)">${bubble}</span>` : ''}
@@ -122,7 +138,14 @@ export const states = {
   'selected-hover': one({ ...button, selected: true, interaction: 'hover' }),
   'selected-active': one({ ...button, selected: true, interaction: 'active' }),
   'selected-focus-visible': one({ ...button, selected: true, interaction: 'focus-visible' }),
-  'mark-layer': one({ label: 'hold-trigger', depth: 2, kind: 'leaf', layer: 'Components' }),
-  'selected-layer': one({ label: 'hold-trigger', depth: 2, kind: 'leaf', layer: 'Components', selected: true }),
+  'mark-layer': one({ label: 'hold-trigger', depth: 2, kind: 'leaf', layer: 'Components', layerKey: 'components' }),
+  'selected-layer': one({
+    label: 'hold-trigger',
+    depth: 2,
+    kind: 'leaf',
+    layer: 'Components',
+    layerKey: 'components',
+    selected: true,
+  }),
   ...others.states,
 };

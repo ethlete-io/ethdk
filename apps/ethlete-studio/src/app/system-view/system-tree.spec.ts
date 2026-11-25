@@ -397,6 +397,7 @@ describe('a part nested under its one user', () => {
       ['pages', [['pages/sketches', ['components/hold-trigger', 'elements/variant-cell']]]],
     ]);
     expect(nestedOf('pages/sketches')?.map((entry) => entry.layer)).toEqual(['Components', 'Elements']);
+    expect(nestedOf('pages/sketches')?.map((entry) => entry.layerKey)).toEqual(['components', 'elements']);
     expect(nestedOf('components/title-bar')?.[0]?.layer).toBeUndefined();
   });
 

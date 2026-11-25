@@ -100,6 +100,7 @@ export type TreeEntry = {
   subSketch?: boolean;
   /** The label of the part's own layer, on a part nested under a host of another layer. */
   layer?: string;
+  layerKey?: string;
 };
 
 export type TreeSection = { key: string; label: string; entries: TreeEntry[] };
@@ -248,7 +249,7 @@ const sketchEntriesOf = (sketches: ListedSketch[], marks: CommentMarks) => {
     const own = sketchEntryOf(sketch, marks);
     const entry =
       host && sketchLayerOf(host) !== sketchLayerOf(sketch)
-        ? { ...own, layer: layerLabelOf(sketchLayerOf(sketch)) }
+        ? { ...own, layer: layerLabelOf(sketchLayerOf(sketch)), layerKey: sketchLayerOf(sketch) }
         : own;
     const nested = sketches
       .filter((candidate) => candidate.parent === sketch.target && candidate !== sketch)
@@ -336,7 +337,8 @@ const nestedEntriesOf = (pool: ListedPart[], entryOf: (part: ListedPart) => Tree
   const hosts = new Map(pool.map((part) => [part, hostOf(part)]));
   const entryWith = (part: ListedPart, host?: ListedPart): TreeEntry => {
     const own = entryOf(part);
-    const entry = host && host.layer !== part.layer ? { ...own, layer: layerLabelOf(part.layer) } : own;
+    const entry =
+      host && host.layer !== part.layer ? { ...own, layer: layerLabelOf(part.layer), layerKey: part.layer } : own;
     const nested = pool
       .filter((candidate) => hosts.get(candidate) === partKeyOf(part))
       .map((candidate) => entryWith(candidate, part));

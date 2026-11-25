@@ -626,40 +626,8 @@
     "pid": 2030204
   },
   "components/tree-row": {
-    "hash": "54194a38f4ab321d",
-    "files": {
-      ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
-      ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
-      ".ethlete/design/studio/assets/icons/chevron-down.svg": "9984134378e832d4",
-      ".ethlete/design/studio/assets/icons/chevron-right.svg": "1a04df114a80da2e",
-      ".ethlete/design/studio/assets/icons/close.svg": "7c9d7c7b0369ac38",
-      ".ethlete/design/studio/assets/icons/comment.svg": "fb680460d7117789",
-      ".ethlete/design/studio/assets/icons/error.svg": "2d3285675d3b2d19",
-      ".ethlete/design/studio/assets/icons/flow.svg": "453c012e8a063e82",
-      ".ethlete/design/studio/assets/icons/grid.svg": "0325b982baf41f85",
-      ".ethlete/design/studio/assets/icons/inbox.svg": "e661f5cf4c65c1c9",
-      ".ethlete/design/studio/assets/icons/maximize.svg": "743f8061df8f16f7",
-      ".ethlete/design/studio/assets/icons/minimize.svg": "1bc111272e357d8d",
-      ".ethlete/design/studio/assets/icons/more.svg": "c899b8912231575e",
-      ".ethlete/design/studio/assets/icons/panel.svg": "05c325920c46d969",
-      ".ethlete/design/studio/assets/icons/pencil.svg": "61f6ed00cf70bfc1",
-      ".ethlete/design/studio/assets/icons/reply.svg": "34c9698a4d28d7b0",
-      ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
-      ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
-      ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/tree-row/shared/tree-row.ts": "dc2d8ce0b66fe0c2",
-      ".ethlete/design/studio/components/tree-row/tree-row.css": "799459ba9916614e",
-      ".ethlete/design/studio/components/tree-row/tree-row.ts": "ab34ce543b8e3652",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
-      "libs/components/design/control.ts": "b0244bc4c0f922a6"
-    },
-    "app": "bd4cbdb4f3c0625c",
     "actions": ["emit:rowPress"],
-    "builder": "designer",
-    "at": "2026-11-23T14:06:36.073Z",
-    "by": "claude-opus-5-5",
-    "cmd": "ready",
-    "pid": 2355738
+    "at": "2026-11-25T11:27:16.842Z"
   },
   "components/update-dialog": {
     "hash": "26001fd23ea75060",
@@ -774,46 +742,8 @@
     "at": "2026-11-25T11:28:33.261Z"
   },
   "elements/part-tree": {
-    "hash": "ecb89982f137f343",
-    "files": {
-      ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
-      ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
-      ".ethlete/design/studio/assets/icons/chevron-down.svg": "9984134378e832d4",
-      ".ethlete/design/studio/assets/icons/chevron-right.svg": "1a04df114a80da2e",
-      ".ethlete/design/studio/assets/icons/close.svg": "7c9d7c7b0369ac38",
-      ".ethlete/design/studio/assets/icons/comment.svg": "fb680460d7117789",
-      ".ethlete/design/studio/assets/icons/error.svg": "2d3285675d3b2d19",
-      ".ethlete/design/studio/assets/icons/flow.svg": "453c012e8a063e82",
-      ".ethlete/design/studio/assets/icons/grid.svg": "0325b982baf41f85",
-      ".ethlete/design/studio/assets/icons/inbox.svg": "e661f5cf4c65c1c9",
-      ".ethlete/design/studio/assets/icons/maximize.svg": "743f8061df8f16f7",
-      ".ethlete/design/studio/assets/icons/minimize.svg": "1bc111272e357d8d",
-      ".ethlete/design/studio/assets/icons/more.svg": "c899b8912231575e",
-      ".ethlete/design/studio/assets/icons/panel.svg": "05c325920c46d969",
-      ".ethlete/design/studio/assets/icons/pencil.svg": "61f6ed00cf70bfc1",
-      ".ethlete/design/studio/assets/icons/reply.svg": "34c9698a4d28d7b0",
-      ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
-      ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
-      ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/tree-row/shared/tree-row.ts": "dc2d8ce0b66fe0c2",
-      ".ethlete/design/studio/components/tree-row/tree-row.css": "799459ba9916614e",
-      ".ethlete/design/studio/components/tree-row/tree-row.ts": "ab34ce543b8e3652",
-      ".ethlete/design/studio/elements/part-tree/part-tree.ts": "cac27f8ffda99432",
-      ".ethlete/design/studio/elements/part-tree/shared/tree.ts": "4e638acdfffbc1ee",
-      ".ethlete/design/studio/foundations/icons/icons.ts": "71f99214cae945af",
-      "apps/ethlete-studio/src/app/i18n/system-labels.ts": "59e319b587dae47f",
-      "libs/components/design/control.ts": "b0244bc4c0f922a6"
-    },
-    "app": "77a99dfdd6cb891f",
-    "embedded": {
-      "components/tree-row": "bd4cbdb4f3c0625c"
-    },
     "actions": ["emit:activate", "emit:expandedChange"],
-    "builder": "designer",
-    "at": "2026-11-23T14:05:53.289Z",
-    "by": "claude-opus-5-5",
-    "cmd": "ready",
-    "pid": 2364031
+    "at": "2026-11-24T00:16:06.681Z"
   },
   "elements/shell-main": {
     "hash": "5b2f6840a324ec8a",

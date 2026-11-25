@@ -14,6 +14,7 @@ type Marks = {
 export type PartTreePart = Marks & {
   name: string;
   layer?: string;
+  layerKey?: string;
   hint?: string;
   status?: TreeRowStatus;
   open?: boolean;
@@ -43,7 +44,10 @@ export type PartTreeLegacy = { key?: string; open: boolean; projects: PartTreeLe
 
 export type PartTree = { layers: PartTreeLayer[]; sketches?: PartTreeSketches; legacy?: PartTreeLegacy };
 
-type RowMarks = Pick<TreeRow, 'kind' | 'selected' | 'warning' | 'warningTitle' | 'status' | 'layer' | 'hint'>;
+type RowMarks = Pick<
+  TreeRow,
+  'kind' | 'selected' | 'warning' | 'warningTitle' | 'status' | 'layer' | 'layerKey' | 'hint'
+>;
 
 const keyOf = (...names: string[]) => names.join('/');
 
@@ -76,6 +80,7 @@ const keyOf = (...names: string[]) => names.join('/');
             warningTitle: marks?.warningTitle,
             status: marks?.status,
             layer: marks?.layer,
+            layerKey: marks?.layerKey,
             hint: marks?.hint,
           }"
           etTreeNode
@@ -135,7 +140,13 @@ export class PartTreeComponent {
       return add({
         value,
         label: part.name,
-        mark: { ...markOf(host ? 'part' : 'leaf', part), layer: part.layer, hint: part.hint, status: part.status },
+        mark: {
+          ...markOf(host ? 'part' : 'leaf', part),
+          layer: part.layer,
+          layerKey: part.layerKey,
+          hint: part.hint,
+          status: part.status,
+        },
         open: part.open !== false,
         nodes: host ? part.nested?.map((child) => partNode(value, child)) : undefined,
       });

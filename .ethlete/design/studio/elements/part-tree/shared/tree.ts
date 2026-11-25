@@ -1,16 +1,13 @@
-import { interactionRows, type Interaction } from '@design-system';
 import type { Row } from '@system/components/tree-row';
 import { SYSTEM_TREE_LABELS, TREE_ROW_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
-type RowInteraction = Extract<Interaction, 'hover' | 'active' | 'focus-visible'>;
-
 type TreePart = {
   name: string;
-  interaction?: RowInteraction;
   warns?: boolean;
   leaf?: boolean;
   selected?: boolean;
   layer?: string;
+  layerKey?: string;
   open?: boolean;
   nested?: TreePart[];
 };
@@ -53,9 +50,8 @@ export const partRows = (part: TreePart, depth: number): Row[] => {
       action: host ? 'emit:expandedChange' : 'emit:activate',
       ...(host ? { expanded: open } : {}),
       selected: part.selected === true,
-      ...(part.interaction ? { interaction: part.interaction } : {}),
       ...(part.warns ? { warning: [TREE_ROW_LABELS.warnings['changed since ready']] } : {}),
-      ...(part.layer ? { layer: part.layer } : {}),
+      ...(part.layer ? { layer: part.layer, ...(part.layerKey ? { layerKey: part.layerKey } : {}) } : {}),
     },
     ...(open ? (part.nested ?? []).flatMap((child) => partRows(child, depth + 1)) : []),
   ];
@@ -106,13 +102,13 @@ const legacyProjects: LegacyProject[] = [
   { name: 'timetrack', calls: [] },
 ];
 
-const componentParts = (interaction?: RowInteraction, hostOpen = true): TreePart[] => [
+const componentParts = (hostOpen = true): TreePart[] => [
   { name: 'button' },
   { name: 'select', warns: true },
   {
     name: 'title-bar',
     open: hostOpen,
-    nested: [{ name: 'title-search', ...(interaction ? { interaction } : {}) }],
+    nested: [{ name: 'title-search' }],
   },
   { name: 'tree-row', selected: true },
 ];
@@ -132,22 +128,17 @@ const layers = (
   { title: 'Pages', open: open.Pages === true, parts: pages },
 ];
 
-const atRest = (interaction?: RowInteraction): Props => ({
+const atRest = (): Props => ({
   sketches: { open: true, items: openSketches },
-  layers: layers({ Components: true }, componentParts(interaction)),
+  layers: layers({ Components: true }, componentParts()),
   legacy: { open: false, projects: legacyProjects },
 });
-
-const rows = interactionRows<Props, 'row', RowInteraction>(
-  { row: atRest() },
-  { interactions: ['hover', 'active', 'focus-visible'], force: (_, interaction) => atRest(interaction) },
-);
 
 export const treeStates = {
   'components-open': atRest(),
   remembered: {
     sketches: { open: false, items: openSketches },
-    layers: layers({ Components: true, Elements: true }, componentParts(undefined, false)),
+    layers: layers({ Components: true, Elements: true }, componentParts(false)),
     legacy: { open: false, projects: legacyProjects },
   },
   'legacy-open': {
@@ -162,12 +153,10 @@ export const treeStates = {
     sketches: { open: false, items: openSketches },
     layers: layers({ Pages: true }, componentParts(), [
       { name: 'inventory' },
-      { name: 'sketches', nested: [{ name: 'hold-trigger', layer: 'Components' }] },
+      { name: 'sketches', nested: [{ name: 'hold-trigger', layer: 'Components', layerKey: 'components' }] },
       { name: 'system' },
     ]),
     legacy: { open: false, projects: legacyProjects },
   },
-  ...rows.states,
+  row: atRest(),
 } satisfies Record<string, Props>;
-
-export const treeGrid = rows.grid;

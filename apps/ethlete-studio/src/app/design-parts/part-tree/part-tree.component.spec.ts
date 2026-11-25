@@ -76,23 +76,31 @@ describe('PartTreeComponent', () => {
     expect(select?.querySelector('svg path[d="M8 2.5 14 13H2z"]')).not.toBeNull();
   });
 
-  it('tags a nested part of another layer with its layer after the label', async () => {
+  it('marks a nested part of another layer with a named layer icon after the label, not the layer word', async () => {
     const element = (
       await render([
         {
           title: 'Pages',
           open: true,
-          parts: [{ name: 'sketches', nested: [{ name: 'hold-trigger', layer: 'Components' }, { name: 'cell' }] }],
+          parts: [
+            {
+              name: 'sketches',
+              nested: [{ name: 'hold-trigger', layer: 'Components', layerKey: 'components' }, { name: 'cell' }],
+            },
+          ],
         },
       ])
     ).nativeElement as HTMLElement;
     const [, host, tagged, plain] = rowsOf(element);
+    const markOf = (row?: Element) => row?.querySelector('[role="img"]');
 
-    expect([host, tagged, plain].map((row) => row?.querySelector('.text-ui-xs')?.textContent?.trim() ?? null)).toEqual([
+    expect([host, tagged, plain].map((row) => markOf(row)?.getAttribute('aria-label') ?? null)).toEqual([
       null,
       'Components',
       null,
     ]);
+    expect(markOf(tagged)?.querySelector('svg')).not.toBeNull();
+    expect(tagged?.textContent).not.toContain('Components');
   });
 
   it('draws a status mark on a nested sub-sketch row: a check once ready, a plain mark in progress', async () => {
