@@ -365,9 +365,14 @@ Schritte, in denen es anfällt; keine neue Entscheidung nötig.
   mit Auto-Migration. `provideColorPalette` (Chart-Farben) behält seinen Namen.
 - **Die reservierte Farbe `surface`** (`etProvideColor="surface"`) wird `etTone="neutral"`
   (Arbeitsname): „Ton surface“ würde die zwei Begriffe wieder vermischen.
-- **cdk ist nicht unberührt**: 4 Dateien nutzen die alten Namen ✔. Wartungsmodus heißt hier
-  mitmigrieren, nicht umbauen. Ebenso query-devtools (6 Dateien ✔) und libs/cli (48 Dateien ✔:
-  Studio-Design-Sheets, Skeleton, Migrationen).
+- **cdk hat zwei Berührungspunkte**, obwohl sein CSS das Surface-System nicht nutzt (eigene
+  Tokens und feste Farben). Erstens liest `carousel.component.scss` an 5 Zeilen das Roh-Tripel
+  `--et-color-primary*` mit festem Rückfallwert ✔: fällt der Name weg, greift still der Rückfall
+  und das Carousel verliert die Theme-Farbe. Zweitens importieren 13 TS-Dateien
+  `ProvideColorDirective` / `COLOR_PROVIDER` / `SURFACE_PROVIDER` aus core ✔ und brechen beim
+  Umbenennen im Build. Beides wird mitmigriert (Schritt 1), sonst nichts. query-devtools (6
+  Dateien ✔) und libs/cli (48 Dateien ✔: Studio-Design-Sheets, Skeleton, Migrationen) ziehen
+  ebenfalls mit.
 - **Agent-Regeln und Skills schreiben die alten Namen vor** (`libs/agent-rules/content` 5 Dateien,
   `.agents/skills` 4 ✔, dazu der generierte Block in `AGENTS.md`). Sie müssen **im selben Schritt**
   wie die Umbenennung wechseln, nicht erst in Schritt 6, sonst schreiben Agenten am nächsten Tag
