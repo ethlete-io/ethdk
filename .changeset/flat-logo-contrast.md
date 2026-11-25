@@ -2,4 +2,4 @@
 '@ethlete/cli': patch
 ---
 
-`et design sketch check` also measures a thin logo or small text on a flat surface, not only text on a picture, and warns below 2.5:1 with a lighter-logo or backing-plate fix.
+`et design sketch check` also measures a logo or text on a flat surface, not only on a picture, and warns below the same 3:1 bar, with a lighter-logo or backing-plate fix for a small one.

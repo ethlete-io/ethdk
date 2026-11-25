@@ -6,17 +6,11 @@ import { overlaySketch } from './overlay';
 import { rejectionOf, Sketch } from './sketch';
 import { defaultFrameOf, SketchPartLoader } from './unchanged-states';
 
-/** Text or a title image drawn on a picture below this contrast ratio against the pixels behind it does not read. */
+/** Text or a title image below this contrast ratio against the pixels behind it does not read, on a picture or a flat surface. */
 export const IMAGE_TEXT_CONTRAST = 3;
 
-/** Text or a title image this many px tall or taller is a title, which has to read on any background. */
+/** A low-contrast block under this height on a flat surface is a small logo or text, fixed by its own colour rather than by a scrim. */
 export const TITLE_HEIGHT = 18;
-
-/**
- * A logo or text under `TITLE_HEIGHT` on a flat surface reads down to this ratio: thin strokes blend into their
- * background at the edges, which pulls the measured median below the colour the stroke is drawn in.
- */
-export const FLAT_SMALL_CONTRAST = 2.5;
 
 /** A channel that changes by more than this when the text is hidden belongs to the text. */
 const TEXT_DIFF = 24;
@@ -157,9 +151,6 @@ export const textBlocksOf = (drawn: Buffer, bare: Buffer): TextBlock[] => {
     });
 };
 
-const barOf = (block: TextBlock) =>
-  block.onImage || block.box.height >= TITLE_HEIGHT ? IMAGE_TEXT_CONTRAST : FLAT_SMALL_CONTRAST;
-
 const statesText = (states: string[]) => states.join(', ');
 
 /**
@@ -207,11 +198,11 @@ export const imageTextWarningsOf = async (options: {
             priority: 'low',
           })
         ).png;
-      const low: { state: string; contrast: number; bar: number; flat: boolean }[] = [];
+      const low: { state: string; contrast: number; flat: boolean }[] = [];
 
       for (const state of read.states) {
         const found = await Promise.all([shot(state, false), shot(state, true)])
-          .then(([drawn, bare]) => textBlocksOf(drawn, bare).filter((block) => block.contrast < barOf(block)))
+          .then(([drawn, bare]) => textBlocksOf(drawn, bare).filter((block) => block.contrast < IMAGE_TEXT_CONTRAST))
           .catch(() => []);
         const worst = found.reduce<TextBlock | null>(
           (lowest, block) => (!lowest || block.contrast < lowest.contrast ? block : lowest),
@@ -222,7 +213,6 @@ export const imageTextWarningsOf = async (options: {
           low.push({
             state,
             contrast: worst.contrast,
-            bar: barOf(worst),
             flat: !worst.onImage && worst.box.height < TITLE_HEIGHT,
           });
       }
@@ -235,7 +225,7 @@ export const imageTextWarningsOf = async (options: {
       if (worst)
         warnings.push(
           `${sketch.target} ${variant}: ${target} ${statesText(low.map((entry) => entry.state))} draws text or a title ` +
-            `image at ${worst.contrast.toFixed(1)}:1 against what it covers, below ${worst.bar}:1 - ` +
+            `image at ${worst.contrast.toFixed(1)}:1 against what it covers, below ${IMAGE_TEXT_CONTRAST}:1 - ` +
             (worst.flat
               ? `use a lighter version of the logo or text, or put a solid plate behind it`
               : `put a scrim or a solid plate behind it, move it onto a calm part of the picture, or give it a colour ` +

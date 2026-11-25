@@ -78,13 +78,15 @@ describe('a logo on a flat surface', () => {
     marks: [],
   });
 
-  it('warns about the thin logo of title-card c new, not about a and b', async () => {
+  it('warns about the thin logo of title-card a and c new, not about b', async () => {
     const { product, sketch } = titleCardSketch();
 
     const warnings = await imageTextWarningsOf({ product, sketch, load: loadNew, pictureOf: flatPictureOf });
 
     expect(warnings).toEqual([
-      'elements/hero c: elements/hero new draws text or a title image at 2.3:1 against what it covers, below 2.5:1 - ' +
+      'elements/hero a: elements/hero new draws text or a title image at 2.9:1 against what it covers, below 3:1 - ' +
+        'use a lighter version of the logo or text, or put a solid plate behind it',
+      'elements/hero c: elements/hero new draws text or a title image at 2.3:1 against what it covers, below 3:1 - ' +
         'use a lighter version of the logo or text, or put a solid plate behind it',
     ]);
   });
