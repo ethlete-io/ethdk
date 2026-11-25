@@ -209,7 +209,7 @@ export const uncomparedAppProblemsOf = (options: {
         } - ${
           record
             ? `run ${invocation} compare --affected --product ${product.name} to compare and record every affected part`
-            : `run ${invocation} compare ${part} --product ${product.name} to compare and record it`
+            : `run ${invocation} task ${part} --product ${product.name} --verify to compare and record it`
         }`,
       }));
   });

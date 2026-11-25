@@ -369,7 +369,8 @@ files `git diff <base>` names, plus every part that embeds one, each as `--part`
 `git diff <base>` names that the app component of an implemented part reaches and that changed since the part's
 `implemented.json` record, or that the app component of a part without such a record reaches, and names the part.
 CI passes the pushed range. `et design compare --affected` (or
-`et design task <part> --verify <rev>`) compares and records the part again, which clears it.
+`et design task <part> --verify <rev>`) compares and records the part again, which clears it. A part without a record
+has only `task <part> --verify`: `compare --affected` skips it and plain `compare` records nothing.
 
 `et design check` fails with `SAMPLE-DEFAULT` when an `input()` or `model()` of an app component that implements a part
 defaults to sample data, an `…_SAMPLE` or `…_ROWS` identifier. Known hits sit on lists in

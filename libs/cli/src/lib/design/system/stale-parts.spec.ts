@@ -355,7 +355,7 @@ describe('IMPLEMENTATION-UNCOMPARED on a part without an implemented record', ()
     const lines = errors.mock.calls.map(([line]) => String(line)).filter((line) => line.startsWith('IMPLEMENTATION-'));
     vi.restoreAllMocks();
 
-    const message = `${SKETCHES} implements it and has no implemented record - run et design compare ${SKETCHES} --product studio to compare and record it`;
+    const message = `${SKETCHES} implements it and has no implemented record - run et design task ${SKETCHES} --product studio --verify to compare and record it`;
 
     expect(lines).toEqual([
       `IMPLEMENTATION-UNCOMPARED ${FOLDER}/sketch-crops.ts: ${message}`,

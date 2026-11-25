@@ -101,7 +101,7 @@ const helpOf = (invocation: string) =>
     '  points. Seconds instead of minutes; CI runs it. Exits 1 on a problem. --base also fails with',
     '  IMPLEMENTATION-UNCOMPARED on each file git diff <base> names that an implemented part reaches and that moved since',
     '  its implemented.json record (or that a part without a record reaches) and names the parts; compare --affected',
-    '  (compare <layer>/<name> for a part without a record) compares and records them.',
+    '  (task <layer>/<name> --verify for a part without a record) compares and records them.',
     '',
     `${invocation} check --product <name>… --live`,
     "  Open every live state of the product's harness.live spec on the real app and report each visible region",
