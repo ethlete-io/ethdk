@@ -15,6 +15,7 @@ export type PartTreePart = Marks & {
   name: string;
   layer?: string;
   hint?: string;
+  status?: TreeRowStatus;
   open?: boolean;
   nested?: PartTreePart[];
 };
@@ -134,7 +135,7 @@ export class PartTreeComponent {
       return add({
         value,
         label: part.name,
-        mark: { ...markOf(host ? 'part' : 'leaf', part), layer: part.layer, hint: part.hint },
+        mark: { ...markOf(host ? 'part' : 'leaf', part), layer: part.layer, hint: part.hint, status: part.status },
         open: part.open !== false,
         nodes: host ? part.nested?.map((child) => partNode(value, child)) : undefined,
       });

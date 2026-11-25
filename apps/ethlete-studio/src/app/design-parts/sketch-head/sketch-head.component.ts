@@ -43,6 +43,8 @@ export class SketchHeadComponent {
   public readyReason = input<string | null>(null);
   public hold = input.required<SketchHold>();
   public autoMerge = input(false);
+  public subSketch = input(false);
+  public approved = input(false);
   public error = input<string | null>(null);
   public commentable = input(false);
   public discardable = input(true);
@@ -73,6 +75,13 @@ export class SketchHeadComponent {
       this.port() !== null ||
       this.withdrawnCount() > 0,
   );
+
+  protected waitingBadge = computed(() => {
+    if (this.busy()) return 'merging';
+    if (!this.subSketch()) return 'waiting';
+
+    return this.approved() ? 'approved' : 'awaitingApproval';
+  });
 
   protected selectRound(value: unknown) {
     if (typeof value === 'string' && value !== this.round()) this.roundChange.emit(value);

@@ -62,6 +62,7 @@ export type PartBadge =
   | 'answered'
   | 'in progress'
   | 'ready'
+  | 'approved'
   | 'needs rebase'
   | 'changed since ready'
   | 'hold target ended'
@@ -96,6 +97,7 @@ export type TreeEntry = {
   count?: number;
   frames?: TreeFrame[];
   nested?: TreeEntry[];
+  subSketch?: boolean;
   /** The label of the part's own layer, on a part nested under a host of another layer. */
   layer?: string;
 };
@@ -206,7 +208,8 @@ export const sketchLabelOf = (key: string): { part: string; name?: string } => {
 
 const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => ({
   key: sketchKeyOf(sketch.target),
-  name: sketch.name,
+  name: sketch.parent ? sketchLabelOf(sketch.target).part : sketch.name,
+  ...(sketch.parent ? { subSketch: true } : {}),
   title: orFallback(
     [
       ...(sketch.targets ?? []).flatMap(({ variant, error }) => (error ? [`${variant}: ${error}`] : [])),
@@ -221,6 +224,7 @@ const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => 
   ),
   ...commentsOf(sketch.target, marks),
   badges: [
+    ...(sketch.approved ? (['approved'] as const) : []),
     ...(sketch.status === 'ready' && !sketch.staleBase && !sketch.changedSinceReady?.length
       ? (['ready'] as const)
       : (['in progress'] as const)),

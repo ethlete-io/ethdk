@@ -33,7 +33,7 @@
       </ng-template>
     }
     @case ('waiting') {
-      <ethlete-sketch-status-badge [status]="busy() ? 'merging' : 'waiting'" />
+      <ethlete-sketch-status-badge [status]="waitingBadge()" />
     }
     @case ('failed') {
       <span class="flex min-w-0 items-center gap-space-2">

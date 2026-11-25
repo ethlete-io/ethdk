@@ -80,6 +80,8 @@ export const SKETCHES_LABELS = {
   status: {
     drawing: 'zeichnet',
     waiting: 'Wartet auf deine Wahl',
+    awaitingApproval: 'Wartet auf Freigabe',
+    approved: 'Freigegeben',
     paused: 'Pausiert',
     failed: 'Render fehlgeschlagen',
     merging: 'Wird übernommen',

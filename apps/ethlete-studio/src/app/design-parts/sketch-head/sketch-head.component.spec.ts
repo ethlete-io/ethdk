@@ -19,6 +19,8 @@ const OPUS = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' as cons
     [agent]="agent()"
     [reasonOpen]="reasonOpen()"
     [status]="status()"
+    [subSketch]="subSketch()"
+    [approved]="approved()"
     [readyReason]="readyReason()"
     [discardable]="discardable()"
     [listError]="listError()"
@@ -35,6 +37,8 @@ class HostComponent {
   agent = signal<SketchAgentRun | null>(null);
   reasonOpen = signal(false);
   status = signal<SketchStatus>('waiting');
+  subSketch = signal(false);
+  approved = signal(false);
   readyReason = signal<string | null>(null);
   discardable = signal(true);
   listError = signal(true);
@@ -69,6 +73,20 @@ const setup = async () => {
 };
 
 describe('SketchHeadComponent', () => {
+  it.each([
+    [false, false, 'Wartet auf deine Wahl'],
+    [true, false, 'Wartet auf Freigabe'],
+    [true, true, 'Freigegeben'],
+  ] as const)('names a waiting sketch (sub-sketch %s, approved %s) %s', async (subSketch, approved, label) => {
+    const { fixture, root, host } = await setup();
+
+    host.subSketch.set(subSketch);
+    host.approved.set(approved);
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(label);
+  });
+
   // The human decided Studio does not show the new or not-ready badges, the not-ready reason, the last
   // change line or the description line under the title.
   it('shows no not-ready badge, reason, last change or description line', async () => {

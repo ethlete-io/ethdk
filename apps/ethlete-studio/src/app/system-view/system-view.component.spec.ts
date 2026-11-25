@@ -1129,6 +1129,50 @@ describe('SystemViewComponent on a merge', () => {
     expect(element.querySelector('ethlete-sketch-view')).toBeNull();
   });
 
+  it('gives a sub-sketch row the sub-part name and a check once approved', async () => {
+    const base: Pick<ListedSketch, 'status' | 'createdAt' | 'product' | 'variants' | 'problems'> = {
+      status: 'ready',
+      createdAt: '2026-11-25T10:00:00Z',
+      product: 'web',
+      variants: ['a'],
+      problems: [],
+    };
+    const parent: ListedSketch = {
+      ...base,
+      target: 'elements/menu',
+      layer: 'elements',
+      name: 'menu',
+      dir: 'menu',
+      subSketches: ['components/shortcuts-dialog'],
+    };
+    const sub: ListedSketch = {
+      ...base,
+      target: 'components/shortcuts-dialog',
+      layer: 'components',
+      name: 'menu-shortcuts-dialog',
+      dir: 'components-shortcuts-dialog',
+      parent: 'elements/menu',
+      approved: { variant: 'a', decidedAt: '2026-11-25T11:00:00Z' },
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches: [parent, sub], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web' });
+    const [item] = fixture.componentInstance['partTree']().sketches?.items ?? [];
+
+    expect(item?.nested?.map(({ name, status }) => ({ name, status }))).toEqual([
+      { name: 'shortcuts-dialog', status: 'ready' },
+    ]);
+  });
+
   it('lists the targets of the open sketch with several parts under it in the tree', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating@stars',

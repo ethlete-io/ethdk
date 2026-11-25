@@ -880,6 +880,25 @@ describe('sketches in the tree', () => {
     ]);
   });
 
+  it('names a sub-sketch by its sub-part and marks it approved once the designer approved a variant', () => {
+    const [sketches] = treeOf([], {
+      sketches: [
+        sketch({ target: 'elements/hero', layer: 'elements', name: 'hero', subSketches: ['components/hero-slider'] }),
+        sketch({
+          target: 'components/hero-slider',
+          name: 'hero-hero-slider',
+          parent: 'elements/hero',
+          approved: { variant: 'a', decidedAt: '2026-11-25T10:00:00Z' },
+        }),
+      ],
+    });
+    const [nested] = sketches?.entries[0]?.nested ?? [];
+
+    expect(nested).toMatchObject({ name: 'hero-slider', subSketch: true });
+    expect(nested?.badges).toContain('approved');
+    expect(sketches?.entries[0]?.badges).not.toContain('approved');
+  });
+
   it('lists open sketches after the pages with their status, and badges the target part', () => {
     const tree = treeOf([part({ name: 'button' }), part({ name: 'card' })], {
       sketches: [

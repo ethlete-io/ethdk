@@ -95,6 +95,32 @@ describe('PartTreeComponent', () => {
     ]);
   });
 
+  it('draws a status mark on a nested sub-sketch row: a check once ready, a plain mark in progress', async () => {
+    const element = (
+      await render([], {
+        sketches: {
+          open: true,
+          items: [
+            {
+              part: 'studio-menu',
+              status: 'in-progress',
+              nested: [
+                { name: 'shortcuts-dialog', status: 'ready' },
+                { name: 'about-dialog', status: 'in-progress' },
+                { name: 'plain' },
+              ],
+            },
+          ],
+        },
+      })
+    ).nativeElement as HTMLElement;
+    const [, , ready, progress, plain] = rowsOf(element);
+
+    expect(ready?.querySelector('.text-et-theme path[d="m3.5 8.5 3 3 6-7"]')).not.toBeNull();
+    expect(progress?.querySelector('svg path[d^="M10.5"]')).not.toBeNull();
+    expect(plain?.querySelector('svg')).toBeNull();
+  });
+
   it('shows a part hint as the tooltip of the full name and draws no tag', async () => {
     const element = (
       await render([

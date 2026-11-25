@@ -2,7 +2,8 @@ import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
-export type SketchBadgeStatus = 'drawing' | 'waiting' | 'paused' | 'failed' | 'merging';
+export type SketchBadgeStatus =
+  'drawing' | 'waiting' | 'paused' | 'failed' | 'merging' | 'awaitingApproval' | 'approved';
 
 const LABELS = SKETCHES_LABELS.status;
 
@@ -12,6 +13,8 @@ const DOT: Record<SketchBadgeStatus, string> = {
   paused: 'bg-et-surface-muted',
   failed: 'bg-(--et-theme-color-primary-solid)',
   merging: 'bg-(--et-theme-color-primary-solid) animate-pulse',
+  awaitingApproval: 'bg-(--et-theme-color-primary-solid)',
+  approved: 'bg-et-surface-muted',
 };
 
 @Component({
