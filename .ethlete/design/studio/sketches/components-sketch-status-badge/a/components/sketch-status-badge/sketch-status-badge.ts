@@ -1,6 +1,5 @@
 import { control } from '@ethlete/components/design/control';
 import { definePart } from '@design-system';
-import { SKETCHES_LABELS } from '../../../../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 
 export type SketchStatus = 'drawing' | 'waiting' | 'paused';
 
@@ -24,16 +23,28 @@ const ICON: Record<SketchBadgeStatus, string> = {
   autoMerge: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
 };
 
+const LABEL: Record<SketchBadgeStatus, string> = {
+  drawing: 'Agent zeichnet',
+  waiting: 'Variante auswählen',
+  awaitingApproval: 'Skizze freigeben',
+  awaitingSubParts: 'Unterteile freigeben',
+  approved: 'Freigegeben',
+  paused: 'Pausiert',
+  failed: 'Fehler prüfen',
+  merging: 'Variante wird übernommen',
+  autoMerge: 'Wird automatisch übernommen',
+};
+
 const DETAIL: Record<SketchBadgeStatus, string> = {
   drawing: 'Der Agent zeichnet gerade eine Variante.',
-  waiting: 'Alle Varianten stehen. Die Wahl wird sofort übernommen.',
-  awaitingApproval: 'Die Skizze wartet auf deine Freigabe.',
-  awaitingSubParts: 'Die Skizze wartet auf ihre Unterteile.',
-  approved: 'Die Skizze ist freigegeben.',
-  paused: 'Der Agent wartet auf andere Arbeit.',
-  failed: 'Der Render ist fehlgeschlagen.',
-  merging: 'Die gewählte Variante wird übernommen.',
-  autoMerge: 'Die Skizze wird automatisch übernommen.',
+  waiting: 'Alle Varianten stehen. Wähle eine aus, sie wird sofort übernommen.',
+  awaitingApproval: 'Die Skizze wartet auf deine Freigabe. Gib sie frei.',
+  awaitingSubParts: 'Gib zuerst die Unterteile frei, danach folgt diese Skizze.',
+  approved: 'Du hast die Skizze freigegeben.',
+  paused: 'Der Agent macht weiter, sobald andere Arbeit fertig ist.',
+  failed: 'Der Render ist fehlgeschlagen. Prüfe den Fehler.',
+  merging: 'Die gewählte Variante wird gerade übernommen.',
+  autoMerge: 'Die Skizze wird ohne dein Zutun übernommen.',
 };
 
 const TONE: Record<SketchBadgeStatus, string> = {
@@ -55,7 +66,7 @@ const SCOPE: Partial<Record<SketchBadgeStatus, string>> = {
 };
 
 export const sketchStatusBadge = async (status: SketchBadgeStatus, open = false) => {
-  const label = SKETCHES_LABELS.status[status];
+  const label = LABEL[status];
   const tip = open
     ? `<span role="status" class="absolute top-full left-0 z-10 mt-space-1 flex w-48 flex-col gap-space-1 rounded-control-md border border-et-surface-border bg-(--et-surface-background-solid) p-space-3 text-ui-sm text-(--et-surface-color-solid)"><span class="font-ui-medium">${label}</span><span class="text-(--et-surface-color-muted-solid)">${DETAIL[status]}</span></span>`
     : '';
@@ -67,7 +78,7 @@ export const sketchStatusBadge = async (status: SketchBadgeStatus, open = false)
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/sketch-status-badge/sketch-status-badge.component.ts',
-  note: 'Der Status einer Skizze als Symbol fester Breite statt Punkt mit Wort. Zeichnen und Übernahme pulsieren sanft per Deckkraft, Fehler und Automatisch tragen ihr Farbthema, Pausiert und Unterteile sind gedämpft. Ein Klick öffnet einen Toggletip mit Wort und Details; die Breite des Badges ändert sich nie.',
+  note: 'Der Status einer Skizze als Symbol fester Breite statt Punkt mit Wort. Zeichnen und Übernahme pulsieren sanft per Deckkraft, Fehler und Automatik tragen ihr Farbthema, Pausiert und Unterteile sind gedämpft. Ein Klick öffnet einen Toggletip mit Wort und Details; die Breite des Badges ändert sich nie.',
   madeBy: ['claude-sonnet-5-5', 'design check'],
   widths: [200],
   states: {
@@ -84,7 +95,7 @@ export default definePart({
   },
   describe: {
     drawing: 'Der pulsierende Stift beim Zeichnen; prüfe, dass das Symbol lesbar ist und das Badge 24px breit bleibt.',
-    waiting: 'Die Abzweigung für die Wahl; prüfe, dass die Breite der des Zeichnens entspricht.',
+    waiting: 'Die Abzweigung für die Variantenwahl; prüfe, dass die Breite der des Zeichnens entspricht.',
     'awaiting-approval': 'Das Auge für die Freigabe; prüfe die gleiche Breite.',
     'awaiting-sub-parts': 'Die Ebenen für Unterteile, gedämpft; prüfe die gleiche Breite.',
     approved: 'Der Haken im Erfolgsthema; prüfe die gleiche Breite.',
