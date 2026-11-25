@@ -4492,6 +4492,7 @@ __metadata:
     "@floating-ui/dom": "npm:1.8.0"
     "@fontsource-variable/jost": "npm:^5.3.0"
     "@fontsource/noto-sans-math": "npm:5.3.0"
+    "@fontsource/noto-sans-symbols": "npm:5.3.0"
     "@fontsource/noto-sans-symbols-2": "npm:5.3.0"
     "@nx/angular": "npm:24.0.2"
     "@nx/devkit": "npm:24.0.2"
@@ -4536,6 +4537,8 @@ __metadata:
     eslint-config-prettier: "npm:10.1.8"
     eslint-plugin-playwright: "npm:2.12.1"
     fake-indexeddb: "npm:^6.2.6"
+    fontverter: "npm:^2.0.0"
+    harfbuzzjs: "npm:^1.6.1"
     husky: "npm:9.1.7"
     jiti: "npm:2.7.0"
     jsdom: "npm:30.1.3"
@@ -4552,6 +4555,7 @@ __metadata:
     rxjs: "npm:7.8.2"
     socket.io-client: "npm:4.8.4"
     storybook: "npm:10.6.5"
+    subset-font: "npm:^2.9.0"
     tailwindcss: "npm:4.3.3"
     ts-morph: "npm:28.0.0"
     ts-node: "npm:10.9.2"
@@ -4638,6 +4642,13 @@ __metadata:
   version: 5.3.0
   resolution: "@fontsource/noto-sans-symbols-2@npm:5.3.0"
   checksum: 10c0/3216a1a6345ca3df1503d5c794458820903c2d42e7ffd52ce5986eadbf3598ce1c608abc9c1c55e5af9ee2a9b308670bd7a10ab5b228acd432f36fccad6bcef4
+  languageName: node
+  linkType: hard
+
+"@fontsource/noto-sans-symbols@npm:5.3.0":
+  version: 5.3.0
+  resolution: "@fontsource/noto-sans-symbols@npm:5.3.0"
+  checksum: 10c0/0ec6627d9e2fa687b1410ec2f7e2f7cecec95bd9a0b9e91b3c1bfb2de52b576de4e3402e0de4b3cece35c49346d8969446be5e74044ee7bab8f5ce0ef49e7f10
   languageName: node
   linkType: hard
 
@@ -12401,6 +12412,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fontverter@npm:^2.0.0":
+  version: 2.1.0
+  resolution: "fontverter@npm:2.1.0"
+  dependencies:
+    wawoff2: "npm:^2.0.0"
+    woff2sfnt-sfnt2woff: "npm:^1.0.0"
+  checksum: 10c0/e3fc43d9e040569a5425d386be2107d91bc51a865dee980dae57b4234e0109ddc3899588972cfb6afb1714dd43a86d2b0c3282702bbf18137ba6097541454364
+  languageName: node
+  linkType: hard
+
 "foreground-child@npm:^3.1.0":
   version: 3.3.1
   resolution: "foreground-child@npm:3.3.1"
@@ -12647,6 +12668,13 @@ __metadata:
   version: 4.2.11
   resolution: "graceful-fs@npm:4.2.11"
   checksum: 10c0/386d011a553e02bc594ac2ca0bd6d9e4c22d7fa8cfbfc448a6d148c59ea881b092db9dbe3547ae4b88e55f1b01f7c4a2ecc53b310c042793e63aa44cf6c257f2
+  languageName: node
+  linkType: hard
+
+"harfbuzzjs@npm:^1.6.1":
+  version: 1.6.4
+  resolution: "harfbuzzjs@npm:1.6.4"
+  checksum: 10c0/85cd10d5083ff2fc8f9707ce188ecc6ccb6633bdb39ab9ba8a8b399edcc9ed1a14bb382350432c4fe2b15bb96f6ab1a5701ef2e2829383dbb73288053ad8b499
   languageName: node
   linkType: hard
 
@@ -15530,7 +15558,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"p-limit@npm:^3.0.2":
+"p-limit@npm:^3.0.2, p-limit@npm:^3.1.0":
   version: 3.1.0
   resolution: "p-limit@npm:3.1.0"
   dependencies:
@@ -15559,6 +15587,13 @@ __metadata:
   version: 1.8.0
   resolution: "package-manager-detector@npm:1.8.0"
   checksum: 10c0/4c8e2c47fdc874465d3b3b11934401db9d73470ccbdabeb092e46cb94abbc491d5befc8c271b5ea1ae9c6a881f44c2997e011873365bde9fd6c3dc001221ff7a
+  languageName: node
+  linkType: hard
+
+"pako@npm:^1.0.7":
+  version: 1.0.11
+  resolution: "pako@npm:1.0.11"
+  checksum: 10c0/86dd99d8b34c3930345b8bbeb5e1cd8a05f608eeb40967b293f72fe469d0e9c88b783a8777e4cc7dc7c91ce54c5e93d88ff4b4f060e6ff18408fd21030d9ffbe
   languageName: node
   linkType: hard
 
@@ -18075,6 +18110,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"subset-font@npm:^2.9.0":
+  version: 2.9.0
+  resolution: "subset-font@npm:2.9.0"
+  dependencies:
+    fontverter: "npm:^2.0.0"
+    harfbuzzjs: "npm:^1.6.1"
+    p-limit: "npm:^3.1.0"
+  checksum: 10c0/23f772b3e836ef1298f6d1218744733f7dd8c581ee2d85ecfb68acddadc98029b31bc44b148216468ac5b5c26120c681517db1a055c44c595eee7a84a136732e
+  languageName: node
+  linkType: hard
+
 "superjson@npm:^2.2.2":
   version: 2.2.6
   resolution: "superjson@npm:2.2.6"
@@ -19169,6 +19215,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"wawoff2@npm:^2.0.0":
+  version: 2.0.1
+  resolution: "wawoff2@npm:2.0.1"
+  dependencies:
+    argparse: "npm:^2.0.1"
+  bin:
+    woff2_compress.js: bin/woff2_compress.js
+    woff2_decompress.js: bin/woff2_decompress.js
+  checksum: 10c0/98a286b60114e15ed578bbeeef1759b4890a1e8106e1486d8d0d4106b8e6c7a99c4c1d1b64afc76a83893dae040cc19a59dd64cffd5754b5337b5c82efed3d12
+  languageName: node
+  linkType: hard
+
 "wcwidth@npm:1.0.1, wcwidth@npm:^1.0.0, wcwidth@npm:^1.0.1":
   version: 1.0.1
   resolution: "wcwidth@npm:1.0.1"
@@ -19339,6 +19397,15 @@ __metadata:
   bin:
     why-is-node-running: cli.js
   checksum: 10c0/e3f82673aac2c0a330fdbcf4b282ecdf7e9c773fa82fb4217db5b8b3d374cbb51e708d928f5b17999bc65bc1a5a90fad0f6bd794641bd15fdd525949ccee5e39
+  languageName: node
+  linkType: hard
+
+"woff2sfnt-sfnt2woff@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "woff2sfnt-sfnt2woff@npm:1.0.0"
+  dependencies:
+    pako: "npm:^1.0.7"
+  checksum: 10c0/2af93bdb98c511e1615bd2f31df023bf96c91922197ab7c1401177a0e77ae3528b53b0aeef57ee69e79857cffc8bdb974d7557089b0d999f1765c41ebc1e7ab5
   languageName: node
   linkType: hard
 
