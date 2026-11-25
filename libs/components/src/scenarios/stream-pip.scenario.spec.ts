@@ -31,6 +31,7 @@ import {
   PipWindowParamsDirective,
   providePipSlotPlaceholderConfig,
   providePipWindowConfig,
+  injectPipWindowConfig,
   provideStreamConfig,
   provideStreamPip,
   STREAM_ERROR_CODES,
@@ -594,6 +595,7 @@ describe('stream picture-in-picture with an app-set window layer', () => {
 
     const pipWindow = query('et-pip-window');
 
+    expect(s.run(() => injectPipWindowConfig()).overlayLayer).toBe(layer);
     expect(pipWindowZIndex()).toBe('var(--_et-pip-window-layer)');
     expect(pipWindow.style.getPropertyValue('--_et-pip-window-layer')).toBe(`${layer}`);
     expect(pipWindow.getAttribute('data-et-overlay-layer')).toBe(`${layer}`);
