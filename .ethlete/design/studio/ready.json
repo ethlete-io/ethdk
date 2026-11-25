@@ -1153,22 +1153,26 @@
     "pid": 2342738
   },
   "foundations/type": {
-    "hash": "3e9b2aafdedb2dfa",
+    "hash": "2288c2452e446b05",
     "files": {
-      ".ethlete/design/studio/assets/fonts/noto-sans-math-latin-400-normal.woff2": "c39a9444f9574734",
-      ".ethlete/design/studio/assets/fonts/noto-sans-symbols-2-symbols-400-normal.woff2": "9c07d511848c274b",
-      ".ethlete/design/studio/assets/fonts/source-code-pro-latin-wght-normal.woff2": "8b774aaa5137a38e",
-      ".ethlete/design/studio/assets/fonts/source-sans-3-latin-wght-normal.woff2": "19143dca075972bc",
-      ".ethlete/design/studio/foundations/type/faces.css": "add984314ce925ab",
-      ".ethlete/design/studio/foundations/type/type.css": "756162a522e8bebe",
-      ".ethlete/design/studio/foundations/type/type.ts": "942880c11f33a677"
+      ".ethlete/design/sdk/assets/fonts/et-kbd-arrows-400-normal.woff2": "454c3036e52923de",
+      ".ethlete/design/sdk/assets/fonts/et-kbd-control-400-normal.woff2": "227454e97673f83e",
+      ".ethlete/design/sdk/assets/fonts/et-kbd-keys-400-normal.woff2": "d9db7cbbc42f8b5b",
+      ".ethlete/design/sdk/assets/fonts/noto-sans-math-latin-400-normal.woff2": "c39a9444f9574734",
+      ".ethlete/design/sdk/assets/fonts/noto-sans-symbols-2-symbols-400-normal.woff2": "9c07d511848c274b",
+      ".ethlete/design/sdk/assets/fonts/source-code-pro-latin-wght-normal.woff2": "8b774aaa5137a38e",
+      ".ethlete/design/sdk/assets/fonts/source-sans-3-latin-wght-normal.woff2": "19143dca075972bc",
+      ".ethlete/design/sdk/foundations/colors/faces.css": "f176799b4334a24b",
+      ".ethlete/design/sdk/foundations/colors/symbol-faces.css": "8386e70b3cf0a784",
+      ".ethlete/design/studio/foundations/type/type.css": "b804b5e7ec626361",
+      ".ethlete/design/studio/foundations/type/type.ts": "3cc09f50cd72ac37"
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-19T12:20:37.987Z",
+    "at": "2026-11-25T13:42:15.767Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 139554
+    "pid": 3334708
   },
   "pages/flows": {
     "hash": "ea66b15e94e5bd60",
