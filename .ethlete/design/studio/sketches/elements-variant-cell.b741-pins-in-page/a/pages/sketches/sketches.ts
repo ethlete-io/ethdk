@@ -149,6 +149,8 @@ const rowFailedMark = (reason: string) =>
     >${SKETCHES_LABELS.rowFailed(reason)}</span
   >`;
 
+const PORT_MERGED = { one: ['components/zoom-chip'], two: ['components/zoom-chip', 'elements/part-tree'] };
+
 const RESET_STATES = ['reset', 'reset-hover', 'reset-active', 'reset-focus-visible'];
 const MERGE_ERROR = 'components/zoom-chip hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.';
 
@@ -792,6 +794,7 @@ export default definePart<Props>({
     'unchanged-matrix-open': { camera: { zoom: 0.2, x: -4000, y: 0 }, same: ['b', 'c'], sameOpen: true },
     'withdrawn-hidden': { camera: 'fit', part: 'narrow', withdrawn: 'hidden' },
     'withdrawn-shown': { camera: 'fit', part: 'narrow', withdrawn: 'shown' },
+    'port-round': { camera: 'fit', part: 'narrow', port: 'two' },
     'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed', errored: ['b'], failures: FAILED_REASONS },
     'sketch-only-points': { camera: 'fit', part: 'narrow', fresh: true, selected: 'b', points: true },
     'sketch-only-points-open': {
@@ -867,6 +870,8 @@ export default definePart<Props>({
     'withdrawn-hidden': 'A variant the agent withdrew, hidden; check the switch to show it and that its row is gone.',
     'withdrawn-shown':
       'The withdrawn variant shown; check its faded row and Vom Agent zurückgezogen with the reason in its head.',
+    'port-round':
+      'A port run after a merge; check the note above the rows names every merged part, and that the toolbar shows only the zeichnet badge.',
     'agent-failed':
       'A failed agent run; check the failure in the error colour in the head of row b, and no model, round or failure text in the toolbar.',
     'sketch-only-points':
@@ -916,7 +921,7 @@ export default definePart<Props>({
     },
     {
       label: 'Agent und Runden',
-      states: ['change-crop', 'change-crop-whole'],
+      states: ['port-round', 'change-crop', 'change-crop-whole'],
     },
     {
       label: 'Vergleich',
@@ -1087,6 +1092,13 @@ export default definePart<Props>({
             data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
             data-blocks="${screen || !transposed ? 1 : blockSizesOf(part, columns, LIST_VIEWPORT).length}"
           >
+            ${
+              port
+                ? html`<p class="m-0 text-ui-xs leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-round-note>
+                    ${SKETCHES_LABELS.mergePort(PORT_MERGED[port])}
+                  </p>`
+                : ''
+            }
             ${world}
             ${
               folded > 0
