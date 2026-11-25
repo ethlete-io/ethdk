@@ -50,7 +50,7 @@
     <div
       class="relative -m-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border flex min-h-0 flex-1 flex-col overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
     >
-      @if (roundNote(); as note) {
+      @if (portNote(); as note) {
         <p
           [attr.title]="note"
           class="m-0 shrink-0 truncate pt-space-3 text-ui-sm text-et-surface-muted"

@@ -31,8 +31,6 @@ import {
   SKETCH_EDIT_SAMPLE,
   SKETCH_NEIGHBOURS_SAMPLE,
   SKETCH_MERGE_PORTS,
-  SKETCH_ROUND_NOTE,
-  SKETCH_ROUNDS,
   SKETCH_COMMENT_DRAFT_SAMPLE,
   SKETCH_COMMENT_DRAFT_TEXT,
   SKETCH_COMMENTS_SAMPLE,
@@ -343,7 +341,6 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     multi,
     agent,
     port,
-    roundNote,
     comments,
     confirm,
     ...props
@@ -382,14 +379,6 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(multi === 'three' || multi === 'many' ? sketchMultiSampleOf(multi) : {}),
       ...(run ? { agent: run } : {}),
       ...(merge ? { port: merge } : {}),
-      ...(roundNote
-        ? {
-            rounds: ('rounds' in sample ? sample.rounds : SKETCH_ROUNDS).map((round) => ({
-              ...round,
-              note: SKETCH_ROUND_NOTE,
-            })),
-          }
-        : {}),
       ...(comments
         ? {
             comments: SKETCH_COMMENTS_SAMPLE,

@@ -522,12 +522,10 @@ export class SketchesComponent {
   });
   protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.scale(), fit: this.noteFit() }));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
-  protected roundNote = computed(() => {
+  protected portNote = computed(() => {
     const port = this.port();
 
-    if (port) return this.LABELS.mergePort(port.merged);
-
-    return this.rounds().find((round) => round.value === this.round())?.note || null;
+    return port ? this.LABELS.mergePort(port.merged) : null;
   });
   protected labelFont = computed(() =>
     textAt(LABEL_TEXT, { scale: Math.min(this.scale(), this.noteFit()), fit: this.noteFit() }),

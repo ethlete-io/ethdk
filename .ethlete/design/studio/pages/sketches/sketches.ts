@@ -97,7 +97,6 @@ type Props = {
   withdrawn?: Withdrawn;
   agent?: AgentRun;
   port?: 'one' | 'two';
-  roundNote?: boolean;
   points?: boolean;
   pointsOpen?: boolean;
   screen?: ScreenMode;
@@ -153,8 +152,6 @@ const rowFailedMark = (reason: string) =>
   >`;
 
 const PORT_MERGED = { one: ['components/zoom-chip'], two: ['components/zoom-chip', 'elements/part-tree'] };
-
-const ROUND_NOTE = 'Kommentar-Pins stehen auf der Sketch-Seite in ihrer Zelle statt als eigener Zustand der Zelle.';
 
 const RESET_STATES = ['reset', 'reset-hover', 'reset-active', 'reset-focus-visible'];
 const MERGE_ERROR = 'components/zoom-chip hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.';
@@ -793,7 +790,6 @@ export default definePart<Props>({
     'withdrawn-hidden': { camera: 'fit', part: 'narrow', withdrawn: 'hidden' },
     'withdrawn-shown': { camera: 'fit', part: 'narrow', withdrawn: 'shown' },
     'port-round': { camera: 'fit', part: 'narrow', port: 'two' },
-    'round-note': { camera: 'fit', part: 'narrow', roundNote: true },
     'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed', errored: ['b'], failures: FAILED_REASONS },
     'sketch-only-points': { camera: 'fit', part: 'narrow', fresh: true, selected: 'b', points: true },
     'sketch-only-points-open': {
@@ -871,8 +867,6 @@ export default definePart<Props>({
       'The withdrawn variant shown; check its faded row and Vom Agent zurückgezogen with the reason in its head.',
     'port-round':
       'A port run after a merge; check the note above the rows names every merged part, and that the toolbar shows only the zeichnet badge.',
-    'round-note':
-      'A round with a note; check the note as one muted line above the canvas, cut with an ellipsis, and nothing of it in the toolbar.',
     'agent-failed':
       'A failed agent run; check the failure in the error colour in the head of row b, and no model, round or failure text in the toolbar.',
     'sketch-only-points':
@@ -922,7 +916,7 @@ export default definePart<Props>({
     },
     {
       label: 'Agent und Runden',
-      states: ['port-round', 'round-note', 'change-crop', 'change-crop-whole'],
+      states: ['port-round', 'change-crop', 'change-crop-whole'],
     },
     {
       label: 'Vergleich',
@@ -972,7 +966,6 @@ export default definePart<Props>({
     withdrawn,
     agent,
     port,
-    roundNote,
     points = false,
     pointsOpen = false,
     screen,
@@ -1073,7 +1066,7 @@ export default definePart<Props>({
       withdrawn: hiddenCount > 0 ? { count: hiddenCount, shown: withdrawn === 'shown' } : undefined,
       class: 'absolute bottom-space-3 left-1/2 z-3 max-w-[calc(100%-40rem)] -translate-x-1/2',
     });
-    const shownRoundNote = port ? SKETCHES_LABELS.mergePort(PORT_MERGED[port]) : roundNote ? ROUND_NOTE : '';
+    const shownRoundNote = port ? SKETCHES_LABELS.mergePort(PORT_MERGED[port]) : '';
     const toggle = await disclosurePart.render({ label: '', body: '', open: false });
     const parts = { body: '', styles: '' };
     const content = html`<div

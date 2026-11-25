@@ -2144,19 +2144,14 @@ describe('SketchesComponent', () => {
     expect(plain.querySelector('[data-sk-round-note]')).toBeNull();
   });
 
-  it('shows the note of the shown round as one line above the canvas, not in the toolbar', async () => {
+  it('shows no agent-written round note in the pick view', async () => {
+    // The human rejected agent prose above the canvas (B741, 25.11.); only the tool's port line may show.
     const note = 'Kommentar-Pins stehen auf der Sketch-Seite in ihrer Zelle statt als eigener Zustand der Zelle.';
-    const rounds = [
-      { value: 'r1', label: 'Runde 1 · Pins in der Zelle', note },
-      { value: 'r2', label: 'Runde 2 · Andere', note: 'Andere Notiz' },
-    ];
+    const rounds = [{ value: 'r1', label: 'Runde 1 · Pins in der Zelle', note }];
     const root: HTMLElement = (await render({ camera: '100', rounds, round: 'r1' })).nativeElement;
-    const notes = [...root.querySelectorAll<HTMLElement>('[data-sk-round-note]')];
 
-    expect(notes.map(textOf)).toEqual([note]);
-    expect(notes[0]?.closest('[data-sk-rows]')).toBeNull();
-    expect(notes[0]?.classList).toContain('truncate');
-    expect(textOf(root.querySelector('[data-sk-toolbar]'))).not.toContain(note);
+    expect(root.querySelector('[data-sk-round-note]')).toBeNull();
+    expect(textOf(root)).not.toContain(note);
   });
 
   it('keeps the sketch status for a failed agent run', async () => {
