@@ -30,6 +30,7 @@ const MIXED_STORY_ID = 'components-media-stream-mixed--mixed-aspect-ratios';
 const YOUTUBE_PIP_STORY_ID = 'components-media-stream-youtube--slot-picture-in-picture';
 const PIP_WINDOW = 'et-pip-window';
 const PIP_TITLE_BAR = '.et-pip-window__title-bar';
+const PIP_WINDOW_DEFAULT_LAYER = '2147483005';
 const PIP_VIEWPORT_PADDING = 8;
 const PIP_MIN_WIDTH = 160;
 const PIP_MAX_WIDTH = 640;
@@ -600,7 +601,8 @@ test.describe('stream / placement', () => {
     const viewport = viewportOf(page);
 
     await expect(pipWindow).toBeVisible();
-    await expect(pipWindow).toHaveCSS('z-index', '1000');
+    await expect(pipWindow).toHaveCSS('z-index', PIP_WINDOW_DEFAULT_LAYER);
+    await expect(pipWindow).toHaveAttribute('data-et-overlay-layer', PIP_WINDOW_DEFAULT_LAYER);
     await expect
       .poll(async () => {
         const box = await boxOf(pipWindow);
