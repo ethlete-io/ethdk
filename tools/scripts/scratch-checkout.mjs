@@ -89,8 +89,13 @@ export const storeEscapes = (repo, dir) => {
     : undefined;
 };
 
-/** Copies the working tree (tracked files with uncommitted edits, plus untracked unignored files) into `dir` and links the repo's dependencies. */
+/**
+ * Copies the working tree (tracked files with uncommitted edits, plus untracked unignored files, without untracked nested
+ * git repos such as a stray scratch copy) into `dir` and links the repo's dependencies. Refuses a `dir` inside `repo`.
+ */
 export const scratchCheckout = (repo, dir) => {
+  if ([resolve(repo), realpathSync(repo)].some((root) => inside(root, resolve(dir))))
+    return { error: `${dir} lies inside the checkout ${repo}; the next scratch copy would copy it along` };
   if (existsSync(dir) && readdirSync(dir).length) return { error: `${dir} exists and is not empty` };
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, MARKER), '');
@@ -98,7 +103,7 @@ export const scratchCheckout = (repo, dir) => {
     'bash',
     [
       '-c',
-      'set -o pipefail; { git ls-files -z --cached --others --exclude-standard; } | while IFS= read -r -d "" f; do [ -e "$f" ] && printf "%s\\0" "$f"; done | tar --null -T - -c | tar -x -C "$1"',
+      'set -o pipefail; { git ls-files -z --cached --others --exclude-standard; } | while IFS= read -r -d "" f; do case "$f" in */) continue ;; esac; [ -e "$f" ] && printf "%s\\0" "$f"; done | tar --null -T - -c | tar -x -C "$1"',
       'scratch',
       dir,
     ],

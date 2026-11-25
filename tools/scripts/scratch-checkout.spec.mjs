@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
+  existsSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
@@ -87,6 +88,26 @@ test('scratchCheckout makes the copy its own git repo with a clean tree, so git-
   assert.equal(git('show', 'HEAD:b.txt'), 'untracked');
   renameSync(join(dir, '.scratch-checkout'), join(dir, '.scratch-checkout.resident-e2e'));
   assert.equal(git('status', '--porcelain', '--untracked-files=all'), '');
+});
+
+test('scratchCheckout leaves out a stray scratch copy in the working tree, so Nx sees each project once', (t) => {
+  const repo = makeRepo(t);
+  writeFileSync(join(repo, '.gitignore'), 'node_modules\n');
+  writeFileSync(join(repo, 'project.json'), '{"name":"app"}');
+  const other = makeRepo(t);
+  writeFileSync(join(other, 'project.json'), '{"name":"app"}');
+  assert.deepEqual(scratchCheckout(other, join(repo, 'stray')), { dir: join(repo, 'stray') });
+  const dir = join(tempFor(t, 'scratch-out-'), 'copy');
+  assert.deepEqual(scratchCheckout(repo, dir), { dir });
+  assert.equal(readFileSync(join(dir, 'project.json'), 'utf8'), '{"name":"app"}');
+  assert.equal(existsSync(join(dir, 'stray')), false);
+});
+
+test('scratchCheckout refuses a dir inside the checkout and leaves nothing behind', (t) => {
+  const repo = makeRepo(t);
+  const result = scratchCheckout(repo, join(repo, 'inner'));
+  assert.match(result.error, /lies inside the checkout/);
+  assert.equal(existsSync(join(repo, 'inner')), false);
 });
 
 test('scratchCheckout turns the Nx daemon off in the copy, so no nx@latest install is left in /tmp', (t) => {
