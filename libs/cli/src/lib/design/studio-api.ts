@@ -55,6 +55,7 @@ import { recordedReadyRefusalOf } from './system/sketch/ready-refusal';
 import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
+import { editAwaitsCommit } from './system/sketch/edit-awaits-commit';
 import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
 import { editVariantInfoOf, withEditUnchanged } from './system/sketch/edit-summary';
 import { EDIT_NEW } from './system/sketch/edit-old-base';
@@ -514,9 +515,11 @@ const listingOf = async ({
   const listOnly = light && asked.url.searchParams.get('targets') === 'no';
   const only = asked.url.searchParams.get('sketch');
   const listed = await listSketchesInTurns({ productDir: product.dir, product: product.name });
-  const sketches = listed.filter(
-    (sketch): sketch is Sketch => typeof sketch !== 'string' && (only === null || sketch.target === only),
-  );
+  const sketches = listed
+    .filter((sketch): sketch is Sketch => typeof sketch !== 'string' && (only === null || sketch.target === only))
+    .map((sketch): Sketch =>
+      editAwaitsCommit(product, sketch) ? { ...sketch, status: 'in progress' as const } : sketch,
+    );
   if (!light && asked.pictureOf) asked.warmRenderer?.();
 
   const { pictureOf } = asked;
