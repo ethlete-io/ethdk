@@ -3002,6 +3002,63 @@ const CASES = [
     },
   },
   {
+    name: 'Fit of all states stops at readable 160 px frames and the list scrolls to the rest',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
+      const canvas = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+      const framesOf = () =>
+        page.evaluate(
+          ({ CANVAS, FRAME }) => {
+            const canvas = document.querySelector(`ethlete-sketch-view :is(${CANVAS})`);
+            const view = canvas.getBoundingClientRect();
+            const rects = [...canvas.querySelectorAll(FRAME)].map((frame) => frame.getBoundingClientRect());
+
+            return {
+              narrowest: Math.round(Math.min(...rects.map((rect) => rect.width))),
+              below: rects.filter((rect) => rect.top >= view.bottom).length,
+              cut: rects.filter((rect) => rect.right > view.right + 1).length,
+              firstTop: rects[0]?.top ?? 0,
+              total: rects.length,
+            };
+          },
+          { CANVAS, FRAME },
+        );
+
+      await button.waitFor({ timeout: FULL_COMPARE_MS });
+      for (let wheel = 0; wheel < 20; wheel++) {
+        const box = await button.boundingBox();
+
+        if (box && box.y > canvas.y && box.y + box.height < canvas.y + canvas.height - 80) break;
+        await wheelCanvas(page, 300);
+        await settle(page);
+      }
+
+      const box = await button.boundingBox();
+
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+
+      const fitted = await framesOf();
+
+      if (process.env['STUDIO_E2E_FIT_SHOTS'])
+        await page.screenshot({ path: join(process.env['STUDIO_E2E_FIT_SHOTS'], 'fit-all-states.png') });
+      await wheelCanvas(page, 600);
+      await settle(page);
+
+      const scrolled = await framesOf();
+
+      if (process.env['STUDIO_E2E_FIT_SHOTS'])
+        await page.screenshot({ path: join(process.env['STUDIO_E2E_FIT_SHOTS'], 'fit-all-states-scrolled.png') });
+
+      return {
+        ok: fitted.narrowest >= 150 && fitted.cut === 0 && fitted.below > 0 && scrolled.firstTop < fitted.firstTop,
+        detail: `narrowest frame ${fitted.narrowest} px, ${fitted.cut} cut at the right, ${fitted.below} of ${fitted.total} frames below the canvas, a wheel moves the list ${Math.round(fitted.firstTop - scrolled.firstTop)} px`,
+      };
+    },
+  },
+  {
     name: 'showing all states after a wheel down to the fold toggle keeps frames on screen',
     pages: ['Sketches'],
     labels: ['Large'],

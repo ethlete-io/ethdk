@@ -346,6 +346,7 @@ export class SketchesComponent {
   private confirmRef: { close: () => void } | null = null;
   private confirmOrigin: HTMLElement | null = null;
   private fitAt = signal<{ scale: number; fonts: number } | null>(null);
+  private gutterWidth = signal(0);
   private fitKey: string | null = null;
   private fitElements: (HTMLElement | null)[] | null = null;
   private appliedKey: string | null = null;
@@ -587,6 +588,7 @@ export class SketchesComponent {
     return matrixBlocksOf(heights, {
       columns: rows.length,
       frameWidth: this.widest(),
+      gutter: this.gutterWidth() || undefined,
       viewport: { width: this.listWidth(), height: this.listSize().client?.height ?? 0 },
     }).map((size) => {
       const states = this.matrixStates().slice(start, start + size);
@@ -728,6 +730,10 @@ export class SketchesComponent {
           }
 
           this.fitAt.set({ scale: this.fitScaleOf(dom), fonts: this.fontLoads() });
+
+          const gutter = Math.max(0, ...dom.gutters.map((element) => element.offsetWidth));
+
+          if (dom.matrix && Math.abs(gutter - this.gutterWidth()) > 1) this.gutterWidth.set(gutter);
         }
 
         const applied = { scale: this.scale(), note: this.noteSize(), label: this.labelFont() };

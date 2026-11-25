@@ -858,7 +858,7 @@ export default definePart<Props>({
     'change-crop-whole':
       'The same round showing the whole screen; check that the full frame fits each cell without cutting it.',
     'many-states-wrap':
-      'A part with 30 wide states in a 1100 px list; check that Einpassen shows all 30 states in 3 blocks side by side, in state order, with the full variant heads and Übernehmen only over the first block (no letter-by-letter wrap), a one-line name tag over each later block, and the cell labels hidden because the frames are too small for them.',
+      'A part with 30 wide states in a 1100 px list; check that Einpassen stops at frames 160 px wide, shows the states in one block in state order with the full variant heads and Übernehmen, and the list scrolls to the rest.',
     'multi-part': 'A sketch over three parts; check that each part shows its own block of state rows with its name.',
     'multi-part-many':
       'A sketch over many parts; check that the part blocks stay readable and the list stays inside the canvas.',

@@ -2,7 +2,7 @@ import { STACK_BELOW_SCALE } from './interaction-grid';
 
 export const MATRIX_COLUMN_GAP = 24;
 
-export const MATRIX_MIN_COLUMN = 28;
+export const MATRIX_MIN_COLUMN = 160;
 
 export const MATRIX_HEAD_MIN = 120;
 
@@ -57,17 +57,19 @@ const scaleOf = ({
   sizes,
   columns,
   frameWidth,
+  gutter,
   viewport,
 }: {
   heights: readonly number[];
   sizes: readonly number[];
   columns: number;
   frameWidth: number;
+  gutter: number;
   viewport: MatrixViewport;
 }) => {
   const blocks = sizes.length;
   const widthFit = matrixWidthFit({
-    room: viewport.width - blocks * (MATRIX_GUTTER_ESTIMATE + columns * MATRIX_COLUMN_GAP) - MATRIX_PADDING,
+    room: viewport.width - blocks * (gutter + columns * MATRIX_COLUMN_GAP) - MATRIX_PADDING,
     columns,
     blocks,
     frameWidth,
@@ -99,7 +101,12 @@ const scaleOf = ({
  */
 export const matrixBlocksOf = (
   heights: readonly number[],
-  { columns, frameWidth, viewport }: { columns: number; frameWidth: number; viewport: MatrixViewport },
+  {
+    columns,
+    frameWidth,
+    gutter = MATRIX_GUTTER_ESTIMATE,
+    viewport,
+  }: { columns: number; frameWidth: number; gutter?: number; viewport: MatrixViewport },
 ) => {
   const count = heights.length;
 
@@ -110,7 +117,7 @@ export const matrixBlocksOf = (
 
   for (let blocks = 1; blocks <= count; blocks++) {
     const sizes = sizesOf(count, blocks);
-    const { scale, widthFit } = scaleOf({ heights, sizes, columns, frameWidth, viewport });
+    const { scale, widthFit } = scaleOf({ heights, sizes, columns, frameWidth, gutter, viewport });
 
     if (blocks > 1 && widthFit * frameWidth < MATRIX_MIN_COLUMN) break;
 
