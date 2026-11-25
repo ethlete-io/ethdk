@@ -47,3 +47,21 @@ test('every stylesheet import and asset url of the shipped sdk design base resol
     rmSync(out, { recursive: true, force: true });
   }
 });
+
+// tomflix needs 0 glyphs from the Noto fallbacks, so the package does not ship 650 KB for nothing.
+test('the shipped sdk design base carries no Noto fallback font', () => {
+  const out = stagedSdk();
+
+  try {
+    const noto = filesUnder(join(out, 'sdk')).filter(
+      (file) => /noto/iu.test(file) || (file.endsWith('.css') && /noto-sans/iu.test(readFileSync(file, 'utf8'))),
+    );
+
+    assert.deepEqual(
+      noto.map((file) => relative(out, file)),
+      [],
+    );
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
