@@ -472,6 +472,36 @@ const showAllStates = async (page) => {
   }
 };
 
+const noVisibleCellCensus = (page) =>
+  page.evaluate((CANVAS) => {
+    const round = (value) => Math.round(value);
+    const shots = [...document.querySelectorAll('ethlete-sketch-view [data-shot]')];
+    const canvas = document.querySelector(`ethlete-sketch-view :is(${CANVAS})`);
+    const view = canvas?.getBoundingClientRect();
+    const boxes = shots.map((cell) => cell.getBoundingClientRect());
+    const scrolled = [...(canvas?.querySelectorAll('*') ?? []), canvas]
+      .filter((element) => element && (element.scrollTop || element.scrollLeft))
+      .map((element) => `${element.tagName.toLowerCase()} ${round(element.scrollLeft)},${round(element.scrollTop)}`);
+    const fold = document.querySelector('[data-sk-folded] button[aria-expanded]');
+    const zoom = document
+      .querySelector('ethlete-sketch-view ethlete-zoom-chip')
+      ?.textContent?.replace(/\s+/g, ' ')
+      .trim();
+    const span = (pick) =>
+      boxes.length ? `${round(Math.min(...boxes.map(pick)))}..${round(Math.max(...boxes.map(pick)))}` : '-';
+
+    return [
+      `census: ${shots.length} cells`,
+      view ? `view ${round(view.left)},${round(view.top)} ${round(view.width)}x${round(view.height)}` : 'no canvas',
+      `tops ${span((box) => box.top)}, lefts ${span((box) => box.left)}, heights ${span((box) => box.height)}`,
+      `zero-height ${boxes.filter((box) => box.height === 0).length}`,
+      `scrolled ${scrolled.join(' ') || 'none'}`,
+      `fold ${fold ? `${fold.getAttribute('aria-expanded')} "${fold.textContent?.trim()}"` : 'none'}`,
+      `zoom ${zoom ?? 'none'}`,
+      `focus ${document.activeElement?.tagName.toLowerCase() ?? 'none'}`,
+    ].join(', ');
+  }, CANVAS);
+
 const LIVE_PAINT_GAP = { channel: 48, share: 0.08 };
 
 const shownLiveFrames = (page) =>
@@ -3663,7 +3693,11 @@ const CASES = [
         if (!top) await page.waitForTimeout(250);
       }
 
-      if (!top) return { ok: false, detail: `no visible sketch cell within ${WAIT_MS} ms` };
+      if (!top)
+        return {
+          ok: false,
+          detail: `no visible sketch cell within ${WAIT_MS} ms; ${await noVisibleCellCensus(page)}`,
+        };
 
       const before = await loadedCell(top.key, () => true, FULL_COMPARE_MS);
 
