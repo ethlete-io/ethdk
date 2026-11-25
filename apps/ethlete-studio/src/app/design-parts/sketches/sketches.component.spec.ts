@@ -139,6 +139,25 @@ describe('SketchesComponent', () => {
     expect(list?.classList.contains('flex-col')).toBe(!side);
   });
 
+  it('gives a side-by-side variant without a shown state the width of a cell (tomflix shell-app run 0236, B676)', async () => {
+    const drawn = (key: string): SketchRow => ({
+      key,
+      note: '',
+      width: 75,
+      sized: true,
+      shots: [{ state: 'default', changed: true, height: 69, width: 75 }],
+    });
+    const rows = [{ key: 'a', note: '', width: 75, sized: true, shots: [] }, drawn('b'), drawn('c')];
+    const root: HTMLElement = (
+      await render({ part: 'elements/shell-app', rows, errored: ['a'], fresh: true, camera: '100' })
+    ).nativeElement;
+    const stage = root.querySelector<HTMLElement>('[data-sk-row="a"] [data-sk-stage-row="a"]');
+
+    expect(root.querySelector('[data-sk-changed]')?.hasAttribute('data-sk-side-by-side')).toBe(true);
+    expect(stage?.style.gridTemplateColumns).toBe('repeat(1, minmax(75px, max-content))');
+    expect(stage?.querySelector('[data-sk-missing][data-sk-state="default"]')).not.toBeNull();
+  });
+
   // Decision human 23.11. (B703): the title (e.g. "Entwurf 46 B") goes away, neither the part key nor a round title shows.
   it('shows no sketch title, neither the part key nor a round title', async () => {
     const root: HTMLElement = (await render({ camera: '100', rows: ROWS, part: 'elements/variant-cell@x' }))
@@ -1699,13 +1718,14 @@ describe('SketchesComponent', () => {
       vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
         return this.hasAttribute('data-sk-rows') ? 1440 : 0;
       });
-      const shots = ['dune', 'no-logo', 'series'].flatMap((state) => [
-        { state, changed: true, height: 844, width: 390 },
-        { state, changed: true, height: 680, width: 1440 },
-      ]);
-      const rowsOf = (sized: boolean, shown: boolean): SketchRow[] =>
-        ['a', 'b', 'c'].map((key) => ({ key, note: '', width: 1440, perLine: 2, sized, shots: shown ? shots : [] }));
-      const fixture = await render({ part: 'elements/hero', rows: rowsOf(false, false), camera: 'fit' });
+      const shotsOf = (changed: boolean | null) =>
+        ['dune', 'no-logo', 'series'].flatMap((state) => [
+          { state, changed, height: 844, width: 390 },
+          { state, changed, height: 680, width: 1440 },
+        ]);
+      const rowsOf = (sized: boolean, changed: boolean | null): SketchRow[] =>
+        ['a', 'b', 'c'].map((key) => ({ key, note: '', width: 1440, perLine: 2, sized, shots: shotsOf(changed) }));
+      const fixture = await render({ part: 'elements/hero', rows: rowsOf(false, null), camera: 'fit' });
       const root: HTMLElement = fixture.nativeElement;
       const held = () => root.querySelector('[data-sk-rows] > [data-sk-sizing]') !== null;
       const show = async (rows: SketchRow[]) => {
@@ -1714,7 +1734,7 @@ describe('SketchesComponent', () => {
       };
 
       expect(held()).toBe(true);
-      await show(rowsOf(true, false));
+      await show(rowsOf(true, null));
       expect(held()).toBe(true);
       await show(rowsOf(false, true));
       expect(held()).toBe(true);
@@ -1722,6 +1742,16 @@ describe('SketchesComponent', () => {
       expect(held()).toBe(false);
       await show(rowsOf(false, true));
       expect(held()).toBe(false);
+    });
+
+    it('shows a part whose variants list no state at once (tomflix shell-app, every variant unloaded, B676)', async () => {
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute('data-sk-rows') ? 1440 : 0;
+      });
+      const rows = ['a', 'b', 'c'].map((key) => ({ key, note: '', width: 1440, sized: true, shots: [] }));
+      const root: HTMLElement = (await render({ part: 'elements/shell-app', rows, camera: 'fit' })).nativeElement;
+
+      expect(root.querySelector('[data-sk-rows] > [data-sk-sizing]')).toBeNull();
     });
 
     it('scales each state line of the matrix to the column (tomflix colors at 1440, B676)', async () => {

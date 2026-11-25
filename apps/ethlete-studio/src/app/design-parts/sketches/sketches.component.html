@@ -378,7 +378,7 @@
       }
       @if (
         row.shots.length > 0 ||
-        ((row.key === CURRENT || isEdit() || dropping().has(row.key)) && stageStates().length > 0)
+        ((row.key === CURRENT || isEdit() || dropping().has(row.key) || sideBySide()) && stageStates().length > 0)
       ) {
         <div
           #stage

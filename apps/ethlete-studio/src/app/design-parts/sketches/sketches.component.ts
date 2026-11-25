@@ -495,7 +495,8 @@ export class SketchesComponent {
     () =>
       this.errored().length > 0 ||
       Object.keys(this.failures()).length > 0 ||
-      this.shownRows().some((row) => row.sized !== false && row.shots.length > 0),
+      this.shownRows().some((row) => row.sized !== false && row.shots.length > 0) ||
+      this.listedRows().every((row) => row.shots.length === 0),
   );
   // Holds only the first layout of a part: a later size loss (a zoom, a refused picture) must not hide a shown view.
   private partSizedSource = computed(() => ({ part: this.part(), sized: this.firstRowSized() }));
