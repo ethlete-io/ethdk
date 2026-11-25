@@ -46,6 +46,11 @@
       "schema": "./migrate-stream-default-components/schema.json",
       "description": "Spread STREAM_DEFAULT_COMPONENTS into provideStreamConfig and report stream slots without one"
     },
+    "migrate-pip-window-z-index": {
+      "factory": "./migrate-pip-window-z-index/migration",
+      "schema": "./migrate-pip-window-z-index/schema.json",
+      "description": "Move --et-pip-window-z-index into providePipWindowConfig and report the sites it cannot move"
+    },
     "migrate-youtube-player-slot-directive": {
       "factory": "./migrate-youtube-player-slot-directive/migration",
       "schema": "./migrate-youtube-player-slot-directive/schema.json",

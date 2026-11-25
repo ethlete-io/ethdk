@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, contentChild, inject, signal, viewChild } from '@angular/core';
-import { DEFAULT_OVERLAY_LAYER, ProvideSurfaceDirective, ResizeEdge, ResizeHandlesComponent } from '@ethlete/core';
+import { ProvideSurfaceDirective, ResizeEdge, ResizeHandlesComponent } from '@ethlete/core';
 import { PipCollapseOverlayDirective } from './headless/pip-collapse-overlay.directive';
 import { PipTitleBarTemplateDirective } from './headless/pip-title-bar-template.directive';
 import { PipTitleBarDirective } from './headless/pip-title-bar.directive';
@@ -8,14 +8,8 @@ import { PipWindowParamsDirective } from './headless/pip-window-params.directive
 import { createPipWindowPosition } from './headless/internals/pip-window-position';
 import { createPipWindowSize } from './headless/internals/pip-window-size';
 import { syncPipDarkSurface } from './pip-dark-surface';
+import { injectPipWindowConfig } from './pip-window-config';
 import { injectStreamLabels } from '../stream-labels';
-
-/**
- * The stacking level the PiP window paints at: above app overlays and the notification stack. Declared
- * as the window's `data-et-overlay-layer` too, so dragging or closing the window does not close an
- * overlay below it.
- */
-export const PIP_WINDOW_OVERLAY_LAYER = /* @__PURE__ */ (() => DEFAULT_OVERLAY_LAYER + 2)();
 
 const KEYBOARD_STEP_PX = 10;
 
@@ -54,10 +48,9 @@ export class PipWindowComponent {
   protected labels = injectStreamLabels();
 
   private resizeHandles = viewChild.required(ResizeHandlesComponent);
-
   private titleBar = viewChild.required(PipTitleBarDirective);
   protected titleBarTemplate = contentChild.required(PipTitleBarTemplateDirective);
-  protected readonly OVERLAY_LAYER = PIP_WINDOW_OVERLAY_LAYER;
+  protected readonly OVERLAY_LAYER = injectPipWindowConfig().overlayLayer;
 
   protected dragHandle = computed(() => this.titleBar().dragHandle);
   protected titleBarH = computed(() => this.titleBar().titleBarH());

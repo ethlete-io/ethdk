@@ -179,6 +179,15 @@
       "description": "Check the app CSS in @layer components that now beats SDK component styles, and drop the overrides that only existed to beat them.",
       "instructions": "./migrations/components-sdk-layer.md",
       "docs": "/components/setup"
+    },
+    {
+      "name": "pip-window-z-index",
+      "version": "1.0.0-next.100",
+      "kind": "auto",
+      "level": "required",
+      "description": "Move --et-pip-window-z-index, which is removed, into providePipWindowConfig({ overlayLayer }), and report the sites that need it by hand.",
+      "generator": "@ethlete/components:migrate-pip-window-z-index",
+      "docs": "/components/stream"
     }
   ]
 }

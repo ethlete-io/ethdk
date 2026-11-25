@@ -1,5 +1,7 @@
 import { Component, Directive, ElementRef, inject, Injectable, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { ColorTheme, DEFAULT_OVERLAY_LAYER, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import {
   createPipChromeAnimations,
@@ -28,6 +30,7 @@ import {
   PipWindowComponent,
   PipWindowParamsDirective,
   providePipSlotPlaceholderConfig,
+  providePipWindowConfig,
   provideStreamConfig,
   provideStreamPip,
   STREAM_ERROR_CODES,
@@ -549,5 +552,64 @@ describe('stream picture-in-picture with a chrome that forgets its ref', () => {
     fixture.componentInstance.slots()[0]?.controls.pipActivate();
 
     expect(() => s.tick()).toThrow(`ET${STREAM_ERROR_CODES.MISSING_PIP_CHROME_TOKEN}`);
+  });
+});
+
+describe('stream picture-in-picture with an app-set window layer', () => {
+  const layer = DEFAULT_OVERLAY_LAYER + 10;
+
+  const scenario = useScenario({
+    providers: [
+      provideOverlay(),
+      provideColorThemesWithTailwind4(COLOR_THEMES),
+      ...provideStreamPip({ pipChromeComponent: StreamPipChromeComponent }),
+      ...providePipWindowConfig({ overlayLayer: layer }),
+    ],
+  });
+
+  // jsdom drops the component stylesheet, so the z-index rule is read from the source.
+  const pipWindowZIndex = () => {
+    const css = readFileSync(
+      fileURLToPath(import.meta.url).replace(/[^/]+$/, '../lib/stream/pip/pip-window.component.css'),
+      'utf8',
+    );
+
+    return /et-pip-window \{[^}]*?z-index:\s*([^;]+);/.exec(css)?.[1]?.trim();
+  };
+
+  it('paints at and declares the configured layer, and keeps a sheet below it open on a press', async () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(MatchCenterComponent);
+
+    s.flush();
+    await floatAndSettle(s, fixture, 0);
+
+    const sheet = s.run(() =>
+      injectOverlayManager().open(SheetContentComponent, { strategies: rightSheetOverlayStrategy(), autoFocus: false }),
+    );
+    const closeSources: string[] = [];
+
+    sheet.beforeClosedEvent().subscribe((event) => closeSources.push(event.source));
+    s.flush();
+
+    const pipWindow = query('et-pip-window');
+
+    expect(pipWindowZIndex()).toBe('var(--_et-pip-window-layer)');
+    expect(pipWindow.style.getPropertyValue('--_et-pip-window-layer')).toBe(`${layer}`);
+    expect(pipWindow.getAttribute('data-et-overlay-layer')).toBe(`${layer}`);
+
+    const titleBar = query('.et-pip-window__title-bar', pipWindow);
+    const init = { bubbles: true, cancelable: true, button: 0, pointerId: 1, isPrimary: true };
+
+    titleBar.dispatchEvent(new PointerEvent('pointerdown', init));
+    titleBar.dispatchEvent(new PointerEvent('pointerup', init));
+    titleBar.click();
+    await s.settle();
+
+    expect(closeSources).toEqual([]);
+    expect(sheet.componentInstance()).not.toBeNull();
+
+    sheet.close();
+    s.flush();
   });
 });
