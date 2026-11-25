@@ -977,6 +977,24 @@ describe('SketchViewComponent', () => {
     expect(linesOf('a')).toEqual([]);
   });
 
+  // B726: a difference stated on a target, with no sub-part mark, still shows at the variant header.
+  it("shows a target's stated difference at the variant header", async () => {
+    const { root } = await render(
+      {
+        ...SKETCH,
+        variantInfo: {
+          b: { notRebuilds: [{ part: 'components/hero', of: 'sdk:badge', difference: 'rating pill, no icon' }] },
+        },
+      },
+      noComments,
+    );
+    const lines = [...root.querySelectorAll('[data-sk-row="b"] [data-sk-sub-part]')].map((line) =>
+      line.textContent?.replace(/\s+/gu, ' ').trim(),
+    );
+
+    expect(lines).toEqual(['components/hero · nicht sdk:badge: rating pill, no icon']);
+  });
+
   // B695: the agent's report text is not something the human acts on, so no drawing row repeats it.
   it('draws every in-progress variant live with the drawing mark and no report text, never as a placeholder', async () => {
     const updatedAt = new Date(Date.now() - 2 * 60_000).toISOString();
