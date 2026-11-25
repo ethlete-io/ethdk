@@ -160,6 +160,12 @@ unten noch „Akzent“ oder `--et-color-*` als Zielname schreibt, gilt diese Ta
 | `--et-surface-color`, `-muted`, `-subtle` | `--et-surface-text`, `-muted`, `-subtle` |
 | Inputs `color`, `pressedColor`            | `tone`, `pressedTone`                    |
 
+Tailwind (Hinweis Tom, 26.11.): Der `@theme`-Block braucht weiter den Namensraum `--color-*`,
+aus dem Tailwind die Utilities erzeugt. Das ist Tailwind-intern und bleibt. Nur der Teil dahinter
+folgt der Worttabelle, und damit ändern sich die Klassennamen: `bg-et-theme-primary` →
+`bg-et-tone-fill`, `text-et-surface-color` → `text-et-surface-text`. Das trifft ✔ fut an etwa 240
+Stellen, die SDK-Apps an etwa 770, fifagg an 1; Auto-Migration im selben Durchgang (S1, S2, S9).
+
 Kein neuer Token-Name hat je ein Kanal-Tripel bedeutet; damit entfällt der Spike „welcher Name
 überlebt“ aus Schritt 1.
 
