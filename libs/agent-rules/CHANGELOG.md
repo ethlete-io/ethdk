@@ -1,5 +1,34 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.44
+
+### Minor Changes
+
+- The `codex-subagent` skill and its wrapper now default to `gpt-6.2-sol`; `gpt-6.2-astra` is for the hardest work and needs the user's approval first.
+- Add the opt-in `design-live-check` hook: after each write of a design file it runs `et design lint` on it and hands every finding back to the agent.
+- Remove the `away-mode` and `builder-chat-words` hooks and the `awayMode` config key.
+- Add `et design studio open [<dir>]`: it adds a checkout to the running Studio and switches Studio to it, after the agent asks the human.
+
+### Patch Changes
+
+- The domain-modeling and grill-with-docs skills record a decision as a test or a tool, never as an ADR; `ADR-FORMAT.md` is gone.
+- `agent-sessions run` called from an agent shell inside tmux now starts the session detached instead of switching the human's client to it.
+- The design guidance keeps a variant note to two short sentences in the words of the screen, and lets the agent work only from its repo and what the user hands it, asking for missing images in one plain sentence.
+- Teach a new product to start with one real screen in finished moods instead of a wireframe round, and add rules for looking at a shot before `ready`, talking about the product, hover and focus states, and the app shell.
+- The design exploration guide draws interactions once, on the first grid row, and a content row only at rest with `interactionRows` `restOnly`.
+- Reword the design skill so a mood round asks for comments, not a pick, and the first real page is drawn from them.
+- Reword the design skill so the first sketch draws the shell as an imported element and interaction states live on the parts a page imports.
+- Make the design check's FONT-FACE rule flag a font the design names but that did not load in the shot, and tell the agent to self-host it.
+- `interactionRows` takes a plain row-name list as `restOnly` when it is called with explicit type arguments.
+- The Studio logo part gets anatomy, clear space, minimum size, colour variants, misuse and motion sections and owns the busy animation; the design check reports a merged logo part that lacks one.
+- Stop the design check's OVERFLOW rule from failing a page taller than its preset height, so a page can scroll.
+- Drop the ADR plan-question open point and ADR numbers from design CLI texts and comments.
+- `agent-sessions restart` refuses a stored command that does not run `claude` or `codex` instead of starting a bare shell, and a footer with only "↓ to manage" no longer counts as background work.
+- The design-exploration skill says that the pick of another sketch is not a wait: a sketch draws with the part as merged now and goes ready, so the user can choose it.
+- The design exploration skill says a composition's variants differ only in arrangement and how a sub-part from an open sketch is used.
+- The Studio menu puts client runs in a submenu named by date and time, lists projects apart from the actions, opens the design server as a submenu and marks "Projekt entfernen" as dangerous; the Start page tells same-name checkouts apart.
+- The design guide asks for states that read as different from rest at a glance, not a lift of a few px alone.
+
 ## 0.1.0-next.43
 
 ### Patch Changes

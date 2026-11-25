@@ -1,5 +1,83 @@
 # @ethlete/cli
 
+## 3.0.0-next.45
+
+### Minor Changes
+
+- The accent from `et design product new --accent` now binds: design check and lint refuse a primary colour of another colour.
+- A part frame with `sheet` instead of `state` draws every state of the part in one table laid out by its `grid`.
+- `et design product new` takes `--colors light|dark|both` and `--accent <#hex>` and starts the product's colors foundation on that base and accent.
+- A pick in Studio merges the variant at once; the "Variante gewählt" state is gone, and a refused merge leaves no pick.
+- `POST /__design/product-base` with `{ name, base }` sets or, with `none`, removes the base of an existing product, as `et design product set` does.
+- `et design product set <name> --base <path|@ethlete/components|none>` sets or removes the base of an existing product.
+- Add `et design lint <file>…`, which prints the design rule and eslint findings of the parts or sketch variants the files belong to in about a second, and flags theme classes and page-level `anchoredDialog()` calls.
+- The new logo foundation draws each section as its own picture, and `sketch check` warns (`TEXT-ONLY`) about states that differ only in their text.
+- A part's design can name its `family`, and the Studio part tree shows the part under that part whatever number of parts use it.
+- A composition sketch draws a part new in another open sketch from its recommended variant (`sketch recommend`), and its variants may not differ in a part they import.
+- `et design sketch new` starts a new `foundations/colors` or `foundations/logo` part from a fixed skeleton with placeholder values instead of an empty stub.
+- `et design sketch pick` merges the picked variant at once, as one step with the pick; a refused merge fails the pick and leaves no pick behind.
+- `sketch check` and `sketch ready` refuse a state whose sentence or note calls it a placeholder (`PLACEHOLDER`) and a `motion` state nothing animates (`MOTION-STILL`); the logo skeleton's motion section now fades in.
+- A part's design names the groups of its states in flow order (`definePart({ groups })`); Studio draws each group as one headed row with its count, and `design check` flags a many-state part without groups (STATE-GROUPS).
+- Add `et design studio open [<dir>]`: it adds a checkout to the running Studio and switches Studio to it, after the agent asks the human.
+
+### Patch Changes
+
+- `sketch ready` no longer calls a variant alike to another one when a state only one of them draws.
+- The design server's sketch listing sends `shotFrames`, the size of each target shot's picture kept on disk, so a client can size its cells before a shot loads. Reading them draws nothing.
+- `et design check` prints a `NO HARNESS <product>: ...` line naming the harness entry to add for a product without one.
+- `POST /__design/product` without `colors` starts the colors foundation on both surfaces, as `et design product new` does.
+- `et design product new` without `--colors` starts the colors foundation on both surfaces instead of leaving grey placeholders.
+- A sketch listing nobody waits for any more takes its queued drawings out of the draw queue, so the listing Studio starts after a part change no longer waits behind them.
+- A sketch listing after a change to a part no listed sketch draws reuses the kept state comparisons instead of drawing every target again.
+- The logo skeleton draws the ink swatch label in the on-colour, so it reads on the ink swatch.
+- The logo skeleton's section titles and labels draw in the product's text colour on its background, instead of inheriting a light colour that vanished on the white frame of a dark product.
+- `design check` counts each failed action of a part it left without a check record as an `ACTION-FAILED` finding, so the part no longer reads as clean while its record is missing.
+- `design check` and `design actions` name an element by its accessible name with its spaces (`button "Kommentar zu a reset"`, not `button "Kommentarzuareset"`); matching still ignores whitespace.
+- The pointer-focus check clicks a point of the element nothing covers, and skips an element covered all over, instead of timing out on a click another element intercepts.
+- The pointer-focus probe of `design actions` and `design check` skips an element no pointer reaches (computed `pointer-events: none`, as a button in a scaled preview), instead of failing after a 15 s click timeout.
+- A product with `base: "@ethlete/components"` now inherits the parts the installed package ships, so a sketch's "Aktuell" shows every SDK state.
+- A product button with a required prop no longer fails `sketch check`, and a logo sketch is asked for its six sections only after the pick.
+- `design sketch ready` and `sketch check` note a render issue of a direct edit's `old` copy as there before instead of refusing on it: the old copy is the last merged part.
+- `sketch ready` no longer refuses an `@edit` sketch because its `new` variant draws like the current part; it still refuses `old` drawing like `new`.
+- An `@edit` sketch names the commits and the states that differ, and folds the states old and new draw alike.
+- `sketch new` and `sketch target add` refuse a sketch that puts a foundation next to a part of another layer, or that holds more than four parts (`SKETCH-SCOPE`): open one sketch per part instead.
+- `design product new` starts the colors foundation in the SDK colours page layout, with every surface and accent state derived instead of one flat value.
+- `design shot` draws each embedded frame with a state again once its web fonts loaded, so a flow that embeds a page no longer renders differently on a second draw.
+- An old checkout opens in Studio even when its installed design tool predates the app's, and its comment, flow and sketch requests no longer fail.
+- Design: a config project with calls but no product of its name now lists as a product with its legacy calls, so an old checkout opens in Studio.
+- A running design server redraws the composition sketches that borrow a part from an open sketch once that sketch recommends or picks another variant.
+- Design check findings and usage lines no longer cite an ADR or an SDK path, and a spec fails if one comes back.
+- Keep the picture of a part only a sketch variant holds in the disk shot store, so a fresh design server lists the frame sizes of a sketch drawn in a former run.
+- The `old` variant of an edit sketch now reads the files outside the product that its parts import as its base commit held them, so a later label change no longer breaks its render or typecheck.
+- The `old` side of an edit sketch draws the parts it holds no copy of as the commit it was taken from holds them, not as later working-tree edits left them.
+- Make the design check's FONT-FACE rule flag a font the design names but that did not load in the shot, and tell the agent to self-host it.
+- A click on a link inside a live design frame no longer navigates the frame away from the drawing.
+- A design frame shows no scrollbar of its own, so a cell that follows the frame's reported height no longer keeps a scrollbar whose width made that height too small.
+- `sketch check` no longer reports the interactions of a rest-only row after the first as undrawn in its grid line.
+- `interactionRows` takes a plain row-name list as `restOnly` when it is called with explicit type arguments.
+- The Studio logo part gets anatomy, clear space, minimum size, colour variants, misuse and motion sections and owns the busy animation; the design check reports a merged logo part that lacks one.
+- The logo skeleton's section titles and labels draw in a sans stack when the product sets no font, instead of the browser's serif.
+- Stop the design check's OVERFLOW rule from failing a page taller than its preset height, so a page can scroll.
+- `design check` no longer reports PAGE-STATE-INNER for a page state that also changes a prop the markup does not show, for example a camera a setup applies.
+- Drop the ADR plan-question open point and ADR numbers from design CLI texts and comments.
+- Remove the `away-mode` and `builder-chat-words` hooks and the `awayMode` config key.
+- `et design` stops a resident design process only when its start time still matches the record, so a stale or copied record never stops an unrelated process with the same pid.
+- `sketch check` and `sketch ready` warn about two states of a part that render the same picture, such as a pressed hover and a pressed active.
+- The design server builds each sketch of a listing answer in its own event loop turn, so a listing of many sketches no longer blocks other requests.
+- `/__design/shot` without a width or preset now draws a part at its first declared width, as `design shot` does, so a full-width part no longer shoots as an empty 48x48 square.
+- A shot asked without a colour scheme now shares the picture of a `scheme=light` ask, so the Studio sketch view no longer redraws every cell the sketch listing already compared.
+- A composition sketch also draws and types the new parts that a part it borrows from an open sketch imports from further open sketches.
+- `et design sketch check` warns about each state that draws the same as its rest state and says how to fix it.
+- `design sketch check` warns and `sketch ready` refuses with STATE-INNER when a state of a sketch variant changes only an inner part, such as a shell hovering its search button.
+- Sketch views fold a state a variant draws exactly like its `rest` state; the rest cell names it (`hover = rest`).
+- `design sketch ready` refuses a grid row that only changes content but draws the first row's interactions again; `interactionRows` takes `restOnly` for such rows.
+- A sketch cell that draws like its rest state at its own width is folded into the rest cell at that width, even when the same state differs at another width. The design server lists these as `sameAsRestAtSizes` per target.
+- A sketch variant of a part inherited from the base lists the base states it does not draw as `inherited` in the Studio sketch listing.
+- `design check` renames PAGE-STATE-INNER to STATE-INNER and also checks own parts of every layer that embed a part, counting a control declared with `part` as that part, so a shell state that only hovers its search button is refused.
+- Raise the Studio API level to 11 for the `/__design/product-base` route.
+- The Studio menu keeps projects by checkout path, so two checkouts with one folder name no longer both show the radio dot, and `et design studio open` refuses inside a client run sandbox.
+- `sketch check` and `sketch ready` warn about a state that barely differs from its rest state, such as a hover that only lifts a card by a few px.
+
 ## 3.0.0-next.44
 
 ### Patch Changes

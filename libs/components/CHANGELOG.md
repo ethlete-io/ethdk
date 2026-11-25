@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-next.99
+
+### Minor Changes
+
+- Add `--et-form-field-floating-inside-control-font-scale` to set the control text scale of a `floating-inside` form field. It defaults to `0.96`, so the look does not change.
+
+### Patch Changes
+
+- A ghost form field shows no border on hover.
+- `et-scrollable` (and so `et-nav-tabs`) keeps the active child at its scroll origin when a label, font or the track resizes, until the user scrolls it.
+- The sketch round picker uses the ghost select without a clear button, and the form field design mock draws the ghost variant.
+
 ## 1.0.0-next.98
 
 ### Patch Changes

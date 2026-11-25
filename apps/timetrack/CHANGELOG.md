@@ -1,5 +1,21 @@
 # timetrack-app
 
+## 0.2.0-next.25
+
+### Minor Changes
+
+- The day screen draws one lane per project: checkouts a project link covers share the project's lane, labelled with
+  its key; a checkout without a project link keeps its own lane.
+
+### Patch Changes
+
+- Update the Rust `cookie` crate to 0.18.3 to fix RUSTSEC-2026-0594 (private cookie nonces can repeat in processes that fork).
+- Read the stored events for a settings send only when a rule or tombstone names a path no checkout covers, and keep only the paths such an entry names.
+- Send the rule of a removed worktree to a paired machine as long as this machine's stored events still name its path.
+- File a deleted git worktree's lane under its main checkout again: the host now lets the app ask git whether a repository holds a commit.
+- A meeting named on one paired machine is now named on the other too.
+- A paired machine's checkout maps onto the local checkout of the same repository whose folder names match it most, then the shortest path, so a scratch clone no longer takes the lane of the main checkout.
+
 ## 0.2.0-next.24
 
 ### Patch Changes
