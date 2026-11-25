@@ -147,7 +147,7 @@ const jsonTextOf = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 
 const systemTsconfigOf = (options: {
   target: string;
-  product: ResolvedProduct & SharedDirs;
+  product: ResolvedProduct & SharedDirs & { lentSharedDirs?: string[] };
   assetRoot?: string;
   include?: string[];
 }) => {
@@ -172,6 +172,7 @@ const systemTsconfigOf = (options: {
     .filter((dir) => !productShared.includes(dir) || existsSync(dir))
     .map(fileOf);
   const shared = sharedDirs.map((dir) => resolve(dir, '**/*.ts'));
+  const sharedPaths = [...sharedDirs, ...(product.lentSharedDirs ?? []).map(fileOf)];
 
   const config = {
     compilerOptions: {
@@ -182,7 +183,7 @@ const systemTsconfigOf = (options: {
         ...(fixtures.length > 0 ? { [FIXTURES_SPECIFIER]: fixtures } : {}),
         [DESIGN_SYSTEM_SPECIFIER]: [definePart],
         [KIT_SPECIFIER]: [kit],
-        ...(sharedDirs.length > 0 ? { [`${SHARED_PREFIX}*`]: sharedDirs.map((dir) => resolve(dir, '*')) } : {}),
+        ...(sharedPaths.length > 0 ? { [`${SHARED_PREFIX}*`]: sharedPaths.map((dir) => resolve(dir, '*')) } : {}),
       },
     },
     include: [

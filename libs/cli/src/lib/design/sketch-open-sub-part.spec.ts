@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -16,7 +16,15 @@ import {
 import { resolveProduct } from './system/resolve-product';
 import { typecheckVariant, variantProblemsOf } from './system/sketch/check-sketches';
 import { mergeRefusalOf } from './system/sketch/merge';
-import { findSketch, parseTarget, Sketch, variantDirOf, writeSketchFile } from './system/sketch/sketch';
+import {
+  createSketch,
+  findSketch,
+  parseTarget,
+  sharedDirOf,
+  Sketch,
+  variantDirOf,
+  writeSketchFile,
+} from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 const reread = (target: string, key: string): Sketch => {
@@ -106,7 +114,7 @@ describe('a composition sketch that uses a part of another open sketch', () => {
     );
 
     expect(messages).toContain(
-      'components/tab-bar is new in the open sketch on components/tab-bar, which recommends no variant - run design sketch recommend components/tab-bar --variant <key> --by <model id>',
+      'components/tab-bar is drawn in the open sketch on components/tab-bar, which recommends no variant - run design sketch recommend components/tab-bar --variant <key> --by <model id>',
     );
   });
 
@@ -125,6 +133,116 @@ describe('a composition sketch that uses a part of another open sketch', () => {
       'elements/shell-app variant a uses components/tab-bar from the open sketch on components/tab-bar - merge that sketch first',
     );
   });
+});
+
+const SDK_BUTTON = resolve(__dirname, '../../../../../.ethlete/design/sdk/components/button');
+const INSTALLED = 'node_modules/@ethlete/components/design';
+
+const BUTTON_KIT_SOURCE = `export const tfButton = (label: string) => \`<button class="tf-button">\${label}</button>\`;
+`;
+
+const TF_BUTTON_SOURCE = `import { definePart, drawing } from '@design-system';
+import { tfButton } from '@shared/button-kit';
+
+type Props = Record<string, never>;
+
+export { tfButton };
+
+export default definePart<Props>({
+  note: 'Der Tomflix-Knopf.',
+  states: { abspielen: {} },
+  describe: { abspielen: 'The play button; check that it reads as the main action.' },
+  render: () => drawing({ body: tfButton('Abspielen'), styles: '' }),
+});
+`;
+
+const HERO_DATA_SOURCE = `import { tfButton } from '@system/components/button';
+
+export const heroActions = () => tfButton('Abspielen');
+`;
+
+const HERO_STUB_SOURCE = `import { definePart, drawing } from '@design-system';
+
+type Props = Record<string, never>;
+
+export default definePart<Props>({
+  note: '',
+  states: { default: {} },
+  describe: { default: '' },
+  render: () => drawing({ body: '<div class="hero">hero</div>', styles: '' }),
+});
+`;
+
+const HERO_USING_TF_BUTTON = `import { definePart, drawing } from '@design-system';
+import { tfButton } from '@system/components/button';
+
+type Props = Record<string, never>;
+
+export default definePart<Props>({
+  note: 'Szenenbild mit Titel und Knopf.',
+  states: { dune: {} },
+  describe: { dune: 'The hero of Dune with its play button; check that the button stands out.' },
+  render: () => drawing({ body: \`<section class="tf-hero">\${tfButton('Abspielen')}</section>\`, styles: '' }),
+});
+`;
+
+describe('a composition sketch that uses an SDK part another open sketch overrides', () => {
+  // Client run 0236: hero variant a and the hero's shared data import tfButton from the open override sketch of the SDK button, which recommends a and builds it in its own shared folder; variant b is still a stub.
+  it('draws the override from the variant the open sketch recommends', () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-open-override-'));
+    const config = { styles: [], base: '@ethlete/components', schemes: ['dark' as const] };
+
+    write(join(target, DESIGN_DIR, 'config.json'), JSON.stringify({ products: { tomflix: config } }));
+    mkdirSync(join(target, DESIGN_DIR, 'tomflix'), { recursive: true });
+    cpSync(SDK_BUTTON, join(target, INSTALLED, 'sdk/components/button'), { recursive: true });
+    write(
+      join(target, INSTALLED, 'config.json'),
+      JSON.stringify({ products: { sdk: { presets: { desktop: { width: 1440 } } } } }),
+    );
+
+    const product = () => resolveProduct({ target, name: 'tomflix', config });
+    const parsed = parseTarget('components/button');
+    const button =
+      typeof parsed === 'string'
+        ? parsed
+        : createSketch({ product: product(), sketch: parsed, variants: ['a', 'b'], merge: 'override' });
+
+    if (typeof button === 'string') throw new Error(button);
+
+    for (const variant of button.variants)
+      write(resolve(variantDirOf(button, variant), 'components/button/button.ts'), TF_BUTTON_SOURCE);
+    write(resolve(sharedDirOf(button), 'button-kit.ts'), BUTTON_KIT_SOURCE);
+    writeSketchFile({ ...button, recommended: 'a' }, { base: button });
+
+    const hero = opened(product(), 'elements/hero');
+
+    write(resolve(variantDirOf(hero, 'a'), 'elements/hero/hero.ts'), HERO_USING_TF_BUTTON);
+    write(resolve(variantDirOf(hero, 'b'), 'elements/hero/hero.ts'), HERO_STUB_SOURCE);
+    write(resolve(sharedDirOf(hero), 'hero-data.ts'), HERO_DATA_SOURCE);
+
+    const system = createSystemModules({ target, config: { products: { tomflix: config } } });
+
+    expect(
+      system.resolveId(
+        '@system/components/button',
+        productModuleIdOf({
+          file: resolve(variantDirOf(hero, 'a'), 'elements/hero/hero.ts'),
+          product: 'tomflix',
+          sketch: { target: hero.target, variant: 'a' },
+        }),
+      ),
+    ).toBe(
+      productModuleIdOf({
+        file: resolve(variantDirOf(button, 'a'), 'components/button/button.ts'),
+        product: 'tomflix',
+        sketch: { target: 'components/button', variant: 'a' },
+      }),
+    );
+    for (const variant of hero.variants)
+      expect(typecheckVariant({ target, product: product(), sketch: reread(target, hero.target), variant })).toEqual({
+        kind: 'ok',
+      });
+  }, 120_000);
 });
 
 describe('a composition sketch whose variants differ in a sub-part', () => {

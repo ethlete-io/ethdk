@@ -1,16 +1,17 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { ASSETS_FOLDER } from '../assets';
 import { Layer, LAYER_USES, LAYERS } from '../layers';
-import { partDependenciesOf } from '../imports';
+import { classifyImport, partDependenciesOf } from '../imports';
 import { fixturesOf, partFilesOf } from '../product';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
+import { importsOf } from '../ts-source';
 import { editOldBaseOf } from './edit-old-base';
 import { changesOnlyImports, importsAnyOf } from './host-edit';
 import { listSketches, Sketch, sharedDirOf, variantDirOf, variantSharedDirOf } from './sketch';
 
-/** A part the product does not hold yet, drawn from the variant `variant` of the open sketch on `sketch`. */
+/** A part the product does not hold of its own yet, drawn from the variant `variant` of the open sketch on `sketch`. */
 export type BorrowedPart = { part: string; sketch: string; variant: string };
 
 export type SketchedProduct = ResolvedProduct & {
@@ -19,6 +20,8 @@ export type SketchedProduct = ResolvedProduct & {
   variantSharedDir: string;
   assetsDir: string;
   borrowed: BorrowedPart[];
+  /** The `shared/` folders of the sketches it borrows from, where a borrowed part finds its own `@shared/...`. */
+  lentSharedDirs: string[];
   /** Whether the user picked this variant; before that its part may still hold fewer states than a merged one. */
   picked: boolean;
 };
@@ -40,12 +43,25 @@ export const openSketchesDrawingOf = (sketch: Sketch, keys: Set<string>) =>
           : other.targets.filter((key) => keys.has(key)).map((part) => ({ part, sketch: other })),
       );
 
-const lentPartsOf = (options: { sketch: Sketch; held: ResolvedPart[]; has: Set<string> }) => {
+/** The parts the `.ts` files below the sketch's `shared/` folders import; each variant typechecks them all. */
+export const sharedPartKeysOf = (sketch: Sketch, variant: string) =>
+  [sharedDirOf(sketch), variantSharedDirOf(sketch, variant)]
+    .filter((dir) => existsSync(dir))
+    .flatMap((dir) =>
+      readdirSync(dir, { recursive: true, encoding: 'utf8' })
+        .filter((name) => name.endsWith('.ts'))
+        .map((name) => resolve(dir, name)),
+    )
+    .flatMap((file) => importsOf(readFileSync(file, 'utf8')).map(classifyImport))
+    .flatMap((imported) => (imported.kind === 'part' ? [partKeyOf(imported)] : []));
+
+type LendOptions = { sketch: Sketch; held: ResolvedPart[]; needs: string[]; has: Set<string>; baseKeys: Set<string> };
+
+const lentPartsOf = (options: LendOptions) => {
   const missing = new Set(
-    options.held
-      .flatMap((part) => partDependenciesOf(part))
-      .map(partKeyOf)
-      .filter((key) => !options.has.has(key)),
+    [...options.held.flatMap((part) => partDependenciesOf(part)).map(partKeyOf), ...options.needs].filter(
+      (key) => !options.has.has(key),
+    ),
   );
 
   return openSketchesDrawingOf(options.sketch, missing).flatMap(({ part, sketch }) => {
@@ -58,26 +74,34 @@ const lentPartsOf = (options: { sketch: Sketch; held: ResolvedPart[]; has: Set<s
 
     const resolved: ResolvedPart = {
       ...file,
-      origin: 'product',
+      origin: options.baseKeys.has(part) ? 'overridden' : 'product',
       source: readFileSync(file.file, 'utf8'),
       cssSource: file.css && existsSync(file.css) ? readFileSync(file.css, 'utf8') : null,
     };
 
-    return [{ resolved, borrowed: { part, sketch: sketch.target, variant } }];
+    return [
+      {
+        resolved,
+        borrowed: { part, sketch: sketch.target, variant },
+        sharedDirs: [variantSharedDirOf(sketch, variant), sharedDirOf(sketch)],
+      },
+    ];
   });
 };
 
-const borrowedPartsOf = (options: { sketch: Sketch; held: ResolvedPart[]; has: Set<string> }) => {
+const borrowedPartsOf = (options: LendOptions) => {
   const has = new Set(options.has);
   const borrowed: ReturnType<typeof lentPartsOf> = [];
   let held = options.held;
+  let needs = options.needs;
 
-  while (held.length > 0) {
-    const lent = lentPartsOf({ sketch: options.sketch, held, has });
+  while (held.length > 0 || needs.length > 0) {
+    const lent = lentPartsOf({ ...options, held, needs, has });
 
     for (const entry of lent) has.add(entry.borrowed.part);
     borrowed.push(...lent);
     held = lent.map(({ resolved }) => resolved);
+    needs = [];
   }
 
   return borrowed;
@@ -117,10 +141,13 @@ export const overlaySketch = (options: {
   const borrowed = borrowedPartsOf({
     sketch,
     held: sketched,
-    has: new Set([...keys, ...product.parts.map(partKeyOf)]),
+    needs: sharedPartKeysOf(sketch, variant),
+    has: new Set([...keys, ...product.parts.filter((part) => part.origin !== 'base').map(partKeyOf)]),
+    baseKeys,
   });
+  const replaced = new Set([...keys, ...borrowed.map((entry) => entry.borrowed.part)]);
   const parts = [
-    ...product.parts.filter((part) => !keys.has(partKeyOf(part))),
+    ...product.parts.filter((part) => !replaced.has(partKeyOf(part))),
     ...sketched,
     ...borrowed.map(({ resolved }) => resolved),
   ].sort((a, b) => LAYERS.indexOf(a.layer) - LAYERS.indexOf(b.layer) || a.name.localeCompare(b.name));
@@ -156,6 +183,7 @@ export const overlaySketch = (options: {
     variantSharedDir: variantSharedDirOf(sketch, variant),
     assetsDir: resolve(dir, ASSETS_FOLDER),
     borrowed: borrowed.map((entry) => entry.borrowed),
+    lentSharedDirs: [...new Set(borrowed.flatMap((entry) => entry.sharedDirs))],
     picked: sketch.decision?.kind === 'pick' && sketch.decision.variant === variant,
   };
 };

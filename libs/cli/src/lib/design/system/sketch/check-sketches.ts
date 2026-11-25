@@ -12,7 +12,7 @@ import { goneSketchCommentWarningsOf } from '../rules/stale-comment';
 import { typecheckProduct, typecheckProductAsync } from '../system-tsconfig';
 import { duplicateClassWarningsOf } from './duplicate-class';
 import { mergedLayoutProblemsOf } from './merged-layout';
-import { lentVariantOf, openSketchesDrawingOf, overlaySketch, SketchedProduct } from './overlay';
+import { lentVariantOf, openSketchesDrawingOf, overlaySketch, sharedPartKeysOf, SketchedProduct } from './overlay';
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
 import { stateNamesOf, stateSourcesOf, withMadeBy, withNote } from './part-definition';
@@ -162,14 +162,21 @@ const differingSubPartsOf = (sketch: Sketch): Map<string, Problem[]> => {
   return problems;
 };
 
-const unlentPartsOf = (sketch: Sketch, overlaid: SketchedProduct): Problem[] => {
-  const has = new Set(overlaid.parts.map(partKeyOf));
+const unlentPartsOf = ({
+  sketch,
+  variant,
+  overlaid,
+}: {
+  sketch: Sketch;
+  variant: string;
+  overlaid: SketchedProduct;
+}): Problem[] => {
+  const has = new Set(overlaid.parts.filter((part) => part.origin !== 'base').map(partKeyOf));
   const held = overlaid.parts.filter((part) => overlaid.sketched.includes(partKeyOf(part)));
   const missing = new Set(
-    held
-      .flatMap((part) => partDependenciesOf(part))
-      .map(partKeyOf)
-      .filter((key) => !has.has(key)),
+    [...held.flatMap((part) => partDependenciesOf(part)).map(partKeyOf), ...sharedPartKeysOf(sketch, variant)].filter(
+      (key) => !has.has(key),
+    ),
   );
 
   return openSketchesDrawingOf(sketch, missing).flatMap(({ part, sketch: other }) =>
@@ -179,7 +186,7 @@ const unlentPartsOf = (sketch: Sketch, overlaid: SketchedProduct): Problem[] => 
           {
             rule: 'SKETCH',
             file: sketch.dir,
-            message: `${part} is new in the open sketch on ${other.target}, which recommends no variant - run design sketch recommend ${other.target} --variant <key> --by <model id>`,
+            message: `${part} is drawn in the open sketch on ${other.target}, which recommends no variant - run design sketch recommend ${other.target} --variant <key> --by <model id>`,
           },
         ],
   );
@@ -240,7 +247,7 @@ export const variantProblemsOf = (options: {
         ...found.filter((problem) => !wasThere(problem)),
         ...metadataProblem,
         ...(differing.get(variant) ?? []),
-        ...unlentPartsOf(options.sketch, overlaid),
+        ...unlentPartsOf({ sketch: options.sketch, variant, overlaid }),
         ...subPartProblemsOf({ ...options, variant, overlaid }),
         ...(isEditSketch(options.sketch) && variant === EDIT_OLD
           ? []
