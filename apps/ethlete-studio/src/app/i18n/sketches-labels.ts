@@ -13,7 +13,6 @@ export const SKETCHES_LABELS = {
   emptyText: 'Skizzen deines Agenten erscheinen hier, sobald er einen Entwurf zeichnet.',
   loading: 'Lädt',
   discard: 'Verwerfen',
-  editHint: 'Kein Verwerfen: wähle eine der beiden Zeilen',
   editOld: 'Zuletzt gemergter Stand',
   editNew: 'Änderung behalten',
   discardConfirm: {
@@ -68,6 +67,7 @@ export const SKETCHES_LABELS = {
   newInSketch: 'neu in der Skizze',
   foldedToRest: '= rest',
   missingInVariant: 'fehlt in dieser Variante',
+  removedIn: (variant: string) => `entfällt in ${variant}`,
   showAllStates: 'Alle Zustände zeigen',
   hideStates: 'Zustände einklappen',
   wholeScreen: 'Ganzer Screen',

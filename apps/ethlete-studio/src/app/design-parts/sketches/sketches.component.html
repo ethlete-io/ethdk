@@ -368,7 +368,10 @@
           </span>
         }
       }
-      @if (row.shots.length > 0 || ((row.key === CURRENT || isEdit()) && stageStates().length > 0)) {
+      @if (
+        row.shots.length > 0 ||
+        ((row.key === CURRENT || isEdit() || dropping().has(row.key)) && stageStates().length > 0)
+      ) {
         <div
           #stage
           [attr.data-sk-stage-row]="row.key"
@@ -421,7 +424,11 @@
                       [style.height.px]="stateHeightOf(state) * scale()"
                       [attr.data-sk-state]="state"
                       [attr.data-sk-variant]="row.key"
-                      [attr.title]="row.key === CURRENT ? LABELS.newInSketch : LABELS.missingInVariant"
+                      [attr.title]="
+                        row.key === CURRENT
+                          ? LABELS.newInSketch
+                          : LABELS.removedIn(row.label ?? LABELS.variant(row.key))
+                      "
                       class="box-border self-end rounded-control-sm border border-dashed border-(--et-surface-border-solid)"
                       data-sk-missing
                     ></div>
@@ -456,7 +463,9 @@
                     [style.width.px]="row.width * scale()"
                     class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
                   >
-                    {{ row.key === CURRENT ? LABELS.newInSketch : LABELS.missingInVariant }}
+                    {{
+                      row.key === CURRENT ? LABELS.newInSketch : LABELS.removedIn(row.label ?? LABELS.variant(row.key))
+                    }}
                   </div>
                 </div>
               }

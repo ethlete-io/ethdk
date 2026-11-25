@@ -211,6 +211,12 @@ const countNewFaces = (
 
 const isWithdrawn = (row: SketchRow) => row.withdrawn !== undefined;
 
+const dropsBaseState = (key: string, listed: readonly SketchRow[]) => {
+  const own = new Set(listed.find((row) => row.key === key)?.shots.map((shot) => shot.state));
+
+  return statesOf(listed.filter(isBaseRow)).some((state) => !own.has(state));
+};
+
 const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === null);
 
 @Component({
@@ -429,6 +435,14 @@ export class SketchesComponent {
   });
   public shownRows = computed(() => this.shownRowsOf(this.statesOpen()));
   protected stageStates = computed(() => statesOf(this.shownRows()));
+  protected dropping = computed(
+    () =>
+      new Set(
+        this.listedRows()
+          .filter((row) => !isBaseRow(row) && dropsBaseState(row.key, this.listedRows()))
+          .map((row) => row.key),
+      ),
+  );
   protected discardable = computed(() => !this.isEdit());
   protected grid = computed(() =>
     this.shownRows().some((row) => row.perLine) ? null : interactionGridOf(gridStatesOf(this.shownRows())),
@@ -506,6 +520,7 @@ export class SketchesComponent {
           !isBaseRow(row) &&
           row.key !== drawn &&
           shotsOf(row.key).length > 0 &&
+          !dropsBaseState(row.key, listed) &&
           shotsOf(row.key).every((shot) => shot.changed === false || (shot.changed === null && wasSame.has(row.key))),
       );
     },
@@ -570,7 +585,13 @@ export class SketchesComponent {
     () =>
       new Set(
         this.listedRows()
-          .filter((row) => !isBaseRow(row) && row.shots.length > 0 && row.shots.every((shot) => shot.changed === false))
+          .filter(
+            (row) =>
+              !isBaseRow(row) &&
+              row.shots.length > 0 &&
+              !this.dropping().has(row.key) &&
+              row.shots.every((shot) => shot.changed === false),
+          )
           .map((row) => row.key),
       ),
   );

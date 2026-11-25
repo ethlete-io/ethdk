@@ -233,9 +233,7 @@ export const sketchHead = async ({
           ? html`<span class="relative flex" data-sk-discard
               >${withAction(control(discard, 'discard'), 'emit:discard')}${discardDialog}</span
             >`
-          : html`<span class="pe-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
-              >${SKETCHES_LABELS.editHint}</span
-            >`
+          : ''
       }
     </div>
   </div>`;

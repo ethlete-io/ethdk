@@ -166,14 +166,14 @@ describe('SketchHeadComponent', () => {
     expect(host.withdrawn()).toBe('shown');
   });
 
-  it('shows the edit hint in place of Verwerfen when the sketch cannot be discarded', async () => {
+  it('draws no Verwerfen and no hint text when the sketch cannot be discarded', async () => {
     const { fixture, root, host } = await setup();
 
     host.discardable.set(false);
     await fixture.whenStable();
 
     expect(root.querySelector('[data-sk-discard]')).toBeNull();
-    expect(root.querySelector('[data-sk-edit-hint]')?.textContent?.trim()).toBe(SKETCHES_LABELS.editHint);
+    expect(root.querySelector('[data-sk-toolbar]')?.textContent).not.toContain('Kein Verwerfen');
   });
 
   // Decision human 23.11. (B703): the head goes away completely, so the part draws no header, title or round select.

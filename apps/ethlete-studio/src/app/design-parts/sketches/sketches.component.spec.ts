@@ -671,7 +671,7 @@ describe('SketchesComponent', () => {
     const edit: HTMLElement = (await render({ part: 'components/card@edit' })).nativeElement;
 
     expect(buttons(edit)).not.toContain(LABELS.discard);
-    expect(textOf(edit.querySelector('[data-sk-edit-hint]'))).toBe(LABELS.editHint);
+    expect(edit.querySelector('[data-sk-toolbar]')?.textContent).not.toContain('Kein Verwerfen');
   });
 
   it('discards only after the confirm, and Abbrechen keeps the sketch', async () => {
@@ -1067,7 +1067,7 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-first-change]')).toBeNull();
   });
 
-  it('marks a state a variant adds as new in Aktuell and as missing in a variant without it', async () => {
+  it('marks a state a variant adds as new in Aktuell and as gone in a variant without it', async () => {
     const rows: SketchRow[] = [
       ...ROWS,
       {
@@ -1082,9 +1082,30 @@ describe('SketchesComponent', () => {
       root.querySelector(`[data-sk-row="${key}"] [data-sk-missing][data-sk-state="busy"]`);
 
     expect(textOf(missingOf('current'))).toBe(`busy ${LABELS.newInSketch}`);
-    expect(textOf(missingOf('x'))).toBe(`busy ${LABELS.missingInVariant}`);
+    expect(textOf(missingOf('x'))).toBe(`busy ${LABELS.removedIn('Variante x')}`);
     expect(missingOf('y')).toBeNull();
     expect(root.querySelector('[data-sk-row="y"] [data-sk-frame="y busy"]')).not.toBeNull();
+  });
+
+  it('shows a variant that only drops a state, with the dropped state as gone in it', async () => {
+    const kept = ['changed', 'unchanged', 'same-as-rest', 'loading', 'loading-small', 'cropped', 'stacked'];
+    const shotsOf = (states: string[]) => states.map((state) => ({ state, changed: false, height: 100 }));
+    const rows: SketchRow[] = [
+      { key: 'current', note: '', width: 400, shots: shotsOf([...kept, 'pinned']) },
+      {
+        key: 'a',
+        note: 'Die Pins sitzen auf ihrem Punkt in der Zelle ihres Zustands; die Zelle selbst zeigt keine Pins mehr.',
+        width: 400,
+        shots: shotsOf(kept),
+      },
+    ];
+    const root: HTMLElement = (await render({ camera: '100', rows })).nativeElement;
+
+    expect(root.querySelector('[data-sk-same]')).toBeNull();
+    expect(textOf(root.querySelector('[data-sk-row="a"] [data-sk-note]'))).toBe(rows[1]!.note);
+    expect(textOf(root.querySelector('[data-sk-row="a"] [data-sk-missing][data-sk-state="pinned"]'))).toBe(
+      `pinned ${LABELS.removedIn('Variante a')}`,
+    );
   });
 
   it('draws a state measured wider than its row at its own width', async () => {
