@@ -245,9 +245,22 @@ pub fn run() {
                 design_server::stop_every(&handle.state::<design_server::DesignServers>());
                 update::install_pending(&handle.state::<update::PendingUpdate>());
                 handle.state::<window_chrome::ChromeWatch>().stop();
+                drain_cef();
             }
         });
     shutdown::exit_with_signal_code();
+}
+
+/// Workaround: tauri-runtime-cef calls `cef::shutdown` right after the last `OnBeforeClose`, while
+/// the closed Chrome-style browser may still wait for its deletion task; `CefShutdown` then crashes
+/// in `BrowserManagerService::Shutdown`. Pumps CEF the way its external-pump sample does before
+/// shutdown:
+/// https://github.com/chromiumembedded/cef/blob/master/tests/shared/browser/main_message_loop_external_pump_linux.cc
+fn drain_cef() {
+    for _ in 0..10 {
+        tauri_runtime_cef::cef::do_message_loop_work();
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
 }
 
 /// The page fetches the design server on a loopback address. Chromium's Local Network Access holds
