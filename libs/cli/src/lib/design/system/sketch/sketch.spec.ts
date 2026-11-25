@@ -813,6 +813,21 @@ describe('addVariant', () => {
     expect(readFileSync(join(shared, 'linked.ts'), 'utf8')).toBe('export const data = 1;\n');
   });
 
+  it('carries the notRebuilds of the copied variant over', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const notRebuilds = [{ part: 'badge', of: 'sdk:badge', difference: 'draws its own shape' }];
+
+    const added = addVariant({
+      sketch: { ...sketch, variantInfo: { ...sketch.variantInfo, a: { ...sketch.variantInfo['a'], notRebuilds } } },
+      variant: 'c',
+      from: 'a',
+    }) as Sketch;
+
+    expect(added.variantInfo['c']?.notRebuilds).toEqual(notRebuilds);
+    expect(added.variantInfo['b']?.notRebuilds).toBeUndefined();
+  });
+
   it('copies a variant into the running round, back to in progress and without the pick', () => {
     const target = acme();
     const sketch = open(target, 'elements/hero');

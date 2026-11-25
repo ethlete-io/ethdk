@@ -1862,7 +1862,13 @@ export const addVariant = (options: {
     ...undecided,
     status: 'in progress',
     rounds,
-    variantInfo: { ...sketch.variantInfo, [variant]: variantInfoOf({ round: runningRoundOf({ rounds }).key, author }) },
+    variantInfo: {
+      ...sketch.variantInfo,
+      [variant]: {
+        ...variantInfoOf({ round: runningRoundOf({ rounds }).key, author }),
+        ...(sketch.variantInfo[from]?.notRebuilds?.length ? { notRebuilds: sketch.variantInfo[from].notRebuilds } : {}),
+      },
+    },
     variants: [...sketch.variants, variant].sort(),
   };
 
