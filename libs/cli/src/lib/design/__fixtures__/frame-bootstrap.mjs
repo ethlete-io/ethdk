@@ -128,6 +128,12 @@ await entry.link((specifier) => {
   if (specifier === './frame-sheet')
     return new SourceTextModule(transpiled(new URL(specifier + '.ts', `file://${process.argv[2]}`)), { context });
 
+  if (specifier === 'virtual:design-explore/frame')
+    return new SourceTextModule(
+      `${transpiled(new URL('../frame-fit-padding.ts', import.meta.url))}\nexport const fitPadding = FRAME_FIT_PADDING;`,
+      { context },
+    );
+
   const exports = modules[specifier];
   return new SyntheticModule(
     Object.keys(exports),
