@@ -825,7 +825,8 @@ go together; the part note stays. With two live variants the user picks in Studi
 
 A merge commits what it wrote as `feat(repo): Merge <target> variant <key> into <product>`. When the checkout has a
 `.changeset` folder and a merged file lies in a workspace package, the commit also holds a changeset that names each
-such package with the level `none`.
+such package with the level `none`. When git refuses that commit (a held `index.lock`, a failing hook), the merge
+undoes every file it wrote, so `merged.json`, the parts and the sketch stay as before, and it fails with git's reason.
 
 A merge refuses a picked variant whose files changed since `sketch ready` judged them. A `sketch rebase` that keeps
 the pick does not count as such a change: when the picked variant was unchanged since `sketch ready` (or is named in

@@ -129,7 +129,7 @@ export const mergeAndRecord = (options: {
 
         const extraFiles = regenerateStudioThemesOf({ target, product, parts: sketch.targets });
 
-        commitMergeResultSync({
+        return commitMergeResultSync({
           target,
           product,
           sketch,
@@ -167,8 +167,8 @@ export const printPortItems = async (options: {
 
 /**
  * Runs `merge` behind the app gate and then `finish` (the writes that complete it, up to its commit) as one journaled
- * step: a refusal or a throw undoes every file it wrote, and the next process that takes the product lock undoes a
- * killed one, or finishes it once its commit landed. Before `finish` it rebases the other sketches the merge made stale
+ * step: a refusal, a throw or a commit git refuses (`finish` answers git's reason) undoes every file it wrote, and the
+ * next process that takes the product lock undoes a killed one, or finishes it once its commit landed. Before `finish` it rebases the other sketches the merge made stale
  * and hands `finish` their folders, so the merge commit holds them. Waits for a merge of the product that another thread
  * or process still finishes.
  */
@@ -177,7 +177,7 @@ export const journaledMergeOf = (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   merge: () => string[] | MergeRefusal;
-  finish: (before: Map<string, string> | null, sketchDirs: string[]) => void;
+  finish: (before: Map<string, string> | null, sketchDirs: string[]) => string | null | void;
 }): string[] | MergeRefusal => {
   const { target, product, sketch } = options;
   const journal = openJournal({
@@ -202,7 +202,14 @@ export const journaledMergeOf = (options: {
     }
 
     rebases = rebaseOthersAfterMerge({ target, product, sketch });
-    options.finish(before, rebases.dirs);
+
+    const refused = options.finish(before, rebases.dirs);
+
+    if (refused) {
+      journal.rollback();
+
+      return { reason: `git refused the merge commit of ${sketch.target}, so nothing was merged: ${refused}` };
+    }
   } catch (error) {
     journal.rollback();
 

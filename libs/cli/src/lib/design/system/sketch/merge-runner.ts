@@ -24,7 +24,7 @@ export type MergeResponse = { result?: string[] | MergeRefusal; error?: string }
 
 /**
  * Merges the picked variant of `sketch` as the Studio merge does, on this thread: refreshes the harness map, records the
- * note and commits the result. With `pick` it records that pick in the same journaled step, so a refused merge leaves
+ * note and commits the result; a commit git refuses undoes the merge and answers why. With `pick` it records that pick in the same journaled step, so a refused merge leaves
  * no pick behind.
  */
 export const studioMergeOf = ({
@@ -61,7 +61,7 @@ export const studioMergeOf = ({
 
       if (note?.trim()) for (const part of sketch.targets) recordMergeReason({ product, part, reason: note.trim() });
 
-      commitMergeResultSync({ target, product, sketch, variant, before, sketchDirs });
+      return commitMergeResultSync({ target, product, sketch, variant, before, sketchDirs });
     },
   });
 };

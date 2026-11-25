@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -37,6 +37,8 @@ const pickedSketch = (target: string, sketch: SketchTarget, css: string) => {
 
   return decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', ...originOf('designer') } }) as Sketch;
 };
+
+const textOf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
 
 const mergeOf = (target: string, sketch: Sketch) =>
   mergeAndRecord({ target, config: readConfig(target) ?? {}, product: productOf(target), sketch, note: 'Calmer.' });
@@ -225,6 +227,42 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
 
     expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
     expect(git('show', '--name-only', '--format=', 'HEAD').stdout).not.toContain('.changeset/');
+  });
+
+  it('refuses a merge whose commit git refuses and leaves merged.json and the sketch as before', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const git = gitOf(target);
+
+    git('init');
+    git('config', 'user.name', 't');
+    git('config', 'user.email', 't@t');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    const hero = pickedSketch(
+      target,
+      { layer: 'elements', name: 'hero' },
+      '.acme-hero { background: var(--acme-accent); }',
+    );
+    const merged = join(target, DESIGN_DIR, 'acme/merged.json');
+    const mergedBefore = textOf(merged);
+    const sketchBefore = readFileSync(join(hero.dir, 'sketch.json'), 'utf8');
+    const heroCss = join(target, DESIGN_DIR, 'acme/elements/hero/hero.css');
+    const cssBefore = readFileSync(heroCss, 'utf8');
+
+    writeFileSync(join(target, '.git/index.lock'), '');
+
+    const result = mergeOf(target, hero);
+
+    expect(result).toEqual(expect.stringContaining('git refused the merge commit of elements/hero'));
+    expect(result).toEqual(expect.stringContaining('index.lock'));
+    expect(textOf(merged)).toBe(mergedBefore);
+    expect(readFileSync(join(hero.dir, 'sketch.json'), 'utf8')).toBe(sketchBefore);
+    expect(readFileSync(heroCss, 'utf8')).toBe(cssBefore);
+    expect(git('log', '--format=%s').stdout.trim()).toBe('base');
   });
 
   it('leaves the files in place outside a git checkout', () => {

@@ -129,11 +129,11 @@ function* commitFlow(options: {
   before: Map<string, string> | null;
   sketchDirs?: string[];
   extraFiles?: string[];
-}): GitFlow<boolean> {
+}): GitFlow<string | null> {
   const { product, sketch, before } = options;
   const after = yield* dirtyFilesFlow(product);
 
-  if (!before || !after) return false;
+  if (!before || !after) return null;
 
   const productDir = realpathSync(product.dir);
   const sketches = sketchesDirOf(productDir);
@@ -145,7 +145,7 @@ function* commitFlow(options: {
     .map(([file]) => file)
     .filter((file) => !below(file, sketches) || held.some((dir) => below(file, dir)));
 
-  if (files.length === 0) return true;
+  if (files.length === 0) return null;
 
   const extra = (options.extraFiles ?? []).filter((file) => !files.includes(file));
 
@@ -181,10 +181,11 @@ function* commitFlow(options: {
 
   for (const { file, text } of restore) writeDecisionFile(file, text);
 
-  if (committed.status !== 0)
-    console.warn(`Could not commit the merge: ${(committed.stderr || committed.stdout).trim()}`);
+  if (committed.status === 0) return null;
 
-  return committed.status === 0;
+  yield { args: ['reset', '--quiet', '--', ...files, ...extra] };
+
+  return (committed.stderr || committed.stdout).trim() || `git exited with ${committed.status}`;
 }
 
 type CommitOptions = {
@@ -204,7 +205,8 @@ export const dirtyFilesOfSync = (options: { target: string; product: ResolvedPro
 /**
  * Commits what a merge wrote into the product's folders - the files dirty now that were clean or different before,
  * the merged sketch's own deletion and what the merge's rebase wrote into `sketchDirs`, never another open sketch - as one commit, with a `none` changeset for each
- * workspace package they lie in when the checkout has a `.changeset` folder. A failed commit warns and leaves the files as they are.
+ * workspace package they lie in when the checkout has a `.changeset` folder. Answers why git refused the commit, else
+ * `null` (also outside a git checkout); a refused commit unstages what it staged and leaves the files to the caller.
  */
 export const commitMergeResultSync = (options: CommitOptions) =>
   withProductLock(options.product.dir, () => runSync(options.target, commitFlow(options)));
