@@ -5,6 +5,8 @@ export type SketchFrameRow = { key: string; shots: readonly SketchFrameShot[] };
 
 const isBaseRow = (row: SketchFrameRow) => row.key === 'current' || row.key === 'old' || row.key === 'new';
 
+const isCurrentRow = (row: SketchFrameRow) => row.key === 'current';
+
 const INTERACTION_SUFFIX = /-(hover|focus-visible|active|disabled)$/;
 
 const interactionGroupOf = (state: string) => state.replace(INTERACTION_SUFFIX, '');
@@ -41,12 +43,17 @@ export const foldedStatesOf = (rows: readonly SketchFrameRow[]): ReadonlySet<str
 export const keptStatesOf = (current: readonly string[], variants: readonly (readonly string[])[]): string[] =>
   variants.length === 0 ? [] : current.filter((state) => variants.every((unchanged) => unchanged.includes(state)));
 
-/** The states no variant is known to change yet: those still compared (`null`) and those known unchanged. */
+/**
+ * The states no variant is known to change yet: those still compared (`null`) and those known unchanged. The `old` and
+ * `new` of an edit sketch count as variants here.
+ */
 export const unknownStatesOf = (rows: readonly SketchFrameRow[]): ReadonlySet<string> =>
   new Set(
     statesOf(rows).filter(
       (state) =>
-        !rows.some((row) => !isBaseRow(row) && row.shots.some((shot) => shot.state === state && shot.changed === true)),
+        !rows.some(
+          (row) => !isCurrentRow(row) && row.shots.some((shot) => shot.state === state && shot.changed === true),
+        ),
     ),
   );
 
@@ -62,7 +69,7 @@ export const shownSketchRowsOf = <T extends SketchFrameRow>(options: {
   open?: boolean;
 }): T[] => {
   const { listed, hidden = [], open = false } = options;
-  const pending = listed.some((row) => !isBaseRow(row) && row.shots.some((shot) => shot.changed === null));
+  const pending = listed.some((row) => !isCurrentRow(row) && row.shots.some((shot) => shot.changed === null));
   const all = [...listed, ...hidden];
   const folded = open ? new Set<string>() : pending ? unknownStatesOf(all) : foldedStatesOf(all);
 
