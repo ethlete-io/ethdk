@@ -140,6 +140,7 @@ import { stopOpenPointsWorkers, warmOpenPointsOf } from './system/open-points-ru
 import { oneProductOf } from './system/sketch/cli-args';
 import { timedPhase } from './phase-timing';
 import { watchModuleFetches } from './fetch-watch';
+import { skipCoveredAdds } from './covered-watch';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -1161,6 +1162,7 @@ const designExplore = ({
         ]);
       });
       vite.watcher.add([designRoot, ...baseDirs, ...packageDirs()]);
+      skipCoveredAdds(vite.watcher, [designRoot, ...baseDirs]);
       vite.watcher.on('add', (file: string) => (isPackageFile(file) ? packageChanged(file) : refresh(file)));
       vite.watcher.on('unlink', refresh);
       vite.watcher.on('change', change);
