@@ -1,5 +1,27 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.45
+
+### Minor Changes
+
+- New opt-in `builder-idle-check` Stop hook: a builder session that ends a turn with nothing running while `plans/QUEUE.md` has open Builder rows is sent back to work, with those rows named.
+- Restore the `away-mode` hook and the `awayMode` config key, including the report on return.
+
+### Patch Changes
+
+- `agent-sessions run` and `restart` no longer refuse a command that sets CLAUDE_CONFIG_DIR when the caller is a human shell (no CLAUDECODE, no CLAUDE_CONFIG_DIR), so `claude2` starts from a plain terminal.
+- `et design sketch check` warns when a state draws a title next to an `<img data-et-carries-title>`, a picture with the title baked in.
+- `sync` registers the `design-live-check` hook in every repo with `.ethlete/design/config.json`, without the repo listing it in `hooks`. Before, no repo turned it on, so a design agent never got its live findings.
+- `et design product new --colors` registers an error and a warning colour theme, so a danger button no longer falls back to the accent.
+- `design sketch check` now also catches an element a variant draws in an existing part's root class or tag under another prefix (`<span class="tsh-badge">Serie</span>` for `et-badge`) as an inline rebuild, and checks only parts the drawing layer may embed.
+- The sketch check fails a variant that draws an existing part inline (`<span>${FIXTURE.badge}</span>` beside the SDK badge) unless it embeds the part or the target states the difference.
+- A parent sketch merge now also writes each approved sub-sketch's `shared/` and asset changes, and refuses when two of its sketches change the same file.
+- A parent sketch merges together with its sub-sketches once every one is approved; until then each merge path refuses it.
+- Picking another variant of a parent sketch now discards the sub-sketches it no longer marks, after a confirmation in `sketch pick` (`--discard-sub-sketches`) and in Studio.
+- Marked sub-parts may differ between composition variants, a name match with an existing part needs `--not-rebuild-of` and a stated difference, a mark change reopens a ready sketch, and Studio shows the marks at the variant header.
+- `et design studio open` keeps its request when Studio is not running and exits 3 (queued); Studio adds the checkout at its next start and drops requests older than 7 days or whose checkout lost its design config.
+- `sketch check` warns when a state uses an `et-color--<name>` class that no foundation of the product defines, and names the defined ones, instead of letting it fall back to the accent silently.
+
 ## 0.1.0-next.44
 
 ### Minor Changes

@@ -1,5 +1,35 @@
 # ethlete-studio
 
+## 0.2.0-next.35
+
+### Minor Changes
+
+- `design sketch approve` approves a variant of a sub-sketch, and every merge of a sub-sketch is refused with the name of its parent. Studio shows "Freigeben" in place of "Übernehmen" on a sub-sketch.
+- A pick of a sketch variant with marked sub-parts opens one sub-sketch per sub-part instead of merging, and Studio shows them under their parent sketch.
+- Picking another variant of a parent sketch now discards the sub-sketches it no longer marks, after a confirmation in `sketch pick` (`--discard-sub-sketches`) and in Studio.
+- Marked sub-parts may differ between composition variants, a name match with an existing part needs `--not-rebuild-of` and a stated difference, a mark change reopens a ready sketch, and Studio shows the marks at the variant header.
+
+### Patch Changes
+
+- A sketch cell shows its final width from the first paint instead of resizing as its frames load.
+- The Design-Server menu of a development build names an outdated CLI build ("CLI-Build veraltet") and offers "CLI bauen und neu starten", which rebuilds the CLI and its design runtime before the restart.
+- The design server start counts its seconds up again, and the side panel and title search show a start state instead of looking empty.
+- The package no longer ships the two Noto fallback fonts (about 650 KB) of the sdk design base; Studio keeps drawing its arrows and keyboard symbols in them.
+- The sdk design base ships a 6.5 KB Noto subset with the 12 `et-kbd` key glyphs (⌘ ⇧ ⌥ ↑ …), so they no longer fall back to a system font.
+- The sdk design base ships its own faces.css and font files, so its colors sheet no longer imports a Studio file the package does not contain; Studio's type sheet imports the faces from the sdk.
+- The sketch bar shows its status as a dot with a label, like its agent and port lines, instead of a tonal pill next to its icon buttons.
+- The Sketches fold bar reads "n unveränderte Zustände ausgeklappt" and its button "Zustände einklappen" once the states are open, instead of keeping the folded wording.
+- Übernehmen shows a loading state while its merge runs, and the other Übernehmen buttons and Verwerfen wait until the merge answers.
+- Sketches Fit stops at frames 160 px wide and lets the list scroll, and wraps states into side-by-side blocks only when they fit at that size.
+- Sketches Fit stacks interaction-grid variants below each other when side by side their frames would draw narrower than 160 px, so no frame runs past the right edge of the list.
+- "Alle Zustände zeigen" on a sketch returns the camera to the top of the list, so frames stay on screen after a wheel down to the toggle.
+- An approved sub-sketch shows no disabled button in its variant header, its bar dot takes the success tone, and its tree check reads "Freigegeben".
+- The host no longer crashes in CEF shutdown when it quits right after start, for example on a signal.
+- `et design studio open` keeps a queued request in a folder that survives a reboot (`~/.local/state/ethlete-studio/open-requests` on Linux, `~/Library/Application Support/ethlete-studio/open-requests` on macOS, `%LOCALAPPDATA%\ethlete-studio\open-requests` on Windows) instead of the temp folder, and Studio reads it from there at its next start.
+- `et design studio open` keeps its request when Studio is not running and exits 3 (queued); Studio adds the checkout at its next start and drops requests older than 7 days or whose checkout lost its design config.
+- A sub-sketch shows its sub-part name and its own status mark in the tree, and its approval state in the sketch bar.
+- The sketch view shows a difference stated on a target for markup a variant draws inline, beside the marked sub-parts.
+
 ## 0.2.0-next.34
 
 ### Minor Changes
