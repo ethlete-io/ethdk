@@ -12,7 +12,7 @@ import { DESIGN_SERVER_LABELS, STUDIO_MENU_LABELS } from '../../../../../apps/et
 type Props = {
   open: boolean;
   server?: Server;
-  submenu?: boolean;
+  submenu?: 'hover';
   interaction?: MenuInteraction;
   option?: MenuInteraction;
   busy?: boolean;
@@ -55,7 +55,7 @@ const serverTrigger = (server: Server, submenu: boolean, busy: boolean): MenuMoc
   submenu: submenu ? 'open' : true,
   active: submenu,
   activeSource: submenu ? 'pointer' : undefined,
-  attributes: `data-studio-submenu-trigger data-et-slot="components/menu" data-et-action="${busy ? 'studio-menu.busy-server' : SERVER_SUBMENU_STATE[server]}"`,
+  attributes: `data-studio-submenu-trigger data-et-slot="components/menu" data-et-action="${busy ? 'studio-menu.busy-server' : SERVER_SUBMENU_STATE[server]}"${submenu ? ' data-et-force="hover"' : ''}`,
 });
 
 const serverRows = (server: Server, busy: boolean): MenuMockRow[] =>
@@ -135,17 +135,23 @@ const studioRows = (
   })),
 ];
 
-const studioPanel = (
+const studioPanel = async (
   server: Server,
   submenu: boolean,
   busy: boolean,
   interaction?: MenuInteraction,
   option?: MenuInteraction,
-) =>
-  menu.render({
+) => {
+  const panel = await menu.render({
     rows: studioRows(server, submenu, busy, option, interaction === 'focus-visible'),
     forced: interaction === 'focus-visible' ? undefined : interaction,
   });
+
+  return {
+    body: panel.body.replace(/et-color--inherited"( data-variant="destructive")/gu, 'et-color--danger"$1'),
+    styles: panel.styles,
+  };
+};
 
 const serverPanel = async (server: Server, busy: boolean) => {
   const panel = await menu.render({ rows: serverRows(server, busy) });
@@ -161,17 +167,10 @@ const serverPanel = async (server: Server, busy: boolean) => {
 const busyTrigger = (trigger: string) =>
   trigger.replace(/^<button /, '<button aria-busy="true" ').replace(studioMark(40), studioBusyMark(40));
 
-export const studioMenu = async ({
-  open,
-  server = 'running',
-  submenu = false,
-  interaction,
-  option,
-  busy = false,
-}: Props) => {
+export const studioMenu = async ({ open, server = 'running', submenu, interaction, option, busy = false }: Props) => {
   const drawn = typeof location !== 'undefined';
   const panel = drawn
-    ? await studioPanel(server, open && submenu, busy, open ? interaction : undefined, open ? option : undefined)
+    ? await studioPanel(server, open && !!submenu, busy, open ? interaction : undefined, open ? option : undefined)
     : { body: '', styles: '' };
   const sub = drawn && open && submenu ? await serverPanel(server, busy) : { body: '', styles: '' };
   const arrow = drawn
@@ -213,15 +212,15 @@ export default definePart({
   madeBy: ['gpt-6', 'claude-opus-5-5', 'design check', 'claude-sonnet-5-5'],
   states: {
     ...menuRows.states,
-    'studio-menu.server': { open: true, submenu: true },
-    'studio-menu.stale': { open: true, server: 'stale', submenu: true },
-    'studio-menu.stopped': { open: true, server: 'stopped', submenu: true },
+    'studio-menu.server': { open: true, submenu: 'hover' },
+    'studio-menu.stale': { open: true, server: 'stale', submenu: 'hover' },
+    'studio-menu.stopped': { open: true, server: 'stopped', submenu: 'hover' },
     'studio-menu.option-hover': { open: true, option: 'hover' },
     'studio-menu.option-focus-visible': { open: true, option: 'focus-visible' },
     'studio-menu.option-active': { open: true, option: 'active' },
     'studio-menu.busy': { open: false, busy: true },
     'studio-menu.busy-open': { open: true, busy: true },
-    'studio-menu.busy-server': { open: true, busy: true, submenu: true },
+    'studio-menu.busy-server': { open: true, busy: true, submenu: 'hover' },
     'studio-menu.busy-focus-visible': { open: false, busy: true, interaction: 'focus-visible' },
     'studio-menu.busy-open-focus-visible': { open: true, busy: true, interaction: 'focus-visible' },
   },

@@ -113,10 +113,10 @@
     "note": "merged without a pick: allowed by ADR 0305"
   },
   "elements/studio-menu": {
-    "hash": "3e144ade9baeb432",
+    "hash": "584508a7f0aefbad",
     "variant": "new",
-    "decidedBy": "builder",
-    "at": "2026-11-22T17:25:49.061Z"
+    "decidedBy": "claude-opus-5-5",
+    "at": "2026-11-25T22:52:58.806Z"
   },
   "elements/variant-cell": {
     "hash": "4a8ccbb62a83fd4f",
