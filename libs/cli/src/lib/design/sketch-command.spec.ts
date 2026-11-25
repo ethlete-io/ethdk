@@ -2852,6 +2852,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
 
     expect(await run(target, 'check', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toContain('draw every variant');
     expect(lines.pop()).toBe(
       `elements/hero b: HARD-CODED-COLOUR ${DESIGN_DIR}/acme/sketches/elements-hero/b/elements/hero/hero.css: #fff outside foundations - use a foundations token`,
     );

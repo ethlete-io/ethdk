@@ -29,6 +29,10 @@ product, part, state, size and a selector path:
 - `UNKNOWN-THEME` - a `et-color--<name>` class names a colour theme no stylesheet of the frame defines, so it draws in the fallback colour.
 - `RENDER` - the frame refused to draw, or the part did not load.
 
+A failed `sketch check` is yours to fix first: a `TYPE-ERROR` or a missing export usually comes from your variant files, so
+correct them and run it again. Draw every variant of the sketch; a variant left as the stub `sketch new` wrote fails
+`STATE-SENTENCE` and `sketch ready` refuses it. Report a tool fault only when the refusal is not caused by your files.
+
 A `WARNING` line does not fail the check:
 
 - `UNDEFINED-CLASS` - a class carries a prefix the product's part CSS uses (`st-`, not the SDK's

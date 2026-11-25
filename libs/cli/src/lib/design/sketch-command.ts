@@ -1940,6 +1940,9 @@ const checked = async (context: Context) => {
   }
 };
 
+const CHECK_FAILED_LINE =
+  'sketch check failed: fix each problem above in the variant files (a TYPE-ERROR or a missing export is yours to fix too), then draw every variant of the sketch - a variant left as the stub `sketch new` wrote is not done and sketch ready refuses it. Report a tool fault only when a refusal is not caused by your files.';
+
 const checkedVariants = async (
   context: Context & { product: ResolvedProduct; shots: WarmDraw; startServer: () => void },
 ) => {
@@ -2041,6 +2044,8 @@ const checkedVariants = async (
 
     failed ||= all.length > 0;
   }
+
+  if (failed) console.error(CHECK_FAILED_LINE);
 
   return checkedShots({ ...context, chosen, failed, stale });
 };
