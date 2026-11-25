@@ -6,6 +6,7 @@ import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchRow } from '../design-parts/sketches/sketches-sample';
 import { LISTING_ERROR_SAMPLE } from '../design-parts/system-page/system-page-sample';
 import { DESIGN_HARNESS_SAMPLES } from './design-harness-samples';
+import { sampleStepper } from './sample-product';
 
 const sketchesOf = (props: Record<string, unknown>) => {
   const sample = DESIGN_HARNESS_SAMPLES['pages/sketches'];
@@ -137,5 +138,12 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
 
     expect(sample?.({ listingError: true })['listingError']).toBe(LISTING_ERROR_SAMPLE);
     expect(sample?.({})['listingError']).toBeNull();
+  });
+
+  it('tints the hovered stepper field as a translucent wash, not the full light interaction colour', () => {
+    const count = /<span[^>]*data-farn-count/.exec(sampleStepper('count-hover'))?.[0] ?? '';
+
+    expect(count).toMatch(/bg-et-surface-interaction\/\d+/);
+    expect(count).not.toMatch(/bg-et-surface-interaction(?![/\w-])/);
   });
 });

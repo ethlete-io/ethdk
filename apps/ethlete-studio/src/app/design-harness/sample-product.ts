@@ -73,7 +73,7 @@ export const sampleBar = (state: string) => {
 
 const stepperTone = (interaction: string) =>
   interaction === 'hover'
-    ? 'bg-et-surface-interaction'
+    ? 'bg-et-surface-interaction/14'
     : interaction === 'active'
       ? 'bg-et-surface-border'
       : interaction === 'focus-visible'
