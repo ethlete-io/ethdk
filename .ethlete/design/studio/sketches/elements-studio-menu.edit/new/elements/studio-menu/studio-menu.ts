@@ -138,17 +138,23 @@ const studioRows = (
   })),
 ];
 
-const studioPanel = (
+const studioPanel = async (
   server: Server,
   submenu: boolean,
   busy: boolean,
   interaction?: MenuInteraction,
   option?: MenuInteraction,
-) =>
-  menu.render({
+) => {
+  const panel = await menu.render({
     rows: studioRows(server, submenu, busy, option, interaction === 'focus-visible'),
     forced: interaction === 'focus-visible' ? undefined : interaction,
   });
+
+  return {
+    body: panel.body.replace(/et-color--inherited"( data-variant="destructive")/gu, 'et-color--danger"$1'),
+    styles: panel.styles,
+  };
+};
 
 const serverPanel = async (server: Server, busy: boolean) => {
   const panel = await menu.render({ rows: serverRows(server, busy) });
