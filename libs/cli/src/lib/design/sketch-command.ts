@@ -69,7 +69,7 @@ import {
   printPortItems,
 } from './system/sketch/merge-step';
 import { journaled, openJournalOf } from './system/write-journal';
-import { approveSubSketch, openSubSketches, subPartsOfPick } from './system/sketch/sub-sketches';
+import { approveSubSketch, openSubSketches, pickOpensSubSketches } from './system/sketch/sub-sketches';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { notRebuildsOf, subPartKeyProblemOf, subPartsOf } from './system/sketch/sub-parts';
 import { repoInvocation } from '../invocation';
@@ -2197,7 +2197,7 @@ const picked = (context: Context) =>
 
     const pick = { kind: 'pick' as const, variant, comment: words, ...originOf('designer') };
 
-    if (subPartsOfPick(sketch, variant).length > 0 || (sketch.subSketches?.length ?? 0) > 0) {
+    if (pickOpensSubSketches(sketch, variant)) {
       const opened = journaled(
         { productDir: product.dir, root: context.target, label: `pick of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
         () => openSubSketches({ product, sketch, pick }),

@@ -10,7 +10,7 @@ import { sketchApproveAnswer, sketchDecisionAnswer, sketchMergeAnswer } from './
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, findSketch, markSketchReady, parseTarget } from './system/sketch/sketch';
 
-const readied = () => {
+const readied = (beforeReady?: (sketchDir: string) => void) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-studio-pick-'));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
@@ -24,9 +24,24 @@ const readied = () => {
 
   if (typeof created === 'string') throw new Error(created);
 
-  markSketchReady({ checkout: target, sketch: created });
+  const sketchDir = join(target, DESIGN_DIR, 'acme/sketches/elements-hero');
 
-  return { target, sketchDir: join(target, DESIGN_DIR, 'acme/sketches/elements-hero') };
+  beforeReady?.(sketchDir);
+  markSketchReady({ checkout: target, sketch: beforeReady ? readSketchAt(target) : created });
+
+  return { target, sketchDir };
+};
+
+const readSketchAt = (target: string) => {
+  const found = findSketch({
+    productDir: join(target, DESIGN_DIR, 'acme'),
+    product: 'acme',
+    sketch: { layer: 'elements', name: 'hero' },
+  });
+
+  if (found === null || typeof found === 'string') throw new Error(`no sketch: ${found}`);
+
+  return found;
 };
 
 const SLIDER = `import { definePart, drawing } from '@design-system';
@@ -94,9 +109,8 @@ const sketchCommand = (target: string, argv: string[]) =>
   });
 
 const withReadySubSketch = async () => {
-  const { target, sketchDir } = readied();
+  const { target, sketchDir } = readied(withMarkedSlider);
 
-  withMarkedSlider(sketchDir);
   await pick(target, 'b');
 
   const sub = findSketch({
@@ -111,6 +125,21 @@ const withReadySubSketch = async () => {
 
   return { target, sketchDir, subDir: subSketchDirOf(target) };
 };
+
+const withApprovedSubSketch = async () => {
+  const ready = await withReadySubSketch();
+
+  writeFileSync(
+    join(ready.subDir, 'a/components/hero-slider/hero-slider.ts'),
+    SLIDER.replace('acme-hero-slider', 'acme-hero-slider-approved'),
+  );
+  await approve(ready.target, 'a');
+
+  return ready;
+};
+
+const productFileOf = (target: string, part: string) =>
+  join(target, DESIGN_DIR, 'acme', part, `${part.split('/')[1]}.ts`);
 
 describe('the Studio pick route', { timeout: 60_000 }, () => {
   // Decision: a pick in Studio is a merge; there is no picked-but-unmerged state.
@@ -291,5 +320,57 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
     expect(errors.mock.calls.flat().join('\n')).toContain(named);
     expect(readJson(join(subDir, 'sketch.json'))['decision']).toBeUndefined();
     expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
+  });
+
+  // Decision B726: Übernehmen on the parent stays refused until every sub-sketch is approved, and says which wait.
+  it('refuses the parent pick again while a sub-sketch is not approved and names it', async () => {
+    const { target, sketchDir } = await withReadySubSketch();
+    const answer = await pick(target, 'b');
+
+    expect(answer.status).toBe(422);
+    expect(JSON.stringify(answer.body)).toContain('waits on its sub-sketches components/hero-slider');
+    expect(JSON.stringify(answer.body)).toContain('design sketch approve');
+    expect(existsSync(sketchDir)).toBe(true);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
+  });
+
+  // Decision B726: once every sub-sketch is approved, one merge writes the parent and each approved sub-part and closes them.
+  it('merges the parent with its approved sub-sketch on sketch merge', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, sketchDir, subDir } = await withApprovedSubSketch();
+    const code = await sketchCommand(target, ['merge', 'elements/hero']);
+
+    expect(code).toBe(0);
+    expect(existsSync(sketchDir)).toBe(false);
+    expect(existsSync(subDir)).toBe(false);
+    expect(readFileSync(productFileOf(target, 'components/hero-slider'), 'utf8')).toContain(
+      'acme-hero-slider-approved',
+    );
+    expect(readJson(join(target, DESIGN_DIR, 'acme/merged.json'))).toMatchObject({
+      'elements/hero': { variant: 'b' },
+      'components/hero-slider': { variant: 'a', decidedBy: 'user' },
+    });
+  });
+
+  it('merges the parent with its approved sub-sketch on the Studio pick route', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, sketchDir, subDir } = await withApprovedSubSketch();
+    const answer = await pick(target, 'b');
+
+    expect(answer).toMatchObject({ status: 200 });
+    expect((answer.body as { merged: string[] }).merged).toEqual(
+      expect.arrayContaining(['elements/hero', 'components/hero-slider']),
+    );
+    expect(existsSync(sketchDir)).toBe(false);
+    expect(existsSync(subDir)).toBe(false);
+    expect(readFileSync(productFileOf(target, 'components/hero-slider'), 'utf8')).toContain(
+      'acme-hero-slider-approved',
+    );
+    expect(readJson(join(target, DESIGN_DIR, 'acme/merged.json'))).toMatchObject({
+      'elements/hero': { variant: 'b' },
+      'components/hero-slider': { variant: 'a' },
+    });
   });
 });

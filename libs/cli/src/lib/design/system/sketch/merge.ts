@@ -42,7 +42,12 @@ import { overlaySketch } from './overlay';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
 import { CleanCopy, cleanCopyOf, contentsBelow } from './clean-copy';
-import { openSubSketchesRefusalOf, subSketchMergeRefusalOf } from './sub-sketches';
+import {
+  ApprovedSubSketch,
+  subSketchesOf,
+  subSketchMergeRefusalOf,
+  unapprovedSubSketchesRefusalOf,
+} from './sub-sketches';
 import {
   authorsOf,
   clearSketchReport,
@@ -474,7 +479,7 @@ const commitOrderRefusalOf = (options: {
   };
 };
 
-/** Why `sketch` cannot be merged as it stands - not ready, no valid pick, or a rejected pick - or `null` when it can. */
+/** Why `sketch` cannot be merged as it stands - not ready, an unapproved sub-sketch, no valid pick, or a rejected pick - or `null` when it can. */
 export const mergeRefusalOf = (options: { product: ResolvedProduct; sketch: Sketch }) => {
   const { product, sketch } = options;
   const sub = subSketchMergeRefusalOf(sketch);
@@ -483,7 +488,7 @@ export const mergeRefusalOf = (options: { product: ResolvedProduct; sketch: Sket
   if (sketch.status !== 'ready')
     return `${sketch.target} is ${sketch.status} - mark it ready before a merge: design sketch ready ${sketch.target} --by <model id> --product ${product.name}`;
 
-  const waiting = openSubSketchesRefusalOf(sketch);
+  const waiting = unapprovedSubSketchesRefusalOf({ product, sketch });
 
   if (waiting) return waiting;
 
@@ -507,6 +512,16 @@ export const rebaseOthersAfterMerge = (options: { target: string; product: Resol
     merged: options.sketch.targets,
     before: options.sketch.baseline ?? {},
   });
+
+const overlayApprovedSubSketches = (options: { into: string; subSketches: ApprovedSubSketch[] }) => {
+  for (const { sketch: sub, approval } of options.subSketches)
+    for (const part of partFilesOf(variantDirOf(sub, approval.variant)).parts) {
+      const into = resolve(options.into, part.layer, part.name);
+
+      rmSync(into, { recursive: true, force: true });
+      cpSync(dirname(part.file), into, { recursive: true });
+    }
+};
 
 const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal => {
   const { target, product, sketch, note, author } = options;
@@ -543,6 +558,10 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
 
     rmSync(sketchesDirOf(copied.dir), { recursive: true, force: true });
     cpSync(sketch.dir, copiedSketch.dir, { recursive: true });
+
+    const subSketches = subSketchesOf({ product, sketch }).approved;
+
+    overlayApprovedSubSketches({ into: variantDirOf(copiedSketch, variant), subSketches });
 
     const edited = editedPartDirOf({ product, sketch });
 
@@ -582,9 +601,22 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
     withProductLock(product.dir, () => {
       applyMerge({ copy, checked });
 
+      const subTargets = subSketches.flatMap(({ sketch: sub }) => sub.targets);
       const productKeys = mergedKeys.filter((key) => !baseKeys.includes(key));
 
-      recordMergedSplit({ product, parts: productKeys, targets: sketch.targets, decision });
+      recordMergedSplit({
+        product,
+        parts: productKeys.filter((key) => !subTargets.includes(key)),
+        targets: sketch.targets,
+        decision,
+      });
+
+      for (const { sketch: sub, approval } of subSketches)
+        recordMerged({
+          product,
+          parts: sub.targets.filter((key) => productKeys.includes(key)),
+          decision: { variant: approval.variant, decidedBy: 'user', at: approval.decidedAt },
+        });
 
       if (product.base && baseKeys.length > 0) {
         recordMergedSplit({
@@ -610,6 +642,17 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
       addressSketchComments({ sketch, reason: 'merge', author, note });
       removeSketchDir(sketch.dir);
       clearSketchReport({ checkout: target, sketch });
+
+      for (const { sketch: sub, approval } of subSketches) {
+        resolveSketchEndComments({
+          sketch: sub,
+          parts: sub.targets,
+          note: `resolved by the merge of ${sketch.target} with ${sub.target} variant ${approval.variant}`,
+        });
+        addressSketchComments({ sketch: sub, reason: 'merge', author, note });
+        removeSketchDir(sub.dir);
+        clearSketchReport({ checkout: target, sketch: sub });
+      }
     });
 
     if (!options.deferRebase)
@@ -631,7 +674,8 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
  * a file with uncommitted edits refuses with that file in `dirty`. When the check fails, the checkout and the sketch stay as they were. Each file in the variant's `assets/` goes into the product's `assets/`. A file of the sketch's `shared/` folder whose path the product's `shared/` holds
  * replaces it there; the rest goes into the target's folder when the target imports it, with its `@shared/` imports made relative; any other part that imports it stops the merge. Otherwise the addressed comments on its variants, and those on the merged parts that have no sketch, are resolved, and the open ones on its variants are addressed, by `author` or the user. Refuses without a
  * pick, and when a part the variant replaces changed in the product since the sketch's baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase
- * would let it, the parts that changed (`[]` without a baseline).
+ * would let it, the parts that changed (`[]` without a baseline). A parent merges only once each of its sub-sketches is approved,
+ * and then writes each approved variant's parts too, records them with their approval and deletes the sub-sketches.
  */
 export const mergeSketch = (options: {
   target: string;

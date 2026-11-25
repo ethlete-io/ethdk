@@ -4,7 +4,7 @@ import { IncomingMessage } from 'http';
 import { relative } from 'path';
 import { journaledAsync } from './system/write-journal';
 import { MERGE_WAIT_MS } from './system/sketch/merge-step';
-import { approveSubSketch, openSubSketches, subPartsOfPick } from './system/sketch/sub-sketches';
+import { approveSubSketch, openSubSketches, pickOpensSubSketches } from './system/sketch/sub-sketches';
 import { fromEvent, take } from 'rxjs';
 import { setImmediate } from 'timers/promises';
 import { repoInvocation } from '../invocation';
@@ -811,7 +811,8 @@ const userNameOf = (dir: string) => {
  * POST `?product=&sketch=`, body `{ kind: 'pick', variant, comment? }`, `{ kind: 'discard', comment? }`, or a verdict
  * by the designer on one variant: `{ kind: 'reject' | 'reopen', variant, reason? }` or `{ kind: 'reason', variant, reason }`.
  * A pick merges the variant at once and answers as `sketch-merge` does; a refused merge leaves no pick. A pick of a variant
- * that marks sub-parts opens one sketch per sub-part instead and answers `{ merged: [], subSketches }`. The others are
+ * that marks sub-parts opens one sketch per sub-part instead and answers `{ merged: [], subSketches }`; the same pick again
+ * merges the parent with its sub-sketches once each is approved. The others are
  * written into sketch.json.
  */
 export const sketchDecisionAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
@@ -834,10 +835,7 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, product, 
         ? { kind, variant, ...(comment ? { comment } : {}), ...studioOrigin }
         : { kind, variant, reason: reason ?? '', by: 'designer' };
 
-  if (
-    decision.kind === 'pick' &&
-    (subPartsOfPick(sketch, variant).length > 0 || (sketch.subSketches?.length ?? 0) > 0)
-  ) {
+  if (decision.kind === 'pick' && pickOpensSubSketches(sketch, variant)) {
     const opened = await journaledAsync(
       { productDir: product.dir, root: asked.target, label: `pick of ${sketch.target}`, waitMs: MERGE_WAIT_MS },
       () => openSubSketches({ product, sketch, pick: decision }),

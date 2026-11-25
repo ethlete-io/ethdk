@@ -14,6 +14,7 @@ import { appGatedMergeOf } from './merge-app-gate';
 import { regenerateStudioThemesOf } from './merge-studio-themes';
 import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
+import { subSketchesOf } from './sub-sketches';
 import {
   decideSketch,
   findSketch,
@@ -77,6 +78,7 @@ export const mergeAndRecord = (options: {
   if (typeof decided === 'string') return decided;
 
   const variant = decided.decision?.kind === 'pick' ? decided.decision.variant : '';
+  const subSketchDirs = subSketchesOf({ product, sketch }).approved.map(({ sketch: sub }) => sub.dir);
   const reason = note?.trim() || undefined;
   const result = timedPhase('merge-files', () =>
     journaledMergeOf({
@@ -111,7 +113,15 @@ export const mergeAndRecord = (options: {
 
         const extraFiles = regenerateStudioThemesOf({ target, product, parts: sketch.targets });
 
-        commitMergeResultSync({ target, product, sketch, variant, before, sketchDirs, extraFiles });
+        commitMergeResultSync({
+          target,
+          product,
+          sketch,
+          variant,
+          before,
+          sketchDirs: [...sketchDirs, ...subSketchDirs],
+          extraFiles,
+        });
       },
     }),
   );

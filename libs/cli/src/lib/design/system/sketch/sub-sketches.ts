@@ -87,11 +87,44 @@ export const openSubSketches = (options: {
   return { variant, subSketches };
 };
 
-/** Why `sketch` may not merge while sub-sketches its pick opened are open, or `null`. */
-export const openSubSketchesRefusalOf = (sketch: Sketch) =>
-  sketch.subSketches && sketch.subSketches.length > 0
-    ? `${sketch.target} waits on its sub-sketches ${sketch.subSketches.join(', ')} - it merges together with them once they are approved`
+/** Whether a pick of `variant` opens sub-sketches, or meets those another variant's pick opened, instead of merging. */
+export const pickOpensSubSketches = (sketch: Sketch, variant: string) =>
+  (sketch.subSketches?.length ?? 0) > 0
+    ? !(sketch.decision?.kind === 'pick' && sketch.decision.variant === variant)
+    : subPartsOfPick(sketch, variant).length > 0;
+
+export type ApprovedSubSketch = { sketch: Sketch; approval: SketchApproval };
+
+/** The sub-sketches of `sketch`: `approved` with each approval, `open` naming the rest; one no longer open counts as open. */
+export const subSketchesOf = (options: { product: ResolvedProduct; sketch: Sketch }) => {
+  const { product, sketch } = options;
+  const approved: ApprovedSubSketch[] = [];
+  const open: string[] = [];
+
+  for (const key of sketch.subSketches ?? []) {
+    const parsed = parseTarget(key);
+    const found =
+      typeof parsed === 'string'
+        ? null
+        : findSketch({ productDir: product.dir, product: product.name, sketch: parsed });
+
+    if (found !== null && typeof found !== 'string' && found.approved)
+      approved.push({ sketch: found, approval: found.approved });
+    else open.push(key);
+  }
+
+  return { approved, open };
+};
+
+/** Why `sketch` may not merge while a sub-sketch its pick opened is not approved, or `null`. */
+export const unapprovedSubSketchesRefusalOf = (options: { product: ResolvedProduct; sketch: Sketch }) => {
+  const { open } = subSketchesOf(options);
+  const { sketch } = options;
+
+  return open.length > 0
+    ? `${sketch.target} waits on its sub-sketches ${open.join(', ')} - approve each (design sketch approve <sub-sketch> --variant <key>), then merge ${sketch.target}: it writes them together`
     : null;
+};
 
 /** Why `sketch` may not merge on its own because a pick of its parent opened it, or `null`. */
 export const subSketchMergeRefusalOf = (sketch: Sketch) =>

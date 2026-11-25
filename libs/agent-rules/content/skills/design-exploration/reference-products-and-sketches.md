@@ -97,6 +97,12 @@ for markup a variant draws inline: a value named like an existing part as an ele
 `<part>`. Never rename a part or value to dodge the match. Studio shows the marks at the variant header; a mark change on a ready
 sketch moves it back to in progress.
 
+A pick of a variant with marked sub-parts merges nothing: it opens one sub-sketch per sub-part, seeded from
+that variant. Draw each to ready, and once the user approves it, record that with
+`sketch approve <sub-part> --variant <key> --decided-by <their words> --by <model id>`; a sub-sketch never
+merges on its own. The parent merge waits until every sub-sketch is approved and names the open ones;
+then one merge writes the parent and every approved sub-part, and closes the sub-sketches.
+
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. A part in a variant keeps every state the part has in the product: `sketch check`
