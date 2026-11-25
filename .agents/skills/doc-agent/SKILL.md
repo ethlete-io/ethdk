@@ -33,6 +33,12 @@ You are the doc session. The rules are in `docs/process.md`; read it first. This
 - If the builder looks stuck, read its pane (`tmux capture-pane`) before you ask it.
 - Consumers keep their own decisions.
 
+## Night shift
+
+- At its start, ask the human when the session limit resets, unless they already said it.
+- Set `CronCreate` wake-ups: every 30 min until 09:00 for each working session (builder, consumer agents), and a one-shot 2-4 min after the reset. A wake-up reads the pane and wakes a stopped session.
+- Tell each session to set its own wake-ups too, offset by a few minutes.
+
 ## Never
 
 - Edit source code. That is the builder's job.
