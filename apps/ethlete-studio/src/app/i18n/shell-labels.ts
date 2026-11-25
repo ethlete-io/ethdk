@@ -5,6 +5,7 @@ export const DESIGN_SERVER_LABELS = {
   stop: 'Design-Server stoppen',
   stopped: 'Design-Server gestoppt',
   starting: 'Design-Server startet',
+  sideWaiting: 'Die Teile erscheinen, sobald der Design-Server läuft.',
   startPhase: {
     starting: 'Design-Server startet',
     'cli-build': 'CLI wird gebaut',

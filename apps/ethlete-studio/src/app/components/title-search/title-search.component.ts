@@ -45,8 +45,10 @@ import { injectCommandPaletteStore } from '../command-palette/command-palette-st
       </svg>
       <span class="flex min-w-0 flex-1 justify-center-safe gap-1 font-ui">
         <span class="shrink-0">{{ product() }}</span>
-        <span class="shrink-0" aria-hidden="true">/</span>
-        <span class="font-ui-strong min-w-0 truncate text-et-surface">{{ part() }}</span>
+        @if (part()) {
+          <span class="shrink-0" aria-hidden="true">/</span>
+          <span class="font-ui-strong min-w-0 truncate text-et-surface">{{ part() }}</span>
+        }
       </span>
       <et-kbd
         [platform]="platform()"

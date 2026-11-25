@@ -7,6 +7,8 @@ import {
   buffer,
   catchError,
   debounceTime,
+  defer,
+  exhaustMap,
   filter,
   finalize,
   first,
@@ -37,6 +39,7 @@ import {
   designServerState$,
   designServerStop$,
 } from '../../host/design';
+import { DESIGN_SERVER_LABELS } from '../i18n/shell-labels';
 import { DesignChange, designChanges$ } from '../../host/design-changes';
 import { DESIGN_STAMP_PATH, designServerReplaced$ } from '../../host/design-server-pid';
 import { PartsRedraw } from '../../host/design-parts';
@@ -66,7 +69,11 @@ const OTHER_ROOT_POLL_MS = 1000;
 
 const START_PHASE_POLL_MS = 1000;
 
+const START_CLOCK_MS = 1000;
+
 export type StartPhaseReading = { phase: NonNullable<ServerState['phase']>; phaseMs: number };
+
+type StartPhaseSince = { phase: StartPhaseReading['phase']; since: number; readAt: number };
 
 const messageLinesOf = (error: unknown) =>
   (error instanceof Error ? error.message : typeof error === 'string' ? error : String(error)).split('\n');
@@ -102,7 +109,11 @@ const NO_PRODUCTS: ShownProducts = { checkout: null, product: '', products: [], 
           busy: menuBusy(),
         }"
         (action)="runShellAction($event)"
-      />
+      >
+        <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted" shellMainSide>
+          {{ LABELS.sideWaiting }}
+        </p>
+      </ethlete-shell-page>
     } @else {
       <ethlete-system-view
         #systemView
@@ -136,9 +147,11 @@ const NO_PRODUCTS: ShownProducts = { checkout: null, product: '', products: [], 
 })
 export class StudioViewComponent {
   private destroyRef = inject(DestroyRef);
-  private codeWatch = injectCodeWatch();
 
+  private codeWatch = injectCodeWatch();
   private systemView = viewChild<SystemViewComponent>('systemView');
+
+  protected readonly LABELS = DESIGN_SERVER_LABELS;
   public checkout = signal('');
   protected projectName = computed(() => folderNameOf(this.checkout()));
   protected serverPanel = signal<'open' | 'hidden'>('open');
@@ -173,27 +186,6 @@ export class StudioViewComponent {
 
     return shown.checkout === this.checkout() ? shown : NO_PRODUCTS;
   });
-
-  public startPhase = toSignal(
-    toObservable(this.serverBusy).pipe(
-      switchMap((busy) =>
-        busy
-          ? interval(START_PHASE_POLL_MS).pipe(
-              switchMap(() =>
-                designServerState$(this.checkout(), this.server()).pipe(
-                  // eslint-disable-next-line ethlete/no-silent-catch-error -- a missed poll keeps the last phase until the next one
-                  catchError(() => EMPTY),
-                ),
-              ),
-              map((state): StartPhaseReading | null =>
-                state.listening || !state.phase ? null : { phase: state.phase, phaseMs: state.phaseMs },
-              ),
-            )
-          : of(null),
-      ),
-    ),
-    { initialValue: null as StartPhaseReading | null },
-  );
 
   public startError = signal<string[] | null>(null);
 
@@ -269,6 +261,60 @@ export class StudioViewComponent {
   protected serverStarting = computed(
     () => !!this.server() && (this.server()?.listening ? !this.serverReady() : this.serverBusy()),
   );
+
+  private startReading = toSignal(
+    toObservable(this.serverBusy).pipe(
+      switchMap((busy) =>
+        busy
+          ? interval(START_PHASE_POLL_MS).pipe(
+              exhaustMap(() =>
+                designServerState$(this.checkout(), this.server()).pipe(
+                  // eslint-disable-next-line ethlete/no-silent-catch-error -- a missed poll keeps the last phase until the next one
+                  catchError(() => EMPTY),
+                ),
+              ),
+              map((state): StartPhaseSince | null => {
+                const readAt = Date.now();
+
+                return state.listening || !state.phase
+                  ? null
+                  : { phase: state.phase, since: readAt - state.phaseMs, readAt };
+              }),
+            )
+          : of(null),
+      ),
+    ),
+    { initialValue: null as StartPhaseSince | null },
+  );
+
+  private startClock = toSignal(
+    toObservable(this.serverStarting).pipe(
+      switchMap((starting) =>
+        starting
+          ? defer(() => {
+              const shownAt = Date.now();
+
+              return interval(START_CLOCK_MS).pipe(
+                startWith(0),
+                map(() => ({ shownAt, now: Date.now() })),
+              );
+            })
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  public startPhase = computed((): StartPhaseReading | null => {
+    const clock = this.startClock();
+
+    if (!clock) return null;
+
+    const reading = this.startReading();
+    const now = Math.max(clock.now, reading?.readAt ?? 0);
+
+    return { phase: reading?.phase ?? 'starting', phaseMs: Math.max(0, now - (reading?.since ?? clock.shownAt)) };
+  });
 
   protected serverCrash = computed(() => serverCrashOf(this.serverDown()?.crash ?? null));
 

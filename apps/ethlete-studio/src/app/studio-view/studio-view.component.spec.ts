@@ -523,14 +523,61 @@ describe('StudioViewComponent', () => {
 
       const fixture = await mount();
 
-      expect(fixture.componentInstance.startPhase()).toBeNull();
+      expect(fixture.componentInstance.startPhase()?.phase).toBe('starting');
 
       vi.advanceTimersByTime(1000);
       await settle(fixture);
 
-      expect(fixture.componentInstance.startPhase()).toEqual({ phase: 'cli-build', phaseMs: 4200 });
+      expect(fixture.componentInstance.startPhase()?.phase).toBe('cli-build');
       expect(element(fixture).textContent).toContain('CLI wird gebaut');
       expect(element(fixture).textContent).toContain('seit 4 s');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('counts the start up while each state read answers slower than the poll period', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+
+    try {
+      const startedAt = Date.now();
+      let starting = false;
+
+      stubHost({
+        design_server_state: () =>
+          starting
+            ? new Promise((answer) =>
+                setTimeout(
+                  () =>
+                    answer({
+                      ...RUNNING,
+                      listening: false,
+                      managed: true,
+                      phase: 'starting',
+                      phaseMs: Date.now() - startedAt,
+                    }),
+                  1200,
+                ),
+              )
+            : { ...RUNNING, listening: false },
+        design_server_start: () => ((starting = true), new Promise(() => undefined)),
+      });
+
+      localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT }));
+
+      const fixture = TestBed.createComponent(StudioViewComponent);
+
+      fixture.autoDetectChanges();
+      await vi.advanceTimersByTimeAsync(10);
+      await fixture.whenStable();
+
+      expect(element(fixture).textContent).toContain('seit 0 s');
+
+      await vi.advanceTimersByTimeAsync(5000);
+      await fixture.whenStable();
+
+      expect(element(fixture).textContent).toContain('Design-Server startet');
+      expect(element(fixture).textContent).toContain('seit 5 s');
     } finally {
       vi.useRealTimers();
     }

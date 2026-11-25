@@ -31,6 +31,13 @@ describe('TitleSearchComponent', () => {
     expect(button?.getAttribute('aria-label')).toBe('Suchen in ');
   });
 
+  it('names the product alone, without a separator, before a part is open', () => {
+    const { button } = render({ product: 'tomflix' });
+
+    expect(button?.textContent).toContain('tomflix');
+    expect(button?.textContent).not.toContain('/');
+  });
+
   it('shows the macOS shortcut on macOS and the other one elsewhere', () => {
     const mac = render({ product: 'shop', part: 'Cart', os: 'macos' });
 
