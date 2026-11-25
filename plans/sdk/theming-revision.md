@@ -392,7 +392,9 @@ Schritte, in denen es anfällt; keine neue Entscheidung nötig.
   Ergebnis voraus. Jede bestehende Migration bleibt lauffähig, auch nachdem Schritt 5
   `legacy-theming.ts` entfernt hat: sie darf dann nur Namen schreiben, die die Folgemigration
   kennt. Beweis: ein Ketten-Spec, der ein Fixture auf dem alten Stand durch alle Migrationen bis
-  zum Zielbild schickt. fifagg bleibt die Bildreferenz, weil es dem heutigen Stand am nächsten ist.
+  zum Zielbild schickt. Auf dem heutigen System sind fifagg und in fut die Hub-App (Tom, 26.11.); die Zählungen „fut“ in
+  diesem Plan stammen aus `fut-frontend` und sind nicht nach App getrennt. fifagg bleibt die
+  Bildreferenz, weil es dem heutigen Stand am nächsten ist; die Hub-App ist die zweite.
 
 ## 8. Entscheidungen
 
