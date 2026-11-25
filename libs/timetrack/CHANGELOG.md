@@ -1,5 +1,19 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.19
+
+### Patch Changes
+
+- Read the stored events for a settings send only when a rule or tombstone names a path no checkout covers, and keep only the paths such an entry names.
+- Send the rule of a removed worktree to a paired machine as long as this machine's stored events still name its path.
+- A short glance at a call's window no longer extends the call after a long silence.
+- A call nothing closed no longer runs on to a lone transcript chunk heard long after its talk ended.
+- A meeting named on one paired machine is now named on the other too.
+- A paired machine's checkout maps onto the local checkout of the same repository whose folder names match it most, then the shortest path, so a scratch clone no longer takes the lane of the main checkout.
+- Apply a row edit from a paired machine to the local row with the same lane and start, so a rename or accept no longer goes missing when the two machines name the row differently.
+- Send the rule of a removed worktree whose events a paired machine still carries, so the events and their rule arrive together.
+- A prompt typed while Timetrack was down, inside an idle stretch only the restart closed, now books its time as attended work instead of leaving it under "Nobody was here".
+
 ## 0.1.0-next.18
 
 ### Patch Changes

@@ -2,4 +2,4 @@
 '@ethlete/cli': patch
 ---
 
-The `old` variant of an edit sketch rebases the imports of its files and its `shared/` folder that leave the part, so it draws.
+The `old` variant of an edit sketch now reads the files outside the product that its parts import as its base commit held them, so a later label change no longer breaks its render or typecheck.
