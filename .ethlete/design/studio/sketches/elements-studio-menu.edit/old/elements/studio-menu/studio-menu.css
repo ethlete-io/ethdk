@@ -1,0 +1,37 @@
+@layer components {
+  .st-studio-trigger {
+    --accent: var(--et-surface-background-solid);
+    --on-accent: var(--et-surface-color-solid);
+    --st-tile: var(--et-surface-background-solid);
+    --st-on-tile: var(--et-surface-color-solid);
+    width: 40px;
+    height: 40px;
+  }
+
+  .st-studio-trigger:hover,
+  .st-studio-trigger[aria-expanded='true'] {
+    --accent: color-mix(in srgb, var(--et-surface-interaction-hover-solid) 5%, var(--et-surface-background-solid));
+    --st-tile: color-mix(in srgb, var(--et-surface-interaction-hover-solid) 5%, var(--et-surface-background-solid));
+  }
+
+  .st-studio-trigger:active {
+    --accent: color-mix(in oklch, var(--et-surface-interaction-active-solid) 10%, transparent);
+    --st-tile: color-mix(in oklch, var(--et-surface-interaction-active-solid) 10%, transparent);
+  }
+
+  .st-studio-menu {
+    --et-menu-max-height: 80vh;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .st-studio-menu .st-studio-menu-arrow {
+    top: 10px;
+    --et-surface-background-solid: initial;
+  }
+
+  .st-studio-trigger path {
+    transform: scale(0.72);
+    transform-origin: center;
+    transform-box: view-box;
+  }
+}
