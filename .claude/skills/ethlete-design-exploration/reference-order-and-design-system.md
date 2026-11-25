@@ -107,7 +107,7 @@ stylesheet. Give a raised or floating area `data-et-auto-surface` and an interac
 `data-et-semantic-color="<type>"`, never a picked `et-color--<name>` class: the frame resolves it by type like
 `injectSemanticColorTheme`. A generated colors foundation registers one theme per type, named after it
 (`et-color--error`, `et-color--warning`); an SDK drawing input that takes a theme name, like the button's `color`,
-takes that name, since no other name resolves. Read the theming skill of the SDK before the first colour in a drawing. `et design check` reports
+takes that name, since no other name resolves. `sketch check` warns when a state uses an `et-color--<name>` no foundation of the product defines, naming the defined ones. Read the theming skill of the SDK before the first colour in a drawing. `et design check` reports
 a denied class from the product's `deniedClasses` list in `config.json`.
 
 A part is one folder, `<product>/<layer>/<part>/`, with its drawing and states. Read the parts of
