@@ -3102,6 +3102,102 @@ const CASES = [
     },
   },
   {
+    name: 'the sketch bar shows its status as a dot and label like its other lines, not as a pill (B728)',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const bar = page.locator('ethlete-sketch-view [data-sk-toolbar]').first();
+
+      await bar.waitFor({ timeout: FULL_COMPARE_MS });
+      await settle(page);
+      await bar.screenshot({ path: join(root, '.claude/handoffs/agent-results/b728-status-after.png') });
+
+      const shown = await bar.evaluate((toolbar) => {
+        const status = toolbar.querySelector('[data-sk-status]');
+        const dot = status?.querySelector('span');
+        const style = status ? getComputedStyle(status) : null;
+
+        return {
+          text: status?.textContent?.replace(/\s+/gu, ' ').trim() ?? null,
+          pills: toolbar.querySelectorAll('et-badge').length,
+          dot: dot ? Math.round(dot.getBoundingClientRect().width) : 0,
+          background: style?.backgroundColor ?? null,
+        };
+      });
+
+      return {
+        ok:
+          shown.text === 'Wartet auf deine Wahl' &&
+          shown.pills === 0 &&
+          shown.dot > 0 &&
+          shown.background === 'rgba(0, 0, 0, 0)',
+        detail: `status "${shown.text}", pills in the bar ${shown.pills}, dot ${shown.dot}px, background ${shown.background}`,
+      };
+    },
+  },
+  {
+    name: 'Übernehmen shows its busy state until the merge answers (B728)',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const decision = '**/__design/sketch-decision?**';
+      let held;
+      const asked = new Promise((done) => (held = done));
+
+      await page.route(decision, (route) => held(route));
+      try {
+        const button = page.locator('[data-sk-row="a"] [data-sk-merge]').first();
+
+        await button.waitFor({ timeout: FULL_COMPARE_MS });
+        await pressOffCamera(button);
+        await page.locator('[role="alertdialog"] [data-sk-confirm]').click({ timeout: WAIT_MS });
+
+        const route = await Promise.race([asked, page.waitForTimeout(WAIT_MS).then(() => null)]);
+
+        if (!route) return { ok: false, detail: `no ${decision} request within ${WAIT_MS} ms` };
+        await settle(page);
+        await button.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+        await page.screenshot({ path: join(root, '.claude/handoffs/agent-results/b728-busy-after.png') });
+        await page
+          .locator('[data-sk-toolbar]')
+          .first()
+          .screenshot({ path: join(root, '.claude/handoffs/agent-results/b728-busy-bar-after.png') });
+
+        const busy = await page.evaluate(() => ({
+          loading: document.querySelector('[data-sk-row="a"] [data-sk-merge]')?.hasAttribute('data-loading') ?? false,
+          discard: document.querySelector('[data-sk-toolbar] [data-sk-discard] button')?.disabled ?? null,
+          bar: document.querySelector('[data-sk-toolbar]')?.getAttribute('aria-busy') ?? null,
+          status: document.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim() ?? null,
+        }));
+
+        await route.abort();
+
+        const cleared = await page
+          .waitForFunction(
+            () => !document.querySelector('[data-sk-row="a"] [data-sk-merge]')?.hasAttribute('data-loading'),
+            null,
+            { timeout: WAIT_MS },
+          )
+          .then(
+            () => true,
+            () => false,
+          );
+
+        return {
+          ok:
+            busy.loading &&
+            busy.discard === true &&
+            busy.bar === 'true' &&
+            busy.status === 'Wird übernommen' &&
+            cleared,
+          detail: `while the merge runs: Übernehmen loading ${busy.loading}, Verwerfen disabled ${busy.discard}, bar aria-busy ${busy.bar}, bar status "${busy.status}"; busy cleared after the answer ${cleared}`,
+        };
+      } finally {
+        await page.unroute(decision);
+      }
+    },
+  },
+  {
     name: 'the fold bar and its button name the open state after showing all states (B740)',
     pages: ['Sketches'],
     labels: ['Large'],

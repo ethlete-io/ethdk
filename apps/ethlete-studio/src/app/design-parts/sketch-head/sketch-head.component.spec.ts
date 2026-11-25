@@ -80,7 +80,7 @@ describe('SketchHeadComponent', () => {
 
     const text = root.textContent ?? '';
 
-    expect(root.querySelector('[data-sk-toolbar] et-badge')).toBeNull();
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')).toBeNull();
     expect(text).not.toContain('Noch nicht bereit');
     expect(text).not.toContain('Grund unbekannt');
     expect(text).not.toContain('SHOT-NOT-VIEWED');

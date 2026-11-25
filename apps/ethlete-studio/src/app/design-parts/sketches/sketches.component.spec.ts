@@ -1353,7 +1353,7 @@ describe('SketchesComponent', () => {
     const waiting: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
     const notReady: HTMLElement = (await render({ camera: '100', status: 'not-ready' })).nativeElement;
 
-    expect(textOf(waiting.querySelector('[data-sk-toolbar] et-badge'))).toBe(LABELS.status.waiting);
+    expect(textOf(waiting.querySelector('[data-sk-toolbar] [data-sk-status]'))).toBe(LABELS.status.waiting);
     expect(textOf(waiting.querySelector('[data-sk-row="x"] button'))).toBe(LABELS.merge);
     expect(notReady.querySelector('[data-sk-row="x"] button')).toBeNull();
   });
@@ -1397,7 +1397,7 @@ describe('SketchesComponent', () => {
       })
     ).nativeElement;
 
-    expect(textOf(root.querySelector('[data-sk-toolbar] et-badge'))).toBe(LABELS.status.failed);
+    expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-status]'))).toBe(LABELS.status.failed);
     expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-failed]'))).toBe('x · default: boom is not defined');
     expect(root.querySelector('[data-sk-merge]')).toBeNull();
   });

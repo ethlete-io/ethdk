@@ -836,7 +836,7 @@ describe('SketchViewComponent', () => {
     };
     const { root } = await render(refused, noComments);
 
-    expect(root.querySelector('[data-sk-toolbar] et-badge')).toBeNull();
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')).toBeNull();
     expect(root.querySelector('[data-sk-toolbar]')?.textContent).not.toContain('SHOT-NOT-VIEWED');
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
   });
@@ -880,12 +880,13 @@ describe('SketchViewComponent', () => {
     };
     const { root } = await render(changed, noComments);
 
-    expect(root.querySelector('[data-sk-toolbar] et-badge')).toBeNull();
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')).toBeNull();
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
   });
 
   it('derives the head badge from the drawing report and readiness, never from the sketch status alone', async () => {
-    const badgeOf = (root: HTMLElement) => root.querySelector('[data-sk-toolbar] et-badge')?.textContent?.trim();
+    const badgeOf = (root: HTMLElement) =>
+      root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim();
     const fresh = new Date(Date.now() - 5 * 60_000).toISOString();
     const stale = new Date(Date.now() - 40 * 60_000).toISOString();
     const open = { ...SKETCH, status: 'in progress' as const, decision: undefined };
@@ -1042,7 +1043,9 @@ describe('SketchViewComponent', () => {
     expect(line).not.toContain('tsc failed');
     expect(line).toContain(labels.ago(50));
     expect(line).toMatch(/Runde (\d+ )?fehlgeschlagen/);
-    expect(root.querySelector('[data-sk-toolbar] et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.failed);
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
+      SKETCHES_LABELS.status.failed,
+    );
     expect(root.querySelector('[data-sk-toolbar] [data-sk-failed]')?.textContent?.trim()).toBe('a: tsc failed (+1)');
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
   });
@@ -1052,7 +1055,7 @@ describe('SketchViewComponent', () => {
     const frames = [...root.querySelectorAll<HTMLIFrameElement>('iframe[data-state]')];
     const failing = frames.at(-1)!;
     const status = SKETCHES_LABELS.status;
-    const badge = () => root.querySelector('[data-sk-toolbar] et-badge')?.textContent?.trim();
+    const badge = () => root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim();
     const report = async (frame: HTMLIFrameElement, extra: object = {}) => {
       window.dispatchEvent(
         new MessageEvent('message', {
@@ -1150,7 +1153,7 @@ describe('SketchViewComponent', () => {
 
     const { fixture, root } = await render(sketch, fetch, null as unknown as ListedPart);
     const badges = () =>
-      [...root.querySelectorAll('[data-sk-toolbar] et-badge')].map((badge) => badge.textContent?.trim());
+      [...root.querySelectorAll('[data-sk-toolbar] [data-sk-status]')].map((badge) => badge.textContent?.trim());
 
     expect(badges()).toEqual([SKETCHES_LABELS.status.waiting]);
     expect(root.querySelector('[data-sk-row][data-selected]')).toBeNull();
@@ -1183,7 +1186,9 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(root.querySelector('[data-sk-toolbar] et-badge')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.paused);
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
+      SKETCHES_LABELS.status.paused,
+    );
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
 
     root.querySelector<HTMLButtonElement>('[data-sk-hold]')?.click();

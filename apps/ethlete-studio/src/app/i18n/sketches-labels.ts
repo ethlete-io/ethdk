@@ -72,6 +72,7 @@ export const SKETCHES_LABELS = {
     waiting: 'Wartet auf deine Wahl',
     paused: 'Pausiert',
     failed: 'Render fehlgeschlagen',
+    merging: 'Wird übernommen',
   },
   holdUntil: (until: string) => `Wartet auf ${until}`,
   since: (minutes: number) => `seit ${spanOf(minutes)}`,

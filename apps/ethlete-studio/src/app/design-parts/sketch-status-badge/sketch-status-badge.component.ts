@@ -1,23 +1,33 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
-import { BADGE_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
-export type SketchBadgeStatus = 'drawing' | 'waiting' | 'paused' | 'failed';
+export type SketchBadgeStatus = 'drawing' | 'waiting' | 'paused' | 'failed' | 'merging';
 
 const LABELS = SKETCHES_LABELS.status;
+
+const DOT: Record<SketchBadgeStatus, string> = {
+  drawing: 'bg-(--et-theme-color-primary-solid) animate-pulse',
+  waiting: 'bg-(--et-theme-color-primary-solid)',
+  paused: 'bg-et-surface-muted',
+  failed: 'bg-(--et-theme-color-primary-solid)',
+  merging: 'bg-(--et-theme-color-primary-solid) animate-pulse',
+};
 
 @Component({
   selector: 'ethlete-sketch-status-badge',
   template: `
-    <span [etProvideColor]="failed() ? errorTheme() : null" class="flex w-fit">
-      <div class="flex flex-wrap items-center">
-        <et-badge variant="tonal" size="sm">{{ label() }}</et-badge>
-      </div>
+    <span
+      [etProvideColor]="failed() ? errorTheme() : null"
+      [class]="failed() ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'"
+      [attr.data-sk-status]="status()"
+      class="flex w-fit items-center gap-space-2 text-ui-sm font-ui-medium whitespace-nowrap"
+    >
+      <span [class]="dot()" class="size-2 flex-none rounded-full"></span>{{ label() }}
     </span>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BADGE_IMPORTS, ProvideColorDirective],
+  imports: [ProvideColorDirective],
   host: { class: 'contents' },
 })
 export class SketchStatusBadgeComponent {
@@ -26,4 +36,5 @@ export class SketchStatusBadgeComponent {
   public status = input<SketchBadgeStatus>('waiting');
   protected failed = computed(() => this.status() === 'failed');
   protected label = computed(() => LABELS[this.status()]);
+  protected dot = computed(() => DOT[this.status()]);
 }
