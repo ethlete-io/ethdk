@@ -938,14 +938,21 @@ export class SketchesComponent {
 
     if (!change || row.key === SKETCH_CURRENT) return [];
 
-    const unit = (item.width ?? row.width) / change.width;
+    const width = item.width ?? row.width;
+    const unit = width / change.width;
+    const height = change.height * unit;
 
-    return (change.areas?.length ? change.areas : [change.box]).map((box) => ({
-      left: box.x * unit - 4,
-      top: box.y * unit - 4,
-      width: box.width * unit + 8,
-      height: box.height * unit + 8,
-    }));
+    return (change.areas?.length ? change.areas : [change.box]).map((box) => {
+      const left = Math.max(0, box.x * unit - 4);
+      const top = Math.max(0, box.y * unit - 4);
+
+      return {
+        left,
+        top,
+        width: Math.min(width, (box.x + box.width) * unit + 4) - left,
+        height: Math.min(height, (box.y + box.height) * unit + 4) - top,
+      };
+    });
   }
 
   protected locatorOf(group: SketchCropGroup) {
