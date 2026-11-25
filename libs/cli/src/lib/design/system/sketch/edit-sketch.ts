@@ -153,6 +153,24 @@ export const pickContradictsPart = (product: ResolvedProduct, sketch: Sketch) =>
   return resolved !== undefined && !partHoldsVariant({ product, resolved, sketch, variant: sketch.decision.variant });
 };
 
+/**
+ * Whether `sketch` is an undecided edit sketch git tracks whose part HEAD holds in a state other than its `old`: a
+ * committed edit put before the user as a pick. A check keeps it and records no hash for its part; its merge does.
+ */
+export const editAwaitsPick = (product: ResolvedProduct, sketch: Sketch) => {
+  if (!isEditSketch(sketch) || !isOpenOrPickedEditSketch(sketch) || sketch.decision) return false;
+  if (!sketch.variants.includes(EDIT_OLD) || !tracksFileBelow(product, sketch.dir)) return false;
+
+  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(sketch));
+
+  return (
+    resolved !== undefined &&
+    resolved.origin !== 'base' &&
+    headHoldsPart(product, resolved) &&
+    !partHoldsVariant({ product, resolved, sketch, variant: EDIT_OLD })
+  );
+};
+
 /** The one way out of an edit sketch whose pick contradicts its part (`pickContradictsPart`): its merge, which writes the picked variant into the part. */
 export const pickedEditRemedyOf = (product: ResolvedProduct, sketch: Pick<Sketch, 'target' | 'decision'>) => {
   const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';

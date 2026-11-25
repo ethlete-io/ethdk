@@ -20,6 +20,7 @@ import {
   EDIT_OLD,
   isOpenOrPickedEditSketch,
   EditOldNotFound,
+  editAwaitsPick,
   pickContradictsPart,
   pickedEditRemedyOf,
   headHoldsPart,
@@ -305,7 +306,10 @@ const discardsUntracked = (product: ResolvedProduct, sketch: Sketch) =>
 
 const leftStaleEditLinesOf = (product: ResolvedProduct, parts: string[] | undefined) =>
   listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
-    typeof sketch !== 'string' && (!parts || parts.includes(partKeyOf(sketch))) && isStaleEditSketch(product, sketch)
+    typeof sketch !== 'string' &&
+    (!parts || parts.includes(partKeyOf(sketch))) &&
+    isStaleEditSketch(product, sketch) &&
+    !editAwaitsPick(product, sketch)
       ? [
           pickContradictsPart(product, sketch)
             ? `STALE EDIT SKETCH ${product.name} ${sketch.target}: ${partKeyOf(sketch)} matches HEAD, but ${pickedEditRemedyOf(product, sketch)}`
@@ -316,7 +320,8 @@ const leftStaleEditLinesOf = (product: ResolvedProduct, parts: string[] | undefi
 
 /**
  * Settles each direct edit of a merged part, or of `parts`, that HEAD already holds: records its hash in `merged.json`
- * and deletes its edit sketch, open or picked, unless the part contradicts its pick (`pickContradictsPart`). Answers the parts it settled. A hash only the stamp cache holds counts as unrecorded. With `writesTracked: false` it records
+ * and deletes its edit sketch, open or picked, unless the part contradicts its pick (`pickContradictsPart`) or the
+ * sketch awaits a pick (`editAwaitsPick`). Answers the parts it settled. A hash only the stamp cache holds counts as unrecorded. With `writesTracked: false` it records
  * nothing and deletes only an edit sketch git does not track and no comment is on. `held` gets each settled part with
  * its part hash; `lines` gets a STALE EDIT SKETCH line per edit sketch whose part HEAD holds, deleted or left.
  */
@@ -331,14 +336,16 @@ export const settleCommittedEdits = (options: {
   const { target, product } = options;
   const writesTracked = options.writesTracked ?? true;
   const sketches = editSketchesOf(product, isOpenOrPickedEditSketch);
-  const contradicted = new Set(editSketchesOf(product, (sketch) => pickContradictsPart(product, sketch)).keys());
+  const kept = new Set(
+    editSketchesOf(product, (sketch) => pickContradictsPart(product, sketch) || editAwaitsPick(product, sketch)).keys(),
+  );
   const candidates = new Set([...changedOutsideSketchOf(product, { tracked: writesTracked }), ...sketches.keys()]);
   const settled = product.parts.filter((resolved) => {
     const part = partKeyOf(resolved);
 
     return (
       candidates.has(part) &&
-      !contradicted.has(part) &&
+      !kept.has(part) &&
       resolved.origin !== 'base' &&
       (!options.parts || options.parts.includes(part)) &&
       headHoldsPart(product, resolved)

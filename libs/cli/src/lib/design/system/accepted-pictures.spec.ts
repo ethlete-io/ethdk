@@ -454,6 +454,21 @@ describe('autoAcceptOf', () => {
       expect(directEditsOf(productOf(target))).toEqual([]);
     });
 
+    it('is kept for its pick, without recording the edit, once HEAD holds the edit and git tracks the sketch', async () => {
+      const { target, dir, chip, draw } = await openSketch();
+      const merged = readMerged(dir)[CHIP];
+
+      gitExec(['add', join(dir, 'sketches')], { cwd: target });
+      commitChip(target, chip);
+
+      expect(await autoAccept(target, draw)).toEqual([
+        `PICTURES CHANGED app-a ${CHIP}: hover`,
+        `DIRECT EDIT app-a ${CHIP}: changed outside a sketch - pick old or new in sketch ${CHIP}@edit`,
+      ]);
+      expect(existsSync(sketchFileOf(dir))).toBe(true);
+      expect(readMerged(dir)[CHIP]).toBe(merged);
+    });
+
     it('is deleted with only new once HEAD holds the edit', async () => {
       const { target, dir, chip } = checkout();
       const { draw } = drawing({ default: 'a1', hover: 'b2' });

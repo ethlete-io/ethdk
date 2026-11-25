@@ -7,6 +7,7 @@ import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { readStampText } from './system/stamp-files';
 import { oneProductOf } from './system/sketch/cli-args';
 import {
+  editAwaitsPick,
   isOpenOrPickedEditSketch,
   isStaleEditSketch,
   pickContradictsPart,
@@ -78,7 +79,7 @@ const sketchLinesOf = (product: ResolvedProduct) => {
     const by = sketch.createdBy ? `, by \`${sketch.createdBy.cmd}\`` : '';
     const about = `${sketch.target}, ${sketch.status}, created ${sketch.createdAt.slice(0, 10)}${by}`;
 
-    if (isStaleEditSketch(product, sketch))
+    if (isStaleEditSketch(product, sketch) && !editAwaitsPick(product, sketch))
       return [
         pickContradictsPart(product, sketch)
           ? `SKETCH LEFTOVER ${product.name} ${folder}: ${about} - its part matches HEAD, but ${pickedEditRemedyOf(product, sketch)}`
