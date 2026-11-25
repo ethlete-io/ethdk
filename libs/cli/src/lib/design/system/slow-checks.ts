@@ -330,7 +330,15 @@ export const staleSlowPartsOf = (product: ResolvedProduct) => {
     .map(([part]) => part);
 };
 
-const freshSlowEntryOf = ({ product, part }: { product: ResolvedProduct; part: string }) => {
+const freshSlowEntryOf = ({
+  product,
+  part,
+  failures = false,
+}: {
+  product: ResolvedProduct;
+  part: string;
+  failures?: boolean;
+}) => {
   const context = contextOf(product);
   const inputs =
     part === PRODUCT_PART
@@ -343,19 +351,27 @@ const freshSlowEntryOf = ({ product, part }: { product: ResolvedProduct; part: s
 
   if (!inputs || inputs.rules.length === 0) return null;
 
-  const entry = readSlowCache(product)[part];
+  const entry = (failures ? readStoredSlowResults(product) : readSlowCache(product))[part];
 
   return entry?.hash === inputs.hash ? entry : 'pending';
 };
 
-export const slowProblemsOf: SlowProblemsOf = ({ product, part }) => {
-  const entry = freshSlowEntryOf({ product, part });
+const slowProblemsFrom = (options: { product: ResolvedProduct; part: string; failures: boolean }) => {
+  const { product } = options;
+  const entry = freshSlowEntryOf(options);
 
   if (entry === null) return [];
   if (entry === 'pending') return 'pending';
 
   return blockingSlowProblemsOf(product, entry.problems);
 };
+
+export const slowProblemsOf: SlowProblemsOf = ({ product, part }) =>
+  slowProblemsFrom({ product, part, failures: false });
+
+/** Like `slowProblemsOf`, but a stored failing result at the current inputs answers with its findings instead of `'pending'`. */
+export const storedSlowProblemsOf: SlowProblemsOf = ({ product, part }) =>
+  slowProblemsFrom({ product, part, failures: true });
 
 /** One warning line per state of `parts` whose current slow result could not judge it, naming the product, part, state and why. */
 export const unjudgedStateWarningsOf = (options: { product: ResolvedProduct; parts: string[] }) =>

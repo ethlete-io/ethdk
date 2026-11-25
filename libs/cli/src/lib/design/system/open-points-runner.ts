@@ -7,6 +7,7 @@ import { DrawnFindings } from './drawn-open-points';
 import { cachedOpenPointsOf } from './open-points-cache';
 import { OpenPoint, PartOpenPoints } from './open-points';
 import { buildReadyOf } from './part-build-ready';
+import { storedSlowProblemsOf } from './slow-checks';
 import { readyMarkOf, readyPartOf } from './part-ready';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { Problem } from './problem';
@@ -60,7 +61,11 @@ export const openPointsOf = ({ product, part, findings }: OpenPointsRequest): Op
     buildReady: buildReadyOf({
       product,
       part,
-      inputs: { ...inputs, pointsOf: (key) => (key === part ? points : inputs.pointsOf(key)) },
+      inputs: {
+        ...inputs,
+        slowOf: storedSlowProblemsOf,
+        pointsOf: (key) => (key === part ? points : inputs.pointsOf(key)),
+      },
     }),
     points,
   };

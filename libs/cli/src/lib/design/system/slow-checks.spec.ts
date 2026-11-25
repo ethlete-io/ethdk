@@ -14,6 +14,7 @@ import {
   slowInputsOf,
   slowProblemsOf,
   staleSlowPartsOf,
+  storedSlowProblemsOf,
   unjudgedStateWarningsOf,
   writeSlowResults,
 } from './slow-checks';
@@ -109,6 +110,15 @@ describe('slowProblemsOf', { timeout: 30_000 }, () => {
     storeAll(product, new Map());
 
     expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toEqual([]);
+  });
+
+  it('shows the findings of a stored failure to the design server while design check still reruns it', () => {
+    const { product } = acme();
+
+    storeAll(product, new Map([['components/chip', [problem]]]));
+
+    expect(storedSlowProblemsOf({ product: product(), part: 'components/chip' })).toEqual([problem]);
+    expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toBe('pending');
   });
 
   it('drops a stored pass when the same inputs then fail', () => {
