@@ -364,6 +364,24 @@ jobs:
 
       - run: yarn nx e2e csp-e2e
 
+  docs-examples-e2e:
+    name: Docs examples e2e
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: docs-examples-e2e
+
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
+
+      - run: yarn nx e2e docs-examples-e2e
+
   studio-e2e:
     name: Studio e2e (${{ matrix.shard }}/9)
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
@@ -550,6 +568,7 @@ jobs:
         storybook-e2e,
         timetrack-e2e,
         csp-e2e,
+        docs-examples-e2e,
         studio-e2e,
         rust,
         webkit-design-events,
@@ -564,7 +583,20 @@ jobs:
   deploy:
     name: Deploy
     if: ${{ !cancelled() && inputs.deploy && !contains(needs.*.result, 'failure') }}
-    needs: [checks, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, studio-e2e, rust]
+    needs:
+      [
+        checks,
+        test,
+        build,
+        storybook,
+        storybook-test,
+        storybook-e2e,
+        timetrack-e2e,
+        csp-e2e,
+        docs-examples-e2e,
+        studio-e2e,
+        rust,
+      ]
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # node:24.22.1-bookworm
     container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}

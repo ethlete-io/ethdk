@@ -49,6 +49,7 @@ yarn nx run ethlete-studio:format-rust    # 17. cargo fmt --check on the studio 
 yarn nx run ethlete-studio:lint-rust      # 18. cargo clippy -D warnings
 yarn nx run ethlete-studio:test-rust      # 19. cargo test
 yarn nx e2e timetrack-e2e                 # 20. timetrack app e2e, against the host fakes
+yarn nx e2e docs-examples-e2e             # 21. theming baseline on the docs examples (B-65 expected red)
 ```
 
 The workflow's `studio` job ("Studio rules") builds the CLI and runs the Studio design rules; locally:
