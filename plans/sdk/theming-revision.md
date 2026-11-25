@@ -145,6 +145,38 @@ Drei Begriffe, je ein Satz, je ein Namensraum. Mehr muss ein App-Entwickler nich
 | **Akzent**  | Eine Farbe für Hervorhebung: Farbe, Text darauf, Tinte.                                                    | `etProvideColor`                                           | `--et-color-*`, **ein** Name je Wert, ein fertiger Farbwert                  |
 | **Zustand** | Hover und Gedrückt sind eine durchscheinende Tönung über dem, was darunter liegt. Stellbar ist die Stärke. | nichts; Komponenten bringen ihre Stärke mit                | Apps: eine Utility für die Tönung, eine für „Hintergrund der nächsten Ebene“ |
 
+**Wörter (Tom, 26.11.): Das zweite Konzept heißt `tone`, nicht mehr `color`.** Ein Ton ist die
+Farbe, in der eine Komponente auftritt (`brand`, `danger`, eine Teamfarbe; Vorbild: Polaris,
+Sanity UI). `accent` ist verworfen (Material: zweite Farbe neben `primary`), `color` ebenfalls
+(„super unbeschreibend“, und `--et-surface-color` meint die Textfarbe). Wo dieser Plan weiter
+unten noch „Akzent“ oder `--et-color-*` als Zielname schreibt, gilt diese Tabelle:
+
+| Heute                                     | Danach                                   |
+| ----------------------------------------- | ---------------------------------------- |
+| Color-Theme                               | Tone                                     |
+| `--et-color-primary`                      | `--et-tone-fill`                         |
+| `--et-color-on-primary`                   | `--et-tone-on-fill`                      |
+| `--et-color-primary-ink`                  | `--et-tone-text`                         |
+| `--et-surface-color`, `-muted`, `-subtle` | `--et-surface-text`, `-muted`, `-subtle` |
+| Inputs `color`, `pressedColor`            | `tone`, `pressedTone`                    |
+
+Kein neuer Token-Name hat je ein Kanal-Tripel bedeutet; damit entfällt der Spike „welcher Name
+überlebt“ aus Schritt 1.
+
+**Direktiven (Vorschlag vom 26.11., Bestätigung durch Tom offen):** Eine App kennt danach zwei.
+
+| Heute                                                                   | Danach                                                                                                                             | Vorkommen ✔ (ohne Specs)                          |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `etAutoSurface` (eine Ebene höher), `etProvideSurface="name"` (benannt) | `etSurface`, `etSurface="name"`                                                                                                    | Auto: fifagg 0, fut 15; Provide: fifagg 5, fut 11 |
+| `etProvideColor="name"`                                                 | `etTone="name"`                                                                                                                    | fifagg 94, fut 431                                |
+| `forceColor`, `syncWithProvider` (Inputs an `etProvideColor`)           | vom Builder zu prüfen: `syncWithProvider` nutzt keine App ✔ → intern; `forceColor` (fifagg 1, fut 5) bleibt als Input von `etTone` | –                                                 |
+| `etSurfaceInteractive`                                                  | entfällt (S4)                                                                                                                      | fifagg 0, fut 0                                   |
+| `etColorInteractive`, `…Container`, `…Exclude`, `…HasFocus`             | SDK-intern, aus der App-Doku; nur umbenannt (`etToneInteractive…`), Verhalten unberührt (Umfang)                                   | Apps 0 bis 1                                      |
+
+Vom Builder vor dem Umbau zu belegen: `etAutoSurface` bindet `ProvideSurfaceDirective` schon als
+Host-Direktive ✔ und hat einen Input `surfaceProvider`; ob beide ohne Verhaltensänderung in einer
+Direktive aufgehen, zeigt die bestehende Spec-Suite.
+
 Was daraus folgt:
 
 - **Jeder Name sagt, wofür die Farbe gebraucht wird** (Tom, 26.11.: „wirre wörter wie ink“).
@@ -249,10 +281,9 @@ Nach jedem Schritt: `et update` in fifagg, Bildvergleich gegen die Aufnahme aus 
 
 Technische Festlegungen (meine, keine Rückfrage):
 
-- Welcher Name je Wert überlebt, entscheidet ein Spike am Anfang von Schritt 1. Kriterium: Eine
-  nicht migrierte Lesestelle muss laut scheitern (Lint oder `et update`-Prüfung), nie still eine
-  ungültige Farbe ergeben. Ein Name, der seinen Typ wechselt (Tripel → Farbwert), erfüllt das nur
-  mit der Prüfung aus S1.
+- Die neuen Namen stehen in der Worttabelle in Abschnitt 3. Eine nicht migrierte Lesestelle muss
+  laut scheitern (Lint oder `et update`-Prüfung auf alte Namen), nie still eine ungültige Farbe
+  ergeben.
 - Zustände werden am Verbraucher gemischt; App-Overrides stehen auf dem Element der Komponente,
   nicht auf `:root` (ein auf `:root` gesetztes `var()` löst dort auf und vererbt den Wurzelwert ✔).
 - Kein Generator-Abbruch bei Farbgleichheit; die Messlatte prüft im Browser.
@@ -318,3 +349,5 @@ Entschieden:
   Farbgleichheit.
 - (26.11., Tom) Wörter wie `ink` versteht niemand; das System muss transparenter werden. Folge:
   Wortliste S9, jeder Name in einem Satz erklärbar.
+- (26.11., Tom) Das Konzept „Color“ heißt künftig `tone` („ja tone ist gut“). `accent` verworfen
+  (Material-Assoziation primary vs. accent). Flächen-Textfarbe wird `--et-surface-text`.
