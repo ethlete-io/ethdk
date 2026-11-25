@@ -1,8 +1,12 @@
 import { Component, Directive, ElementRef, inject, Injectable, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
+import { ColorTheme, DEFAULT_OVERLAY_LAYER, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import {
   createPipChromeAnimations,
+  injectOverlayManager,
+  PIP_WINDOW_OVERLAY_LAYER,
+  provideOverlay,
+  rightSheetOverlayStrategy,
   createPipChromeState,
   DEFAULT_STREAM_LABELS,
   injectPipManager,
@@ -69,6 +73,9 @@ class MatchCenterComponent {
     this.slots()[index]?.controls.pipActivate();
   }
 }
+
+@Component({ selector: 'et-scenario-sheet-content', template: '<p>Match details</p>' })
+class SheetContentComponent {}
 
 const floatAndSettle = async (s: Scenario, fixture: { componentInstance: MatchCenterComponent }, index: number) => {
   fixture.componentInstance.float(index);
@@ -144,6 +151,7 @@ afterEach(() => browser.restore());
 describe('stream picture-in-picture scenarios', () => {
   const scenario = useScenario({
     providers: [
+      provideOverlay(),
       provideColorThemesWithTailwind4(COLOR_THEMES),
       ...provideStreamPip({
         pipChromeComponent: StreamPipChromeComponent,
@@ -307,6 +315,50 @@ describe('stream picture-in-picture scenarios', () => {
     await floatAndSettle(s, fixture, 0);
 
     expect(document.querySelector('body > et-stream-pip-chrome')).not.toBeNull();
+  });
+
+  it('keeps a sheet below it open while the PiP window is dragged and closed', async () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(MatchCenterComponent);
+    const pip = s.run(() => injectPipManager());
+
+    s.flush();
+    await floatAndSettle(s, fixture, 0);
+
+    const sheet = s.run(() =>
+      injectOverlayManager().open(SheetContentComponent, { strategies: rightSheetOverlayStrategy(), autoFocus: false }),
+    );
+
+    const closeSources: string[] = [];
+
+    sheet.beforeClosedEvent().subscribe((event) => closeSources.push(event.source));
+    s.flush();
+    expect(sheet.componentInstance()).not.toBeNull();
+
+    const pipWindow = query('et-pip-window');
+
+    expect(pipWindow.getAttribute('data-et-overlay-layer')).toBe(`${PIP_WINDOW_OVERLAY_LAYER}`);
+    expect(PIP_WINDOW_OVERLAY_LAYER).toBeGreaterThan(DEFAULT_OVERLAY_LAYER);
+
+    const press = async (target: HTMLElement) => {
+      const init = { bubbles: true, cancelable: true, button: 0, pointerId: 1, isPrimary: true };
+
+      target.dispatchEvent(new PointerEvent('pointerdown', init));
+      target.dispatchEvent(new PointerEvent('pointerup', init));
+      target.click();
+      await s.settle();
+    };
+
+    await press(query('.et-pip-window__title-bar', pipWindow));
+    expect(closeSources).toEqual([]);
+
+    await press(query('.et-stream-pip-chrome__close', pipWindow));
+    expect(pip.pips()).toEqual([]);
+    expect(closeSources).toEqual([]);
+    expect(sheet.componentInstance()).not.toBeNull();
+
+    sheet.close();
+    s.flush();
   });
 
   it('moves and resizes the PiP window from the keyboard', async () => {

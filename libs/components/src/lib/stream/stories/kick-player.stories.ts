@@ -1,5 +1,9 @@
 import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
-import { KickPlayerSlotStorybookComponent, KickPlayerStorybookComponent } from './components';
+import {
+  KickPlayerSlotOverSheetStorybookComponent,
+  KickPlayerSlotStorybookComponent,
+  KickPlayerStorybookComponent,
+} from './components';
 
 export default {
   title: 'Components/Media/Stream/Kick',
@@ -28,5 +32,14 @@ const SlotTemplate: StoryFn<KickPlayerSlotStorybookComponent> = (args) => ({
 export const SlotPictureInPicture = {
   render: SlotTemplate,
   decorators: [moduleMetadata({ imports: [KickPlayerSlotStorybookComponent] })],
+  args: { channel: 'xqc' },
+};
+
+export const SlotPictureInPictureOverSheet = {
+  render: (args: { channel: string }) => ({
+    props: args,
+    template: `<et-sb-kick-player-slot-over-sheet [channel]="channel" />`,
+  }),
+  decorators: [moduleMetadata({ imports: [KickPlayerSlotOverSheetStorybookComponent] })],
   args: { channel: 'xqc' },
 };

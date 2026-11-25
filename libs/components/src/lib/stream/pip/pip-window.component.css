@@ -21,7 +21,8 @@
     position: fixed;
     right: var(--et-pip-window-offset-right, 24px);
     bottom: var(--et-pip-window-offset-bottom, 24px);
-    z-index: var(--et-pip-window-z-index, 1000);
+    /* @see PIP_WINDOW_OVERLAY_LAYER */
+    z-index: var(--et-pip-window-z-index, var(--_et-pip-window-layer));
     display: flex;
     flex-direction: column;
     touch-action: none;

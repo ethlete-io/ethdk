@@ -19,3 +19,4 @@ export * from './youtube-player-storybook.component';
 export * from './youtube-player-slot-controls-storybook.component';
 export * from './youtube-player-slot-consent-provider-storybook.component';
 export * from './youtube-player-slot-custom-pip-chrome-storybook.component';
+export * from './kick-player-slot-over-sheet-storybook.component';
