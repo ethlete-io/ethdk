@@ -6,7 +6,7 @@ import { Readable } from 'stream';
 import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { designSketch } from './sketch-command';
-import { sketchApproveAnswer, sketchDecisionAnswer, sketchesAnswer, sketchMergeAnswer } from './studio-api';
+import { sketchApproveAnswer, sketchDecisionAnswer, sketchesAnswer } from './studio-api';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, findSketch, markSketchReady, parseTarget } from './system/sketch/sketch';
 
@@ -113,14 +113,6 @@ const markSubReady = (target: string, name: string) => {
 };
 
 const readJson = (file: string) => JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
-
-const merge = (target: string, sketch = 'elements/hero') =>
-  sketchMergeAnswer({
-    target,
-    url: new URL(`http://localhost/?product=acme&sketch=${sketch}`),
-    request: Object.assign(Readable.from(['{}']), { method: 'POST' }) as unknown as IncomingMessage,
-    signal: new AbortController().signal,
-  });
 
 const pick = (target: string, variant: string, sketch = 'elements/hero', extra: Record<string, unknown> = {}) =>
   sketchDecisionAnswer({
@@ -261,7 +253,7 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
     withMarkedSlider(sketchDir);
     await pick(target, 'b');
 
-    const answer = await merge(target);
+    const answer = await pick(target, 'b');
 
     expect(answer.status).toBe(422);
     expect(JSON.stringify(answer.body)).toContain('waits on its sub-sketches components/hero-slider');
@@ -482,12 +474,9 @@ describe('the Studio pick route', { timeout: 60_000 }, () => {
     const { target, subDir } = await withReadySubSketch();
     const named = 'is a sub-sketch of elements/hero';
 
-    const studioMerge = await merge(target, 'components/hero-slider');
     const studioPick = await pick(target, 'a', 'components/hero-slider');
     const code = await sketchCommand(target, ['merge', 'components/hero-slider']);
 
-    expect(studioMerge.status).toBe(422);
-    expect(JSON.stringify(studioMerge.body)).toContain(named);
     expect(studioPick.status).toBe(422);
     expect(JSON.stringify(studioPick.body)).toContain(named);
     expect(code).not.toBe(0);

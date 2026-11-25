@@ -1503,10 +1503,6 @@ describe('the design server for sketches and comments', () => {
       status: 422,
       body: { error: 'components/card variant b is rejected by the designer: too flat - reopen it first' },
     });
-    expect(await ask('/__design/sketch-merge', sketchQuery, 'POST', {})).toMatchObject({
-      status: 422,
-      body: { error: expect.stringContaining('has no pick') },
-    });
     expect(await decide({ kind: 'reopen', variant: 'b', reason: 'second look' })).toMatchObject({
       status: 200,
       body: { rejections: { b: [{ reopened: { by: 'designer', reason: 'second look' } }] } },
@@ -1524,10 +1520,6 @@ describe('the design server for sketches and comments', () => {
 
     const { ask } = await serveAcme(target);
 
-    expect(await ask('/__design/sketch-merge', sketchQuery, 'POST', {})).toMatchObject({
-      status: 422,
-      body: { error: expect.stringContaining('has no pick') },
-    });
     writeFileSync(join(target, DESIGN_DIR, 'acme-base/components/card/card.css'), '.acme-card { padding: 0; }');
     expect(await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'b' })).toMatchObject({
       status: 422,
@@ -1536,10 +1528,6 @@ describe('the design server for sketches and comments', () => {
         changed: ['components/card'],
         rebase: expect.stringMatching(/ sketch rebase components\/card --product acme --by <model id>$/u),
       },
-    });
-    expect(await ask('/__design/sketch-merge', sketchQuery, 'POST', { note: 'x' })).toMatchObject({
-      status: 422,
-      body: { error: expect.stringContaining('has no pick') },
     });
     expect(await ask('/__design/sketch-discard', sketchQuery, 'POST')).toMatchObject({
       status: 200,

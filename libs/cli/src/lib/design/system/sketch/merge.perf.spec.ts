@@ -6,7 +6,7 @@ import { Readable } from 'stream';
 import { describe, expect, it } from 'vitest';
 import { calibrationMs, recordPerf, watchLongestBlock } from '../../../perf.fixtures';
 import { readConfig } from '../../design-config';
-import { sketchMergeAnswer } from '../../studio-api';
+import { sketchDecisionAnswer } from '../../studio-api';
 import { resolveProduct } from '../resolve-product';
 import { originOf } from '../write-origin';
 import { createSketch, decideSketch, markSketchReady, Sketch } from './sketch';
@@ -23,9 +23,7 @@ const readyPickedSketch = () => {
     sketch: { layer: 'elements', name: 'hero' },
     variants: ['a', 'b'],
   }) as Sketch;
-  const ready = markSketchReady({ checkout: target, sketch: created }) as Sketch;
-
-  decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', ...originOf('spec') } });
+  markSketchReady({ checkout: target, sketch: created });
 
   return target;
 };
@@ -36,10 +34,12 @@ describe('mergeSketch perf', { timeout: 60_000 }, () => {
     const unitBefore = calibrationMs();
     const stop = watchLongestBlock();
 
-    const answer = await sketchMergeAnswer({
+    const answer = await sketchDecisionAnswer({
       target,
       url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
-      request: Object.assign(Readable.from([Buffer.from('{}')]), { method: 'POST' }) as unknown as IncomingMessage,
+      request: Object.assign(Readable.from([JSON.stringify({ kind: 'pick', variant: 'b' })]), {
+        method: 'POST',
+      }) as unknown as IncomingMessage,
     });
 
     const { longestMs, gc } = stop();

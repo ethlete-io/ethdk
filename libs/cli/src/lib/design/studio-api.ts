@@ -100,7 +100,6 @@ export const SKETCH_DIFF_PATH = '/__design/sketch-diff';
 export const SKETCH_CROP_PATH = '/__design/sketch-crop';
 export const STATE_DIFF_PATH = '/__design/state-diff';
 export const SKETCH_DECISION_PATH = '/__design/sketch-decision';
-export const SKETCH_MERGE_PATH = '/__design/sketch-merge';
 export const SKETCH_APPROVE_PATH = '/__design/sketch-approve';
 
 const SKETCH_DECISION_KINDS: readonly SketchDecisionInput['kind'][] = ['pick', 'discard', 'reject', 'reason', 'reopen'];
@@ -832,7 +831,7 @@ const userNameOf = (dir: string) => {
 /**
  * POST `?product=&sketch=`, body `{ kind: 'pick', variant, comment? }`, `{ kind: 'discard', comment? }`, or a verdict
  * by the designer on one variant: `{ kind: 'reject' | 'reopen', variant, reason? }` or `{ kind: 'reason', variant, reason }`.
- * A pick merges the variant at once and answers as `sketch-merge` does; a refused merge leaves no pick. A pick of a variant
+ * A pick merges the variant at once and answers with the merge; a refused merge leaves no pick. A pick of a variant
  * that marks sub-parts opens one sketch per sub-part instead and answers `{ merged: [], subSketches, discarded }`; the same
  * pick again merges the parent with its sub-sketches once each is approved, or answers 422 with reason `sub-sketches-open`
  * and the open ones as `findings`. A pick of another variant that would discard sub-sketches answers 409 with reason
@@ -917,17 +916,6 @@ export const sketchApproveAnswer = withSketch('POST', async ({ asked, product, s
   return typeof approved === 'string'
     ? failure(422, approved)
     : { status: 200, body: sketchOf({ sketch: approved, target: asked.target }) };
-});
-
-/**
- * POST `?product=&sketch=`, body `{ note? }`: merges the picked variant into the product, as `et design sketch merge` does.
- * A merge refused for a stale baseline answers 422 with `changed` (the parts, `[]` without a baseline) and the `rebase` command;
- * one the check fails after answers 422 with reason `check-failed` and the check's `findings` lines.
- */
-export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
-  const body = await bodyOf(asked.request);
-
-  return mergeAnswerOf({ asked, product, sketch, note: textOf(body?.['note']) });
 });
 
 /**

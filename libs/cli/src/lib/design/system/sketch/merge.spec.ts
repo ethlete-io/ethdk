@@ -8,7 +8,7 @@ import { join, resolve } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
-import { sketchMergeAnswer } from '../../studio-api';
+import { sketchDecisionAnswer } from '../../studio-api';
 import {
   addressComment,
   commentsOnSketch,
@@ -112,14 +112,14 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     config.products.acme.harness = harness;
     writeFileSync(configFile, JSON.stringify(config));
 
-    const ready = readySketch(target);
+    readySketch(target);
 
-    picked(ready.sketch);
-
-    const answer = await sketchMergeAnswer({
+    const answer = await sketchDecisionAnswer({
       target,
       url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
-      request: Object.assign(Readable.from([Buffer.from('{}')]), { method: 'POST' }) as unknown as IncomingMessage,
+      request: Object.assign(Readable.from([JSON.stringify({ kind: 'pick', variant: 'b' })]), {
+        method: 'POST',
+      }) as unknown as IncomingMessage,
     });
 
     expect(answer.status).toBe(200);
@@ -128,9 +128,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
 
   it('runs a Studio merge without a child process', async () => {
     const target = acme();
-    const ready = readySketch(target);
-
-    picked(ready.sketch);
+    readySketch(target);
 
     const spawners = (['spawn', 'spawnSync', 'exec', 'execSync', 'execFile', 'execFileSync', 'fork'] as const).map(
       (name) => vi.spyOn(childProcess, name),
@@ -138,10 +136,12 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
 
     syncBuiltinESMExports();
 
-    const answer = await sketchMergeAnswer({
+    const answer = await sketchDecisionAnswer({
       target,
       url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
-      request: Object.assign(Readable.from([Buffer.from('{}')]), { method: 'POST' }) as unknown as IncomingMessage,
+      request: Object.assign(Readable.from([JSON.stringify({ kind: 'pick', variant: 'b' })]), {
+        method: 'POST',
+      }) as unknown as IncomingMessage,
     });
 
     const spawned = spawners.filter((spy) => spy.mock.calls.length > 0).map((spy) => spy.getMockName());
@@ -569,10 +569,12 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     writeFileSync(join(created.dir, 'b/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
     picked(markSketchReady({ checkout: target, sketch: created }) as Sketch);
 
-    const answer = await sketchMergeAnswer({
+    const answer = await sketchDecisionAnswer({
       target,
       url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
-      request: Object.assign(Readable.from([Buffer.from('{}')]), { method: 'POST' }) as unknown as IncomingMessage,
+      request: Object.assign(Readable.from([JSON.stringify({ kind: 'pick', variant: 'b' })]), {
+        method: 'POST',
+      }) as unknown as IncomingMessage,
     });
 
     expect(answer.status).toBe(422);
