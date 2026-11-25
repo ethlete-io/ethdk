@@ -4,6 +4,7 @@ import { pathToFileURL } from 'url';
 import { Worker } from 'worker_threads';
 import { packageFileOf } from '../package-root';
 import { HeldEdits, replaceHeldEdits } from './sketch/held-edits';
+import { watchWorkerHeap } from '../heap-watch';
 
 export type SlowRunWorkerData = { target: string; intervalMs?: number; exited?: SharedArrayBuffer };
 
@@ -17,15 +18,18 @@ const startWorker = (workerData: SlowRunWorkerData): SlowRunWorker => {
   const built = packageFileOf(resolve(__dirname, 'slow-run-worker.js'));
 
   // Specs run this file from source, where only the `.ts` worker exists.
-  return existsSync(built)
-    ? new Worker(built, { workerData })
-    : new Worker(resolve(__dirname, 'slow-run-worker.ts'), {
-        workerData,
-        execArgv: [
-          '--import',
-          pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib/jiti-register.mjs')).href,
-        ],
-      });
+  return watchWorkerHeap(
+    'slow-run',
+    existsSync(built)
+      ? new Worker(built, { workerData })
+      : new Worker(resolve(__dirname, 'slow-run-worker.ts'), {
+          workerData,
+          execArgv: [
+            '--import',
+            pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib/jiti-register.mjs')).href,
+          ],
+        }),
+  );
 };
 
 /**

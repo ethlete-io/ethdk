@@ -1,3 +1,4 @@
+import { watchWorkerHeap } from './heap-watch';
 import { statSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { resolve } from 'path';
@@ -86,7 +87,10 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
 
     startedWith = JSON.stringify(workerData);
 
-    const started = new Worker(packageFileOf(resolve(__dirname, 'render-worker.js')), { workerData });
+    const started = watchWorkerHeap(
+      'render',
+      new Worker(packageFileOf(resolve(__dirname, 'render-worker.js')), { workerData }),
+    );
 
     started.on('message', (response: RenderResponse) => {
       const { id, watched: loaded, lines, ...result } = response;

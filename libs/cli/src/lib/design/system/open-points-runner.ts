@@ -13,6 +13,7 @@ import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { allHeldEdits, HeldEdits } from './sketch/held-edits';
 import { openDirectEditPartsOf } from './sketch/merged-parts';
+import { watchWorkerHeap } from '../heap-watch';
 
 export type OpenPointsRequest = {
   product: ResolvedProduct;
@@ -79,14 +80,17 @@ const startWorker = () => {
   const built = packageFileOf(resolve(__dirname, 'open-points-worker.js'));
 
   // Specs run this file from source, where only the `.ts` worker exists.
-  return existsSync(built)
-    ? new Worker(built)
-    : new Worker(resolve(__dirname, 'open-points-worker.ts'), {
-        execArgv: [
-          '--import',
-          pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib/jiti-register.mjs')).href,
-        ],
-      });
+  return watchWorkerHeap(
+    'open-points',
+    existsSync(built)
+      ? new Worker(built)
+      : new Worker(resolve(__dirname, 'open-points-worker.ts'), {
+          execArgv: [
+            '--import',
+            pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib/jiti-register.mjs')).href,
+          ],
+        }),
+  );
 };
 
 type Waiting = { done: (answer: unknown) => void; fail: (error: Error) => void };

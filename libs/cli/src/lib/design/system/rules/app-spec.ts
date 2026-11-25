@@ -52,27 +52,28 @@ const vitestOf = (root: string) => {
   return existsSync(local) ? { command: local, args: [] } : { command: 'npx', args: ['vitest'] };
 };
 
+export const relatedSpecArgsOf = (options: { root: string; config: string; report: string; files: string[] }) => [
+  'related',
+  '--run',
+  '--passWithNoTests',
+  '--pool=forks',
+  '--config',
+  options.config,
+  '--reporter=json',
+  `--outputFile=${options.report}`,
+  ...options.files.map((file) => resolve(options.root, file)),
+];
+
 export const runRelatedSpecs: RunRelatedSpecs = ({ root, config, files }) => {
   const dir = mkdtempSync(join(tmpdir(), 'et-design-app-spec-'));
   const report = join(dir, 'report.json');
   const { command, args } = vitestOf(root);
 
   return new Promise((done) => {
-    const child = spawn(
-      command,
-      [
-        ...args,
-        'related',
-        '--run',
-        '--passWithNoTests',
-        '--config',
-        config,
-        '--reporter=json',
-        `--outputFile=${report}`,
-        ...files.map((file) => resolve(root, file)),
-      ],
-      { cwd: root, stdio: ['ignore', 'ignore', 'pipe'] },
-    );
+    const child = spawn(command, [...args, ...relatedSpecArgsOf({ root, config, report, files })], {
+      cwd: root,
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
     let errors = '';
 
     child.stderr.on('data', (chunk: Buffer) => (errors = `${errors}${chunk.toString()}`.slice(-2000)));

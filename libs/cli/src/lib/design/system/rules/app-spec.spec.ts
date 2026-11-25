@@ -2,9 +2,23 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { appSpecProblemsOf, specFailuresOf, specSeedsOf } from './app-spec';
+import { appSpecProblemsOf, relatedSpecArgsOf, specFailuresOf, specSeedsOf } from './app-spec';
 
 const report = readFileSync(join(__dirname, 'app-spec.vitest-related.json'), 'utf8');
+
+describe('relatedSpecArgsOf', () => {
+  it('runs the related specs in forked workers, which free their memory per file unlike threads', () => {
+    const args = relatedSpecArgsOf({
+      root: '/repo',
+      config: 'vite.config.mts',
+      report: '/tmp/r.json',
+      files: ['src/a.ts'],
+    });
+
+    expect(args).toContain('--pool=forks');
+    expect(args.slice(-1)).toEqual(['/repo/src/a.ts']);
+  });
+});
 
 describe('specFailuresOf', () => {
   it('names each failed spec with its failed tests, or the load error of a spec that did not run', () => {
