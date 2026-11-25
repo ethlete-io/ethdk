@@ -47,6 +47,9 @@ const CLI_SOURCE_DIRS: [&str; 3] = ["src", "design", "playwright"];
 
 const BUILD_INFO: &str = "dist/libs/cli/build-info.json";
 
+/// `cli-runtime` depends on `cli:build`, so it renews both copies a development build may start.
+const CLI_BUILD: [&str; 3] = ["nx", "run", "ethlete-studio:cli-runtime"];
+
 /// Written by `libs/cli/src/lib/design/crash-log.ts`, one entry per crash.
 const CRASH_LOG: &str = ".ethlete/cache/design-server-crash.log";
 
@@ -64,6 +67,8 @@ pub struct ServerState {
     /// True when the listening server was started from a different cli than the one on disk now,
     /// or reports no stamp at all.
     pub stale: bool,
+    /// Why `stale` is set, `None` while it is not.
+    pub stale_reason: Option<StaleReason>,
     /// True when a server this Studio started has since ended. Its last output stays in `log`.
     pub exited: bool,
     /// The crash-log entry of the exited server, when it died of an uncaught error.
@@ -75,6 +80,15 @@ pub struct ServerState {
     pub phase: Option<StartPhase>,
     /// Milliseconds spent in `phase`, 0 without one.
     pub phase_ms: u64,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum StaleReason {
+    /// This repository's `dist/libs/cli` was built from other sources than `libs/cli` holds now.
+    CliBuildOutdated,
+    /// The server answers no stamp, or another one than the cli Studio would start it with.
+    Stamp,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -266,6 +280,7 @@ async fn state(
         managed,
         foreign: listening && !managed,
         stale: false,
+        stale_reason: None,
         exited,
         crash,
         log: (known_log != Some(log_revision)).then_some(lines),
@@ -397,16 +412,6 @@ fn stamps_differ(own: &serde_json::Value, served: &serde_json::Value) -> bool {
         .any(|field| own.get(field) != served.get(field))
 }
 
-async fn judge_stale(checkout: String, port: u16) -> Verdict {
-    let outdated = cfg!(debug_assertions) && tokio::task::spawn_blocking(built_cli_outdated).await.unwrap_or(false);
-
-    if outdated {
-        return Verdict::Stale;
-    }
-
-    is_stale(&checkout, port).await
-}
-
 fn forget_verdict(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<()> {
     servers
         .verdicts
@@ -417,21 +422,31 @@ fn forget_verdict(servers: &DesignServers, checkout: &str, port: u16) -> StudioR
     Ok(())
 }
 
-async fn judged_with<F, J>(
+async fn judged_with<F, J, G, O>(
     servers: &DesignServers,
     checkout: &str,
     port: u16,
     known_log: Option<u64>,
+    outdated: O,
     judge: J,
 ) -> StudioResult<ServerState>
 where
     J: FnOnce() -> F,
     F: Future<Output = Verdict>,
+    O: FnOnce() -> G,
+    G: Future<Output = bool>,
 {
     let mut current = state(servers, checkout, port, known_log).await?;
 
     if !current.listening {
         forget_verdict(servers, checkout, port)?;
+
+        return Ok(current);
+    }
+
+    if outdated().await {
+        current.stale = true;
+        current.stale_reason = Some(StaleReason::CliBuildOutdated);
 
         return Ok(current);
     }
@@ -461,6 +476,7 @@ where
             stale
         }
     };
+    current.stale_reason = current.stale.then_some(StaleReason::Stamp);
 
     Ok(current)
 }
@@ -471,9 +487,14 @@ async fn judged(
     port: u16,
     known_log: Option<u64>,
 ) -> StudioResult<ServerState> {
-    judged_with(servers, checkout, port, known_log, || {
-        judge_stale(checkout.to_owned(), port)
-    })
+    judged_with(
+        servers,
+        checkout,
+        port,
+        known_log,
+        || async { cfg!(debug_assertions) && tokio::task::spawn_blocking(built_cli_outdated).await.unwrap_or(false) },
+        || is_stale(checkout, port),
+    )
     .await
 }
 
@@ -937,18 +958,74 @@ pub async fn design_server_restart(
     servers: tauri::State<'_, DesignServers>,
     checkout: String,
 ) -> StudioResult<ServerState> {
-    let port = port_of_checkout(&checkout)?;
     let phase = servers.begin(&checkout);
-    let app_copy = restart(servers.inner(), &checkout, port, prepare(servers.inner(), &checkout)).await?;
+
+    restarted(&app, servers.inner(), &checkout, phase).await
+}
+
+async fn restarted(
+    app: &tauri::AppHandle,
+    servers: &DesignServers,
+    checkout: &str,
+    phase: PhaseGuard,
+) -> StudioResult<ServerState> {
+    let port = port_of_checkout(checkout)?;
+    let app_copy = restart(servers, checkout, port, prepare(servers, checkout)).await?;
     drop(phase);
 
-    let answer = judged(servers.inner(), &checkout, port, None).await;
+    let answer = judged(servers, checkout, port, None).await;
 
     if let Some(copy) = app_copy {
-        crate::studio_code::reload_on_switch(&app, &copy);
+        crate::studio_code::reload_on_switch(app, &copy);
     }
 
     answer
+}
+
+#[tauri::command]
+pub async fn design_server_rebuild(
+    app: tauri::AppHandle,
+    servers: tauri::State<'_, DesignServers>,
+    checkout: String,
+) -> StudioResult<ServerState> {
+    let phase = servers.begin(&checkout);
+
+    servers.set_phase(&checkout, StartPhase::CliBuild);
+    build_cli().await?;
+
+    restarted(&app, servers.inner(), &checkout, phase).await
+}
+
+async fn build_cli() -> StudioResult<()> {
+    let output = crate::child_env::command("npx")
+        .args(CLI_BUILD)
+        .current_dir(crate::studio_code::repo_root())
+        .env("NX_NO_CLOUD", "true")
+        .stdin(Stdio::null())
+        .kill_on_drop(true)
+        .output()
+        .await
+        .map_err(|error| match error.kind() {
+            std::io::ErrorKind::NotFound => StudioError::NotInstalled("npx".to_owned()),
+            _ => StudioError::Io(error),
+        })?;
+
+    if output.status.success() {
+        return Ok(());
+    }
+
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let lines: Vec<&str> = text.lines().collect();
+
+    Err(StudioError::Rejected(format!(
+        "npx {} failed.\n{}",
+        CLI_BUILD.join(" "),
+        lines[lines.len().saturating_sub(LOG_LINES)..].join("\n")
+    )))
 }
 
 /// The copy of the design tool this app ships, else in a development build the copy
@@ -1604,6 +1681,66 @@ mod tests {
         let _ = std::fs::remove_dir_all(&checkout);
     }
 
+    async fn not_outdated() -> bool {
+        false
+    }
+
+    #[tokio::test]
+    async fn an_outdated_cli_build_names_itself_until_the_build_is_renewed() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("a listener");
+        let port = listener.local_addr().expect("an address").port();
+        let servers = DesignServers::default();
+        let root = std::env::temp_dir().join(format!("ethlete-studio-{}-outdated-cli", std::process::id()));
+        let cli = root.join("cli");
+        let info = root.join("build-info.json");
+
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(cli.join("src")).expect("a directory");
+        std::fs::write(cli.join("src/index.ts"), "export {};").expect("a file");
+        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, cli_source_hash(&cli))).expect("a file");
+
+        let judge = || {
+            judged_with(
+                &servers,
+                "/checkout",
+                port,
+                None,
+                || async { cli_build_is_stale(&cli, &info) },
+                || async { Verdict::Current },
+            )
+        };
+
+        let built = judge().await.expect("a state");
+
+        assert!(!built.stale);
+        assert_eq!(built.stale_reason, None);
+
+        std::fs::write(cli.join("src/index.ts"), "export const changed = 1;").expect("a file");
+
+        let changed = judge().await.expect("a state");
+
+        assert!(changed.stale);
+        assert_eq!(changed.stale_reason, Some(StaleReason::CliBuildOutdated));
+
+        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, cli_source_hash(&cli))).expect("a file");
+
+        let rebuilt = judge().await.expect("a state");
+
+        assert!(!rebuilt.stale);
+        assert_eq!(rebuilt.stale_reason, None);
+
+        std::fs::remove_dir_all(&root).expect("cleaned up");
+        drop(listener);
+    }
+
+    #[test]
+    fn the_stale_reason_reaches_the_frontend_by_name() {
+        assert_eq!(
+            serde_json::to_value(StaleReason::CliBuildOutdated).expect("json"),
+            serde_json::json!("cli-build-outdated")
+        );
+    }
+
     #[tokio::test]
     async fn the_stale_verdict_is_judged_once_per_server_start() {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("a listener");
@@ -1615,21 +1752,27 @@ mod tests {
             async move { verdict }
         };
 
-        let first = judged_with(&servers, "/checkout", port, None, || judge(Verdict::Stale))
-            .await
-            .expect("a state");
-        let second = judged_with(&servers, "/checkout", port, None, || judge(Verdict::Current))
-            .await
-            .expect("a state");
+        let first = judged_with(&servers, "/checkout", port, None, not_outdated, || {
+            judge(Verdict::Stale)
+        })
+        .await
+        .expect("a state");
+        let second = judged_with(&servers, "/checkout", port, None, not_outdated, || {
+            judge(Verdict::Current)
+        })
+        .await
+        .expect("a state");
 
         assert!(first.stale && second.stale);
         assert_eq!(judged.load(Ordering::SeqCst), 1);
 
         forget_verdict(&servers, "/checkout", port).expect("forgotten");
 
-        let restarted = judged_with(&servers, "/checkout", port, None, || judge(Verdict::Current))
-            .await
-            .expect("a state");
+        let restarted = judged_with(&servers, "/checkout", port, None, not_outdated, || {
+            judge(Verdict::Current)
+        })
+        .await
+        .expect("a state");
 
         assert!(!restarted.stale);
         assert_eq!(judged.load(Ordering::SeqCst), 2);
@@ -1642,9 +1785,11 @@ mod tests {
             .expect("the verdicts")
             .insert(("/checkout".to_owned(), STOPPED), true);
 
-        let stopped = judged_with(&servers, "/checkout", STOPPED, None, || judge(Verdict::Stale))
-            .await
-            .expect("a state");
+        let stopped = judged_with(&servers, "/checkout", STOPPED, None, not_outdated, || {
+            judge(Verdict::Stale)
+        })
+        .await
+        .expect("a state");
 
         assert!(!stopped.listening);
         assert_eq!(judged.load(Ordering::SeqCst), 2);
@@ -1662,12 +1807,16 @@ mod tests {
         let port = listener.local_addr().expect("an address").port();
         let servers = DesignServers::default();
 
-        let starting = judged_with(&servers, "/checkout", port, None, || async { Verdict::Unanswered })
-            .await
-            .expect("a state");
-        let answered = judged_with(&servers, "/checkout", port, None, || async { Verdict::Current })
-            .await
-            .expect("a state");
+        let starting = judged_with(&servers, "/checkout", port, None, not_outdated, || async {
+            Verdict::Unanswered
+        })
+        .await
+        .expect("a state");
+        let answered = judged_with(&servers, "/checkout", port, None, not_outdated, || async {
+            Verdict::Current
+        })
+        .await
+        .expect("a state");
 
         assert!(starting.stale);
         assert!(!answered.stale);

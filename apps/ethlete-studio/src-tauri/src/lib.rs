@@ -227,6 +227,7 @@ pub fn run() {
             design_server::design_server_state,
             design_server::design_server_stop,
             design_server::design_server_restart,
+            design_server::design_server_rebuild,
             help::help_open,
             studio_code::studio_code_state,
             studio_code::studio_quit_for_rebuild,

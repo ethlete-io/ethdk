@@ -5,15 +5,16 @@ import { STUDIO_MENU_LABELS, DESIGN_SERVER_LABELS } from '../../i18n/shell-label
 import { projectEntriesOf } from './project-entries';
 import { injectStudioMenuDialogs } from './studio-menu-dialogs';
 
-export type DesignServerAction = 'start' | 'restart' | 'stop';
+export type DesignServerAction = 'start' | 'restart' | 'rebuild' | 'stop';
 
-export type DesignServerStatus = 'running' | 'stale' | 'stopped';
+export type DesignServerStatus = 'running' | 'stale' | 'cli-outdated' | 'stopped';
 
 type ServerRow = DesignServerAction | 'reload';
 
 const SERVER_ROWS: Record<DesignServerStatus, ServerRow[]> = {
   running: ['reload', 'restart', 'stop'],
   stale: ['restart', 'reload', 'stop'],
+  'cli-outdated': ['rebuild', 'reload', 'stop'],
   stopped: ['start'],
 };
 

@@ -2,6 +2,7 @@ import { Component, DOCUMENT, DestroyRef, ViewEncapsulation, computed, inject, s
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   EMPTY,
+  Observable,
   Subscription,
   buffer,
   catchError,
@@ -30,6 +31,7 @@ import {
   Project,
   ServerState,
   designProject$,
+  designServerRebuild$,
   designServerRestart$,
   designServerStart$,
   designServerState$,
@@ -96,6 +98,7 @@ const NO_PRODUCTS: ShownProducts = { checkout: null, product: '', products: [], 
           startPhase: startPhase(),
           serverCrash: serverCrash(),
           serverStale: serverStale(),
+          serverCliOutdated: serverCliOutdated(),
           busy: menuBusy(),
         }"
         (action)="runShellAction($event)"
@@ -114,6 +117,7 @@ const NO_PRODUCTS: ShownProducts = { checkout: null, product: '', products: [], 
         [roots]="checkouts.roots()"
         [busy]="menuBusy()"
         [serverStale]="serverStale()"
+        [serverCliOutdated]="serverCliOutdated()"
         (projectChange)="checkouts.chooseByName($event)"
         (openProject)="checkouts.openFolder()"
         (scanProjects)="checkouts.scan()"
@@ -241,6 +245,8 @@ export class StudioViewComponent {
   public serverReady = computed(() => this.listeningPort() !== null && this.serverAnswer() === 'answers');
 
   protected serverStale = computed(() => !!this.server()?.listening && !!this.server()?.stale && !this.serverBusy());
+
+  protected serverCliOutdated = computed(() => this.server()?.staleReason === 'cli-build-outdated');
 
   protected serverSilent = computed(() => this.listeningPort() !== null && this.serverAnswer() === 'silent');
 
@@ -372,7 +378,7 @@ export class StudioViewComponent {
       .subscribe();
   }
 
-  public restartServer() {
+  public restartServer(restart$: (checkout: string) => Observable<ServerState> = designServerRestart$) {
     const checkout = this.checkout();
 
     if (!checkout || this.serverBusy()) return;
@@ -380,7 +386,7 @@ export class StudioViewComponent {
     this.startError.set(null);
     this.serverBusy.set(true);
 
-    designServerRestart$(checkout)
+    restart$(checkout)
       .pipe(
         tap((state) => this.showServer(state)),
         // eslint-disable-next-line ethlete/no-silent-catch-error -- failRestart shows the restart toast
@@ -425,6 +431,7 @@ export class StudioViewComponent {
   protected runServerAction(action: DesignServerAction) {
     if (action === 'start') this.startServer();
     if (action === 'restart') this.restartServer();
+    if (action === 'rebuild') this.restartServer(designServerRebuild$);
     if (action === 'stop') this.stopServer();
   }
 

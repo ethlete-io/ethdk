@@ -6,6 +6,7 @@ import { DesignServerCrash, Project, Themes } from '../../host/design';
 import { resetDesignStreams } from '../../host/design-events';
 import { THEMES } from '../../themes';
 import { ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
+import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { NO_LIST_REVISIONS } from './list-revisions';
 import { StudioViewComponent } from './studio-view.component';
@@ -23,6 +24,8 @@ class SystemViewStubComponent {
   public roots = input<string[]>([]);
   public busy = input(false);
   public serverStale = input(false);
+  public serverCliOutdated = input(false);
+  public serverAction = output<DesignServerAction>();
   public reload = output();
   public menuOpen = output();
   public scanProjects = output();
@@ -76,6 +79,7 @@ const RUNNING = {
   managed: false,
   foreign: false,
   stale: false,
+  staleReason: null as 'cli-build-outdated' | 'stamp' | null,
   exited: false,
   crash: null as DesignServerCrash | null,
   log: [] as string[],
@@ -174,6 +178,32 @@ describe('StudioViewComponent', () => {
     await settle(fixture);
 
     expect(projectReads()).toBeGreaterThan(before);
+  });
+
+  it('names an outdated cli build to the system view until its rebuild restarts the server from the new build', async () => {
+    let staleReason: 'cli-build-outdated' | null = 'cli-build-outdated';
+
+    stubHost({
+      design_server_state: () => ({ ...RUNNING, stale: !!staleReason, staleReason }),
+      design_server_rebuild: () => {
+        staleReason = null;
+
+        return { ...RUNNING, staleReason };
+      },
+    });
+
+    const fixture = await mount();
+
+    expect(system(fixture)?.serverStale()).toBe(true);
+    expect(system(fixture)?.serverCliOutdated()).toBe(true);
+
+    system(fixture)?.serverAction.emit('rebuild');
+    await settle(fixture);
+
+    expect(sent.some((call) => call.command === 'design_server_rebuild')).toBe(true);
+    expect(sent.some((call) => call.command === 'design_server_restart')).toBe(false);
+    expect(system(fixture)?.serverStale()).toBe(false);
+    expect(system(fixture)?.serverCliOutdated()).toBe(false);
   });
 
   it('re-reads the server state when the menu opens', async () => {

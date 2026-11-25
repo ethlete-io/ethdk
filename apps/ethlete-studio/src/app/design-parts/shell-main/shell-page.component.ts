@@ -21,6 +21,7 @@ export type ShellState = {
   panel: 'open' | 'hidden';
   server?: 'running' | 'starting' | 'unanswered' | 'stopped' | 'crashed';
   serverStale?: boolean;
+  serverCliOutdated?: boolean;
   serverUrl?: string;
   serverLog?: readonly string[];
   startPhase?: { phase: StartPhase; phaseMs: number } | null;
@@ -125,9 +126,10 @@ export class ShellPageComponent {
   protected systemPicker = signal<'open' | 'closed'>('closed');
   protected sideWidth = signal(clampSideWidth(rememberedView().sideWidth ?? SIDE_WIDTH.rest));
   protected menuServer = computed<DesignServerStatus>(() => {
-    const { server, serverStale } = this.shell();
+    const { server, serverStale, serverCliOutdated } = this.shell();
 
     if (server === 'stopped' || server === 'crashed') return 'stopped';
+    if (serverStale && serverCliOutdated) return 'cli-outdated';
 
     return serverStale ? 'stale' : 'running';
   });

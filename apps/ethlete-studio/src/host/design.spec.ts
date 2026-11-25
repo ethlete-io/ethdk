@@ -91,6 +91,7 @@ describe('designServerState$', () => {
     managed: false,
     foreign: true,
     stale: false,
+    staleReason: null,
     exited: true,
     crash: null,
     log: ['kept'],

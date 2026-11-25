@@ -21,6 +21,7 @@
     "allow-design-status-watch",
     "allow-design-server-start",
     "allow-design-server-restart",
+    "allow-design-server-rebuild",
     "allow-design-server-state",
     "allow-design-server-stop",
     "allow-help-open",

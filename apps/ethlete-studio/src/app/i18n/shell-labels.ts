@@ -1,6 +1,7 @@
 export const DESIGN_SERVER_LABELS = {
   start: 'Design-Server starten',
   restart: 'Design-Server neu starten',
+  rebuild: 'CLI bauen und neu starten',
   stop: 'Design-Server stoppen',
   stopped: 'Design-Server gestoppt',
   starting: 'Design-Server startet',
@@ -34,7 +35,7 @@ export const STUDIO_MENU_LABELS = {
   removeProject: 'Projekt entfernen',
   designServer: 'Design-Server',
   reload: 'Neu laden',
-  serverStatus: { running: 'läuft', stale: 'veraltet', stopped: 'gestoppt' },
+  serverStatus: { running: 'läuft', stale: 'veraltet', 'cli-outdated': 'CLI-Build veraltet', stopped: 'gestoppt' },
   shortcuts: 'Tastenkürzel',
   help: 'Hilfe',
   about: 'Über Studio',

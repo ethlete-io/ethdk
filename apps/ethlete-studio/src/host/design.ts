@@ -147,6 +147,8 @@ export type ServerState = {
   foreign: boolean;
   /** True when the server runs another cli build than the one on disk, or reports none. */
   stale: boolean;
+  /** Why `stale` is set: this repository's cli build is older than its sources, or the server's stamp differs. */
+  staleReason: 'cli-build-outdated' | 'stamp' | null;
   /** True when a server Studio started has since ended. `log` holds its last output. */
   exited: boolean;
   /** The exited server's own crash-log entry, when it died of an uncaught error. */
@@ -177,6 +179,10 @@ export const designServerStop$ = (checkout: string): Observable<ServerState> =>
 /** Stops whatever listens on the checkout's port, whoever started it, and starts Studio's own server. */
 export const designServerRestart$ = (checkout: string): Observable<ServerState> =>
   invokeHost$<ServerState>('design_server_restart', { checkout });
+
+/** Builds this repository's cli and the app's design runtime, then restarts the checkout's server. */
+export const designServerRebuild$ = (checkout: string): Observable<ServerState> =>
+  invokeHost$<ServerState>('design_server_rebuild', { checkout });
 
 /** Where one variant is drawn: the checkout's design server port, the call and the variant. */
 export type FrameAddress = {

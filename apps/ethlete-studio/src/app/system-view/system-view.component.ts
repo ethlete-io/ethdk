@@ -415,6 +415,7 @@ export class SystemViewComponent {
   public roots = input<string[]>([]);
   public busy = input(false);
   public serverStale = input(false);
+  public serverCliOutdated = input(false);
 
   public projectThemes = input<Record<string, Themes>>({});
   public lists = input(NO_LIST_REVISIONS);
@@ -1211,6 +1212,7 @@ export class SystemViewComponent {
     panel: this.panel(),
     busy: this.busy(),
     serverStale: this.serverStale(),
+    serverCliOutdated: this.serverCliOutdated(),
   }));
 
   private railSection = signal<Exclude<ShellSection, 'Inbox'>>(

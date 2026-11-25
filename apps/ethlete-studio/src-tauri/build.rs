@@ -16,6 +16,7 @@ fn main() {
             "design_status_watch",
             "design_server_start",
             "design_server_restart",
+            "design_server_rebuild",
             "design_server_state",
             "design_server_stop",
             "help_open",

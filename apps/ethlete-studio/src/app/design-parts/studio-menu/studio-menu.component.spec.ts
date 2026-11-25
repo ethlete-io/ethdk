@@ -167,6 +167,25 @@ describe('StudioMenuComponent', () => {
     expect(rows().slice(-3)).toEqual(['Design-Server neu starten', 'Neu laden', 'Design-Server stoppen']);
   });
 
+  it('names an outdated cli build and offers its rebuild first', async () => {
+    const { fixture, events, rows, row, serverMenu } = await openMenu({
+      project: 'a',
+      projects: ['a'],
+      server: 'cli-outdated',
+    });
+
+    expect(rows()).toContain('Design-Server · CLI-Build veraltet');
+
+    await serverMenu();
+
+    expect(rows().slice(-3)).toEqual(['CLI bauen und neu starten', 'Neu laden', 'Design-Server stoppen']);
+
+    row('CLI bauen und neu starten')?.click();
+    await fixture.whenStable();
+
+    expect(events).toEqual(['server:rebuild']);
+  });
+
   it('names a stopped server and offers no reload', async () => {
     const { rows, serverMenu } = await openMenu({ project: 'a', projects: ['a'], server: 'stopped' });
 
