@@ -51,19 +51,19 @@ const accountOf = (who: string) =>
       : `<span class="text-ui-sm text-et-surface">Anmelden</span>`;
 
 /** Farn's top bar, 1440 px wide: wordmark, shop navigation, search, the account and the basket. */
-export const sampleBar = (state: string) => {
+export const sampleBar = (state: string, fluid = false) => {
   const [who = 'guest', basket] = state.split('-');
 
   return `<div
-  class="box-border flex h-12 w-360 items-center gap-space-8 bg-et-surface-bg px-space-6 text-et-surface shadow-[inset_0_-1px_0_var(--et-surface-border-solid)]"
+  class="box-border flex h-12 ${fluid ? 'w-full' : 'w-360'} items-center ${fluid ? 'gap-space-4 px-space-4 md:gap-space-8 md:px-space-6' : 'gap-space-8 px-space-6'} bg-et-surface-bg text-et-surface shadow-[inset_0_-1px_0_var(--et-surface-border-solid)]"
   data-farn-bar
 >
   ${mark}
-  <span class="flex items-center gap-space-5 text-ui-sm text-et-surface-muted" data-farn-nav
+  <span class="${fluid ? 'hidden md:flex' : 'flex'} items-center gap-space-5 text-ui-sm text-et-surface-muted" data-farn-nav
     ><span class="text-et-surface">Pflanzen</span><span>Töpfe</span><span>Pflege</span><span>Geschenke</span></span
   >
   <span
-    class="ml-auto flex h-8 w-2xl items-center gap-space-2 rounded-full bg-et-surface-interaction px-space-4 text-ui-sm text-et-surface-muted"
+    class="ml-auto ${fluid ? 'hidden md:flex' : 'flex'} h-8 w-2xl items-center gap-space-2 rounded-full bg-et-surface-interaction px-space-4 text-ui-sm text-et-surface-muted"
     data-farn-search
     ><span class="size-2.5 rounded-full shadow-[0_0_0_1.5px_currentColor]"></span>Monstera, Farn, Kaktus …</span
   >
@@ -128,23 +128,23 @@ const card = (name: string, price: string) => `<span class="flex flex-col gap-sp
 </span>`;
 
 /** A Farn shop page, 1440 × 900 px, featuring the plant the state's number picks. */
-export const samplePage = (state: string) => {
+export const samplePage = (state: string, fluid = false) => {
   const index = Number(/\d+/.exec(state)?.[0] ?? '1') - 1;
   const plant = PLANTS[index % PLANTS.length] ?? 'Monstera';
   const others = [1, 2, 3, 4].map((step) => PLANTS[(index + step) % PLANTS.length] ?? 'Pilea');
 
-  return `<div class="box-border flex h-225 w-360 flex-col overflow-hidden bg-et-surface-bg text-et-surface" data-farn-page="${state}">
-  ${sampleBar('member')}
-  <div class="flex items-center gap-space-12 px-space-16 py-space-12">
+  return `<div class="box-border flex ${fluid ? 'min-h-225 w-full' : 'h-225 w-360'} flex-col overflow-hidden bg-et-surface-bg text-et-surface" data-farn-page="${state}">
+  ${sampleBar('member', fluid)}
+  <div class="flex ${fluid ? 'flex-col items-stretch md:flex-row md:items-center' : 'items-center'} ${fluid ? 'gap-space-6 p-space-6 md:gap-space-12 md:px-space-16 md:py-space-12' : 'gap-space-12 px-space-16 py-space-12'}">
     <span class="flex flex-1 flex-col gap-space-4">
       <span class="text-ui-sm font-ui-medium text-et-theme-ink">Pflanze der Woche</span>
       <span class="text-h1">${plant}</span>
       <span class="max-w-md text-ui-md text-et-surface-muted">Robust, dankbar und in drei Topfgrößen lieferbar. Mit Pflegekarte und Erde aus der Gärtnerei in Bremen.</span>
       <span class="flex items-center gap-space-4">${sampleStepper('count')}<span class="text-ui-md text-et-surface-muted">ab 24 €</span></span>
     </span>
-    ${plantArt('h-90 w-3xl')}
+    ${plantArt(fluid ? 'h-60 w-full md:h-90 md:w-3xl' : 'h-90 w-3xl')}
   </div>
-  <div class="grid grid-cols-4 gap-space-6 px-space-16">
+  <div class="grid ${fluid ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-4'} gap-space-6 ${fluid ? 'px-space-6 pb-space-6 md:px-space-16' : 'px-space-16'}">
     ${others.map((name, step) => card(name, `${18 + step * 6} €`)).join('')}
   </div>
 </div>`;
