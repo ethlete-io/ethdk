@@ -16,6 +16,32 @@ const ask = (middleware: (request: IncomingMessage, response: ServerResponse) =>
   });
 
 describe('createDrawLedger', () => {
+  it('counts a write as working until it ends, then how long the server has been quiet', () => {
+    let clock = 1000;
+    const ledger = createDrawLedger(() => clock);
+    const end = ledger.work();
+
+    clock = 5000;
+    expect(ledger.report()).toMatchObject({ working: 1, quietMs: 4000 });
+
+    end();
+    end();
+    clock = 8000;
+    expect(ledger.report()).toMatchObject({ working: 0, quietMs: 3000 });
+  });
+
+  it('counts the end of a drawing as the last activity', () => {
+    let clock = 1000;
+    const ledger = createDrawLedger(() => clock);
+    const drawing = ledger.ask();
+
+    drawing.start();
+    clock = 2000;
+    drawing.end();
+    clock = 2500;
+    expect(ledger.report()).toMatchObject({ queued: 0, rendering: 0, quietMs: 500 });
+  });
+
   it('counts the queued and drawing jobs of a draw queue and the age of the oldest', async () => {
     let clock = 1000;
     const ledger = createDrawLedger(() => clock);
@@ -33,6 +59,8 @@ describe('createDrawLedger', () => {
       failed: [],
       drawnTotal: 0,
       waitedTotal: 0,
+      working: 0,
+      quietMs: null,
     });
 
     await vi.waitFor(() => expect(releases).toHaveLength(DRAWS_AT_ONCE));

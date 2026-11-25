@@ -216,6 +216,44 @@ describe('StudioViewComponent', () => {
     expect(system(fixture)?.serverCliOutdated()).toBe(false);
   });
 
+  describe('a server it started from an older cli commit while libs/cli has uncommitted edits', () => {
+    const olderCli = (queue: object) => {
+      stubHost({
+        design_server_state: () => ({ ...RUNNING, managed: true, stale: true, staleReason: 'cli-build-outdated' }),
+        studio_code_state: () => ({
+          cli: { running: 'a'.repeat(40), latest: 'b'.repeat(40), dirty: true },
+          frontend: { latest: null },
+          host: { running: null, latest: null },
+        }),
+        design_server_restart: () => RUNNING,
+      });
+      vi.stubGlobal('fetch', (url: string) =>
+        Promise.resolve(new Response(JSON.stringify(String(url).endsWith('/__design/queue') ? queue : []))),
+      );
+    };
+    const restarts = () => sent.filter((call) => call.command === 'design_server_restart').length;
+
+    it('restarts it on the current build when no drawing, check or merge runs in it', async () => {
+      olderCli({ queued: 0, rendering: 0, working: 0, quietMs: 60_000 });
+
+      const fixture = await mount();
+
+      await settle(fixture);
+
+      expect(restarts()).toBe(1);
+    });
+
+    it('leaves it running while a merge runs in it', async () => {
+      olderCli({ queued: 0, rendering: 0, working: 1, quietMs: 0 });
+
+      const fixture = await mount();
+
+      await settle(fixture);
+
+      expect(restarts()).toBe(0);
+    });
+  });
+
   it('re-reads the server state when the menu opens', async () => {
     let stale = false;
 

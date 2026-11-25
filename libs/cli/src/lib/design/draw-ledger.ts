@@ -21,6 +21,10 @@ export type QueueReport = {
   drawnTotal: number;
   /** Pictures this server waited for while another server drew them, and then read from the shared store. */
   waitedTotal: number;
+  /** Writes in flight, such as a sketch merge, that a restart would cut off. */
+  working: number;
+  /** Milliseconds since the last drawing or write ended, null before the first one. */
+  quietMs: number | null;
 };
 
 type Asked = { since: number; drawing: boolean };
@@ -39,6 +43,8 @@ export const createDrawLedger = (
   let failedTotal = 0;
   let drawnTotal = 0;
   let waitedTotal = 0;
+  let working = 0;
+  let lastActiveAt: number | null = null;
 
   return {
     /** Records a drawing as queued; `start` marks it drawing and `end` drops it. */
@@ -54,7 +60,23 @@ export const createDrawLedger = (
         },
         end: () => {
           asked.delete(entry);
+          lastActiveAt = now();
         },
+      };
+    },
+    /** Records a write as running until the returned function is called. */
+    work: () => {
+      working++;
+      lastActiveAt = now();
+
+      let ended = false;
+
+      return () => {
+        if (ended) return;
+
+        ended = true;
+        working--;
+        lastActiveAt = now();
       };
     },
     /** Records a picture another server drew while this one waited for it. */
@@ -84,6 +106,8 @@ export const createDrawLedger = (
         failed: [...failed],
         drawnTotal,
         waitedTotal,
+        working,
+        quietMs: lastActiveAt === null ? null : now() - lastActiveAt,
       };
     },
   };

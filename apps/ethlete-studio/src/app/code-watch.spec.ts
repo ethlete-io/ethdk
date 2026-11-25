@@ -42,11 +42,15 @@ describe('codeNoticeOf', () => {
   });
 
   // The human decided Studio does not show that the CLI copy has uncommitted changes.
-  it('shows no notice while the cli has uncommitted changes', () => {
+  it('asks to restart the server after a commit in the cli, also while the cli has uncommitted changes', () => {
     const notice = codeNoticeOf({ ...settled, cli: { running: A, latest: B, dirty: true } }, A);
 
-    expect(notice).toBeNull();
+    expect(notice).toEqual({ text: 'CLI geändert - neu starten', action: 'restartServer' });
     expect(JSON.stringify(notice)).not.toContain('CLI hat uncommittete Änderungen');
+  });
+
+  it('shows no notice while the server runs the newest cli commit and the cli has uncommitted changes', () => {
+    expect(codeNoticeOf({ ...settled, cli: { running: A, latest: A, dirty: true } }, A)).toBeNull();
   });
 
   it('asks to restart the server after a commit to the app copy', () => {

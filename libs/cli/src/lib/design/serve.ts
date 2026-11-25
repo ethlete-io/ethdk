@@ -959,13 +959,16 @@ const designExplore = ({
             if (!response.writableFinished) closed.abort();
           });
 
+          const ended = request.method === 'GET' ? null : ledger.work();
           const answered = handle(new URL(request.url ?? '', 'http://localhost'), {
             request,
             signal: closed.signal,
-          }).catch((error: unknown) => ({
-            status: 500,
-            body: { error: error instanceof Error ? error.message : String(error) },
-          }));
+          })
+            .catch((error: unknown) => ({
+              status: 500,
+              body: { error: error instanceof Error ? error.message : String(error) },
+            }))
+            .finally(() => ended?.());
 
           void (held ? sendHeldJson(response, answered) : answered.then((answer) => sendJson(response, answer)));
         };

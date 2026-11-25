@@ -24,7 +24,7 @@ export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string
     return { text: labels.host, action: 'restartStudio' };
   }
 
-  if (cli.running && !cli.dirty && cli.latest && cli.running !== cli.latest) {
+  if (cli.running && cli.latest && cli.running !== cli.latest) {
     return { text: labels.cli, action: 'restartServer' };
   }
 
@@ -34,6 +34,11 @@ export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string
 
   return null;
 };
+
+export const serverRenewalOf = (state: StudioCodeState | null, pageLoadedAt: string | null): string | null =>
+  codeNoticeOf(state, pageLoadedAt)?.action === 'restartServer' && state
+    ? `${state.cli.running}>${state.cli.latest}`
+    : null;
 
 const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const state = signal<StudioCodeState | null>(null);
@@ -82,6 +87,7 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   return {
     notice: computed(() => codeNoticeOf(state(), pageLoadedAt())),
+    serverRenewal: computed(() => serverRenewalOf(state(), pageLoadedAt())),
     act,
     restart: restart.asReadonly(),
     failRestart: () => restart.set('failed'),

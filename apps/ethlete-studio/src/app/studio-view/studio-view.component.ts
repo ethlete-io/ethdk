@@ -8,6 +8,7 @@ import {
   catchError,
   debounceTime,
   defer,
+  distinctUntilChanged,
   exhaustMap,
   filter,
   finalize,
@@ -53,6 +54,7 @@ import { NO_FRAME_REVISIONS, frameReports$, frameRevisionsWith, frameRevisionsWi
 import { NO_LIST_REVISIONS, listRevisionsWith } from './list-revisions';
 import { rememberView, rememberedView } from './remembered';
 import { serverCrashOf } from './server-crash';
+import { serverIdle$ } from './server-idle';
 
 /** One edit lands as several file events, and an agent writes a whole round in a burst. */
 const SETTLE_MS = 300;
@@ -70,6 +72,8 @@ const OTHER_ROOT_POLL_MS = 1000;
 const START_PHASE_POLL_MS = 1000;
 
 const START_CLOCK_MS = 1000;
+
+const SERVER_IDLE_POLL_MS = 5000;
 
 export type StartPhaseReading = { phase: NonNullable<ServerState['phase']>; phaseMs: number };
 
@@ -371,6 +375,27 @@ export class StudioViewComponent {
       .pipe(
         filter((root): root is string => root !== null),
         tap((root) => this.handOverPort(root)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.codeWatch.serverRenewal)
+      .pipe(
+        distinctUntilChanged(),
+        switchMap((renewal) =>
+          renewal === null
+            ? EMPTY
+            : timer(0, SERVER_IDLE_POLL_MS).pipe(
+                exhaustMap(() => {
+                  const port = this.listeningPort();
+
+                  return port === null ? of(false) : serverIdle$(port);
+                }),
+                first(Boolean),
+              ),
+        ),
+        filter(() => this.codeWatch.restart() === null && !this.serverBusy()),
+        tap(() => this.codeWatch.act('restartServer')),
         takeUntilDestroyed(),
       )
       .subscribe();
