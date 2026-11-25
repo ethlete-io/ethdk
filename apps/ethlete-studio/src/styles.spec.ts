@@ -33,7 +33,7 @@ describe('styles.css', () => {
   it('loads the merged Studio product tokens in the lowest layer', () => {
     const css = compileStyles();
 
-    expect(css).toMatch(/@layer studio-tokens, theme, base,/);
+    expect(css).toMatch(/@layer studio-tokens, studio-farn, theme, base,/);
     expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--accent: oklch\(0\.68 0\.11 190\)/);
     expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--surface-dark-elevated: oklch\(/);
   });
@@ -53,7 +53,7 @@ describe('styles.css', () => {
   it('keeps the SDK themes generated from the colours part', () => {
     const css = compileStyles();
 
-    expect(css).toMatch(/@layer studio-tokens, theme, base, components, studio-sdk, utilities;/);
+    expect(css).toMatch(/@layer studio-tokens, studio-farn, theme, base, components, studio-sdk, utilities;/);
     expect(css).not.toMatch(/--et-surface-background: from var\(/);
     expect(css).toMatch(/@layer studio-sdk\s*{[\s\S]*--et-form-field-control-min-height: var\(--control-md\)/);
     expect(() =>
