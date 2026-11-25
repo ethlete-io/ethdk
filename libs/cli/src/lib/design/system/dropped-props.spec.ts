@@ -167,3 +167,32 @@ describe('droppedStatePropsOf', () => {
     ).toBe(0);
   });
 });
+
+describe('statesWithoutSourceOf with forced interactions', () => {
+  const states = {
+    rest: { percent: 25 },
+    'out-hover': { percent: 25, target: 'out', interaction: 'hover' },
+    'out-active': { percent: 25, target: 'out', interaction: 'active' },
+  };
+  const run = (templates: string[], overrides: Record<string, unknown> = states) =>
+    statesWithoutSourceOf({
+      states: overrides,
+      inputs: ['percent', 'target', 'interaction'],
+      selector: 'app-chip',
+      templates,
+    });
+
+  it('needs no source for the inputs only the states forcing an interaction set', () => {
+    expect(run([`<app-chip [percent]="p()" />`]).size).toBe(0);
+  });
+
+  it('still asks for a source of a forced input a state sets outside the forcing states', () => {
+    expect(run([`<app-chip target="fit" />`], { ...states, rest: { target: 'in' } })).toEqual(
+      new Map([
+        ['rest', ['target']],
+        ['out-hover', ['target']],
+        ['out-active', ['target']],
+      ]),
+    );
+  });
+});

@@ -198,14 +198,7 @@ export const droppedStatePropsOf = (options: {
 }): Map<string, string[]> => {
   const { states, inputs, sampled = [], controls } = options;
   const opens = pointerOpensOf({ states, controls });
-  const forcedOf = (state: string, props: unknown): string[] => [
-    ...INTERACTIONS.filter((known) => state.endsWith(`-${known}`)),
-    ...Object.values(isRecord(props) ? props : {}).flatMap((value) => {
-      const named = isRecord(value) ? value['interaction'] : value;
-
-      return typeof named === 'string' && INTERACTIONS.some((known) => known === named) ? [named] : [];
-    }),
-  ];
+  const forcedOf = forcedInteractionsOf;
   const forcing = new Set(
     Object.entries(states).flatMap(([state, props]) => (forcedOf(state, props).length > 0 ? [state] : [])),
   );
@@ -307,6 +300,31 @@ const constantOf = (binding: Binding): string | null => {
   return match ? (match[1] ?? match[2] ?? match[0]) : null;
 };
 
+const forcedInteractionsOf = (state: string, props: unknown): string[] => [
+  ...INTERACTIONS.filter((known) => state.endsWith(`-${known}`)),
+  ...Object.values(isRecord(props) ? props : {}).flatMap((value) => {
+    const named = isRecord(value) ? value['interaction'] : value;
+
+    return typeof named === 'string' && INTERACTIONS.some((known) => known === named) ? [named] : [];
+  }),
+];
+
+const forcedKeyOf = (options: {
+  key: string;
+  value: unknown;
+  forced: readonly string[];
+  states: Record<string, unknown>;
+  forcing: ReadonlySet<string>;
+}) => {
+  const { key, value, forced, states, forcing } = options;
+  const named = isRecord(value) ? value['interaction'] : value;
+
+  return (
+    (typeof named === 'string' && forced.includes(named)) ||
+    Object.entries(states).every(([name, props]) => forcing.has(name) || !isRecord(props) || props[key] === undefined)
+  );
+};
+
 /**
  * The state props that name an input no consumer template feeds: no tag of `selector` binds it, or every tag binds a
  * constant (a tag that leaves it out feeds its literal default from `defaults`) that differs from the value the state
@@ -327,12 +345,17 @@ export const statesWithoutSourceOf = (options: {
     openers.some((text) => new RegExp(`(?:inputBinding|twoWayBinding)\\(\\s*['"]${escaped(key)}['"]`, 'u').test(text));
   const tags = tagsOf(selector, [...templates]);
   const missing = new Map<string, string[]>();
+  const forcing = new Set(
+    Object.entries(states).flatMap(([state, props]) => (forcedInteractionsOf(state, props).length > 0 ? [state] : [])),
+  );
 
   for (const [state, props] of Object.entries(states)) {
     if (!isRecord(props)) continue;
 
+    const forced = forcedInteractionsOf(state, props);
     const keys = Object.entries(props)
       .filter(([key]) => inputs.includes(key))
+      .filter(([key, value]) => !(forced.length > 0 && forcedKeyOf({ key, value, forced, states, forcing })))
       .filter(([key, value]) => {
         if (isOpened(key)) return false;
 
