@@ -4831,14 +4831,25 @@ const CASES = [
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       });
       const before = await probe(page);
-      const outOfView = ({ frames, view }) => {
+      const toolbarRect = () =>
+        page.evaluate(() => {
+          const rect = document.querySelector('ethlete-sketch-view [data-sk-toolbar]')?.getBoundingClientRect();
+
+          return rect ? { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom } : null;
+        });
+      const outOfView = ({ frames, view }, toolbar) => {
         const shown = frames.filter((frame) => frame.right - frame.left >= 1);
         const out = shown.filter(
           (frame) =>
             frame.left < view.left - 2 ||
             frame.right > view.right + 2 ||
             frame.top < view.top - 2 ||
-            frame.bottom > view.bottom + 2,
+            frame.bottom > view.bottom + 2 ||
+            (toolbar &&
+              frame.left < toolbar.right &&
+              frame.right > toolbar.left &&
+              frame.top < toolbar.bottom &&
+              frame.bottom > toolbar.top),
         );
 
         return shown.length === 0
@@ -4849,7 +4860,7 @@ const CASES = [
       await page.keyboard.press('Shift+Digit1');
       await settle(page);
       const after = await probe(page);
-      const shiftOut = outOfView(after);
+      const shiftOut = outOfView(after, await toolbarRect());
 
       if (process.env['STUDIO_E2E_FIT_SHOTS'])
         await page.screenshot({
@@ -4862,7 +4873,7 @@ const CASES = [
       await page.getByRole('button', { name: 'Einpassen' }).first().click();
       await settle(page);
       const fitted = await probe(page);
-      const fitOut = outOfView(fitted);
+      const fitOut = outOfView(fitted, await toolbarRect());
 
       return {
         ok: !shiftOut && !fitOut && after.camera?.y !== before.camera?.y,

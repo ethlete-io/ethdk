@@ -1303,7 +1303,7 @@ export class SketchesComponent {
     }
 
     const tallest = Math.max(0, ...lines.values());
-    const room = list.clientHeight - FIT_PADDING - (matrix.offsetHeight - tallest);
+    const room = this.fitHeightOf(list) - FIT_PADDING - (matrix.offsetHeight - tallest);
 
     return tallest > 0 && room > 0 ? (room * scale) / tallest : Infinity;
   }
@@ -1468,6 +1468,13 @@ export class SketchesComponent {
     return Math.max(scale, MATRIX_MIN_COLUMN / widest);
   }
 
+  private fitHeightOf(list: HTMLElement) {
+    const toolbar = this.head().toolbar()?.nativeElement;
+    const covered = toolbar ? list.getBoundingClientRect().bottom - toolbar.getBoundingClientRect().top : 0;
+
+    return list.clientHeight - Math.max(0, covered);
+  }
+
   private stageRoomOf(list: HTMLElement, stage: HTMLElement) {
     const zoom = this.shownZoom() || 1;
     const lead = (stage.getBoundingClientRect().left - list.getBoundingClientRect().left) / zoom;
@@ -1506,7 +1513,7 @@ export class SketchesComponent {
 
       const framesHeight = [...lines.values()].reduce((sum, height) => sum + height, 0);
       const total = last.getBoundingClientRect().bottom - first.getBoundingClientRect().top;
-      const room = list.clientHeight - FIT_PADDING - (total - framesHeight);
+      const room = this.fitHeightOf(list) - FIT_PADDING - (total - framesHeight);
 
       return [framesHeight > 0 && room > 0 ? (room * scale) / framesHeight : Infinity];
     });

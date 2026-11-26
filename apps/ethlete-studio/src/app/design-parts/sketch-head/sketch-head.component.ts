@@ -58,6 +58,7 @@ export class SketchHeadComponent {
   public retry = output();
   public discard = output();
   public discardAnchor = viewChild('discardAnchor', { read: ElementRef<HTMLElement> });
+  public toolbar = viewChild('toolbar', { read: ElementRef<HTMLElement> });
 
   protected readonly LABELS = SKETCHES_LABELS;
   protected readonly SYSTEM_LABELS = SYSTEM_LABELS;
