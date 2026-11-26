@@ -249,7 +249,6 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-color-input-swatch',
   'et-color-input-trigger',
   'et-color-input-value',
-  'et-color-interactive-container',
   'et-color-interactive-exclude',
   'et-color-picker-area',
   'et-color-picker-area-thumb',
