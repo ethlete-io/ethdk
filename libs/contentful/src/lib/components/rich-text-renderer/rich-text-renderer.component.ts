@@ -19,6 +19,7 @@ import {
   reflectComponentType,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { Block, Inline, Mark, Text } from '@contentful/rich-text-types';
 import { getObjectProperty, injectRenderer, injectUrl, isObject } from '@ethlete/core';
@@ -345,7 +346,7 @@ const warnOnUnresolvedParentPath = (content: ContentfulCollection, richTextPath:
 
 @Component({
   selector: 'et-contentful-rich-text-renderer',
-  template: ``,
+  templateUrl: './rich-text-renderer.component.html',
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-contentful-rich-text-renderer',
@@ -353,7 +354,6 @@ const warnOnUnresolvedParentPath = (content: ContentfulCollection, richTextPath:
   },
 })
 export class ContentfulRichTextRendererComponent {
-  private viewContainerRef = inject(ViewContainerRef);
   private renderer = injectRenderer();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private config = injectContentfulConfig();
@@ -390,6 +390,8 @@ export class ContentfulRichTextRendererComponent {
 
   /** The linked entries and assets `richText` resolves its embeds against, e.g. a custom component's `includes`. */
   includes = input<ContentfulIncludeMap | null | undefined>();
+
+  private outlet = viewChild.required('outlet', { read: ViewContainerRef });
 
   private ancestorEntryIds = inject(ANCESTOR_ENTRY_IDS, { optional: true }) ?? new Set<string>();
 
@@ -1031,7 +1033,7 @@ export class ContentfulRichTextRendererComponent {
           })
         : undefined;
 
-      const componentRef = this.viewContainerRef.createComponent(command.component, { bindings, injector });
+      const componentRef = this.outlet().createComponent(command.component, { bindings, injector });
 
       const rootNode = this.getComponentRootNode(componentRef);
 

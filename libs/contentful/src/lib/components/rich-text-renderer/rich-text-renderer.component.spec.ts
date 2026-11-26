@@ -242,6 +242,9 @@ const setup = (options: SetupOptions = {}) => {
 const renderRoot = (fixture: ComponentFixture<TestHostComponent>) =>
   fixture.nativeElement.querySelector('et-contentful-rich-text-renderer') as HTMLElement;
 
+const renderedNodes = (fixture: ComponentFixture<TestHostComponent>) =>
+  [...renderRoot(fixture).childNodes].filter((node) => node.nodeType !== Node.COMMENT_NODE);
+
 const setContent = (
   fixture: ComponentFixture<TestHostComponent>,
   richText: unknown,
@@ -296,13 +299,13 @@ describe('ContentfulRichTextRendererComponent', () => {
     it('renders nothing for an empty document', () => {
       const { fixture } = setup({ richText: doc() });
 
-      expect(renderRoot(fixture).innerHTML).toBe('');
+      expect(renderedNodes(fixture)).toEqual([]);
     });
 
     it('renders nothing when the content is null', () => {
       const { fixture } = setup({ content: null });
 
-      expect(renderRoot(fixture).innerHTML).toBe('');
+      expect(renderedNodes(fixture)).toEqual([]);
     });
 
     it('renders a response that omits includes', () => {
@@ -533,7 +536,7 @@ describe('ContentfulRichTextRendererComponent', () => {
         includes: { Asset: [createAsset('a1', null, null)] },
       });
 
-      expect(renderRoot(fixture).innerHTML).toBe('');
+      expect(renderedNodes(fixture)).toEqual([]);
       expect(warn).toHaveBeenCalled();
 
       warn.mockRestore();
@@ -547,7 +550,7 @@ describe('ContentfulRichTextRendererComponent', () => {
         includes: { Asset: [createAsset('a1', 'image/png', null)] },
       });
 
-      expect(renderRoot(fixture).innerHTML).toBe('');
+      expect(renderedNodes(fixture)).toEqual([]);
       expect(StubImageComponent.instances).toHaveLength(0);
       expect(warn).toHaveBeenCalled();
 
@@ -1426,7 +1429,7 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       setContent(fixture, doc(), { Entry: [a] });
 
-      expect(renderRoot(fixture).innerHTML).toBe('');
+      expect(renderedNodes(fixture)).toEqual([]);
       expect(StubTeaserComponent.destroyed).toBe(1);
 
       setContent(fixture, doc(paragraph('text'), embeddedEntry('a')), { Entry: [a] });
@@ -1461,7 +1464,7 @@ describe('ContentfulRichTextRendererComponent', () => {
         richText: doc(block('paragraph', [block('hyperlink', [text('')], { uri: 'https://example.com' })])),
       });
 
-      expect(renderRoot(fixture).innerHTML).toBe('');
+      expect(renderedNodes(fixture)).toEqual([]);
     });
   });
 
