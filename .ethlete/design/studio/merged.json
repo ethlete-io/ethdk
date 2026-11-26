@@ -151,10 +151,11 @@
     "at": "2026-11-19T10:25:13.055Z"
   },
   "pages/flows": {
-    "hash": "5f9d41e1be7d2953",
+    "hash": "5dcd3a832cf3b9fa",
     "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-21T04:19:29.759Z"
+    "decidedBy": "plan: docs/process.md:49",
+    "at": "2026-11-26T20:38:54.954Z",
+    "note": "merged without a pick: allowed by docs/process.md:49"
   },
   "pages/inbox": {
     "hash": "2cdc95a4a51639da",
