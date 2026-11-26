@@ -4,7 +4,6 @@ import {
   ColorInteractiveDirective,
   ProvideColorDirective,
   ProvideSurfaceDirective,
-  SurfaceInteractiveDirective,
 } from '@ethlete/core';
 
 @Component({
@@ -18,16 +17,10 @@ import {
       <div etProvideColor="app-error">
         <button etColorInteractive type="button">Error themed</button>
       </div>
-      <button etSurfaceInteractive type="button">Surface interactive</button>
+      <button type="button">Surface interactive</button>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    ProvideSurfaceDirective,
-    AutoSurfaceDirective,
-    ProvideColorDirective,
-    ColorInteractiveDirective,
-    SurfaceInteractiveDirective,
-  ],
+  imports: [ProvideSurfaceDirective, AutoSurfaceDirective, ProvideColorDirective, ColorInteractiveDirective],
 })
 export class ThemingRouteComponent {}

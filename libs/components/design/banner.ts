@@ -52,7 +52,7 @@ export const bannerStyles = /* @__PURE__ */ [buttonStyles, iconBase, iconButtonB
 );
 
 const dismissButton = (attributes?: string) =>
-  `<button ${attributes ?? ''} aria-label="Dismiss" type="button" class="et-banner-dismiss-btn et-surface-interactive et-color-interactive et-icon-button et-focus-ring et-color--inherited" data-variant="transparent" data-size="xs"><div class="et-icon-button-icon">${iconMarkup(TIMES_ICON)}</div></button>`;
+  `<button ${attributes ?? ''} aria-label="Dismiss" type="button" class="et-banner-dismiss-btn et-color-interactive et-icon-button et-focus-ring et-color--inherited" data-variant="transparent" data-size="xs"><div class="et-icon-button-icon">${iconMarkup(TIMES_ICON)}</div></button>`;
 
 const actionButton = (label: string, attributes?: string) =>
   `<button ${attributes ?? ''} etBannerAction type="button" class="et-text-button et-color-interactive et-focus-ring et-color--inherited" data-icon-alignment="start" data-size="md"><div class="et-text-button-contents">${label}</div></button>`;

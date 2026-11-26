@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
-import { AutoSurfaceDirective, SurfaceInteractiveDirective } from '@ethlete/core';
+import { AutoSurfaceDirective } from '@ethlete/core';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { AgentLogoName } from '../../icons/agent-logos';
 import { COMMENT_PIN_LABELS } from '../../i18n/comments-labels';
@@ -34,7 +34,7 @@ const FACE_INTERACTIVE = `${FACE} group-hover/pin:bg-et-surface-tint/9 group-act
   selector: 'ethlete-comment-pin',
   templateUrl: './comment-pin.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, AutoSurfaceDirective, SurfaceInteractiveDirective, AgentLogoComponent],
+  imports: [NgTemplateOutlet, AutoSurfaceDirective, AgentLogoComponent],
   host: { class: 'inline-flex font-ui' },
 })
 export class CommentPinComponent {

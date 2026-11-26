@@ -25,7 +25,7 @@
   --color-bb-surface-text-muted: var(--et-surface-text-muted);
   --color-bb-surface-text-subtle: var(--et-surface-text-subtle);
   --color-bb-surface-border: var(--et-surface-border);
-  --color-bb-surface-tint: var(--et-surface-tint);
+  --color-bb-surface-tint: var(--et-surface-tint, var(--et-surface-text));
   --color-bb-surface-control-text: var(--et-surface-control-text);
   --color-bb-surface-control-text-hover: var(--et-surface-control-text-hover);
   --color-bb-surface-control-text-focus: var(--et-surface-control-text-focus);
@@ -89,7 +89,7 @@
     --color-bb-surface-text-muted: var(--et-surface-text-muted);
     --color-bb-surface-text-subtle: var(--et-surface-text-subtle);
     --color-bb-surface-border: var(--et-surface-border);
-    --color-bb-surface-tint: var(--et-surface-tint);
+    --color-bb-surface-tint: var(--et-surface-tint, var(--et-surface-text));
     --color-bb-surface-control-text: var(--et-surface-control-text);
     --color-bb-surface-control-text-hover: var(--et-surface-control-text-hover);
     --color-bb-surface-control-text-focus: var(--et-surface-control-text-focus);

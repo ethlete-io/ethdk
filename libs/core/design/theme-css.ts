@@ -265,9 +265,10 @@ ${state('text', () => `var(--${runtimePrefix}-surface-text)`)}
 };
 
 const buildDynamicSurfaceColors = (utilityPrefix: string, runtimePrefix: string) => [
-  ...['background', 'text', 'text-muted', 'text-subtle', 'border', 'tint'].map(
+  ...['background', 'text', 'text-muted', 'text-subtle', 'border'].map(
     (token) => `--color-${utilityPrefix}-surface-${token}: var(--${runtimePrefix}-surface-${token});`,
   ),
+  `--color-${utilityPrefix}-surface-tint: var(--${runtimePrefix}-surface-tint, var(--${runtimePrefix}-surface-text));`,
   ...STATE_SUFFIXES.map(
     (suffix) =>
       `--color-${utilityPrefix}-surface-control-text${suffix}: var(--${runtimePrefix}-surface-control-text${suffix});`,

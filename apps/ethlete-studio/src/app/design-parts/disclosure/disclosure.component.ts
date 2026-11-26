@@ -1,7 +1,5 @@
 import { booleanAttribute, Component, input, model, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { SurfaceInteractiveDirective } from '@ethlete/core';
-
 export const DISCLOSURE_BODY_CLASS =
   'flex flex-col gap-space-1 m-0 pt-space-1 pl-[calc(var(--space-2)+14px+var(--space-2))] list-none text-et-surface-text-muted text-(length:--text-sm) *:flex *:gap-space-2';
 
@@ -9,7 +7,7 @@ export const DISCLOSURE_BODY_CLASS =
   selector: 'ethlete-disclosure',
   templateUrl: './disclosure.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, SurfaceInteractiveDirective],
+  imports: [BUTTON_IMPORTS],
   host: { class: 'contents font-ui text-ui-md' },
 })
 export class DisclosureComponent {

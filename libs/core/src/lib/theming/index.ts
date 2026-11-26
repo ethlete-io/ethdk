@@ -11,5 +11,4 @@ export * from './legacy-theming';
 export * from './provide-surface.directive';
 export * from './semantic-color-theme';
 export * from './surface-context-tracker';
-export * from './surface-interactive.directive';
 export * from './surface-theme.util';

@@ -102,13 +102,7 @@ const footerButton = (action: DialogMockButton) => {
 };
 
 const closeButton = (attributes?: string) => {
-  const classes = [
-    'et-surface-interactive',
-    'et-color-interactive',
-    'et-icon-button',
-    'et-focus-ring',
-    'et-color--inherited',
-  ];
+  const classes = ['et-color-interactive', 'et-icon-button', 'et-focus-ring', 'et-color--inherited'];
 
   return `<button ${attributes ?? ''} etOverlayClose type="button" aria-label="Close" class="${classes.join(' ')}" data-variant="transparent" data-size="sm"><div class="et-icon-button-icon">${iconMarkup(TIMES_ICON)}</div></button>`;
 };

@@ -109,7 +109,7 @@ const sizeStyle = (rect: { x: number; y: number; width: number; height: number }
   styled(`translate: ${rect.x}px ${rect.y}px; width: ${rect.width}px; height: ${rect.height}px;`);
 
 const removeAction = (item: GridMockItem) =>
-  `<div etGridItemAction><et-grid-item-default-actions><et-grid-item-toolbar class="et-grid-item-toolbar"><button aria-label="Remove ${item.title}" type="button" class="et-grid-item-default-actions__remove et-surface-interactive et-color-interactive et-icon-button et-focus-ring et-color--inherited" data-variant="transparent" data-size="xs"${item.removeForce ? ` data-et-force="${item.removeForce}"` : ''}><div class="et-icon-button-icon">${iconMarkup(TIMES_ICON)}</div></button></et-grid-item-toolbar></et-grid-item-default-actions></div>`;
+  `<div etGridItemAction><et-grid-item-default-actions><et-grid-item-toolbar class="et-grid-item-toolbar"><button aria-label="Remove ${item.title}" type="button" class="et-grid-item-default-actions__remove et-color-interactive et-icon-button et-focus-ring et-color--inherited" data-variant="transparent" data-size="xs"${item.removeForce ? ` data-et-force="${item.removeForce}"` : ''}><div class="et-icon-button-icon">${iconMarkup(TIMES_ICON)}</div></button></et-grid-item-toolbar></et-grid-item-default-actions></div>`;
 
 const gridItem = (item: GridMockItem, options: GridMockOptions) => {
   const geometry = geometryOf(options);

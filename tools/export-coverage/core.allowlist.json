@@ -43,7 +43,6 @@
   "SURFACE_TYPE": "constant: value",
   "SWIPE_VELOCITY_WINDOW_MS": "constant: value",
   "SlugifyPipe": "internal: pipe wrapper around an exported transform; no app or lib imports it",
-  "SurfaceInteractiveDirective": "internal: building block of @ethlete/components, no app imports it",
   "UNSAVED_CHANGES_TITLE_MARKER": "constant: value",
   "ValidateAtLeastOneRequired": "unused: no app or other lib imports it",
   "VisuallyHiddenStylesComponent": "internal: building block of @ethlete/components, no app imports it",

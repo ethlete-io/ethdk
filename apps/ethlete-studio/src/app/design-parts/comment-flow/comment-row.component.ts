@@ -1,6 +1,6 @@
 import { Component, input, output, ViewEncapsulation } from '@angular/core';
 import { TOOLTIP_IMPORTS } from '@ethlete/components';
-import { AutoSurfaceDirective, SurfaceInteractiveDirective } from '@ethlete/core';
+import { AutoSurfaceDirective } from '@ethlete/core';
 import { COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { InboxComment } from '../inbox/inbox-sample';
@@ -12,7 +12,7 @@ const SELECTED_CLASS =
   selector: 'ethlete-comment-row',
   templateUrl: './comment-row.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [TOOLTIP_IMPORTS, AutoSurfaceDirective, SurfaceInteractiveDirective, AgentLogoComponent],
+  imports: [TOOLTIP_IMPORTS, AutoSurfaceDirective, AgentLogoComponent],
   host: { class: 'block' },
 })
 export class CommentRowComponent {

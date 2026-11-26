@@ -1,6 +1,6 @@
 import { TOOLTIP_IMPORTS } from '@ethlete/components';
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
-import { injectSemanticColorTheme, ProvideColorDirective, SurfaceInteractiveDirective } from '@ethlete/core';
+import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { TREE_ROW_LABELS } from '../../i18n/system-labels';
 
 export type TreeRowStatus = 'in-progress' | 'ready' | 'awaiting-approval' | 'approved';
@@ -169,7 +169,6 @@ const SELECTED_CLASS =
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [ProvideColorDirective, TOOLTIP_IMPORTS],
-  hostDirectives: [SurfaceInteractiveDirective],
   host: {
     '[class]': 'hostClass()',
     '[style.--depth]': 'item().depth',

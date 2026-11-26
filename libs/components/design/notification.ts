@@ -83,7 +83,6 @@ const spinner = () => {
 const dismissButton = (color: string | undefined, attributes?: string) => {
   const classes = [
     'et-notification-dismiss-btn',
-    'et-surface-interactive',
     'et-color-interactive',
     'et-icon-button',
     'et-focus-ring',

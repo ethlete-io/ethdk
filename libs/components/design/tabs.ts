@@ -50,7 +50,7 @@ export const tabs = (options: TabsMockOptions) => {
         `aria-controls="et-tab-panel-${id}-${index}"`,
         tab.disabled && 'aria-disabled="true" disabled',
         `tabindex="${isSelected ? 0 : -1}"`,
-        `class="${['et-tab-group__trigger', 'et-surface-interactive', 'et-focus-ring', isSelected && 'et-tab-group__trigger--active', tab.disabled && 'et-tab-group__trigger--disabled'].filter(Boolean).join(' ')}"`,
+        `class="${['et-tab-group__trigger', 'et-focus-ring', isSelected && 'et-tab-group__trigger--active', tab.disabled && 'et-tab-group__trigger--disabled'].filter(Boolean).join(' ')}"`,
       ].filter(Boolean);
 
       return `<button ${attributes.join(' ')}><span class="et-tab-group__trigger-content">${tab.label}</span><span class="et-tab-bar-underline${isSelected ? ' et-tab-bar-underline--active' : ''}"></span></button>`;

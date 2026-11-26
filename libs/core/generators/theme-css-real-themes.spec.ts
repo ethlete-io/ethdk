@@ -190,12 +190,18 @@ describe('themeCss on real app themes', () => {
       expect(ruleOf(css, `.et-surface--${name}`)).toContain('--et-surface-tint: rgb(');
       expect(ruleOf(css, `.et-surface--${name}`)).toContain('--et-surface-control-text-hover: rgb(');
       expect(css).toContain(`--color-${prefix}-surface-${name}-control-text-active: rgb(`);
-      expect(css).toContain(`--color-${prefix}-surface-tint: var(--et-surface-tint);`);
     },
   );
 
   it('leaves a theme without a tint free to inherit the tint of its parent', () => {
     expect(ruleOf(appA, '.et-surface--app-a-dark-inset')).not.toContain('--et-surface-tint');
+  });
+
+  it.each([
+    ['app-a', appA, 'aa'],
+    ['app-b', appB, 'bb'],
+  ])('reads the surface text as the tint where no theme sets one for %s', (_, css, prefix) => {
+    expect(css).toContain(`--color-${prefix}-surface-tint: var(--et-surface-tint, var(--et-surface-text));`);
   });
 
   it.each([

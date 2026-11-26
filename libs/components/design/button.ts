@@ -39,7 +39,6 @@ export const button = (options: ButtonMockOptions) => {
   const iconBox = `<div class="et-button-icon">${icon ?? ''}</div>`;
 
   const classes = [
-    'et-surface-interactive',
     'et-color-interactive',
     'et-button',
     'et-focus-ring',
@@ -92,7 +91,6 @@ export const iconButton = (options: IconButtonMockOptions) => {
   const { icon, ariaLabel, size = 'md', variant = 'transparent', tag = 'button' } = options;
 
   const classes = [
-    'et-surface-interactive',
     'et-color-interactive',
     'et-icon-button',
     'et-focus-ring',

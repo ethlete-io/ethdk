@@ -333,7 +333,7 @@ export const schedulerAgenda = (options: SchedulerMockAgendaOptions) => {
   return `<et-scheduler-agenda-view class="et-scheduler-agenda-view"><div class="et-scheduler-agenda-view-scroller et-scrollbar-host">${days}</div></et-scheduler-agenda-view>`;
 };
 
-const BUTTON_CLASSES = 'et-surface-interactive et-color-interactive';
+const BUTTON_CLASSES = 'et-color-interactive';
 
 /**
  * Draws an `et-scheduler` with its wide header (today button, toolbar action, previous and next, the range label

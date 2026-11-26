@@ -66,14 +66,13 @@ Color (from the nearest `[etProvideColor]` scope):
 | `--et-tone-on-fill` | text/icons on a primary-filled background                                                                                                                                                                                             |
 | `--et-tone-text`    | primary-tinted text/border on transparent/tonal fills                                                                                                                                                                                 |
 
-Interaction-state variants (`--et-surface-interaction-{hover,focus,active,disabled}`)
-resolve automatically per CSS state when the element has `[etSurfaceInteractive]`;
-similarly `[etColorInteractive]` re-resolves the color tokens per state. Put either on
-the interactive element itself, never on a wrapper.
+`[etColorInteractive]` re-resolves the color tokens per CSS state. Put it on the
+interactive element itself, never on a wrapper. Neutral hover and pressed feedback mixes
+`--et-surface-tint` per state at the consumer; `etSurfaceInteractive` is removed.
 
-**Never use `hover:bg-et-surface-interaction-hover` for a hover row.** The token is a
-full-strength neutral tint, so in dark mode it gives a light row with near-white text. Use
-`[etSurfaceInteractive]` on the row for hover feedback.
+**Never use `hover:bg-et-surface-control-text-hover` for a hover row.** The token is a
+full-strength text colour, so in dark mode it gives a light row with near-white text. Mix
+the tint instead: `hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15`.
 
 ## Providing context
 

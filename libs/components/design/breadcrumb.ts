@@ -74,7 +74,6 @@ const separator = `<span class="et-breadcrumb-separator" aria-hidden="true">${/*
 
 const overflowTrigger = (label: string, attributes?: string) => {
   const classes = [
-    'et-surface-interactive',
     'et-color-interactive',
     'et-icon-button',
     'et-focus-ring',

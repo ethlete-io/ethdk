@@ -11,7 +11,6 @@ import {
   signal,
   Signal,
 } from '@angular/core';
-import { SurfaceInteractiveDirective } from '@ethlete/core';
 
 export const BUTTON_TYPES = {
   BUTTON: 'button',
@@ -32,7 +31,6 @@ export type ButtonLoadingSource = {
 @Directive({
   selector: '[etButton]',
   exportAs: 'etButton',
-  hostDirectives: [SurfaceInteractiveDirective],
   host: {
     '[attr.data-loading]': 'isLoading() ? true : null',
     '[attr.data-pressed]': 'pressed() ? true : null',
