@@ -1,0 +1,21 @@
+            diameter="45"
+            strokeWidth="3"
+          />
+          <p class="text-aa-light-3 text-aa-p3">Loading interactive experience</p>
+        </div>
+      }
+
+      @if (panelState() === 'attached' && !useFullPageExperience()) {
+        <div class="bg-aa-surface-1 z-10">
+          <div
+            class="h-px w-full from-[color-mix(in_srgb,var(--et-tone-fill-rest)_10%,transparent)] via-[color-mix(in_srgb,var(--et-tone-fill-rest)_100%,transparent)] to-[color-mix(in_srgb,var(--et-tone-fill-rest)_10%,transparent)] bg-linear-to-r/srgb"
+          ></div>
+          <div
+            class="flex justify-center p-2 from-[color-mix(in_srgb,var(--et-tone-fill-rest)_25%,transparent)] to-[color-mix(in_srgb,var(--et-tone-fill-rest)_5%,transparent)] bg-linear-to-b/srgb"
+          >
+            <aa-fancy-border>
+              <button (click)="toggleInteractiveExperience()" class="min-h-10" et-button>
+                <i etIcon="sparkles" variant="regular"></i>
+                {{ enterFullScreenText() }}
+              </button>
+            </aa-fancy-border>

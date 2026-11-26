@@ -1,0 +1,144 @@
+@layer utilities {
+  /* The hub's list rows are cards of a fixed height, which `appearance="cards"` gets most of the way
+     to: the tint, the border and the gap are the SDK's own surface-token defaults. What is left is the
+     geometry the hub's design fixes, and the trailing checkbox column's divider. */
+  .bb-hub-list-view .et-table-host:where([data-appearance='cards']) {
+    --et-table-row-radius: var(--radius-md);
+    --et-table-row-gap: 0.8rem;
+    /* Every other card surface in the hub reads by its tint alone, so a bordered row would be the one
+       ringed card in the app. The corner a pinned column holds is cut from the page background, so it
+       stays rounded without the ring. */
+    --et-table-row-border-color: transparent;
+    /* A pinned column's edge carries both marks: a rule, as the old table drew it, and the SDK's pin
+       shadow beside it, which paints only while the table is scrolled that way and says values are
+       passing behind. The SDK's default shadow is barely there on this near-black surface. The block
+       axis carries none: the sticky header already ends on its own rule. */
+    --et-table-pin-shadow-color: color-mix(in srgb, var(--et-surface-interaction, black) 40%, transparent);
+    --et-table-pin-shadow-color-block: transparent;
+
+    /* That shadow, the edge gradients and the drag-scroll cursor all say the list scrolls sideways, so
+       the platform's own bar under it is one more piece of chrome saying the same thing. */
+    scrollbar-width: none;
+  }
+
+  .bb-hub-list-view .et-table-host:where([data-appearance='cards'])::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* The empty and the error state stand in for the rows, so they hold the height the skeleton block had -
+     `etTableSkeleton`'s five placeholder rows at this list's own row height - rather than dropping the
+     page to a strip the moment a filter matches nothing. */
+  .bb-hub-list-view .et-table-host:where([data-appearance='cards']) .et-table-empty-cell,
+  .bb-hub-list-view .et-table-host:where([data-appearance='cards']) .et-table-error-cell {
+    min-block-size: calc(5 * (6rem + var(--et-table-row-gap, 0.8rem)));
+  }
+
+  /* Every row the same height whether or not its identity cell carries a 3.2rem logo, which the cells'
+     own padding alone cannot do - a row of plain text would come out a step shorter. Content taller
+     than this still grows the row.
+
+     On the cell rather than the row: a row is `display: grid` over the table's own tracks and takes its
+     height from the cells in it, so this is the only place the floor can sit and still reach a skeleton
+     placeholder row as well - which is what keeps the loading list the same height as the data. */
+  .bb-hub-list-view .et-table-host:where([data-appearance='cards']) .et-table-cell {
+    min-block-size: 6rem;
+  }
+
+  .bb-hub-list-view .et-table-host:where([data-appearance='cards']) .et-table-header-cell {
+    min-block-size: 4.4rem;
+    /* The SDK mutes a header label; the old table's labels were the surface's own ink. */
+    color: var(--et-surface-text, CanvasText);
+  }
+
+  .bb-hub-list-view .et-table-host:where([data-appearance='cards']) .et-table-row--selected .et-table-cell {
+    background: color-mix(in srgb, var(--et-tone-fill) 12%, transparent);
+  }
+
+  .bb-hub-list-view
+    .et-table-host:where([data-appearance='cards'])
+    .et-table-row--selected
+    .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
+    background: color-mix(
+      in srgb,
+      var(--et-tone-fill) 12%,
+      var(--_et-table-row-surface, var(--et-surface-background))
+    );
+  }
+
+  @media (hover: hover) {
+    .bb-hub-list-view .et-table-host:where([data-appearance='cards']) .et-table-row--selected:hover .et-table-cell {
+      background: color-mix(in srgb, var(--et-tone-fill) 18%, transparent);
+    }
+
+    .bb-hub-list-view
+      .et-table-host:where([data-appearance='cards'])
+      .et-table-row--selected:hover
+      .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
+      background: color-mix(
+        in srgb,
+        var(--et-tone-fill) 18%,
+        var(--_et-table-row-surface, var(--et-surface-background))
+      );
+    }
+  }
+
+  .bb-hub-list-view
+    .et-table-host:where([data-appearance='cards'])
+    .et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
+    .et-table-cell {
+    background: color-mix(in srgb, var(--et-tone-fill) 26%, transparent);
+  }
+
+  .bb-hub-list-view
+    .et-table-host:where([data-appearance='cards'])
+    .et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
+    .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
+    background: color-mix(
+      in srgb,
+      var(--et-tone-fill) 26%,
+      var(--_et-table-row-surface, var(--et-surface-background))
+    );
+  }
+
+  /* The sub table sits inside an expanded row of the table above and carries the same appearance, so
+     every rule above reaches its cells as well. Its own class is what tells the two apart, and this
+     block has to stay after them: the selectors weigh the same, so source order decides.
+
+     The heights are the outer list's alone. The floors above hold a page of cards to one rhythm, and the
+     empty and error cells to the height of the skeleton block; a list within a row needs none of that
+     and takes its height from `density` instead. */
+  .bb-hub-list-view .bb-hub-list-view-sub-table .et-table-cell,
+  .bb-hub-list-view .bb-hub-list-view-sub-table .et-table-header-cell,
+  .bb-hub-list-view .bb-hub-list-view-sub-table .et-table-empty-cell,
+  .bb-hub-list-view .bb-hub-list-view-sub-table .et-table-error-cell {
+    min-block-size: 0;
+  }
+
+  /* The gap is a share of the row it separates, and these rows are a little over half the height of the
+     ones above them. Inherited from the outer list it would read as the wider mark of the two. */
+  .bb-hub-list-view .bb-hub-list-view-sub-table {
+    --et-table-row-gap: 0.4rem;
+  }
+
+  /* Both pinned blocks are chrome around the scrolling values - the identity column and the expander at
+     the leading edge, the actions and the checkbox column at the trailing one - so a rule marks each
+     boundary. Only the outermost cell of a block carries it: every other pinned cell would draw a second
+     rule inside the block, between the expander and the identity column, or between the actions and the
+     checkbox. Body cells only: a header cell already ends on the resize grip's own line. */
+  .bb-hub-list-view
+    .et-table-host:where([data-appearance='cards'])
+    .et-table-cell.et-table-sticky-start:not(:has(~ .et-table-cell.et-table-sticky-start)) {
+    border-inline-end: 1px solid var(--et-surface-border, rgb(128 128 128 / 0.1));
+  }
+
+  .bb-hub-list-view .et-table-host:where([data-appearance='cards']) .et-table-cell.et-table-sticky-end {
+    border-inline-start: 1px solid var(--et-surface-border, rgb(128 128 128 / 0.1));
+  }
+
+  .bb-hub-list-view
+    .et-table-host:where([data-appearance='cards'])
+    .et-table-cell.et-table-sticky-end
+    ~ .et-table-cell.et-table-sticky-end {
+    border-inline-start: none;
+  }
+}

@@ -1,0 +1,45 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`migrateThemeTokenNames on the app-a fixtures > button-tokens.scss.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-a fixtures > challenge.component.scss.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-a fixtures > checkbox.scss.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-a fixtures > gradient.component.ts.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-a fixtures > links.component.html.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-a fixtures > reward.component.ts.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-a fixtures > workflow.component.css.txt 2`] = `
+[
+  {
+    "line": 3,
+    "reason": "--et-surface-border and --et-surface-border-solid are both set here and merge into --et-surface-border: keep one by hand",
+    "text": "--et-surface-border-solid: var(--color-aa-light-2);",
+  },
+]
+`;
+
+exports[`migrateThemeTokenNames on the app-b fixtures > add-overlay.component.scss.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-b fixtures > badge.component.scss.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-b fixtures > index.scss.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-b fixtures > provider-select.component.html.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-b fixtures > submission.component.ts.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-b fixtures > table.css.txt 2`] = `[]`;
+
+exports[`migrateThemeTokenNames on the app-b fixtures > text-widget.component.ts.txt 2`] = `
+[
+  {
+    "line": 16,
+    "reason": "--et-color-primary is a triplet read outside rgb() (in color): check every reader by hand",
+    "text": "color: var(--et-color-primary);",
+  },
+]
+`;
