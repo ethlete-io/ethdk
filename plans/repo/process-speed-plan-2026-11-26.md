@@ -94,7 +94,7 @@ Done when: three days with under 20% red runs on `next`, and no red run older th
 
 ## Package 3: the night (tonight)
 
-1. The builder starts at 22:00 on its own (a scheduled `agent-sessions` start), not when the human thinks of it.
+1. ~~The builder starts at 22:00 on its own~~: dropped, the human starts the sessions (26.11.).
 2. Three subagents on three rows with no file in common. Rows that share files become one row before the night.
 3. A row not closed after its third code commit is split into the finished part, which closes, and the open points.
 4. The builder merges at night where eee7d66bac allows it. The human gets the merged result with an image in the
