@@ -102,14 +102,63 @@
       }
     }
 
-    &.et-scrollable--can-scroll:has(.et-scrollable-buttons--inside) {
-      &[direction='horizontal'] > .et-scrollable-wrapper > .et-scrollable-container,
-      &:not([direction]) > .et-scrollable-wrapper > .et-scrollable-container {
-        padding-inline-end: var(--et-scrollable-buttons-end-space);
+    &.et-scrollable--can-scroll:has(> .et-scrollable-wrapper > .et-scrollable-buttons--inside) {
+      & > .et-scrollable-wrapper > .et-scrollable-container {
+        --_et-scrollable-button-space: clamp(0px, var(--et-scrollable-buttons-end-space), 50%);
+        --_et-scrollable-start-clip: 0px;
+        --_et-scrollable-end-clip: 0px;
+        --_et-scrollable-scrollbar-edge: calc(100% - var(--_et-scrollable-scrollbar-size, 0px));
+      }
+
+      &:not(.et-scrollable--is-at-start) > .et-scrollable-wrapper > .et-scrollable-container {
+        --_et-scrollable-start-clip: var(--_et-scrollable-button-space);
+      }
+
+      &:not(.et-scrollable--is-at-end) > .et-scrollable-wrapper > .et-scrollable-container {
+        --_et-scrollable-end-clip: var(--_et-scrollable-button-space);
+      }
+
+      /* Clip only the content area. Padding changes can clamp the scroll offset at the end,
+         and insetting the scrollport itself can move the items or trim the native scrollbar. */
+      &:is([direction='horizontal'], :not([direction])) > .et-scrollable-wrapper > .et-scrollable-container {
+        --_et-scrollable-left-clip: var(--_et-scrollable-start-clip);
+        --_et-scrollable-right-clip: calc(100% - var(--_et-scrollable-end-clip));
+
+        clip-path: polygon(
+          var(--_et-scrollable-left-clip) 0,
+          var(--_et-scrollable-right-clip) 0,
+          var(--_et-scrollable-right-clip) var(--_et-scrollable-scrollbar-edge),
+          100% var(--_et-scrollable-scrollbar-edge),
+          100% 100%,
+          0 100%,
+          0 var(--_et-scrollable-scrollbar-edge),
+          var(--_et-scrollable-left-clip) var(--_et-scrollable-scrollbar-edge)
+        );
+
+        &:dir(rtl) {
+          --_et-scrollable-left-clip: var(--_et-scrollable-end-clip);
+          --_et-scrollable-right-clip: calc(100% - var(--_et-scrollable-start-clip));
+        }
       }
 
       &[direction='vertical'] > .et-scrollable-wrapper > .et-scrollable-container {
-        padding-block-end: var(--et-scrollable-buttons-end-space);
+        --_et-scrollable-scrollbar-outer-edge: 100%;
+
+        clip-path: polygon(
+          var(--_et-scrollable-scrollbar-outer-edge) 0,
+          var(--_et-scrollable-scrollbar-edge) 0,
+          var(--_et-scrollable-scrollbar-edge) var(--_et-scrollable-start-clip),
+          calc(100% - var(--_et-scrollable-scrollbar-outer-edge)) var(--_et-scrollable-start-clip),
+          calc(100% - var(--_et-scrollable-scrollbar-outer-edge)) calc(100% - var(--_et-scrollable-end-clip)),
+          var(--_et-scrollable-scrollbar-edge) calc(100% - var(--_et-scrollable-end-clip)),
+          var(--_et-scrollable-scrollbar-edge) 100%,
+          var(--_et-scrollable-scrollbar-outer-edge) 100%
+        );
+
+        &:dir(rtl) {
+          --_et-scrollable-scrollbar-outer-edge: 0%;
+          --_et-scrollable-scrollbar-edge: var(--_et-scrollable-scrollbar-size, 0px);
+        }
       }
     }
 

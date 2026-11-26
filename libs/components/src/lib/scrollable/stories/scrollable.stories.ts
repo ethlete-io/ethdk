@@ -234,6 +234,31 @@ export const ProvidedButtonColor: Story = {
   }),
 };
 
+export const TabBar: Story = {
+  decorators: [
+    applicationConfig({
+      providers: [provideScrollableConfig({ buttons: { enabled: true, variant: 'filled' } })],
+    }),
+    moduleMetadata({ imports: [SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS] }),
+  ],
+  render: () => ({
+    template: `
+      <et-scrollable
+        [renderMasks]="false"
+        scrollableRole="tablist"
+        class="bg-white/5"
+        style="inline-size: min(100%, 320px); --et-scrollable-buttons-end-space: 3.2rem"
+      >
+        @for (label of ['Home', 'Schedule', 'Results', 'Standings']; track label) {
+          <button type="button" role="tab" class="h-10 text-small" [style.inline-size.px]="$first ? 136 : 66">
+            <span>{{ label }}</span>
+          </button>
+        }
+      </et-scrollable>
+    `,
+  }),
+};
+
 export const ProvidedMaskSize: Story = {
   decorators: [
     applicationConfig({

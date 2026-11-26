@@ -9,6 +9,7 @@ const FOOTER_BUTTONS_STORY_ID = 'components-layout-scrollable--footer-buttons';
 const STICKY_BUTTONS_STORY_ID = 'components-layout-scrollable--sticky-buttons';
 const BORDER_MASK_STORY_ID = 'components-layout-scrollable--border-mask';
 const PROVIDED_BUTTON_COLOR_STORY_ID = 'components-layout-scrollable--provided-button-color';
+const TAB_BAR_STORY_ID = 'components-layout-scrollable--tab-bar';
 
 const HOST = '.et-scrollable';
 const CONTAINER = '.et-scrollable-container';
@@ -42,6 +43,21 @@ function scrollTrackTo(container: Locator, to: 'start' | 'middle' | 'end'): Prom
     const max = el.scrollWidth - el.clientWidth;
     el.scrollLeft = { start: 0, middle: max / 2, end: max }[target];
   }, to);
+}
+
+function tabsNearTrackEdges(host: Locator): Promise<(string | null)[]> {
+  return host.evaluate((el) => {
+    const { left, right, top, height } = el.getBoundingClientRect();
+    const probeInset = 28;
+
+    return [left + probeInset, right - probeInset].map(
+      (x) =>
+        document
+          .elementFromPoint(x, top + height / 2)
+          ?.closest('[role="tab"]')
+          ?.textContent?.trim() ?? null,
+    );
+  });
 }
 
 function maskOpacities(root: Locator): Promise<[number, number]> {
@@ -444,6 +460,44 @@ test.describe('scrollable / edges and chrome', () => {
       expect(position.current).toBeGreaterThanOrEqual(position.max - 1);
     });
   }
+});
+
+test('an inside-button tab bar clears the first label and has no trailing gap at scroll end', async ({ page }) => {
+  const root = await openStory(page, TAB_BAR_STORY_ID);
+  const host = root.locator(HOST);
+  const firstTab = root.getByRole('tab').first();
+  const lastTab = root.getByRole('tab').last();
+  const previous = host.locator(PREVIOUS_BUTTON);
+  const next = host.locator(NEXT_BUTTON);
+
+  await expect(next).toBeEnabled();
+  await expect(previous).toBeDisabled();
+  expect.soft(await tabsNearTrackEdges(host), 'gutter only at the end').toEqual(['Home', null]);
+
+  const lastImmediatelyAtEnd = await lastTab.evaluate((tab) => {
+    const track = tab.parentElement;
+    if (!track) throw new Error('The last tab has no scroll container');
+
+    track.scrollLeft = track.scrollWidth - track.clientWidth;
+
+    return tab.getBoundingClientRect().right;
+  });
+  await expect(next).toBeDisabled();
+  await expect(next).toHaveCSS('opacity', '0');
+  await expect(previous).toHaveCSS('opacity', '1');
+
+  const [track, last, label, startButton] = await Promise.all([
+    boxOf(host),
+    boxOf(lastTab),
+    boxOf(firstTab.locator('span')),
+    boxOf(previous),
+  ]);
+  const lastRight = last.x + last.width;
+
+  expect.soft(Math.abs(lastImmediatelyAtEnd - lastRight), 'no visual jump').toBeLessThanOrEqual(1);
+  expect.soft(Math.abs(track.x + track.width - lastRight), 'trailing gap').toBeLessThanOrEqual(1);
+  expect.soft(label.x, 'first label clears the start button').toBeGreaterThanOrEqual(startButton.x + startButton.width);
+  expect.soft(await tabsNearTrackEdges(host), 'gutter only at the start').toEqual([null, 'Standings']);
 });
 
 test.describe('scrollable / scroll origin and margin', () => {
