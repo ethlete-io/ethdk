@@ -104,6 +104,7 @@ export class OverlayDirective {
   public isMounted = computed(() => this.overlayRef() !== null);
 
   private isClosing = false;
+  private isDestroyed = false;
 
   private originElement = computed(() => {
     return (
@@ -150,7 +151,11 @@ export class OverlayDirective {
       }
     });
 
-    this.destroyRef.onDestroy(() => this.overlayRef()?.forceClose());
+    this.destroyRef.onDestroy(() => {
+      // the open model is already destroyed here, so the close must not write it
+      this.isDestroyed = true;
+      this.overlayRef()?.forceClose();
+    });
 
     if (ngDevMode) {
       afterNextRender(() => {
@@ -296,7 +301,7 @@ export class OverlayDirective {
         tap(() => {
           this.isClosing = true;
 
-          if (this.open()) {
+          if (this.open() && !this.isDestroyed) {
             this.open.set(false);
           }
         }),
@@ -312,7 +317,7 @@ export class OverlayDirective {
           this.isClosing = false;
           this.overlayRef.set(null);
 
-          if (this.open()) {
+          if (this.open() && !this.isDestroyed) {
             this.open.set(false);
           }
         }),

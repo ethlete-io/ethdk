@@ -32,15 +32,11 @@ export default defineConfig(() => ({
       }
 
       if (type === 'stderr') {
-        // Benign cross-file teardown races: a deferred overlay change-detection
-        // tick or an output emission fires after a previous spec's TestBed has
-        // been destroyed. Harmless (every spec passes in isolation), but vitest
-        // reuses the worker so the stderr lands on — and is mislabelled with —
-        // whichever test is running. Filter the two known signatures only.
-        if (
-          log.includes('NG0406: This instance of the `ApplicationRef` has already been destroyed') ||
-          log.includes('NG0953: Unexpected emit for destroyed `OutputRef`')
-        ) {
+        // Benign cross-file teardown race: a deferred overlay change-detection
+        // tick fires after a previous spec's TestBed has been destroyed. Harmless
+        // (every spec passes in isolation), but vitest reuses the worker so the
+        // stderr lands on — and is mislabelled with — whichever test is running.
+        if (log.includes('NG0406: This instance of the `ApplicationRef` has already been destroyed')) {
           return false;
         }
 

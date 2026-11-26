@@ -83,7 +83,9 @@ describe('OverlayDirective', () => {
   });
 
   afterEach(() => {
-    overlayDirective.hide();
+    if (!fixture.componentRef.hostView.destroyed) {
+      overlayDirective.hide();
+    }
   });
 
   it('opens as an anchored overlay from the registered anchor in non-modal mode', () => {

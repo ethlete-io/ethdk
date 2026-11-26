@@ -1272,7 +1272,9 @@ describe('CascaderDirective (edge cases)', () => {
   });
 
   afterEach(async () => {
-    await driver.close();
+    if (!driver.fixture.componentRef.hostView.destroyed) {
+      await driver.close();
+    }
   });
 
   it('does not open a readonly cascader through the open binding', async () => {

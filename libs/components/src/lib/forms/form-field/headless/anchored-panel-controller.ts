@@ -275,7 +275,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
       .pipe(
         take(1),
         tap(() => {
-          if (overlayRef() !== currentRef) {
+          if (overlayRef() !== currentRef || destroyed) {
             return;
           }
 
