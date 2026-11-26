@@ -55,7 +55,10 @@ export const parseArgs = (argv) => {
 
 const shellQuote = (value) => `'${value.replaceAll("'", `'\\''`)}'`;
 
-const nativeRun = (suite) => `  export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
+const nativeRun = (
+  suite,
+) => `  export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
+  cd "$work" || return 1
   local started=$SECONDS
   yarn install --immutable > "$work/.remote-run-install.log" 2>&1 || { tail -40 "$work/.remote-run-install.log"; return 1; }
   echo "[remote-run] install $((SECONDS - started))s"

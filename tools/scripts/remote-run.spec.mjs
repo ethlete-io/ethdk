@@ -155,3 +155,29 @@ test('registers the run in the run registry with its machine, log and exit code'
 
   assert.equal(run(['--host', 'mac', '--', 'yarn test']).runs[0].machine, 'mac');
 });
+
+test('a native run installs and runs the suite inside its slot checkout', () => {
+  const script = remoteScript({ sha: SHA, slot: 'w1', suite: 'node --test a.spec.mjs', host: 'mac', linux: false });
+  const work = mkdtempSync(join(tmpdir(), 'remote-run-native-'));
+  const home = join(work, 'home');
+  const bin = join(work, 'bin');
+  mkdirSync(join(home, 'ethlete-rr', 'w1', '.git'), { recursive: true });
+  mkdirSync(join(home, 'ethlete-mirror.git'), { recursive: true });
+  mkdirSync(bin);
+  writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\npwd > "$HOME/yarn-cwd"\n');
+  writeFileSync(join(bin, 'node'), '#!/usr/bin/env bash\npwd > "$HOME/suite-cwd"\n');
+  for (const name of ['git', 'yarn', 'node']) chmodSync(join(bin, name), 0o755);
+  try {
+    const result = spawnSync('bash', ['-c', script], {
+      encoding: 'utf8',
+      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home },
+    });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const slot = join(home, 'ethlete-rr', 'w1');
+    assert.equal(readFileSync(join(home, 'yarn-cwd'), 'utf8').trim(), slot);
+    assert.equal(readFileSync(join(home, 'suite-cwd'), 'utf8').trim(), slot);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});
