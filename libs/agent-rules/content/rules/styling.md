@@ -30,7 +30,7 @@ rule, so source order decides. Leave interaction states (`:hover`, `:focus-visib
 
 **Never use a hardcoded colour as the primary value.** Backgrounds, text, borders and
 interaction states resolve from the surface and colour theming tokens
-(`--et-surface-*-solid`, `--et-theme-color-*`). A static fallback inside
+(`--et-surface-*`, `--et-tone-*`). A static fallback inside
 `var(--token, <fallback>)` is permitted, but not required.
 
 Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by the application;

@@ -44,31 +44,29 @@ whichever theme the app registered with `type: 'error'`.
 
 ## Tokens components may consume
 
-Use these **derived** tokens - never the raw `--et-surface-background` /
-`--et-color-primary` channel triplets. Never use a hardcoded color as the primary value.
+Use these tokens - each is a ready color, never a channel triplet. Never use a hardcoded color as the primary value.
 A static fallback inside `var(--token, <fallback>)` is permitted, but not required.
 
-Surface (each exists as `-solid` = usable color, `-rgb` = `R G B` channels):
+Surface:
 
-| Token                             | Use for                                                                                                                                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--et-surface-background-solid`   | component/panel background                                                                                                                                                      |
-| `--et-surface-color-solid`        | text                                                                                                                                                                            |
-| `--et-surface-color-muted-solid`  | secondary text, placeholders, group labels                                                                                                                                      |
-| `--et-surface-color-subtle-solid` | tertiary text                                                                                                                                                                   |
-| `--et-surface-border-solid`       | borders, separators                                                                                                                                                             |
-| `--et-surface-interaction-solid`  | neutral hover/active tint source - mix it: `color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent)` (12/16/20% for hover/focus/active, 6–8% for subtle fills) |
+| Token                      | Use for                                                                                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-surface-background`  | component/panel background                                                                                                                                                |
+| `--et-surface-text`        | text                                                                                                                                                                      |
+| `--et-surface-text-muted`  | secondary text, placeholders, group labels                                                                                                                                |
+| `--et-surface-text-subtle` | tertiary text                                                                                                                                                             |
+| `--et-surface-border`      | borders, separators                                                                                                                                                       |
+| `--et-surface-interaction` | neutral hover/active tint source - mix it: `color-mix(in srgb, var(--et-surface-interaction) 12%, transparent)` (12/16/20% for hover/focus/active, 6–8% for subtle fills) |
 
 Color (from the nearest `[etProvideColor]` scope):
 
-| Token                            | Use for                                                                                                                                                                                                                                                                                                                                                             |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--et-theme-color-primary`       | filled backgrounds on an element you do **not** tint. To tint per state, set `--et-theme-color-primary-opacity: 0.16` and compose the color yourself: `rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity))`. The alias is substituted at the `et-color--*` scope, so an inherited value carries the scope's opacity, never the element's |
-| `--et-theme-color-primary-solid` | accents at full strength: focus borders, selected marks, spinners                                                                                                                                                                                                                                                                                                   |
-| `--et-theme-color-on-primary`    | text/icons on a primary-filled background                                                                                                                                                                                                                                                                                                                           |
-| `--et-theme-color-ink-solid`     | primary-tinted text/border on transparent/tonal fills                                                                                                                                                                                                                                                                                                               |
+| Token               | Use for                                                                                                                                                                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-tone-fill`    | filled backgrounds and accents at full strength: focus borders, selected marks, spinners. To tint per state, compose it yourself: `color-mix(in srgb, var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%), transparent)` |
+| `--et-tone-on-fill` | text/icons on a primary-filled background                                                                                                                                                                                             |
+| `--et-tone-text`    | primary-tinted text/border on transparent/tonal fills                                                                                                                                                                                 |
 
-Interaction-state variants (`--et-surface-interaction-{hover,focus,active,disabled}-solid`)
+Interaction-state variants (`--et-surface-interaction-{hover,focus,active,disabled}`)
 resolve automatically per CSS state when the element has `[etSurfaceInteractive]`;
 similarly `[etColorInteractive]` re-resolves the color tokens per state. Put either on
 the interactive element itself, never on a wrapper.
@@ -93,7 +91,7 @@ full-strength neutral tint, so in dark mode it gives a light row with near-white
   registered no `type: 'error'` theme) and either bind it
   (`[etProvideColor]="errorColorTheme()"`) or force it programmatically
   (`provideColor.forceColor(theme)` / `clearForcedColor()`). Inside that scope,
-  `--et-theme-color-primary-*` _is_ the error color.
+  `--et-tone-*` _is_ the error color.
 - **A surface swaps a chosen accent; it never picks one.** The chosen accent is the
   nearest `[etProvideColor]`, else the `isDefault` theme, or for
   `injectSemanticColorTheme(type)` the theme of that `type`. The nearest surface's
@@ -123,10 +121,10 @@ full-strength neutral tint, so in dark mode it gives a light row with near-white
   with no error. Percentages and viewport units (`vh`, `vw`, `dvh`) are fine. When the
   default has to be relative, use `syntax: '*'` with no `initial-value` and put the
   default in a fallback at each use site: `var(--et-skeleton-size, 1em)`.
-- `--et-theme-color-primary-*` always resolves to the **nearest color scope**. A
+- `--et-tone-*` always resolves to the **nearest color scope**. A
   hardcoded semantic color in CSS can't be replaced by it unless the right theme is
   provided on that element.
-- A static fallback (`var(--et-surface-border-solid, rgb(255 255 255 / 0.1))`) is
+- A static fallback (`var(--et-surface-border, rgb(255 255 255 / 0.1))`) is
   permitted for theme-less setups, but themes make it unnecessary. `injectSemanticColorTheme()`
   is a hard requirement wherever it is read.
 - **Cascade layers, not `:where()`, decide who wins against SDK component CSS.** SDK

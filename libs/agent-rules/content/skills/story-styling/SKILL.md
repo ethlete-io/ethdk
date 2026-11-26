@@ -62,9 +62,9 @@ paints must come from those tokens - the same rule as component CSS
 ({%skill:theming%} is the reference for the token names).
 
 - A tinted panel: put `etAutoSurface` on it (next elevation up) and read the token:
-  `style="background: var(--et-surface-background-solid)"`.
+  `style="background: var(--et-surface-background)"`.
 - An accent: scope it with `[etProvideColor]="storyAccentTheme"` and read
-  `--et-theme-color-primary-solid` / `--et-theme-color-ink-solid`. Theme names are
+  `--et-tone-fill` / `--et-tone-text`. Theme names are
   whatever **your app** registers - fine to name in a story, never in library code.
 - Better still: don't hand-paint. Compose the component that already does it
   (`<et-chip>` for a badge, `<et-button>` for an action) - that's also what a real

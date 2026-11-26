@@ -57,7 +57,7 @@ a media query's `rem` ignores the root font size.
 
 **Never use a hardcoded colour as the primary value.** Backgrounds, text, borders and
 interaction states resolve from the app's theme: the SDK surface and colour tokens
-(`--et-surface-*-solid`, `--et-theme-color-*`) and their generated utilities, or the palette
+(`--et-surface-*`, `--et-tone-*`) and their generated utilities, or the palette
 the app's Tailwind config defines. Never write an arbitrary colour value such as
 `bg-[#1a1a1a]` in a template. A static fallback inside `var(--token, <fallback>)` is
 permitted, but not required.
