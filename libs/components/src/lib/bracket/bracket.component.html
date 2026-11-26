@@ -28,22 +28,8 @@
         </defs>
       }
 
-      @for (rect of drawn.rects; track rect.id) {
-        @let toneTheme = rect.tone ? swissToneThemes()[rect.tone] : null;
-
-        <g [etProvideColor]="toneTheme" [attr.data-swiss-toned]="toneTheme ? '' : null">
-          <rect
-            [attr.x]="rect.x"
-            [attr.y]="rect.y"
-            [attr.width]="rect.width"
-            [attr.height]="rect.height"
-            [attr.rx]="rect.radius"
-            [attr.stroke]="rect.stroke"
-            [attr.stroke-width]="rect.strokeWidth"
-            [attr.class]="rect.cssClass"
-            fill="none"
-          />
-        </g>
+      @if (drawn.rects.length && rectsComponent(); as rects) {
+        <ng-container *ngComponentOutlet="rects; inputs: { rects: drawn.rects }" />
       }
 
       <!-- Both: the attribute is what draws the line, and the CSS `d` property is the only one a

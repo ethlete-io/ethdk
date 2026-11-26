@@ -9,6 +9,7 @@ import {
   BracketSwissColors,
   generateBracketRoundSwissGroupMaps,
 } from '@ethlete/bracket';
+import { BracketSwissGroupBordersComponent } from './bracket-swiss-group-borders.component';
 import { BracketSwissRoundHeaderComponent } from './bracket-swiss-round-header.component';
 import { BracketSwissStylesComponent } from './bracket-swiss-styles.component';
 
@@ -80,5 +81,6 @@ export const swissBracketLayout = <TRoundData = any, TMatchData = any>(
   },
   configComponents: (config) => ({ roundHeader: config.swiss?.roundHeaderComponent }),
   defaultComponents: { roundHeader: BracketSwissRoundHeaderComponent },
+  rectsComponent: BracketSwissGroupBordersComponent,
   styles: [BracketSwissStylesComponent],
 });

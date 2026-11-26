@@ -15,7 +15,7 @@ import {
   Type,
   ViewEncapsulation,
 } from '@angular/core';
-import { createComponentId, injectRenderer, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
+import { createComponentId, injectRenderer, injectStyleManager } from '@ethlete/core';
 import {
   BracketContinueComponent,
   BracketFinalAlignment,
@@ -53,7 +53,6 @@ import {
   createBracketHostLayout,
   createBracketHostMatchNormalizer,
 } from './bracket-host';
-import { injectSwissToneThemes } from './layouts/swiss/swiss-tone-themes';
 import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from './bracket.config';
 
 @Component({
@@ -61,7 +60,7 @@ import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from '
   templateUrl: './bracket.component.html',
   styleUrl: './bracket.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgComponentOutlet, ProvideColorDirective],
+  imports: [NgComponentOutlet],
   providers: [{ provide: BRACKET_CARD_CONTEXT, useExisting: BracketComponent }],
   host: {
     class: 'et-bracket-host',
@@ -69,8 +68,6 @@ import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from '
 })
 export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   private config = injectBracketConfig();
-
-  protected swissToneThemes = injectSwissToneThemes();
 
   public source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
@@ -373,6 +370,8 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       colors: this.swissColors(),
     }),
   );
+
+  protected rectsComponent = computed(() => this.resolvedLayout().rectsComponent ?? null);
 
   protected swissToneColors = computed(() => {
     const colors: Record<string, string> = {};

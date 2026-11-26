@@ -120,6 +120,12 @@ export type BracketLayout<TRoundData = any, TMatchData = any> = {
   defaultComponents?: BracketComponentOverrides<TRoundData, TMatchData>;
 
   /**
+   * Draws the drawing's `rects` inside the bracket's `<svg>`: a component whose selector starts with `svg`, with a
+   * `rects` input. Without one the host draws none.
+   */
+  rectsComponent?: Type<unknown>;
+
+  /**
    * Styles-only components the host mounts (once, app-wide) while this layout renders - CSS only
    * brackets with this layout need, kept out of every other consumer's document.
    */

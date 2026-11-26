@@ -182,6 +182,24 @@ describe('the swiss default round header', () => {
     ]);
   });
 
+  it('draws the group boxes as svg elements', () => {
+    const driver = bracketTestDriver({
+      source: swissSource([[['r0-m0', 'a', 'b', 'home']], [['r1-m0', 'a', 'b', 'home']]]),
+      layouts: [swissBracketLayout()],
+      providers: [provideColorThemes(TEST_SEMANTIC_COLOR_THEMES)],
+    });
+    const boxes = Array.from(driver.element().querySelectorAll('.et-bracket-svg rect'));
+
+    expect(boxes.length).toBeGreaterThan(0);
+    const namespaces = boxes.flatMap((box) => [
+      box.namespaceURI,
+      box.parentElement?.namespaceURI,
+      box.closest('[et-bracket-swiss-group-borders]')?.namespaceURI,
+    ]);
+
+    expect(new Set(namespaces)).toEqual(new Set(['http://www.w3.org/2000/svg']));
+  });
+
   it('colours each header like the box of its group when the layout sets colors', () => {
     const colors: BracketSwissColors = {
       neutral: '#111111',
