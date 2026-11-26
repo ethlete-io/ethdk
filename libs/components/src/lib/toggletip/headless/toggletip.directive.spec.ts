@@ -264,3 +264,29 @@ describe('ToggletipDirective host destroyed while open', () => {
     expect(driver.manager().openOverlays().length).toBe(0);
   });
 });
+
+describe('ToggletipDirective destroyed while open', () => {
+  it('closes its overlay without logging an error', () => {
+    TestBed.configureTestingModule({ imports: [ToggletipNeighbourTestHost] });
+
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+    const fixture = TestBed.createComponent(ToggletipNeighbourTestHost);
+    fixture.detectChanges();
+
+    const directive = fixture.debugElement.query(By.directive(ToggletipDirective)).injector.get(ToggletipDirective);
+    directive.show();
+    fixture.detectChanges();
+
+    expect(directive.overlayRef()).not.toBeNull();
+
+    fixture.destroy();
+
+    expect(handleError).not.toHaveBeenCalled();
+    expect(consoleWarn).not.toHaveBeenCalled();
+    expect(consoleError).not.toHaveBeenCalled();
+    consoleWarn.mockRestore();
+    consoleError.mockRestore();
+  });
+});

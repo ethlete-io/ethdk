@@ -155,7 +155,10 @@ export class ToggletipDirective {
     });
 
     this.destroyRef.onDestroy(() => {
-      this.overlayRef()?.close();
+      const overlayRef = this.overlayRef();
+
+      this.overlayRef.set(null);
+      overlayRef?.close();
     });
   }
 
