@@ -157,11 +157,10 @@
     "at": "2026-11-21T04:19:29.759Z"
   },
   "pages/inbox": {
-    "hash": "9fe9d1c9a513990c",
-    "variant": "a",
-    "decidedBy": "plan: ADR 0387",
-    "at": "2026-11-20T14:07:53.240Z",
-    "note": "merged without a pick: allowed by ADR 0387"
+    "hash": "2cdc95a4a51639da",
+    "variant": "new",
+    "decidedBy": "claude-sonnet-5-5",
+    "at": "2026-11-26T09:54:44.245Z"
   },
   "pages/inventory": {
     "hash": "bb84266858a56467",
