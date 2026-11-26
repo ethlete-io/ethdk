@@ -57,6 +57,7 @@ describe('agent-sessions', () => {
         CLAUDE_CONFIG_DIR: join(dir, 'claude'),
         CLAUDE_CODE_SESSION_ID: '',
         AGENT_RESTART_RESUME_WAIT_MS: '500',
+        AGENT_RESTART_EXIT_WAIT_MS: '1000',
         XDG_RUNTIME_DIR: '',
         DBUS_SESSION_BUS_ADDRESS: '',
         ...env,
