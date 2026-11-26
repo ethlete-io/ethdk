@@ -365,7 +365,10 @@ cli-Nacharbeit zu Schritt 3 (für den Q1-cli-Commit nach Toms Antwort; Schritt 3
 cli-Dateien unberührt): `libs/cli/design/web/surface-interactive.css` löschen und die zwei Specs, die
 sie bytegleich zum core-Sheet halten, mit; `etSurfaceInteractive`-Attribute in den Studio-Design-Sheets
 und Skeletons unter `libs/cli/design` und `libs/cli/src/lib/design` entfernen (`grep -rn
-etSurfaceInteractive libs/cli`).
+etSurfaceInteractive libs/cli`). Dazu (Stand nach 9b4df01ffe): Import in `frame.ts:19`,
+`frame-surfaces.ts`, `part-task.ts`, `rules/live-rules.ts` samt Specs und Fixtures,
+`data-et-surface-interactive` in 5 Studio-Teilen und die Klasse in sdk action-sheet unter `.ethlete/design`,
+`apps/docs/cli/index.md:882`, Skill design-exploration Zeilen 110-111.
 
 Abhängige Zeilen: **B756** (Tabs-Variante liest alle `et-tab`-Tokens) nach Schritt 3 (Namensmuster).
 **B759** ist unabhängig. Reihenfolge der Konsumenten: fifagg zuerst, fut danach (34 Releases
