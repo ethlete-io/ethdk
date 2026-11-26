@@ -203,7 +203,7 @@ const failedSketchModule = async (context) => {
     return { ok: false, detail: 'no render-error badge for a variant whose module fails to import' };
   }
 
-  const badge = (await page.locator('[data-sk-render-error]').textContent())?.trim() ?? '';
+  const badge = (await page.locator('[data-sk-render-error] [data-sk-status-button]').getAttribute('aria-label')) ?? '';
   const mergeWhileFailed = await page.locator('[data-sk-row="a"] [data-sk-merge]').count();
   const failedFrames = async () => {
     const frames = await Promise.all((await page.$$(variantFrames)).map((frame) => frame.contentFrame()));
@@ -238,7 +238,7 @@ const failedSketchModule = async (context) => {
 
   return {
     ok:
-      badge === 'Fehler' &&
+      badge === 'Fehler prüfen' &&
       mergeWhileFailed === 0 &&
       failedBefore.all > 0 &&
       failedBefore.failed === failedBefore.all &&
@@ -268,7 +268,7 @@ const everyPageFrameDraws = async (context) => {
   const missing = Object.keys(PAGE_VARIANTS).filter(
     (variant) => !cells.some((cell) => cell.key.startsWith(`${variant} `)),
   );
-  const badge = (await page.locator('[data-sk-render-error]').allTextContents()).join(' ').trim();
+  const badges = await page.locator('[data-sk-render-error]').count();
   const undrawn = cells.filter((cell) => !cell.drawn && !cell.failed).map((cell) => `${cell.key} (${cell.state})`);
 
   return {
@@ -279,8 +279,8 @@ const everyPageFrameDraws = async (context) => {
       drawn === cells.length &&
       !failed.length &&
       !missing.length &&
-      !badge,
-    detail: `${drawn}/${cells.length} cells drawn, variants without a cell ${missing.length}${missing.length ? ': ' + missing.join(', ') : ''}, badge "${badge}", failed ${failed.length}${failed.length ? ': ' + failed.slice(0, 4).join('; ') : ''}, unloaded variants ${unloaded.length}${unloaded.length ? ': ' + unloaded.join('; ').slice(0, 300) : ''}, pictures drawn again after the listing compared them ${redrawn}${undrawn.length ? `, undrawn: ${undrawn.slice(0, 8).join('; ')}` : ''}`,
+      !badges,
+    detail: `${drawn}/${cells.length} cells drawn, variants without a cell ${missing.length}${missing.length ? ': ' + missing.join(', ') : ''}, render-error badges ${badges}, failed ${failed.length}${failed.length ? ': ' + failed.slice(0, 4).join('; ') : ''}, unloaded variants ${unloaded.length}${unloaded.length ? ': ' + unloaded.join('; ').slice(0, 300) : ''}, pictures drawn again after the listing compared them ${redrawn}${undrawn.length ? `, undrawn: ${undrawn.slice(0, 8).join('; ')}` : ''}`,
   };
 };
 
