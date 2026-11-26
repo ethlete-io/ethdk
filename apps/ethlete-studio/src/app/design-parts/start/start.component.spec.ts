@@ -48,6 +48,8 @@ describe('StartComponent', () => {
     expect(element.textContent).toContain('Lege in mein-monorepo-mit-langem-namen das Produkt shop an');
     expect(button('Repo öffnen')).toBeUndefined();
     expect(emitted).toEqual(['other', 'copy']);
+    expect(element.querySelector('header button')).toBeNull();
+    expect(element.querySelector('ethlete-sketch-head [role="toolbar"]')?.textContent).toContain('Anderes Repo');
   });
 
   it('asks for the colour base and the accent and copies a prompt with both answers', async () => {
@@ -120,7 +122,7 @@ describe('StartComponent', () => {
     let other = 0;
 
     fixture.componentInstance.otherRepo.subscribe(() => other++);
-    const button = element.querySelector<HTMLButtonElement>('header button');
+    const button = element.querySelector<HTMLButtonElement>('ethlete-sketch-head [role="toolbar"] button');
 
     button?.click();
 

@@ -1,5 +1,6 @@
 import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
+import { SketchHeadComponent } from '../sketch-head/sketch-head.component';
 import { projectEntriesOf } from '../studio-menu/project-entries';
 import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/start-labels';
 
@@ -20,11 +21,26 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
       <span class="text-et-surface-text font-ui-strong text-ui-md">{{ LABELS.title }}</span>
       @if (repo(); as name) {
         <span class="text-et-surface-text-muted text-ui-sm">{{ name }}</span>
-        <button [loading]="busy()" (click)="otherRepo.emit()" et-button type="button" variant="transparent" size="sm">
-          {{ LABELS.otherRepo }}
-        </button>
       }
     </header>
+    @if (repo()) {
+      <div class="pointer-events-none absolute inset-x-0 bottom-space-3 z-3 flex justify-center">
+        <ethlete-sketch-head [status]="null" class="pointer-events-auto min-w-0" discardable="false">
+          <button
+            [loading]="busy()"
+            (click)="otherRepo.emit()"
+            sketchHeadExtra
+            et-button
+            type="button"
+            variant="transparent"
+            color="surface"
+            size="sm"
+          >
+            {{ LABELS.otherRepo }}
+          </button>
+        </ethlete-sketch-head>
+      </div>
+    }
     <div class="flex-1 flex items-center justify-center">
       <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
         @if (repo(); as name) {
@@ -166,8 +182,8 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS],
-  host: { class: 'flex font-ui h-full min-h-225 w-full flex-col bg-et-surface-background' },
+  imports: [BUTTON_IMPORTS, SketchHeadComponent],
+  host: { class: 'relative flex font-ui h-full min-h-225 w-full flex-col bg-et-surface-background' },
 })
 export class StartComponent {
   public repo = input<string | undefined>();

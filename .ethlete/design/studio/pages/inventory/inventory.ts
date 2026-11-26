@@ -15,7 +15,11 @@ import {
   pageList,
   pagesOf,
 } from './shared/inventory-sample';
+import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 import { INVENTORY_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/inventory-labels';
+
+const TRAY =
+  'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border)) bg-et-surface-background shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))';
 
 const COLUMNS = 2;
 
@@ -30,7 +34,7 @@ const worldOf = (pages: InventoryPage[]) =>
   </div>`;
 
 export default definePart<Props>({
-  note: 'The Inventory of every page of the product, opened from Inventory in the studio menu: a canvas with the rest frame of each page (pan by wheel and drag, zoom with the zoom chip), each frame headed by its page and how many entries are open, a numbered box on every control, asset and overlay. A page picked in the part tree is selected and its frame outlined; the column at the right shows that page with Neu laden and its entries in three sections: Bedienelemente, Assets (A1, A2 …) and Overlays (O1 …), each row with its name and what it belongs to. An undeclared control, an inline asset or a mocked overlay is red, an unclassified control amber. The Inventory needs no approval.',
+  note: 'The Inventory of every page of the product, opened from Inventory in the studio menu: a canvas with the rest frame of each page (pan by wheel and drag, zoom with the zoom chip), each frame headed by its page and how many entries are open, a numbered box on every control, asset and overlay. A page picked in the part tree is selected and its frame outlined; Neu laden sits in the shared toolbar at the bottom centre of the canvas (the head of the column has no button); the column at the right shows that page and its entries in three sections: Bedienelemente, Assets (A1, A2 …) and Overlays (O1 …), each row with its name and what it belongs to. An undeclared control, an inline asset or a mocked overlay is red, an unclassified control amber. The Inventory needs no approval.',
   madeBy: ['claude-opus-5-5', 'design check', 'claude-sonnet-5-5'],
   implements: {
     route: '/',
@@ -41,8 +45,9 @@ export default definePart<Props>({
     loading: { inventory: 'loading' },
   },
   describe: {
-    open: 'pages/flows selected with open entries; check its outlined frame with 3 offen, the numbered boxes on every frame and the three sections at the right with a red inline asset and no approve button.',
-    loading: 'The inventory while it loads; check that Neu laden is disabled and no frames or entries show.',
+    open: 'pages/flows selected with open entries; check its outlined frame with 3 offen, the numbered boxes on every frame and the three sections at the right with a red inline asset the toolbar with Neu laden at the bottom centre, no button in the column head and no approve button.',
+    loading:
+      'The inventory while it loads; check that Neu laden in the toolbar is disabled and no frames or entries show.',
   },
   controls: {
     canvas: { kind: 'field', part: 'components/canvas-viewport' },
@@ -54,7 +59,8 @@ export default definePart<Props>({
     const selected = pages[0];
     const reload = await button.render({
       label: INVENTORY_LABELS.reload,
-      variant: 'outline',
+      variant: 'transparent',
+      color: 'surface',
       size: 'sm',
       disabled: loading,
     });
@@ -88,7 +94,19 @@ export default definePart<Props>({
       product: 'studio',
       side: tree.body,
       content: html`<div class="grid h-full grid-cols-[minmax(0,1fr)_28rem]">
-        <div class="relative min-h-0 overflow-hidden">${canvas}</div>
+        <div class="relative min-h-0 overflow-hidden">
+          ${canvas}
+          <div class="absolute inset-x-0 bottom-space-3 z-3 flex justify-center ps-(--st-shell-inset-left)">
+            <div
+              class="flex items-center gap-space-2 p-space-1 font-ui ${TRAY}"
+              role="toolbar"
+              aria-label="${SKETCHES_LABELS.toolbar}"
+              data-sk-toolbar
+            >
+              ${control(withAction(reload.body, 'emit:reloadInventory'), 'reload')}
+            </div>
+          </div>
+        </div>
         <aside class="flex min-h-0 flex-col border-l border-et-surface-border bg-et-surface-background">
           <header
             class="flex flex-wrap items-center gap-space-3 border-b border-et-surface-border px-space-4 py-space-3"
@@ -97,7 +115,6 @@ export default definePart<Props>({
               <span class="truncate text-ui-sm text-et-surface-text-muted">${INVENTORY_LABELS.title}</span>
               <h2 class="m-0 truncate text-ui-lg font-ui-strong">${loading ? '' : (selected?.part ?? '')}</h2>
             </div>
-            ${control(withAction(reload.body, 'emit:reloadInventory'), 'reload')}
           </header>
           ${
             loading || !selected

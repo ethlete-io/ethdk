@@ -18,6 +18,7 @@ import { INVENTORY_LABELS } from '../../i18n/inventory-labels';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
+import { SketchHeadComponent } from '../sketch-head/sketch-head.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 import { placeMarkers } from './marker-layout';
 import { INVENTORY_PAGE_TREE, inventoryPageSampleOf } from './inventory-page-sample';
@@ -150,6 +151,24 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
               class="absolute right-space-3 bottom-space-3 z-3"
             />
           }
+          <div
+            class="pointer-events-none absolute inset-x-0 bottom-space-3 z-3 flex justify-center ps-(--st-shell-inset-left)"
+          >
+            <ethlete-sketch-head [status]="null" class="pointer-events-auto min-w-0" discardable="false">
+              <button
+                [disabled]="loading()"
+                (click)="reload.emit()"
+                sketchHeadExtra
+                et-button
+                type="button"
+                variant="transparent"
+                color="surface"
+                size="sm"
+              >
+                {{ LABELS.reload }}
+              </button>
+            </ethlete-sketch-head>
+          </div>
         </div>
         <aside class="flex min-h-0 flex-col border-l border-et-surface-border bg-et-surface-background">
           <header
@@ -159,9 +178,6 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
               <span class="truncate text-ui-sm text-et-surface-text-muted">{{ LABELS.title }}</span>
               <h2 class="m-0 truncate text-ui-lg font-ui-strong">{{ loading() ? '' : (current()?.part ?? '') }}</h2>
             </div>
-            <button [disabled]="loading()" (click)="reload.emit()" et-button type="button" variant="outline" size="sm">
-              {{ LABELS.reload }}
-            </button>
             @if (!loading() && current()?.error; as error) {
               <p class="m-0 w-full text-ui-sm whitespace-pre-line text-et-surface-text-muted">{{ error }}</p>
             }
@@ -210,6 +226,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
     PartTreeComponent,
     ProvideColorDirective,
     ShellPageComponent,
+    SketchHeadComponent,
     ZoomChipComponent,
   ],
   host: { class: 'block h-screen w-full' },

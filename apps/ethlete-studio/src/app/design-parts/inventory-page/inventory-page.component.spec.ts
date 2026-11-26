@@ -112,6 +112,13 @@ describe('InventoryPageComponent', () => {
     expect(reloads).toBe(1);
   });
 
+  it('shows Neu laden in the shared toolbar and no button in the aside header', async () => {
+    const { element } = await render({});
+
+    expect(element.querySelectorAll('aside:has(h2) > header button')).toHaveLength(0);
+    expect(element.querySelector('ethlete-sketch-head [role="toolbar"]')?.textContent).toContain('Neu laden');
+  });
+
   it('shows only the drawing note and blocks reload while loading', async () => {
     const { element, button } = await render({ inventory: 'loading', pages: null });
 

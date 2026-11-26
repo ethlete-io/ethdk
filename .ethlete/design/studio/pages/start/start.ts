@@ -1,6 +1,7 @@
 import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
 import { studioMark } from '@system/foundations/logo';
+import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 import { START_LABELS, StartBase, StartColors } from '../../../../../apps/ethlete-studio/src/app/i18n/start-labels';
 
 type Props = {
@@ -12,16 +13,28 @@ type Props = {
   base?: StartBase;
 };
 
+const TRAY =
+  'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border)) bg-et-surface-background shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))';
+
 const COLORS: StartColors[] = ['light', 'dark', 'both'];
 
 const BASES: StartBase[] = ['sdk', 'own'];
 
-const header = (other: string, repo?: string) =>
+const TRAY_CLASS = 'flex items-center gap-space-2 p-space-1 font-ui';
+
+const header = (repo?: string) =>
   html`<header class="flex items-center gap-space-3 p-space-4">
     ${studioMark(24)}
     <span class="text-et-surface-text font-ui-strong text-ui-md">${START_LABELS.title}</span>
-    ${repo ? html`<span class="text-et-surface-text-muted text-ui-sm">${repo}</span>${withAction(other, 'emit:otherRepo')}` : ''}
+    ${repo ? html`<span class="text-et-surface-text-muted text-ui-sm">${repo}</span>` : ''}
   </header>`;
+
+const toolbar = (other: string) =>
+  html`<div class="absolute inset-x-0 bottom-space-3 z-3 flex justify-center">
+    <div class="${TRAY_CLASS} ${TRAY}" role="toolbar" aria-label="${SKETCHES_LABELS.toolbar}" data-sk-toolbar>
+      ${withAction(other, 'emit:otherRepo')}
+    </div>
+  </div>`;
 
 const ghostProduct =
   '<span class="block w-10 h-10 rounded-full outline outline-et-surface-border bg-et-surface-background"></span>';
@@ -71,7 +84,7 @@ const noProducts = (copy: string, repo: string, known: string[], questions: stri
   );
 
 export default definePart<Props>({
-  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it asks for the colour base (Hell, Dunkel or Beides, Beides by default) and the accent (five named swatches, Rot by default) as outline toggle buttons, then whether the product inherits from the Ethlete SDK (Erbt vom SDK or Eigenständig, none pressed by default: without an answer the prompt says nothing about a base), and gives an example prompt for the agent that carries the answers, and a copy button; Studio text names no CLI command. While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331). When Studio knows other repos, both cards list them under Zuletzt geöffnet as small outline buttons that switch without a folder dialog (ADR 0419).',
+  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it asks for the colour base (Hell, Dunkel or Beides, Beides by default) and the accent (five named swatches, Rot by default) as outline toggle buttons, then whether the product inherits from the Ethlete SDK (Erbt vom SDK or Eigenständig, none pressed by default: without an answer the prompt says nothing about a base), and gives an example prompt for the agent that carries the answers, and a copy button; Studio text names no CLI command. With a repo open, Anderes Repo is a text button in the shared toolbar at the bottom centre (the header has no button). While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331). When Studio knows other repos, both cards list them under Zuletzt geöffnet as small outline buttons that switch without a folder dialog (ADR 0419).',
   madeBy: ['claude-opus-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/start/start.component.ts' },
   widths: [1440],
@@ -149,6 +162,7 @@ export default definePart<Props>({
     const other = await button.render({
       label: START_LABELS.otherRepo,
       variant: 'transparent',
+      color: 'surface',
       size: 'sm',
       loading: busy,
     });
@@ -165,13 +179,14 @@ export default definePart<Props>({
     );
 
     return drawing({
-      body: html`<div class="h-full min-h-225 flex flex-col bg-et-surface-background">
-        ${header(other.body, repo)}
+      body: html`<div class="relative h-full min-h-225 flex flex-col bg-et-surface-background">
+        ${header(repo)}
         ${
           repo
             ? noProducts(copy.body, repo, known, questions, START_LABELS.prompt({ repo, colors, accent, base }))
             : noRepo(open.body, known)
         }
+        ${repo ? toolbar(other.body) : ''}
       </div>`,
       styles: open.styles + copy.styles + other.styles + (schemeButtons[0]?.styles ?? ''),
     });
