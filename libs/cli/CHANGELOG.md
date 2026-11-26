@@ -1,5 +1,77 @@
 # @ethlete/cli
 
+## 3.0.0-next.48
+
+### Minor Changes
+
+- `et design check` fails with `OWN-PART-IN-FRAME` when a part that reaches the product's canvas draws another of the product's own parts across its states as frame content.
+- An automatic merge of a sketch with no visible change now undoes itself when git refuses its merge commit, and says so, instead of warning and leaving the merged files uncommitted.
+- The colors foundation skeleton writes the new theme token names (`--et-surface-text*`, `--et-tone-*`, `rgb()` values), and design frames no longer style `data-et-surface-interactive`.
+- `design check` fails on sample text outside a product's sample data, on loose button groups in pages and on unused merged parts, and drops the inventory approval.
+- A sketch state change names each part that only moved; Studio marks it as one move and describes changes in plain words instead of pixel counts.
+- `et update` stops at a failed codemod: the codemods after it stay unrun, the output names the failed step and each `file:line` the generator reported, and `--continue` resumes at the failed step.
+
+### Patch Changes
+
+- `design sketch approve` and `design sketch merge` no longer take `--decided-by`: an agent approves with `--by <model id>` (and optional `--mandate`), recorded as its own; only Studio records the designer.
+- `design sketch pick` records an agent's pick as its own (`by` model id, optional `--mandate` chat text) instead of as a person's, and `design sketch merge` accepts it.
+- The APP-SPEC check runs after the harness app's build and compare instead of beside them, so the memory peak of a design check no longer adds the vitest run to the build.
+- An APP-SPEC problem names why each failed test failed (the first line of its error), not only the test name, so a failure that does not repeat can still be told apart.
+- The APP-SPEC check no longer grows its vitest run by about 55 MB per related spec file, and the heap status line names the worker heaps.
+- A design check keeps the old side of an edit sketch on the commit it was taken from instead of moving it to a later HEAD.
+- An edit sketch view shows only the final compare, with change marks on both sides.
+- The design render now scans the folders a relative `@source` or `source()` names in an imported stylesheet, and Studio's sketch frames draw the sample shop Farn.
+- Studio finds a colour theme only by `--et-tone-fill-rest`; regenerate a product's theme CSS that still declares `--et-color-primary`.
+- A sketch state change reads a part as moved also when something beside it changes too, and kept sketch compares refresh after a cli update.
+- `design check --part` no longer prints `ok` and exits 0 when it prints `NO RECORD`; a part left without a check record now fails the check.
+- Design server: the sketch view opens faster on a cold start.
+- The CLI build copies the compile output into `dist` instead of moving it, and refuses a partial build, so builds running at the same time no longer leave a CLI with missing modules.
+- `design check` no longer reports an edit sketch as `OPENED` when the same run discards it because every state draws as before; it prints `CLOSED <product> <part>@edit: draws as before` instead.
+- Write the surface tint and control text tokens in the colors skeleton instead of the retired `--et-surface-interaction*` tokens.
+- A published CLI no longer contains compiled files of sources that were removed, and concurrent builds no longer
+  produce a CLI without `src/index.js`.
+- `cli:compile` no longer deletes its output directory on start, so a second compile running at the same time cannot leave a partial build in the Nx cache.
+- Design frames recognise colour themes written with the new `--et-tone-fill-rest` token name.
+- `design check --part` settles a committed direct edit of each embedder it checks, as the embedder's own check does, so the result no longer depends on which part was checked first. An uncommitted edit stays `DIRECT-EDIT-PENDING`.
+- A shot Studio shows no longer waits behind the sketch listing's picture draws.
+- `design sketch merge --variant new --allowed-by <ref>` merges a ready `@edit` sketch whose live variants are just `new` and `old`.
+- The post-merge check prints an unused part the merge added as `NOTE (new in this merge; a page must embed it)`, not as `was there before`.
+- Add `et design product prune <name>`: drops files that no longer exist from the product's
+  implemented.json and implementation-baseline.json; a dropped baseline pin keeps its entry.
+- A design server shot answers with `x-design-shot-queue`: its draw-queue lane, queue wait and the lanes drawing when it
+  started. The heavy edit sketch e2e case logs it per shot.
+- Keep the design server answering while it lists many sketches: each sketch now starts in its own event-loop turn instead of all in one.
+- `STATE-NO-SOURCE` counts a prop the design harness feeds through `DESIGN_HARNESS_TEMPLATES` as a source, so a template-fed part no longer reports it.
+- A shown shot that starts drawing now stops the running sketch listing draws; each draws again once no shown shot
+  draws, so the shot the viewer waits for gets the CPU.
+- The design rule messages and the theming hint name the `--et-tone-*` tokens instead of the old `--et-theme-color-*` names.
+- The sketch listing no longer offers the edit sketch of an uncommitted direct edit as a pick: it stays in progress until git holds the change.
+- `design compare` no longer keeps an action result whose check failed at a harness error such as a timeout, so the next run presses the action again. With `--state` the action check covers only the selected states.
+- A design drawing leaves an overlay pane that carries `data-et-arrow-anchor` where its markup draws it, also next to an expanded trigger, so an open toggletip mock sits above its button instead of below it.
+- `design sketch merge --by <model id>` (and the MCP `sketch_merge`) now merges the only live variant of a ready sketch that has no human pick, recorded as a builder merge for the human to review afterwards.
+- `design check` treats a direct edit that only renames theme tokens as held: the part keeps its ready mark and no old/new sketch opens.
+- `design check` no longer reports `HARD-CODED-COLOUR` for a colour that is only the fallback of a `var()`.
+- The resident design process no longer leaves a headless Chromium behind each time an interrupted check is followed by a restart of its draw setup.
+- Compare boxes the design root of a part over every top-level element of its drawing, so a drawing with two roots (a disclosure toggle and its open panel) no longer fails with a SIZE against the app host.
+- The note of a direct edit counts the states that differ ("38 Zustände anders") instead of listing their internal names.
+- `design check` keeps a tracked, undecided edit sketch once HEAD holds its part edit, and records no merged hash for the part: the sketch waits for a pick.
+- A part whose slow checks failed now shows those findings in the design server instead of waiting as pending.
+- `design check` keeps a tracked, undecided edit sketch whose committed part edit draws every state as before, instead of closing it as held: the sketch waits for a pick.
+- The first Studio sketch view after a design server restart opens faster: compared sketch states are kept on disk.
+- `et design sketch merge` and the Studio merge now undo the merge and fail with git's reason when git refuses the merge commit, instead of leaving `merged.json` and the deleted sketch uncommitted.
+- The design server no longer serves the unused `/__design/sketch-merge` route; a pick through `sketch-decision` merges. `STUDIO_API_LEVEL` is now 13.
+- `design ready` now records a committed direct edit in the tracked `merged.json` even when the stamp cache already holds its hash, and `READY UNCOMMITTED` points at `design ready` when the cache holds the new mark.
+- The design server draws a part again once a rebuild changes an Angular package its render worker loaded, so a changed SDK component CSS no longer comes back as an old shot.
+- `design sketch check` removes a sketch folder that holds only generated tsconfig files instead of noting it, and leaves real sketch folders untouched.
+- `et design sketch merge` merges the `built` variant of a ready missing-state sketch the check opened without a pick in Studio, and records `decidedBy: builder: <model>` in `merged.json`. A sketch a person started still needs the pick.
+- The design server's slow runner replays a failing part's stored result while its inputs stay unchanged, instead of running its slow checks (and their vitest forks) again on every poll. `design check --slow` still reruns a failure.
+- STATE-NO-SOURCE no longer asks for a data source of the inputs a state sets only to force an interaction
+  (`interaction`, `target`): the harness forces them, no template feeds them.
+- Studio restarts the design server it started on the newest CLI commit once no drawing, check or merge runs in it, and offers the restart otherwise, also while `libs/cli` has uncommitted edits; `/__design/queue` reports running writes and quiet time.
+- `design task --verify` no longer names DIRECT-EDIT-PENDING as a blocker when HEAD already holds the direct edit: design check accepts that edit itself.
+- `et design task --verify` now accepts a changed `libs/<lib>/design/**` file when the part imports it. A lib design file the part does not import stays outside the allowed files.
+- `design task --verify` without a check record now names what blocks the record, such as an unmerged sketch, and the `design check --part` to run next.
+
 ## 3.0.0-next.47
 
 ### Minor Changes

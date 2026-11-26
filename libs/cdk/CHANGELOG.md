@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 5.0.0-next.59
+
+### Major Changes
+
+- The carousel dots read the new tone tokens (`--et-tone-fill-*`) instead of `--et-color-primary*`.
+
+### Patch Changes
+
+- The cdk migration's list of components classes no longer includes `et-color-interactive-container`.
+
 ## 5.0.0-next.58
 
 ### Patch Changes

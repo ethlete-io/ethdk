@@ -1,5 +1,12 @@
 # @ethlete/query
 
+## 6.0.0-next.65
+
+### Patch Changes
+
+- The interactive colour and surface styles, the favicon dot and the deprecated `provideColorThemes` read and write the new theme token names (`--et-tone-*`, `--et-surface-*` colours).
+- Server rendering no longer throws in `InfinityQueryTriggerDirective` and `withPolling` arms no timer or window/document listener on the server.
+
 ## 6.0.0-next.64
 
 ### Patch Changes

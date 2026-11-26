@@ -1,5 +1,30 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.47
+
+### Minor Changes
+
+- The `builder-idle-check` hook blocks a builder stop while fewer agents run than the slot limit and a free Builder row
+  exists. The limit is `builderSlots` in `ethlete-agents.config.local.json` (default 4).
+- `agent-sessions stop-own [--dry-run]` stops the reparented processes of the calling Claude session and the orphans of a dead session in the checkout, so an agent needs no raw `kill`.
+- The e2e-progress mod also shows the runs registered in `/tmp/ethlete-runs` (heavy.mjs, remote-run.mjs, push-suite steps), each with its machine, and counts vitest and `node --test` progress.
+
+### Patch Changes
+
+- The design-exploration skill reference names `sketch approve --by <model id> [--mandate <quote>]` instead of `--decided-by`.
+- The away-mode hook no longer treats a scheduled-task (cron) prompt as typed input, so it neither ends away mode nor inserts a report.
+- The away-mode hook now also starts when the configured skill loads, however the session was started.
+- The `builder-idle-check` hook now fits other repos: a local `builderIdle` setting names the queue files, wait phrases and session roles, and coordinator sessions count.
+- The design-exploration skill no longer mentions `data-et-surface-interactive`.
+- The theming skill names the current stylesheet token for neutral control text.
+- `agent-sessions run` and `restart` now start the agent with `WAYLAND_DISPLAY`, `DISPLAY`, `NIRI_SOCKET`, `XDG_SESSION_TYPE` and `XDG_RUNTIME_DIR` from the tmux global environment, so a restarted session can read the clipboard and accept pasted images.
+- `agent-sessions run` and `restart` no longer pass `SSH_CONNECTION`, `SSH_CLIENT` and `SSH_TTY` to the agent they start in tmux, so Claude Code accepts a pasted image after a restart from an SSH client.
+- `agent-sessions restart` no longer stops running background shells and agents; only `--process` starts a new process.
+- The theming, story-styling and styling skills and rules name the new `--et-tone-*` and `--et-surface-*` tokens.
+- `SurfaceInteractiveDirective` (`[etSurfaceInteractive]`) and its `et-surface-interactive` class are removed; `etButton` no longer adds it. The `et-surface-tint` utilities read the surface text color where no theme sets `tint`. `et update` runs `@ethlete/core:migrate-remove-surface-interactive`, which drops the attribute, the class and the imports.
+- The `e2e-progress` mod counts Playwright list-reporter lines that use `ok`, `x` and `-` instead of the unicode marks, so a run on such a log no longer shows 0 done.
+- `agent-sessions stop-own` stops only the calling subagent's own processes: the `background-design-commands` hook stamps every subagent Bash call with `ET_AGENT_ID`, and sibling subagents' runs are no longer selected.
+
 ## 0.1.0-next.46
 
 ### Patch Changes
