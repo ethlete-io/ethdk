@@ -8,7 +8,8 @@ the hook does nothing. A session becomes active when a prompt starts with `/<ski
 session was started.
 
 Prompts the agent sessions send themselves (mailbox messages, cross-session messages, task
-notifications, system reminders, the restart prompt) are not human input. The last human-typed
+notifications, system reminders, the restart prompt, scheduled-task (cron) prompts, found through
+the transcript's `scheduled_task_fire` entry) are not human input. The last human-typed
 prompt is stored per session; when a non-human prompt arrives after the threshold, the hook injects
 the away message once and a one-line reminder afterwards. The next human-typed prompt injects the
 back message; with `awayMode.reportCommand` (e.g. `node dist/libs/agent-rules/src/index.js report`)
@@ -141,8 +142,36 @@ def away_report(root, command, since):
     return output if result.returncode == 0 and output else None
 
 
-def is_human_typed(prompt):
+def fired_by_schedule(prompt, transcript_path):
+    if not isinstance(transcript_path, str):
+        return False
+    try:
+        with open(transcript_path, "rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - 65536))
+            tail = f.read().decode("utf-8", errors="ignore").splitlines()[-40:]
+    except OSError:
+        return False
+    for raw in reversed(tail):
+        try:
+            line = json.loads(raw)
+        except ValueError:
+            continue
+        if not isinstance(line, dict):
+            continue
+        if line.get("subtype") == "scheduled_task_fire" and isinstance(line.get("prompt"), str):
+            return prompt.strip().startswith(line["prompt"].strip()[:200])
+        if line.get("type") == "user" and line.get("turnOrigin") == "scheduled":
+            return True
+        if line.get("type") == "user" and not line.get("isMeta"):
+            return False
+    return False
+
+
+def is_human_typed(prompt, transcript_path=None):
     stripped = prompt.strip()
+    if fired_by_schedule(prompt, transcript_path):
+        return False
     return not (
         stripped.startswith("Mailbox message from ")
         or "<cross-session-message" in stripped
@@ -250,7 +279,7 @@ def main():
     now = datetime.now(timezone.utc)
     now_iso = now.isoformat(timespec="seconds")
     state = read_state(path)
-    human = is_human_typed(prompt)
+    human = is_human_typed(prompt, data.get("transcript_path"))
 
     if not state or not state.get("active"):
         if not invokes_skill(prompt, skills):

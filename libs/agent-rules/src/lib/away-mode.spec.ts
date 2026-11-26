@@ -45,7 +45,7 @@ const setup = (options: { config?: Record<string, unknown>; localConfig?: Record
         }),
       });
     },
-    send: (prompt: string) => {
+    send: (prompt: string, transcriptPath?: string) => {
       const output = execFileSync('python3', [hookPath, '--agent', 'claude'], {
         encoding: 'utf8',
         env: { ...process.env, CLAUDE_PROJECT_DIR: root },
@@ -54,6 +54,7 @@ const setup = (options: { config?: Record<string, unknown>; localConfig?: Record
           hook_event_name: 'UserPromptSubmit',
           session_id: SESSION,
           prompt,
+          transcript_path: transcriptPath,
         }),
       });
 
@@ -69,7 +70,22 @@ const setup = (options: { config?: Record<string, unknown>; localConfig?: Record
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 const MAILBOX = 'Mailbox message from builder: question';
 
+const cronTranscript = resolve(__dirname, 'fixtures/away-mode-cron-transcript.jsonl');
+const cronPrompt = (
+  JSON.parse(readFileSync(cronTranscript, 'utf8').split('\n')[1] ?? '') as { message: { content: string } }
+).message.content;
+
 describe('away-mode', () => {
+  it('keeps the session away and adds no report for a scheduled-task prompt after 30 min away', () => {
+    const session = setup({ config });
+    session.writeState({ active: true, lastHumanInput: minutesAgo(30), away: true });
+
+    expect(session.send(cronPrompt, cronTranscript)).toContain('The user is still away');
+    expect(session.state()).toMatchObject({ away: true });
+    expect(session.state()?.lastHumanInput).not.toBeNull();
+    expect(Date.now() - Date.parse(session.state()?.lastHumanInput ?? '')).toBeGreaterThan(29 * 60_000);
+  });
+
   it('does nothing without config', () => {
     const session = setup({});
 
