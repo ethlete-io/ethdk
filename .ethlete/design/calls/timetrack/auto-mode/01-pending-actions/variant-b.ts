@@ -126,11 +126,11 @@ export default drawing({
     DAY_STYLES +
     css`
       .lane-auto .lane-head {
-        color: var(--color-et-brand-ink);
+        color: var(--color-et-tone-brand-text);
       }
 
       .lane-auto .lane {
-        background: rgb(var(--et-color-primary) / 0.04);
+        background: color-mix(in srgb, var(--et-tone-fill-rest) 4%, transparent);
       }
 
       .pending-edge {
@@ -139,7 +139,7 @@ export default drawing({
         right: -0.1rem;
         width: 0.3rem;
         border-radius: 0.2rem;
-        background: var(--color-et-brand-ink);
+        background: var(--color-et-tone-brand-text);
       }
 
       .marker {
@@ -147,7 +147,7 @@ export default drawing({
         left: -0.1rem;
         width: 0.3rem;
         border-radius: 0.2rem;
-        background: var(--color-et-brand-ink);
+        background: var(--color-et-tone-brand-text);
       }
 
       .card {
@@ -158,9 +158,9 @@ export default drawing({
         flex-direction: column;
         gap: 0.2rem;
         padding: 0.5rem 0.8rem 0.6rem;
-        border: 1px solid rgb(var(--et-color-primary-ink) / 0.6);
+        border: 1px solid color-mix(in srgb, var(--et-tone-text-rest) 60%, transparent);
         border-radius: 0.4rem;
-        background: rgb(var(--et-surface-background));
+        background: var(--et-surface-background);
         line-height: 1.4;
       }
 
@@ -175,7 +175,7 @@ export default drawing({
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        color: var(--color-et-brand-ink);
+        color: var(--color-et-tone-brand-text);
       }
 
       .decide {
@@ -204,29 +204,29 @@ export default drawing({
       }
 
       .diff-del {
-        color: rgb(var(--et-surface-color-subtle));
+        color: var(--et-surface-text-subtle);
         text-decoration: line-through;
       }
 
       .diff-add,
       .diff-new {
-        color: var(--color-et-brand-ink);
+        color: var(--color-et-tone-brand-text);
       }
 
       .card-details summary {
         width: fit-content;
-        color: rgb(var(--et-surface-color-muted));
+        color: var(--et-surface-text-muted);
         font-size: 1.2rem;
         cursor: pointer;
       }
 
       .card-details summary:hover {
-        color: rgb(var(--et-surface-color));
+        color: var(--et-surface-text);
       }
 
       .card-details p {
         margin: 0.4rem 0 0;
-        color: rgb(var(--et-surface-color-muted));
+        color: var(--et-surface-text-muted);
         white-space: normal;
       }
     `,

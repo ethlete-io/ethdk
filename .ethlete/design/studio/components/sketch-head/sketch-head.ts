@@ -46,7 +46,7 @@ const statusMarkup = async (status: SketchHeadStatus, hold: SketchHeadHold) => {
       body: holdTrigger({
         content: tag.body,
         open: false,
-        reason: html`<span class="font-ui-medium text-et-surface">Wartet auf ${hold.until}</span>
+        reason: html`<span class="font-ui-medium text-et-surface-text">Wartet auf ${hold.until}</span>
           <span>· ${hold.since}</span>`,
       }),
     };
@@ -55,7 +55,7 @@ const statusMarkup = async (status: SketchHeadStatus, hold: SketchHeadHold) => {
 };
 
 const trayClass =
-  'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))';
+  'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border)) bg-et-surface-background shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))';
 
 const roundMenu = async (rounds: SketchHeadRound[], open: boolean) => {
   const trigger = iconButton({
@@ -147,7 +147,7 @@ export const sketchHead = async ({
     ${
       error
         ? html`<p
-            class="m-0 max-w-5xl px-space-3 py-space-2 text-ui-xs text-et-theme-ink ${trayClass}"
+            class="m-0 max-w-5xl px-space-3 py-space-2 text-ui-xs text-et-tone-text ${trayClass}"
             data-et-semantic-color="error"
             role="alert"
             data-sk-head-error

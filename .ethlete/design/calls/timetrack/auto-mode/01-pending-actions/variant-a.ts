@@ -75,19 +75,19 @@ export default drawing({
     DAY_STYLES +
     css`
       .pill-hint {
-        color: rgb(var(--et-surface-color-muted));
+        color: var(--et-surface-text-muted);
       }
 
       .band.proposed {
-        border: 1px dashed rgb(var(--et-color-primary-ink));
-        background: rgb(var(--et-color-primary) / 0.1);
+        border: 1px dashed var(--et-tone-text-rest);
+        background: color-mix(in srgb, var(--et-tone-fill-rest) 10%, transparent);
         padding-block: 0.3rem;
         line-height: 1.3;
         cursor: default;
       }
 
       .band.proposed:not([data-compact]) > .band-line:first-child {
-        color: var(--color-et-brand-ink);
+        color: var(--color-et-tone-brand-text);
       }
 
       .band.proposed[data-compact] {
@@ -99,11 +99,11 @@ export default drawing({
 
       .band.proposed[data-compact] .band-line {
         flex-grow: 1;
-        color: var(--color-et-brand-ink);
+        color: var(--color-et-tone-brand-text);
       }
 
       .proposed-by {
-        color: rgb(var(--et-surface-color-muted));
+        color: var(--et-surface-text-muted);
         font-size: 1.2rem;
         white-space: nowrap;
       }
@@ -124,7 +124,7 @@ export default drawing({
         gap: 0.6rem;
         margin-top: auto;
         padding-top: 0.2rem;
-        border-top: 1px dashed rgb(var(--et-color-primary-ink) / 0.5);
+        border-top: 1px dashed color-mix(in srgb, var(--et-tone-text-rest) 50%, transparent);
       }
 
       .ask-line {
@@ -132,7 +132,7 @@ export default drawing({
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        color: var(--color-et-brand-ink);
+        color: var(--color-et-tone-brand-text);
       }
     `,
 });

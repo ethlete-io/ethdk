@@ -48,15 +48,15 @@ const DETAIL: Record<SketchBadgeStatus, string> = {
 };
 
 const TONE: Record<SketchBadgeStatus, string> = {
-  drawing: 'text-(--et-theme-color-primary-solid) animate-pulse',
-  waiting: 'text-(--et-theme-color-primary-solid)',
-  awaitingApproval: 'text-(--et-theme-color-primary-solid)',
-  awaitingSubParts: 'text-et-surface-muted',
-  approved: 'text-et-surface',
-  paused: 'text-et-surface-muted',
-  failed: 'text-(--et-theme-color-primary-solid)',
-  merging: 'text-(--et-theme-color-primary-solid) animate-pulse',
-  autoMerge: 'text-(--et-theme-color-primary-solid)',
+  drawing: 'text-(--et-tone-fill) animate-pulse',
+  waiting: 'text-(--et-tone-fill)',
+  awaitingApproval: 'text-(--et-tone-fill)',
+  awaitingSubParts: 'text-et-surface-text-muted',
+  approved: 'text-et-surface-text',
+  paused: 'text-et-surface-text-muted',
+  failed: 'text-(--et-tone-fill)',
+  merging: 'text-(--et-tone-fill) animate-pulse',
+  autoMerge: 'text-(--et-tone-fill)',
 };
 
 const SCOPE: Partial<Record<SketchBadgeStatus, string>> = {
@@ -68,7 +68,7 @@ const SCOPE: Partial<Record<SketchBadgeStatus, string>> = {
 export const sketchStatusBadge = async (status: SketchBadgeStatus, open = false) => {
   const label = LABEL[status];
   const tip = open
-    ? `<span role="status" class="absolute top-full left-0 z-10 mt-space-1 flex w-48 flex-col gap-space-1 rounded-control-md border border-et-surface-border bg-(--et-surface-background-solid) p-space-3 text-ui-sm text-(--et-surface-color-solid)"><span class="font-ui-medium">${label}</span><span class="text-(--et-surface-color-muted-solid)">${DETAIL[status]}</span></span>`
+    ? `<span role="status" class="absolute top-full left-0 z-10 mt-space-1 flex w-48 flex-col gap-space-1 rounded-control-md border border-et-surface-border bg-(--et-surface-background) p-space-3 text-ui-sm text-(--et-surface-text)"><span class="font-ui-medium">${label}</span><span class="text-(--et-surface-text-muted)">${DETAIL[status]}</span></span>`
     : '';
   return {
     body: `<span class="block ${open ? 'h-28' : ''}"><span class="relative inline-flex">${control(`<button type="button" aria-label="${label}" aria-expanded="${open}" data-sk-status="${status}"${SCOPE[status] ?? ''} class="flex size-6 flex-none items-center justify-center rounded-control-sm ${open ? 'bg-et-surface-interaction/15' : ''}"><svg data-et-drawing class="size-4 ${TONE[status]}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[status]}</svg></button>`, 'status')}${tip}</span></span>`,

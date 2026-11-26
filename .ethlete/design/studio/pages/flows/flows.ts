@@ -37,7 +37,7 @@ import {
 } from './shared/flow-data';
 
 const NOTE_CLASS =
-  'w-64 box-border p-space-3 rounded-md border border-et-surface-border bg-et-surface-bg shadow-lg text-ui-md text-et-surface cursor-grab';
+  'w-64 box-border p-space-3 rounded-md border border-et-surface-border bg-et-surface-background shadow-lg text-ui-md text-et-surface-text cursor-grab';
 
 const noteOf = (note: FlowNoteSample, remove: string, field: string) =>
   html`<div class="absolute ${NOTE_CLASS}" style="left:${note.x}px;top:${note.y}px" data-flow-note>
@@ -49,9 +49,11 @@ const noteOf = (note: FlowNoteSample, remove: string, field: string) =>
 
 const orphanSection = (entries: string[]) =>
   html`<section class="mt-space-4 flex flex-col gap-space-1">
-    <h2 class="m-0 px-space-3 text-ui-xs font-ui-strong text-et-surface-muted">${ORPHAN_TITLE} · ${entries.length}</h2>
+    <h2 class="m-0 px-space-3 text-ui-xs font-ui-strong text-et-surface-text-muted">
+      ${ORPHAN_TITLE} · ${entries.length}
+    </h2>
     <div class="flex flex-col items-stretch">
-      ${entries.length ? entries.join('') : '<p class="m-0 px-space-3 text-ui-sm text-et-surface-muted">Keine</p>'}
+      ${entries.length ? entries.join('') : '<p class="m-0 px-space-3 text-ui-sm text-et-surface-text-muted">Keine</p>'}
     </div>
   </section>`;
 

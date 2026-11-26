@@ -88,8 +88,8 @@ export default drawing({
       grid-template-rows: auto minmax(0, 1fr) auto;
       width: 72rem;
       height: 90rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font:
         400 1.4rem/1.45 'Jost',
         system-ui,
@@ -108,20 +108,20 @@ export default drawing({
       gap: 1.2rem;
       align-items: baseline;
       padding: 1.3rem 2.4rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       white-space: nowrap;
     }
     .ws-a__head {
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
     }
     .ws-a__foot {
-      border-top: 0.1rem solid var(--et-surface-border-solid);
+      border-top: 0.1rem solid var(--et-surface-border);
     }
     .ws-a__eyebrow,
     .ws-a__address,
     .ws-a__canvas-mark {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
       letter-spacing: 0.02em;
@@ -138,7 +138,7 @@ export default drawing({
       text-overflow: ellipsis;
     }
     .ws-a__round {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .ws-a__stage {
@@ -159,26 +159,26 @@ export default drawing({
       position: relative;
       gap: 0.5rem;
       padding: 0.5rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.5rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.03);
+      background: color-mix(in srgb, var(--et-surface-text) 3%, transparent);
       text-align: left;
     }
     .ws-a__tile--chosen {
-      border-color: var(--et-theme-color-primary-solid);
+      border-color: var(--et-tone-fill);
     }
     .ws-a__tile--chosen .ws-a__tile-name {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .ws-a__tile--rejected {
       opacity: 0.32;
     }
     .ws-a__tile--current {
-      border-color: var(--et-surface-color-muted-solid);
-      background: rgb(var(--et-surface-color-rgb) / 0.12);
+      border-color: var(--et-surface-text-muted);
+      background: color-mix(in srgb, var(--et-surface-text) 12%, transparent);
     }
     .ws-a__tile--current .ws-a__tile-name {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
     }
     .ws-a__tile--current::after {
       position: absolute;
@@ -186,9 +186,9 @@ export default drawing({
       right: -0.9rem;
       width: 1rem;
       height: 1rem;
-      border-top: 0.1rem solid var(--et-surface-color-muted-solid);
-      border-right: 0.1rem solid var(--et-surface-color-muted-solid);
-      background: var(--et-surface-background-solid);
+      border-top: 0.1rem solid var(--et-surface-text-muted);
+      border-right: 0.1rem solid var(--et-surface-text-muted);
+      background: var(--et-surface-background);
       transform: rotate(45deg);
       content: '';
     }
@@ -199,8 +199,8 @@ export default drawing({
       height: 5.4rem;
       padding: 0.5rem;
       border-radius: 0.3rem;
-      background: var(--et-surface-background-solid);
-      box-shadow: inset 0 0 0 0.1rem rgb(var(--et-surface-color-rgb) / 0.08);
+      background: var(--et-surface-background);
+      box-shadow: inset 0 0 0 0.1rem color-mix(in srgb, var(--et-surface-text) 8%, transparent);
       overflow: hidden;
     }
     .ws-a__thumb-row {
@@ -210,22 +210,22 @@ export default drawing({
     .ws-a__thumb-row i {
       height: 0.7rem;
       border-radius: 0.1rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.18);
+      background: color-mix(in srgb, var(--et-surface-text) 18%, transparent);
     }
     .ws-a__tile--current .ws-a__thumb-row i {
-      background: rgb(var(--et-surface-color-rgb) / 0.34);
+      background: color-mix(in srgb, var(--et-surface-text) 34%, transparent);
     }
     .ws-a__tile--chosen .ws-a__thumb-row i {
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.4);
+      background: color-mix(in srgb, var(--et-tone-fill) 40%, transparent);
     }
     .ws-a__tile-name {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1rem;
       line-height: 1.3;
     }
     .ws-a__tile-name b {
       padding-right: 0.4rem;
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
       font-weight: 500;
     }
     .ws-a__canvas {
@@ -234,11 +234,15 @@ export default drawing({
       place-items: center;
       min-height: 0;
       padding: 2.4rem 0;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 1.2rem;
       background:
-        repeating-linear-gradient(135deg, rgb(var(--et-surface-color-rgb) / 0.03) 0 0.1rem, transparent 0.1rem 1.4rem),
-        rgb(var(--et-surface-color-rgb) / 0.03);
+        repeating-linear-gradient(
+          135deg,
+          color-mix(in srgb, var(--et-surface-text) 3%, transparent) 0 0.1rem,
+          transparent 0.1rem 1.4rem
+        ),
+        color-mix(in srgb, var(--et-surface-text) 3%, transparent);
     }
     .ws-a__canvas-mark {
       position: absolute;
@@ -253,8 +257,8 @@ export default drawing({
       height: 100%;
       padding: 1.2rem;
       border-radius: 0.6rem;
-      background: var(--et-surface-background-solid);
-      box-shadow: 0 0 0 0.1rem var(--et-surface-border-solid);
+      background: var(--et-surface-background);
+      box-shadow: 0 0 0 0.1rem var(--et-surface-border);
       overflow: hidden;
     }
     .ws-a__frame-bar {
@@ -263,13 +267,13 @@ export default drawing({
       align-items: center;
       justify-content: space-between;
       padding-bottom: 1rem;
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
     }
     .ws-a__frame-bar i,
     .ws-a__frame-row i {
       height: 1rem;
       border-radius: 0.2rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.14);
+      background: color-mix(in srgb, var(--et-surface-text) 14%, transparent);
     }
     .ws-a__frame-row {
       display: grid;
@@ -277,16 +281,16 @@ export default drawing({
       justify-items: start;
       padding: 0.9rem 1rem;
       border-radius: 0.4rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.04);
+      background: color-mix(in srgb, var(--et-surface-text) 4%, transparent);
     }
     .ws-a__frame-row--tall i {
-      background: rgb(var(--et-surface-color-rgb) / 0.26);
+      background: color-mix(in srgb, var(--et-surface-text) 26%, transparent);
     }
     .ws-a__frame-chip {
       width: 8rem;
       height: 1.6rem;
       border-radius: 0.8rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.22);
+      background: color-mix(in srgb, var(--et-tone-fill) 22%, transparent);
     }
     .ws-a__foot-name {
       font-weight: 500;
@@ -296,14 +300,14 @@ export default drawing({
       display: flex;
       gap: 0.5rem;
       align-items: center;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .ws-a__dot {
       width: 0.6rem;
       height: 0.6rem;
       border-radius: 50%;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
     .ws-a__address {
       flex: 1;
@@ -317,16 +321,16 @@ export default drawing({
     }
     .ws-a__verb {
       padding: 0.5rem 0.9rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.4rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.04);
-      color: var(--et-surface-color-muted-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 4%, transparent);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .ws-a__verb--primary {
       border-color: transparent;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-weight: 500;
     }
   `,

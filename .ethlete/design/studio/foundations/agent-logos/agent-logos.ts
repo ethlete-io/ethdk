@@ -62,11 +62,13 @@ type View = 'hosts' | 'detail';
 
 const surfaces = [
   { name: 'surface', cls: 'et-surface--dark' },
-  { name: 'surface-dark-elevated', cls: 'et-surface--dark-elevated bg-et-surface-bg' },
-  { name: 'surface-dark-elevated-2', cls: 'et-surface--dark-elevated-2 bg-et-surface-bg' },
+  { name: 'surface-dark-elevated', cls: 'et-surface--dark-elevated bg-et-surface-background' },
+  { name: 'surface-dark-elevated-2', cls: 'et-surface--dark-elevated-2 bg-et-surface-background' },
 ];
 
-const hosts = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surface-bg text-text font-ui text-ui-md">
+const hosts = html`<div
+  class="flex flex-col gap-space-4 p-space-6 bg-et-surface-background text-text font-ui text-ui-md"
+>
   <h2 class="m-0 text-ui-xl font-ui-strong">
     Agent logos at 1.2rem, as the inbox, the sketches page and the comment pin draw them
   </h2>
@@ -87,7 +89,9 @@ const hosts = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surface
   </div>
 </div>`;
 
-const detail = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surface-bg text-text font-ui text-ui-md">
+const detail = html`<div
+  class="flex flex-col gap-space-4 p-space-6 bg-et-surface-background text-text font-ui text-ui-md"
+>
   <h2 class="m-0 text-ui-xl font-ui-strong">Agent logos at 3.2rem</h2>
   <div class="flex items-center gap-space-7">
     ${agents

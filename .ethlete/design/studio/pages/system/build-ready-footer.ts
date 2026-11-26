@@ -45,13 +45,13 @@ const blockerList = async (status: BuildReady) => {
     .map(
       ({ title, icon, blockers }) =>
         html`<li>
-          <h3 class="m-0 px-space-2 pt-space-1 text-ui-xs font-ui-strong text-et-surface-muted">${title}</h3>
+          <h3 class="m-0 px-space-2 pt-space-1 text-ui-xs font-ui-strong text-et-surface-text-muted">${title}</h3>
           <ul class="m-0 p-0 list-none">
             ${blockers
               .map(
                 ({ text }) =>
                   html`<li class="flex items-center gap-space-2 px-space-2 py-space-1">
-                    ${blockerIcon(icon)}<span class="min-w-0 flex-1 text-et-surface">${text}</span>
+                    ${blockerIcon(icon)}<span class="min-w-0 flex-1 text-et-surface-text">${text}</span>
                   </li>`,
               )
               .join('')}
@@ -94,7 +94,7 @@ export const buildReadyView = async (status: BuildReady, open: boolean, develope
 
   return {
     before: '',
-    footer: html`<footer class="border-t border-(--et-surface-border-solid) px-space-3 py-space-2">
+    footer: html`<footer class="border-t border-(--et-surface-border) px-space-3 py-space-2">
       <div class="flex items-center gap-space-2">
         ${state.body}${mark?.body ?? ''}
         <span class="ms-auto"></span>

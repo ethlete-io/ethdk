@@ -121,8 +121,8 @@ export default drawing({
       grid-template-rows: auto minmax(0, 1fr) auto;
       width: 72rem;
       min-height: 90rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font:
         400 1.4rem/1.45 'Jost',
         system-ui,
@@ -138,7 +138,7 @@ export default drawing({
     .ws-b__eyebrow,
     .ws-b__address,
     .ws-b__canvas-width {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
       letter-spacing: 0.02em;
@@ -156,7 +156,7 @@ export default drawing({
         sans-serif;
     }
     .ws-b__round {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.3rem;
     }
     .ws-b__stage {
@@ -189,35 +189,35 @@ export default drawing({
       justify-content: space-between;
     }
     .ws-b__round-head b {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-weight: 500;
       font-size: 1.1rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
     .ws-b__round-head span {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 1rem;
     }
     .ws-b__tile {
       display: grid;
       gap: 0.45rem;
       padding: 0.5rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.5rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.03);
+      background: color-mix(in srgb, var(--et-surface-text) 3%, transparent);
       text-align: left;
     }
     .ws-b__tile--rejected {
       opacity: 0.32;
     }
     .ws-b__tile--chosen {
-      border-color: var(--et-theme-color-primary-solid);
+      border-color: var(--et-tone-fill);
     }
     .ws-b__tile--current {
       border-color: transparent;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.12);
-      box-shadow: 0 0 0 0.2rem var(--et-theme-color-primary-solid);
+      background: color-mix(in srgb, var(--et-tone-fill) 12%, transparent);
+      box-shadow: 0 0 0 0.2rem var(--et-tone-fill);
     }
     .ws-b__thumb {
       position: relative;
@@ -227,8 +227,8 @@ export default drawing({
       height: 3rem;
       padding: 0.4rem;
       border-radius: 0.3rem;
-      background: var(--et-surface-background-solid);
-      box-shadow: inset 0 0 0 0.1rem rgb(var(--et-surface-color-rgb) / 0.08);
+      background: var(--et-surface-background);
+      box-shadow: inset 0 0 0 0.1rem color-mix(in srgb, var(--et-surface-text) 8%, transparent);
       overflow: hidden;
     }
     .ws-b__thumb-row {
@@ -238,14 +238,14 @@ export default drawing({
     .ws-b__block {
       height: 0.5rem;
       border-radius: 0.1rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.18);
+      background: color-mix(in srgb, var(--et-surface-text) 18%, transparent);
     }
     .ws-b__block--dim {
-      background: rgb(var(--et-surface-color-rgb) / 0.1);
+      background: color-mix(in srgb, var(--et-surface-text) 10%, transparent);
     }
     .ws-b__tile--current .ws-b__block,
     .ws-b__tile--chosen .ws-b__block {
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.35);
+      background: color-mix(in srgb, var(--et-tone-fill) 35%, transparent);
     }
     .ws-b__verdict {
       position: absolute;
@@ -253,49 +253,49 @@ export default drawing({
       bottom: 0.3rem;
       padding: 0.1rem 0.4rem;
       border-radius: 0.2rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.12);
-      color: var(--et-surface-color-muted-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 12%, transparent);
+      color: var(--et-surface-text-muted);
       font-size: 0.9rem;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
     .ws-b__tile--chosen .ws-b__verdict {
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
     }
     .ws-b__verdict--current {
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.2);
-      color: var(--et-theme-color-ink-solid);
+      background: color-mix(in srgb, var(--et-tone-fill) 20%, transparent);
+      color: var(--et-tone-text);
     }
     .ws-b__tile-name {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1rem;
       line-height: 1.25;
     }
     .ws-b__tile--current .ws-b__tile-name,
     .ws-b__tile--chosen .ws-b__tile-name {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .ws-b__verbs {
       display: grid;
       gap: 0.5rem;
       padding-top: 1.2rem;
-      border-top: 0.1rem solid var(--et-surface-border-solid);
+      border-top: 0.1rem solid var(--et-surface-border);
     }
     .ws-b__verb {
       padding: 0.6rem 1.2rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.4rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.04);
-      color: var(--et-surface-color-muted-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 4%, transparent);
+      color: var(--et-surface-text-muted);
       font-size: 1.25rem;
       text-align: center;
       white-space: nowrap;
     }
     .ws-b__verb--primary {
       border-color: transparent;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-weight: 500;
     }
     .ws-b__measure,
@@ -303,7 +303,7 @@ export default drawing({
       display: flex;
       gap: 0.6rem;
       align-items: center;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1rem;
     }
@@ -311,7 +311,7 @@ export default drawing({
     .ws-b__frame-measure i {
       flex: 1;
       height: 0.1rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.2);
+      background: color-mix(in srgb, var(--et-surface-text) 20%, transparent);
     }
     .ws-b__canvas {
       position: relative;
@@ -321,11 +321,15 @@ export default drawing({
       gap: 0.8rem;
       min-height: 0;
       padding: 3.6rem 2.4rem 2.4rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 1.2rem;
       background:
-        repeating-linear-gradient(135deg, rgb(var(--et-surface-color-rgb) / 0.03) 0 0.1rem, transparent 0.1rem 1.4rem),
-        rgb(var(--et-surface-color-rgb) / 0.03);
+        repeating-linear-gradient(
+          135deg,
+          color-mix(in srgb, var(--et-surface-text) 3%, transparent) 0 0.1rem,
+          transparent 0.1rem 1.4rem
+        ),
+        color-mix(in srgb, var(--et-surface-text) 3%, transparent);
     }
     .ws-b__canvas-width {
       position: absolute;
@@ -343,8 +347,8 @@ export default drawing({
       min-height: 0;
       padding: 1.4rem 1.2rem;
       border-radius: 0.6rem;
-      background: var(--et-surface-background-solid);
-      box-shadow: inset 0 0 0 0.1rem rgb(var(--et-surface-color-rgb) / 0.12);
+      background: var(--et-surface-background);
+      box-shadow: inset 0 0 0 0.1rem color-mix(in srgb, var(--et-surface-text) 12%, transparent);
     }
     .ws-b__frame-bar,
     .ws-b__frame-foot {
@@ -360,7 +364,7 @@ export default drawing({
     .ws-b__frame-foot {
       justify-content: space-between;
       padding-top: 1.2rem;
-      border-top: 0.1rem solid var(--et-surface-border-solid);
+      border-top: 0.1rem solid var(--et-surface-border);
     }
     .ws-b__frame-list {
       display: grid;
@@ -374,7 +378,7 @@ export default drawing({
       gap: 0.6rem;
       padding: 0.9rem 1rem;
       border-radius: 0.4rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.05);
+      background: color-mix(in srgb, var(--et-surface-text) 5%, transparent);
     }
     .ws-b__frame-lines {
       display: grid;
@@ -383,13 +387,13 @@ export default drawing({
     .ws-b__frame-lines i {
       height: 0.7rem;
       border-radius: 0.2rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.22);
+      background: color-mix(in srgb, var(--et-surface-text) 22%, transparent);
     }
     .ws-b__frame-chip {
       width: 8rem;
       height: 1.4rem;
       border-radius: 0.7rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.3);
+      background: color-mix(in srgb, var(--et-tone-fill) 30%, transparent);
     }
     .ws-b__foot {
       display: grid;
@@ -405,11 +409,11 @@ export default drawing({
     }
     .ws-b__claim b {
       margin-right: 0.8rem;
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
       font-weight: 500;
     }
     .ws-b__cost {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .ws-b__foot-line {
@@ -422,14 +426,14 @@ export default drawing({
       display: flex;
       gap: 0.6rem;
       align-items: center;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .ws-b__check i {
       width: 0.6rem;
       height: 0.6rem;
       border-radius: 50%;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
   `,
 });

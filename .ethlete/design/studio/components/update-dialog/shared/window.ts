@@ -60,7 +60,7 @@ export const studioWindow = async (overlay: string) => {
   });
 
   return {
-    body: html`<div class="relative flex h-100 w-360 flex-col overflow-hidden bg-et-surface-bg" data-et-surface>
+    body: html`<div class="relative flex h-100 w-360 flex-col overflow-hidden bg-et-surface-background" data-et-surface>
       ${bar.body}
       <div class="flex-1 border-t border-et-surface-border"></div>
       ${overlay}

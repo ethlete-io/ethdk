@@ -131,8 +131,8 @@ export default drawing({
       grid-template-rows: auto minmax(0, 1fr);
       width: 42rem;
       height: 90rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font:
         400 1.4rem/1.45 'Jost',
         system-ui,
@@ -156,7 +156,7 @@ export default drawing({
       display: grid;
       gap: 1.4rem;
       padding: 2rem 1.6rem 1.6rem;
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
     }
     .explorer-b__project {
       display: flex;
@@ -176,16 +176,16 @@ export default drawing({
       gap: 0.5rem;
       align-items: center;
       padding: 0.5rem 0.9rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.4rem;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .explorer-b__projects-count {
       padding: 0 0.5rem;
       border-radius: 0.9rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.1);
-      color: var(--et-surface-color-subtle-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 10%, transparent);
+      color: var(--et-surface-text-subtle);
       font-size: 1.1rem;
     }
     .explorer-b__search {
@@ -193,10 +193,10 @@ export default drawing({
       gap: 0.8rem;
       align-items: center;
       padding: 0.8rem 1rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.6rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.04);
-      color: var(--et-surface-color-subtle-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 4%, transparent);
+      color: var(--et-surface-text-subtle);
       font-size: 1.3rem;
     }
     .explorer-b__list {
@@ -213,7 +213,7 @@ export default drawing({
       padding: 1.6rem 1.6rem 0.6rem;
     }
     .explorer-b__section-head b {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-weight: 500;
       font-size: 1.2rem;
       letter-spacing: 0.06em;
@@ -222,14 +222,14 @@ export default drawing({
     .explorer-b__section-head span {
       padding: 0 0.6rem;
       border-radius: 0.9rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.08);
-      color: var(--et-surface-color-subtle-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 8%, transparent);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
     }
     .explorer-b__section--settled {
       margin-top: 0.8rem;
-      border-top: 0.1rem solid var(--et-surface-border-solid);
+      border-top: 0.1rem solid var(--et-surface-border);
     }
     .explorer-b__row {
       display: grid;
@@ -239,7 +239,7 @@ export default drawing({
     }
     .explorer-b__row b {
       display: -webkit-box;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-weight: 400;
       font-size: 1.3rem;
       line-height: 1.35;
@@ -259,7 +259,7 @@ export default drawing({
     .explorer-b__eyebrow,
     .explorer-b__touched,
     .explorer-b__count {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
       letter-spacing: 0.02em;
@@ -268,8 +268,8 @@ export default drawing({
     .explorer-b__tag {
       padding: 0.1rem 0.6rem;
       border-radius: 0.3rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.08);
-      color: var(--et-surface-color-muted-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 8%, transparent);
+      color: var(--et-surface-text-muted);
       font-size: 1.1rem;
       white-space: nowrap;
       overflow: hidden;
@@ -287,32 +287,32 @@ export default drawing({
       width: 0.5rem;
       height: 0.5rem;
       border-radius: 50%;
-      background: rgb(var(--et-surface-color-rgb) / 0.2);
+      background: color-mix(in srgb, var(--et-surface-text) 20%, transparent);
     }
     .explorer-b__pip--settled {
-      background: var(--et-surface-color-muted-solid);
+      background: var(--et-surface-text-muted);
     }
     .explorer-b__row--current {
-      border-left-color: var(--et-theme-color-primary-solid);
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.12);
+      border-left-color: var(--et-tone-fill);
+      background: color-mix(in srgb, var(--et-tone-fill) 12%, transparent);
     }
     .explorer-b__row--current b {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
       font-weight: 500;
     }
     .explorer-b__row--current .explorer-b__eyebrow,
     .explorer-b__row--current .explorer-b__count {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .explorer-b__row--current .explorer-b__tag {
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
     }
     .explorer-b__row--current .explorer-b__pip {
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.3);
+      background: color-mix(in srgb, var(--et-tone-fill) 30%, transparent);
     }
     .explorer-b__row--current .explorer-b__pip--settled {
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
     .explorer-b__group-head {
       display: flex;
@@ -323,37 +323,37 @@ export default drawing({
       text-align: left;
     }
     .explorer-b__group-head b {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-weight: 500;
       font-size: 1.3rem;
     }
     .explorer-b__group-head span {
       margin-left: auto;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
     }
     .explorer-b__group-head svg {
       width: 1.2rem;
       height: 1.2rem;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
     }
     .explorer-b__group--expanded {
-      background: rgb(var(--et-surface-color-rgb) / 0.03);
+      background: color-mix(in srgb, var(--et-surface-text) 3%, transparent);
     }
     .explorer-b__group--expanded .explorer-b__group-head svg {
       transform: rotate(90deg);
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
     .explorer-b__group--expanded .explorer-b__group-head b {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
     }
     .explorer-b__row--settled {
       gap: 0.3rem;
       padding: 0.6rem 1.6rem 0.8rem 3.6rem;
     }
     .explorer-b__row--settled b {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       -webkit-line-clamp: 1;
     }
   `,

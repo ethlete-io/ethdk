@@ -36,8 +36,8 @@ export const canvasViewport = ({
 };
 
 const sampleCards = html`<div class="absolute top-space-4 left-space-4 flex gap-space-4">
-  <div class="h-40 w-56 rounded-control-md bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"></div>
-  <div class="h-40 w-56 rounded-control-md bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"></div>
+  <div class="h-40 w-56 rounded-control-md bg-et-surface-background shadow-[0_0_0_1px_var(--et-surface-border)]"></div>
+  <div class="h-40 w-56 rounded-control-md bg-et-surface-background shadow-[0_0_0_1px_var(--et-surface-border)]"></div>
 </div>`;
 
 export default definePart({

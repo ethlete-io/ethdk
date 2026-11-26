@@ -94,7 +94,7 @@ export const PARTS: Record<PartKind, SketchPart> = {
         note: 'Gerade Zustände ändern sich.',
         model: { ...OPUS, when: '02.11. 11:02' },
         changed: MANY_STATES.filter((_, index) => index % 2 === 1),
-        look: '[&_div]:text-et-theme',
+        look: '[&_div]:text-et-tone-fill',
       },
       {
         key: 'b',
@@ -171,7 +171,7 @@ export const PARTS: Record<PartKind, SketchPart> = {
         note: 'Die Anzahl färbt sich beim Überfahren des Zählers.',
         model: { ...OPUS, when: '02.11. 11:02' },
         changed: ['count-hover'],
-        look: '**:data-farn-count:text-et-theme',
+        look: '**:data-farn-count:text-et-tone-fill',
       },
       {
         key: 'b',
@@ -284,7 +284,9 @@ export const takeButton = (disabled = false) =>
 
 export const takeAction = (take: string) => html`<span class="flex">${withAction(take, 'emit:merge')}</span>`;
 
-export const comparingMark = html`<span class="text-ui-xs text-et-surface-muted whitespace-nowrap" data-sk-comparing
+export const comparingMark = html`<span
+  class="text-ui-xs text-et-surface-text-muted whitespace-nowrap"
+  data-sk-comparing
   >${SKETCHES_LABELS.comparing}</span
 >`;
 
@@ -293,19 +295,19 @@ export const rowHead = (row: Row, action: string, mark = '') =>
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
       ${
         row.key === 'current'
-          ? html`<span class="text-ui-sm font-ui-medium text-et-surface">${rowName(row)}</span>`
-          : html`<span class="font-code text-ui-sm text-et-surface">${rowName(row)}</span>`
+          ? html`<span class="text-ui-sm font-ui-medium text-et-surface-text">${rowName(row)}</span>`
+          : html`<span class="font-code text-ui-sm text-et-surface-text">${rowName(row)}</span>`
       }
       ${
         row.model
-          ? html`<span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
+          ? html`<span class="flex items-center gap-space-1 text-ui-sm text-et-surface-text-muted"
               >${agentLogo(row.model.agent, 'size-3 flex-none')}${row.model.short}</span
             >`
           : ''
       }
       ${mark}
     </div>
-    <p class="m-0 text-(length:--sk-note) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-note>
+    <p class="m-0 text-(length:--sk-note) leading-[1.35] text-et-surface-text-muted wrap-anywhere" data-sk-note>
       ${row.note}
     </p>
     ${row.key === 'current' ? '' : action}

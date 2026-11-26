@@ -2,13 +2,13 @@
   display: flex;
   align-items: center;
   padding: 2.4rem 1.6rem;
-  background: var(--et-surface-background-solid);
-  color: var(--et-surface-color-solid);
+  background: var(--et-surface-background);
+  color: var(--et-surface-text);
 }
 
 @layer components {
   .et-avatar:not(:has(> .et-avatar-image)) {
-    outline: 1px solid var(--et-theme-color-ink-solid);
+    outline: 1px solid var(--et-tone-text);
     outline-offset: -1px;
   }
 }

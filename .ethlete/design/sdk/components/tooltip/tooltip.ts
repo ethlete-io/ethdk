@@ -7,7 +7,7 @@ const LONG = 'Everyone with the link can view this board. Comments stay private 
 const TEMPLATE = '<p><strong>Shift + C</strong></p><p>Copies the link to this board. Anyone with it can view.</p>';
 
 export default definePart<TooltipMockOptions>({
-  note: 'The SDK tooltip, drawn by its mock from @ethlete/components/design: the open pane with its arrow on the inherited surface. Short text, long text that wraps at the 34ch max width, template content, and each side the pane opens on, plus a -start and an -end placement with the arrow 20 px in. In the dark scheme the pane border and the arrow edge are a 1 px ring in --et-surface-ring-solid, 24 % --et-surface-color-solid over the fill, as in the foundations/elevation round. The token is defined here; the generator does not emit it yet.',
+  note: 'The SDK tooltip, drawn by its mock from @ethlete/components/design: the open pane with its arrow on the inherited surface. Short text, long text that wraps at the 34ch max width, template content, and each side the pane opens on, plus a -start and an -end placement with the arrow 20 px in. In the dark scheme the pane border and the arrow edge are a 1 px ring in --sdk-surface-ring, 24 % --et-surface-text over the fill, as in the foundations/elevation round. The token is defined here; the generator does not emit it yet.',
   madeBy: ['claude-opus-5-5'],
   states: {
     short: { text: SHORT },

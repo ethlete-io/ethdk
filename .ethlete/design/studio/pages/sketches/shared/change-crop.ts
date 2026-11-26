@@ -88,7 +88,7 @@ export const zoomTextOf = (crop: Box) => `${magnifyOf(crop).toFixed(1).replace('
 
 const cellAt = (x: number, y: number, tile: string, round: boolean) =>
   html`<div
-    class="absolute flex items-center justify-center shadow-[0_0_0_1px_var(--et-surface-border-solid)] ${
+    class="absolute flex items-center justify-center shadow-[0_0_0_1px_var(--et-surface-border)] ${
       round ? 'rounded-full' : 'rounded-control-sm'
     }"
     style="left: ${x}px; top: ${y}px; width: ${CELL_WIDTH}px; height: ${CELL_HEIGHT}px"
@@ -98,8 +98,8 @@ const cellAt = (x: number, y: number, tile: string, round: boolean) =>
 
 const rowAt = (y: number, label: string, note: string, tiles: string[], round: boolean) =>
   html`<div class="absolute" style="left: 300px; top: ${y}px; width: 300px">
-      <div class="text-ui-sm font-ui-medium text-et-surface">${label}</div>
-      <p class="m-0 mt-space-1 text-ui-sm text-et-surface-muted">${note}</p>
+      <div class="text-ui-sm font-ui-medium text-et-surface-text">${label}</div>
+      <p class="m-0 mt-space-1 text-ui-sm text-et-surface-text-muted">${note}</p>
     </div>
     ${tiles.map((tile, index) => cellAt(643 + index * (CELL_WIDTH + CELL_GAP), y, tile, round && index > 0)).join('')}`;
 
@@ -110,26 +110,26 @@ export const screenOf = (state: string, changed: boolean) => {
   const port = GROUPS[1]?.states.includes(state) ?? false;
   const cells = GROUPS[0]?.states.includes(state) ?? false;
   const body = html`<div
-    class="relative overflow-hidden bg-et-surface-bg text-et-surface"
+    class="relative overflow-hidden bg-et-surface-background text-et-surface-text"
     style="width: ${SCREEN_WIDTH}px; height: ${SCREEN_HEIGHT}px"
     data-cc-screen="${state}"
     inert
     ${slot('screen')}
   >
-    <div class="absolute inset-y-0 left-0 w-65 shadow-[1px_0_0_var(--et-surface-border-solid)]">
-      <div class="flex flex-col gap-space-2 p-space-5 text-ui-sm text-et-surface-muted">
+    <div class="absolute inset-y-0 left-0 w-65 shadow-[1px_0_0_var(--et-surface-border)]">
+      <div class="flex flex-col gap-space-2 p-space-5 text-ui-sm text-et-surface-text-muted">
         ${SAMPLE_CATEGORIES.map((name, index) =>
-          index === 0 ? html`<span class="text-et-surface">${name}</span>` : html`<span>${name}</span>`,
+          index === 0 ? html`<span class="text-et-surface-text">${name}</span>` : html`<span>${name}</span>`,
         ).join('')}
       </div>
     </div>
     <div class="absolute flex items-center gap-space-3" style="left: 300px; top: 40px">
       <span class="text-ui-lg font-ui-strong">Topfgrößen</span>
-      <span class="text-ui-sm text-et-surface-muted">${state}</span>
+      <span class="text-ui-sm text-et-surface-text-muted">${state}</span>
     </div>
     ${
       port && changed
-        ? html`<div class="absolute text-ui-sm text-et-surface" style="left: 300px; top: 92px">
+        ? html`<div class="absolute text-ui-sm text-et-surface-text" style="left: 300px; top: 92px">
             Versandkostenfrei ab 50 € · Lieferung morgen
           </div>`
         : ''
@@ -143,7 +143,7 @@ export const screenOf = (state: string, changed: boolean) => {
 
 const markOf = (box: Box) =>
   html`<span
-    class="pointer-events-none absolute rounded-control-sm border-2 border-et-theme"
+    class="pointer-events-none absolute rounded-control-sm border-2 border-et-tone-fill"
     style="left: ${box.x - 4}px; top: ${box.y - 4}px; width: ${box.width + 8}px; height: ${box.height + 8}px"
   ></span>`;
 

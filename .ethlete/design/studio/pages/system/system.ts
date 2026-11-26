@@ -47,18 +47,19 @@ import {
 import { SYSTEM_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 import { EXCEPTIONS_LABELS, SHELL_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
 
-const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
+const ghostBox =
+  '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-background"></span>';
 
 const emptyCanvasOf = (copy: string) =>
   html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
     <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
       <div class="grid grid-cols-2 gap-space-2" aria-hidden="true">${ghostBox}${ghostBox}${ghostBox}${ghostBox}</div>
-      <p class="m-0 text-et-surface font-ui-strong text-ui-md">${SYSTEM_LABELS.emptyTitle}</p>
-      <p class="m-0 text-et-surface-muted">
+      <p class="m-0 text-et-surface-text font-ui-strong text-ui-md">${SYSTEM_LABELS.emptyTitle}</p>
+      <p class="m-0 text-et-surface-text-muted">
         Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent
         zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:
       </p>
-      <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
+      <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-background text-et-surface-text text-ui-sm">
         Lege die Foundations für studio an: Farben, Schrift und Abstände.
       </p>
       ${withAction(copy, 'emit:copyPrompt')}
@@ -71,7 +72,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean, acting: boolean, exc
     {
       label: count ? `${count} offen` : SYSTEM_LABELS.nothingOpen,
       icon: count
-        ? `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-theme' })}</span>`
+        ? `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-tone-fill' })}</span>`
         : checkIcon(14),
       variant: 'outline',
       size: 'sm',
@@ -160,7 +161,7 @@ type SendPhase = 'busy' | 'error' | 'rejected';
 
 const REFUSED = 'part components/button no longer exists';
 
-const kindIcon = (name: IconName) => icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' });
+const kindIcon = (name: IconName) => icon(name, { size: 14, cls: 'flex-none text-(--et-surface-text-muted)' });
 
 const pointLines = ({ icon: name, lines }: PointGroup) => {
   const { shown, more } = collapsed(lines, 3);
@@ -169,14 +170,12 @@ const pointLines = ({ icon: name, lines }: PointGroup) => {
       .map(
         ({ text, detail }) =>
           html`<li class="flex items-center gap-space-2 px-space-3 py-space-1">
-            ${kindIcon(name)}<span class="flex-1 min-w-0 truncate text-(--et-surface-color-solid)">${text}</span
-            ><span class="font-code text-(--et-surface-color-muted-solid) text-ui-xs">${detail}</span>
+            ${kindIcon(name)}<span class="flex-1 min-w-0 truncate text-(--et-surface-text)">${text}</span
+            ><span class="font-code text-(--et-surface-text-muted) text-ui-xs">${detail}</span>
           </li>`,
       )
       .join('') +
-    (more > 0
-      ? html`<li class="ps-9 pe-space-3 py-space-1 text-(--et-surface-color-muted-solid)">+${more} weitere</li>`
-      : '')
+    (more > 0 ? html`<li class="ps-9 pe-space-3 py-space-1 text-(--et-surface-text-muted)">+${more} weitere</li>` : '')
   );
 };
 
@@ -188,24 +187,24 @@ const exceptionGroup = async () => {
       ({ rule, reason }) =>
         html`<li class="flex flex-col gap-space-1 px-space-3 py-space-2">
           <span class="flex items-center gap-space-2">
-            <span class="min-w-0 flex-1 font-code text-ui-xs break-all text-et-surface">${rule}</span>
+            <span class="min-w-0 flex-1 font-code text-ui-xs break-all text-et-surface-text">${rule}</span>
             ${open.body}
           </span>
           <span class="flex items-center gap-space-2">
-            <span class="min-w-0 flex-1 text-et-surface-muted">${reason}</span>
+            <span class="min-w-0 flex-1 text-et-surface-text-muted">${reason}</span>
             ${control(withAction(approve.body, 'emit:approveException'), 'exception-approve')}
           </span>
         </li>`,
     )
     .join('');
   return {
-    body: html`<section class="border-t border-(--et-surface-border-solid) py-space-1">
+    body: html`<section class="border-t border-(--et-surface-border) py-space-1">
       <h3
-        class="m-0 flex items-center gap-space-2 px-space-3 py-space-1 text-ui-xs font-ui-strong text-et-surface-muted"
+        class="m-0 flex items-center gap-space-2 px-space-3 py-space-1 text-ui-xs font-ui-strong text-et-surface-text-muted"
       >
         ${EXCEPTIONS_LABELS.toggle}<span class="font-code font-normal">${buttonExceptions.length}</span>
       </h3>
-      <ul class="m-0 list-none p-0 divide-y divide-(--et-surface-border-solid)">
+      <ul class="m-0 list-none p-0 divide-y divide-(--et-surface-border)">
         ${rows}
       </ul>
     </section>`,
@@ -224,11 +223,11 @@ const popover = async (
   const exceptions = withExceptions ? await exceptionGroup() : undefined;
   const build = await buildReadyView(status, blockersOpen, developer ? developerReasons : undefined);
   const list = groups.length
-    ? html`<ul class="m-0 p-0 py-space-1 list-none divide-y divide-(--et-surface-border-solid)">
+    ? html`<ul class="m-0 p-0 py-space-1 list-none divide-y divide-(--et-surface-border)">
         ${groups.map((group) => `<li><ul class="m-0 p-0 py-space-1 list-none">${pointLines(group)}</ul></li>`).join('')}
       </ul>`
     : html`<div class="flex items-center gap-space-2 px-space-3 py-space-4">
-        ${checkIcon()}<span class="text-(--et-surface-color-muted-solid)">${SYSTEM_LABELS.allDone}</span>
+        ${checkIcon()}<span class="text-(--et-surface-text-muted)">${SYSTEM_LABELS.allDone}</span>
       </div>`;
   const dialog = await anchoredDialog.render({
     label: SYSTEM_LABELS.openPoints,
@@ -236,12 +235,12 @@ const popover = async (
     anchor: '[data-et-control="open-points"]',
     content: html`<div class="w-96 text-ui-sm">
       <header
-        class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border-solid)"
+        class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border)"
       >
-        <span class="text-(--et-surface-color-solid) font-ui-strong"
+        <span class="text-(--et-surface-text) font-ui-strong"
           >${groups.length ? SYSTEM_LABELS.openPoints : SYSTEM_LABELS.nothingOpen}</span
         >
-        <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">${open.part}</span>
+        <span class="ms-auto font-code text-(--et-surface-text-muted) text-ui-xs">${open.part}</span>
       </header>
       ${build.before}${list}${exceptions?.body ?? ''}${build.footer}
     </div>`,
@@ -299,7 +298,9 @@ const buttonGrid = async () => {
   return stateGrid({ columns: [...interactions], rows }, { cellWidth: '120px', place: 'center' });
 };
 
-const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">${SYSTEM_LABELS.none}</p>`;
+const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-text-muted text-ui-sm">
+  ${SYSTEM_LABELS.none}
+</p>`;
 
 const CANVAS_NOTE = SHELL_LABELS.startServer;
 
@@ -532,10 +533,10 @@ export default definePart<{
         content: html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
           <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
             <span class="contents" data-et-semantic-color="error"
-              >${icon('error', { size: 24, cls: 'text-et-theme' })}</span
+              >${icon('error', { size: 24, cls: 'text-et-tone-fill' })}</span
             >
-            <p class="m-0 text-et-surface font-ui-strong text-ui-md">${SYSTEM_LABELS.listingFailed}</p>
-            <p class="m-0 text-et-surface-muted">missing build: pages/system</p>
+            <p class="m-0 text-et-surface-text font-ui-strong text-ui-md">${SYSTEM_LABELS.listingFailed}</p>
+            <p class="m-0 text-et-surface-text-muted">missing build: pages/system</p>
             ${control(withAction(reload.body, 'emit:reload'), 'reload')}
           </div>
         </div>`,
@@ -553,9 +554,9 @@ export default definePart<{
         side: '',
         content: html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)" data-canvas-note>
           <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
-            ${icon('warning', { size: 24, cls: 'text-et-surface-muted' })}
-            <p class="m-0 text-et-surface font-ui-strong text-ui-md">${SYSTEM_LABELS.serverDown}</p>
-            ${noteHint ? html`<p class="m-0 text-et-surface-muted">${noteHint}</p>` : ''}
+            ${icon('warning', { size: 24, cls: 'text-et-surface-text-muted' })}
+            <p class="m-0 text-et-surface-text font-ui-strong text-ui-md">${SYSTEM_LABELS.serverDown}</p>
+            ${noteHint ? html`<p class="m-0 text-et-surface-text-muted">${noteHint}</p>` : ''}
           </div>
         </div>`,
       });

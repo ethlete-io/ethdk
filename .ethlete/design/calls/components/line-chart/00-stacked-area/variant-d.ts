@@ -23,7 +23,7 @@ export default drawing({
     ${frameStyles}
 
     stop {
-      stop-color: var(--et-theme-color-primary-solid);
+      stop-color: var(--et-tone-fill);
     }
 
     .stop-top {

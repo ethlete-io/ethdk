@@ -24,16 +24,16 @@ type Props = { thread: Thread; selected?: boolean; interaction?: RowInteraction 
 const replyIcon = icon('reply', { size: 14, cls: 'flex-none' });
 const checkIcon = icon('check', { size: 14, cls: 'flex-none' });
 
-const countClass = 'flex items-center gap-0.5 text-et-surface-muted';
+const countClass = 'flex items-center gap-0.5 text-et-surface-text-muted';
 
 export const commentRowStyles = styles;
 
 export const commentRow = ({ thread: c, selected = false, interaction }: Props) => {
-  const strong = c.resolved ? 'text-et-surface-muted' : 'text-et-surface';
+  const strong = c.resolved ? 'text-et-surface-text-muted' : 'text-et-surface-text';
 
   const markup = control(
     html`<div
-      class="st-crow flex gap-space-2 p-space-2 rounded-control-md cursor-pointer outline-none ${selected ? 'bg-et-theme/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15"
+      class="st-crow flex gap-space-2 p-space-2 rounded-control-md cursor-pointer outline-none ${selected ? 'bg-et-tone-fill/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15"
       data-et-action="emit:pick"
       data-et-surface-interactive
       role="button"
@@ -41,20 +41,20 @@ export const commentRow = ({ thread: c, selected = false, interaction }: Props) 
       aria-pressed="${selected}"
     >
       <span
-        class="st-crow-avatar flex flex-none items-center justify-center size-5 bg-et-surface-bg text-et-surface text-(length:--text-xs) font-ui-strong"
+        class="st-crow-avatar flex flex-none items-center justify-center size-5 bg-et-surface-background text-et-surface-text text-(length:--text-xs) font-ui-strong"
         data-et-auto-surface
         >${c.agent ? agentLogo(c.agent, 'size-3') : c.initials}</span
       >
       <div class="flex flex-1 flex-col gap-0.5 min-w-0">
         <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
           <span class="${strong} font-ui-medium">${c.author}</span>
-          <span class="flex-1 text-et-surface-muted">${c.when}</span>
-          ${c.unread ? '<span class="st-crow-unread size-1.5 bg-et-theme"></span>' : ''}
+          <span class="flex-1 text-et-surface-text-muted">${c.when}</span>
+          ${c.unread ? '<span class="st-crow-unread size-1.5 bg-et-tone-fill"></span>' : ''}
         </div>
         <p class="m-0 line-clamp-2 ${strong} text-ui-sm">${c.text}</p>
         <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
           <span
-            class="flex-1 min-w-0 overflow-hidden text-ellipsis ${selected ? 'text-et-theme-ink' : 'text-et-surface-muted'} font-code"
+            class="flex-1 min-w-0 overflow-hidden text-ellipsis ${selected ? 'text-et-tone-text' : 'text-et-surface-text-muted'} font-code"
             >${c.part} › ${c.state}</span
           >
           ${c.resolved ? `<span class="${countClass}">${checkIcon}</span>` : c.replies > 0 ? `<span class="${countClass}">${replyIcon}${c.replies}</span>` : ''}

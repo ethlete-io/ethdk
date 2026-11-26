@@ -116,13 +116,13 @@ export default drawing({
   `,
   styles: css`
     .shell-c {
-      --et-surface-interaction: var(--et-surface-color);
+      --et-surface-interaction: var(--et-surface-text);
 
       display: grid;
       grid-template-columns: 300px minmax(0, 1fr) 340px;
       height: 900px;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font-family: Jost, system-ui, sans-serif;
       font-size: 14px;
       line-height: 1.4;
@@ -146,22 +146,22 @@ export default drawing({
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
       min-height: 0;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
 
     .shell-c__explorer {
-      border-right: 1px solid var(--et-surface-border-solid);
+      border-right: 1px solid var(--et-surface-border);
     }
 
     .shell-c__chat {
-      border-left: 1px solid var(--et-surface-border-solid);
+      border-left: 1px solid var(--et-surface-border);
     }
 
     .shell-c__explorer-head {
       display: grid;
       gap: 14px;
       padding: 18px 16px 14px;
-      border-bottom: 1px solid var(--et-surface-border-solid);
+      border-bottom: 1px solid var(--et-surface-border);
     }
 
     .shell-c__project {
@@ -182,16 +182,16 @@ export default drawing({
       gap: 6px;
       align-items: center;
       padding: 4px 8px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 4px;
       background: transparent;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font: inherit;
       font-size: 12px;
     }
 
     .shell-c__project-switch span {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
     }
 
     .shell-c__search {
@@ -199,19 +199,19 @@ export default drawing({
       gap: 8px;
       align-items: center;
       padding: 7px 10px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 4px;
-      background: color-mix(in srgb, var(--et-surface-interaction-solid) 6%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction) 6%, transparent);
     }
 
     .shell-c__search-mark {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 15px;
     }
 
     .shell-c__search-label {
       flex: 1;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 13px;
     }
 
@@ -224,7 +224,7 @@ export default drawing({
     }
 
     .shell-c__search kbd {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 11px;
     }
 
@@ -245,14 +245,14 @@ export default drawing({
     }
 
     .shell-c__group-name {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 11px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
     .shell-c__group-open {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
       font-size: 11px;
     }
 
@@ -265,18 +265,18 @@ export default drawing({
     }
 
     .shell-c__row--open {
-      border-color: color-mix(in srgb, var(--et-theme-color-ink-solid) 45%, transparent);
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.14);
+      border-color: color-mix(in srgb, var(--et-tone-text) 45%, transparent);
+      background: color-mix(in srgb, var(--et-tone-fill) 14%, transparent);
     }
 
     .shell-c__row-eyebrow {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 11px;
       letter-spacing: 0.04em;
     }
 
     .shell-c__row--open .shell-c__row-eyebrow {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
 
     .shell-c__row-headline {
@@ -284,16 +284,16 @@ export default drawing({
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
       overflow: hidden;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 13px;
     }
 
     .shell-c__row--open .shell-c__row-headline {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
     }
 
     .shell-c__row-settled {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 11px;
     }
 
@@ -301,12 +301,12 @@ export default drawing({
       display: grid;
       gap: 4px;
       padding: 12px 16px 14px;
-      border-top: 1px solid var(--et-surface-border-solid);
+      border-top: 1px solid var(--et-surface-border);
     }
 
     .shell-c__checkout {
       overflow: hidden;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 11px;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -316,7 +316,7 @@ export default drawing({
       display: flex;
       gap: 7px;
       align-items: center;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 11px;
     }
 
@@ -324,7 +324,7 @@ export default drawing({
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
 
     .shell-c__workspace-head {
@@ -333,7 +333,7 @@ export default drawing({
       align-items: flex-start;
       justify-content: space-between;
       padding: 22px 28px 16px;
-      border-bottom: 1px solid var(--et-surface-border-solid);
+      border-bottom: 1px solid var(--et-surface-border);
     }
 
     .shell-c__call {
@@ -343,7 +343,7 @@ export default drawing({
     }
 
     .shell-c__call-eyebrow {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 11px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -356,7 +356,7 @@ export default drawing({
     }
 
     .shell-c__call-round {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 12px;
     }
 
@@ -364,9 +364,9 @@ export default drawing({
       display: flex;
       gap: 4px;
       padding: 4px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 6px;
-      background: color-mix(in srgb, var(--et-surface-interaction-solid) 6%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction) 6%, transparent);
     }
 
     .shell-c__variant {
@@ -374,22 +374,22 @@ export default drawing({
       border: 1px solid transparent;
       border-radius: 4px;
       background: transparent;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font: inherit;
       font-size: 12px;
       white-space: nowrap;
     }
 
     .shell-c__variant--current {
-      border-color: var(--et-theme-color-ink-solid);
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.16);
-      color: var(--et-theme-color-ink-solid);
+      border-color: var(--et-tone-text);
+      background: color-mix(in srgb, var(--et-tone-fill) 16%, transparent);
+      color: var(--et-tone-text);
     }
 
     .shell-c__variant--rejected {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       text-decoration: line-through;
-      text-decoration-color: color-mix(in srgb, var(--et-surface-color-subtle-solid) 60%, transparent);
+      text-decoration-color: color-mix(in srgb, var(--et-surface-text-subtle) 60%, transparent);
     }
 
     .shell-c__stage {
@@ -403,9 +403,9 @@ export default drawing({
       grid-template-rows: auto minmax(0, 1fr);
       flex: 1;
       overflow: hidden;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 6px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
       box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
     }
 
@@ -414,13 +414,13 @@ export default drawing({
       gap: 12px;
       justify-content: space-between;
       padding: 10px 14px;
-      border-bottom: 1px solid var(--et-surface-border-solid);
-      color: var(--et-surface-color-muted-solid);
+      border-bottom: 1px solid var(--et-surface-border);
+      color: var(--et-surface-text-muted);
       font-size: 12px;
     }
 
     .shell-c__canvas-size {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 11px;
     }
 
@@ -428,12 +428,12 @@ export default drawing({
       background:
         repeating-linear-gradient(
           to right,
-          color-mix(in srgb, var(--et-surface-border-solid) 55%, transparent) 0 1px,
+          color-mix(in srgb, var(--et-surface-border) 55%, transparent) 0 1px,
           transparent 1px 48px
         ),
         repeating-linear-gradient(
           to bottom,
-          color-mix(in srgb, var(--et-surface-border-solid) 55%, transparent) 0 1px,
+          color-mix(in srgb, var(--et-surface-border) 55%, transparent) 0 1px,
           transparent 1px 48px
         );
     }
@@ -442,23 +442,23 @@ export default drawing({
       display: flex;
       gap: 8px;
       padding: 14px 28px 18px;
-      border-top: 1px solid var(--et-surface-border-solid);
+      border-top: 1px solid var(--et-surface-border);
     }
 
     .shell-c__verb {
       padding: 8px 16px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 4px;
       background: transparent;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font: inherit;
       font-size: 13px;
     }
 
     .shell-c__verb--primary {
       border-color: transparent;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-weight: 500;
     }
 
@@ -466,7 +466,7 @@ export default drawing({
       display: grid;
       gap: 3px;
       padding: 18px 18px 14px;
-      border-bottom: 1px solid var(--et-surface-border-solid);
+      border-bottom: 1px solid var(--et-surface-border);
     }
 
     .shell-c__chat-name {
@@ -475,7 +475,7 @@ export default drawing({
     }
 
     .shell-c__chat-sub {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 11px;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -490,7 +490,7 @@ export default drawing({
     }
 
     .shell-c__chat-body p {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 13px;
       text-align: center;
     }
@@ -499,16 +499,16 @@ export default drawing({
       display: grid;
       gap: 10px;
       padding: 14px 18px 18px;
-      border-top: 1px solid var(--et-surface-border-solid);
+      border-top: 1px solid var(--et-surface-border);
     }
 
     .shell-c__composer-field {
       min-height: 84px;
       padding: 10px 12px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 4px;
-      background: color-mix(in srgb, var(--et-surface-interaction-solid) 6%, transparent);
-      color: var(--et-surface-color-subtle-solid);
+      background: color-mix(in srgb, var(--et-surface-interaction) 6%, transparent);
+      color: var(--et-surface-text-subtle);
       font-size: 13px;
     }
 
@@ -520,7 +520,7 @@ export default drawing({
     }
 
     .shell-c__agent {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 11px;
     }
 

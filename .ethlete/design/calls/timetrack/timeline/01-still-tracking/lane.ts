@@ -69,15 +69,15 @@ export const band = (options: {
 export const LANE_STYLES = css`
   /* The frame runs without the surface directive, so the value the dark theme sets at runtime is written here. */
   #root {
-    --et-surface-interaction: 161 161 161;
+    --et-surface-interaction: rgb(161 161 161);
   }
 
   .sheet {
     display: flex;
     gap: 3rem;
     padding: 3rem;
-    background: rgb(var(--et-surface-background));
-    color: rgb(var(--et-surface-color));
+    background: var(--et-surface-background);
+    color: var(--et-surface-text);
     font-size: var(--text-small);
     line-height: var(--text-small--line-height);
   }
@@ -96,15 +96,15 @@ export const LANE_STYLES = css`
   }
 
   .panel-hint {
-    color: rgb(var(--et-surface-color-subtle));
+    color: var(--et-surface-text-subtle);
   }
 
   .lane-head {
     margin-left: 5.2rem;
     padding: 0.4rem 0.8rem;
-    border-bottom: 1px solid rgb(var(--et-surface-border));
-    border-left: 1px solid rgb(var(--et-surface-border));
-    color: rgb(var(--et-surface-color-muted));
+    border-bottom: 1px solid var(--et-surface-border);
+    border-left: 1px solid var(--et-surface-border);
+    color: var(--et-surface-text-muted);
   }
 
   .day {
@@ -124,13 +124,13 @@ export const LANE_STYLES = css`
     width: 4.4rem;
     text-align: right;
     font-family: ui-monospace, monospace;
-    color: rgb(var(--et-surface-color-subtle));
+    color: var(--et-surface-text-subtle);
   }
 
   .hour-rule {
     height: 1px;
     flex-grow: 1;
-    background: rgb(var(--et-surface-border));
+    background: var(--et-surface-border);
   }
 
   .lane {
@@ -138,7 +138,7 @@ export const LANE_STYLES = css`
     inset-block: 0;
     left: 5.2rem;
     right: 0;
-    border-left: 1px solid rgb(var(--et-surface-border));
+    border-left: 1px solid var(--et-surface-border);
   }
 
   .now {
@@ -147,7 +147,7 @@ export const LANE_STYLES = css`
     left: 5.2rem;
     right: 0;
     z-index: 10;
-    border-top: 2px solid var(--color-et-brand-ink);
+    border-top: 2px solid var(--color-et-tone-brand-text);
   }
 
   .now-dot {
@@ -157,7 +157,7 @@ export const LANE_STYLES = css`
     width: 0.8rem;
     height: 0.8rem;
     border-radius: 999px;
-    background: var(--color-et-brand-ink);
+    background: var(--color-et-tone-brand-text);
   }
 
   .band {
@@ -167,15 +167,15 @@ export const LANE_STYLES = css`
     flex-direction: column;
     overflow: hidden;
     padding: 0.4rem 0.8rem;
-    border-left: 2px solid rgb(var(--et-color-primary));
+    border-left: 2px solid var(--et-tone-fill-rest);
     border-radius: 0.25rem;
-    background: rgb(var(--et-color-primary) / 0.15);
+    background: color-mix(in srgb, var(--et-tone-fill-rest) 15%, transparent);
     cursor: grab;
     outline: none;
   }
 
   .band:hover {
-    background: rgb(var(--et-color-primary) / 0.3);
+    background: color-mix(in srgb, var(--et-tone-fill-rest) 30%, transparent);
   }
 
   .band[data-compact] {
@@ -193,11 +193,11 @@ export const LANE_STYLES = css`
   }
 
   .band-detail {
-    color: rgb(var(--et-surface-color-muted));
+    color: var(--et-surface-text-muted);
   }
 
   .muted {
-    color: rgb(var(--et-surface-color-muted));
+    color: var(--et-surface-text-muted);
   }
 
   .chip {
@@ -207,10 +207,10 @@ export const LANE_STYLES = css`
     align-items: center;
     gap: 0.4rem;
     padding: 0 0.6rem;
-    border: 1px solid rgb(var(--et-surface-border));
+    border: 1px solid var(--et-surface-border);
     border-radius: 0.25rem;
-    background: rgb(var(--et-surface-background));
-    color: rgb(var(--et-surface-color-muted));
+    background: var(--et-surface-background);
+    color: var(--et-surface-text-muted);
     font-family: ui-monospace, monospace;
     font-size: 1.2rem;
     line-height: 1.8rem;
@@ -219,8 +219,8 @@ export const LANE_STYLES = css`
   }
 
   .chip:hover {
-    color: rgb(var(--et-surface-color));
-    border-color: rgb(var(--et-color-primary-ink));
+    color: var(--et-surface-text);
+    border-color: var(--et-tone-text-rest);
   }
 
   @keyframes live-breathe {

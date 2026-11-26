@@ -136,13 +136,13 @@ export default drawing({
   `,
   styles: css`
     .shell-d {
-      --et-surface-interaction: var(--et-surface-color);
+      --et-surface-interaction: var(--et-surface-text);
 
       display: grid;
       grid-template-columns: 40rem minmax(0, 1fr) 36rem;
       height: 90rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font:
         400 1.4rem/1.45 'Jost',
         system-ui,
@@ -178,7 +178,7 @@ export default drawing({
     .shell-d__server,
     .shell-d__agent,
     .shell-d__option-address {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
       letter-spacing: 0.02em;
@@ -191,20 +191,20 @@ export default drawing({
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
       min-height: 0;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
     }
     .shell-d__explorer {
-      border-right: 0.1rem solid var(--et-surface-border-solid);
+      border-right: 0.1rem solid var(--et-surface-border);
     }
     .shell-d__chat {
-      border-left: 0.1rem solid var(--et-surface-border-solid);
+      border-left: 0.1rem solid var(--et-surface-border);
     }
     .shell-d__head {
       display: grid;
       gap: 1.4rem;
       padding: 2rem 1.8rem 1.6rem;
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
     }
     .shell-d__project {
       display: flex;
@@ -223,10 +223,10 @@ export default drawing({
       gap: 0.5rem;
       align-items: center;
       padding: 0.5rem 0.9rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.5rem;
-      background: rgb(var(--et-surface-interaction) / 0.06);
-      color: var(--et-surface-color-muted-solid);
+      background: color-mix(in srgb, var(--et-surface-interaction) 6%, transparent);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .shell-d__search {
@@ -234,10 +234,10 @@ export default drawing({
       gap: 0.9rem;
       align-items: center;
       padding: 0.9rem 1.1rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.6rem;
-      background: rgb(var(--et-surface-interaction) / 0.05);
-      color: var(--et-surface-color-subtle-solid);
+      background: color-mix(in srgb, var(--et-surface-interaction) 5%, transparent);
+      color: var(--et-surface-text-subtle);
       font-size: 1.3rem;
     }
     .shell-d__search span {
@@ -245,7 +245,7 @@ export default drawing({
     }
     .shell-d__search kbd {
       padding: 0.1rem 0.5rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.4rem;
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1rem;
@@ -265,14 +265,14 @@ export default drawing({
       padding: 0 1.8rem 0.8rem;
     }
     .shell-d__group-head b {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-weight: 500;
       font-size: 1.2rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
     .shell-d__group-head span {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
       font-size: 1.1rem;
     }
     .shell-d__call {
@@ -282,28 +282,28 @@ export default drawing({
       border-left: 0.2rem solid transparent;
     }
     .shell-d__call b {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-weight: 400;
       font-size: 1.3rem;
       line-height: 1.35;
     }
     .shell-d__call--open {
-      border-left-color: var(--et-theme-color-primary-solid);
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.1);
+      border-left-color: var(--et-tone-fill);
+      background: color-mix(in srgb, var(--et-tone-fill) 10%, transparent);
     }
     .shell-d__call--open b {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
       font-weight: 500;
     }
     .shell-d__call--open .shell-d__eyebrow {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .shell-d__foot {
       display: grid;
       gap: 0.8rem;
       padding: 1.4rem 1.8rem 1.6rem;
-      border-top: 0.1rem solid var(--et-surface-border-solid);
-      background: rgb(var(--et-surface-interaction) / 0.03);
+      border-top: 0.1rem solid var(--et-surface-border);
+      background: color-mix(in srgb, var(--et-surface-interaction) 3%, transparent);
     }
     .shell-d__checkout-row {
       display: flex;
@@ -318,9 +318,9 @@ export default drawing({
       gap: 0.5rem;
       align-items: center;
       padding: 0.4rem 0.9rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.5rem;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .shell-d__server {
@@ -332,7 +332,7 @@ export default drawing({
       width: 0.6rem;
       height: 0.6rem;
       border-radius: 50%;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
     .shell-d__workspace {
       display: grid;
@@ -353,7 +353,7 @@ export default drawing({
         sans-serif;
     }
     .shell-d__round {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.3rem;
     }
     .shell-d__stage {
@@ -373,14 +373,14 @@ export default drawing({
       display: grid;
       gap: 0.6rem;
       padding: 0.6rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.5rem;
-      background: rgb(var(--et-surface-interaction) / 0.04);
+      background: color-mix(in srgb, var(--et-surface-interaction) 4%, transparent);
       text-align: left;
     }
     .shell-d__tile--current {
-      border-color: var(--et-theme-color-ink-solid);
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.12);
+      border-color: var(--et-tone-text);
+      background: color-mix(in srgb, var(--et-tone-fill) 12%, transparent);
     }
     .shell-d__tile--rejected {
       opacity: 0.32;
@@ -392,18 +392,18 @@ export default drawing({
       height: 6.4rem;
       padding: 0.6rem;
       border-radius: 0.3rem;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
       overflow: hidden;
     }
     .shell-d__thumb-bar {
       height: 0.8rem;
       border-radius: 0.1rem;
-      background: rgb(var(--et-surface-interaction) / 0.22);
+      background: color-mix(in srgb, var(--et-surface-interaction) 22%, transparent);
     }
     .shell-d__thumb-block {
       height: 1.4rem;
       border-radius: 0.1rem;
-      background: rgb(var(--et-surface-interaction) / 0.1);
+      background: color-mix(in srgb, var(--et-surface-interaction) 10%, transparent);
     }
     .shell-d__thumb-block--short {
       width: 60%;
@@ -413,15 +413,15 @@ export default drawing({
       width: 80%;
     }
     .shell-d__tile--current .shell-d__thumb-bar {
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.55);
+      background: color-mix(in srgb, var(--et-tone-fill) 55%, transparent);
     }
     .shell-d__tile-name {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.1rem;
       line-height: 1.3;
     }
     .shell-d__tile--current .shell-d__tile-name {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .shell-d__drawing {
       display: grid;
@@ -433,18 +433,18 @@ export default drawing({
       display: grid;
       place-items: center;
       min-height: 0;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 1rem;
       background:
         repeating-linear-gradient(
           135deg,
-          rgb(var(--et-surface-interaction) / 0.03) 0 0.1rem,
+          color-mix(in srgb, var(--et-surface-interaction) 3%, transparent) 0 0.1rem,
           transparent 0.1rem 1.4rem
         ),
-        rgb(var(--et-surface-interaction) / 0.03);
+        color-mix(in srgb, var(--et-surface-interaction) 3%, transparent);
     }
     .shell-d__canvas span {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.2rem;
     }
@@ -455,11 +455,11 @@ export default drawing({
       min-width: 0;
     }
     .shell-d__option-name {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
       font-size: 1.5rem;
     }
     .shell-d__option-state {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .shell-d__verbs {
@@ -469,16 +469,16 @@ export default drawing({
     }
     .shell-d__verb {
       padding: 0.8rem 1.6rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.4rem;
-      background: rgb(var(--et-surface-interaction) / 0.04);
-      color: var(--et-surface-color-muted-solid);
+      background: color-mix(in srgb, var(--et-surface-interaction) 4%, transparent);
+      color: var(--et-surface-text-muted);
       font-size: 1.4rem;
     }
     .shell-d__verb--primary {
       border-color: transparent;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-weight: 500;
     }
     .shell-d__chat-head {
@@ -487,7 +487,7 @@ export default drawing({
       align-items: baseline;
       justify-content: space-between;
       padding: 2rem 1.8rem 1.6rem;
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
     }
     .shell-d__chat-head b {
       font-weight: 500;
@@ -496,7 +496,7 @@ export default drawing({
       text-transform: uppercase;
     }
     .shell-d__chat-head span {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
     }
@@ -507,7 +507,7 @@ export default drawing({
       padding: 2.4rem;
     }
     .shell-d__chat-body p {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 1.3rem;
       text-align: center;
     }
@@ -515,15 +515,15 @@ export default drawing({
       display: grid;
       gap: 1rem;
       padding: 1.6rem 1.8rem 1.8rem;
-      border-top: 0.1rem solid var(--et-surface-border-solid);
+      border-top: 0.1rem solid var(--et-surface-border);
     }
     .shell-d__field {
       min-height: 9rem;
       padding: 1rem 1.2rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.6rem;
-      background: rgb(var(--et-surface-interaction) / 0.04);
-      color: var(--et-surface-color-subtle-solid);
+      background: color-mix(in srgb, var(--et-surface-interaction) 4%, transparent);
+      color: var(--et-surface-text-subtle);
       font-size: 1.3rem;
     }
     .shell-d__composer-foot {

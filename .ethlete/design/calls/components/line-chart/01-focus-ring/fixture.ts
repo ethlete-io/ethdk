@@ -176,30 +176,30 @@ export const frameStyles = css`
   }
 
   #root {
-    --et-surface-background-solid: #ffffff;
-    --et-surface-color-solid: #1c1f24;
-    --et-surface-color-muted-solid: #5f6670;
-    --et-surface-color-subtle-solid: #8a9099;
-    --et-surface-border-solid: #e3e5e8;
-    --et-surface-interaction-solid: #1c1f24;
-    --et-theme-color-primary-solid: #2f6fdf;
+    --et-surface-background: #ffffff;
+    --et-surface-text: #1c1f24;
+    --et-surface-text-muted: #5f6670;
+    --et-surface-text-subtle: #8a9099;
+    --et-surface-border: #e3e5e8;
+    --et-surface-interaction: #1c1f24;
+    --et-tone-fill: #2f6fdf;
 
     display: block;
     padding: ${FRAME_PADDING}px;
-    background: var(--et-surface-background-solid);
+    background: var(--et-surface-background);
     font-family: system-ui, sans-serif;
     font-size: 12px;
     line-height: 1.4;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
   }
 
   [data-series='0'] {
-    --_series: var(--et-theme-color-primary-solid);
+    --_series: var(--et-tone-fill);
   }
 
   [data-series='1'] {
-    --et-theme-color-primary-solid: #d9682a;
-    --_series: var(--et-theme-color-primary-solid);
+    --et-tone-fill: #d9682a;
+    --_series: var(--et-tone-fill);
   }
 
   .block {
@@ -267,7 +267,7 @@ export const frameStyles = css`
   }
 
   .grid-line {
-    stroke: var(--et-surface-border-solid);
+    stroke: var(--et-surface-border);
     stroke-width: 1px;
   }
 
@@ -280,13 +280,13 @@ export const frameStyles = css`
   }
 
   .crosshair {
-    stroke: var(--et-surface-color-subtle-solid);
+    stroke: var(--et-surface-text-subtle);
     stroke-width: 1px;
   }
 
   .slice-point {
     fill: var(--_series);
-    stroke: var(--et-surface-background-solid);
+    stroke: var(--et-surface-background);
     stroke-width: 2px;
   }
 

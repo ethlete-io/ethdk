@@ -39,7 +39,7 @@ const themeSwitch = async (): Promise<Drawn> => {
       );
       return {
         body: html`<div
-          class="flex gap-0.5 rounded-control-lg border border-(--et-surface-border-solid) p-0.5"
+          class="flex gap-0.5 rounded-control-lg border border-(--et-surface-border) p-0.5"
           role="group"
           aria-label="${label}"
         >
@@ -79,8 +79,8 @@ export const callView = async (transferred: boolean): Promise<Drawn> => {
       <div
         class="absolute top-space-3 inset-s-[calc(var(--st-shell-inset-left)+var(--spacing-space-4))] min-w-0 max-w-1/2"
       >
-        <h2 class="m-0 truncate text-et-surface font-ui-strong text-ui-md">Schmale Spur für die Wochenansicht</h2>
-        <span class="font-code text-et-surface-muted text-ui-xs">timetrack/kerbe/03-narrow-lane</span>
+        <h2 class="m-0 truncate text-et-surface-text font-ui-strong text-ui-md">Schmale Spur für die Wochenansicht</h2>
+        <span class="font-code text-et-surface-text-muted text-ui-xs">timetrack/kerbe/03-narrow-lane</span>
       </div>
       <div class="absolute top-space-3 right-space-3 flex items-center gap-space-2">
         ${themes.body}${transferMarkup}

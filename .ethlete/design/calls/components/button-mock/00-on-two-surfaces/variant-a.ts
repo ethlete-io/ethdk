@@ -25,8 +25,8 @@ export default drawing({
     }
     .panel {
       padding: 24px;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
     }
     .row {
       display: flex;

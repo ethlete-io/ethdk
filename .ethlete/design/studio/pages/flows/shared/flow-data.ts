@@ -97,14 +97,17 @@ export const presetPickerOf = async () => {
   return { ...picker, body: withAction(picker.body, { action: 'emit:presetChange', on: '.et-select-trigger' }) };
 };
 
-const caption = (text: string) => html`<span class="text-et-surface-muted text-ui-sm">${text}</span>`;
+const caption = (text: string) => html`<span class="text-et-surface-text-muted text-ui-sm">${text}</span>`;
 
 export const copyButton = () => button.render({ label: FLOWS_LABELS.copyPrompt, variant: 'outline', size: 'sm' });
 
-const prompt = html`<p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
+const prompt = html`<p
+  class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-background text-et-surface-text text-ui-sm"
+>
   ${FLOWS_LABELS.emptyPrompt}
 </p>`;
-const ghostBox = '<span class="block w-24 h-15 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
+const ghostBox =
+  '<span class="block w-24 h-15 rounded-sm outline outline-et-surface-border bg-et-surface-background"></span>';
 const ghostLine = '<span class="block w-10 h-px bg-et-surface-border"></span>';
 
 export const emptyCanvasOf = (copy: string) =>
@@ -113,8 +116,8 @@ export const emptyCanvasOf = (copy: string) =>
       <div class="flex items-center gap-space-2" aria-hidden="true">
         ${ghostBox}${ghostLine}${ghostBox}${ghostLine}${ghostBox}
       </div>
-      <p class="m-0 text-et-surface font-ui-strong text-ui-md">${FLOWS_LABELS.emptyTitle}</p>
-      <p class="m-0 text-et-surface-muted">
+      <p class="m-0 text-et-surface-text font-ui-strong text-ui-md">${FLOWS_LABELS.emptyTitle}</p>
+      <p class="m-0 text-et-surface-text-muted">
         Ein Flow verbindet Seiten und ihre Zustände zu einem Weg, den du von links nach rechts liest. Dein Agent legt
         ihn an. Bitte ihn zum Beispiel so:
       </p>
@@ -122,7 +125,7 @@ export const emptyCanvasOf = (copy: string) =>
     </div>
   </div>`;
 
-export const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">
+export const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-text-muted text-ui-sm">
   ${FLOWS_LABELS.none}
 </p>`;
 
@@ -212,11 +215,11 @@ export const flowGraph = (
     const y2 = b.y + CAPTION + h / 2;
     const bend = x1 + 12;
     const path = y1 === y2 ? `M${x1} ${y1}H${x2}` : `M${x1} ${y1}H${bend}V${y2}H${x2}`;
-    const label = `<span class="absolute text-center text-et-surface-muted text-ui-xs -translate-y-full pb-space-1" style="left:${bend + 4}px;top:${y2}px;width:${x2 - bend - 8}px">${edge.label}</span>`;
+    const label = `<span class="absolute text-center text-et-surface-text-muted text-ui-xs -translate-y-full pb-space-1" style="left:${bend + 4}px;top:${y2}px;width:${x2 - bend - 8}px">${edge.label}</span>`;
     return [{ path, label }];
   });
 
-  const svg = `<svg data-et-drawing class="absolute inset-0 overflow-visible text-et-surface-muted" width="${width}" height="${height}" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5"/></marker></defs>${edges.map((edge) => `<path d="${edge.path}" marker-end="url(#flow-arrow)"/>`).join('')}</svg>`;
+  const svg = `<svg data-et-drawing class="absolute inset-0 overflow-visible text-et-surface-text-muted" width="${width}" height="${height}" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5"/></marker></defs>${edges.map((edge) => `<path d="${edge.path}" marker-end="url(#flow-arrow)"/>`).join('')}</svg>`;
 
   return html`<div class="relative flex-none" style="width:${width}px;height:${height}px">
     ${svg}${frames}${edges.map((edge) => edge.label).join('')}${overlay}${onShots}

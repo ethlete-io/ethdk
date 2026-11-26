@@ -5,11 +5,11 @@
 
 @media (prefers-color-scheme: dark) {
   .et-tooltip-panel {
-    --et-surface-ring-solid: color-mix(in srgb, var(--et-surface-color-solid) 24%, var(--et-surface-background-solid));
-    --et-overlay-arrow-border: var(--et-surface-ring-solid);
+    --sdk-surface-ring: color-mix(in srgb, var(--et-surface-text) 24%, var(--et-surface-background));
+    --et-overlay-arrow-border: var(--sdk-surface-ring);
   }
 
   .et-tooltip {
-    --_et-floating-tip-border: var(--et-surface-ring-solid);
+    --_et-floating-tip-border: var(--sdk-surface-ring);
   }
 }

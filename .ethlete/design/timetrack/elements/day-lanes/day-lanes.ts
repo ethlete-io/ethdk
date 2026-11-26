@@ -16,7 +16,7 @@ const PARENT_WIDTH = 60;
 
 const tick = (row: Row, subagent: Subagent) => html`
   <span
-    class="absolute right-0 w-2 rounded-l-sm bg-et-theme"
+    class="absolute right-0 w-2 rounded-l-sm bg-et-tone-fill"
     style="top: ${topRemOf(subagent.from) - topRemOf(row.from)}rem; height: ${Math.max(heightRemOf(subagent), 0.6)}rem"
     title="${subagent.task} · ${formatMinutes(durationOf(subagent))}"
     data-short-subagent
@@ -28,14 +28,16 @@ const TWO_LINE_MIN_REM = 4;
 const stripeLabel = (subagent: Subagent) =>
   heightRemOf(subagent) < TWO_LINE_MIN_REM
     ? html`<span class="truncate"
-        >${subagent.task} <span class="text-et-surface-muted">${formatMinutes(durationOf(subagent))}</span></span
+        >${subagent.task} <span class="text-et-surface-text-muted">${formatMinutes(durationOf(subagent))}</span></span
       >`
     : html`<span class="line-clamp-2">${subagent.task}</span>
-        <span class="truncate text-et-surface-muted">${formatMinutes(durationOf(subagent))} · books nothing</span>`;
+        <span class="truncate text-et-surface-text-muted"
+          >${formatMinutes(durationOf(subagent))} · books nothing</span
+        >`;
 
 const stripe = (row: Row, subagent: Subagent) => html`
   <div
-    class="et-color--${row.theme} absolute flex flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme/60 bg-et-theme/8 px-1.5 py-0.5 text-small leading-tight"
+    class="et-color--${row.theme} absolute flex flex-col overflow-hidden rounded-sm border-l-2 border-l-et-tone-fill/60 bg-et-tone-fill/8 px-1.5 py-0.5 text-small leading-tight"
     style="top: ${topRemOf(subagent.from)}rem; height: ${heightRemOf(subagent)}rem; left: ${PARENT_WIDTH}%; width: ${
       100 - PARENT_WIDTH
     }%"
@@ -48,7 +50,7 @@ const stripe = (row: Row, subagent: Subagent) => html`
 
 const rail = (row: Row) => html`
   <div
-    class="et-color--${row.theme} absolute border-l border-dashed border-l-et-theme/40"
+    class="et-color--${row.theme} absolute border-l border-dashed border-l-et-tone-fill/40"
     style="top: ${topRemOf(row.from)}rem; height: ${heightRemOf(row)}rem; left: ${PARENT_WIDTH}%"
   ></div>
 `;
@@ -56,7 +58,7 @@ const rail = (row: Row) => html`
 const subagentCount = (row: Row) => {
   const short = shortSubagentsOf(row).length;
 
-  return html`<span class="relative mt-auto block truncate text-et-surface-muted"
+  return html`<span class="relative mt-auto block truncate text-et-surface-text-muted"
     >${row.subagents.length} subagents${short ? ` · ${short} short` : ''}</span
   >`;
 };

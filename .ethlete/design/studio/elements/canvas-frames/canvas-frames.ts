@@ -48,7 +48,7 @@ const label = (text: string, extra = '', description?: string) =>
 type Place = NonNullable<StateGridOptions['place']>;
 
 const cell = (place: Place) => (body: string | undefined) =>
-  `<div class="st-sgrid-cell p-space-3 bg-et-surface-bg ${place === 'center' ? 'grid place-items-center' : ''}">${body ?? ''}</div>`;
+  `<div class="st-sgrid-cell p-space-3 bg-et-surface-background ${place === 'center' ? 'grid place-items-center' : ''}">${body ?? ''}</div>`;
 
 const tableRow =
   (place: Place) =>
@@ -94,7 +94,7 @@ export const stateGrid = (
       </div>`
     : '';
   return html`<div
-    class="st-sgrid flex flex-col gap-6 w-max bg-et-surface-bg text-et-surface-muted pt-4 px-6 pb-6"
+    class="st-sgrid flex flex-col gap-6 w-max bg-et-surface-background text-et-surface-text-muted pt-4 px-6 pb-6"
     data-place="${place}"
     ${rows.some((row) => row.description) ? 'data-described' : ''}
     style="--st-cols: ${columns.length}; --st-cell-w: ${cellWidth}"
@@ -105,14 +105,16 @@ export const stateGrid = (
 
 /** The head of a frame: its name, an optional width and an optional trailing mark, set above the frame box. */
 export const canvasFrameHead = (name: string, width = '', extra = '') =>
-  html`<figcaption class="st-cframe-head absolute bottom-full left-0 flex pb-space-2 text-et-surface whitespace-nowrap">
-    ${name}${width ? `<span class="text-et-surface-muted tabular-nums">${width}</span>` : ''}${extra}
+  html`<figcaption
+    class="st-cframe-head absolute bottom-full left-0 flex pb-space-2 text-et-surface-text whitespace-nowrap"
+  >
+    ${name}${width ? `<span class="text-et-surface-text-muted tabular-nums">${width}</span>` : ''}${extra}
   </figcaption>`;
 
 /** The box of a frame: a hairline-edged surface around the body, with an optional head above it and extra classes and attributes on the box. */
 export const canvasFrameBox = (body: string, head = '', { class: extra = '', attrs = '' } = {}) =>
   html`<figure
-    class="st-cframe relative m-0 after:pointer-events-none after:absolute after:inset-0 bg-et-surface-bg ${extra}"
+    class="st-cframe relative m-0 after:pointer-events-none after:absolute after:inset-0 bg-et-surface-background ${extra}"
     ${attrs ? ` ${attrs}` : ''}
   >
     ${head}${body}
@@ -197,7 +199,7 @@ const gridBody = slotted(944, 224);
 
 const roundBody = slotted(556, 132);
 
-const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-muted" data-loading-badge data-et-skip="CLIPPED">${spinner({ diameter: 14, strokeWidth: 1.75 })}${CANVAS_LABELS.loading}</span>`;
+const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-text-muted" data-loading-badge data-et-skip="CLIPPED">${spinner({ diameter: 14, strokeWidth: 1.75 })}${CANVAS_LABELS.loading}</span>`;
 
 const markedFrame = async (name: string, body: string, mark?: FrameMark) => {
   const action = MARK_ACTION[mark ?? 'rest'];

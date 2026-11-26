@@ -41,13 +41,13 @@ const list = () =>
       ${GROUPS.map(
         (group) =>
           html`<section class="flex flex-col gap-space-1">
-            <h3 class="m-0 text-ui-xs font-ui-strong text-et-surface-muted">${group.label}</h3>
+            <h3 class="m-0 text-ui-xs font-ui-strong text-et-surface-text-muted">${group.label}</h3>
             <dl class="m-0 flex flex-col">
               ${group.rows
                 .map(
                   (row) =>
                     html`<div class="flex items-center justify-between gap-space-3 py-space-1 text-ui-sm">
-                      <dt class="text-et-surface">${row.label}</dt>
+                      <dt class="text-et-surface-text">${row.label}</dt>
                       <dd class="m-0 flex"><et-kbd keys="${row.keys}" platform="other" /></dd>
                     </div>`,
                 )

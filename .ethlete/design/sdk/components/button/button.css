@@ -1,19 +1,9 @@
 @layer components {
   .et-icon-button:where([data-variant='filled']) {
-    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
-
-    @media (hover: hover) {
-      &:not([disabled], [aria-disabled='true']):hover {
-        --et-theme-color-primary-rgb: var(--et-color-primary-active);
-      }
-    }
+    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-tone-text), transparent);
 
     &:not([disabled], [aria-disabled='true']):active {
-      --_et-button-background: color-mix(
-        in srgb,
-        var(--et-theme-color-primary-solid) 84%,
-        var(--et-theme-color-on-primary-solid)
-      );
+      --_et-button-background: color-mix(in srgb, var(--et-tone-fill) 84%, var(--et-tone-on-fill));
     }
   }
 
@@ -22,7 +12,7 @@
 
     @media (hover: hover) {
       &:not([disabled], [aria-disabled='true']):hover {
-        --et-theme-color-primary-opacity: 1;
+        --_et-tone-fill-opacity: 1;
       }
     }
   }

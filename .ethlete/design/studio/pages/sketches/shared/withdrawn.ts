@@ -18,7 +18,7 @@ export const withdrawnCount = (rows: Row[], withdrawn?: Withdrawn) =>
   withdrawn === undefined ? 0 : rows.filter((row) => isWithdrawn(row, withdrawn)).length;
 
 export const withdrawnMark = html`<span
-  class="text-(length:--sk-note) leading-[1.35] text-et-surface-muted italic wrap-anywhere"
+  class="text-(length:--sk-note) leading-[1.35] text-et-surface-text-muted italic wrap-anywhere"
   data-sk-withdrawn
   >${SYSTEM_TREE_LABELS.withdrawnLabel}: ${WITHDRAWN.reason}</span
 >`;

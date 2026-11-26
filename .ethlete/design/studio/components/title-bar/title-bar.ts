@@ -214,7 +214,7 @@ export default definePart({
     return drawing({
       body: html`<div class="${props.notice && !props.restart ? 'pb-12' : ''}">
           <div
-            class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 bg-et-surface-bg shadow-[inset_0_-1px_0_var(--color-et-surface-border)] ${props.os === 'windows' ? 'pl-1.5' : 'px-1.5'} text-et-surface font-ui text-ui-sm"
+            class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 bg-et-surface-background shadow-[inset_0_-1px_0_var(--color-et-surface-border)] ${props.os === 'windows' ? 'pl-1.5' : 'px-1.5'} text-et-surface-text font-ui text-ui-sm"
             data-et-surface
             data-tauri-drag-region="deep"
           >

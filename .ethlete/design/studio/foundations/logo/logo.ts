@@ -31,13 +31,17 @@ const appIconSheet = logoSheet({
   marks: [{ title: 'App icon', svg: appIcon, sizes: [16, 32, 64, 128, 256], onLight: [32, 64] }],
 });
 
-const sidebar = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surface-bg text-text font-ui text-ui-md">
+const sidebar = html`<div
+  class="flex flex-col gap-space-4 p-space-6 bg-et-surface-background text-text font-ui text-ui-md"
+>
   <aside class="flex flex-col w-60 h-80 border border-et-surface-border rounded-control-lg overflow-hidden">
     <header class="flex items-center gap-space-2 h-11 px-space-3 border-b border-et-surface-border">
       ${studioMark(20)}<span class="text-ui-lg font-ui-strong">Studio</span>
     </header>
     <nav class="flex flex-col gap-space-1 p-space-2">
-      <span class="flex items-center h-row px-space-2 rounded-control-sm bg-et-theme/20 text-text">Foundations</span>
+      <span class="flex items-center h-row px-space-2 rounded-control-sm bg-et-tone-fill/20 text-text"
+        >Foundations</span
+      >
       <span class="flex items-center h-row px-space-2 rounded-control-sm text-text-muted">Components</span>
       <span class="flex items-center h-row px-space-2 rounded-control-sm text-text-muted">Sketches</span>
     </nav>
@@ -64,7 +68,7 @@ export const studioBusyMark = (
 </svg>`;
 
 const tileVars =
-  'style="--st-tile: var(--accent, var(--et-theme-color-solid)); --st-on-tile: var(--on-accent, var(--surface-bg))"';
+  'style="--st-tile: var(--accent, var(--et-tone-fill)); --st-on-tile: var(--on-accent, var(--surface-bg))"';
 
 const legend = (rows: [string, string][]) =>
   html`<div class="lg-legend">

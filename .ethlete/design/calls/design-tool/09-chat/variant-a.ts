@@ -42,8 +42,8 @@ export default drawing({
       grid-template-rows: auto minmax(0, 1fr) auto;
       width: 38rem;
       height: 90rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font:
         400 1.4rem/1.5 'Jost',
         system-ui,
@@ -62,12 +62,12 @@ export default drawing({
       align-items: baseline;
       justify-content: space-between;
       padding: 1.4rem 1.6rem;
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
     }
     .chat-a__eyebrow,
     .chat-a__agent,
     .chat-a__at {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
       letter-spacing: 0.02em;
@@ -95,20 +95,20 @@ export default drawing({
       align-items: center;
     }
     .chat-a__who {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-weight: 500;
       font-size: 1.1rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
     .chat-a__turn--you .chat-a__who {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .chat-a__verb {
       padding: 0.2rem 0.7rem;
       border-radius: 0.3rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.18);
-      color: var(--et-theme-color-ink-solid);
+      background: color-mix(in srgb, var(--et-tone-fill) 18%, transparent);
+      color: var(--et-tone-text);
       font-size: 1.1rem;
       line-height: 1.5;
     }
@@ -118,43 +118,43 @@ export default drawing({
     }
     .chat-a__turn--agent .chat-a__text {
       padding-left: 1.2rem;
-      border-left: 0.2rem solid var(--et-surface-border-solid);
-      color: var(--et-surface-color-muted-solid);
+      border-left: 0.2rem solid var(--et-surface-border);
+      color: var(--et-surface-text-muted);
     }
     .chat-a__turn--you .chat-a__text {
       padding: 1rem 1.2rem;
       border-radius: 0.8rem 0.8rem 0.2rem 0.8rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.14);
-      color: var(--et-surface-color-solid);
+      background: color-mix(in srgb, var(--et-tone-fill) 14%, transparent);
+      color: var(--et-surface-text);
     }
     .chat-a__composer {
       display: grid;
       gap: 1rem;
       padding: 1.6rem;
-      border-top: 0.1rem solid var(--et-surface-border-solid);
+      border-top: 0.1rem solid var(--et-surface-border);
     }
     .chat-a__input {
       min-height: 9rem;
       padding: 1rem 1.2rem;
-      border: 0.1rem solid var(--et-theme-color-primary-solid);
+      border: 0.1rem solid var(--et-tone-fill);
       border-radius: 0.6rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.05);
+      background: color-mix(in srgb, var(--et-surface-text) 5%, transparent);
     }
     .chat-a__draft {
       margin: 0;
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
       font-size: 1.35rem;
     }
     .chat-a__caret {
       display: inline-block;
       width: 0.15rem;
       height: 1.6rem;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
       vertical-align: text-bottom;
       animation: chat-a-blink 1.1s steps(1, end) infinite;
     }
     .chat-a__rest {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       opacity: 0.45;
     }
     .chat-a__actions {
@@ -164,8 +164,8 @@ export default drawing({
     .chat-a__send {
       padding: 0.7rem 1.6rem;
       border-radius: 0.4rem;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-weight: 500;
       font-size: 1.3rem;
     }

@@ -26,7 +26,7 @@ export const rowBand = (options: { row: Row; left?: string; width?: string; deta
 
   return html`
     <div
-      class="et-color--${row.theme} absolute flex flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small data-compact:py-0 data-compact:leading-none"
+      class="et-color--${row.theme} absolute flex flex-col overflow-hidden rounded-sm border-l-2 border-l-et-tone-fill bg-et-tone-fill/15 px-2 py-1 text-left text-small data-compact:py-0 data-compact:leading-none"
       style="top: ${topRemOf(row.from)}rem; height: ${height}rem; left: ${options.left ?? '0'}; width: ${
         options.width ?? '100%'
       }"
@@ -35,20 +35,20 @@ export const rowBand = (options: { row: Row; left?: string; width?: string; deta
     >
       ${options.overlay ?? ''}
       <span class="relative block w-fit max-w-full truncate">
-        ${row.label} <span class="text-et-surface-muted">${formatMinutes(durationOf(row))}</span>
-        ${!detailed && html`<span class="text-et-surface-muted">${' · ' + row.description}</span>`}
+        ${row.label} <span class="text-et-surface-text-muted">${formatMinutes(durationOf(row))}</span>
+        ${!detailed && html`<span class="text-et-surface-text-muted">${' · ' + row.description}</span>`}
       </span>
-      ${detailed && html`<span class="relative block w-fit max-w-full truncate text-et-surface-muted">${row.description}</span>`}
+      ${detailed && html`<span class="relative block w-fit max-w-full truncate text-et-surface-text-muted">${row.description}</span>`}
       ${options.detail ?? ''}
     </div>
   `;
 };
 
 export const laneHeader = (label: string) =>
-  html`<span class="block truncate px-2 py-1 text-small text-et-surface-muted">${label}</span>`;
+  html`<span class="block truncate px-2 py-1 text-small text-et-surface-text-muted">${label}</span>`;
 
 export const dayTimeline = (columns: Column[]) => html`
-  <div class="flex h-full w-full flex-col overflow-hidden bg-et-surface-bg pb-4">
+  <div class="flex h-full w-full flex-col overflow-hidden bg-et-surface-background pb-4">
     <div class="flex">
       <div class="w-13 shrink-0"></div>
       ${columns.map(
@@ -71,7 +71,7 @@ export const dayTimeline = (columns: Column[]) => html`
             class="absolute inset-x-0 flex -translate-y-1/2 items-center gap-2"
             style="top: ${(hour - DAY_START_HOUR) * HOUR_REM}rem"
           >
-            <span class="w-11 shrink-0 text-right text-mono text-et-surface-subtle">${hour}:00</span>
+            <span class="w-11 shrink-0 text-right text-mono text-et-surface-text-subtle">${hour}:00</span>
             <span class="h-px grow bg-et-surface-border"></span>
           </div>
         `,

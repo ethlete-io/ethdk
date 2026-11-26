@@ -13,13 +13,13 @@ export default drawing({
     ${frameStyles}
 
     .crosshair {
-      stroke: var(--et-theme-color-primary-solid);
+      stroke: var(--et-tone-fill);
       stroke-width: 2px;
     }
 
     .ring {
       fill: none;
-      stroke: var(--et-theme-color-primary-solid);
+      stroke: var(--et-tone-fill);
       stroke-width: 2px;
     }
   `,

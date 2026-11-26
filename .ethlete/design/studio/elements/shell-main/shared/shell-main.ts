@@ -137,16 +137,17 @@ const HOVER_PRESS_RAISED =
 
 const bubbleClass = (kind: RailKind, active: boolean, panelHidden: boolean) => {
   if (kind === 'section') {
-    if (active && !panelHidden) return 'rounded-control-lg text-et-theme-ink bg-et-theme/20 hover:bg-et-theme/20';
+    if (active && !panelHidden)
+      return 'rounded-control-lg text-et-tone-text bg-et-tone-fill/20 hover:bg-et-tone-fill/20';
 
-    return `rounded-control-lg ${active ? 'text-et-theme-ink' : 'text-et-surface-muted'} ${HOVER_PRESS}`;
+    return `rounded-control-lg ${active ? 'text-et-tone-text' : 'text-et-surface-text-muted'} ${HOVER_PRESS}`;
   }
 
   if (kind === 'product') {
-    return `rounded-control-md bg-et-surface-bg ${active ? 'text-et-surface' : 'text-et-surface-muted'} ${HOVER_PRESS_RAISED}`;
+    return `rounded-control-md bg-et-surface-background ${active ? 'text-et-surface-text' : 'text-et-surface-text-muted'} ${HOVER_PRESS_RAISED}`;
   }
 
-  return `rounded-control-md text-et-surface-muted ${HOVER_PRESS}`;
+  return `rounded-control-md text-et-surface-text-muted ${HOVER_PRESS}`;
 };
 
 const railButton = (markup: string, label: string, kind: RailKind, force?: RailForce) => {
@@ -170,7 +171,7 @@ const railItem = (
   panelHidden = false,
   force?: RailForce,
 ) =>
-  `<div class="st-shell-slot relative flex justify-center w-full ${active ? `before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}>${railButton(
+  `<div class="st-shell-slot relative flex justify-center w-full ${active ? `before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-tone-fill' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}>${railButton(
     `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}" data-et-action="${kind === 'section' && active && !panelHidden ? 'emit:collapse' : RAIL_ACTIONS[kind]}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
     label,
     kind,
@@ -189,7 +190,9 @@ const rail = (
   logos: Record<string, string>,
   force?: RailForce,
 ) =>
-  html`<nav class="st-shell-rail row-start-2 flex flex-col items-center gap-space-1 py-space-3 bg-et-surface-bg">
+  html`<nav
+    class="st-shell-rail row-start-2 flex flex-col items-center gap-space-1 py-space-3 bg-et-surface-background"
+  >
     <div class="st-shell-slot relative flex justify-center w-full min-h-10" data-kind="logo">${studio}</div>
     ${sep}
     ${SECTIONS.map((s) => railItem(icon(ICONS[s], { size: 20 }), s, s === railSection(section), 'section', panelHidden, force)).join('')}
@@ -200,7 +203,7 @@ const rail = (
 
 const sidePanel = (side: string, head: string, top: string) =>
   html`<aside
-    class="st-shell-side absolute top-space-3 bottom-space-3 left-space-3 flex flex-col min-h-0 overflow-hidden rounded-control-lg bg-et-surface-bg"
+    class="st-shell-side absolute top-space-3 bottom-space-3 left-space-3 flex flex-col min-h-0 overflow-hidden rounded-control-lg bg-et-surface-background"
   >
     <header class="st-shell-side-head flex items-center justify-between gap-space-1 box-border pr-space-2 pl-space-2">
       ${head}
@@ -257,16 +260,18 @@ const serverScreen = (
             >
               ${
                 server === 'starting'
-                  ? html`<div class="flex items-center gap-space-2 text-et-surface">
+                  ? html`<div class="flex items-center gap-space-2 text-et-surface-text">
                         ${spinner()}
                         <h3 class="m-0 text-ui-lg font-ui-strong">${PHASE_HEADINGS[phase]}</h3>
                       </div>
-                      <p class="m-0 mt-space-1 text-ui-sm text-et-surface-muted">${elapsedLabel(phaseMs)}</p>`
-                  : html`<h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">${DESIGN_SERVER_LABELS.stopped}</h3>`
+                      <p class="m-0 mt-space-1 text-ui-sm text-et-surface-text-muted">${elapsedLabel(phaseMs)}</p>`
+                  : html`<h3 class="m-0 text-ui-lg font-ui-strong text-et-surface-text">
+                      ${DESIGN_SERVER_LABELS.stopped}
+                    </h3>`
               }
               ${
                 server === 'unanswered'
-                  ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
+                  ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-text-muted">
                         ${STUDIO_MENU_LABELS.designServer} antwortet nicht: ${serverUrl}
                       </p>
                       <div class="mt-space-3">${restartButton}</div>`
@@ -274,10 +279,10 @@ const serverScreen = (
               }
             </div>`
           : html`<div
-              class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
+              class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-text-muted"
               role="alert"
             >
-              <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">${DESIGN_SERVER_LABELS.stopped}</h3>
+              <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface-text">${DESIGN_SERVER_LABELS.stopped}</h3>
               ${
                 log.length
                   ? html`<pre
@@ -379,7 +384,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
 
     return drawing({
       body: html`<div
-        class="st-shell relative grid overflow-hidden bg-et-surface-bg text-et-surface font-ui text-ui-md"
+        class="st-shell relative grid overflow-hidden bg-et-surface-background text-et-surface-text font-ui text-ui-md"
         data-et-surface
         data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}${sideWidth ? ` style="--st-side-width: ${sideWidth}px"` : ''}
       >
@@ -387,7 +392,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
         ${rail(section, product, panel === 'hidden', studio, logos, force)}
         <div class="st-shell-stage relative row-start-2 min-w-0">
           <main
-            class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg"
+            class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-background"
             ${server ? '' : slot('canvas')}
           >
             ${server ? serverScreen(server, log, serverUrl, crash, crashScreen, phase, phaseMs) : content}

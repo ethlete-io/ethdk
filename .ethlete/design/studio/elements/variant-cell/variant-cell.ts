@@ -28,7 +28,7 @@ const STACK_INSETS = [6, 12];
 export const variantCellStyles = styles + loaderStyles;
 
 const loadingBadge = html`<span
-  class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-muted [@container(height<14px)]:hidden"
+  class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-text-muted [@container(height<14px)]:hidden"
   data-loading-badge
   >${spinner({ diameter: 14, strokeWidth: 1.75 })}<span class="[@container(height<18px)]:hidden"
     >${CANVAS_LABELS.loading}</span
@@ -56,7 +56,7 @@ const frame = ({
   const stackEdges = STACK_INSETS.map(
     (inset) =>
       html`<div
-        class="rounded-b-control-sm bg-et-surface-bg sk-fit"
+        class="rounded-b-control-sm bg-et-surface-background sk-fit"
         style="height: 5px; margin-inline: ${inset}px"
         data-sk-crop-stack
       ></div>`,
@@ -87,7 +87,7 @@ const frame = ({
             .map(
               (mark) =>
                 html`<span
-                  class="pointer-events-none absolute rounded-control-sm border-2 border-et-theme"
+                  class="pointer-events-none absolute rounded-control-sm border-2 border-et-tone-fill"
                   style="left: ${mark.left}px; top: ${mark.top}px; width: ${mark.width}px; height: ${mark.height}px"
                   data-sk-crop-mark
                 ></span>`,
@@ -101,7 +101,7 @@ const frame = ({
     ${
       stacked.length > 0
         ? html`${stackEdges}<span
-              class="mt-space-1 w-(--sk-frame) font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere"
+              class="mt-space-1 w-(--sk-frame) font-code text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere"
               data-sk-stack-states
               >${SKETCHES_LABELS.stackedStates(stacked)}</span
             >`
@@ -122,17 +122,19 @@ export const variantCell = (props: Props) => {
       data-sk-label
       ><span
         class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere ${
-          same ? 'text-et-surface-muted' : 'text-et-surface'
+          same ? 'text-et-surface-text-muted' : 'text-et-surface-text'
         }"
         ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span
         >${same ? SKETCHES_LABELS.unchanged : ''}</span
-      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-same-as-rest>${SKETCHES_LABELS.sameAsRest(sameAsRest, state)}</span>` : ''}</span
+      >${sameAsRest.length > 0 ? html`<span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere" data-sk-same-as-rest>${SKETCHES_LABELS.sameAsRest(sameAsRest, state)}</span>` : ''}</span
     >
     ${frame(props)}
   </div>`;
 };
 
-const demo = html`<div class="flex h-full items-center justify-center bg-et-surface-bg text-ui-lg text-et-surface">
+const demo = html`<div
+  class="flex h-full items-center justify-center bg-et-surface-background text-ui-lg text-et-surface-text"
+>
   Speichern
 </div>`;
 

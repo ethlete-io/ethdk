@@ -62,7 +62,7 @@ export default definePart({
   render: (props: Props) =>
     drawing({
       body: html`<div
-        class="inline-flex ${props.interaction === 'focus-visible' ? 'min-w-10 justify-center pb-space-2' : 'p-space-2'} text-et-surface font-ui"
+        class="inline-flex ${props.interaction === 'focus-visible' ? 'min-w-10 justify-center pb-space-2' : 'p-space-2'} text-et-surface-text font-ui"
       >
         ${shellCollapse(props)}
       </div>`,

@@ -69,13 +69,13 @@ export default drawing({
         align-self: stretch;
         width: 0.4rem;
         border-radius: 999px;
-        background: rgb(var(--et-color-primary));
+        background: var(--et-tone-fill-rest);
       }
 
       .rail-label {
         font-family: ui-monospace, monospace;
         font-size: 1.2rem;
-        color: rgb(var(--et-color-primary-ink));
+        color: var(--et-tone-text-rest);
       }
 
       .rail-cut {

@@ -80,8 +80,8 @@ export default drawing({
       grid-template-rows: auto minmax(0, 1fr) auto;
       width: 38rem;
       height: 90rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font:
         400 1.4rem/1.45 'Jost',
         system-ui,
@@ -106,9 +106,9 @@ export default drawing({
       align-content: start;
       gap: 0.5rem;
       padding: 1.8rem 1.6rem 1.4rem;
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
     }
     .chat-b__head h2 {
       margin: 0;
@@ -118,13 +118,13 @@ export default drawing({
         sans-serif;
     }
     .chat-b__eyebrow {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
       letter-spacing: 0.02em;
     }
     .chat-b__round {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
     .chat-b__variants {
@@ -132,7 +132,7 @@ export default drawing({
       gap: 1.2rem;
       margin-top: 1rem;
       padding-top: 1.2rem;
-      border-top: 0.1rem solid var(--et-surface-border-solid);
+      border-top: 0.1rem solid var(--et-surface-border);
     }
     .chat-b__variant-group {
       display: grid;
@@ -140,7 +140,7 @@ export default drawing({
     }
     .chat-b__group-label {
       padding: 0 0.7rem 0.3rem;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 1.05rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -159,20 +159,20 @@ export default drawing({
       width: 1.6rem;
       height: 1.6rem;
       border-radius: 50%;
-      background: rgb(var(--et-surface-color-rgb) / 0.08);
-      color: var(--et-surface-color-subtle-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 8%, transparent);
+      color: var(--et-surface-text-subtle);
     }
     .chat-b__variant-name {
       flex: 1;
       min-width: 0;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .chat-b__verdict {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1rem;
       letter-spacing: 0.06em;
@@ -180,28 +180,28 @@ export default drawing({
       white-space: nowrap;
     }
     .chat-b__variant--chosen .chat-b__mark {
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.2);
-      color: var(--et-theme-color-ink-solid);
+      background: color-mix(in srgb, var(--et-tone-fill) 20%, transparent);
+      color: var(--et-tone-text);
     }
     .chat-b__variant--chosen .chat-b__verdict {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .chat-b__variant--rejected {
       opacity: 0.45;
     }
     .chat-b__variant--current {
-      border-left-color: var(--et-theme-color-primary-solid);
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.12);
+      border-left-color: var(--et-tone-fill);
+      background: color-mix(in srgb, var(--et-tone-fill) 12%, transparent);
     }
     .chat-b__variant--current .chat-b__variant-name {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
       font-weight: 500;
     }
     .chat-b__on-screen {
       padding: 0.15rem 0.5rem;
       border-radius: 0.3rem;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1rem;
       letter-spacing: 0.04em;
@@ -223,7 +223,7 @@ export default drawing({
       bottom: 1.8rem;
       width: 0.3rem;
       border-radius: 0.2rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.07);
+      background: color-mix(in srgb, var(--et-surface-text) 7%, transparent);
     }
     .chat-b__rail i {
       position: absolute;
@@ -232,7 +232,7 @@ export default drawing({
       left: 0;
       height: 66%;
       border-radius: 0.2rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.22);
+      background: color-mix(in srgb, var(--et-surface-text) 22%, transparent);
     }
     .chat-b__turn {
       display: grid;
@@ -256,37 +256,37 @@ export default drawing({
       font-weight: 400;
     }
     .chat-b__turn-head span {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
     }
     .chat-b__turn--agent {
       padding-left: 1.1rem;
-      border-left: 0.2rem solid var(--et-surface-border-solid);
+      border-left: 0.2rem solid var(--et-surface-border);
     }
     .chat-b__turn--agent .chat-b__turn-head b {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
     }
     .chat-b__turn--agent p {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
     .chat-b__turn--you {
       justify-self: end;
       max-width: 90%;
       padding: 0.9rem 1.1rem;
       border-radius: 1rem 1rem 0.3rem 1rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.14);
-      box-shadow: inset 0 0 0 0.1rem rgb(var(--et-theme-color-primary-rgb) / 0.3);
+      background: color-mix(in srgb, var(--et-tone-fill) 14%, transparent);
+      box-shadow: inset 0 0 0 0.1rem color-mix(in srgb, var(--et-tone-fill) 30%, transparent);
     }
     .chat-b__turn--you .chat-b__turn-head b {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .chat-b__turn--you p {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
     }
     .chat-b__verb {
       padding: 0.2rem 0.6rem;
       border-radius: 0.3rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.28);
-      color: var(--et-theme-color-ink-solid);
+      background: color-mix(in srgb, var(--et-tone-fill) 28%, transparent);
+      color: var(--et-tone-text);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1rem;
       letter-spacing: 0.06em;
@@ -297,8 +297,8 @@ export default drawing({
       justify-items: end;
       gap: 1rem;
       padding: 1.4rem 1.6rem 1.6rem;
-      border-top: 0.1rem solid var(--et-surface-border-solid);
-      background: rgb(var(--et-surface-color-rgb) / 0.03);
+      border-top: 0.1rem solid var(--et-surface-border);
+      background: color-mix(in srgb, var(--et-surface-text) 3%, transparent);
     }
     .chat-b__input {
       display: flex;
@@ -306,26 +306,26 @@ export default drawing({
       justify-self: stretch;
       min-height: 7.6rem;
       padding: 1rem 1.2rem;
-      border: 0.1rem solid var(--et-theme-color-primary-solid);
+      border: 0.1rem solid var(--et-tone-fill);
       border-radius: 0.8rem;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
       font-size: 1.3rem;
       line-height: 1.5;
     }
     .chat-b__draft {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
       white-space: pre-wrap;
     }
     .chat-b__caret {
       width: 0.15rem;
       height: 1.9rem;
-      background: var(--et-theme-color-ink-solid);
+      background: var(--et-tone-text);
     }
     .chat-b__send {
       padding: 0.7rem 1.6rem;
       border-radius: 0.4rem;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-weight: 500;
       font-size: 1.3rem;
     }

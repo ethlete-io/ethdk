@@ -80,7 +80,7 @@ export const band = (options: {
 export const DAY_STYLES = css`
   /* The frame runs without the surface directive, so the value the dark theme sets at runtime is written here. */
   #root {
-    --et-surface-interaction: 161 161 161;
+    --et-surface-interaction: rgb(161 161 161);
   }
 
   .sheet {
@@ -89,8 +89,8 @@ export const DAY_STYLES = css`
     gap: 1.6rem;
     min-height: 100vh;
     padding: 2.4rem 3rem 3rem;
-    background: rgb(var(--et-surface-background));
-    color: rgb(var(--et-surface-color));
+    background: var(--et-surface-background);
+    color: var(--et-surface-text);
     font-size: var(--text-small);
     line-height: var(--text-small--line-height);
   }
@@ -111,11 +111,11 @@ export const DAY_STYLES = css`
   }
 
   .muted {
-    color: rgb(var(--et-surface-color-muted));
+    color: var(--et-surface-text-muted);
   }
 
   .subtle {
-    color: rgb(var(--et-surface-color-subtle));
+    color: var(--et-surface-text-subtle);
   }
 
   .mono {
@@ -141,7 +141,7 @@ export const DAY_STYLES = css`
     transform: translateY(-50%);
     font-family: ui-monospace, monospace;
     font-size: 1.2rem;
-    color: rgb(var(--et-surface-color-subtle));
+    color: var(--et-surface-text-subtle);
     white-space: nowrap;
   }
 
@@ -160,14 +160,14 @@ export const DAY_STYLES = css`
     position: absolute;
     inset-inline: 0;
     height: 1px;
-    background: rgb(var(--et-surface-border));
+    background: var(--et-surface-border);
   }
 
   .now {
     position: absolute;
     inset-inline: 0;
     z-index: 10;
-    border-top: 2px solid var(--color-et-brand-ink);
+    border-top: 2px solid var(--color-et-tone-brand-text);
   }
 
   .now-dot {
@@ -177,7 +177,7 @@ export const DAY_STYLES = css`
     width: 0.8rem;
     height: 0.8rem;
     border-radius: 999px;
-    background: var(--color-et-brand-ink);
+    background: var(--color-et-tone-brand-text);
   }
 
   .lane-col {
@@ -200,9 +200,9 @@ export const DAY_STYLES = css`
   .lane-head {
     height: 2.9rem;
     padding: 0.4rem 0.8rem;
-    border-bottom: 1px solid rgb(var(--et-surface-border));
-    border-left: 1px solid rgb(var(--et-surface-border));
-    color: rgb(var(--et-surface-color-muted));
+    border-bottom: 1px solid var(--et-surface-border);
+    border-left: 1px solid var(--et-surface-border);
+    color: var(--et-surface-text-muted);
     white-space: nowrap;
   }
 
@@ -212,7 +212,7 @@ export const DAY_STYLES = css`
 
   .lane {
     position: relative;
-    border-left: 1px solid rgb(var(--et-surface-border));
+    border-left: 1px solid var(--et-surface-border);
   }
 
   .band {
@@ -222,15 +222,15 @@ export const DAY_STYLES = css`
     flex-direction: column;
     overflow: hidden;
     padding: 0.4rem 0.8rem;
-    border-left: 2px solid rgb(var(--et-color-primary));
+    border-left: 2px solid var(--et-tone-fill-rest);
     border-radius: 0.25rem;
-    background: rgb(var(--et-color-primary) / 0.15);
+    background: color-mix(in srgb, var(--et-tone-fill-rest) 15%, transparent);
     cursor: grab;
     outline: none;
   }
 
   .band:hover {
-    background: rgb(var(--et-color-primary) / 0.3);
+    background: color-mix(in srgb, var(--et-tone-fill-rest) 30%, transparent);
   }
 
   .band[data-compact] {
@@ -248,7 +248,7 @@ export const DAY_STYLES = css`
   }
 
   .band-detail {
-    color: rgb(var(--et-surface-color-muted));
+    color: var(--et-surface-text-muted);
   }
 
   .icon-button {
@@ -257,10 +257,10 @@ export const DAY_STYLES = css`
     width: 2.2rem;
     height: 2.2rem;
     flex-shrink: 0;
-    border: 1px solid rgb(var(--et-surface-border));
+    border: 1px solid var(--et-surface-border);
     border-radius: 0.3rem;
-    background: rgb(var(--et-surface-background));
-    color: rgb(var(--et-surface-color));
+    background: var(--et-surface-background);
+    color: var(--et-surface-text);
     font-size: 1.2rem;
     line-height: 1;
     cursor: pointer;
@@ -268,12 +268,12 @@ export const DAY_STYLES = css`
   }
 
   .icon-button:hover {
-    border-color: rgb(var(--et-color-primary-ink));
+    border-color: var(--et-tone-text-rest);
   }
 
   .icon-button[data-approve] {
-    border-color: rgb(var(--et-color-primary-ink));
-    color: var(--color-et-brand-ink);
+    border-color: var(--et-tone-text-rest);
+    color: var(--color-et-tone-brand-text);
   }
 
   .pill {
@@ -281,10 +281,10 @@ export const DAY_STYLES = css`
     align-items: center;
     gap: 0.6rem;
     padding: 0.2rem 1rem;
-    border: 1px solid rgb(var(--et-color-primary-ink) / 0.6);
+    border: 1px solid color-mix(in srgb, var(--et-tone-text-rest) 60%, transparent);
     border-radius: 999px;
-    background: rgb(var(--et-color-primary) / 0.15);
-    color: var(--color-et-brand-ink);
+    background: color-mix(in srgb, var(--et-tone-fill-rest) 15%, transparent);
+    color: var(--color-et-tone-brand-text);
     white-space: nowrap;
     cursor: pointer;
   }
@@ -293,14 +293,14 @@ export const DAY_STYLES = css`
     width: 0.7rem;
     height: 0.7rem;
     border-radius: 999px;
-    background: var(--color-et-brand-ink);
+    background: var(--color-et-tone-brand-text);
   }
 
   .one-by-one {
     padding: 0 0.6rem;
     border-radius: 0.2rem;
-    background: rgb(var(--et-color-primary) / 0.15);
-    color: rgb(var(--et-color-primary-ink));
+    background: color-mix(in srgb, var(--et-tone-fill-rest) 15%, transparent);
+    color: var(--et-tone-text-rest);
     font-size: 1.2rem;
     white-space: nowrap;
   }

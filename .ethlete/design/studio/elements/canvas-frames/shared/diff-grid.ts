@@ -29,7 +29,7 @@ const insetOf = (edge: number) => `${edge}px`;
 const markOf = (box: Box) =>
   html`<div class="pointer-events-none absolute inset-0 overflow-clip" data-diff-mark data-et-skip="CLIPPED">
     <div
-      class="absolute shadow-[0_0_0_100vmax_color-mix(in_srgb,var(--et-surface-background-solid)_50%,transparent)]"
+      class="absolute shadow-[0_0_0_100vmax_color-mix(in_srgb,var(--et-surface-background)_50%,transparent)]"
       style="left: ${insetOf(box.x)}; top: ${insetOf(box.y)}; right: ${insetOf(
         CELL.width - box.x - box.width,
       )}; bottom: ${insetOf(CELL.height - box.y - box.height)}"

@@ -8,7 +8,7 @@ type Props = { frame: string; action?: string; interaction?: TargetInteraction }
 export const commentTarget = ({ frame, action = 'emit:comment', interaction }: Props) => {
   const markup = control(
     html`<div
-      class="absolute inset-0 cursor-crosshair outline-none [transition:var(--transition-state)] bg-(--et-theme-color-primary-solid)/6 hover:bg-(--et-theme-color-primary-solid)/10 active:bg-(--et-theme-color-primary-solid)/14 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
+      class="absolute inset-0 cursor-crosshair outline-none [transition:var(--transition-state)] bg-(--et-tone-fill)/6 hover:bg-(--et-tone-fill)/10 active:bg-(--et-tone-fill)/14 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
       aria-label="Kommentar zu ${frame}"
       role="button"
       tabindex="0"

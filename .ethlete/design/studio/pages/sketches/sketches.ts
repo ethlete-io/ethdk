@@ -137,13 +137,13 @@ const LIST_VIEWPORT = { width: LIST_WIDTH, height: LIST_HEIGHT };
 const LIST_ERROR = 'missing build: pages/sketches';
 const FAILED_REASONS = { b: 'default: boom is not defined' };
 const failedMark = (reason: string) =>
-  html`<span class="text-ui-xs text-et-theme-ink" data-et-semantic-color="error" role="alert" data-sk-compare-failed
+  html`<span class="text-ui-xs text-et-tone-text" data-et-semantic-color="error" role="alert" data-sk-compare-failed
     >Vergleich fehlgeschlagen: ${reason}</span
   >`;
 
 const rowFailedMark = (reason: string) =>
   html`<span
-    class="line-clamp-3 text-ui-xs text-et-theme-ink wrap-anywhere"
+    class="line-clamp-3 text-ui-xs text-et-tone-text wrap-anywhere"
     data-et-semantic-color="error"
     role="alert"
     title="${SKETCHES_LABELS.rowFailed(reason)}"
@@ -161,7 +161,7 @@ const MERGE_ERROR =
   'components/quantity-stepper hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.';
 
 const errorText = (reason: string) =>
-  html`<p class="m-0 text-ui-xs text-et-theme-ink" data-et-semantic-color="error" role="alert" data-sk-merge-error>
+  html`<p class="m-0 text-ui-xs text-et-tone-text" data-et-semantic-color="error" role="alert" data-sk-merge-error>
     ${reason}
   </p>`;
 
@@ -206,12 +206,12 @@ const measuredCell = (part: SketchPart, row: Row, state: string, pending: boolea
 const missingCell = (row: Row, state: string) =>
   html`<div class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1" data-sk-state="${state}" data-sk-missing>
     <span class="row-start-1 flex min-w-0 items-center in-data-sk-labels-hidden:hidden" data-sk-label
-      ><span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere"
+      ><span class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere"
         >${state}</span
       ></span
     >
     <div
-      class="row-start-2 box-border flex w-(--sk-frame) items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
+      class="row-start-2 box-border flex w-(--sk-frame) items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border) p-space-2 text-center text-ui-xs text-et-surface-text-muted"
     >
       ${row.key === 'current' ? SKETCHES_LABELS.newInSketch : SKETCHES_LABELS.missingInVariant}
     </div>
@@ -294,15 +294,14 @@ const controlsOf = async () => ({
   chip: await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' }),
 });
 
-const drawingMark = html`<span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
-  ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
-  >${SKETCHES_LABELS.drawingMark}</span
+const drawingMark = html`<span class="flex items-center gap-space-1 text-ui-sm text-et-surface-text-muted"
+  ><span class="size-1.5 animate-pulse rounded-full bg-(--et-tone-fill)"></span>${SKETCHES_LABELS.drawingMark}</span
 >`;
 
 const pointsChip = async (open: boolean) => {
   const drawn = await button.render({
     label: openLabel(SKETCH_POINTS.length),
-    icon: `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-theme' })}</span>`,
+    icon: `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-tone-fill' })}</span>`,
     variant: 'outline',
     size: 'sm',
     pressed: open,
@@ -317,10 +316,10 @@ const pointsPopover = async (part: string) => {
   const lines = SKETCH_POINTS.map(
     ({ icon: name, text, detail }) =>
       html`<li class="flex items-center gap-space-2 px-space-3 py-space-1">
-        ${icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' })}<span
-          class="min-w-0 flex-1 truncate text-(--et-surface-color-solid)"
+        ${icon(name, { size: 14, cls: 'flex-none text-(--et-surface-text-muted)' })}<span
+          class="min-w-0 flex-1 truncate text-(--et-surface-text)"
           >${text}</span
-        ><span class="font-code text-ui-xs text-(--et-surface-color-muted-solid)">${detail}</span>
+        ><span class="font-code text-ui-xs text-(--et-surface-text-muted)">${detail}</span>
       </li>`,
   ).join('');
   const dialog = await anchoredDialog.render({
@@ -329,10 +328,10 @@ const pointsPopover = async (part: string) => {
     anchor: '[data-sk-points]',
     content: html`<div class="w-96 text-ui-sm">
       <header
-        class="flex items-baseline gap-space-2 border-b border-(--et-surface-border-solid) px-space-3 pt-space-3 pb-space-2"
+        class="flex items-baseline gap-space-2 border-b border-(--et-surface-border) px-space-3 pt-space-3 pb-space-2"
       >
-        <span class="font-ui-strong text-(--et-surface-color-solid)">Offene Punkte</span>
-        <span class="ms-auto font-code text-ui-xs text-(--et-surface-color-muted-solid)">${part}</span>
+        <span class="font-ui-strong text-(--et-surface-text)">Offene Punkte</span>
+        <span class="ms-auto font-code text-ui-xs text-(--et-surface-text-muted)">${part}</span>
       </header>
       <ul class="m-0 list-none p-0 py-space-1">
         ${lines}
@@ -367,10 +366,10 @@ const confirmDialog = async (kind: ConfirmKind, part: string, variant: string) =
     data-sk-confirm-dialog
   >
     <div class="flex flex-col gap-space-1">
-      <span class="font-ui-strong wrap-anywhere text-et-surface"
+      <span class="font-ui-strong wrap-anywhere text-et-surface-text"
         >${merge ? `${variant} in ${part} übernehmen?` : `Skizze ${part} verwerfen?`}</span
       >
-      <span class="text-et-surface-muted"
+      <span class="text-et-surface-text-muted"
         >${merge ? SKETCHES_LABELS.mergeConfirm.note : SKETCHES_LABELS.discardConfirm.note}</span
       >
     </div>
@@ -437,7 +436,7 @@ const headOf = (row: Row, view: View) => {
 const tagNoteOf = (row: Row) =>
   row.note
     ? html`<p
-        class="m-0 mt-space-1 hidden text-ui-xs text-et-surface-muted wrap-anywhere in-data-sk-head-hidden:line-clamp-2"
+        class="m-0 mt-space-1 hidden text-ui-xs text-et-surface-text-muted wrap-anywhere in-data-sk-head-hidden:line-clamp-2"
         title="${row.note}"
         data-sk-tag-note
       >
@@ -453,7 +452,7 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
   >
     <div class="min-w-0" data-sk-head-row>
       <span
-        class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
+        class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)] in-data-sk-head-hidden:inline-flex"
         data-sk-head-tag
         >${row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key)}</span
       >
@@ -487,7 +486,7 @@ const gutter = (states: string[], top: number, block: number, offset: number) =>
     .map(
       (state, index) =>
         html`<span
-          class="flex items-center self-stretch pr-space-3 font-code text-(length:--sk-note) leading-[1.35] text-et-surface in-data-sk-head-hidden:text-transparent"
+          class="flex items-center self-stretch pr-space-3 font-code text-(length:--sk-note) leading-[1.35] text-et-surface-text in-data-sk-head-hidden:text-transparent"
           data-sk-gutter
           data-sk-block="${block}"
           style="grid-column: ${offset + 1}; grid-row: ${top + 1 + index * 2} / span 2${block > 0 ? '; padding-left: 24px' : ''}"
@@ -512,7 +511,7 @@ const column = (part: SketchPart, states: string[], row: Row, at: number, top: n
     ${row.key === view.selected ? ' data-selected' : ''}
   >
     <span
-      class="${block > 0 ? 'inline-flex max-w-full truncate px-1' : 'hidden in-data-sk-head-hidden:inline-flex max-w-full truncate px-space-2'} items-center rounded-full py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+      class="${block > 0 ? 'inline-flex max-w-full truncate px-1' : 'hidden in-data-sk-head-hidden:inline-flex max-w-full truncate px-space-2'} items-center rounded-full py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
       data-sk-head-tag
       >${block > 0 ? shortLabelOf(rowLabelOf(row)) : rowLabelOf(row)}</span
     >
@@ -590,7 +589,7 @@ const screenHead = (row: Row, at: number, view: View) =>
     style="grid-column: ${at}; grid-row: 1"
   >
     <span
-      class="hidden in-data-sk-head-hidden:inline-flex max-w-full items-center truncate rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+      class="hidden in-data-sk-head-hidden:inline-flex max-w-full items-center truncate rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
       data-sk-head-tag
       >${row.label ?? (row.key === 'current' ? SKETCHES_LABELS.current : row.key)}</span
     >
@@ -603,22 +602,22 @@ const percent = (part: number, whole: number) => `${(part / whole) * 100}%`;
 const locator = (group: ChangeGroup) => {
   const crop = cropOf(group.box);
   return html`<span
-    class="relative block aspect-16/10 w-[calc(var(--sk-note)*9)] rounded-control-sm bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+    class="relative block aspect-16/10 w-[calc(var(--sk-note)*9)] rounded-control-sm bg-et-surface-background shadow-[0_0_0_1px_var(--et-surface-border)]"
     data-cc-locator
   >
-    <span class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border-solid)]"></span>
+    <span class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border)]"></span>
     <span
-      class="absolute rounded-[2px] border-2 border-et-theme"
+      class="absolute rounded-[2px] border-2 border-et-tone-fill"
       style="left: ${percent(crop.x, SCREEN_WIDTH)}; top: ${percent(crop.y, SCREEN_HEIGHT)}; width: ${percent(crop.width, SCREEN_WIDTH)}; height: ${percent(crop.height, SCREEN_HEIGHT)}"
     ></span>
   </span>`;
 };
 
 const stackEdges = html`<div
-    class="mx-8 h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
+    class="mx-8 h-5 rounded-b-control-md bg-et-surface-background shadow-[0_0_0_2px_var(--et-surface-border)]"
   ></div>
   <div
-    class="mx-16 h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
+    class="mx-16 h-5 rounded-b-control-md bg-et-surface-background shadow-[0_0_0_2px_var(--et-surface-border)]"
   ></div>`;
 
 const buttonsOf = async () => {
@@ -644,12 +643,12 @@ const screenGutter = (group: ChangeGroup, line: number, whole: boolean, buttons:
     data-sk-gutter
     style="grid-column: 1; grid-row: ${line} / span 2"
   >
-    <span class="font-code text-et-surface">${first}</span>
-    ${count > 1 ? html`<span class="text-et-surface">${count} Zustände, gleicher Ausschnitt</span>` : ''}
+    <span class="font-code text-et-surface-text">${first}</span>
+    ${count > 1 ? html`<span class="text-et-surface-text">${count} Zustände, gleicher Ausschnitt</span>` : ''}
     ${reasonLinesOf(group)
       .map(
         (line, index, lines) =>
-          html`<span class="text-et-surface-muted" data-cc-reason
+          html`<span class="text-et-surface-text-muted" data-cc-reason
             >${line}${whole || index < lines.length - 1 ? '' : ` · ${zoomTextOf(cropOf(group.box))} vergrößert`}</span
           >`,
       )
@@ -992,13 +991,13 @@ export default definePart<Props>({
         studio: menu.body,
         section: 'Sketches',
         product: 'studio',
-        side: html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">${SKETCHES_LABELS.none}</p>`,
+        side: html`<p class="px-space-3 py-space-2 text-et-surface-text-muted text-ui-sm">${SKETCHES_LABELS.none}</p>`,
         content: html`<div
           class="h-full flex flex-col items-center justify-center gap-space-1 text-center ps-(--st-shell-inset-left)"
         >
-          ${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-theme-ink' })}
-          <p class="m-0 text-et-surface text-(length:--text-sm)">${SKETCHES_LABELS.emptyTitle}</p>
-          <p class="m-0 text-et-surface-muted text-(length:--text-xs)">${SKETCHES_LABELS.emptyText}</p>
+          ${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-tone-text' })}
+          <p class="m-0 text-et-surface-text text-(length:--text-sm)">${SKETCHES_LABELS.emptyTitle}</p>
+          <p class="m-0 text-et-surface-text-muted text-(length:--text-xs)">${SKETCHES_LABELS.emptyText}</p>
         </div>`,
       });
       return drawing({ body: shell.body, setup: [menu.setup], styles: shell.styles + menu.styles });
@@ -1092,7 +1091,7 @@ export default definePart<Props>({
         ${
           shownRoundNote
             ? html`<p
-                class="m-0 shrink-0 truncate pt-space-3 text-ui-sm text-et-surface-muted"
+                class="m-0 shrink-0 truncate pt-space-3 text-ui-sm text-et-surface-text-muted"
                 title="${shownRoundNote}"
                 data-sk-round-note
               >
@@ -1118,7 +1117,7 @@ export default definePart<Props>({
                     data-sk-folded
                     ${pending.length > 0 ? 'data-sk-pending' : ''}
                   >
-                    ${html`<span class="flex items-center gap-space-3" style="transform: translateX(var(--sk-pan-x, 0px))"><span class="text-ui-sm text-et-surface-muted">${pending.length > 0 ? (listError ? pendingFailedLabel(folded) : pendingLabel(folded)) : foldedLabel(folded)}</span>${disclosure({ label: SKETCHES_LABELS.showAllStates, body: '', open: false, size: 'xs', hug: true, action: 'emit:statesToggle' })}</span>`}
+                    ${html`<span class="flex items-center gap-space-3" style="transform: translateX(var(--sk-pan-x, 0px))"><span class="text-ui-sm text-et-surface-text-muted">${pending.length > 0 ? (listError ? pendingFailedLabel(folded) : pendingLabel(folded)) : foldedLabel(folded)}</span>${disclosure({ label: SKETCHES_LABELS.showAllStates, body: '', open: false, size: 'xs', hug: true, action: 'emit:statesToggle' })}</span>`}
                   </section>`
                 : ''
             }

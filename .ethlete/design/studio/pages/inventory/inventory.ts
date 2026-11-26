@@ -88,7 +88,7 @@ export default definePart<Props>({
     });
     const canvas = loading
       ? html`<p
-          class="m-0 p-space-4 ps-[calc(var(--st-shell-inset-left)+var(--space-4))] text-ui-sm text-et-surface-muted"
+          class="m-0 p-space-4 ps-[calc(var(--st-shell-inset-left)+var(--space-4))] text-ui-sm text-et-surface-text-muted"
         >
           ${DRAWING}
         </p>`
@@ -104,12 +104,12 @@ export default definePart<Props>({
       side: tree.body,
       content: html`<div class="grid h-full grid-cols-[minmax(0,1fr)_28rem]">
         <div class="relative min-h-0 overflow-hidden">${canvas}</div>
-        <aside class="flex min-h-0 flex-col border-l border-et-surface-border bg-et-surface-bg">
+        <aside class="flex min-h-0 flex-col border-l border-et-surface-border bg-et-surface-background">
           <header
             class="flex flex-wrap items-center gap-space-3 border-b border-et-surface-border px-space-4 py-space-3"
           >
             <div class="flex min-w-24 flex-1 basis-0 flex-col">
-              <span class="truncate text-ui-sm text-et-surface-muted">${INVENTORY_LABELS.title}</span>
+              <span class="truncate text-ui-sm text-et-surface-text-muted">${INVENTORY_LABELS.title}</span>
               <h2 class="m-0 truncate text-ui-lg font-ui-strong">${loading ? '' : (selected?.part ?? '')}</h2>
             </div>
             ${control(withAction(reload.body, 'emit:reloadInventory'), 'reload')}
@@ -117,7 +117,7 @@ export default definePart<Props>({
             ${
               loading || !selected
                 ? ''
-                : `<p class="m-0 w-full text-ui-sm text-et-surface-muted">${APPROVAL[selected.approval]}</p>`
+                : `<p class="m-0 w-full text-ui-sm text-et-surface-text-muted">${APPROVAL[selected.approval]}</p>`
             }
           </header>
           ${

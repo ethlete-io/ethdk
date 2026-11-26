@@ -59,7 +59,7 @@ export const statusLabel = (status: BuildReady) =>
       : `Nicht baubereit (${status.blockers.length})`;
 
 export const blockerIcon = (name: IconName) =>
-  icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' });
+  icon(name, { size: 14, cls: 'flex-none text-(--et-surface-text-muted)' });
 
 export const developerReasons = [
   'injiziert den Service CommandPaletteStore (title-search.component.ts)',

@@ -46,7 +46,7 @@ export const BASE = css`
     margin: 0;
     padding: 24px;
     font-family: system-ui, sans-serif;
-    background: var(--et-surface-background-solid);
+    background: var(--et-surface-background);
   }
   .phone {
     position: relative;
@@ -55,9 +55,9 @@ export const BASE = css`
     block-size: 720px;
     margin-inline: auto;
     border-radius: 36px;
-    border: 1px solid var(--et-surface-border-solid);
-    background: var(--et-surface-background-solid);
-    color: var(--et-surface-color-solid);
+    border: 1px solid var(--et-surface-border);
+    background: var(--et-surface-background);
+    color: var(--et-surface-text);
   }
   .page {
     padding: 56px 20px 0;
@@ -72,7 +72,7 @@ export const BASE = css`
     block-size: 48px;
     margin-block-end: 12px;
     border-radius: 12px;
-    background: var(--et-surface-border-solid);
+    background: var(--et-surface-border);
     opacity: 0.6;
   }
   .scrim {
@@ -89,8 +89,8 @@ export const BASE = css`
     padding: 0 20px;
     border-radius: 20px 20px 0 0;
     overflow: hidden;
-    background: var(--et-surface-background-solid);
-    box-shadow: 0 -1px 0 var(--et-surface-border-solid);
+    background: var(--et-surface-background);
+    box-shadow: 0 -1px 0 var(--et-surface-border);
     transform-origin: top center;
     transition:
       transform 400ms ${SPRING},
@@ -116,7 +116,7 @@ export const BASE = css`
     block-size: 4px;
     margin: 10px auto 22px;
     border-radius: 5px;
-    background: var(--et-surface-border-solid);
+    background: var(--et-surface-border);
   }
   .action {
     margin-block-start: 8px;
@@ -126,7 +126,7 @@ export const BASE = css`
     font: inherit;
     font-weight: 600;
     cursor: pointer;
-    background: var(--et-theme-color-primary-color-default, rgb(37 99 235));
-    color: var(--et-theme-color-primary-on-color-default, white);
+    background: var(--et-tone-fill, rgb(37 99 235));
+    color: var(--et-tone-on-fill, white);
   }
 `;

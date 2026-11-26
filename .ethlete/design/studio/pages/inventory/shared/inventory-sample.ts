@@ -157,9 +157,9 @@ export const APPROVAL: Record<Approval, string> = {
 const statusOf = (page: InventoryPage) => {
   const open = openCount(page);
 
-  if (open > 0) return `<span class="text-et-theme"${TONE.error}>${open} offen</span>`;
+  if (open > 0) return `<span class="text-et-tone-fill"${TONE.error}>${open} offen</span>`;
 
-  return `<span class="text-et-surface-muted">${page.approval === 'approved' ? 'freigegeben' : 'bereit zur Freigabe'}</span>`;
+  return `<span class="text-et-surface-text-muted">${page.approval === 'approved' ? 'freigegeben' : 'bereit zur Freigabe'}</span>`;
 };
 
 const percent = (value: number, of: number) => `${(value / of) * 100}%`;
@@ -167,7 +167,7 @@ const percent = (value: number, of: number) => `${(value / of) * 100}%`;
 const markOf = (row: Row) =>
   row.box
     ? html`<div
-        class="pointer-events-none absolute border-2 border-et-theme"
+        class="pointer-events-none absolute border-2 border-et-tone-fill"
         style="left:${percent(row.box.x, SHOT.width)};top:${percent(row.box.y, SHOT.height)};width:${percent(row.box.width, SHOT.width)};height:${percent(row.box.height, SHOT.height)}"
         ${TONE[row.tone]}
       ></div>`
@@ -188,7 +188,7 @@ const markersOf = (rows: Row[]) => {
     .map(
       (marker, index) =>
         html`<span
-          class="pointer-events-none absolute rounded-full bg-et-theme text-center font-code text-ui-xs leading-4 text-et-on-theme"
+          class="pointer-events-none absolute rounded-full bg-et-tone-fill text-center font-code text-ui-xs leading-4 text-et-tone-on-fill"
           style="left:${marker.left}px;top:${marker.top}px;width:${marker.width}px;height:${marker.height}px"
           ${TONE[boxed[index]?.tone ?? 'ok']}
           >${marker.number}</span
@@ -201,11 +201,11 @@ const markersOf = (rows: Row[]) => {
 export const pageFrame = (page: InventoryPage, selected: boolean, at: { x: number; y: number }) =>
   html`<figure class="absolute m-0 flex flex-col gap-space-1" style="left:${at.x}px;top:${at.y}px">
     <figcaption class="flex items-center gap-space-2 text-ui-sm whitespace-nowrap">
-      <span class="${selected ? 'font-ui-strong text-et-surface' : 'text-et-surface'}">${page.part}</span>
+      <span class="${selected ? 'font-ui-strong text-et-surface-text' : 'text-et-surface-text'}">${page.part}</span>
       ${statusOf(page)}
     </figcaption>
     <div
-      class="relative bg-et-surface-bg ${selected ? 'outline-2 outline-et-surface-border' : 'outline outline-et-surface-border'}"
+      class="relative bg-et-surface-background ${selected ? 'outline-2 outline-et-surface-border' : 'outline outline-et-surface-border'}"
       style="width:${FRAME.width}px;height:${FRAME.height}px"
     >
       ${page.sections.flatMap((section) => section.rows.map(markOf)).join('')}
@@ -215,10 +215,10 @@ export const pageFrame = (page: InventoryPage, selected: boolean, at: { x: numbe
 
 const rowOf = (row: Row) =>
   html`<li class="flex gap-space-2 text-ui-sm" ${TONE[row.tone]}>
-    <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-on-theme">${row.number}</span>
+    <span class="h-fit shrink-0 rounded-full bg-et-tone-fill px-1.5 font-code text-et-tone-on-fill">${row.number}</span>
     <span class="flex min-w-0 flex-col">
-      <span class="text-et-surface">${row.name}</span>
-      <span class="${row.tone === 'ok' ? 'text-et-surface-muted' : 'text-et-theme'}">${row.detail}</span>
+      <span class="text-et-surface-text">${row.name}</span>
+      <span class="${row.tone === 'ok' ? 'text-et-surface-text-muted' : 'text-et-tone-fill'}">${row.detail}</span>
     </span>
   </li>`;
 
@@ -228,13 +228,13 @@ export const pageList = (page: InventoryPage) =>
     .map(
       (section) =>
         html`<section class="flex flex-col gap-space-2">
-          <h3 class="m-0 text-ui-sm font-ui-strong text-et-surface">
-            ${section.title} <span class="font-ui text-et-surface-muted">${section.rows.length}</span>
+          <h3 class="m-0 text-ui-sm font-ui-strong text-et-surface-text">
+            ${section.title} <span class="font-ui text-et-surface-text-muted">${section.rows.length}</span>
           </h3>
           ${
             section.rows.length
               ? `<ol class="m-0 flex list-none flex-col gap-space-2 p-0">${section.rows.map(rowOf).join('')}</ol>`
-              : `<p class="m-0 text-ui-sm text-et-surface-muted">Keine</p>`
+              : `<p class="m-0 text-ui-sm text-et-surface-text-muted">Keine</p>`
           }
         </section>`,
     )

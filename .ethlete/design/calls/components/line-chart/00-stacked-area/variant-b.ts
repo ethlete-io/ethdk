@@ -12,7 +12,7 @@ export default drawing({
     ${frameStyles}
 
     .area {
-      fill: color-mix(in oklab, var(--_color) 45%, var(--et-surface-background-solid));
+      fill: color-mix(in oklab, var(--_color) 45%, var(--et-surface-background));
     }
   `,
 });

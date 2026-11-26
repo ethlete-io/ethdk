@@ -91,9 +91,9 @@ export default drawing({
         flex-direction: column;
         gap: 0.6rem;
         padding: 0.8rem 1rem;
-        border: 1px solid rgb(var(--et-color-primary-ink) / 0.5);
+        border: 1px solid color-mix(in srgb, var(--et-tone-text-rest) 50%, transparent);
         border-radius: 0.4rem;
-        background: rgb(var(--et-color-primary) / 0.06);
+        background: color-mix(in srgb, var(--et-tone-fill-rest) 6%, transparent);
       }
 
       .queue-head {
@@ -103,16 +103,16 @@ export default drawing({
       }
 
       .queue-title {
-        color: var(--color-et-brand-ink);
+        color: var(--color-et-tone-brand-text);
       }
 
       .approve-all {
         margin-left: auto;
         padding: 0.3rem 1rem;
-        border: 1px solid rgb(var(--et-color-primary-ink));
+        border: 1px solid var(--et-tone-text-rest);
         border-radius: 0.3rem;
-        background: rgb(var(--et-color-primary) / 0.2);
-        color: var(--color-et-brand-ink);
+        background: color-mix(in srgb, var(--et-tone-fill-rest) 20%, transparent);
+        color: var(--color-et-tone-brand-text);
         cursor: pointer;
       }
 
@@ -136,13 +136,13 @@ export default drawing({
 
       .queue-line:hover,
       .queue-line:focus-within {
-        background: rgb(var(--et-color-primary) / 0.14);
+        background: color-mix(in srgb, var(--et-tone-fill-rest) 14%, transparent);
       }
 
       .queue-source {
         width: 8.4rem;
         flex-shrink: 0;
-        color: rgb(var(--et-surface-color-muted));
+        color: var(--et-surface-text-muted);
         white-space: nowrap;
       }
 
@@ -175,7 +175,7 @@ export default drawing({
         width: 0.8rem;
         height: 0.8rem;
         border-radius: 999px;
-        background: var(--color-et-brand-ink);
+        background: var(--color-et-tone-brand-text);
       }
 
       .band {
@@ -187,7 +187,7 @@ export default drawing({
         pointer-events: none;
         position: absolute;
         inset: 0;
-        border: 1px solid var(--color-et-brand-ink);
+        border: 1px solid var(--color-et-tone-brand-text);
         border-radius: inherit;
         opacity: 0;
         transition: opacity 150ms ease;

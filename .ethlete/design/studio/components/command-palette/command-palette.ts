@@ -65,14 +65,14 @@ const itemsOf = ({ entries, recents, query = '' }: Props): Item[] =>
           .map((entry) => ({ label: entry.label, hint: HINTS[entry.kind], group: GROUPS[kind] })),
       );
 
-const start = `<div class="flex flex-col items-center gap-space-2 px-space-3 py-space-6 text-ui-sm text-et-surface-muted"><span>${COMMAND_PALETTE_LABELS.start}</span><span class="flex items-center gap-space-1 text-(length:--text-xs)"><et-kbd class="[--et-kbd-color:currentColor]" keys="mod+k" platform="other" /> ${COMMAND_PALETTE_LABELS.startShortcut}</span></div>`;
+const start = `<div class="flex flex-col items-center gap-space-2 px-space-3 py-space-6 text-ui-sm text-et-surface-text-muted"><span>${COMMAND_PALETTE_LABELS.start}</span><span class="flex items-center gap-space-1 text-(length:--text-xs)"><et-kbd class="[--et-kbd-color:currentColor]" keys="mod+k" platform="other" /> ${COMMAND_PALETTE_LABELS.startShortcut}</span></div>`;
 
 const row = (item: Item, selected: boolean, interaction?: RowInteraction) => {
   const markup = control(
-    `<div role="option" data-et-action="emit:choose" aria-label="${item.label} ${item.hint}" class="st-cprow flex items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm outline-none text-et-surface ${selected ? 'bg-et-theme/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15" ${selected ? 'data-selected aria-selected="true"' : ''}>
-    <span class="text-et-surface-muted">${icon('search', { size: 14 })}</span>
+    `<div role="option" data-et-action="emit:choose" aria-label="${item.label} ${item.hint}" class="st-cprow flex items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm outline-none text-et-surface-text ${selected ? 'bg-et-tone-fill/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15" ${selected ? 'data-selected aria-selected="true"' : ''}>
+    <span class="text-et-surface-text-muted">${icon('search', { size: 14 })}</span>
     <span class="min-w-0 flex-1 truncate">${item.label}</span>
-    <span class="text-et-surface-muted text-(length:--text-sm)">${item.hint}</span>
+    <span class="text-et-surface-text-muted text-(length:--text-sm)">${item.hint}</span>
   </div>`,
     'row',
   );
@@ -82,13 +82,13 @@ const row = (item: Item, selected: boolean, interaction?: RowInteraction) => {
 
 const field = (query: string) =>
   `<div class="flex items-center gap-space-2 border-b border-et-surface-border px-space-3 py-space-2 text-ui-sm">
-    <span class="text-et-surface-muted">${icon('search', { size: 14 })}</span>
-    <span class="flex min-w-0 flex-1 items-center"><input role="combobox" aria-expanded="true" aria-controls="cp-list" data-et-action="emit:queryChange" aria-label="${COMMAND_PALETTE_LABELS.placeholder}" placeholder="${COMMAND_PALETTE_LABELS.placeholder}" value="${query}" class="${query.trim() === '' ? 'min-w-0 flex-1' : 'min-w-0 field-sizing-content'} bg-transparent text-et-surface outline-none placeholder:text-et-surface-muted" />${query.trim() === '' ? '' : '<span class="inline-block h-4 w-px translate-y-0.5 bg-et-surface"></span>'}</span>
+    <span class="text-et-surface-text-muted">${icon('search', { size: 14 })}</span>
+    <span class="flex min-w-0 flex-1 items-center"><input role="combobox" aria-expanded="true" aria-controls="cp-list" data-et-action="emit:queryChange" aria-label="${COMMAND_PALETTE_LABELS.placeholder}" placeholder="${COMMAND_PALETTE_LABELS.placeholder}" value="${query}" class="${query.trim() === '' ? 'min-w-0 flex-1' : 'min-w-0 field-sizing-content'} bg-transparent text-et-surface-text outline-none placeholder:text-et-surface-text-muted" />${query.trim() === '' ? '' : '<span class="inline-block h-4 w-px translate-y-0.5 bg-et-surface-text"></span>'}</span>
     <et-kbd keys="esc" />
   </div>`;
 
 const empty = (query: string) =>
-  `<div class="flex flex-col items-center gap-space-1 px-space-3 py-space-6 text-ui-sm"><span class="text-et-surface font-ui-strong">${COMMAND_PALETTE_LABELS.none}</span><span class="text-et-surface-muted">Für „${query}“ gibt es keinen ${COMMAND_PALETTE_LABELS.hints.part}, keine ${COMMAND_PALETTE_LABELS.hints.page} und keine ${COMMAND_PALETTE_LABELS.hints.sketch}.</span></div>`;
+  `<div class="flex flex-col items-center gap-space-1 px-space-3 py-space-6 text-ui-sm"><span class="text-et-surface-text font-ui-strong">${COMMAND_PALETTE_LABELS.none}</span><span class="text-et-surface-text-muted">Für „${query}“ gibt es keinen ${COMMAND_PALETTE_LABELS.hints.part}, keine ${COMMAND_PALETTE_LABELS.hints.page} und keine ${COMMAND_PALETTE_LABELS.hints.sketch}.</span></div>`;
 
 const window = async (overlay: string, scrim: boolean) => {
   const bar = await titleBar.render({
@@ -100,10 +100,10 @@ const window = async (overlay: string, scrim: boolean) => {
     part: 'Title bar',
   });
   return {
-    body: html`<div class="relative flex h-100 w-360 flex-col overflow-hidden bg-et-surface-bg" data-et-surface>
+    body: html`<div class="relative flex h-100 w-360 flex-col overflow-hidden bg-et-surface-background" data-et-surface>
       ${bar.body}
       <div class="flex-1 border-t border-et-surface-border"></div>
-      ${scrim ? '<div class="absolute inset-x-0 top-10 bottom-0 bg-et-surface-bg/60"></div>' : ''} ${overlay}
+      ${scrim ? '<div class="absolute inset-x-0 top-10 bottom-0 bg-et-surface-background/60"></div>' : ''} ${overlay}
     </div>`,
     styles: bar.styles,
   };
@@ -124,7 +124,7 @@ const body = (props: Props) => {
         : groups(items)
             .map(
               (g) =>
-                `<div role="group" aria-label="${g}" class="flex flex-col gap-0.5 p-space-1"><div aria-hidden="true" class="px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-xs)">${g}</div>${items
+                `<div role="group" aria-label="${g}" class="flex flex-col gap-0.5 p-space-1"><div aria-hidden="true" class="px-space-2 pt-space-1 text-et-surface-text-muted text-(length:--text-xs)">${g}</div>${items
                   .filter((i) => i.group === g)
                   .map((i) => {
                     n++;
@@ -133,7 +133,7 @@ const body = (props: Props) => {
                   .join('')}</div>`,
             )
             .join('');
-  return `<div class="absolute top-16 left-1/2 w-3xl -translate-x-1/2 overflow-hidden rounded-control-lg bg-et-surface-bg shadow-lg" data-et-auto-surface role="dialog" aria-modal="true" aria-label="${COMMAND_PALETTE_LABELS.label}">${field(query)}<div id="cp-list" role="listbox" aria-label="${COMMAND_PALETTE_LABELS.label}" class="max-h-64 overflow-auto">${list}</div><div class="flex gap-space-3 border-t border-et-surface-border px-space-3 py-space-2 text-et-surface-muted text-(length:--text-xs)"><span>${COMMAND_PALETTE_LABELS.select}</span><span>${COMMAND_PALETTE_LABELS.open}</span><span class="flex-1"></span><span>${COMMAND_PALETTE_LABELS.close}</span></div></div>`;
+  return `<div class="absolute top-16 left-1/2 w-3xl -translate-x-1/2 overflow-hidden rounded-control-lg bg-et-surface-background shadow-lg" data-et-auto-surface role="dialog" aria-modal="true" aria-label="${COMMAND_PALETTE_LABELS.label}">${field(query)}<div id="cp-list" role="listbox" aria-label="${COMMAND_PALETTE_LABELS.label}" class="max-h-64 overflow-auto">${list}</div><div class="flex gap-space-3 border-t border-et-surface-border px-space-3 py-space-2 text-et-surface-text-muted text-(length:--text-xs)"><span>${COMMAND_PALETTE_LABELS.select}</span><span>${COMMAND_PALETTE_LABELS.open}</span><span class="flex-1"></span><span>${COMMAND_PALETTE_LABELS.close}</span></div></div>`;
 };
 
 const FOUND = { entries: ENTRIES, recents: [], query: 'tit' } satisfies Props;

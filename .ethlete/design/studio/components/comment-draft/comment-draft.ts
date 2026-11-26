@@ -11,11 +11,11 @@ type Props = { text?: string; phase?: Phase; reason?: string };
 
 const problem = (text: string) =>
   html`<p
-    class="m-0 flex items-center gap-space-1 text-et-theme-ink text-ui-xs"
+    class="m-0 flex items-center gap-space-1 text-et-tone-text text-ui-xs"
     data-et-semantic-color="error"
     role="alert"
   >
-    ${icon('error', { size: 14, cls: 'flex-none text-et-theme' })}<span>${text}</span>
+    ${icon('error', { size: 14, cls: 'flex-none text-et-tone-fill' })}<span>${text}</span>
   </p>`;
 
 export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => {
@@ -48,7 +48,7 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
   const cancelMarkup = busy ? cancel.body : withAction(cancel.body, 'comment-mode');
   return {
     body: html`<div
-      class="relative z-20 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"
+      class="relative z-20 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border) bg-(--et-surface-background) p-space-3 shadow-lg"
       data-et-auto-surface
       role="dialog"
       aria-label="${COMMENT_DRAFT_LABELS.dialog}"

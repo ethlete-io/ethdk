@@ -55,14 +55,18 @@ const dot = (inert?: boolean) =>
 
 const lead = ({ kind, expanded, inert }: Row) => (kind === 'leaf' ? dot(inert) : chevron(expanded === true));
 
-const statusClass = { 'in-progress': 'text-et-surface-muted', ready: 'text-et-theme' };
+const statusClass = { 'in-progress': 'text-et-surface-text-muted', ready: 'text-et-tone-fill' };
 
 const rowMarkup = (r: Row) => {
-  const accent = r.selected ? 'text-et-theme-ink' : 'text-et-surface-muted';
-  const color = r.selected ? 'text-et-theme-ink' : r.kind === 'group' ? 'text-et-surface-muted' : 'text-et-surface';
+  const accent = r.selected ? 'text-et-tone-text' : 'text-et-surface-text-muted';
+  const color = r.selected
+    ? 'text-et-tone-text'
+    : r.kind === 'group'
+      ? 'text-et-surface-text-muted'
+      : 'text-et-surface-text';
 
   return `<div
-        class="st-trow relative flex items-center gap-space-1 text-ui-md rounded-control-sm ${r.selected ? 'bg-et-theme/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 ${color} whitespace-nowrap outline-none cursor-default"
+        class="st-trow relative flex items-center gap-space-1 text-ui-md rounded-control-sm ${r.selected ? 'bg-et-tone-fill/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 ${color} whitespace-nowrap outline-none cursor-default"
         style="--depth: ${r.depth}"
         role="treeitem"
         aria-level="${r.depth + 1}"
@@ -76,7 +80,7 @@ const rowMarkup = (r: Row) => {
         <span class="st-trow-lead flex flex-none items-center justify-center ${accent}">${lead(r)}</span>
         <span class="flex-1 min-w-0 overflow-hidden text-ellipsis">${r.label}</span>
         ${layerMark(r, accent)}
-        ${r.warning ? `<span class="flex flex-none text-et-theme" data-et-semantic-color="warning" title="${r.warning.join(' ')}">${warningIcon}</span>` : ''}
+        ${r.warning ? `<span class="flex flex-none text-et-tone-fill" data-et-semantic-color="warning" title="${r.warning.join(' ')}">${warningIcon}</span>` : ''}
         ${r.status ? `<span class="flex flex-none ${statusClass[r.status]}">${statusIcon[r.status]}</span>` : ''}
         ${r.comments ? `<span class="flex flex-none items-center gap-0.5 ${accent} text-(length:--text-xs)">${bubble}</span>` : ''}
       </div>`;

@@ -35,8 +35,8 @@ export default definePart({
       content: await ng(
         `<div class="box-border flex w-80 flex-col gap-space-3 p-space-3 text-ui-sm">
           <div class="flex flex-col gap-space-1">
-            <span class="ud-wrap text-et-surface font-ui-strong">${QUESTION(props.version)}</span>
-            <span class="text-et-surface-muted">${RESTART_NOTE}</span>
+            <span class="ud-wrap text-et-surface-text font-ui-strong">${QUESTION(props.version)}</span>
+            <span class="text-et-surface-text-muted">${RESTART_NOTE}</span>
           </div>
           <div class="flex justify-end gap-space-2">
             ${mark('later', `<button et-button type="button" data-et-action="emit:later" variant="outline" color="surface" size="xs">${UPDATE_DIALOG_LABELS.later}</button>`, props)}

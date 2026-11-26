@@ -264,7 +264,9 @@ export default definePart({
   render: async (props: Props) => {
     const menu = await studioMenu(props);
     return drawing({
-      body: html`<div class="box-border w-3xl h-120 p-space-3 text-et-surface font-ui text-ui-md">${menu.body}</div>`,
+      body: html`<div class="box-border w-3xl h-120 p-space-3 text-et-surface-text font-ui text-ui-md">
+        ${menu.body}
+      </div>`,
       setup: menu.setup,
       styles: menu.styles,
     });

@@ -20,11 +20,11 @@ const content = (version: string) =>
   html`<div class="flex items-center gap-space-3">
       <div class="size-12 shrink-0">${studioMark(48)}</div>
       <div class="flex min-w-0 flex-col gap-space-1">
-        <span class="font-ui-strong text-ui-md text-et-surface">${ABOUT_DIALOG_LABELS.product}</span>
-        <span class="ad-wrap text-ui-sm text-et-surface-muted">Version ${version}</span>
+        <span class="font-ui-strong text-ui-md text-et-surface-text">${ABOUT_DIALOG_LABELS.product}</span>
+        <span class="ad-wrap text-ui-sm text-et-surface-text-muted">Version ${version}</span>
       </div>
     </div>
-    <p class="mt-space-3 text-ui-sm text-et-surface-muted">
+    <p class="mt-space-3 text-ui-sm text-et-surface-text-muted">
       ${ABOUT_DIALOG_LABELS.license(new Date().getFullYear())}
     </p>`;
 

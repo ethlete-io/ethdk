@@ -79,8 +79,8 @@ export default drawing({
       grid-template-rows: auto minmax(0, 1fr) auto;
       width: 100%;
       min-height: 90rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font:
         400 1.4rem/1.45 'Jost',
         system-ui,
@@ -106,7 +106,7 @@ export default drawing({
     .chat-c__round,
     .chat-c__fixed,
     .chat-c__input-off-tag {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1.1rem;
       letter-spacing: 0.02em;
@@ -115,7 +115,7 @@ export default drawing({
       display: grid;
       gap: 0.6rem;
       padding: 1.6rem;
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
     }
     .chat-c__head-row {
       display: flex;
@@ -143,7 +143,7 @@ export default drawing({
       width: 0.6rem;
       height: 0.6rem;
       border-radius: 50%;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
     .chat-c__thread {
       display: grid;
@@ -175,36 +175,36 @@ export default drawing({
     }
     .chat-c__turn--agent {
       padding-left: 1rem;
-      border-left: 0.2rem solid var(--et-surface-border-solid);
+      border-left: 0.2rem solid var(--et-surface-border);
     }
     .chat-c__turn--agent .chat-c__turn-meta b {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
     .chat-c__turn--agent p {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
     .chat-c__turn--you {
       margin-left: 2.8rem;
       padding: 1rem 1.2rem 1.1rem;
-      border: 0.1rem solid rgb(var(--et-theme-color-primary-rgb) / 0.3);
+      border: 0.1rem solid color-mix(in srgb, var(--et-tone-fill) 30%, transparent);
       border-radius: 0.8rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.1);
+      background: color-mix(in srgb, var(--et-tone-fill) 10%, transparent);
     }
     .chat-c__turn--you .chat-c__turn-meta b {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .chat-c__turn-verb {
       padding: 0.1rem 0.6rem;
       border-radius: 0.3rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.22);
-      color: var(--et-theme-color-ink-solid);
+      background: color-mix(in srgb, var(--et-tone-fill) 22%, transparent);
+      color: var(--et-tone-text);
       font-family: 'IBM Plex Mono', ui-monospace, monospace;
       font-size: 1rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
     .chat-c__foot {
-      --chat-c-below: var(--et-surface-background-rgb);
+      --chat-c-below: var(--et-surface-background);
 
       display: grid;
       gap: 1rem;
@@ -213,17 +213,17 @@ export default drawing({
     .chat-c__lift {
       height: 2.4rem;
       margin: -2.4rem -1.6rem -1rem;
-      background: linear-gradient(to bottom, transparent, var(--et-surface-background-solid));
+      background: linear-gradient(to bottom, transparent, var(--et-surface-background));
     }
     .chat-c__card {
       display: grid;
       gap: 1.2rem;
       padding: 1.4rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.9rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
-      box-shadow: 0 -0.2rem 2.4rem rgb(var(--chat-c-below) / 0.9);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
+      box-shadow: 0 -0.2rem 2.4rem color-mix(in srgb, var(--chat-c-below) 90%, transparent);
     }
     .chat-c__card-head {
       display: flex;
@@ -244,8 +244,8 @@ export default drawing({
       height: 2.4rem;
       margin: -0.4rem -0.4rem -0.4rem 0;
       border-radius: 0.4rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.06);
-      color: var(--et-surface-color-muted-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 6%, transparent);
+      color: var(--et-surface-text-muted);
     }
     .chat-c__field {
       display: grid;
@@ -253,7 +253,7 @@ export default drawing({
       justify-items: start;
     }
     .chat-c__label {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 1.1rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -261,8 +261,8 @@ export default drawing({
     .chat-c__verb {
       padding: 0.4rem 1rem;
       border-radius: 0.4rem;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-weight: 500;
       font-size: 1.3rem;
     }
@@ -273,7 +273,7 @@ export default drawing({
       justify-self: stretch;
       padding: 0.7rem 1rem;
       border-radius: 0.5rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.06);
+      background: color-mix(in srgb, var(--et-surface-text) 6%, transparent);
     }
     .chat-c__variant {
       font-size: 1.3rem;
@@ -286,9 +286,9 @@ export default drawing({
       justify-self: stretch;
       min-height: 7.2rem;
       padding: 0.9rem 1.1rem;
-      border: 0.1rem solid var(--et-theme-color-primary-solid);
+      border: 0.1rem solid var(--et-tone-fill);
       border-radius: 0.5rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.04);
+      background: color-mix(in srgb, var(--et-surface-text) 4%, transparent);
       font-size: 1.3rem;
       line-height: 1.5;
     }
@@ -296,7 +296,7 @@ export default drawing({
       display: inline-block;
       width: 0.1rem;
       height: 1.5rem;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
       vertical-align: text-bottom;
     }
     .chat-c__card-foot {
@@ -306,8 +306,8 @@ export default drawing({
     .chat-c__send {
       padding: 0.7rem 1.6rem;
       border-radius: 0.4rem;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-weight: 500;
       font-size: 1.3rem;
     }
@@ -317,9 +317,9 @@ export default drawing({
       align-items: center;
       justify-content: space-between;
       padding: 1rem 1.2rem;
-      border: 0.1rem dashed var(--et-surface-border-solid);
+      border: 0.1rem dashed var(--et-surface-border);
       border-radius: 0.6rem;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       font-size: 1.3rem;
       opacity: 0.55;
     }

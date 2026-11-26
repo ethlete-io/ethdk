@@ -58,8 +58,8 @@ export default drawing({
         border-left-color: transparent;
         background: linear-gradient(
           to bottom,
-          rgb(var(--et-color-primary) / 0.15) 0 ${joinPercent}%,
-          rgb(var(--et-color-primary) / 0) 100%
+          color-mix(in srgb, var(--et-tone-fill-rest) 15%, transparent) 0 ${joinPercent}%,
+          color-mix(in srgb, var(--et-tone-fill-rest) 0%, transparent) 100%
         );
       }
 
@@ -71,8 +71,8 @@ export default drawing({
         width: 2px;
         background: linear-gradient(
           to bottom,
-          rgb(var(--et-color-primary)) 0 ${joinPercent}%,
-          rgb(var(--et-color-primary) / 0) 100%
+          var(--et-tone-fill-rest) 0 ${joinPercent}%,
+          color-mix(in srgb, var(--et-tone-fill-rest) 0%, transparent) 100%
         );
       }
 
@@ -89,7 +89,7 @@ export default drawing({
 
       .cut-line {
         flex-grow: 1;
-        border-top: 1px dashed rgb(var(--et-color-primary-ink));
+        border-top: 1px dashed var(--et-tone-text-rest);
       }
 
       .cut--done .cut-line {

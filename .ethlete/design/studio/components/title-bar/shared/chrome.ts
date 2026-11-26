@@ -151,4 +151,4 @@ export const windowControls = (props: Props, buttons: WindowButton[]) => {
 
 /** Gives a Windows close tile the error theme's fill and ink on hover, focus and press. */
 export const errorClose = (markup: string) =>
-  `<span class="contents [--et-window-control-button-close-background-active:rgb(var(--et-color-primary-active))] [--et-window-control-button-close-background:var(--et-theme-color-primary-solid)] [--et-window-control-button-close-color:var(--et-theme-color-on-primary-solid)]" data-et-semantic-color="error">${markup}</span>`;
+  `<span class="contents [--et-window-control-button-close-background-active:var(--et-tone-fill-active)] [--et-window-control-button-close-background:var(--et-tone-fill)] [--et-window-control-button-close-color:var(--et-tone-on-fill)]" data-et-semantic-color="error">${markup}</span>`;

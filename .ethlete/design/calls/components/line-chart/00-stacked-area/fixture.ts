@@ -126,33 +126,33 @@ export const chartPair = (layer: SeriesLayer) => html`
  */
 const appThemes = css`
   .et-surface--light {
-    --et-surface-background-solid: rgb(255 255 255);
-    --et-surface-color-solid: rgb(23 23 23);
-    --et-surface-color-muted-solid: rgb(115 115 115);
-    --et-surface-border-solid: rgb(229 229 229);
+    --et-surface-background: rgb(255 255 255);
+    --et-surface-text: rgb(23 23 23);
+    --et-surface-text-muted: rgb(115 115 115);
+    --et-surface-border: rgb(229 229 229);
   }
 
   .et-surface--dark {
-    --et-surface-background-solid: rgb(23 23 23);
-    --et-surface-color-solid: rgb(250 250 250);
-    --et-surface-color-muted-solid: rgb(161 161 161);
-    --et-surface-border-solid: rgb(64 64 64);
+    --et-surface-background: rgb(23 23 23);
+    --et-surface-text: rgb(250 250 250);
+    --et-surface-text-muted: rgb(161 161 161);
+    --et-surface-border: rgb(64 64 64);
   }
 
   .et-color--chart-blue {
-    --et-theme-color-primary-solid: rgb(42 120 214);
+    --et-tone-fill: rgb(42 120 214);
   }
 
   .et-color--chart-orange {
-    --et-theme-color-primary-solid: rgb(235 104 52);
+    --et-tone-fill: rgb(235 104 52);
   }
 
   .et-color--chart-aqua {
-    --et-theme-color-primary-solid: rgb(27 175 122);
+    --et-tone-fill: rgb(27 175 122);
   }
 
   .et-color--chart-yellow {
-    --et-theme-color-primary-solid: rgb(237 161 0);
+    --et-tone-fill: rgb(237 161 0);
   }
 `;
 
@@ -180,10 +180,10 @@ export const frameStyles = css`
   .panel {
     box-sizing: border-box;
     padding: ${PANEL_PADDING}px;
-    border: 1px solid var(--et-surface-border-solid);
+    border: 1px solid var(--et-surface-border);
     border-radius: 8px;
-    background: var(--et-surface-background-solid);
-    color: var(--et-surface-color-muted-solid);
+    background: var(--et-surface-background);
+    color: var(--et-surface-text-muted);
   }
 
   .panel-label {
@@ -192,7 +192,7 @@ export const frameStyles = css`
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--et-surface-color-solid);
+    color: var(--et-surface-text);
   }
 
   .legend {
@@ -216,7 +216,7 @@ export const frameStyles = css`
     inline-size: 10px;
     block-size: 10px;
     border-radius: 2px;
-    background: var(--et-theme-color-primary-solid);
+    background: var(--et-tone-fill);
   }
 
   .figure {
@@ -265,13 +265,13 @@ export const frameStyles = css`
   }
 
   .grid-line {
-    stroke: var(--et-surface-border-solid);
+    stroke: var(--et-surface-border);
     stroke-width: 1px;
     shape-rendering: crispEdges;
   }
 
   .series {
-    --_color: var(--et-theme-color-primary-solid);
+    --_color: var(--et-tone-fill);
   }
 
   .line {

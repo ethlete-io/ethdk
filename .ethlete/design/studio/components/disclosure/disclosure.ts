@@ -17,11 +17,11 @@ export type Props = {
 const CHEVRON = icon('chevron-right', { size: 14, cls: 'flex-none' });
 
 export const disclosureBodyClass =
-  'st-disclosure-body flex flex-col gap-space-1 m-0 text-et-surface-muted text-(length:--text-sm) *:flex *:gap-space-2';
+  'st-disclosure-body flex flex-col gap-space-1 m-0 text-et-surface-text-muted text-(length:--text-sm) *:flex *:gap-space-2';
 
 export const disclosure = ({ label, body, open, size = 'sm', hug = false, interaction, action }: Props) => {
   const toggle = html`<button
-    class="st-disclosure flex ${hug ? '' : 'w-full'} gap-space-2 px-space-2 py-space-1 border-0 text-et-surface-muted hover:text-et-surface active:bg-et-surface-interaction/15 active:text-et-surface active:rounded-control-sm focus-visible:text-et-surface focus-visible:rounded-control-sm cursor-pointer ${size === 'xs' ? 'items-start text-start text-(length:--text-xs)' : 'items-center text-(length:--text-sm)'}"
+    class="st-disclosure flex ${hug ? '' : 'w-full'} gap-space-2 px-space-2 py-space-1 border-0 text-et-surface-text-muted hover:text-et-surface-text active:bg-et-surface-interaction/15 active:text-et-surface-text active:rounded-control-sm focus-visible:text-et-surface-text focus-visible:rounded-control-sm cursor-pointer ${size === 'xs' ? 'items-start text-start text-(length:--text-xs)' : 'items-center text-(length:--text-sm)'}"
     type="button"
     data-et-surface-interactive
     data-et-control="toggle"

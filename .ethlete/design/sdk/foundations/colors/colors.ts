@@ -10,44 +10,46 @@ type Props = { group: 'surface' | 'contrast' | Theme; surface: Surface };
 
 const STATE_ENDS = ['', '-hover', '-focus', '-active', '-disabled'];
 
+const TONE_ENDS = ['-rest', '-hover', '-focus', '-active', '-disabled'];
+
 const labelOf = (end: string) => (end ? end.slice(1) : 'rest');
 
 const SURFACE_TOKEN =
-  /^et-(surface-(background|color(-muted|-subtle)?|border|interaction(-hover|-focus|-active|-disabled)?)|shadow-color-rgb)$/u;
+  /^et-(surface-(background|text(-muted|-subtle)?|border|interaction(-hover|-focus|-active|-disabled)?)|shadow-color)$/u;
 
-const COLOR_TOKEN = /^et-color-(on-)?primary(-ink)?(-hover|-focus|-active|-disabled)?$/u;
+const COLOR_TOKEN = /^et-tone-(fill|on-fill|text)-(rest|hover|focus|active|disabled)$/u;
 
-const TEXT_TOKEN = /^et-surface-(background|color(-muted|-subtle)?)$/u;
+const TEXT_TOKEN = /^et-surface-(background|text(-muted|-subtle)?)$/u;
 
 const themeClassOf = (theme: Theme, surface: Surface) => `et-color--${theme}${surface === 'light' ? '-on-light' : ''}`;
 
 const demoNote = (theme: Theme, surface: Surface) =>
   `${theme} is a demo theme of the SDK Storybook (apps/storybook/src/themes.ts); the SDK ships no theme names, each app registers its own.${surface === 'light' ? ` On a light surface the sheet reads .${themeClassOf(theme, surface)}.` : ''}`;
 
-const swatch = (token: string) => html`<span class="sdk-swatch" style="background: rgb(var(--${token}))"></span>`;
+const swatch = (token: string) => html`<span class="sdk-swatch" style="background: var(--${token})"></span>`;
 
 const disabledOf = (name: string) => (name.endsWith('-disabled') ? 'aria-disabled="true"' : '');
 
 const ink = (token: string, label = 'Aa') =>
-  html`<span class="sdk-ink" ${disabledOf(token)} style="color: rgb(var(--${token}))">${label}</span>`;
+  html`<span class="sdk-ink" ${disabledOf(token)} style="color: var(--${token})">${label}</span>`;
 
 const surfaceSample = (name: string) => {
-  if (name === 'et-shadow-color-rgb') return html`<span class="sdk-swatch sdk-shadow"></span>`;
-  if (/^et-surface-color/u.test(name)) return ink(name);
+  if (name === 'et-shadow-color') return html`<span class="sdk-swatch sdk-shadow"></span>`;
+  if (/^et-surface-text/u.test(name)) return ink(name);
 
   return swatch(name);
 };
 
 const colorSample = (name: string) => {
-  const onFill = /^et-color-on-primary(.*)$/u.exec(name);
+  const onFill = /^et-tone-on-fill(.*)$/u.exec(name);
   if (onFill)
     return html`<span
       class="sdk-fill"
       ${disabledOf(name)}
-      style="background: rgb(var(--et-color-primary${onFill[1]})); color: rgb(var(--${name}))"
+      style="background: var(--et-tone-fill${onFill[1]}); color: var(--${name})"
       >Aa</span
     >`;
-  if (name.startsWith('et-color-primary-ink')) return ink(name, 'Ink');
+  if (name.startsWith('et-tone-text')) return ink(name, 'Ink');
 
   return swatch(name);
 };
@@ -61,8 +63,7 @@ const surfacePanel = html`<div class="sdk-card">
     ${STATE_ENDS.map(
       (end) =>
         html`<span class="sdk-state"
-          ><span class="sdk-swatch" style="background: rgb(var(--et-surface-interaction${end}))"></span
-          >${labelOf(end)}</span
+          ><span class="sdk-swatch" style="background: var(--et-surface-interaction${end})"></span>${labelOf(end)}</span
         >`,
     ).join('')}
   </div>
@@ -72,20 +73,20 @@ const surfacePanel = html`<div class="sdk-card">
   </div>`;
 
 const themePanel = html`<div class="sdk-states">
-    ${STATE_ENDS.map(
+    ${TONE_ENDS.map(
       (end) =>
         html`<span
           class="sdk-fill sdk-fill--wide"
           ${disabledOf(end)}
-          style="background: rgb(var(--et-color-primary${end})); color: rgb(var(--et-color-on-primary${end}))"
+          style="background: var(--et-tone-fill${end}); color: var(--et-tone-on-fill${end})"
           >${labelOf(end)}</span
         >`,
     ).join('')}
   </div>
   <div class="sdk-states">
-    ${STATE_ENDS.map(
+    ${TONE_ENDS.map(
       (end) =>
-        html`<span class="sdk-link" ${disabledOf(end)} style="color: rgb(var(--et-color-primary-ink${end}))"
+        html`<span class="sdk-link" ${disabledOf(end)} style="color: var(--et-tone-text${end})"
           >Ink ${labelOf(end)}</span
         >`,
     ).join('')}
@@ -145,28 +146,28 @@ const sheetOf = (props: Props) => {
 
 const STYLES = `
   ${contrastStyles}
-  .sdk-colors { --surface: var(--et-surface-background-solid); --text: var(--et-surface-color-solid); --text-muted: var(--et-surface-color-muted-solid); --surface-border: var(--et-surface-border-solid); --font-ui: var(--et-font-family); --font-code: var(--et-font-family-mono); width: max-content; }
+  .sdk-colors { --surface: var(--et-surface-background); --text: var(--et-surface-text); --text-muted: var(--et-surface-text-muted); --surface-border: var(--et-surface-border); --font-ui: var(--et-font-family); --font-code: var(--et-font-family-mono); width: max-content; }
   .sdk-colors .ts-row { grid-template-columns: 300px 160px 1fr; }
   section.ts-panel { display: flex; flex-direction: column; gap: 1.2rem; }
   section.ts-panel.sdk-contrast { flex-direction: row; flex-wrap: wrap; gap: 2.4rem; }
   .sdk-table { display: flex; flex-direction: column; gap: 0.8rem; }
   .sdk-title { margin: 0; font-size: 1.4rem; font-weight: 600; }
-  .sdk-value { font-family: var(--et-font-family-mono); font-size: 1.2rem; color: var(--et-surface-color-muted-solid); white-space: nowrap; }
-  .sdk-card { display: flex; gap: 2.4rem; padding: 1.2rem 1.6rem; border: 0.1rem solid var(--et-surface-border-solid); border-radius: 0.6rem; }
-  .sdk-muted { color: var(--et-surface-color-muted-solid); }
-  .sdk-subtle { color: var(--et-surface-color-subtle-solid); }
+  .sdk-value { font-family: var(--et-font-family-mono); font-size: 1.2rem; color: var(--et-surface-text-muted); white-space: nowrap; }
+  .sdk-card { display: flex; gap: 2.4rem; padding: 1.2rem 1.6rem; border: 0.1rem solid var(--et-surface-border); border-radius: 0.6rem; }
+  .sdk-muted { color: var(--et-surface-text-muted); }
+  .sdk-subtle { color: var(--et-surface-text-subtle); }
   .sdk-states { display: flex; flex-wrap: wrap; gap: 1.2rem; align-items: center; }
   .sdk-state { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 1.2rem; }
-  .sdk-swatch { display: block; width: 4rem; height: 2.4rem; border-radius: 0.4rem; border: 0.1rem solid var(--et-surface-border-solid); }
-  .sdk-shadow { background: var(--et-surface-background-solid); box-shadow: 0 0.6rem 1.2rem rgb(var(--et-shadow-color-rgb) / 0.22), 0 0.2rem 0.4rem rgb(var(--et-shadow-color-rgb) / 0.14); }
+  .sdk-swatch { display: block; width: 4rem; height: 2.4rem; border-radius: 0.4rem; border: 0.1rem solid var(--et-surface-border); }
+  .sdk-shadow { background: var(--et-surface-background); box-shadow: 0 0.6rem 1.2rem color-mix(in srgb, var(--et-shadow-color) 22%, transparent), 0 0.2rem 0.4rem color-mix(in srgb, var(--et-shadow-color) 14%, transparent); }
   .sdk-ink { font-size: 1.6rem; font-weight: 600; }
   .sdk-fill { display: inline-grid; place-items: center; min-width: 4rem; height: 2.4rem; padding: 0 0.8rem; box-sizing: border-box; border-radius: 0.4rem; font-size: 1.2rem; font-weight: 600; }
   .sdk-fill--wide { min-width: 8rem; height: 3.2rem; }
   .sdk-link { min-width: 8rem; font-size: 1.3rem; font-weight: 600; text-decoration: underline; }
   .sdk-elevations { display: flex; gap: 2.4rem; padding: 0.8rem 0; }
-  .sdk-elevation { display: grid; place-items: center; width: 12rem; height: 4.8rem; border-radius: 0.6rem; background: var(--et-surface-background-solid); font-size: 1.2rem; }
-  .sdk-shadow-resting { box-shadow: 0 0.3rem 0.8rem rgb(var(--et-shadow-color-rgb) / 0.2), 0 0.1rem 0.3rem rgb(var(--et-shadow-color-rgb) / 0.12); }
-  .sdk-shadow-raised { box-shadow: 0 0.6rem 1.2rem rgb(var(--et-shadow-color-rgb) / 0.22), 0 0.2rem 0.4rem rgb(var(--et-shadow-color-rgb) / 0.14); }
+  .sdk-elevation { display: grid; place-items: center; width: 12rem; height: 4.8rem; border-radius: 0.6rem; background: var(--et-surface-background); font-size: 1.2rem; }
+  .sdk-shadow-resting { box-shadow: 0 0.3rem 0.8rem color-mix(in srgb, var(--et-shadow-color) 20%, transparent), 0 0.1rem 0.3rem color-mix(in srgb, var(--et-shadow-color) 12%, transparent); }
+  .sdk-shadow-raised { box-shadow: 0 0.6rem 1.2rem color-mix(in srgb, var(--et-shadow-color) 22%, transparent), 0 0.2rem 0.4rem color-mix(in srgb, var(--et-shadow-color) 14%, transparent); }
 `;
 
 const render = (props: Props): Drawing => {

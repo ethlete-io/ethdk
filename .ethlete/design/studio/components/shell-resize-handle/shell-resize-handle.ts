@@ -10,7 +10,7 @@ type Props = { width?: number; interaction?: ResizeInteraction };
 export const SIDE_WIDTH = { min: 200, rest: 248, dragging: 312, max: 400 };
 
 const LINE =
-  '<span class="st-shell-resize-line absolute top-2.5 bottom-2.5 left-0.75 w-0.5 rounded-full group-hover:bg-et-theme/50 group-active:bg-et-theme group-focus-visible:bg-focus-ring"></span>';
+  '<span class="st-shell-resize-line absolute top-2.5 bottom-2.5 left-0.75 w-0.5 rounded-full group-hover:bg-et-tone-fill/50 group-active:bg-et-tone-fill group-focus-visible:bg-focus-ring"></span>';
 
 export const shellResizeHandleStyles = styles;
 
@@ -45,6 +45,6 @@ export default definePart({
   styles,
   render: (props: Props) =>
     drawing({
-      body: html`<div class="relative box-border h-30 w-2 bg-et-surface-bg">${shellResizeHandle(props)}</div>`,
+      body: html`<div class="relative box-border h-30 w-2 bg-et-surface-background">${shellResizeHandle(props)}</div>`,
     }),
 });

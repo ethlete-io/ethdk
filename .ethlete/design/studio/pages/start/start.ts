@@ -19,12 +19,12 @@ const BASES: StartBase[] = ['sdk', 'own'];
 const header = (other: string, repo?: string) =>
   html`<header class="flex items-center gap-space-3 p-space-4">
     ${studioMark(24)}
-    <span class="text-et-surface font-ui-strong text-ui-md">${START_LABELS.title}</span>
-    ${repo ? html`<span class="text-et-surface-muted text-ui-sm">${repo}</span>${withAction(other, 'emit:otherRepo')}` : ''}
+    <span class="text-et-surface-text font-ui-strong text-ui-md">${START_LABELS.title}</span>
+    ${repo ? html`<span class="text-et-surface-text-muted text-ui-sm">${repo}</span>${withAction(other, 'emit:otherRepo')}` : ''}
   </header>`;
 
 const ghostProduct =
-  '<span class="block w-10 h-10 rounded-full outline outline-et-surface-border bg-et-surface-bg"></span>';
+  '<span class="block w-10 h-10 rounded-full outline outline-et-surface-border bg-et-surface-background"></span>';
 
 const card = (inner: string) =>
   html`<div class="flex-1 flex items-center justify-center">
@@ -33,14 +33,14 @@ const card = (inner: string) =>
 
 const knownRepos = (buttons: string[]) =>
   buttons.length
-    ? html`<p class="m-0 text-et-surface-muted text-ui-sm">${START_LABELS.knownRepos}</p>
+    ? html`<p class="m-0 text-et-surface-text-muted text-ui-sm">${START_LABELS.knownRepos}</p>
         <div class="flex flex-wrap justify-center gap-space-2">${buttons.join('')}</div>`
     : '';
 
 const noRepo = (open: string, known: string[]) =>
   card(
-    html`<p class="m-0 text-et-surface font-ui-strong text-ui-md">${START_LABELS.noRepo}</p>
-      <p class="m-0 text-et-surface-muted">
+    html`<p class="m-0 text-et-surface-text font-ui-strong text-ui-md">${START_LABELS.noRepo}</p>
+      <p class="m-0 text-et-surface-text-muted">
         Studio liest das Design-System aus einem Git-Checkout. Öffne den Ordner eines Repos, in dem die Produkte liegen
         oder entstehen sollen.
       </p>
@@ -49,7 +49,7 @@ const noRepo = (open: string, known: string[]) =>
 
 const question = (title: string, buttons: string[]) =>
   html`<div class="flex flex-col items-center gap-space-2">
-    <p class="m-0 text-et-surface font-ui-strong text-ui-sm">${title}</p>
+    <p class="m-0 text-et-surface-text font-ui-strong text-ui-sm">${title}</p>
     <div class="flex flex-wrap justify-center gap-space-2" role="group" aria-label="${title}">${buttons.join('')}</div>
   </div>`;
 
@@ -58,13 +58,15 @@ const noProducts = (copy: string, repo: string, known: string[], questions: stri
     html`<div class="flex items-center gap-space-2" aria-hidden="true">
         ${ghostProduct}${ghostProduct}${ghostProduct}
       </div>
-      <p class="m-0 text-et-surface font-ui-strong text-ui-md">${START_LABELS.noProducts}</p>
-      <p class="m-0 text-et-surface-muted">
+      <p class="m-0 text-et-surface-text font-ui-strong text-ui-md">${START_LABELS.noProducts}</p>
+      <p class="m-0 text-et-surface-text-muted">
         Ein Produkt ist ein eigenes Design-System, zum Beispiel für eine App, mit Teilen, Sketches und Flows. Dein Agent
         legt es an. Bitte ihn zum Beispiel so:
       </p>
       ${questions}
-      <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">${prompt}</p>
+      <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-background text-et-surface-text text-ui-sm">
+        ${prompt}
+      </p>
       ${withAction(copy, 'emit:copyPrompt')} ${knownRepos(known)}`,
   );
 
@@ -163,7 +165,7 @@ export default definePart<Props>({
     );
 
     return drawing({
-      body: html`<div class="h-full min-h-225 flex flex-col bg-et-surface-bg">
+      body: html`<div class="h-full min-h-225 flex flex-col bg-et-surface-background">
         ${header(other.body, repo)}
         ${
           repo

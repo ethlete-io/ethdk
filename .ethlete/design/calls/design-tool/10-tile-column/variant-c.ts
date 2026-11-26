@@ -83,8 +83,8 @@ export default drawing({
       grid-template-columns: minmax(0, 1fr) 4.2rem;
       width: 26rem;
       height: 90rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font:
         400 1.4rem/1.45 'Jost',
         system-ui,
@@ -108,9 +108,9 @@ export default drawing({
       display: grid;
       grid-template-rows: auto minmax(0, 1fr);
       min-height: 0;
-      border-right: 0.1rem solid var(--et-surface-border-solid);
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      border-right: 0.1rem solid var(--et-surface-border);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       overflow: hidden;
     }
     .tc-c__stepper {
@@ -118,7 +118,7 @@ export default drawing({
       gap: 0.6rem;
       justify-items: center;
       padding: 1.2rem 1rem 1.4rem;
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
     }
     .tc-c__walk {
       display: grid;
@@ -131,17 +131,17 @@ export default drawing({
       display: grid;
       place-items: center;
       height: 2.4rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.4rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.06);
-      color: var(--et-surface-color-muted-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 6%, transparent);
+      color: var(--et-surface-text-muted);
       font-size: 1.6rem;
       line-height: 1;
     }
     .tc-c__step--spent {
-      border-color: rgb(var(--et-surface-color-rgb) / 0.1);
+      border-color: color-mix(in srgb, var(--et-surface-text) 10%, transparent);
       background: none;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       opacity: 0.4;
     }
     .tc-c__round {
@@ -152,17 +152,17 @@ export default drawing({
       text-align: center;
     }
     .tc-c__round-key {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       text-transform: uppercase;
     }
     .tc-c__round-title {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
       font-weight: 500;
       font-size: 1.3rem;
       line-height: 1.25;
     }
     .tc-c__mark {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
     }
     .tc-c__tiles {
       display: grid;
@@ -177,28 +177,28 @@ export default drawing({
       gap: 0.8rem;
       min-height: 0;
       padding: 0.8rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.6rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.03);
+      background: color-mix(in srgb, var(--et-surface-text) 3%, transparent);
       text-align: left;
     }
     .tc-c__tile--rejected {
       opacity: 0.32;
     }
     .tc-c__tile--chosen {
-      border-color: var(--et-theme-color-primary-solid);
+      border-color: var(--et-tone-fill);
     }
     .tc-c__tile--chosen .tc-c__name,
     .tc-c__tile--chosen .tc-c__tag {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .tc-c__tile--current {
-      border-color: var(--et-surface-color-muted-solid);
-      background: rgb(var(--et-surface-color-rgb) / 0.1);
-      box-shadow: 0 0 0 0.2rem rgb(var(--et-surface-color-rgb) / 0.14);
+      border-color: var(--et-surface-text-muted);
+      background: color-mix(in srgb, var(--et-surface-text) 10%, transparent);
+      box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--et-surface-text) 14%, transparent);
     }
     .tc-c__tile--current .tc-c__name {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
     }
     .tc-c__thumb {
       display: grid;
@@ -207,8 +207,8 @@ export default drawing({
       min-height: 0;
       padding: 0.8rem;
       border-radius: 0.4rem;
-      background: var(--et-surface-background-solid);
-      box-shadow: inset 0 0 0 0.1rem rgb(var(--et-surface-color-rgb) / 0.08);
+      background: var(--et-surface-background);
+      box-shadow: inset 0 0 0 0.1rem color-mix(in srgb, var(--et-surface-text) 8%, transparent);
       overflow: hidden;
     }
     .tc-c__thumb-bar {
@@ -216,13 +216,13 @@ export default drawing({
       height: 0.9rem;
       margin-bottom: 0.4rem;
       border-radius: 0.2rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.28);
+      background: color-mix(in srgb, var(--et-surface-text) 28%, transparent);
     }
     .tc-c__mock {
       display: grid;
       gap: 0.6rem;
       padding-bottom: 0.9rem;
-      border-bottom: 0.1rem solid rgb(var(--et-surface-color-rgb) / 0.08);
+      border-bottom: 0.1rem solid color-mix(in srgb, var(--et-surface-text) 8%, transparent);
     }
     .tc-c__mock--inline {
       grid-template-columns: minmax(0, 1fr) auto;
@@ -241,24 +241,24 @@ export default drawing({
       min-width: 0;
       padding: 0.5rem;
       border-radius: 0.3rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.05);
+      background: color-mix(in srgb, var(--et-surface-text) 5%, transparent);
     }
     .tc-c__line {
       height: 0.9rem;
       border-radius: 0.2rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.18);
+      background: color-mix(in srgb, var(--et-surface-text) 18%, transparent);
     }
     .tc-c__tile--current .tc-c__line {
-      background: rgb(var(--et-surface-color-rgb) / 0.32);
+      background: color-mix(in srgb, var(--et-surface-text) 32%, transparent);
     }
     .tc-c__tile--chosen .tc-c__line {
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.35);
+      background: color-mix(in srgb, var(--et-tone-fill) 35%, transparent);
     }
     .tc-c__chip {
       width: 6.4rem;
       height: 1.4rem;
       border-radius: 0.7rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.28);
+      background: color-mix(in srgb, var(--et-tone-fill) 28%, transparent);
     }
     .tc-c__mock--split .tc-c__chip {
       width: 100%;
@@ -267,7 +267,7 @@ export default drawing({
       width: 1.6rem;
       height: 1.6rem;
       border-radius: 0.4rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.28);
+      background: color-mix(in srgb, var(--et-tone-fill) 28%, transparent);
     }
     .tc-c__foot {
       display: grid;
@@ -275,18 +275,22 @@ export default drawing({
       justify-items: start;
     }
     .tc-c__name {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
       line-height: 1.3;
     }
     .tc-c__tag {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
     }
     .tc-c__canvas {
       position: relative;
       background:
-        repeating-linear-gradient(135deg, rgb(var(--et-surface-color-rgb) / 0.04) 0 0.1rem, transparent 0.1rem 1.4rem),
-        rgb(var(--et-surface-color-rgb) / 0.03);
+        repeating-linear-gradient(
+          135deg,
+          color-mix(in srgb, var(--et-surface-text) 4%, transparent) 0 0.1rem,
+          transparent 0.1rem 1.4rem
+        ),
+        color-mix(in srgb, var(--et-surface-text) 3%, transparent);
       overflow: hidden;
     }
     .tc-c__canvas-edge {
@@ -294,8 +298,8 @@ export default drawing({
       inset-block: 0;
       right: 0;
       width: 1.4rem;
-      border-left: 0.1rem solid var(--et-surface-border-solid);
-      background: var(--et-surface-background-solid);
+      border-left: 0.1rem solid var(--et-surface-border);
+      background: var(--et-surface-background);
     }
   `,
 });

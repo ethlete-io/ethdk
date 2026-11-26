@@ -24,7 +24,7 @@ export const holdTrigger = ({ content, open, reason = '', action = 'emit:openCha
   return html`<span class="flex min-w-0 items-center gap-space-2">
     ${interaction ? forceInteraction(trigger, interaction) : trigger}
     <span
-      class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
+      class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-text-muted whitespace-nowrap"
       data-sk-hold-reason
       ${open ? '' : 'hidden'}
     >
@@ -33,8 +33,8 @@ export const holdTrigger = ({ content, open, reason = '', action = 'emit:openCha
   </span>`;
 };
 
-const demo = html`<span class="text-ui-sm text-et-surface-muted">Pausiert</span>`;
-const demoReason = html`<span class="font-ui-medium text-et-surface">Wartet auf ADR 0331</span>`;
+const demo = html`<span class="text-ui-sm text-et-surface-text-muted">Pausiert</span>`;
+const demoReason = html`<span class="font-ui-medium text-et-surface-text">Wartet auf ADR 0331</span>`;
 
 const { states, grid } = interactionRows<Props, 'closed' | 'open', HoldInteraction>(
   {

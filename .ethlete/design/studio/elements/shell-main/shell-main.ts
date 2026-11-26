@@ -22,18 +22,20 @@ const systemChoice: SystemChoice = async ({ product, products, open }) => {
 
 const crashScreen: CrashScreen = ({ time, pid, port, path, stack }) =>
   html`<div
-    class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
+    class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-text-muted"
     role="alert"
   >
     <div class="flex flex-col gap-space-1">
-      <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">${DESIGN_SERVER_LABELS.crashed}</h3>
+      <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface-text">${DESIGN_SERVER_LABELS.crashed}</h3>
       <p class="m-0">Abgestürzt am ${time} (PID ${pid}, Port ${port})</p>
     </div>
     <pre
       class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
     >
 ${stack.join('\n')}</pre>
-    <p class="m-0">${DESIGN_SERVER_LABELS.crashLog} <span class="font-code break-all text-et-surface">${path}</span></p>
+    <p class="m-0">
+      ${DESIGN_SERVER_LABELS.crashLog} <span class="font-code break-all text-et-surface-text">${path}</span>
+    </p>
     ${restartButton}
   </div>`;
 
@@ -54,7 +56,7 @@ const shell = shellMain(
   crashScreen,
 );
 const studioPreview = html`<span
-  class="inline-flex size-10 items-center justify-center rounded-control-lg bg-et-surface-bg text-et-surface"
+  class="inline-flex size-10 items-center justify-center rounded-control-lg bg-et-surface-background text-et-surface-text"
   data-et-auto-surface
   aria-label="Studio"
 >

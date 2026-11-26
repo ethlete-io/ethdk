@@ -180,7 +180,7 @@ export default definePart({
     const panel = props.open ? await shellSystemPickerMenu(props, keyboard) : null;
 
     return drawing({
-      body: html`<div class="relative box-border flex w-62 p-space-2 text-et-surface font-ui text-ui-md">
+      body: html`<div class="relative box-border flex w-62 p-space-2 text-et-surface-text font-ui text-ui-md">
         ${shellSystemPicker(keyboard ? { ...props, interaction: undefined } : props)}
         ${
           panel

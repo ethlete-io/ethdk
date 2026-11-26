@@ -14,8 +14,8 @@ export default drawing({
     ${frameStyles}
 
     .ring {
-      fill: color-mix(in srgb, var(--et-surface-interaction-solid) 6%, transparent);
-      stroke: var(--et-theme-color-primary-solid);
+      fill: color-mix(in srgb, var(--et-surface-interaction) 6%, transparent);
+      stroke: var(--et-tone-fill);
       stroke-width: 2px;
     }
   `,

@@ -8,7 +8,7 @@ const BUTTON_IMPORTS = { imports: ['BUTTON_IMPORTS'] };
 
 export const MARK_CLASS: Record<FrameMark, string> = {
   selected: '',
-  active: 'after:outline-2 after:outline-dashed after:outline-(--et-theme-color-primary-solid)',
+  active: 'after:outline-2 after:outline-dashed after:outline-(--et-tone-fill)',
   failed: '',
   loading: '',
 };
@@ -22,11 +22,11 @@ export const MARK_ACTION: Record<FrameMark | 'rest', string> = {
   loading: '',
 };
 
-export const liveBadge = `<span class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)" data-live-badge>${CANVAS_LABELS.live}</span>`;
+export const liveBadge = `<span class="shrink-0 rounded-sm bg-(--et-tone-fill) px-[0.4em] text-(--et-tone-on-fill)" data-live-badge>${CANVAS_LABELS.live}</span>`;
 
 export const failureBanner = async (reason: string) =>
   html`<div
-    class="absolute top-space-2 right-space-2 left-space-2 flex items-center gap-space-2 rounded-md border border-solid border-(--et-theme-color-primary-solid) bg-et-surface-bg p-space-2 text-(length:--text-xs) text-(--et-theme-color-primary-solid) shadow-md"
+    class="absolute top-space-2 right-space-2 left-space-2 flex items-center gap-space-2 rounded-md border border-solid border-(--et-tone-fill) bg-et-surface-background p-space-2 text-(length:--text-xs) text-(--et-tone-fill) shadow-md"
     data-et-semantic-color="error"
     role="alert"
   >
@@ -44,7 +44,7 @@ export type RoundSample = { title: string; note: string; columns: Omit<Column, '
 const LABEL_ZOOM = 'zoom: var(--st-canvas-label-scale, 1)';
 
 const columnHead = ({ label, note }: Column) =>
-  `<span style="${LABEL_ZOOM}" class="text-[1.6rem] leading-[1.4] font-semibold text-et-surface">${label}<span class="block text-[0.8em] font-normal text-et-surface-muted">${note}</span></span>`;
+  `<span style="${LABEL_ZOOM}" class="text-[1.6rem] leading-[1.4] font-semibold text-et-surface-text">${label}<span class="block text-[0.8em] font-normal text-et-surface-text-muted">${note}</span></span>`;
 
 const groupHead = async (round: RoundSample) =>
   html`<div class="flex items-center gap-space-2 text-(length:--text-sm) whitespace-nowrap" style="${LABEL_ZOOM}">
@@ -52,7 +52,7 @@ const groupHead = async (round: RoundSample) =>
       `<button et-button type="button" variant="transparent" color="surface" size="sm" aria-expanded="true" data-et-control="column" data-et-action="emit:columnToggle">${round.title}</button><button et-button type="button" variant="outline" color="surface" size="sm" [pressed]="false" data-et-control="group" data-et-action="emit:groupSwitch">Unveränderte Zustände zeigen</button>`,
       BUTTON_IMPORTS,
     )}
-    <span class="min-w-0 truncate text-et-surface-muted">${round.note}</span>
+    <span class="min-w-0 truncate text-et-surface-text-muted">${round.note}</span>
   </div>`;
 
 /** Rounded to 4 canvas px, so frames sit on whole screen pixels at 25 % steps; the harness camera rounds the same room. */
@@ -88,7 +88,7 @@ export const foldedRound = async (round: RoundSample) =>
             BUTTON_IMPORTS,
           )}
         </div>
-        <p class="m-0 line-clamp-12 whitespace-pre-wrap text-et-surface-muted">${round.note}</p>
+        <p class="m-0 line-clamp-12 whitespace-pre-wrap text-et-surface-text-muted">${round.note}</p>
       </div>
     </div>
   </div>`;

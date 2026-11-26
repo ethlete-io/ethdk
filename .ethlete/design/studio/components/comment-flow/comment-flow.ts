@@ -74,7 +74,8 @@ export const commentDraftAt = async (at: string, props: DraftProps) => {
 
 /** The hint beside the pressed Kommentar toggle that Esc or C leaves comment mode. */
 export const commentModeHint = () => ({
-  body: html`<span class="self-center flex items-center gap-space-1 text-ui-xs text-et-surface-muted whitespace-nowrap"
+  body: html`<span
+    class="self-center flex items-center gap-space-1 text-ui-xs text-et-surface-text-muted whitespace-nowrap"
     >${kbd({ keys: ['Esc'] })} oder ${kbd({ keys: ['C'] })} beendet</span
   >`,
   styles: kbdStyles,
@@ -82,16 +83,16 @@ export const commentModeHint = () => ({
 
 const problem = (text: string) =>
   html`<p
-    class="m-0 flex items-center gap-space-1 text-et-theme-ink text-ui-xs"
+    class="m-0 flex items-center gap-space-1 text-et-tone-text text-ui-xs"
     data-et-semantic-color="error"
     role="alert"
   >
-    ${icon('error', { size: 14, cls: 'flex-none text-et-theme' })}<span>${text}</span>
+    ${icon('error', { size: 14, cls: 'flex-none text-et-tone-fill' })}<span>${text}</span>
   </p>`;
 
 const avatar = (m: ThreadMessage) =>
   html`<span
-    class="st-crow-avatar flex flex-none items-center justify-center size-5 bg-et-surface-bg text-et-surface text-(length:--text-xs) font-ui-strong"
+    class="st-crow-avatar flex flex-none items-center justify-center size-5 bg-et-surface-background text-et-surface-text text-(length:--text-xs) font-ui-strong"
     data-et-auto-surface
     >${m.agent ? agentLogo(m.agent, 'size-3') : m.initials}</span
   >`;
@@ -155,24 +156,24 @@ export const threadCard = async ({ place, messages, closeTo, text = '', phase, r
       ${avatar(m)}
       <div class="flex flex-1 flex-col gap-0.5 min-w-0">
         <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
-          <span class="text-et-surface font-ui-medium">${m.author}</span>
-          <span class="flex-1 text-et-surface-muted">${m.when}</span>
+          <span class="text-et-surface-text font-ui-medium">${m.author}</span>
+          <span class="flex-1 text-et-surface-text-muted">${m.when}</span>
         </div>
-        <p class="m-0 text-et-surface text-ui-sm">${m.text}</p>
+        <p class="m-0 text-et-surface-text text-ui-sm">${m.text}</p>
         ${m.own ? html`<div class="-ml-space-2 flex">${withdrawAction}</div>` : ''}
       </div>
     </li>`;
 
   return {
     body: html`<div
-      class="relative z-20 flex flex-col w-80 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) shadow-lg"
+      class="relative z-20 flex flex-col w-80 rounded-md border border-(--et-surface-border) bg-(--et-surface-background) shadow-lg"
       data-et-auto-surface
       role="dialog"
       aria-label="${COMMENT_THREAD_LABELS.dialog}"
     >
       <div class="flex items-center gap-space-2 border-b border-et-surface-border px-space-3 py-space-2">
         <span
-          class="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-code text-ui-xs text-et-surface-muted"
+          class="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-code text-ui-xs text-et-surface-text-muted"
           >${place}</span
         >
         ${control(withAction(resolve.body, 'emit:resolveThread'), 'thread-resolve')}${control(
@@ -186,7 +187,7 @@ export const threadCard = async ({ place, messages, closeTo, text = '', phase, r
       <div class="flex flex-col gap-space-2 border-t border-et-surface-border p-space-3">
         ${field.body}${phase === 'error' ? problem(COMMENT_DRAFT_LABELS.notSent) : phase === 'rejected' ? problem(reason) : ''}
         <div class="flex items-center justify-between gap-space-2">
-          <span class="flex items-center gap-space-1 text-ui-xs text-et-surface-muted"
+          <span class="flex items-center gap-space-1 text-ui-xs text-et-surface-text-muted"
             >${kbd({ keys: ['Esc'] })} schließt</span
           >
           ${control(sendMarkup, 'thread-send')}
@@ -205,8 +206,8 @@ export const threadCardAt = async (at: string, props: ThreadCardProps) => {
 
 const listHead = (count: number) =>
   html`<div class="flex items-center gap-space-2 px-space-2 py-space-1">
-    <span class="text-ui-sm font-ui-strong text-et-surface">${COMMENT_LIST_LABELS.title}</span>
-    <span class="text-ui-xs text-et-surface-muted">${count} offen</span>
+    <span class="text-ui-sm font-ui-strong text-et-surface-text">${COMMENT_LIST_LABELS.title}</span>
+    <span class="text-ui-xs text-et-surface-text-muted">${count} offen</span>
   </div>`;
 
 /** The open comments of a view; `selected` is the index of the selected row, -1 for none. */

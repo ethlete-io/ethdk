@@ -245,25 +245,25 @@ const ACTIVE_PART = 'button';
 const rowOf = (selected: string) => (c: Comment) => commentRow({ thread: c, selected: c.id === selected });
 
 const groupHead = (title: string, count: number) =>
-  `<div class="flex items-center justify-between pt-space-3 px-space-2 pb-space-1 not-first:mt-space-2 not-first:border-t border-et-surface-border text-et-surface-muted text-(length:--text-xs)"><span class="font-code">${title}</span><span>${count}</span></div>`;
+  `<div class="flex items-center justify-between pt-space-3 px-space-2 pb-space-1 not-first:mt-space-2 not-first:border-t border-et-surface-border text-et-surface-text-muted text-(length:--text-xs)"><span class="font-code">${title}</span><span>${count}</span></div>`;
 
 const group = (title: string, comments: Comment[], selected = SELECTED) =>
   comments.length === 0 ? '' : groupHead(title, comments.length) + comments.map(rowOf(selected)).join('');
 
 const activeGroup = (comments: Comment[], selected = SELECTED) =>
   comments.length === 0
-    ? `${groupHead(ACTIVE_PART, 0)}<p class="m-0 pt-space-1 px-space-2 pb-space-2 text-et-surface-muted text-(length:--text-sm)">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
+    ? `${groupHead(ACTIVE_PART, 0)}<p class="m-0 pt-space-1 px-space-2 pb-space-2 text-et-surface-text-muted text-(length:--text-sm)">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
     : group(ACTIVE_PART, comments, selected);
 
-const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center">${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-theme-ink' })}<p class="m-0 text-et-surface text-(length:--text-sm)">${INBOX_LABELS.emptyTitle}</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">${INBOX_LABELS.emptyText}</p></div>`;
+const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center">${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-tone-text' })}<p class="m-0 text-et-surface-text text-(length:--text-sm)">${INBOX_LABELS.emptyTitle}</p><p class="m-0 text-et-surface-text-muted text-(length:--text-xs)">${INBOX_LABELS.emptyText}</p></div>`;
 
-const loadingNote = `<p class="m-0 px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-sm)">${INBOX_LABELS.loading}</p>`;
+const loadingNote = `<p class="m-0 px-space-2 pt-space-1 text-et-surface-text-muted text-(length:--text-sm)">${INBOX_LABELS.loading}</p>`;
 
 const loadError = (retry: string, reason: string) =>
-  `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center"><span class="contents" data-et-semantic-color="error">${icon('error', { size: 14, cls: 'size-5 mb-space-2 text-et-theme' })}</span><p class="m-0 text-et-surface text-(length:--text-sm)">${INBOX_LABELS.errorTitle}</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">${reason || INBOX_LABELS.errorText}</p><div class="mt-space-3">${retry}</div></div>`;
+  `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center"><span class="contents" data-et-semantic-color="error">${icon('error', { size: 14, cls: 'size-5 mb-space-2 text-et-tone-fill' })}</span><p class="m-0 text-et-surface-text text-(length:--text-sm)">${INBOX_LABELS.errorTitle}</p><p class="m-0 text-et-surface-text-muted text-(length:--text-xs)">${reason || INBOX_LABELS.errorText}</p><div class="mt-space-3">${retry}</div></div>`;
 
 const interruptedNote = (retry: string) =>
-  `<div class="mx-space-2 mt-space-2 flex flex-col items-start gap-space-2 rounded-md border border-et-surface-border px-space-3 py-space-2 text-(length:--text-xs)"><span class="flex items-center gap-space-2 text-et-surface-muted"><span class="contents" data-et-semantic-color="warning">${icon('error', { size: 14, cls: 'size-4 text-et-theme' })}</span>${INBOX_LABELS.interrupted}</span>${retry}</div>`;
+  `<div class="mx-space-2 mt-space-2 flex flex-col items-start gap-space-2 rounded-md border border-et-surface-border px-space-3 py-space-2 text-(length:--text-xs)"><span class="flex items-center gap-space-2 text-et-surface-text-muted"><span class="contents" data-et-semantic-color="warning">${icon('error', { size: 14, cls: 'size-4 text-et-tone-fill' })}</span>${INBOX_LABELS.interrupted}</span>${retry}</div>`;
 
 const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string, anchored?: string) => {
   let index = -1;
@@ -420,8 +420,8 @@ export const inbox = definePart<Props>({
       <div
         class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-et-surface-border text-ui-sm"
       >
-        <span class="text-et-surface-muted">${load ? '' : `${unresolved} offen`}</span>
-        <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}</div>
+        <span class="text-et-surface-text-muted">${load ? '' : `${unresolved} offen`}</span>
+        <div class="flex items-center gap-space-2 text-et-surface-text">Erledigte zeigen ${controls}</div>
       </div>
       ${interrupted ? interruptedNote(retry) : ''}
       <div class="flex flex-col gap-px min-h-0 overflow-auto p-space-2">

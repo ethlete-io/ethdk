@@ -131,8 +131,8 @@ export default drawing({
       grid-template-columns: 12rem minmax(0, 1fr);
       width: 72rem;
       height: 90rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       font:
         400 1.4rem/1.45 'Jost',
         system-ui,
@@ -162,9 +162,9 @@ export default drawing({
       gap: 1.8rem;
       min-height: 0;
       padding: 1.2rem 1rem;
-      border-right: 0.1rem solid var(--et-surface-border-solid);
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      border-right: 0.1rem solid var(--et-surface-border);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
       overflow: hidden;
     }
     .ws-c__round-group {
@@ -172,35 +172,35 @@ export default drawing({
       gap: 0.8rem;
     }
     .ws-c__round-head {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       text-transform: uppercase;
     }
     .ws-c__tile {
       display: grid;
       gap: 0.5rem;
       padding: 0.5rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.5rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.03);
+      background: color-mix(in srgb, var(--et-surface-text) 3%, transparent);
       text-align: left;
     }
     .ws-c__tile--rejected {
       opacity: 0.32;
     }
     .ws-c__tile--chosen {
-      border-color: var(--et-theme-color-primary-solid);
+      border-color: var(--et-tone-fill);
     }
     .ws-c__tile--chosen .ws-c__tile-name,
     .ws-c__tile--chosen .ws-c__tile-tag {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
     }
     .ws-c__tile--current {
-      border-color: var(--et-surface-color-muted-solid);
-      background: rgb(var(--et-surface-color-rgb) / 0.1);
-      box-shadow: 0 0 0 0.2rem rgb(var(--et-surface-color-rgb) / 0.14);
+      border-color: var(--et-surface-text-muted);
+      background: color-mix(in srgb, var(--et-surface-text) 10%, transparent);
+      box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--et-surface-text) 14%, transparent);
     }
     .ws-c__tile--current .ws-c__tile-name {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
     }
     .ws-c__thumb {
       display: grid;
@@ -209,8 +209,8 @@ export default drawing({
       height: 5rem;
       padding: 0.4rem;
       border-radius: 0.3rem;
-      background: var(--et-surface-background-solid);
-      box-shadow: inset 0 0 0 0.1rem rgb(var(--et-surface-color-rgb) / 0.08);
+      background: var(--et-surface-background);
+      box-shadow: inset 0 0 0 0.1rem color-mix(in srgb, var(--et-surface-text) 8%, transparent);
       overflow: hidden;
     }
     .ws-c__thumb-row {
@@ -220,21 +220,21 @@ export default drawing({
     .ws-c__block {
       height: 0.7rem;
       border-radius: 0.1rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.18);
+      background: color-mix(in srgb, var(--et-surface-text) 18%, transparent);
     }
     .ws-c__tile--current .ws-c__block {
-      background: rgb(var(--et-surface-color-rgb) / 0.32);
+      background: color-mix(in srgb, var(--et-surface-text) 32%, transparent);
     }
     .ws-c__tile--chosen .ws-c__block {
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.35);
+      background: color-mix(in srgb, var(--et-tone-fill) 35%, transparent);
     }
     .ws-c__tile-name {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.1rem;
       line-height: 1.3;
     }
     .ws-c__tile-tag {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
     }
     .ws-c__canvas {
       position: relative;
@@ -242,8 +242,12 @@ export default drawing({
       place-items: center;
       min-height: 0;
       background:
-        repeating-linear-gradient(135deg, rgb(var(--et-surface-color-rgb) / 0.04) 0 0.1rem, transparent 0.1rem 1.4rem),
-        rgb(var(--et-surface-color-rgb) / 0.03);
+        repeating-linear-gradient(
+          135deg,
+          color-mix(in srgb, var(--et-surface-text) 4%, transparent) 0 0.1rem,
+          transparent 0.1rem 1.4rem
+        ),
+        color-mix(in srgb, var(--et-surface-text) 3%, transparent);
       overflow: hidden;
     }
     .ws-c__frame {
@@ -251,8 +255,8 @@ export default drawing({
       grid-template-rows: auto minmax(0, 1fr) auto;
       width: 39rem;
       height: 100%;
-      border-inline: 0.1rem solid var(--et-surface-border-solid);
-      background: var(--et-surface-background-solid);
+      border-inline: 0.1rem solid var(--et-surface-border);
+      background: var(--et-surface-background);
     }
     .ws-c__frame-header {
       display: flex;
@@ -260,19 +264,19 @@ export default drawing({
       align-items: center;
       height: 6.4rem;
       padding: 0 1.6rem;
-      border-bottom: 0.1rem solid var(--et-surface-border-solid);
+      border-bottom: 0.1rem solid var(--et-surface-border);
     }
     .ws-c__frame-glyph {
       width: 2rem;
       height: 2rem;
       border-radius: 0.4rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.3);
+      background: color-mix(in srgb, var(--et-surface-text) 30%, transparent);
     }
     .ws-c__frame-heading {
       width: 16rem;
       height: 1.4rem;
       border-radius: 0.2rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.3);
+      background: color-mix(in srgb, var(--et-surface-text) 30%, transparent);
     }
     .ws-c__frame-rows {
       display: grid;
@@ -286,18 +290,18 @@ export default drawing({
       gap: 0.6rem;
       justify-items: start;
       padding-bottom: 1.4rem;
-      border-bottom: 0.1rem solid rgb(var(--et-surface-color-rgb) / 0.08);
+      border-bottom: 0.1rem solid color-mix(in srgb, var(--et-surface-text) 8%, transparent);
     }
     .ws-c__frame-line {
       height: 1.1rem;
       border-radius: 0.2rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.16);
+      background: color-mix(in srgb, var(--et-surface-text) 16%, transparent);
     }
     .ws-c__frame-stage {
       width: 8rem;
       height: 1.6rem;
       border-radius: 0.8rem;
-      background: rgb(var(--et-theme-color-primary-rgb) / 0.28);
+      background: color-mix(in srgb, var(--et-tone-fill) 28%, transparent);
     }
     .ws-c__frame-tabs {
       display: flex;
@@ -305,13 +309,13 @@ export default drawing({
       align-items: center;
       justify-content: center;
       height: 6.4rem;
-      border-top: 0.1rem solid var(--et-surface-border-solid);
+      border-top: 0.1rem solid var(--et-surface-border);
     }
     .ws-c__frame-tab {
       width: 2.4rem;
       height: 2.4rem;
       border-radius: 0.5rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.3);
+      background: color-mix(in srgb, var(--et-surface-text) 30%, transparent);
     }
     .ws-c__measure {
       position: absolute;
@@ -322,13 +326,13 @@ export default drawing({
       width: 39rem;
       height: 1.2rem;
       transform: translate(-50%, -50%);
-      border-top: 0.1rem dashed rgb(var(--et-surface-color-rgb) / 0.35);
-      border-inline: 0.1rem dashed rgb(var(--et-surface-color-rgb) / 0.35);
+      border-top: 0.1rem dashed color-mix(in srgb, var(--et-surface-text) 35%, transparent);
+      border-inline: 0.1rem dashed color-mix(in srgb, var(--et-surface-text) 35%, transparent);
     }
     .ws-c__measure span {
       padding: 0 0.6rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-subtle-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text-subtle);
       transform: translateY(-0.7rem);
     }
     .ws-c__float {
@@ -348,9 +352,9 @@ export default drawing({
       display: grid;
       gap: 0.5rem;
       padding: 1.4rem 1.8rem;
-      border-block: 0.1rem solid rgb(var(--et-surface-color-rgb) / 0.12);
-      background: rgb(var(--et-surface-background-rgb) / 0.62);
-      color: var(--et-surface-color-solid);
+      border-block: 0.1rem solid color-mix(in srgb, var(--et-surface-text) 12%, transparent);
+      background: color-mix(in srgb, var(--et-surface-background) 62%, transparent);
+      color: var(--et-surface-text);
       backdrop-filter: blur(1rem);
     }
     .ws-c__float--top .ws-c__bar {
@@ -368,7 +372,7 @@ export default drawing({
     }
     .ws-c__eyebrow,
     .ws-c__round {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
     }
     .ws-c__round {
       font-size: 1.2rem;
@@ -387,10 +391,10 @@ export default drawing({
       min-width: 0;
       height: 2.6rem;
       padding: 0 1rem;
-      border: 0.1rem solid rgb(var(--et-surface-color-rgb) / 0.12);
+      border: 0.1rem solid color-mix(in srgb, var(--et-surface-text) 12%, transparent);
       border-radius: 1.3rem;
-      background: rgb(var(--et-surface-background-rgb) / 0.62);
-      color: var(--et-surface-color-solid);
+      background: color-mix(in srgb, var(--et-surface-background) 62%, transparent);
+      color: var(--et-surface-text);
       backdrop-filter: blur(1rem);
     }
     .ws-c__line-text {
@@ -398,23 +402,23 @@ export default drawing({
       gap: 0.5rem;
       align-items: center;
       min-width: 0;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .ws-c__line-strong {
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-text);
       font-weight: 500;
       font-size: 1.2rem;
       white-space: nowrap;
     }
     .ws-c__note {
       padding: 0.2rem 0.6rem;
-      border: 0.1rem dashed rgb(var(--et-theme-color-primary-rgb) / 0.5);
+      border: 0.1rem dashed color-mix(in srgb, var(--et-tone-fill) 50%, transparent);
       border-radius: 0.3rem;
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
       white-space: nowrap;
     }
     .ws-c__option {
@@ -432,7 +436,7 @@ export default drawing({
       display: flex;
       gap: 0.5rem;
       align-items: center;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.2rem;
       white-space: nowrap;
     }
@@ -440,11 +444,11 @@ export default drawing({
       width: 0.6rem;
       height: 0.6rem;
       border-radius: 50%;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
     .ws-c__address {
       flex: 1;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -455,14 +459,14 @@ export default drawing({
       gap: 0.8rem;
       align-items: baseline;
       margin: 0;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.3rem;
       line-height: 1.4;
     }
     .ws-c__tag {
       flex: none;
       width: 4.4rem;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-text-subtle);
       text-transform: uppercase;
     }
     .ws-c__verbs {
@@ -472,16 +476,16 @@ export default drawing({
     }
     .ws-c__verb {
       padding: 0.7rem 1.4rem;
-      border: 0.1rem solid var(--et-surface-border-solid);
+      border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.4rem;
-      background: rgb(var(--et-surface-color-rgb) / 0.06);
-      color: var(--et-surface-color-muted-solid);
+      background: color-mix(in srgb, var(--et-surface-text) 6%, transparent);
+      color: var(--et-surface-text-muted);
       font-size: 1.3rem;
     }
     .ws-c__verb--primary {
       border-color: transparent;
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary-solid);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
       font-weight: 500;
     }
   `,

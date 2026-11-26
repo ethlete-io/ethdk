@@ -62,13 +62,13 @@ export default drawing({
         position: absolute;
         inset-inline: 0;
         bottom: 0;
-        border-top: 1px dashed rgb(var(--et-color-primary-ink));
+        border-top: 1px dashed var(--et-tone-text-rest);
         background: repeating-linear-gradient(
           -45deg,
           transparent 0,
           transparent 4px,
-          rgb(var(--et-color-primary) / 0.35) 4px,
-          rgb(var(--et-color-primary) / 0.35) 6px
+          color-mix(in srgb, var(--et-tone-fill-rest) 35%, transparent) 4px,
+          color-mix(in srgb, var(--et-tone-fill-rest) 35%, transparent) 6px
         );
       }
 

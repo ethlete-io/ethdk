@@ -12,7 +12,7 @@ export default drawing({
 
     .ring {
       fill: none;
-      stroke: var(--et-theme-color-primary-solid);
+      stroke: var(--et-tone-fill);
       stroke-width: 2px;
     }
   `,

@@ -18,7 +18,7 @@ export const frameStyles = (componentStyles: string) => css`
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 24px;
     padding: 24px;
-    background: var(--et-surface-background-solid);
-    color: var(--et-surface-color-solid);
+    background: var(--et-surface-background);
+    color: var(--et-surface-text);
   }
 `;
