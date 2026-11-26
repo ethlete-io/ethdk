@@ -2,11 +2,23 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
 
 const script = new URL('./heavy.mjs', import.meta.url).pathname;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const spawned = new Set();
+
+after(() => {
+  for (const child of spawned) {
+    try {
+      process.kill(-child.pid, 'SIGKILL');
+    } catch {
+      // the group has already exited
+    }
+  }
+});
 
 const setup = () => {
   const dir = tempDir('heavy-spec-');
@@ -17,12 +29,22 @@ const setup = () => {
     RUN_REGISTRY_DIR: join(dir, 'runs'),
   };
   const start = (cmd) => {
-    const child = spawn('node', [script, 'run', '--', 'sh', '-c', cmd], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('node', [script, 'run', '--', 'sh', '-c', cmd], {
+      env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: true,
+    });
+    spawned.add(child);
     child.out = '';
     child.err = '';
     child.stdout.on('data', (d) => (child.out += d));
     child.stderr.on('data', (d) => (child.err += d));
-    child.done = new Promise((r) => child.on('close', (code) => r(code)));
+    child.done = new Promise((r) =>
+      child.on('close', (code) => {
+        spawned.delete(child);
+        r(code);
+      }),
+    );
     return child;
   };
   return { dir, start };
@@ -36,30 +58,32 @@ const waitFor = async (cond) => {
   assert.fail('timeout');
 };
 
+const holderLines = (err) => err.match(/slot \d: pid \d+/g) ?? [];
+
 const holdUntil = (gate, tag) => `echo ${tag}; while [ ! -e ${gate} ]; do sleep 0.05; done`;
 
-test('4 jobs: 3 run at once, the 4th waits and prints holders', async () => {
+test('4 jobs: 3 run at once, the 4th waits and prints holders', { timeout: 30_000 }, async () => {
   const { dir, start } = setup();
   const gate = join(dir, 'go');
   const jobs = [1, 2, 3].map((i) => start(holdUntil(gate, `started-${i}`)));
   await waitFor(() => jobs.every((j) => j.out.includes('started-')));
   const fourth = start('echo fourth-ran');
-  await waitFor(() => fourth.err.includes('all 3 slots are taken'));
+  await waitFor(() => holderLines(fourth.err).length === 3);
   assert.equal(fourth.out, '');
-  assert.equal(fourth.err.match(/slot \d: pid \d+/g).length, 3);
+  assert.match(fourth.err, /all 3 slots are taken/);
   writeFileSync(gate, '');
   assert.equal(await fourth.done, 0);
   assert.match(fourth.out, /fourth-ran/);
   await Promise.all(jobs.map((j) => j.done));
 });
 
-test('a killed holder frees its slot', async () => {
+test('a killed holder frees its slot', { timeout: 30_000 }, async () => {
   const { dir, start } = setup();
   const gate = join(dir, 'go');
   const jobs = [1, 2, 3].map((i) => start(holdUntil(gate, `started-${i}`)));
   await waitFor(() => jobs.every((j) => j.out.includes('started-')));
   const fourth = start('echo fourth-ran');
-  await waitFor(() => fourth.err.includes('all 3 slots are taken'));
+  await waitFor(() => holderLines(fourth.err).length === 3);
   const pid = Number(fourth.err.match(/slot \d: pid (\d+)/)[1]);
   process.kill(pid, 'SIGKILL');
   assert.equal(await fourth.done, 0);
@@ -68,7 +92,7 @@ test('a killed holder frees its slot', async () => {
   await Promise.all(jobs.map((j) => j.done));
 });
 
-test('exit code passes through', async () => {
+test('exit code passes through', { timeout: 30_000 }, async () => {
   const { start } = setup();
   assert.equal(await start('exit 7').done, 7);
   assert.equal(await start('exit 0').done, 0);
