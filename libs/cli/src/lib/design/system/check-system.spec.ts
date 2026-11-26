@@ -199,7 +199,8 @@ describe('summaryText', () => {
       chromiumOf: noBrowser,
     });
 
-    expect(code).toBe(0);
+    expect(code).toBe(1);
+    expect(lines).toContainEqual(expect.stringMatching(/^NO RECORD acme elements\/hero: /));
     expect(lines).toContainEqual(expect.stringMatching(/^RENDER CHECK SKIPPED - neither /));
     expect(lines.some((line) => line.startsWith('RENDER CHECK FAILED'))).toBe(false);
   });

@@ -134,7 +134,8 @@ describe('design check --part settles the committed edits of its embedders', () 
 
     expect(lines.filter((line) => line.includes('changed since its merged hash'))).toEqual([]);
     expect(lines).toContain(`EMBEDDERS PASS ${VIEWPORT}: 1 part`);
-    expect(code).toBe(0);
+    expect(code).toBe(1);
+    expect(lines).toContainEqual(expect.stringMatching(/^NO RECORD app-a /));
     expect(chipHashOf(target)).not.toBe(before);
     expect(mergedOf(target)).toEqual({ [CHIP]: chipHashOf(target) });
     expect(git(target, 'status', '--porcelain', '--', join(DESIGN_DIR, 'app-a', 'merged.json'))).toBe('');

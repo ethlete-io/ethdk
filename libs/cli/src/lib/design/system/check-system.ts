@@ -731,6 +731,7 @@ const printProductOpenPoints = async (
     );
 
   let slowFailures = 0;
+  let noRecords = 0;
   const recorded = await recordCheckedBuildReady({
     target,
     config,
@@ -765,7 +766,14 @@ const printProductOpenPoints = async (
             return declared;
           },
         }),
-    ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
+    ...(options.part
+      ? {
+          onNoRecord: (line: string) => {
+            noRecords += 1;
+            console.log(line);
+          },
+        }
+      : {}),
     onRecordDropped: (line: string) => console.log(line),
     onSlowProblems: (part, problems) => {
       slowFailures += problems.length;
@@ -821,7 +829,7 @@ const printProductOpenPoints = async (
     console.log(staleLineOf(name, stale)),
   );
 
-  return slowFailures + actionFailures.reduce((count, { failures }) => count + failures.length, 0);
+  return slowFailures + noRecords + actionFailures.reduce((count, { failures }) => count + failures.length, 0);
 };
 
 const notCheckedLineOf = (options: { product: string; parts: string; why: string }) =>

@@ -110,9 +110,10 @@ describe('checkDesign', () => {
   it('finds the product of a part without --product, and refuses an unknown part', async () => {
     const lines = output();
 
-    expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/home'], invocation: 'et design' })).toBe(0);
+    expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/home'], invocation: 'et design' })).toBe(1);
     expect(lines.filter((line) => /^PARTS? /u.test(line))).toEqual([expect.stringMatching(/^PART acme pages\/home: /)]);
     expect(lines).toContainEqual(expect.stringMatching(/^NO RECORD acme pages\/home: .*no-harness/));
+    expect(lines).not.toContain('ok');
     expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/gone'], invocation: 'et design' })).toBe(1);
     expect(lines.at(-1)).toBe('NO PART "pages/gone" in any product of config.json.');
   });

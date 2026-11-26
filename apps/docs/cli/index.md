@@ -500,6 +500,7 @@ names its writer, with `cmd` set to `ready`,
 build-ready parts. Any edit of the part changes its hash, and the record then reads as stale until `et design ready`,
 `et design check` or the design server writes it again. A part-scoped `et design check` prints
 `NO RECORD <product> <part>: <kind>: <text>; …` for a part it left without a holding record, naming every blocker.
+Each such part counts as a failure too: the check prints no `ok` and exits 1, so an open point or a missing harness never reads as a pass.
 Each failed action of such a part counts as an `ACTION-FAILED` finding, so the part does not read as clean and the check exits 1.
 A slow rule that fails while a part-scoped check settles the part blocks it with that problem instead of `pending`, and counts as a finding.
 
