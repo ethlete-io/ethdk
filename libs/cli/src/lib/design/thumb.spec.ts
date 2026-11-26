@@ -188,10 +188,10 @@ describe('createThumbnailer', () => {
   });
 
   it('closes the browser it launched', async () => {
-    const { middleware, close } = thumbnailer();
-
-    await close();
+    await thumbnailer().close();
     expect(closeBrowser).not.toHaveBeenCalled();
+
+    const { middleware, close } = thumbnailer();
 
     await ask(middleware, '/?call=app/one&variant=a');
     await close();
@@ -289,6 +289,39 @@ describe('createDrawQueue', () => {
 
     await expect(failed).rejects.toThrow('broken');
     await expect(next).resolves.toBe('drawn');
+  });
+
+  it('leaves no browser open when a draw starts after close, as one queued behind the running draws of an aborted run', async () => {
+    const open = new Set<number>();
+    let launched = 0;
+    const launching = async () => {
+      const id = ++launched;
+
+      open.add(id);
+
+      return { newContext, close: async () => void open.delete(id) };
+    };
+    const queue = createDrawQueue({
+      target: '/co',
+      chromiumOf: async () => ({
+        chromium: { launch: launching } as never,
+        from: '/co/node_modules/playwright/index.js',
+      }),
+    });
+    const releases: (() => void)[] = [];
+    const drawn = Array.from({ length: DRAWS_AT_ONCE + 2 }, () =>
+      queue.run(() => new Promise<void>((done) => releases.push(done))).catch(() => undefined),
+    );
+
+    await vi.waitFor(() => expect(releases).toHaveLength(DRAWS_AT_ONCE));
+    await queue.close();
+    releases.splice(0).forEach((release) => release());
+    await new Promise((done) => setTimeout(done, 5));
+    releases.splice(0).forEach((release) => release());
+    await Promise.all(drawn);
+    await expect(queue.run(async () => 'drawn')).rejects.toThrow();
+
+    expect({ launched, open: [...open] }).toEqual({ launched: 1, open: [] });
   });
 });
 

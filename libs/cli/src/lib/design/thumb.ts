@@ -326,12 +326,15 @@ export const createDrawQueue = (options: {
   const { target, ledger, args = DRAW_BROWSER_ARGS } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
   let browser: Promise<Browser> | null = null;
+  let closed = false;
   const waiting: WaitingDraw[] = [];
   const entries = new WeakMap<Promise<unknown>, WaitingDraw>();
   let drawing = 0;
   let shownView = 0;
 
   const launch = () => {
+    if (closed) return Promise.reject(new ThumbUnavailableError('design-explore: the draw queue closed'));
+
     browser ??= resolveChromium(target).then((resolved) => {
       if (!resolved) {
         throw new ThumbUnavailableError(
@@ -468,6 +471,7 @@ export const createDrawQueue = (options: {
     close: async () => {
       const running = browser;
 
+      closed = true;
       browser = null;
       await running?.then((open) => open.close()).catch(() => undefined);
     },
