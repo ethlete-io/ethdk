@@ -1,1 +1,11 @@
-{"agentType":"general-purpose","isBuiltIn":true,"description":"B833 Gründe button probe","toolUseId":"toolu_01HVPUYiHLc3AvZtu5JaoAKo","spawnDepth":1,"requestShape":"background","requestNonInteractive":true,"model":"sonnet","pickedEffortModel":"claude-opus-5-5"}
+{
+  "agentType": "general-purpose",
+  "isBuiltIn": true,
+  "description": "B833 Gründe button probe",
+  "toolUseId": "toolu_01HVPUYiHLc3AvZtu5JaoAKo",
+  "spawnDepth": 1,
+  "requestShape": "background",
+  "requestNonInteractive": true,
+  "model": "sonnet",
+  "pickedEffortModel": "claude-opus-5-5"
+}
