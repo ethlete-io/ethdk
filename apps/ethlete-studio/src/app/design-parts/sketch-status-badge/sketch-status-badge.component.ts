@@ -7,7 +7,7 @@ import { SKETCH_STATUS_ICONS, SKETCH_STATUS_TONE, SketchBadgeStatus } from '../.
 @Component({
   selector: 'ethlete-sketch-status-badge',
   template: `
-    <span [etProvideColor]="scope()" [attr.data-sk-status]="status()" class="flex flex-none">
+    <span [etProvideColor]="scope()" [attr.data-sk-status]="status()" class="inline-flex flex-none">
       <button
         [etToggletipOpen]="open()"
         [etToggletip]="tip"
@@ -25,7 +25,7 @@ import { SKETCH_STATUS_ICONS, SKETCH_STATUS_TONE, SketchBadgeStatus } from '../.
       </button>
     </span>
     <ng-template #tip>
-      <div class="flex max-w-64 flex-col gap-space-1 text-ui-sm" data-toggletip-body data-sk-status-tip>
+      <div class="flex flex-col gap-space-1 text-ui-sm" data-toggletip-body data-sk-status-tip>
         <span class="font-ui-medium text-et-surface-text">{{ tipText().label }}</span>
         <span class="text-et-surface-text-muted">{{ tipText().detail }}</span>
         @if (note(); as note) {

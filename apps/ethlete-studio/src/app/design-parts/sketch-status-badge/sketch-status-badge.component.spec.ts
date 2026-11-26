@@ -57,6 +57,14 @@ describe('SketchStatusBadgeComponent', () => {
     expect(classes.size).toBe(1);
   });
 
+  it('hugs its icon button instead of filling the width of a block parent', async () => {
+    const { host } = await render('waiting');
+    const wrapper = host.querySelector<HTMLElement>('[data-sk-status]');
+
+    expect(wrapper?.classList).toContain('inline-flex');
+    expect(wrapper?.classList).not.toContain('flex');
+  });
+
   it('opens a toggletip with the word, the detail and the note', async () => {
     const { fixture, host } = await render('paused', 'Wartet auf B1');
 
