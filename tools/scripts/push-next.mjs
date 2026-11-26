@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { realpathSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { releaseSlot } from './push-slot.mjs';
+import { mirrorDir } from './next-mirror.mjs';
+import { claimSlot, heldLine, releaseSlot } from './push-slot.mjs';
 
 const DESIGN_RECORD = /^\.ethlete\/design\/[^/]+\/(ready|merged)\.json$/;
 
@@ -22,14 +23,47 @@ export const uncommittedDesignRecordLines = ({ cwd, now = Date.now() }) =>
       return `push-next: ${path} is uncommitted, last written ${minutes} min ago; commit it before a merge refuses it.`;
     });
 
-/** Pushes HEAD to `next`, then releases the push slot. Returns the exit code. */
-export const pushNext = ({ cwd, remote = 'origin', branch = 'next', holder, dryRun = false, log = console.error }) => {
+/** The mirror verdict of `sha` (`green`, `red`, `error`), undefined when the mirror has not judged it. */
+export const mirrorStatus = (sha, dir = mirrorDir()) => {
+  const file = join(dir, `${sha}.json`);
+  if (!existsSync(file)) return undefined;
+  try {
+    return JSON.parse(readFileSync(file, 'utf8')).status;
+  } catch {
+    return undefined;
+  }
+};
+
+/** Takes the push slot, pushes HEAD to `next`, then releases the slot. Returns the exit code. */
+export const pushNext = ({
+  cwd,
+  remote = 'origin',
+  branch = 'next',
+  holder,
+  dryRun = false,
+  mirror = mirrorDir(),
+  log = console.error,
+}) => {
   const sha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' }).stdout.trim();
   for (const line of uncommittedDesignRecordLines({ cwd })) log(line);
+  if (mirrorStatus(sha, mirror) === 'red') {
+    log(`push-next: the mirror judged ${sha.slice(0, 12)} red (${join(mirror, `${sha}.json`)}); commit a fix on top.`);
+    return 1;
+  }
   if (dryRun) {
     log(`push-next: --dry-run, would push ${sha.slice(0, 12)} to ${remote} ${branch}`);
     return 0;
   }
+  const claim = claimSlot({ cwd, holder, sha, remote, branch, log });
+  if (claim.slot && !claim.ok) {
+    log(`push-next: ${heldLine(claim.slot)}; push after its push or expiry.`);
+    return 1;
+  }
+  if (claim.lost) {
+    log('push-next: another builder claimed the push slot first; see `yarn push:slot status`.');
+    return 1;
+  }
+  if (!claim.ok) log(`push-next: push slot not claimed, pushing anyway: ${claim.reason}`);
   const pushed = spawnSync('git', ['push', remote, `${sha}:${branch}`], { cwd, stdio: 'inherit' });
   if (pushed.status !== 0) {
     log('push-next: push failed, the push slot stays held.');
