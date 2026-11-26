@@ -31,7 +31,7 @@ import { settleLayout } from './settle-wait.mjs';
 import { runOrderOf, shardShareOf } from './shard-share.mjs';
 import { runStandalone, standaloneJobsOf } from './standalone-jobs.mjs';
 import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
-import { FRAME, measureZoom, ZOOM_BUDGET } from './zoom-budget.mjs';
+import { FRAME, measureZoom, ZOOM_BUDGET, zoomP50BudgetOf } from './zoom-budget.mjs';
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
 import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
 import { placeSketchDraft } from './sketch-comment-draft.mjs';
@@ -1546,8 +1546,8 @@ const CASES = [
       if (!zoomed) return { ok: false, detail: `the wheel did not zoom: frame ${before} -> ${zoomedIn} px` };
 
       return {
-        ok: p50 <= ZOOM_BUDGET.p50,
-        detail: `${engine}, ${cells} cells, frame ${before} -> ${zoomedIn} px, ${ZOOM_BUDGET.steps} steps: frame interval p50 ${p50.toFixed(1)} ms (<= ${ZOOM_BUDGET.p50}), p95 ${p95.toFixed(1)} ms (target ${ZOOM_BUDGET.p95}, not enforced), ${frames} frames`,
+        ok: p50 <= zoomP50BudgetOf(engine),
+        detail: `${engine}, ${cells} cells, frame ${before} -> ${zoomedIn} px, ${ZOOM_BUDGET.steps} steps: frame interval p50 ${p50.toFixed(1)} ms (<= ${zoomP50BudgetOf(engine)}), p95 ${p95.toFixed(1)} ms (target ${ZOOM_BUDGET.p95}, not enforced), ${frames} frames`,
       };
     },
   },
