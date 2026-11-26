@@ -993,19 +993,12 @@
   "pages/inventory": {
     "actions": [
       "emit:activate",
-      "emit:close",
       "emit:collapse",
       "emit:expandedChange",
-      "emit:fit",
-      "emit:maximize",
-      "emit:minimize",
       "emit:productChange",
       "emit:reloadInventory",
       "emit:sectionChange",
       "emit:sideWidthChange",
-      "emit:zoomIn",
-      "emit:zoomOut",
-      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "system-picker"

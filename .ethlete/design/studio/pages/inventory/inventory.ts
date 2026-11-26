@@ -1,6 +1,7 @@
 import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
+import { icon } from '@system/foundations/icons';
 import zoomChip from '@system/components/zoom-chip';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
 import partTree from '@system/elements/part-tree';
@@ -34,7 +35,7 @@ const worldOf = (pages: InventoryPage[]) =>
   </div>`;
 
 export default definePart<Props>({
-  note: 'The Inventory of every page of the product, opened from Inventory in the studio menu: a canvas with the rest frame of each page (pan by wheel and drag, zoom with the zoom chip), each frame headed by its page and how many entries are open, a numbered box on every control, asset and overlay. A page picked in the part tree is selected and its frame outlined; Neu laden sits in the shared toolbar at the bottom centre of the canvas (the head of the column has no button); the column at the right shows that page and its entries in three sections: Bedienelemente, Assets (A1, A2 …) and Overlays (O1 …), each row with its name and what it belongs to. An undeclared control, an inline asset or a mocked overlay is red, an unclassified control amber. The Inventory needs no approval.',
+  note: 'The Inventory of every page of the product, opened from Inventory in the studio menu: a canvas with the rest frame of each page (pan by wheel and drag, zoom with the zoom chip), each frame headed by its page and how many entries are open, a numbered box on every control, asset and overlay. A page picked in the part tree is selected and its frame outlined; Neu laden sits as a refresh icon button with a tooltip in the shared toolbar at the bottom centre of the canvas (the head of the column has no button); the column at the right shows that page and its entries in three sections: Bedienelemente, Assets (A1, A2 …) and Overlays (O1 …), each row with its name and what it belongs to. An undeclared control, an inline asset or a mocked overlay is red, an unclassified control amber. The Inventory needs no approval.',
   madeBy: ['claude-opus-5-5', 'design check', 'claude-sonnet-5-5'],
   implements: {
     route: '/',
@@ -45,9 +46,9 @@ export default definePart<Props>({
     loading: { inventory: 'loading' },
   },
   describe: {
-    open: 'pages/shop selected with open entries; check its outlined frame with 3 offen, the numbered boxes on every frame and the three sections at the right with a red inline asset the toolbar with Neu laden at the bottom centre, no button in the column head and no approve button.',
+    open: 'pages/shop selected with open entries; check its outlined frame with 3 offen, the numbered boxes on every frame and the three sections at the right with a red inline asset the toolbar with the Neu laden refresh icon button at the bottom centre, no button in the column head and no approve button.',
     loading:
-      'The inventory while it loads; check that Neu laden in the toolbar is disabled and no frames or entries show.',
+      'The inventory while it loads; check that the Neu laden icon button in the toolbar is disabled and no frames or entries show.',
   },
   controls: {
     canvas: { kind: 'field', part: 'components/canvas-viewport' },
@@ -58,7 +59,9 @@ export default definePart<Props>({
     const pages = pagesOf(inventory);
     const selected = pages[0];
     const reload = await button.render({
-      label: INVENTORY_LABELS.reload,
+      iconOnly: true,
+      icon: icon('refresh', { size: 16 }),
+      ariaLabel: INVENTORY_LABELS.reload,
       variant: 'transparent',
       color: 'surface',
       size: 'sm',

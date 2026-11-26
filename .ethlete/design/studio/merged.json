@@ -170,11 +170,11 @@
     "at": "2026-11-26T09:54:44.245Z"
   },
   "pages/inventory": {
-    "hash": "06cb3d35a2b604ae",
-    "variant": "a",
-    "decidedBy": "plan: plans/QUEUE.md B794",
-    "at": "2026-11-26T10:20:42.673Z",
-    "note": "merged without a pick: allowed by plans/QUEUE.md B794 - merged: B794: Das Inventar braucht keine Freigabe mehr."
+    "hash": "2b5d1be0c74cba02",
+    "variant": "new",
+    "decidedBy": "plan: docs/process.md:49",
+    "at": "2026-11-26T21:14:57.478Z",
+    "note": "merged without a pick: allowed by docs/process.md:49"
   },
   "pages/sketches": {
     "hash": "620ec76df713592b",
