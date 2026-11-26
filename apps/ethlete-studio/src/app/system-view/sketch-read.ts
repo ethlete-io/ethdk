@@ -64,7 +64,8 @@ const openedOf = (picked: string | null) =>
 
 /**
  * Reads the sketch names without loading a part module, the quick listing and the compare of the sketch `picked`
- * names alone at once and answers them in that order, then the full listing; a failed or timed out listing keeps the
+ * names alone at once and answers the names first, then the quick listing and the compare as each arrives (a quick
+ * listing after the compare keeps the compared sketch), then the full listing; a failed or timed out listing keeps the
  * last items and carries the error, but a failed compare of a picked sketch only waits for the full listing. A sketch
  * that `picks` names later is compared alone while the full listing runs. A sketch in `kept` that the name listing
  * still lists stays as kept until the quick listing answers.
@@ -85,6 +86,7 @@ export const sketchRead$ = ({
   defer(() => {
     let items: ListedSketch[] = kept ?? [];
     const opened = openedOf(picked);
+    let compared: ListedSketch[] = [];
     const compared$ = (answer$: Observable<ListedSketches>) =>
       answer$.pipe(
         map((answer) => ({
@@ -111,8 +113,10 @@ export const sketchRead$ = ({
       openedCompare?.start$ ?? EMPTY,
       concat(
         kept ? names.answer$.pipe(map(keepListed(kept))) : names.answer$,
-        quick.answer$,
-        openedCompare ? compared$(openedCompare.answer$) : EMPTY,
+        merge(
+          quick.answer$.pipe(map((answer) => keepListed(compared)(answer))),
+          openedCompare ? compared$(openedCompare.answer$.pipe(tap((answer) => (compared = answer.sketches)))) : EMPTY,
+        ),
         merge(
           full$,
           laterPicks$.pipe(

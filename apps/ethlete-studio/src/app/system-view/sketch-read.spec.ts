@@ -62,6 +62,38 @@ describe('sketchRead$', () => {
     ]);
   });
 
+  it('answers the compare of the picked sketch while the quick listing still runs and keeps it when quick answers', async () => {
+    const other = { target: 'b' };
+    const compared = { ...sketch, compared: true };
+    let answerQuick = () => undefined as void;
+    const quickAnswered = new Promise<void>((done) => (answerQuick = done));
+
+    vi.stubGlobal('fetch', async (url: string) => {
+      const query = new URL(url).searchParams;
+      const kind = query.get('sketch') ?? (query.get('targets') ? 'names' : query.get('unchanged') ? 'quick' : 'full');
+
+      if (kind === 'quick') await quickAnswered;
+      if (kind === 'full') return new Promise(() => undefined);
+
+      return new Response(JSON.stringify({ sketches: kind === 'a' ? [compared] : [sketch, other], unreadable: [] }));
+    });
+
+    const reads: unknown[][] = [];
+    const read = sketchRead$({ port: 1, product: 'p', picked: 'sketch:a' }).subscribe(({ items }) => {
+      reads.push(items);
+      if (reads.length === 2) answerQuick();
+    });
+
+    await vi.waitFor(() => expect(reads).toHaveLength(3));
+    read.unsubscribe();
+
+    expect(reads).toEqual([
+      [sketch, other],
+      [compared, other],
+      [compared, other],
+    ]);
+  });
+
   it('asks for the names, the quick listing and the compare of the picked sketch without waiting on each other', async () => {
     const asked: string[] = [];
 

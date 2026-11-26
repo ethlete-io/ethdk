@@ -1446,6 +1446,69 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="new"] [data-sk-comparing]')).toBeNull();
   });
 
+  it('hides an @edit sketch with zeichnet, by opacity so live frames still paint, until its compare and every shown picture are in, then keeps it shown', async () => {
+    const side = (key: string, changed: boolean | null): SketchRow => ({
+      key,
+      note: '',
+      width: 280,
+      sized: true,
+      shots: ['mark-layer', 'selected-layer'].map((state) => ({ state, changed, height: 46 })),
+    });
+    const rowsOf = (changed: boolean | null) => [side('new', changed), side('old', changed)];
+    const fixture = await render({
+      camera: '100',
+      rows: rowsOf(null),
+      part: 'components/tree-row@edit',
+      status: 'waiting',
+    });
+    const root: HTMLElement = fixture.nativeElement;
+    const set = async (inputs: Record<string, unknown>) => {
+      Object.entries(inputs).forEach(([name, value]) => fixture.componentRef.setInput(name, value));
+      await fixture.whenStable();
+    };
+    const view = () => ({
+      hidden: root.querySelector('[data-sk-rows] > [data-sk-sizing]') !== null,
+      invisible: root.querySelector('[data-sk-rows] > .invisible') !== null,
+      status: root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status'),
+    });
+
+    expect(view()).toMatchObject({ hidden: true, status: 'drawing' });
+    await set({ rows: rowsOf(true), loadingShots: new Set(['new mark-layer', 'old selected-layer']) });
+    expect(view()).toEqual({ hidden: true, invisible: false, status: 'drawing' });
+    await set({ loadingShots: new Set() });
+    expect(view()).toEqual({ hidden: false, invisible: false, status: 'waiting' });
+    await set({ loadingShots: new Set(['new mark-layer']) });
+    expect(view()).toEqual({ hidden: false, invisible: false, status: 'waiting' });
+  });
+
+  it('shows an @edit sketch once its rest pictures are in, while its interaction states still load', async () => {
+    const states = ['close', 'close-hover', 'close-active', 'close-focus-visible'];
+    const rowOf = (key: string): SketchRow => ({
+      key,
+      note: '',
+      width: 280,
+      sized: true,
+      shots: states.map((state) => ({ state, changed: key === 'current' ? null : true, height: 46 })),
+    });
+    const never = ['current', 'new', 'old'].flatMap((key) =>
+      states.flatMap((state) => (key === 'current' || state !== 'close' ? [`${key} ${state}`] : [])),
+    );
+    const fixture = await render({
+      camera: '100',
+      rows: [rowOf('current'), rowOf('new'), rowOf('old')],
+      part: 'components/about-dialog@edit',
+      status: 'waiting',
+      loadingShots: new Set([...never, 'new close', 'old close']),
+    });
+    const root: HTMLElement = fixture.nativeElement;
+    const held = () => root.querySelector('[data-sk-rows] > [data-sk-sizing]') !== null;
+
+    expect(held()).toBe(true);
+    fixture.componentRef.setInput('loadingShots', new Set(never));
+    await fixture.whenStable();
+    expect(held()).toBe(false);
+  });
+
   it('marks the changed area on both sides of tree-row@edit', async () => {
     const change = { width: 280, height: 46, box: { x: 240, y: 14, width: 18, height: 18 }, pixels: 120, regions: 1 };
     const side = (key: string): SketchRow => ({

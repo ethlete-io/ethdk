@@ -1289,6 +1289,7 @@ const discardAsksFirst = async (page) => {
 const EDIT_PART = 'components/about-dialog';
 const EDIT_LABEL = { before: '>Version ${version}</span>', after: '>Version: ${version}</span>' };
 const EDIT_WAIT_MS = 120000;
+const EDIT_SHOWN_MS = 30000;
 
 const namedWait = async (page, label, predicate, arg) => {
   try {
@@ -1410,13 +1411,43 @@ const withEditSketch = async (page, designPort, run) => {
       null,
     );
     phase('sketch shown');
+    // Playwright counts a cell under an opacity-0 or hidden ancestor as visible, so the drawn hold is read from styles.
+    const painted = await page
+      .waitForFunction(
+        () => {
+          const cells = [...document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]')];
+          const seen = (cell) => {
+            if (getComputedStyle(cell).visibility !== 'visible') return false;
+            for (let node = cell; node; node = node.parentElement) {
+              if (Number(getComputedStyle(node).opacity) !== 1) return false;
+            }
+
+            return true;
+          };
+
+          return cells.length > 0 && cells.every(seen);
+        },
+        null,
+        { timeout: EDIT_SHOWN_MS },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+    phase(painted ? 'sketch painted' : `sketch still hidden after ${EDIT_SHOWN_MS} ms`);
     await page.waitForTimeout(SETTLE_MS);
 
-    return page.evaluate(() => ({
-      variants: [...new Set([...document.querySelectorAll('[data-sk-variant]')].map((cell) => cell.dataset.skVariant))],
-      folded: !!document.querySelector('[data-sk-folded]'),
-      discard: !!document.querySelector('ethlete-sketches [data-sk-discard] button'),
-    }));
+    return page.evaluate(
+      (painted) => ({
+        painted,
+        variants: [
+          ...new Set([...document.querySelectorAll('[data-sk-variant]')].map((cell) => cell.dataset.skVariant)),
+        ],
+        folded: !!document.querySelector('[data-sk-folded]'),
+        discard: !!document.querySelector('ethlete-sketches [data-sk-discard] button'),
+      }),
+      painted,
+    );
   };
   const pick = async (variant) => {
     phaseStart = performance.now();
@@ -1501,8 +1532,12 @@ const CASES = [
         const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
         const shown = await edit();
         const opened =
-          shown.variants.includes('new') && shown.variants.includes('old') && !shown.folded && !shown.discard;
-        const shownDetail = `variants ${shown.variants.join(', ')}, folded states: ${shown.folded}, Verwerfen: ${shown.discard}`;
+          shown.painted &&
+          shown.variants.includes('new') &&
+          shown.variants.includes('old') &&
+          !shown.folded &&
+          !shown.discard;
+        const shownDetail = `painted (opacity 1, visible): ${shown.painted}, variants ${shown.variants.join(', ')}, folded states: ${shown.folded}, Verwerfen: ${shown.discard}, ${phaseLine()}`;
 
         if (!opened) return { ok: false, detail: shownDetail };
 
