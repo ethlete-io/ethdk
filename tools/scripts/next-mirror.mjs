@@ -149,6 +149,11 @@ export const runningState = (dir) => {
   return { state: record.pid && alive(record.pid) ? 'running' : 'died', record };
 };
 
+const startOf = (git, head, dir) => {
+  const parent = git(['rev-parse', '--verify', '--quiet', `${head}^`]).stdout.trim();
+  return parent && !existsSync(join(dir, `${head}.json`)) ? parent : head;
+};
+
 /** Polls `branch` of `repo` and mirrors each new commit in order; one watcher per mirror dir. */
 export const watch = async ({
   repo,
@@ -167,7 +172,7 @@ export const watch = async ({
   const stateFile = join(dir, 'state.json');
   const git = gitIn(repo);
   const headOf = () => git(['rev-parse', '--verify', `refs/heads/${branch}`]).stdout.trim();
-  let last = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, 'utf8')).last : headOf();
+  let last = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, 'utf8')).last : startOf(git, headOf(), dir);
   writeFileSync(stateFile, JSON.stringify({ last }));
   log(`next-mirror: watching ${branch} of ${repo} from ${last.slice(0, 12)}, verdicts in ${dir}`);
   while (!signal?.aborted) {

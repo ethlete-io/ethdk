@@ -181,6 +181,39 @@ test('watch mirrors a new commit on the branch once and writes its verdict', asy
   }
 });
 
+test('a watcher without state, as after a reboot cleared /tmp, judges the head once', async () => {
+  const repo = tempGitRepo('next-mirror-');
+  commit(repo, 'a');
+  const head = commit(repo, 'b');
+  const branch = git(repo, 'branch', '--show-current');
+  const dir = mkdtempSync(join(tmpdir(), 'next-mirror-out-'));
+  const mirrored = [];
+  const remote = async ({ sha, log }) => {
+    mirrored.push(sha);
+    writeFileSync(log, `push-suite: ok ${sha}\n`);
+    return 0;
+  };
+  const watchOnce = async () => {
+    const stop = new AbortController();
+    const watching = watch({ repo, branch, every: 0.02, dir, log: () => undefined, remote, signal: stop.signal });
+    try {
+      await until(() => existsSync(join(dir, `${head}.json`)), 2000);
+      await new Promise((done) => setTimeout(done, 100));
+    } finally {
+      stop.abort();
+      await watching;
+    }
+  };
+  try {
+    await watchOnce();
+    rmSync(join(dir, 'state.json'));
+    await watchOnce();
+    assert.deepEqual(mirrored, [head]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('the service unit restarts the watcher on the given repo', () => {
   const unit = serviceUnit({ node: '/n/node', script: '/r/next-mirror.mjs', repo: '/r' });
   assert.match(unit, /^ExecStart=\/n\/node \/r\/next-mirror\.mjs watch --repo \/r$/m);
