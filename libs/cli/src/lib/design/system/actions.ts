@@ -284,14 +284,60 @@ export const targetStateOf = (options: { state: string; input: ActionInput; stat
 
 const actionRoleOf = (element: ActionElement) => element.key.slice(0, element.key.indexOf(' "'));
 
+const labelWordsOf = (element: ActionElement) => {
+  const name = element.name ?? element.key;
+
+  return name
+    .slice(name.indexOf(' "') + 2, -1)
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+};
+
 /**
- * The app elements whose key no design element shares, each paired with the one design element of its role that no
- * app element shares a key with - only where the role has exactly one such element on each side.
+ * Whether two names of one role differ only in one word each, around at least one shared word with a letter: the
+ * product or count a design's sample data puts into a name the app fills from its own data ("Suchen in farn",
+ * "Suchen in studio"; "48 offen", "3 offen").
+ */
+export const differsInSampleDataOf = (options: { design: ActionElement; app: ActionElement }) => {
+  const { design, app } = options;
+
+  if (actionRoleOf(design) !== actionRoleOf(app) || design.key === app.key) return false;
+
+  const designWords = labelWordsOf(design);
+  const appWords = labelWordsOf(app);
+
+  if (designWords.length !== appWords.length) return false;
+
+  const differing = designWords.flatMap((word, at) => (word === appWords[at] ? [] : [at]));
+  const shared = designWords.filter((word, at) => word === appWords[at]);
+
+  return differing.length === 1 && shared.some((word) => /\p{L}/u.test(word));
+};
+
+/**
+ * The app elements whose key no design element shares, each paired with a design element of its role that no app
+ * element shares a key with: the first whose name differs only in sample data, else the one such element where the
+ * role has exactly one on each side.
  */
 const renamedPairsOf = <TDesign extends ActionElement>(options: { design: TDesign[]; app: ActionElement[] }) => {
   const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
   const designs = new Set(options.design.map(idOf));
   const apps = new Set(options.app.map(idOf));
+  const renamed = new Map<ActionElement, TDesign>();
+  const sampled = new Set<TDesign>();
+  const designsLeft = options.design.filter((design) => !apps.has(idOf(design)));
+
+  for (const app of options.app.filter((candidate) => !designs.has(idOf(candidate)))) {
+    const design = designsLeft.find(
+      (candidate) => !sampled.has(candidate) && differsInSampleDataOf({ design: candidate, app }),
+    );
+
+    if (design) {
+      renamed.set(app, design);
+      sampled.add(design);
+    }
+  }
+
   const leftOf = <T extends ActionElement>(elements: T[], paired: (element: T) => boolean) => {
     const byRole = new Map<string, T[]>();
 
@@ -300,10 +346,9 @@ const renamedPairsOf = <TDesign extends ActionElement>(options: { design: TDesig
 
     return byRole;
   };
-  const designLeft = leftOf(options.design, (design) => apps.has(idOf(design)));
-  const renamed = new Map<ActionElement, TDesign>();
+  const designLeft = leftOf(options.design, (design) => apps.has(idOf(design)) || sampled.has(design));
 
-  for (const [role, [app, ...moreApps]] of leftOf(options.app, (app) => designs.has(idOf(app)))) {
+  for (const [role, [app, ...moreApps]] of leftOf(options.app, (app) => designs.has(idOf(app)) || renamed.has(app))) {
     const [design, ...moreDesigns] = designLeft.get(role) ?? [];
 
     if (app && design && moreApps.length === 0 && moreDesigns.length === 0) renamed.set(app, design);
@@ -321,7 +366,12 @@ export const nearMissesOf = <TDesign extends ActionElement>(options: {
   const apps = new Set(options.app.map((element) => element.key));
   const role = actionRoleOf(options.element);
 
-  return options.design.filter((design) => actionRoleOf(design) === role && !apps.has(design.key));
+  return options.design.filter(
+    (design) =>
+      actionRoleOf(design) === role &&
+      !apps.has(design.key) &&
+      !options.app.some((app) => differsInSampleDataOf({ design, app })),
+  );
 };
 
 /** The design and app elements of one state, paired by key and occurrence. */
@@ -342,10 +392,13 @@ export const pairElementsOf = <TDesign extends ActionElement>(options: { design:
 
 export const ACCESSIBLE_NAME_RULE = 'ACCESSIBLE-NAME';
 
-/** The paired elements whose accessible names differ between the design and the app. */
+/** The paired elements whose accessible names differ between the design and the app beyond the sample data. */
 export const accessibleNameDriftsOf = <TDesign extends ActionElement>(
   paired: { app: ActionElement; design: TDesign | null }[],
-) => paired.flatMap(({ app, design }) => (design !== null && design.key !== app.key ? [{ app, design }] : []));
+) =>
+  paired.flatMap(({ app, design }) =>
+    design !== null && design.key !== app.key && !differsInSampleDataOf({ design, app }) ? [{ app, design }] : [],
+  );
 
 /** The failure line for an element the app names differently from the design. */
 export const accessibleNameFailureOf = (options: { app: ActionElement; design: ActionElement }) =>
@@ -402,8 +455,9 @@ export const isHostElementOf = (options: { key: string; hosts: readonly string[]
 
 /**
  * The elements the action check covers for one state: the part's own. A design element an embedded part draws, and the
- * app element it pairs with, are left to that part's own check. A declared host the design does not draw is app chrome
- * and is left out too; `skipped` names the hosts that were.
+ * app element it pairs with, are left to that part's own check, as is an unpaired app element of a role whose unpaired
+ * design elements are several and all drawn by embedded parts: a list of sample data the app fills with its own. A
+ * declared host the design does not draw is app chrome and is left out too; `skipped` names the hosts that were.
  */
 export const ownScopeOf = <TDesign extends ActionElement & { owners: readonly string[] }>(options: {
   design: TDesign[];
@@ -415,8 +469,22 @@ export const ownScopeOf = <TDesign extends ActionElement & { owners: readonly st
   const embedded = new Set(options.design.filter((element) => element.owners.length > 0).map(idOf));
   const ownIds = new Set(own.map(idOf));
 
-  for (const [app, design] of renamedPairsOf({ design: options.design, app: options.app }))
-    if (design.owners.length > 0 && !ownIds.has(idOf(app))) embedded.add(idOf(app));
+  const renamed = renamedPairsOf({ design: options.design, app: options.app });
+
+  for (const [app, design] of renamed) if (design.owners.length > 0 && !ownIds.has(idOf(app))) embedded.add(idOf(app));
+
+  const appIds = new Set(options.app.map(idOf));
+  const renamedDesigns = new Set<TDesign>(renamed.values());
+  const designsLeft = options.design.filter((design) => !appIds.has(idOf(design)) && !renamedDesigns.has(design));
+  const designIds = new Set(options.design.map(idOf));
+
+  for (const app of options.app) {
+    if (designIds.has(idOf(app)) || renamed.has(app)) continue;
+
+    const ofRole = designsLeft.filter((design) => actionRoleOf(design) === actionRoleOf(app));
+
+    if (ofRole.length > 1 && ofRole.every((design) => design.owners.length > 0)) embedded.add(idOf(app));
+  }
 
   const drawnKeys = new Set(options.design.map((element) => element.key));
   const skipped = new Set<string>();
