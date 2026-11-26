@@ -215,7 +215,7 @@ export const MCP_TOOLS: ToolSpec[] = [
   {
     name: 'sketch_merge',
     description:
-      'Merge the variant the user picked, or the built variant of a ready missing-state sketch the check opened. Studio runs it on the click of the user.',
+      'Merge the variant the user picked, the built variant of a ready missing-state sketch the check opened, or the only live variant of your own ready sketch (recorded as a builder merge, by your model id). Studio runs it on the click of the user.',
     command: ['sketch', 'merge'],
     positional: [PART],
     values: [{ name: 'note', flag: '--note', description: 'The reason, the note of the part.' }, BY],

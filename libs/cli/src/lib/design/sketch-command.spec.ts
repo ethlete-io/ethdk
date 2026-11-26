@@ -3393,8 +3393,19 @@ export default definePart({
       });
     });
 
-    it('still refuses a ready sketch a person started without a pick, even with only a built variant', async () => {
-      const { target, lines } = await readied('built');
+    it('merges the only live variant of a ready sketch with no human pick as a builder merge when --by names a model', async () => {
+      const { target, lines } = await readied('a');
+
+      expect(await write(target, 'merge', 'components/button', '--product', 'acme')).toBe(0);
+      expect(lines.join('\n')).toContain('BUILDER MERGE of variant a');
+      expect(existsSync(sketchDir(target))).toBe(false);
+      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
+        'components/button': { variant: 'a', decidedBy: 'builder: claude-opus-5-5' },
+      });
+    });
+
+    it('still refuses a ready sketch with two live variants and no pick', async () => {
+      const { target, lines } = await readied('a,b');
 
       expect(await write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
       expect(lines.pop()).toBe('components/button has no pick - the user picks a variant in Studio before a merge');

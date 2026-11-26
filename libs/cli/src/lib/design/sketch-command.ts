@@ -2350,12 +2350,19 @@ const merged = (context: Context) =>
         `REUSED the pick of variant ${sketch.decision.variant} by ${sketch.decision.by} from ${sketch.decision.decidedAt}, recorded before this merge`,
       );
 
-    const builderPick = allowed || standingPickOf(sketch) !== undefined ? undefined : builderPickOf(sketch);
+    const readyBuilderPick =
+      by && isModelId(by) && sketch.status === 'ready' && sketch.decision === undefined
+        ? sketch.variants.filter((variant) => !rejectionOf(sketch, variant))
+        : [];
+    const builderPick =
+      allowed || standingPickOf(sketch) !== undefined
+        ? undefined
+        : (builderPickOf(sketch) ?? (readyBuilderPick.length === 1 ? readyBuilderPick[0] : undefined));
     const builder = by ? `builder: ${by}` : 'builder';
 
     if (builderPick)
       console.log(
-        `BUILDER PICK of variant ${builderPick}: the check opened ${sketch.target} for an undesigned state, so no pick in Studio is needed`,
+        `BUILDER MERGE of variant ${builderPick}: ${sketch.target} is ready and its only live variant, merged by ${by ?? 'the builder'} for the human to review in Studio`,
       );
 
     const mergeNow = async () => {
