@@ -5774,6 +5774,114 @@ const CASES = [
     },
   },
   {
+    name: 'a click on a target row of a part taller than the view shows it at 100 % with its head at the top',
+    listingMayPend: 'waits for the new sketch row itself and reads the zoom and head position, not the listing',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const title = 'Runde Hoher Teil';
+      const studio = join(checkout, '.ethlete/design/studio');
+      const sketchDir = join(studio, 'sketches/foundations-e2e-tall');
+      const parts = { 'foundations/e2e-short': 'short-body', 'foundations/e2e-tall': 'tall-body' };
+      const targets = Object.keys(parts);
+      const row = (text) => page.locator('ethlete-part-tree [etTreeNode]').filter({ hasText: text }).first();
+      const state = () =>
+        page.evaluate(() => {
+          const view = document.querySelector('[data-sk-rows]')?.getBoundingClientRect();
+          const frame = document.querySelector('[data-sk-frame][data-selected]')?.getBoundingClientRect();
+
+          return {
+            percent: Number.parseInt(
+              document.querySelector('ethlete-zoom-chip')?.textContent?.match(/\d+/)?.[0] ?? '',
+              10,
+            ),
+            headGap: view && frame ? Math.round(frame.top - view.top) : null,
+            frameHeight: frame ? Math.round(frame.height) : null,
+            viewHeight: view ? Math.round(view.height) : null,
+          };
+        });
+      const results = {};
+
+      try {
+        for (const [part, key] of Object.entries(parts)) {
+          const name = part.split('/')[1];
+          const dir = join(sketchDir, 'a', part);
+
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(
+            join(dir, `${name}.ts`),
+            [
+              "import { definePart, html } from '@design-system';",
+              '',
+              'export default definePart({',
+              `  note: 'The ${name} part of the canvas e2e tall-part sketch.',`,
+              `  states: { '${key}': {} },`,
+              `  describe: { '${key}': 'The ${key} state; check its label.' },`,
+              `  render: () => ({ body: html\`<p style="padding: 24px; height: ${name === 'e2e-tall' ? 4000 : 40}px">${name}</p>\` }),`,
+              '});',
+              '',
+            ].join('\n'),
+          );
+        }
+        writeFileSync(
+          join(sketchDir, 'sketch.json'),
+          JSON.stringify({
+            target: targets[0],
+            targets,
+            status: 'ready',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            rounds: [{ key: 'r1', title, note: 'canvas e2e' }],
+            variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
+          }),
+        );
+        await row(title).waitFor({ timeout: 2 * FULL_COMPARE_MS });
+        await row(title).click();
+        await page.waitForSelector('[data-sk-rows] [data-sk-frame]', { timeout: 2 * FULL_COMPARE_MS });
+        await settle(page);
+
+        for (const target of [...targets].reverse()) {
+          await row(target).locator('.text-ellipsis').click();
+          await page.waitForFunction(
+            (key) => document.querySelector('[data-sk-frame][data-selected]')?.getAttribute('data-sk-frame') === key,
+            `a ${parts[target]}`,
+            { timeout: FULL_COMPARE_MS },
+          );
+          if (target === 'foundations/e2e-tall') {
+            await page.waitForFunction(
+              () => {
+                const view = document.querySelector('[data-sk-rows]')?.getBoundingClientRect();
+                const frame = document.querySelector('[data-sk-frame][data-selected]')?.getBoundingClientRect();
+                const percent = Number(document.querySelector('ethlete-zoom-chip')?.textContent?.match(/\d+/)?.[0]);
+
+                return Boolean(view && frame && percent && (frame.height * 100) / percent > view.height);
+              },
+              undefined,
+              { timeout: FULL_COMPARE_MS },
+            );
+          }
+          await settle(page);
+          results[target] = await state();
+        }
+
+        const tall = results['foundations/e2e-tall'];
+        const short = results['foundations/e2e-short'];
+
+        return {
+          ok:
+            tall.frameHeight > tall.viewHeight &&
+            tall.percent === 100 &&
+            tall.headGap !== null &&
+            short.headGap !== null &&
+            Math.abs(tall.headGap - short.headGap) <= 4 &&
+            short.percent <= 100,
+          detail: `tall ${JSON.stringify(tall)}; short ${JSON.stringify(short)}`,
+        };
+      } finally {
+        rmSync(sketchDir, { recursive: true, force: true });
+      }
+    },
+  },
+  {
     name: 'a click on each target row of a several-part sketch shows that part, drawn but not listed',
     listingMayPend: 'waits for the new sketch row itself and reads the frames each row click shows, not the listing',
     pages: ['Sketches'],
@@ -5829,7 +5937,7 @@ const CASES = [
               `  note: 'The ${name} part of the canvas e2e several-part sketch.',`,
               `  states: { ${states.map((key) => `'${key}': {}`).join(', ')} },`,
               `  describe: { ${states.map((key) => `'${key}': 'The ${key} state; check its label.'`).join(', ')} },`,
-              `  render: () => html\`<p style="padding: 24px">${name}</p>\`,`,
+              `  render: () => ({ body: html\`<p style="padding: 24px">${name}</p>\` }),`,
               '});',
               '',
             ].join('\n'),

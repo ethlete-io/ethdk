@@ -356,6 +356,7 @@ export class SketchesComponent {
   protected reasonOpen = linkedSignal(this.reason);
   protected roundsOpen = signal(false);
   protected selectedFrame = signal<string | null>(null);
+  private headFrame = signal<string | null>(null);
   private confirmRow = signal<string | null>(null);
   private confirmRef: { close: () => void } | null = null;
   private confirmOrigin: HTMLElement | null = null;
@@ -860,6 +861,29 @@ export class SketchesComponent {
       });
     });
 
+    // A frame's picture can size it after the click: a decision made once in fitFrame reads it unsized.
+    afterRenderEffect(() => {
+      const key = this.headFrame();
+
+      this.shownRows();
+      this.listSize();
+      this.scale();
+
+      if (key === null || !this.listMeasured() || this.canvas.preview()) return;
+
+      const frame = this.frames().find((candidate) => candidate.nativeElement.getAttribute('data-sk-frame') === key);
+
+      if (!frame) return;
+
+      untracked(() => {
+        const tall = frame.nativeElement.offsetHeight / this.scale() > this.list().nativeElement.clientHeight;
+        const zoom = this.canvas.zoom();
+
+        if (tall && zoom !== 1) this.place({ x: 0, y: 0, zoom: 1 });
+        else if (!tall && zoom !== 'fit') this.placeFit();
+      });
+    });
+
     afterRenderEffect({
       read: () => {
         this.fontLoads();
@@ -1089,8 +1113,8 @@ export class SketchesComponent {
   }
 
   protected fit() {
-    this.canvas.fit();
-    this.userCamera$.next(null);
+    this.headFrame.set(null);
+    this.placeFit();
   }
 
   protected showListTop() {
@@ -1129,12 +1153,8 @@ export class SketchesComponent {
     if (!frame) return false;
 
     this.selectedFrame.set(key);
-
-    if (this.world().nativeElement.offsetHeight > this.list().nativeElement.clientHeight) {
-      this.move({ x: 0, y: 0, zoom: 1 });
-    } else {
-      this.fit();
-    }
+    this.fit();
+    this.headFrame.set(key);
 
     return true;
   }
@@ -1500,8 +1520,18 @@ export class SketchesComponent {
   }
 
   private move(camera: Camera) {
+    this.headFrame.set(null);
+    this.place(camera);
+  }
+
+  private place(camera: Camera) {
     this.gesture$.next();
     this.userCamera$.next(this.canvas.move(camera, this.shownZoom()));
+  }
+
+  private placeFit() {
+    this.canvas.fit();
+    this.userCamera$.next(null);
   }
 
   private show(target: CameraTarget, pressed: HTMLElement | null) {
