@@ -10,7 +10,7 @@
     "foundations/agent-logos": "bc651c568c63f7f1",
     "foundations/colors": "946a707641c1818d",
     "foundations/elevation": "6af976995853a78e",
-    "foundations/icons": "ac570e8af234072b",
+    "foundations/icons": "c75e6ec1d9f0cb30",
     "foundations/logo": "a98bc4417dd67803",
     "foundations/motion": "eb901f46d52b7f06",
     "foundations/spacing": "54a4700bba85215c",
@@ -100,12 +100,12 @@
     "pages/flows": "3addc7e5f20cb73d",
     "pages/inbox": "45b517e0cc2324df",
     "pages/inventory": "42b01b80f10cd7ab",
-    "pages/sketches": "5b38fed2179a7995",
+    "pages/sketches": "bebadbb0fce4a4c9",
     "pages/start": "ce59d97ea0c350e1",
     "pages/system": "acd71eaa6b910ad6",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "f0b32ccc3b6e91e6211a3b61b39a22cb6786e380",
+  "baselineTree": "45d56dd783915bb7fa254f3980dca80342642c01",
   "editOldCommit": "d69a28bcc0ae5c913d5a0af89d459e1e1ef1da87",
   "sharedBase": {
     "pages/inventory/shared/inventory-sample.ts": "9d359d2c7f78863f"
@@ -130,20 +130,20 @@
     }
   },
   "readyContent": {
-    "new": "c3e9c0a99b8498f8",
+    "new": "ee9ab81894511198",
     "old": "3939f83ec2d60107"
-  },
-  "mergeHold": {
-    "reason": "variant new changes open, loading; variant old changes open, loading - a shot failed: design-explore: the run was aborted, its client closed the connection",
-    "at": "2026-11-26T18:17:05.011Z"
   },
   "autoMergeForecast": {
     "merges": false,
-    "reason": "variant new changes open, loading; variant old changes open, loading - a shot failed: design-explore: the run was aborted, its client closed the connection",
+    "reason": "variant new changes open, loading; variant old changes open, loading",
     "contents": {
-      "new": "c3e9c0a99b8498f8",
+      "new": "ee9ab81894511198",
       "old": "3939f83ec2d60107"
     },
-    "at": "2026-11-26T18:17:03.663Z"
+    "at": "2026-11-26T20:54:40.219Z"
+  },
+  "mergeHold": {
+    "reason": "variant new changes open, loading; variant old changes open, loading",
+    "at": "2026-11-26T20:55:10.282Z"
   }
 }

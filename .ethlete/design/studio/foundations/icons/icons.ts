@@ -20,6 +20,8 @@ import maximize from '@assets/icons/maximize.svg?raw';
 import close from '@assets/icons/close.svg?raw';
 import history from '@assets/icons/history.svg?raw';
 import trash from '@assets/icons/trash.svg?raw';
+import refresh from '@assets/icons/refresh.svg?raw';
+import folder from '@assets/icons/folder.svg?raw';
 
 export type IconName =
   | 'chevron-right'
@@ -42,7 +44,9 @@ export type IconName =
   | 'maximize'
   | 'close'
   | 'history'
-  | 'trash';
+  | 'trash'
+  | 'refresh'
+  | 'folder';
 
 const icons: Record<IconName, string> = {
   'chevron-right': chevronRight,
@@ -66,6 +70,8 @@ const icons: Record<IconName, string> = {
   close,
   history,
   trash,
+  refresh,
+  folder,
 };
 
 export const iconNames = Object.keys(icons) as IconName[];

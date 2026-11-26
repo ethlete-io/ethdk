@@ -10,7 +10,7 @@
     "foundations/agent-logos": "bc651c568c63f7f1",
     "foundations/colors": "946a707641c1818d",
     "foundations/elevation": "6af976995853a78e",
-    "foundations/icons": "ac570e8af234072b",
+    "foundations/icons": "c75e6ec1d9f0cb30",
     "foundations/logo": "a98bc4417dd67803",
     "foundations/motion": "eb901f46d52b7f06",
     "foundations/spacing": "54a4700bba85215c",
@@ -97,15 +97,16 @@
     "elements/shell-main": "db1a3f8965164a96",
     "elements/studio-menu": "18d6cb580595f84e",
     "elements/variant-cell": "ac4cdc7232e390d6",
-    "pages/flows": "ee95f84d435bb3d4",
-    "pages/inbox": "2cdc95a4a51639da",
-    "pages/inventory": "e24a7f77f0578bb2",
-    "pages/sketches": "ea3d71606ca4d0eb",
+    "pages/flows": "3addc7e5f20cb73d",
+    "pages/inbox": "45b517e0cc2324df",
+    "pages/inventory": "42b01b80f10cd7ab",
+    "pages/sketches": "bebadbb0fce4a4c9",
     "pages/start": "ce59d97ea0c350e1",
-    "pages/system": "cf49e47c731fd7a4",
+    "pages/system": "acd71eaa6b910ad6",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "ad6ca8673c27139d0b75a3f0c95e303b7a6b3a56",
+  "baselineTree": "45d56dd783915bb7fa254f3980dca80342642c01",
+  "editOldCommit": "d69a28bcc0ae5c913d5a0af89d459e1e1ef1da87",
   "rounds": [
     {
       "key": "r1",
@@ -126,8 +127,20 @@
     }
   },
   "readyContent": {
-    "new": "192d6b9ba93da674",
+    "new": "b738ac7d1a4453bb",
     "old": "df22f2867a1b7d50"
   },
-  "editOldCommit": "d69a28bcc0ae5c913d5a0af89d459e1e1ef1da87"
+  "autoMergeForecast": {
+    "merges": false,
+    "reason": "variant new changes no-repo, no-products, no-repo-known, no-products-known, no-products-dark, no-products-sdk; variant old changes no-products, no-products-known, no-products-dark, no-products-sdk",
+    "contents": {
+      "new": "b738ac7d1a4453bb",
+      "old": "df22f2867a1b7d50"
+    },
+    "at": "2026-11-26T20:44:33.859Z"
+  },
+  "mergeHold": {
+    "reason": "variant new changes no-repo, no-products, no-repo-known, no-products-known, no-products-dark, no-products-sdk; variant old changes no-products, no-products-known, no-products-dark, no-products-sdk",
+    "at": "2026-11-26T20:46:28.865Z"
+  }
 }
