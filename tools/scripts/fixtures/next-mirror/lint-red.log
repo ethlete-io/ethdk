@@ -1,0 +1,49 @@
+[remote-run] rack 70199487067935f9b6d5747f67a5ee581e8dea89 slot mirror, log /tmp/ethlete-mirror-probe/logs/70199487067935f9b6d5747f67a5ee581e8dea89.log
+[remote-run] Gast WSL ethlete container run
+[rack-linux] install 4s
+[own-scope] push-suite runs in the caller's cgroup, no systemd user scope: Failed to set bus address: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+push-suite: checks ok in 6 s
+push-suite: exported 701994870679 to /tmp/push-suite-701994870679-331SgI in 0 s
+push-suite: lint failed at load 0.6 (max 0.6 during the step) in 4 s
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (libs/query/vite.config.mts:10:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (libs/components/vite.config.mts:10:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (libs/query-devtools/vite.config.mts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+[7m[1m[36m NX [39m[22m[27m  [36mRunning target [1mlint[22m for project types:[39m
+
+[2m-[22m types
+
+[2m[36m[39m[22m
+
+[2m> [22m[2mnx run[22m types:lint
+
+[2m> [22meslint .
+
+[0m
+[4m/tmp/push-suite-701994870679-331SgI/libs/types/src/lib/mirror-lint-probe.ts[24m
+  [2m2:3[22m  [31merror[39m  Unexpected 'debugger' statement  [2mno-debugger[22m
+
+[31m[1m✖ 1 problem (1 error, 0 warnings)[22m[39m
+[0m
+Warning: command "eslint ." exited with non-zero status code
+[2m[31m[39m[22m
+
+[7m[1m[31m NX [39m[22m[27m  [31mRunning target [1mlint[22m for project types failed[39m
+
+[2mFailed tasks:[22m
+
+[2m-[22m types:lint
+
+  Run duration:      1.2s
+  Critical path:     1.2s (1 task)
+  Recoverable time:  <1ms
+
+push-suite: blocked lint failed at 70199487067935f9b6d5747f67a5ee581e8dea89
+[rack-linux] suite exit 1 after 10s

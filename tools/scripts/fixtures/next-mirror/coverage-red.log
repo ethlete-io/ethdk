@@ -1,0 +1,14 @@
+[remote-run] rack e3c2f5528abded111b9a77c4f8ecab15389b81ac slot mirror, log /tmp/ethlete-mirror-probe/logs/e3c2f5528abded111b9a77c4f8ecab15389b81ac.log
+[remote-run] Gast WSL ethlete container run
+[rack-linux] install 3s
+[own-scope] push-suite runs in the caller's cgroup, no systemd user scope: Failed to set bus address: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+push-suite: checks ok in 6 s
+push-suite: exported e3c2f5528abd to /tmp/push-suite-e3c2f5528abd-p5bJcI in 1 s
+push-suite: lint ok in 6 s
+push-suite: tools ok in 5 s
+push-suite: coverage failed at load 4.3 (max 4.4 during the step) in 2 s
+core: 407 runtime exports, 176 covered by scenarios, 231 uncovered
+  ✖ mirrorCoverageProbe has no scenario usage - reference it in a scenario, or add it to tools/export-coverage/core.allowlist.json with a reason
+
+push-suite: blocked coverage failed at e3c2f5528abded111b9a77c4f8ecab15389b81ac
+[rack-linux] suite exit 1 after 21s

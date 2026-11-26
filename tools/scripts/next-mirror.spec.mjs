@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { git, gitSpawn, tempGitRepo } from './git-test-env.mjs';
 import {
   cleanGitEnv,
@@ -11,7 +12,9 @@ import {
   newCommits,
   parseArgs,
   runningState,
+  serviceUnit,
   verdictOf,
+  watch,
 } from './next-mirror.mjs';
 
 const commit = (repo, name) => {
@@ -141,3 +144,71 @@ test('mirrorCommit records its own pid while running', async () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+const until = async (check, ms = 10_000) => {
+  const end = Date.now() + ms;
+  while (!check()) {
+    if (Date.now() > end) assert.fail('timed out');
+    await new Promise((done) => setTimeout(done, 20));
+  }
+};
+
+test('watch mirrors a new commit on the branch once and writes its verdict', async () => {
+  const repo = tempGitRepo('next-mirror-');
+  const first = commit(repo, 'a');
+  const branch = git(repo, 'branch', '--show-current');
+  const dir = mkdtempSync(join(tmpdir(), 'next-mirror-out-'));
+  const stop = new AbortController();
+  const mirrored = [];
+  const remote = async ({ sha, log }) => {
+    mirrored.push(sha);
+    writeFileSync(log, `push-suite: ok ${sha}\n`);
+    return 0;
+  };
+  const watching = watch({ repo, branch, every: 0.02, dir, log: () => undefined, remote, signal: stop.signal });
+  try {
+    await until(() => existsSync(join(dir, 'state.json')));
+    assert.equal(JSON.parse(readFileSync(join(dir, 'state.json'), 'utf8')).last, first);
+    const second = commit(repo, 'b');
+    await until(() => existsSync(join(dir, `${second}.json`)));
+    await new Promise((done) => setTimeout(done, 200));
+    assert.deepEqual(mirrored, [second]);
+    assert.equal(JSON.parse(readFileSync(join(dir, `${second}.json`), 'utf8')).status, 'green');
+  } finally {
+    stop.abort();
+    await watching;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the service unit restarts the watcher on the given repo', () => {
+  const unit = serviceUnit({ node: '/n/node', script: '/r/next-mirror.mjs', repo: '/r' });
+  assert.match(unit, /^ExecStart=\/n\/node \/r\/next-mirror\.mjs watch --repo \/r$/m);
+  assert.match(unit, /^Restart=always$/m);
+  assert.match(unit, /^WantedBy=default\.target$/m);
+});
+
+const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'next-mirror');
+
+for (const [fixture, step] of [
+  ['lint-red.log', 'lint'],
+  ['coverage-red.log', 'coverage'],
+]) {
+  test(`a rack run whose ${step} step fails gives a red verdict`, async () => {
+    const repo = tempGitRepo('next-mirror-');
+    commit(repo, 'a');
+    const sha = commit(repo, 'b');
+    const dir = mkdtempSync(join(tmpdir(), 'next-mirror-out-'));
+    try {
+      const remote = async ({ log }) => {
+        writeFileSync(log, readFileSync(join(FIXTURES, fixture), 'utf8'));
+        return 1;
+      };
+      const verdict = await mirrorCommit({ repo, sha, dir, remote });
+      assert.deepEqual([verdict.status, verdict.step], ['red', step]);
+      assert.equal(JSON.parse(readFileSync(join(dir, `${sha}.json`), 'utf8')).status, 'red');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}

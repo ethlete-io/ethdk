@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const USAGE = `usage: next-mirror.mjs watch [--repo <dir>] [--branch next] [--every <s>]
        next-mirror.mjs run [--repo <dir>] <rev>
-       next-mirror.mjs status`;
+       next-mirror.mjs status
+       next-mirror.mjs install | uninstall`;
 
 export const POLL_SECONDS = 15;
+export const UNIT = 'ethlete-next-mirror';
 export const MIRROR_STEPS = 'lint,tools,coverage';
 
 export const mirrorDir = (env = process.env) => env['ETHLETE_MIRROR_DIR'] || '/tmp/ethlete-mirror';
@@ -21,7 +24,7 @@ export const cleanGitEnv = (env = process.env) =>
 export const parseArgs = (argv) => {
   const [command, ...rest] = argv;
   const opts = { command, repo: resolve(HERE, '../..'), branch: 'next', every: POLL_SECONDS, rev: undefined };
-  if (!['watch', 'run', 'status'].includes(command)) throw new Error(USAGE);
+  if (!['watch', 'run', 'status', 'install', 'uninstall'].includes(command)) throw new Error(USAGE);
   for (let i = 0; i < rest.length; i++) {
     const key = rest[i].replace(/^--/, '');
     if (rest[i].startsWith('--')) {
@@ -147,7 +150,15 @@ export const runningState = (dir) => {
 };
 
 /** Polls `branch` of `repo` and mirrors each new commit in order; one watcher per mirror dir. */
-export const watch = async ({ repo, branch, every, dir = mirrorDir(), log = console.log }) => {
+export const watch = async ({
+  repo,
+  branch,
+  every,
+  dir = mirrorDir(),
+  log = console.log,
+  remote = spawnRemoteRun,
+  signal,
+}) => {
   mkdirSync(dir, { recursive: true });
   const pidFile = join(dir, 'watch.pid');
   const holder = existsSync(pidFile) ? Number(readFileSync(pidFile, 'utf8')) : 0;
@@ -159,17 +170,59 @@ export const watch = async ({ repo, branch, every, dir = mirrorDir(), log = cons
   let last = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, 'utf8')).last : headOf();
   writeFileSync(stateFile, JSON.stringify({ last }));
   log(`next-mirror: watching ${branch} of ${repo} from ${last.slice(0, 12)}, verdicts in ${dir}`);
-  for (;;) {
+  while (!signal?.aborted) {
     const head = headOf();
     for (const sha of head ? newCommits(git, last, head) : []) {
+      if (signal?.aborted) break;
       log(`next-mirror: mirroring ${sha.slice(0, 12)}`);
-      const verdict = await mirrorCommit({ repo, sha, dir });
+      const verdict = await mirrorCommit({ repo, sha, dir, remote });
       log(`next-mirror: ${verdictLine({ at: verdict.finishedAt, ...verdict })}`);
       last = sha;
       writeFileSync(stateFile, JSON.stringify({ last }));
     }
-    await new Promise((done) => setTimeout(done, every * 1000));
+    await new Promise((done) => {
+      const timer = setTimeout(done, every * 1000);
+      signal?.addEventListener('abort', () => (clearTimeout(timer), done()), { once: true });
+    });
   }
+};
+
+/** The systemd user service that keeps `watch` running across agent restarts and reboots. */
+export const serviceUnit = ({ node, script, repo }) => `[Unit]
+Description=Mirror every new local commit on next of ${repo} to the rack
+After=network-online.target
+
+[Service]
+ExecStart=${node} ${script} watch --repo ${repo}
+WorkingDirectory=${repo}
+Environment=NX_NO_CLOUD=true
+Restart=always
+RestartSec=30
+Nice=10
+
+[Install]
+WantedBy=default.target
+`;
+
+const systemctl = (...args) => spawnSync('systemctl', ['--user', ...args], { stdio: 'inherit' }).status ?? 1;
+
+const install = (repo) => {
+  const unitDir = join(homedir(), '.config', 'systemd', 'user');
+  mkdirSync(unitDir, { recursive: true });
+  writeFileSync(
+    join(unitDir, `${UNIT}.service`),
+    serviceUnit({ node: realpathSync(process.execPath), script: fileURLToPath(import.meta.url), repo }),
+  );
+  const status = systemctl('daemon-reload') || systemctl('enable', '--now', `${UNIT}.service`);
+  if (status === 0)
+    console.log(`Installed ${UNIT}. Follow it: journalctl --user -fu ${UNIT}; stop it: next-mirror.mjs uninstall`);
+  return status;
+};
+
+const uninstall = () => {
+  const status = systemctl('disable', '--now', `${UNIT}.service`);
+  rmSync(join(homedir(), '.config', 'systemd', 'user', `${UNIT}.service`), { force: true });
+  return status || systemctl('daemon-reload');
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -181,8 +234,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(2);
   }
   const dir = mirrorDir();
-  if (opts.command === 'status') {
+  if (opts.command === 'install') process.exitCode = install(opts.repo);
+  else if (opts.command === 'uninstall') process.exitCode = uninstall();
+  else if (opts.command === 'status') {
     const latest = join(dir, 'latest.txt');
+    const pidFile = join(dir, 'watch.pid');
+    const watcher = existsSync(pidFile) ? Number(readFileSync(pidFile, 'utf8')) : 0;
+    console.log(watcher && alive(watcher) ? `watcher ${watcher} runs` : 'no watcher runs');
     const running = runningState(dir);
     if (running) console.log(`${running.state} ${JSON.stringify(running.record)}`);
     console.log(existsSync(latest) ? readFileSync(latest, 'utf8').trim() : 'no verdict yet');
