@@ -1354,8 +1354,35 @@ const editLoadTimelineOf = (page, { layoutMs, watchMs }) =>
         return false;
       };
       const blank = [];
+      const drawnAt = new Map();
+      const pictureAt = new Map();
+      const frameAt = new Map();
       let rowsSeen = false;
       let cellsAt = null;
+      let comparedAt = null;
+      const holdOf = () => {
+        const cellsDrawn = [...drawnAt].sort((a, b) => a[1] - b[1]);
+        const late = cellsDrawn
+          .slice(-3)
+          .map(([cell, at]) => {
+            const [variant, state] = cell.split('/');
+            const src = document.querySelector(
+              `[data-sk-variant="${variant}"][data-sk-state="${state}"] img[data-shot-picture]`,
+            )?.currentSrc;
+            const fetched = src && performance.getEntriesByName(src).at(-1);
+            const request = fetched
+              ? `, fetched ${Math.round(fetched.startTime)}-${Math.round(fetched.responseEnd)} (first byte ${Math.round(fetched.responseStart)}) ${src.split('?')[0].split('/').slice(-2).join('/')}`
+              : '';
+
+            return `${cell} ${at} (picture ${pictureAt.get(cell) ?? '-'}, frame ${frameAt.get(cell) ?? '-'}${request})`;
+          })
+          .join(', ');
+        const stillLoading = [...document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]')]
+          .filter((cell) => cell.querySelector('[data-loading]'))
+          .map((cell) => `${cell.dataset.skVariant}/${cell.dataset.skState}`);
+
+        return `compare done at ${comparedAt ?? '-'} ms, ${cellsDrawn.length} cells drawn, first at ${cellsDrawn[0]?.[1] ?? '-'}, last: ${late || '-'}${stillLoading.length ? `, still loading: ${stillLoading.slice(0, 4).join(', ')}` : ''}`;
+      };
 
       for (;;) {
         const t = Math.round(performance.now());
@@ -1364,14 +1391,30 @@ const editLoadTimelineOf = (page, { layoutMs, watchMs }) =>
 
         if (rows && seen(rows)) rowsSeen = true;
         if (cells.length > 0) cellsAt ??= t;
+        if (
+          cells.length > 0 &&
+          comparedAt === null &&
+          !document.querySelector('ethlete-sketches')?.textContent.includes('vergleicht')
+        )
+          comparedAt = t;
+        for (const cell of cells) {
+          const key = `${cell.dataset.skVariant}/${cell.dataset.skState}`;
+
+          const picture = cell.querySelector('img[data-shot-picture]');
+
+          if (!drawnAt.has(key) && !cell.querySelector('[data-loading]')) drawnAt.set(key, t);
+          if (!pictureAt.has(key) && picture?.complete && picture.naturalWidth > 0) pictureAt.set(key, t);
+          if (!frameAt.has(key) && cell.querySelector('iframe[data-painted]')) frameAt.set(key, t);
+        }
         if (cells.length > 0 && cells.every(seen)) {
           const loading = cells.filter((cell) => inView(cell) && cell.querySelector('[data-loading]')).length;
 
-          return { shownAt: t, cellsAt, loadingInView: loading, cells: cells.length, blank };
+          return { shownAt: t, cellsAt, loadingInView: loading, cells: cells.length, blank, hold: holdOf() };
         }
-        if (rowsSeen && !(rows && seen(rows))) return { shownAt: null, cellsAt, left: t, blank };
+        if (rowsSeen && !(rows && seen(rows))) return { shownAt: null, cellsAt, left: t, blank, hold: holdOf() };
         if (rowsSeen && !drawingShown()) blank.push(t);
-        if (t > (cellsAt === null ? layoutMs : cellsAt + watchMs)) return { shownAt: null, cellsAt, blank };
+        if (t > (cellsAt === null ? layoutMs : cellsAt + watchMs))
+          return { shownAt: null, cellsAt, blank, hold: holdOf() };
 
         await new Promise((done) => setTimeout(done, 50));
       }
@@ -1616,13 +1659,24 @@ const CASES = [
         page,
         designPort,
         async ({ edit, phaseLine }) => {
-          const { shownAt, cellsAt, loadingInView, cells, blank, left } = await edit({ timeline: true });
+          const sources = new Map();
+          const countSource = (response) => {
+            if (!response.url().includes('/__design/shot?')) return;
+            const source = response.headers()['x-design-shot'] ?? 'none';
+
+            sources.set(source, (sources.get(source) ?? 0) + 1);
+          };
+
+          page.on('response', countSource);
+          const { shownAt, cellsAt, loadingInView, cells, blank, left, hold } = await edit({ timeline: true });
+
+          page.off('response', countSource);
           const blankSpan = blank.length > 0 ? `${blank[0]}-${blank.at(-1)} ms (${blank.length} samples)` : 'none';
 
           return {
             ok:
               shownAt !== null && shownAt - cellsAt <= HEAVY_EDIT_HOLD_MS && loadingInView === 0 && blank.length === 0,
-            detail: `${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${phaseLine()}`,
+            detail: `${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${hold}, shot sources ${JSON.stringify(Object.fromEntries(sources))}, ${phaseLine()}`,
           };
         },
         HEAVY_EDIT,
