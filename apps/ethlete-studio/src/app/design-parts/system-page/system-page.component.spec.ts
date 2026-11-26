@@ -177,6 +177,23 @@ describe('SystemPageComponent canvas note', () => {
     expect(bars[0]?.querySelector('ethlete-sketch-status-badge')).toBeNull();
   });
 
+  it('lifts the sketch bar above the folded-states pill only while the pill shows', async () => {
+    const fixture = await render({ part: 'components/button', foldedStates: 12 });
+    const root: HTMLElement = fixture.nativeElement;
+    const wrapper = () => root.querySelector('ethlete-sketch-head')?.parentElement?.parentElement as HTMLElement;
+
+    expect(root.querySelector('[data-folded-states]')).not.toBeNull();
+    expect(wrapper().hasAttribute('data-above-folded')).toBe(true);
+    expect(wrapper().classList.contains('pb-14')).toBe(true);
+
+    fixture.componentRef.setInput('foldedStates', 0);
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-folded-states]')).toBeNull();
+    expect(wrapper().hasAttribute('data-above-folded')).toBe(false);
+    expect(wrapper().classList.contains('pb-14')).toBe(false);
+  });
+
   it('draws the note title and hint as a card, and omits an empty hint', async () => {
     const fixture = await render({ noted: true, noteTitle: 'Lesefehler', noteHint: 'boom' });
     const card: HTMLElement = fixture.nativeElement.querySelector('[data-canvas-note]');

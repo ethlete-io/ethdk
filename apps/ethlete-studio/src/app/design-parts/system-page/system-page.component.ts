@@ -310,6 +310,8 @@ export const FRAME_HEAD_CLASS =
         </div>
         @if (part()) {
           <div
+            [class.pb-14]="foldedStates() > 0"
+            [attr.data-above-folded]="foldedStates() > 0 ? '' : null"
             class="pointer-events-none absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 @container"
           >
             <div
