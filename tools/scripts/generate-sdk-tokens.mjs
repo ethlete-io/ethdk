@@ -73,7 +73,7 @@ const unknownTargets = Object.keys(overrides.values ?? {}).filter(
 
 if (unknownTargets.length) throw new Error(`Overrides name themes outside the set: ${unknownTargets.join(', ')}`);
 
-const SHADOW_COLOR = { light: '23 23 23', dark: '0 0 0' };
+const SHADOW_COLOR = { light: 'rgb(23 23 23)', dark: 'rgb(0 0 0)' };
 
 const withoutUtilityColors = (css) =>
   css
@@ -84,14 +84,14 @@ const withoutUtilityColors = (css) =>
 const withShadowColor = (css) =>
   css.replace(
     /^(\s*)--et-surface-type: (light|dark);\n\s*--et-surface-elevation: [\d.]+;/gm,
-    (match, indent, type) => `${match}\n${indent}--et-shadow-color-rgb: ${SHADOW_COLOR[type]};`,
+    (match, indent, type) => `${match}\n${indent}--et-shadow-color: ${SHADOW_COLOR[type]};`,
   );
 
 const inkOf = (css, theme) => {
   const body = css.match(new RegExp(`\\.et-color--${theme}[ ,][\\s\\S]*?\\{\\n([\\s\\S]*?)\\n\\s*\\}`))?.[1];
-  const ink = body?.match(/^\s*--et-color-primary-ink[^;]*;$/gm)?.map((line) => line.trim());
+  const ink = body?.match(/^\s*--et-tone-text-[a-z]+:[^;]*;$/gm)?.map((line) => line.trim());
 
-  if (!ink?.length) throw new Error(`No --et-color-primary-ink values in .et-color--${theme}`);
+  if (!ink?.length) throw new Error(`No --et-tone-text-* values in .et-color--${theme}`);
 
   return ink.join('\n');
 };
@@ -197,8 +197,8 @@ body {
   margin: 0;
   font-family: var(--et-font-family);
   font-size: 1.4rem;
-  background: var(--et-surface-background-solid);
-  color: var(--et-surface-color-solid);
+  background: var(--et-surface-background);
+  color: var(--et-surface-text);
 }
 
 @layer base {
