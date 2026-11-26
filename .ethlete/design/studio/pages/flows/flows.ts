@@ -62,15 +62,15 @@ const orphanSection = (entries: string[]) =>
   </section>`;
 
 const SCALE = 0.18;
-const COMMENTED = 'sketch';
+const COMMENTED = 'plant';
 
 const FLOW_THREAD: PlacedThread = {
   author: 'Hanna',
   initials: 'H',
   when: 'vor 2 Std.',
-  part: 'pages/sketches',
-  state: 'page-sketch',
-  text: 'Der Merge-Knopf ist hier zu leise.',
+  part: 'pages/shop',
+  state: '2',
+  text: 'Der Korb-Knopf ist hier zu leise.',
   replies: 0,
   at: '',
 };
@@ -205,7 +205,7 @@ export default definePart<FlowProps>({
     const shell = await shellMain.render({
       studio: menu.body,
       section: 'Flows',
-      product: 'studio',
+      product: 'farn',
       side: flow === 'open' ? list.body + orphanSection(entries.map((entry) => entry.body)) : emptySide,
       content:
         flow === 'open'

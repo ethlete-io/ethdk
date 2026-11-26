@@ -19,28 +19,28 @@ export const FRAME = { width: 360, height: 225 };
 
 const MENU = { x: 12, y: 12, width: 40, height: 40 };
 
-const FLOWS_OPEN: Section[] = [
+const SHOP_OPEN: Section[] = [
   {
     title: 'Bedienelemente',
     rows: [
-      { number: '1', name: 'Studio', detail: 'nicht deklariert', tone: 'error', box: MENU },
+      { number: '1', name: 'Anmelden', detail: 'nicht deklariert', tone: 'error', box: MENU },
       {
         number: '2',
-        name: 'System',
-        detail: 'gehört zu elements/shell-main',
+        name: 'Pflanzen',
+        detail: 'gehört zu elements/shop-nav',
         tone: 'ok',
         box: { x: 12, y: 72, width: 40, height: 40 },
       },
       {
         number: '3',
-        name: 'Sketch prüfen',
+        name: 'In den Korb',
         detail: 'deklariert',
         tone: 'ok',
         box: { x: 72, y: 72, width: 216, height: 28 },
       },
       {
         number: '4',
-        name: 'Desktop · 1440 × 900',
+        name: 'Alle Pflanzen',
         detail: 'nicht eingeordnet',
         tone: 'warning',
         box: { x: 1172, y: 20, width: 240, height: 36 },
@@ -50,10 +50,10 @@ const FLOWS_OPEN: Section[] = [
   {
     title: 'Assets',
     rows: [
-      { number: 'A1', name: 'Studio-Logo', detail: 'gehört zu foundations/logo', tone: 'ok', box: MENU },
+      { number: 'A1', name: 'Farn-Blatt', detail: 'gehört zu foundations/logo', tone: 'ok', box: MENU },
       {
         number: 'A2',
-        name: 'Pfeil',
+        name: 'Lupe',
         detail: 'Inline-SVG, nicht aus den Foundations',
         tone: 'error',
         box: { x: 640, y: 420, width: 24, height: 24 },
@@ -65,8 +65,8 @@ const FLOWS_OPEN: Section[] = [
     rows: [
       {
         number: 'O1',
-        name: 'Größe',
-        detail: 'gehört zu components/menu',
+        name: 'Topfgröße',
+        detail: 'gehört zu components/pot-picker',
         tone: 'ok',
         box: { x: 1172, y: 60, width: 240, height: 160 },
       },
@@ -88,14 +88,14 @@ const resolved = (sections: Section[]): Section[] =>
     ),
   }));
 
-const INBOX: Section[] = [
+const BASKET: Section[] = [
   {
     title: 'Bedienelemente',
     rows: [
-      { number: '1', name: 'Studio', detail: 'gehört zu elements/studio-menu', tone: 'ok', box: MENU },
+      { number: '1', name: 'Anmelden', detail: 'gehört zu elements/shop-bar', tone: 'ok', box: MENU },
       {
         number: '2',
-        name: 'Antworten',
+        name: 'Zur Kasse',
         detail: 'gehört zu components/button',
         tone: 'ok',
         box: { x: 1260, y: 820, width: 140, height: 40 },
@@ -106,15 +106,15 @@ const INBOX: Section[] = [
   { title: 'Overlays', rows: [] },
 ];
 
-const SYSTEM: Section[] = [
+const CHECKOUT: Section[] = [
   {
     title: 'Bedienelemente',
     rows: [
-      { number: '1', name: 'Studio', detail: 'gehört zu elements/studio-menu', tone: 'ok', box: MENU },
+      { number: '1', name: 'Anmelden', detail: 'gehört zu elements/shop-bar', tone: 'ok', box: MENU },
       {
         number: '2',
-        name: 'Design Canvas',
-        detail: 'gehört zu components/canvas-viewport',
+        name: 'Lieferadresse',
+        detail: 'gehört zu components/form-field',
         tone: 'ok',
         box: { x: 300, y: 64, width: 1128, height: 824 },
       },
@@ -122,18 +122,18 @@ const SYSTEM: Section[] = [
   },
   {
     title: 'Assets',
-    rows: [{ number: 'A1', name: 'Studio-Logo', detail: 'gehört zu foundations/logo', tone: 'ok', box: MENU }],
+    rows: [{ number: 'A1', name: 'Farn-Blatt', detail: 'gehört zu foundations/logo', tone: 'ok', box: MENU }],
   },
   { title: 'Overlays', rows: [] },
 ];
 
 export const pagesOf = (inventory: Props['inventory']): InventoryPage[] => [
   {
-    part: 'pages/flows',
-    sections: inventory === 'open' ? FLOWS_OPEN : resolved(FLOWS_OPEN),
+    part: 'pages/shop',
+    sections: inventory === 'open' ? SHOP_OPEN : resolved(SHOP_OPEN),
   },
-  { part: 'pages/inbox', sections: INBOX },
-  { part: 'pages/system', sections: SYSTEM },
+  { part: 'pages/basket', sections: BASKET },
+  { part: 'pages/checkout', sections: CHECKOUT },
 ];
 
 const TONE: Record<Tone, string> = {

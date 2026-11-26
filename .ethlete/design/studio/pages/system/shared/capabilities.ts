@@ -9,11 +9,11 @@ type Drawn = { body: string; styles: string };
 
 type PartException = { rule: string; reason: string; reopened: boolean };
 
-export const buttonExceptions: PartException[] = [
-  { rule: 'filled/UNBOUND-INPUT', reason: 'Das Label kommt aus einem Beispieltext.', reopened: false },
+export const partExceptions: PartException[] = [
+  { rule: 'add/UNBOUND-INPUT', reason: 'Das Label kommt aus einem Beispieltext.', reopened: false },
   {
-    rule: 'outline/CONTRAST',
-    reason: 'Die Kontur liegt bewusst unter 3:1.',
+    rule: 'count/CONTRAST',
+    reason: 'Die Ziffer liegt bewusst unter 3:1.',
     reopened: true,
   },
 ];

@@ -967,7 +967,7 @@ export default definePart<Props>({
       const shell = await shellMain.render({
         studio: menu.body,
         section: 'Sketches',
-        product: 'studio',
+        product: 'farn',
         side: html`<p class="px-space-3 py-space-2 text-et-surface-text-muted text-ui-sm">${SKETCHES_LABELS.none}</p>`,
         content: html`<div
           class="h-full flex flex-col items-center justify-center gap-space-1 text-center ps-(--st-shell-inset-left)"
@@ -1110,7 +1110,7 @@ export default definePart<Props>({
     const shell = await shellMain.render({
       studio: menu.body,
       section: 'Sketches',
-      product: 'studio',
+      product: 'farn',
       side: list ? withCommentList(side.body, list.body) : side.body,
       content,
     });

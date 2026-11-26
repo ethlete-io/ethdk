@@ -12,22 +12,22 @@ export type PartOpenPoints = { part: string; points: OpenPoint[] };
 
 type Kind = OpenPoint['kind'];
 
-const STATES = ['filled', 'outline', 'tonal', 'hover', 'active', 'focus-visible', 'disabled'];
+const STATES = ['minus', 'count', 'plus', 'add', 'hover', 'active', 'focus-visible'];
 
 const motions = STATES.flatMap((from) => STATES.filter((to) => to !== from).map((to) => [from, to] as const));
 
-export const buttonPoints: PartOpenPoints = {
-  part: 'components/button',
+export const partPoints: PartOpenPoints = {
+  part: 'components/quantity-stepper',
   points: [
     { kind: 'missing-state', control: null },
-    { kind: 'contrast', state: 'tonal', path: 'label' },
-    { kind: 'open-comment', comment: '20261031T102204Z-1180', state: 'filled', answered: true },
+    { kind: 'contrast', state: 'add', path: 'label' },
+    { kind: 'open-comment', comment: '20261031T102204Z-1180', state: 'minus · hover', answered: true },
     { kind: 'unlinked' },
     ...motions.map(([from, to]): OpenPoint => ({ kind: 'missing-motion', from, to })),
   ],
 };
 
-export const nothingOpen: PartOpenPoints = { part: 'components/button', points: [] };
+export const nothingOpen: PartOpenPoints = { part: 'components/quantity-stepper', points: [] };
 
 type PointLine = { text: string; detail: string };
 

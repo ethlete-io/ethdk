@@ -28,19 +28,19 @@ export const blockerGroupsOf = (blockers: Blocker[]): BlockerGroup[] =>
 
 export const embeddedBlocker: Blocker = {
   kind: 'embedded',
-  text: 'components/badge ist nicht baubereit',
-  part: 'components/badge',
+  text: 'components/shop-bar ist nicht baubereit',
+  part: 'components/shop-bar',
 };
 
 export const hardcodedColourBlocker: Blocker = {
   kind: 'problem',
-  text: 'HARDCODED-COLOR: button.component.css',
+  text: 'HARDCODED-COLOR: quantity-stepper.component.css',
 };
 
 export const manyBlockers = (openCount: number): Blocker[] => [
   { kind: 'open-point', text: `${openCount} offene Punkte und Ausnahmen` },
   embeddedBlocker,
-  { kind: 'problem', text: 'APP-SPEC: button.component.spec.ts schlägt fehl' },
+  { kind: 'problem', text: 'APP-SPEC: quantity-stepper.component.spec.ts schlägt fehl' },
   { kind: 'compare', text: 'hover weicht vom Design ab' },
 ];
 

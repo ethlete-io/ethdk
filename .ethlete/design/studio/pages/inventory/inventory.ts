@@ -45,7 +45,7 @@ export default definePart<Props>({
     loading: { inventory: 'loading' },
   },
   describe: {
-    open: 'pages/flows selected with open entries; check its outlined frame with 3 offen, the numbered boxes on every frame and the three sections at the right with a red inline asset the toolbar with Neu laden at the bottom centre, no button in the column head and no approve button.',
+    open: 'pages/shop selected with open entries; check its outlined frame with 3 offen, the numbered boxes on every frame and the three sections at the right with a red inline asset the toolbar with Neu laden at the bottom centre, no button in the column head and no approve button.',
     loading:
       'The inventory while it loads; check that Neu laden in the toolbar is disabled and no frames or entries show.',
   },
@@ -73,7 +73,7 @@ export default definePart<Props>({
         {
           title: 'Pages',
           open: true,
-          parts: [{ name: 'flows', leaf: true, selected: true }, { name: 'inbox' }, { name: 'system' }],
+          parts: [{ name: 'shop', leaf: true, selected: true }, { name: 'basket' }, { name: 'checkout' }],
         },
       ],
     });
@@ -91,7 +91,7 @@ export default definePart<Props>({
     const shell = await shellMain.render({
       studio: menu.body,
       section: 'System',
-      product: 'studio',
+      product: 'farn',
       side: tree.body,
       content: html`<div class="grid h-full grid-cols-[minmax(0,1fr)_28rem]">
         <div class="relative min-h-0 overflow-hidden">

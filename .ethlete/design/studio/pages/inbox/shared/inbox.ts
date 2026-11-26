@@ -3,6 +3,7 @@ import { control } from '@ethlete/components/design/control';
 import { commentPinMark } from '@system/components/comment-pin';
 import { commentRow, commentRowStyles, type Thread } from '@system/components/comment-row';
 import button from '@system/components/button';
+import { stepperGrid } from '../../system/shared/many-states';
 import switchPart from '@system/components/switch';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
@@ -32,9 +33,9 @@ const COMMENTS: Comment[] = [
     initials: 'C',
     agent: 'claude',
     when: 'vor 3 Min',
-    part: 'button',
-    state: 'filled · hover',
-    text: 'Hover ist jetzt eine Stufe heller, ich nehme accent-hover statt der Mischung. Reicht dir der Abstand zu active noch?',
+    part: 'quantity-stepper',
+    state: 'minus · hover',
+    text: 'Hover ist jetzt eine Stufe dunkler, ich nehme accent-hover statt der Mischung. Reicht dir der Abstand zu active noch?',
     replies: 3,
     unread: true,
     cell: 1,
@@ -45,9 +46,9 @@ const COMMENTS: Comment[] = [
     initials: 'CX',
     agent: 'codex',
     when: 'vor 20 Min',
-    part: 'button',
-    state: 'outline · disabled',
-    text: 'Ich habe zwei Wege skizziert: den Rand auf 3:1 heben oder eine leise Fläche statt Rand. Beide liegen als Runde 2 unter Sketches.',
+    part: 'quantity-stepper',
+    state: 'plus · focus-visible',
+    text: 'Ich habe zwei Wege skizziert: den Ring enger ziehen oder eine ruhige Fläche statt Ring. Beide liegen als Runde 2 unter Sketches.',
     replies: 1,
     unread: true,
     cell: 11,
@@ -57,9 +58,9 @@ const COMMENTS: Comment[] = [
     author: 'human',
     initials: 'H',
     when: 'vor 1 Std',
-    part: 'button',
-    state: 'tonal · rest',
-    text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    part: 'quantity-stepper',
+    state: 'add · rest',
+    text: 'In den Korb wirkt neben dem Zähler zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
     replies: 0,
     cell: 12,
   },
@@ -68,9 +69,9 @@ const COMMENTS: Comment[] = [
     author: 'Lena Krüger',
     initials: 'LK',
     when: 'gestern',
-    part: 'form-field',
-    state: 'default',
-    text: 'QC: Label und Feld sitzen hier enger als bei select. Gewollt oder Drift?',
+    part: 'shop-bar',
+    state: 'guest',
+    text: 'QC: Suche und Navigation sitzen hier enger als im Korb-Zustand. Gewollt oder Drift?',
     replies: 0,
   },
   {
@@ -78,9 +79,9 @@ const COMMENTS: Comment[] = [
     author: 'Lena Krüger',
     initials: 'LK',
     when: 'gestern',
-    part: 'select',
-    state: 'open',
-    text: 'QC: Die offene Liste deckt den Hilfetext ab. Bitte nachziehen, bevor wir das Formular bauen.',
+    part: 'shop-bar',
+    state: 'member-basket',
+    text: 'QC: Die Korb-Pille deckt den Namen ab. Bitte nachziehen, bevor wir den Checkout bauen.',
     replies: 0,
   },
   {
@@ -89,9 +90,9 @@ const COMMENTS: Comment[] = [
     initials: 'G',
     agent: 'gemini',
     when: 'Mo',
-    part: 'system',
-    state: 'part',
-    text: 'Die Baumzeilen sind jetzt 24 px hoch. Die Schrift bleibt dicht, nur die Trefferfläche wächst. Runde 3 zeigt beide Höhen nebeneinander.',
+    part: 'product-card',
+    state: 'default',
+    text: 'Die Karten haben jetzt 24 px Abstand. Die Schrift bleibt dicht, nur der Raum wächst. Runde 3 zeigt beide Abstände nebeneinander.',
     replies: 4,
   },
   {
@@ -99,9 +100,9 @@ const COMMENTS: Comment[] = [
     author: 'human',
     initials: 'H',
     when: 'Fr',
-    part: 'button',
-    state: 'filled · focus-visible',
-    text: 'Der Fokusring verschwindet auf der dunklen Fläche. Mach ihn sichtbar.',
+    part: 'quantity-stepper',
+    state: 'plus · focus-visible',
+    text: 'Der Fokusring verschwindet auf dem grünen Knopf. Mach ihn sichtbar.',
     replies: 2,
     resolved: true,
   },
@@ -111,9 +112,9 @@ const COMMENTS: Comment[] = [
     initials: 'CX',
     agent: 'codex',
     when: 'Do',
-    part: 'button',
-    state: 'filled',
-    text: 'Alle Labels lesen jetzt „Save“. Ich habe auch die Shots der Varianten neu erzeugt.',
+    part: 'quantity-stepper',
+    state: 'add',
+    text: 'Alle Labels lesen jetzt „In den Korb“. Ich habe auch die Shots der Varianten neu erzeugt.',
     replies: 1,
     resolved: true,
   },
@@ -125,56 +126,56 @@ const MORE: [string, string, Agent | undefined, string, string, string, string][
     'C',
     'claude',
     'Mo',
-    'card',
+    'product-card',
     'elevated',
-    'Der Schatten von elevated liegt jetzt auf derselben Stufe wie beim Menü.',
+    'Der Schatten der Karte liegt jetzt auf derselben Stufe wie beim Korb-Menü.',
   ],
   [
     'Lena Krüger',
     'LK',
     undefined,
     'Mo',
-    'tabs',
+    'category-tabs',
     'overflow',
-    'QC: Die Pfeile verdecken den letzten Tab halb. Lieber ausblenden?',
+    'QC: Die Pfeile verdecken den letzten Reiter halb. Lieber ausblenden?',
   ],
   [
     'Codex',
     'CX',
     'codex',
     'So',
-    'dialog',
+    'basket-drawer',
     'open',
     'Der Fokus springt beim Öffnen auf Schließen statt auf das erste Feld.',
   ],
   ['Gemini', 'G', 'gemini', 'So', 'tooltip', 'top', 'Der Pfeil sitzt einen Pixel neben der Mitte des Ankers.'],
-  ['human', 'H', undefined, 'Sa', 'chip', 'removable', 'Das Schließen-Icon ist zu klein für den Daumen.'],
+  ['human', 'H', undefined, 'Sa', 'pot-tag', 'removable', 'Das Schließen-Icon ist zu klein für den Daumen.'],
   [
     'Claude',
     'C',
     'claude',
     'Sa',
-    'pagination',
+    'price-tag',
     'compact',
-    'Die Seitenzahl bricht bei drei Stellen um. Ich setze tabular-nums.',
+    'Der Preis bricht bei drei Stellen um. Ich setze tabular-nums.',
   ],
   [
     'Lena Krüger',
     'LK',
     undefined,
     'Fr',
-    'table',
+    'basket-table',
     'sticky-header',
     'QC: Der Kopf verliert beim Scrollen seine untere Linie.',
   ],
-  ['Codex', 'CX', 'codex', 'Fr', 'slider', 'range', 'Beide Griffe lassen sich übereinander ziehen. Soll das gehen?'],
-  ['human', 'H', undefined, 'Do', 'badge', 'dot', 'Der Punkt ist neben der Schrift kaum zu sehen.'],
+  ['Codex', 'CX', 'codex', 'Fr', 'pot-size', 'range', 'Beide Griffe lassen sich übereinander ziehen. Soll das gehen?'],
+  ['human', 'H', undefined, 'Do', 'basket-pill', 'dot', 'Die Zahl ist neben dem Wort Korb kaum zu sehen.'],
   [
     'Gemini',
     'G',
     'gemini',
     'Do',
-    'accordion',
+    'care-accordion',
     'open',
     'Die Öffnen-Bewegung ist eine Spur zu lang. Runde 2 zeigt 150 ms.',
   ],
@@ -202,14 +203,14 @@ const THREADS: Record<string, ThreadMessage[]> = {
       initials: 'H',
       own: true,
       when: 'vor 2 Std',
-      text: 'Hover und active liegen zu nah beieinander. Mach hover heller.',
+      text: 'Hover und active liegen zu nah beieinander. Mach hover dunkler.',
     },
     {
       author: 'Claude',
       initials: 'C',
       agent: 'claude',
       when: 'vor 1 Std',
-      text: 'Ich mische accent mit 12 % Weiß. Passt das so?',
+      text: 'Ich mische accent mit 12 % Schwarz. Passt das so?',
     },
     {
       author: 'human',
@@ -223,7 +224,7 @@ const THREADS: Record<string, ThreadMessage[]> = {
       initials: 'C',
       agent: 'claude',
       when: 'vor 3 Min',
-      text: 'Hover ist jetzt eine Stufe heller, ich nehme accent-hover statt der Mischung. Reicht dir der Abstand zu active noch?',
+      text: 'Hover ist jetzt eine Stufe dunkler, ich nehme accent-hover statt der Mischung. Reicht dir der Abstand zu active noch?',
     },
   ],
   c3: [
@@ -232,7 +233,7 @@ const THREADS: Record<string, ThreadMessage[]> = {
       initials: 'H',
       own: true,
       when: 'vor 1 Std',
-      text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+      text: 'In den Korb wirkt neben dem Zähler zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
     },
   ],
 };
@@ -240,7 +241,7 @@ const THREADS: Record<string, ThreadMessage[]> = {
 const REPLY = 'Ja, der Abstand reicht. Lass es so.';
 
 const SELECTED = 'c1';
-const ACTIVE_PART = 'button';
+const ACTIVE_PART = 'quantity-stepper';
 
 const rowOf = (selected: string) => (c: Comment) => commentRow({ thread: c, selected: c.id === selected });
 
@@ -307,7 +308,7 @@ export const inbox = definePart<Props>({
     'thread-rejected': thread('c1', {
       text: REPLY,
       phase: 'rejected',
-      reason: 'Der Teil components/button existiert nicht mehr.',
+      reason: 'Der Teil components/quantity-stepper existiert nicht mehr.',
     }),
   },
   describe: {
@@ -387,24 +388,7 @@ export const inbox = definePart<Props>({
     );
     const visible = comments.filter((c) => showResolved || !c.resolved);
     const unresolved = comments.filter((c) => !c.resolved).length;
-    const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
-    const gridRows = await Promise.all(
-      (['filled', 'outline', 'tonal'] as const).map(async (variant) => ({
-        label: variant,
-        cells: await Promise.all(
-          interactions.map(
-            async (interaction) =>
-              (
-                await button.render(
-                  { label: 'Save', variant, pressed: interaction === 'pressed' },
-                  interaction === 'rest' || interaction === 'pressed' ? {} : { interaction },
-                )
-              ).body,
-          ),
-        ),
-      })),
-    );
-    const grid = stateGrid({ columns: [...interactions], rows: gridRows }, { cellWidth: '120px', place: 'center' });
+    const grid = stateGrid(stepperGrid(), { cellWidth: '180px', place: 'center' });
     const pins = new Map(
       visible.map((c) => [
         c.id,
@@ -453,7 +437,7 @@ export const inbox = definePart<Props>({
     const canvas = await canvasView(
       [
         canvasFrame(
-          'button',
+          'quantity-stepper',
           html`<div ${slot('canvas')}>
               ${pinned(grid, visible, (c) => pins.get(c.id) ?? '', card ? selected : undefined)}
             </div>
@@ -469,7 +453,7 @@ export const inbox = definePart<Props>({
     const shell = await shellMain.render({
       studio: menu.body,
       section: 'Inbox',
-      product: 'studio',
+      product: 'farn',
       side,
       content: canvas,
     });
