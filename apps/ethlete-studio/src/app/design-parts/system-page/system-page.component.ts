@@ -337,7 +337,7 @@ export const FRAME_HEAD_CLASS =
                   (openEditSketch)="openEditSketch.emit($event)"
                   (approveException)="approveException.emit($event)"
                   sketchHeadExtra
-                  popoverPlacement="top"
+                  popoverPlacement="top-end"
                 />
               </ethlete-sketch-head>
             </div>

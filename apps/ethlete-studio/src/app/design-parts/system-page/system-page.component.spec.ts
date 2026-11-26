@@ -1,10 +1,12 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { COMMENT_THREAD_LABELS, COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
 import { SHELL_LABELS } from '../../i18n/shell-labels';
+import { OpenPointsChipComponent } from './open-points-chip.component';
 import { SystemPageComponent } from './system-page.component';
 
 const LABELS = SYSTEM_LABELS;
@@ -175,6 +177,19 @@ describe('SystemPageComponent canvas note', () => {
     expect(root.querySelector('[data-canvas-actions]')?.querySelector('[data-open-points-chip],button')).toBeNull();
     expect(bars[0]?.querySelector('[data-sk-discard]')).toBeNull();
     expect(bars[0]?.querySelector('ethlete-sketch-status-badge')).toBeNull();
+  });
+
+  it('opens the open-points popover at top-end like the design draws it', async () => {
+    const fixture = await render({
+      noted: false,
+      noteTitle: '',
+      noteHint: '',
+      empty: false,
+      part: 'components/button',
+    });
+    const chip = fixture.debugElement.query(By.directive(OpenPointsChipComponent));
+
+    expect((chip.componentInstance as OpenPointsChipComponent).popoverPlacement()).toBe('top-end');
   });
 
   it('lifts the sketch bar above the folded-states pill only while the pill shows', async () => {
