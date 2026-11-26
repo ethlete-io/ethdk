@@ -1,4 +1,5 @@
-import { computed, Directive, ElementRef, inject, input, OnDestroy, OnInit } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { computed, Directive, ElementRef, inject, input, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
 import { fromEvent, Subject, takeUntil } from 'rxjs';
 import { INFINITY_QUERY_TOKEN, InfinityQueryDirective } from './infinity-query.directive';
 
@@ -11,6 +12,7 @@ import { INFINITY_QUERY_TOKEN, InfinityQueryDirective } from './infinity-query.d
 export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private _infinityQuery = inject(INFINITY_QUERY_TOKEN);
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   scrollContainerSelector = input<string | null>(null);
 
@@ -30,7 +32,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
 
     if (isInteractive) {
       this.click$.pipe(takeUntil(this.destroy)).subscribe(() => this.infinityQuery().loadNextPage());
-    } else {
+    } else if (this.isBrowser) {
       this.setupIntersectionObserver();
     }
   }

@@ -1,6 +1,7 @@
+import { isPlatformServer } from '@angular/common';
 import { HttpEventType } from '@angular/common/http';
 import { equal } from '@ethlete/core';
-import { CreateEffectOptions, effect, Signal, untracked, WritableSignal } from '@angular/core';
+import { CreateEffectOptions, effect, PLATFORM_ID, Signal, untracked, WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { filter } from 'rxjs';
@@ -227,6 +228,8 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
         throw withPollingUsedOnUnsupportedHttpMethod(context.flags.method);
       }
 
+      const isServer = isPlatformServer(context.deps.injector.get(PLATFORM_ID));
+
       let intervalId: number | null = null;
       let timeoutId: number | null = null;
       let active = false;
@@ -268,17 +271,17 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
           acquire(heldKey);
         };
 
-        document.addEventListener('visibilitychange', handOverWhenHidden);
+        if (!isServer) document.addEventListener('visibilitychange', handOverWhenHidden);
 
         context.deps.destroyRef.onDestroy(() => {
-          document.removeEventListener('visibilitychange', handOverWhenHidden);
+          if (!isServer) document.removeEventListener('visibilitychange', handOverWhenHidden);
           hold?.release();
         });
       }
 
       const currentInterval = () => untracked(() => readPollingInterval(options.interval));
       const isEnabled = () => (options.enabled ? untracked(options.enabled) : true);
-      const isPaused = () => (options.pauseWhileHidden === true && document.hidden) || !isEnabled();
+      const isPaused = () => (options.pauseWhileHidden === true && !isServer && document.hidden) || !isEnabled();
 
       const stop = () => {
         if (intervalId !== null) clearInterval(intervalId);
@@ -300,7 +303,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
       const schedule = (firstDelay: number) => {
         stop();
 
-        if (!active || isPaused()) return;
+        if (isServer || !active || isPaused()) return;
 
         const interval = currentInterval();
 
@@ -400,7 +403,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
         context.deps.destroyRef.onDestroy(() => target.removeEventListener(type, listener));
       };
 
-      if (options.pauseWhileHidden) {
+      if (options.pauseWhileHidden && !isServer) {
         listen(document, 'visibilitychange', resumeOrStop);
       }
 
@@ -411,8 +414,8 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
         schedule(currentInterval());
       };
 
-      if (options.refetchOnFocus) listen(window, 'focus', refetchNow);
-      if (options.refetchOnReconnect) listen(window, 'online', refetchNow);
+      if (options.refetchOnFocus && !isServer) listen(window, 'focus', refetchNow);
+      if (options.refetchOnReconnect && !isServer) listen(window, 'online', refetchNow);
 
       context.deps.destroyRef.onDestroy(stop);
     },
