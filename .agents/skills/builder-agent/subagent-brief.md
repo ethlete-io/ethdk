@@ -9,3 +9,4 @@ Copy each line into every subagent brief.
 - A defect fix needs a test red without it on the reported real case (another fixture does not count) and a shot of that case after it. Without both: report "not fixed, Suspect", no `fix` commit.
 - A change to a Studio view runs that view's e2e cases with `--case` (about 5 min max, in the background) and `yarn studio:classes:check` (0 findings) before you report done. The full suite stays in CI.
 - Stop only the processes you started, by their pid. Never `pkill -f`/`killall` a pattern: other agents and the human run design servers from the same command.
+- Run a code generator or migration with `--dry-run` first. If its file list holds a file outside your task, stop and report it.
