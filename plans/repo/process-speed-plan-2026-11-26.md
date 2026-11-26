@@ -82,7 +82,7 @@ Goal: a red commit is known within minutes, by its hash, and never reaches GitHu
    - `cdk/generators/migrate-from-cdk/components-classes.spec.ts` (8 red runs): the list is derived from the
      components stylesheets at test time, or its check moves into `components:test`, so the commit that adds a class
      fails its own project.
-   - `agent-rules/src/lib/agent-sessions.spec.ts` (5 runs): no assertion on runner paths, cgroups or clock.
+   - ~~`agent-rules/src/lib/agent-sessions.spec.ts` (5 runs)~~: done, each cause already fixed (882f1e051f, d8e9cd6136, 5efbc18271, b60970c636, 87c34ab3de, ee8e6daee8); no red since 23.11.
    - Temp folders of `cli` and `agent-rules` specs (3 runs): one folder per spec file, removed with retries.
    - `cli` specs that time out at 5000 ms (2 runs): a higher limit for the specs that start a process.
    - Merge specs set their own git identity (red only in CI on 25.11.).
