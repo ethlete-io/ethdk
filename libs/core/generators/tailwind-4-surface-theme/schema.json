@@ -23,7 +23,7 @@
     },
     "prefix": {
       "type": "string",
-      "description": "Prefix for Tailwind utility surface variable names (e.g., 'et' creates --color-et-surface-*, usable as bg-et-surface)",
+      "description": "Prefix for Tailwind utility surface variable names (e.g., 'et' creates --color-et-surface-*, usable as bg-et-surface-background)",
       "default": "et"
     },
     "runtimePrefix": {

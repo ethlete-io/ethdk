@@ -75,8 +75,8 @@ describe('tailwind-4-surface-theme generator', () => {
 
     const content = tree.read('src/styles/tailwind-surface-themes.css', 'utf-8');
     expect(content).toContain('@theme {');
-    expect(content).toContain('--color-et-surface-card-bg: rgb(255 255 255);');
-    expect(content).toContain('--color-et-surface-sheet: rgb(255 255 255);');
+    expect(content).toContain('--color-et-surface-card-background: rgb(255 255 255);');
+    expect(content).toContain('--color-et-surface-sheet-text: rgb(255 255 255);');
     expect(content).toContain('.et-surface--card {');
   });
 
@@ -141,7 +141,7 @@ describe('tailwind-4-surface-theme generator', () => {
     expect(consoleWarnSpy).not.toHaveBeenCalledWith(expect.stringContaining('is not an object literal'));
 
     const content = tree.read('src/styles/tailwind-surface-themes.css', 'utf-8');
-    expect(content).toContain('--color-et-surface-card-bg: rgb(255 255 255);');
+    expect(content).toContain('--color-et-surface-card-background: rgb(255 255 255);');
   });
 
   it('should generate an EthleteSurfaceThemeNameRegistry augmentation next to the CSS by default', async () => {
@@ -190,7 +190,7 @@ describe('tailwind-4-surface-theme generator', () => {
     });
 
     const content = tree.read('src/styles/tw.css', 'utf-8');
-    expect(content).toContain('--color-fut-surface-card-bg: rgb(255 255 255);');
+    expect(content).toContain('--color-fut-surface-card-background: rgb(255 255 255);');
     expect(content).toContain('.fut-surface--card {');
   });
 
@@ -209,20 +209,20 @@ describe('tailwind-4-surface-theme generator', () => {
 
     // Static per-theme utility classes and the dynamic "current surface" utility use the
     // Tailwind utility prefix.
-    expect(content).toContain('--color-fut-surface-card-bg: rgb(255 255 255);');
-    expect(content).toContain('--color-fut-surface-bg: rgb(var(--et-surface-background));');
-    expect(content).toContain('--color-fut-surface-interaction: rgb(var(--et-surface-interaction));');
+    expect(content).toContain('--color-fut-surface-card-background: rgb(255 255 255);');
+    expect(content).toContain('--color-fut-surface-background: var(--et-surface-background);');
+    expect(content).toContain('--color-fut-surface-interaction: var(--et-surface-interaction);');
 
     // The runtime theme-swap selectors and variables use the runtime prefix, not the
     // Tailwind utility prefix.
     expect(content).toContain('.et-surface--default-light, .et-surface--card {');
-    expect(content).toContain('--et-surface-background: 255 255 255;');
+    expect(content).toContain('--et-surface-background: rgb(255 255 255);');
     expect(content).not.toContain('fut-surface--');
     expect(content).not.toContain('--fut-surface-background');
 
-    // The convenience alias block also follows the runtime prefix.
+    // The per-scope re-declaration also follows the runtime prefix.
     expect(content).toContain('[class*="et-surface--"]');
-    expect(content).toContain('--et-surface-background-rgb: var(--et-surface-background);');
+    expect(content).toContain('--color-fut-surface-text: var(--et-surface-text);');
   });
 
   it('should default runtimePrefix to prefix when not specified', async () => {
@@ -237,7 +237,7 @@ describe('tailwind-4-surface-theme generator', () => {
 
     const content = tree.read('src/styles/tw.css', 'utf-8');
     expect(content).toContain('.custom-surface--default-light, .custom-surface--card {');
-    expect(content).toContain('--custom-surface-background: 255 255 255;');
+    expect(content).toContain('--custom-surface-background: rgb(255 255 255);');
   });
 
   describe('interactionColor swatch', () => {
@@ -266,8 +266,8 @@ describe('tailwind-4-surface-theme generator', () => {
       await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
 
       const content = tree.read('src/styles/tw.css', 'utf-8');
-      expect(content).toContain('--et-surface-interaction: 115 115 115;');
-      expect(content).toContain('--et-surface-interaction-active: 23 23 23;');
+      expect(content).toContain('--et-surface-interaction: rgb(115 115 115);');
+      expect(content).toContain('--et-surface-interaction-active: rgb(23 23 23);');
       expect(content).toContain('--color-et-surface-card-interaction-hover: rgb(64 64 64);');
       expect(content).not.toContain('--et-surface-on-interaction:');
     });
@@ -283,12 +283,12 @@ describe('tailwind-4-surface-theme generator', () => {
       await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
 
       const content = tree.read('src/styles/tw.css', 'utf-8');
-      expect(content).toContain('--et-surface-on-interaction: 255 255 255;');
-      expect(content).toContain('--et-surface-on-interaction-hover: 250 250 250;');
+      expect(content).toContain('--et-surface-on-interaction: rgb(255 255 255);');
+      expect(content).toContain('--et-surface-on-interaction-hover: rgb(250 250 250);');
       // focus falls back to hover, active and disabled to default
-      expect(content).toContain('--et-surface-on-interaction-focus: 250 250 250;');
-      expect(content).toContain('--et-surface-on-interaction-active: 255 255 255;');
-      expect(content).toContain('--et-surface-interaction-ink-disabled: 23 23 23;');
+      expect(content).toContain('--et-surface-on-interaction-focus: rgb(250 250 250);');
+      expect(content).toContain('--et-surface-on-interaction-active: rgb(255 255 255);');
+      expect(content).toContain('--et-surface-interaction-ink-disabled: rgb(23 23 23);');
     });
 
     it('emits the reserved surface color scope, following the runtime prefix', async () => {
@@ -304,11 +304,11 @@ describe('tailwind-4-surface-theme generator', () => {
 
       const content = tree.read('src/styles/tw.css', 'utf-8');
       expect(content).toContain('.et-color--surface {');
-      expect(content).toContain('--et-color-primary: var(--et-surface-interaction, var(--et-surface-color));');
+      expect(content).toContain('--et-tone-fill-rest: var(--et-surface-interaction, var(--et-surface-text));');
       expect(content).toContain(
-        '--et-color-on-primary: var(--et-surface-on-interaction, var(--et-surface-background));',
+        '--et-tone-on-fill-rest: var(--et-surface-on-interaction, var(--et-surface-background));',
       );
-      expect(content).toContain('--et-color-primary-ink: var(--et-surface-interaction-ink, var(--et-surface-color));');
+      expect(content).toContain('--et-tone-text-rest: var(--et-surface-interaction-ink, var(--et-surface-text));');
       expect(content).not.toContain('.fut-color--surface');
     });
 
@@ -428,7 +428,7 @@ describe('tailwind-4-surface-theme generator', () => {
 
     await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
 
-    expect(tree.read('src/styles/tw.css', 'utf-8')).toContain('--color-et-surface-base-bg: rgb(250 250 250);');
+    expect(tree.read('src/styles/tw.css', 'utf-8')).toContain('--color-et-surface-base-background: rgb(250 250 250);');
   });
 
   it('should fail the generator when a theme cannot be parsed', async () => {
@@ -479,7 +479,7 @@ describe('tailwind-4-surface-theme generator', () => {
     await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
 
     const content = tree.read('src/styles/tw.css', 'utf-8');
-    expect(content).toContain('--color-et-surface-card-bg: rgb(255 255 255);');
+    expect(content).toContain('--color-et-surface-card-background: rgb(255 255 255);');
     expect(content).toContain('.et-surface--card {');
   });
 
@@ -644,8 +644,8 @@ describe('tailwind-4-surface-theme generator', () => {
       });
 
       const content = tree.read('src/styles/tw.css', 'utf-8');
-      expect(content).toContain(':root.et-scheme--light {\n  --et-surface-background: 255 255 255;');
-      expect(content).toContain(':root.et-scheme--dark {\n  --et-surface-background: 10 10 10;');
+      expect(content).toContain(':root.et-scheme--light {\n  --et-surface-background: rgb(255 255 255);');
+      expect(content).toContain(':root.et-scheme--dark {\n  --et-surface-background: rgb(10 10 10);');
       expect(content).toMatch(/:root\.et-scheme--dark \{[^}]*color-scheme: dark;/);
     });
 
@@ -660,7 +660,7 @@ describe('tailwind-4-surface-theme generator', () => {
 
       const content = tree.read('src/styles/tw.css', 'utf-8');
       expect(content).not.toContain('prefers-color-scheme');
-      expect(content).toContain(':root {\n  --et-surface-background: 10 10 10;');
+      expect(content).toContain(':root {\n  --et-surface-background: rgb(10 10 10);');
       expect(content).toContain('  color-scheme: dark;');
     });
   });

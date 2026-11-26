@@ -55,7 +55,7 @@ const themesOfRules = (rules: CSSRuleList, themes: FrameThemes) => {
         registered.forEach((name) => themes.surfaces.push({ name, ...surface, isDefault, colorThemeVariants }));
       }
 
-      if (rule.style.getPropertyValue('--et-color-primary')) {
+      if (rule.style.getPropertyValue('--et-tone-fill-rest') || rule.style.getPropertyValue('--et-color-primary')) {
         const names = scopeNamesOf(rule, COLOR_CLASS_SELECTOR);
         const type = rule.style.getPropertyValue('--et-color-theme-type').trim() || null;
         const isDefault = names.includes('default');
@@ -77,7 +77,7 @@ const sheetThemes = new WeakMap<CSSStyleSheet, FrameThemes>();
 /**
  * The surface and colour themes the frame's stylesheets register, as the SDK's generated theme CSS writes them: every
  * `.et-surface--<name>` rule that sets `--et-surface-type` and `--et-surface-elevation` (with its
- * `--et-surface-color-theme-variants`), and every `.et-color--<name>` rule that sets `--et-color-primary` (with its
+ * `--et-surface-color-theme-variants`), and every `.et-color--<name>` rule that sets `--et-tone-fill-rest` (with its
  * `--et-color-theme-type`).
  */
 export const registeredThemesOf = (document: Document): FrameThemes => {

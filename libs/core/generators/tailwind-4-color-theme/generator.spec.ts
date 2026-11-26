@@ -107,15 +107,15 @@ describe('tailwind-4-color-theme generator', () => {
     const content = tree.read('src/styles/tailwind-themes.css', 'utf-8');
 
     expect(content).toContain('@theme {');
-    expect(content).toContain('--color-et-pitch-green: rgb(7 244 104);');
-    expect(content).toContain('--color-et-red: rgb(239 68 68);');
-    expect(content).toContain('--color-et-on-pitch-green: rgb(21 22 22);');
+    expect(content).toContain('--color-et-tone-pitch-green-fill: rgb(7 244 104);');
+    expect(content).toContain('--color-et-tone-red-fill: rgb(239 68 68);');
+    expect(content).toContain('--color-et-tone-pitch-green-on-fill: rgb(21 22 22);');
 
     // isDefaultAlt is not yet supported; alt-test is treated as a regular non-default theme
     expect(content).toContain('.et-color--alt-test {');
-    expect(content).toContain('--et-color-primary: 7 244 104;');
-    expect(content).toContain('--et-color-primary-hover: 58 245 133;');
-    expect(content).toContain('--et-color-on-primary: 21 22 22;');
+    expect(content).toContain('--et-tone-fill-rest: rgb(7 244 104);');
+    expect(content).toContain('--et-tone-fill-hover: rgb(58 245 133);');
+    expect(content).toContain('--et-tone-on-fill-rest: rgb(21 22 22);');
   });
 
   it('should parse individual theme objects using `satisfies X` instead of `as const`', async () => {
@@ -164,8 +164,8 @@ describe('tailwind-4-color-theme generator', () => {
     expect(consoleWarnSpy).not.toHaveBeenCalledWith(expect.stringContaining('is not an object literal'));
 
     const content = tree.read('src/styles/tailwind-themes.css', 'utf-8');
-    expect(content).toContain('--color-et-pitch-green: rgb(7 244 104);');
-    expect(content).toContain('--color-et-red: rgb(239 68 68);');
+    expect(content).toContain('--color-et-tone-pitch-green-fill: rgb(7 244 104);');
+    expect(content).toContain('--color-et-tone-red-fill: rgb(239 68 68);');
     expect(content).toContain('.et-color--pitch-green');
   });
 
@@ -268,8 +268,8 @@ describe('tailwind-4-color-theme generator', () => {
     });
 
     const content = tree.read('src/styles/tw.css', 'utf-8');
-    expect(content).toContain('--color-custom-brand: rgb(0 0 0);');
-    expect(content).toContain('--color-custom-on-brand: rgb(255 255 255);');
+    expect(content).toContain('--color-custom-tone-brand-fill: rgb(0 0 0);');
+    expect(content).toContain('--color-custom-tone-brand-on-fill: rgb(255 255 255);');
   });
 
   it('should decouple the Tailwind utility prefix from the runtime theme-swap prefix', async () => {
@@ -298,24 +298,24 @@ describe('tailwind-4-color-theme generator', () => {
     const content = tree.read('src/styles/tw.css', 'utf-8');
 
     // Static per-theme utility classes use the Tailwind utility prefix.
-    expect(content).toContain('--color-fut-brand: rgb(0 0 0);');
-    expect(content).toContain('--color-fut-on-brand: rgb(255 255 255);');
+    expect(content).toContain('--color-fut-tone-brand-fill: rgb(0 0 0);');
+    expect(content).toContain('--color-fut-tone-brand-on-fill: rgb(255 255 255);');
 
     // The dynamic "current theme" utility still uses the Tailwind utility prefix for its
     // own name, but reads the runtime prefix's CSS variable.
-    expect(content).toContain('--color-fut-theme: rgb(var(--et-color-primary));');
-    expect(content).toContain('--color-fut-on-theme: rgb(var(--et-color-on-primary));');
+    expect(content).toContain('--color-fut-tone-fill: var(--et-tone-fill-rest);');
+    expect(content).toContain('--color-fut-tone-on-fill: var(--et-tone-on-fill-rest);');
 
     // The runtime theme-swap selectors and variables use the runtime prefix, not the
     // Tailwind utility prefix.
     expect(content).toContain('.et-color--default, .et-color--brand {');
-    expect(content).toContain('--et-color-primary: 0 0 0;');
+    expect(content).toContain('--et-tone-fill-rest: rgb(0 0 0);');
     expect(content).not.toContain('fut-color--');
-    expect(content).not.toContain('--fut-color-primary');
+    expect(content).not.toContain('--fut-tone-fill');
 
     // The convenience alias block also follows the runtime prefix.
     expect(content).toContain('[class*="et-color--"]');
-    expect(content).toContain('--et-theme-color-primary-rgb: var(--et-color-primary);');
+    expect(content).toContain('--et-tone-fill: var(--et-tone-fill-rest);');
   });
 
   it('should default runtimePrefix to prefix when not specified', async () => {
@@ -342,7 +342,7 @@ describe('tailwind-4-color-theme generator', () => {
 
     const content = tree.read('src/styles/tw.css', 'utf-8');
     expect(content).toContain('.custom-color--default, .custom-color--brand {');
-    expect(content).toContain('--custom-color-primary: 0 0 0;');
+    expect(content).toContain('--custom-tone-fill-rest: rgb(0 0 0);');
   });
 
   it('should handle kebab-case theme names', async () => {
@@ -367,7 +367,7 @@ describe('tailwind-4-color-theme generator', () => {
     });
 
     const content = tree.read('src/output.css', 'utf-8');
-    expect(content).toContain('--color-et-pitch-green: rgb(7 244 104);');
+    expect(content).toContain('--color-et-tone-pitch-green-fill: rgb(7 244 104);');
   });
 
   it('should handle complex spread operations', async () => {
@@ -431,36 +431,36 @@ describe('tailwind-4-color-theme generator', () => {
 
     // Check Tailwind @theme block
     expect(content).toContain('@theme {');
-    expect(content).toContain('--color-et-blue: rgb(10 127 255);');
-    expect(content).toContain('--color-et-blue-hover: rgb(47 146 255);');
-    expect(content).toContain('--color-et-blue-active: rgb(9 114 230);');
-    expect(content).toContain('--color-et-blue-disabled: rgb(30 77 128);');
+    expect(content).toContain('--color-et-tone-blue-fill: rgb(10 127 255);');
+    expect(content).toContain('--color-et-tone-blue-fill-hover: rgb(47 146 255);');
+    expect(content).toContain('--color-et-tone-blue-fill-active: rgb(9 114 230);');
+    expect(content).toContain('--color-et-tone-blue-fill-disabled: rgb(30 77 128);');
 
     // Check that spread color values are correctly extracted
-    expect(content).toContain('--color-et-on-blue: rgb(10 13 16);');
-    expect(content).toContain('--color-et-on-blue-disabled: rgb(30 77 128);'); // Override from spread
+    expect(content).toContain('--color-et-tone-blue-on-fill: rgb(10 13 16);');
+    expect(content).toContain('--color-et-tone-blue-on-fill-disabled: rgb(30 77 128);'); // Override from spread
 
     // Check blue-inverse theme
-    expect(content).toContain('--color-et-blue-inverse: rgb(10 127 255);');
-    expect(content).toContain('--color-et-on-blue-inverse: rgb(255 255 255);'); // From onColorLight
-    expect(content).toContain('--color-et-on-blue-inverse-disabled: rgb(30 77 128);'); // Override
+    expect(content).toContain('--color-et-tone-blue-inverse-fill: rgb(10 127 255);');
+    expect(content).toContain('--color-et-tone-blue-inverse-on-fill: rgb(255 255 255);'); // From onColorLight
+    expect(content).toContain('--color-et-tone-blue-inverse-on-fill-disabled: rgb(30 77 128);'); // Override
 
     // Check runtime CSS variables for default theme
     expect(content).toContain(':root, .et-color--default, .et-color--blue {');
-    expect(content).toContain('--et-color-primary: 10 127 255;');
-    expect(content).toContain('--et-color-primary-hover: 47 146 255;');
-    expect(content).toContain('--et-color-on-primary: 10 13 16;');
-    expect(content).toContain('--et-color-on-primary-disabled: 30 77 128;');
+    expect(content).toContain('--et-tone-fill-rest: rgb(10 127 255);');
+    expect(content).toContain('--et-tone-fill-hover: rgb(47 146 255);');
+    expect(content).toContain('--et-tone-on-fill-rest: rgb(10 13 16);');
+    expect(content).toContain('--et-tone-on-fill-disabled: rgb(30 77 128);');
 
     // Check runtime CSS for non-default theme
     expect(content).toContain('.et-color--blue-inverse {');
-    expect(content).toContain('--et-color-primary: 10 127 255;');
-    expect(content).toContain('--et-color-primary-hover: 40 49 64;');
-    expect(content).toContain('--et-color-on-primary: 255 255 255;');
+    expect(content).toContain('--et-tone-fill-rest: rgb(10 127 255);');
+    expect(content).toContain('--et-tone-fill-hover: rgb(40 49 64);');
+    expect(content).toContain('--et-tone-on-fill-rest: rgb(255 255 255);');
 
     // Verify fallbacks work correctly
-    expect(content).toContain('--color-et-on-blue-hover: rgb(10 13 16);'); // Falls back to default
-    expect(content).toContain('--color-et-on-blue-focus: rgb(10 13 16);'); // Falls back to hover -> default
+    expect(content).toContain('--color-et-tone-blue-on-fill-hover: rgb(10 13 16);'); // Falls back to default
+    expect(content).toContain('--color-et-tone-blue-on-fill-focus: rgb(10 13 16);'); // Falls back to hover -> default
   });
 
   it('should resolve color maps referenced by identifier', async () => {
@@ -483,7 +483,7 @@ describe('tailwind-4-color-theme generator', () => {
       skipFormat: true,
     });
 
-    expect(tree.read('src/styles/tw.css', 'utf-8')).toContain('--et-color-primary: 1 1 1;');
+    expect(tree.read('src/styles/tw.css', 'utf-8')).toContain('--et-tone-fill-rest: rgb(1 1 1);');
   });
 
   it('should generate dynamic theme variables', async () => {
@@ -520,75 +520,17 @@ describe('tailwind-4-color-theme generator', () => {
     const content = tree.read('src/styles/tailwind-themes.css', 'utf-8');
 
     // Check static theme colors
-    expect(content).toContain('--color-et-blue: rgb(10 127 255);');
+    expect(content).toContain('--color-et-tone-blue-fill: rgb(10 127 255);');
 
     // Check dynamic theme variables that reference runtime CSS variables
-    expect(content).toContain('--color-et-theme: rgb(var(--et-color-primary));');
-    expect(content).toContain('--color-et-theme-hover: rgb(var(--et-color-primary-hover));');
-    expect(content).toContain('--color-et-on-theme: rgb(var(--et-color-on-primary));');
+    expect(content).toContain('--color-et-tone-fill: var(--et-tone-fill-rest);');
+    expect(content).toContain('--color-et-tone-fill-hover: var(--et-tone-fill-hover);');
+    expect(content).toContain('--color-et-tone-on-fill: var(--et-tone-on-fill-rest);');
 
     // isDefaultAlt is not yet supported; no alt-theme dynamic variables are generated
   });
 
-  it('should generate secondary and tertiary dynamic variables for alt themes', async () => {
-    const themesContent = `
-    import { type Theme as EthleteTheme } from '@ethlete/cdk';
-
-    export const DEFAULT_THEME = {
-      name: 'default',
-      isDefault: true,
-      primary: {
-        color: { default: '10 127 255', hover: '47 146 255', active: '9 114 230', disabled: '30 77 128' },
-        onColor: { default: '10 13 16' },
-      },
-      secondary: {
-        color: { default: '100 200 50', hover: '120 220 70', active: '80 180 40', disabled: '50 100 30' },
-        onColor: { default: '255 255 255' },
-      },
-    } as const;
-
-    export const ALT_THEME = {
-      name: 'alt',
-      isDefaultAlt: true,
-      primary: {
-        color: { default: '200 100 50', hover: '220 120 70', active: '180 80 40', disabled: '100 50 30' },
-        onColor: { default: '0 0 0' },
-      },
-      secondary: {
-        color: { default: '50 150 200', hover: '70 170 220', active: '40 130 180', disabled: '30 75 100' },
-        onColor: { default: '255 255 255' },
-      },
-      tertiary: {
-        color: { default: '150 50 200', hover: '170 70 220', active: '130 40 180', disabled: '75 30 100' },
-        onColor: { default: '255 255 255' },
-      },
-    } as const;
-
-    export const THEMES = [DEFAULT_THEME, ALT_THEME] satisfies EthleteTheme[];
-  `;
-
-    tree.write('src/themes.ts', themesContent);
-
-    await migrate(tree, {
-      themesPath: 'src/themes.ts',
-      outputPath: 'src/styles/tailwind-themes.css',
-      skipFormat: true,
-    });
-
-    const content = tree.read('src/styles/tailwind-themes.css', 'utf-8');
-
-    // Check main theme secondary
-    expect(content).toContain('--color-et-theme-secondary: rgb(var(--et-color-secondary));');
-    expect(content).toContain('--color-et-on-theme-secondary: rgb(var(--et-color-on-secondary));');
-
-    // isDefaultAlt is not yet supported; all themes contribute to the single theme dynamic variable set.
-    // ALT_THEME has tertiary, so --color-et-theme-tertiary is generated for the main theme prefix.
-    expect(content).not.toContain('--color-et-alt-theme-secondary:');
-    expect(content).not.toContain('--color-et-alt-theme-tertiary:');
-    expect(content).toContain('--color-et-theme-tertiary: rgb(var(--et-color-tertiary));');
-  });
-
-  it('should generate secondary and tertiary dynamic variables when present', async () => {
+  it('should ignore secondary and tertiary swatches', async () => {
     const themesContent = `
     import { type Theme as EthleteTheme } from '@ethlete/cdk';
 
@@ -622,17 +564,8 @@ describe('tailwind-4-color-theme generator', () => {
 
     const content = tree.read('src/styles/tailwind-themes.css', 'utf-8');
 
-    // Check secondary dynamic variables
-    expect(content).toContain('--color-et-theme-secondary: rgb(var(--et-color-secondary));');
-    expect(content).toContain('--color-et-on-theme-secondary: rgb(var(--et-color-on-secondary));');
-
-    // Check tertiary dynamic variables
-    expect(content).toContain('--color-et-theme-tertiary: rgb(var(--et-color-tertiary));');
-    expect(content).toContain('--color-et-on-theme-tertiary: rgb(var(--et-color-on-tertiary));');
-
-    // Check runtime CSS for secondary/tertiary
-    expect(content).toContain('--et-color-secondary: 100 200 50;');
-    expect(content).toContain('--et-color-tertiary: 200 100 50;');
+    expect(content).toContain('--et-tone-fill-rest: rgb(10 127 255);');
+    expect(content).not.toMatch(/secondary|tertiary|100 200 50|200 100 50/u);
   });
 
   it('should error when no default theme is provided', async () => {
@@ -780,7 +713,7 @@ describe('tailwind-4-color-theme generator', () => {
     await migrate(tree, { themesPath: 'src/themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
 
     const content = tree.read('src/styles/tw.css', 'utf-8');
-    expect(content).toContain('--et-color-primary: 1 1 1;');
+    expect(content).toContain('--et-tone-fill-rest: rgb(1 1 1);');
     expect(content).toContain('9 9 9');
     expect(tree.read('src/styles/tw.d.ts', 'utf-8')).toContain(`name: 'brand' | 'accent';`);
   });
@@ -801,7 +734,7 @@ describe('tailwind-4-color-theme generator', () => {
         skipFormat: true,
       });
 
-      expect(tree.read('src/styles/tw.scss', 'utf-8')).toContain('--et-color-primary: 1 1 1;');
+      expect(tree.read('src/styles/tw.scss', 'utf-8')).toContain('--et-tone-fill-rest: rgb(1 1 1);');
       expect(tree.exists('src/styles/tw-types.d.ts')).toBe(true);
     });
 
