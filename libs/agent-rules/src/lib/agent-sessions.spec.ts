@@ -201,6 +201,24 @@ describe('agent-sessions', () => {
     expect(run(['inbox', 'gemini', '--wait', '1']).stdout).toBe('No new messages.\n');
   });
 
+  it.skipIf(!hasTmux)('names the tmux session of the sender in each message', () => {
+    const session = `mailbox-spec-sender-${process.pid}@${basename(dir)}`;
+    spawnSync('tmux', ['new-session', '-d', '-s', session, 'sleep 30']);
+
+    try {
+      const pane = spawnSync('tmux', ['display-message', '-p', '-t', `=${session}:`, '#{pane_id}'], {
+        encoding: 'utf8',
+      }).stdout.trim();
+      run(['send', 'codex', 'from tmux'], undefined, { TMUX_PANE: pane });
+      run(['send', 'gemini', 'no tmux']);
+
+      expect(run(['read']).stdout).toContain(`codex (tmux ${session}): from tmux`);
+      expect(run(['read']).stdout).toContain('gemini: no tmux');
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${session}`]);
+    }
+  });
+
   it.skipIf(!hasTmux)(
     'wakes the tmux session of the recipient for a message sent --to it',
     async () => {

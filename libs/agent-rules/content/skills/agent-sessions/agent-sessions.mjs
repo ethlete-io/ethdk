@@ -786,7 +786,8 @@ const parse = (line) => {
 
 const entries = () => (existsSync(mailbox) ? readFileSync(mailbox, 'utf8').split('\n').map(parse).filter(Boolean) : []);
 
-const show = (entry) => process.stdout.write(`[${entry.timestamp}] ${entry.sender}: ${entry.message}\n`);
+const senderLabel = (entry) => (entry.session ? `${entry.sender} (tmux ${entry.session})` : entry.sender);
+const show = (entry) => process.stdout.write(`[${entry.timestamp}] ${senderLabel(entry)}: ${entry.message}\n`);
 
 const inboxCursor = (reader) => join(dirname(mailbox), `mailbox.cursor.${reader}`);
 
@@ -948,7 +949,8 @@ if (command === 'stop-own') {
     );
     process.exitCode = 1;
   } else {
-    append({ sender, message, ...(recipient ? { to: recipient } : {}) });
+    const session = ownSession();
+    append({ sender, message, ...(session ? { session } : {}), ...(recipient ? { to: recipient } : {}) });
     process.stdout.write(`Sent as ${sender}.\n`);
   }
 } else if (command === 'up') {
@@ -1327,7 +1329,7 @@ if (command === 'stop-own') {
         '-t',
         `=${session}:`,
         '-l',
-        `Mailbox message from ${entry.sender}: ${normalize(String(entry.message ?? ''))}`,
+        `Mailbox message from ${senderLabel(entry)}: ${normalize(String(entry.message ?? ''))}`,
       ]);
       sleep(ENTER_DELAY_MS);
       spawnSync('tmux', ['send-keys', '-t', `=${session}:`, 'Enter']);
