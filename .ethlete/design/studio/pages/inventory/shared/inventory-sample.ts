@@ -1,7 +1,7 @@
 import { html } from '@design-system';
 import { placeMarkers } from '../../../../../../apps/ethlete-studio/src/app/design-parts/inventory-page/marker-layout';
 
-export type Props = { inventory: 'open' | 'approvable' | 'approved' | 'loading' };
+export type Props = { inventory: 'open' | 'loading' };
 
 type Tone = 'ok' | 'error' | 'warning';
 
@@ -11,9 +11,7 @@ type Row = { number: string; name: string; detail: string; tone: Tone; box?: Box
 
 type Section = { title: string; rows: Row[] };
 
-type Approval = 'open' | 'approvable' | 'approved';
-
-export type InventoryPage = { part: string; approval: Approval; sections: Section[] };
+export type InventoryPage = { part: string; sections: Section[] };
 
 const SHOT = { width: 1440, height: 900 };
 
@@ -132,11 +130,10 @@ const SYSTEM: Section[] = [
 export const pagesOf = (inventory: Props['inventory']): InventoryPage[] => [
   {
     part: 'pages/flows',
-    approval: inventory === 'approved' ? 'approved' : inventory === 'approvable' ? 'approvable' : 'open',
     sections: inventory === 'open' ? FLOWS_OPEN : resolved(FLOWS_OPEN),
   },
-  { part: 'pages/inbox', approval: 'approved', sections: INBOX },
-  { part: 'pages/system', approval: 'approvable', sections: SYSTEM },
+  { part: 'pages/inbox', sections: INBOX },
+  { part: 'pages/system', sections: SYSTEM },
 ];
 
 const TONE: Record<Tone, string> = {
@@ -148,18 +145,10 @@ const TONE: Record<Tone, string> = {
 const openCount = (page: InventoryPage) =>
   page.sections.reduce((count, section) => count + section.rows.filter((row) => row.tone !== 'ok').length, 0);
 
-export const APPROVAL: Record<Approval, string> = {
-  open: 'Noch nicht freigegeben',
-  approvable: 'Noch nicht freigegeben',
-  approved: 'Vom Designer am 31.10.2026, 14:20:00 freigegeben',
-};
-
 const statusOf = (page: InventoryPage) => {
   const open = openCount(page);
 
-  if (open > 0) return `<span class="text-et-tone-fill"${TONE.error}>${open} offen</span>`;
-
-  return `<span class="text-et-surface-text-muted">${page.approval === 'approved' ? 'freigegeben' : 'bereit zur Freigabe'}</span>`;
+  return open > 0 ? `<span class="text-et-tone-fill"${TONE.error}>${open} offen</span>` : '';
 };
 
 const percent = (value: number, of: number) => `${(value / of) * 100}%`;

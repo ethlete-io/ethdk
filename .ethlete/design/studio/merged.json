@@ -163,10 +163,11 @@
     "at": "2026-11-26T09:54:44.245Z"
   },
   "pages/inventory": {
-    "hash": "bb84266858a56467",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-21T03:22:49.823Z"
+    "hash": "06cb3d35a2b604ae",
+    "variant": "a",
+    "decidedBy": "plan: plans/QUEUE.md B794",
+    "at": "2026-11-26T10:20:42.673Z",
+    "note": "merged without a pick: allowed by plans/QUEUE.md B794 - merged: B794: Das Inventar braucht keine Freigabe mehr."
   },
   "pages/sketches": {
     "hash": "620ec76df713592b",

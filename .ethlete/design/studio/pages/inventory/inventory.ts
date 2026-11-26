@@ -7,7 +7,6 @@ import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import {
-  APPROVAL,
   DRAWING,
   FRAME,
   type InventoryPage,
@@ -31,7 +30,7 @@ const worldOf = (pages: InventoryPage[]) =>
   </div>`;
 
 export default definePart<Props>({
-  note: 'The Inventory of every page of the product, opened from Inventory in the studio menu: a canvas with the rest frame of each page (pan by wheel and drag, zoom with the zoom chip), each frame headed by its page and how many entries are open, a numbered box on every control, asset and overlay. A page picked in the part tree is selected and its frame outlined; the column at the right shows that page with its approval state, Neu laden and Inventory freigeben, and its entries in three sections: Bedienelemente, Assets (A1, A2 …) and Overlays (O1 …), each row with its name and what it belongs to. An undeclared control, an inline asset or a mocked overlay is red, an unclassified control amber; Approve stays off while either is left.',
+  note: 'The Inventory of every page of the product, opened from Inventory in the studio menu: a canvas with the rest frame of each page (pan by wheel and drag, zoom with the zoom chip), each frame headed by its page and how many entries are open, a numbered box on every control, asset and overlay. A page picked in the part tree is selected and its frame outlined; the column at the right shows that page with Neu laden and its entries in three sections: Bedienelemente, Assets (A1, A2 …) and Overlays (O1 …), each row with its name and what it belongs to. An undeclared control, an inline asset or a mocked overlay is red, an unclassified control amber. The Inventory needs no approval.',
   madeBy: ['claude-opus-5-5', 'design check', 'claude-sonnet-5-5'],
   implements: {
     route: '/',
@@ -39,23 +38,15 @@ export default definePart<Props>({
   },
   states: {
     open: { inventory: 'open' },
-    approvable: { inventory: 'approvable' },
-    approved: { inventory: 'approved' },
     loading: { inventory: 'loading' },
   },
   describe: {
-    open: 'pages/flows selected with open entries; check its outlined frame with 3 offen, the numbered boxes on every frame and the three sections at the right with a red inline asset and a disabled Inventory freigeben.',
-    approvable:
-      'Every entry of pages/flows resolved but not yet approved; check bereit zur Freigabe on its frame, Noch nicht freigegeben at the right and that Inventory freigeben is enabled.',
-    approved:
-      'pages/flows approved; check freigegeben on its frame, the approval line with date and time at the right and that Inventory freigeben is disabled.',
-    loading:
-      'The inventory while it loads; check that Neu laden and Inventory freigeben are disabled and no frames or entries show.',
+    open: 'pages/flows selected with open entries; check its outlined frame with 3 offen, the numbered boxes on every frame and the three sections at the right with a red inline asset and no approve button.',
+    loading: 'The inventory while it loads; check that Neu laden is disabled and no frames or entries show.',
   },
   controls: {
     canvas: { kind: 'field', part: 'components/canvas-viewport' },
     reload: { kind: 'button', part: 'components/button' },
-    approve: { kind: 'button', part: 'components/button' },
   },
   render: async ({ inventory }) => {
     const loading = inventory === 'loading';
@@ -66,12 +57,6 @@ export default definePart<Props>({
       variant: 'outline',
       size: 'sm',
       disabled: loading,
-    });
-    const approve = await button.render({
-      label: INVENTORY_LABELS.approve,
-      variant: 'filled',
-      size: 'sm',
-      disabled: loading || selected?.approval !== 'approvable',
     });
     const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
     const tree = await partTree.render({
@@ -113,12 +98,6 @@ export default definePart<Props>({
               <h2 class="m-0 truncate text-ui-lg font-ui-strong">${loading ? '' : (selected?.part ?? '')}</h2>
             </div>
             ${control(withAction(reload.body, 'emit:reloadInventory'), 'reload')}
-            ${control(withAction(approve.body, 'emit:approveInventory'), 'approve')}
-            ${
-              loading || !selected
-                ? ''
-                : `<p class="m-0 w-full text-ui-sm text-et-surface-text-muted">${APPROVAL[selected.approval]}</p>`
-            }
           </header>
           ${
             loading || !selected
@@ -132,8 +111,7 @@ export default definePart<Props>({
     return drawing({
       body: shell.body,
       setup: menu.setup,
-      styles:
-        shell.styles + menu.styles + tree.styles + reload.styles + approve.styles + chip.styles + canvasViewportStyles,
+      styles: shell.styles + menu.styles + tree.styles + reload.styles + chip.styles + canvasViewportStyles,
     });
   },
 });
