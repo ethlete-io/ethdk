@@ -5,16 +5,17 @@ import {
   SAMPLE_POT_SIZES,
   samplePotTile,
 } from '../../../../../../apps/ethlete-studio/src/app/design-harness/sample-product';
+import { SKETCHES_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 import { type Row } from './sketch-rows';
 
 type Box = { x: number; y: number; width: number; height: number };
 
-type VariantReason = { variant: string; pixels: number; units: string };
+type VariantReason = { variant: string; text: string };
 
 export type ChangeGroup = { states: string[]; box: Box; areas: Box[]; reasons: VariantReason[] };
 
 export const SCREEN_WIDTH = 1440;
-export const SCREEN_HEIGHT = 900;
+const SCREEN_HEIGHT = 900;
 const MARGIN = 24;
 const CELL_WIDTH = 176;
 const CELL_HEIGHT = 45;
@@ -38,13 +39,13 @@ export const GROUPS: ChangeGroup[] = [
     ],
     box: { x: 842, y: 371, width: 575, height: 45 },
     areas: [842, 1041, 1240].map((x) => ({ x, y: 371, width: 176, height: 45 })),
-    reasons: [{ variant: 'Entwurf 1', pixels: 1358, units: '3 Stellen' }],
+    reasons: [{ variant: 'Entwurf 1', text: SKETCHES_LABELS.changedIn(3, null) }],
   },
   {
     states: ['port-after-merge'],
     box: { x: 300, y: 92, width: 420, height: 24 },
     areas: [{ x: 300, y: 92, width: 420, height: 24 }],
-    reasons: [{ variant: 'Entwurf 1', pixels: 2140, units: '1 Stelle' }],
+    reasons: [{ variant: 'Entwurf 1', text: SKETCHES_LABELS.changedAt('oben') }],
   },
 ];
 
@@ -75,16 +76,12 @@ export const cropOf = (box: Box): Box => {
 
 const magnifyOf = (crop: Box) => SCREEN_WIDTH / crop.width;
 
-const reasonOf = (reason: VariantReason) => `${reason.pixels} px in ${reason.units}`;
-
 export const reasonLinesOf = (group: ChangeGroup) => {
-  const texts = group.reasons.map(reasonOf);
+  const texts = group.reasons.map((reason) => reason.text);
   return new Set(texts).size <= 1
     ? texts.slice(0, 1)
-    : group.reasons.map((reason, index) => `${reason.variant}: ${texts[index]}`);
+    : group.reasons.map((reason) => `${reason.variant}: ${reason.text}`);
 };
-
-export const zoomTextOf = (crop: Box) => `${magnifyOf(crop).toFixed(1).replace('.', ',')}×`;
 
 const cellAt = (x: number, y: number, tile: string, round: boolean) =>
   html`<div

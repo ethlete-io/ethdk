@@ -58,7 +58,6 @@ import {
   type ChangeGroup,
   GROUPS,
   SCREEN_KEY,
-  SCREEN_HEIGHT,
   SCREEN_ROWS,
   SCREEN_WIDTH,
   UNCHANGED_COUNT,
@@ -67,7 +66,6 @@ import {
   markedScreen,
   reasonLinesOf,
   screenOf,
-  zoomTextOf,
 } from './shared/change-crop';
 import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 import { BUILD_READY_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
@@ -597,22 +595,6 @@ const screenHead = (row: Row, at: number, view: View) =>
     <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
   </section>`;
 
-const percent = (part: number, whole: number) => `${(part / whole) * 100}%`;
-
-const locator = (group: ChangeGroup) => {
-  const crop = cropOf(group.box);
-  return html`<span
-    class="relative block aspect-16/10 w-[calc(var(--sk-note)*9)] rounded-control-sm bg-et-surface-background shadow-[0_0_0_1px_var(--et-surface-border)]"
-    data-cc-locator
-  >
-    <span class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border)]"></span>
-    <span
-      class="absolute rounded-[2px] border-2 border-et-tone-fill"
-      style="left: ${percent(crop.x, SCREEN_WIDTH)}; top: ${percent(crop.y, SCREEN_HEIGHT)}; width: ${percent(crop.width, SCREEN_WIDTH)}; height: ${percent(crop.height, SCREEN_HEIGHT)}"
-    ></span>
-  </span>`;
-};
-
 const stackEdges = html`<div
     class="mx-8 h-5 rounded-b-control-md bg-et-surface-background shadow-[0_0_0_2px_var(--et-surface-border)]"
   ></div>
@@ -643,17 +625,12 @@ const screenGutter = (group: ChangeGroup, line: number, whole: boolean, buttons:
     data-sk-gutter
     style="grid-column: 1; grid-row: ${line} / span 2"
   >
-    <span class="font-code text-et-surface-text">${first}</span>
-    ${count > 1 ? html`<span class="text-et-surface-text">${count} Zustände, gleicher Ausschnitt</span>` : ''}
+    <span class="font-ui-medium text-et-surface-text">${first}</span>
     ${reasonLinesOf(group)
-      .map(
-        (line, index, lines) =>
-          html`<span class="text-et-surface-text-muted" data-cc-reason
-            >${line}${whole || index < lines.length - 1 ? '' : ` · ${zoomTextOf(cropOf(group.box))} vergrößert`}</span
-          >`,
-      )
+      .map((line) => html`<span class="text-et-surface-text" data-cc-reason>${line}</span>`)
       .join('')}
-    <span class="mt-space-1 flex items-end gap-space-2">${locator(group)}${whole ? cropButton : wholeButton}</span>
+    ${count > 1 ? html`<span class="text-et-surface-text-muted">${SKETCHES_LABELS.sameCrop(count)}</span>` : ''}
+    <span class="mt-space-1 flex">${whole ? cropButton : wholeButton}</span>
   </div>`;
 };
 

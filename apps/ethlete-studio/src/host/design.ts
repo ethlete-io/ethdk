@@ -603,6 +603,11 @@ export type SketchChange = {
   regions: number;
   /** One box per separate changed area. Missing from an `@ethlete/cli` older than this field. */
   areas?: { x: number; y: number; width: number; height: number }[];
+  /** Each area whose content moved to another area, both among `areas`. Missing while nothing moved, and from an `@ethlete/cli` older than this field. */
+  moves?: {
+    from: { x: number; y: number; width: number; height: number };
+    to: { x: number; y: number; width: number; height: number };
+  }[];
 };
 
 export type SketchTargetChanges = {

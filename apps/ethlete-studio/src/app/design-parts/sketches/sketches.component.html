@@ -100,37 +100,18 @@
                     class="flex flex-col justify-center gap-space-1 self-stretch pr-space-3 leading-[1.35]"
                     data-sk-gutter
                   >
-                    <span class="font-code">{{ state }}</span>
+                    <span class="font-ui-medium">{{ state }}</span>
+                    @for (reason of group?.reasons ?? []; track $index) {
+                      <span data-sk-crop-reason>{{ reasonTextOf(reason) }}</span>
+                    }
                     @if (group && group.states.length > 1) {
-                      <span data-sk-crop-count>{{ LABELS.sameCrop(group.states.length) }}</span>
+                      <span [class.text-et-surface-text-muted]="!headHidden()" data-sk-crop-count>{{
+                        LABELS.sameCrop(group.states.length)
+                      }}</span>
                     }
                     @if (group && !group.whole) {
                       @let whole = !croppedOf(state);
-                      @for (reason of group.reasons; track $index; let last = $last) {
-                        <span [class.text-et-surface-text-muted]="!headHidden()" data-sk-crop-reason
-                          >{{ reasonTextOf(reason)
-                          }}{{ whole || !last ? '' : LABELS.magnified(magnifyTextOf(group)) }}</span
-                        >
-                      }
-                      <span class="mt-space-1 flex items-end gap-space-2">
-                        @let locator = locatorOf(group);
-                        <span
-                          [style.width.px]="noteSize() * 9"
-                          [style.aspect-ratio]="locator.ratio"
-                          class="relative block rounded-control-sm bg-et-surface-background shadow-[0_0_0_1px_var(--et-surface-border)]"
-                          data-sk-crop-locator
-                        >
-                          <span
-                            class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border)]"
-                          ></span>
-                          <span
-                            [style.left]="locator.left"
-                            [style.top]="locator.top"
-                            [style.width]="locator.width"
-                            [style.height]="locator.height"
-                            class="absolute rounded-[2px] border-2 border-et-tone-fill"
-                          ></span>
-                        </span>
+                      <span class="mt-space-1 flex">
                         <button
                           (click)="toggleScreen(state)"
                           et-button

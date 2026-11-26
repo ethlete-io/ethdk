@@ -1,8 +1,12 @@
 import { Component, computed, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { SpinnerComponent } from '@ethlete/components';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
+import { moveArrowOf } from './move-arrow';
 
-export type VariantCellMark = { left: number; top: number; width: number; height: number };
+type MarkBox = { left: number; top: number; width: number; height: number };
+
+/** A changed area of the shot; with `from`, the new place of a part that moved there from `from`. */
+export type VariantCellMark = MarkBox & { from?: MarkBox };
 
 const FRAME_RING = 'shadow-[0_0_0_1px_var(--et-surface-border)]';
 
@@ -57,5 +61,12 @@ export class VariantCellComponent {
   protected note = computed(() => (this.inherited() ? this.LABELS.fromSdk : this.same() ? this.LABELS.unchanged : ''));
   protected frameWidth = computed(() => this.width() * this.scale());
   protected shownHeight = computed(() => this.shown() ?? this.height() ?? 0);
+  protected arrows = computed(() =>
+    this.marks().flatMap((mark) => {
+      const arrow = mark.from ? moveArrowOf(mark.from, mark) : null;
+
+      return arrow ? [arrow] : [];
+    }),
+  );
   protected frameClass = computed(() => (this.stacked().length > 0 ? `z-1 ${FRAME_RING}` : FRAME_RING));
 }

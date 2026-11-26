@@ -63,13 +63,14 @@ import { CANVAS_LABELS } from '../../i18n/canvas-labels';
 import { SYSTEM_TREE_LABELS } from '../../i18n/system-labels';
 import { SketchConfirmComponent, SketchConfirmText } from './sketch-confirm.component';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
-import { VariantCellComponent } from '../variant-cell/variant-cell.component';
+import { VariantCellComponent, VariantCellMark } from '../variant-cell/variant-cell.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { CommentTargetComponent } from '../comment-target/comment-target.component';
 import { CommentListComponent } from '../comment-flow/comment-list.component';
 import { CommentDraftComponent, CommentSendPhase } from '../system-page/comment-draft.component';
 import { DisclosureComponent } from '../disclosure/disclosure.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
+import { SketchChange } from '../../../host/design';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 import { OpenPointsChipComponent } from '../system-page/open-points-chip.component';
@@ -85,7 +86,7 @@ import {
   variantsLeaveMatrixOf,
 } from './matrix-blocks';
 import { gridColumnWidthOf, gridScaleOf, interactionGridOf, variantsStackedOf } from './interaction-grid';
-import { cropGroupsOf, magnifyTextOf, SketchCropGroup, SketchCropReason } from './sketch-crops';
+import { cropGroupsOf, SketchCropReason } from './sketch-crops';
 import {
   SKETCH_CURRENT,
   SKETCH_DRAWN,
@@ -954,7 +955,7 @@ export class SketchesComponent {
     return `scale(${group.magnify}) translate(${-group.crop.x * unit}px, ${-group.crop.y * unit}px)`;
   }
 
-  protected marksOf(row: SketchRow, item: SketchShot) {
+  protected marksOf(row: SketchRow, item: SketchShot): VariantCellMark[] {
     const { change } = item;
 
     if (!change || row.key === SKETCH_CURRENT) return [];
@@ -962,8 +963,7 @@ export class SketchesComponent {
     const width = item.width ?? row.width;
     const unit = width / change.width;
     const height = change.height * unit;
-
-    return (change.areas?.length ? change.areas : [change.box]).map((box) => {
+    const markOf = (box: SketchChange['box']) => {
       const left = Math.max(0, box.x * unit - 4);
       const top = Math.max(0, box.y * unit - 4);
 
@@ -973,31 +973,19 @@ export class SketchesComponent {
         width: Math.min(width, (box.x + box.width) * unit + 4) - left,
         height: Math.min(height, (box.y + box.height) * unit + 4) - top,
       };
-    });
-  }
-
-  protected locatorOf(group: SketchCropGroup) {
-    const percent = (part: number, whole: number) => `${(part / whole) * 100}%`;
-
-    return {
-      left: percent(group.crop.x, group.change.width),
-      top: percent(group.crop.y, group.change.height),
-      width: percent(group.crop.width, group.change.width),
-      height: percent(group.crop.height, group.change.height),
-      ratio: `${group.change.width} / ${group.change.height}`,
     };
+    const moves = change.moves ?? [];
+    const keyOf = (box: SketchChange['box']) => `${box.x} ${box.y} ${box.width} ${box.height}`;
+    const moved = new Set(moves.flatMap(({ from, to }) => [keyOf(from), keyOf(to)]));
+    const areas = (change.areas?.length ? change.areas : [change.box]).filter((box) => !moved.has(keyOf(box)));
+
+    return [...moves.map(({ from, to }) => ({ ...markOf(to), from: markOf(from) })), ...areas.map(markOf)];
   }
 
   protected reasonTextOf(reason: SketchCropReason) {
-    const text = this.LABELS.changeReason(reason.pixels, reason.regions);
-
-    const { variant } = reason;
+    const { variant, text } = reason;
 
     return variant ? this.LABELS.variantReason(variant.label ?? this.LABELS.variant(variant.key), text) : text;
-  }
-
-  protected magnifyTextOf(group: SketchCropGroup) {
-    return magnifyTextOf(group.magnify);
   }
 
   protected withdrawnMarkOf(reason: string) {

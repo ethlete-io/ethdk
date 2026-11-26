@@ -273,6 +273,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
   }),
   'elements/variant-cell': ({
     shot: _shot,
+    arrows: _arrows,
     look: _look,
     place: _place,
     sample: _sample,

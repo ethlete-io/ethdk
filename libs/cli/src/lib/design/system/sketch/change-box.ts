@@ -9,7 +9,13 @@ export type ChangeBox = {
   pixels: number;
   regions: number;
   areas: ChangedBox[];
+  /** Each changed area whose content shows up unchanged at another changed area: the same content in a new place. */
+  moves?: ChangeMove[];
 };
+
+export type ChangeMove = { from: ChangedBox; to: ChangedBox };
+
+type Picture = { width: number; height: number; data: Buffer };
 
 const REGION_CELL = 8;
 
@@ -52,6 +58,85 @@ const regionBoxesOf = (cells: Map<number, Bounds>, columns: number) => {
   }
 
   return boxes;
+};
+
+const MOVE_MATCH = 0.9;
+const MOVE_SIZE_SLACK = 0.25;
+
+const wordOf = (picture: Picture, { x, y }: { x: number; y: number }) =>
+  picture.data.readUInt32BE((y * picture.width + x) * 4);
+
+const busynessOf = (picture: Picture, box: ChangedBox) => {
+  let edges = 0;
+
+  for (let y = box.y; y < box.y + box.height; y++)
+    for (let x = box.x; x < box.x + box.width; x++) {
+      const word = wordOf(picture, { x, y });
+
+      if (x > 0 && pixelsDiffer(word, wordOf(picture, { x: x - 1, y }))) edges++;
+      if (y > 0 && pixelsDiffer(word, wordOf(picture, { x, y: y - 1 }))) edges++;
+    }
+
+  return edges;
+};
+
+const carriesOver = (
+  { from, to }: { from: Picture; to: Picture },
+  { box, offset }: { box: ChangedBox; offset: { x: number; y: number } },
+) => {
+  let changed = 0;
+  let matched = 0;
+
+  for (let y = box.y; y < box.y + box.height; y++)
+    for (let x = box.x; x < box.x + box.width; x++) {
+      const word = wordOf(from, { x, y });
+
+      if (!pixelsDiffer(word, wordOf(to, { x, y }))) continue;
+
+      changed++;
+      const tx = x + offset.x;
+      const ty = y + offset.y;
+
+      if (tx >= 0 && ty >= 0 && tx < to.width && ty < to.height && !pixelsDiffer(word, wordOf(to, { x: tx, y: ty })))
+        matched++;
+    }
+
+  return changed > 0 && matched / changed >= MOVE_MATCH;
+};
+
+const offsetsOf = (from: ChangedBox, to: ChangedBox) => [
+  { x: to.x - from.x, y: to.y - from.y },
+  { x: to.x + to.width - from.x - from.width, y: to.y + to.height - from.y - from.height },
+  { x: to.x - from.x, y: to.y + to.height - from.y - from.height },
+  { x: to.x + to.width - from.x - from.width, y: to.y - from.y },
+];
+
+const alikeInSize = (a: ChangedBox, b: ChangedBox) =>
+  Math.abs(a.width - b.width) <= Math.max(a.width, b.width) * MOVE_SIZE_SLACK &&
+  Math.abs(a.height - b.height) <= Math.max(a.height, b.height) * MOVE_SIZE_SLACK;
+
+const movesOf = ({ before, after }: { before: Picture; after: Picture }, areas: ChangedBox[]) => {
+  const moves: ChangeMove[] = [];
+  const taken = new Set<ChangedBox>();
+
+  for (const [index, one] of areas.entries())
+    for (const other of areas.slice(index + 1)) {
+      if (taken.has(one) || taken.has(other) || !alikeInSize(one, other)) continue;
+
+      const [from, to] = busynessOf(before, one) >= busynessOf(before, other) ? [one, other] : [other, one];
+      const moved = offsetsOf(from, to).some(
+        (offset) =>
+          carriesOver({ from: before, to: after }, { box: from, offset }) &&
+          carriesOver({ from: after, to: before }, { box: to, offset: { x: -offset.x, y: -offset.y } }),
+      );
+
+      if (!moved) continue;
+
+      moves.push({ from, to });
+      taken.add(one).add(other);
+    }
+
+  return moves;
 };
 
 /**
@@ -120,6 +205,8 @@ export const changeBoxOf = (before: Buffer, after: Buffer): ChangeBox | null => 
     if (pixels === 0) return null;
 
     const regions = regionBoxesOf(cells, columns);
+    const areas = changedAreasOf(regions);
+    const moves = movesOf({ before: left, after: right }, areas);
 
     return {
       width,
@@ -127,7 +214,8 @@ export const changeBoxOf = (before: Buffer, after: Buffer): ChangeBox | null => 
       box: { x: leftmost, y: top, width: rightmost - leftmost + 1, height: bottom - top + 1 },
       pixels,
       regions: regions.length,
-      areas: changedAreasOf(regions),
+      areas,
+      ...(moves.length > 0 ? { moves } : {}),
     };
   } catch {
     return null;

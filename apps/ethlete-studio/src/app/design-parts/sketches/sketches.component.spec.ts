@@ -1834,18 +1834,17 @@ describe('SketchesComponent', () => {
       },
     ];
 
-    // A change crop is labelled with a count of Stellen, not of cells.
-    it('shows states with the same change once, cropped and enlarged, with the count, the reason and a locator', async () => {
+    it('shows states with the same change once, cropped and enlarged, with the count and what changed where', async () => {
       const root: HTMLElement = (await render({ rows: cropRows, camera: '100' })).nativeElement;
       const gutters = [...root.querySelectorAll('[data-sk-gutter]')];
 
-      expect(gutters.map((gutter) => gutter.querySelector('.font-code')?.textContent)).toEqual(['open', 'moved']);
+      expect(gutters.map((gutter) => gutter.querySelector('.font-ui-medium')?.textContent)).toEqual(['open', 'moved']);
       expect(root.querySelectorAll('[data-sk-state="hover"]')).toHaveLength(0);
-      expect(textOf(gutters[0]?.querySelector('[data-sk-crop-count]'))).toBe(LABELS.sameCrop(2));
-      expect(textOf(gutters[0]?.querySelector('[data-sk-crop-reason]'))).toBe('1358 px in 3 Stellen · 4,6× vergrößert');
-      expect(gutters[1]?.querySelector('[data-sk-crop-reason]')).toBeNull();
+      expect(textOf(gutters[0]?.querySelector('[data-sk-crop-count]'))).toBe('Gleiche Änderung in 2 Zuständen');
+      expect(textOf(gutters[0]?.querySelector('[data-sk-crop-reason]'))).toBe('An 3 Stellen geändert, in der Mitte');
+      expect(textOf(gutters[1]?.querySelector('[data-sk-crop-reason]'))).toBe('Überall geändert');
       expect(gutters[1]?.querySelector('[data-sk-crop-count]')).toBeNull();
-      expect(gutters[1]?.querySelector('[data-sk-crop-locator]')).toBeNull();
+      expect(root.querySelector('[data-sk-gutter] .font-code')).toBeNull();
       expect(root.querySelectorAll('[data-sk-state="rest"]')).toHaveLength(0);
 
       const frame = root.querySelector<HTMLElement>('[data-sk-frame="x open"]');
@@ -1886,7 +1885,7 @@ describe('SketchesComponent', () => {
       expect(root.querySelector('[data-sk-matrix]')?.parentElement?.classList.contains('min-w-full')).toBe(true);
     });
 
-    it('names no pixels, magnification or screen toggle beside a crop that is the whole picture (tomflix colors)', async () => {
+    it('names a crop that is the whole picture once, in words, with no screen toggle (tomflix colors)', async () => {
       const picture = { width: 992, height: 1000, box: { x: 16, y: 16, width: 960, height: 968 }, regions: 1 };
       const variant = (key: string, pixels: number): SketchRow => ({
         key,
@@ -1908,8 +1907,7 @@ describe('SketchesComponent', () => {
       const root: HTMLElement = (await render({ rows, camera: '100' })).nativeElement;
       const gutter = root.querySelector('[data-sk-gutter]');
 
-      expect(textOf(gutter)).toBe('dark');
-      expect(gutter?.querySelector('[data-sk-crop-locator]')).toBeNull();
+      expect([...(gutter?.children ?? [])].map(textOf)).toEqual(['dark', 'Überall geändert']);
       expect(gutter?.querySelector('[data-sk-screen-toggle]')).toBeNull();
     });
 
@@ -2059,7 +2057,7 @@ describe('SketchesComponent', () => {
       expect(root.querySelector<HTMLElement>('[data-sk-frame="x open"]')?.style.height).toBe('1000px');
       expect(root.querySelector('[data-sk-state="open"] [data-sk-crop-mark]')).not.toBeNull();
       expect(root.querySelector('[data-sk-frame="x moved"]')?.hasAttribute('data-sk-cropped')).toBe(true);
-      expect(textOf(root.querySelectorAll('[data-sk-crop-reason]')[0])).toBe('1358 px in 3 Stellen');
+      expect(textOf(root.querySelectorAll('[data-sk-crop-reason]')[0])).toBe('An 3 Stellen geändert, in der Mitte');
 
       toggleOf('open')?.click();
       await fixture.whenStable();
@@ -2084,15 +2082,41 @@ describe('SketchesComponent', () => {
       const reasonsOf = (state: string) =>
         [
           ...([...root.querySelectorAll('[data-sk-gutter]')]
-            .find((gutter) => gutter.querySelector('.font-code')?.textContent === state)
+            .find((gutter) => gutter.querySelector('.font-ui-medium')?.textContent === state)
             ?.querySelectorAll('[data-sk-crop-reason]') ?? []),
         ].map(textOf);
 
       expect(reasonsOf('open')).toEqual([
-        `${LABELS.variant('x')}: 1358 px in 3 Stellen`,
-        'Entwurf 2: 420 px in 2 Stellen · 1,7× vergrößert',
+        `${LABELS.variant('x')}: An 3 Stellen geändert, in der Mitte`,
+        'Entwurf 2: An 2 Stellen geändert, oben links',
       ]);
-      expect(reasonsOf('hover')).toEqual(['1358 px in 3 Stellen · 4,6× vergrößert']);
+      expect(reasonsOf('hover')).toEqual(['An 3 Stellen geändert, in der Mitte']);
+    });
+
+    it('names a part that only moved as one move and marks its old and new place joined by an arrow (B804)', async () => {
+      const from = { x: 2400, y: 100, width: 300, height: 200 };
+      const to = { x: 600, y: 700, width: 300, height: 200 };
+      const moved = {
+        width: 3000,
+        height: 1000,
+        box: { x: 600, y: 100, width: 2100, height: 800 },
+        pixels: 90000,
+        regions: 2,
+        areas: [from, to],
+        moves: [{ from, to }],
+      };
+      const rows = cropRows.map((row) => ({
+        ...row,
+        shots: row.shots.map((shot) => (shot.state === 'open' ? { ...shot, change: moved } : shot)),
+      }));
+      const root: HTMLElement = (await render({ rows, camera: '100' })).nativeElement;
+      const cell = root.querySelector('[data-sk-variant="x"][data-sk-state="open"]');
+
+      expect(textOf(root.querySelector('[data-sk-crop-reason]'))).toBe('Verschoben nach unten links');
+      expect(cell?.querySelectorAll('[data-sk-crop-mark]')).toHaveLength(1);
+      expect(cell?.querySelector<HTMLElement>('[data-sk-crop-mark]')?.style.left).toBe('596px');
+      expect(cell?.querySelector<HTMLElement>('[data-sk-move-from]')?.style.left).toBe('2396px');
+      expect(cell?.querySelectorAll('[data-sk-move-arrow] line')).toHaveLength(1);
     });
 
     it('draws the crop groups named in wholeScreens whole and reports a toggle back', async () => {

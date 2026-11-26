@@ -77,13 +77,20 @@ export const SKETCHES_LABELS = {
   removed: 'entfällt',
   showAllStates: 'Alle Zustände zeigen',
   hideStates: 'Zustände einklappen',
-  wholeScreen: 'Ganzer Screen',
-  cropScreen: 'Ausschnitt',
-  sameCrop: (count: number) => `${count} Zustände, gleicher Ausschnitt`,
-  changeReason: (pixels: number, regions: number) =>
-    `${pixels} px in ${regions} ${regions === 1 ? 'Stelle' : 'Stellen'}`,
+  wholeScreen: 'Ganze Ansicht zeigen',
+  cropScreen: 'Nur die Änderung zeigen',
+  sameCrop: (count: number) => `Gleiche Änderung in ${count} Zuständen`,
+  middle: 'in der Mitte',
+  changedEverywhere: 'Überall geändert',
+  changedAt: (where: string) => `Geändert ${where}`,
+  changedIn: (count: number, where: string | null) =>
+    where ? `An ${count} Stellen geändert, ${where}` : `An ${count} Stellen geändert`,
+  movedTo: (direction: string) => `Verschoben nach ${direction}`,
+  movedCount: (count: number, direction: string | null) =>
+    direction ? `${count} Teile verschoben nach ${direction}` : `${count} Teile verschoben`,
+  alsoChanged: (moved: string, others: number) =>
+    `${moved}, dazu ${others === 1 ? '1 weitere Stelle' : `${others} weitere Stellen`} geändert`,
   variantReason: (variant: string, reason: string) => `${variant}: ${reason}`,
-  magnified: (factor: string) => ` · ${factor}× vergrößert`,
   drawingMark: 'zeichnet',
   subParts: 'Unterteile',
   notRebuild: (of: string, difference: string) => `nicht ${of}: ${difference}`,

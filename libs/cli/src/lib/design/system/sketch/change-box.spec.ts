@@ -41,6 +41,30 @@ describe('changeBoxOf', () => {
     });
   });
 
+  it('reads a block that only changes its place as one move from the old to the new place', () => {
+    const block = (x: number, y: number) => [
+      ...Array.from({ length: 12 }, (_, row) => strip(x, y + row, 20)).flat(),
+      ...strip(x + 4, y + 14, 6),
+    ];
+    const before = pictureOf(200, 100, block(130, 10));
+    const after = pictureOf(200, 100, block(20, 60));
+
+    expect(changeBoxOf(before, after)).toMatchObject({
+      areas: [
+        { x: 130, y: 10, width: 20, height: 15 },
+        { x: 20, y: 60, width: 20, height: 15 },
+      ],
+      moves: [{ from: { x: 130, y: 10, width: 20, height: 15 }, to: { x: 20, y: 60, width: 20, height: 15 } }],
+    });
+  });
+
+  it('reads two places that change to different content as no move', () => {
+    const before = pictureOf(200, 100, [...strip(130, 10, 20), ...strip(20, 60, 6)]);
+    const after = pictureOf(200, 100, [...strip(130, 12, 20), ...strip(20, 62, 20)]);
+
+    expect(changeBoxOf(before, after)?.moves).toBeUndefined();
+  });
+
   it('answers null for the same picture and for another size', () => {
     const before = pictureOf(40, 20);
 

@@ -57,6 +57,16 @@
           <ng-content />
         </div>
         @for (box of marks(); track $index) {
+          @if (box.from; as from) {
+            <span
+              [style.left.px]="from.left"
+              [style.top.px]="from.top"
+              [style.width.px]="from.width"
+              [style.height.px]="from.height"
+              class="pointer-events-none absolute rounded-control-sm border-2 border-dashed border-et-tone-fill opacity-70"
+              data-sk-move-from
+            ></span>
+          }
           <span
             [style.left.px]="box.left"
             [style.top.px]="box.top"
@@ -65,6 +75,27 @@
             class="pointer-events-none absolute rounded-control-sm border-2 border-et-tone-fill"
             data-sk-crop-mark
           ></span>
+        }
+        @if (arrows().length > 0) {
+          <svg
+            class="pointer-events-none absolute top-0 left-0 size-px overflow-visible"
+            aria-hidden="true"
+            data-et-drawing
+            data-sk-move-arrow
+          >
+            @for (arrow of arrows(); track $index) {
+              <line
+                [attr.x1]="arrow.x1"
+                [attr.y1]="arrow.y1"
+                [attr.x2]="arrow.x2"
+                [attr.y2]="arrow.y2"
+                class="stroke-et-tone-fill"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <polygon [attr.points]="arrow.head" class="fill-et-tone-fill" />
+            }
+          </svg>
         }
       </div>
     </div>
