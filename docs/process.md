@@ -14,6 +14,9 @@ How the doc session and the builder work. A process change edits this page.
 - `plans/QUEUE.md` holds every open row, at most 15. A row: ID, name, goal in one sentence, state, owner.
 - A finished row is deleted in the commit that finishes it. Git keeps the history.
 - A 16th row needs one row dropped or parked first. Parked rows are one line at the end of the file.
+- At most 2 rows are in progress. All four subagent slots go to them, in parallel slices; a third row starts only when neither has a slice that can move, and it is "Füllarbeit".
+- A row in progress runs until it is done and verified. Only red CI or a blocked consumer interrupts it.
+- Feedback on a row in progress stays in that row. Any other new row goes to the end of the queue.
 
 ## Proof
 
