@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -24,14 +24,24 @@ type RunOptions = {
   stopHookActive?: boolean;
   queue?: string;
   localConfig?: Record<string, unknown>;
+  consumerPlan?: boolean;
 };
 
 const runHook = (options: RunOptions) => {
-  const { transcript, stopHookActive = false, queue = QUEUE, localConfig } = options;
-  const root = mkdtempSync(join(tmpdir(), 'agent-rules-builder-idle-'));
+  const { transcript, stopHookActive = false, queue = QUEUE, localConfig, consumerPlan = false } = options;
+  const parent = mkdtempSync(join(tmpdir(), 'agent-rules-builder-idle-'));
+  const root = join(parent, 'repo');
 
-  mkdirSync(join(root, 'plans'));
+  mkdirSync(join(root, 'plans'), { recursive: true });
   writeFileSync(join(root, 'plans', 'QUEUE.md'), queue, 'utf8');
+
+  if (consumerPlan) {
+    mkdirSync(join(parent, 'specs', 'tracks', 'track'), { recursive: true });
+    copyFileSync(
+      resolve(__dirname, 'fixtures/builder-idle-check/plans/checkbox-plan.md'),
+      join(parent, 'specs', 'tracks', 'track', 'plan.md'),
+    );
+  }
 
   if (localConfig) {
     writeFileSync(join(root, 'ethlete-agents.config.local.json'), JSON.stringify(localConfig), 'utf8');
@@ -124,5 +134,47 @@ describe('builder-idle-check', () => {
       .join('\n');
 
     expect(runHook({ transcript: 'two-agents-running', queue })).toBeNull();
+  });
+
+  describe('in a consumer repo', () => {
+    const consumerConfig = {
+      builderIdle: {
+        queues: [{ path: '../specs/tracks/track/plan.md', format: 'checkbox' }],
+        waitPatterns: ['blockiert durch', 'wartet auf'],
+      },
+    };
+
+    it('blocks a coordinator session at 0 of 4 agents while a checkbox plan has open rows', () => {
+      const result = runHook({ transcript: 'coordinator-idle', consumerPlan: true, localConfig: consumerConfig });
+
+      expect(result?.decision).toBe('block');
+      expect(result?.reason).toContain('0 of 4');
+      expect(result?.reason).toContain('../specs/tracks/track/plan.md');
+      expect(result?.reason).toContain('9.7 (Restliste');
+      expect(result?.reason).not.toContain('7.13');
+      expect(result?.reason).not.toContain('7.14');
+      expect(result?.reason).not.toContain('8.1');
+      expect(result?.reason).toContain('"blockiert durch" or "wartet auf"');
+    });
+
+    it('does not count a coordinator without the role configured away', () => {
+      const localConfig = { builderIdle: { ...consumerConfig.builderIdle, roles: ['builder'] } };
+
+      expect(runHook({ transcript: 'coordinator-idle', consumerPlan: true, localConfig })).toBeNull();
+    });
+
+    it('treats a row as open when it holds no configured wait pattern', () => {
+      const localConfig = { builderIdle: { ...consumerConfig.builderIdle, waitPatterns: ['nichts'] } };
+      const result = runHook({ transcript: 'coordinator-idle', consumerPlan: true, localConfig });
+
+      expect(result?.reason).toContain('7.14');
+      expect(result?.reason).toContain('8.1');
+    });
+
+    it('stays silent while enough agents run', () => {
+      const localConfig = { ...consumerConfig, builderSlots: 1 };
+
+      expect(runHook({ transcript: 'subagent-running', consumerPlan: true, localConfig })).toBeNull();
+    });
   });
 });

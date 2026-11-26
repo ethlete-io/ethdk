@@ -129,7 +129,7 @@ const collectLocalConfigWarnings = (root: string) => {
 
   if (local.unknownKeys.length > 0) {
     warnings.push(
-      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports ${LOCAL_CONFIG_KEYS.map((key) => `"${key}"`).join(' and ')}; it never changes what sync writes.`,
+      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports ${LOCAL_CONFIG_KEYS.map((key) => `"${key}"`).join(', ')}; it never changes what sync writes.`,
     );
   }
 

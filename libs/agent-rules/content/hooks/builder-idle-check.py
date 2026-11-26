@@ -4,8 +4,8 @@
 A builder session (one that ran the `builder-agent` skill, or `/handoff resume
 builder-...`) must not end a turn with free slots. When a turn ends with fewer
 subagents and background commands running than the slot limit - a CI watcher or a
-dev server does not count - and `plans/QUEUE.md` has open rows owned by `Builder`
-without a wait reason, the stop is blocked and the reason names those rows, so
+dev server does not count - and the queue (`plans/QUEUE.md`, rows owned by `Builder`) has open
+rows without a wait reason, the stop is blocked and the reason names those rows, so
 the turn goes on. The slot limit is `builderSlots` in the local config (default 4).
 
 Running work comes from the transcript: every background Bash, Monitor and
@@ -13,15 +13,20 @@ async Agent start, minus every task-notification and every TaskStop for it. A
 notification that says the agent "is waiting on its own background work" does not end it: the
 agent has not handed back yet and notifies again when it does.
 
-A row waits when its `Stand` cell contains "wartet auf" or "Offen nur:"
-(case-insensitive). Rows owned by anyone else are skipped.
+A row waits when its `Stand` cell (a checkbox row: its whole line) contains one of the wait
+patterns, "wartet auf" or "Offen nur:" by default (case-insensitive). Table rows owned by anyone
+else are skipped. A session counts as a builder when it ran the `builder-agent` skill or
+`/handoff resume <role>-...` for a role in `roles` (default builder and coordinator).
 
 Fires at most once per idle stop chain: a stop that a Stop hook already
 continued (`stop_hook_active`) passes.
 
 Per-machine settings come from a gitignored ethlete-agents.config.local.json at
 the repo root: {"disableHooks": true} or {"disableHooks": ["builder-idle-check"]}
-disables the hook, {"builderSlots": 2} sets the slot limit.
+disables the hook, {"builderSlots": 2} sets the slot limit. {"builderIdle": {...}} adapts the
+queue for a consumer repo: "queues" is a list of {"path", "format"} (path relative to the repo
+root, "../" allowed; format "table" for a QUEUE.md table or "checkbox" for `- [ ]` lines),
+"waitPatterns" replaces the wait phrases, "roles" the session roles that count.
 
 Fail-safe: any error exits 0 with no output.
 """
@@ -34,15 +39,17 @@ from datetime import datetime
 
 HOOK_NAME = "builder-idle-check"
 LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
-QUEUE_FILE = os.path.join("plans", "QUEUE.md")
+DEFAULT_QUEUES = [{"path": os.path.join("plans", "QUEUE.md"), "format": "table"}]
 QUEUE_OWNER = "Builder"
 DEFAULT_SLOTS = 4
-WAIT_MARKERS = ("wartet auf", "offen nur:")
+DEFAULT_WAIT_PATTERNS = ("wartet auf", "Offen nur:")
+DEFAULT_ROLES = ("builder", "coordinator")
+CHECKBOX_ROW = re.compile(r"^\s*[-*]\s+\[ \]\s+(.*)$")
+ROW_ID = re.compile(r"^\*\*([^*]+)\*\*\s*(.*)$")
 
-BUILDER_LAUNCH = re.compile(
+BUILDER_SKILL_LAUNCH = re.compile(
     r"Base directory for this skill: \S*/skills/builder-agent\b"
     r"|<command-name>/builder-agent</command-name>"
-    r"|<command-args>\s*resume\s+builder\b"
 )
 OTHER_ROLE_LAUNCH = re.compile(
     r"Base directory for this skill: \S*/skills/doc-agent\b"
@@ -96,6 +103,34 @@ def slot_limit(config):
     return DEFAULT_SLOTS
 
 
+def builder_idle_config(config):
+    value = config.get("builderIdle")
+    return value if isinstance(value, dict) else {}
+
+
+def string_list(value, default):
+    if isinstance(value, list) and value and all(isinstance(item, str) and item for item in value):
+        return tuple(value)
+    return default
+
+
+def queue_sources(settings):
+    queues = settings.get("queues")
+    if not isinstance(queues, list):
+        return DEFAULT_QUEUES
+    sources = [
+        {"path": queue["path"], "format": "checkbox" if queue.get("format") == "checkbox" else "table"}
+        for queue in queues
+        if isinstance(queue, dict) and isinstance(queue.get("path"), str) and queue["path"]
+    ]
+    return sources or DEFAULT_QUEUES
+
+
+def role_launch(roles):
+    names = "|".join(re.escape(role) for role in roles)
+    return re.compile(BUILDER_SKILL_LAUNCH.pattern + rf"|<command-args>\s*resume\s+(?:{names})\b")
+
+
 def is_watcher(command):
     if WATCHER_COMMAND.search(command) or SERVER_COMMAND.search(command):
         return True
@@ -117,8 +152,8 @@ def texts_of(content):
     return []
 
 
-def read_transcript(path):
-    state = {"builder": False, "tool_uses": {}, "tasks": {}, "done": set(), "now": None}
+def read_transcript(path, launch):
+    state = {"launch": launch, "builder": False, "tool_uses": {}, "tasks": {}, "done": set(), "now": None}
     with open(path, encoding="utf-8") as f:
         for raw in f:
             if not any(hint in raw for hint in LINE_HINTS):
@@ -144,7 +179,7 @@ def read_transcript(path):
 
 def read_user_line(state, line, content):
     for text in texts_of(content):
-        if BUILDER_LAUNCH.search(text):
+        if state["launch"].search(text):
             state["builder"] = True
         elif OTHER_ROLE_LAUNCH.search(text):
             state["builder"] = False
@@ -171,7 +206,9 @@ def read_user_line(state, line, content):
                 "watcher": is_watcher(tool_input.get("command", "")),
                 "ends": started + timeout / 1000 if started and isinstance(timeout, (int, float)) else None,
             }
-        elif result.get("agentId") and (result.get("isAsync") or result.get("status") == "async_launched"):
+        elif result.get("agentId") and (
+            result.get("isAsync") or result.get("status") in ("async_launched", "running", "in_process")
+        ):
             state["tasks"][result["agentId"]] = {
                 "kind": "agent",
                 "tool_use_id": item.get("tool_use_id"),
@@ -208,12 +245,12 @@ def running_tasks(state):
     ]
 
 
-def waits(stand):
-    lowered = stand.lower()
-    return any(marker in lowered for marker in WAIT_MARKERS)
+def waits(text, patterns):
+    lowered = text.lower()
+    return any(pattern.lower() in lowered for pattern in patterns)
 
 
-def open_builder_rows(queue_text):
+def open_table_rows(queue_text, patterns):
     rows = []
     stand_index = None
     for raw in queue_text.splitlines():
@@ -225,19 +262,46 @@ def open_builder_rows(queue_text):
             continue
         if stand_index is None or len(cells) <= stand_index or not re.fullmatch(r"[A-Z]+\d+", cells[0]):
             continue
-        if cells[-1] == QUEUE_OWNER and not waits(cells[stand_index]):
+        if cells[-1] == QUEUE_OWNER and not waits(cells[stand_index], patterns):
             rows.append(f"{cells[0]} ({cells[1]})")
     return rows
 
 
-def reason_for(rows, watchers, working, slots):
+def open_checkbox_rows(queue_text, patterns):
+    rows = []
+    for raw in queue_text.splitlines():
+        match = CHECKBOX_ROW.match(raw)
+        if not match or waits(raw, patterns):
+            continue
+        text = match.group(1).strip()
+        titled = ROW_ID.match(text)
+        rows.append(f"{titled.group(1)} ({titled.group(2)[:60].strip()})" if titled else f"({text[:60].strip()})")
+    return rows
+
+
+def open_builder_rows(root, sources, patterns):
+    rows = []
+    for source in sources:
+        try:
+            with open(os.path.join(root, source["path"]), encoding="utf-8") as f:
+                text = f.read()
+        except OSError:
+            continue
+        read = open_checkbox_rows if source["format"] == "checkbox" else open_table_rows
+        rows.extend(read(text, patterns))
+    return rows
+
+
+def reason_for(rows, watchers, working, slots, sources, patterns):
     watching = f" (still watching: {', '.join(watchers)})" if watchers else ""
+    queues = ", ".join(source["path"] for source in sources)
+    waiting = " or ".join(f'"{pattern}"' for pattern in patterns)
     return (
         f"[{HOOK_NAME} hook] This turn ends with {working} of {slots} slots in use, not counting CI watchers and dev servers{watching}, "
-        f"while plans/QUEUE.md has open Builder rows without a wait reason: {', '.join(rows)}. "
+        f"while {queues} has open rows without a wait reason: {', '.join(rows)}. "
         "Do not leave slots idle: take the first of them now, or start a subagent on it. "
-        'A row waits when its Stand cell contains "wartet auf" or "Offen nur:"; if a row really waits, '
-        "write the reason into its Stand cell. This hook fires once per idle stop."
+        f"A row waits when it contains {waiting}; if a row really waits, "
+        "write the reason into the row. This hook fires once per idle stop."
     )
 
 
@@ -251,7 +315,9 @@ def main():
         config = read_local_config(root)
         if disabled_locally(config) or not isinstance(transcript_path, str):
             return
-        state = read_transcript(transcript_path)
+        settings = builder_idle_config(config)
+        roles = string_list(settings.get("roles"), DEFAULT_ROLES)
+        state = read_transcript(transcript_path, role_launch(roles))
         if not state["builder"]:
             return
         running = running_tasks(state)
@@ -259,12 +325,13 @@ def main():
         slots = slot_limit(config)
         if working >= slots:
             return
-        with open(os.path.join(root, QUEUE_FILE), encoding="utf-8") as f:
-            rows = open_builder_rows(f.read())
+        sources = queue_sources(settings)
+        patterns = string_list(settings.get("waitPatterns"), DEFAULT_WAIT_PATTERNS)
+        rows = open_builder_rows(root, sources, patterns)
         if not rows:
             return
         watchers = [task["label"] for task in running]
-        print(json.dumps({"decision": "block", "reason": reason_for(rows, watchers, working, slots)}))
+        print(json.dumps({"decision": "block", "reason": reason_for(rows, watchers, working, slots, sources, patterns)}))
     except Exception:
         return
 

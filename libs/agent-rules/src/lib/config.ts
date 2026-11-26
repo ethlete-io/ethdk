@@ -194,6 +194,13 @@ const unknownConfigKeyWarnings = (raw: RawConfig) => {
     : [];
 };
 
+/** Settings of the `builder-idle-check` hook for a repo whose queue is not `plans/QUEUE.md`. */
+export type BuilderIdleConfig = {
+  queues?: { path: string; format?: 'table' | 'checkbox' }[];
+  waitPatterns?: string[];
+  roles?: string[];
+};
+
 /**
  * The gitignored local config holds per-machine values, read at runtime — by the generated hook
  * scripts, and by the agent while following a skill — never by `sync`. Sync output must be
@@ -215,6 +222,8 @@ export type LocalConfig = {
   disableHooks?: boolean | string[];
   disableAutoHandoffSave?: boolean;
   awayMode?: AwayModeConfig;
+  builderSlots?: number;
+  builderIdle?: BuilderIdleConfig;
 };
 
 export type LocalConfigState =
@@ -222,7 +231,13 @@ export type LocalConfigState =
   | { exists: true; valid: false }
   | { exists: true; valid: true; config: LocalConfig; unknownKeys: string[]; movedKeys: string[] };
 
-export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'disableAutoHandoffSave', 'awayMode'];
+export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = [
+  'disableHooks',
+  'disableAutoHandoffSave',
+  'awayMode',
+  'builderSlots',
+  'builderIdle',
+];
 
 /**
  * Repo topology moved to `@ethlete/cli`'s `ethlete.config.local.json`, because `et` needs it too.

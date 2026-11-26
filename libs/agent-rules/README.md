@@ -520,6 +520,28 @@ that differs per developer, without touching any committed file:
 - **`builderSlots`** - the slot limit of the `builder-idle-check` hook (default 4): a builder
   stop is blocked while fewer subagents and background commands run than this and a free
   `Builder` row exists in `plans/QUEUE.md`. CI watchers and dev servers do not count.
+- **`builderIdle`** - adapts the `builder-idle-check` hook to a repo whose queue is not
+  `plans/QUEUE.md`. Every field is optional; without it the hook behaves as described above.
+  A coordinator session (`/handoff resume coordinator-...`) counts next to builder sessions, and
+  running in-process subagents count as running agents.
+
+  ```json
+  {
+    "builderIdle": {
+      "queues": [{ "path": "../specs/tracks/my-track/plan.md", "format": "checkbox" }],
+      "waitPatterns": ["blockiert durch", "wartet auf"],
+      "roles": ["builder", "coordinator"]
+    }
+  }
+  ```
+
+  - `queues` - one or more files, paths relative to the repo root (`../` is fine). `format` is
+    `"table"` (a `QUEUE.md` table with `ID`/`Stand` columns, only rows owned by `Builder`;
+    the default) or `"checkbox"` (every open `- [ ]` line; a leading `**id**` names the row).
+  - `waitPatterns` - phrases that mark a row as waiting, case-insensitive; replaces the default
+    `["wartet auf", "Offen nur:"]`. A checkbox row waits when its line holds one; a table row when
+    its `Stand` cell does.
+  - `roles` - session roles that count as a builder, default `["builder", "coordinator"]`.
 
 Everything in this file is read at runtime, never by `sync`: the generated files stay
 identical on every machine and in CI, which is what lets `check` diff them. That is also
