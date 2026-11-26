@@ -18,6 +18,7 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "tmp/cli-build",
+        "clean": false,
         "main": "libs/cli/src/index.ts",
         "tsConfig": "libs/cli/tsconfig.lib.json",
         "assets": [
