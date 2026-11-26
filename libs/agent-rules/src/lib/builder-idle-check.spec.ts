@@ -117,6 +117,15 @@ describe('builder-idle-check', () => {
     expect(result?.reason).toContain('2 of 4');
   });
 
+  it('counts agents from before a /clear that are unfinished in the session subagents dir', () => {
+    const result = runHook({ transcript: 'cleared-session' });
+
+    expect(result?.reason).toContain('3 of 4');
+    expect(result?.reason).toContain('B832 sample-aware matching');
+    expect(result?.reason).not.toContain('B700');
+    expect(runHook({ transcript: 'cleared-session', localConfig: { builderSlots: 3 } })).toBeNull();
+  });
+
   it('stays silent once the running agents fill the slot limit', () => {
     expect(runHook({ transcript: 'two-agents-running', localConfig: { builderSlots: 2 } })).toBeNull();
   });

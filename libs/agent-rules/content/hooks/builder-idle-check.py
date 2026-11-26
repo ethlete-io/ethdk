@@ -8,6 +8,9 @@ dev server does not count - and the queue (`plans/QUEUE.md`, rows owned by `Buil
 rows without a wait reason, the stop is blocked and the reason names those rows, so
 the turn goes on. The slot limit is `builderSlots` in the local config (default 4).
 
+Agents started before a `/clear` are read from the meta files in the session's `subagents/`
+directory (an unfinished meta whose launch is not in the transcript counts as running).
+
 Running work comes from the transcript: every background Bash, Monitor and
 async Agent start, minus every task-notification and every TaskStop for it. A
 notification that says the agent "is waiting on its own background work" does not end it: the
@@ -234,6 +237,34 @@ def read_assistant_line(state, content):
             state["done"].update(str(tool_input.get(key)) for key in ("task_id", "shell_id") if tool_input.get(key))
 
 
+def read_earlier_agents(state, transcript_path):
+    """Agents started before a /clear: their meta files sit in this session's subagents dir."""
+    directory = os.path.join(os.path.splitext(transcript_path)[0], "subagents")
+    try:
+        names = sorted(os.listdir(directory))
+    except OSError:
+        return
+    for name in names:
+        if not (name.startswith("agent-") and name.endswith(".meta.json")):
+            continue
+        agent_id = name[len("agent-") : -len(".meta.json")]
+        try:
+            with open(os.path.join(directory, name), encoding="utf-8") as f:
+                meta = json.load(f)
+        except (OSError, ValueError):
+            continue
+        tool_use_id = meta.get("toolUseId") if isinstance(meta, dict) else None
+        if not tool_use_id or meta.get("finished") or tool_use_id in state["tool_uses"] or agent_id in state["tasks"]:
+            continue
+        state["tasks"][agent_id] = {
+            "kind": "agent",
+            "tool_use_id": tool_use_id,
+            "label": meta.get("description", ""),
+            "watcher": False,
+            "ends": None,
+        }
+
+
 def running_tasks(state):
     now = state["now"]
     return [
@@ -320,6 +351,7 @@ def main():
         state = read_transcript(transcript_path, role_launch(roles))
         if not state["builder"]:
             return
+        read_earlier_agents(state, transcript_path)
         running = running_tasks(state)
         working = sum(1 for task in running if not task["watcher"])
         slots = slot_limit(config)
