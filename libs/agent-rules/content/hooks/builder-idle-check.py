@@ -21,6 +21,9 @@ patterns, "wartet auf" or "Offen nur:" by default (case-insensitive). Table rows
 else are skipped. A session counts as a builder when it ran the `builder-agent` skill or
 `/handoff resume <role>-...` for a role in `roles` (default builder and coordinator).
 
+A Codex run in a tmux session named `codex-<task>@<repo directory name>` counts as a running
+subagent too: a builder starts them outside the transcript.
+
 Fires at most once per idle stop chain: a stop that a Stop hook already
 continued (`stop_hook_active`) passes.
 
@@ -37,6 +40,7 @@ Fail-safe: any error exits 0 with no output.
 import json
 import os
 import re
+import subprocess
 import sys
 from datetime import datetime
 
@@ -276,6 +280,17 @@ def running_tasks(state):
     ]
 
 
+def codex_runs(root):
+    try:
+        names = subprocess.run(
+            ["tmux", "list-sessions", "-F", "#{session_name}"], capture_output=True, text=True, timeout=5
+        ).stdout.split()
+    except (OSError, subprocess.SubprocessError):
+        return []
+    suffix = "@" + os.path.basename(os.path.normpath(root))
+    return [name for name in names if name.startswith("codex-") and name.endswith(suffix)]
+
+
 def waits(text, patterns):
     lowered = text.lower()
     return any(pattern.lower() in lowered for pattern in patterns)
@@ -353,7 +368,8 @@ def main():
             return
         read_earlier_agents(state, transcript_path)
         running = running_tasks(state)
-        working = sum(1 for task in running if not task["watcher"])
+        codex = codex_runs(root)
+        working = sum(1 for task in running if not task["watcher"]) + len(codex)
         slots = slot_limit(config)
         if working >= slots:
             return
@@ -362,7 +378,7 @@ def main():
         rows = open_builder_rows(root, sources, patterns)
         if not rows:
             return
-        watchers = [task["label"] for task in running]
+        watchers = [task["label"] for task in running] + codex
         print(json.dumps({"decision": "block", "reason": reason_for(rows, watchers, working, slots, sources, patterns)}))
     except Exception:
         return

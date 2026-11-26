@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -25,10 +25,18 @@ type RunOptions = {
   queue?: string;
   localConfig?: Record<string, unknown>;
   consumerPlan?: boolean;
+  tmuxSessions?: string[];
 };
 
 const runHook = (options: RunOptions) => {
-  const { transcript, stopHookActive = false, queue = QUEUE, localConfig, consumerPlan = false } = options;
+  const {
+    transcript,
+    stopHookActive = false,
+    queue = QUEUE,
+    localConfig,
+    consumerPlan = false,
+    tmuxSessions = [],
+  } = options;
   const parent = mkdtempSync(join(tmpdir(), 'agent-rules-builder-idle-'));
   const root = join(parent, 'repo');
 
@@ -47,9 +55,18 @@ const runHook = (options: RunOptions) => {
     writeFileSync(join(root, 'ethlete-agents.config.local.json'), JSON.stringify(localConfig), 'utf8');
   }
 
+  const bin = join(parent, 'bin');
+  mkdirSync(bin);
+  writeFileSync(
+    join(bin, 'tmux'),
+    `#!/bin/sh\nprintf '%s\\n' ${tmuxSessions.map((name) => `'${name}'`).join(' ')}\n`,
+    'utf8',
+  );
+  chmodSync(join(bin, 'tmux'), 0o755);
+
   const output = execFileSync('python3', [hookPath, '--agent', 'claude'], {
     encoding: 'utf8',
-    env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    env: { ...process.env, CLAUDE_PROJECT_DIR: root, PATH: `${bin}:${process.env['PATH']}` },
     input: JSON.stringify({
       cwd: root,
       hook_event_name: 'Stop',
@@ -128,6 +145,21 @@ describe('builder-idle-check', () => {
 
   it('stays silent once the running agents fill the slot limit', () => {
     expect(runHook({ transcript: 'two-agents-running', localConfig: { builderSlots: 2 } })).toBeNull();
+  });
+
+  it('counts a Codex run in a tmux session of this repo as a running subagent', () => {
+    const tmuxSessions = ['codex-b1@repo', 'codex-b2@repo', 'codex-b9@other-repo', 'claude@repo'];
+
+    const reason = runHook({
+      transcript: 'two-agents-running',
+      tmuxSessions,
+      localConfig: { builderSlots: 5 },
+    })?.reason;
+
+    expect(reason).toContain('4 of 5');
+    expect(reason).toContain('codex-b1@repo');
+    expect(reason).not.toContain('other-repo');
+    expect(runHook({ transcript: 'two-agents-running', tmuxSessions })).toBeNull();
   });
 
   it('uses 4 slots without a config', () => {
