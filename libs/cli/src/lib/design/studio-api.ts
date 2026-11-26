@@ -295,22 +295,28 @@ const inheritedOf = ({ base, drawn }: { base: string[]; drawn: string[] }) => {
 };
 
 /** Maps `items` side by side, each started once the server could answer other requests, and stops once `signal` aborts. */
-const inTurns = <TItem, TResult>(
+const inTurns = async <TItem, TResult>(
   { items, signal }: { items: readonly TItem[]; signal?: AbortSignal | undefined },
   run: (item: TItem) => Promise<TResult>,
-) =>
-  Promise.all(
-    items.map(async (item) => {
-      await setImmediate();
+) => {
+  const started: Promise<TResult>[] = [];
+
+  for (const item of items) {
+    await setImmediate();
+    signal?.throwIfAborted();
+
+    const result = run(item).then((value) => {
       signal?.throwIfAborted();
 
-      const result = await run(item);
+      return value;
+    });
 
-      signal?.throwIfAborted();
+    result.catch(() => undefined);
+    started.push(result);
+  }
 
-      return result;
-    }),
-  );
+  return Promise.all(started);
+};
 
 /** Maps `items` one after another, each in its own turn of the event loop, and stops once `signal` aborts. */
 const oneTurnEach = async <TItem, TResult>(
