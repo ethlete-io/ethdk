@@ -33,6 +33,7 @@ How the doc session and the builder work. A process change edits this page.
 - Two failed repairs: revert to the last good state.
 - Red CI is first, before every other row.
 - At most 3 heavy jobs run on tank at once, across all repos: every design check of a whole project, build, e2e suite or full test run goes through `node /home/tom/dev/ethlete-sdk/tools/scripts/heavy.mjs run -- <cmd>` (the other repo calls it by that absolute path), with at most 2 local e2e workers. Light jobs take no slot: one design check of one part, one spec file, one e2e `--case`. Visual shards and every picture-comparing suite stay on tank (Linux-only baselines) and count against the 3 slots; only non-visual suites go to the rack. A long-running server (Storybook, `design serve`) never starts under a slot. One hold lasts at most 15 minutes: a longer suite runs in chunks. An agent stops every process it started before it hands back.
+- A subagent runs the design check with the CLI `design check --product <p> --part <part>`, never with the ethlete-design MCP tool.
 
 ## Git
 
