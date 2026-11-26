@@ -212,6 +212,8 @@ const migrateThemeFields = (
 
 const SURFACE_INTERACTION =
   /(?<![\w-])(--)?([a-z][\w]*(?:-[\w]+)*?-surface(?:-[\w]+)*?)-interaction((?:-hover|-focus|-active|-disabled)?)(?![\w-])/g;
+const SURFACE_INTERACTION_DECLARATION =
+  /(?<![\w[-])--([a-z][\w]*(?:-[\w]+)*?-surface(?:-[\w]+)*?)-interaction(\s*:\s*)([^;{}\n]*?)\s*(?:;|(?=\s*})|$)/g;
 const FILL_UTILITY = /^(?:bg|from|via|to)-/;
 const LINE_UTILITY = /^(?:(?:inset-)?(?:ring|shadow)|border(?:-[xytrblse])?|outline|divide(?:-[xy])?|fill|stroke)-/;
 const RETIRED_SURFACE_READER = /(?<![\w-])[\w-]*-surface(?:-[\w]+)*?-(?:on-interaction|interaction-ink)(?![\w])/;
@@ -245,19 +247,28 @@ const migrateReaders = (content: string, findings: SurfaceRolesFinding[]) =>
         return line;
       }
 
-      return line.replace(
-        SURFACE_INTERACTION,
-        (match: string, dashes: string | undefined, base: string, state: string, offset: number) => {
-          if (dashes) {
-            return !state && insideColorMix(line, offset) ? `--${base}-tint` : `--${base}-control-text${state}`;
-          }
+      const wholeLine = line.match(/^(\s*)(--[^:]+:[^;{}]*;?)\s*$/);
+      const separator = wholeLine ? `\n${wholeLine[1]}` : ' ';
 
-          const withOpacity = line[offset + match.length] === '/';
-          const tints = !state && (FILL_UTILITY.test(base) || (withOpacity && LINE_UTILITY.test(base)));
+      return line
+        .replace(
+          SURFACE_INTERACTION_DECLARATION,
+          (_match: string, base: string, colon: string, value: string) =>
+            `--${base}-tint${colon}${value};${separator}--${base}-control-text${colon}${value};`,
+        )
+        .replace(
+          SURFACE_INTERACTION,
+          (match: string, dashes: string | undefined, base: string, state: string, offset: number) => {
+            if (dashes) {
+              return !state && insideColorMix(line, offset) ? `--${base}-tint` : `--${base}-control-text${state}`;
+            }
 
-          return tints ? `${base}-tint` : `${base}-control-text${state}`;
-        },
-      );
+            const withOpacity = line[offset + match.length] === '/';
+            const tints = !state && (FILL_UTILITY.test(base) || (withOpacity && LINE_UTILITY.test(base)));
+
+            return tints ? `${base}-tint` : `${base}-control-text${state}`;
+          },
+        );
     })
     .join('\n');
 
