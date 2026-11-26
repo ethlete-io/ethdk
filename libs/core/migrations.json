@@ -91,6 +91,16 @@
       "generator": "@ethlete/core:migrate-surface-roles",
       "requires": ["ts-morph"],
       "docs": "/core/theming"
+    },
+    {
+      "name": "remove-surface-interactive",
+      "version": "5.0.0-next.80",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove etSurfaceInteractive, its marker class and its SurfaceInteractiveDirective imports.",
+      "generator": "@ethlete/core:migrate-remove-surface-interactive",
+      "requires": ["ts-morph"],
+      "docs": "/core/theming"
     }
   ]
 }

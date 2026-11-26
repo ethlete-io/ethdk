@@ -58,6 +58,11 @@
       "implementation": "./migrate-surface-roles/migration",
       "schema": "./migrate-surface-roles/schema.json",
       "description": "Split surface theme interactionColor into tint and controlText, drop onColor and inkColor, and rename the surface interaction token readers"
+    },
+    "migrate-remove-surface-interactive": {
+      "implementation": "./migrate-remove-surface-interactive/migration",
+      "schema": "./migrate-remove-surface-interactive/schema.json",
+      "description": "Remove etSurfaceInteractive, its marker class and its directive imports"
     }
   }
 }
