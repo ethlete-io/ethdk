@@ -1159,7 +1159,11 @@
   },
   "pages/inbox": {
     "actions": [
+      "emit:close",
       "emit:collapse",
+      "emit:fit",
+      "emit:maximize",
+      "emit:minimize",
       "emit:pick",
       "emit:pinToggle",
       "emit:productChange",
@@ -1170,26 +1174,36 @@
       "emit:showResolvedChange",
       "emit:sideWidthChange",
       "emit:withdrawComment",
+      "emit:zoomIn",
+      "emit:zoomOut",
+      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "system-picker"
     ],
-    "at": "2026-11-26T04:31:40.184Z"
+    "at": "2026-11-26T10:47:24.475Z"
   },
   "pages/inventory": {
     "actions": [
       "emit:activate",
+      "emit:close",
       "emit:collapse",
       "emit:expandedChange",
+      "emit:fit",
+      "emit:maximize",
+      "emit:minimize",
       "emit:productChange",
       "emit:reloadInventory",
       "emit:sectionChange",
       "emit:sideWidthChange",
+      "emit:zoomIn",
+      "emit:zoomOut",
+      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "system-picker"
     ],
-    "at": "2026-11-26T09:46:43.949Z"
+    "at": "2026-11-26T10:40:09.369Z"
   },
   "pages/sketches": {
     "actions": [
@@ -1225,7 +1239,7 @@
   },
   "pages/start": {
     "actions": ["emit:copyPrompt", "emit:openRepo", "emit:otherRepo", "emit:projectChange"],
-    "at": "2026-11-23T11:38:19.438Z"
+    "at": "2026-11-26T12:04:11.522Z"
   },
   "pages/system": {
     "actions": [

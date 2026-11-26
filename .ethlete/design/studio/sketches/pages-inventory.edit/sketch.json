@@ -130,7 +130,20 @@
     }
   },
   "readyContent": {
-    "new": "1acf5056a11670e1",
-    "old": "6d140ffe1b97739c"
+    "new": "c3e9c0a99b8498f8",
+    "old": "3939f83ec2d60107"
+  },
+  "mergeHold": {
+    "reason": "variant new changes open, loading; variant old changes open, loading - a shot failed: design-explore: the run was aborted, its client closed the connection",
+    "at": "2026-11-26T18:17:05.011Z"
+  },
+  "autoMergeForecast": {
+    "merges": false,
+    "reason": "variant new changes open, loading; variant old changes open, loading - a shot failed: design-explore: the run was aborted, its client closed the connection",
+    "contents": {
+      "new": "c3e9c0a99b8498f8",
+      "old": "3939f83ec2d60107"
+    },
+    "at": "2026-11-26T18:17:03.663Z"
   }
 }

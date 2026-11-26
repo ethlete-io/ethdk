@@ -100,12 +100,12 @@
     "pages/flows": "3addc7e5f20cb73d",
     "pages/inbox": "45b517e0cc2324df",
     "pages/inventory": "42b01b80f10cd7ab",
-    "pages/sketches": "5b38fed2179a7995",
+    "pages/sketches": "bebadbb0fce4a4c9",
     "pages/start": "ce59d97ea0c350e1",
     "pages/system": "acd71eaa6b910ad6",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "f0b32ccc3b6e91e6211a3b61b39a22cb6786e380",
+  "baselineTree": "a3434c16e00a000f2ff809c996624b8fd060596d",
   "editOldCommit": "dd007ec4067ce1de654ddf221add294af3ff99e8",
   "sharedBase": {
     "pages/flows/shared/flow-data.ts": "27752954e08fc52c"
@@ -130,16 +130,20 @@
     }
   },
   "readyContent": {
-    "new": "0a597a215c08610a",
-    "old": "af27c5e010ae5e96"
+    "new": "ad9fd6516ed166f2",
+    "old": "5e25a8e184d8307a"
   },
-  "portAfterMerge": {
-    "merged": ["pages/flows"],
-    "parts": ["pages/flows"],
-    "reasons": [
-      "new: SKETCH .ethlete/design/studio/sketches/pages-flows.edit/new/pages/flows/flows.ts: variant new draws ${chip} inline in pages/flows, whose name matches components/chip of sdk - embed @system/components/chip, or state the difference: design sketch sub-part pages/flows@edit pages/flows --variant new --not-rebuild-of sdk:chip \"<what it is that chip is not>\" --by <model id>",
-      "old: SKETCH .ethlete/design/studio/sketches/pages-flows.edit/old/pages/flows/flows.ts: variant old draws ${chip} inline in pages/flows, whose name matches components/chip of sdk - embed @system/components/chip, or state the difference: design sketch sub-part pages/flows@edit pages/flows --variant old --not-rebuild-of sdk:chip \"<what it is that chip is not>\" --by <model id>"
-    ],
-    "at": "2026-11-26T17:35:17.268Z"
+  "mergeHold": {
+    "reason": "variant new changes flow, new-note, orphaned, empty, comment-mode, comments, thread, comment-draft, comments-draft; variant old changes flow, new-note, orphaned, empty, comment-mode, comments, thread, comment-draft, comments-draft",
+    "at": "2026-11-26T17:51:20.652Z"
+  },
+  "autoMergeForecast": {
+    "merges": false,
+    "reason": "variant new changes flow, new-note, orphaned, empty, comment-mode, comments, thread, comment-draft, comments-draft; variant old changes flow, new-note, orphaned, empty, comment-mode, comments, thread, comment-draft, comments-draft",
+    "contents": {
+      "new": "ad9fd6516ed166f2",
+      "old": "5e25a8e184d8307a"
+    },
+    "at": "2026-11-26T17:39:46.552Z"
   }
 }

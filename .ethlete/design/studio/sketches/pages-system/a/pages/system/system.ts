@@ -11,11 +11,12 @@ import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import { manyStatesView, stepperGrid } from '@shared/many-states';
+import { FARN_PART, FARN_PRODUCT, FARN_TREE } from '@shared/farn-product';
 import { FOLDED_SAMPLE, foldedStatesPill } from '@shared/folded-states';
 import disclosureStyles from '@system/components/disclosure.css?inline';
 import { icon, type IconName } from '@system/foundations/icons';
 import {
-  buttonPoints,
+  partPoints,
   checkIcon,
   collapsed,
   groupsOf,
@@ -23,7 +24,7 @@ import {
   type PartOpenPoints,
   type PointGroup,
 } from '@shared/open-points';
-import { buttonExceptions, callView } from '@shared/capabilities';
+import { partExceptions, callView } from '@shared/capabilities';
 import {
   directEditBlocker,
   embeddedBlocker,
@@ -121,9 +122,9 @@ const PART_THREADS: PlacedThread[] = [
     author: 'human',
     initials: 'H',
     when: 'vor 1 Std',
-    part: 'button',
-    state: 'tonal · rest',
-    text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    part: FARN_PART,
+    state: 'add · rest',
+    text: 'In den Korb wirkt neben dem Zähler zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
     replies: 2,
   },
   {
@@ -132,9 +133,9 @@ const PART_THREADS: PlacedThread[] = [
     initials: 'C',
     agent: 'claude',
     when: 'vor 3 Min',
-    part: 'button',
-    state: 'filled · hover',
-    text: 'Hover ist jetzt eine Stufe heller. Reicht dir der Abstand zu active noch?',
+    part: FARN_PART,
+    state: 'minus · hover',
+    text: 'Hover ist jetzt eine Stufe dunkler. Reicht dir der Abstand zu active noch?',
     replies: 3,
     unread: true,
   },
@@ -149,7 +150,7 @@ const PART_MESSAGES: ThreadMessage[][] = [
       initials: 'H',
       own: true,
       when: 'vor 1 Std',
-      text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+      text: 'In den Korb wirkt neben dem Zähler zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
     },
   ],
   [
@@ -158,14 +159,14 @@ const PART_MESSAGES: ThreadMessage[][] = [
       initials: 'H',
       own: true,
       when: 'vor 2 Std',
-      text: 'Hover und active liegen zu nah beieinander. Mach hover heller.',
+      text: 'Hover und active liegen zu nah beieinander. Mach hover dunkler.',
     },
     {
       author: 'Claude',
       initials: 'C',
       agent: 'claude',
       when: 'vor 1 Std',
-      text: 'Ich mische accent mit 12 % Weiß. Passt das so?',
+      text: 'Ich mische accent mit 12 % Schwarz. Passt das so?',
     },
     { author: 'human', initials: 'H', own: true, when: 'vor 40 Min', text: 'Noch zu dunkel. Nimm lieber den Token.' },
     {
@@ -173,7 +174,7 @@ const PART_MESSAGES: ThreadMessage[][] = [
       initials: 'C',
       agent: 'claude',
       when: 'vor 3 Min',
-      text: 'Hover ist jetzt eine Stufe heller. Reicht dir der Abstand zu active noch?',
+      text: 'Hover ist jetzt eine Stufe dunkler. Reicht dir der Abstand zu active noch?',
     },
   ],
 ];
@@ -187,7 +188,7 @@ const DRAFT_AT = 'left-[38%] top-[42%]';
 
 type SendPhase = 'busy' | 'error' | 'rejected';
 
-const REFUSED = 'part components/button no longer exists';
+const REFUSED = 'part components/quantity-stepper no longer exists';
 
 const kindIcon = (name: IconName) => icon(name, { size: 14, cls: 'flex-none text-(--et-surface-text-muted)' });
 
@@ -210,7 +211,7 @@ const pointLines = ({ icon: name, lines }: PointGroup) => {
 const exceptionGroup = async () => {
   const approve = await button.render({ label: EXCEPTIONS_LABELS.approve, variant: 'outline', size: 'xs' });
   const open = await badgePart.render({ badges: [{ label: 'offen', variant: 'outline', size: 'sm' }] });
-  const rows = buttonExceptions
+  const rows = partExceptions
     .map(
       ({ rule, reason }) =>
         html`<li class="flex flex-col gap-space-1 px-space-3 py-space-2">
@@ -230,7 +231,7 @@ const exceptionGroup = async () => {
       <h3
         class="m-0 flex items-center gap-space-2 px-space-3 py-space-1 text-ui-xs font-ui-strong text-et-surface-text-muted"
       >
-        ${EXCEPTIONS_LABELS.toggle}<span class="font-code font-normal">${buttonExceptions.length}</span>
+        ${EXCEPTIONS_LABELS.toggle}<span class="font-code font-normal">${partExceptions.length}</span>
       </h3>
       <ul class="m-0 list-none p-0 divide-y divide-(--et-surface-border)">
         ${rows}
@@ -297,34 +298,6 @@ const fitAll = (root: HTMLElement) => {
 
   strip.style.transformOrigin = '0 0';
   strip.style.transform = transform;
-};
-
-const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
-
-const BUTTON_SENTENCES = {
-  filled:
-    'The filled button in every interaction; check that hover and active darken the fill and the pressed one stays dark.',
-  outline:
-    'The outlined button in every interaction; check that the border stays visible on hover and disabled fades it.',
-  tonal:
-    'The tonal button in every interaction; check that the tint deepens on hover and the label keeps its contrast.',
-};
-
-const buttonGrid = async () => {
-  const rows = await Promise.all(
-    (['filled', 'outline', 'tonal'] as const).map(async (variant) => ({
-      label: variant,
-      description: BUTTON_SENTENCES[variant],
-      cells: await Promise.all(
-        interactions.map(async (interaction) => {
-          const props = { label: 'Save', variant, pressed: interaction === 'pressed' };
-          const forced = interaction === 'rest' || interaction === 'pressed' ? {} : { interaction };
-          return (await button.render(props, forced)).body;
-        }),
-      ),
-    })),
-  );
-  return stateGrid({ columns: [...interactions], rows }, { cellWidth: '120px', place: 'center' });
 };
 
 const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-text-muted text-ui-sm">
@@ -449,7 +422,7 @@ export default definePart<{
     'call-transferred': { call: 'transferred' },
   },
   describe: {
-    part: 'The button part on the canvas with its state grid; check that each row shows its sentence under the state name.',
+    part: 'The quantity-stepper part on the canvas with its state grid; check that each row shows its target under the state name.',
     empty: 'A product without parts; check the short line in the panel and the centred card with the example prompt.',
     'listing-error':
       'A failed listing read; check the centred error card with the server reason and Erneut laden, and that no frames show.',
@@ -529,13 +502,13 @@ export default definePart<{
     developer = false,
   }) => {
     if (call) {
-      const tree = await partTree.render(partTree.states['components-open']);
+      const tree = await partTree.render(FARN_TREE);
       const view = await callView(call === 'transferred');
       const menu = await studioMenu({ open: false });
       const shell = await shellMain.render({
         studio: menu.body,
         section: 'System',
-        product: 'studio',
+        product: FARN_PRODUCT,
         side: tree.body,
         content: view.body,
       });
@@ -557,7 +530,7 @@ export default definePart<{
       const shell = await shellMain.render({
         studio: menu.body,
         section: 'System',
-        product: 'studio',
+        product: FARN_PRODUCT,
         side: '',
         content: html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
           <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
@@ -579,7 +552,7 @@ export default definePart<{
       const shell = await shellMain.render({
         studio: menu.body,
         section: 'System',
-        product: 'studio',
+        product: FARN_PRODUCT,
         side: '',
         content: html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)" data-canvas-note>
           <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
@@ -599,7 +572,7 @@ export default definePart<{
       const shell = await shellMain.render({
         studio: menu.body,
         section: 'System',
-        product: 'studio',
+        product: FARN_PRODUCT,
         side: emptySide,
         content: emptyCanvasOf(copy.body),
       });
@@ -607,13 +580,13 @@ export default definePart<{
       return drawing({ body: shell.body, setup: menu.setup, styles: shell.styles + menu.styles + copy.styles });
     }
 
-    const tree = await partTree.render(partTree.states['components-open']);
+    const tree = await partTree.render(FARN_TREE);
     const shot = fit
       ? html`<div class="w-md h-45" ${slot('shot')}></div>`
-      : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
+      : html`<div ${slot('shot')}>${stateGrid(stepperGrid())}</div>`;
     const at = comments ? 'left-[calc(38%+var(--space-6))] top-[42%]' : DRAFT_AT;
     const writing = draft === undefined ? undefined : await commentDraftAt(at, { text: draft, phase: send, reason });
-    const target = commentLayer('button', 'comment-draft');
+    const target = commentLayer(FARN_PART, 'comment-draft');
     const selected = writing ? -1 : (thread ?? 0);
     const pins = comments ? commentPins(PART_THREADS, selected) + (writing ? draftPin(DRAFT_AT) : '') : '';
     const opened =
@@ -631,10 +604,10 @@ export default definePart<{
             ${shot}${pins}${commentMode ? target : ''}${writing?.body ?? ''}${opened?.body ?? ''}
           </div>`
         : shot;
-    const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full', true);
-    const points = clear ? nothingOpen : buttonPoints;
+    const frames = await canvasView([canvasFrame(FARN_PART, body)], '100%', {}, 'w-full', true);
+    const points = clear ? nothingOpen : partPoints;
     const acting = !fit && !clear;
-    const exceptionCount = clear ? 0 : buttonExceptions.length;
+    const exceptionCount = clear ? 0 : partExceptions.length;
     const toggle = chip(points, !closed, acting && !commentMode, exceptionCount);
     const comment = commentToggle(commentMode, acting ? (commentMode ? 'points-closed' : 'comment-mode') : undefined);
     const status: BuildReady =
@@ -661,7 +634,7 @@ export default definePart<{
     const shell = await shellMain.render({
       studio: menu.body,
       section: 'System',
-      product: 'studio',
+      product: FARN_PRODUCT,
       side: list ? withCommentList(tree.body, list.body) : tree.body,
       content: html`${frames}
         <div class="absolute top-space-3 right-space-3 flex gap-space-2">${hint?.body ?? ''}</div>

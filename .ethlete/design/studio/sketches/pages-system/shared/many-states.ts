@@ -2,6 +2,7 @@ import { drawing, html, slot } from '@design-system';
 import partTree from '@system/elements/part-tree';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import type { StateGridDrawing } from '@system/elements/canvas-frames';
+import { FARN_PRODUCT, FARN_TREE } from './farn-product';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import {
@@ -21,26 +22,8 @@ export const stepperGrid = (): StateGridDrawing => ({
   })),
 });
 
-const treeSelected = {
-  layers: [
-    { title: 'Foundations', open: false, parts: [] },
-    {
-      title: 'Components',
-      open: true,
-      parts: [
-        { name: 'button', leaf: true },
-        { name: 'form-field' },
-        { name: 'select', warns: true },
-        { name: 'quantity-stepper', selected: true, states: [{ name: 'grid' }, { name: 'stepper' }] },
-      ],
-    },
-    { title: 'Elements', open: false, parts: [] },
-    { title: 'Pages', open: false, parts: [] },
-  ],
-};
-
 export const manyStatesView = async (grid: StateGridDrawing) => {
-  const tree = await partTree.render(treeSelected);
+  const tree = await partTree.render(FARN_TREE);
   const canvas = await canvasView(
     [
       canvasFrame('grid', html`<div ${slot('shot')}>${stateGrid(grid)}</div>`),
@@ -59,7 +42,7 @@ export const manyStatesView = async (grid: StateGridDrawing) => {
   const shell = await shellMain.render({
     studio: menu.body,
     section: 'System',
-    product: 'studio',
+    product: FARN_PRODUCT,
     side: tree.body,
     content: canvas,
   });

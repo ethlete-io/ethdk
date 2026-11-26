@@ -1,6 +1,6 @@
 {
   "target": "pages/system",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-26T10:10:23.677Z",
   "createdBy": {
     "cmd": "design sketch new pages/system --variants a --round Runde 1 · Leiste unten mittig, offene Punkte als Icon-Knopf --note B786 (f)+(g): die Sketch-Leiste sitzt wie in der App unten mittig; Kommentar und offene Punkte sind Icon-Knöpfe, die offenen Punkte eine Sprechblase mit Zahl-Badge in der Akzentfarbe. --by claude-opus-5-5 --product studio",
@@ -96,22 +96,22 @@
     "elements/part-tree": "25dc8e0384f4c2b1",
     "elements/shell-main": "db1a3f8965164a96",
     "elements/studio-menu": "18d6cb580595f84e",
-    "elements/variant-cell": "65b248d5f3885704",
-    "pages/flows": "eb7c23113e4226b3",
-    "pages/inbox": "2cdc95a4a51639da",
-    "pages/inventory": "494c58b419ce5ede",
-    "pages/sketches": "f4996b7e80190dca",
-    "pages/start": "ceefd2f5ce8df0d1",
-    "pages/system": "cf49e47c731fd7a4",
+    "elements/variant-cell": "ac4cdc7232e390d6",
+    "pages/flows": "3addc7e5f20cb73d",
+    "pages/inbox": "45b517e0cc2324df",
+    "pages/inventory": "42b01b80f10cd7ab",
+    "pages/sketches": "5b38fed2179a7995",
+    "pages/start": "ce59d97ea0c350e1",
+    "pages/system": "acd71eaa6b910ad6",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "646e072bd13b52add4fd8d0d7686078dc6f4b74e",
+  "baselineTree": "f0b32ccc3b6e91e6211a3b61b39a22cb6786e380",
   "sharedBase": {
-    "pages/system/shared/build-ready.ts": "1d1dab4e9aee81eb",
-    "pages/system/shared/capabilities.ts": "d586e49c6fb9b0e0",
+    "pages/system/shared/build-ready.ts": "d42ae7af80ff269a",
+    "pages/system/shared/capabilities.ts": "3e29a3d3e61dd3ff",
     "pages/system/shared/folded-states.ts": "322c68ce66d167d6",
-    "pages/system/shared/many-states.ts": "40a80d72ce27d224",
-    "pages/system/shared/open-points.ts": "049244e166975261"
+    "pages/system/shared/many-states.ts": "ae4c2821ed8c17e3",
+    "pages/system/shared/open-points.ts": "d620381533d208b8"
   },
   "rounds": [
     {
@@ -126,18 +126,19 @@
       "round": "r1"
     }
   },
+  "readyContent": {
+    "a": "c4881882d101116f"
+  },
   "autoMergeForecast": {
     "merges": false,
     "reason": "variant a changes part, many-states-folded, fit, points-closed, nothing-open, comment-mode, comment-draft, comment-draft-typed, send-error, send-rejected, comments, comments-mode, comments-draft, thread, thread-own, one-blocker, checking, blocked-checking, direct-edit, direct-edit-closed, blockers-open, developer-part, developer-part-blocked",
     "contents": {
-      "a": "8fdfd7989b61f642"
+      "a": "c4881882d101116f"
     },
-    "at": "2026-11-26T11:04:07.417Z"
+    "at": "2026-11-26T17:38:26.589Z"
   },
-  "portAfterMerge": {
-    "merged": ["pages/system"],
-    "parts": ["pages/system"],
-    "reasons": ["a: pages/system/system.ts - the variant and the product both changed it"],
-    "at": "2026-11-26T17:35:19.065Z"
+  "mergeHold": {
+    "reason": "variant a changes part, many-states-folded, fit, points-closed, nothing-open, comment-mode, comment-draft, comment-draft-typed, send-error, send-rejected, comments, comments-mode, comments-draft, thread, thread-own, one-blocker, checking, blocked-checking, direct-edit, direct-edit-closed, blockers-open, developer-part, developer-part-blocked",
+    "at": "2026-11-26T17:46:02.418Z"
   }
 }

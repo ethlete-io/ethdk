@@ -1,6 +1,6 @@
 {
   "target": "pages/sketches@edit",
-  "status": "ready",
+  "status": "in progress",
   "createdAt": "2026-11-26T17:19:09.366Z",
   "createdBy": {
     "cmd": "design check --product studio --part pages/sketches",
@@ -134,8 +134,13 @@
       "note": "Zuletzt übernommen"
     }
   },
-  "readyContent": {
-    "new": "e25da7e9096acfd3",
-    "old": "713104b5d0b833ff"
+  "autoMergeForecast": {
+    "merges": false,
+    "reason": "variant new changes page-sketch, page-100, zoomed-page, drawing, paused, failed, new-part, narrow-part, sticky-names, comparing, comparing-narrow, no-sketches, list-error, compare-pending, compare-answered, neighbourhood, added-state, narrow-wide-state, panned-zoomed, merge-error, below-fit, far-out, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, unchanged-matrix, unchanged-matrix-open, withdrawn-hidden, withdrawn-shown, port-round, agent-failed, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole, many-states-wrap, farn-page, farn-page-narrow, multi-part, multi-part-many, comments, comments-mode, comments-draft, merge-confirm, discard-confirm, live; variant old changes page-sketch, page-100, zoomed-page, drawing, paused, failed, new-part, narrow-part, sticky-names, comparing, comparing-narrow, no-sketches, list-error, compare-pending, compare-answered, neighbourhood, added-state, narrow-wide-state, panned-zoomed, merge-error, below-fit, far-out, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, unchanged-matrix, unchanged-matrix-open, withdrawn-hidden, withdrawn-shown, port-round, agent-failed, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole, many-states-wrap, farn-page, farn-page-narrow, multi-part, multi-part-many, comments, comments-mode, comments-draft, merge-confirm, discard-confirm, live",
+    "contents": {
+      "new": "81d3f9ac1c488b39",
+      "old": "713104b5d0b833ff"
+    },
+    "at": "2026-11-26T18:04:29.926Z"
   }
 }

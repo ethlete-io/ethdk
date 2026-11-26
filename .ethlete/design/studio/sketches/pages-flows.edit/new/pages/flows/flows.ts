@@ -88,7 +88,7 @@ const placedAt = (point: { x: number; y: number }, scale: number, body: string) 
 
 const contentOf = (
   presetPicker: string,
-  chip: string,
+  zoom: string,
   add: string,
   notes: string,
   header: { comment: string; hint: string },
@@ -109,7 +109,7 @@ const contentOf = (
         ${control(header.comment, 'comment')}${control(add, 'note-add')}
       </div>
     </div>
-    ${chip}
+    ${zoom}
   </div>`;
 
 export default definePart<FlowProps>({
@@ -169,7 +169,7 @@ export default definePart<FlowProps>({
     const add = await addNoteButton();
     const remove = await noteDeleteButton();
     const field = await noteField('new');
-    const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
+    const zoom = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
     const list = await flatFlowList();
     const menu = await studioMenu({ open: false });
     const entries = orphans ? await orphanButtons() : [];
@@ -211,7 +211,7 @@ export default definePart<FlowProps>({
         flow === 'open'
           ? contentOf(
               picker.body,
-              chip.body,
+              zoom.body,
               add.body,
               drawnNotes,
               { comment: comment.body, hint: hint?.body ?? '' },
@@ -229,7 +229,7 @@ export default definePart<FlowProps>({
         list.styles +
         picker.styles +
         copy.styles +
-        chip.styles +
+        zoom.styles +
         add.styles +
         comment.styles +
         (written?.styles ?? '') +
