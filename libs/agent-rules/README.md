@@ -400,6 +400,11 @@ Hooks can be turned off per machine - see the local config below.
 package ships (`yarn agents:sync` writes the marketplace and `enabledPlugins` into
 `.claude/settings.json`). A mod runs code in every session of the repo, so none is on by default.
 
+- **`codex-runs`** - open the live tmux run list with `/codex-runs` and show a run's last captured lines with
+  `/codex-runs <name>`. `agent-sessions run <name> codex` records the launching Claude session ID.
+  For a direct tmux launch, pass `-e "ETHLETE_CODEX_OWNER=$CLAUDE_CODE_SESSION_ID"` to `tmux new-session`.
+  Runs without an owner appear in Claude sessions in the same checkout. The pane keeps observed runs and
+  their last captured output for an hour after they end.
 - **`e2e-progress`** - live Playwright run progress as a status line entry and a pane.
 - **`status-line`** - a band above the prompt, always visible: `▶ <running slice> · 42 min · 14 offen · ❓2`.
   The slice comes from the git `slice-paths` file (`kein Slice` once it is older than 2 h), the queue

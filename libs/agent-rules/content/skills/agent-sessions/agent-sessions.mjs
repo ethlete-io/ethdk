@@ -182,6 +182,8 @@ const foreignCheckoutsOf = (agent) => [
   ),
 ];
 const createRunSession = (session, shellCommand, baseCommand) => {
+  const owner = process.env.CLAUDE_CODE_SESSION_ID;
+  const ownerArgs = owner && basename(programOf(words) ?? '') === 'codex' ? ['-e', `ETHLETE_CODEX_OWNER=${owner}`] : [];
   const result = tmux(
     'new-session',
     '-d',
@@ -189,6 +191,7 @@ const createRunSession = (session, shellCommand, baseCommand) => {
     session,
     '-c',
     process.cwd(),
+    ...ownerArgs,
     ...withoutSshEnv(process.env.SHELL || 'sh', '-c', inAgentScopeCommand(shellCommand, session)),
   );
   if (result.status !== 0) {
