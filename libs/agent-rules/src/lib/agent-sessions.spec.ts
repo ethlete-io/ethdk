@@ -2299,3 +2299,110 @@ process.stdin.on('data', (data) => {
     expect(readFileSync(rc, 'utf8')).toBe('export A=1\n');
   });
 });
+
+describe('agent-sessions stop-own', () => {
+  const started: number[] = [];
+  let checkout: string;
+
+  const isRunning = (pid: number) => {
+    try {
+      process.kill(pid, 0);
+      return !readFileSync(`/proc/${pid}/stat`, 'utf8').includes(') Z');
+    } catch {
+      return false;
+    }
+  };
+
+  const deadPid = () => {
+    const child = spawnSync('true');
+    return child.pid ?? 0;
+  };
+
+  const sh = (script: string, env: Record<string, string>, cwd: string) => {
+    const childEnv = { ...process.env, ...env };
+    if (!env['CLAUDE_PID']) delete childEnv['CLAUDE_PID'];
+    const result = spawnSync('sh', ['-c', script], {
+      cwd,
+      env: childEnv,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const pids = result.stdout.trim().split(' ').filter(Boolean).map(Number);
+    started.push(...pids);
+    return pids;
+  };
+
+  const sleeper = (env: Record<string, string>, cwd: string) =>
+    sh('sleep 300 >/dev/null 2>&1 & echo $!', env, cwd)[0] ?? 0;
+
+  const standIn = (cwd: string) => {
+    const file = join(checkout, 'standin.pids');
+    const child = spawn('sh', ['-c', `CLAUDE_PID=$$ sleep 300 & echo $$ $! > ${file}; wait`], {
+      cwd,
+      env: Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'CLAUDE_PID')),
+      stdio: 'ignore',
+      detached: true,
+    });
+    child.unref();
+    spawnSync('sleep', ['0.3']);
+    const [claude = 0, attached = 0] = readFileSync(file, 'utf8').trim().split(' ').map(Number);
+    started.push(claude, attached);
+    return [claude, attached] as const;
+  };
+
+  const stopOwn = (callerPid: string, flags: string[] = []) =>
+    spawnSync('node', [SCRIPT, 'stop-own', ...flags], {
+      cwd: checkout,
+      env: { ...process.env, CLAUDE_PID: callerPid },
+      encoding: 'utf8',
+    });
+
+  const settle = () => spawnSync('sleep', ['0.3']);
+
+  beforeEach(() => {
+    checkout = realpathSync(mkdtempSync(join(tmpdir(), 'et-stop-own-')));
+  });
+
+  afterEach(() => {
+    started.splice(0).forEach((pid) => {
+      if (isRunning(pid)) process.kill(pid, 'SIGKILL');
+    });
+    rmSync(checkout, { recursive: true, force: true });
+  });
+
+  it('stops reparented processes of the caller and of a dead session, and leaves the rest', () => {
+    const [claude, attached] = standIn(checkout);
+    const live = sleeper({}, checkout);
+    const orphan = sleeper({ CLAUDE_PID: String(deadPid()) }, checkout);
+    const own = sleeper({ CLAUDE_PID: String(claude) }, checkout);
+    const unmarked = sleeper({}, checkout);
+    const otherSession = sleeper({ CLAUDE_PID: String(live) }, checkout);
+    const elsewhere = sleeper({ CLAUDE_PID: String(deadPid()) }, tmpdir());
+    settle();
+
+    const result = stopOwn(String(claude));
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain(`${orphan} orphan`);
+    expect(result.stdout).toContain(`${own} own`);
+    settle();
+    expect(isRunning(orphan)).toBe(false);
+    expect(isRunning(own)).toBe(false);
+    expect(isRunning(attached)).toBe(true);
+    expect(isRunning(claude)).toBe(true);
+    expect(isRunning(unmarked)).toBe(true);
+    expect(isRunning(otherSession)).toBe(true);
+    expect(isRunning(elsewhere)).toBe(true);
+    expect(isRunning(live)).toBe(true);
+  });
+
+  it('lists without signalling on --dry-run', () => {
+    const orphan = sleeper({ CLAUDE_PID: String(deadPid()) }, checkout);
+    settle();
+
+    const result = stopOwn(String(process.pid), ['--dry-run']);
+
+    expect(result.stdout).toContain(`${orphan} orphan`);
+    expect(isRunning(orphan)).toBe(true);
+  });
+});

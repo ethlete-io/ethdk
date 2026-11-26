@@ -92,3 +92,7 @@ If the prompt of the agent holds typed text, the dispatcher waits until that tex
 In this repo commit with `yarn commit -m "..." -- <paths>`: it adds untracked paths and waits for `.git/index.lock`. The hook lints staged files; typecheck and most specs run later.
 
 A claim is advisory, not a lock. `--force` claims over another agent: use it only after the holder agreed. Silence is not approval. Acknowledge each handoff in words. No agent starts automatically. The user starts each one.
+
+## Stop own processes
+
+`stop-own [--dry-run]` stops what a session leaves behind, with no raw `kill`: processes that carry the caller's `CLAUDE_PID` but are reparented (no longer below that Claude process), and orphans of a dead session whose cwd lies in this checkout or its scratch dir, each with its whole subtree. Background tasks still attached to a live Claude process always stay: stop those with TaskStop first. Subagents share their session's `CLAUDE_PID`, so a process below the live session is never touched. `--dry-run` lists without signalling; otherwise SIGTERM, up to 5 s, then SIGKILL. Linux only, same uid.

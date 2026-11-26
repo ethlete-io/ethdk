@@ -5,11 +5,12 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   rmSync,
   watchFile,
   writeFileSync,
 } from 'node:fs';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -95,6 +96,8 @@ Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>
                                                        a session with no role while another agent session runs in the repo;
                                                        refuses while a ❓ question of a claude session has no later human message
                                                        and the resumed handoff does not name it under "Open for the human")
+Stop:    node ${script} stop-own [--dry-run]
+                                                      (stop the processes of this Claude session and of dead sessions in this checkout)
 Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
 Dispatch: node ${script} dispatch                      (wake the session <agent>@<repo> for each message sent --to <agent>)
 
@@ -780,7 +783,108 @@ const activeClaims = () => {
   return claims.filter((claim) => Date.parse(claim.expires) > now);
 };
 
-if (command === 'send' && sender) {
+const STOP_GRACE_MS = 5000;
+const procText = (pid, file) => {
+  try {
+    return readFileSync(`/proc/${pid}/${file}`, 'utf8');
+  } catch {
+    return null;
+  }
+};
+const procEnv = (pid) => {
+  const text = procText(pid, 'environ');
+  return text === null
+    ? null
+    : Object.fromEntries(
+        text
+          .split('\0')
+          .filter(Boolean)
+          .map((entry) => entry.split(/=(.*)/s).slice(0, 2)),
+      );
+};
+const statFields = (pid) => {
+  const stat = procText(pid, 'stat');
+  return stat === null ? null : stat.slice(stat.lastIndexOf(')') + 2).split(' ');
+};
+const procStart = (pid) => Number(statFields(pid)?.[19] ?? NaN);
+const procParent = (pid) => Number(statFields(pid)?.[1] ?? 0);
+const procCwd = (pid) => {
+  try {
+    return readlinkSync(`/proc/${pid}/cwd`);
+  } catch {
+    return null;
+  }
+};
+const insideDir = (dir, parent) => dir === parent || dir.startsWith(`${parent}${sep}`);
+const SCRATCH_ROOT = join(homedir(), '.cache/ethlete-scratch');
+
+const ancestorsOf = (pid) => {
+  const chain = new Set();
+  for (let next = procParent(pid); next > 1 && !chain.has(next); next = procParent(next)) chain.add(next);
+  return chain;
+};
+
+const stopSelection = () => {
+  const callerSession = process.env.CLAUDE_PID;
+  const protectedPids = new Set([process.pid, ...ancestorsOf(process.pid)]);
+  const uid = String(process.getuid());
+  const pids = readdirSync('/proc')
+    .filter((entry) => /^\d+$/.test(entry))
+    .map(Number)
+    .filter((pid) => !protectedPids.has(pid));
+  const describe = (pid, reason) => ({
+    pid,
+    reason,
+    cwd: procCwd(pid) ?? '',
+    text: (procText(pid, 'cmdline') ?? '').split('\0').join(' ').trim().slice(0, 120),
+  });
+  const selected = new Map();
+  for (const pid of pids) {
+    if (procText(pid, 'status')?.match(/^Uid:\s+(\d+)/m)?.[1] !== uid || statFields(pid)?.[0] === 'Z') continue;
+    const owner = procEnv(pid)?.CLAUDE_PID;
+    const cwd = procCwd(pid);
+    if (!owner || cwd === null || ancestorsOf(pid).has(Number(owner))) continue;
+    if (owner === callerSession) {
+      selected.set(pid, describe(pid, 'own'));
+      continue;
+    }
+    const ownerStart = procStart(Number(owner));
+    const dead = Number.isNaN(ownerStart) || ownerStart > procStart(pid);
+    if (dead && (insideDir(cwd, root) || insideDir(cwd, SCRATCH_ROOT))) selected.set(pid, describe(pid, 'orphan'));
+  }
+  for (const pid of pids) {
+    const chain = ancestorsOf(pid);
+    const top = [...chain].find((ancestor) => selected.has(ancestor));
+    if (top !== undefined && !selected.has(pid) && procParent(pid) !== 0) {
+      selected.set(pid, describe(pid, selected.get(top).reason));
+    }
+  }
+  return [...selected.values()];
+};
+
+const stopOwn = async () => {
+  const selected = stopSelection();
+  selected.forEach((proc) => process.stdout.write(`${proc.pid} ${proc.reason} ${proc.cwd} ${proc.text}\n`));
+  if (!selected.length) process.stdout.write('No processes to stop.\n');
+  if (dryRun) return;
+  const signal = (name) =>
+    selected.forEach((proc) => {
+      try {
+        process.kill(proc.pid, name);
+      } catch {
+        return;
+      }
+    });
+  const running = () => selected.filter((proc) => (statFields(proc.pid)?.[0] ?? 'Z') !== 'Z');
+  signal('SIGTERM');
+  const deadline = Date.now() + STOP_GRACE_MS;
+  while (running().length && Date.now() < deadline) await new Promise((done) => setTimeout(done, 100));
+  running().forEach((proc) => process.kill(proc.pid, 'SIGKILL'));
+};
+
+if (command === 'stop-own') {
+  await stopOwn();
+} else if (command === 'send' && sender) {
   const message = words.length ? words.join(' ') : process.stdin.isTTY ? '' : readFileSync(0, 'utf8').trim();
   if (!message) {
     process.stderr.write('No message given.\n');
