@@ -102,8 +102,8 @@ default track is not the shape you want:
 ```
 
 The directive exposes `geometry()` (`thumbSize`, `thumbOffset`, `progress`, `canScroll`),
-`isVisible()`, `isDragging()` and `isRtl()` as signals, and writes
-`--_et-scrollbar-thumb-size` / `--_et-scrollbar-thumb-offset` on its host element, plus a
+`isVisible()`, `isDragging()` and `isRtl()` as signals, and writes the
+thumb size and offset as custom properties on its host element, plus a
 `data-orientation` attribute and the `et-scrollbar--visible` / `et-scrollbar--dragging` classes.
 
 The `et-scrollbar-host` rule that hides the native scrollbar ships with `<et-scrollbar>`. A headless

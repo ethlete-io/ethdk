@@ -2392,7 +2392,7 @@ production builds.
 The panel styles its own chrome from the [surface & color theming](/core/theming)
 tokens (`--et-surface-*`, `--et-tone-fill`) so it adapts to
 the host app's current surface, and falls back to a self-contained dark palette
-when no themes are registered. Override the panel's internal `--_et-qdt-*` custom
-properties on `.et-query-devtools-host` if you need to retune it. Its CSS lives in
+when no themes are registered. The panel's own custom properties are private; retune
+it through the surface and tone tokens it resolves from. Its CSS lives in
 the `components` cascade layer like every other component, so utility classes can
 override it without `!important`.
