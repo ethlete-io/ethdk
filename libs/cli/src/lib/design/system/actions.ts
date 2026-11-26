@@ -72,6 +72,7 @@ export type ActionElement = {
   probe: number;
   action: string | null;
   control: string | null;
+  owners?: readonly string[];
 };
 
 /**
@@ -162,6 +163,24 @@ export const embeddedOwnersScriptOf = (part: string) => `(() => {
       }
 
     owners[element.getAttribute('data-et-action-probe')] = chain;
+  }
+
+  return owners;
+})()`;
+
+export const appOwnersScriptOf = (selectors: [string, string][]) => `(() => {
+  const selectors = ${JSON.stringify(selectors)};
+  const owners = {};
+
+  for (const element of document.querySelectorAll('[data-et-action-probe]')) {
+    for (let at = element; at; at = at.parentElement) {
+      const parts = selectors.flatMap(([part, selector]) => at.matches(selector) ? [part] : []);
+
+      if (parts.length === 0) continue;
+
+      owners[element.getAttribute('data-et-action-probe')] = parts;
+      break;
+    }
   }
 
   return owners;
@@ -284,14 +303,16 @@ export const targetStateOf = (options: { state: string; input: ActionInput; stat
 
 const actionRoleOf = (element: ActionElement) => element.key.slice(0, element.key.indexOf(' "'));
 
-const labelWordsOf = (element: ActionElement) => {
+const labelOf = (element: ActionElement) => {
   const name = element.name ?? element.key;
 
-  return name
-    .slice(name.indexOf(' "') + 2, -1)
-    .split(/\s+/)
-    .filter((word) => word.length > 0);
+  return name.slice(name.indexOf(' "') + 2, -1);
 };
+
+const labelWordsOf = (element: ActionElement) => labelOf(element).split(/\s+/).filter(Boolean);
+
+export const isWholeSampleName = (element: ActionElement, samples: ReadonlySet<string>) =>
+  samples.has(labelOf(element));
 
 /**
  * Whether two names of one role differ only in one word each, around at least one shared word with a letter, and the
@@ -322,18 +343,55 @@ export const differsInSampleDataOf = (options: {
   );
 };
 
-/**
- * The app elements whose key no design element shares, each paired with a design element of its role that no app
- * element shares a key with: the first whose name differs only in sample data, else the one such element where the
- * role has exactly one on each side.
- */
+const unmatchedSlotsOf = <T extends ActionElement>(options: {
+  elements: T[];
+  anchors: ReadonlyMap<ActionElement, number>;
+  ownerParts?: ReadonlySet<string>;
+}) => {
+  const { elements, anchors, ownerParts } = options;
+  const slots = new Map<string, T[]>();
+  const nearest = new Map<string, number>();
+  const next = new Map<T, number>();
+
+  for (const element of [...elements].reverse()) {
+    const role = actionRoleOf(element);
+    const anchor = anchors.get(element);
+
+    if (anchor !== undefined) nearest.set(role, anchor);
+    else next.set(element, nearest.get(role) ?? -1);
+  }
+
+  nearest.clear();
+
+  for (const element of elements) {
+    const role = actionRoleOf(element);
+    const anchor = anchors.get(element);
+
+    if (anchor !== undefined) {
+      nearest.set(role, anchor);
+      continue;
+    }
+
+    const [owner, ...otherOwners] = element.owners ?? [];
+    const slot =
+      owner !== undefined && ownerParts?.has(owner)
+        ? JSON.stringify([role, owner, ...otherOwners.filter((part) => ownerParts.has(part))])
+        : JSON.stringify([role, nearest.get(role) ?? -1, next.get(element)]);
+
+    slots.set(slot, [...(slots.get(slot) ?? []), element]);
+  }
+
+  return slots;
+};
+
 const renamedPairsOf = <TDesign extends ActionElement>(options: {
   design: TDesign[];
   app: ActionElement[];
   samples: ReadonlySet<string>;
+  ownerParts?: ReadonlySet<string>;
 }) => {
   const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
-  const designs = new Set(options.design.map(idOf));
+  const designs = new Map(options.design.map((design) => [idOf(design), design]));
   const apps = new Set(options.app.map(idOf));
   const renamed = new Map<ActionElement, TDesign>();
   const sampled = new Set<TDesign>();
@@ -346,6 +404,40 @@ const renamedPairsOf = <TDesign extends ActionElement>(options: {
     );
 
     if (design) {
+      renamed.set(app, design);
+      sampled.add(design);
+    }
+  }
+
+  const appAnchors = new Map<ActionElement, number>();
+  const designAnchors = new Map<ActionElement, number>();
+
+  for (const app of options.app) {
+    const design = designs.get(idOf(app)) ?? renamed.get(app);
+
+    if (design) {
+      appAnchors.set(app, appAnchors.size);
+      designAnchors.set(design, appAnchors.size - 1);
+    }
+  }
+
+  const { ownerParts } = options;
+  const designSlots = unmatchedSlotsOf({ elements: options.design, anchors: designAnchors, ownerParts });
+
+  for (const [slot, [app, ...moreApps]] of unmatchedSlotsOf({
+    elements: options.app,
+    anchors: appAnchors,
+    ownerParts,
+  })) {
+    const [design, ...moreDesigns] = designSlots.get(slot) ?? [];
+
+    if (
+      app &&
+      design &&
+      moreApps.length === 0 &&
+      moreDesigns.length === 0 &&
+      isWholeSampleName(design, options.samples)
+    ) {
       renamed.set(app, design);
       sampled.add(design);
     }
@@ -364,7 +456,14 @@ const renamedPairsOf = <TDesign extends ActionElement>(options: {
   for (const [role, [app, ...moreApps]] of leftOf(options.app, (app) => designs.has(idOf(app)) || renamed.has(app))) {
     const [design, ...moreDesigns] = designLeft.get(role) ?? [];
 
-    if (app && design && moreApps.length === 0 && moreDesigns.length === 0) renamed.set(app, design);
+    if (
+      app &&
+      design &&
+      moreApps.length === 0 &&
+      moreDesigns.length === 0 &&
+      !isWholeSampleName(design, options.samples)
+    )
+      renamed.set(app, design);
   }
 
   return renamed;
@@ -416,7 +515,10 @@ export const accessibleNameDriftsOf = <TDesign extends ActionElement>(
   samples: ReadonlySet<string>,
 ) =>
   paired.flatMap(({ app, design }) =>
-    design !== null && design.key !== app.key && !differsInSampleDataOf({ design, app, samples })
+    design !== null &&
+    design.key !== app.key &&
+    !isWholeSampleName(design, samples) &&
+    !differsInSampleDataOf({ design, app, samples })
       ? [{ app, design }]
       : [],
   );
@@ -485,13 +587,14 @@ export const ownScopeOf = <TDesign extends ActionElement & { owners: readonly st
   app: ActionElement[];
   hosts: readonly string[];
   samples: ReadonlySet<string>;
+  ownerParts?: ReadonlySet<string>;
 }) => {
   const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
   const own = options.design.filter((element) => element.owners.length === 0);
   const embedded = new Set(options.design.filter((element) => element.owners.length > 0).map(idOf));
   const ownIds = new Set(own.map(idOf));
 
-  const renamed = renamedPairsOf({ design: options.design, app: options.app, samples: options.samples });
+  const renamed = renamedPairsOf(options);
 
   for (const [app, design] of renamed) if (design.owners.length > 0 && !ownIds.has(idOf(app))) embedded.add(idOf(app));
 

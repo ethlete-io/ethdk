@@ -2,6 +2,8 @@ export const FARN_PRODUCT = 'farn';
 
 export const FARN_PART = 'quantity-stepper';
 
+export const FARN_OPEN_POINTS_COUNT = 48;
+
 export const FARN_TREE = {
   layers: [
     { title: 'Foundations', open: false, parts: [] },

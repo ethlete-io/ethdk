@@ -108,6 +108,62 @@ const failuresOf = async (design: typeof scans.design, app: string[], fixtures: 
 };
 
 describe('checkActions with design sample data', () => {
+  it('pairs a declared whole sample name in its own slot between matched buttons', async () => {
+    const failures = await failuresOf(
+      [
+        { name: 'button "Studio menu"', action: null, owner: 'components/studio-menu' },
+        { name: 'button "farn"', action: null, owner: 'components/shell-system-picker' },
+        { name: 'button "48 offen"', action: 'opens:components/open-points' },
+        { name: 'button "Kommentar senden"', action: 'opens:components/comment-draft' },
+      ],
+      ['button "Studio menu"', 'button "studio"', 'button "49 offen"', 'button "Kommentar löschen"'],
+    );
+
+    expect(failures).toEqual([
+      'button "Kommentar löschen": ACCESSIBLE-NAME: the design names it button "Kommentar senden", the app names it button "Kommentar löschen"',
+    ]);
+  });
+
+  it('still fails a whole name the product does not declare', async () => {
+    const failures = await failuresOf(
+      [{ name: 'button "farn"', action: 'opens:components/system-picker' }],
+      ['button "studio"'],
+      fixturesOf('export const OTHER_PRODUCT = "another";'),
+    );
+
+    expect(failures).toEqual([
+      'button "studio": ACCESSIBLE-NAME: the design names it button "farn", the app names it button "studio"',
+    ]);
+  });
+
+  it('leaves a whole sample name unpaired when two app buttons share its slot', async () => {
+    const failures = await failuresOf(
+      [
+        { name: 'button "farn"', action: 'opens:components/system-picker' },
+        { name: 'button "Kommentar"', action: 'opens:components/comment-draft' },
+      ],
+      ['button "studio"', 'button "other"', 'button "Kommentar"'],
+    );
+
+    expect(failures).toContain(
+      'button "farn": the design declares opens:components/system-picker but the app draws no such element',
+    );
+  });
+
+  it('still fails a whole sample name moved across a matched button', async () => {
+    const failures = await failuresOf(
+      [
+        { name: 'button "farn"', action: 'opens:components/system-picker' },
+        { name: 'button "Kommentar"', action: 'opens:components/comment-draft' },
+      ],
+      ['button "Kommentar"', 'button "studio"'],
+    );
+
+    expect(failures).toContain(
+      'button "farn": the design declares opens:components/system-picker but the app draws no such element',
+    );
+  });
+
   it('pairs a name that differs in a sample value the product declares and fails one that differs in another word', async () => {
     const failures = await failuresOf(
       [

@@ -7,6 +7,7 @@ import anchoredDialog from '@system/components/anchored-dialog';
 import badgePart from '@system/components/badge';
 import button from '@system/components/button';
 import { canvasFrame, canvasFrameStyles, canvasView, fitTransform, stateGrid } from '@system/elements/canvas-frames';
+import { FARN_OPEN_POINTS_COUNT } from '@system/fixtures';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
@@ -74,8 +75,7 @@ const BUBBLE_ICON = svgAsset(commentsOpen, { size: 16, class: 'et-icon', attrs: 
 const TRAY =
   'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border)) bg-et-surface-background shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))';
 
-const chip = (open: PartOpenPoints, pressed: boolean, acting: boolean, exceptions: number) => {
-  const count = open.points.length + exceptions;
+const chip = (count: number, pressed: boolean, acting: boolean) => {
   const label = count ? SYSTEM_LABELS.openCount(count) : SYSTEM_LABELS.nothingOpen;
   const trigger = iconButton({
     icon: BUBBLE_ICON,
@@ -608,7 +608,8 @@ export default definePart<{
     const points = clear ? nothingOpen : partPoints;
     const acting = !fit && !clear;
     const exceptionCount = clear ? 0 : partExceptions.length;
-    const toggle = chip(points, !closed, acting && !commentMode, exceptionCount);
+    const openCount = clear ? 0 : FARN_OPEN_POINTS_COUNT;
+    const toggle = chip(openCount, !closed, acting && !commentMode);
     const comment = commentToggle(commentMode, acting ? (commentMode ? 'points-closed' : 'comment-mode') : undefined);
     const status: BuildReady =
       build === 'checking'
@@ -620,14 +621,11 @@ export default definePart<{
             : build === 'direct-edit'
               ? {
                   state: 'blocked',
-                  blockers: [
-                    directEditBlocker,
-                    ...manyBlockers(points.points.length + exceptionCount).filter(({ kind }) => kind !== 'compare'),
-                  ],
+                  blockers: [directEditBlocker, ...manyBlockers(openCount).filter(({ kind }) => kind !== 'compare')],
                 }
               : clear
                 ? { state: 'ready' }
-                : { state: 'blocked', blockers: manyBlockers(points.points.length + exceptionCount) };
+                : { state: 'blocked', blockers: manyBlockers(openCount) };
     const dialog = closed ? undefined : await popover(points, status, exceptionCount > 0, blockersOpen, developer);
     const list = comments ? commentList(PART_THREADS, selected) : undefined;
     const menu = await studioMenu({ open: false });

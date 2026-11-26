@@ -24,12 +24,14 @@ import {
   ActionInput,
   ActionOutcome,
   actionScanScriptOf,
+  appOwnersScriptOf,
   componentSelectorOf,
   drawsStateAlreadyOf,
   elementNameOf,
   embeddedOwnersScriptOf,
   enclosingControlsScriptOf,
   exemptFromDeclaringOf,
+  isWholeSampleName,
   nearMissesOf,
   ownScopeOf,
   embeddersOf,
@@ -546,6 +548,16 @@ export const checkActions = async (options: {
 
       const start: ActionStart = { state, props: open ? (open.props ?? states[open.from]) : states[state], opener };
       const startUrl = harnessUrlOf({ url, part, state, props: start.props, layout: frame.layout });
+      const sampleOwners = new Set(
+        design.flatMap((element) => {
+          const owner = element.owners[0];
+
+          return owner !== undefined && isWholeSampleName(element, samples) ? [owner] : [];
+        }),
+      );
+      const ownerSelectors: [string, string][] = (await Promise.all([...sampleOwners].map(embeddedOf))).flatMap(
+        ({ part, selector }) => (selector === null ? [] : [[part, selector]]),
+      );
       const app = await timedPhase('actions-app-scan', () =>
         queue.run(async (browser) => {
           const context = await browser.newContext({ viewport: viewportOf(frame.size) });
@@ -564,14 +576,26 @@ export const checkActions = async (options: {
               await settle(page, DRAW_TIMEOUT_MS);
             }
 
-            return await scanOf(page, APP_ACTION_ROOTS);
+            const found = await scanOf(page, APP_ACTION_ROOTS);
+
+            if (ownerSelectors.length === 0) return found;
+
+            const owners = (await page.evaluate(appOwnersScriptOf(ownerSelectors))) as Record<string, string[]>;
+
+            return found.map((element) => ({ ...element, owners: owners[String(element.probe)] ?? [] }));
           } finally {
             await context.close();
           }
         }),
       );
       const hosts = product.config.harness?.hosts ?? [];
-      const scope = ownScopeOf({ design, app, hosts, samples });
+      const scope = ownScopeOf({
+        design,
+        app,
+        hosts,
+        samples,
+        ownerParts: new Set(ownerSelectors.map(([key]) => key)),
+      });
 
       const { paired, missing } = pairElementsOf({ design: scope.design, app: scope.app, samples });
 
