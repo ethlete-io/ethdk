@@ -1609,7 +1609,7 @@ const CASES = [
   {
     name: 'a heavy edit sketch shows drawn soon after its cells lay out, with zeichnet while it is held',
     listingMayPend: 'samples the view from the page load, before any listing answers',
-    perf: true,
+    ownShard: true,
     pages: ['System'],
     run: (page, _state, _target, { designPort }) =>
       withEditSketch(
