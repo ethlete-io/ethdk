@@ -12,11 +12,15 @@ const LAYOUT_KEYS = /* @__PURE__ */ Object.keys(BRACKET_DEFAULTS) as (keyof Brac
 
 /**
  * Resolves a partial config in the order the bracket documents: what you set, then the density preset,
- * then {@link BRACKET_DEFAULTS}. Use it to position your own UI around a bracket before the grid renders.
+ * then the layout defaults, then {@link BRACKET_DEFAULTS}. Use it to position your own UI around a bracket before the grid renders.
  */
-export const resolveBracketLayoutSettings = (config: BracketLayoutConfig): BracketLayoutSettings => {
+export const resolveBracketLayoutSettings = (
+  config: BracketLayoutConfig,
+  layoutDefaults: BracketLayoutConfig = {},
+): BracketLayoutSettings => {
   const settings: BracketLayoutSettings = {
     ...BRACKET_DEFAULTS,
+    ...layoutDefaults,
     ...BRACKET_DENSITY_PRESETS[config.density ?? BRACKET_DEFAULTS.density],
   };
 
@@ -57,7 +61,7 @@ export const createBracketGridConfig = (
   finalRoundHeaderGap: settings.hideRoundHeaders ? null : settings.finalRoundHeaderGap,
   thirdPlaceTopOffset: settings.thirdPlaceTopOffset,
   swissGroupPadding: settings.swissGroupPadding,
-  swissGroupBorderWidth: settings.lineWidth,
+  swissGroupBorderWidth: settings.swissGroupBorderWidth,
   sectionTitleHeight: settings.showSectionTitles ? settings.sectionTitleHeight : 0,
   finalAlignment: settings.finalAlignment,
   continueElement:

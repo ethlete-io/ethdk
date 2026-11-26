@@ -17,8 +17,11 @@
     font-size: 10px;
     font-weight: 800;
     line-height: 1.2;
-    color: var(--et-bracket-swiss-neutral-color, var(--_et-bracket-swiss-round-header-tone));
-    letter-spacing: 0.14em;
+    color: var(
+      --et-bracket-swiss-group-border-color,
+      var(--et-bracket-swiss-neutral-color, var(--_et-bracket-swiss-round-header-tone))
+    );
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     white-space: nowrap;
   }
@@ -28,15 +31,24 @@
   }
 
   .et-bracket-swiss-round-header[data-swiss-tone='positive'] {
-    color: var(--et-bracket-swiss-positive-color, var(--_et-bracket-swiss-round-header-tone));
+    color: var(
+      --et-bracket-swiss-group-border-color,
+      var(--et-bracket-swiss-positive-color, var(--_et-bracket-swiss-round-header-tone))
+    );
   }
 
   .et-bracket-swiss-round-header[data-swiss-tone='warning'] {
-    color: var(--et-bracket-swiss-warning-color, var(--_et-bracket-swiss-round-header-tone));
+    color: var(
+      --et-bracket-swiss-group-border-color,
+      var(--et-bracket-swiss-warning-color, var(--_et-bracket-swiss-round-header-tone))
+    );
   }
 
   .et-bracket-swiss-round-header[data-swiss-tone='negative'] {
-    color: var(--et-bracket-swiss-negative-color, var(--_et-bracket-swiss-round-header-tone));
+    color: var(
+      --et-bracket-swiss-group-border-color,
+      var(--et-bracket-swiss-negative-color, var(--_et-bracket-swiss-round-header-tone))
+    );
   }
 
   .et-bracket-swiss-round-header-name,

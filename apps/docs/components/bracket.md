@@ -314,7 +314,7 @@ shipped default listed below. The resolved set is on the component as `settings(
 | `finalColumnWidth`        | `360`        | Width of the final column - sized for the shipped final card.                                                              |
 | `finalMatchHeight`        | `200`        | Height of the final match card - likewise.                                                                                 |
 | `roundHeaderHeight`       | `50`         | Height of the round-header row.                                                                                            |
-| `roundHeaderGap`          | `20`         | Gap between the header row and the first match.                                                                            |
+| `roundHeaderGap`          | `20`         | Gap between the header row and the first match (`12` with the swiss layout).                                               |
 | `thirdPlaceTopOffset`     | `null`       | Folds the third place into the final's column, this far below the top of the final's card.                                 |
 | `finalRoundHeaderGap`     | `null`       | Header-to-card gap for the final's column alone, where it is wider than `roundHeaderGap`.                                  |
 | `alignRoundHeaders`       | `'start'`    | `'start'` or `'center'` - where a round header sits over its column.                                                       |
@@ -329,6 +329,7 @@ shipped default listed below. The resolved set is on the component as `settings(
 | `focusedParticipantId`    | `null`       | Two-way. Pins a participant's journey - see [Participant focus](#participant-focus).                                       |
 | `swissGroupPadding`       | `10`         | Padding inside a swiss group border box.                                                                                   |
 | `swissGroupBorderRadius`  | `12`         | Corner radius of a swiss group border box.                                                                                 |
+| `swissGroupBorderWidth`   | `2`          | Stroke width of a swiss group border box (`1` with the swiss layout).                                                      |
 | `swissColors`             | -            | Per-group-type colors (see [Swiss](#swiss)).                                                                               |
 | `showContinueElement`     | `false`      | Append a "continue" column (see [Continue element](#continue-element)).                                                    |
 | `continueColumnWidth`     | `250`        | Width of the continue column.                                                                                              |
@@ -692,7 +693,7 @@ providers: [
 The cards sit between a host's inputs and the app-wide `provideBracketConfig` components: input →
 layout → config → shipped default. The `swissColors` **input** on `<et-bracket>` still exists and wins
 over the factory's `colors`, per instance. Group geometry (`swissGroupPadding`,
-`swissGroupBorderRadius`) stays where the rest of the layout geometry is - an input, or
+`swissGroupBorderRadius`, `swissGroupBorderWidth`) stays where the rest of the layout geometry is - an input, or
 `provideBracketConfig`.
 
 ### The swiss round header

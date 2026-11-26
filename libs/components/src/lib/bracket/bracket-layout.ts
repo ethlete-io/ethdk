@@ -1,6 +1,6 @@
 import { Type } from '@angular/core';
 import { BracketComponentOverrides } from './bracket-components';
-import { BracketConfig } from './bracket.config';
+import { BracketConfig, BracketLayoutConfig } from './bracket.config';
 import { BracketLayoutSettings } from './bracket-grid';
 import { BracketLabels } from './bracket-labels';
 import {
@@ -124,6 +124,9 @@ export type BracketLayout<TRoundData = any, TMatchData = any> = {
    * brackets with this layout need, kept out of every other consumer's document.
    */
   styles?: readonly Type<unknown>[];
+
+  /** Settings this layout defaults differently from the shipped defaults; the density preset and anything you set still win. */
+  defaults?: BracketLayoutConfig;
 };
 
 /**

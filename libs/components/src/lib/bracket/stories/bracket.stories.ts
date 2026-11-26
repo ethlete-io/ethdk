@@ -302,6 +302,5 @@ export const Swiss = {
   render: Template,
   args: {
     source: generateBracketDataForEthlete(ET_DUMMY_DATA_SWISS as unknown as RoundStageStructureWithMatchesView[]),
-    roundHeaderGap: 12,
   },
 };

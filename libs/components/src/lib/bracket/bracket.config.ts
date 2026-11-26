@@ -87,6 +87,7 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   disableJourneyHighlight?: boolean;
   swissGroupPadding?: number;
   swissGroupBorderRadius?: number;
+  swissGroupBorderWidth?: number;
   /**
    * The size everything is drawn at - `'default'`, or `'compact'` for a bracket in an article column or
    * a phone. A preset under everything else: any setting above still wins over it. See
@@ -190,6 +191,7 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   disableJourneyHighlight: false,
   swissGroupPadding: 10,
   swissGroupBorderRadius: 12,
+  swissGroupBorderWidth: 2,
   density: 'default',
   hideRoundHeaders: false,
   showSectionTitles: false,

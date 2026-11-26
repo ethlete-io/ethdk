@@ -297,3 +297,21 @@ test.describe('bracket / card layout', () => {
     await expect(regularCell.locator('.et-match-participant-emblem').first()).not.toHaveCSS('display', 'none');
   });
 });
+
+test.describe('bracket swiss / group border token', () => {
+  test('the host group border colour recolours the round header with the boxes', async ({ page }) => {
+    const root = await openStory(page, 'components-sports-bracket--swiss');
+
+    await root
+      .locator('et-bracket')
+      .first()
+      .evaluate((el) => el.style.setProperty('--et-bracket-swiss-group-border-color', 'rgb(255, 0, 0)'));
+
+    const header = root.locator('.et-bracket-swiss-round-header').first();
+    const box = root.locator('.et-bracket-swiss-group-border').first();
+
+    await expect(box).toBeAttached();
+    expect(await box.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+    expect(await header.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
+  });
+});

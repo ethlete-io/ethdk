@@ -146,6 +146,9 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public swissGroupBorderRadius = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
+  public swissGroupBorderWidth = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
+  });
 
   public swissColors = input<BracketSwissColors | undefined>(undefined);
 
@@ -248,53 +251,57 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   private journeyController = signal<JourneyHighlightController | null>(null);
 
+  private resolvedLayout = createBracketHostLayout(this.layouts, this.source, this.config);
+
   /**
    * Every layout value in effect: this component's inputs first, `provideBracketConfig` second, the
    * density preset third, the shipped defaults last. Read this rather than the inputs - an input alone
    * is only half the answer.
    */
   public settings = computed(() =>
-    resolveBracketLayoutSettings({
-      ...this.config,
-      density: this.density() ?? this.config.density,
-      columnWidth: this.columnWidth() ?? this.config.columnWidth,
-      matchHeight: this.matchHeight() ?? this.config.matchHeight,
-      finalMatchHeight: this.finalMatchHeight() ?? this.config.finalMatchHeight,
-      finalColumnWidth: this.finalColumnWidth() ?? this.config.finalColumnWidth,
-      roundHeaderHeight: this.roundHeaderHeight() ?? this.config.roundHeaderHeight,
-      roundHeaderGap: this.roundHeaderGap() ?? this.config.roundHeaderGap,
-      columnGap: this.columnGap() ?? this.config.columnGap,
-      rowGap: this.rowGap() ?? this.config.rowGap,
-      rowRoundGap: this.rowRoundGap() ?? this.config.rowRoundGap,
-      rowSpanRoundId: this.rowSpanRoundId() === undefined ? this.config.rowSpanRoundId : this.rowSpanRoundId(),
-      thirdPlaceTopOffset:
-        this.thirdPlaceTopOffset() === undefined ? this.config.thirdPlaceTopOffset : this.thirdPlaceTopOffset(),
-      finalRoundHeaderGap:
-        this.finalRoundHeaderGap() === undefined ? this.config.finalRoundHeaderGap : this.finalRoundHeaderGap(),
-      alignRoundHeaders: this.alignRoundHeaders() ?? this.config.alignRoundHeaders,
-      focusInset: this.focusInset() ?? this.config.focusInset,
-      lineStartingCurveAmount: this.lineStartingCurveAmount() ?? this.config.lineStartingCurveAmount,
-      lineEndingCurveAmount: this.lineEndingCurveAmount() ?? this.config.lineEndingCurveAmount,
-      lineTurnOffset: this.lineTurnOffset() === undefined ? this.config.lineTurnOffset : this.lineTurnOffset(),
-      lineWidth: this.lineWidth() ?? this.config.lineWidth,
-      lineDashArray: this.lineDashArray() ?? this.config.lineDashArray,
-      lineDashOffset: this.lineDashOffset() ?? this.config.lineDashOffset,
-      disableJourneyHighlight: this.disableJourneyHighlight() ?? this.config.disableJourneyHighlight,
-      swissGroupPadding: this.swissGroupPadding() ?? this.config.swissGroupPadding,
-      swissGroupBorderRadius: this.swissGroupBorderRadius() ?? this.config.swissGroupBorderRadius,
-      hideRoundHeaders: this.hideRoundHeaders() ?? this.config.hideRoundHeaders,
-      showSectionTitles: this.showSectionTitles() ?? this.config.showSectionTitles,
-      sectionTitleHeight: this.sectionTitleHeight() ?? this.config.sectionTitleHeight,
-      finalAlignment: this.finalAlignment() ?? this.config.finalAlignment,
-      showContinueElement: this.showContinueElement() ?? this.config.showContinueElement,
-      continueColumnWidth: this.continueColumnWidth() ?? this.config.continueColumnWidth,
-      continueElementHeight: this.continueElementHeight() ?? this.config.continueElementHeight,
-      continueLineDashArray: this.continueLineDashArray() ?? this.config.continueLineDashArray,
-      roundHeaderLevel: this.roundHeaderLevel(),
-    }),
+    resolveBracketLayoutSettings(
+      {
+        ...this.config,
+        density: this.density() ?? this.config.density,
+        columnWidth: this.columnWidth() ?? this.config.columnWidth,
+        matchHeight: this.matchHeight() ?? this.config.matchHeight,
+        finalMatchHeight: this.finalMatchHeight() ?? this.config.finalMatchHeight,
+        finalColumnWidth: this.finalColumnWidth() ?? this.config.finalColumnWidth,
+        roundHeaderHeight: this.roundHeaderHeight() ?? this.config.roundHeaderHeight,
+        roundHeaderGap: this.roundHeaderGap() ?? this.config.roundHeaderGap,
+        columnGap: this.columnGap() ?? this.config.columnGap,
+        rowGap: this.rowGap() ?? this.config.rowGap,
+        rowRoundGap: this.rowRoundGap() ?? this.config.rowRoundGap,
+        rowSpanRoundId: this.rowSpanRoundId() === undefined ? this.config.rowSpanRoundId : this.rowSpanRoundId(),
+        thirdPlaceTopOffset:
+          this.thirdPlaceTopOffset() === undefined ? this.config.thirdPlaceTopOffset : this.thirdPlaceTopOffset(),
+        finalRoundHeaderGap:
+          this.finalRoundHeaderGap() === undefined ? this.config.finalRoundHeaderGap : this.finalRoundHeaderGap(),
+        alignRoundHeaders: this.alignRoundHeaders() ?? this.config.alignRoundHeaders,
+        focusInset: this.focusInset() ?? this.config.focusInset,
+        lineStartingCurveAmount: this.lineStartingCurveAmount() ?? this.config.lineStartingCurveAmount,
+        lineEndingCurveAmount: this.lineEndingCurveAmount() ?? this.config.lineEndingCurveAmount,
+        lineTurnOffset: this.lineTurnOffset() === undefined ? this.config.lineTurnOffset : this.lineTurnOffset(),
+        lineWidth: this.lineWidth() ?? this.config.lineWidth,
+        lineDashArray: this.lineDashArray() ?? this.config.lineDashArray,
+        lineDashOffset: this.lineDashOffset() ?? this.config.lineDashOffset,
+        disableJourneyHighlight: this.disableJourneyHighlight() ?? this.config.disableJourneyHighlight,
+        swissGroupPadding: this.swissGroupPadding() ?? this.config.swissGroupPadding,
+        swissGroupBorderRadius: this.swissGroupBorderRadius() ?? this.config.swissGroupBorderRadius,
+        swissGroupBorderWidth: this.swissGroupBorderWidth() ?? this.config.swissGroupBorderWidth,
+        hideRoundHeaders: this.hideRoundHeaders() ?? this.config.hideRoundHeaders,
+        showSectionTitles: this.showSectionTitles() ?? this.config.showSectionTitles,
+        sectionTitleHeight: this.sectionTitleHeight() ?? this.config.sectionTitleHeight,
+        finalAlignment: this.finalAlignment() ?? this.config.finalAlignment,
+        showContinueElement: this.showContinueElement() ?? this.config.showContinueElement,
+        continueColumnWidth: this.continueColumnWidth() ?? this.config.continueColumnWidth,
+        continueElementHeight: this.continueElementHeight() ?? this.config.continueElementHeight,
+        continueLineDashArray: this.continueLineDashArray() ?? this.config.continueLineDashArray,
+        roundHeaderLevel: this.roundHeaderLevel(),
+      },
+      this.resolvedLayout().defaults,
+    ),
   );
-
-  private resolvedLayout = createBracketHostLayout(this.layouts, this.source, this.config);
 
   public bracketData = computed(() =>
     createBracket(this.source(), {

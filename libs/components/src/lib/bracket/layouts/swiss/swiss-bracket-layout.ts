@@ -67,11 +67,12 @@ export const swissBracketLayout = <TRoundData = any, TMatchData = any>(
       groupBorder: {
         padding: context.settings.swissGroupPadding,
         radius: context.settings.swissGroupBorderRadius,
-        width: context.settings.lineWidth,
+        width: context.settings.swissGroupBorderWidth,
       },
       colors: context.colors ?? options.colors,
       idPrefix: context.idPrefix,
     }),
+  defaults: { roundHeaderGap: 12, swissGroupBorderWidth: 1 },
   listGrouping: generateBracketRoundSwissGroupMaps,
   components: {
     match: options.matchComponent,
