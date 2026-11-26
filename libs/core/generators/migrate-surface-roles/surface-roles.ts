@@ -212,6 +212,8 @@ const migrateThemeFields = (
 
 const SURFACE_INTERACTION =
   /(?<![\w-])(--)?([a-z][\w]*(?:-[\w]+)*?-surface(?:-[\w]+)*?)-interaction((?:-hover|-focus|-active|-disabled)?)(?![\w-])/g;
+const FILL_UTILITY = /^(?:bg|from|via|to)-/;
+const LINE_UTILITY = /^(?:(?:inset-)?(?:ring|shadow)|border(?:-[xytrblse])?|outline|divide(?:-[xy])?|fill|stroke)-/;
 const RETIRED_SURFACE_READER = /(?<![\w-])[\w-]*-surface(?:-[\w]+)*?-(?:on-interaction|interaction-ink)(?![\w])/;
 
 const insideColorMix = (line: string, index: number) => {
@@ -245,10 +247,16 @@ const migrateReaders = (content: string, findings: SurfaceRolesFinding[]) =>
 
       return line.replace(
         SURFACE_INTERACTION,
-        (_, dashes: string | undefined, base: string, state: string, offset: number) =>
-          dashes && !state && insideColorMix(line, offset)
-            ? `--${base}-tint`
-            : `${dashes ?? ''}${base}-control-text${state}`,
+        (match: string, dashes: string | undefined, base: string, state: string, offset: number) => {
+          if (dashes) {
+            return !state && insideColorMix(line, offset) ? `--${base}-tint` : `--${base}-control-text${state}`;
+          }
+
+          const withOpacity = line[offset + match.length] === '/';
+          const tints = !state && (FILL_UTILITY.test(base) || (withOpacity && LINE_UTILITY.test(base)));
+
+          return tints ? `${base}-tint` : `${base}-control-text${state}`;
+        },
       );
     })
     .join('\n');

@@ -121,6 +121,32 @@ export const B: SurfaceTheme = { name: 'b', interactionColor: DARK_INTERACTION, 
       expect(result.content).toContain('text-et-surface-control-text hover:text-fut-surface-card-control-text-hover');
     });
 
+    it('renames a Tailwind fill utility to the tint', () => {
+      const ts = `const HOVER_PRESS = 'bg-transparent hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15';
+  'hover:bg-linear-to-b hover:from-et-surface-interaction/9 hover:via-et-surface-interaction/9 active:to-et-surface-interaction/15';
+class="rounded-md px-2 text-small hover:bg-et-surface-interaction"
+class="fill-et-surface-interaction/40 ring-et-surface-interaction/20 border-x-et-surface-interaction/10 shadow-fut-surface-card-interaction/30"`;
+      const result = migrateSurfaceRolesInFile('a.ts', ts);
+
+      expect(result.content).toContain("'bg-transparent hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15'");
+      expect(result.content).toContain(
+        "'hover:bg-linear-to-b hover:from-et-surface-tint/9 hover:via-et-surface-tint/9 active:to-et-surface-tint/15'",
+      );
+      expect(result.content).toContain('hover:bg-et-surface-tint"');
+      expect(result.content).toContain(
+        'fill-et-surface-tint/40 ring-et-surface-tint/20 border-x-et-surface-tint/10 shadow-fut-surface-card-tint/30',
+      );
+    });
+
+    it('keeps a solid line or a state utility on the control text', () => {
+      const html = `<div class="fill-et-surface-interaction border-et-surface-interaction outline-et-surface-interaction bg-et-surface-interaction-hover"></div>`;
+      const result = migrateSurfaceRolesInFile('a.html', html);
+
+      expect(result.content).toContain(
+        'fill-et-surface-control-text border-et-surface-control-text outline-et-surface-control-text bg-et-surface-control-text-hover',
+      );
+    });
+
     it('leaves on-interaction and interaction-ink readers for a hand fix', () => {
       const css = `.a {\n  color: var(--et-surface-on-interaction);\n  fill: var(--et-surface-interaction-ink-hover);\n}`;
       const result = migrateSurfaceRolesInFile('a.css', css);
