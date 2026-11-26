@@ -1,7 +1,11 @@
+import type { UserConfig } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { specWorkers } from '../../tools/vitest/workers.mjs';
 
 export default defineConfig({
+  // Vite's OxcOptions type omits `tsconfig`. Without `false` the transform follows content/mods/plugins/*/tsconfig.json
+  // to a `.claude-plugin/types` dir that only Claude Code generates, so CI cannot load it.
+  oxc: { tsconfig: false } as UserConfig['oxc'],
   test: {
     name: 'agent-rules',
     environment: 'node',
