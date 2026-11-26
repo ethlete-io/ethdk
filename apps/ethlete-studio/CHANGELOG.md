@@ -1,5 +1,13 @@
 # ethlete-studio
 
+## 0.2.0-next.38
+
+### Patch Changes
+
+- Fit and Shift+1 in the sketch view size the frames to the room above the floating toolbar, so no frame runs under it.
+- Sketch frames keep their bottom border at every zoom; the scaled shot no longer covers the frame ring.
+- The sketch view toolbar sits above the fold bar and no longer covers it; Fit and Shift+1 leave room for both.
+
 ## 0.2.0-next.37
 
 ### Minor Changes

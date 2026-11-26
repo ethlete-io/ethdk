@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 3.0.0-next.49
+
+### Patch Changes
+
+- `design check` no longer reports ACTION-FAILED when the design's sample data names differ from the app's data.
+
 ## 3.0.0-next.48
 
 ### Minor Changes
