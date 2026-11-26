@@ -16,7 +16,7 @@ export const appConfig: ApplicationConfig = {
     // The bundled app is served off `tauri://localhost` as static files, so a path route would 404
     // the moment the webview reloads on one.
     provideRouter(APP_ROUTES, withHashLocation()),
-    ...provideColorThemesWithTailwind4([...THEMES, FARN_THEME]),
+    ...provideColorThemesWithTailwind4([...THEMES, { ...FARN_THEME, isDefault: false }]),
     ...provideSurfaceThemesWithTailwind4([...SURFACE_THEMES, { ...FARN_SURFACE, isDefault: false }]),
     providePreferredScheme(),
     provideWindowChrome(),
