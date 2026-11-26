@@ -9,9 +9,29 @@ import { harnessUrlOf } from '../part-compare';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { builtPictureModuleOf } from './part-definition';
-import { createSketch, listSketches, markSketchReady, Sketch, variantDirOf, writeSketchFile } from './sketch';
+import {
+  createSketch,
+  listSketches,
+  markSketchReady,
+  rejectionOf,
+  Sketch,
+  variantDirOf,
+  writeSketchFile,
+} from './sketch';
 
 export const BUILT_VARIANT = 'built';
+
+/**
+ * The variant the builder merges as its own pick: `built`, on a ready sketch the check opened for an undesigned app
+ * branch, while nobody picked and `built` is its only live variant. A sketch a person started never has one.
+ */
+export const builderPickOf = (sketch: Sketch) =>
+  sketch.status === 'ready' &&
+  sketch.decision === undefined &&
+  (sketch.undesigned?.length ?? 0) > 0 &&
+  sketch.variants.filter((variant) => !rejectionOf(sketch, variant)).join() === BUILT_VARIANT
+    ? BUILT_VARIANT
+    : undefined;
 
 type Missing = NonNullable<Problem['missing']>;
 

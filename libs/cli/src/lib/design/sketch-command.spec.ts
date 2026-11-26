@@ -3378,6 +3378,29 @@ export default definePart({
       });
     });
 
+    it('merges the built variant of a ready sketch the check opened as the builder pick (B776)', async () => {
+      const { target, lines } = await readied('built');
+      const file = join(sketchDir(target), 'sketch.json');
+      const sketch = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+
+      writeFileSync(file, JSON.stringify({ ...sketch, undesigned: ['@if (note())'] }));
+
+      expect(await write(target, 'merge', 'components/button', '--product', 'acme')).toBe(0);
+      expect(lines.join('\n')).not.toContain('has no pick');
+      expect(existsSync(sketchDir(target))).toBe(false);
+      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
+        'components/button': { variant: 'built', decidedBy: 'builder: claude-opus-5-5' },
+      });
+    });
+
+    it('still refuses a ready sketch a person started without a pick, even with only a built variant', async () => {
+      const { target, lines } = await readied('built');
+
+      expect(await write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
+      expect(lines.pop()).toBe('components/button has no pick - the user picks a variant in Studio before a merge');
+      expect(existsSync(sketchDir(target))).toBe(true);
+    });
+
     it('fails a pick whose merge is refused and leaves no pick behind', async () => {
       const { target, lines } = await readied('a,b');
       const file = join(sketchDir(target), 'sketch.json');

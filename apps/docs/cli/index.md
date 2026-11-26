@@ -420,7 +420,9 @@ on the same product or parts, so it writes the same check record, and exits 1 on
   literal, `design serve` opens the missing-state sketch `<part>@<state>` on its own: its one variant `built` declares
   the state (the first state's props, set so the branch is taken) and draws it as a picture of the app harness. While
   that sketch is open the hit waits for the pick; a pick of `built` merges the state, so the hit clears, and a pick of
-  a redrawn variant leaves the app to match it. Any other branch: draw its sketch by hand.
+  a redrawn variant leaves the app to match it. Once it is ready, `sketch merge` merges `built` without a pick while it
+  is the one live variant, prints `BUILDER PICK of variant built`, and records `decidedBy: builder: <model>` in
+  `merged.json`. A sketch a person started still needs the pick in Studio. Any other branch: draw its sketch by hand.
 - `COMPARE` and `SDK-ERROR` compare a part implemented at its current design with its design, and report an SDK error
   the harness page logs.
 - `APP-ERROR` reports, once per state, the first other error the harness page throws or logs with `console.error`,

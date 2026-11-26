@@ -135,6 +135,7 @@ import { spawnPlain } from '../plain-output';
 import { TypecheckResult } from './typecheck';
 import { hasPersonName, PERSON_NAME_REFUSAL } from '../person-names';
 import { lintGateLinesOf, variantLintFilesOf } from './design-lint';
+import { builderPickOf } from './system/sketch/undesigned-sketch';
 
 export const SKETCH_USAGE = [
   'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--name <sketch name>] [--round <title>] [--note <text>] [--asks <state,state>] [--variant-note <variant>=<text>]… [--override | --into-base] [--ready] [--product <name>]',
@@ -2345,13 +2346,21 @@ const merged = (context: Context) =>
         `REUSED the pick of variant ${sketch.decision.variant} by ${sketch.decision.by} from ${sketch.decision.decidedAt}, recorded before this merge`,
       );
 
+    const builderPick = allowed || standingPickOf(sketch) !== undefined ? undefined : builderPickOf(sketch);
+    const builder = by ? `builder: ${by}` : 'builder';
+
+    if (builderPick)
+      console.log(
+        `BUILDER PICK of variant ${builderPick}: the check opened ${sketch.target} for an undesigned state, so no pick in Studio is needed`,
+      );
+
     const mergeNow = async () => {
       const afterMerge = await embedderCheckAroundMerge({
         target: context.target,
         config: context.config,
         product,
         sketch,
-        variant: allowed?.variant ?? standingPickOf(sketch),
+        variant: allowed?.variant ?? standingPickOf(sketch) ?? builderPick,
       });
       const result = timedPhase('merge', () =>
         mergeAndRecord({
@@ -2363,6 +2372,12 @@ const merged = (context: Context) =>
           replaceNote,
           by,
           allowed,
+          ...(builderPick
+            ? {
+                pick: { kind: 'pick' as const, variant: builderPick, agentPick: true as const, ...originOf(builder) },
+                decidedBy: builder,
+              }
+            : {}),
         }),
       );
 
