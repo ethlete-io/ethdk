@@ -346,6 +346,7 @@ type CheckOptions = {
   config: DesignConfig;
   products: string[];
   known?: string[];
+  newParts?: string[];
   /** Only this part's findings, `<layer>/<name>`. */
   part?: string;
   tally?: Tally;
@@ -485,6 +486,12 @@ const reportSystem = (
   let failed = false;
   const report = (problem: Problem & { line?: string }, product: ResolvedProduct) => {
     const line = problem.line ?? lineOf(target, problem);
+    if (options.newParts?.includes(line)) {
+      console.warn(`NOTE (new in this merge; a page must embed it) ${line}`);
+
+      return;
+    }
+
     if (options.known?.includes(line)) {
       console.warn(`NOTE (was there before) ${line}`);
 

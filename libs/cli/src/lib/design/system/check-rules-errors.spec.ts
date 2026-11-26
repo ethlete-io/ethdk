@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
-import { buildReadyInputsOf, checkRules } from './check-system';
+import { buildReadyInputsOf, checkRules, checkSystem } from './check-system';
 import { resolveProduct } from './resolve-product';
 import { gitExec } from '../../git-test-env.fixtures';
 
@@ -70,6 +70,25 @@ describe('checkRules', () => {
 
     expect(status).toBe(1);
     expect(errors.map(ruleOf)).toEqual(['ORPHAN-PART']);
+  });
+
+  it('passes a part new in a merge with its own note, not the was-there-before one', () => {
+    const target = checkout({ 'components/chip/chip.ts': PAGE, 'pages/home/home.ts': PAGE });
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    checkSystem({ target, config: CONFIG, products: ['app-a'] });
+
+    const line = String(error.mock.calls[0]?.[0]);
+
+    error.mockClear();
+
+    expect(checkSystem({ target, config: CONFIG, products: ['app-a'], newParts: [line] })).toBe(0);
+    expect(error).not.toHaveBeenCalled();
+    expect(warn.mock.calls.map(([text]) => String(text))).toEqual([
+      `NOTE (new in this merge; a page must embed it) ${line}`,
+    ]);
   });
 
   it('passes the hits its rule baseline lists and prints them as baselined', () => {

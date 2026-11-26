@@ -341,15 +341,15 @@ const checkedMergeOf = (options: MergeOptions & { variant: string }): string | M
 
   const merged = resolveProduct({ target, name: product.name, config: product.config });
 
-  known.push(
-    ...orphanPartsOf(merged)
-      .filter((problem) => newKeys.includes(problem.part ?? ''))
-      .map((problem) => lineOf(target, problem)),
-  );
+  const newParts = orphanPartsOf(merged)
+    .filter((problem) => newKeys.includes(problem.part ?? ''))
+    .map((problem) => lineOf(target, problem));
 
   const checked = [product.name, ...(baseProduct ? [baseProduct.name] : [])];
 
-  const { code, failures } = withPrintedErrors(() => checkSystem({ target, config, products: checked, known }));
+  const { code, failures } = withPrintedErrors(() =>
+    checkSystem({ target, config, products: checked, known, newParts }),
+  );
 
   if (code !== 0) {
     const changed = [
