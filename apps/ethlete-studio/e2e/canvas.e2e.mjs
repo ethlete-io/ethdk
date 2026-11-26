@@ -798,10 +798,43 @@ const frameBoxes = (page, selector) =>
         const content = Number.parseFloat(frame.firstElementChild?.style.width ?? '');
         const zoom = width / (frame.hasAttribute('data-sk-frame') && content > 0 ? content : frame.offsetWidth || 1);
 
-        return { left, top, width, height, zoom, iframe: !!frame.querySelector('iframe') };
+        return {
+          left,
+          top,
+          width,
+          height,
+          zoom,
+          content: content > 0 ? content : frame.offsetWidth,
+          iframe: !!frame.querySelector('iframe'),
+        };
       });
     },
     { CANVAS, selector },
+  );
+
+const rowSizingOf = (page, selector, index) =>
+  page.evaluate(
+    ({ CANVAS, selector, index }) => {
+      const canvas = [...document.querySelectorAll(CANVAS)].sort(
+        (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+      )[0];
+      const frame = [...(canvas?.querySelectorAll(selector) ?? [])][index];
+      const variant = frame?.closest('[data-sk-variant]')?.getAttribute('data-sk-variant');
+
+      if (!variant) return 'frame in no sketch row';
+
+      const cells = [...canvas.querySelectorAll(`[data-sk-variant="${variant}"][data-sk-state]`)];
+      const widths = cells.map((cell) => {
+        const shown = cell.querySelector('[data-sk-frame]');
+        const content = Number.parseFloat(shown?.firstElementChild?.style.width ?? '');
+
+        return `${cell.getAttribute('data-sk-state')} ${content > 0 ? content : (shown?.offsetWidth ?? '-')}${cell.querySelector('iframe[data-painted]') ? ' painted' : ''}`;
+      });
+      const unsized = canvas.querySelector(`[data-sk-row="${variant}"]`)?.hasAttribute('data-sk-unsized');
+
+      return `row ${variant}${unsized ? ' unsized' : ''} now: ${widths.join(', ')}`;
+    },
+    { CANVAS, selector, index },
   );
 
 const FEEDBACK_MS = 100;
@@ -1469,12 +1502,17 @@ const withEditSketch = async (page, designPort, run, edited = { part: EDIT_PART,
       file,
       edited.file ? before.split(edited.before).join(edited.after) : replaceOnce(before, edited.before, edited.after),
     );
+    const TMPDRAWS0 = await drawsSoFar(designPort);
+    const TMPT0 = performance.now();
     const check = spawnSync(
       process.execPath,
       [cliEntry, 'design', 'check', '--product', 'studio', '--part', edited.part],
       { cwd: checkout, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, ETHLETE_DESIGN_PHASES: '1' } },
     );
     phase(`check (slowest: ${slowestPhasesOf(check.stderr ?? '')})`);
+    console.log(
+      `[TMP-B736] server draws during check: ${JSON.stringify(drawsSince(await drawsSoFar(designPort), TMPDRAWS0))} in ${Math.round(performance.now() - TMPT0)} ms, url ${page.url()}`,
+    );
     // Only after the check: a check settles a committed direct edit without a sketch, and the sketch listing
     // offers the pick only once git holds the edit.
     git('commit', '-qm', 'canvas e2e edit', '--', file);
@@ -1864,6 +1902,8 @@ const CASES = [
       const start = boxes[index];
       const pointer = { x: start.left + start.width * 0.3, y: start.top + start.height * 0.4 };
       const drifts = [];
+      const contents = [];
+      const startRow = await rowSizingOf(page, selector, index);
       let before = start;
 
       await page.mouse.move(pointer.x, pointer.y);
@@ -1893,12 +1933,15 @@ const CASES = [
         if (unzoomed) return unzoomed;
 
         drifts.push(driftOf(after));
+        contents.push(`${before.content.toFixed(0)} -> ${after.content.toFixed(0)}`);
         before = after;
       }
 
+      const ok = drifts.every((drift) => drift <= 2) && before.width < start.width;
+
       return {
-        ok: drifts.every((drift) => drift <= 2) && before.width < start.width,
-        detail: `drift ${drifts.map((drift) => drift.toFixed(1)).join(' / ')} px, width ${start.width.toFixed(0)} -> ${before.width.toFixed(0)}`,
+        ok,
+        detail: `drift ${drifts.map((drift) => drift.toFixed(1)).join(' / ')} px, width ${start.width.toFixed(0)} -> ${before.width.toFixed(0)}${ok ? '' : `, frame ${index} unzoomed width per wheel ${contents.join(' / ')}, at start ${startRow}, at end ${await rowSizingOf(page, selector, index)}`}`,
       };
     },
   },
