@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  abortingOf,
   DRAWS_AT_ONCE,
   IDLE_DRAWS_AT_ONCE,
   FrameUnservedError,
@@ -314,6 +315,45 @@ describe('createDrawQueue', () => {
     release();
     await Promise.all([high, idle]);
     expect(started).toEqual(['high', 'idle']);
+  });
+
+  it('stops a running idle job when a shown shot starts, and draws it again once the shot is drawn', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const started: string[] = [];
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const idle = queue.run(async (browser) => {
+      started.push('idle');
+      if (started.length > 1) return 'drawn again';
+
+      const { signal } = abortingOf(browser);
+
+      await new Promise<void>((done, fail) => {
+        signal?.addEventListener('abort', () => fail(new Error('the context closed')));
+        setTimeout(done, 50);
+      });
+
+      return 'drawn through';
+    }, 'idle');
+
+    await vi.waitFor(() => expect(started).toEqual(['idle']));
+
+    const shown = queue.run(
+      async () => {
+        started.push('visible');
+        await held;
+      },
+      { priority: 'low', rank: 'visible' },
+    );
+
+    await vi.waitFor(() => expect(started).toEqual(['idle', 'visible']));
+    await new Promise((done) => setTimeout(done, 80));
+    expect(started).toEqual(['idle', 'visible']);
+
+    release();
+    await shown;
+    await expect(idle).resolves.toBe('drawn again');
+    expect(started).toEqual(['idle', 'visible', 'idle']);
   });
 
   it('launches Chromium without partial raster, so the same page draws the same pixels each time', async () => {

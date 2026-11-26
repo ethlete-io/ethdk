@@ -261,7 +261,12 @@ export type DrawWant = {
   onStart?: (start: { lane: number; waitedMs: number; busyLanes: number[] }) => void;
 };
 
-type WaitingDraw = { job: () => Promise<void>; wants: Set<DrawWant>; drop: () => void; asked: number };
+type WaitingDraw = {
+  job: (stop: AbortSignal | null) => Promise<void>;
+  wants: Set<DrawWant>;
+  drop: () => void;
+  asked: number;
+};
 
 // Partial raster redraws only the invalidated part of a tile, so the anti-aliased edge of a rounded clip over an
 // embedded frame depends on which frame painted first: two draws of the same page differed under load.
@@ -278,7 +283,8 @@ const IDLE_LANE = 5;
  * A waiting `high` drawing runs first; of the `low` ones, those for the active frame of the shown view,
  * then its visible cells, then the rest, then those of views no longer shown, then the `idle` ones, each lane in the
  * order asked. `idle` drawings take at most `IDLE_DRAWS_AT_ONCE` places and none start while a shown shot draws, so a
- * shot the viewer waits for starts at once and shares the CPU with few of them.
+ * shot the viewer waits for starts at once and shares the CPU with few of them. A shown shot that starts stops the
+ * running `idle` drawings; each waits in its lane again and draws anew.
  * A drawing every ask withdrew before it started is dropped. A failed launch is not kept, so the next ask
  * tries again.
  */
@@ -335,6 +341,7 @@ export const createDrawQueue = (options: {
   const waiting: WaitingDraw[] = [];
   const entries = new WeakMap<Promise<unknown>, WaitingDraw>();
   const drawingLanes: number[] = [];
+  const runningIdle = new Set<AbortController>();
   let shownView = 0;
 
   const launch = () => {
@@ -390,9 +397,15 @@ export const createDrawQueue = (options: {
 
       const start = { lane, waitedMs: performance.now() - entry.asked, busyLanes: [...drawingLanes] };
 
+      const stop = lane === IDLE_LANE ? new AbortController() : null;
+
+      if (lane <= 2) runningIdle.forEach((running) => running.abort());
+      if (stop) runningIdle.add(stop);
+
       drawingLanes.push(lane);
       entry.wants.forEach((want) => want.onStart?.(start));
-      void entry.job().finally(() => {
+      void entry.job(stop?.signal ?? null).finally(() => {
+        if (stop) runningIdle.delete(stop);
         drawingLanes.splice(drawingLanes.indexOf(lane), 1);
         next();
       });
@@ -437,15 +450,20 @@ export const createDrawQueue = (options: {
       const asked = performance.now();
       const signal = runSignal();
       const entry: WaitingDraw = {
-        job: () => Promise.resolve(),
+        job: async () => undefined,
         wants: new Set(),
         drop: () => undefined,
         asked,
       };
       const drawn = new Promise<T>((resolve, reject) => {
-        entry.job = () => {
-          ticket?.start();
-          recordDrawWait(performance.now() - asked);
+        let started = false;
+
+        entry.job = (stop) => {
+          if (!started) {
+            ticket?.start();
+            recordDrawWait(performance.now() - asked);
+          }
+          started = true;
 
           if (signal?.aborted) {
             ticket?.end();
@@ -454,10 +472,23 @@ export const createDrawQueue = (options: {
             return Promise.resolve();
           }
 
+          const aborts = [signal, stop].filter((each): each is AbortSignal => each !== null);
+          const drawSignal = aborts.length > 1 ? AbortSignal.any(aborts) : aborts[0];
+
           return launch()
-            .then((open) => draw(signal ? closingOnAbort(open, signal) : open))
-            .then(resolve, reject)
-            .finally(() => ticket?.end());
+            .then((open) => draw(drawSignal ? closingOnAbort(open, drawSignal) : open))
+            .then(resolve, (error: unknown) => {
+              if (stop?.aborted && !signal?.aborted && !closed && entry.wants.size > 0) {
+                waiting.unshift(entry);
+
+                return;
+              }
+
+              reject(error);
+            })
+            .then(() => {
+              if (!waiting.includes(entry)) ticket?.end();
+            });
         };
         entry.drop = () => {
           ticket?.end();
