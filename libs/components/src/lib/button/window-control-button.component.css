@@ -13,7 +13,6 @@
 
   .et-window-control-button {
     --_et-tone-fill-opacity: 0;
-    --_et-window-control-button-fallback-background: transparent;
     --_et-window-control-button-fallback-color: rgba(255, 255, 255, 0.92);
     --_et-window-control-button-border-radius: 4px;
 
@@ -27,7 +26,11 @@
     padding: 0;
     border: none;
     border-radius: var(--_et-window-control-button-border-radius);
-    background: var(--et-tone-fill, var(--_et-window-control-button-fallback-background));
+    background: color-mix(
+      in srgb,
+      var(--et-tone-fill, rgb(255, 255, 255)) calc(var(--_et-tone-fill-opacity) * 100%),
+      transparent
+    );
     color: var(--et-tone-text, var(--_et-window-control-button-fallback-color));
     cursor: var(--et-button-cursor);
     font-size: var(--_et-window-control-button-icon-size);
@@ -66,7 +69,6 @@
 
     &:where([data-shape='round']) {
       --_et-tone-fill-opacity: 0.1;
-      --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.1);
       --_et-window-control-button-border-radius: 50%;
     }
 
@@ -88,39 +90,32 @@
     @media (hover: hover) {
       &:hover {
         --_et-tone-fill-opacity: 0.14;
-        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.14);
       }
     }
 
     &:focus-visible {
       --_et-tone-fill-opacity: 0.18;
-      --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.18);
     }
 
     &:active {
       --_et-tone-fill-opacity: 0.22;
-      --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.22);
     }
 
     &[data-pressed='true'] {
       --_et-tone-fill-opacity: 0.18;
-      --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.18);
 
       @media (hover: hover) {
         &:hover {
           --_et-tone-fill-opacity: 0.24;
-          --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.24);
         }
       }
 
       &:focus-visible {
         --_et-tone-fill-opacity: 0.28;
-        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.28);
       }
 
       &:active {
         --_et-tone-fill-opacity: 0.32;
-        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.32);
       }
     }
 
@@ -128,18 +123,15 @@
       @media (hover: hover) {
         &:hover {
           --_et-tone-fill-opacity: 0.15;
-          --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.15);
         }
       }
 
       &:focus-visible {
         --_et-tone-fill-opacity: 0.15;
-        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.15);
       }
 
       &:active {
         --_et-tone-fill-opacity: 0.3;
-        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.3);
       }
     }
 
@@ -153,20 +145,17 @@
       @media (hover: hover) {
         &:hover {
           --_et-tone-fill-opacity: 0.06;
-          --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.06);
         }
       }
 
       &:focus-visible {
         --_et-tone-fill-opacity: 0.06;
-        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.06);
 
         outline-offset: -2px;
       }
 
       &:active {
         --_et-tone-fill-opacity: 0.04;
-        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.04);
       }
     }
 
