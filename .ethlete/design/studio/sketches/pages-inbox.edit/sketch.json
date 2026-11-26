@@ -99,13 +99,13 @@
     "elements/variant-cell": "ac4cdc7232e390d6",
     "pages/flows": "5dcd3a832cf3b9fa",
     "pages/inbox": "45b517e0cc2324df",
-    "pages/inventory": "42b01b80f10cd7ab",
+    "pages/inventory": "2b5d1be0c74cba02",
     "pages/sketches": "bebadbb0fce4a4c9",
     "pages/start": "ce59d97ea0c350e1",
-    "pages/system": "95fc1e93a843e076",
-    "fixtures.ts": "909089fbef7b8f34"
+    "pages/system": "e40d309c95b341c4",
+    "fixtures.ts": "8880b68aeb4e5cdd"
   },
-  "baselineTree": "e442e7d3f985c8c53d6ff402334942c4cc84aa75",
+  "baselineTree": "2ef181f9acd14aaefad269b773adb6208c78f625",
   "editOldCommit": "f94ee4a03602d4dd14814bf7d3fc583a8b7605be",
   "sharedBase": {
     "pages/inbox/shared/inbox.css": "87b524c00df2c0b7",
