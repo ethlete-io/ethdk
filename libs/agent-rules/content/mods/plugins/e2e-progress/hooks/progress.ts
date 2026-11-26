@@ -110,3 +110,43 @@ export const parseUnit = (path: string, raw: string, mtimeMs: number, nowMs: num
     firstDone: 0,
   };
 };
+
+export const REGISTRY = '/tmp/ethlete-runs';
+export const HIDE_AFTER_MS = 60_000;
+
+type RegistryFileSystem = {
+  list(path: string): Promise<{ name: string; kind: string }[]>;
+  read(path: string): Promise<string>;
+  stat(path: string): Promise<{ mtimeMs: number }>;
+};
+
+type RegistryEntry = { log: string; machine: string; label: string; pid: number; cwd?: string; endedAt?: number };
+export type RegistryRun = { entry: RegistryEntry; mtimeMs: number };
+
+type RegistryScope = { nowMs: number; projectRoot: string };
+
+export async function registryRuns(
+  fs: RegistryFileSystem,
+  { nowMs, projectRoot }: RegistryScope,
+): Promise<RegistryRun[]> {
+  const root = projectRoot.replace(/\/+$/, '');
+  const files = await fs.list(REGISTRY).catch(() => []);
+  const found = await Promise.all(
+    files
+      .filter((f) => f.kind === 'file' && f.name.endsWith('.json'))
+      .map(async (f): Promise<RegistryRun | undefined> => {
+        const entry = await fs.read(`${REGISTRY}/${f.name}`).then(
+          (t) => JSON.parse(t) as RegistryEntry,
+          () => undefined,
+        );
+        if (!entry?.log || typeof entry.cwd !== 'string') return undefined;
+        if (entry.cwd !== root && !entry.cwd.startsWith(`${root}/`)) return undefined;
+        if (entry.endedAt === undefined && !(await fs.stat(`/proc/${entry.pid}`).catch(() => undefined)))
+          return undefined;
+        if (entry.endedAt !== undefined && nowMs - entry.endedAt > HIDE_AFTER_MS) return undefined;
+        const stat = await fs.stat(entry.log).catch(() => undefined);
+        return { entry, mtimeMs: stat?.mtimeMs ?? 0 };
+      }),
+  );
+  return found.filter((r) => r !== undefined);
+}

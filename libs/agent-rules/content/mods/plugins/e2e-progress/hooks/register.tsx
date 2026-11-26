@@ -2,15 +2,14 @@ import { atom, read, update } from 'claude-code';
 import type { EngineInterface, Register, Timer } from 'claude-code';
 
 import type { Progress } from '../types';
-import { FAIL_LINE, doneOf, parse, parseUnit, summary } from './progress';
+import { FAIL_LINE, HIDE_AFTER_MS, REGISTRY, doneOf, parse, parseUnit, registryRuns, summary } from './progress';
+import type { RegistryRun } from './progress';
 
 const PANE = 'e2e-progress';
 const HANDOFFS = ['.claude/handoffs', '.agents/handoffs'];
 const WORKTREES = '.claude/worktrees';
-const REGISTRY = '/tmp/ethlete-runs';
 const TICK_MS = 5000;
 const STALE_MS = 15_000;
-const HIDE_AFTER_MS = 60_000;
 const MIN_ETA_TESTS = 5;
 const MIN_ETA_MS = 30_000;
 const MAX_CANDIDATES = 12;
@@ -191,30 +190,6 @@ const shortLabel = (label: string) => {
 const titleOfRun = (p: Progress) =>
   `${p.machine ? `${p.machine} ` : ''}${p.label ? shortLabel(p.label) : nameOf(p.path)}`;
 
-type RegistryEntry = { log: string; machine: string; label: string; pid: number; endedAt?: number };
-type RegistryRun = { entry: RegistryEntry; mtimeMs: number };
-
-async function registryRuns($: EngineInterface, nowMs: number): Promise<RegistryRun[]> {
-  const files = await $.fs.list(REGISTRY).catch(() => []);
-  const found = await Promise.all(
-    files
-      .filter((f) => f.kind === 'file' && f.name.endsWith('.json'))
-      .map(async (f): Promise<RegistryRun | undefined> => {
-        const entry = await $.fs.read(`${REGISTRY}/${f.name}`).then(
-          (t) => JSON.parse(t) as RegistryEntry,
-          () => undefined,
-        );
-        if (!entry?.log) return undefined;
-        if (entry.endedAt === undefined && !(await $.fs.stat(`/proc/${entry.pid}`).catch(() => undefined)))
-          return undefined;
-        if (entry.endedAt !== undefined && nowMs - entry.endedAt > HIDE_AFTER_MS) return undefined;
-        const stat = await $.fs.stat(entry.log).catch(() => undefined);
-        return { entry, mtimeMs: stat?.mtimeMs ?? 0 };
-      }),
-  );
-  return found.filter((r) => r !== undefined);
-}
-
 async function progressOfRegistryRun(
   $: EngineInterface,
   { entry, mtimeMs }: RegistryRun,
@@ -321,8 +296,11 @@ async function tick($: EngineInterface) {
     next.push(await withRecords($, parsed, text));
   }
   if (!pinned) {
+    const root = await $.session.root();
+    const stat = await $.fs.stat(root, { resolve: true }).catch(() => undefined);
+    const projectRoot = stat?.realPath ?? root;
     const known = new Set(next.map((p) => p.path));
-    for (const run of await registryRuns($, nowMs)) {
+    for (const run of await registryRuns($.fs, { nowMs, projectRoot })) {
       if (known.has(run.entry.log)) continue;
       next.push(await progressOfRegistryRun($, run, last.get(run.entry.log), nowMs));
     }

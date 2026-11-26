@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parse, parseUnit } from '../../content/mods/plugins/e2e-progress/hooks/progress';
+import { parse, parseUnit, registryRuns } from '../../content/mods/plugins/e2e-progress/hooks/progress';
 
 const fixture = (name: string) => readFileSync(resolve(__dirname, 'fixtures/e2e-progress', name), 'utf8');
 
@@ -37,5 +37,32 @@ describe('e2e-progress parse', () => {
     expect(parseUnit('run.log', live, 0, 0, false)).toMatchObject({ passed: 5, isDone: false });
     expect(parseUnit('run.log', '', 0, 0, true)).toMatchObject({ passed: 0, isDone: true });
     expect(parseUnit('run.log', '✔  nx run core:build:production\n', 0, 0, false)).toMatchObject({ passed: 0 });
+  });
+});
+
+describe('e2e-progress registry', () => {
+  it('lists only runs launched within the session project', async () => {
+    const registry = '/tmp/ethlete-runs';
+    const now = 100_000;
+    const sdk = '/home/tom/dev/ethlete-sdk';
+    const fifagg = '/home/tom/dev/fut-frontend';
+    const entries = [
+      { cwd: sdk + '/libs/agent-rules', pid: 1001 },
+      { cwd: fifagg, pid: 1002 },
+      { cwd: sdk + '-other', pid: 1003 },
+      { cwd: sdk, pid: 1004, endedAt: now - 1000 },
+      { cwd: fifagg, pid: 1005, endedAt: now - 1000 },
+      { pid: 1006 },
+    ].map((entry) => ({ ...entry, log: `${registry}/${entry.pid}.log`, machine: 'tank', label: 'playwright' }));
+    const fs = {
+      list: async () => entries.map(({ pid }) => ({ name: `${pid}.json`, kind: 'file' })),
+      read: async (path: string) => JSON.stringify(entries.find(({ pid }) => path === `${registry}/${pid}.json`)),
+      stat: async () => ({ mtimeMs: now }),
+    };
+    const runPids = async (projectRoot: string) =>
+      (await registryRuns(fs, { nowMs: now, projectRoot })).map(({ entry }) => entry.pid);
+
+    expect(await runPids(sdk)).toEqual([1001, 1004]);
+    expect(await runPids(fifagg)).toEqual([1002, 1005]);
   });
 });
