@@ -43,7 +43,7 @@ const acme = () => {
         acme: {
           ...config.products?.['acme'],
           styles: [`${DESIGN_DIR}/acme/styles.css`],
-          deniedClasses: [{ pattern: '^var\\(--accent', fix: 'use --et-theme-color-*' }],
+          deniedClasses: [{ pattern: '^var\\(--accent', fix: 'use --et-tone-*' }],
         },
       },
     }),

@@ -14,7 +14,7 @@ import { deniedClassesOf } from './denied-class';
 
 const DENIED: DesignDeniedClass[] = [
   { pattern: '^(bg|text|border)-surface(-raised)?$', fix: 'use the et-surface tokens of a data-et-surface scope' },
-  { pattern: '^var\\(--accent', fix: 'use --et-theme-color-*' },
+  { pattern: '^var\\(--accent', fix: 'use --et-tone-*' },
 ];
 
 const write = (target: string, path: string, content: string) => {
@@ -78,10 +78,10 @@ describe('deniedClassesOf', { timeout: 30_000 }, () => {
 
     expect(linesOf(target)).toEqual([
       'DENIED-CLASS home.ts: `bg-surface` is denied in this product - use the et-surface tokens of a data-et-surface scope',
-      'DENIED-CLASS home.ts: `var(--accent-text)` is denied in this product - use --et-theme-color-*',
+      'DENIED-CLASS home.ts: `var(--accent-text)` is denied in this product - use --et-tone-*',
       'DENIED-CLASS row.ts: `border-surface-raised` is denied in this product - use the et-surface tokens of a data-et-surface scope',
-      'DENIED-CLASS row.ts: `var(--accent-hover)` is denied in this product - use --et-theme-color-*',
-      'DENIED-CLASS home.css: `var(--accent)` is denied in this product - use --et-theme-color-*',
+      'DENIED-CLASS row.ts: `var(--accent-hover)` is denied in this product - use --et-tone-*',
+      'DENIED-CLASS home.css: `var(--accent)` is denied in this product - use --et-tone-*',
     ]);
   });
 
@@ -106,7 +106,7 @@ describe('deniedClassesOf', { timeout: 30_000 }, () => {
 
     expect(linesOf(target)).toEqual([
       'DENIED-STYLESHEET styles.css: `--color-surface-raised` exposes the denied `bg-surface-raised` - the product stylesheet defines only the inputs of the SDK themes; use the et-surface tokens of a data-et-surface scope',
-      'DENIED-STYLESHEET styles.css: `--accent-hover` exposes the denied `var(--accent-hover)` - the product stylesheet defines only the inputs of the SDK themes; use --et-theme-color-*',
+      'DENIED-STYLESHEET styles.css: `--accent-hover` exposes the denied `var(--accent-hover)` - the product stylesheet defines only the inputs of the SDK themes; use --et-tone-*',
       'DENIED-STYLESHEET styles.css: `@utility bg-surface` exposes the denied `bg-surface` - the product stylesheet defines only the inputs of the SDK themes; use the et-surface tokens of a data-et-surface scope',
       'DENIED-STYLESHEET styles.css: `.text-surface` exposes the denied `text-surface` - the product stylesheet defines only the inputs of the SDK themes; use the et-surface tokens of a data-et-surface scope',
     ]);

@@ -114,11 +114,11 @@
         },
         {
           "pattern": "^(bg|text|border|ring|divide|outline|fill|stroke)-accent(-|$)",
-          "fix": "Use the SDK colour theming: --et-theme-color-* tokens under a colour theme scope (injectSemanticColorTheme types), not the Studio accent, warning or danger vars"
+          "fix": "Use the SDK colour theming: --et-tone-* tokens under a colour theme scope (injectSemanticColorTheme types), not the Studio accent, warning or danger vars"
         },
         {
           "pattern": "^var\\(--(accent|warning|danger)(-|\\))",
-          "fix": "Use the SDK colour theming: --et-theme-color-* tokens under a colour theme scope (injectSemanticColorTheme types), not the Studio accent, warning or danger vars"
+          "fix": "Use the SDK colour theming: --et-tone-* tokens under a colour theme scope (injectSemanticColorTheme types), not the Studio accent, warning or danger vars"
         }
       ]
     },
