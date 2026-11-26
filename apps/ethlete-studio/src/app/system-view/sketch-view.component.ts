@@ -292,6 +292,7 @@ export const repicksOf = (sketch: ListedSketch): Record<string, SketchRepick> =>
       [sendPhase]="commentStore.sendPhase()"
       [sendReason]="commentStore.sendReason()"
       [loadingShots]="loadingShots()"
+      [nearLoadingShots]="nearLoadingShots()"
       [shot]="shot"
       [tree]="shell().tree"
       [shell]="shell()"
@@ -1048,6 +1049,14 @@ export class SketchViewComponent {
         .filter(([key, picture]) => !loaded.has(key) && !painted.has(key) && (live.has(key) || !failed.has(picture)))
         .map(([key]) => key),
     );
+  });
+
+  protected nearLoadingShots = computed(() => {
+    if (this.shotCellRefs().length === 0) return null;
+
+    const near = this.nearShots();
+
+    return new Set([...this.loadingShots()].filter((key) => near.has(key)));
   });
 
   private pendingPart = linkedSignal<string, string | null>({

@@ -1446,6 +1446,68 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-row="new"] [data-sk-comparing]')).toBeNull();
   });
 
+  it('holds an @edit sketch with a visible zeichnet, by opacity so live frames still paint, until its compare and the pictures of the cells in view are in, then keeps it shown', async () => {
+    const side = (key: string, changed: boolean | null): SketchRow => ({
+      key,
+      note: '',
+      width: 280,
+      sized: true,
+      shots: ['mark-layer', 'selected-layer'].map((state) => ({ state, changed, height: 46 })),
+    });
+    const rowsOf = (changed: boolean | null) => [side('new', changed), side('old', changed)];
+    const fixture = await render({
+      camera: '100',
+      rows: rowsOf(null),
+      part: 'components/tree-row@edit',
+      status: 'waiting',
+      nearLoadingShots: null,
+    });
+    const root: HTMLElement = fixture.nativeElement;
+    const set = async (inputs: Record<string, unknown>) => {
+      Object.entries(inputs).forEach(([name, value]) => fixture.componentRef.setInput(name, value));
+      await fixture.whenStable();
+    };
+    const view = () => ({
+      held: root.querySelector('[data-sk-rows] > .opacity-0') !== null,
+      invisible: root.querySelector('[data-sk-rows] > .invisible') !== null,
+      drawing: textOf(root.querySelector('[data-sk-edit-drawing]')),
+      status: root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status'),
+    });
+
+    expect(view()).toEqual({ held: false, invisible: true, drawing: 'zeichnet', status: 'drawing' });
+    await set({ rows: rowsOf(true) });
+    expect(view()).toEqual({ held: true, invisible: false, drawing: 'zeichnet', status: 'drawing' });
+    await set({ nearLoadingShots: new Set(['new mark-layer']) });
+    expect(view()).toEqual({ held: true, invisible: false, drawing: 'zeichnet', status: 'drawing' });
+    await set({ nearLoadingShots: new Set() });
+    expect(view()).toEqual({ held: false, invisible: false, drawing: '', status: 'waiting' });
+    await set({ nearLoadingShots: new Set(['new mark-layer']) });
+    expect(view()).toEqual({ held: false, invisible: false, drawing: '', status: 'waiting' });
+  });
+
+  it('shows an @edit sketch once the cells in view are drawn, while pictures of cells out of view or not rendered still load', async () => {
+    const states = Array.from({ length: 38 }, (_, index) => `state-${index}`);
+    const rowOf = (key: string): SketchRow => ({
+      key,
+      note: '',
+      width: 280,
+      sized: true,
+      shots: states.map((state) => ({ state, changed: true, height: 46 })),
+    });
+    const fixture = await render({
+      camera: '100',
+      rows: [rowOf('new'), rowOf('old')],
+      part: 'pages/sketches@edit',
+      status: 'waiting',
+      loadingShots: new Set(['new', 'old'].flatMap((key) => states.map((state) => `${key} ${state}`))),
+      nearLoadingShots: new Set(),
+    });
+    const root: HTMLElement = fixture.nativeElement;
+
+    expect(root.querySelector('[data-sk-rows] > .opacity-0')).toBeNull();
+    expect(root.querySelector('[data-sk-edit-drawing]')).toBeNull();
+  });
+
   it('marks the changed area on both sides of tree-row@edit', async () => {
     const change = { width: 280, height: 46, box: { x: 240, y: 14, width: 18, height: 18 }, pixels: 120, regions: 1 };
     const side = (key: string): SketchRow => ({

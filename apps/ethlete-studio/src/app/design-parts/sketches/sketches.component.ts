@@ -284,6 +284,7 @@ export class SketchesComponent {
   public wholeScreens = model<readonly string[]>([]);
 
   public loadingShots = input<ReadonlySet<string>>(new Set());
+  public nearLoadingShots = input<ReadonlySet<string> | null>(new Set());
   public shot = input<TemplateRef<SketchShotContext> | null>(null);
   public tree = input(SKETCH_TREE);
   public error = input<string | null>(null);
@@ -500,11 +501,10 @@ export class SketchesComponent {
   );
   // Holds only the first layout of a part: a later size loss (a zoom, a refused picture) must not hide a shown view.
   private partSizedSource = computed(() => ({ part: this.part(), sized: this.firstRowSized() }));
-  private partSized = linkedSignal<{ part: string; sized: boolean }, boolean>({
+  protected partSized = linkedSignal<{ part: string; sized: boolean }, boolean>({
     source: this.partSizedSource,
     computation: ({ part, sized }, previous) => sized || (previous?.source.part === part && previous.value),
   });
-  protected sizing = computed(() => !this.partSized());
   private fitScale = computed(() => this.fitAt()?.scale ?? 1);
   protected scale = computed(() => {
     const zoom = this.canvas.zoom();
@@ -533,12 +533,33 @@ export class SketchesComponent {
   protected labelSize = computed(() =>
     this.labelsHiddenAt({ scale: this.scale(), label: this.labelFont() }) ? null : this.labelFont(),
   );
-  protected shownStatus = computed(() =>
+  private shownStatus = computed(() =>
     (this.agent() && !this.agent()?.failure) || this.port()
       ? 'drawing'
       : this.errored().length > 0 && ['waiting', 'not-ready'].includes(this.status())
         ? 'failed'
         : this.status(),
+  );
+  private editDrawing = computed(() => {
+    if (!this.isEdit() || this.shownStatus() === 'failed') return false;
+    if (this.listError() === null && this.pendingStates().size > 0) return true;
+
+    const near = this.nearLoadingShots();
+
+    return near === null ? this.shownRows().some((row) => row.shots.length > 0) : near.size > 0;
+  });
+  // Holds only the first finished view of an edit sketch: a later reload of a picture must not hide a shown view.
+  private editDrawnSource = computed(() => ({ part: this.part(), drawn: !this.editDrawing() }));
+  private editDrawn = linkedSignal<{ part: string; drawn: boolean }, boolean>({
+    source: this.editDrawnSource,
+    computation: ({ part, drawn }, previous) => drawn || (previous?.source.part === part && previous.value),
+  });
+  protected sizing = computed(() => !this.partSized() || !this.editDrawn());
+  // Opacity, not visibility: Chromium stops rendering a hidden cross-origin frame, so a live frame would never report painted.
+  protected editHeld = computed(() => this.partSized() && !this.editDrawn());
+  protected editHolding = computed(() => this.isEdit() && this.sizing());
+  protected headStatus = computed(() =>
+    this.shownStatus() === 'waiting' && !this.editDrawn() ? 'drawing' : this.shownStatus(),
   );
 
   public drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));

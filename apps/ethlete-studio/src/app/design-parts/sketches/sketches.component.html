@@ -68,7 +68,8 @@
         <div
           #world
           [attr.data-sk-sizing]="sizing() ? '' : null"
-          [class.invisible]="sizing()"
+          [class.invisible]="!partSized()"
+          [class.opacity-0]="editHeld()"
           [class.w-max]="transposed() || canvas.zoom() !== 'fit'"
           [class.min-w-full]="!transposed() || screenMode()"
           [style.transform]="canvas.transform()"
@@ -318,6 +319,13 @@
           }
         </div>
       </ethlete-canvas-viewport>
+      @if (editHolding()) {
+        <div class="pointer-events-none absolute inset-0 flex items-center justify-center" data-sk-edit-drawing>
+          <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-text-muted"
+            ><span class="size-1.5 animate-pulse rounded-full bg-(--et-tone-fill)"></span>{{ LABELS.drawingMark }}</span
+          >
+        </div>
+      }
     </div>
     <div
       class="pointer-events-none absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 flex items-end gap-space-3"
@@ -327,7 +335,7 @@
         [(roundsOpen)]="roundsOpen"
         [(commentMode)]="commentMode"
         [(withdrawn)]="withdrawn"
-        [status]="shownStatus()"
+        [status]="headStatus()"
         [subSketch]="subSketch()"
         [approved]="approved() !== null"
         [subSketchesOpen]="subSketchesOpen()"

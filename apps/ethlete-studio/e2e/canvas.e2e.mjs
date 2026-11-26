@@ -1289,6 +1289,14 @@ const discardAsksFirst = async (page) => {
 const EDIT_PART = 'components/about-dialog';
 const EDIT_LABEL = { before: '>Version ${version}</span>', after: '>Version: ${version}</span>' };
 const EDIT_WAIT_MS = 120000;
+const HEAVY_EDIT = {
+  part: 'pages/sketches',
+  file: 'pages/sketches/shared/sketch-rows.ts',
+  before: "label: 'Stand',",
+  after: "label: 'Stand A',",
+};
+const HEAVY_EDIT_HOLD_MS = 3000;
+const HEAVY_EDIT_WATCH_MS = 20000;
 
 const namedWait = async (page, label, predicate, arg) => {
   try {
@@ -1323,10 +1331,54 @@ const slowestPhasesOf = (stderr) =>
     .map(({ name, seconds }) => `${name} ${seconds}s`)
     .join(', ');
 
-const withEditSketch = async (page, designPort, run) => {
+// Samples the sketch view from the start of the page load until its cells show: when they first show, any cell in view
+// still loading means a half drawn view; a sample with the canvas shown but no cell and no visible "zeichnet" is blank.
+const editLoadTimelineOf = (page, watchMs) =>
+  page.evaluate(async (watchMs) => {
+    const seen = (element) => element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+    const inView = (element) => {
+      const rect = element.getBoundingClientRect();
+
+      return rect.width > 0 && rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth;
+    };
+    const drawingShown = () => {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (node.textContent.includes('zeichnet') && seen(node.parentElement) && inView(node.parentElement))
+          return true;
+      }
+
+      return false;
+    };
+    const blank = [];
+    let rowsSeen = false;
+    let cellsAt = null;
+
+    for (;;) {
+      const t = Math.round(performance.now());
+      const rows = document.querySelector('[data-sk-rows]');
+      const cells = [...document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]')];
+
+      if (rows && seen(rows)) rowsSeen = true;
+      if (cells.length > 0) cellsAt ??= t;
+      if (cells.length > 0 && cells.every(seen)) {
+        const loading = cells.filter((cell) => inView(cell) && cell.querySelector('[data-loading]')).length;
+
+        return { shownAt: t, cellsAt, loadingInView: loading, cells: cells.length, blank };
+      }
+      if (rowsSeen && !(rows && seen(rows))) return { shownAt: null, cellsAt, left: t, blank };
+      if (rowsSeen && !drawingShown()) blank.push(t);
+      if (t > watchMs) return { shownAt: null, cellsAt, blank };
+
+      await new Promise((done) => setTimeout(done, 50));
+    }
+  }, watchMs);
+
+const withEditSketch = async (page, designPort, run, edited = { part: EDIT_PART, ...EDIT_LABEL }) => {
   const studio = join(checkout, '.ethlete/design/studio');
   const saved = mkdtempSync(join(tmpdir(), 'studio-e2e-edit-'));
-  const file = join(studio, EDIT_PART, `${EDIT_PART.split('/')[1]}.ts`);
+  const file = join(studio, edited.file ?? join(edited.part, `${edited.part.split('/')[1]}.ts`));
   const before = readFileSync(file, 'utf8');
   const git = (...gitArgs) => {
     try {
@@ -1345,12 +1397,12 @@ const withEditSketch = async (page, designPort, run) => {
     }
   };
   const merged = JSON.parse(readFileSync(join(studio, 'merged.json'), 'utf8'));
-  const entry = merged[EDIT_PART];
+  const entry = merged[edited.part];
 
   cpSync(studio, saved, { recursive: true });
   // A part with an open sketch is never a direct edit, so the fixture sketch of the part goes first.
-  rmSync(join(studio, 'sketches', EDIT_PART.replace('/', '-')), { recursive: true, force: true });
-  merged[EDIT_PART] = typeof entry === 'string' ? '0'.repeat(16) : { ...entry, hash: '0'.repeat(16) };
+  rmSync(join(studio, 'sketches', edited.part.replace('/', '-')), { recursive: true, force: true });
+  merged[edited.part] = typeof entry === 'string' ? '0'.repeat(16) : { ...entry, hash: '0'.repeat(16) };
   writeFileSync(join(studio, 'merged.json'), `${JSON.stringify(merged, null, 2)}\n`);
   git('init', '-q');
   git('add', '--', '.ethlete');
@@ -1367,11 +1419,14 @@ const withEditSketch = async (page, designPort, run) => {
   };
   const phaseLine = () => `phases: ${phases.join(', ')}`;
 
-  const edit = async () => {
-    writeFileSync(file, replaceOnce(before, EDIT_LABEL.before, EDIT_LABEL.after));
+  const edit = async ({ timeline = false } = {}) => {
+    writeFileSync(
+      file,
+      edited.file ? before.split(edited.before).join(edited.after) : replaceOnce(before, edited.before, edited.after),
+    );
     const check = spawnSync(
       process.execPath,
-      [cliEntry, 'design', 'check', '--product', 'studio', '--part', EDIT_PART],
+      [cliEntry, 'design', 'check', '--product', 'studio', '--part', edited.part],
       { cwd: checkout, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, ETHLETE_DESIGN_PHASES: '1' } },
     );
     phase(`check (slowest: ${slowestPhasesOf(check.stderr ?? '')})`);
@@ -1384,9 +1439,10 @@ const withEditSketch = async (page, designPort, run) => {
           'ethlete-studio.call-view',
           JSON.stringify({ checkout, systemProduct: 'studio', systemEntry: `sketch:${part}@edit` }),
         ),
-      { checkout, part: EDIT_PART },
+      { checkout, part: edited.part },
     );
     await page.reload();
+    if (timeline) return editLoadTimelineOf(page, HEAVY_EDIT_WATCH_MS);
     try {
       await page.waitForSelector('ethlete-sketches [data-sk-state]', { timeout: EDIT_WAIT_MS });
     } catch (error) {
@@ -1399,7 +1455,7 @@ const withEditSketch = async (page, designPort, run) => {
       const output = `${check.stdout ?? ''}${check.stderr ?? ''}`.trim().split('\n').slice(-6).join(' | ');
 
       throw new Error(
-        `no edit sketch cell after ${EDIT_WAIT_MS} ms: design check exited ${check.status ?? check.signal} (${output}), sketch folder on disk: ${existsSync(join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`))}, page ${JSON.stringify(shown)}: ${error.message.split('\n')[0]}`,
+        `no edit sketch cell after ${EDIT_WAIT_MS} ms: design check exited ${check.status ?? check.signal} (${output}), sketch folder on disk: ${existsSync(join(studio, 'sketches', `${edited.part.replace('/', '-')}.edit`))}, page ${JSON.stringify(shown)}: ${error.message.split('\n')[0]}`,
         { cause: error },
       );
     }
@@ -1440,7 +1496,7 @@ const withEditSketch = async (page, designPort, run) => {
 
           return url.searchParams.get('part') === part && !url.searchParams.has('sketch');
         }),
-      EDIT_PART,
+      edited.part,
     );
     phase('part frame');
 
@@ -1545,6 +1601,28 @@ const CASES = [
           detail: `new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}, sketch folder gone: ${!existsSync(sketchDir)}, part opened after the merge: ${newPick.opened}, ${phaseLine()}`,
         };
       }),
+  },
+  {
+    name: 'a heavy edit sketch shows drawn soon after its cells lay out, with zeichnet while it is held',
+    listingMayPend: 'samples the view from the page load, before any listing answers',
+    ownShard: true,
+    pages: ['System'],
+    run: (page, _state, _target, { designPort }) =>
+      withEditSketch(
+        page,
+        designPort,
+        async ({ edit, phaseLine }) => {
+          const { shownAt, cellsAt, loadingInView, cells, blank, left } = await edit({ timeline: true });
+          const blankSpan = blank.length > 0 ? `${blank[0]}-${blank.at(-1)} ms (${blank.length} samples)` : 'none';
+
+          return {
+            ok:
+              shownAt !== null && shownAt - cellsAt <= HEAVY_EDIT_HOLD_MS && loadingInView === 0 && blank.length === 0,
+            detail: `${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${phaseLine()}`,
+          };
+        },
+        HEAVY_EDIT,
+      ),
   },
   {
     name: 'a sketch merged while its view is open opens the part view of the target',
