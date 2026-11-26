@@ -16,7 +16,6 @@ import { fitRoot } from './frame-fit';
 import { sheetLayoutOf, sheetMarkupOf, SHEET_STYLES } from './frame-sheet';
 import { pinScheme } from './frame-scheme';
 import { watchSurfaces } from './frame-surfaces';
-import surfaceInteractiveCss from './surface-interactive.css?inline';
 import { createMotionDriver, emulateReducedMotion, motionDriveMessageOf } from '../motion-drive';
 import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
 import { rootTokensOf, withTokenNames } from '../motion-tokens';
@@ -106,7 +105,7 @@ const showBuilding = (line: string) => {
   root.replaceChildren(text);
   root.setAttribute(
     'style',
-    'padding:16px;font:14px monospace;color:var(--et-surface-color-muted-solid);background:var(--et-surface-background-solid)',
+    'padding:16px;font:14px monospace;color:var(--et-surface-text-muted);background:var(--et-surface-background)',
   );
 
   return null;
@@ -532,7 +531,7 @@ const drawKey = async () => {
 
     const error = mountDrawing(root, loaded);
 
-    undo.push(watchSurfaces(root, surfaceInteractiveCss));
+    undo.push(watchSurfaces(root));
     const partRoot = partRootOf(root);
 
     if (interaction && partRoot) force(partRoot, interaction);

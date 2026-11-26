@@ -9,12 +9,10 @@ export type FrameColorTheme = { name: string; type: string | null; isDefault: bo
 export type FrameThemes = { surfaces: FrameSurfaceTheme[]; colors: FrameColorTheme[] };
 
 export const AUTO_SURFACE_ATTRIBUTE = 'data-et-auto-surface';
-export const SURFACE_INTERACTIVE_ATTRIBUTE = 'data-et-surface-interactive';
 export const SEMANTIC_COLOR_ATTRIBUTE = 'data-et-semantic-color';
 
 const SURFACE_CLASS_PREFIX = 'et-surface--';
 const COLOR_CLASS_PREFIX = 'et-color--';
-const SURFACE_INTERACTIVE_CLASS = 'et-surface-interactive';
 const SURFACE_CLASS_SELECTOR = /^\.et-surface--([\w-]+)$/u;
 const COLOR_CLASS_SELECTOR = /^\.et-color--([\w-]+)$/u;
 const RESERVED_COLORS = new Set(['default', 'surface']);
@@ -253,27 +251,13 @@ export const resolveTheming = (root: ParentNode, themes: FrameThemes) => {
 };
 
 /**
- * Resolves the theming attributes under `root` now and again after every change of its markup or of the page's
- * stylesheets: auto surfaces and semantic colours as `resolveTheming`, and `[data-et-surface-interactive]` as `etSurfaceInteractive`, whose CSS
- * (`interactiveCss`) goes into the page once. Returns a function that stops watching and takes that CSS out again.
+ * Resolves the auto surfaces and semantic colours under `root` as `resolveTheming`, now and again after every change
+ * of its markup or of the page's stylesheets. Returns a function that stops watching.
  */
-export const watchSurfaces = (root: HTMLElement, interactiveCss: string) => {
+export const watchSurfaces = (root: HTMLElement) => {
   const document = root.ownerDocument;
-  let styled: HTMLStyleElement | null = null;
 
   const resolve = () => {
-    const interactive = Array.from(root.querySelectorAll(`[${SURFACE_INTERACTIVE_ATTRIBUTE}]`));
-
-    interactive.forEach((element) => {
-      if (!element.classList.contains(SURFACE_INTERACTIVE_CLASS)) element.classList.add(SURFACE_INTERACTIVE_CLASS);
-    });
-
-    if (interactive.length > 0 && !styled) {
-      styled = document.createElement('style');
-      styled.textContent = interactiveCss;
-      document.head.append(styled);
-    }
-
     if (root.querySelector(`[${AUTO_SURFACE_ATTRIBUTE}], [${SEMANTIC_COLOR_ATTRIBUTE}]`))
       resolveTheming(root, registeredThemesOf(document));
   };
@@ -287,13 +271,12 @@ export const watchSurfaces = (root: HTMLElement, interactiveCss: string) => {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['class', AUTO_SURFACE_ATTRIBUTE, SURFACE_INTERACTIVE_ATTRIBUTE, SEMANTIC_COLOR_ATTRIBUTE],
+    attributeFilter: ['class', AUTO_SURFACE_ATTRIBUTE, SEMANTIC_COLOR_ATTRIBUTE],
   });
   sheets.observe(document.head, { childList: true, subtree: true, characterData: true });
 
   return () => {
     markup.disconnect();
     sheets.disconnect();
-    styled?.remove();
   };
 };

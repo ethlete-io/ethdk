@@ -1,6 +1,6 @@
 @layer components {
   .tf-button-stage {
-    background: var(--et-surface-background-solid);
+    background: var(--et-surface-background);
   }
 
   .tf-button-stage .tf-button {

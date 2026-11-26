@@ -3,10 +3,10 @@
   align-items: center;
   justify-content: center;
   padding: 4rem 6rem;
-  background: var(--et-surface-background-solid);
+  background: var(--et-surface-background);
 }
 
 .logo-stage .logo-mark {
   display: block;
-  color: var(--et-theme-color-primary-solid);
+  color: var(--et-tone-fill);
 }

@@ -64,7 +64,7 @@ describe('unknownThemeWarningsOf', () => {
   });
 
   it('names the defined themes', async () => {
-    const colors = `${fixture('tomflix-colors.css')}\n.et-color--error { --et-color-primary: 239 68 68; }\n.et-color--warning { --et-color-primary: 245 158 11; }`;
+    const colors = `${fixture('tomflix-colors.css')}\n.et-color--error { --et-tone-fill-rest: rgb(239 68 68); }\n.et-color--warning { --et-tone-fill-rest: rgb(245 158 11); }`;
     const { product, sketch } = heroSketch(colors);
     const warnings = await unknownThemeWarningsOf({ product, sketch, load, pictureOf });
 
@@ -72,7 +72,7 @@ describe('unknownThemeWarningsOf', () => {
   });
 
   it('stays quiet once the foundation defines the theme', async () => {
-    const colors = `${fixture('tomflix-colors.css')}\n.et-color--danger { --et-color-primary: 239 68 68; }`;
+    const colors = `${fixture('tomflix-colors.css')}\n.et-color--danger { --et-tone-fill-rest: rgb(239 68 68); }`;
     const { product, sketch } = heroSketch(colors);
 
     expect(await unknownThemeWarningsOf({ product, sketch, load, pictureOf })).toEqual([]);

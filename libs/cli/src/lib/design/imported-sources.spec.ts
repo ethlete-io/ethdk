@@ -32,7 +32,7 @@ describe('importedSourcesPlugin', () => {
     const css = await studioCssOf();
 
     expect(css).toContain('.w-7\\.5');
-    expect(css).toContain('.bg-et-theme-hover');
-    expect(css).toContain('.bg-et-theme-active');
+    expect(css).toContain('.bg-et-tone-fill-hover');
+    expect(css).toContain('.bg-et-tone-fill-active');
   }, 120_000);
 });

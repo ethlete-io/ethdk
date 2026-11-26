@@ -4,7 +4,7 @@ import { colorsSkeletonOf } from './colors-skeleton';
 const TOMFLIX_ACCENT = '#2dd4cc';
 
 const tokenOf = (css: string, name: string) => {
-  const match = new RegExp(`${name}: (\\d+) (\\d+) (\\d+);`, 'u').exec(css);
+  const match = new RegExp(`${name}: rgb\\((\\d+) (\\d+) (\\d+)\\);`, 'u').exec(css);
 
   return match ? Number(match[1]) : NaN;
 };
@@ -24,14 +24,16 @@ describe('colors skeleton interaction states', () => {
     const css = darkCss();
 
     // The SDK uses one value for hover and focus.
-    for (const name of ['--et-surface-interaction', '--et-color-primary', '--et-color-primary-ink'])
+    for (const name of ['--et-surface-interaction', '--et-tone-fill', '--et-tone-text']) {
+      expect(tokenOf(css, `${name}-hover`)).not.toBeNaN();
       expect(tokenOf(css, `${name}-focus`)).toBe(tokenOf(css, `${name}-hover`));
+    }
   });
 });
 
 const channelsOf = (css: string, selector: string, name: string) => {
   const body = new RegExp(`\\n  ${selector.replace('.', '\\.')} \\{([^}]*)\\}`, 'u').exec(css)?.[1] ?? '';
-  const match = new RegExp(`${name}: (\\d+ \\d+ \\d+);`, 'u').exec(body);
+  const match = new RegExp(`${name}: rgb\\((\\d+ \\d+ \\d+)\\);`, 'u').exec(body);
 
   return match?.[1]?.split(' ').map(Number) ?? [];
 };
@@ -59,18 +61,18 @@ describe('colors skeleton semantic colour themes', () => {
 
     for (const type of ['error', 'warning']) {
       const theme = `.et-color--${type}`;
-      const fill = (state: string) => channelsOf(css, theme, `--et-color-primary${state}`);
-      const on = (state: string) => channelsOf(css, theme, `--et-color-on-primary${state}`);
-      const ink = (state: string) => channelsOf(css, theme, `--et-color-primary-ink${state}`);
+      const fill = (state: string) => channelsOf(css, theme, `--et-tone-fill-${state}`);
+      const on = (state: string) => channelsOf(css, theme, `--et-tone-on-fill-${state}`);
+      const ink = (state: string) => channelsOf(css, theme, `--et-tone-text-${state}`);
 
       expect(css).toMatch(new RegExp(`\\${theme} \\{\\s*--et-color-theme-type: ${type};`, 'u'));
-      expect(fill('')).not.toEqual([45, 212, 204]);
-      expect(fill('-focus')).toEqual(fill('-hover'));
-      expect(ink('-focus')).toEqual(ink('-hover'));
-      expect(new Set(['', '-hover', '-active', '-disabled'].map((state) => fill(state).join(' '))).size).toBe(4);
-      expect(on('-disabled')).not.toEqual(on(''));
+      expect(fill('rest')).not.toEqual([45, 212, 204]);
+      expect(fill('focus')).toEqual(fill('hover'));
+      expect(ink('focus')).toEqual(ink('hover'));
+      expect(new Set(['rest', 'hover', 'active', 'disabled'].map((state) => fill(state).join(' '))).size).toBe(4);
+      expect(on('disabled')).not.toEqual(on('rest'));
 
-      for (const state of ['', '-hover', '-focus', '-active']) {
+      for (const state of ['rest', 'hover', 'focus', 'active']) {
         expect(ratioOf(on(state), fill(state))).toBeGreaterThanOrEqual(4.5);
         expect(ratioOf(ink(state), [0, 0, 0])).toBeGreaterThanOrEqual(4.5);
       }
@@ -81,10 +83,10 @@ describe('colors skeleton semantic colour themes', () => {
     const css = colorsSkeletonOf({ scheme: 'both', accent: TOMFLIX_ACCENT }).files['colors.css'] ?? '';
 
     for (const type of ['error', 'warning']) {
-      const light = channelsOf(css, `.et-color--${type}`, '--et-color-primary-ink');
+      const light = channelsOf(css, `.et-color--${type}`, '--et-tone-text-rest');
       const dark = /@media \(prefers-color-scheme: dark\) \{\s*\.et-color--[a-z]+ \{/u.test(css)
         ? (new RegExp(
-            `\\.et-surface--dark \\.et-color--${type},\\s*\\.et-surface--dark\\.et-color--${type} \\{\\s*--et-color-primary-ink: (\\d+ \\d+ \\d+);`,
+            `\\.et-surface--dark \\.et-color--${type},\\s*\\.et-surface--dark\\.et-color--${type} \\{\\s*--et-tone-text-rest: rgb\\((\\d+ \\d+ \\d+)\\);`,
             'u',
           )
             .exec(css)?.[1]

@@ -5,12 +5,14 @@ import { isHexColor, rgbOf } from '../sketch/colors-skeleton';
 
 export const ACCENT_PRIMARY_RULE = 'ACCENT-PRIMARY';
 
-const PRIMARY = /^--et-color-primary\s*:/u;
+const PRIMARY = /^--et-tone-fill-rest\s*:/u;
 
 const declaredRgbOf = (value: string): number[] | null => {
-  const text = value.replace(/!important/u, '').trim();
+  const declared = value.replace(/!important/u, '').trim();
 
-  if (isHexColor(text)) return rgbOf(text);
+  if (isHexColor(declared)) return rgbOf(declared);
+
+  const text = /^rgb\(([^)]*)\)$/u.exec(declared)?.[1]?.trim() ?? declared;
 
   const channels = text.split(/[\s,]+/u);
 
@@ -26,7 +28,7 @@ const accentDeclarationsOf = (css: string) =>
     .flatMap((body) => cssBlocksOf(body).declarations);
 
 /**
- * A `--et-color-primary` in a foundations stylesheet of a product that recorded an `accent` at `product new`, whose
+ * A `--et-tone-fill-rest` in a foundations stylesheet of a product that recorded an `accent` at `product new`, whose
  * value is another colour than that accent; a product without `accent` and a colour theme with a `--et-color-theme-type`
  * pass.
  */
@@ -50,7 +52,7 @@ export const accentPrimariesOf = (product: ResolvedProduct): Problem[] => {
                 {
                   rule: ACCENT_PRIMARY_RULE,
                   file: part.css ?? part.file,
-                  message: `--et-color-primary is ${rgb.join(' ')}, but ${product.name} was started with the accent ${accent} (${wanted}) - set --et-color-primary to ${wanted}; show another colour only as an extra variant next to the accent, never instead of it`,
+                  message: `--et-tone-fill-rest is rgb(${rgb.join(' ')}), but ${product.name} was started with the accent ${accent} (rgb(${wanted})) - set --et-tone-fill-rest to rgb(${wanted}); show another colour only as an extra variant next to the accent, never instead of it`,
                 },
               ]
             : [];

@@ -2,7 +2,7 @@ import { FoundationSkeleton } from './foundation-skeletons';
 
 type Rgb = [number, number, number];
 
-const STATES = ['', '-hover', '-focus', '-active', '-disabled'];
+const STATES = ['-rest', '-hover', '-focus', '-active', '-disabled'];
 
 const PLACEHOLDER: Rgb = [128, 128, 128];
 
@@ -35,7 +35,7 @@ export const rgbOf = (hex: string) => {
   return pairs.map((pair) => parseInt(pair, 16));
 };
 
-const channelsOf = (rgb: Rgb) => rgb.join(' ');
+const colourOf = (rgb: Rgb) => `rgb(${rgb.join(' ')})`;
 
 const mix = ([from, to]: [Rgb, Rgb], amount: number): Rgb =>
   from.map((channel, index) => Math.round(channel + ((to[index] ?? 0) - channel) * amount)) as Rgb;
@@ -85,8 +85,8 @@ const accentStatesOf = (accent: Rgb, page: Rgb) => {
   const onFills = [onColour, onColour, onColour, onColour, mix([onColour, disabled], 0.5)];
 
   return [
-    ...STATES.map((state, index) => [`primary${state}`, channelsOf(fills[index] ?? accent)]),
-    ...STATES.map((state, index) => [`on-primary${state}`, channelsOf(onFills[index] ?? onColour)]),
+    ...STATES.map((state, index) => [`fill${state}`, colourOf(fills[index] ?? accent)]),
+    ...STATES.map((state, index) => [`on-fill${state}`, colourOf(onFills[index] ?? onColour)]),
   ];
 };
 
@@ -100,12 +100,12 @@ const inkStatesOf = (accent: Rgb, { background, text }: Surface) => {
     mix([ink, background], 0.5),
   ];
 
-  return STATES.map((state, index) => `--et-color-primary-ink${state}: ${channelsOf(inks[index] ?? ink)};`);
+  return STATES.map((state, index) => `--et-tone-text${state}: ${colourOf(inks[index] ?? ink)};`);
 };
 
 const SURFACE_STEPS: [string, number][] = [
-  ['color-muted', 0.7],
-  ['color-subtle', 0.56],
+  ['text-muted', 0.7],
+  ['text-subtle', 0.56],
   ['border', 0.2],
   ['interaction', 0.62],
   ['interaction-hover', 0.86],
@@ -114,27 +114,23 @@ const SURFACE_STEPS: [string, number][] = [
   ['interaction-disabled', 0.27],
 ];
 
-const SURFACE_ALIASES = ['background', 'color', 'color-muted', 'color-subtle', 'border'].concat(
-  STATES.map((state) => `interaction${state}`),
-);
-
-const COLOUR_ALIASES = [
-  ['primary', 'var(--et-color-primary)'],
-  ['on-primary', 'var(--et-color-on-primary)'],
-  ['ink', 'var(--et-color-primary-ink, var(--et-color-primary))'],
+const TONE_ALIASES = [
+  '--et-tone-fill: var(--et-tone-fill-rest);',
+  '--et-tone-on-fill: var(--et-tone-on-fill-rest);',
+  '--et-tone-text: var(--et-tone-text-rest, var(--et-tone-fill-rest));',
 ];
 
 const block = (selector: string, lines: string[]) => [`  ${selector} {`, ...lines.map((line) => `    ${line}`), '  }'];
 
 const surfaceLinesOf = (surface: Surface, accent: Rgb) => [
-  `--et-surface-background: ${channelsOf(surface.background)};`,
-  `--et-surface-color: ${channelsOf(surface.text)};`,
+  `--et-surface-background: ${colourOf(surface.background)};`,
+  `--et-surface-text: ${colourOf(surface.text)};`,
   ...SURFACE_STEPS.map(
-    ([token, amount]) => `--et-surface-${token}: ${channelsOf(mix([surface.background, surface.text], amount))};`,
+    ([token, amount]) => `--et-surface-${token}: ${colourOf(mix([surface.background, surface.text], amount))};`,
   ),
   `--et-surface-type: ${surface.name};`,
   '--et-surface-elevation: 0;',
-  '--et-shadow-color-rgb: 0 0 0;',
+  '--et-shadow-color: rgb(0 0 0);',
   ...inkStatesOf(accent, surface),
   `color-scheme: ${surface.name};`,
 ];
@@ -144,7 +140,7 @@ const semanticCssOf = (scheme: ColorScheme) =>
     const theme = `.et-color--${type}`;
     const own = (surface: Surface) => `.et-surface--${surface.name} ${theme},\n  .et-surface--${surface.name}${theme}`;
     const fills = accentStatesOf(base, scheme === 'dark' ? DARK.background : LIGHT.background).map(
-      ([token, value]) => `--et-color-${token}: ${value};`,
+      ([token, value]) => `--et-tone-${token}: ${value};`,
     );
     const first = scheme === 'dark' ? DARK : LIGHT;
     const lines = ['', ...block(theme, [`--et-color-theme-type: ${type};`, ...fills, ...inkStatesOf(base, first)])];
@@ -187,28 +183,12 @@ const colorsCssOf = (scheme: ColorScheme, accent: Rgb) =>
     ...block(
       ':root',
       accentStatesOf(accent, scheme === 'dark' ? DARK.background : LIGHT.background).map(
-        ([token, value]) => `--et-color-${token}: ${value};`,
+        ([token, value]) => `--et-tone-${token}: ${value};`,
       ),
     ),
     ...semanticCssOf(scheme),
     '',
-    ...block(
-      ":root,\n  :where([class*='et-surface--'])",
-      SURFACE_ALIASES.flatMap((token) => [
-        `--et-surface-${token}-rgb: var(--et-surface-${token});`,
-        `--et-surface-${token}-solid: rgb(var(--et-surface-${token}-rgb));`,
-      ]),
-    ),
-    '',
-    ...block(
-      ":root,\n  :where([class*='et-color--'])",
-      COLOUR_ALIASES.flatMap(([token, value]) => {
-        const name = `--et-theme-color-${token}`;
-        const colour = `rgb(var(${name}-rgb) / var(${name}-opacity))`;
-
-        return [`${name}-rgb: ${value};`, `${name}-opacity: 1;`, `${name}-solid: ${colour};`, `${name}: ${colour};`];
-      }),
-    ),
+    ...block(":root,\n  :where([class*='et-color--'])", TONE_ALIASES),
     '}',
     '',
   ].join('\n');
@@ -244,20 +224,20 @@ type Surface = ${surfaces.map((surface) => `'${surface}'`).join(' | ')};
 
 type Props = { group: 'surface' | 'accent' | 'contrast'; surface: Surface };
 
-const STATE_ENDS = ['', '-hover', '-focus', '-active', '-disabled'];
+const STATE_ENDS = ['-rest', '-hover', '-focus', '-active', '-disabled'];
 
 const THEMES = ['error', 'warning'];
 
 const AA = 4.5;
 
 const SURFACE_TOKEN =
-  /^et-(surface-(background|color(-muted|-subtle)?|border|interaction(-hover|-focus|-active|-disabled)?)|shadow-color-rgb)$/u;
+  /^et-(surface-(background|text(-muted|-subtle)?|border|interaction(-hover|-focus|-active|-disabled)?)|shadow-color)$/u;
 
-const COLOR_TOKEN = /^et-color-(on-)?primary(-ink)?(-hover|-focus|-active|-disabled)?$/u;
+const COLOR_TOKEN = /^et-tone-(fill|on-fill|text)-(rest|hover|focus|active|disabled)$/u;
 
-const TEXT_TOKEN = /^et-(surface-(background|color(-muted|-subtle)?)|color-primary-ink)$/u;
+const TEXT_TOKEN = /^et-(surface-(background|text(-muted|-subtle)?)|tone-text-rest)$/u;
 
-const labelOf = (end: string) => (end ? end.slice(1) : 'rest');
+const labelOf = (end: string) => end.slice(1);
 
 const disabledOf = (name: string) => (name.endsWith('-disabled') ? 'aria-disabled="true"' : '');
 
@@ -267,24 +247,24 @@ const ink = (token: string, label = 'Aa') =>
   html\`<span class="colors-ink" \${disabledOf(token)} data-ink="--\${token}">\${label}</span>\`;
 
 const surfaceSample = (name: string) => {
-  if (name === 'et-shadow-color-rgb') return html\`<span class="colors-swatch colors-shadow"></span>\`;
-  if (/^et-(surface-color|color-primary-ink)/u.test(name)) return ink(name);
+  if (name === 'et-shadow-color') return html\`<span class="colors-swatch colors-shadow"></span>\`;
+  if (/^et-(surface-text|tone-text)/u.test(name)) return ink(name);
 
   return swatch(name);
 };
 
 const colorSample = (name: string) => {
-  const onFill = /^et-color-on-primary(.*)$/u.exec(name);
+  const onFill = /^et-tone-on-fill(.*)$/u.exec(name);
 
   if (onFill)
     return html\`<span
       class="colors-fill"
       \${disabledOf(name)}
-      data-fill="--et-color-primary\${onFill[1]}"
+      data-fill="--et-tone-fill\${onFill[1]}"
       data-ink="--\${name}"
       >Aa</span
     >\`;
-  if (name.startsWith('et-color-primary-ink')) return ink(name, 'Ink');
+  if (name.startsWith('et-tone-text')) return ink(name, 'Ink');
 
   return swatch(name);
 };
@@ -298,7 +278,7 @@ const surfacePanel = html\`<div class="colors-card">
     \${STATE_ENDS.map(
       (end) =>
         html\`<span class="colors-state"
-          ><span class="colors-swatch" data-fill="--et-surface-interaction\${end}"></span
+          ><span class="colors-swatch" data-fill="--et-surface-interaction\${end === '-rest' ? '' : end}"></span
           >\${labelOf(end)}</span
         >\`,
     ).join('')}
@@ -313,8 +293,8 @@ const fillsAndInks = html\`<div class="colors-states">
         html\`<span
           class="colors-fill colors-fill--wide"
           \${disabledOf(end)}
-          data-fill="--et-color-primary\${end}"
-          data-ink="--et-color-on-primary\${end}"
+          data-fill="--et-tone-fill\${end}"
+          data-ink="--et-tone-on-fill\${end}"
           >\${labelOf(end)}</span
         >\`,
     ).join('')}
@@ -322,7 +302,7 @@ const fillsAndInks = html\`<div class="colors-states">
   <div class="colors-states">
     \${STATE_ENDS.map(
       (end) =>
-        html\`<span class="colors-link" \${disabledOf(end)} data-ink="--et-color-primary-ink\${end}"
+        html\`<span class="colors-link" \${disabledOf(end)} data-ink="--et-tone-text\${end}"
           >Ink \${labelOf(end)}</span
         >\`,
     ).join('')}
@@ -363,19 +343,19 @@ const contrastPanel = (surface: Surface) =>
     pairTable(
       \`Text on the \${surface} background\`,
       ['', '-muted', '-subtle'].map((end) =>
-        pair(end ? end.slice(1) : 'text', \`--et-surface-color\${end}\`, '--et-surface-background', surface),
+        pair(end ? end.slice(1) : 'text', \`--et-surface-text\${end}\`, '--et-surface-background', surface),
       ),
     ),
     pairTable(
       'On-colour on the accent fill',
       STATE_ENDS.filter((end) => end !== '-disabled').map((end) =>
-        pair(labelOf(end), \`--et-color-on-primary\${end}\`, \`--et-color-primary\${end}\`, surface),
+        pair(labelOf(end), \`--et-tone-on-fill\${end}\`, \`--et-tone-fill\${end}\`, surface),
       ),
     ),
     pairTable(
       \`Ink on the \${surface} background\`,
       STATE_ENDS.filter((end) => end !== '-disabled').map((end) =>
-        pair(labelOf(end), \`--et-color-primary-ink\${end}\`, '--et-surface-background', surface),
+        pair(labelOf(end), \`--et-tone-text\${end}\`, '--et-surface-background', surface),
       ),
     ),
     ...THEMES.map((theme) =>
@@ -384,14 +364,14 @@ const contrastPanel = (surface: Surface) =>
         STATE_ENDS.filter((end) => end !== '-disabled').flatMap((end) => [
           pair(
             \`on-colour \${labelOf(end)}\`,
-            \`--et-color-on-primary\${end}\`,
-            \`--et-color-primary\${end}\`,
+            \`--et-tone-on-fill\${end}\`,
+            \`--et-tone-fill\${end}\`,
             surface,
             \`et-color--\${theme}\`,
           ),
           pair(
             \`ink \${labelOf(end)}\`,
-            \`--et-color-primary-ink\${end}\`,
+            \`--et-tone-text\${end}\`,
             '--et-surface-background',
             surface,
             \`et-color--\${theme}\`,
@@ -405,8 +385,8 @@ const paint = (root: HTMLElement) =>
   root.querySelectorAll<HTMLElement>('[data-fill], [data-ink]').forEach((element) => {
     const { fill, ink } = element.dataset;
 
-    if (fill) element.style.background = \`rgb(var(\${fill}))\`;
-    if (ink) element.style.color = \`rgb(var(\${ink}))\`;
+    if (fill) element.style.background = \`var(\${fill})\`;
+    if (ink) element.style.color = \`var(\${ink})\`;
   });
 
 const fillContrast = (root: HTMLElement) => {
@@ -449,20 +429,20 @@ const sheetOf = ({ group, surface }: Props) => {
 };
 
 const STYLES = \`
-  .colors-page { --surface: var(--et-surface-background-solid); --text: var(--et-surface-color-solid); --text-muted: var(--et-surface-color-muted-solid); --surface-border: var(--et-surface-border-solid); width: max-content; }
+  .colors-page { --surface: var(--et-surface-background); --text: var(--et-surface-text); --text-muted: var(--et-surface-text-muted); --surface-border: var(--et-surface-border); width: max-content; }
   .colors-page .ts-row { grid-template-columns: 300px 160px 1fr; }
   section.ts-panel { display: flex; flex-direction: column; gap: 12px; }
   section.ts-panel.colors-contrast { flex-direction: row; flex-wrap: wrap; gap: 24px; }
   .colors-table { display: flex; flex-direction: column; gap: 8px; }
   .colors-title { margin: 0; font-size: 14px; font-weight: 600; }
-  .colors-value { font-size: 12px; color: var(--et-surface-color-muted-solid); white-space: nowrap; }
-  .colors-card { display: flex; gap: 24px; padding: 12px 16px; border: 1px solid var(--et-surface-border-solid); border-radius: 6px; }
-  .colors-muted { color: var(--et-surface-color-muted-solid); }
-  .colors-subtle { color: var(--et-surface-color-subtle-solid); }
+  .colors-value { font-size: 12px; color: var(--et-surface-text-muted); white-space: nowrap; }
+  .colors-card { display: flex; gap: 24px; padding: 12px 16px; border: 1px solid var(--et-surface-border); border-radius: 6px; }
+  .colors-muted { color: var(--et-surface-text-muted); }
+  .colors-subtle { color: var(--et-surface-text-subtle); }
   .colors-states { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .colors-state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
-  .colors-swatch { display: block; width: 40px; height: 24px; border-radius: 4px; border: 1px solid var(--et-surface-border-solid); }
-  .colors-shadow { background: var(--et-surface-background-solid); box-shadow: 0 6px 12px rgb(var(--et-shadow-color-rgb) / 0.22), 0 2px 4px rgb(var(--et-shadow-color-rgb) / 0.14); }
+  .colors-swatch { display: block; width: 40px; height: 24px; border-radius: 4px; border: 1px solid var(--et-surface-border); }
+  .colors-shadow { background: var(--et-surface-background); box-shadow: 0 6px 12px color-mix(in srgb, var(--et-shadow-color) 22%, transparent), 0 2px 4px color-mix(in srgb, var(--et-shadow-color) 14%, transparent); }
   .colors-ink { font-size: 16px; font-weight: 600; }
   .colors-fill { display: inline-grid; place-items: center; min-width: 40px; height: 24px; padding: 0 8px; box-sizing: border-box; border-radius: 4px; font-size: 12px; font-weight: 600; }
   .colors-fill--wide { min-width: 80px; height: 32px; }
@@ -470,11 +450,11 @@ const STYLES = \`
   .colors-elevation { display: grid; place-items: center; width: 120px; height: 48px; border-radius: 6px; border: 0; font-size: 12px; }
   .colors-pairs { display: grid; grid-template-columns: 40px auto auto auto; gap: 6px 12px; align-items: center; }
   .colors-pair-row { display: contents; }
-  .colors-theme { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; border-top: 1px solid var(--et-surface-border-solid); }
-  .colors-pair { display: grid; place-items: center; width: 40px; height: 28px; border-radius: 4px; border: 1px solid var(--et-surface-border-solid); font-size: 14px; font-weight: 600; }
+  .colors-theme { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; border-top: 1px solid var(--et-surface-border); }
+  .colors-pair { display: grid; place-items: center; width: 40px; height: 28px; border-radius: 4px; border: 1px solid var(--et-surface-border); font-size: 14px; font-weight: 600; }
   .colors-pair-label, .colors-ratio { font-size: 12px; white-space: nowrap; }
   .colors-ratio { font-variant-numeric: tabular-nums; }
-  .colors-ratio[data-et-contrast-low] { color: var(--et-surface-color-muted-solid); text-decoration: line-through; }
+  .colors-ratio[data-et-contrast-low] { color: var(--et-surface-text-muted); text-decoration: line-through; }
 \`;
 
 const render = (props: Props): Drawing => {

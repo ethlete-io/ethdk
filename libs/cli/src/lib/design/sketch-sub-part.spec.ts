@@ -40,11 +40,11 @@ export default definePart<Props>({
 `;
 
 const TOMFLIX_INLINE_BADGES = [
-  '<span class="flex items-center gap-2 text-xs text-et-surface-muted"',
-  '  ><span class="size-[5px] rounded-full bg-et-theme"></span>${FIXTURE.badge}</span',
+  '<span class="flex items-center gap-2 text-xs text-et-surface-text-muted"',
+  '  ><span class="size-[5px] rounded-full bg-et-tone-fill"></span>${FIXTURE.badge}</span',
   '>',
-  '<span class="text-xs font-semibold text-et-theme-ink">${FIXTURE.badge}</span>',
-  '<span class="shrink-0 text-xs font-semibold text-et-surface-muted">${FIXTURE.badge}</span>',
+  '<span class="text-xs font-semibold text-et-tone-text">${FIXTURE.badge}</span>',
+  '<span class="shrink-0 text-xs font-semibold text-et-surface-text-muted">${FIXTURE.badge}</span>',
 ].join('\n');
 
 const TOMFLIX_LITERAL_BADGE = [
@@ -53,7 +53,7 @@ const TOMFLIX_LITERAL_BADGE = [
   '</div>',
 ].join('\n');
 
-const TOMFLIX_CAPTION_TAGS = '<span class="text-et-theme-ink">Neu</span><span>Serie</span>';
+const TOMFLIX_CAPTION_TAGS = '<span class="text-et-tone-text">Neu</span><span>Serie</span>';
 
 const tomflixHero = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-sub-part-'));

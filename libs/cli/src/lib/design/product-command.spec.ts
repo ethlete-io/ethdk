@@ -133,11 +133,11 @@ describe('designProduct', () => {
     const css = readFileSync(join(dir, 'colors.css'), 'utf8');
     const ts = readFileSync(join(dir, 'colors.ts'), 'utf8');
 
-    expect(css).toContain(':root,\n  .et-surface--dark {\n    --et-surface-background: 0 0 0;');
+    expect(css).toContain(':root,\n  .et-surface--dark {\n    --et-surface-background: rgb(0 0 0);');
     expect(css).not.toContain('et-surface--light');
     expect(css).not.toContain('prefers-color-scheme');
-    expect(css).toContain('--et-color-primary: 229 9 20;');
-    expect(css).toContain('--et-color-on-primary: 255 255 255;');
+    expect(css).toContain('--et-tone-fill-rest: rgb(229 9 20);');
+    expect(css).toContain('--et-tone-on-fill-rest: rgb(255 255 255);');
     expect(ts).toContain("'surface-dark': { group: 'surface', surface: 'dark' }");
     expect(ts).not.toContain('surface-light');
     expect(readConfig(target)?.products?.['tomflix']?.schemes).toEqual(['dark']);
@@ -153,7 +153,7 @@ describe('designProduct', () => {
     const dir = join(target, DESIGN_DIR, 'tomflix', 'foundations', 'colors');
     const css = readFileSync(join(dir, 'colors.css'), 'utf8');
     const ts = readFileSync(join(dir, 'colors.ts'), 'utf8');
-    const valueOf = (token: string) => new RegExp(`--et-${token}: ([\\d ]+);`, 'u').exec(css)?.[1] ?? '';
+    const valueOf = (token: string) => new RegExp(`--et-${token}: rgb\\(([\\d ]+)\\);`, 'u').exec(css)?.[1] ?? '';
     const distinct = (tokens: string[]) => new Set(tokens.map(valueOf)).size;
     const luminanceOf = (rgb: string) => {
       const [r = 0, g = 0, b = 0] = rgb.split(' ').map((channel) => {
@@ -171,11 +171,9 @@ describe('designProduct', () => {
     };
 
     expect(css).not.toContain('128 128 128');
-    expect(valueOf('color-primary')).toBe('229 9 20');
-    expect(distinct(['color-primary', 'color-primary-hover', 'color-primary-active', 'color-primary-disabled'])).toBe(
-      4,
-    );
-    expect(valueOf('color-primary-focus')).toBe(valueOf('color-primary-hover'));
+    expect(valueOf('tone-fill-rest')).toBe('229 9 20');
+    expect(distinct(['tone-fill-rest', 'tone-fill-hover', 'tone-fill-active', 'tone-fill-disabled'])).toBe(4);
+    expect(valueOf('tone-fill-focus')).toBe(valueOf('tone-fill-hover'));
     expect(
       distinct([
         'surface-interaction',
@@ -186,23 +184,23 @@ describe('designProduct', () => {
     ).toBe(4);
     expect(valueOf('surface-interaction-focus')).toBe(valueOf('surface-interaction-hover'));
     expect(Number(valueOf('surface-interaction').split(' ')[0])).toBeLessThanOrEqual(160);
-    expect(valueOf('color-on-primary-disabled')).not.toBe(valueOf('color-on-primary'));
+    expect(valueOf('tone-on-fill-disabled')).not.toBe(valueOf('tone-on-fill-rest'));
     expect(
       distinct([
-        'surface-color',
-        'surface-color-muted',
-        'surface-color-subtle',
+        'surface-text',
+        'surface-text-muted',
+        'surface-text-subtle',
         'surface-border',
         'surface-interaction-hover',
         'surface-interaction-disabled',
       ]),
     ).toBe(6);
 
-    for (const text of ['surface-color', 'surface-color-muted', 'color-primary-ink'])
+    for (const text of ['surface-text', 'surface-text-muted', 'tone-text-rest'])
       expect(ratioOf(text, 'surface-background')).toBeGreaterThanOrEqual(4.5);
 
-    for (const state of ['', '-hover', '-focus', '-active'])
-      expect(ratioOf(`color-on-primary${state}`, `color-primary${state}`)).toBeGreaterThanOrEqual(4.5);
+    for (const state of ['rest', 'hover', 'focus', 'active'])
+      expect(ratioOf(`tone-on-fill-${state}`, `tone-fill-${state}`)).toBeGreaterThanOrEqual(4.5);
 
     expect(ts).toContain('measureContrastPairs');
     expect(ts).toMatch(/'surface-dark'[\s\S]*'accent-dark'[\s\S]*'contrast-dark'/u);
@@ -218,7 +216,9 @@ describe('designProduct', () => {
     const dir = join(target, DESIGN_DIR, 'tomflix', 'foundations', 'colors');
     const css = readFileSync(join(dir, 'colors.css'), 'utf8');
 
-    expect(css).toMatch(/\.et-color--error \{\s*--et-color-theme-type: error;\s*--et-color-primary: 220 38 38;/u);
+    expect(css).toMatch(
+      /\.et-color--error \{\s*--et-color-theme-type: error;\s*--et-tone-fill-rest: rgb\(220 38 38\);/u,
+    );
     expect(css).toMatch(/\.et-color--warning \{\s*--et-color-theme-type: warning;/u);
     expect(readFileSync(join(dir, 'colors.ts'), 'utf8')).toContain("const THEMES = ['error', 'warning'];");
     expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['tomflix'] })).toBe(0);
@@ -242,7 +242,7 @@ describe('designProduct', () => {
     expect(designLint({ target, argv: [css], invocation: 'et design' })).toBe(1);
     expect(out).toContainEqual(
       expect.stringMatching(
-        /^ACCENT-PRIMARY .*colors\.css: --et-color-primary is 224 164 82, but tomflix was started with the accent #e50914 \(229 9 20\) - set --et-color-primary to 229 9 20; show another colour only as an extra variant/u,
+        /^ACCENT-PRIMARY .*colors\.css: --et-tone-fill-rest is rgb\(224 164 82\), but tomflix was started with the accent #e50914 \(rgb\(229 9 20\)\) - set --et-tone-fill-rest to rgb\(229 9 20\); show another colour only as an extra variant/u,
       ),
     );
   }, 60_000);
@@ -284,8 +284,8 @@ describe('designProduct', () => {
 
     expect(css).toContain('.et-surface--light');
     expect(css).toContain('.et-surface--dark');
-    expect(css).toContain('--et-color-primary: 255 204 0;');
-    expect(css).toContain('--et-color-on-primary: 0 0 0;');
+    expect(css).toContain('--et-tone-fill-rest: rgb(255 204 0);');
+    expect(css).toContain('--et-tone-on-fill-rest: rgb(0 0 0);');
     expect(readConfig(target)?.products?.['shop']?.schemes).toBeUndefined();
     expect(run(target, 'new', 'web', '--colors', 'grey')).toBe(1);
     expect(await post(target, { name: 'app', accent: 'red' })).toMatchObject({ status: 400 });

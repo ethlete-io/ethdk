@@ -30,13 +30,13 @@ describe('bespoke controls', () => {
     const root = drawn(
       '<button class="flex h-6 rounded-sm" data-et-control="search"></button>' +
         '<button class="et-button tabular-nums" data-et-control="reset"></button>' +
-        '<button class="et-button" data-et-control="open"><div class="et-button-contents"><span class="text-et-surface-muted">⌘K</span></div></button>',
+        '<button class="et-button" data-et-control="open"><div class="et-button-contents"><span class="text-et-surface-text-muted">⌘K</span></div></button>',
     );
 
     expect(bespokeControlsIn(root, 'components/title-bar', ['search', 'reset', 'open'])).toEqual([
       { id: 'search', why: 'is drawn markup (button.flex.h-6.rounded-sm), no SDK component' },
       { id: 'reset', why: 'is an SDK component with the custom class tabular-nums' },
-      { id: 'open', why: 'is an SDK component with drawn content (span.text-et-surface-muted)' },
+      { id: 'open', why: 'is an SDK component with drawn content (span.text-et-surface-text-muted)' },
     ]);
   });
 

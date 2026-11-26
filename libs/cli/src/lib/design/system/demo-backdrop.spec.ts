@@ -3,14 +3,14 @@ import { chromiumOf } from '../browser';
 import { SeenFrame, completenessGapLineOf, completenessGapsOf, seeFrame } from './complete';
 import { demoBackdropGapsOf } from './demo-backdrop';
 
-const SURFACE = 'style="--et-surface-background: 20 30 40"';
+const SURFACE = 'style="--et-surface-background: rgb(20 30 40)"';
 
 const FRAMES: Record<string, string> = {
-  backdrop: `<div id="root" ${SURFACE}><div class="demo" data-et-part="components/x" style="padding:8px;background-color:rgb(var(--et-surface-background))"><button data-et-control="go">Go</button></div></div>`,
+  backdrop: `<div id="root" ${SURFACE}><div class="demo" data-et-part="components/x" style="padding:8px;background-color:var(--et-surface-background)"><button data-et-control="go">Go</button></div></div>`,
   transparent: `<div id="root" ${SURFACE}><div class="demo" data-et-part="components/x" style="padding:8px"><button data-et-control="go">Go</button></div></div>`,
-  ownSurface: `<div id="root" ${SURFACE}><div class="card" data-et-part="components/x" style="--et-surface-background: 60 70 80;background-color:rgb(var(--et-surface-background))"><button data-et-control="go">Go</button></div></div>`,
+  ownSurface: `<div id="root" ${SURFACE}><div class="card" data-et-part="components/x" style="--et-surface-background: rgb(60 70 80);background-color:var(--et-surface-background)"><button data-et-control="go">Go</button></div></div>`,
   ownFill: `<div id="root" ${SURFACE}><div class="chip" data-et-part="components/x" style="background-color:rgb(1 2 3)"><button data-et-control="go">Go</button></div></div>`,
-  controlRoot: `<div id="root" ${SURFACE}><button data-et-part="components/x" data-et-control="go" style="background-color:rgb(var(--et-surface-background))">Go</button></div>`,
+  controlRoot: `<div id="root" ${SURFACE}><button data-et-part="components/x" data-et-control="go" style="background-color:var(--et-surface-background)">Go</button></div>`,
   bareRootSurface: `<div id="root" ${SURFACE}><div class="card" data-et-part="components/x" data-et-surface><button data-et-control="go">Go</button></div></div>`,
   bareInnerSurface: `<div id="root" ${SURFACE}><div class="card" data-et-part="components/x" data-et-surface><div data-et-surface></div></div></div>`,
 };

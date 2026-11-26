@@ -15,7 +15,7 @@ export type EmbedPageOptions = {
 };
 
 const MARK_CSS =
-  '[data-et-embed-marked] { outline: 0.2rem solid var(--et-theme-color-primary-solid, Highlight); outline-offset: 0.2rem; }';
+  '[data-et-embed-marked] { outline: 0.2rem solid var(--et-tone-fill, Highlight); outline-offset: 0.2rem; }';
 
 const KEPT = ['product', 'sketch', 'variant', 'surface', 'color'];
 

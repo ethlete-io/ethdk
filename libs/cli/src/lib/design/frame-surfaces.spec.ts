@@ -18,8 +18,6 @@ const THEMES_CSS = `@layer base {
   ${surfaceRule(':root', 'dark', 0)}
 }`;
 
-const INTERACTIVE_CSS = '.et-surface-interactive { outline: 1px solid; }';
-
 const SURFACES_SCRIPT = transformSync(readFileSync(resolve(WEB, 'frame-surfaces.ts'), 'utf8'), {
   loader: 'ts',
   format: 'iife',
@@ -50,12 +48,10 @@ describe('frame surfaces', () => {
 
     await page.setContent(`<style>${css}</style><div id="root">${body}</div>`);
     await page.addScriptTag({ content: SURFACES_SCRIPT });
-    await page.evaluate(
-      (css) =>
-        (
-          window as unknown as { frameSurfaces: { watchSurfaces: (root: HTMLElement, css: string) => void } }
-        ).frameSurfaces.watchSurfaces(document.querySelector('#root')!, css),
-      INTERACTIVE_CSS,
+    await page.evaluate(() =>
+      (
+        window as unknown as { frameSurfaces: { watchSurfaces: (root: HTMLElement) => void } }
+      ).frameSurfaces.watchSurfaces(document.querySelector('#root')!),
     );
 
     return page;
@@ -110,32 +106,6 @@ describe('frame surfaces', () => {
     });
 
     expect(await classesOf(page)).toMatchObject({ a: 'et-surface--dark-elevated-2' });
-    await page.close();
-  });
-
-  it('marks interactive surfaces and loads their CSS once', async (context) => {
-    if (!browser) return context.skip('no browser');
-
-    const page = await frameOf(
-      browser,
-      '<button id="x" data-et-surface-interactive></button><button id="y" data-et-surface-interactive></button>',
-    );
-
-    await page.evaluate(() => {
-      document.querySelector('#root')!.insertAdjacentHTML('beforeend', '<a id="z" data-et-surface-interactive></a>');
-    });
-
-    expect(await classesOf(page)).toMatchObject({
-      x: 'et-surface-interactive',
-      y: 'et-surface-interactive',
-      z: 'et-surface-interactive',
-    });
-    expect(
-      await page.evaluate(
-        (css) => Array.from(document.querySelectorAll('style')).filter((style) => style.textContent === css).length,
-        INTERACTIVE_CSS,
-      ),
-    ).toBe(1);
     await page.close();
   });
 
@@ -251,17 +221,3 @@ describe('frame surfaces', () => {
     });
   });
 }, 30_000);
-
-describe('surface interactive CSS', () => {
-  // A Studio row part draws its row on an interactive surface.
-  it.each([
-    'tree-row/shared/tree-row.ts',
-    'comment-row/comment-row.ts',
-    'disclosure/disclosure.ts',
-    'hold-trigger/hold-trigger.ts',
-  ])('marks the row of %s as an interactive surface', (path) => {
-    const source = readFileSync(resolve(__dirname, '../../../../../.ethlete/design/studio/components', path), 'utf8');
-
-    expect(source).toContain('data-et-surface-interactive');
-  });
-});

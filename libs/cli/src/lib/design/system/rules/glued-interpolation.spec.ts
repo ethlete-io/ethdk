@@ -42,7 +42,7 @@ describe('gluedInterpolationsOf', { timeout: 30_000 }, () => {
   it('passes an interpolation whose every branch starts with whitespace', () => {
     expect(
       messagesOf(
-        `<figure class="st-cframe bg-et-surface-bg\${props.class ? \` \${props.class}\` : ''} p-2\${props.name ? ' ' + props.name : ''}"></figure>`,
+        `<figure class="st-cframe bg-et-surface-background\${props.class ? \` \${props.class}\` : ''} p-2\${props.name ? ' ' + props.name : ''}"></figure>`,
       ),
     ).toEqual([]);
   });

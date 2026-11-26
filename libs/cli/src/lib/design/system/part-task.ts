@@ -474,10 +474,7 @@ export const gitDiffChangesOf = (options: { root: string; range: string }) =>
 export const gitDiffFilesOf = (options: { root: string; range: string }) =>
   gitDiffChangesOf(options).map(({ file }) => file);
 
-const SURFACE_DIRECTIVES = [
-  ['data-et-auto-surface', 'etAutoSurface'],
-  ['data-et-surface-interactive', 'etSurfaceInteractive'],
-] as const;
+const SURFACE_DIRECTIVES = [['data-et-auto-surface', 'etAutoSurface']] as const;
 
 /**
  * Each theming attribute a part's source uses, mapped to the `@ethlete/core` API the implementation puts there: the

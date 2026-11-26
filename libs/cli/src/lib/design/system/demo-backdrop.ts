@@ -12,7 +12,7 @@ export const findDemoBackdrop = (part: string) => `((root) => {
   const fill = getComputedStyle(own).backgroundColor;
   if (${JSON.stringify([...TRANSPARENT])}.includes(fill)) return null;
   const probe = document.createElement('div');
-  probe.style.backgroundColor = 'rgb(var(--et-surface-background))';
+  probe.style.backgroundColor = 'var(--et-surface-background)';
   own.parentElement.appendChild(probe);
   const under = getComputedStyle(probe).backgroundColor;
   probe.remove();

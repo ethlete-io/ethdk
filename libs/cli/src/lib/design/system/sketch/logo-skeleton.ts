@@ -130,9 +130,9 @@ const logoCss = `@layer components {
     --logo-accent: var(--et-color-primary, 128 128 128);
     --logo-ink: var(--et-color-primary-ink, var(--logo-accent));
     --logo-on-accent: var(--et-color-on-primary, 255 255 255);
-    --logo-bg: var(--et-surface-background, 255 255 255);
+    --logo-bg: var(--et-surface-background, rgb(255 255 255));
     --logo-fg: var(--et-surface-color, 0 0 0);
-    --logo-line: var(--et-surface-border, 200 200 200);
+    --logo-line: var(--et-surface-border, rgb(200 200 200));
     font-family: var(--default-font-family, system-ui, sans-serif);
     background: rgb(var(--logo-bg));
     color: rgb(var(--logo-fg));

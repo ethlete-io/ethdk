@@ -36,10 +36,10 @@ const escaped = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 export const SHEET_STYLES = `
-.et-design-sheet{border-collapse:collapse;font:12px/1.3 system-ui,sans-serif;color:var(--et-surface-color-muted-solid,#888)}
+.et-design-sheet{border-collapse:collapse;font:12px/1.3 system-ui,sans-serif;color:var(--et-surface-text-muted,#888)}
 .et-design-sheet th{padding:6px 12px;font-weight:500;white-space:nowrap;text-align:left;vertical-align:middle}
-.et-design-sheet thead th{border-bottom:1px solid var(--et-surface-border-solid,rgb(128 128 128/.3))}
-.et-design-sheet tbody tr+tr>*{border-top:1px solid var(--et-surface-border-solid,rgb(128 128 128/.3))}
+.et-design-sheet thead th{border-bottom:1px solid var(--et-surface-border,rgb(128 128 128/.3))}
+.et-design-sheet tbody tr+tr>*{border-top:1px solid var(--et-surface-border,rgb(128 128 128/.3))}
 .et-design-sheet td{padding:8px 12px;vertical-align:middle}
 `;
 

@@ -10,7 +10,7 @@ const lineAt = (source: string, index: number) => source.slice(0, index).split('
 
 const themeClassFixOf = (kind: string, name: string) =>
   kind === 'surface'
-    ? `take the surface from the scope instead: data-et-auto-surface for a raised or floating area, data-et-surface-interactive for an interactive one`
+    ? `take the surface from the scope instead: data-et-auto-surface for a raised or floating area`
     : `read the --et-theme-color-* tokens of the inherited colour theme instead, set by etProvideColor on an ancestor; pick a semantic colour by its theme type, never by the name "${name}"`;
 
 /** An `et-surface--*` or `et-color--*` class in a design file outside foundations: a part takes its theme from its scope. */

@@ -337,7 +337,6 @@ describe('part task', () => {
   it('maps the surface attributes of a part to the directives of @ethlete/core', async () => {
     expect(themingDirectivesOf('<div data-et-auto-surface><button data-et-surface-interactive>')).toEqual([
       'data-et-auto-surface -> etAutoSurface',
-      'data-et-surface-interactive -> etSurfaceInteractive',
     ]);
     expect(themingDirectivesOf('<div data-et-auto-surface-x class="et-surface--dark">')).toEqual([]);
     expect(

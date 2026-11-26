@@ -1,11 +1,11 @@
 @layer components {
   .tf-title-card {
-    color: var(--et-surface-color-solid, CanvasText);
+    color: var(--et-surface-text, CanvasText);
     outline: none;
   }
 
   .tf-title-card:focus-visible {
-    outline: 0.3rem solid var(--et-theme-color-primary-solid, currentColor);
+    outline: 0.3rem solid var(--et-tone-fill, currentColor);
     outline-offset: 0.3rem;
   }
 
@@ -17,7 +17,7 @@
 
   .tf-title-card-meta {
     font-size: 1.3rem;
-    color: var(--et-surface-color-muted-solid, GrayText);
+    color: var(--et-surface-text-muted, GrayText);
   }
 
   .tf-title-card:hover .tf-title-card-poster {
@@ -31,8 +31,8 @@
   .tf-title-card-scrim {
     background: linear-gradient(
       to top,
-      var(--et-surface-background-solid, Canvas) 15%,
-      color-mix(in srgb, var(--et-surface-background-solid, Canvas) 70%, transparent) 60%,
+      var(--et-surface-background, Canvas) 15%,
+      color-mix(in srgb, var(--et-surface-background, Canvas) 70%, transparent) 60%,
       transparent
     );
   }
