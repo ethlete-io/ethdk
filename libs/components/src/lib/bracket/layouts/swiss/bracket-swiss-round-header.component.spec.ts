@@ -3,6 +3,7 @@ import { provideColorThemes } from '@ethlete/core';
 import {
   BracketRound,
   BracketRoundSwissGroup,
+  BracketSwissColors,
   MatchParticipantSide,
   SWISS_BRACKET_ROUND_TYPE,
   TOURNAMENT_MODE,
@@ -116,7 +117,7 @@ describe('the swiss round header precedence', () => {
 });
 
 describe('the swiss default round header', () => {
-  const render = () => {
+  const render = (colors?: BracketSwissColors) => {
     const driver = bracketTestDriver({
       source: swissSource([
         [
@@ -138,7 +139,7 @@ describe('the swiss default round header', () => {
           ['r2-m3', 'd', 'h', null],
         ],
       ]),
-      layouts: [swissBracketLayout()],
+      layouts: [swissBracketLayout({ colors })],
       providers: [provideColorThemes(TEST_SEMANTIC_COLOR_THEMES)],
     });
 
@@ -179,5 +180,42 @@ describe('the swiss default round header', () => {
       'et-color--sunshine',
       'et-color--danger',
     ]);
+  });
+
+  it('colours each header like the box of its group when the layout sets colors', () => {
+    const colors: BracketSwissColors = {
+      neutral: '#111111',
+      positive: '#222222',
+      warning: '#333333',
+      negative: '#444444',
+    };
+    const driver = bracketTestDriver({
+      source: swissSource([
+        [
+          ['r0-m0', 'a', 'b', 'home'],
+          ['r0-m1', 'c', 'd', 'home'],
+        ],
+        [
+          ['r1-m0', 'a', 'c', 'home'],
+          ['r1-m1', 'b', 'd', 'home'],
+        ],
+      ]),
+      layouts: [swissBracketLayout({ colors })],
+      providers: [provideColorThemes(TEST_SEMANTIC_COLOR_THEMES)],
+    });
+    const root = driver.element();
+    const section = root.querySelector<HTMLElement>('[style*="--et-bracket-swiss"]');
+    const boxStrokes = Array.from(root.querySelectorAll('.et-bracket-svg rect[stroke]'), (rect) =>
+      rect.getAttribute('stroke'),
+    );
+    const headerTones = Array.from(
+      root.querySelectorAll<HTMLElement>('.et-bracket-swiss-round-header'),
+      (header) => header.dataset['swissTone'] as keyof BracketSwissColors,
+    );
+
+    expect(headerTones).toEqual(['neutral', 'positive', 'warning']);
+    expect(headerTones.map((tone) => section?.style.getPropertyValue(`--et-bracket-swiss-${tone}-color`))).toEqual(
+      boxStrokes,
+    );
   });
 });

@@ -5,7 +5,6 @@
     box-sizing: border-box;
     inline-size: 100%;
     block-size: 100%;
-    padding-block-end: 6px;
   }
 
   .et-bracket-swiss-round-header {
@@ -16,10 +15,10 @@
     gap: 10px;
     inline-size: 100%;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1.2;
     color: var(--et-bracket-swiss-neutral-color, var(--_et-bracket-swiss-round-header-tone));
-    letter-spacing: 0.08em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     white-space: nowrap;
   }
@@ -49,6 +48,5 @@
     flex: 1;
     block-size: 1px;
     background: currentColor;
-    opacity: 0.6;
   }
 }
