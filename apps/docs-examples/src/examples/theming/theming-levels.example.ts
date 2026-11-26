@@ -184,11 +184,7 @@ export class ThemingLevelsOverlayButtonComponent {
                 <app-theming-levels-overlay-button />
 
                 <div etAutoSurface>
-                  <app-theming-level
-                    class="app-theming-level"
-                    data-level="overlay-static"
-                    label="Overlay level (always shown)"
-                  />
+                  <app-theming-level class="app-theming-level" data-level="overlay-static" label="Overlay" />
                 </div>
               </app-theming-level>
             </div>
