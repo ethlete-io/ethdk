@@ -1,0 +1,11 @@
+
+ RUN  v5.0.5 /home/tom/dev/ethlete-sdk/libs/agent-rules
+
+ ✓ |agent-rules| src/lib/e2e-progress.spec.ts (1 test) 5ms
+ ✓ |agent-rules| src/lib/plan.spec.ts (27 tests) 77ms
+
+ Test Files  2 passed (2)
+      Tests  28 passed (28)
+   Start at  17:15:02
+   Duration  291ms (transform 52%, tests 30%, import 8%, setup 6%, worker 4%)
+

@@ -34,6 +34,7 @@ export const parse = (
   const ticks = count(text, /✓/g) + count(text, /^\s+ok\s+\d+\s+\[/gm);
   const p = {
     path,
+    kind: 'e2e' as const,
     total: Number(text.match(/Running (\d+) tests?/)?.[1] ?? 0),
     passed: summary(text, 'passed') ?? (ticks > 0 ? ticks + expected.size : Math.max(0, started - failures.length)),
     failed: summary(text, 'failed') ?? failures.length,
@@ -59,4 +60,53 @@ export const parse = (
   return isSameRun
     ? { ...p, firstSeenMs: last.firstSeenMs, firstDone: last.firstDone }
     : { ...p, firstDone: doneOf(p) };
+};
+
+const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
+const numberAfter = (text: string, re: RegExp) => {
+  const hit = text.match(re);
+  return hit ? Number(hit[1]) : undefined;
+};
+const sumOf = (text: string, re: RegExp) => [...text.matchAll(re)].reduce((n, m) => n + Number(m[1]), 0);
+
+export const parseUnit = (path: string, raw: string, mtimeMs: number, nowMs: number, isEnded: boolean): Progress => {
+  const text = raw.replace(ANSI, '');
+  const vitest = text.match(/^\s*Tests\s+(.*)\((\d+)\)\s*$/m);
+  const nodeTotal = numberAfter(text, /^[ℹ#] tests (\d+)/m);
+  const passed = vitest
+    ? (numberAfter(vitest[1] ?? '', /(\d+) passed/) ?? 0)
+    : (numberAfter(text, /^[ℹ#] pass (\d+)/m) ??
+      sumOf(text, /^\s*✓ .*\((\d+) tests?\)/gm) + count(text, /^(?:✔ .*\([\d.]+m?s\)$|ok \d+ )/gm));
+  const failed = vitest
+    ? (numberAfter(vitest[1] ?? '', /(\d+) failed/) ?? 0)
+    : (numberAfter(text, /^[ℹ#] fail (\d+)/m) ?? count(text, /^(?:✖ .*\([\d.]+m?s\)$|not ok \d+ |\s*FAIL\s)/gm));
+  const skipped = vitest
+    ? (numberAfter(vitest[1] ?? '', /(\d+) skipped/) ?? 0)
+    : (numberAfter(text, /^[ℹ#] skipped (\d+)/m) ?? 0);
+  const failures = [
+    ...new Set(
+      [...text.matchAll(/^(?:✖ (?!failing tests)|not ok \d+ - |\s*FAIL\s+)(.+?)(?: \([\d.]+m?s\))?$/gm)].map((m) =>
+        (m[1] ?? '').trim(),
+      ),
+    ),
+  ];
+  const total = vitest ? Number(vitest[2]) : (nodeTotal ?? 0);
+  return {
+    path,
+    kind: 'unit',
+    total,
+    passed,
+    failed,
+    skipped,
+    flaky: 0,
+    didNotRun: 0,
+    workers: 1,
+    duration: text.match(/^\s*Duration\s+(\S+)/m)?.[1],
+    expected: 0,
+    isDone: isEnded || vitest !== null || nodeTotal !== undefined,
+    failures,
+    mtimeMs,
+    firstSeenMs: nowMs,
+    firstDone: 0,
+  };
 };

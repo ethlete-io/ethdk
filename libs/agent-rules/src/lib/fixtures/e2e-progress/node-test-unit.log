@@ -1,0 +1,13 @@
+✔ registerRun writes one entry per run with machine, log and pid; finish records the exit code (1.398331ms)
+✔ listRuns deletes entries of dead processes and entries ended over an hour ago, with their own logs (0.861169ms)
+✔ heavy.mjs registers its run on this machine and tees the output and the slot to the log (26.537157ms)
+✔ push-suite runStep registers each step with a log of its output (23.093291ms)
+✔ run-registry.mjs track registers a light run (26.454186ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 121.738404

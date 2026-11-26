@@ -10,7 +10,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const setup = () => {
   const dir = tempDir('heavy-spec-');
-  const env = { ...process.env, HEAVY_LOCK_PREFIX: join(dir, 'lock'), HEAVY_POLL_MS: '50' };
+  const env = {
+    ...process.env,
+    HEAVY_LOCK_PREFIX: join(dir, 'lock'),
+    HEAVY_POLL_MS: '50',
+    RUN_REGISTRY_DIR: join(dir, 'runs'),
+  };
   const start = (cmd) => {
     const child = spawn('node', [script, 'run', '--', 'sh', '-c', cmd], { env, stdio: ['ignore', 'pipe', 'pipe'] });
     child.out = '';

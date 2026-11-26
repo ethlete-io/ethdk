@@ -1,5 +1,8 @@
 export type Progress = {
   path: string;
+  kind: 'e2e' | 'unit';
+  machine?: string;
+  label?: string;
   total: number;
   passed: number;
   failed: number;

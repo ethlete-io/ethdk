@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync, rmSync } from 'node:fs';
+import { createWriteStream, existsSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { cpus, loadavg, tmpdir } from 'node:os';
 import { basename, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -167,8 +167,12 @@ export const withStepTmp = async (name, run, env = process.env) => {
 export const stepLine = (name, status, ms, note, load, max = load) =>
   `push-suite: ${name} ${status === 0 ? 'ok' : `failed at load ${formatLoad(load)} (max ${formatLoad(max)} during the step)`} in ${seconds(ms)}${note ? ` (${note})` : ''}`;
 
-export const runStep = (command, args, cwd, env = {}) =>
-  new Promise((done) => {
+export const runStep = async (command, args, cwd, env = {}) => {
+  const { registerRun } = await import('./run-registry.mjs');
+  return new Promise((done) => {
+    const line = [command, ...args].join(' ');
+    const run = registerRun({ label: `push-suite ${line}`, command: line, cwd });
+    const log = createWriteStream(run.log, { flags: 'a' });
     const child = spawn(command, args, {
       cwd,
       env: { ...process.env, ...env },
@@ -177,11 +181,18 @@ export const runStep = (command, args, cwd, env = {}) =>
     let output = '';
     const take = (chunk) => {
       output += chunk;
+      log.write(chunk);
     };
     child.stdout.on('data', take);
     child.stderr.on('data', take);
-    child.on('close', (status) => done({ status: status ?? 1, output }));
+    child.on('close', (status) =>
+      log.end(() => {
+        run.finish(status ?? 1);
+        done({ status: status ?? 1, output });
+      }),
+    );
   });
+};
 
 export const reexecCommand = (exportDir, repo, { only, range, maxLoad }, env = process.env) => ({
   command: process.execPath,

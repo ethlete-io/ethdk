@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -42,9 +42,16 @@ const run = (args, env = {}) => {
   const dir = stubDir();
   const stubLog = join(dir, 'calls.log');
   const log = join(dir, 'run.log');
+  mkdirSync(join(dir, 'runs'));
   const result = spawnSync(process.execPath, [SCRIPT, ...args.map((a) => (a === '$LOG' ? log : a))], {
     encoding: 'utf8',
-    env: gitEnv({ PATH: `${dir}:${process.env.PATH}`, STUB_LOG: stubLog, TMPDIR: dir, ...env }),
+    env: gitEnv({
+      PATH: `${dir}:${process.env.PATH}`,
+      STUB_LOG: stubLog,
+      TMPDIR: dir,
+      RUN_REGISTRY_DIR: join(dir, 'runs'),
+      ...env,
+    }),
   });
   const read = (file) => {
     try {
@@ -59,6 +66,10 @@ const run = (args, env = {}) => {
     stderr: result.stderr,
     calls: read(stubLog),
     log: read(log),
+    runs: readdirSync(join(dir, 'runs'), { withFileTypes: true })
+      .filter((e) => e.name.endsWith('.json'))
+      .map((e) => JSON.parse(read(join(dir, 'runs', e.name)))),
+    logPath: log,
   };
   rmSync(dir, { recursive: true });
   return out;
@@ -132,4 +143,15 @@ test('exits 2 on bad arguments without calling ssh', () => {
   const result = run(['--host', 'nope', '--', 'true']);
   assert.equal(result.status, 2);
   assert.equal(result.calls, '');
+});
+
+test('registers the run in the run registry with its machine, log and exit code', () => {
+  const rack = run(['--host', 'rack', '--log', '$LOG', '--', 'yarn e2e'], { FAKE_SUITE_CODE: '5' });
+  assert.equal(rack.runs.length, 1);
+  assert.equal(rack.runs[0].machine, 'rack');
+  assert.equal(rack.runs[0].log, rack.logPath);
+  assert.equal(rack.runs[0].label, 'remote-run yarn e2e');
+  assert.equal(rack.runs[0].exitCode, 5);
+
+  assert.equal(run(['--host', 'mac', '--', 'yarn test']).runs[0].machine, 'mac');
 });

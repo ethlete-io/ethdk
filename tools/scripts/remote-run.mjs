@@ -3,6 +3,7 @@ import { createWriteStream, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { registerRun } from './run-registry.mjs';
 
 export const HOSTS = {
   rack: {
@@ -160,6 +161,11 @@ export const remoteRun = async (opts) => {
   const log = opts.log ?? join(tmpdir(), 'remote-run', `${opts.host}-${sha.slice(0, 12)}-${Date.now()}.log`);
   mkdirSync(dirname(log), { recursive: true });
   const file = createWriteStream(log);
+  const entry = registerRun({ machine: opts.host, label: `remote-run ${opts.suite}`, command: opts.suite, log });
+  const end = (code, reason) => {
+    entry.finish(code);
+    return finish(file, code, reason);
+  };
   const tee = (chunk, stream) => {
     stream.write(chunk);
     file.write(chunk);
@@ -170,7 +176,7 @@ export const remoteRun = async (opts) => {
   const init = await runSsh(host, initScript(), {
     onData: (chunk, stream) => (stream === process.stdout ? (haves += chunk) : tee(chunk, stream)),
   });
-  if (init !== 0) return finish(file, init, 'mirror init failed');
+  if (init !== 0) return end(init, 'mirror init failed');
 
   const known = [...haves.matchAll(/^have ([0-9a-f]{40})\s*$/gm)].map((m) => m[1]);
   let bundle;
@@ -182,10 +188,10 @@ export const remoteRun = async (opts) => {
     git(['update-ref', ref, sha]);
     const created = git(['bundle', 'create', '--quiet', local, ref, ...bases.map((have) => `^${have}`)]);
     git(['update-ref', '-d', ref]);
-    if (created.status !== 0) return finish(file, 1, `bundle failed: ${created.stderr.trim()}`);
+    if (created.status !== 0) return end(1, `bundle failed: ${created.stderr.trim()}`);
     const copy = spawnSync('scp', ['-q', ...SSH_OPTIONS, local, `${host.ssh}:${bundle}`], { encoding: 'utf8' });
     rmSync(local, { force: true });
-    if (copy.status !== 0) return finish(file, copy.status ?? 1, `scp failed: ${copy.stderr.trim()}`);
+    if (copy.status !== 0) return end(copy.status ?? 1, `scp failed: ${copy.stderr.trim()}`);
   }
 
   const code = await runSsh(
@@ -201,7 +207,7 @@ export const remoteRun = async (opts) => {
     }),
     { onData: tee },
   );
-  return finish(file, code);
+  return end(code);
 };
 
 const finish = (file, code, reason) =>

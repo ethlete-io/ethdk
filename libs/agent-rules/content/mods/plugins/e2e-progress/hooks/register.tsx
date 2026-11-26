@@ -2,11 +2,12 @@ import { atom, read, update } from 'claude-code';
 import type { EngineInterface, Register, Timer } from 'claude-code';
 
 import type { Progress } from '../types';
-import { FAIL_LINE, doneOf, parse, summary } from './progress';
+import { FAIL_LINE, doneOf, parse, parseUnit, summary } from './progress';
 
 const PANE = 'e2e-progress';
 const HANDOFFS = ['.claude/handoffs', '.agents/handoffs'];
 const WORKTREES = '.claude/worktrees';
+const REGISTRY = '/tmp/ethlete-runs';
 const TICK_MS = 5000;
 const STALE_MS = 15_000;
 const HIDE_AFTER_MS = 60_000;
@@ -131,7 +132,7 @@ async function withRecords($: EngineInterface, p: Progress, text: string): Promi
 const remainingMs = (p: Progress, nowMs: number) => {
   const doneSince = doneOf(p) - p.firstDone;
   const elapsed = nowMs - p.firstSeenMs;
-  if (p.isDone || doneSince < MIN_ETA_TESTS || elapsed < MIN_ETA_MS) return undefined;
+  if (p.isDone || p.total <= 0 || doneSince < MIN_ETA_TESTS || elapsed < MIN_ETA_MS) return undefined;
   return ((p.total - doneOf(p)) / doneSince) * elapsed;
 };
 
@@ -178,6 +179,66 @@ async function handoffDirs($: EngineInterface) {
 
 const nameOf = (path: string) => (path.split('/').pop() ?? path).replace(/\.log$/, '');
 
+const MAX_LABEL = 40;
+const shortLabel = (label: string) => {
+  const words = label
+    .split(/\s+/)
+    .filter((w) => !/^(npx|yarn|node|sh|-c|--)$/.test(w) && !w.includes('='))
+    .map((w) => (w.includes('/') ? (w.split('/').pop() ?? w) : w))
+    .join(' ');
+  return words.length > MAX_LABEL ? `${words.slice(0, MAX_LABEL - 1)}…` : words;
+};
+const titleOfRun = (p: Progress) =>
+  `${p.machine ? `${p.machine} ` : ''}${p.label ? shortLabel(p.label) : nameOf(p.path)}`;
+
+type RegistryEntry = { log: string; machine: string; label: string; pid: number; endedAt?: number };
+type RegistryRun = { entry: RegistryEntry; mtimeMs: number };
+
+async function registryRuns($: EngineInterface, nowMs: number): Promise<RegistryRun[]> {
+  const files = await $.fs.list(REGISTRY).catch(() => []);
+  const found = await Promise.all(
+    files
+      .filter((f) => f.kind === 'file' && f.name.endsWith('.json'))
+      .map(async (f): Promise<RegistryRun | undefined> => {
+        const entry = await $.fs.read(`${REGISTRY}/${f.name}`).then(
+          (t) => JSON.parse(t) as RegistryEntry,
+          () => undefined,
+        );
+        if (!entry?.log) return undefined;
+        if (entry.endedAt === undefined && !(await $.fs.stat(`/proc/${entry.pid}`).catch(() => undefined)))
+          return undefined;
+        if (entry.endedAt !== undefined && nowMs - entry.endedAt > HIDE_AFTER_MS) return undefined;
+        const stat = await $.fs.stat(entry.log).catch(() => undefined);
+        return { entry, mtimeMs: stat?.mtimeMs ?? 0 };
+      }),
+  );
+  return found.filter((r) => r !== undefined);
+}
+
+async function progressOfRegistryRun(
+  $: EngineInterface,
+  { entry, mtimeMs }: RegistryRun,
+  previous: Progress | undefined,
+  nowMs: number,
+): Promise<Progress> {
+  const isEnded = entry.endedAt !== undefined;
+  const tag = { machine: entry.machine, label: entry.label };
+  if (previous?.mtimeMs === mtimeMs && previous.isDone === isEnded) return { ...previous, ...tag };
+  const text = mtimeMs === 0 ? '' : await $.fs.read(entry.log).catch(() => '');
+  if (isRunLog(text)) {
+    sourceCache.clear();
+    const parsed = parse(entry.log, text, await expectedFailures($, entry.log, text), mtimeMs, nowMs, previous ?? null);
+    return { ...(await withRecords($, parsed, text)), isDone: parsed.isDone || isEnded, ...tag };
+  }
+  const unit = parseUnit(entry.log, text, mtimeMs, nowMs, isEnded);
+  return {
+    ...unit,
+    firstSeenMs: previous?.firstSeenMs ?? nowMs,
+    mtimeMs: isEnded ? (entry.endedAt ?? mtimeMs) : mtimeMs,
+    ...tag,
+  };
+}
+
 const isRunLog = (text: string) => /^Running \d+ tests?/m.test(text);
 
 const notRunLogs = new Map<string, number>();
@@ -221,9 +282,14 @@ function setStatus($: EngineInterface, text: string | undefined) {
   $.ui.status(text);
 }
 
+const unitStatusOf = (p: Progress) =>
+  `${titleOfRun(p)} ${p.isDone ? 'done' : p.passed + p.failed === 0 ? 'running' : `${p.passed + p.failed}${p.total ? `/${p.total}` : ''}`} ✓${p.passed} ✘${p.failed}`;
+
 const statusOf = (p: Progress, nowMs: number) =>
-  `${nameOf(p.path)} w${p.workers} ${p.isDone ? `done ${p.duration ?? ''}`.trim() : `${doneOf(p)}/${p.total}`} ✓${p.passed} ✘${p.failed}` +
-  `${p.flaky ? ` ~${p.flaky}` : ''}${p.skipped ? ` -${p.skipped}` : ''}${p.didNotRun ? ` ⊘${p.didNotRun}` : ''}${formatEta(remainingMs(p, nowMs))}`;
+  p.kind === 'unit'
+    ? unitStatusOf(p)
+    : `${titleOfRun(p)} w${p.workers} ${p.isDone ? `done ${p.duration ?? ''}`.trim() : `${doneOf(p)}/${p.total}`} ✓${p.passed} ✘${p.failed}` +
+      `${p.flaky ? ` ~${p.flaky}` : ''}${p.skipped ? ` -${p.skipped}` : ''}${p.didNotRun ? ` ⊘${p.didNotRun}` : ''}${formatEta(remainingMs(p, nowMs))}`;
 
 async function tick($: EngineInterface) {
   const nowMs = await $.clock.now();
@@ -254,6 +320,13 @@ async function tick($: EngineInterface) {
     );
     next.push(await withRecords($, parsed, text));
   }
+  if (!pinned) {
+    const known = new Set(next.map((p) => p.path));
+    for (const run of await registryRuns($, nowMs)) {
+      if (known.has(run.entry.log)) continue;
+      next.push(await progressOfRegistryRun($, run, last.get(run.entry.log), nowMs));
+    }
+  }
   const visible = next.filter((p) => isVisible(p, nowMs)).sort((a, b) => a.path.localeCompare(b.path));
   await update($, runs, () => visible);
 
@@ -267,7 +340,7 @@ async function tick($: EngineInterface) {
   }
 
   isHidden = false;
-  setStatus($, `e2e ${visible.map((p) => statusOf(p, nowMs)).join('  │  ')}`);
+  setStatus($, `runs ${visible.map((p) => statusOf(p, nowMs)).join('  │  ')}`);
 }
 
 async function run($: EngineInterface) {
@@ -340,7 +413,7 @@ export const register: Register = (on) => {
     if (shown.length === 0)
       return (
         <Text dimColor>
-          No active run log under {HANDOFFS.join(' or ')}, also in {WORKTREES}/*.
+          No active run in {REGISTRY} and no run log under {HANDOFFS.join(' or ')}, also in {WORKTREES}/*.
         </Text>
       );
 
@@ -353,13 +426,13 @@ export const register: Register = (on) => {
           return (
             <Box flexDirection="column" marginBottom={1}>
               <Text bold>
-                {nameOf(p.path)} <Text dimColor>· {p.workers} workers</Text>
+                {titleOfRun(p)} <Text dimColor>· {p.kind === 'unit' ? 'unit' : `${p.workers} workers`}</Text>
               </Text>
               <Text dimColor wrap="truncate-start">
                 {p.path}
               </Text>
               <Text>
-                {p.isDone ? `finished in ${p.duration ?? '?'}` : `${done} / ${p.total}`}
+                {p.isDone ? `finished in ${p.duration ?? '?'}` : p.total > 0 ? `${done} / ${p.total}` : `${done} done`}
                 {p.total > 0 && !p.isDone ? ` (${Math.round((done / p.total) * 100)}%)` : ''}
                 {formatEta(remainingMs(p, nowMs))}
               </Text>

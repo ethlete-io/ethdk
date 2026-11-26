@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { registerRun, teeRun } from './run-registry.mjs';
 
 const prefix = process.env.HEAVY_LOCK_PREFIX ?? '/tmp/fifagg-heavy';
 const slotCount = Number(process.env.HEAVY_SLOTS ?? 3);
@@ -25,31 +25,49 @@ const describeHolder = (n) => {
   return `slot ${n}: held by a bare flock caller (no info)`;
 };
 
-const tryRun = (command, n) =>
-  new Promise((resolve) => {
-    const info = JSON.stringify({ cwd: process.cwd(), command: command.join(' '), startedAt: Date.now() });
-    const script = 'printf \'{"pid":%s,%s\' "$$" "${HEAVY_INFO#\\{}" > "$1"; shift; exec "$@"';
-    const child = spawn(
+const tryRun = (command, n, run) => {
+  const info = JSON.stringify({ cwd: process.cwd(), command: command.join(' '), startedAt: Date.now() });
+  const script =
+    'printf \'{"pid":%s,%s\' "$$" "${HEAVY_INFO#\\{}" > "$1"; printf \'[heavy] slot %s\\n\' "$2" >> "$3"; shift 3; exec "$@"';
+  let child;
+  const forward = (signal) => child?.kill(signal);
+  for (const s of forwarded) process.on(s, forward);
+  return teeRun(run, command, {
+    wrap: (argv) => [
       'flock',
-      ['-n', '-E', String(busyExit), slotFile(n), 'sh', '-c', script, 'sh', `${slotFile(n)}.info`, ...command],
-      { stdio: 'inherit', env: { ...process.env, HEAVY_INFO: info } },
-    );
-    const forward = (signal) => child.kill(signal);
-    for (const s of forwarded) process.on(s, forward);
-    child.on('close', (code, signal) => {
-      for (const s of forwarded) process.off(s, forward);
-      resolve(signal ? 128 + (signalNumber[signal] ?? 0) : code);
-    });
+      '-n',
+      '-E',
+      String(busyExit),
+      slotFile(n),
+      'sh',
+      '-c',
+      script,
+      'sh',
+      `${slotFile(n)}.info`,
+      String(n),
+      run.log,
+      ...argv,
+    ],
+    env: { ...process.env, HEAVY_INFO: info },
+    onSpawn: (spawned) => (child = spawned),
+  }).then(({ code, signal }) => {
+    for (const s of forwarded) process.off(s, forward);
+    return signal ? 128 + (signalNumber[signal] ?? 0) : code;
   });
+};
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const run = async (command) => {
+  const entry = registerRun({ label: `heavy ${command.join(' ')}`, command: command.join(' ') });
   let reported = false;
   for (;;) {
     for (let n = 1; n <= slotCount; n++) {
-      const code = await tryRun(command, n);
-      if (code !== busyExit) return code;
+      const code = await tryRun(command, n, entry);
+      if (code !== busyExit) {
+        entry.finish(code);
+        return code;
+      }
     }
     if (!reported) {
       reported = true;
