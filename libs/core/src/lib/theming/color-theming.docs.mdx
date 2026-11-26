@@ -1,0 +1,218 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/Theming/Color" />
+
+# Color Theming — Design Specification
+
+The color theming system lets components consume a named color palette without hardcoding any values. The palette is **project-specific** — consuming projects register their own themes. The SDK provides the infrastructure; the actual colors are defined per project.
+
+---
+
+## What is a color theme
+
+A color theme is a named set of color swatches. Components pull from it via CSS custom properties. Switching the active theme switches all component colors simultaneously with no class or style changes on the components themselves.
+
+---
+
+## ColorTheme structure
+
+<table>
+  <tr>
+    <td>Field</td>
+    <td>Type</td>
+    <td>Description</td>
+  </tr>
+  <tr>
+    <td>`name`</td>
+    <td>`string`</td>
+    <td>Identifier used to apply the theme (e.g. `'brand'`, `'danger'`)</td>
+  </tr>
+  <tr>
+    <td>`type?`</td>
+    <td>`'success' | 'warning' | 'error'`</td>
+    <td>Semantic role — enables `injectSemanticColorTheme(type)`</td>
+  </tr>
+  <tr>
+    <td>`isDefault?`</td>
+    <td>`boolean`</td>
+    <td>
+      Applied when no explicit color input is set on a component. The CSS generator's `--defaultTheme=<name>` option
+      overrides these flags, so apps sharing one theme set can each pick their own default at generation time.
+    </td>
+  </tr>
+  <tr>
+    <td>`primary`</td>
+    <td>`ThemeSwatch`</td>
+    <td>Required — the main swatch</td>
+  </tr>
+  <tr>
+    <td>`secondary?`</td>
+    <td>`ThemeSwatch`</td>
+    <td>Optional secondary swatch</td>
+  </tr>
+  <tr>
+    <td>`tertiary?`</td>
+    <td>`ThemeSwatch`</td>
+    <td>Optional tertiary swatch</td>
+  </tr>
+</table>
+
+### ThemeSwatch fields
+
+<table>
+  <tr>
+    <td>Field</td>
+    <td>Description</td>
+  </tr>
+  <tr>
+    <td>`color`</td>
+    <td>Primary color with per-state overrides: default, hover, focus, active, disabled</td>
+  </tr>
+  <tr>
+    <td>`onColor`</td>
+    <td>Text/icon color for use on a solid primary background, with per-state overrides</td>
+  </tr>
+  <tr>
+    <td>`inkColor?`</td>
+    <td>Optional accent color for ink, icons, and borders. Falls back to `color` when omitted.</td>
+  </tr>
+</table>
+
+Color values are space-separated channel numbers — no `rgb()` wrapper:
+
+- RGB: `"59 130 246"` (R G B, 0–255)
+- HSL: `"217 91% 60%"` (H Hdeg% L%)
+
+---
+
+## Registration
+
+Themes are registered once at application bootstrap:
+
+```ts
+provideColorThemesWithTailwind4([BRAND_THEME, DANGER_THEME, SUCCESS_THEME]);
+```
+
+---
+
+## Applying a theme
+
+Pass the theme name or a `ColorTheme` object to any component that accepts a `color` input:
+
+```html
+<button [etProvideColor]="'brand'" et-button>Label</button>
+<button [etProvideColor]="dangerTheme" et-button>Delete</button>
+```
+
+`[etProvideColor]` can also wrap a container — all themed children inside inherit its color context.
+
+---
+
+## The `surface` color
+
+`surface` is a reserved name rather than a registered theme:
+
+```html
+<button color="surface" et-button>Cancel</button>
+```
+
+Inside that scope the tokens below resolve from the ambient surface's `controlText` instead of
+an accent, so a secondary action reads as chrome and follows the surface it sits on — which a registered
+neutral theme cannot do. Apps must not register a theme named `surface`.
+
+The scope itself is emitted by the surface theme generator, so it needs `tailwind-4-surface-theme` to have
+been run since upgrading.
+
+---
+
+## Colors per surface
+
+A surface can swap a chosen accent for a version that reads well on it. Register the variant as a theme without a
+`type` (the app's own name, e.g. `brand-on-light`) and name it in `colorThemeVariants`:
+
+```ts
+const LIGHT_SURFACE: SurfaceTheme = {
+  name: 'light',
+  type: 'light',
+  elevation: 0,
+  colorThemeVariants: { brand: 'brand-on-light', success: 'success-on-light' },
+  // …
+};
+```
+
+The chosen accent is the nearest `[etProvideColor]`, else the `isDefault` theme, or the theme of a `type` for
+`injectSemanticColorTheme(type)`. The swap always starts from the chosen accent, so a dark surface inside a light one
+draws the chosen accent again. An accent without an entry stays the same on every surface. `colorTheme` and
+`semanticColorThemes` are deprecated in favor of `colorThemeVariants`.
+
+---
+
+## CSS tokens generated
+
+When a color theme is active, these custom properties are available on the element and its descendants:
+
+<table>
+  <tr>
+    <td>Token</td>
+    <td>Role</td>
+  </tr>
+  <tr>
+    <td>`--et-tone-fill`</td>
+    <td>
+      Primary color at full strength, following the element's interaction state (use for solid fills and tint sources)
+    </td>
+  </tr>
+  <tr>
+    <td>`--et-tone-fill-rest`</td>
+    <td>Primary color at rest; `-hover`, `-focus`, `-active` and `-disabled` hold the other states</td>
+  </tr>
+  <tr>
+    <td>`--_et-tone-fill-opacity`</td>
+    <td>Opacity a component applies to the primary layer per interaction state</td>
+  </tr>
+  <tr>
+    <td>`--et-tone-on-fill`</td>
+    <td>Text/icon color for use on a solid primary background</td>
+  </tr>
+  <tr>
+    <td>`--et-tone-text`</td>
+    <td>Ink/border color at full strength (falls back to primary when no inkColor is set)</td>
+  </tr>
+</table>
+
+### How opacity works
+
+`--_et-tone-fill-opacity` starts at `1`. Components override it per interaction state to produce tint layers. For example, a `tonal` button at rest sets it to `0.16`; at hover it becomes `0.24`. The base color never changes — only the opacity.
+
+A component that overrides the opacity must compose the color itself, with `color-mix(in srgb, var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%), transparent)`. `--et-tone-fill` itself is always full strength.
+
+Interaction state management is automatic via `[etColorInteractive]`. Components do not manually track hover/focus/active — the directive drives the opacity.
+
+---
+
+## Figma mapping
+
+Each color theme = one variable mode in Figma. Define variables for:
+
+<table>
+  <tr>
+    <td>Figma variable</td>
+    <td>Maps to</td>
+  </tr>
+  <tr>
+    <td>`color/primary`</td>
+    <td>`--et-tone-fill`</td>
+  </tr>
+  <tr>
+    <td>`color/on-primary`</td>
+    <td>`--et-tone-on-fill`</td>
+  </tr>
+  <tr>
+    <td>`color/ink`</td>
+    <td>`--et-tone-text`</td>
+  </tr>
+</table>
+
+Tint layers in Figma are implemented as fills at the correct opacity — not as separate variables. The opacity values per variant and state are documented in each component's design spec.
+
+Switching variable mode switches the entire component palette.

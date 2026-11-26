@@ -1,0 +1,140 @@
+# Tabs
+
+Two flavors sharing one accessible tab-bar engine: **content tabs** (`et-tab-group`, panels in place) and **nav tabs** (`et-nav-tabs`, anchors bound to the Angular router). Import `TAB_IMPORTS` or `NAV_TAB_IMPORTS` (`OVERLAY_NAV_TAB_IMPORTS` for [nav tabs in an overlay](#nav-tabs-in-an-overlay)).
+
+## Content tabs
+
+```html
+<et-tab-group [(selectedIndex)]="activeTab" color="brand">
+  <et-tab icon="et-grid-2x2" label="Overview">
+    <div class="p-4">Overview content</div>
+  </et-tab>
+
+  <et-tab>
+    <ng-template etTabLabel><span>🏠 Home</span></ng-template>
+    <div class="p-4">Home content</div>
+  </et-tab>
+
+  <et-tab disabled label="Admin">…</et-tab>
+</et-tab-group>
+```
+
+```ts
+import { TAB_IMPORTS } from '@ethlete/components';
+```
+
+- `selectedIndex` is a two-way model (default `0`); disabled tabs are skipped, and a selected tab that turns disabled hands the selection to its nearest enabled neighbour (the preceding one on a tie).
+- `label` + optional `icon` render the trigger, or supply a custom `ng-template etTabLabel`.
+- `ariaLabel` names the trigger button. Set it on an icon-only tab (an `icon` and no `label`), which otherwise has no accessible name: `<et-tab icon="et-grid-2x2" ariaLabel="Overview">`.
+- `preserveContent` (default `true`) keeps inactive panels rendered but `hidden` + `inert`; set it to `false` for lazy rendering of only the active panel.
+- `sessionMemoryKey` remembers the selected tab in session storage under that key and restores it on the next mount. Nothing is stored without a key. The stored tab wins over the initial `selectedIndex`, so leave the key unset when the index comes from the URL.
+- The tab bar lives inside a [scrollable](/components/scrollable), so overflowing tabs scroll with the active one centered. Tabs opt into that scrollable's prev/next buttons for you; they carry none of its other optional chrome.
+- `scrollableButtons` switches those buttons per bar: `[scrollableButtons]="false"`, or `{ enabled: { md: true } }` for one value per breakpoint (a key applies from there up). It also takes the other [`etScrollableButtons`](/components/scrollable) options. It wins over `provideScrollableConfig`; without it the bar follows that provider and shows the buttons otherwise. Nav tabs take the same input.
+
+@example tabs/tabs-default 380px
+
+## Nav tabs
+
+Anchors + router instead of an index - active state comes from `RouterLinkActive`, content renders through your `<router-outlet>`:
+
+```html
+<et-nav-tabs color="brand">
+  <a et-nav-tab-link="/overview"><i etIcon="et-grid-2x2"></i> Overview</a>
+  <a et-nav-tab-link="/settings"><i etIcon="et-pencil"></i> Settings</a>
+</et-nav-tabs>
+
+<et-nav-tabs-outlet>
+  <router-outlet />
+</et-nav-tabs-outlet>
+```
+
+```ts
+import { NAV_TAB_IMPORTS } from '@ethlete/components';
+```
+
+`a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs - a disabled link keeps `aria-disabled` but drops its `href`, so it cannot be followed. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics - place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically. With more than one `et-nav-tabs` on the page it cannot tell which bar that is, so place it inside its own `et-nav-tabs`; dev mode warns with `ET2004`.
+
+A nav tab link is active on its route whatever the URL's query params - it defaults `routerLinkActiveOptions` to `{ paths: 'subset', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' }`, so a link carrying `[queryParams]` (a default sort, say) stays selected after the user changes them. Bind `[routerLinkActiveOptions]` yourself (e.g. `{ exact: true }`) to match query params again.
+
+@example tabs/nav-tabs-default 380px
+
+### Nav tabs in an overlay
+
+Inside an overlay the Angular router is usually not the one moving between pages - the [overlay router](/components/overlays#routing-inside-overlays) is. `button[et-overlay-nav-tab-link]` is the nav tab link for that case: it takes the target overlay route as its selector input and otherwise behaves like `a[et-nav-tab-link]`. Import `OVERLAY_NAV_TAB_IMPORTS`: it holds `et-nav-tabs` and the overlay link, so plain router nav tabs do not bundle the overlay router.
+
+```html
+<et-nav-tabs fit="fill" orientation="vertical">
+  <button et-overlay-nav-tab-link="/">General</button>
+  <button et-overlay-nav-tab-link="/notifications">Notifications</button>
+</et-nav-tabs>
+
+<et-overlay-router-outlet />
+```
+
+```ts
+import { OVERLAY_NAV_TAB_IMPORTS } from '@ethlete/components';
+```
+
+Upgrading from a version where `NAV_TAB_IMPORTS` held the overlay link? The migration adds
+`OVERLAY_NAV_TAB_IMPORTS` next to `NAV_TAB_IMPORTS` in every component whose template uses it:
+
+```bash
+yarn nx g @ethlete/components:migrate-overlay-nav-tab-imports
+```
+
+It is a `button` rather than an anchor - an overlay route is not an address unless the router mirrors it into the URL - so it activates on <kbd>Enter</kbd> and <kbd>Space</kbd>. `disabled` and the router link's `navigationDirection` work as usual, and `orientation="vertical"` is what pairs it with a [sidebar overlay](/components/overlays#sidebar-layouts). Active state comes from the overlay router rather than from the click, so a navigation an [unsaved-changes guard](/components/overlays#guarding-navigation) is still deciding on leaves the underline on the page currently rendered - it moves once the guard lets the navigation through, and not at all when one refuses.
+
+## Appearance
+
+Both flavors accept the shared tab-bar inputs:
+
+| Input               | Default        | Values                                                        |
+| ------------------- | -------------- | ------------------------------------------------------------- |
+| `variant`           | `'secondary'`  | `'primary' \| 'secondary'`                                    |
+| `orientation`       | `'horizontal'` | `'horizontal' \| 'vertical'`                                  |
+| `fit`               | `'content'`    | `'content' \| 'fill'`                                         |
+| `align`             | `'start'`      | `'start' \| 'center' \| 'end'` (horizontal bars)              |
+| `divider`           | `true`         | Divider line under the bar                                    |
+| `activeUnderline`   | `true`         | Underline under the active tab                                |
+| `underlineWidth`    | `'tab'`        | `'tab' \| 'label'`: underline spans the tab or only its label |
+| `size`              | `'md'`         | `'sm' \| 'md' \| 'lg'`                                        |
+| `color` / `surface` | -              | App-registered theme names                                    |
+
+## Accessibility
+
+Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role="tabpanel"` with `aria-selected`, `aria-labelledby` and roving tabindex. Arrow keys move orientation-aware from the focused tab (wrapping, skipping disabled; <kbd>ArrowLeft</kbd>/<kbd>ArrowRight</kbd> swap in a right-to-left bar), <kbd>Home</kbd>/<kbd>End</kbd> jump, <kbd>Enter</kbd> activates (nav links also on <kbd>Space</kbd>). A disabled tab never holds the tab stop - it sits on the first enabled one instead, and a bar whose tabs are all disabled is skipped in the tab order. A disabled nav tab link has no `href`, so focusing it programmatically and pressing <kbd>Enter</kbd> navigates nowhere. An icon-only content tab needs `ariaLabel`; an icon-only nav tab link takes a plain `aria-label` on the `<a>`.
+
+## Theming
+
+Content tabs: `--et-tab-group-gap` / `--et-tab-group-header-gap` (`0px`), `--et-tab-group-trigger-padding-inline` (`16px`), `--et-tab-group-trigger-padding-block` (`12px`), `--et-tab-group-underline-size` (`2px`), `--et-tab-group-underline-radius` (`1px`), `--et-tab-group-font-size` (`1.4rem`). Nav tabs mirror them as `--et-nav-tabs-gap` / `-underline-size` / `-underline-radius` / `-font-size` plus `--et-nav-tab-link-padding-inline` / `-padding-block`. Set any of them on the tab bar's host element. Colors come from the [surface/color theme systems](/core/theming).
+
+Underneath, all of those default from **one shared scale** that `size` drives - `--et-tab-padding-inline`, `--et-tab-padding-block`, `--et-tab-font-size`, `--et-tab-underline-size`, `--et-tab-underline-radius` and `--et-tab-baseline-opacity`. Retheming the scale moves content tabs, nav tabs and a [segmented button group in its tabs variant](/components/choice-inputs#segmented-tabs) together; the per-component tokens above still win where you want one of them to differ.
+
+Both flavors, and the segmented button group's tabs variant (font weight, text transform, letter spacing, line height and inactive colour), also read these optional tokens, unset by default:
+
+| Token                              | Default when unset                 | What it changes                                         |
+| ---------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| `--et-tab-font-weight`             | inherited                          | Trigger label weight                                    |
+| `--et-tab-text-transform`          | none                               | Trigger label case, e.g. `uppercase`                    |
+| `--et-tab-letter-spacing`          | normal                             | Trigger label tracking, e.g. `0.12em`                   |
+| `--et-tab-line-height`             | inherited                          | Trigger label line height                               |
+| `--et-tab-baseline-size`           | the underline size                 | Thickness of the divider line under the bar             |
+| `--et-tab-baseline-color`          | the surface's border               | Colour of the divider line under the bar                |
+| `--et-tab-active-color`            | the surface's colour               | Text colour of the active trigger                       |
+| `--et-tab-inactive-color`          | the surface's `controlText` ladder | Text colour of an inactive trigger                      |
+| `--et-tab-hover-color`             | the surface's `controlText` hover  | Text colour of a hovered inactive trigger               |
+| `--et-tab-hover-underline-opacity` | `0`                                | Shows the underline on a hovered inactive trigger (`1`) |
+
+### Defaults for the whole app
+
+`provideTabsConfig` sets `underlineWidth` for every tab group and nav tabs bar; an input on a bar wins over it.
+
+```ts
+providers: [provideTabsConfig({ underlineWidth: 'label' })];
+```
+
+With `[activeUnderline]="false"` on a bar, tell the active tab apart by colour, e.g. `--et-tab-active-color: var(--et-tone-fill)` with `--et-tab-inactive-color: #fff` on the bar.
+
+## Error codes
+
+Misplaced tabs pieces (orphan `<et-tab>`, triggers/panels outside their containers, nav pieces without `et-nav-tabs`) throw [`ET20xx` errors](/components/error-codes#tabs-et20xx) in dev mode.

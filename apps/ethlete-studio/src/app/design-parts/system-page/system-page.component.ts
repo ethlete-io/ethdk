@@ -1,0 +1,490 @@
+import { NgTemplateOutlet } from '@angular/common';
+import {
+  Component,
+  computed,
+  ElementRef,
+  input,
+  model,
+  output,
+  TemplateRef,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
+import { BADGE_IMPORTS, BUTTON_IMPORTS, KBD_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
+import { injectSemanticColorTheme, ProvideColorDirective, signalElementDimensions } from '@ethlete/core';
+import { SYSTEM_LABELS } from '../../i18n/system-labels';
+import { SHELL_LABELS } from '../../i18n/shell-labels';
+import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
+import { PartTreeComponent } from '../part-tree/part-tree.component';
+import { ShellSection } from '../shell-main/shell-main.component';
+import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
+import { DisclosureComponent } from '../disclosure/disclosure.component';
+import { SystemEmptyComponent } from './system-empty.component';
+import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
+import { CommentListComponent } from '../comment-flow/comment-list.component';
+import { CommentPinComponent } from '../comment-pin/comment-pin.component';
+import { CommentTargetComponent } from '../comment-target/comment-target.component';
+import { CommentThread, ThreadCardComponent } from '../comment-flow/thread-card.component';
+import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
+import { SketchHeadComponent } from '../sketch-head/sketch-head.component';
+import { OpenPointsChipComponent } from './open-points-chip.component';
+import {
+  CommentWriter,
+  LegacyCall,
+  MANY_STATES_LAYERS,
+  OpenPointTarget,
+  OPEN_POINTS_SAMPLE,
+  PartException,
+  PlacedComment,
+  SYSTEM_TREE,
+  ThemePick,
+  ThemeSwitch,
+} from './system-page-sample';
+
+export const FRAME_CLASS =
+  'relative m-0 bg-et-surface-background shadow-[0_0_0_calc(1px*var(--st-canvas-label-scale,1))_var(--et-surface-border)]';
+
+export const FRAME_HEAD_CLASS =
+  'absolute bottom-full left-0 flex gap-[0.6em] pb-space-2 text-[calc(1.2rem*var(--st-canvas-label-scale,1))]/[calc(1.6rem*var(--st-canvas-label-scale,1))] whitespace-nowrap text-et-surface-text';
+
+@Component({
+  selector: 'ethlete-system-page',
+  template: `
+    <ethlete-shell-page [shell]="shell()" [section]="section()" (action)="shellAction.emit($event)">
+      <ng-container ngProjectAs="[shellMainSide]">
+        <ng-content select="[systemSide]">
+          @if (empty()) {
+            <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-text-muted">{{ LABELS.none }}</p>
+          } @else if (listingError() === null) {
+            <ethlete-part-tree
+              [layers]="manyStates() ? manyStatesLayers() : tree().layers"
+              [sketches]="manyStates() ? undefined : tree().sketches"
+              [legacy]="manyStates() ? undefined : tree().legacy"
+              (expandedChange)="expandedChange.emit($event)"
+              (activate)="activate.emit($event)"
+            />
+            @if (comments(); as comments) {
+              <ethlete-comment-list [comments]="comments" [selectedId]="selectedComment()" />
+            }
+          }
+        </ng-content>
+      </ng-container>
+      @if (listingError(); as message) {
+        <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)" data-listing-error>
+          <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">
+            <span [etProvideColor]="errorTheme()" class="contents">
+              <svg
+                class="text-et-tone-fill"
+                width="24"
+                height="24"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="8" cy="8" r="5.5" />
+                <path d="m6 6 4 4m0-4-4 4" />
+              </svg>
+            </span>
+            <p class="m-0 text-ui-md font-ui-strong text-et-surface-text">{{ LABELS.listingFailed }}</p>
+            <p class="m-0 text-et-surface-text-muted">{{ message }}</p>
+            <button (click)="reload.emit()" et-button type="button" variant="outline" size="sm">
+              {{ LABELS.reload }}
+            </button>
+          </div>
+        </div>
+      } @else if (call(); as shown) {
+        <ng-content select="[systemCallCanvas]">
+          <ethlete-canvas-frames
+            (zoomOut)="zoomOut.emit()"
+            (zoomReset)="zoomReset.emit()"
+            (zoomIn)="zoomIn.emit()"
+            (fit)="fitAll.emit()"
+            class="w-full pt-16"
+          >
+            <figure [class]="FRAME_CLASS">
+              <figcaption [class]="FRAME_HEAD_CLASS">{{ callFrame() }}</figcaption>
+              <div class="h-45 w-md">
+                <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: callFrame() }" />
+              </div>
+            </figure>
+          </ethlete-canvas-frames>
+        </ng-content>
+        <div
+          class="absolute inset-s-[calc(var(--st-shell-inset-left)+var(--spacing-space-4))] top-space-3 min-w-0 max-w-1/2"
+        >
+          <h2 class="m-0 truncate font-ui-strong text-ui-md text-et-surface-text">{{ shown.headline }}</h2>
+          <span class="font-code text-ui-xs text-et-surface-text-muted">{{ shown.slug }}</span>
+        </div>
+        <div class="absolute top-space-3 right-space-3 flex items-center gap-space-2">
+          @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
+            <div
+              [attr.aria-label]="themeSwitch.kind === 'surface' ? SHELL_LABELS.surfaceTheme : SHELL_LABELS.colorTheme"
+              class="flex gap-0.5 rounded-control-lg border border-(--et-surface-border) p-0.5"
+              role="group"
+            >
+              @for (name of themeSwitch.names; track name) {
+                <button
+                  [pressed]="name === themeSwitch.current"
+                  (click)="pickTheme.emit({ kind: themeSwitch.kind, name })"
+                  et-button
+                  type="button"
+                  variant="transparent"
+                  color="surface"
+                  size="xs"
+                >
+                  {{ name }}
+                </button>
+              }
+            </div>
+          }
+          @if (shown.transferred) {
+            <div class="flex flex-wrap items-center">
+              <et-badge variant="tonal" size="sm">{{ SHELL_LABELS.transferred }}</et-badge>
+            </div>
+          } @else {
+            <button
+              (click)="markTransferred.emit(shown.slug)"
+              et-button
+              type="button"
+              variant="outline"
+              color="surface"
+              size="sm"
+            >
+              {{ SHELL_LABELS.markTransferred }}
+            </button>
+          }
+        </div>
+      } @else if (noted()) {
+        <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)" data-canvas-note>
+          <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">
+            <svg
+              class="text-et-surface-text-muted"
+              width="24"
+              height="24"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M8 2.5 14 13H2z" />
+              <path d="M8 6.5v3" />
+              <path d="M8 11.25v.01" />
+            </svg>
+            <p class="m-0 text-ui-md font-ui-strong text-et-surface-text">
+              {{ noteTitle() }}
+            </p>
+            @if (noteHint()) {
+              <p class="m-0 text-et-surface-text-muted">{{ noteHint() }}</p>
+            }
+          </div>
+        </div>
+      } @else if (empty()) {
+        <ethlete-system-empty [product]="shell().product" (copyPrompt)="copyPrompt.emit()" />
+      } @else if (manyStates()) {
+        <ethlete-canvas-frames
+          (zoomOut)="zoomOut.emit()"
+          (zoomReset)="zoomReset.emit()"
+          (zoomIn)="zoomIn.emit()"
+          (fit)="fitAll.emit()"
+          zoom="75%"
+        >
+          <figure [class]="FRAME_CLASS">
+            <figcaption [class]="FRAME_HEAD_CLASS">{{ LABELS.frameGrid }}</figcaption>
+            <div>
+              <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'grid' }" />
+            </div>
+          </figure>
+          <figure [class]="FRAME_CLASS">
+            <figcaption [class]="FRAME_HEAD_CLASS">
+              {{ LABELS.frameStepper }}<span class="text-et-surface-text-muted tabular-nums">176</span>
+            </figcaption>
+            <div class="w-44">
+              <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'stepper' }" />
+            </div>
+          </figure>
+        </ethlete-canvas-frames>
+      } @else {
+        @if (canvas(); as canvas) {
+          <ng-container *ngTemplateOutlet="canvas; context: { $implicit: thread() ? threadCard : null }" />
+        } @else {
+          <ethlete-canvas-frames
+            [fitted]="fit()"
+            (zoomOut)="zoomOut.emit()"
+            (zoomReset)="zoomReset.emit()"
+            (zoomIn)="zoomIn.emit()"
+            (fit)="fitAll.emit()"
+            class="w-full"
+          >
+            <figure [class]="FRAME_CLASS">
+              <figcaption [class]="FRAME_HEAD_CLASS">{{ frame() }}</figcaption>
+              <div class="relative">
+                <div [class.w-md]="fit()" [class.h-45]="fit()">
+                  <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: frame() }" />
+                </div>
+                @for (comment of comments() ?? []; track comment.id) {
+                  <span
+                    [style.left.%]="comment.at.x"
+                    [style.top.%]="comment.at.y"
+                    class="absolute z-10 flex -translate-y-full"
+                  >
+                    <ethlete-comment-pin
+                      [author]="comment.author"
+                      [initials]="comment.initials"
+                      [agent]="comment.agent"
+                      [count]="comment.replies + 1"
+                      [selected]="comment.id === selectedComment()"
+                    />
+                  </span>
+                }
+                @if (threadAt(); as at) {
+                  <div
+                    [style.left]="'calc(' + at.x + '% + var(--space-6))'"
+                    [style.top]="'calc(' + at.y + '% - var(--space-6))'"
+                    class="absolute"
+                  >
+                    <ng-container *ngTemplateOutlet="threadCard" />
+                  </div>
+                }
+                @if (commentMode()) {
+                  <ethlete-comment-target [frame]="frame()" (comment)="draft.set('')" class="absolute inset-0" />
+                  @if (draft() !== null) {
+                    @if (comments()) {
+                      <span class="absolute top-[42%] left-[38%] z-10 flex -translate-y-full">
+                        <ethlete-comment-pin
+                          [author]="writer().author"
+                          [initials]="writer().initials"
+                          [selected]="true"
+                        />
+                      </span>
+                    }
+                    <ethlete-comment-draft
+                      [text]="draft() ?? ''"
+                      [phase]="send()"
+                      [reason]="reason()"
+                      [class]="comments() ? 'left-[calc(38%+var(--space-6))]' : 'left-[38%]'"
+                      (textChange)="draft.set($event)"
+                      (send)="sendComment.emit($event)"
+                      (discard)="draft.set(null)"
+                      class="absolute top-[42%] z-4"
+                    />
+                  }
+                }
+              </div>
+            </figure>
+          </ethlete-canvas-frames>
+        }
+        @if (foldedStates() > 0) {
+          <div
+            class="absolute bottom-space-3 left-1/2 flex -translate-x-1/2 items-center gap-space-3 rounded-control-md border border-et-surface-border bg-et-surface-background px-space-3 py-space-2 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))"
+            data-folded-states
+          >
+            @if (!allStatesShown()) {
+              <span class="text-ui-sm text-et-surface-text-muted">{{ LABELS.foldedStates(foldedStates()) }}</span>
+            }
+            <ethlete-disclosure
+              [open]="allStatesShown()"
+              [label]="LABELS.showAllStates"
+              (openChange)="showAllStates.emit($event)"
+              hug
+              size="xs"
+            />
+          </div>
+        }
+        <div #actions class="absolute top-space-3 right-space-3 z-1 flex gap-space-2" data-canvas-actions>
+          <ng-content select="[systemActions]" />
+          @if (part()) {
+            @if (commentMode() && draft() === null) {
+              <span
+                class="flex items-center gap-space-1 self-center text-ui-xs whitespace-nowrap text-et-surface-text-muted"
+                ><et-kbd keys="esc" /> {{ LABELS.commentModeOr }} <et-kbd keys="c" /> {{ LABELS.commentModeEnds }}</span
+              >
+            }
+          }
+        </div>
+        @if (part()) {
+          <div
+            [class.pb-14]="foldedStates() > 0"
+            [attr.data-above-folded]="foldedStates() > 0 ? '' : null"
+            class="pointer-events-none absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 @container"
+          >
+            <div
+              class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end @min-[36rem]:grid-cols-[minmax(0,1fr)_auto_minmax(18rem,1fr)] @max-[35.99rem]:mb-11"
+            >
+              <ethlete-sketch-head
+                [commentMode]="commentMode()"
+                [status]="null"
+                (commentModeChange)="setComments($event)"
+                class="pointer-events-auto col-start-2 min-w-0"
+                commentable
+                discardable="false"
+              >
+                <ethlete-open-points-chip
+                  [(closed)]="closed"
+                  [(blockersOpen)]="blockersOpen"
+                  [part]="part()"
+                  [groups]="groups()"
+                  [exceptions]="openExceptions()"
+                  [buildReady]="buildReady()"
+                  [missingShots]="missingShots()"
+                  (openPoint)="openPoint.emit($event)"
+                  (openEditSketch)="openEditSketch.emit($event)"
+                  (approveException)="approveException.emit($event)"
+                  sketchHeadExtra
+                  popoverPlacement="top"
+                />
+              </ethlete-sketch-head>
+            </div>
+          </div>
+        }
+      }
+    </ethlete-shell-page>
+
+    <ng-template #threadCard>
+      @if (thread(); as opened) {
+        <ethlete-thread-card
+          [(text)]="replyText"
+          [place]="opened.place"
+          [messages]="opened.messages"
+          [phase]="opened.phase ?? null"
+          [reason]="opened.reason ?? ''"
+          (replyComment)="replyComment.emit($event)"
+          (resolveThread)="resolveThread.emit()"
+          (withdrawComment)="withdrawComment.emit($event)"
+          (dismiss)="closeThread.emit()"
+        />
+      }
+    </ng-template>
+
+    <ng-template #frameShot let-frame>
+      @if (shot(); as shot) {
+        <ng-container *ngTemplateOutlet="shot; context: { $implicit: frame }" />
+      }
+    </ng-template>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    BADGE_IMPORTS,
+    BUTTON_IMPORTS,
+    KBD_IMPORTS,
+    TOOLTIP_IMPORTS,
+    CanvasFramesComponent,
+    CommentDraftComponent,
+    CommentListComponent,
+    CommentPinComponent,
+    CommentTargetComponent,
+    DisclosureComponent,
+    NgTemplateOutlet,
+    OpenPointsChipComponent,
+    SketchHeadComponent,
+    PartTreeComponent,
+    ProvideColorDirective,
+    ShellPageComponent,
+    SystemEmptyComponent,
+    ThreadCardComponent,
+  ],
+  host: {
+    class: 'block h-screen w-full',
+    '[style.--st-canvas-actions-reach]': 'actionsReach()?.reach',
+    '[style.--st-canvas-actions-bottom]': 'actionsReach()?.bottom',
+  },
+})
+export class SystemPageComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
+  public shell = input<ShellState>(SHELL_SAMPLE);
+  public section = input<ShellSection>('System');
+  public noted = input(false);
+  public noteTitle = input('');
+  public noteHint = input('');
+  public missingShots = input(0);
+  public empty = input(false);
+  public listingError = input<string | null>(null);
+  public manyStates = input(false);
+
+  public foldedStates = input(0);
+  public allStatesShown = input(false);
+  public nothingOpen = input(false);
+  public fit = input(false);
+  public closed = model(false);
+  public commentMode = model(false);
+  public draft = model<string | null>(null);
+  public send = input<CommentSendPhase | null>(null);
+  public reason = input('');
+  public comments = input<PlacedComment[] | null>(null);
+  public selectedComment = input<string | null>(null);
+  public thread = input<CommentThread | null>(null);
+  public replyText = model('');
+  public canvas = input<TemplateRef<unknown> | null>(null);
+  public writer = input<CommentWriter>({ author: '', initials: '' });
+  public tree = input(SYSTEM_TREE);
+  public manyStatesLayers = input(MANY_STATES_LAYERS);
+  public frame = input('button');
+  public shot = input<TemplateRef<{ $implicit: string }> | null>(null);
+  public part = input('components/button');
+  public openPoints = input(OPEN_POINTS_SAMPLE);
+  public exceptions = input<PartException[]>([]);
+  public buildReady = input<BuildReadyStatus | null>(null);
+  public call = input<LegacyCall | null>(null);
+  public themeSwitches = input<ThemeSwitch[]>([]);
+  public blockersOpen = model(false);
+  public shellAction = output<ShellAction>();
+  public activate = output<string>();
+  public expandedChange = output<readonly string[]>();
+  public copyPrompt = output();
+
+  public reload = output();
+  public zoomOut = output();
+  public zoomReset = output();
+  public zoomIn = output();
+  public fitAll = output();
+  public sendComment = output<string>();
+  public openEditSketch = output<BuildBlocker>();
+  public approveException = output<string>();
+  public openPoint = output<OpenPointTarget>();
+  // eslint-disable-next-line ethlete/prefer-present-tense-output -- the design action emit:markTransferred fixes this name
+  public markTransferred = output<string>();
+  public pickTheme = output<ThemePick>();
+  public showAllStates = output<boolean>();
+  public replyComment = output<string>();
+  public resolveThread = output();
+  public withdrawComment = output<number>();
+  public closeThread = output();
+  private actions = viewChild<ElementRef<HTMLElement>>('actions');
+  private actionsSize = signalElementDimensions(this.actions);
+  protected actionsReach = computed(() => {
+    const size = this.actionsSize().offset;
+
+    return size && size.width > 0
+      ? {
+          reach: `calc(${size.width}px + var(--space-3) * 2)`,
+          bottom: `calc(${size.height}px + var(--space-3))`,
+        }
+      : null;
+  });
+
+  protected readonly LABELS = SYSTEM_LABELS;
+  protected readonly SHELL_LABELS = SHELL_LABELS;
+  protected readonly FRAME_CLASS = FRAME_CLASS;
+  protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
+
+  public groups = computed(() => (this.nothingOpen() ? [] : this.openPoints()));
+  public openExceptions = computed(() => (this.nothingOpen() ? [] : this.exceptions()));
+  protected threadAt = computed(() => {
+    const id = this.thread()?.id;
+
+    return this.comments()?.find((comment) => comment.id === id)?.at ?? null;
+  });
+  protected callFrame = computed(() => this.call()?.slug.split('/').pop() ?? '');
+
+  protected setComments(on: boolean) {
+    this.commentMode.set(on);
+    if (on) this.closed.set(true);
+    else this.draft.set(null);
+  }
+}

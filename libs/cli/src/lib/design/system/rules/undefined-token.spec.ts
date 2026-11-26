@@ -1,0 +1,174 @@
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { dirname, join } from 'path';
+import { describe, expect, it } from 'vitest';
+import { DESIGN_DIR, readConfig } from '../../design-config';
+import { resolveProduct } from '../resolve-product';
+import { undefinedTokensOf } from './undefined-token';
+
+const acme = () => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-design-undefined-token-'));
+
+  cpSync(join(__dirname, '../__fixtures__'), target, { recursive: true });
+
+  return target;
+};
+
+const write = (target: string, path: string, content: string) => {
+  mkdirSync(dirname(join(target, path)), { recursive: true });
+  writeFileSync(join(target, path), content);
+};
+
+const messagesOf = (target: string, config = readConfig(target)?.products?.['acme'] ?? {}) =>
+  undefinedTokensOf(resolveProduct({ target, name: 'acme', config })).map(
+    (problem) => `${problem.file.split('/').pop()}: ${problem.message}`,
+  );
+
+describe('undefinedTokensOf', () => {
+  it('passes the clean fixture, whose parts use the tokens of its base', () => {
+    expect(messagesOf(acme())).toEqual([]);
+  });
+
+  it('flags a var() without a fallback whose token nothing defines', () => {
+    const target = acme();
+
+    write(
+      target,
+      `${DESIGN_DIR}/acme/elements/hero/hero.css`,
+      '.hero { --hero-gap: 4px; gap: var(--hero-gap); padding: var(--space-8); margin: var(--space-9, 2px); color: var(--et-surface-1-solid); }',
+    );
+
+    expect(messagesOf(target)).toEqual([
+      'hero.css: var(--space-8) has no fallback, and no stylesheet of the product or its base defines --space-8',
+    ]);
+  });
+
+  it('flags a token in another stylesheet the part imports, and reads the tokens its files define', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+
+    write(
+      target,
+      `${hero}/extra.css`,
+      '.hero-extra { --hero-extra: 1px; gap: var(--hero-extra); width: var(--hero-w); padding: var(--radius-md); }',
+    );
+    write(target, `${hero}/hero-data.ts`, 'export const sized = `<div style="--hero-w: 2px"></div>`;\n');
+    write(
+      target,
+      `${hero}/hero.ts`,
+      `import extra from './extra.css?inline';\n${readFileSync(join(target, hero, 'hero.ts'), 'utf8')}`,
+    );
+
+    expect(messagesOf(target)).toEqual([
+      'extra.css: var(--radius-md) has no fallback, and no stylesheet of the product or its base defines --radius-md',
+    ]);
+  });
+
+  it('reads the tokens a stylesheet of the product config defines', () => {
+    const target = acme();
+
+    write(target, `${DESIGN_DIR}/acme/elements/hero/hero.css`, '.hero { padding: var(--space-8); }');
+    write(target, 'app/styles.css', ':root { --space-8: 80px; }');
+
+    expect(messagesOf(target, { ...readConfig(target)?.products?.['acme'], styles: ['app/styles.css'] })).toEqual([]);
+  });
+
+  it('checks reachable shared styles through nested modules and resolves variant overrides', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+    const shared = join(target, 'shared');
+    const variant = join(target, 'variant-shared');
+
+    write(target, `${hero}/hero.ts`, `import '@shared/shell';\n${readFileSync(join(target, hero, 'hero.ts'), 'utf8')}`);
+    write(target, 'shared/shell.ts', "import './nested'; import '@shared/tokens.css';");
+    write(target, 'shared/nested.ts', "import './shell'; import './shell.css';");
+    write(
+      target,
+      'shared/shell.css',
+      '.shell { gap: var(--variant-token); color: var(--missing); width: var(--unused); }',
+    );
+    write(target, 'shared/tokens.css', ':root { --base-token: 1px; }');
+    write(target, 'variant-shared/tokens.css', ':root { --variant-token: 1px; }');
+    write(target, 'shared/unused.css', ':root { --unused: 1px; }');
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const problems = undefinedTokensOf({ ...product, sharedDir: shared, variantSharedDir: variant });
+
+    expect(problems.map((problem) => problem.message)).toEqual([
+      'var(--missing) has no fallback, and no stylesheet of the product or its base defines --missing',
+      'var(--unused) has no fallback, and no stylesheet of the product or its base defines --unused',
+    ]);
+    expect(problems.every((problem) => problem.file === join(shared, 'shell.css'))).toBe(true);
+  });
+
+  it('does not use definitions from a shared stylesheet replaced by a variant', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+
+    write(
+      target,
+      `${hero}/hero.ts`,
+      `import '@shared/tokens.css';\n${readFileSync(join(target, hero, 'hero.ts'), 'utf8')}`,
+    );
+    write(target, `${hero}/hero.css`, '.hero { gap: var(--base-only); }');
+    write(target, 'shared/tokens.css', ':root { --base-only: 1px; }');
+    write(target, 'variant-shared/tokens.css', ':root { --variant-only: 1px; }');
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+    expect(
+      undefinedTokensOf({
+        ...product,
+        sharedDir: join(target, 'shared'),
+        variantSharedDir: join(target, 'variant-shared'),
+      }).map((problem) => problem.message),
+    ).toEqual(['var(--base-only) has no fallback, and no stylesheet of the product or its base defines --base-only']);
+  });
+
+  it('follows CSS imports without treating commented imports as loaded styles', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+
+    write(target, `${hero}/hero.ts`, `import '@shared/shell.css';`);
+    write(
+      target,
+      'shared/shell.css',
+      `@import url(./tokens.css); /* @import './unused.css'; */ .shell { gap: var(--loaded); color: var(--not-loaded); }`,
+    );
+    write(target, 'shared/tokens.css', ':root { --loaded: 1px; }');
+    write(target, 'shared/unused.css', ':root { --not-loaded: 1px; }');
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+    expect(
+      undefinedTokensOf({ ...product, sharedDir: join(target, 'shared') }).map((problem) => problem.message),
+    ).toEqual(['var(--not-loaded) has no fallback, and no stylesheet of the product or its base defines --not-loaded']);
+  });
+
+  it('reads the tokens an SDK design module defines in the stylesheets it imports, without checking them', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+
+    write(
+      target,
+      `${hero}/hero.ts`,
+      `import { buttonStyles } from '@ethlete/components/design/button';\n${readFileSync(join(target, hero, 'hero.ts'), 'utf8')}`,
+    );
+    write(
+      target,
+      `${hero}/hero.css`,
+      '.hero { outline: var(--_et-focus-ring-width) solid var(--_et-focus-ring-color); gap: var(--missing); }',
+    );
+    write(
+      target,
+      'libs/components/design/button.ts',
+      "import focusRing from '../src/lib/focus-ring/focus-ring.css?inline';\nexport const buttonStyles = focusRing;\n",
+    );
+    write(
+      target,
+      'libs/components/src/lib/focus-ring/focus-ring.css',
+      '.et-focus-ring { --_et-focus-ring-width: 2px; --_et-focus-ring-color: red; margin: var(--lib-only); }',
+    );
+
+    expect(messagesOf(target)).toEqual([
+      'hero.css: var(--missing) has no fallback, and no stylesheet of the product or its base defines --missing',
+    ]);
+  });
+});

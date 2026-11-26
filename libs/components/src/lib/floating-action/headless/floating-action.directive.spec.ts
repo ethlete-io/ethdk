@@ -1,0 +1,285 @@
+import { Component, ErrorHandler, signal } from '@angular/core';
+import '../../../test-helpers';
+import { provideFloatingActionConfig } from './floating-action-config';
+import { FLOATING_ACTION_ERROR_CODES } from '../floating-action-errors';
+import { FLOATING_ACTION_IMPORTS } from '../floating-action.imports';
+import { FLOATING_ACTION_STATES } from '../floating-action.types';
+import { mountFloatingAction } from '../testing/floating-action-driver';
+
+@Component({
+  template: `
+    <div [disabled]="disabled()" etFloatingAction>
+      <div etFloatingActionAnchor>
+        <button etFloatingActionTrigger>Filter</button>
+      </div>
+      @if (withScope()) {
+        <ul etFloatingActionScope>
+          <li>Result</li>
+        </ul>
+      }
+    </div>
+  `,
+  imports: [FLOATING_ACTION_IMPORTS],
+})
+class FloatingActionTestHost {
+  disabled = signal(false);
+  withScope = signal(true);
+}
+
+@Component({
+  template: `
+    <div etFloatingAction>
+      <div etFloatingActionAnchor>
+        <button etFloatingActionTrigger>Filter</button>
+      </div>
+      <h2 etFloatingActionTop>Results</h2>
+    </div>
+  `,
+  imports: [FLOATING_ACTION_IMPORTS],
+})
+class FloatingActionWithTopTestHost {}
+
+@Component({
+  template: `<div etFloatingAction><button etFloatingActionTrigger>Filter</button></div>`,
+  imports: [FLOATING_ACTION_IMPORTS],
+})
+class FloatingActionMissingAnchorTestHost {}
+
+@Component({
+  template: `
+    <div etFloatingAction>
+      @if (withAnchor()) {
+        <div etFloatingActionAnchor>
+          <button etFloatingActionTrigger>Filter</button>
+        </div>
+      }
+    </div>
+  `,
+  imports: [FLOATING_ACTION_IMPORTS],
+})
+class FloatingActionRemovableAnchorTestHost {
+  withAnchor = signal(true);
+}
+
+@Component({
+  template: `
+    <div etFloatingAction>
+      <div etFloatingActionAnchor>
+        <button id="outer" etFloatingActionTrigger>Back to top</button>
+      </div>
+      <section etFloatingActionScope>
+        <div etFloatingAction>
+          <div etFloatingActionAnchor>
+            <button id="inner" etFloatingActionTrigger>Filter</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  `,
+  imports: [FLOATING_ACTION_IMPORTS],
+})
+class NestedFloatingActionTestHost {}
+
+describe('FloatingActionDirective', () => {
+  it('starts inline while the anchor is on screen', async () => {
+    const driver = await mountFloatingAction(FloatingActionTestHost);
+
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.INLINE);
+    expect(driver.floatingAction.isFloating()).toBe(false);
+  });
+
+  it('floats once the anchor has scrolled above the viewport', async () => {
+    const driver = await mountFloatingAction(FloatingActionTestHost);
+
+    driver.scrollAnchorAbove();
+
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.FLOATING);
+    expect(driver.floatingAction.isFloating()).toBe(true);
+  });
+
+  it('hides once the scope has scrolled above the viewport too', async () => {
+    const driver = await mountFloatingAction(FloatingActionTestHost);
+
+    driver.scrollAnchorAbove();
+    driver.scrollScopeAbove();
+
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.HIDDEN);
+  });
+
+  it('returns to inline once the anchor scrolls back into view', async () => {
+    const driver = await mountFloatingAction(FloatingActionTestHost);
+
+    driver.scrollAnchorAbove();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.FLOATING);
+
+    driver.scrollAnchorIntoView();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.INLINE);
+  });
+
+  it('keeps floating for the rest of the page when there is no scope to bound it', async () => {
+    const driver = await mountFloatingAction(FloatingActionTestHost);
+
+    driver.host.withScope.set(false);
+    driver.detectChanges();
+    driver.scrollAnchorAbove();
+
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.FLOATING);
+  });
+
+  it('floats again once a scope that had scrolled away is destroyed', async () => {
+    const driver = await mountFloatingAction(FloatingActionTestHost);
+
+    driver.scrollAnchorAbove();
+    driver.scrollScopeAbove();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.HIDDEN);
+
+    driver.host.withScope.set(false);
+    driver.detectChanges();
+
+    expect(driver.floatingAction.scope()).toBeNull();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.FLOATING);
+  });
+
+  it('goes back to inline once its anchor is destroyed', async () => {
+    const driver = await mountFloatingAction(FloatingActionRemovableAnchorTestHost);
+
+    driver.scrollAnchorAbove();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.FLOATING);
+
+    driver.host.withAnchor.set(false);
+    driver.detectChanges();
+
+    expect(driver.floatingAction.anchor()).toBeNull();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.INLINE);
+  });
+
+  it('marks each trigger with the state of its own floating action, not of an outer one', async () => {
+    const driver = await mountFloatingAction(NestedFloatingActionTestHost);
+    const trigger = (id: string) => (driver.fixture.nativeElement as HTMLElement).querySelector(`#${id}`);
+
+    driver.scrollAnchorAbove();
+
+    expect(trigger('outer')?.getAttribute('data-floating-action-state')).toBe(FLOATING_ACTION_STATES.FLOATING);
+    expect(trigger('inner')?.getAttribute('data-floating-action-state')).toBe(FLOATING_ACTION_STATES.INLINE);
+  });
+
+  it('stays inline while disabled, whatever the scroll position', async () => {
+    const driver = await mountFloatingAction(FloatingActionTestHost);
+
+    driver.host.disabled.set(true);
+    driver.detectChanges();
+    driver.scrollAnchorAbove();
+    driver.scrollScopeAbove();
+
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.INLINE);
+  });
+
+  describe('scrollToTop', () => {
+    let scrollTo: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      scrollTo = vi.fn();
+
+      Object.defineProperty(Element.prototype, 'scrollTo', {
+        configurable: true,
+        value: scrollTo,
+        writable: true,
+      });
+    });
+
+    const placeAt = (el: HTMLElement | null, top: number) => {
+      if (!el) throw new Error('missing element');
+
+      return vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({ top, height: 20 } as DOMRect);
+    };
+
+    it('scrolls to its own element without an etFloatingActionTop', async () => {
+      const driver = await mountFloatingAction(FloatingActionTestHost);
+
+      placeAt(driver.element(), 300);
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+      expect(scrollTo).toHaveBeenCalledWith({ top: 300, behavior: 'smooth' });
+    });
+
+    it('scrolls to the etFloatingActionTop element when there is one', async () => {
+      const driver = await mountFloatingAction(FloatingActionWithTopTestHost);
+
+      placeAt(driver.element(), 900);
+      placeAt(driver.topEl(), 120);
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).toHaveBeenCalledWith({ top: 120, behavior: 'smooth' });
+    });
+  });
+
+  describe('scrollToTopOnlyUp', () => {
+    let scrollTo: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      scrollTo = vi.fn();
+      Object.defineProperty(Element.prototype, 'scrollTo', { configurable: true, value: scrollTo, writable: true });
+    });
+
+    const place = (el: HTMLElement | null, top: number, scrollMarginTop = '0px') => {
+      if (!el) throw new Error('missing element');
+      vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({ top, height: 20 } as DOMRect);
+      el.style.scrollMarginTop = scrollMarginTop;
+    };
+
+    it('scrolls in both directions by default', async () => {
+      const driver = await mountFloatingAction(FloatingActionTestHost);
+
+      place(driver.element(), 300);
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not scroll when the anchor lies below the top edge', async () => {
+      const driver = await mountFloatingAction(FloatingActionTestHost, {}, [
+        provideFloatingActionConfig({ scrollToTopOnlyUp: true }),
+      ]);
+
+      place(driver.element(), 300);
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).not.toHaveBeenCalled();
+    });
+
+    it('scrolls to the target minus its scroll-margin-top when it lies above', async () => {
+      const driver = await mountFloatingAction(FloatingActionTestHost, {}, [
+        provideFloatingActionConfig({ scrollToTopOnlyUp: true }),
+      ]);
+
+      place(driver.element(), -200, '60px');
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+    });
+
+    it('does not scroll when the target sits within its scroll-margin-top', async () => {
+      const driver = await mountFloatingAction(FloatingActionTestHost, {}, [
+        provideFloatingActionConfig({ scrollToTopOnlyUp: true }),
+      ]);
+
+      place(driver.element(), 60, '60px');
+      driver.floatingAction.scrollToTop();
+
+      expect(scrollTo).not.toHaveBeenCalled();
+    });
+  });
+
+  it('throws in dev mode when there is no anchor to tell it when it has scrolled away', async () => {
+    const errors: unknown[] = [];
+
+    const driver = await mountFloatingAction(FloatingActionMissingAnchorTestHost, {}, [
+      { provide: ErrorHandler, useValue: { handleError: (error: unknown) => errors.push(error) } },
+    ]);
+
+    await driver.fixture.whenStable();
+
+    expect(errors).toEqual([expect.objectContaining({ code: FLOATING_ACTION_ERROR_CODES.MISSING_ANCHOR })]);
+  });
+});

@@ -1,0 +1,53 @@
+<span class="et-stat-tile-label">{{ label() }}</span
+>&ngsp;
+
+@if (loading()) {
+  <et-skeleton class="et-stat-tile-skeleton">
+    <et-skeleton-item class="et-stat-tile-value-skeleton" shape="rect" />
+    <et-skeleton-item class="et-stat-tile-delta-skeleton" shape="rect" />
+  </et-skeleton>
+} @else {
+  <span class="et-stat-tile-value">
+    @if (formattedValue(); as formatted) {
+      {{ formatted }}
+      @if (unit(); as unit) {
+        <span class="et-stat-tile-unit">{{ unit }}</span>
+      }
+    } @else {
+      <span aria-hidden="true">–</span><span class="et-visually-hidden">{{ labels().noValue }}</span>
+    }
+  </span>
+
+  @if (deltaView() || caption()) {
+    &ngsp;<span class="et-stat-tile-footer">
+      @if (deltaView(); as delta) {
+        <span
+          [etProvideColor]="deltaTheme()"
+          [attr.data-direction]="delta.direction"
+          [attr.data-sentiment]="delta.sentiment"
+          class="et-stat-tile-delta"
+        >
+          <svg class="et-stat-tile-delta-icon" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+            @switch (delta.direction) {
+              @case ('up') {
+                <path d="M6 2 11 9H1Z" />
+              }
+              @case ('down') {
+                <path d="M6 10 1 3h10Z" />
+              }
+              @default {
+                <path d="M1.5 5h9v2h-9Z" />
+              }
+            }
+          </svg>
+          <span class="et-visually-hidden">{{ directionLabel() }} </span>{{ delta.text }}
+        </span>
+      }
+      @if (caption(); as caption) {
+        &ngsp;<span class="et-stat-tile-caption">{{ caption }}</span>
+      }
+    </span>
+  }
+}
+
+<ng-content />

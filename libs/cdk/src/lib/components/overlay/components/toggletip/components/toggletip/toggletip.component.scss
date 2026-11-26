@@ -1,0 +1,134 @@
+:where(.et-toggletip) {
+  --background-color: hsl(0 0% 20%);
+  --foreground-color: CanvasText;
+  --border-radius: 4px;
+  --padding-inline: 1.5ch;
+  --padding-block: 0.75ch;
+  --inline-max-size: 25ch;
+
+  --arrow-size: 10px;
+  --arrow-radius: 2px;
+}
+
+.et-toggletip {
+  transform: var(--et-floating-translate);
+  will-change: transform;
+
+  &[et-floating-placement^='top'] .toggletip-arrow {
+    bottom: -4px;
+    left: 0;
+  }
+
+  &[et-floating-placement^='right'] .toggletip-arrow {
+    left: -4px;
+    top: 0;
+  }
+
+  &[et-floating-placement^='bottom'] .toggletip-arrow {
+    top: -4px;
+    left: 0;
+  }
+
+  &[et-floating-placement^='left'] .toggletip-arrow {
+    right: -4px;
+    top: 0;
+  }
+}
+
+.et-toggletip-container {
+  z-index: 1;
+  inline-size: max-content;
+  max-inline-size: var(--inline-max-size);
+  padding: var(--padding-block) var(--padding-inline);
+  border-radius: var(--border-radius);
+  background: var(--background-color);
+  color: var(--foreground-color);
+  will-change: transform;
+
+  &::before {
+    content: '; Has toggletip: ';
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: inset(50%);
+    height: 1px;
+    width: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+  }
+}
+
+.toggletip-arrow {
+  transform: var(--et-floating-arrow-translate);
+  inline-size: var(--arrow-size);
+  block-size: var(--arrow-size);
+  position: absolute;
+  z-index: 1;
+  will-change: transform;
+
+  &::before {
+    inline-size: var(--arrow-size);
+    block-size: var(--arrow-size);
+    border-radius: var(--arrow-radius);
+    position: absolute;
+    z-index: -1;
+    transform: rotate(45deg);
+    background: var(--background-color);
+    top: 0;
+    left: 0;
+    content: '';
+  }
+}
+
+.et-toggletip.et-with-default-animation {
+  .et-toggletip-container {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+
+      .toggletip-arrow::before {
+        transform: rotate(45deg) scale(0);
+      }
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 200ms var(--ease-out-5),
+        opacity 200ms var(--ease-out-5);
+
+      .toggletip-arrow::before {
+        transition: transform 200ms var(--ease-out-5);
+      }
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 150ms var(--ease-in-5),
+        opacity 150ms var(--ease-in-5);
+
+      .toggletip-arrow::before {
+        transition: transform 150ms var(--ease-in-5);
+      }
+    }
+  }
+
+  &[et-floating-placement^='top'] .et-toggletip-container.et-animation-enter-from,
+  &[et-floating-placement^='top'] .et-toggletip-container.et-animation-leave-to {
+    transform: translate(0, 5px);
+  }
+
+  &[et-floating-placement^='right'] .et-toggletip-container.et-animation-enter-from,
+  &[et-floating-placement^='right'] .et-toggletip-container.et-animation-leave-to {
+    transform: translate(-5px, 0);
+  }
+
+  &[et-floating-placement^='bottom'] .et-toggletip-container.et-animation-enter-from,
+  &[et-floating-placement^='bottom'] .et-toggletip-container.et-animation-leave-to {
+    transform: translate(0, -5px);
+  }
+
+  &[et-floating-placement^='left'] .et-toggletip-container.et-animation-enter-from,
+  &[et-floating-placement^='left'] .et-toggletip-container.et-animation-leave-to {
+    transform: translate(5px, 0);
+  }
+}

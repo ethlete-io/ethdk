@@ -1,0 +1,128 @@
+# App setup
+
+The one-time wiring an application needs before `@ethlete/components` renders correctly. Work
+through it top to bottom when you start a new app; each item says what breaks without it.
+
+```ts
+import { provideColorThemesWithTailwind4, provideLocale, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
+import { provideDateLocale, provideOverlay, providePaginationLabels, provideTableLabels } from '@ethlete/components';
+import { de } from 'date-fns/locale';
+import { COLOR_THEMES } from './theme/color-themes';
+import { SURFACE_THEMES } from './theme/surface-themes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideSurfaceThemesWithTailwind4(SURFACE_THEMES),
+    provideColorThemesWithTailwind4(COLOR_THEMES),
+    provideOverlay(),
+    provideLocale('de'),
+    provideDateLocale(de),
+    provideTableLabels({ empty: 'Keine Ergebnisse.' }),
+    providePaginationLabels({ next: 'Nächste Seite' }),
+  ],
+};
+```
+
+## Styles
+
+- **Root font size 62.5%.** Every SDK size is in `rem` against a 10px root (`1rem = 10px`,
+  so `1.4rem` means 14px). At the browser default of 16px every control renders 1.6× too
+  large. Put it in your global stylesheet:
+
+  ```css
+  @layer base {
+    html {
+      font-size: 62.5%;
+    }
+  }
+  ```
+
+  Size your own text in `rem` on the same 10px scale (or in `px`). Tailwind's rem-based scales
+  shrink with the root, so scale them back in your `@theme` - `--spacing: 0.4rem` restores the
+  default 4px step.
+
+  In dev mode, `provideSurfaceThemesWithTailwind4()` logs a console warning once the page has
+  loaded if the root font size is still the browser default. Any other root size (a fixed `10px`,
+  a responsive rule) is taken as intentional and stays silent.
+
+- **Tailwind CSS v4.** The theme generators emit Tailwind 4 CSS (`@theme` blocks and
+  utilities), and component styles sit in `@layer components.sdk` so utilities and your own
+  `@layer components` rules can override them - see [Overriding component styles](/components/#overriding-component-styles).
+  `@import 'tailwindcss';` comes first in the global stylesheet.
+- **Generated theme CSS imported.** Define themes in TypeScript, then generate the CSS and
+  the `.d.ts` that types your theme names ([Theming](/core/theming)):
+
+  ```bash
+  yarn nx g @ethlete/core:tailwind-4-surface-theme --themesPath=src/theme/surface-themes.ts
+  yarn nx g @ethlete/core:tailwind-4-color-theme --themesPath=src/theme/color-themes.ts
+  ```
+
+  Import both generated `.css` files in the global stylesheet after Tailwind, and re-run the
+  generators whenever a theme file changes.
+
+## Theming providers (`@ethlete/core`)
+
+- **`provideSurfaceThemesWithTailwind4(themes)`** - the neutral surfaces (backgrounds, text,
+  borders) components resolve from. One `isDefault` surface per `type` (`'light'` / `'dark'`).
+- **`provideColorThemesWithTailwind4(themes)`** - the accent palettes. Exactly one
+  `isDefault` theme. Pass the same arrays you ran the generators on.
+- **A color theme with `type: 'error'`.** `et-form-field`, `et-select`, `et-cascader`,
+  `et-menu` / menu items (destructive items) and alert dialogs resolve their error styling through `injectSemanticColorTheme('error')`, which throws
+  `No color theme with type "error" found` when none is registered - so every form control
+  fails without it. Register `type: 'warning'` too if you use form warnings, and
+  `'success'` / `'warning'` / `'error'` for `et-progress-steps` states. `et-stat-tile` reads
+  `'success'` and `'error'` for its deltas, and `et-banner` reads `'success'`, `'warning'` and
+  `'error'` for those types - each throws the same way when the type is missing. The table, notifications, match and bracket pick cards and the rich text editor's token popup only use a registered theme of that type and fall back to neutral styling without one.
+
+Theme names (`brand`, `neongreen`, …) are yours to choose; the SDK ships none. Semantic behavior
+only ever looks up the `type`.
+
+## Component providers (`@ethlete/components`)
+
+- **`provideOverlay()`** - once at bootstrap, before any dialog, sheet, menu, select or
+  tooltip opens. Registers the scroll blocker that locks body scroll while an overlay is
+  open ([Overlays](/components/overlays#setup)).
+- **`provideDateLocale(locale)`** - the date-fns locale for month and weekday names,
+  calendars, and parsing typed dates. It does not follow `provideLocale()`; without it dates
+  stay en-US ([Localization](/components/localization#_2-the-date-fns-locale)).
+- **`provideDateFormat(format)`** - only if your API does not speak the default wire formats.
+  It is the string the date-only controls read and write (default `yyyy-MM-dd`).
+  `provideDateTimeFormat(format)` does the same for the date-time controls (default
+  `yyyy-MM-dd'T'HH:mm:ssxxx`), and `provideTimeFormat(format)` for the time controls (default
+  `HH:mm`).
+- **`provideDateTimeZone(zone)`** - only if every date should read as one zone's wall clock (e.g.
+  `'UTC'`) rather than the browser's ([Date & time inputs](/components/date-time-inputs#app-time-zone)).
+- **`provide<Domain>Labels(...)`** - one call per domain you use in a non-English app, e.g.
+  `provideTableLabels`, `providePaginationLabels`, `provideFormFieldLabels`,
+  `provideSelectLabels`. Every label is partial; omitted keys keep their English default. The
+  full list is in [Localization](/components/localization).
+- **`provideFormFieldDefaults(...)`** - optional: the default `appearance`, `fill`, `labelMode` and
+  `size` of every form field (`size` also applies to choice fields and the checkbox, radio and segmented groups), if your design differs from `box`/`transparent`/`static`/`md`
+  ([Forms](/components/forms#the-field-shell)).
+- **`provideIcons(...icons)`** - not app-wide setup: register icons on the component that
+  renders them, so unused ones stay tree-shakeable ([Icon](/components/icon)).
+
+## Locale (`@ethlete/core`)
+
+- **`provideLocale('de')`** - sets the start value of the locale signal that label tokens react to; date formatting follows `provideDateLocale` instead.
+  Defaults to `'en'`; skip it for an English-only app.
+
+## Tooling
+
+- **`@ethlete/cli`** as a dev dependency. `et update` moves the `@ethlete/*` packages and runs
+  the migrations each release ships ([Updating the SDK](/cli/update)). Without it a repo that
+  uses `@ethlete/agent-rules` never gets the `sdk-update` skill, so its agent bumps versions by
+  hand and skips every migration.
+
+```bash
+yarn add -D @ethlete/cli@next
+```
+
+Install it from `next`: `latest` still points at a 2.x release without `et update`.
+
+In unit specs, call `setupComponentsTestEnvironment()` from `@ethlete/components/testing` in the test setup file: jsdom lacks browser APIs the components need ([Testing](/components/testing)).
+
+## Framework
+
+- **`provideHttpClient()`** from `@angular/common/http` if you use `@ethlete/query`'s HTTP
+  client ([Query](/query/)).

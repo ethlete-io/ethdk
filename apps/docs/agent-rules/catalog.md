@@ -1,0 +1,115 @@
+# Content catalog
+
+These are the rules, skills and integrations shipped by `@ethlete/agent-rules`. The
+identifiers in the first column are the exact names accepted by the relevant config
+option or CLI command.
+
+## How content is selected
+
+Rules and skills pass through four filters before `sync` emits them:
+
+1. `profile` selects `consumer` plus `both`, or `sdk` plus `both` for the SDK profile.
+2. Content with `requires` is kept only when that package is installed.
+3. Every declared template variable must have a configured, derived or default value.
+4. Names in `exclude` are removed for every agent and developer in the repository.
+
+The gitignored local config never changes emitted rules or skills. It holds runtime,
+machine-specific values only, keeping generated output identical locally and in CI.
+
+## Always-loaded rules
+
+| Name              | Guidance                                                                                                                                                                                  | Availability                               |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `app-styling`     | Styles app components with Tailwind utilities in templates, keeps app CSS in `@layer components`, `@layer utilities` or unlayered and never uses a hardcoded colour as the primary value. | Consumer profile; requires `@ethlete/core` |
+| `comments`        | Allows comments only for timing constraints, type-inexpressible invariants, documented workarounds and public API JSDoc.                                                                  | All profiles                               |
+| `lint-and-format` | Runs lint with auto-fixes first and formats every edited file before completion.                                                                                                          | All profiles                               |
+| `nx-layout`       | Nx workspace layout: thin apps, feature code in libs grouped by kind, path-mirroring aliases and scope tags.                                                                              | Consumer profile; requires `nx`            |
+| `reactive-state`  | Uses signals for synchronous state, RxJS for asynchronous work and bridges rather than copied state.                                                                                      | All profiles                               |
+| `styling`         | Keeps component styling in plain layered CSS and resolves every color through theme tokens.                                                                                               | SDK profile; requires `@ethlete/core`      |
+| `subagent-models` | Names the model on every subagent call: haiku for a lookup, opus for real work, fable for judgment-heavy work.                                                                            | All profiles                               |
+
+Rules are always loaded by the configured agents. Use `exclude` when a repository has
+its own replacement for one of them.
+
+## On-demand skills
+
+| Name                  | Use it for                                                                                                       | Availability                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `angular-patterns`    | Choosing and structuring Angular components, directives, services, pipes, templates and lifecycle behavior.      | All profiles; requires `@ethlete/core`              |
+| `api-source`          | Reading a configured backend checkout to verify API behavior without editing that checkout.                      | Consumer profile                                    |
+| `app-testing`         | Unit-testing an app built on the SDK: query views, overlays and views that read the URL.                         | Consumer profile; requires `@ethlete/core`          |
+| `codex-subagent`      | Delegating a task to a Codex agent for a second opinion, a review or a cheap parallel lookup.                    | All profiles                                        |
+| `design-exploration`  | Running a visual design exploration in steps, with the user as the designer.                                     | All profiles                                        |
+| `domain-modeling`     | Building a project's glossary and recording an architecture decision while a design is discussed.                | All profiles                                        |
+| `e2e-triage`          | Working through a failed Playwright e2e run: group the failures, fix the largest group, re-run only what failed. | Consumer profile; requires `@ethlete/cli`           |
+| `figma-export`        | Reconciling rendered components with SVG and CSS exports from Figma.                                             | All profiles                                        |
+| `git-commit`          | Writing commitlint-compatible, scoped, lean commit messages.                                                     | All profiles                                        |
+| `git-flow`            | Naming, basing and targeting feature, sub-feature, release and hotfix branches.                                  | All profiles                                        |
+| `grill-with-docs`     | Running the interview and the documentation together; the user starts it, no agent does.                         | All profiles                                        |
+| `grilling`            | Stress-testing a plan or a decision through rounds of questions, one settled frontier at a time.                 | All profiles                                        |
+| `handoff`             | Saving work state for a fresh agent session or resuming a saved handoff.                                         | All profiles                                        |
+| `query`               | Building with the signals-first query client, reactive arguments, auth, polling, pagination and RxJS bridges.    | Consumer profile; requires `@ethlete/query`         |
+| `rxjs-signals`        | Choosing between signals and RxJS, managing subscriptions and avoiding streams inside effects or computeds.      | All profiles; requires `@ethlete/core`              |
+| `sdk-docs`            | Finding the authoritative SDK guide or Storybook documentation before using an unfamiliar API.                   | Consumer profile                                    |
+| `sdk-local-build`     | Building an unreleased SDK checkout and temporarily installing it through a `file:` dependency.                  | Consumer profile                                    |
+| `sdk-source`          | Reading a configured SDK checkout when published docs and installed types are insufficient.                      | Consumer profile                                    |
+| `sdk-update`          | Updating the `@ethlete/*` packages with `et update` and working the migration tasks it leaves behind.            | Consumer profile; requires `@ethlete/cli`           |
+| `story-styling`       | Styling Storybook stories with the repository's trimmed Tailwind theme.                                          | Consumer profile; requires `@ethlete/core`          |
+| `styleguide`          | Applying the TypeScript and Angular judgment calls that lint cannot enforce.                                     | Consumer profile; requires `@ethlete/eslint-plugin` |
+| `theming`             | Using surface and semantic color theming, including across overlays and portals.                                 | Consumer profile; requires `@ethlete/core`          |
+| `timetrack`           | Reading and writing Jira data through the running Timetrack app without repository credentials.                  | All profiles                                        |
+| `verify-in-app`       | Driving the running app with Playwright to verify a view or style change and prove a fix with a test.            | Consumer profile                                    |
+| `verify-in-storybook` | Driving a Storybook story with Playwright to verify DOM, styles, animations and interactions.                    | Consumer profile                                    |
+
+Skills are emitted in the Agent Skills `SKILL.md` format and load on demand. Their
+frontmatter descriptions tell each agent when the guide applies.
+
+`domain-modeling`, `grill-with-docs` and `grilling` are vendored from
+[mattpocock/skills](https://github.com/mattpocock/skills) under the MIT license. Each one
+names its upstream commit; `THIRD-PARTY-LICENSES.md` in the package holds the license.
+
+## Agent hooks
+
+Agent hooks are not emitted by default. Add their names to `hooks`; a local
+`disableHooks` setting can then turn all or selected generated hooks off on one machine.
+
+| Name                    | Targets               | Event                                                                                        | Behavior                                                                                                                                                                                                                                                                                                |
+| ----------------------- | --------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `context-warning`       | Claude Code and Codex | `SessionStart`, `UserPromptSubmit`, `PostToolBatch`, `Stop` (Codex: `UserPromptSubmit` only) | Names the budget at session start, then warns at 70%, 85% and 95% of the effective context or long-context pricing budget - between the agent's own tool batches as well as on a prompt, and again as a turn ends, so work is finished or handed off before quality degrades or premium pricing starts. |
+| `subagent-model-policy` | Claude Code           | `PreToolUse` on the subagent tool                                                            | Denies a subagent call that names no model and returns the model table instead, then asks the user before a subagent runs on the most expensive model.                                                                                                                                                  |
+| `builder-idle-check`    | Claude Code           | `Stop`                                                                                       | In a builder session, blocks a turn end with no subagent and no background command running (CI watchers and dev servers do not count) while `plans/QUEUE.md` has open `Builder` rows whose `Stand` says neither "wartet auf" nor "Offen nur:", and names those rows. Fires once per idle stop.          |
+
+For Codex, [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
+[Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra),
+[Luna](https://developers.openai.com/api/docs/models/gpt-5.6-luna),
+[GPT-5.5](https://developers.openai.com/api/docs/models/gpt-5.5) and
+[GPT-5.4](https://developers.openai.com/api/docs/models/gpt-5.4) use their documented
+272k long-context pricing boundary. Other models use the context window reported in
+the rollout. The runtime window takes precedence when it is smaller than a pricing
+boundary.
+
+## Git hooks
+
+Git hooks are also opt-in. Add their names to `gitHooks`; `sync` appends a generated
+block to the corresponding Husky file without replacing existing hook logic.
+
+| Name            | Behavior                                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `pre-push`      | Runs `git-flow check --push` for the current branch. Advisory mode only blocks direct pushes to protected base branches. |
+| `post-checkout` | Reports a non-conforming local branch before it reaches a remote and becomes expensive to rename.                        |
+
+`ETHLETE_GIT_FLOW_SKIP=1` silences both generated git hooks on one machine.
+
+## Output styles
+
+Output styles are installed explicitly and are not part of `sync` or `check`.
+
+| Name          | Target      | Behavior                                                                                                           |
+| ------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| `ste-clarity` | Claude Code | Writes prose in ASD-STE100 Simplified Technical English while preserving code, identifiers, paths and quoted text. |
+
+Install and activate the shipped style with:
+
+```bash
+yarn ethlete-agents output-style
+```

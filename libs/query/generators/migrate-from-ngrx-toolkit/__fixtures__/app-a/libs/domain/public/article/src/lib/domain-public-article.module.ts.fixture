@@ -1,0 +1,21 @@
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CmsRendererModule } from '@app-a/domain/shared/cms';
+import { UikitCommonModule } from '@app-a/uikit/common';
+import { NgRxToolkitModule } from '@tomtomb/ngrx-toolkit';
+import { DomainPublicArticleRoutingModule } from './domain-public-article-routing.module';
+
+import * as Views from './views';
+
+@NgModule({
+  imports: [
+    CommonModule,
+    DomainPublicArticleRoutingModule,
+    NgRxToolkitModule,
+    CmsRendererModule,
+    UikitCommonModule,
+    Views.ArticleDetailComponent,
+    Views.ArticleOverviewComponent,
+  ],
+})
+export class DomainPublicArticleModule {}

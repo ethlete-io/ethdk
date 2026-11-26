@@ -1,0 +1,14 @@
+{
+  "products": {
+    "acme-base": {
+      "presets": { "desktop": { "width": 1280, "height": 800 } }
+    },
+    "acme": {
+      "base": ".ethlete/design/acme-base",
+      "presets": {
+        "phone": { "width": 390, "height": 844 },
+        "desktop": { "width": 1280 }
+      }
+    }
+  }
+}

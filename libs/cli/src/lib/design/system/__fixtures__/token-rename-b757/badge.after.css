@@ -1,0 +1,31 @@
+.badge-frame {
+  display: flex;
+  align-items: center;
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background);
+  color: var(--et-surface-text);
+}
+
+@layer components {
+  .et-badge:where([data-variant='filled'], [data-variant='tonal']) {
+    --_et-badge-border-color: var(--et-tone-text);
+  }
+}
+
+.badge-frame-narrow {
+  inline-size: 16rem;
+}
+
+@layer components {
+  .et-badge[data-long-label] {
+    --et-badge-max-width: 12rem;
+  }
+
+  .et-badge[data-long-label] .et-badge-label {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-box: normal;
+  }
+}

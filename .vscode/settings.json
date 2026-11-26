@@ -1,0 +1,54 @@
+{
+  "tailwindCSS.experimental.configFile": "apps/storybook/src/styles/storybook.css",
+  "tailwindCSS.rootFontSize": 10,
+  "cSpell.words": [
+    "autofilled",
+    "Checkmark",
+    "combobox",
+    "contentful",
+    "dailymotion",
+    "DELAYABLE",
+    "endregion",
+    "ethlete",
+    "ETxxxx",
+    "Googleplay",
+    "INLINES",
+    "klass",
+    "Pagerfanta",
+    "precomposed",
+    "referrerpolicy",
+    "RELS",
+    "retryable",
+    "scrollbars",
+    "Soop",
+    "Symfony",
+    "themeable",
+    "toggletip",
+    "uikit",
+    "UNCACHEABLE",
+    "unthrown",
+    "viewports"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "vsicons.presets.angular": true,
+  "files.watcherExclude": {
+    "**/.claude/worktrees/**": true,
+    "**/node_modules/**": true,
+    "**/.design-base/**": true,
+    "dist/**": true,
+    "tmp/**": true
+  },
+  "search.exclude": {
+    "**/.claude/worktrees": true,
+    "**/.design-base": true,
+    "dist": true,
+    "tmp": true
+  },
+  "files.exclude": {
+    "**/.claude/worktrees": true,
+    "tmp": true
+  },
+  "nxConsole.generateAiAgentRules": true
+}

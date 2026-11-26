@@ -1,0 +1,56 @@
+<ng-template #face>
+  <span [class]="faceClass()">
+    @if (resolved()) {
+      <svg
+        class="size-3"
+        width="12"
+        height="12"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m3.5 8.5 3 3 6-7" />
+      </svg>
+    } @else if (agent(); as agent) {
+      <svg [agent]="agent" class="size-3" ethlete-agent-logo></svg>
+    } @else {
+      {{ initials() }}
+    }
+  </span>
+</ng-template>
+
+<span class="relative inline-flex">
+  @if (filled()) {
+    <button
+      [class]="pinClass()"
+      [attr.aria-label]="label()"
+      (click)="pinToggle.emit()"
+      type="button"
+      aria-pressed="true"
+    >
+      <ng-container *ngTemplateOutlet="face" />
+    </button>
+  } @else {
+    <button
+      [class]="pinClass()"
+      [attr.aria-label]="label()"
+      [attr.aria-pressed]="selected() || null"
+      (click)="pinToggle.emit()"
+      type="button"
+      etAutoSurface
+    >
+      <ng-container *ngTemplateOutlet="face" />
+    </button>
+  }
+  @if (count() > 1 && !resolved()) {
+    <span
+      class="pointer-events-none absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-tone-fill px-1 font-ui-strong text-ui-xs leading-none text-et-tone-on-fill tabular-nums ring-2 ring-et-surface-background"
+      aria-hidden="true"
+      >{{ count() }}</span
+    >
+  }
+</span>

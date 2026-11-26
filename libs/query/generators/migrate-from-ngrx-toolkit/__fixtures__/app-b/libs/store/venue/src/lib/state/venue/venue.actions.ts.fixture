@@ -1,0 +1,37 @@
+import * as Models from './venue.models';
+import { createHttpActionGroup, defineArgTypes } from '@tomtomb/ngrx-toolkit';
+import { VenueDetailView, VenueListView, VenueRankingView, Paginated } from '@app-b/types';
+
+export const VENUE_ACTION_PREFIX = 'Venue';
+
+export const getVenueBySlug = createHttpActionGroup({
+  method: 'GET',
+  name: 'Venue By Slug',
+  scope: VENUE_ACTION_PREFIX,
+  argsTypes: defineArgTypes<{
+    args: Models.GetVenueBySlugArgs;
+    response: VenueDetailView;
+  }>(),
+});
+
+export const getVenueRanking = createHttpActionGroup({
+  method: 'GET',
+  name: 'Venue Rankings',
+  scope: VENUE_ACTION_PREFIX,
+  argsTypes: defineArgTypes<{
+    args: Models.GetVenueRankingArgs;
+    response: VenueRankingView;
+  }>(),
+});
+
+export const getVenues = createHttpActionGroup({
+  method: 'GET',
+  name: 'Venues',
+  scope: VENUE_ACTION_PREFIX,
+  argsTypes: defineArgTypes<{
+    args: Models.GetVenuesArgs;
+    response: Paginated<VenueListView>;
+  }>(),
+});
+
+export const VENUE_ACTIONS = { getVenueBySlug, getVenues, getVenueRanking };

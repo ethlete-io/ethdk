@@ -1,0 +1,90 @@
+.t-frame {
+  box-sizing: border-box;
+  display: grid;
+  gap: 1.6rem;
+  padding: 1.6rem;
+  background: var(--et-surface-background);
+  color: var(--et-surface-text);
+  font-size: 1.4rem;
+}
+
+@layer components {
+  et-form-field[data-text-shell] {
+    --_et-form-field-frame-border: color-mix(in oklab, var(--et-surface-text) 43%, var(--et-surface-background));
+    --_et-form-field-frame-border-hover: var(--et-surface-text);
+  }
+
+  et-form-field[data-text-shell][data-error] {
+    --_et-form-field-frame-border: var(--et-tone-fill);
+    --_et-form-field-frame-border-hover: light-dark(
+      var(--et-tone-fill-hover, var(--et-tone-fill-rest)),
+      var(
+        --et-tone-text-active,
+        var(
+          --et-tone-text-focus,
+          var(
+            --et-tone-text-hover,
+            var(
+              --et-tone-text-rest,
+              var(--et-tone-fill-active, var(--et-tone-fill-focus, var(--et-tone-fill-hover, var(--et-tone-fill-rest))))
+            )
+          )
+        )
+      )
+    );
+  }
+
+  et-textarea .et-textarea-native::placeholder {
+    color: color-mix(in srgb, currentColor 60%, transparent);
+  }
+
+  et-form-field et-label .et-label-required-marker {
+    color: var(--et-tone-text);
+  }
+}
+
+@layer components {
+  et-form-field[data-text-shell][data-control-type='textarea'][data-appearance='box']:not(
+      [data-label-mode='floating-inside']
+    ) {
+    --_t-line: calc(var(--et-form-field-control-font-size) * var(--et-form-field-control-line-height));
+    --_t-pad: max(
+      var(--et-form-field-control-padding-block),
+      (
+          var(--et-form-field-control-min-height) - var(--et-form-field-control-font-size) *
+            var(--et-form-field-control-line-height) - 2 * var(--et-form-field-control-border-width)
+        ) /
+        2
+    );
+
+    .et-form-field-control-frame {
+      padding-block: 0;
+      padding-inline-end: 0;
+    }
+
+    .et-textarea-native {
+      box-sizing: border-box;
+      padding-block: var(--_t-pad);
+      padding-inline-end: var(--et-form-field-control-padding-inline);
+    }
+
+    textarea[data-et-textarea-autosize] {
+      min-block-size: calc(var(--et-textarea-min-rows, 1) * 1lh + 2 * var(--_t-pad));
+      max-block-size: calc(var(--et-textarea-max-block-size, 1000lh) + 2 * var(--_t-pad));
+    }
+
+    &[data-label-mode='inline'] .et-form-field-label-area--inline {
+      margin-block: 0;
+    }
+
+    .t-scrolled & .et-form-field-control-slot {
+      overflow: clip;
+      max-block-size: calc(4 * var(--_t-line) + 2 * var(--_t-pad));
+    }
+
+    .t-scrolled & textarea[data-et-textarea-autosize] {
+      max-block-size: none;
+      translate: 0 calc(-2.5 * var(--_t-line) - var(--_t-pad));
+    }
+  }
+}

@@ -1,0 +1,7016 @@
+#!/usr/bin/env node
+import { execFile, execFileSync, fork, spawn, spawnSync } from 'node:child_process';
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { createRequire } from 'node:module';
+import { createServer } from 'node:net';
+import { availableParallelism, hostname, loadavg, tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+import { holderLine, takeHeavyLock } from '../../../tools/scripts/heavy-run-lock.mjs';
+import { enterOwnScope } from '../../../tools/scripts/own-scope.mjs';
+import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
+import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
+import { noMatchLineOf } from './case-filter.mjs';
+import { copyPart } from './copy-part.mjs';
+import { shootProducts } from './product-matrix.mjs';
+import { settleLayout } from './settle-wait.mjs';
+import { runOrderOf, shardShareOf } from './shard-share.mjs';
+import { runStandalone, standaloneJobsOf } from './standalone-jobs.mjs';
+import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
+import { FRAME, measureZoom, ZOOM_BUDGET } from './zoom-budget.mjs';
+import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
+import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
+import { placeSketchDraft } from './sketch-comment-draft.mjs';
+
+const root = resolve(import.meta.dirname, '../../..');
+const args = process.argv.slice(2);
+const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 1]) : undefined;
+const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined;
+const zoomFixture = args.includes('--zoom-fixture') || args.includes('--prepare-checkout');
+const engine = args.includes('--engine') ? args[args.indexOf('--engine') + 1] : 'chromium';
+const pageGroups = args.includes('--page') ? args[args.indexOf('--page') + 1].split('|') : undefined;
+const VIEWS = {
+  system: ['System', 'Edited', 'Inbox'],
+  sketches: ['Sketches', 'Wide', 'Zoom', 'Merge', 'Discard'],
+  flow: ['Flow'],
+};
+const view = args.includes('--view') ? args[args.indexOf('--view') + 1] : undefined;
+const listOnly = args.includes('--list');
+const waitForLock = !args.includes('--no-wait-lock');
+const keepTimings = !args.includes('--no-timings');
+const coldShots = args.includes('--cold-shots') || process.env['STUDIO_E2E_COLD_SHOTS'] === '1';
+
+if (coldShots) process.env['STUDIO_E2E_COLD_SHOTS'] = '1';
+const perfOnly = args.includes('--perf');
+const proofRow = args.includes('--proof') ? args[args.indexOf('--proof') + 1] : undefined;
+
+if (!['chromium', 'webkit'].includes(engine)) {
+  console.error(`unknown --engine ${engine}, one of: chromium, webkit`);
+  process.exit(2);
+}
+
+if (view && !VIEWS[view]) {
+  console.error(`unknown --view ${view}, one of: ${Object.keys(VIEWS).join(', ')}`);
+  process.exit(2);
+}
+
+const shardArg = args.includes('--shard') ? args[args.indexOf('--shard') + 1] : process.env['STUDIO_E2E_SHARD'];
+const shard = shardArg ? { index: Number(shardArg.split('/')[0]), count: Number(shardArg.split('/')[1]) } : undefined;
+
+if (
+  shard &&
+  !(Number.isInteger(shard.index) && Number.isInteger(shard.count) && shard.index >= 1 && shard.index <= shard.count)
+) {
+  console.error(`invalid shard ${shardArg}, expected <i>/<n> with 1 <= i <= n`);
+  process.exit(2);
+}
+
+if (args.includes('--hold-listings'))
+  process.env['STUDIO_E2E_HOLD_LISTINGS'] = args[args.indexOf('--hold-listings') + 1];
+
+const holdListingsMs = Number(process.env['STUDIO_E2E_HOLD_LISTINGS'] ?? 0);
+
+if (!(Number.isInteger(holdListingsMs) && holdListingsMs >= 0)) {
+  console.error(`invalid --hold-listings ${process.env['STUDIO_E2E_HOLD_LISTINGS']}, expected a whole number of ms`);
+  process.exit(2);
+}
+
+if (args.includes('--delay-pictures'))
+  process.env['STUDIO_E2E_DELAY_PICTURES'] = args[args.indexOf('--delay-pictures') + 1];
+
+const delayPicturesMs = Number(process.env['STUDIO_E2E_DELAY_PICTURES'] ?? 0);
+
+if (!(Number.isInteger(delayPicturesMs) && delayPicturesMs >= 0)) {
+  console.error(`invalid --delay-pictures ${process.env['STUDIO_E2E_DELAY_PICTURES']}, expected a whole number of ms`);
+  process.exit(2);
+}
+
+if (args.includes('--delay-frames')) process.env['STUDIO_E2E_DELAY_FRAMES'] = args[args.indexOf('--delay-frames') + 1];
+
+const delayFramesMs = Number(process.env['STUDIO_E2E_DELAY_FRAMES'] ?? 0);
+
+if (!(Number.isInteger(delayFramesMs) && delayFramesMs >= 0)) {
+  console.error(`invalid --delay-frames ${process.env['STUDIO_E2E_DELAY_FRAMES']}, expected a whole number of ms`);
+  process.exit(2);
+}
+
+if (delayFramesMs) process.env['ETHLETE_DESIGN_DELAY_FRAMES_MS'] = String(delayFramesMs);
+
+const framesDelayedNote = delayFramesMs ? `, frame documents delayed ${delayFramesMs} ms` : '';
+
+if (args.includes('--cpu-rate')) process.env['STUDIO_E2E_CPU_RATE'] = args[args.indexOf('--cpu-rate') + 1];
+
+const cpuRate = Number(process.env['STUDIO_E2E_CPU_RATE'] ?? 1);
+
+if (!(Number.isInteger(cpuRate) && cpuRate >= 1)) {
+  console.error(`invalid --cpu-rate ${process.env['STUDIO_E2E_CPU_RATE']}, expected a whole number of 1 or more`);
+  process.exit(2);
+}
+
+const loadArg = loadArgOf(args);
+
+if (!loadArg.ok) {
+  console.error(loadArg.line);
+  process.exit(2);
+}
+
+const busyLoops = loadArg.count;
+const slowedNote = `${framesDelayedNote}${cpuRate === 1 ? '' : `, renderer CPU slowed ${cpuRate}x`}${busyLoops ? `, ${busyLoops} busy loops` : ''}`;
+
+const TIMINGS_FILE = join(root, 'node_modules/.cache/studio-e2e/canvas-timings.json');
+
+const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
+
+const GONE_TARGETS = { Merge: 'components/title-bar', Discard: 'components/tree-row' };
+
+const WIDE_SKETCH = {
+  part: 'components/title-bar',
+  name: 'notice-hint',
+  variants: ['a', 'b', 'c'],
+  changed: 'linux-full-notice-failed',
+};
+
+const ZOOM_SKETCH = { part: 'pages/system', name: 'zoom-budget', variants: ['a', 'b', 'c', 'd'] };
+
+const EDITED_PART = 'components/disclosure';
+const WAIT_MS = 10000;
+// Workaround: a reload on a loaded CI runner (load ~16 on 4 cores) takes 8.8-18.3 s until its first cell.
+const RELOAD_WAIT_MS = 30000;
+const FULL_COMPARE_MS = 60000;
+// Playwright's API request agent ignores the server's `Keep-Alive: timeout=5` hint, so reusing an idle socket races the
+// design server's idle close and resets (ECONNRESET under load). Each API request opens its own connection.
+const OWN_CONNECTION = { connection: 'close' };
+const COLD_START_MS = 60000;
+const ZOOM_LISTING_MS = 180000;
+const BUDGET_MS = 5 * 60 * 1000;
+
+const PAGE_SWITCHES = [
+  'foundations/icons',
+  'foundations/logo',
+  'foundations/icons',
+  'foundations/logo',
+  'foundations/icons',
+  'elements/shell-main',
+  'foundations/icons',
+  'elements/shell-main',
+];
+const PAGE_SWITCH_SETTLE_MS = 1500;
+
+const PAGES = [
+  ...Object.entries(GONE_TARGETS).map(([name, target]) => ({
+    name,
+    view: { systemProduct: 'studio', systemEntry: `sketch:${target}` },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+    hides: 'ethlete-system-view [data-sketch-missing]',
+  })),
+  {
+    name: 'System',
+    view: { systemProduct: 'studio', systemEntry: 'pages/system' },
+    shows: 'ethlete-system-view ethlete-open-points-chip',
+    hides: 'ethlete-sketch-view',
+    fullSize: true,
+  },
+  {
+    name: 'Edited',
+    view: { systemProduct: 'studio', systemEntry: EDITED_PART },
+    shows: 'ethlete-system-view ethlete-open-points-chip',
+    hides: 'ethlete-sketch-view',
+  },
+  {
+    name: 'Sketches',
+    view: { systemProduct: 'studio', systemEntry: 'sketch:pages/system' },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+    fits: 'width',
+  },
+  {
+    name: 'Sketches',
+    label: 'Chip',
+    view: { systemProduct: 'studio', systemEntry: 'sketch:components/zoom-chip' },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+    fits: 'width',
+  },
+  {
+    name: 'Sketches',
+    label: 'Large',
+    view: { systemProduct: 'studio', systemEntry: 'sketch:elements/shell-main' },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+    fits: 'width',
+  },
+  {
+    name: 'Wide',
+    view: { systemProduct: 'studio', systemEntry: `sketch:${WIDE_SKETCH.part}@${WIDE_SKETCH.name}` },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+  },
+  {
+    name: 'Zoom',
+    view: { systemProduct: 'studio', systemEntry: `sketch:${ZOOM_SKETCH.part}@${ZOOM_SKETCH.name}` },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+  },
+  {
+    name: 'Switch',
+    view: {
+      systemProduct: 'sdk',
+      systemEntry: 'components/input',
+      movedCameras: { 'sdk components/notification': { x: -20000, y: -20000, zoom: 1 } },
+    },
+    shows: 'ethlete-system-view ethlete-open-points-chip',
+    hides: 'ethlete-sketch-view',
+  },
+  {
+    name: 'Inbox',
+    view: { systemProduct: 'studio', systemEntry: 'pages/system', commentsOpen: true },
+    shows: 'ethlete-inbox',
+    hides: 'ethlete-sketch-view',
+  },
+  {
+    name: 'Flow',
+    view: { systemProduct: 'studio-lab', systemEntry: 'flow:sign-in' },
+    frame: 'figure',
+    shows: 'ethlete-flow-view',
+  },
+];
+
+const NARROW = { width: 1440, height: 900 };
+const WIDE = { width: 2000, height: 1100 };
+const CHIP_INSET = 12;
+
+const ARROW_STEP = 80;
+const SETTLE_MS = 600;
+const EDGE_ROOM = 200;
+const ARROWS_BY = {
+  ArrowLeft: { x: ARROW_STEP, y: 0 },
+  ArrowRight: { x: -ARROW_STEP, y: 0 },
+  ArrowUp: { x: 0, y: ARROW_STEP },
+  ArrowDown: { x: 0, y: -ARROW_STEP },
+};
+const PAN_EDGES = [
+  { name: 'left', key: 'ArrowLeft', room: (content, view) => view.left + EDGE_ROOM - content.left },
+  { name: 'top', key: 'ArrowUp', room: (content, view) => view.top + EDGE_ROOM - content.top },
+  { name: 'right', key: 'ArrowRight', room: (content, view) => content.right - (view.right - EDGE_ROOM) },
+  { name: 'bottom', key: 'ArrowDown', room: (content, view) => content.bottom - (view.bottom - EDGE_ROOM) },
+];
+
+const contentOf = (frames) =>
+  frames.length
+    ? {
+        left: Math.min(...frames.map((frame) => frame.left)),
+        top: Math.min(...frames.map((frame) => frame.top)),
+        right: Math.max(...frames.map((frame) => frame.left + frame.width)),
+        bottom: Math.max(...frames.map((frame) => frame.top + frame.height)),
+      }
+    : null;
+
+const probe = (page) =>
+  page.evaluate(
+    ({ CANVAS, FRAME }) => {
+      const canvas = [...document.querySelectorAll(CANVAS)]
+        .map((element) => ({ element, box: element.getBoundingClientRect() }))
+        .sort((a, b) => b.box.width * b.box.height - a.box.width * a.box.height)[0];
+
+      if (!canvas) return null;
+
+      const world = [...canvas.element.querySelectorAll('*')].find((element) =>
+        element.style?.transform?.startsWith('translate('),
+      );
+      const match = /translate\(([-\d.e]+)px(?:, ([-\d.e]+)px)?\) scale\(([-\d.e]+)\)/.exec(
+        world?.style.transform ?? '',
+      );
+      const covered =
+        Number.parseFloat(getComputedStyle(canvas.element).getPropertyValue('--st-shell-inset-left')) || 0;
+      const box = canvas.box;
+      const view = { left: box.left + covered, top: box.top, right: box.right, bottom: box.bottom };
+      const frames = [...canvas.element.querySelectorAll(FRAME)].map((frame, index) => {
+        const rect = frame.getBoundingClientRect();
+
+        return {
+          index,
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+          selected: frame.hasAttribute('data-selected') || !!frame.querySelector('[data-selected]'),
+        };
+      });
+      const inside = (x, y) => x > view.left + 4 && x < view.right - 4 && y > view.top + 4 && y < view.bottom - 4;
+      const ownFrame = (element) => element?.closest(FRAME);
+      const grid = [];
+
+      for (let y = view.top + 8; y < view.bottom - 8; y += 12) {
+        for (let x = view.left + 8; x < view.right - 8; x += 12) grid.push({ x, y });
+      }
+
+      const hit = (point) => document.elementFromPoint(point.x, point.y);
+      const empty = grid.find((point) => {
+        const element = hit(point);
+
+        return (
+          element &&
+          canvas.element.contains(element) &&
+          !ownFrame(element) &&
+          !element.closest('button, a, input, select, [role="button"], ethlete-zoom-chip, ethlete-comment-pin')
+        );
+      });
+      const framePoint = frames
+        .map((frame) => {
+          const element = [...canvas.element.querySelectorAll(FRAME)][frame.index];
+          const point = grid.find(
+            (candidate) =>
+              candidate.x > frame.left + 4 &&
+              candidate.x < frame.right - 4 &&
+              candidate.y > frame.top + 4 &&
+              candidate.y < frame.bottom - 4 &&
+              inside(candidate.x, candidate.y) &&
+              hit(candidate)?.localName !== 'iframe' &&
+              ownFrame(hit(candidate)) === element &&
+              !hit(candidate)?.closest('button, a, input, select, [role="button"], ethlete-comment-pin'),
+          );
+
+          return point ? { ...point, index: frame.index } : null;
+        })
+        .find(Boolean);
+
+      return {
+        camera: match ? { x: Number(match[1]), y: Number(match[2] ?? 0), zoom: Number(match[3]) } : null,
+        view,
+        frames,
+        empty: empty ?? null,
+        frame: framePoint ?? null,
+        focused: canvas.element.contains(document.activeElement) || document.activeElement === canvas.element,
+      };
+    },
+    { CANVAS, FRAME },
+  );
+
+const NOT_PART_GROUPS = ['Sketches', 'Legacy'];
+
+const markPartLeaves = (page) =>
+  page.evaluate((outside) => {
+    let inPartGroup = true;
+
+    for (const row of document.querySelectorAll('[role="treeitem"]')) {
+      if (row.getAttribute('data-kind') === 'group')
+        inPartGroup = !outside.some((label) => row.textContent.trim().startsWith(label));
+      row.toggleAttribute('data-e2e-part', inPartGroup && row.getAttribute('data-kind') === 'leaf');
+    }
+  }, NOT_PART_GROUPS);
+
+const settle = (page) => page.waitForTimeout(SETTLE_MS);
+
+const toFullSize = async (page) => {
+  await page
+    .locator('ethlete-system-view ethlete-design-canvas ethlete-zoom-chip [data-camera-reset] button')
+    .first()
+    .click();
+  await settle(page);
+};
+
+const underPanel = (page) =>
+  page.evaluate(
+    ({ CANVAS, FRAME }) => {
+      const panel = document.querySelector('main ~ aside')?.getBoundingClientRect();
+      const canvas = [...document.querySelectorAll(CANVAS)]
+        .map((element) => ({ element, box: element.getBoundingClientRect() }))
+        .sort((a, b) => b.box.width * b.box.height - a.box.width * a.box.height)[0]?.element;
+
+      if (!panel || !canvas) return null;
+
+      const clip = { left: 0, right: innerWidth, top: 0, bottom: innerHeight };
+
+      for (let at = canvas; at instanceof HTMLElement; at = at.parentElement) {
+        const style = getComputedStyle(at);
+        const rect = at.getBoundingClientRect();
+
+        if (style.overflowX !== 'visible') {
+          clip.left = Math.max(clip.left, rect.left + at.clientLeft);
+          clip.right = Math.min(clip.right, rect.left + at.clientLeft + at.clientWidth);
+        }
+        if (style.overflowY !== 'visible') {
+          clip.top = Math.max(clip.top, rect.top + at.clientTop);
+          clip.bottom = Math.min(clip.bottom, rect.top + at.clientTop + at.clientHeight);
+        }
+      }
+
+      const x = panel.right + 8;
+      const straddling = [...canvas.querySelectorAll(FRAME)]
+        .map((frame) => ({ frame, rect: frame.getBoundingClientRect() }))
+        .filter(
+          ({ rect }) =>
+            rect.left < x - 4 && rect.right > x + 4 && rect.bottom > clip.top + 24 && rect.top < clip.bottom - 24,
+        )
+        .map(({ frame, rect }) => {
+          const y = Math.round(Math.min(Math.max((rect.top + rect.bottom) / 2, clip.top + 24), clip.bottom - 24));
+          const hit = document.elementFromPoint(x, y);
+
+          return {
+            y,
+            hit: hit?.closest(FRAME) === frame,
+            by: hit ? hit.localName + (hit.className ? '.' + String(hit.className).split(' ')[0] : '') : 'nothing',
+          };
+        })[0];
+
+      return {
+        clip: Object.fromEntries(Object.entries(clip).map(([edge, value]) => [edge, Math.round(value)])),
+        panel: { left: Math.round(panel.left), right: Math.round(panel.right) },
+        window: innerWidth,
+        straddling: straddling ?? null,
+      };
+    },
+    { CANVAS, FRAME },
+  );
+
+const stillInFit = async (page, after) =>
+  (await readUntil(
+    page,
+    () => page.locator('[data-sk-rows][data-sk-fit]').count(),
+    (count) => count === 0,
+  ))
+    ? {
+        ok: false,
+        detail: `precondition not met: the camera is still in Fit after ${after}, so this fixture cannot test it`,
+      }
+    : null;
+
+const SCROLL_STEP_PX = 300;
+const SCROLL_SAMPLES_MS = [30, 300];
+const SHOT_URL = '**/__design/shot?**';
+const EDITED_SHOT_DELAY_MS = 3000;
+const SKETCH_CSS = {
+  current: 'elements/shell-main/shell-main.css',
+  a: 'sketches/elements-shell-main/a/elements/shell-main/shell-main.css',
+};
+
+/** Übernehmen enables only once every mounted frame has reported; until then the sketch bar reads "zeichnet". */
+const MERGE_OPEN = '[data-sk-row="a"] [data-sk-merge]:enabled';
+
+// A stacked sketch at Fit can draw its fold buttons below the canvas, where no pointer click reaches them.
+const pressOffCamera = async (button) => {
+  await button.evaluate((element) => element.focus({ preventScroll: true }));
+  await button.page().keyboard.press('Enter');
+};
+
+const showAllStates = async (page) => {
+  const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
+
+  await button.waitFor({ timeout: FULL_COMPARE_MS });
+  if ((await button.count()) && (await button.getAttribute('aria-expanded')) !== 'true') {
+    await pressOffCamera(button);
+    await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+  }
+};
+
+const describeSettle = (settle) => {
+  if (!settle) return 'not run';
+
+  const tail = `${settle.polls} polls, ${settle.ms} ms, last layout ${(settle.layout ?? '').slice(0, 160) || 'none'}`;
+
+  if (settle.timedOut) return `timed out with pending ${settle.pending.join(', ')} after ${tail}`;
+
+  return settle.held ? `held after ${tail}` : `never held in ${tail}, last move ${settle.moved}`;
+};
+
+const noVisibleCellCensus = (page) =>
+  page.evaluate(
+    ({ CANVAS, settle }) => {
+      const round = (value) => Math.round(value);
+      const shots = [...document.querySelectorAll('ethlete-sketch-view [data-shot]')];
+      const canvas = document.querySelector(`ethlete-sketch-view :is(${CANVAS})`);
+      const view = canvas?.getBoundingClientRect();
+      const boxes = shots.map((cell) => cell.getBoundingClientRect());
+      const frameElements = shots.map((cell) => cell.closest('[data-sk-frame]')).filter(Boolean);
+      const frames = frameElements.map((frame) => frame.getBoundingClientRect());
+      const frameSamples = frameElements
+        .filter((frame) => frame.getBoundingClientRect().height === 0)
+        .slice(0, 3)
+        .map((frame) => ` "${frame.dataset['skFrame']}" ${frame.style.height}/${frame.firstElementChild?.style.height}`)
+        .join('');
+      const scrolled = [...(canvas?.querySelectorAll('*') ?? []), canvas]
+        .filter((element) => element && (element.scrollTop || element.scrollLeft))
+        .map((element) => `${element.tagName.toLowerCase()} ${round(element.scrollLeft)},${round(element.scrollTop)}`);
+      const fold = document.querySelector('[data-sk-folded] button[aria-expanded]');
+      const zoom = document
+        .querySelector('ethlete-sketch-view ethlete-zoom-chip')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim();
+      const span = (pick) =>
+        boxes.length ? `${round(Math.min(...boxes.map(pick)))}..${round(Math.max(...boxes.map(pick)))}` : '-';
+
+      return [
+        `census: ${shots.length} cells`,
+        view ? `view ${round(view.left)},${round(view.top)} ${round(view.width)}x${round(view.height)}` : 'no canvas',
+        `tops ${span((box) => box.top)}, lefts ${span((box) => box.left)}, heights ${span((box) => box.height)}`,
+        `zero-height ${boxes.filter((box) => box.height === 0).length}`,
+        `setup settle ${settle}`,
+        `zero-height frames ${frames.filter((box) => box.height === 0).length} of ${frames.length}${frameSamples}`,
+        `scrolled ${scrolled.join(' ') || 'none'}`,
+        `fold ${fold ? `${fold.getAttribute('aria-expanded')} "${fold.textContent?.trim()}"` : 'none'}`,
+        `zoom ${zoom ?? 'none'}`,
+        `focus ${document.activeElement?.tagName.toLowerCase() ?? 'none'}`,
+      ].join(', ');
+    },
+    { CANVAS, settle: describeSettle(lastSettle) },
+  );
+
+const LIVE_PAINT_GAP = { channel: 48, share: 0.08 };
+
+const shownLiveFrames = (page) =>
+  page.evaluate(() => {
+    const vw = innerWidth;
+    const vh = innerHeight;
+
+    return [...document.querySelectorAll('ethlete-sketch-view [data-shot] iframe')].flatMap((iframe, index) => {
+      const cell = iframe.closest('[data-shot]');
+      const box = iframe.getBoundingClientRect();
+      const picture = cell.querySelector('img[data-shot-picture]');
+
+      if (getComputedStyle(iframe).opacity === '0') return [];
+      iframe.dataset['livePaint'] = String(index);
+
+      return [
+        {
+          index,
+          key: cell.dataset['shot'],
+          frameWidth: iframe.clientWidth,
+          cellWidth: cell.clientWidth,
+          picture: picture?.src ?? null,
+          inView: box.left >= 0 && box.top >= 0 && box.right <= vw && box.bottom <= vh && box.width > 0,
+          clip: { x: box.left, y: box.top, width: box.width, height: box.height },
+        },
+      ];
+    });
+  });
+
+const livePaintGapOf = (page, { live, picture, type }) =>
+  page.evaluate(
+    async ({ live, picture, type, channel }) => {
+      const bitmapOf = async (base64, mime) =>
+        createImageBitmap(await (await fetch(`data:${mime};base64,${base64}`)).blob());
+      const shown = await bitmapOf(live, 'image/png');
+      const stored = await bitmapOf(picture, type);
+      const width = shown.width;
+      const height = Math.min(shown.height, Math.floor((stored.height * width) / stored.width));
+      const pixelsOf = (bitmap, drawnHeight) => {
+        const canvas = new OffscreenCanvas(width, height);
+        const context = canvas.getContext('2d');
+
+        context.drawImage(bitmap, 0, 0, width, drawnHeight);
+
+        return context.getImageData(0, 0, width, height).data;
+      };
+      const a = pixelsOf(shown, shown.height);
+      const b = pixelsOf(stored, (stored.height * width) / stored.width);
+      let off = 0;
+
+      for (let at = 0; at < a.length; at += 4) {
+        const gap = Math.max(Math.abs(a[at] - b[at]), Math.abs(a[at + 1] - b[at + 1]), Math.abs(a[at + 2] - b[at + 2]));
+
+        if (gap > channel) off++;
+      }
+
+      return { width, height, share: off / (width * height) };
+    },
+    { live, picture, type, channel: LIVE_PAINT_GAP.channel },
+  );
+
+const liveFrameFaultsOf = async (page, frame) => {
+  const wrong = [];
+  const content = await page.$(`iframe[data-live-paint="${frame.index}"]`).then((iframe) => iframe?.contentFrame());
+  const scroll = await content
+    ?.evaluate(() => ({
+      left: document.scrollingElement?.scrollLeft ?? 0,
+      top: document.scrollingElement?.scrollTop ?? 0,
+      x: scrollX,
+      y: scrollY,
+    }))
+    .catch(() => null);
+
+  if (!scroll) wrong.push(`${frame.key}: no frame document`);
+  else if (scroll.left || scroll.top || scroll.x || scroll.y)
+    wrong.push(`${frame.key}: scrolled ${scroll.left}/${scroll.top} (window ${scroll.x}/${scroll.y})`);
+  if (Math.abs(frame.frameWidth - frame.cellWidth) > 1)
+    wrong.push(`${frame.key}: iframe ${frame.frameWidth} px in a ${frame.cellWidth} px cell`);
+  if (!frame.inView || !frame.picture) return { wrong, gap: null };
+
+  const requestedAt = Date.now();
+  const answer = await page.request.get(frame.picture, { timeout: WAIT_MS, headers: OWN_CONNECTION }).catch((error) => {
+    console.log(
+      `[ci-timing] sideways frame picture request failed: ${Date.now() - requestedAt} ms (${error.message.split('\n')[0]})`,
+    );
+    throw error;
+  });
+
+  console.log(`[ci-timing] sideways frame picture request: ${Date.now() - requestedAt} ms`);
+  const live = await page.screenshot({ clip: frame.clip });
+  const gap = await livePaintGapOf(page, {
+    live: live.toString('base64'),
+    picture: (await answer.body()).toString('base64'),
+    type: answer.headers()['content-type'] ?? 'image/png',
+  });
+
+  if (gap.share > LIVE_PAINT_GAP.share)
+    wrong.push(`${frame.key}: ${(gap.share * 100).toFixed(1)}% of its pixels differ from its picture`);
+
+  return { wrong, gap: `${frame.key} ${(gap.share * 100).toFixed(1)}% of ${gap.width}x${gap.height}` };
+};
+
+const zoomSketchTo100 = async (page) => {
+  const box = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await page.keyboard.press('Shift+Digit0');
+  await settle(page);
+};
+
+const wheelCanvas = async (page, deltaY) => {
+  const box = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, deltaY);
+};
+
+const ringOf = (page) =>
+  page.evaluate(
+    ({ CANVAS }) => {
+      const canvas = [...document.querySelectorAll(CANVAS)].sort(
+        (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+      )[0];
+      const transparent = /^transparent$|\/\s*0(\.0+)?\s*\)$|,\s*0(\.0+)?\s*\)$/;
+      const rings = [];
+
+      for (let at = canvas; at && at !== document.body; at = at.parentElement) {
+        const style = getComputedStyle(at);
+        const visible =
+          style.outlineStyle !== 'none' &&
+          Number.parseFloat(style.outlineWidth) > 0 &&
+          !transparent.test(style.outlineColor.trim());
+
+        if (visible) rings.push(`${at.localName} ${style.outlineWidth} ${style.outlineColor}`);
+      }
+
+      const active = document.activeElement;
+
+      return {
+        focused: active === canvas,
+        rings,
+        active: active ? `${active.localName}${active.id ? `#${active.id}` : ''}` : 'nothing',
+      };
+    },
+    { CANVAS },
+  );
+
+const readUntil = async (page, read, done) => {
+  let value = await read();
+
+  for (const until = Date.now() + WAIT_MS; !done(value) && Date.now() < until; value = await read()) {
+    await page.waitForTimeout(50);
+  }
+
+  return value;
+};
+
+const focusUntil = (page, done) => readUntil(page, () => ringOf(page), done);
+
+const LIVE_GRACE_MS = 5000;
+
+const liveFrameUntil = async (page, id) => {
+  const handle = await page.waitForFunction(
+    ({ CANVAS, id }) => {
+      const canvas = document.querySelector(CANVAS)?.getBoundingClientRect();
+      const frame = [...document.querySelectorAll('ethlete-canvas-frame[data-live="true"]')].find((host) => {
+        const iframe = host.querySelector('iframe:not(.opacity-0)');
+        const box = iframe?.getBoundingClientRect();
+
+        return (
+          (!id || host.dataset.frameId === id) &&
+          box &&
+          box.top >= canvas.top &&
+          box.bottom <= canvas.bottom &&
+          box.left >= canvas.left &&
+          box.right <= canvas.right
+        );
+      });
+
+      return frame?.dataset.frameId ?? false;
+    },
+    { CANVAS, id },
+    { timeout: FULL_COMPARE_MS },
+  );
+
+  return handle.jsonValue();
+};
+
+const frameFocusOf = async (page, id) => {
+  const outer = await page.evaluate((id) => {
+    const host = document.querySelector(`ethlete-canvas-frame[data-frame-id="${id}"]`);
+    const active = document.activeElement;
+    const owner = active?.closest('ethlete-canvas-frame');
+    const label = active
+      ? `${active.localName}${owner ? `[${owner.dataset.frameId}]` : ''}${active.getAttribute('aria-label') ? ` "${active.getAttribute('aria-label')}"` : ''}`
+      : 'nothing';
+
+    return { label, onHost: active === host, inFrame: active?.localName === 'iframe' && host?.contains(active) };
+  }, id);
+  const iframe = outer.inFrame
+    ? await page.locator(`ethlete-canvas-frame[data-frame-id="${id}"] iframe:not(.opacity-0)`).elementHandle()
+    : null;
+  const inner = iframe
+    ? await (await iframe.contentFrame())?.evaluate(() => document.activeElement?.localName ?? 'nothing')
+    : null;
+
+  return { ...outer, active: inner ? `${outer.label} > ${inner}` : outer.label };
+};
+
+const focusInto = async (page, id) => {
+  await page.evaluate(
+    (id) => document.querySelector(`ethlete-canvas-frame[data-frame-id="${id}"] iframe:not(.opacity-0)`)?.focus(),
+    id,
+  );
+  await page.keyboard.press('Tab');
+
+  const inside = (focus) => focus.inFrame && !focus.active.endsWith('> body') && !focus.active.endsWith('> nothing');
+
+  return inside(await readUntil(page, () => frameFocusOf(page, id), inside));
+};
+
+const noRingAfterPointer = async (page, point) => {
+  await page.mouse.click(point.x, point.y);
+  await settle(page);
+  const clicked = await ringOf(page);
+  await page.keyboard.press('Shift');
+  await settle(page);
+  const shifted = await ringOf(page);
+  await page.keyboard.press('ArrowRight');
+  await settle(page);
+  const panned = await ringOf(page);
+  const rings = [...clicked.rings, ...shifted.rings, ...panned.rings];
+
+  return {
+    ok: clicked.focused && rings.length === 0,
+    detail: `focused=${clicked.focused} click=[${clicked.rings}] shift=[${shifted.rings}] arrow=[${panned.rings}]`,
+  };
+};
+
+const drag = async (page, from, by, button = 'left') => {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down({ button });
+  for (let step = 1; step <= 6; step++) {
+    await page.mouse.move(from.x + (by.x * step) / 6, from.y + (by.y * step) / 6);
+  }
+  await page.mouse.up({ button });
+};
+
+const near = (a, b) => Math.abs(a - b) <= 1.5;
+
+const moved = (before, after, by) =>
+  !!before?.camera &&
+  !!after?.camera &&
+  near(after.camera.x - before.camera.x, by.x) &&
+  near(after.camera.y - before.camera.y, by.y);
+
+const unmoved = (before, after) =>
+  moved(before, after, { x: 0, y: 0 }) && Math.abs(after.camera.zoom - before.camera.zoom) < 0.001;
+
+const describe = (before, after) =>
+  before?.camera && after?.camera
+    ? `camera ${before.camera.x.toFixed(1)},${before.camera.y.toFixed(1)}@${before.camera.zoom.toFixed(3)} -> ${after.camera.x.toFixed(1)},${after.camera.y.toFixed(1)}@${after.camera.zoom.toFixed(3)}`
+    : 'no camera';
+
+const frameBoxes = (page, selector) =>
+  page.evaluate(
+    ({ CANVAS, selector }) => {
+      const canvas = [...document.querySelectorAll(CANVAS)].sort(
+        (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+      )[0];
+
+      return [...(canvas?.querySelectorAll(selector) ?? [])].map((frame) => {
+        const { left, top, width, height } = frame.getBoundingClientRect();
+        const content = Number.parseFloat(frame.firstElementChild?.style.width ?? '');
+        const zoom = width / (frame.hasAttribute('data-sk-frame') && content > 0 ? content : frame.offsetWidth || 1);
+
+        return { left, top, width, height, zoom, iframe: !!frame.querySelector('iframe') };
+      });
+    },
+    { CANVAS, selector },
+  );
+
+const FEEDBACK_MS = 100;
+const SLOW_HOST_MS = 3000;
+
+/**
+ * Clicks `target` in the page and resolves whether a visible answer follows within `ms`: the element turns disabled
+ * or busy, leaves the page, changes its text, or a status, alert or spinner appears.
+ */
+const expectFeedbackWithin = (target, ms) =>
+  target.evaluate(
+    (element, ms) =>
+      new Promise((done) => {
+        const SIGNALS = '[aria-busy="true"], [role="status"]:not(:empty), [role="alert"], et-progress-spinner';
+        const before = { text: element.textContent, signals: document.querySelectorAll(SIGNALS).length };
+        const answerOf = () => {
+          if (!element.isConnected) return 'the button left the page';
+          if (element.disabled || element.getAttribute('aria-disabled') === 'true') return 'the button turned disabled';
+          if (element.getAttribute('aria-busy') === 'true') return 'the button turned busy';
+          if (element.textContent !== before.text) return 'the button changed its text';
+          if (document.querySelectorAll(SIGNALS).length > before.signals) return 'a status, alert or spinner appeared';
+
+          return null;
+        };
+        const startedAt = performance.now();
+        const observer = new MutationObserver(() => {
+          const answer = answerOf();
+
+          if (answer) finish(answer);
+        });
+        const timer = setTimeout(() => finish(null), ms);
+        const finish = (answer) => {
+          observer.disconnect();
+          clearTimeout(timer);
+          done({
+            ok: !!answer,
+            detail: answer
+              ? `${answer} after ${Math.round(performance.now() - startedAt)} ms`
+              : `no visible answer within ${ms} ms of the click`,
+          });
+        };
+
+        observer.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+        element.click();
+
+        const answer = answerOf();
+
+        if (answer) finish(answer);
+      }),
+    ms,
+  );
+
+const withChangedCliAndSlowRestart = (key) => {
+  if (!localStorage.getItem(key)) return;
+
+  const internals = window.__TAURI_INTERNALS__;
+  const invoke = internals.invoke;
+
+  internals.invoke = (command, args) => {
+    if (command === 'studio_code_state')
+      return Promise.resolve({
+        cli: { running: 'aaaaaaaaaaaa', latest: 'bbbbbbbbbbbb', dirty: false },
+        frontend: { latest: null },
+        host: { running: null, latest: null },
+      });
+    if (command === 'window_chrome_watch') {
+      setTimeout(() => args.changes.onmessage({ os: 'linux', left: [], right: ['close'], preferNoCsd: false }));
+
+      return Promise.resolve(null);
+    }
+    if (command === 'design_server_restart')
+      return new Promise((done) => setTimeout(done, Number(localStorage.getItem(key)))).then(() =>
+        invoke(command, args),
+      );
+
+    return invoke(command, args);
+  };
+};
+
+const withChangedUiThenRestart = () => {
+  const internals = window.__TAURI_INTERNALS__;
+  const invoke = internals.invoke;
+  const SHA = 'cccccccccccc';
+
+  window.__codePolls = 0;
+  internals.invoke = (command, args) => {
+    if (command === 'studio_code_state') {
+      const restarted = !!localStorage.getItem('e2e.ui-restarted');
+
+      window.__codePolls++;
+
+      return Promise.resolve({
+        cli: { running: SHA, latest: SHA, dirty: false },
+        frontend: { latest: restarted || window.__codePolls > 1 ? 'bbbbbbbbbbbb' : 'aaaaaaaaaaaa' },
+        host: { running: SHA, latest: SHA },
+      });
+    }
+    if (command === 'window_chrome_watch') {
+      setTimeout(() => args.changes.onmessage({ os: 'linux', left: [], right: ['close'], preferNoCsd: false }));
+
+      return Promise.resolve(null);
+    }
+    if (command === 'design_server_restart') {
+      localStorage.setItem('e2e.ui-restarted', '1');
+
+      return Promise.resolve({
+        port: 0,
+        listening: true,
+        managed: true,
+        foreign: false,
+        stale: false,
+        exited: false,
+        crash: null,
+        log: [],
+        logRevision: 0,
+        phase: null,
+        phaseMs: 0,
+      });
+    }
+
+    return invoke(command, args);
+  };
+};
+
+const listingCounts = { requested: 0, outstanding: 0 };
+let listingHoldOn = true;
+
+const listingAnswered = async (page) => {
+  const deadline = Date.now() + FULL_COMPARE_MS;
+  let wait;
+
+  for (;;) {
+    const pendingMarker = await page.evaluate(() => !!document.querySelector('[data-sk-changed="pending"]'));
+
+    wait = listingWait({ holdActive: !!holdListingsMs && listingHoldOn, ...listingCounts, pendingMarker });
+    if (wait.done) return;
+    if (Date.now() > deadline) throw new Error(`listingAnswered timed out: ${wait.reason}`);
+    await page.waitForTimeout(50);
+  }
+};
+
+const framesPainted = async (page, timeoutMs) => {
+  const deadline = Date.now() + timeoutMs;
+  let last = null;
+  let same = 0;
+  let now = { total: 0, painted: 0 };
+
+  while (Date.now() < deadline) {
+    now = await page.evaluate(() => {
+      const iframes = [...document.querySelectorAll('[data-sk-frame] iframe')];
+
+      return {
+        total: iframes.length,
+        painted: iframes.filter((iframe) => !iframe.classList.contains('opacity-0')).length,
+        srcs: iframes.map((iframe) => iframe.src).join(' '),
+      };
+    });
+    const done = now.total > 0 && now.painted === now.total;
+
+    same = done && now.srcs === last ? same + 1 : 0;
+    if (same >= 2) return null;
+    last = done ? now.srcs : null;
+    await page.waitForTimeout(250);
+  }
+
+  return `[data-sk-frame] iframes painted after ${timeoutMs / 1000} s ${now.painted} of ${now.total} (all must paint before the refreshes start)`;
+};
+
+const srcChange = (from, to) => {
+  const parse = (url) => (url && URL.canParse(url) ? new URL(url) : null);
+  const [before, after] = [parse(from), parse(to)];
+
+  if (!before || !after || before.origin + before.pathname !== after.origin + after.pathname)
+    return [before ?? from ?? 'none', after ?? to]
+      .map((url) => (url instanceof URL && url.protocol.startsWith('http') ? url.pathname + url.search : String(url)))
+      .join(' -> ');
+
+  const keys = [...new Set([...before.searchParams.keys(), ...after.searchParams.keys()])].filter(
+    (key) => before.searchParams.getAll(key).join() !== after.searchParams.getAll(key).join(),
+  );
+  const side = (url) => keys.map((key) => `${key}=${url.searchParams.getAll(key).join() || '-'}`).join('&');
+
+  return keys.length ? `${side(before)} -> ${side(after)}` : `same src ${after.pathname}`;
+};
+
+const eventUrl = (url) =>
+  URL.canParse(url) && /^https?:/u.test(url) ? new URL(url).pathname + new URL(url).search : String(url);
+
+const eventLog = (startedAt = Date.now()) => {
+  const events = [];
+
+  return {
+    events,
+    restart: (at = Date.now()) => {
+      startedAt = at;
+    },
+    add: (kind, subject, detail = '', at = Date.now()) => {
+      events.push({ at, kind, subject, detail });
+    },
+    lines: async (pick = () => true) => {
+      const picked = events.filter(pick).sort((a, b) => a.at - b.at);
+      const details = await Promise.all(picked.map((event) => event.detail));
+
+      return picked
+        .map(
+          (event, i) =>
+            `\n  ${Math.round(event.at - startedAt)} ms ${event.kind} ${eventUrl(event.subject)}${details[i] ? `: ${details[i]}` : ''}`,
+        )
+        .join('');
+    },
+  };
+};
+
+let streamTimeline = eventLog();
+let writeSeen = false;
+let awaitingListing = false;
+let writtenIds = [];
+
+const markWrite = (what) => {
+  writeSeen = true;
+  awaitingListing = true;
+  writtenIds.push(what.replace(/\.json$/u, ''));
+  streamTimeline.add('wrote', what);
+};
+
+const listedIdsOf = (response, ids) =>
+  response.json().then(
+    (body) => {
+      const listed = new Set((body?.comments ?? []).map((comment) => comment.id));
+
+      return `${ids.filter((id) => listed.has(id)).length}/${ids.length} written ids listed`;
+    },
+    (error) => `unreadable body: ${String(error).split('\n')[0]}`,
+  );
+
+const watchServerEvents = (designPort) => {
+  const abort = new AbortController();
+  let pending = '';
+
+  fetch(`http://[::1]:${designPort}/__design/comment-events`, { signal: abort.signal })
+    .then(async (response) => {
+      const decoder = new TextDecoder();
+
+      streamTimeline.add('own stream opened', response.url, String(response.status));
+      for await (const chunk of response.body) {
+        pending += decoder.decode(chunk, { stream: true });
+
+        const frames = pending.split('\n\n');
+
+        pending = frames.pop() ?? '';
+        for (const frame of frames) {
+          const name = /^event: (.+)$/mu.exec(frame)?.[1];
+
+          if (name === 'comments' && writeSeen) streamTimeline.add('server comments event', response.url, 'own stream');
+        }
+      }
+    })
+    .catch((error) => {
+      if (!abort.signal.aborted) streamTimeline.add('own stream failed', `http://[::1]:${designPort}/`, String(error));
+    });
+
+  return () => abort.abort();
+};
+
+const watchStream = (page, designPort) => {
+  streamTimeline = eventLog();
+  const unwatchServerEvents = watchServerEvents(designPort);
+  writeSeen = false;
+  awaitingListing = false;
+  writtenIds = [];
+
+  const pathOf = (request) => new URL(request.url()).pathname;
+  const onRequest = (request) => {
+    if (pathOf(request) === '/__design/comment-events') streamTimeline.add('stream request', request.url());
+    else if (writeSeen && pathOf(request) === '/__design/comments')
+      streamTimeline.add('comments request', request.url());
+    else if (awaitingListing && pathOf(request) === '/__design/sketches') {
+      awaitingListing = false;
+      streamTimeline.add('first listing request after the write', request.url());
+    }
+  };
+  const onResponse = (response) => {
+    if (pathOf(response.request()) === '/__design/comment-events')
+      streamTimeline.add('stream response', response.url());
+    else if (writeSeen && pathOf(response.request()) === '/__design/comments')
+      streamTimeline.add('comments response', response.url(), listedIdsOf(response, [...writtenIds]));
+  };
+
+  page.on('request', onRequest);
+  page.on('response', onResponse);
+
+  return () => {
+    unwatchServerEvents();
+    page.off('request', onRequest);
+    page.off('response', onResponse);
+  };
+};
+
+const streamLines = async (result) =>
+  (result.ok && !process.env.FORCE_FAIL) || !writeSeen
+    ? result
+    : { ...result, detail: `${result.detail}${await streamTimeline.lines()}` };
+
+let lastSettle = null;
+
+const settled = async (page, selector) => {
+  await listingAnswered(page);
+  try {
+    lastSettle = await settleLayout({
+      polls: WAIT_MS / 250,
+      waitedFor: `${WAIT_MS / 1000} s`,
+      wait: () => page.waitForTimeout(250),
+      read: () =>
+        page.evaluate(
+          ({ CANVAS, selector }) => {
+            const changes = document.querySelectorAll('[data-sk-changed="pending"]').length;
+            const unsized = [...document.querySelectorAll('[data-sk-row][data-sk-unsized]')].map(
+              (row) => `row ${row.getAttribute('data-sk-row')} unsized`,
+            );
+
+            return {
+              pending: [...unsized, ...(changes ? [`${changes} change mark(s) pending`] : [])],
+              layout: [...(document.querySelector(CANVAS)?.querySelectorAll(selector) ?? [])]
+                .map((frame) => {
+                  const { left, top, width, height } = frame.getBoundingClientRect();
+
+                  return [left, top, width, height].map(Math.round).join();
+                })
+                .join(' '),
+            };
+          },
+          { CANVAS, selector },
+        ),
+    });
+  } catch (error) {
+    if (error.settle) lastSettle = { ...error.settle, timedOut: true };
+    throw error;
+  }
+};
+
+const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) => {
+  const part = GONE_TARGETS[target.name];
+  const ask = (path, body) => {
+    const url = `http://[::1]:${designPort}/__design/${path}?product=studio&sketch=${encodeURIComponent(part)}`;
+
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    }).catch((error) => {
+      throw new Error(`POST ${url}: ${error.message}`, { cause: error.cause ?? error });
+    });
+  };
+  const overlays = () =>
+    Promise.all(page.frames().map((frame) => frame.locator('vite-error-overlay').count())).then((counts) =>
+      counts.reduce((sum, count) => sum + count, 0),
+    );
+
+  const answer = await decide(ask);
+
+  if (!answer.ok) return { ok: false, detail: `the design server refused: ${answer.status} ${await answer.text()}` };
+
+  try {
+    await page.waitForFunction(() => !document.querySelector('ethlete-sketch-view'));
+  } catch {
+    return { ok: false, detail: 'the sketch view stays open after the sketch dropped from the listing' };
+  }
+
+  await page.waitForTimeout(3000);
+  await toFullSize(page);
+
+  const shown = await page.evaluate((part) => {
+    const frames = [...document.querySelectorAll('iframe')].map((frame) => new URL(frame.src, location.href));
+
+    return {
+      partFrames: frames.filter((url) => url.searchParams.get('part') === part && !url.searchParams.has('sketch'))
+        .length,
+      sketchFrames: frames.filter((url) => url.searchParams.has('sketch')).length,
+      missing: !!document.querySelector('[data-sketch-missing]'),
+      blank: !document.querySelector('ethlete-system-view'),
+    };
+  }, part);
+  const overlayCount = await overlays();
+
+  return {
+    ok: shown.partFrames > 0 && !shown.sketchFrames && !shown.missing && !shown.blank && overlayCount === 0,
+    detail: `frames of ${part}: ${shown.partFrames}, frames of the gone sketch: ${shown.sketchFrames}, not-found note: ${shown.missing}, blank: ${shown.blank}, error overlays: ${overlayCount}`,
+  };
+};
+
+const discardScene = (page) =>
+  page
+    .evaluate(() => {
+      const buttons = [...document.querySelectorAll('ethlete-sketches [data-sk-discard] button')];
+      const box = buttons[0]?.getBoundingClientRect();
+      const hit = box && document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+
+      return JSON.stringify({
+        buttons: buttons.length,
+        box: box && [box.left, box.top, box.width, box.height].map(Math.round),
+        hit: hit && hit.outerHTML.slice(0, 120),
+        sketchView: !!document.querySelector('ethlete-sketch-view'),
+        dialogs: document.querySelectorAll('[role="alertdialog"]').length,
+        dialogTexts: [...document.querySelectorAll('[role="alertdialog"], [role="dialog"]')].map((dialog) =>
+          dialog.textContent.replace(/\s+/g, ' ').trim().slice(0, 80),
+        ),
+        active: document.activeElement?.outerHTML.slice(0, 120) ?? 'none',
+      });
+    })
+    .catch((error) => `scene unread: ${error.message}`);
+
+const openDiscardConfirm = async (page) => {
+  const clicked = await page
+    .locator('ethlete-sketches [data-sk-discard] button')
+    .first()
+    .click()
+    .then(
+      () => null,
+      (error) => {
+        const lines = error.message.split('\n');
+
+        return [...lines.slice(0, 2), '...', ...lines.slice(-6)].join(' ');
+      },
+    );
+
+  if (clicked) return { ok: false, detail: `Verwerfen not clicked: ${clicked}, scene ${await discardScene(page)}` };
+
+  const opened = await page
+    .locator('[role="alertdialog"]')
+    .waitFor({ timeout: 5000 })
+    .then(
+      () => true,
+      () => false,
+    );
+
+  return opened
+    ? { ok: true }
+    : { ok: false, detail: `Verwerfen discarded without a confirm, scene ${await discardScene(page)}` };
+};
+
+const discardAsksFirst = async (page) => {
+  const dismissals = [
+    ['Escape', () => page.keyboard.press('Escape')],
+    ['Abbrechen', () => page.locator('[role="alertdialog"] [data-sk-confirm-cancel]').click()],
+  ];
+
+  for (const [how, dismiss] of dismissals) {
+    const opened = await openDiscardConfirm(page);
+
+    if (!opened.ok) return { ok: false, detail: `${how}: ${opened.detail}` };
+
+    const focused = await page
+      .waitForFunction(() => document.activeElement?.hasAttribute('data-sk-confirm-cancel'), null, { timeout: 3000 })
+      .then(
+        () => true,
+        () => false,
+      );
+    const confirm = await page.evaluate(() => ({
+      text: [...document.querySelectorAll('[role="alertdialog"]')]
+        .map((dialog) => dialog.textContent.replace(/\s+/g, ' ').trim())
+        .join(' | '),
+      active: document.activeElement?.outerHTML.slice(0, 160) ?? 'none',
+    }));
+
+    if (!focused)
+      return {
+        ok: false,
+        detail: `the confirm does not focus Abbrechen: "${confirm.text}", focus on ${confirm.active}`,
+      };
+
+    await dismiss();
+    await page.locator('[role="alertdialog"]').waitFor({ state: 'detached', timeout: 5000 });
+    await page.waitForTimeout(1000);
+
+    if (!(await page.locator('ethlete-sketch-view').count()))
+      return { ok: false, detail: `${how} on the confirm ("${confirm.text}") discarded the sketch` };
+  }
+
+  return { ok: true };
+};
+
+// No other part may embed EDIT_PART: `check --part` then checks each embedder too, which pushed the shard past its CI budget.
+const EDIT_PART = 'components/about-dialog';
+const EDIT_LABEL = { before: '>Version ${version}</span>', after: '>Version: ${version}</span>' };
+const EDIT_WAIT_MS = 120000;
+const HEAVY_EDIT = {
+  part: 'pages/sketches',
+  file: 'pages/sketches/shared/sketch-rows.ts',
+  before: "label: 'Stand',",
+  after: "label: 'Stand A',",
+};
+const HEAVY_EDIT_HOLD_MS = 3000;
+const HEAVY_EDIT_WATCH_MS = 20000;
+
+const namedWait = async (page, label, predicate, arg) => {
+  try {
+    await page.waitForFunction(predicate, arg, { timeout: EDIT_WAIT_MS });
+  } catch (error) {
+    const shown = await page
+      .evaluate(() => ({
+        sketchView: !!document.querySelector('ethlete-sketch-view'),
+        confirm: !!document.querySelector('[role="alertdialog"]'),
+        alerts: [...document.querySelectorAll('ethlete-sketch-view [role="alert"]')].map((alert) =>
+          alert.textContent.trim(),
+        ),
+        variants: document.querySelectorAll('[data-sk-variant]').length,
+        frames: [...document.querySelectorAll('iframe')].map((frame) => frame.getAttribute('src')).slice(0, 6),
+      }))
+      .catch((evaluateError) => ({ evaluateError: evaluateError.message }));
+
+    throw new Error(
+      `${label} not met after ${EDIT_WAIT_MS} ms, page ${JSON.stringify(shown)}: ${error.message.split('\n')[0]}`,
+      {
+        cause: error,
+      },
+    );
+  }
+};
+
+const slowestPhasesOf = (stderr) =>
+  [...stderr.matchAll(/^PHASE (.+) ([\d.]+)s$/gmu)]
+    .map(([, name, seconds]) => ({ name, seconds: Number(seconds) }))
+    .sort((a, b) => b.seconds - a.seconds)
+    .slice(0, 4)
+    .map(({ name, seconds }) => `${name} ${seconds}s`)
+    .join(', ');
+
+// Samples the sketch view from the start of the page load until its cells show: when they first show, any cell in view
+// still loading means a half drawn view; a sample with the canvas shown but no cell and no visible "zeichnet" is blank.
+// The watch runs `watchMs` past the cell layout, which can come later than `layoutMs` after a slow check under load.
+const editLoadTimelineOf = (page, { layoutMs, watchMs }) =>
+  page.evaluate(
+    async ({ layoutMs, watchMs }) => {
+      const seen = (element) => element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+      const inView = (element) => {
+        const rect = element.getBoundingClientRect();
+
+        return rect.width > 0 && rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth;
+      };
+      const drawingShown = () => {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          if (node.textContent.includes('zeichnet') && seen(node.parentElement) && inView(node.parentElement))
+            return true;
+        }
+
+        return false;
+      };
+      const blank = [];
+      let rowsSeen = false;
+      let cellsAt = null;
+
+      for (;;) {
+        const t = Math.round(performance.now());
+        const rows = document.querySelector('[data-sk-rows]');
+        const cells = [...document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]')];
+
+        if (rows && seen(rows)) rowsSeen = true;
+        if (cells.length > 0) cellsAt ??= t;
+        if (cells.length > 0 && cells.every(seen)) {
+          const loading = cells.filter((cell) => inView(cell) && cell.querySelector('[data-loading]')).length;
+
+          return { shownAt: t, cellsAt, loadingInView: loading, cells: cells.length, blank };
+        }
+        if (rowsSeen && !(rows && seen(rows))) return { shownAt: null, cellsAt, left: t, blank };
+        if (rowsSeen && !drawingShown()) blank.push(t);
+        if (t > (cellsAt === null ? layoutMs : cellsAt + watchMs)) return { shownAt: null, cellsAt, blank };
+
+        await new Promise((done) => setTimeout(done, 50));
+      }
+    },
+    { layoutMs, watchMs },
+  );
+
+const withEditSketch = async (page, designPort, run, edited = { part: EDIT_PART, ...EDIT_LABEL }) => {
+  const studio = join(checkout, '.ethlete/design/studio');
+  const saved = mkdtempSync(join(tmpdir(), 'studio-e2e-edit-'));
+  const file = join(studio, edited.file ?? join(edited.part, `${edited.part.split('/')[1]}.ts`));
+  const before = readFileSync(file, 'utf8');
+  const git = (...gitArgs) => {
+    try {
+      return execFileSync('git', ['-c', 'user.email=e2e@canvas', '-c', 'user.name=canvas-e2e', ...gitArgs], {
+        cwd: checkout,
+        stdio: 'pipe',
+      });
+    } catch (error) {
+      const stderr = String(error.stderr ?? '')
+        .trim()
+        .replace(/\s*\n\s*/g, ' | ');
+
+      throw new Error(`git ${gitArgs.join(' ')} exited ${error.status ?? error.signal}: ${stderr || 'no stderr'}`, {
+        cause: error,
+      });
+    }
+  };
+  const merged = JSON.parse(readFileSync(join(studio, 'merged.json'), 'utf8'));
+  const entry = merged[edited.part];
+
+  cpSync(studio, saved, { recursive: true });
+  // A part with an open sketch is never a direct edit, so the fixture sketch of the part goes first.
+  rmSync(join(studio, 'sketches', edited.part.replace('/', '-')), { recursive: true, force: true });
+  merged[edited.part] = typeof entry === 'string' ? '0'.repeat(16) : { ...entry, hash: '0'.repeat(16) };
+  writeFileSync(join(studio, 'merged.json'), `${JSON.stringify(merged, null, 2)}\n`);
+  git('init', '-q');
+  git('add', '--', '.ethlete');
+  git('commit', '-qm', 'canvas e2e base', '--', '.ethlete');
+
+  const base = git('rev-parse', 'HEAD').toString().trim();
+  const phases = [];
+  let phaseStart = performance.now();
+  const phase = (name) => {
+    const now = performance.now();
+
+    phases.push(`${name} ${Math.round(now - phaseStart)} ms`);
+    phaseStart = now;
+  };
+  const phaseLine = () => `phases: ${phases.join(', ')}`;
+
+  const edit = async ({ timeline = false } = {}) => {
+    writeFileSync(
+      file,
+      edited.file ? before.split(edited.before).join(edited.after) : replaceOnce(before, edited.before, edited.after),
+    );
+    const check = spawnSync(
+      process.execPath,
+      [cliEntry, 'design', 'check', '--product', 'studio', '--part', edited.part],
+      { cwd: checkout, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, ETHLETE_DESIGN_PHASES: '1' } },
+    );
+    phase(`check (slowest: ${slowestPhasesOf(check.stderr ?? '')})`);
+    // Only after the check: a check settles a committed direct edit without a sketch, and the sketch listing
+    // offers the pick only once git holds the edit.
+    git('commit', '-qm', 'canvas e2e edit', '--', file);
+    await page.evaluate(
+      ({ checkout, part }) =>
+        localStorage.setItem(
+          'ethlete-studio.call-view',
+          JSON.stringify({ checkout, systemProduct: 'studio', systemEntry: `sketch:${part}@edit` }),
+        ),
+      { checkout, part: edited.part },
+    );
+    await page.reload();
+    if (timeline) return editLoadTimelineOf(page, { layoutMs: EDIT_WAIT_MS, watchMs: HEAVY_EDIT_WATCH_MS });
+    try {
+      await page.waitForSelector('ethlete-sketches [data-sk-state]', { timeout: EDIT_WAIT_MS });
+    } catch (error) {
+      const shown = await page.evaluate(() => ({
+        sketchView: !!document.querySelector('ethlete-sketch-view'),
+        sketches: !!document.querySelector('ethlete-sketches'),
+        missing: !!document.querySelector('[data-sketch-missing]'),
+        entry: JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemEntry,
+      }));
+      const output = `${check.stdout ?? ''}${check.stderr ?? ''}`.trim().split('\n').slice(-6).join(' | ');
+
+      throw new Error(
+        `no edit sketch cell after ${EDIT_WAIT_MS} ms: design check exited ${check.status ?? check.signal} (${output}), sketch folder on disk: ${existsSync(join(studio, 'sketches', `${edited.part.replace('/', '-')}.edit`))}, page ${JSON.stringify(shown)}: ${error.message.split('\n')[0]}`,
+        { cause: error },
+      );
+    }
+    await namedWait(
+      page,
+      'edit: new/old variant cells',
+      () => document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]').length > 0,
+      null,
+    );
+    phase('sketch shown');
+    await page.waitForTimeout(SETTLE_MS);
+
+    return page.evaluate(() => ({
+      variants: [...new Set([...document.querySelectorAll('[data-sk-variant]')].map((cell) => cell.dataset.skVariant))],
+      folded: !!document.querySelector('[data-sk-folded]'),
+      discard: !!document.querySelector('ethlete-sketches [data-sk-discard] button'),
+    }));
+  };
+  const pick = async (variant) => {
+    phaseStart = performance.now();
+    await listingAnswered(page);
+    phase('listing');
+    await page.locator(`[data-sk-row="${variant}"] [data-sk-merge]`).first().click();
+    await page.locator('[role="alertdialog"] [data-sk-confirm]').click({ timeout: EDIT_WAIT_MS });
+    await namedWait(
+      page,
+      `pick ${variant}: sketch view closed`,
+      () => !document.querySelector('ethlete-sketch-view'),
+      null,
+    );
+    phase('merge');
+    await namedWait(
+      page,
+      `pick ${variant}: part frame without sketch`,
+      (part) =>
+        [...document.querySelectorAll('iframe')].some((frame) => {
+          const url = new URL(frame.src, location.href);
+
+          return url.searchParams.get('part') === part && !url.searchParams.has('sketch');
+        }),
+      edited.part,
+    );
+    phase('part frame');
+
+    const entry = await page.evaluate(
+      () => JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemEntry,
+    );
+
+    return { opened: entry };
+  };
+
+  try {
+    return await run({ edit, pick, file, studio, git, base, phaseLine });
+  } finally {
+    console.log(`[ci-timing] edit sketch ${phaseLine()}`);
+    rmSync(join(checkout, '.git'), { recursive: true, force: true });
+    rmSync(studio, { recursive: true, force: true });
+    cpSync(saved, studio, { recursive: true });
+    rmSync(saved, { recursive: true, force: true });
+    // The restore leaves the server's rule check cold (4 s on 2 idle cores); without this listing the next case's
+    // first frame pays that full rule run inside its WAIT_MS.
+    await fetch(`http://[::1]:${designPort}/__design/system`, { signal: AbortSignal.timeout(EDIT_WAIT_MS) }).then(
+      (response) => response.arrayBuffer(),
+    );
+  }
+};
+
+const CASES = [
+  {
+    name: 'ctrl-wheel zoom over 100 cells keeps the frame interval budget',
+    perf: true,
+    pages: ['Zoom'],
+    engines: ['chromium', 'webkit'],
+    run: async (page) => {
+      await settled(page, FRAME);
+
+      const cells = await page.locator(`ethlete-sketch-view ${FRAME}`).count();
+
+      if (cells < ZOOM_BUDGET.cells)
+        return { ok: false, detail: `${cells} cells, the budget needs ${ZOOM_BUDGET.cells}` };
+
+      const { before, zoomedIn, zoomed, p50, p95, frames } = await measureZoom(page, cells);
+
+      if (!zoomed) return { ok: false, detail: `the wheel did not zoom: frame ${before} -> ${zoomedIn} px` };
+
+      return {
+        ok: p50 <= ZOOM_BUDGET.p50,
+        detail: `${engine}, ${cells} cells, frame ${before} -> ${zoomedIn} px, ${ZOOM_BUDGET.steps} steps: frame interval p50 ${p50.toFixed(1)} ms (<= ${ZOOM_BUDGET.p50}), p95 ${p95.toFixed(1)} ms (target ${ZOOM_BUDGET.p95}, not enforced), ${frames} frames`,
+      };
+    },
+  },
+  {
+    name: 'a visible edit of a merged design part opens its old/new sketch with nothing folded, picking old restores the design',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before the pick',
+    ownShard: true,
+    pages: ['System'],
+    run: (page, _state, _target, { designPort }) =>
+      withEditSketch(page, designPort, async ({ edit, pick, file, studio, git, base, phaseLine }) => {
+        const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
+        const shown = await edit();
+        const opened =
+          shown.variants.includes('new') && shown.variants.includes('old') && !shown.folded && !shown.discard;
+        const shownDetail = `variants ${shown.variants.join(', ')}, folded states: ${shown.folded}, Verwerfen: ${shown.discard}`;
+
+        if (!opened) return { ok: false, detail: shownDetail };
+
+        const oldPick = await pick('old');
+
+        const design = readFileSync(file, 'utf8');
+        const drift = git('diff', base, '--', file).toString();
+        const restored =
+          design.includes(EDIT_LABEL.before) &&
+          !design.includes(EDIT_LABEL.after) &&
+          drift === '' &&
+          !existsSync(sketchDir);
+
+        return {
+          ok: restored && oldPick.opened === EDIT_PART,
+          detail: `${shownDetail}, old restored the design byte-identical to the base commit: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, part opened after the merge: ${oldPick.opened}, ${phaseLine()}`,
+        };
+      }),
+  },
+  {
+    name: 'picking new of an edit sketch records the edit as merged',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before the pick',
+    ownShard: true,
+    pages: ['System'],
+    run: (page, _state, _target, { designPort }) =>
+      withEditSketch(page, designPort, async ({ edit, pick, file, studio, phaseLine }) => {
+        const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
+        const shown = await edit();
+
+        if (!shown.variants.includes('new'))
+          return { ok: false, detail: `no new variant: ${shown.variants.join(', ')}` };
+
+        const newPick = await pick('new');
+
+        const recorded = JSON.parse(readFileSync(join(studio, 'merged.json'), 'utf8'))[EDIT_PART];
+        const kept = readFileSync(file, 'utf8').includes(EDIT_LABEL.after);
+
+        return {
+          ok: kept && recorded?.variant === 'new' && !existsSync(sketchDir) && newPick.opened === EDIT_PART,
+          detail: `new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}, sketch folder gone: ${!existsSync(sketchDir)}, part opened after the merge: ${newPick.opened}, ${phaseLine()}`,
+        };
+      }),
+  },
+  {
+    name: 'a heavy edit sketch shows drawn soon after its cells lay out, with zeichnet while it is held',
+    listingMayPend: 'samples the view from the page load, before any listing answers',
+    ownShard: true,
+    pages: ['System'],
+    run: (page, _state, _target, { designPort }) =>
+      withEditSketch(
+        page,
+        designPort,
+        async ({ edit, phaseLine }) => {
+          const { shownAt, cellsAt, loadingInView, cells, blank, left } = await edit({ timeline: true });
+          const blankSpan = blank.length > 0 ? `${blank[0]}-${blank.at(-1)} ms (${blank.length} samples)` : 'none';
+
+          return {
+            ok:
+              shownAt !== null && shownAt - cellsAt <= HEAVY_EDIT_HOLD_MS && loadingInView === 0 && blank.length === 0,
+            detail: `${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${phaseLine()}`,
+          };
+        },
+        HEAVY_EDIT,
+      ),
+  },
+  {
+    name: 'a sketch merged while its view is open opens the part view of the target',
+    listingMayPend:
+      'the evidence is the view leaving to the part view after the merge, which does not wait for a listing',
+    pages: ['Merge'],
+    run: (page, _state, target, context) =>
+      goneSketchLeavesToThePart(page, context, target, async (ask) => {
+        // A sync exec here blocks the event loop past the server's keep-alive timeout, so the next POST reuses a closed socket.
+        await promisify(execFile)(
+          process.execPath,
+          [cliEntry, 'design', 'sketch', 'rebase', GONE_TARGETS.Merge, '--product', 'studio', '--by', 'canvas-e2e'],
+          { cwd: checkout },
+        );
+
+        return ask('sketch-decision', { kind: 'pick', variant: 'a' });
+      }),
+  },
+  {
+    name: 'a sketch discarded while its view is open opens the part view of the target',
+    listingMayPend:
+      'the evidence is the view leaving to the part view after the discard, which does not wait for a listing',
+    pages: ['Discard'],
+    run: async (page, _state, target, context) => {
+      const kept = await discardAsksFirst(page);
+
+      if (!kept.ok) return kept;
+
+      return goneSketchLeavesToThePart(page, context, target, async () => {
+        const opened = await openDiscardConfirm(page);
+
+        if (!opened.ok) throw new Error(opened.detail);
+        await page.locator('[role="alertdialog"] [data-sk-confirm]').click();
+
+        return { ok: true };
+      });
+    },
+  },
+  {
+    name: 'wheel and ctrl-wheel over a frame centre move the camera',
+    pages: ['System', 'Sketches', 'Inbox', 'Flow'],
+    run: async (page, state, target) => {
+      const selector = target.frame ?? FRAME;
+      const { view } = state;
+      const centreOf = (box) => ({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
+      const seen = (box) => {
+        const { x, y } = centreOf(box);
+
+        return box.width > 8 && x > view.left + 4 && x < view.right - 4 && y > view.top + 4 && y < view.bottom - 4;
+      };
+      let boxes = await frameBoxes(page, selector);
+
+      // A sketch mounts its frames only once the listing with its targets arrives; until then its cells show pictures.
+      for (
+        const until = Date.now() + WAIT_MS;
+        target.name === 'Sketches' && !boxes.some((box) => box.iframe && seen(box)) && Date.now() < until;
+        boxes = await frameBoxes(page, selector)
+      )
+        await page.waitForTimeout(250);
+      const index = [boxes.findIndex((box) => box.iframe && seen(box)), boxes.findIndex(seen)].find((at) => at >= 0);
+
+      if (index === undefined) return { ok: false, detail: 'no frame centre in view' };
+      if (target.name === 'Sketches' && !boxes[index].iframe)
+        return { ok: false, detail: `no iframe frame within ${WAIT_MS} ms` };
+
+      const before = boxes[index];
+      const towardsMiddle = centreOf(before).y < (view.top + view.bottom) / 2 ? -120 : 120;
+      await page.mouse.move(centreOf(before).x, centreOf(before).y);
+      await page.mouse.wheel(0, towardsMiddle);
+      const pansFrom = (panned) => Math.abs(panned.top - before.top) > 20 || Math.abs(panned.left - before.left) > 20;
+      const panned = (
+        await readUntil(
+          page,
+          () => frameBoxes(page, selector),
+          (boxes) => pansFrom(boxes[index]),
+        )
+      )[index];
+
+      if (!seen(panned)) return { ok: false, detail: `the pan moved the frame centre out of view, top ${panned.top}` };
+      await page.mouse.move(centreOf(panned).x, centreOf(panned).y);
+      await page.keyboard.down('Control');
+      await page.mouse.wheel(0, -240);
+      await page.keyboard.up('Control');
+      const zoomed = (
+        await readUntil(
+          page,
+          () => frameBoxes(page, selector),
+          (boxes) => boxes[index].zoom > panned.zoom * 1.05,
+        )
+      )[index];
+      const unzoomed = await stillInFit(page, 'a ctrl-wheel zoom');
+
+      if (unzoomed) return unzoomed;
+
+      const pans = pansFrom(panned);
+      // A sketch row stays at the 1440 px fallback until its iframe measures it, which can land between two reads.
+      const zooms = zoomed.zoom > panned.zoom * 1.05;
+
+      return {
+        ok: pans && zooms,
+        detail: `iframe=${before.iframe} top ${before.top.toFixed(0)} -> ${panned.top.toFixed(0)} width ${panned.width.toFixed(0)} -> ${zoomed.width.toFixed(0)} zoom ${panned.zoom.toFixed(3)} -> ${zoomed.zoom.toFixed(3)}`,
+      };
+    },
+  },
+  {
+    name: 'wheel over an iframe pans when iframes take pointer events, as in WKWebView',
+    pages: ['System', 'Sketches', 'Flow'],
+    run: async (page, state) => {
+      const { view } = state;
+      const point = await page.evaluate(
+        ({ CANVAS, view }) => {
+          const canvas = document.querySelector(CANVAS);
+
+          for (const iframe of canvas?.querySelectorAll('iframe') ?? []) {
+            if (iframe.closest('[data-active]')) continue;
+
+            const box = iframe.getBoundingClientRect();
+            const x = Math.max(box.left, view.left) / 2 + Math.min(box.right, view.right) / 2;
+            const y = Math.max(box.top, view.top) / 2 + Math.min(box.bottom, view.bottom) / 2;
+
+            if (box.width > 8 && x > view.left + 4 && x < view.right - 4 && y > view.top + 4 && y < view.bottom - 4)
+              return { x, y };
+          }
+
+          return null;
+        },
+        { CANVAS, view },
+      );
+
+      if (!point) return { ok: false, detail: 'no iframe in view' };
+
+      const style = await page.addStyleTag({ content: 'iframe { pointer-events: auto !important; }' });
+
+      try {
+        const before = (await probe(page)).camera;
+        await page.mouse.move(point.x, point.y);
+        await page.mouse.wheel(0, point.y < (view.top + view.bottom) / 2 ? -120 : 120);
+        const movedBy = (after) => Math.abs(after.x - before.x) + Math.abs(after.y - before.y);
+        const moved = movedBy(
+          (
+            await readUntil(
+              page,
+              () => probe(page),
+              (after) => !!after?.camera && movedBy(after.camera) > 20,
+            )
+          ).camera,
+        );
+
+        return { ok: moved > 20, detail: `camera moved ${moved.toFixed(0)}px with the pointer over an iframe` };
+      } finally {
+        await style.evaluate((element) => element.remove());
+      }
+    },
+  },
+  {
+    name: 'ctrl-wheel keeps the world point under the pointer',
+    pages: ['System', 'Sketches', 'Inbox', 'Flow'],
+    run: async (page, state, target) => {
+      const selector = target.frame ?? FRAME;
+      const { view } = state;
+
+      await listingAnswered(page);
+      await settled(page, selector);
+      const boxes = await frameBoxes(page, selector);
+      const index = boxes.findIndex(
+        (box) =>
+          box.width > 16 &&
+          box.left + box.width / 2 > view.left + 40 &&
+          box.left + box.width / 2 < view.right - 40 &&
+          box.top + box.height / 2 > view.top + 40 &&
+          box.top + box.height / 2 < view.bottom - 40,
+      );
+
+      if (index < 0) return { ok: false, detail: 'no frame centre in view' };
+
+      const start = boxes[index];
+      const pointer = { x: start.left + start.width * 0.3, y: start.top + start.height * 0.4 };
+      const drifts = [];
+      let before = start;
+
+      await page.mouse.move(pointer.x, pointer.y);
+
+      for (const delta of [-240, 240, 240]) {
+        await page.keyboard.down('Control');
+        await page.mouse.wheel(0, delta);
+        await page.keyboard.up('Control');
+
+        const driftOf = (after) => {
+          const ratio = after.width / before.width;
+
+          return Math.hypot(
+            after.left + (pointer.x - before.left) * ratio - pointer.x,
+            after.top + (pointer.y - before.top) * ratio - pointer.y,
+          );
+        };
+        const after = (
+          await readUntil(
+            page,
+            () => frameBoxes(page, selector),
+            (boxes) => boxes[index].width !== before.width && driftOf(boxes[index]) <= 2,
+          )
+        )[index];
+        const unzoomed = await stillInFit(page, `a ctrl-wheel of ${delta}`);
+
+        if (unzoomed) return unzoomed;
+
+        drifts.push(driftOf(after));
+        before = after;
+      }
+
+      return {
+        ok: drifts.every((drift) => drift <= 2) && before.width < start.width,
+        detail: `drift ${drifts.map((drift) => drift.toFixed(1)).join(' / ')} px, width ${start.width.toFixed(0)} -> ${before.width.toFixed(0)}`,
+      };
+    },
+  },
+  {
+    name: 'no text leaves its box at min zoom, Fit, 100 % and max zoom',
+    pages: ['System', 'Sketches', 'Inbox', 'Flow'],
+    run: async (page, state) => {
+      const { view } = state;
+      const centre = { x: (view.left + view.right) / 2, y: (view.top + view.bottom) / 2 };
+      const wheelZoom = async (delta) => {
+        await page.mouse.move(centre.x, centre.y);
+        await page.keyboard.down('Control');
+        for (let step = 0; step < 30; step++) await page.mouse.wheel(0, delta);
+        await page.keyboard.up('Control');
+        await settle(page);
+      };
+      const shortcut = async (key) => {
+        await page.mouse.click(centre.x, centre.y);
+        await page.keyboard.press(key);
+        await settle(page);
+      };
+      const zooms = [
+        ['min', () => wheelZoom(100)],
+        ['Fit', () => shortcut('Shift+Digit1')],
+        ['100 %', () => shortcut('Shift+Digit0')],
+        ['max', () => wheelZoom(-100)],
+      ];
+      const faults = [];
+
+      for (const [label, zoom] of zooms) {
+        await zoom();
+        faults.push(
+          ...(await page.evaluate(
+            ({ CANVAS, label }) => {
+              const canvas = [...document.querySelectorAll(CANVAS)].sort(
+                (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+              )[0];
+              const found = [];
+
+              if (!canvas) return [`${label}: no canvas`];
+
+              const walker = document.createTreeWalker(canvas, NodeFilter.SHOW_TEXT);
+
+              for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                const box = node.parentElement?.getBoundingClientRect();
+
+                if (!node.textContent.trim() || !box || box.width === 0) continue;
+
+                const range = document.createRange();
+                range.selectNodeContents(node);
+
+                const text = range.getBoundingClientRect();
+                const style = getComputedStyle(node.parentElement);
+                const ellipsis = style.textOverflow === 'ellipsis' && style.overflowX !== 'visible';
+                let clip = { top: -Infinity, bottom: Infinity };
+
+                for (let at = node.parentElement; at && at !== canvas; at = at.parentElement) {
+                  const rect = at.getBoundingClientRect();
+
+                  if (rect.height > 3 * text.height) break;
+                  if (getComputedStyle(at).overflowY === 'visible') continue;
+
+                  clip = { top: Math.max(clip.top, rect.top), bottom: Math.min(clip.bottom, rect.bottom) };
+                }
+
+                if (text.width > 0 && (text.top < clip.top - 0.5 || text.bottom > clip.bottom + 0.5))
+                  found.push(`${label}: "${node.textContent.trim().slice(0, 30)}" is clipped at its top or bottom`);
+
+                if (
+                  text.width > 0 &&
+                  (text.left < box.left - 1 ||
+                    (!ellipsis && text.right > box.right + 1) ||
+                    text.top < box.top - 1 ||
+                    text.bottom > box.bottom + 1)
+                )
+                  found.push(`${label}: "${node.textContent.trim().slice(0, 30)}" leaves its box`);
+              }
+
+              for (const row of canvas.querySelectorAll('[data-sk-row]:not([data-sk-matrix] *)')) {
+                const [head, stage] = row.children;
+
+                if (head && stage && head.getBoundingClientRect().bottom > stage.getBoundingClientRect().top + 0.5)
+                  found.push(`${label}: head overlaps the frames in row ${row.getAttribute('data-sk-row')}`);
+              }
+
+              return found;
+            },
+            { CANVAS, label },
+          )),
+        );
+      }
+
+      return { ok: faults.length === 0, detail: faults.slice(0, 4).join('; ') || '4 zooms' };
+    },
+  },
+  {
+    name: 'Fit is stable, + steps from it, 25 % report',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads the zoom chip',
+    pages: ['Sketches'],
+    run: async (page, state) => {
+      const { view } = state;
+
+      await settled(page, FRAME);
+      await page.mouse.click((view.left + view.right) / 2, (view.top + view.bottom) / 2);
+      await page.keyboard.press('Shift+Digit1');
+      await settle(page);
+
+      const shown = () =>
+        page.evaluate(() => {
+          const match = /(\d+)\s*%/.exec(
+            document.querySelector('ethlete-sketches ethlete-zoom-chip')?.textContent ?? '',
+          );
+
+          return match ? Number(match[1]) : null;
+        });
+      const percent = await shown();
+
+      if (percent === null) return { ok: false, detail: 'no zoom chip percent' };
+
+      await page.reload();
+      await page.waitForSelector('[data-sk-state]', { timeout: FULL_COMPARE_MS });
+      await settled(page, FRAME);
+      await page.getByRole('button', { name: 'Einpassen' }).first().click();
+      const again = await readUntil(page, shown, (again) => again !== null && Math.abs(again - percent) <= 1);
+
+      await page.getByRole('button', { name: 'Vergrößern' }).first().click();
+      const stepped = await readUntil(
+        page,
+        shown,
+        (stepped) => stepped !== null && Math.abs(stepped - Math.round(again * 1.5)) <= 1,
+      );
+      const faults = [
+        ...(again !== null && Math.abs(again - percent) <= 1
+          ? []
+          : [`Fit ${percent} % then ${again} % after a reload`]),
+        ...(stepped !== null && Math.abs(stepped - Math.round(again * 1.5)) <= 1
+          ? []
+          : [`+ from Fit ${again} % shows ${stepped} %, expected ${Math.round(again * 1.5)} %`]),
+      ];
+      const report = percent >= 25 ? `Fit ${percent} %` : `too large for Fit: ${percent} %`;
+
+      return { ok: faults.length === 0, detail: [report, ...faults].join('; ') };
+    },
+  },
+  {
+    name: 'the sketch canvas clips its frames at the bottom of the shell main area',
+    pages: ['Sketches'],
+    engines: ['chromium', 'webkit'],
+    run: async (page) => {
+      await settled(page, FRAME);
+      const read = await page.evaluate((CANVAS) => {
+        const sketches = document.querySelector('ethlete-sketches [data-sketches-page]');
+        const main = sketches?.closest('main');
+        const canvas = [...(sketches?.querySelectorAll(CANVAS) ?? [])].sort(
+          (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+        )[0];
+
+        if (!sketches || !main || !canvas) return { error: 'no sketches page, shell main or canvas' };
+        let clip = Infinity;
+
+        for (let at = canvas; at && at !== main; at = at.parentElement) {
+          const style = getComputedStyle(at);
+
+          if (style.overflowY === 'visible') continue;
+          clip = Math.min(clip, at.getBoundingClientRect().bottom - (Number.parseFloat(style.borderBottomWidth) || 0));
+        }
+
+        return {
+          main: main.getBoundingClientRect().bottom,
+          page: sketches.getBoundingClientRect().bottom,
+          clip,
+        };
+      }, CANVAS);
+
+      if (read.error) return { ok: false, detail: read.error };
+      const faults = [
+        ...(Math.abs(read.page - read.main) <= 1
+          ? []
+          : [`the sketches page ends at y ${Math.round(read.page)}, the shell main at y ${Math.round(read.main)}`]),
+        ...(Math.abs(read.clip - read.main) <= 1
+          ? []
+          : [
+              `the canvas clips its frames at y ${Math.round(read.clip)}, the shell main ends at y ${Math.round(read.main)}`,
+            ]),
+      ];
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || `canvas clip and page end at y ${Math.round(read.main)}`,
+      };
+    },
+  },
+  {
+    name: 'no state is marked before the compare answers',
+    pages: ['Sketches'],
+    labels: ['Chip'],
+    run: async (page, _state, target) => {
+      const sketch = target.view.systemEntry.slice('sketch:'.length);
+      const listing = `http://localhost:${process.env['DE_PORT']}/__design/sketches?product=${target.view.systemProduct}`;
+      const entryOf = (answer) => answer?.sketches?.find((candidate) => candidate.target === sketch);
+      const listedTargetOf = (entry, variant) =>
+        entry?.targets?.find(
+          (candidate) => candidate.variant === variant && (candidate.part ?? entry.target) === entry.target,
+        );
+      const cells = () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll('[data-sk-variant][data-sk-changed]')]
+            .filter((cell) => cell.getAttribute('data-sk-variant') !== 'current')
+            .map((cell) => ({
+              variant: cell.getAttribute('data-sk-variant'),
+              state: cell.getAttribute('data-sk-state'),
+              changed: cell.getAttribute('data-sk-changed'),
+            })),
+        );
+
+      const primed = entryOf(
+        await (await page.request.get(listing, { timeout: FULL_COMPARE_MS, headers: OWN_CONNECTION })).json(),
+      );
+      let release;
+      const held = new Promise((resolve) => (release = resolve));
+      let answered;
+      const fullAnswered = new Promise((resolve) => (answered = resolve));
+      let listed;
+      let passThrough = false;
+      const inFlight = new Set();
+
+      await page.route('**/__design/sketches?*', async (route) => {
+        if (passThrough) return route.fallback();
+        if (route.request().url().includes('unchanged=no')) return route.continue();
+
+        const handled = (async () => {
+          await held;
+          const response = await route.fetch();
+
+          listed = await response.json();
+          await route.fulfill({ response, json: listed });
+          answered();
+        })();
+
+        inFlight.add(handled);
+        await handled.finally(() => inFlight.delete(handled));
+      });
+      const quickAnswered = page.waitForResponse(
+        (response) => /unchanged=no$/.test(response.url()) && response.url().includes('/__design/sketches?'),
+      );
+
+      await page.reload();
+      await page.waitForSelector('[data-sk-state]');
+      await quickAnswered;
+      await settle(page);
+
+      const early = await cells();
+      const first = await page.evaluate(() => document.querySelectorAll('[data-sk-first-change]').length);
+      const kept = early.filter(({ changed }) => changed !== 'pending');
+      const fresh = kept.filter(
+        ({ variant, state, changed }) =>
+          changed !== String(!(listedTargetOf(primed, variant)?.unchanged ?? []).includes(state)),
+      );
+
+      release();
+      await fullAnswered;
+      await listingAnswered(page);
+      passThrough = true;
+      // Removing the last page route continues its in-flight routes server-side, so a later fulfill throws.
+      await Promise.all(inFlight);
+      await page.unroute('**/__design/sketches?*');
+
+      const entry = entryOf(listed);
+      const marks = await cells();
+      const wrong = marks.filter(({ variant, state, changed }) => {
+        const listedTarget = listedTargetOf(entry, variant);
+
+        if (!listedTarget) return false;
+
+        return changed !== String(!(listedTarget.unchanged ?? []).includes(state));
+      });
+      const faults = [
+        ...(primed?.targets?.some((candidate) => candidate.unchanged?.length)
+          ? []
+          : [`the earlier full listing of ${sketch} kept no unchanged state`]),
+        ...fresh
+          .slice(0, 3)
+          .map(({ variant, state, changed }) => `${variant}/${state} marked ${changed} before the compare`),
+        ...(first && !kept.some(({ changed }) => changed === 'true') ? ['"erste Änderung" before any kept mark'] : []),
+        ...(entry ? [] : [`no listed sketch ${sketch}`]),
+        ...wrong.slice(0, 3).map(({ variant, state, changed }) => `${variant}/${state} shows ${changed}`),
+      ];
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || `${kept.length} kept marks before the compare, ${marks.length} marks match it`,
+      };
+    },
+  },
+  {
+    name: 'frames of one grid row share their top edge',
+    pages: ['Sketches'],
+    run: async (page) => {
+      const spread = await page.evaluate(() => {
+        let worst = 0;
+
+        for (const stage of document.querySelectorAll('[data-sk-stage]')) {
+          const rows = new Map();
+
+          for (const cell of stage.querySelectorAll('[data-sk-state]')) {
+            const frame = cell.querySelector('[data-sk-frame]');
+            const line = Math.round(cell.getBoundingClientRect().top);
+
+            if (frame) rows.set(line, [...(rows.get(line) ?? []), frame.getBoundingClientRect().top]);
+          }
+
+          for (const tops of rows.values()) worst = Math.max(worst, Math.max(...tops) - Math.min(...tops));
+        }
+
+        return worst;
+      });
+
+      return { ok: spread <= 1, detail: `widest top spread ${spread.toFixed(1)} px` };
+    },
+  },
+  {
+    name: 'a frame renders real content, not an error page',
+    pages: ['System', 'Sketches'],
+    run: async (page) => {
+      const deadline = Date.now() + WAIT_MS;
+      let texts = [];
+
+      while (Date.now() < deadline) {
+        texts = [];
+
+        for (const frame of page.frames().filter((candidate) => candidate !== page.mainFrame())) {
+          texts.push(await frame.evaluate(() => document.body?.innerText.trim() ?? '').catch(() => ''));
+        }
+
+        if (texts.some((text) => text && !/403|restricted|forbidden|cannot (get|find)|error/i.test(text))) {
+          return { ok: true, detail: `${texts.length} frames` };
+        }
+
+        await page.waitForTimeout(500);
+      }
+
+      return { ok: false, detail: `no frame shows content: ${JSON.stringify(texts.map((text) => text.slice(0, 60)))}` };
+    },
+  },
+  {
+    name: 'a tree switch to a part whose remembered view shows no frame fits instead',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads the canvas frame boxes',
+    pages: ['Switch'],
+    run: async (page) => {
+      await page
+        .locator('[role="treeitem"]', { hasText: /^\s*notification\s*$/ })
+        .first()
+        .click();
+      await listingAnswered(page);
+      await page.waitForSelector('ethlete-canvas-frame', { timeout: WAIT_MS });
+      await settle(page);
+
+      const visible = await readUntil(
+        page,
+        () =>
+          page.evaluate(() => {
+            const view = document.querySelector('ethlete-design-canvas')?.getBoundingClientRect();
+
+            return [...document.querySelectorAll('ethlete-canvas-frame')].filter((frame) => {
+              const box = frame.getBoundingClientRect();
+
+              return (
+                !!view &&
+                box.width > 0 &&
+                box.left < view.right &&
+                box.right > view.left &&
+                box.top < view.bottom &&
+                box.bottom > view.top
+              );
+            }).length;
+          }),
+        (count) => count > 0,
+      );
+
+      const where = await page.evaluate(() => ({
+        selected: document
+          .querySelector('[role="treeitem"][data-selected], [role="treeitem"][aria-selected="true"]')
+          ?.textContent?.trim(),
+        frames: document.querySelectorAll('ethlete-canvas-frame').length,
+        chip: document.querySelector('ethlete-zoom-chip')?.textContent?.trim(),
+      }));
+
+      return { ok: visible > 0, detail: `${visible} frames in the canvas after the switch ${JSON.stringify(where)}` };
+    },
+  },
+  {
+    name: 'zoom chip sits at the canvas bottom right',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page) => {
+      const placed = await page.evaluate(
+        ({ CANVAS }) =>
+          [...document.querySelectorAll('ethlete-zoom-chip')]
+            .map((chip) => ({ chip, box: chip.getBoundingClientRect() }))
+            .filter(({ box }) => box.width > 0)
+            .map(({ chip, box }) => {
+              let holder = chip.parentElement;
+
+              while (holder && !holder.querySelector(CANVAS)) holder = holder.parentElement;
+
+              const area = (chip.closest(CANVAS) ?? holder ?? chip.offsetParent).getBoundingClientRect();
+
+              return { right: area.right - box.right, bottom: area.bottom - box.bottom, left: box.left };
+            }),
+        { CANVAS },
+      );
+      const ok =
+        placed.length > 0 &&
+        placed.every((gap) => Math.abs(gap.right - CHIP_INSET) <= 2 && Math.abs(gap.bottom - CHIP_INSET) <= 2);
+
+      return { ok, detail: JSON.stringify(placed) };
+    },
+  },
+  {
+    name: 'the part tree keeps its scroll position after a reload',
+    listingMayPend: 'it waits up to 15 s for the restored scroll position itself',
+    pages: ['System'],
+    run: async (page) => {
+      const scroller = () =>
+        page.evaluate(() => {
+          const element = document.querySelector('ethlete-part-tree')?.closest('.overflow-y-auto');
+
+          return element
+            ? { top: element.scrollTop, max: element.scrollHeight - element.clientHeight }
+            : { top: -1, max: -1 };
+        });
+
+      await page.waitForSelector('ethlete-part-tree [etTreeNode]');
+      const before = await scroller();
+
+      if (before.max < 40) return { ok: false, detail: `the tree cannot scroll, scrollable ${before.max} px` };
+
+      const target = Math.min(300, before.max);
+
+      await page.evaluate((top) => {
+        document.querySelector('ethlete-part-tree')?.closest('.overflow-y-auto')?.scrollTo({ top });
+      }, target);
+      await page.waitForTimeout(600);
+      await page.reload();
+      await page.waitForSelector('ethlete-part-tree [etTreeNode]');
+
+      let after = await scroller();
+
+      for (let waited = 0; waited < 15000 && Math.abs(after.top - target) > 2; waited += 250) {
+        await page.waitForTimeout(250);
+        after = await scroller();
+      }
+
+      return { ok: Math.abs(after.top - target) <= 2, detail: `scrolled to ${target}, ${after.top} after the reload` };
+    },
+  },
+  {
+    name: 'a wheel over a tree row label scrolls the part tree',
+    pages: ['System'],
+    run: async (page) => {
+      await page.waitForSelector('ethlete-part-tree [etTreeNode]');
+      const point = await page.evaluate(() => {
+        const scroller = document.querySelector('ethlete-part-tree')?.closest('.overflow-y-auto');
+        const label = [...scroller.querySelectorAll('[ethlete-tree-row-item] .text-ellipsis')].find((element) => {
+          const box = element.getBoundingClientRect();
+
+          return box.height > 0 && box.top >= scroller.getBoundingClientRect().top;
+        });
+        const box = label.getBoundingClientRect();
+        const x = box.left + Math.min(box.width / 2, 20);
+        const y = box.top + box.height / 2;
+
+        scroller.scrollTop = 0;
+
+        return {
+          x,
+          y,
+          max: scroller.scrollHeight - scroller.clientHeight,
+          hit: document.elementFromPoint(x, y) === label,
+        };
+      });
+
+      if (point.max < 40) return { ok: false, detail: `the tree cannot scroll, scrollable ${point.max} px` };
+      if (!point.hit) return { ok: false, detail: 'no row label under the wheel point' };
+
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.wheel(0, 120);
+      await page.waitForTimeout(400);
+      const top = await page.evaluate(
+        () => document.querySelector('ethlete-part-tree')?.closest('.overflow-y-auto')?.scrollTop ?? -1,
+      );
+
+      return { ok: top > 0, detail: `a 120 px wheel over a row label scrolled the tree to ${top}` };
+    },
+  },
+  {
+    name: 'every product view shows a described state',
+    holdListings: false,
+    listingMayPend: 'waits for the described state of each product view, not for a listing',
+    pages: ['System'],
+    run: (page) => shootProducts(page, checkout),
+  },
+  {
+    name: 'open points chip pressed matches its popup',
+    holdListings: false,
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const chip = page.locator('[data-open-points-chip]').first();
+      const steps = [];
+
+      for (let click = 1; click <= 4; click++) {
+        await chip.click();
+        await page.waitForTimeout(SETTLE_MS);
+        if (click === 1)
+          await page.locator('ethlete-build-ready-footer et-badge').first().waitFor({ timeout: COLD_START_MS });
+        steps.push(
+          await page.evaluate(() => ({
+            pressed: document.querySelector('[data-open-points-chip]')?.getAttribute('aria-pressed') === 'true',
+            open: !!document.querySelector('[role="dialog"][aria-label="Offene Punkte"]'),
+            status: document.querySelector('ethlete-build-ready-footer et-badge')?.textContent?.trim() ?? null,
+            go: [...document.querySelectorAll('[role="dialog"] button')].some((button) =>
+              button.textContent?.includes('Go geben'),
+            ),
+          })),
+        );
+      }
+
+      const buildReady = /^(Baubereit|Nicht baubereit \(\d+\)|Wird geprüft)$/.test(steps[0].status ?? '');
+      const ok =
+        buildReady &&
+        !steps[0].go &&
+        steps.every((step, index) => step.pressed === step.open && step.open === (index % 2 === 0));
+
+      return {
+        ok,
+        detail: `${steps.map((step) => `${+step.pressed}/${+step.open}`).join(' ')} status=${steps[0].status} go=${steps[0].go}`,
+      };
+    },
+  },
+  {
+    name: 'a quick switch product button shows its full name as a tooltip and a click switches the product',
+    holdListings: false,
+    listingMayPend: 'the evidence is the tooltip and the remembered product, not a listing',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const names = await page
+        .locator('ethlete-shell-main nav button[aria-label]:not([aria-current])')
+        .evaluateAll((all) =>
+          all.map((button) => button.getAttribute('aria-label')).filter((label) => /^[a-z][a-z-]+$/.test(label ?? '')),
+        );
+
+      if (!names.length) return { ok: false, detail: 'no inactive product button in the rail' };
+
+      const name = names[0];
+      const button = page.locator(`ethlete-shell-main nav button[aria-label="${name}"]`);
+
+      await button.hover();
+      const tip = page.getByRole('tooltip').filter({ hasText: name }).first();
+      const shown = await tip.waitFor({ timeout: 5000 }).then(
+        () => true,
+        () => false,
+      );
+      const text = shown ? ((await tip.textContent()) ?? '').trim() : null;
+
+      await button.click();
+      const switched = await readUntil(
+        page,
+        () => page.evaluate(() => JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemProduct),
+        (product) => product === name,
+      );
+
+      return {
+        ok: text === name && switched === name,
+        detail: `product=${name} tooltip=${JSON.stringify(text)} remembered=${JSON.stringify(switched)}`,
+      };
+    },
+  },
+  {
+    name: 'the comment button: crosshair, a click places the draft, Esc cancels it, a sent comment lands on disk, in the Inbox and as a pin at once, Esc without a draft leaves comment mode, no button in the Inbox',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const commentsDir = join(checkout, '.ethlete/design/studio/comments');
+      const filesOf = () =>
+        existsSync(commentsDir) ? readdirSync(commentsDir).filter((n) => n.endsWith('.json')) : [];
+      const before = new Set(filesOf());
+      const text = `B145 e2e ${Date.now()}`;
+      const fail = (detail) => ({ ok: false, detail });
+      const toggle = page.locator('ethlete-system-page [data-sk-comment]').first();
+
+      const toggled = await toggle.click({ timeout: WAIT_MS }).then(
+        () => null,
+        () =>
+          page.evaluate(() => {
+            const button = document.querySelector('ethlete-system-page [data-sk-comment]');
+            const box = button?.getBoundingClientRect();
+            const top = box && document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+
+            return button
+              ? `Kommentar in ${button.closest('[class]')?.tagName}, box ${Math.round(box.x)},${Math.round(box.y)} ${Math.round(box.width)}x${Math.round(box.height)}, covered by ${top?.tagName}.${top?.className}`
+              : 'no Kommentar button';
+          }),
+      );
+
+      if (toggled) return fail(`comment button not clickable: ${toggled}`);
+      await page.locator('[data-comment-target]').first().waitFor({ timeout: WAIT_MS });
+
+      const pickAt = (fx, fy) =>
+        page.evaluate(
+          ({ fx, fy }) => {
+            const canvas = document.querySelector('ethlete-design-canvas')?.getBoundingClientRect();
+
+            for (const target of document.querySelectorAll('[data-comment-target]')) {
+              const box = target.getBoundingClientRect();
+              const x = Math.round(box.left + box.width * fx);
+              const y = Math.round(box.top + box.height * fy);
+              const inside = !canvas || (x > canvas.left && x < canvas.right && y > canvas.top && y < canvas.bottom);
+
+              if (inside && document.elementFromPoint(x, y) === target)
+                return { x, y, cursor: getComputedStyle(target).cursor };
+            }
+
+            return null;
+          },
+          { fx, fy },
+        );
+      const draftBox = () =>
+        page.evaluate(() => {
+          const box = document.querySelector('[data-comment-draft]')?.getBoundingClientRect();
+
+          return box ? { left: box.left, top: box.top } : null;
+        });
+      const pinsNear = (point) =>
+        page.evaluate(
+          ({ x, y }) =>
+            [...document.querySelectorAll('[data-comment-pin]')]
+              .map((pin) => {
+                const box = pin.getBoundingClientRect();
+
+                return Math.round(Math.hypot(box.left - x, box.bottom - y));
+              })
+              .sort((a, b) => a - b),
+          point,
+        );
+
+      const first = await pickAt(0.3, 0.4);
+
+      if (!first) return fail('no comment target has a visible point');
+      if (first.cursor !== 'crosshair') return fail(`comment target cursor is ${first.cursor}, not crosshair`);
+
+      await page.mouse.click(first.x, first.y);
+      await page.locator('[data-comment-draft]').waitFor({ timeout: WAIT_MS });
+
+      const placed = await draftBox();
+
+      if (!placed || Math.abs(placed.left - first.x) > 2 || Math.abs(placed.top - first.y) > 2)
+        return fail(`draft at ${JSON.stringify(placed)}, click at ${first.x},${first.y}`);
+
+      await page.locator('[data-comment-draft] textarea').click();
+      await page.keyboard.type('weg damit');
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(SETTLE_MS);
+
+      const afterEsc = await page.evaluate(() => ({
+        draft: !!document.querySelector('[data-comment-draft]'),
+        targets: document.querySelectorAll('[data-comment-target]').length,
+      }));
+
+      if (afterEsc.draft) return fail('Esc left the draft open');
+      if (!afterEsc.targets) return fail('Esc with a draft open also left comment mode');
+      if (filesOf().length !== before.size) return fail('Esc wrote a comment');
+
+      const second = await pickAt(0.6, 0.55);
+
+      if (!second) return fail('no visible point for the second draft');
+
+      await page.mouse.click(second.x, second.y);
+      await page.locator('[data-comment-draft] textarea').click();
+      await page.keyboard.type(text);
+      await page.keyboard.press('Enter');
+
+      let deadline = Date.now() + WAIT_MS;
+
+      while (Date.now() < deadline && filesOf().length === before.size) await page.waitForTimeout(200);
+
+      deadline = Date.now() + WAIT_MS;
+      let pinsBeforeInbox = [];
+
+      while (Date.now() < deadline) {
+        pinsBeforeInbox = await pinsNear(second);
+        if (pinsBeforeInbox[0] < 40) break;
+        await page.waitForTimeout(200);
+      }
+
+      const pinAtOnce = pinsBeforeInbox.filter((d) => d < 40).length === 1;
+
+      await page.locator('[data-comment-draft]').waitFor({ state: 'detached', timeout: WAIT_MS });
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(SETTLE_MS);
+
+      const modeLeft = (await page.locator('[data-comment-target]').count()) === 0;
+
+      await page.locator('button[aria-label="Inbox"]').first().click();
+      deadline = Date.now() + WAIT_MS;
+      let written = [];
+      let pins = [];
+      let listed = false;
+
+      while (Date.now() < deadline) {
+        written = filesOf().filter((name) => !before.has(name));
+        pins = await pinsNear(second);
+        listed = await page.evaluate(
+          (text) => !!document.querySelector('ethlete-inbox')?.textContent?.includes(text),
+          text,
+        );
+        if (written.length && pins[0] < 40 && listed) break;
+        await page.waitForTimeout(200);
+      }
+
+      const buttonInInbox = await toggle.isVisible();
+
+      const saved = written.map((name) => JSON.parse(readFileSync(join(commentsDir, name), 'utf8')));
+
+      for (const name of written) rmSync(join(commentsDir, name));
+
+      const ok =
+        saved.length === 1 &&
+        saved[0].text === text &&
+        !!saved[0].point &&
+        pins.filter((d) => d < 40).length === 1 &&
+        listed &&
+        pinAtOnce &&
+        modeLeft &&
+        !buttonInInbox;
+
+      return {
+        ok,
+        detail: `crosshair, draft at click ${first.x},${first.y}, Esc closed it (comment mode ${afterEsc.targets ? 'on' : 'off'}), sent ${saved.length} file(s) ${JSON.stringify(saved.map((s) => ({ part: s.part, text: s.text, point: s.point })))}, pin at once with the Inbox closed ${pinAtOnce} (${pinsBeforeInbox.join(',')} px), Esc without a draft left comment mode ${modeLeft}, Kommentar button in the Inbox ${buttonInInbox}, in the Inbox ${listed}, pin distances to the click ${pins.join(',')} px`,
+      };
+    },
+  },
+  {
+    name: 'a comment of a merged sketch pins on the part frame, replied or not, and a resolved sketch comment pins on its variant',
+    pages: ['System', 'Wide'],
+    viewport: WIDE,
+    run: async (page, _state, target) => {
+      const commentsDir = join(checkout, '.ethlete/design/studio/comments');
+      const written = [];
+      const put = (id, comment) => {
+        const file = join(commentsDir, `${id}.json`);
+
+        mkdirSync(commentsDir, { recursive: true });
+        markWrite(`${id}.json`);
+        writeFileSync(
+          file,
+          JSON.stringify({ state: 'part', size: 'desktop', createdAt: '2026-11-01T10:00:00.000Z', ...comment }),
+        );
+        written.push(file);
+      };
+      const pinCount = (selector) => page.locator(selector).count();
+
+      try {
+        if (target.name === 'Wide') {
+          const before = await pinCount('ethlete-sketches ethlete-comment-pin [aria-label$="resolved"]');
+
+          put('e2e-a18-resolved', {
+            part: WIDE_SKETCH.part,
+            state: WIDE_SKETCH.changed,
+            text: 'A18 e2e resolved',
+            sketch: {
+              target: `${WIDE_SKETCH.part}@${WIDE_SKETCH.name}`,
+              variant: 'a',
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+            resolved: { by: 'user', resolvedAt: '2026-11-02T10:00:00.000Z' },
+          });
+
+          const seen = await page
+            .waitForFunction(
+              (count) =>
+                document.querySelectorAll('ethlete-sketches ethlete-comment-pin [aria-label$="resolved"]').length >
+                count,
+              before,
+              { timeout: WAIT_MS },
+            )
+            .then(
+              () => true,
+              () => false,
+            );
+
+          if (seen) return { ok: true, detail: `resolved pin on the variant of the sketch view: ${seen}` };
+
+          const cells = await pinCount(`ethlete-sketches [data-sk-frame="a ${WIDE_SKETCH.changed}"]`);
+          const after = await pinCount('ethlete-sketches ethlete-comment-pin [aria-label$="resolved"]');
+
+          return {
+            ok: false,
+            detail: `resolved pin on the variant of the sketch view: false (resolved pins ${before} -> ${after}, cells of a ${WIDE_SKETCH.changed}: ${cells})`,
+          };
+        }
+
+        const before = await pinCount('ethlete-comment-pin');
+        const gone = { target: 'pages/system', variant: 'a', createdAt: '2026-01-02T00:00:00.000Z' };
+
+        put('e2e-a18-merged', {
+          part: 'pages/system',
+          text: 'A18 e2e merged',
+          sketch: gone,
+          addressed: { by: 'agent', reason: 'merge', addressedAt: '2026-11-02T10:00:00.000Z' },
+        });
+        put('e2e-a18-replied', {
+          part: 'pages/system',
+          text: 'A18 e2e replied',
+          sketch: gone,
+          replies: [{ by: 'user', text: 'and one more', createdAt: '2026-11-03T10:00:00.000Z' }],
+        });
+
+        const seen = await page
+          .waitForFunction((count) => document.querySelectorAll('ethlete-comment-pin').length >= count + 2, before, {
+            timeout: WAIT_MS,
+          })
+          .then(
+            () => true,
+            () => false,
+          );
+
+        return {
+          ok: seen,
+          detail: `pins on the part frame before ${before}, both merged-sketch comments pinned: ${seen}`,
+        };
+      } finally {
+        for (const file of written) rmSync(file, { force: true });
+      }
+    },
+  },
+  {
+    name: 'comment mode: the crosshair with the Esc oder C hint, and C or Esc each leave it',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const toggle = page.locator('ethlete-system-page [data-sk-comment]').first();
+      const target = page.locator('[data-comment-target]').first();
+      const hint = page.locator('[data-canvas-actions]', { hasText: /oder.*beendet/ });
+      const seen = [];
+
+      for (const key of ['c', 'Escape']) {
+        await toggle.click({ timeout: WAIT_MS });
+        await target.waitFor({ timeout: WAIT_MS });
+
+        const cursor = await target.evaluate((element) => getComputedStyle(element).cursor);
+        const hinted = (await hint.count()) > 0;
+
+        await page.keyboard.press(key);
+
+        const left = await target.waitFor({ state: 'detached', timeout: WAIT_MS }).then(
+          () => true,
+          () => false,
+        );
+
+        seen.push({ key, cursor, hinted, left });
+      }
+
+      return {
+        ok: seen.every(({ cursor, hinted, left }) => cursor === 'crosshair' && hinted && left),
+        detail: seen
+          .map(({ key, cursor, hinted, left }) => `${key}: cursor ${cursor}, hint ${hinted}, left ${left}`)
+          .join('; '),
+      };
+    },
+  },
+  {
+    name: 'a refused check record still offers the direct edit sketch',
+    listingMayPend:
+      'the evidence is the footer popover, read from a faked open-points response that the listing does not gate',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      await page.route('**/__design/open-points?*', (route) =>
+        route.fulfill({
+          json: {
+            points: [{ kind: 'direct-edit', sketch: 'pages/system@edit' }],
+            buildReady: {
+              ready: false,
+              blockers: [
+                { kind: 'stale-record', text: 'no check record at the current design' },
+                { kind: 'open-point', text: 'changed outside a sketch - pick old or new in sketch pages/system@edit' },
+              ],
+            },
+          },
+        }),
+      );
+      await page.reload();
+      await page.locator('[data-open-points-chip]').first().click({ timeout: RELOAD_WAIT_MS });
+
+      const open = page.locator('[role="dialog"] button', { hasText: 'Sketch öffnen' });
+      const status = page.locator('ethlete-build-ready-footer et-badge').first();
+
+      await page.locator('ethlete-build-ready-footer button', { hasText: 'Gründe' }).first().click({ timeout: 20000 });
+      await open.waitFor({ timeout: 5000 });
+      await page.unroute('**/__design/open-points?*');
+
+      const offered = await open.count();
+      const badge = (await status.textContent().catch(() => null))?.trim() ?? null;
+
+      return { ok: offered === 1 && badge !== 'Wird geprüft', detail: `offered=${offered} badge=${badge}` };
+    },
+  },
+  {
+    name: 'an open points row that names a part opens that part',
+    listingMayPend:
+      'the row comes from a faked open-points response and the part from the system listing, neither held',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const part = 'pages/sketches';
+
+      await page.route('**/__design/open-points?*', (route) =>
+        route.fulfill({
+          json: {
+            points: [],
+            buildReady: { ready: false, blockers: [{ kind: 'embedded', text: `${part} is not build-ready`, part }] },
+          },
+        }),
+      );
+      await page.reload();
+      await page.locator('[data-open-points-chip]').first().click({ timeout: RELOAD_WAIT_MS });
+
+      const row = page.locator('[role="dialog"] [data-open-point-target]', { hasText: part });
+
+      await row.waitFor({ timeout: 20000 });
+
+      const rows = await row.count();
+
+      if (process.env['STUDIO_E2E_SHOTS'])
+        await page.screenshot({ path: join(process.env['STUDIO_E2E_SHOTS'], 'open-points-part-row.png') });
+      const clickedAt = Date.now();
+
+      await row.click();
+      await settle(page);
+      await page.unroute('**/__design/open-points?*');
+
+      const dialogOpen = () =>
+        page.evaluate(() => !!document.querySelector('[role="dialog"][aria-label="Offene Punkte"]'));
+      let stillOpen = await dialogOpen();
+
+      for (; stillOpen && Date.now() - clickedAt < 30000; stillOpen = await dialogOpen())
+        await page.waitForTimeout(100);
+      console.log(
+        `[ci-timing] open-points row dialog closed after row click: ${stillOpen ? 'still open after 30000' : Date.now() - clickedAt} ms`,
+      );
+
+      const after = await page.evaluate(() => ({
+        open: !!document.querySelector('[role="dialog"][aria-label="Offene Punkte"]'),
+        entry: JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemEntry ?? null,
+      }));
+
+      return {
+        ok: rows === 1 && !after.open && after.entry === part,
+        detail: `rows=${rows} open=${after.open} entry=${after.entry}`,
+      };
+    },
+  },
+  {
+    name: 'a part switch asks for its open points once',
+    pages: ['System'],
+    run: async (page) => {
+      const asked = [];
+      const log = eventLog();
+      let switched = 0;
+      const count = (request) => {
+        if (!request.url().includes('/__design/open-points?')) return;
+        asked.push(new URL(request.url()).searchParams.get('part'));
+        log.add('open-points request', request.url(), `switch ${switched}`);
+      };
+      await markPartLeaves(page);
+      const leaves = page.locator('[data-e2e-part]:not([data-selected])');
+
+      if ((await leaves.count()) < 1) return { ok: false, detail: 'no other part in the tree' };
+
+      page.on('request', count);
+
+      const counts = [];
+
+      for (let step = 0; step < 2; step++) {
+        asked.length = 0;
+        switched = step + 1;
+        log.add('switch', `leaf ${step}`);
+        await leaves.nth(step).click();
+        await page.waitForTimeout(2500);
+        counts.push([...asked]);
+      }
+
+      page.off('request', count);
+
+      const ok = counts.every((parts) => parts.length === 1);
+
+      return {
+        ok,
+        detail: `${counts.map((parts) => `${parts.length} (${parts.join(', ')})`).join(' / ')}${ok ? '' : await log.lines()}`,
+      };
+    },
+  },
+  {
+    name: 'a part shown before paints every stored picture in the first frame',
+    quiet: true,
+    delayPictures: false,
+    pages: ['System'],
+    run: async (page) => {
+      const leafTexts = async () => {
+        await markPartLeaves(page);
+
+        return page.evaluate(() =>
+          [...document.querySelectorAll('[data-e2e-part]')].map((leaf) => leaf.textContent.trim()),
+        );
+      };
+      const open = async (text) => {
+        const at = (await leafTexts()).indexOf(text);
+
+        if (at < 0) throw new Error(`no part ${text} in the tree`);
+        await page.locator('[data-e2e-part]').nth(at).click();
+      };
+      const pictures = () =>
+        page.evaluate(
+          ({ CANVAS }) =>
+            [
+              ...(document
+                .querySelector(CANVAS)
+                ?.querySelectorAll('ethlete-canvas-frame img[src*="/__design/shot?"]') ?? []),
+            ].map((img) => ({ src: img.getAttribute('src'), loaded: img.complete && img.naturalWidth > 0 })),
+          { CANVAS },
+        );
+      const loadAll = async () => {
+        for (let poll = 0; poll < 120; poll++) {
+          await page.waitForTimeout(250);
+          const shown = await pictures();
+
+          if (shown.length > 0 && shown.every((picture) => picture.loaded)) return shown;
+        }
+
+        return pictures();
+      };
+      const firstPaint = async (text) => {
+        await markPartLeaves(page);
+
+        return page.evaluate(
+          ({ CANVAS, text }) =>
+            new Promise((done) => {
+              const leaves = [...document.querySelectorAll('[data-e2e-part]')];
+              const started = performance.now();
+              let frames = 0;
+              const sample = () => {
+                frames++;
+                const shown = [
+                  ...(document
+                    .querySelector(CANVAS)
+                    ?.querySelectorAll('ethlete-canvas-frame img[src*="/__design/shot?"]') ?? []),
+                ].map((img) => ({ src: img.getAttribute('src'), loaded: img.complete && img.naturalWidth > 0 }));
+
+                if (shown.length > 0 || frames > 30) done({ frames, ms: performance.now() - started, shown });
+                else requestAnimationFrame(sample);
+              };
+
+              leaves.find((leaf) => leaf.textContent.trim() === text)?.click();
+              requestAnimationFrame(sample);
+            }),
+          { CANVAS, text },
+        );
+      };
+      const unranked = (src) => src.replace(/&(view|rank)=[^&]*/gu, '');
+      const texts = (await leafTexts()).filter((text) => text);
+
+      if (texts.length < 2) return { ok: false, detail: 'fewer than two parts in the tree' };
+
+      const [first, second] = texts;
+      const log = eventLog();
+      const shotKey = (url) => unranked(eventUrl(new URL(url, 'http://host').href));
+      const onShot = (kind) => (request) => {
+        if (!request.url().includes('/__design/shot?')) return;
+        log.add(
+          kind,
+          request.url(),
+          kind === 'shot failed'
+            ? request.failure()?.errorText
+            : kind === 'shot request'
+              ? ''
+              : `${request.timing().responseEnd >= 0 ? Math.round(request.timing().responseEnd) : '-'} ms response end`,
+        );
+      };
+      const listeners = {
+        request: onShot('shot request'),
+        requestfinished: onShot('shot done'),
+        requestfailed: onShot('shot failed'),
+      };
+
+      Object.entries(listeners).forEach(([event, listener]) => page.on(event, listener));
+
+      try {
+        await open(first);
+        const seen = new Set((await loadAll()).filter((picture) => picture.loaded).map(({ src }) => unranked(src)));
+
+        log.add('open', second);
+        await open(second);
+        await loadAll();
+
+        log.add('back to', first);
+        const back = await firstPaint(first);
+        const stored = back.shown.filter(({ src }) => seen.has(unranked(src)));
+        const empty = stored.filter((picture) => !picture.loaded);
+        const ok = seen.size > 0 && stored.length > 0 && empty.length === 0;
+
+        empty.forEach((picture) => log.add('not painted', picture.src, `first paint rAF ${back.frames}`));
+
+        const emptyKeys = new Set(empty.map(({ src }) => shotKey(src)));
+
+        return {
+          ok,
+          detail: `${first} <- ${second}: ${stored.length - empty.length}/${stored.length} stored pictures painted in rAF ${back.frames} (+${Math.round(back.ms)} ms), ${seen.size} seen${ok ? '' : await log.lines((event) => !event.subject.includes('/__design/shot?') || emptyKeys.has(shotKey(event.subject)))}`,
+        };
+      } finally {
+        Object.entries(listeners).forEach(([event, listener]) => page.off(event, listener));
+      }
+    },
+  },
+  {
+    name: 'a part edited on disk while away shows its new picture on return',
+    listingMayPend: 'the evidence is the part picture tag, read through shot requests that the listing does not gate',
+    delayPictures: false,
+    pages: ['Edited'],
+    run: async (page) => {
+      const rows = page.locator('[role="treeitem"]');
+      const pictures = () =>
+        page.evaluate(
+          ({ CANVAS }) =>
+            [
+              ...(document
+                .querySelector(CANVAS)
+                ?.querySelectorAll('ethlete-canvas-frame img[src*="/__design/shot?"]') ?? []),
+            ].map((img) => ({ src: img.src, loaded: img.complete && img.naturalWidth > 0 })),
+          { CANVAS },
+        );
+      const shownUntil = async (accept, wait) => {
+        for (const until = Date.now() + wait; Date.now() < until;) {
+          await page.waitForTimeout(250);
+          const shown = await pictures();
+
+          if (shown.length > 0 && accept(shown)) return shown;
+        }
+
+        return null;
+      };
+      const loaded = (accept, wait = WAIT_MS) =>
+        shownUntil((shown) => shown.every((picture) => picture.loaded) && accept(shown), wait);
+      const tagsOf = (shown) =>
+        Promise.all(
+          shown.map(({ src }) =>
+            page.request
+              .get(src, { timeout: WAIT_MS, headers: OWN_CONNECTION })
+              .then((answer) => answer.headers()['etag']),
+          ),
+        );
+      const leaves = await rows.evaluateAll((all) =>
+        all.flatMap((row) => (row.dataset.kind === 'leaf' ? [row.textContent.trim()] : [])),
+      );
+      const home = EDITED_PART.split('/')[1];
+      const away = leaves.find((text) => text !== home);
+
+      if (!leaves.includes(home) || !away) return { ok: false, detail: `no ${home} leaf or no other leaf` };
+
+      const rowOf = (text) => rows.filter({ hasText: new RegExp(`^\\s*${text}\\s*$`, 'u') }).first();
+
+      const before = await loaded(() => true);
+
+      if (!before) return { ok: false, detail: `${EDITED_PART} shows no loaded picture` };
+
+      const tags = new Set(await tagsOf(before));
+      const stylesheet = join(checkout, '.ethlete/design/studio', EDITED_PART, 'disclosure.css');
+      const original = readFileSync(stylesheet, 'utf8');
+
+      await rowOf(away).click();
+      await loaded(() => true);
+
+      try {
+        writeFileSync(
+          stylesheet,
+          `${original}\n.st-disclosure { background: rgb(255 0 0); outline: 6px solid rgb(0 128 255); }\n`,
+        );
+        await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+        await rowOf(home).click();
+
+        const seen = new Set(before.map(({ src }) => src));
+        const returned = Date.now();
+        const renewed = await shownUntil((shown) => shown.some(({ src }) => !seen.has(src)), WAIT_MS);
+
+        if (!renewed)
+          return { ok: false, detail: `no new picture URL within ${WAIT_MS} ms (${before.length} pictures)` };
+
+        const renewedMs = Date.now() - returned;
+        const after = await loaded((shown) => shown.some(({ src }) => !seen.has(src)), FULL_COMPARE_MS);
+
+        if (!after) {
+          const last = await pictures();
+
+          return {
+            ok: false,
+            detail: `new picture URL at ${renewedMs} ms, but ${last.filter((picture) => !picture.loaded).length}/${last.length} pictures not drawn within ${FULL_COMPARE_MS} ms`,
+          };
+        }
+
+        const drawnMs = Date.now() - returned;
+        const changed = (await tagsOf(after)).filter((tag) => !tags.has(tag));
+
+        return {
+          ok: changed.length > 0,
+          detail: `${changed.length}/${after.length} pictures changed after the edit, new URL at ${renewedMs} ms, drawn at ${drawnMs} ms`,
+        };
+      } finally {
+        writeFileSync(stylesheet, original);
+      }
+    },
+  },
+  {
+    name: 'a sketch scroll never empties a cell that had a picture',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const had = new Set();
+      const loadedPictures = new Set();
+      const note = (cells) =>
+        cells.forEach((cell) => {
+          if ((cell.visible && cell.shows) || cell.picture) had.add(cell.key);
+          if (cell.picture) loadedPictures.add(cell.drawnPictureSrc);
+        });
+      const steps = [];
+      const empties = [];
+      let reread = 0;
+
+      await showAllStates(page);
+      await zoomSketchTo100(page);
+
+      let first = await sketchCells(page);
+
+      for (const until = Date.now() + WAIT_MS; Date.now() < until; first = await sketchCells(page)) {
+        const visible = first.filter((cell) => cell.visible);
+
+        if (visible.length > 0 && visible.every((cell) => cell.shows)) break;
+        await page.waitForTimeout(250);
+      }
+      const scrollSteps = Math.ceil(Math.max(...first.map((cell) => cell.below)) / SCROLL_STEP_PX);
+
+      note(first);
+      if (had.size === 0) {
+        return {
+          ok: false,
+          detail: `no visible cell shows a picture or a drawn frame: ${first
+            .filter((cell) => cell.visible)
+            .map(
+              (cell) =>
+                `${cell.key} ${cell.framed ? 'iframe' : '-'}/${cell.drawn ? 'drawn' : '-'}/${cell.drawnPictureSrc ? (cell.picture ? 'picture' : 'pending') : '-'}`,
+            )
+            .join(
+              ', ',
+            )} of ${first.length} cells; ${await page.evaluate(() => (document.querySelector('ethlete-sketch-view')?.textContent ?? 'no sketch view').replace(/\s+/gu, ' ').slice(0, 300))}`,
+        };
+      }
+      if (scrollSteps < 3)
+        return { ok: false, detail: `the sketch is ${scrollSteps} scroll steps tall, not 3 or more` };
+
+      for (const [name, by] of [
+        ['down', SCROLL_STEP_PX],
+        ['up', -SCROLL_STEP_PX],
+      ]) {
+        for (let step = 1; step <= scrollSteps; step++) {
+          let waited = 0;
+          const counts = [];
+
+          await wheelCanvas(page, by);
+          for (const at of SCROLL_SAMPLES_MS) {
+            await page.waitForTimeout(at - waited);
+            waited = at;
+
+            const cells = await sketchCells(page);
+            const visible = cells.filter((cell) => cell.visible);
+            const empty = visible.filter(
+              (cell) => !cell.shows && (had.has(cell.key) || loadedPictures.has(cell.drawnPictureSrc)),
+            );
+
+            reread += cells.filter((cell) => cell.gone).length;
+            counts.push(`${empty.length}/${visible.length}`);
+            empties.push(
+              ...empty.map(
+                (cell) =>
+                  `${name}${step}+${at} ${cell.key}${cell.framed ? ` (iframe: ${cell.probe})` : ''}${cell.gone ? ` (${cell.gone})` : ''}`,
+              ),
+            );
+            note(cells);
+          }
+          steps.push(`${name}${step} ${counts.join(' ')}`);
+        }
+      }
+
+      return {
+        ok: empties.length === 0,
+        detail: `empty/visible cells per step at +${SCROLL_SAMPLES_MS.join(' +')} ms: ${steps.join(', ')}; frames gone before their probe: ${reread}${empties.length ? `; first: ${empties.slice(0, 6).join(' | ')}` : ''}`,
+      };
+    },
+  },
+  {
+    name: 'Fit of all states stops at readable 160 px frames and the list scrolls to the rest',
+    pages: ['Sketches'],
+    labels: ['Large', 'Chip'],
+    run: async (page, state, target) => {
+      const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
+      const canvas = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+      const framesOf = () =>
+        page.evaluate(
+          ({ CANVAS, FRAME }) => {
+            const canvas = document.querySelector(`ethlete-sketch-view :is(${CANVAS})`);
+            const view = canvas.getBoundingClientRect();
+            const rects = [...canvas.querySelectorAll(FRAME)].map((frame) => frame.getBoundingClientRect());
+
+            return {
+              narrowest: Math.round(Math.min(...rects.map((rect) => rect.width))),
+              below: rects.filter((rect) => rect.top >= view.bottom).length,
+              cut: rects.filter((rect) => rect.right > view.right + 1).length,
+              firstTop: rects[0]?.top ?? 0,
+              total: rects.length,
+            };
+          },
+          { CANVAS, FRAME },
+        );
+
+      if (target.label === 'Chip') {
+        await listingAnswered(page);
+        await page.getByRole('button', { name: 'Einpassen' }).first().click();
+        await settle(page);
+        await settled(page, FRAME);
+
+        const fitted = await framesOf();
+
+        if (process.env['STUDIO_E2E_FIT_SHOTS'])
+          await page.screenshot({ path: join(process.env['STUDIO_E2E_FIT_SHOTS'], 'fit-chip.png') });
+
+        return {
+          ok: fitted.narrowest >= 150 && fitted.cut === 0,
+          detail: `narrowest frame ${fitted.narrowest} px, ${fitted.cut} of ${fitted.total} frames cut at the right`,
+        };
+      }
+
+      await button.waitFor({ timeout: FULL_COMPARE_MS });
+      for (let wheel = 0; wheel < 20; wheel++) {
+        const box = await button.boundingBox();
+
+        if (box && box.y > canvas.y && box.y + box.height < canvas.y + canvas.height - 80) break;
+        await wheelCanvas(page, 300);
+        await settle(page);
+      }
+
+      const box = await button.boundingBox();
+
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+
+      const fitted = await framesOf();
+
+      if (process.env['STUDIO_E2E_FIT_SHOTS'])
+        await page.screenshot({ path: join(process.env['STUDIO_E2E_FIT_SHOTS'], 'fit-all-states.png') });
+      await wheelCanvas(page, 600);
+      await settle(page);
+
+      const scrolled = await framesOf();
+
+      if (process.env['STUDIO_E2E_FIT_SHOTS'])
+        await page.screenshot({ path: join(process.env['STUDIO_E2E_FIT_SHOTS'], 'fit-all-states-scrolled.png') });
+
+      return {
+        ok: fitted.narrowest >= 150 && fitted.cut === 0 && fitted.below > 0 && scrolled.firstTop < fitted.firstTop,
+        detail: `narrowest frame ${fitted.narrowest} px, ${fitted.cut} cut at the right, ${fitted.below} of ${fitted.total} frames below the canvas, a wheel moves the list ${Math.round(fitted.firstTop - scrolled.firstTop)} px`,
+      };
+    },
+  },
+  {
+    name: 'showing all states after a wheel down to the fold toggle keeps frames on screen',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
+      const canvas = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+
+      await button.waitFor({ timeout: FULL_COMPARE_MS });
+      for (let wheel = 0; wheel < 20; wheel++) {
+        const box = await button.boundingBox();
+
+        if (box && box.y > canvas.y && box.y + box.height < canvas.y + canvas.height - 80) break;
+        await wheelCanvas(page, 300);
+        await settle(page);
+      }
+
+      const box = await button.boundingBox();
+
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+
+      const shown = await page.evaluate(
+        ({ CANVAS, FRAME }) => {
+          const canvas = document.querySelector(`ethlete-sketch-view :is(${CANVAS})`);
+          const view = canvas.getBoundingClientRect();
+
+          return [...canvas.querySelectorAll(FRAME)].filter((frame) => {
+            const rect = frame.getBoundingClientRect();
+
+            return rect.bottom > view.top && rect.top < view.bottom && rect.right > view.left && rect.left < view.right;
+          }).length;
+        },
+        { CANVAS, FRAME },
+      );
+      const zoom = await page.locator('ethlete-sketch-view ethlete-zoom-chip').first().textContent();
+
+      return {
+        ok: shown > 0,
+        detail: `${shown} frames on screen after the toggle, zoom ${zoom.replace(/\s+/gu, ' ')}`,
+      };
+    },
+  },
+  {
+    name: 'the sketch bar shows its status as an icon button with a toggletip, no text and no pill (B728)',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const bar = page.locator('ethlete-sketch-view [data-sk-toolbar]').first();
+
+      await page.locator(MERGE_OPEN).first().waitFor({ timeout: FULL_COMPARE_MS });
+      await settle(page);
+      await bar.screenshot({ path: join(root, '.claude/handoffs/agent-results/b728-status-after.png') });
+
+      const shown = await bar.evaluate((toolbar) => {
+        const status = toolbar.querySelector('[data-sk-status]');
+        const button = status?.querySelector('[data-sk-status-button]');
+        const sibling = toolbar.querySelector('[data-sk-discard] button');
+
+        return {
+          status: status?.getAttribute('data-sk-status') ?? null,
+          text: status?.textContent?.replace(/\s+/gu, ' ').trim() ?? null,
+          pills: toolbar.querySelectorAll('et-badge').length,
+          width: button ? Math.round(button.getBoundingClientRect().width) : 0,
+          height: button ? Math.round(button.getBoundingClientRect().height) : 0,
+          siblingWidth: sibling ? Math.round(sibling.getBoundingClientRect().width) : -1,
+        };
+      });
+
+      return {
+        ok:
+          shown.status === 'waiting' &&
+          shown.text === '' &&
+          shown.pills === 0 &&
+          shown.width > 0 &&
+          shown.width === shown.height &&
+          shown.width === shown.siblingWidth,
+        detail: `status "${shown.status}", text "${shown.text}", pills in the bar ${shown.pills}, button ${shown.width}x${shown.height}px, the Verwerfen button ${shown.siblingWidth}px`,
+      };
+    },
+  },
+  {
+    name: 'Übernehmen shows its busy state until the merge answers (B728)',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const decision = '**/__design/sketch-decision?**';
+      let held;
+      const asked = new Promise((done) => (held = done));
+
+      await page.route(decision, (route) => held(route));
+      try {
+        const button = page.locator('[data-sk-row="a"] [data-sk-merge]').first();
+
+        await page.locator(MERGE_OPEN).first().waitFor({ timeout: FULL_COMPARE_MS });
+        await pressOffCamera(button);
+        await page.locator('[role="alertdialog"] [data-sk-confirm]').click({ timeout: WAIT_MS });
+
+        const route = await Promise.race([asked, page.waitForTimeout(WAIT_MS).then(() => null)]);
+
+        if (!route) return { ok: false, detail: `no ${decision} request within ${WAIT_MS} ms` };
+        await settle(page);
+        await button.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+        await page.screenshot({ path: join(root, '.claude/handoffs/agent-results/b728-busy-after.png') });
+        await page
+          .locator('[data-sk-toolbar]')
+          .first()
+          .screenshot({ path: join(root, '.claude/handoffs/agent-results/b728-busy-bar-after.png') });
+
+        const busy = await page.evaluate(() => ({
+          loading: document.querySelector('[data-sk-row="a"] [data-sk-merge]')?.hasAttribute('data-loading') ?? false,
+          discard: document.querySelector('[data-sk-toolbar] [data-sk-discard] button')?.disabled ?? null,
+          bar: document.querySelector('[data-sk-toolbar]')?.getAttribute('aria-busy') ?? null,
+          status: document.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status') ?? null,
+        }));
+
+        await route.abort();
+
+        const cleared = await page
+          .waitForFunction(
+            () => !document.querySelector('[data-sk-row="a"] [data-sk-merge]')?.hasAttribute('data-loading'),
+            null,
+            { timeout: WAIT_MS },
+          )
+          .then(
+            () => true,
+            () => false,
+          );
+
+        return {
+          ok: busy.loading && busy.discard === true && busy.bar === 'true' && busy.status === 'merging' && cleared,
+          detail: `while the merge runs: Übernehmen loading ${busy.loading}, Verwerfen disabled ${busy.discard}, bar aria-busy ${busy.bar}, bar status "${busy.status}"; busy cleared after the answer ${cleared}`,
+        };
+      } finally {
+        await page.unroute(decision);
+      }
+    },
+  },
+  {
+    name: 'the fold bar and its button name the open state after showing all states (B740)',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const bar = page.locator('[data-sk-folded]').first();
+      const button = bar.getByRole('button').first();
+      const canvas = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+      const read = async () => ({
+        text: ((await bar.locator('.text-ui-sm').first().textContent()) ?? '').replace(/\s+/gu, ' ').trim(),
+        button: ((await button.textContent()) ?? '').replace(/\s+/gu, ' ').trim(),
+      });
+
+      await button.waitFor({ timeout: FULL_COMPARE_MS });
+      for (let wheel = 0; wheel < 20; wheel++) {
+        const box = await button.boundingBox();
+
+        if (box && box.y > canvas.y && box.y + box.height < canvas.y + canvas.height - 80) break;
+        await wheelCanvas(page, 300);
+        await settle(page);
+      }
+
+      const before = await read();
+      const box = await button.boundingBox();
+
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+
+      const after = await read();
+      const count = /^(\d+) unveränderte/u.exec(before.text)?.[1];
+
+      for (let wheel = 0; wheel < 40; wheel++) {
+        const barBox = await bar.boundingBox();
+
+        if (barBox && barBox.y > canvas.y + 100 && barBox.y + barBox.height < canvas.y + canvas.height - 100) break;
+        await wheelCanvas(page, barBox && barBox.y < canvas.y ? -300 : 300);
+        await settle(page);
+      }
+      await page.screenshot({ path: join(root, '.claude/handoffs/agent-results/b740c-open-label.png') });
+
+      return {
+        ok:
+          before.text.endsWith('eingeklappt') &&
+          before.button === 'Alle Zustände zeigen' &&
+          after.text.includes('ausgeklappt') &&
+          after.text.startsWith(count ?? '?') &&
+          after.button === 'Zustände einklappen',
+        detail: `before "${before.text}" / "${before.button}", after "${after.text}" / "${after.button}"`,
+      };
+    },
+  },
+  {
+    name: 'every live sketch frame sits at 0/0, fills its cell and paints its picture',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      await showAllStates(page);
+
+      let frames = [];
+
+      for (const until = Date.now() + FULL_COMPARE_MS; Date.now() < until; frames = await shownLiveFrames(page)) {
+        if (frames.some((frame) => frame.inView && frame.picture)) break;
+        await page.waitForTimeout(250);
+      }
+      if (frames.length === 0) return { ok: false, detail: 'no live sketch frame painted' };
+
+      const wrong = [];
+      const gaps = [];
+
+      for (const frame of frames) {
+        const fault = await liveFrameFaultsOf(page, frame);
+
+        wrong.push(...fault.wrong);
+        if (fault.gap) gaps.push(fault.gap);
+      }
+
+      return {
+        ok: wrong.length === 0 && gaps.length > 0,
+        detail: `${frames.length} live frames, compared with their picture: ${gaps.join(', ') || 'none in view'}${wrong.length ? `; wrong: ${wrong.slice(0, 6).join(' | ')}` : ''}`,
+      };
+    },
+  },
+  {
+    name: 'a live sketch frame scrolled sideways is hidden for its picture and the 0/0 check flags it',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      await showAllStates(page);
+
+      let frames = [];
+
+      for (const until = Date.now() + FULL_COMPARE_MS; Date.now() < until; frames = await shownLiveFrames(page)) {
+        if (frames.some((frame) => frame.inView && frame.picture)) break;
+        await page.waitForTimeout(250);
+      }
+
+      const target = frames.find((frame) => frame.inView && frame.picture);
+
+      if (!target) return { ok: false, detail: 'no live sketch frame painted' };
+
+      const content = await page
+        .$(`iframe[data-live-paint="${target.index}"]`)
+        .then((iframe) => iframe?.contentFrame());
+
+      await content?.evaluate(() => {
+        document.documentElement.style.minWidth = '3000px';
+        scrollTo(250, 0);
+      });
+
+      const state = () =>
+        page.evaluate((index) => {
+          const iframe = document.querySelector(`iframe[data-live-paint="${index}"]`);
+          const picture = iframe?.closest('[data-shot]')?.querySelector('img[data-shot-picture]');
+
+          return {
+            frameHidden: !iframe || getComputedStyle(iframe).opacity === '0',
+            pictureShown: !!picture && getComputedStyle(picture).opacity !== '0',
+          };
+        }, target.index);
+      let now = await state();
+
+      for (const until = Date.now() + WAIT_MS; Date.now() < until && !(now.frameHidden && now.pictureShown);) {
+        await page.waitForTimeout(250);
+        now = await state();
+      }
+
+      const fault = await liveFrameFaultsOf(page, target);
+      const flagged = fault.wrong.some((entry) => entry.includes('scrolled 250'));
+
+      return {
+        ok: now.frameHidden && now.pictureShown && flagged,
+        detail: `${target.key}: frame hidden ${now.frameHidden}, picture shown ${now.pictureShown}; 0/0 check: ${fault.wrong.join(' | ') || 'not flagged'}`,
+      };
+    },
+  },
+  {
+    name: 'B498 R3: scroll, edit and wait never leave a sketch cell or column empty',
+    proof: 'B498',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const had = new Set();
+      const empties = new Map();
+      const mounted = new Set();
+      const left = new Map();
+      const sample = async (phase) => {
+        const cells = await sketchCells(page);
+        const keys = new Set(cells.map((cell) => cell.key));
+        const stateOf = (key) => key.slice(key.indexOf(' ') + 1);
+        const grouped = await page.evaluate(() =>
+          [...document.querySelectorAll('ethlete-sketch-view [data-sk-crop-count]')]
+            .map((count) => Number.parseInt(count.textContent?.match(/\d+/)?.[0] ?? '', 10) - 1)
+            .filter((extra) => extra > 0)
+            .reduce((sum, extra) => sum + extra, 0),
+        );
+        const covered = new Set([...keys].map(stateOf)).size + grouped;
+
+        if (covered < new Set([...mounted].map(stateOf)).size)
+          for (const key of mounted)
+            if (!keys.has(key) && !left.has(key)) left.set(key, `${phase} (${keys.size} of ${mounted.size} cells)`);
+        if (phase === 'start') for (const key of keys) mounted.add(key);
+
+        for (const cell of cells.filter((each) => each.visible)) {
+          if (cell.shows) had.add(cell.key);
+          else if (had.has(cell.key) && !empties.has(`${phase} ${cell.key}`))
+            empties.set(`${phase} ${cell.key}`, cell.framed ? `iframe ${cell.probe}` : 'no picture');
+        }
+
+        return cells;
+      };
+      const scrollThrough = async (phase, steps) => {
+        for (const [name, by] of [
+          ['down', SCROLL_STEP_PX],
+          ['up', -SCROLL_STEP_PX],
+        ])
+          for (let step = 1; step <= steps; step++) {
+            await wheelCanvas(page, by);
+            for (const at of SCROLL_SAMPLES_MS) {
+              await page.waitForTimeout(at);
+              await sample(`${phase} ${name}${step}+${at}`);
+            }
+          }
+      };
+      const urlsOutside = (cells, variant) =>
+        new Map(cells.filter((cell) => !cell.key.startsWith(`${variant} `)).map((cell) => [cell.key, cell.pictureSrc]));
+      const emptyColumns = () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll('ethlete-sketch-view [data-sk-variant]')]
+            .filter((row) => !row.querySelector('[data-shot]'))
+            .map((row) => row.getAttribute('data-sk-variant')),
+        );
+
+      await showAllStates(page);
+
+      let first = await sample('start');
+
+      for (const until = Date.now() + FULL_COMPARE_MS; Date.now() < until; first = await sample('start')) {
+        const visible = first.filter((cell) => cell.visible);
+
+        if (visible.length > 0 && visible.every((cell) => cell.shows)) break;
+        await page.waitForTimeout(250);
+      }
+      if (had.size === 0) return { ok: false, detail: 'no visible cell shows a picture or a drawn frame' };
+
+      const steps = Math.max(3, Math.ceil(Math.max(...first.map((cell) => cell.below)) / SCROLL_STEP_PX));
+
+      await scrollThrough('scroll', steps);
+
+      const stylesheet = join(checkout, '.ethlete/design/studio', SKETCH_CSS.a);
+      const original = readFileSync(stylesheet, 'utf8');
+      const before = urlsOutside(await sketchCells(page), 'a');
+      let renewed;
+
+      try {
+        await page.route(SHOT_URL, async (route) => {
+          await new Promise((done) => setTimeout(done, EDITED_SHOT_DELAY_MS));
+          await route.fallback().catch(() => undefined);
+        });
+        writeFileSync(
+          stylesheet,
+          `${original}\n.st-shell { outline: 3px solid rgb(255 0 0); outline-offset: -3px; }\n`,
+        );
+        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
+          await sample('edit');
+          await page.waitForTimeout(100);
+        }
+        await scrollThrough('edited scroll', steps);
+        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
+          await sample('wait');
+          await page.waitForTimeout(250);
+        }
+        renewed = [...urlsOutside(await sketchCells(page), 'a')].filter(
+          ([key, src]) => before.has(key) && before.get(key) && src && before.get(key) !== src,
+        );
+      } finally {
+        writeFileSync(stylesheet, original);
+        await page.unroute(SHOT_URL);
+      }
+
+      const columns = await emptyColumns();
+      const faults = [
+        ...(empties.size
+          ? [
+              `${empties.size} empty samples of cells that had a picture: ${[...empties]
+                .slice(0, 8)
+                .map(([at, why]) => `${at} (${why})`)
+                .join(' | ')}`,
+            ]
+          : []),
+        ...(renewed.length
+          ? [
+              `an edit of variant a renewed ${renewed.length} picture URLs of other rows: ${renewed
+                .slice(0, 3)
+                .map(([key]) => key)
+                .join(', ')}`,
+            ]
+          : []),
+        ...(columns.length ? [`columns with no cell: ${columns.join(', ')}`] : []),
+        ...(left.size
+          ? [
+              `${left.size} of ${mounted.size} cells left the DOM: ${[...left]
+                .slice(0, 4)
+                .map(([key, at]) => `${key} at ${at}`)
+                .join(' | ')}`,
+            ]
+          : []),
+      ];
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.length
+          ? faults.join('; ')
+          : `${had.size} of ${mounted.size} cells kept their picture through ${steps} scroll steps, an edit and a wait`,
+      };
+    },
+  },
+  {
+    name: 'a sketch opens with one /__design/system request until its first cell',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const asked = [];
+      const count = (request) => {
+        if (new URL(request.url()).pathname === '/__design/system') asked.push(request.url());
+      };
+
+      page.on('request', count);
+      try {
+        await page.reload();
+        await page.waitForSelector('ethlete-sketch-view [data-shot]', { timeout: RELOAD_WAIT_MS });
+      } finally {
+        page.off('request', count);
+      }
+      await listingAnswered(page);
+
+      return {
+        ok: asked.length === 1,
+        detail: `${asked.length} /__design/system request(s) until the first cell${asked.length > 1 ? `: ${asked.join(' | ')}` : ''}`,
+      };
+    },
+  },
+  {
+    name: 'a sketch first paints the frame count it settles on',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      await page.addInitScript(() => {
+        const observer = new MutationObserver(() => {
+          const shots = document.querySelectorAll('ethlete-sketch-view [data-shot]').length;
+
+          if (!shots) return;
+          window.__firstSketchShots = shots;
+          observer.disconnect();
+        });
+
+        observer.observe(document, { childList: true, subtree: true });
+      });
+      await page.reload();
+      await page.waitForFunction(() => window.__firstSketchShots > 0);
+      await listingAnswered(page);
+
+      const [first, settled] = await page.evaluate(() => [
+        window.__firstSketchShots,
+        document.querySelectorAll('ethlete-sketch-view [data-shot]').length,
+      ]);
+
+      return {
+        ok: first === settled,
+        detail:
+          first === settled
+            ? `${first} frames from the first paint on`
+            : `${first} frames at the first paint, ${settled} once settled`,
+      };
+    },
+  },
+  {
+    name: 'a sketch keeps its frame count and pictures through a sketch edit',
+    holdListings: false,
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const count = () => page.evaluate(() => document.querySelectorAll('ethlete-sketch-view [data-shot]').length);
+      const shown = (cells) => new Set(cells.filter((cell) => cell.visible && cell.shows).map((cell) => cell.key));
+      const faults = [];
+
+      await page.reload();
+      await page.waitForSelector('ethlete-sketch-view [data-shot]');
+      await listingAnswered(page);
+      await showAllStates(page);
+      const settledCount = await count();
+      const edited = (keys) => [...keys].some((key) => key.startsWith('a '));
+      let pictured = shown(await sketchCells(page));
+
+      for (const until = Date.now() + WAIT_MS; !edited(pictured) && Date.now() < until;) {
+        await page.waitForTimeout(250);
+        pictured = shown(await sketchCells(page));
+      }
+
+      if (!edited(pictured)) return { ok: false, detail: 'no visible cell of variant a shows a picture' };
+
+      const stylesheet = join(checkout, '.ethlete/design/studio', SKETCH_CSS.a);
+      const original = readFileSync(stylesheet, 'utf8');
+      const counts = new Set();
+      const lost = new Set();
+      const log = eventLog();
+      const onListing = (response) => {
+        if (response.url().includes('/__design/sketches?')) log.add('listing', response.url(), `${response.status()}`);
+      };
+      let lastCount = settledCount;
+
+      page.on('response', onListing);
+      try {
+        log.restart();
+        writeFileSync(stylesheet, `${original}\n.st-shell { outline: 1px solid rgb(255 0 0); }\n`);
+        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
+          const cells = await sketchCells(page);
+
+          if (cells.length !== lastCount) log.add('frame count', `${lastCount} -> ${cells.length}`);
+          lastCount = cells.length;
+          counts.add(cells.length);
+          cells
+            .filter((cell) => cell.visible && !cell.shows && pictured.has(cell.key) && !lost.has(cell.key))
+            .forEach((cell) => {
+              lost.add(cell.key);
+              log.add('lost picture', cell.key);
+            });
+          await page.waitForTimeout(100);
+        }
+      } finally {
+        page.off('response', onListing);
+        writeFileSync(stylesheet, original);
+      }
+
+      const drifted = [...counts].filter((seen) => seen !== settledCount);
+
+      if (drifted.length) faults.push(`after the edit the frame count went ${settledCount} -> ${drifted.join(', ')}`);
+      if (lost.size)
+        faults.push(`after the edit ${lost.size} cells lost their picture: ${[...lost].slice(0, 4).join(', ')}`);
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.length
+          ? `${faults.join('; ')}${await log.lines()}`
+          : `${settledCount} frames through the edit, ${pictured.size} pictures kept`,
+      };
+    },
+  },
+  {
+    name: 'a sketch cell edited on disk while scrolled away shows its new picture on return',
+    listingMayPend: 'the evidence is the cell picture tag, read through shot requests that the listing does not gate',
+    delayPictures: false,
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const cellOf = async (key) => (await sketchCells(page)).find((cell) => cell.key === key);
+      const away = Math.ceil((2 * (NARROW.height + 400)) / SCROLL_STEP_PX);
+      const loadedCell = async (key, accept, wait = WAIT_MS) => {
+        for (const until = Date.now() + wait; Date.now() < until;) {
+          const cell = await cellOf(key);
+
+          if (
+            cell?.pictureSrc &&
+            (await page.evaluate(
+              (src) => [...document.images].some((img) => img.src === src && img.complete && img.naturalWidth > 0),
+              cell.pictureSrc,
+            )) &&
+            accept(cell)
+          )
+            return cell;
+          await page.waitForTimeout(250);
+        }
+
+        return null;
+      };
+      const tagOf = async (src) =>
+        (await page.request.get(src, { timeout: WAIT_MS, headers: OWN_CONNECTION })).headers()['etag'];
+
+      await showAllStates(page);
+      await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+      let top;
+      let rounds = 0;
+
+      for (const until = Date.now() + WAIT_MS; !top && Date.now() < until; rounds++) {
+        top = (await sketchCells(page)).filter((cell) => cell.frameVisible).sort((a, b) => a.frameTop - b.frameTop)[0];
+        if (!top) await page.waitForTimeout(250);
+      }
+
+      if (!top)
+        return {
+          ok: false,
+          detail: `no visible sketch cell within ${WAIT_MS} ms (${rounds} censuses); ${await noVisibleCellCensus(page)}`,
+        };
+
+      const before = await loadedCell(top.key, () => true, FULL_COMPARE_MS);
+
+      if (!before) return { ok: false, detail: `${top.key} loads no picture` };
+
+      const tag = await tagOf(before.pictureSrc);
+      const stylesheet = join(checkout, '.ethlete/design/studio', SKETCH_CSS[top.key.split(' ')[0]]);
+      const original = readFileSync(stylesheet, 'utf8');
+
+      for (let step = 0; step < away; step++) {
+        await wheelCanvas(page, SCROLL_STEP_PX);
+        await page.waitForTimeout(100);
+      }
+
+      const gone = await cellOf(top.key);
+
+      if (gone?.frameVisible) return { ok: false, detail: `${top.key} still visible after ${away} steps` };
+
+      try {
+        writeFileSync(
+          stylesheet,
+          `${original}\n.st-shell { outline: 12px solid rgb(255 0 0); outline-offset: -12px; }\n`,
+        );
+        await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+        for (let step = 0; step < away; step++) {
+          await wheelCanvas(page, -SCROLL_STEP_PX);
+          await page.waitForTimeout(100);
+        }
+
+        const returned = Date.now();
+        const renewed = (cell) => !!cell?.pictureSrc && cell.pictureSrc !== before.pictureSrc;
+        let cell = await cellOf(top.key);
+
+        for (const until = returned + WAIT_MS; !renewed(cell) && Date.now() < until; cell = await cellOf(top.key))
+          await page.waitForTimeout(250);
+
+        if (!renewed(cell))
+          return { ok: false, detail: `${top.key} kept its old picture URL for ${WAIT_MS} ms after the edit` };
+
+        const renewedMs = Date.now() - returned;
+        const after = await loadedCell(top.key, renewed, FULL_COMPARE_MS);
+
+        if (!after)
+          return {
+            ok: false,
+            detail: `${top.key}: new picture URL at ${renewedMs} ms, but not drawn within ${FULL_COMPARE_MS} ms`,
+          };
+
+        const drawnMs = Date.now() - returned;
+        const newTag = await tagOf(after.pictureSrc);
+
+        return {
+          ok: newTag !== tag,
+          detail: `${top.key}: new picture URL at ${renewedMs} ms, drawn at ${drawnMs} ms, ETag ${newTag === tag ? 'unchanged' : 'changed'}`,
+        };
+      } finally {
+        writeFileSync(stylesheet, original);
+      }
+    },
+  },
+  {
+    name: 'page switch time is logged to the design timings',
+    quiet: true,
+    perf: true,
+    pages: ['System'],
+    run: async (page) => {
+      const { recordPageSwitch, timingsFileOf } = createRequire(import.meta.url)(
+        resolve(dirname(cliEntry), 'lib/design/timings.js'),
+      );
+      const shots = [];
+      const onShot = async (request) => {
+        if (!request.url().includes('/__design/shot?')) return;
+        const finishedAt = Date.now();
+        const response = await request.response();
+
+        shots.push({
+          url: request.url(),
+          finishedAt,
+          timing: request.timing(),
+          source: response?.headers()['x-design-shot'] ?? `status ${response?.status() ?? '-'}`,
+        });
+      };
+      const requests = new Map();
+      const inFlight = new Map();
+      const onRequest = (request) => {
+        inFlight.set(request, { url: request.url(), sentAt: Date.now() });
+        if (request.url().includes('part=')) requests.set(request.url(), { sentAt: Date.now() });
+      };
+      const inFlightOf = (clickedAt) => {
+        const open = [...inFlight.values()].filter(({ url }) => !url.includes('/__design/shot?'));
+
+        return `\n  in flight at the window end: ${inFlight.size - open.length} picture(s), ${open.length} other${open
+          .slice(0, 12)
+          .map(({ url, sentAt }) => `\n    ${eventUrl(url).slice(0, 90)} sent +${Math.round(sentAt - clickedAt)}`)
+          .join('')}`;
+      };
+      const onRequestDone = async (request) => {
+        inFlight.delete(request);
+        const sent = requests.get(request.url());
+
+        if (!sent) return;
+        const response = await request.response().catch(() => null);
+
+        const { startTime, requestStart, responseStart } = request.timing();
+
+        Object.assign(sent, {
+          endAt: Date.now(),
+          onWire: requestStart >= 0 ? startTime + requestStart : undefined,
+          firstByte: responseStart >= 0 ? startTime + responseStart : undefined,
+          answer: request.failure()?.errorText ?? `status ${response?.status() ?? '-'}`,
+        });
+      };
+      const requestOf = (url, clickedAt) => {
+        const sent = requests.get(url);
+        const since = (at) => Math.round(at - clickedAt);
+
+        if (!sent) return 'not sent';
+
+        const wire =
+          sent.onWire === undefined
+            ? ''
+            : `, on the wire +${since(sent.onWire)}, first byte ${sent.firstByte === undefined ? '-' : `+${since(sent.firstByte)}`}`;
+
+        return `sent +${since(sent.sentAt)}${wire}, ${sent.endAt ? `${sent.answer} +${since(sent.endAt)}` : 'not answered'}`;
+      };
+      const switchTo = async (part) => {
+        await markPartLeaves(page);
+
+        return page.evaluate(
+          ({ part, timeoutMs }) =>
+            new Promise((resolveSwitch) => {
+              const heard = new Map();
+              const loadedAt = new Map();
+              const onMessage = (event) => {
+                const type = String(event.data?.type ?? '').replace('design-explore:', '');
+
+                if (!type || !event.source) return;
+                heard.set(event.source, [...(heard.get(event.source) ?? []), type]);
+              };
+              const onLoad = (event) => {
+                if (event.target instanceof HTMLIFrameElement && !loadedAt.has(event.target))
+                  loadedAt.set(event.target, Math.round(performance.now() - started));
+              };
+              const done = (result) => {
+                window.removeEventListener('message', onMessage);
+                document.removeEventListener('load', onLoad, true);
+                resolveSwitch(result);
+              };
+
+              window.addEventListener('message', onMessage);
+              document.addEventListener('load', onLoad, true);
+
+              const named = [
+                ...document.querySelectorAll('[role="treeitem"][data-kind="part"], [role="treeitem"][data-e2e-part]'),
+              ].filter((candidate) => candidate.textContent.trim() === part.split('/')[1]);
+              const leaf = named.find((candidate) => candidate.dataset.kind === 'part') ?? named[0];
+
+              if (!leaf) return done({ error: `no part ${part} in the tree` });
+
+              const marker = `part=${encodeURIComponent(part)}&`;
+              const before = new Set(document.querySelectorAll('ethlete-canvas-frame'));
+              const shotsOf = (frame) => [...frame.querySelectorAll('img[src*="/__design/shot?"]')];
+              const isPainted = (frame) =>
+                !!frame.querySelector('iframe:not(.opacity-0)') ||
+                shotsOf(frame).some((img) => img.complete && img.naturalWidth > 0 && !img.matches('.opacity-0'));
+              const started = performance.now();
+              const times = {};
+              const paintedAt = new Map();
+              const sourceOf = (frame) => {
+                const iframe = frame.querySelector('iframe');
+                const img = shotsOf(frame)[0];
+
+                if (iframe)
+                  return {
+                    src: iframe.getAttribute('src') ?? 'iframe without src',
+                    state: [...iframe.classList].includes('opacity-0') ? 'iframe opacity-0' : 'iframe shown',
+                  };
+                if (img)
+                  return {
+                    src: img.getAttribute('src'),
+                    state: `img complete ${img.complete}, width ${img.naturalWidth}${img.matches('.opacity-0') ? ', opacity-0' : ''}`,
+                  };
+
+                return { src: 'no iframe or picture', state: '' };
+              };
+              const sample = () => {
+                const now = performance.now() - started;
+                const frames = [...document.querySelectorAll('ethlete-canvas-frame')].filter(
+                  (frame) =>
+                    !before.has(frame) || shotsOf(frame).some((img) => img.getAttribute('src').includes(marker)),
+                );
+                const painted = frames.filter(isPainted);
+
+                painted.forEach((frame) => paintedAt.has(frame) || paintedAt.set(frame, now));
+                if (frames.length > 0) times.mounted ??= now;
+                if (painted.length > 0) times.first ??= now;
+                if (frames.length > 0 && painted.length === frames.length) {
+                  done({ ...times, all: now, frames: frames.length, clickedAt: performance.timeOrigin + started });
+                } else if (now > timeoutMs) {
+                  const marked = [...document.querySelectorAll('img, iframe')].filter((node) =>
+                    (node.getAttribute('src') ?? '').includes(marker),
+                  );
+                  const shown = (node) =>
+                    node.localName === 'iframe'
+                      ? !node.matches('.opacity-0')
+                      : node.complete && node.naturalWidth > 0 && !node.matches('.opacity-0');
+                  const unpainted = marked
+                    .filter((node) => !shown(node))
+                    .map((node) => {
+                      const src = new URL(node.src, location.href);
+                      const { top, left, bottom, right } = node.getBoundingClientRect();
+                      const frame = node.closest('ethlete-canvas-frame');
+                      const cell = node.closest('[data-cell-id]');
+
+                      return {
+                        url: src.href,
+                        tag: node.localName,
+                        part: src.searchParams.get('part'),
+                        state: src.searchParams.get('state') ?? cell?.getAttribute('data-cell-id') ?? '-',
+                        opacity: node.matches('.opacity-0') ? 'opacity-0' : 'shown',
+                        img: node.localName === 'img' ? `complete ${node.complete}, width ${node.naturalWidth}` : '',
+                        iframe:
+                          node.localName === 'iframe'
+                            ? `load ${loadedAt.get(node) ?? 'none'}, posted ${heard.get(node.contentWindow)?.join('+') || 'none'}`
+                            : '',
+                        inViewport: bottom > 0 && right > 0 && top < innerHeight && left < innerWidth,
+                        live: frame?.getAttribute('data-live') ?? '-',
+                        framePainted: frame ? isPainted(frame) : false,
+                      };
+                    });
+                  const chain = [];
+
+                  for (let node = marked[0]?.parentElement; node; node = node.parentElement) {
+                    if (node.localName.startsWith('ethlete-')) chain.push(node.localName);
+                  }
+
+                  done({
+                    ...times,
+                    dom: `${marked.length} marked img/iframe, ${document.querySelectorAll('ethlete-canvas-frame').length} canvas frames, first in ${chain.slice(0, 6).join('<')}; shots ${[...document.querySelectorAll('img[src*="/__design/shot?"]')].map((img) => new URL(img.src).searchParams.get('part')).slice(0, 3)}; ${[...document.querySelectorAll('[role="treeitem"]')].filter((row) => row.textContent.trim() === part.split('/')[1]).map((row) => `leaf ${row.dataset.kind}${row.hasAttribute('data-selected') ? ' selected' : ''}`)}; views ${[...new Set([...document.querySelectorAll('[class*="view"], ethlete-system-view *')].map((node) => node.localName).filter((tag) => tag.startsWith('ethlete-')))].slice(0, 25)}`,
+                    frames: frames.length,
+                    painted: painted.length,
+                    frameEvents: frames.map((frame) => ({
+                      ms: paintedAt.get(frame) ?? now,
+                      painted: paintedAt.has(frame),
+                      ...sourceOf(frame),
+                    })),
+                    unpainted,
+                    clickedAt: performance.timeOrigin + started,
+                  });
+                } else requestAnimationFrame(sample);
+              };
+
+              leaf.click();
+              requestAnimationFrame(sample);
+            }),
+          { part, timeoutMs: WAIT_MS },
+        );
+      };
+      const rows = [];
+      const seen = new Set(['pages/system']);
+      let from = 'pages/system';
+
+      page.on('requestfinished', onShot);
+      page.on('request', onRequest);
+      page.on('requestfinished', onRequestDone);
+      page.on('requestfailed', onRequestDone);
+
+      try {
+        for (const to of PAGE_SWITCHES) {
+          const firstShot = shots.length;
+          const result = await switchTo(to);
+          const flying = result.all === undefined ? inFlightOf(result.clickedAt) : '';
+
+          if (result.error) return { ok: false, detail: result.error };
+          await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+
+          const marker = `part=${encodeURIComponent(to)}&`;
+          const asked = shots
+            .slice(firstShot)
+            .filter((shot) => shot.url.includes(marker))
+            .map(({ url, finishedAt, timing, source }) => ({
+              url,
+              ms: Math.round(finishedAt - result.clickedAt),
+              wait: Math.round(timing.responseStart - timing.requestStart),
+              source,
+            }));
+          const painted = result.all !== undefined;
+          const ms = result.all ?? WAIT_MS;
+          const mounted = result.mounted ?? ms;
+          const log = eventLog(result.clickedAt);
+
+          (result.frameEvents ?? []).forEach((frame) =>
+            log.add(frame.painted ? 'painted' : 'not painted', frame.src, frame.state, result.clickedAt + frame.ms),
+          );
+          asked.forEach((shot) =>
+            log.add('shot finished', shot.url, `${shot.source}, wait ${shot.wait} ms`, result.clickedAt + shot.ms),
+          );
+
+          rows.push({
+            from,
+            to,
+            seen: seen.has(to),
+            painted,
+            ms,
+            mounted,
+            first: result.first,
+            frames: result.frames,
+            paintedFrames: result.painted,
+            dom: result.dom,
+            asked,
+            events: painted
+              ? ''
+              : `${await log.lines()}${(result.unpainted ?? [])
+                  .map(
+                    (cell) =>
+                      `\n  unpainted ${cell.tag} ${cell.state} ${eventUrl(cell.url).slice(0, 90)}: ${cell.opacity}, ${cell.img || cell.iframe}, request ${requestOf(cell.url, result.clickedAt)}, ${cell.inViewport ? 'in' : 'out of'} viewport, live ${cell.live}, frame ${cell.framePainted ? 'painted' : 'not painted'}`,
+                  )
+                  .join('')}${flying}`,
+          });
+          await recordPageSwitch({
+            file: timingsFileOf(root),
+            from,
+            to,
+            seen: seen.has(to),
+            ms,
+            painted,
+            start: new Date(result.clickedAt),
+            phases: [
+              { name: 'frame-mount', ms: Math.round(mounted), at: 0 },
+              { name: 'picture-wait', ms: Math.round(ms - mounted), at: Math.round(mounted) },
+            ],
+          });
+          seen.add(to);
+          from = to;
+        }
+      } finally {
+        page.off('requestfinished', onShot);
+        page.off('request', onRequest);
+        page.off('requestfinished', onRequestDone);
+        page.off('requestfailed', onRequestDone);
+      }
+
+      const round = (ms) => (ms === undefined ? '-' : Math.round(ms));
+      const detail = rows
+        .map(
+          (row) =>
+            `${row.from.split('/')[1]}->${row.to.split('/')[1]} ${row.seen ? 'seen' : 'first'}: mount ${round(row.mounted)}, first ${round(row.first)}, all ${row.painted ? round(row.ms) : `NOT (${row.paintedFrames} painted; ${row.dom})`} ms (${row.frames} frames; ${row.asked.length} shots${row.asked.length ? ` ${row.asked.map((shot) => `${shot.source} +${shot.ms}/${shot.wait}`).join(' ')}` : ''})${row.events}`,
+        )
+        .join(' | ');
+
+      return { ok: rows.every((row) => row.painted), detail };
+    },
+  },
+  {
+    name: 'pointer click on an empty area keeps the ring off',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page, state) =>
+      state.empty ? noRingAfterPointer(page, state.empty) : { ok: false, detail: 'no empty point' },
+  },
+  {
+    name: 'pointer click on a frame keeps the ring off',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page, state) =>
+      state.frame ? noRingAfterPointer(page, state.frame) : { ok: false, detail: 'no frame point' },
+  },
+  {
+    name: 'window blur keeps the pointer mark',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page, state) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      await page.mouse.click(state.empty.x, state.empty.y);
+      const mark = (blurred) =>
+        page.evaluate(
+          ({ CANVAS, blurred }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+
+            if (blurred) {
+              document.hasFocus = () => false;
+              canvas.dispatchEvent(new FocusEvent('blur'));
+              delete document.hasFocus;
+            }
+
+            return canvas.hasAttribute('data-pointer-focus');
+          },
+          { CANVAS, blurred },
+        );
+      const clicked = await readUntil(page, () => mark(false), Boolean);
+      await mark(true);
+      await settle(page);
+      const kept = await mark(false);
+      const ring = await ringOf(page);
+
+      return {
+        ok: clicked && kept && ring.focused && ring.rings.length === 0,
+        detail: `clicked=${clicked} kept=${kept} focused=${ring.focused} rings=[${ring.rings}]`,
+      };
+    },
+  },
+  {
+    name: 'Tab focus shows the ring',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page, state) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      await page.mouse.click(state.empty.x, state.empty.y);
+      const clicked = await focusUntil(page, (ring) => ring.focused);
+      if (!clicked.focused) return { ok: false, detail: `the click left focus on ${clicked.active}` };
+      await page.keyboard.press('Shift+Tab');
+      const left = await focusUntil(page, (ring) => !ring.focused);
+      if (left.focused) return { ok: false, detail: 'Shift+Tab kept focus on the canvas' };
+      await page.keyboard.press('Tab');
+      const ring = await focusUntil(page, (ring) => ring.focused && ring.rings.length > 0);
+
+      return {
+        ok: ring.focused && ring.rings.length > 0,
+        detail: `focused=${ring.focused} rings=[${ring.rings}] active=${ring.active}`,
+      };
+    },
+  },
+  {
+    name: 'focus inside a live frame stays on the frame across its remount',
+    listingMayPend: 'the evidence is where focus sits, and the case waits for the remounted iframe itself',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const target = await liveFrameUntil(page);
+
+      const stylesheet = join(checkout, '.ethlete/design/studio', EDITED_PART, 'disclosure.css');
+      const original = readFileSync(stylesheet, 'utf8');
+      const rows = [];
+      const check = async (path, remount) => {
+        if (!(await focusInto(page, target))) return `${path}: Tab put no focus inside frame ${target}`;
+
+        const before = await frameFocusOf(page, target);
+
+        await page.keyboard.press('Shift+Tab');
+        const expected = await frameFocusOf(page, target);
+
+        if (!(await focusInto(page, target))) return `${path}: Tab put no focus inside frame ${target} again`;
+        await remount();
+        const after = await frameFocusOf(page, target);
+        await page.keyboard.press('Shift+Tab');
+        const shifted = await frameFocusOf(page, target);
+        const kept = after.onHost || after.inFrame;
+
+        rows.push(
+          `${path}: before ${before.active}, after remount ${after.active}, Shift+Tab ${shifted.active} (without remount ${expected.active})`,
+        );
+
+        return kept && shifted.active === expected.active ? null : `${path} lost focus`;
+      };
+
+      try {
+        const failures = [
+          await check('address', async () => {
+            const src = await page.evaluate(
+              (id) => document.querySelector(`ethlete-canvas-frame[data-frame-id="${id}"] iframe:not(.opacity-0)`)?.src,
+              target,
+            );
+
+            writeFileSync(stylesheet, `${original}\n.st-disclosure { outline: 6px solid rgb(0 128 255); }\n`);
+            await page.waitForFunction(
+              ({ id, src }) => {
+                const shown = document.querySelector(
+                  `ethlete-canvas-frame[data-frame-id="${id}"] iframe:not(.opacity-0)`,
+                );
+
+                return (
+                  !!shown &&
+                  shown.src !== src &&
+                  document.querySelectorAll(`ethlete-canvas-frame[data-frame-id="${id}"] iframe`).length === 1
+                );
+              },
+              { id: target, src },
+              { timeout: FULL_COMPARE_MS },
+            );
+            await settle(page);
+          }),
+          await check('grace', async () => {
+            const box = await page.locator(CANVAS).first().boundingBox();
+
+            await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+            for (let step = 0; step < 10; step++) await page.mouse.wheel(0, 600);
+            await page.waitForFunction(
+              (id) => !document.querySelector(`ethlete-canvas-frame[data-frame-id="${id}"] iframe`),
+              target,
+              { timeout: LIVE_GRACE_MS + WAIT_MS },
+            );
+            await settle(page);
+            rows.push(`grace dropped: ${(await frameFocusOf(page, target)).active}`);
+            for (let step = 0; step < 10; step++) await page.mouse.wheel(0, -600);
+            await liveFrameUntil(page, target);
+            await settle(page);
+          }),
+        ].filter(Boolean);
+
+        return { ok: failures.length === 0, detail: `frame ${target}: ${[...failures, ...rows].join('; ')}` };
+      } finally {
+        writeFileSync(stylesheet, original);
+      }
+    },
+  },
+  {
+    name: 'left drag on an empty area pans',
+    run: async (page, state) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      const by = { x: 90, y: 60 };
+      await drag(page, state.empty, by);
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => moved(state, after, by),
+      );
+
+      return { ok: moved(state, after, by), detail: describe(state, after) };
+    },
+  },
+  {
+    name: 'left click on a frame selects it',
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      await page.mouse.click(state.frame.x, state.frame.y);
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => !!after?.frames[state.frame.index]?.selected,
+      );
+      const frame = after.frames[state.frame.index];
+
+      return { ok: !!frame?.selected, detail: `selected=${!!frame?.selected}` };
+    },
+  },
+  {
+    name: 'a click on a frame selects it without a selection outline',
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      await page.mouse.click(state.frame.x, state.frame.y);
+      const read = () =>
+        page.evaluate(
+          ({ CANVAS }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+            const border = canvas?.querySelector('[data-selected] [data-frame-border]');
+
+            if (!border) return null;
+
+            const style = getComputedStyle(border);
+
+            return { width: style.outlineWidth, style: style.outlineStyle, color: style.outlineColor };
+          },
+          { CANVAS },
+        );
+      const outline = await readUntil(page, read, (outline) => !!outline);
+      const ringless = !!outline && (outline.style === 'none' || Number.parseFloat(outline.width) === 0);
+
+      return { ok: ringless, detail: JSON.stringify(outline) };
+    },
+  },
+  {
+    name: 'hover alone draws no frame border',
+    quiet: true,
+    run: async (page, state) => {
+      if (!state.frame || !state.empty) return { ok: false, detail: 'no frame or empty point' };
+      const edges = () =>
+        page.evaluate(
+          ({ CANVAS, FRAME, index }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+            const box = [...canvas.querySelectorAll(FRAME)][index].getBoundingClientRect();
+            const ids = (window.__hoverEdgeIds ??= new WeakMap());
+            const edges = {};
+
+            for (const element of document.querySelectorAll('*')) {
+              const rect = element.getBoundingClientRect();
+              const over =
+                rect.right >= box.left - 8 &&
+                rect.left <= box.right + 8 &&
+                rect.bottom >= box.top - 8 &&
+                rect.top <= box.bottom + 8;
+
+              if (!over) continue;
+              if (!ids.has(element)) ids.set(element, (window.__hoverEdgeCount = (window.__hoverEdgeCount ?? 0) + 1));
+
+              const style = getComputedStyle(element);
+              const seen = (color) =>
+                color !== 'transparent' && !/^rgba\(.*,\s*0(\.0*)?\)$|\/\s*0(\.0*)?\)$/.test(color);
+              const line = (name, lineStyle, width, color) =>
+                lineStyle !== 'none' && lineStyle !== 'hidden' && parseFloat(width) > 0 && seen(color)
+                  ? [`${name} ${lineStyle} ${width} ${color}`]
+                  : [];
+              const shadows =
+                style.boxShadow === 'none'
+                  ? []
+                  : style.boxShadow.split(/,(?![^(]*\))/).filter((shadow) => {
+                      const color = shadow.match(/[a-z-]+\([^)]*\)|transparent/)?.[0] ?? 'currentcolor';
+
+                      return seen(color) && (shadow.match(/-?[\d.]+px/g) ?? []).some((length) => parseFloat(length));
+                    });
+              const visible = [
+                ...line('outline', style.outlineStyle, style.outlineWidth, style.outlineColor),
+                ...(shadows.length ? [`shadow ${shadows.join(',')}`] : []),
+                ...['top', 'right', 'bottom', 'left'].flatMap((side) =>
+                  line(
+                    `border-${side}`,
+                    style.getPropertyValue(`border-${side}-style`),
+                    style.getPropertyValue(`border-${side}-width`),
+                    style.getPropertyValue(`border-${side}-color`),
+                  ),
+                ),
+              ];
+              const marks = [...element.attributes].flatMap((attribute) =>
+                attribute.name.startsWith('data-') ? [attribute.name] : [],
+              );
+
+              edges[ids.get(element)] = visible.length ? `${element.localName}[${marks}] ${visible.join(' | ')}` : '';
+            }
+
+            return edges;
+          },
+          { CANVAS, FRAME, index: state.frame.index },
+        );
+
+      await page.mouse.move(state.empty.x, state.empty.y);
+      await settle(page);
+      const before = await edges();
+
+      await page.mouse.move(state.frame.x, state.frame.y);
+      await settle(page);
+      const after = await edges();
+      const changed = Object.entries(after).flatMap(([id, edge]) =>
+        edge === (before[id] ?? '') ? [] : [`${before[id] || 'no edge'} -> ${edge || 'no edge'}`],
+      );
+
+      return { ok: changed.length === 0, detail: changed.length ? changed.join('; ') : 'unchanged' };
+    },
+  },
+  {
+    name: 'arrow key pans',
+    run: async (page, state) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      await page.mouse.click(state.empty.x, state.empty.y);
+      await focusUntil(page, (ring) => ring.focused);
+      const before = await probe(page);
+      await page.keyboard.press('ArrowRight');
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => moved(before, after, { x: -ARROW_STEP, y: 0 }),
+      );
+
+      return { ok: moved(before, after, { x: -ARROW_STEP, y: 0 }), detail: describe(before, after) };
+    },
+  },
+  {
+    name: 'double-click leaves the viewport unchanged',
+    pages: ['System', 'Sketches', 'Flow'],
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      const before = await probe(page);
+
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      const after = await probe(page);
+      const still = unmoved(before, after);
+
+      return { ok: still, detail: describe(before, after) };
+    },
+  },
+  {
+    name: 'double-click makes a frame live',
+    pages: ['System'],
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      const before = await probe(page);
+
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      const live = await readUntil(
+        page,
+        () =>
+          page.evaluate(() => {
+            const frame = document.querySelector('[data-active]');
+            const frames = [...(frame?.querySelectorAll('iframe:not(.opacity-0)') ?? [])];
+
+            return {
+              active: !!frame,
+              interactive: frames.some((shown) => getComputedStyle(shown).pointerEvents !== 'none'),
+            };
+          }),
+        (live) => live.active && live.interactive,
+      );
+      const after = await probe(page);
+      const still = unmoved(before, after);
+
+      await page.keyboard.press('Escape');
+      await settle(page);
+      const ended = await page.evaluate(() => !document.querySelector('[data-active]'));
+      const by = { x: 60, y: 30 };
+      const panAfter = async (from) => {
+        const before = await probe(page);
+
+        await page.keyboard.down('Space');
+        await drag(page, from, by);
+        await page.keyboard.up('Space');
+        const after = await readUntil(
+          page,
+          () => probe(page),
+          (after) => moved(before, after, by),
+        );
+
+        return moved(before, after, by);
+      };
+      const box = await page.locator(CANVAS).first().boundingBox();
+      const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      const pansAfterEsc = await panAfter(centre);
+
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      await page
+        .locator('[role="treeitem"]')
+        .filter({ hasNotText: /^\s*system\s*$/ })
+        .first()
+        .click();
+      await settle(page);
+      const pansAfterSwitch = await panAfter(centre);
+
+      return {
+        ok: live.active && live.interactive && still && ended && pansAfterEsc && pansAfterSwitch,
+        detail: `${describe(before, after)} active=${live.active} interactive=${live.interactive} endedByEsc=${ended} pansAfterEsc=${pansAfterEsc} pansAfterSwitch=${pansAfterSwitch}`,
+      };
+    },
+  },
+  {
+    name: 'double-click makes a sketch frame live',
+    pages: ['Sketches'],
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      const before = await probe(page);
+
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      const liveOf = () =>
+        page.evaluate(() => {
+          const frames = [...document.querySelectorAll('[data-sk-frame] iframe:not(.opacity-0)')];
+
+          return {
+            shown: frames.length,
+            interactive: frames.some((shown) => getComputedStyle(shown).pointerEvents !== 'none'),
+          };
+        });
+      const live = await readUntil(page, liveOf, (found) => found.interactive);
+      const after = await probe(page);
+      const still = unmoved(before, after);
+
+      await page.keyboard.press('Escape');
+      await settle(page);
+      const ended = await readUntil(page, liveOf, (found) => !found.interactive);
+
+      return {
+        ok: live.interactive && still && !ended.interactive,
+        detail: `${describe(before, after)} interactive=${live.interactive} afterEsc=${ended.interactive}`,
+      };
+    },
+  },
+  {
+    name: 'a live sketch frame shows the Live badge and Esc ends it, also from inside the frame',
+    pages: ['Sketches'],
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      const liveOf = () =>
+        page.evaluate(() => {
+          const badge = document.querySelector('[data-sketches-page] [data-live-badge]');
+          const frame = document.querySelector('[data-shot][data-active] iframe:not(.opacity-0)');
+
+          return {
+            badge:
+              !!badge && badge.getBoundingClientRect().width > 0 && getComputedStyle(badge).visibility !== 'hidden',
+            text: badge?.textContent?.trim() ?? '',
+            interactive: !!frame && getComputedStyle(frame).pointerEvents !== 'none',
+          };
+        });
+
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      const live = await readUntil(page, liveOf, (found) => found.badge && found.interactive);
+
+      await page.keyboard.press('Escape');
+      await settle(page);
+      const ended = await readUntil(page, liveOf, (found) => !found.badge && !found.interactive);
+
+      await page.mouse.dblclick(state.frame.x, state.frame.y);
+      await settle(page);
+      const again = await readUntil(page, liveOf, (found) => found.badge && found.interactive);
+      const box = await page.locator('[data-shot][data-active] iframe:not(.opacity-0)').first().boundingBox();
+
+      if (box) await page.mouse.click(box.x + 4, box.y + 4);
+      await settle(page);
+      const inFrame = await page.evaluate(() => document.activeElement?.tagName === 'IFRAME');
+
+      await page.keyboard.press('Escape');
+      await settle(page);
+      const endedInFrame = await readUntil(page, liveOf, (found) => !found.badge && !found.interactive);
+
+      return {
+        ok:
+          live.badge &&
+          live.text === 'Live · Esc' &&
+          !ended.badge &&
+          !ended.interactive &&
+          again.badge &&
+          inFrame &&
+          !endedInFrame.badge &&
+          !endedInFrame.interactive,
+        detail: `badge=${live.badge} text="${live.text}" afterEsc=${ended.badge}/${ended.interactive} again=${again.badge} focusInFrame=${inFrame} afterEscInFrame=${endedInFrame.badge}/${endedInFrame.interactive}`,
+      };
+    },
+  },
+  {
+    name: 'Space+drag pans',
+    run: async (page, state) => {
+      const from = state.frame ?? state.empty;
+      if (!from) return { ok: false, detail: 'no point' };
+      const by = { x: 70, y: 40 };
+      await page.keyboard.down('Space');
+      await drag(page, from, by);
+      await page.keyboard.up('Space');
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => moved(state, after, by),
+      );
+
+      return { ok: moved(state, after, by), detail: describe(state, after) };
+    },
+  },
+  {
+    name: 'middle drag pans',
+    run: async (page, state) => {
+      const from = state.frame ?? state.empty;
+      if (!from) return { ok: false, detail: 'no point' };
+      const by = { x: -50, y: 30 };
+      await drag(page, from, by, 'middle');
+      const after = await readUntil(
+        page,
+        () => probe(page),
+        (after) => moved(state, after, by),
+      );
+
+      return { ok: moved(state, after, by), detail: describe(state, after) };
+    },
+  },
+  {
+    name: 'pan beyond every edge of the content',
+    pages: ['System', 'Sketches', 'Inbox', 'Flow'],
+    run: async (page, state, target) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      await page.mouse.click(state.empty.x, state.empty.y);
+      await focusUntil(page, (ring) => ring.focused);
+
+      const selector = target.frame ?? FRAME;
+      const failed = [];
+
+      for (const edge of PAN_EDGES) {
+        const before = await probe(page);
+        const content = contentOf(await frameBoxes(page, selector));
+
+        if (!content) return { ok: false, detail: 'no frames' };
+
+        const presses = Math.max(1, Math.ceil(edge.room(content, before.view) / ARROW_STEP) + 1);
+
+        const by = { x: ARROWS_BY[edge.key].x * presses, y: ARROWS_BY[edge.key].y * presses };
+
+        for (let press = 0; press < presses; press++) await page.keyboard.press(edge.key);
+
+        const after = await readUntil(
+          page,
+          () => probe(page),
+          (after) => moved(before, after, by),
+        );
+        const beyond = edge.room(contentOf(await frameBoxes(page, selector)), after.view) < 0;
+
+        if (!moved(before, after, by) || !beyond) {
+          failed.push(`${edge.name}: ${presses} x ${edge.key} ${describe(before, after)} beyond=${beyond}`);
+        }
+      }
+
+      return { ok: failed.length === 0, detail: failed.join('; ') || 'all four edges' };
+    },
+  },
+  {
+    name: 'Shift+1 fits all, window-wide',
+    run: async (page, state, target) => {
+      await page.mouse.move(state.view.left + 20, state.view.top + 20);
+      await page.mouse.wheel(0, 900);
+      await settle(page);
+      await page.evaluate(() => {
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      });
+      const before = await probe(page);
+      await page.keyboard.press('Shift+Digit1');
+      await settle(page);
+      const after = await probe(page);
+      const { view } = after;
+      const fitsHeight = target.fits !== 'width';
+      const shown = after.frames.filter((frame) => frame.right - frame.left >= 1);
+      const all =
+        shown.every(
+          (frame) =>
+            frame.left >= view.left - 2 &&
+            frame.right <= view.right + 2 &&
+            (!fitsHeight || (frame.top >= view.top - 2 && frame.bottom <= view.bottom + 2)),
+        ) &&
+        (fitsHeight || (shown.length > 0 && Math.min(...shown.map((frame) => frame.top)) >= view.top - 2));
+
+      return { ok: all && after.camera?.y !== before.camera?.y, detail: `${describe(before, after)} allInView=${all}` };
+    },
+  },
+  {
+    name: 'the sketch comment button in a wide sketch: crosshair, a click on a frame places the draft pin',
+    pages: ['Wide'],
+    viewport: WIDE,
+    run: async (page) => {
+      await listingAnswered(page);
+      await settle(page);
+      try {
+        return await placeSketchDraft(page, WAIT_MS);
+      } finally {
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('Escape');
+      }
+    },
+  },
+  {
+    name: 'Fit shows every column of a wide sketch, heads at the top',
+    pages: ['Wide'],
+    viewport: WIDE,
+    run: async (page) => {
+      await listingAnswered(page);
+      await page.getByRole('button', { name: 'Einpassen' }).first().click();
+      await settle(page);
+      await settled(page, FRAME);
+
+      const { view, columns, headTop, crops } = await page.evaluate(() => {
+        const viewport = document.querySelector('ethlete-sketches ethlete-canvas-viewport');
+        const box = viewport.getBoundingClientRect();
+        const covered = Number.parseFloat(getComputedStyle(viewport).getPropertyValue('--st-shell-inset-left')) || 0;
+        const columns = Object.entries(
+          Object.groupBy(viewport.querySelectorAll('[data-sk-variant]'), (cell) => cell.dataset['skVariant']),
+        ).map(([key, cells]) => {
+          const frames = cells.map((cell) => cell.querySelector('[data-sk-frame]').getBoundingClientRect());
+
+          return {
+            key,
+            left: Math.min(...frames.map((frame) => frame.left)),
+            right: Math.max(...frames.map((frame) => frame.right)),
+          };
+        });
+        const crops = [...viewport.querySelectorAll('[data-sk-frame]')].flatMap((frame) => {
+          const outer = frame.getBoundingClientRect();
+          const inner = frame.firstElementChild.getBoundingClientRect();
+
+          return Math.abs(inner.left - outer.left) > 1 || Math.abs(inner.width - outer.width) > 1
+            ? [
+                `${frame.dataset['skFrame']} content ${Math.round(inner.left - outer.left)}+${Math.round(inner.width)} in ${Math.round(outer.width)}`,
+              ]
+            : [];
+        });
+        const heads = [...viewport.querySelectorAll('[data-sk-row]')].map((head) => head.getBoundingClientRect().top);
+
+        return {
+          view: { left: box.left + covered, top: box.top, right: box.right },
+          columns,
+          headTop: heads.length ? Math.min(...heads) : null,
+          crops,
+        };
+      });
+      const shown = columns.map((column) => column.key).sort();
+      const expected = ['current', ...WIDE_SKETCH.variants];
+      const cut = columns.filter((column) => column.left < view.left - 2 || column.right > view.right + 2);
+      const gap = headTop === null ? null : Math.round(headTop - view.top);
+      const faults = [
+        ...(expected.every((key) => shown.includes(key)) ? [] : [`columns ${shown.join(',')}, expected ${expected}`]),
+        ...cut.map(
+          (column) =>
+            `${column.key} spans ${Math.round(column.left)}..${Math.round(column.right)} outside ${Math.round(view.left)}..${Math.round(view.right)}`,
+        ),
+        ...(gap !== null && gap <= 40 ? [] : [`first head ${gap} px below the canvas top`]),
+        ...crops.slice(0, 3),
+      ];
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || `${shown.length} columns inside, head gap ${gap} px`,
+      };
+    },
+  },
+  {
+    name: 'the canvas runs under the open panel, clipped only at the window edge',
+    pages: ['System', 'Sketches'],
+    run: async (page, state) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      const first = await underPanel(page);
+
+      if (!first) return { ok: false, detail: 'no open panel' };
+      await page.mouse.click(state.empty.x, state.empty.y);
+      let after = first;
+
+      for (let press = 0; press < 30 && !after.straddling; press++) {
+        await page.keyboard.press('ArrowRight');
+        await page.waitForTimeout(120);
+        after = await underPanel(page);
+      }
+      await settle(page);
+      after = await underPanel(page);
+
+      const { clip, panel, window: right, straddling } = after;
+      const faults = [
+        ...(clip.left <= panel.left + 1
+          ? []
+          : [`the canvas clip starts at ${clip.left}, right of the panel at ${panel.left}`]),
+        ...(Math.abs(clip.right - right) <= 1
+          ? []
+          : [`the canvas clip ends at ${clip.right}, not the window edge ${right}`]),
+        ...(straddling
+          ? straddling.hit
+            ? []
+            : [`at ${panel.right + 2},${straddling.y} the frame across the panel edge is hidden by ${straddling.by}`]
+          : ['no frame reached the panel edge']),
+      ];
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || `clip ${clip.left}..${clip.right}, panel ${panel.left}..${panel.right}`,
+      };
+    },
+  },
+  {
+    name: 'the sketch toolbar stays clear of the part tree panel and the zoom chip in a narrow window',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads the toolbar',
+    pages: ['Sketches'],
+    run: async (page) => {
+      await listingAnswered(page);
+      const faults = [];
+      const overlapping = [];
+      const onZoom = [];
+
+      for (let width = 700; width <= 1440; width += 20) {
+        await page.setViewportSize({ width, height: NARROW.height });
+        await settle(page);
+        const hit = await page.evaluate(() => {
+          const panel = document.querySelector('main ~ aside')?.getBoundingClientRect();
+          const head = document.querySelector('ethlete-sketch-head');
+          const badge = [...(head?.querySelectorAll('ethlete-sketch-status-badge') ?? [])]
+            .map((element) => element.getBoundingClientRect())
+            .find((rect) => rect.width > 0);
+          const box = head?.getBoundingClientRect();
+          const zoom = document.querySelector('ethlete-zoom-chip')?.getBoundingClientRect();
+
+          if (!panel || !box || !zoom) return null;
+
+          const crosses = (rect, other) =>
+            rect.left < other.right && rect.right > other.left && rect.top < other.bottom && rect.bottom > other.top;
+
+          return { head: crosses(box, panel), badge: !!badge && crosses(badge, panel), zoom: crosses(box, zoom) };
+        });
+
+        if (!hit) return { ok: false, detail: `no toolbar, panel or zoom chip at ${width} px` };
+        if (hit.head || hit.badge) overlapping.push(width);
+        if (hit.zoom) onZoom.push(width);
+      }
+      if (overlapping.length) {
+        faults.push(
+          `toolbar under the panel at ${overlapping.length} widths from ${overlapping[0]} to ${overlapping.at(-1)} px`,
+        );
+      }
+      if (onZoom.length) {
+        faults.push(`toolbar over the zoom chip at ${onZoom.length} widths from ${onZoom[0]} to ${onZoom.at(-1)} px`);
+      }
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || 'toolbar clear of the panel and the zoom chip from 700 to 1440 px',
+      };
+    },
+  },
+  {
+    name: 'the sketch bar of the part view keeps a gap to the zoom chip in a narrow window',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads the bar',
+    pages: ['System'],
+    run: async (page) => {
+      await listingAnswered(page);
+      const tight = [];
+
+      for (let width = 600; width <= 1440; width += 20) {
+        await page.setViewportSize({ width, height: NARROW.height });
+        await settle(page);
+        const gap = await page.evaluate(() => {
+          const bar = document.querySelector('ethlete-system-view ethlete-sketch-head')?.getBoundingClientRect();
+          const zoom = document.querySelector('ethlete-system-view ethlete-zoom-chip')?.getBoundingClientRect();
+
+          return bar && zoom
+            ? Math.round(
+                Math.max(zoom.left - bar.right, bar.left - zoom.right, zoom.top - bar.bottom, bar.top - zoom.bottom),
+              )
+            : null;
+        });
+
+        if (gap === null) return { ok: false, detail: `no sketch bar or zoom chip at ${width} px` };
+        if (gap < 8) tight.push(`${width} px: ${gap}`);
+      }
+
+      return {
+        ok: tight.length === 0,
+        detail: tight.length
+          ? `bar to zoom chip gap under 8 px at ${tight.join(', ')}`
+          : 'bar at least 8 px clear of the zoom chip from 600 to 1440 px',
+      };
+    },
+  },
+  {
+    name: 'the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads heads and pictures',
+    pages: ['Sketches', 'Wide'],
+    run: async (page, _state, target) => {
+      await listingAnswered(page);
+      const faults = [];
+
+      try {
+        for (const [label, outSteps, heads, refused] of [
+          ['100 %', 0, true, false],
+          ['30 %', 3, true, false],
+          ['30 %, pictures refused', 3, true, true],
+        ]) {
+          if (refused) {
+            await page.route('**/__design/shot?**', (route) => route.fulfill({ status: 404, body: '' }));
+            await page.reload();
+            await page.waitForFunction(
+              () =>
+                [...document.querySelectorAll('img[data-shot-picture]')].some(
+                  (picture) => picture.complete && picture.naturalWidth === 0,
+                ),
+              null,
+              { timeout: FULL_COMPARE_MS },
+            );
+          }
+          await page.getByRole('button', { name: 'Auf 100 % zoomen' }).first().click();
+          for (let step = 0; step < outSteps; step++)
+            await page.getByRole('button', { name: 'Verkleinern' }).first().click();
+          await settled(page, FRAME);
+          if (process.env['STUDIO_E2E_SHOTS'])
+            await page.screenshot({
+              path: join(
+                process.env['STUDIO_E2E_SHOTS'],
+                `${target.label ?? target.name}-${label.replace(/\W+/g, '-')}.png`,
+              ),
+            });
+
+          faults.push(
+            ...(await page.evaluate(
+              ({ label, heads }) => {
+                const viewport = document.querySelector('ethlete-sketches ethlete-canvas-viewport');
+                const view = viewport.getBoundingClientRect();
+                const inView = (box) =>
+                  box.width > 0 &&
+                  box.height > 0 &&
+                  box.right > view.left &&
+                  box.left < view.right &&
+                  box.bottom > view.top &&
+                  box.top < view.bottom;
+                const paints = (element) => {
+                  const style = getComputedStyle(element);
+
+                  return (
+                    style.visibility !== 'hidden' && style.color !== 'rgba(0, 0, 0, 0)' && Number(style.opacity) > 0
+                  );
+                };
+                const visibleContent = (box) => {
+                  const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+
+                  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                    const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+                    const rect = element.getBoundingClientRect();
+
+                    if (rect.width === 0 || rect.height === 0 || !paints(element)) continue;
+                    if (
+                      node.nodeType === Node.TEXT_NODE ? node.textContent.trim() : element.matches('svg, img, button')
+                    )
+                      return true;
+                  }
+
+                  return false;
+                };
+                const found = [];
+
+                for (const section of heads ? viewport.querySelectorAll('[data-sk-row]') : []) {
+                  const head = section.closest('[data-sk-matrix]') ? section : section.firstElementChild;
+                  const box = head.getBoundingClientRect();
+
+                  if (inView(box) && box.height > 8 && !visibleContent(head))
+                    found.push(
+                      `${label}: head of ${section.dataset['skRow']} is an empty ${Math.round(box.width)}x${Math.round(box.height)} box`,
+                    );
+                }
+
+                const tags = [...viewport.querySelectorAll('[data-sk-head-tag]')].filter(
+                  (tag) => inView(tag.getBoundingClientRect()) && paints(tag),
+                );
+                const small = tags.find((tag) => parseFloat(getComputedStyle(tag).fontSize) < 9);
+
+                const collapsed = !!viewport.querySelector('[data-sk-head-hidden]');
+
+                if (collapsed && tags.length === 0) found.push(`${label}: heads collapsed but no head tag in view`);
+                if (label.startsWith('100') && tags.length > 0)
+                  found.push(`${label}: head tag shows beside the full head`);
+                if (small) found.push(`${label}: head tag text is ${getComputedStyle(small).fontSize}`);
+
+                for (const picture of viewport.querySelectorAll('img[data-shot-picture]')) {
+                  if (
+                    inView(picture.getBoundingClientRect()) &&
+                    paints(picture) &&
+                    picture.complete &&
+                    picture.naturalWidth === 0
+                  )
+                    found.push(`${label}: picture ${picture.alt} failed and shows its alt text`);
+                }
+
+                return found;
+              },
+              { label, heads },
+            )),
+          );
+        }
+      } finally {
+        await page.unroute('**/__design/shot?**');
+      }
+
+      return {
+        ok: faults.length === 0,
+        detail:
+          faults.slice(0, 4).join('; ') ||
+          'heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden',
+      };
+    },
+  },
+  {
+    name: 'an orphan note listed in the side panel is centred in the stage by a click',
+    pages: ['Flow'],
+    run: async (page, _state, _target, context) => {
+      const text = 'verwaiste notiz e2e';
+      const query = new URLSearchParams({ product: 'studio-lab', flow: 'sign-in' }).toString();
+      const added = await fetch(`http://[::1]:${context.designPort}/__design/flow-note?${query}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text, at: { x: 3200, y: 2400 } }),
+      });
+
+      if (!added.ok) return { ok: false, detail: `flow-note answered ${added.status}` };
+
+      const entry = page.getByRole('button', { name: text });
+
+      await entry.waitFor({ timeout: 15000 });
+      await settle(page);
+
+      const shots = process.env['STUDIO_E2E_FLOW_SHOTS'];
+
+      if (shots) await page.screenshot({ path: join(shots, 'notesfix-orphan-before.png') });
+
+      await entry.click();
+      await settle(page);
+
+      if (shots) await page.screenshot({ path: join(shots, 'notesfix-orphan-after.png') });
+
+      const offset = await page.evaluate((label) => {
+        const stage = document.querySelector('[data-flow-stage]')?.getBoundingClientRect();
+        const note = [...document.querySelectorAll('[data-flow-note]')]
+          .find((element) => element.textContent?.includes(label))
+          ?.getBoundingClientRect();
+
+        if (!stage || !note) return null;
+
+        return {
+          x: note.left + note.width / 2 - (stage.left + stage.width / 2),
+          y: note.top + note.height / 2 - (stage.top + stage.height / 2),
+        };
+      }, text);
+
+      if (!offset) return { ok: false, detail: 'stage or note not found after the click' };
+
+      return {
+        ok: Math.abs(offset.x) <= 2 && Math.abs(offset.y) <= 2,
+        detail: `note centre is ${offset.x.toFixed(1)} px right and ${offset.y.toFixed(1)} px below the stage centre`,
+      };
+    },
+  },
+  {
+    name: 'flow frame boxes follow the aspect ratio of the picked preset',
+    pages: ['Flow'],
+    run: async (page) => {
+      const combobox = page.getByRole('combobox', { name: 'Bildschirmgröße' });
+
+      await combobox.click();
+      await page.getByRole('option').first().waitFor({ timeout: 10000 });
+      const options = await page.getByRole('option').allTextContents();
+      const sized = options.map((text) => ({ text, match: /(\d+) × (\d+)/.exec(text) })).filter(({ match }) => match);
+
+      await page.keyboard.press('Escape');
+
+      if (sized.length === 0) return { ok: false, detail: `no preset with a height in ${options.join(', ')}` };
+
+      const faults = [];
+
+      for (const { text, match } of sized) {
+        await combobox.click();
+        await page.getByRole('option', { name: text }).click();
+        await settle(page);
+        const box = await page.locator('[data-et-projected="shot"]').first().boundingBox();
+        const want = Number(match[2]) / Number(match[1]);
+
+        if (!box || Math.abs(box.height / box.width - want) > 0.02) {
+          faults.push(`${text}: box ${box?.width}x${box?.height}`);
+        }
+
+        if (process.env['STUDIO_E2E_FLOW_SHOTS']) {
+          await page.screenshot({
+            path: join(process.env['STUDIO_E2E_FLOW_SHOTS'], `a22-flow-${match[1]}x${match[2]}.png`),
+          });
+        }
+      }
+
+      return { ok: faults.length === 0, detail: faults.join('; ') || `${sized.length} presets keep their ratio` };
+    },
+  },
+  {
+    name: 'hiding the panel keeps the frames',
+    pages: ['System', 'Sketches', 'Flow'],
+    run: async (page, _state, target) => {
+      const firstFrame = () =>
+        page.evaluate(
+          ({ CANVAS, FRAME }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+            const rect = canvas?.querySelector(`${FRAME}, figure`)?.getBoundingClientRect();
+            const origin = canvas?.getBoundingClientRect();
+
+            return rect && origin ? { x: rect.left, y: rect.top, canvasLeft: origin.left } : null;
+          },
+          { CANVAS, FRAME },
+        );
+      const head = page.getByText('Aktuell', { exact: true });
+      const headOffset = async (frame) => ((await head.count()) ? (await head.first().boundingBox()).x - frame.x : 0);
+      // Sketches' Fit is sticky and re-fits to the wider canvas, so the case holds a fixed zoom. 100 % stays Fit where
+      // the content fits at 100 %, so the case zooms in past any fit.
+      if (target.name === 'Sketches') {
+        await page.getByRole('button', { name: 'Vergrößern' }).first().click();
+        await settle(page);
+      }
+
+      const unzoomed = await stillInFit(page, 'Vergrößern');
+
+      if (unzoomed) return unzoomed;
+
+      const before = await probe(page);
+      const frameBefore = await firstFrame();
+      const headBefore = frameBefore ? await headOffset(frameBefore) : 0;
+
+      await page.getByRole('button', { name: 'Panel ausblenden' }).first().click();
+      await settle(page);
+
+      const after = await probe(page);
+      const frameAfter = await firstFrame();
+      const headAfter = frameAfter ? await headOffset(frameAfter) : 0;
+      const kept =
+        !!before?.camera &&
+        !!after?.camera &&
+        !!frameBefore &&
+        !!frameAfter &&
+        near(frameAfter.x, frameBefore.x) &&
+        near(frameAfter.y, frameBefore.y) &&
+        near(after.camera.zoom * 1000, before.camera.zoom * 1000) &&
+        near(headAfter, headBefore);
+
+      return {
+        ok: kept,
+        detail: `${describe(before, after)} frame ${frameBefore?.x},${frameBefore?.y} -> ${frameAfter?.x},${frameAfter?.y}, canvas left ${frameBefore?.canvasLeft} -> ${frameAfter?.canvasLeft}, head-frame ${headBefore} -> ${headAfter}`,
+      };
+    },
+  },
+  {
+    name: 'the loading badge never overlaps a long label and load end moves no row or frame',
+    pages: ['Sketches'],
+    labels: ['Large', 'Sketches'],
+    delayPictures: false,
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it waits for the badge',
+    run: async (page) => {
+      let release;
+      const held = new Promise((resolve) => (release = resolve));
+      const pictures = /__design\/shot\?|\/frame\.html/;
+      const hold = async (route) => {
+        await held;
+        await route.fallback().catch(() => undefined);
+      };
+      const WIDTHS = [120, 160, 220];
+      const LONG_LABEL = 'linux-full-notice-pending';
+      const measure = (width) =>
+        page.evaluate(
+          ({ width, LONG_LABEL }) => {
+            const cell = document.querySelector('[data-probe-cell]');
+            const text = cell?.querySelector('[data-sk-label-text]');
+            const frame = cell?.querySelector('[data-sk-frame]');
+            const row = cell?.querySelector('[data-sk-label]');
+
+            if (!cell || !text || !frame || !row) return null;
+
+            cell.style.width = `${width}px`;
+            cell.style.maxWidth = `${width}px`;
+            text.style.fontSize = '13px';
+
+            const name = text.firstElementChild;
+
+            name?.classList.remove('hidden');
+
+            if (name) name.textContent = LONG_LABEL;
+
+            const range = document.createRange();
+
+            range.selectNodeContents(text);
+
+            const badge = cell.querySelector('[data-loading-badge]');
+            const b = badge?.getBoundingClientRect();
+            const overlap = b
+              ? Math.max(
+                  0,
+                  ...[...range.getClientRects()].map((r) => {
+                    const x = Math.min(r.right, b.right) - Math.max(r.left, b.left);
+                    const y = Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top);
+
+                    return x > 0 && y > 0 ? Math.min(x, y) : 0;
+                  }),
+                )
+              : 0;
+            const top = cell.getBoundingClientRect().top;
+
+            return {
+              badge: !!badge,
+              overlap,
+              rowTop: row.getBoundingClientRect().top - top,
+              rowHeight: row.getBoundingClientRect().height,
+              frameTop: frame.getBoundingClientRect().top - top,
+            };
+          },
+          { width, LONG_LABEL },
+        );
+      const before = [];
+      const after = [];
+
+      await page.route(pictures, hold);
+
+      try {
+        await page.reload();
+        await listingAnswered(page);
+        await page.waitForSelector('[data-loading-badge]', { timeout: WAIT_MS });
+        await page.evaluate(() => {
+          document
+            .querySelector('[data-loading-badge]')
+            ?.closest('[data-sk-state]')
+            ?.setAttribute('data-probe-cell', '');
+        });
+
+        for (const width of WIDTHS) before.push(await measure(width));
+      } finally {
+        release();
+        await page.unroute(pictures, hold);
+      }
+
+      await page.waitForFunction(() => !document.querySelector('[data-probe-cell] [data-loading-badge]'), undefined, {
+        timeout: WAIT_MS,
+      });
+
+      for (const width of WIDTHS) after.push(await measure(width));
+
+      const complete = before.every(Boolean) && after.every(Boolean);
+      const overlap = complete ? Math.max(...before.map((m) => m.overlap)) : Number.NaN;
+      const moved = complete
+        ? Math.max(
+            ...before.flatMap((m, i) => [
+              Math.abs(m.rowTop - after[i].rowTop),
+              Math.abs(m.rowHeight - after[i].rowHeight),
+              Math.abs(m.frameTop - after[i].frameTop),
+            ]),
+          )
+        : Number.NaN;
+
+      return {
+        ok: complete && before.every((m) => m.badge) && overlap <= 0.5 && moved <= 0.5,
+        detail: `widths ${WIDTHS.join('/')}: overlap while loading ${before.map((m) => m?.overlap.toFixed(1)).join('/')} px, row top/height and frame top moved at load end by at most ${moved.toFixed(1)} px, frame top ${before.map((m) => m?.frameTop.toFixed(1)).join('/')} -> ${after.map((m) => m?.frameTop.toFixed(1)).join('/')}`,
+      };
+    },
+  },
+  {
+    name: 'a narrow cell wraps its label so the state name and the chips stay whole',
+    pages: ['Sketches'],
+    engines: ['chromium', 'webkit'],
+    labels: ['Large', 'Sketches'],
+    run: async (page) => {
+      const LONG_LABEL = 'series-new-season-focus-visible · 112';
+      const WIDTHS = [100, 160];
+
+      await page.waitForSelector('[data-sk-state] [data-sk-label-text]', { state: 'attached', timeout: WAIT_MS });
+      const measured = [];
+
+      for (const width of WIDTHS) {
+        measured.push(
+          await page.evaluate(
+            ({ width, LONG_LABEL }) => {
+              const cell = document.querySelector('[data-sk-state]');
+              const row = cell?.querySelector('[data-sk-label]');
+              const text = row?.querySelector('[data-sk-label-text]');
+
+              if (!cell || !row || !text) return null;
+
+              cell.style.width = `${width}px`;
+              cell.style.maxWidth = `${width}px`;
+              row.classList.remove('hidden');
+              text.style.fontSize = '13px';
+              const name = text.firstElementChild;
+
+              name?.classList.remove('hidden');
+              if (name) name.textContent = LONG_LABEL;
+              if (!row.querySelector('[data-probe-chip]')) {
+                const chip = document.createElement('span');
+
+                chip.className = 'shrink-0 rounded-full px-space-2 text-ui-xs';
+                chip.dataset['probeChip'] = '';
+                chip.textContent = 'geändert';
+                row.append(chip);
+              }
+
+              const box = row.getBoundingClientRect();
+              const cut = [...row.children].filter((child) => {
+                const b = child.getBoundingClientRect();
+
+                return (
+                  child.scrollWidth > child.clientWidth + 1 || b.right > box.right + 1 || b.bottom > box.bottom + 1
+                );
+              });
+
+              return { cut: cut.length, scroll: row.scrollWidth - row.clientWidth, shown: text.textContent };
+            },
+            { width, LONG_LABEL },
+          ),
+        );
+      }
+
+      return {
+        ok: measured.every((m) => m && m.cut === 0 && m.scroll <= 1 && m.shown.includes(LONG_LABEL)),
+        detail: `widths ${WIDTHS.join('/')}: cut parts ${measured.map((m) => m?.cut).join('/')}, row overflow ${measured.map((m) => m?.scroll).join('/')} px`,
+      };
+    },
+  },
+  {
+    name: 'hiding the panel at a panned and zoomed camera keeps the frames on screen',
+    pages: ['System', 'Sketches', 'Flow'],
+    run: async (page) => {
+      const screenRect = () =>
+        page.evaluate(
+          ({ CANVAS, FRAME }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+            const rect = canvas?.querySelector(`${FRAME}, figure`)?.getBoundingClientRect();
+
+            return rect
+              ? { left: rect.left, top: rect.top, width: rect.width, canvasLeft: canvas.getBoundingClientRect().left }
+              : null;
+          },
+          { CANVAS, FRAME },
+        );
+      const canvasBox = await page.locator(CANVAS).evaluateAll((all) => {
+        const widest = all.sort((a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width)[0];
+        const box = widest.getBoundingClientRect();
+
+        return { x: box.right - box.width / 4, y: box.top + box.height / 2 };
+      });
+
+      await page.mouse.move(canvasBox.x, canvasBox.y);
+      const wheeled = await probe(page);
+      await page.mouse.wheel(60, 90);
+      await readUntil(
+        page,
+        () => probe(page),
+        (now) => now?.camera?.x !== wheeled?.camera?.x || now?.camera?.y !== wheeled?.camera?.y,
+      );
+      const unwheeled = await screenRect();
+      await page.keyboard.down('Control');
+      await page.mouse.wheel(0, -120);
+      await page.keyboard.up('Control');
+      await readUntil(page, screenRect, (now) => now?.width !== unwheeled?.width);
+
+      const unzoomed = await stillInFit(page, 'a ctrl-wheel zoom');
+
+      if (unzoomed) return unzoomed;
+
+      const before = await screenRect();
+      const cameraBefore = await probe(page);
+
+      await page.getByRole('button', { name: 'Panel ausblenden' }).first().click();
+      await settle(page);
+      const after = await screenRect();
+      const cameraAfter = await probe(page);
+      const kept =
+        !!before &&
+        !!after &&
+        Math.abs(after.left - before.left) <= 1 &&
+        Math.abs(after.top - before.top) <= 1 &&
+        Math.abs(after.width - before.width) <= 1;
+
+      return {
+        ok: kept,
+        detail: `${describe(cameraBefore, cameraAfter)} frame ${before?.left},${before?.top} w ${before?.width} -> ${after?.left},${after?.top} w ${after?.width}, canvas left ${before?.canvasLeft} -> ${after?.canvasLeft}`,
+      };
+    },
+  },
+  {
+    name: 'a listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame',
+    quiet: true,
+    listingMayPend: 'waits for all frames to paint, which needs the listing, before the refreshes start',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const sketchJson = join(checkout, '.ethlete/design/studio/sketches/elements-shell-main/sketch.json');
+      const original = readFileSync(sketchJson, 'utf8');
+      const unpainted = await framesPainted(page, 30_000);
+
+      if (unpainted) return { ok: false, detail: unpainted };
+
+      const log = eventLog();
+      const known = new Set(page.frames());
+      const srcs = new Map(page.frames().map((frame) => [frame, frame.url()]));
+      const onNavigated = (frame) => {
+        if (frame === page.mainFrame()) return;
+        log.add('navigation', srcChange(srcs.get(frame), frame.url()), known.has(frame) ? '' : 'new iframe');
+        srcs.set(frame, frame.url());
+      };
+      let flip = false;
+
+      page.on('framenavigated', onNavigated);
+
+      const timer = setInterval(() => {
+        flip = !flip;
+        log.add('refresh write', 'sketch.json');
+        writeFileSync(sketchJson, original.trimEnd() + (flip ? '\n\n' : '\n'));
+      }, 1000);
+
+      await page.waitForTimeout(6000);
+      clearInterval(timer);
+      writeFileSync(sketchJson, original);
+      page.off('framenavigated', onNavigated);
+      await page.waitForTimeout(1000);
+
+      const heights = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-sk-frame]')].map((frame) => ({
+          key: frame.getAttribute('data-sk-frame'),
+          frame: Math.round(frame.getBoundingClientRect().height),
+          iframes: [...frame.querySelectorAll('iframe')].map((iframe) => ({
+            height: iframe.offsetHeight,
+            src: iframe.getAttribute('src') ?? 'no src',
+          })),
+        })),
+      );
+      const placeholder = heights.filter((row) => row.frame <= 0 || row.iframes.some(({ height }) => height === 150));
+      const navigations = log.events.filter((event) => event.kind === 'navigation');
+
+      placeholder.forEach((row) =>
+        log.add(
+          'placeholder',
+          row.key,
+          `frame ${row.frame}px, iframes ${row.iframes.map(({ height, src }) => `${height}px ${eventUrl(src)}`).join(', ') || 'none'}`,
+        ),
+      );
+
+      const ok = heights.length > 0 && navigations.length === 0 && placeholder.length === 0;
+
+      return {
+        ok,
+        detail: `frames ${heights.length}, iframe re-navigations in 6 s ${navigations.length} (must be 0), frames with 150px placeholder or no height 1 s after the last refresh ${placeholder.length} (must be 0)${ok ? '' : await log.lines()}`,
+      };
+    },
+  },
+  {
+    name: 'a variant equal to Aktuell keeps its iframes across a quick and a full listing',
+    listingMayPend:
+      'waits for a quick and a full listing of each write itself, and reads iframe identity, not the listing',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const sketchDir = join(checkout, '.ethlete/design/studio/sketches/elements-shell-main');
+      const sketchJson = join(sketchDir, 'sketch.json');
+      const base = readFileSync(sketchJson, 'utf8');
+      const sketch = JSON.parse(base);
+      const original = JSON.stringify({ ...sketch, variantInfo: { ...sketch.variantInfo, b: sketch.variantInfo.a } });
+      const listings = { quick: 0, full: 0 };
+      const log = eventLog();
+      const askedAt = new WeakMap();
+      let writtenAt = 0;
+      const isListing = (request) => request.url().includes('/__design/sketches?');
+      const onRequest = (request) => {
+        if (isListing(request)) askedAt.set(request, Date.now());
+      };
+      const onListed = async (request) => {
+        if (!isListing(request) || (askedAt.get(request) ?? 0) < writtenAt) return;
+        const kind = request.url().includes('unchanged=no') ? 'quick' : 'full';
+
+        listings[kind] += 1;
+        log.add(`${kind} listing answered`, request.url(), `${(await request.response())?.status()}`);
+      };
+      const refresh = async (content) => {
+        listings.quick = 0;
+        listings.full = 0;
+        log.add('write', 'sketch.json');
+        writtenAt = Date.now();
+        writeFileSync(sketchJson, content);
+        const deadline = Date.now() + 2 * FULL_COMPARE_MS;
+
+        while ((listings.quick === 0 || listings.full === 0) && Date.now() < deadline) await page.waitForTimeout(250);
+        await page.waitForTimeout(1000);
+
+        return { ...listings };
+      };
+      const watch = () =>
+        page.evaluate(() => {
+          const record = { added: 0, removed: 0, events: [] };
+          const touches = (node) =>
+            node instanceof Element &&
+            (node.matches('[data-sk-row="b"], [data-sk-variant="b"], iframe') || !!node.querySelector('iframe'));
+          const note = (kind, node) => {
+            const iframe = node.matches('iframe') ? node : node.querySelector('iframe');
+            const keys = ['data-sk-row', 'data-sk-variant', 'data-sk-frame']
+              .filter((name) => node.hasAttribute(name))
+              .map((name) => `${name}=${node.getAttribute(name)}`);
+
+            record[kind] += 1;
+            record.events.push({
+              at: Date.now(),
+              kind,
+              subject: `<${node.localName}${keys.length ? ` ${keys.join(' ')}` : ''}>`,
+              detail: `iframe src ${iframe?.hasAttribute('src') ? ((url) => url.pathname + url.search)(new URL(iframe.getAttribute('src'), location.href)) : 'none'}`,
+            });
+          };
+
+          window.__sameRow = record;
+          window.__sameObserver?.disconnect();
+          window.__sameObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+              for (const node of mutation.addedNodes) if (touches(node)) note('added', node);
+              for (const node of mutation.removedNodes) if (touches(node)) note('removed', node);
+            }
+          });
+          window.__sameObserver.observe(document.body, { childList: true, subtree: true });
+        });
+      const changes = async (phase) => {
+        const record = await page.evaluate(() => ({ ...window.__sameRow }));
+
+        record.events.forEach((event) => log.add(`${phase} ${event.kind}`, event.subject, event.detail, event.at));
+
+        return record;
+      };
+
+      page.on('request', onRequest);
+      page.on('requestfinished', onListed);
+
+      try {
+        copyPart(
+          join(checkout, '.ethlete/design/studio/elements/shell-main'),
+          join(sketchDir, 'b/elements/shell-main'),
+        );
+        const setupListings = await refresh(original);
+        const folded = await page.evaluate(() => !!document.querySelector('[data-sk-same]'));
+
+        await watch();
+        const collapsedListings = await refresh(original.trimEnd() + '\n\n');
+        const collapsed = await changes('collapsed');
+
+        await pressOffCamera(page.locator('[data-sk-same] button').first());
+        await settle(page);
+        await page.evaluate(() => {
+          window.__sameFrames = [
+            ...document.querySelectorAll('[data-sk-row="b"] iframe, [data-sk-variant="b"] iframe'),
+          ];
+        });
+        await watch();
+        const openListings = await refresh(original);
+        const open = await changes('open');
+        const kept = await page.evaluate(() => {
+          const now = [...document.querySelectorAll('[data-sk-row="b"] iframe, [data-sk-variant="b"] iframe')];
+
+          return {
+            before: window.__sameFrames.length,
+            same:
+              now.length === window.__sameFrames.length && now.every((frame, i) => frame === window.__sameFrames[i]),
+          };
+        });
+
+        const listed = (counts) => counts.quick > 0 && counts.full > 0;
+        const ok =
+          folded &&
+          listed(setupListings) &&
+          listed(collapsedListings) &&
+          listed(openListings) &&
+          collapsed.added + collapsed.removed === 0 &&
+          open.added + open.removed === 0 &&
+          kept.before > 0 &&
+          kept.same;
+
+        return {
+          ok,
+          detail: `setup: listings ${JSON.stringify(setupListings)}, folded ${folded}; collapsed: listings ${JSON.stringify(collapsedListings)}, iframe/row adds ${collapsed.added} removes ${collapsed.removed} (must be 0); open: listings ${JSON.stringify(openListings)}, adds ${open.added} removes ${open.removed} (must be 0), iframes ${kept.before} kept ${kept.same}${ok ? '' : await log.lines()}`,
+        };
+      } finally {
+        page.off('request', onRequest);
+        page.off('requestfinished', onListed);
+        writeFileSync(sketchJson, base);
+        rmSync(join(sketchDir, 'b'), { recursive: true, force: true });
+      }
+    },
+  },
+  {
+    name: 'every nested target row of a sketch keeps the sketch view, also for a listed or undrawn part',
+    listingMayPend: 'waits for the new sketch row itself and reads what each row click does, not the listing',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const title = 'Runde Baumzeilen';
+      const studio = join(checkout, '.ethlete/design/studio');
+      const sketchDir = join(studio, 'sketches/elements-shell-main.tree-rows');
+      const targets = ['elements/shell-main', 'components/zoom-chip', 'components/e2e-unbuilt'];
+      const row = (text) => page.locator('ethlete-part-tree [etTreeNode]').filter({ hasText: text }).first();
+      const label = (text) => row(text).locator('.text-ellipsis');
+      const state = () =>
+        page.evaluate(() => ({
+          sketchView: !!document.querySelector('[data-sk-rows]'),
+          selected: document.querySelector('[data-sk-frame][data-selected]')?.getAttribute('data-sk-frame') ?? null,
+          live: document.querySelector('[data-sk-frame][data-active]')?.getAttribute('data-sk-frame') ?? null,
+        }));
+      const reopen = async () => {
+        await row(title).click();
+        await page.waitForSelector('[data-sk-rows] [data-sk-frame]', { timeout: 2 * FULL_COMPARE_MS });
+        await settle(page);
+      };
+      const results = {};
+
+      try {
+        for (const target of targets.slice(0, 2)) {
+          copyPart(join(studio, target), join(sketchDir, 'a', target));
+        }
+        markWrite('sketch.json');
+        writeFileSync(
+          join(sketchDir, 'sketch.json'),
+          JSON.stringify({
+            target: 'elements/shell-main@tree-rows',
+            targets,
+            status: 'ready',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            rounds: [{ key: 'r1', title, note: 'canvas e2e' }],
+            variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
+          }),
+        );
+        await row(title).waitFor({ timeout: 2 * FULL_COMPARE_MS });
+        const titled = (await row(title).textContent())?.includes(title) ?? false;
+
+        await reopen();
+        const opened = await state();
+
+        await label('components/e2e-unbuilt').click();
+        await settle(page);
+        results.unbuilt = await state();
+        await label('components/zoom-chip').click();
+        await settle(page);
+        results.zoomChip = await state();
+        await label('elements/shell-main').click();
+        await settle(page);
+        results.shellMain = await state();
+
+        const ok =
+          titled &&
+          opened.sketchView &&
+          results.unbuilt.sketchView &&
+          results.zoomChip.sketchView &&
+          results.shellMain.sketchView;
+
+        return {
+          ok,
+          detail: `sketch row shows title ${titled}; opened ${JSON.stringify(opened)}; undrawn row click ${JSON.stringify(results.unbuilt)}; listed rows keep the sketch view: zoom-chip ${JSON.stringify(results.zoomChip)}, shell-main ${JSON.stringify(results.shellMain)}`,
+        };
+      } finally {
+        rmSync(sketchDir, { recursive: true, force: true });
+      }
+    },
+  },
+  {
+    name: 'a click on each target row of a several-part sketch shows that part, drawn but not listed',
+    listingMayPend: 'waits for the new sketch row itself and reads the frames each row click shows, not the listing',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const title = 'Runde Teilansicht';
+      const studio = join(checkout, '.ethlete/design/studio');
+      const sketchDir = join(studio, 'sketches/foundations-e2e-sheet');
+      const parts = {
+        'foundations/e2e-sheet': ['sheet-plain', 'sheet-dense'],
+        'foundations/e2e-scale': ['scale-steps'],
+        'elements/e2e-bar': ['bar-top', 'bar-scrolled'],
+        'elements/e2e-card': ['card-film', 'card-series', 'card-long'],
+        'elements/e2e-banner': ['banner-wide'],
+      };
+      const targets = Object.keys(parts);
+      const row = (text) => page.locator('ethlete-part-tree [etTreeNode]').filter({ hasText: text }).first();
+      const state = () =>
+        page.evaluate(() => ({
+          sketchView: !!document.querySelector('[data-sk-rows]'),
+          selected: document.querySelector('[data-sk-frame][data-selected]')?.getAttribute('data-sk-frame') ?? null,
+          percent: Number.parseInt(
+            document.querySelector('ethlete-zoom-chip')?.textContent?.match(/\d+/)?.[0] ?? '',
+            10,
+          ),
+          offset: document.querySelector('[data-sk-rows] > div')?.style.transform ?? null,
+          ring: (() => {
+            const border = document.querySelector('[data-sk-frame][data-selected] [data-frame-border]');
+            const style = border && getComputedStyle(border);
+
+            return style && style.outlineStyle !== 'none' && Number.parseFloat(style.outlineWidth) > 0
+              ? `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`
+              : null;
+          })(),
+          frames: [...document.querySelectorAll('[data-sk-rows] [data-sk-frame]')].map((frame) =>
+            frame.getAttribute('data-sk-frame'),
+          ),
+        }));
+      const results = {};
+
+      try {
+        for (const [part, states] of Object.entries(parts)) {
+          const name = part.split('/')[1];
+          const dir = join(sketchDir, 'a', part);
+
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(
+            join(dir, `${name}.ts`),
+            [
+              "import { definePart, html } from '@design-system';",
+              '',
+              'export default definePart({',
+              `  note: 'The ${name} part of the canvas e2e several-part sketch.',`,
+              `  states: { ${states.map((key) => `'${key}': {}`).join(', ')} },`,
+              `  describe: { ${states.map((key) => `'${key}': 'The ${key} state; check its label.'`).join(', ')} },`,
+              `  render: () => html\`<p style="padding: 24px">${name}</p>\`,`,
+              '});',
+              '',
+            ].join('\n'),
+          );
+        }
+        writeFileSync(
+          join(sketchDir, 'sketch.json'),
+          JSON.stringify({
+            target: targets[0],
+            targets,
+            status: 'ready',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            rounds: [{ key: 'r1', title, note: 'canvas e2e' }],
+            variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
+          }),
+        );
+        await row(title).waitFor({ timeout: 2 * FULL_COMPARE_MS });
+        await row(title).click();
+        await page.waitForSelector('[data-sk-rows] [data-sk-frame]', { timeout: 2 * FULL_COMPARE_MS });
+        await settle(page);
+
+        for (const target of targets) {
+          await row(target).locator('.text-ellipsis').click();
+          await page.waitForFunction(
+            (key) => document.querySelector('[data-sk-frame][data-selected]')?.getAttribute('data-sk-frame') === key,
+            `a ${parts[target][0]}`,
+            { timeout: FULL_COMPARE_MS },
+          );
+          await settle(page);
+          results[target] = await state();
+        }
+
+        const shows = (target) => {
+          const shown = results[target];
+          const expected = parts[target].map((key) => `a ${key}`);
+
+          return (
+            shown.sketchView &&
+            shown.selected === expected[0] &&
+            shown.percent <= 100 &&
+            shown.offset === 'translate(0px, 0px) scale(1)' &&
+            shown.ring === null &&
+            JSON.stringify(shown.frames) === JSON.stringify(expected)
+          );
+        };
+
+        return {
+          ok: targets.every(shows),
+          detail: targets
+            .map((target) => `${target} ${shows(target) ? 'shown' : 'NOT shown'} ${JSON.stringify(results[target])}`)
+            .join('; '),
+        };
+      } finally {
+        rmSync(sketchDir, { recursive: true, force: true });
+      }
+    },
+  },
+  {
+    name: 'first load creates one iframe per frame and aborts no frame request',
+    quiet: true,
+    listingMayPend:
+      'records iframe creation and aborted requests, and is meant to see the first load while the listing is late',
+    pages: ['Sketches'],
+    run: async (page) => {
+      const log = eventLog();
+      let oldPageFrames = new Set();
+      const onFailed = (request) => {
+        if (oldPageFrames.has(request.frame())) return;
+        if (request.resourceType() !== 'document' || request.frame() === page.mainFrame()) return;
+
+        const frame = request.frame();
+        const head = `${request.failure()?.errorText ?? 'none'}, ${request.isNavigationRequest() ? 'navigation' : 'subrequest'}, initiator ${eventUrl(frame.url())}`;
+
+        log.add(
+          'aborted',
+          request.url(),
+          frame
+            .frameElement()
+            .then((element) => element.getAttribute('src'))
+            .catch(() => 'detached')
+            .then((src) => `${head}, iframe src then ${eventUrl(src ?? 'none')}`),
+        );
+      };
+
+      page.on('requestfailed', onFailed);
+
+      try {
+        await page.addInitScript(() => {
+          if (window.__frameLoad) return;
+
+          const record = { created: [], createdAt: new Map(), srcAt: new Map(), loadedAt: new Map() };
+          const create = Document.prototype.createElement;
+          const src = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
+          const setAttribute = Element.prototype.setAttribute;
+          const noteSrc = (iframe) => {
+            if (!record.srcAt.has(iframe)) record.srcAt.set(iframe, performance.now());
+          };
+
+          window.__frameLoad = record;
+          Document.prototype.createElement = function (tag, ...rest) {
+            const element = create.call(this, tag, ...rest);
+
+            if (element instanceof HTMLIFrameElement) {
+              record.created.push(element);
+              record.createdAt.set(element, Date.now());
+            }
+
+            return element;
+          };
+          Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
+            ...src,
+            set(value) {
+              noteSrc(this);
+              src.set.call(this, value);
+            },
+          });
+          Element.prototype.setAttribute = function (name, value) {
+            if (this instanceof HTMLIFrameElement && name === 'src') noteSrc(this);
+
+            return setAttribute.call(this, name, value);
+          };
+          document.addEventListener(
+            'load',
+            (event) => {
+              const iframe = event.target;
+
+              if (iframe instanceof HTMLIFrameElement && iframe.hasAttribute('src') && !record.loadedAt.has(iframe)) {
+                record.loadedAt.set(iframe, performance.now());
+              }
+            },
+            true,
+          );
+        });
+        log.restart();
+        oldPageFrames = new Set(page.frames());
+        await page.reload();
+        await page.waitForFunction(({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME), {
+          CANVAS,
+          FRAME,
+        });
+        await listingAnswered(page);
+
+        const loadState = () =>
+          page.evaluate(() => {
+            const iframes = [...document.querySelectorAll('[data-sk-frame] iframe')];
+
+            return `${iframes.length}/${iframes.filter((iframe) => window.__frameLoad.loadedAt.has(iframe)).length}`;
+          });
+        const deadline = Date.now() + WAIT_MS;
+        let stable = 0;
+        let last = '';
+
+        while (stable < 4 && Date.now() < deadline) {
+          await page.waitForTimeout(500);
+          const now = await loadState();
+          const [frames, loaded] = now.split('/');
+
+          stable = now === last && frames === loaded && frames !== '0' ? stable + 1 : 0;
+          last = now;
+        }
+
+        const load = await page.evaluate(() => {
+          const record = window.__frameLoad;
+          const iframes = [...document.querySelectorAll('[data-sk-frame] iframe')];
+          const keyOf = (iframe) => `${iframe.dataset['variant']} ${iframe.dataset['state']}`;
+          const shownKeys = new Set(iframes.map(keyOf));
+          const inView = (iframe) => {
+            const box = iframe.getBoundingClientRect();
+
+            return box.right > 0 && box.bottom > 0 && box.left < innerWidth && box.top < innerHeight;
+          };
+          const srcAt = (iframe) => record.srcAt.get(iframe) ?? Infinity;
+          const visible = iframes.filter(inView);
+          const hidden = iframes.filter((iframe) => !inView(iframe));
+
+          const createdForShown = record.created.filter((iframe) => shownKeys.has(keyOf(iframe)));
+
+          return {
+            frames: iframes.length,
+            created: record.created.length,
+            createdForShown: createdForShown.length,
+            createdEvents: createdForShown.map((iframe) => ({
+              at: record.createdAt.get(iframe),
+              key: keyOf(iframe),
+              detail: `${iframe.isConnected ? 'connected' : 'detached'}, src ${iframe.getAttribute('src') ?? 'none'}${record.loadedAt.has(iframe) ? `, loaded ${Math.round(record.loadedAt.get(iframe))} ms after reload` : ', not loaded'}`,
+            })),
+            urls: iframes.map((iframe) => iframe.src),
+            visible: visible.length,
+            visibleFirst: hidden.length === 0 || Math.max(...visible.map(srcAt)) <= Math.min(...hidden.map(srcAt)),
+            visibleLoadedMs: Math.round(Math.max(0, ...visible.map((iframe) => record.loadedAt.get(iframe) ?? NaN))),
+            allLoadedMs: Math.round(Math.max(0, ...iframes.map((iframe) => record.loadedAt.get(iframe) ?? NaN))),
+          };
+        });
+        const aborted = log.events.filter((event) => event.kind === 'aborted');
+        const shownAborts = aborted.filter((event) => load.urls.includes(event.subject)).length;
+        const createdOk = load.createdForShown === load.frames;
+
+        if (!createdOk)
+          load.createdEvents.forEach((event) => log.add('iframe created', event.key, event.detail, event.at));
+
+        const ok = stable >= 4 && load.frames > 0 && createdOk && shownAborts === 0;
+
+        return {
+          ok,
+          detail: `${stable >= 4 ? 'settled' : `not settled in ${WAIT_MS / 1000} s (${last} loaded)`}, iframes ${load.frames}, created for them ${load.createdForShown} (must equal), created in all ${load.created}, aborted requests of shown frames ${shownAborts} of ${aborted.length} (must be 0), ${load.visible} visible got src first ${load.visibleFirst}, visible loaded at ${load.visibleLoadedMs} ms, all at ${load.allLoadedMs} ms after reload${ok ? '' : await log.lines((event) => event.kind !== 'aborted' || load.urls.includes(event.subject))}`,
+        };
+      } finally {
+        page.off('requestfailed', onFailed);
+      }
+    },
+  },
+  {
+    name: 'Neu starten in the code notice answers within 100 ms',
+    perf: true,
+    pages: ['System'],
+    run: async (page) => {
+      const key = 'e2e.slow-restart-ms';
+
+      await page.addInitScript(withChangedCliAndSlowRestart, key);
+      await page.evaluate(({ key, ms }) => localStorage.setItem(key, String(ms)), { key, ms: SLOW_HOST_MS });
+      await page.reload();
+
+      const restart = page.locator('ethlete-title-bar').getByRole('button', { name: 'Neu starten' });
+
+      await restart.waitFor({ state: 'visible' });
+
+      return expectFeedbackWithin(restart, FEEDBACK_MS);
+    },
+  },
+  {
+    name: 'restart button reloads a changed UI',
+    pages: ['System'],
+    run: async (page) => {
+      await page.addInitScript(withChangedUiThenRestart);
+      await page.evaluate(() => localStorage.removeItem('e2e.ui-restarted'));
+      await page.reload();
+
+      const notice = page.locator('ethlete-title-bar').getByRole('button', { name: 'Neu starten' });
+
+      await notice.waitFor({ state: 'visible', timeout: 2 * WAIT_MS });
+      await page.evaluate(() => (window.__beforeReload = true));
+      await notice.click();
+      await page.waitForFunction(() => window.__beforeReload !== true && window.__codePolls >= 1, undefined, {
+        timeout: WAIT_MS,
+      });
+      await page.waitForTimeout(1000);
+
+      const shown = await notice.count();
+
+      await page.evaluate(() => localStorage.removeItem('e2e.ui-restarted'));
+
+      return {
+        ok: shown === 0,
+        detail: `the page reloaded after the restart; restart buttons after the reload ${shown} (must be 0)`,
+      };
+    },
+  },
+];
+
+let checkout;
+
+const MARKED_SHELL = '.st-shell { outline: 2px solid rgb(255 0 0); outline-offset: -2px; }';
+
+/**
+ * Variant `a` of each canvas sketch changes exactly the `changed` state, so a cold compare draws one state per sketch
+ * and every other state folds.
+ */
+const SKETCH_CHANGES = {
+  'components/zoom-chip': {
+    file: 'zoom-chip.ts',
+    changed: 'reset',
+    change: (source) =>
+      replaceOnce(
+        source,
+        'return [name, target ? { ...(props as Props), target } : props];',
+        "return [name, name === 'reset' ? { ...(props as Props), percent: 110 } : target ? { ...(props as Props), target } : props];",
+      ),
+  },
+  'elements/shell-main': {
+    file: 'shell-main.ts',
+    changed: 'hidden',
+    change: (source) =>
+      replaceOnce(
+        source,
+        '    shell.render({ ...props, studio: props.studio ?? studioPreview }),',
+        [
+          '    shell.render({ ...props, studio: props.studio ?? studioPreview }).then((drawn) =>',
+          `      props.panel === 'hidden' ? { ...drawn, styles: drawn.styles + ${JSON.stringify(MARKED_SHELL)} } : drawn,`,
+          '    ),',
+        ].join('\n'),
+      ),
+  },
+  'pages/system': {
+    file: 'system.ts',
+    changed: 'empty',
+    change: (source) =>
+      replaceOnce(
+        source,
+        'styles: shell.styles + menu.styles + copy.styles });',
+        `styles: shell.styles + menu.styles + copy.styles + ${JSON.stringify(MARKED_SHELL)} });`,
+      ),
+  },
+};
+
+const replaceOnce = (source, needle, replacement) => {
+  const at = source.indexOf(needle);
+
+  if (at < 0 || source.indexOf(needle, at + 1) >= 0) {
+    throw new Error(`SKETCH_CHANGES: expected exactly one ${JSON.stringify(needle)} in the fixture source`);
+  }
+
+  return source.replace(needle, () => replacement);
+};
+
+const FIXTURE_CHANGES = [
+  ...Object.entries(SKETCH_CHANGES).map(([target, { changed }]) => ({
+    target,
+    part: target,
+    variants: ['a'],
+    changed,
+  })),
+  {
+    target: `${WIDE_SKETCH.part}@${WIDE_SKETCH.name}`,
+    part: WIDE_SKETCH.part,
+    variants: WIDE_SKETCH.variants,
+    changed: WIDE_SKETCH.changed,
+  },
+];
+
+const PROBE_MS = 2000;
+
+const serverProbe = async (designPort) => {
+  const startedAt = performance.now();
+  const answer = await fetch(`http://[::1]:${designPort}/__design/queue`, { signal: AbortSignal.timeout(PROBE_MS) })
+    .then((response) => `answered ${response.status}`)
+    .catch(() => `did not answer within ${PROBE_MS} ms, so the server is busy or down`);
+
+  return `a /__design/queue probe ${answer} after ${Math.round(performance.now() - startedAt)} ms`;
+};
+
+const assertSketchFixtures = async (page, designPort, assertStates) => {
+  const url = `http://[::1]:${designPort}/__design/sketches?product=studio`;
+  const limit = zoomFixture ? ZOOM_LISTING_MS : COLD_START_MS;
+  const startedAt = performance.now();
+  const listing = await page.request
+    .get(url, { timeout: limit })
+    .then((response) => response.json())
+    .catch(async (error) => {
+      const waited = seconds(performance.now() - startedAt).trim();
+      const probe = await serverProbe(designPort);
+
+      throw new Error(
+        `sketch fixture check could not list the sketches: GET ${url} failed after ${waited} (limit ${limit} ms); ${probe}: ${String(error).split('\n')[0]}`,
+      );
+    });
+
+  if (!assertStates) return;
+
+  const faults = FIXTURE_CHANGES.flatMap(({ target, part, variants, changed }) => {
+    const sketch = listing?.sketches?.find((candidate) => candidate.target === target);
+
+    return variants.flatMap((variant) => {
+      const unchanged = sketch?.targets?.find(
+        (candidate) => candidate.variant === variant && (candidate.part ?? part) === part,
+      )?.unchanged;
+
+      if (!unchanged) return [`${target}/${variant}: not listed with compared states`];
+      if (unchanged.includes(changed))
+        return [`${target}/${variant}: fixture folds every state, ${changed} draws like Aktuell`];
+      if (unchanged.length === 0) return [`${target}/${variant}: changes every state, not only ${changed}`];
+
+      return [];
+    });
+  });
+
+  if (faults.length) throw new Error(`sketch fixture check failed: ${faults.join('; ')}`);
+};
+
+const addZoomFixture = (dir) => {
+  const zoom = join(
+    dir,
+    '.ethlete/design/studio/sketches',
+    `${ZOOM_SKETCH.part.replace('/', '-')}.${ZOOM_SKETCH.name}`,
+  );
+  const zoomTs = join(ZOOM_SKETCH.part, `${ZOOM_SKETCH.part.split('/')[1]}.ts`);
+
+  ZOOM_SKETCH.variants.forEach((variant, index) => {
+    copyPart(join(dir, '.ethlete/design/studio', ZOOM_SKETCH.part), join(zoom, variant, ZOOM_SKETCH.part));
+    writeFileSync(
+      join(zoom, variant, zoomTs),
+      readFileSync(join(zoom, variant, zoomTs), 'utf8').replaceAll(
+        'canvasFrameStyles +',
+        `canvasFrameStyles + 'body { opacity: ${0.4 + index * 0.15}; }' +`,
+      ),
+    );
+  });
+  writeFileSync(
+    join(zoom, 'sketch.json'),
+    JSON.stringify({
+      target: `${ZOOM_SKETCH.part}@${ZOOM_SKETCH.name}`,
+      targets: [ZOOM_SKETCH.part],
+      status: 'ready',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
+      variantInfo: Object.fromEntries(
+        ZOOM_SKETCH.variants.map((variant) => [variant, { authors: ['canvas-e2e'], round: 'r1' }]),
+      ),
+    }),
+  );
+};
+
+const prepareCheckout = () => {
+  const dir = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));
+
+  for (const entry of readdirSync(root)) {
+    if (entry === '.ethlete' || entry === '.git' || entry === 'tmp' || (coldShots && entry === 'node_modules'))
+      continue;
+    // git reads no symlinked .gitignore, so `git add -- .ethlete` would take .ethlete/cache.
+    if (entry === '.gitignore') copyFileSync(join(root, entry), join(dir, entry));
+    else symlinkSync(join(root, entry), join(dir, entry));
+  }
+
+  if (coldShots) {
+    mkdirSync(join(dir, 'node_modules'));
+    for (const entry of readdirSync(join(root, 'node_modules'))) {
+      if (entry !== '.design-explore') symlinkSync(join(root, 'node_modules', entry), join(dir, 'node_modules', entry));
+    }
+  }
+
+  // A linked tmp would put the design serve's resident lock and discovery file into the main checkout.
+  mkdirSync(join(dir, 'tmp'));
+  if (process.env['STUDIO_E2E_SHOTS']) {
+    mkdirSync(join(dir, '.ethlete/cache/design-explore'), { recursive: true });
+    symlinkSync(process.env['STUDIO_E2E_SHOTS'], join(dir, '.ethlete/cache/design-explore/part-shots'));
+  }
+  cpSync(join(root, '.ethlete/design'), join(dir, '.ethlete/design'), { recursive: true });
+
+  rmSync(join(dir, '.ethlete/design/studio/sketches'), { recursive: true, force: true });
+
+  for (const target of [
+    'pages/system',
+    'components/zoom-chip',
+    'elements/shell-main',
+    ...Object.values(GONE_TARGETS),
+  ]) {
+    const folder = join(dir, '.ethlete/design/studio/sketches', target.replace('/', '-'));
+
+    mkdirSync(join(folder, 'a', dirname(target)), { recursive: true });
+    copyPart(join(dir, '.ethlete/design/studio', target), join(folder, 'a', target));
+
+    const { file, change } = SKETCH_CHANGES[target] ?? {};
+
+    if (file) {
+      const variantFile = join(folder, 'a', target, file);
+
+      writeFileSync(variantFile, change(readFileSync(variantFile, 'utf8')));
+    }
+    writeFileSync(
+      join(folder, 'sketch.json'),
+      JSON.stringify({
+        target,
+        targets: [target],
+        status: 'ready',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
+        variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
+      }),
+    );
+  }
+
+  const wide = join(
+    dir,
+    '.ethlete/design/studio/sketches',
+    `${WIDE_SKETCH.part.replace('/', '-')}.${WIDE_SKETCH.name}`,
+  );
+  const wideTs = join(WIDE_SKETCH.part, `${WIDE_SKETCH.part.split('/')[1]}.ts`);
+
+  WIDE_SKETCH.variants.forEach((variant, index) => {
+    copyPart(join(dir, '.ethlete/design/studio', WIDE_SKETCH.part), join(wide, variant, WIDE_SKETCH.part));
+    writeFileSync(
+      join(wide, variant, wideTs),
+      replaceOnce(
+        readFileSync(join(wide, variant, wideTs), 'utf8'),
+        "styles: [styles, tooltipStyles, loaderStyles, notificationStyles].join('\\n'),",
+        `styles: [styles, tooltipStyles, loaderStyles, notificationStyles].join('\\n') + (props.restart === 'failed' ? '.st-title-bar { opacity: ${0.4 + index * 0.2}; }' : ''),`,
+      ),
+    );
+  });
+  writeFileSync(
+    join(wide, 'sketch.json'),
+    JSON.stringify({
+      target: `${WIDE_SKETCH.part}@${WIDE_SKETCH.name}`,
+      targets: [WIDE_SKETCH.part],
+      status: 'ready',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
+      variantInfo: Object.fromEntries(
+        WIDE_SKETCH.variants.map((variant) => [variant, { authors: ['canvas-e2e'], round: 'r1' }]),
+      ),
+    }),
+  );
+
+  if (zoomFixture) addZoomFixture(dir);
+
+  return dir;
+};
+
+const warmUp = async (page, studioUrl) => {
+  await page.goto(studioUrl);
+  await page.waitForFunction(
+    ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
+    { CANVAS, FRAME },
+    { timeout: COLD_START_MS },
+  );
+};
+
+const waitForFirstFrame = async (page, studioUrl, designPort, frame) => {
+  const startedAt = performance.now();
+  const at = () => Math.round(performance.now() - startedAt);
+  const port = `:${designPort}/`;
+  const requests = new Map();
+  const onRequest = (request) =>
+    request.url().includes(port) && requests.set(request, { url: request.url(), start: at(), end: null });
+  const onDone = (request) => requests.has(request) && (requests.get(request).end = at());
+  const pings = [];
+  let pinging = true;
+  const ping = async () => {
+    while (pinging) {
+      const sent = at();
+
+      await fetch(`http://[::1]${port}__design/e2e-ping`, { signal: AbortSignal.timeout(WAIT_MS) }).catch(
+        () => undefined,
+      );
+      pings.push(at() - sent);
+      await new Promise((done) => setTimeout(done, 250));
+    }
+  };
+
+  page.on('request', onRequest);
+  page.on('requestfinished', onDone);
+  page.on('requestfailed', onDone);
+  const pinged = ping();
+
+  try {
+    await page.goto(studioUrl);
+    await page.waitForFunction(
+      ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
+      { CANVAS, FRAME: frame },
+      { timeout: COLD_START_MS },
+    );
+  } catch (error) {
+    const short = (url) => url.slice(url.indexOf(port) + port.length - 1).slice(0, 90);
+    const slow = [...requests.values()]
+      .map((request) => ({ ...request, ms: (request.end ?? at()) - request.start }))
+      .filter((request) => request.end === null || request.ms > 1000)
+      .map(
+        (request) => `${short(request.url)} @${request.start} ${request.end === null ? 'pending' : `${request.ms}ms`}`,
+      );
+
+    throw new Error(
+      `${String(error).split('\n')[0]} - no frame after ${at()} ms; slow design requests: ${slow.join(', ') || 'none'}; ${requests.size} sent; server pings max ${Math.max(0, ...pings)} ms of ${pings.length}`,
+      { cause: error },
+    );
+  } finally {
+    pinging = false;
+    page.off('request', onRequest);
+    page.off('requestfinished', onDone);
+    page.off('requestfailed', onDone);
+    await pinged;
+  }
+};
+
+const BLANK_PATH = '/__canvas-e2e-blank';
+
+const cpuSessions = new WeakMap();
+
+const throttleCpu = async (page) => {
+  if (cpuRate === 1) return;
+  if (!cpuSessions.has(page)) cpuSessions.set(page, await page.context().newCDPSession(page));
+  await cpuSessions.get(page).send('Emulation.setCPUThrottlingRate', { rate: cpuRate });
+};
+
+const runCase = async (page, studioUrl, designPort, target, testCase) => {
+  await page.goto(`${studioUrl}${BLANK_PATH}`);
+  await throttleCpu(page);
+  await page.evaluate(
+    ({ view, checkout }) => {
+      localStorage.clear();
+      localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout, ...view }));
+    },
+    { view: target.view, checkout },
+  );
+  await page.setViewportSize(testCase.viewport ?? NARROW);
+  await waitForFirstFrame(page, studioUrl, designPort, target.frame ?? FRAME);
+  await settled(page, target.frame ?? FRAME);
+  if (target.fullSize) await toFullSize(page);
+
+  const shown = await page.evaluate(
+    ({ shows, hides }) => !!document.querySelector(shows) && !(hides && document.querySelector(hides)),
+    { shows: target.shows, hides: target.hides ?? null },
+  );
+  const state = await probe(page);
+
+  heldListings.startRun();
+
+  const result = !shown
+    ? { ok: false, detail: `the page does not show ${target.shows}` }
+    : state
+      ? await testCase.run(page, state, target, { designPort })
+      : { ok: false, detail: 'no canvas' };
+
+  if (!testCase.open || !shown || !state) return result;
+
+  return result.ok
+    ? { ok: false, detail: `passes now - drop \`open\` from the case (${testCase.open}): ${result.detail}` }
+    : { ok: true, detail: `open, ${testCase.open}: ${result.detail}` };
+};
+
+const heldListings = listingHold(holdListingsMs);
+
+const holdListings = (page) =>
+  page.context().route(
+    (url) => url.pathname === '/__design/sketches' && url.searchParams.get('targets') !== 'no',
+    async (route) => {
+      if (listingHoldOn && route.request().method() === 'GET') {
+        listingCounts.requested++;
+        listingCounts.outstanding++;
+        try {
+          await heldListings.hold();
+        } finally {
+          listingCounts.outstanding--;
+        }
+      }
+      await route.fallback().catch(() => undefined);
+    },
+  );
+
+let pictureDelayOn = true;
+
+const delayPictures = (page) =>
+  page.context().route(/__design\/shot\?/, async (route) => {
+    if (pictureDelayOn) await new Promise((done) => setTimeout(done, delayPicturesMs));
+    await route.fallback().catch(() => undefined);
+  });
+
+const trackRoutes = (page) => {
+  const routes = new Set();
+  const route = page.route.bind(page);
+  const unroute = page.unroute.bind(page);
+
+  page.route = (url, ...rest) => {
+    routes.add(String(url));
+
+    return route(url, ...rest);
+  };
+  page.unroute = (url, ...rest) => {
+    routes.delete(String(url));
+
+    return unroute(url, ...rest);
+  };
+
+  return routes;
+};
+
+const studioBuilt = new Promise((done) => {
+  const onBuilt = (message) => {
+    if (message?.type !== 'built') return;
+    process.off('message', onBuilt);
+    done();
+  };
+
+  process.on('message', onBuilt);
+});
+
+const nextJob = () =>
+  new Promise((done) => {
+    process.once('message', done);
+    process.send({ type: 'next' });
+  });
+
+const crashOnAsyncError = (error) => {
+  console.error(error);
+  process.exit(1);
+};
+
+let reportAsyncError = crashOnAsyncError;
+
+process.on('unhandledRejection', (error) => reportAsyncError(error));
+process.on('uncaughtException', (error) => reportAsyncError(error));
+
+const drawsSoFar = (designPort) =>
+  fetch(`http://[::1]:${designPort}/__design/queue`)
+    .then((answer) => answer.json())
+    .then((report) => ({ drawn: report.drawnTotal ?? null, waited: report.waitedTotal ?? null }))
+    .catch(() => ({ drawn: null, waited: null }));
+
+const drawsSince = (now, before) => ({
+  drawn: now.drawn === null || before.drawn === null ? null : now.drawn - before.drawn,
+  waited: now.waited === null || before.waited === null ? null : now.waited - before.waited,
+});
+
+const work = async () => {
+  const steps = [];
+  let stepAt = performance.now();
+  const step = (name) => {
+    const now = performance.now();
+
+    steps.push(`${name} ${seconds(now - stepAt).trim()} @${loadavg()[0].toFixed(1)}`);
+    stepAt = now;
+  };
+
+  checkout = prepareCheckout();
+  step('checkout');
+  process.send({ type: 'checkout', checkout: realpathSync(checkout) });
+
+  await withStudio(
+    async ({ page, studioUrl, designPort }) => {
+      step('firstPage');
+      page.setDefaultTimeout(WAIT_MS);
+      const routes = trackRoutes(page);
+
+      const opened = performance.now();
+
+      await page
+        .context()
+        .route(`${studioUrl}${BLANK_PATH}`, (route) => route.fulfill({ contentType: 'text/html', body: '' }));
+      await assertSketchFixtures(page, designPort, args.includes('--check-fixtures')).catch((error) => {
+        process.send({ type: 'fixtures', detail: error.message });
+        throw error;
+      });
+      const fixed = performance.now();
+
+      // Before the build wait: the warm-up's first frame waits on this listing's rule checks, so they run beside the build.
+      void page.request
+        .get(`http://[::1]:${designPort}/__design/system`, { timeout: COLD_START_MS })
+        .catch(() => undefined);
+      await studioBuilt;
+      const builtAt = performance.now();
+
+      await warmUp(page, studioUrl);
+      let draws = await drawsSoFar(designPort);
+
+      process.send({
+        type: 'ready',
+        ...draws,
+        steps,
+        phases: {
+          open: opened,
+          fixtures: fixed - opened,
+          build: builtAt - fixed,
+          warmUp: performance.now() - builtAt,
+        },
+      });
+      if (holdListingsMs) await holdListings(page);
+      if (delayPicturesMs) await delayPictures(page);
+      for (let { job } = await nextJob(); job; { job } = await nextJob()) {
+        const startedAt = performance.now();
+        let result;
+
+        pictureDelayOn = CASES[job.case].delayPictures !== false;
+        listingHoldOn = CASES[job.case].holdListings !== false;
+        heldListings.startJob();
+        listingCounts.requested = 0;
+
+        const unwatch = watchStream(page, designPort);
+
+        try {
+          result = await Promise.race([
+            runCase(page, studioUrl, designPort, PAGES[job.target], CASES[job.case]),
+            new Promise((_, reject) => (reportAsyncError = reject)),
+          ]);
+        } catch (error) {
+          const cause = error?.cause
+            ? ` (cause: ${[error.cause.code, error.cause.message].filter(Boolean).join(' ')})`
+            : '';
+
+          const at = (error?.stack ?? '')
+            .split('\n')
+            .filter((line) => line.includes('canvas.e2e.mjs'))
+            .slice(0, 4)
+            .map((line) => line.trim().replace(/^at /, ''))
+            .join(' < ');
+
+          result = { ok: false, detail: `${String(error).split('\n')[0]}${cause}${at ? ` at ${at}` : ''}` };
+        }
+
+        unwatch();
+        result = await streamLines(result);
+
+        if (!CASES[job.case].open && !CASES[job.case].listingMayPend) result = heldListings.check(result);
+
+        reportAsyncError = crashOnAsyncError;
+
+        const leftRoutes = [...routes];
+
+        routes.clear();
+        await page.unrouteAll({ behavior: 'ignoreErrors' });
+        if (leftRoutes.length)
+          result = { ok: false, detail: `left route ${leftRoutes.join(', ')} active after the case: ${result.detail}` };
+
+        const ms = performance.now() - startedAt;
+        const drawsBefore = draws;
+
+        draws = await drawsSoFar(designPort);
+        process.send({ type: 'result', ok: result.ok, detail: result.detail, ms, ...drawsSince(draws, drawsBefore) });
+      }
+    },
+    { built, checkout, echoDesign: true, engine, onStep: step },
+  ).finally(() => rmSync(checkout, { recursive: true, force: true }));
+
+  process.exit(0);
+};
+
+const freePort = () =>
+  new Promise((done, fail) => {
+    const server = createServer();
+
+    server.on('error', fail);
+    server.listen(0, '::1', () => {
+      const { port } = server.address();
+
+      server.close(() => done(port));
+    });
+  });
+
+const keyOf = (job) => `${job.page} :: ${job.name}`;
+const seconds = (ms) => `${(ms / 1000).toFixed(1)}s`.padStart(7);
+const minutes = (ms) => {
+  const total = Math.round(ms / 1000);
+
+  return `${Math.floor(total / 60)}m${total % 60 ? `${String(total % 60).padStart(2, '0')}s` : ''}`;
+};
+
+const buildStudioAsync = (outputPath) =>
+  new Promise((done) => {
+    console.log('[canvas-e2e] studio build starting');
+    const child = spawn(
+      'npx',
+      ['nx', 'build', 'ethlete-studio', `--outputPath=${outputPath}`, '--excludeTaskDependencies', '--skip-nx-cache'],
+      {
+        cwd: root,
+        stdio: ['ignore', 'inherit', 'inherit'],
+        env: { ...process.env, NX_NO_CLOUD: 'true', NG_BUILD_TYPE_CHECK: '0' },
+      },
+    );
+
+    child.on('error', () => done(1));
+    child.on('exit', (code) => done(code ?? 1));
+  });
+
+const workerCount = () => {
+  const asked = Number(
+    args.includes('--workers') ? args[args.indexOf('--workers') + 1] : process.env['STUDIO_E2E_WORKERS'],
+  );
+
+  return asked >= 1 ? Math.floor(asked) : Math.max(1, Math.min(8, Math.floor(availableParallelism() / 4)));
+};
+
+const lead = async () => {
+  // macOS Maintenance Sleep freezes every process mid-run and reads as a design server stall.
+  if (process.platform === 'darwin')
+    spawn('caffeinate', ['-i', '-s', '-w', String(process.pid)], { detached: true, stdio: 'ignore' }).unref();
+
+  const noReason = CASES.filter(
+    (testCase) =>
+      'listingMayPend' in testCase && (typeof testCase.listingMayPend !== 'string' || !testCase.listingMayPend.trim()),
+  );
+
+  if (noReason.length) {
+    for (const testCase of noReason)
+      console.error(
+        `[canvas-e2e] listingMayPend needs a reason string, not ${testCase.listingMayPend}: ${testCase.name}`,
+      );
+    process.exit(2);
+  }
+
+  const known = existsSync(TIMINGS_FILE) ? JSON.parse(readFileSync(TIMINGS_FILE, 'utf8')) : {};
+  const queue = PAGES.flatMap((target, targetIndex) =>
+    CASES.flatMap((testCase, caseIndex) =>
+      !!testCase.perf === perfOnly &&
+      (testCase.engines ?? ['chromium']).includes(engine) &&
+      testCase.proof === proofRow &&
+      (testCase.pages ?? ['System', 'Sketches']).includes(target.name) &&
+      (!testCase.labels || testCase.labels.includes(target.label)) &&
+      (!only || only.split('|').some((part) => testCase.name.includes(part))) &&
+      (!view || VIEWS[view].includes(target.name)) &&
+      (!pageGroups || pageGroups.includes(target.label ?? target.name))
+        ? [
+            {
+              target: targetIndex,
+              case: caseIndex,
+              page: target.label ?? target.name,
+              name: testCase.name,
+              ownShard: !!testCase.ownShard,
+            },
+          ]
+        : [],
+    ),
+  );
+  if (!perfOnly && engine === 'chromium' && !proofRow && !view) queue.push(...standaloneJobsOf({ only, pageGroups }));
+  const matched = queue.length;
+
+  if (!matched && (only || pageGroups)) {
+    console.error(
+      only
+        ? noMatchLineOf({ flag: '--case', only, names: CASES.map((testCase) => testCase.name) })
+        : noMatchLineOf({
+            flag: '--page',
+            only: pageGroups.join('|'),
+            names: PAGES.map((page) => page.label ?? page.name),
+          }),
+    );
+    process.exit(2);
+  }
+  if (!listOnly) {
+    enterOwnScope('studio-e2e');
+    const lock = await takeHeavyLock('studio:e2e', { wait: waitForLock });
+
+    if (!lock.ok) {
+      console.error(`[canvas-e2e] ${holderLine(lock.holder)}`);
+      process.exit(2);
+    }
+    await startRunLoad(busyLoops);
+  }
+
+  const runStartedAt = performance.now();
+  const loadAtStart = loadavg()[0];
+  const skippedPerf = perfOnly ? 0 : CASES.filter((testCase) => testCase.perf).length;
+
+  const shardWeights = shard ? JSON.parse(readFileSync(SHARD_WEIGHTS_FILE, 'utf8')) : {};
+
+  if (shard) queue.splice(0, queue.length, ...shardShareOf(queue, shard, keyOf, shardWeights));
+  const unweighted = shard ? queue.filter((job) => !job.ownShard && shardWeights[keyOf(job)] === undefined).length : 0;
+  const quiet = (job) => !!job && !job.file && !!CASES[job.case].quiet;
+
+  queue.splice(0, queue.length, ...runOrderOf(queue, keyOf, { known, weights: shardWeights, quiet }));
+
+  const shardLabel = shard ? ` (shard ${shard.index}/${shard.count})` : '';
+  const unweightedNote = unweighted
+    ? `, ${unweighted} case(s) without a CI weight in ${SHARD_WEIGHTS_FILE.split('/').pop()} split by the median`
+    : '';
+
+  if (listOnly) {
+    const knownMs = queue.reduce((sum, job) => sum + (known[keyOf(job)] ?? 0), 0);
+
+    console.log(
+      `${queue.length} of ${matched} cases${shardLabel}, ${seconds(knownMs).trim()} by the last local timings${unweightedNote}:`,
+    );
+    for (const job of queue) {
+      const undelayed = delayPicturesMs && CASES[job.case]?.delayPictures === false ? '  [pictures not delayed]' : '';
+      const unheld = holdListingsMs && CASES[job.case]?.holdListings === false ? '  [listings not held]' : '';
+
+      console.log(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}${undelayed}${unheld}`);
+    }
+    process.exit(0);
+  }
+
+  if (!queue.length && matched) {
+    console.log(`0 of ${matched} cases fall to${shardLabel.replace(/[()]/g, '')}, nothing to run`);
+    process.exit(0);
+  }
+
+  const declared = [...queue];
+  const total = queue.length;
+  const workers = Math.min(total, workerCount());
+  const tailWidth = Math.min(workers, Math.max(1, Math.floor(availableParallelism() / 5)));
+  const rows = [];
+  const busy = new Map();
+  let quietTail = false;
+  let firstCase = false;
+  const scratch = built ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-build-'));
+  const shots = coldShots ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-shots-'));
+  const classFacts = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-class-facts-'));
+  const record = (job, result) => {
+    rows.push({ ...job, ...result });
+    console.log(
+      `  ${result.ok ? '✓' : '✘'}  ${rows.length} [${job.page}] › ${job.name} ${result.detail}${result.ok ? '' : ` - load ${loadavg()[0].toFixed(1)} on ${busy.size || 1} worker(s)${slowedNote}`} (${seconds(result.ms ?? 0).trim()})`,
+    );
+  };
+  let fixtureFault;
+  const teardowns = new Map();
+
+  try {
+    ensureCli();
+    const children = new Set();
+    let builtOk = !scratch;
+    let fixturesAsked = false;
+    const build = scratch ? buildStudioAsync(scratch) : Promise.resolve(0);
+    const failBuild = (code) => {
+      console.log(`[canvas-e2e] studio build failed with ${code}`);
+      for (const child of children) child.kill();
+      process.exit(1);
+    };
+
+    void build.then((code) => {
+      if (code !== 0) return failBuild(code);
+      builtOk = true;
+      console.log(`[canvas-e2e] studio build done at ${seconds(performance.now() - runStartedAt).trim()}`);
+      for (const child of children) child.send({ type: 'built' });
+    });
+    console.log(
+      `[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)${perfOnly ? ' (perf only)' : skippedPerf ? `, ${skippedPerf} perf case(s) skipped (--perf runs them)` : ''}${slowedNote}${unweightedNote}`,
+    );
+    console.log(`Running ${total} test${total === 1 ? '' : 's'} using ${workers} worker${workers === 1 ? '' : 's'}`);
+
+    const startCase = (index, job) => {
+      busy.set(index, job);
+      if (firstCase) return;
+      firstCase = true;
+      console.log(`[canvas-e2e] first case starting at ${seconds(performance.now() - runStartedAt).trim()}`);
+    };
+    const runFileJob = async (index, job) => {
+      if (job.takesBuilt) await build;
+      record(job, await runStandalone(job, { built: built ?? scratch, port: await freePort() }));
+      busy.delete(index);
+    };
+
+    const runWorker = async (index) => {
+      if (queue[0]?.file) {
+        const job = queue.shift();
+
+        startCase(index, job);
+        await runFileJob(index, job);
+        return true;
+      }
+
+      const port = await freePort();
+      const checkFixtures = index === 0 && !fixturesAsked;
+
+      fixturesAsked ||= checkFixtures;
+      const child = fork(
+        fileURLToPath(import.meta.url),
+        [
+          '--worker',
+          '--built',
+          built ?? scratch,
+          '--engine',
+          engine,
+          ...(checkFixtures ? ['--check-fixtures'] : []),
+          ...(declared.some((job) => job.page === 'Zoom') ? ['--zoom-fixture'] : []),
+        ],
+        {
+          env: {
+            ETHLETE_DESIGN_SLOW_CHECKS: 'off',
+            ...process.env,
+            DE_PORT: String(port),
+            ...(shots ? { STUDIO_E2E_SHOTS: shots } : {}),
+            ETHLETE_DESIGN_CLASS_FACTS_DIR: classFacts,
+          },
+          stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+        },
+      );
+
+      children.add(child);
+      child.on('exit', () => children.delete(child));
+      if (builtOk) child.send({ type: 'built' });
+      let output = '';
+      let current;
+      let tookJob = false;
+      let workerCheckout;
+
+      const giveJob = async () => {
+        if (quiet(queue[0]) && index >= tailWidth) return child.send({ job: null });
+        while (quiet(queue[0]) && [...busy].some(([other, job]) => other !== index && !quiet(job)))
+          await new Promise((done) => setTimeout(done, 200));
+        if (quiet(queue[0]) && !quietTail) {
+          quietTail = true;
+          console.log(
+            `[canvas-e2e] quiet tail: ${queue.length} case(s) on ${tailWidth} worker(s) after the parallel cases, at ${seconds(performance.now() - runStartedAt).trim()}`,
+          );
+        }
+        current = queue.shift();
+        tookJob ||= !!current;
+        if (current) startCase(index, current);
+        if (current?.file) {
+          await runFileJob(index, current);
+          current = undefined;
+          return giveJob();
+        }
+        child.send({ job: current ?? null });
+      };
+
+      child.stdout.on('data', (chunk) => {
+        output += chunk;
+        for (const line of String(chunk).split('\n'))
+          if (line.startsWith('[ci-timing]'))
+            console.log(process.env['GITHUB_ACTIONS'] ? `::notice title=ci-timing::${line}` : line);
+      });
+      child.stderr.on('data', (chunk) => (output += chunk));
+      child.on('message', (message) => {
+        if (message.type === 'result') {
+          record(current, message);
+          if (!message.ok) console.log(`[canvas-e2e] worker ${index} output tail:\n${output.slice(-3000)}`);
+          console.log(
+            `[canvas-e2e] worker ${index} drew ${message.drawn ?? '?'} picture(s) in the case, waited for ${message.waited ?? '?'}`,
+          );
+          current = undefined;
+          busy.delete(index);
+        }
+        if (message.type === 'fixtures') {
+          fixtureFault = message.detail;
+          console.log(`[canvas-e2e] ${fixtureFault}, stopping the run`);
+          queue.splice(0);
+        }
+        if (message.type === 'ready')
+          console.log(
+            `[canvas-e2e] worker ${index} ready: ${Object.entries(message.phases)
+              .map(([phase, ms]) => `${phase} ${seconds(ms).trim()}`)
+              .join(', ')}, ${message.drawn ?? '?'} picture(s) drawn, ${message.waited ?? '?'} waited for`,
+          );
+        if (message.type === 'ready' && message.steps)
+          console.log(`[canvas-e2e] worker ${index} open steps (load): ${message.steps.join(', ')}`);
+        if (message.type === 'next') void giveJob();
+        if (message.type === 'checkout') workerCheckout = message.checkout;
+      });
+
+      const code = await new Promise((done) => child.on('exit', done));
+
+      if (workerCheckout) teardowns.set(workerCheckout, Date.now());
+
+      if (code !== 0 || current) {
+        console.log(`[canvas-e2e] worker ${index} on port ${port} exited with ${code}\n${output.slice(-4000)}`);
+        if (current) record(current, { ok: false, detail: `worker exited with ${code}` });
+        busy.delete(index);
+      }
+
+      return tookJob;
+    };
+
+    await Promise.all(
+      Array.from({ length: workers }, async (_, index) => {
+        while (queue.length && (index < tailWidth || !quiet(queue[0])) && (await runWorker(index)));
+      }),
+    );
+  } finally {
+    if (scratch) rmSync(scratch, { recursive: true, force: true });
+    if (shots) rmSync(shots, { recursive: true, force: true });
+    rmSync(classFacts, { recursive: true, force: true });
+  }
+
+  const survivors = await residentSurvivors({ teardowns });
+
+  const groups = Object.entries(Object.groupBy(rows, (row) => row.page)).map(([page, pageRows]) => ({
+    page,
+    ms: pageRows.reduce((sum, row) => sum + (row.ms ?? 0), 0),
+    count: pageRows.length,
+  }));
+
+  console.log('\nTime per page group, slowest first:');
+  for (const group of groups.sort((a, b) => b.ms - a.ms)) {
+    console.log(`${seconds(group.ms)}  ${group.page} (${group.count} cases)`);
+  }
+  console.log('\nTime per case, slowest first:');
+  for (const row of rows.toSorted((a, b) => (b.ms ?? 0) - (a.ms ?? 0))) {
+    console.log(`${seconds(row.ms ?? 0)}  ${row.page.padEnd(9)} ${row.name}`);
+    for (const part of row.cases ?? []) console.log(`${seconds(part.ms)}  ${''.padEnd(9)}   ${part.name}`);
+  }
+
+  if (keepTimings) {
+    mkdirSync(dirname(TIMINGS_FILE), { recursive: true });
+    writeFileSync(
+      TIMINGS_FILE,
+      JSON.stringify({
+        ...known,
+        ...Object.fromEntries(rows.filter((row) => row.ms).map((row) => [keyOf(row), Math.round(row.ms)])),
+      }),
+    );
+  }
+
+  const failed = rows.filter((row) => !row.ok);
+  const ran = new Set(rows.map(keyOf));
+  const notRun = declared.filter((job) => !ran.has(keyOf(job)));
+
+  if (notRun.length) {
+    console.log(`\n${notRun.length} case(s) did not run:`);
+    for (const job of notRun) console.log(`NOT RUN  ${job.page.padEnd(9)} ${job.name}`);
+  }
+
+  const suiteMs = performance.now() - runStartedAt;
+  const loadAtEnd = loadavg()[0];
+  const overBudget = suiteMs > BUDGET_MS;
+  const enforceBudget = process.env['STUDIO_E2E_BUDGET_ENFORCE'] === '1';
+
+  const optedOut = CASES.filter((testCase) => testCase.listingMayPend && !testCase.open);
+
+  if (holdListingsMs && optedOut.length) {
+    console.log('\nopted out of the held-listing check (listingMayPend):');
+    for (const testCase of optedOut) console.log(`  ${testCase.name}: ${testCase.listingMayPend}`);
+  }
+
+  console.log('');
+  failed.forEach((row, at) => console.log(`  ${at + 1}) [${row.page}] › ${row.name}`));
+  console.log(`  ${rows.length - failed.length} passed (${seconds(suiteMs).trim()})`);
+  if (failed.length) console.log(`  ${failed.length} failed`);
+  if (fixtureFault) console.log(`  ${fixtureFault}`);
+  if (notRun.length) console.log(`  ${notRun.length} did not run`);
+  for (const line of survivorLinesOf(survivors)) console.log(`  ${line}`);
+  console.log(
+    `\n${rows.length - failed.length}/${total} passed${shardLabel} in ${seconds(suiteMs).trim()} on ${workers} worker(s)`,
+  );
+  console.log(
+    `suite${shard ? ` shard ${shard.index}/${shard.count}` : ''} ${minutes(suiteMs)} of ${minutes(BUDGET_MS)} budget${overBudget ? ` - over budget${enforceBudget ? ', failing the run' : ' (STUDIO_E2E_BUDGET_ENFORCE=1 fails the run)'}` : ''}`,
+  );
+  const load = { start: loadAtStart, end: loadAtEnd, cores: availableParallelism() };
+  console.log(runLoadLineOf({ ...load, workers, machine: hostname() }));
+  if (
+    !only &&
+    !pageGroups &&
+    !view &&
+    !shard &&
+    !perfOnly &&
+    !holdListingsMs &&
+    !delayPicturesMs &&
+    !delayFramesMs &&
+    !busyLoops
+  )
+    console.log(
+      goalLineOf({
+        ms: suiteMs,
+        machine: hostname(),
+        noisy: isNoisy(load),
+        goalMachine: process.env['STUDIO_E2E_GOAL_MACHINE'] || undefined,
+      }),
+    );
+  if (isNoisy(load)) console.log(['top processes by cpu:', ...topProcesses()].join('\n'));
+  process.exit(
+    fixtureFault ||
+      failed.length ||
+      survivors.length ||
+      rows.length < total ||
+      !matched ||
+      (overBudget && enforceBudget)
+      ? 1
+      : 0,
+  );
+};
+
+if (args.includes('--prepare-checkout')) console.log(prepareCheckout());
+else await (args.includes('--worker') ? work() : lead());

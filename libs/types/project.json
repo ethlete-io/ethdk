@@ -1,0 +1,45 @@
+{
+  "name": "types",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/types/src",
+  "prefix": "ethlete",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "outputs": ["{workspaceRoot}/dist/libs/types"],
+      "defaultConfiguration": "production",
+      "options": {
+        "project": "libs/types/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/types/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/types/tsconfig.lib.json"
+        }
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/types/tsconfig.lib.json --noEmit"
+      }
+    },
+    "lint": {
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
+    }
+  }
+}

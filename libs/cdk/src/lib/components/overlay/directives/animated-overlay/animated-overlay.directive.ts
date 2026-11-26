@@ -1,0 +1,525 @@
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { ComponentPortal, ComponentType } from '@angular/cdk/portal';
+import {
+  ComponentRef,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  Injector,
+  NgZone,
+  Signal,
+  StaticProvider,
+  ViewContainerRef,
+  booleanAttribute,
+  computed,
+  effect,
+  inject,
+  input,
+  isDevMode,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import {
+  MiddlewareData,
+  OffsetOptions,
+  Padding,
+  Placement,
+  Platform,
+  arrow,
+  autoUpdate,
+  computePosition,
+  flip,
+  hide,
+  limitShift,
+  offset,
+  platform,
+  shift,
+  size,
+} from '@floating-ui/dom';
+import { Subject, Subscription, filter, take, tap } from 'rxjs';
+import {
+  AnimatedLifecycleDirective,
+  ProvideColorDirective,
+  injectBoundaryElement,
+  nextFrame,
+  signalElementDimensions,
+} from '@ethlete/core';
+
+const FLOATING_MAX_SIZE_PROPERTIES = ['--et-floating-max-width', '--et-floating-max-height'] as const;
+
+/**
+ * `flip` reads the first measurement of the floating element in each `computePosition` run. Against the
+ * cap `size` set in the previous run, the squeezed side always fits, so that measurement lifts the cap.
+ */
+const platformMeasuringUncappedFloatingElFirst = (floatingEl: HTMLElement): Platform => {
+  let measuredUncapped = false;
+
+  return {
+    ...platform,
+    getDimensions: (element) => {
+      if (element !== floatingEl || measuredUncapped) return platform.getDimensions(element);
+
+      measuredUncapped = true;
+
+      const caps = FLOATING_MAX_SIZE_PROPERTIES.map((name) => [name, floatingEl.style.getPropertyValue(name)] as const);
+
+      if (caps.every(([, value]) => !value)) return platform.getDimensions(element);
+
+      // The uncapped layout clamps the scroll offset of every scroller the cap made scrollable.
+      const scrolled = [...floatingEl.querySelectorAll<HTMLElement>('*')]
+        .filter((el) => el.scrollTop || el.scrollLeft)
+        .map((el) => ({ el, top: el.scrollTop, left: el.scrollLeft }));
+
+      for (const [name] of caps) floatingEl.style.removeProperty(name);
+
+      const dimensions = platform.getDimensions(element);
+
+      for (const [name, value] of caps) {
+        if (value) floatingEl.style.setProperty(name, value);
+      }
+
+      for (const { el, top, left } of scrolled) {
+        el.scrollTop = top;
+        el.scrollLeft = left;
+      }
+
+      return dimensions;
+    },
+  };
+};
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export type AnimatedOverlayComponentBase = {
+  animatedLifecycle: Signal<AnimatedLifecycleDirective | undefined>;
+  setColorFromProvider: (provider: ProvideColorDirective) => void;
+};
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export type AnimatedOverlayMountConfig<T> = {
+  component: ComponentType<T>;
+  providers?: StaticProvider[];
+  data?: Partial<T>;
+  colorProvider?: ProvideColorDirective | null;
+};
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export type AnimatedOverlayState = 'init' | 'mounting' | 'mounted' | 'unmounting' | 'unmounted';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+@Directive({
+  selector: '[etAnimatedOverlay]',
+  exportAs: 'etAnimatedOverlay',
+  host: {
+    class: 'et-animated-overlay',
+  },
+})
+export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
+  private overlayService = inject(Overlay);
+  private injector = inject(Injector);
+  private viewContainerRef = inject(ViewContainerRef);
+  private zone = inject(NgZone);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private rootBoundary = injectBoundaryElement({ optional: true });
+  private destroyRef = inject(DestroyRef);
+
+  private floatingElCleanupFn: (() => void) | null = null;
+  private unmountSubscription: Subscription | null = null;
+
+  placement = input<Placement | undefined>('bottom');
+  fallbackPlacements = input<Placement[]>();
+  offset = input<OffsetOptions | null>(null);
+  arrowPadding = input<Padding | null>(4);
+  viewportPadding = input<Padding | null>(8);
+  autoResize = input(false, { transform: booleanAttribute });
+  shift = input(true, { transform: booleanAttribute });
+  autoHide = input(false, { transform: booleanAttribute });
+  autoCloseIfReferenceHidden = input(false, { transform: booleanAttribute });
+  referenceElement = input(this.elementRef.nativeElement);
+  mirrorWidth = input(false, { transform: booleanAttribute });
+
+  portal: ComponentPortal<T> | null = null;
+  overlayRef: OverlayRef | null = null;
+  componentRef: ComponentRef<T> | null = null;
+
+  beforeOpened$ = new Subject<void>();
+  afterOpened$ = new Subject<void>();
+  beforeClosed$ = new Subject<void>();
+  afterClosed$ = new Subject<void>();
+
+  state = signal<AnimatedOverlayState>('init');
+
+  isMounted = computed(() => this.state() === 'mounted');
+  isMounting = computed(() => this.state() === 'mounting');
+  isUnmounted = computed(() => this.state() === 'unmounted');
+  isUnmounting = computed(() => this.state() === 'unmounting');
+
+  canMount = computed(() => !this.isMounted() && !this.isMounting());
+  canUnmount = computed(() => (this.isMounted() || this.isMounting()) && !this.isUnmounting());
+
+  isHidden = signal(false);
+
+  isMounted$ = toObservable(this.isMounted);
+  isMounting$ = toObservable(this.isMounting);
+  isUnmounted$ = toObservable(this.isUnmounted);
+  isUnmounting$ = toObservable(this.isUnmounting);
+
+  canMount$ = toObservable(this.canMount);
+  canUnmount$ = toObservable(this.canUnmount);
+
+  isHidden$ = toObservable(this.isHidden);
+
+  referenceElementDimensions = signalElementDimensions(
+    computed(() => (this.mirrorWidth() ? this.referenceElement() : null)),
+  );
+
+  constructor() {
+    effect(() => {
+      const dimensions = this.referenceElementDimensions();
+
+      if (!dimensions || !this.mirrorWidth()) return;
+
+      this.overlayRef?.updateSize({
+        width: this.elementRef.nativeElement.offsetWidth,
+      });
+    });
+
+    this.destroyRef.onDestroy(() => this.destroy());
+  }
+
+  mount(config: AnimatedOverlayMountConfig<T>): T | undefined {
+    if (this.isUnmounting()) {
+      if (!this.componentRef) {
+        if (isDevMode()) {
+          console.warn('AnimatedOverlayDirective: Cannot remount. Component ref is not available.');
+        }
+
+        return;
+      }
+
+      this.unmountSubscription?.unsubscribe();
+      this.unmountSubscription = null;
+
+      this.applyComponentData(config.data);
+      this.applyColorProvider(config.colorProvider);
+
+      const lifecycle = this.componentRef.instance.animatedLifecycle();
+      if (lifecycle) {
+        this.state.set('mounting');
+        this.beforeOpened$.next();
+
+        lifecycle.enter();
+
+        lifecycle.state$
+          .pipe(
+            filter((s) => s === 'entered'),
+            tap(() => {
+              if (this.state() === 'mounting') {
+                this.state.set('mounted');
+                this.afterOpened$.next();
+              }
+            }),
+            take(1),
+            takeUntilDestroyed(this.destroyRef),
+          )
+          .subscribe();
+      }
+
+      return this.componentRef.instance;
+    }
+
+    if (!this.canMount()) {
+      if (isDevMode()) {
+        console.warn('AnimatedOverlayDirective: Cannot mount. Component is already mounted or currently mounting.');
+      }
+
+      return;
+    }
+
+    const { component, providers, data, colorProvider } = config;
+
+    this.state.set('mounting');
+    this.beforeOpened$.next();
+
+    const injector = Injector.create({
+      parent: this.injector,
+      providers: providers ?? [],
+    });
+
+    this.overlayRef = this.overlayService.create();
+    this.portal = new ComponentPortal(component, this.viewContainerRef, injector);
+    this.componentRef = this.overlayRef.attach(this.portal);
+
+    this.applyComponentData(data);
+    this.applyColorProvider(colorProvider);
+    this.updateOverlaySize();
+    this.setupFloatingUI();
+
+    return this.componentRef.instance;
+  }
+
+  unmount() {
+    if (!this.isMounted() && !this.isMounting() && !this.isUnmounting()) {
+      if (isDevMode()) {
+        console.warn(`AnimatedOverlayDirective: Cannot unmount. Component is currently ${this.state()}`);
+      }
+
+      return;
+    }
+
+    if (this.isUnmounting()) {
+      return;
+    }
+
+    if (!this.componentRef) {
+      if (isDevMode()) {
+        console.warn('AnimatedOverlayDirective: Cannot unmount. Component ref is not available.');
+      }
+
+      return;
+    }
+
+    this.state.set('unmounting');
+    this.beforeClosed$.next();
+
+    if (this.isHidden()) {
+      this.destroy();
+
+      return;
+    }
+
+    const lifecycle = this.componentRef.instance.animatedLifecycle();
+
+    if (!lifecycle) {
+      this.destroy();
+
+      return;
+    }
+
+    lifecycle.leave();
+    this.unmountSubscription = lifecycle.state$
+      .pipe(
+        filter((s) => s === 'left'),
+        take(1),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.unmountSubscription = null;
+        this.destroy();
+      });
+  }
+
+  private applyComponentData(data?: Partial<T>) {
+    if (!this.componentRef || !data) return;
+
+    Object.assign(this.componentRef.instance, data);
+    this.componentRef.changeDetectorRef.markForCheck();
+  }
+
+  private applyColorProvider(colorProvider?: ProvideColorDirective | null) {
+    if (!this.componentRef || !colorProvider) return;
+
+    this.componentRef.instance.setColorFromProvider(colorProvider);
+  }
+
+  private updateOverlaySize() {
+    if (!this.overlayRef || !this.mirrorWidth()) return;
+
+    this.overlayRef.updateSize({
+      width: this.elementRef.nativeElement.offsetWidth,
+    });
+  }
+
+  private setupFloatingUI() {
+    this.zone.runOutsideAngular(() => {
+      if (!this.componentRef) return;
+
+      const floatingEl = this.componentRef.location.nativeElement as HTMLElement;
+      const floatingElArrow = this.getFloatingArrow();
+
+      floatingEl.classList.add('et-floating-element');
+
+      const refEl = this.referenceElement();
+      const boundary = this.rootBoundary?.value();
+
+      const update = () => this.updateFloatingPosition(floatingEl, refEl, boundary, floatingElArrow);
+
+      this.floatingElCleanupFn = autoUpdate(refEl, floatingEl, update);
+
+      this.waitForRenderAndAnimate(update);
+    });
+  }
+
+  private getFloatingArrow(): HTMLElement | null {
+    if (!this.componentRef) return null;
+
+    return this.componentRef.location.nativeElement.querySelector('[et-floating-arrow]') as HTMLElement | null;
+  }
+
+  private updateFloatingPosition(
+    floatingEl: HTMLElement,
+    refEl: HTMLElement,
+    boundary: HTMLElement | undefined,
+    floatingElArrow: HTMLElement | null,
+  ) {
+    if (!this.componentRef) return;
+
+    const middleware = this.buildFloatingMiddleware(floatingEl, boundary, floatingElArrow);
+
+    computePosition(refEl, floatingEl, {
+      placement: this.placement(),
+      middleware,
+      platform: this.autoResize() ? platformMeasuringUncappedFloatingElFirst(floatingEl) : platform,
+    }).then(({ x, y, placement, middlewareData }) => {
+      this.applyFloatingStyles(floatingEl, x, y, placement);
+      this.applyArrowStyles(floatingEl, middlewareData, floatingElArrow);
+      this.handleReferenceHidden(floatingEl, middlewareData);
+    });
+  }
+
+  private buildFloatingMiddleware(
+    floatingEl: HTMLElement,
+    boundary: HTMLElement | undefined,
+    floatingElArrow: HTMLElement | null,
+  ) {
+    const middleware = [];
+
+    const offsetValue = this.offset();
+    if (offsetValue !== null) {
+      middleware.push(offset(offsetValue));
+    }
+
+    middleware.push(
+      flip({
+        fallbackPlacements: this.fallbackPlacements() ?? undefined,
+        fallbackAxisSideDirection: 'start',
+        boundary,
+      }),
+    );
+
+    if (this.autoResize()) {
+      middleware.push(
+        size({
+          padding: this.viewportPadding() ?? undefined,
+          apply({ availableHeight, availableWidth }) {
+            floatingEl.style.setProperty('--et-floating-max-width', `${availableWidth}px`);
+            floatingEl.style.setProperty('--et-floating-max-height', `${availableHeight}px`);
+          },
+        }),
+      );
+    }
+
+    if (this.shift()) {
+      middleware.push(
+        shift({
+          limiter: limitShift(),
+          padding: this.viewportPadding() ?? undefined,
+          boundary,
+        }),
+      );
+    }
+
+    if (floatingElArrow) {
+      middleware.push(arrow({ element: floatingElArrow, padding: this.arrowPadding() ?? undefined }));
+    }
+
+    if (this.autoHide() || this.autoCloseIfReferenceHidden()) {
+      middleware.push(hide({ strategy: 'referenceHidden', boundary }));
+    }
+
+    return middleware;
+  }
+
+  private applyFloatingStyles(floatingEl: HTMLElement, x: number, y: number, placement: Placement) {
+    floatingEl.style.setProperty('--et-floating-translate', `translate3d(${x}px, ${y}px, 0)`);
+    floatingEl.setAttribute('et-floating-placement', placement);
+  }
+
+  private applyArrowStyles(
+    floatingEl: HTMLElement,
+    middlewareData: MiddlewareData,
+    floatingElArrow: HTMLElement | null,
+  ) {
+    if (!middlewareData.arrow || !floatingElArrow) return;
+
+    const { x: arrowX, y: arrowY } = middlewareData.arrow;
+
+    floatingEl.style.setProperty('--et-floating-arrow-translate', `translate3d(${arrowX ?? 0}px, ${arrowY ?? 0}px, 0)`);
+  }
+
+  private handleReferenceHidden(floatingEl: HTMLElement, middlewareData: MiddlewareData) {
+    if (middlewareData.hide?.referenceHidden) {
+      if (this.autoCloseIfReferenceHidden()) {
+        this.unmount();
+      } else {
+        floatingEl.classList.add('et-floating-element--hidden');
+        this.isHidden.set(true);
+      }
+    } else if (this.autoHide()) {
+      floatingEl.classList.remove('et-floating-element--hidden');
+      this.isHidden.set(false);
+    }
+  }
+
+  private waitForRenderAndAnimate(updateFloatingPosition: () => void) {
+    nextFrame(() => {
+      if (!this.componentRef || this.state() !== 'mounting') {
+        return;
+      }
+
+      updateFloatingPosition();
+
+      const lifecycle = this.componentRef.instance.animatedLifecycle?.();
+
+      if (!lifecycle) {
+        console.error(
+          'AnimatedOverlayDirective: The component does not have an AnimatedLifecycleDirective. Please add one to the component.',
+        );
+
+        return;
+      }
+
+      lifecycle.enter();
+
+      lifecycle.state$
+        .pipe(
+          filter((s) => s === 'entered'),
+          tap(() => {
+            if (this.state() === 'mounting') {
+              this.state.set('mounted');
+              this.afterOpened$.next();
+            }
+          }),
+          take(1),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe();
+    });
+  }
+
+  private destroy() {
+    this.zone.runOutsideAngular(() => {
+      this.floatingElCleanupFn?.();
+    });
+
+    if (this.overlayRef) {
+      this.overlayRef.dispose();
+      this.overlayRef = null;
+    }
+
+    if (this.componentRef) {
+      this.componentRef.destroy();
+      this.componentRef = null;
+    }
+
+    this.state.set('unmounted');
+    this.afterClosed$.next();
+  }
+}

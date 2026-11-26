@@ -1,0 +1,141 @@
+@layer components.sdk {
+  .et-overlay.et-with-default-animation {
+    &.et-overlay--full-screen-dialog {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translate(var(--origin-translate-x, 0), var(--origin-translate-y, 0))
+          scale(var(--origin-scale-x, 0), var(--origin-scale-y, 0)) !important;
+        border-radius: min(250px, calc(var(--origin-width, 0px) / 2), calc(var(--origin-height, 0px) / 2));
+        opacity: 0;
+      }
+
+      &.et-animation-enter-active {
+        transition:
+          transform 400ms var(--ease-out-5),
+          border-radius 400ms var(--ease-out-5),
+          opacity 150ms linear;
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition:
+            transform 400ms var(--ease-spring-1),
+            border-radius 400ms var(--ease-spring-1),
+            opacity 150ms linear;
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition:
+          transform 300ms var(--ease-in-out-5),
+          border-radius 300ms var(--ease-in-out-5),
+          opacity 150ms linear 100ms;
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          /* a response 0.28s critically damped spring; the origin clone leave uses the same curve and timing */
+          --_et-full-screen-leave-spring: linear(
+            0,
+            0.0155 2.78%,
+            0.0547 5.56%,
+            0.1092 8.33%,
+            0.1726 11.11%,
+            0.3764 19.44%,
+            0.5015 25%,
+            0.5577 27.78%,
+            0.6092 30.56%,
+            0.656 33.33%,
+            0.6982 36.11%,
+            0.7361 38.89%,
+            0.7997 44.44%,
+            0.8493 50%,
+            0.8874 55.56%,
+            0.9281 63.89%,
+            0.9612 75%,
+            0.9908 100%,
+            1
+          );
+
+          transition:
+            transform 300ms var(--_et-full-screen-leave-spring),
+            border-radius 300ms var(--_et-full-screen-leave-spring),
+            opacity 150ms linear 35ms;
+        }
+      }
+
+      &.et-overlay--full-screen-dialog--reduced-animation {
+        &.et-animation-enter-active {
+          transition:
+            transform 300ms var(--ease-out-5),
+            border-radius 300ms var(--ease-out-5),
+            opacity 150ms linear;
+
+          @supports (transition-timing-function: linear(0, 1)) {
+            transition:
+              transform 300ms var(--ease-spring-2),
+              opacity 300ms var(--ease-out-5),
+              border-radius 300ms var(--ease-spring-2);
+          }
+        }
+
+        &.et-animation-leave-active {
+          transition:
+            transform 150ms var(--ease-in-5),
+            border-radius 150ms var(--ease-in-5),
+            opacity 150ms var(--ease-in-5);
+
+          @supports (transition-timing-function: linear(0, 1)) {
+            /* a response 0.22s critically damped spring, cut where the opacity reaches 0 */
+            --_et-full-screen-leave-spring: linear(
+              0,
+              0.0242 5.56%,
+              0.083 11.11%,
+              0.1607 16.67%,
+              0.4178 33.33%,
+              0.4961 38.89%,
+              0.5674 44.44%,
+              0.6311 50%,
+              0.6872 55.56%,
+              0.7361 61.11%,
+              0.7783 66.67%,
+              0.8145 72.22%,
+              0.8453 77.78%,
+              0.8713 83.33%,
+              0.9117 94.44%,
+              0.9271 100%,
+              1 100%
+            );
+
+            transition:
+              transform 150ms var(--_et-full-screen-leave-spring),
+              border-radius 150ms var(--_et-full-screen-leave-spring),
+              opacity 150ms linear;
+          }
+        }
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-overlay--full-screen-dialog {
+      &.et-animation-enter-active {
+        transition: opacity 150ms linear;
+      }
+
+      &.et-animation-leave-active {
+        transition: opacity 150ms linear 100ms;
+      }
+
+      &.et-overlay--full-screen-dialog--reduced-animation.et-animation-enter-active {
+        transition: opacity 150ms linear;
+      }
+
+      &.et-overlay--full-screen-dialog--reduced-animation.et-animation-leave-active {
+        transition: opacity 150ms var(--ease-in-5);
+      }
+
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: none !important;
+        border-radius: 0;
+      }
+    }
+  }
+}

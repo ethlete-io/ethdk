@@ -1,0 +1,20 @@
+import { isDevMode } from '@angular/core';
+import { createDeleteQuery, createGetQuery, createPatchQuery, createPostQuery, createPutQuery, createQueryClient, withEthleteApiErrors } from '@ethlete/query';
+import { environment } from '@app-b/env';
+import { toInjectFn, toProvideFn } from '@ethlete/core';
+
+export const publicApiClientConfig = createQueryClient({
+  baseUrl: environment.apiBaseURL,
+  name: 'publicApiClient',
+  cacheAdapter: () => 0,
+  features: [withEthleteApiErrors()]
+});
+
+export const publicApiGet = createGetQuery(publicApiClientConfig);
+export const publicApiPost = createPostQuery(publicApiClientConfig);
+export const publicApiPut = createPutQuery(publicApiClientConfig);
+export const publicApiPatch = createPatchQuery(publicApiClientConfig);
+export const publicApiDelete = createDeleteQuery(publicApiClientConfig);
+
+export const providePublicApiClient = toProvideFn(publicApiClientConfig);
+export const injectPublicApiClient = toInjectFn(publicApiClientConfig);

@@ -1,0 +1,1344 @@
+import { EventEmitter } from 'events';
+import { cpSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { IncomingMessage, ServerResponse } from 'http';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { changedPartsOf } from './changed-parts';
+import { createDrawLedger } from './draw-ledger';
+import { DESIGN_DIR, readConfig } from './design-config';
+import { createDesignServer } from './serve';
+import { createPartShooter, dependentIdsOf, NotKeptError } from './shot';
+import { createShotStore } from './shot-store';
+import { createDrawQueue, DRAWS_AT_ONCE, ShotUnprocessableError } from './thumb';
+import { createSketch, parseTarget } from './system/sketch/sketch';
+import { unviewedShotLinesOf } from './system/sketch/viewed-shots';
+import { createSystemModules, productModuleIdOf } from './system/system-modules';
+
+const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
+const drawnUrls = () => goto.mock.calls.flatMap(([url]) => (url === 'about:blank' ? [] : [url]));
+const switchedStates = () => evaluate.mock.calls.filter(([script]) => script.includes('"switching":true'));
+const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('png'));
+const boundingBox = vi.fn<() => Promise<{ x: number; y: number; width: number; height: number } | null>>(async () => ({
+  x: 10,
+  y: 20,
+  width: 200,
+  height: 80,
+}));
+let overlayCount = 0;
+let frameError: string | null = null;
+let frameMissing: string | null = null;
+const marks = [{ parts: ['components/card'], x: 0, y: 4, width: 200, height: 80 }];
+const evaluate = vi.fn<(script: string) => Promise<unknown>>(async (script) =>
+  script.includes('data-et-part')
+    ? marks
+    : script.includes('data-et-missing')
+      ? frameMissing
+      : script.includes('data-et-error')
+        ? frameError
+        : script.includes('innerHTML')
+          ? '<p>card</p>'
+          : true,
+);
+const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
+  newPage: async () => ({
+    goto,
+    mouse: { move: async () => undefined },
+    mainFrame: () => ({ childFrames: () => [] }),
+    url: () => 'http://localhost/frame.html',
+    screenshot,
+    evaluate,
+    frames: () => [{ evaluate, url: () => 'http://localhost/frame.html' }],
+    locator: (selector: string) => ({
+      count: async () => (selector === 'vite-error-overlay' ? overlayCount : 0),
+      locator: () => ({ innerText: async () => '  Failed to resolve import "./nope"  ' }),
+      first: () => ({ waitFor: async () => undefined }),
+      boundingBox,
+    }),
+  }),
+  clearCookies: async () => undefined,
+  close: async () => undefined,
+}));
+const chromium = { launch: async () => ({ newContext, close: async () => undefined }) } as never;
+const withBrowser = async () => ({ chromium, from: 'playwright' });
+
+const cwd = process.cwd();
+const closing: (() => Promise<void>)[] = [];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  overlayCount = 0;
+  frameError = null;
+  frameMissing = null;
+});
+
+afterEach(async () => {
+  await Promise.all(closing.splice(0).map((close) => close()));
+  process.chdir(cwd);
+});
+
+const acme = (
+  statesOf?: Parameters<typeof createPartShooter>[0]['statesOf'],
+  appShotOf?: Parameters<typeof createPartShooter>[0]['appShotOf'],
+) => {
+  const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-shot-')));
+
+  cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+  const config = readConfig(target) ?? {};
+  const system = createSystemModules({ target, config });
+  const ledger = createDrawLedger();
+  const shots = createPartShooter({
+    target,
+    base: 'http://localhost:1',
+    system,
+    chromiumOf: withBrowser,
+    statesOf,
+    ledger,
+    appShotOf,
+  });
+
+  closing.push(() => shots.close());
+
+  return { target, config, system, ledger, shots };
+};
+
+const sharingShooters = () => {
+  const { target, system } = acme();
+  const input = join(target, 'drawn-from.ts');
+
+  writeFileSync(input, 'export const drawn = 1;');
+
+  const shooter = () => {
+    const ledger = createDrawLedger();
+    const store = createShotStore({
+      dir: join(target, 'part-shots'),
+      salt: 'salt',
+      checkout: target,
+      inputsOf: () => [input],
+      scopeOf: () => 'scope',
+      pollMs: 5,
+    });
+    const shots = createPartShooter({
+      target,
+      base: 'http://localhost:1',
+      system,
+      chromiumOf: withBrowser,
+      ledger,
+      store,
+    });
+
+    closing.push(() => shots.close());
+
+    return { shots, ledger };
+  };
+
+  return { first: shooter(), second: shooter() };
+};
+
+const asking = (shots: ReturnType<typeof createPartShooter>, query: string) => {
+  const headers: Record<string, string> = {};
+  const response = Object.assign(new EventEmitter(), {
+    statusCode: 200,
+    writableFinished: false,
+    setHeader: (name: string, value: string) => (headers[name] = value),
+    end: (() => undefined) as (body: unknown) => void,
+  });
+  const answer = new Promise<{ status: number; type: string; body: unknown; note?: string }>((done) => {
+    response.end = (body: unknown) => {
+      response.writableFinished = true;
+      done({
+        status: response.statusCode,
+        type: headers['content-type'] ?? '',
+        body,
+        ...(headers['x-et-note'] ? { note: headers['x-et-note'] } : {}),
+      });
+    };
+  });
+
+  shots.middleware({ url: `/?${query}` } as IncomingMessage, response as unknown as ServerResponse);
+
+  return { answer, hangUp: () => response.emit('close') };
+};
+
+const ask = (shots: ReturnType<typeof createPartShooter>, query: string) => asking(shots, query).answer;
+
+describe('createPartShooter', () => {
+  it('shoots the app harness of the asked part and state with source=app, not the design', async () => {
+    const appShotOf = vi.fn(async () => Buffer.from('app png'));
+    const { shots } = acme(undefined, appShotOf);
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&source=app');
+
+    expect(shot).toMatchObject({ status: 200, type: 'image/png', body: Buffer.from('app png') });
+    expect(appShotOf).toHaveBeenCalledWith({
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: 'phone',
+    });
+    expect(drawnUrls()).toEqual([]);
+  });
+
+  it('answers 422 with the reason the app harness cannot shoot a state', async () => {
+    const { shots } = acme(undefined, async () => {
+      throw new ShotUnprocessableError('product "acme" has no harness in config.json');
+    });
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&source=app')).toMatchObject({
+      status: 422,
+      body: 'product "acme" has no harness in config.json',
+    });
+  });
+
+  it.each([
+    ['source=nope', 'source is design or app, not "nope"'],
+    ['source=app&part=components/card&state=long', 'source=app needs product, part and state'],
+    ['source=app&part=components/card&state=long&product=acme&sketch=x&variant=a', 'takes no sketch'],
+    ['source=app&part=components/card&state=long&product=acme&width=300', 'takes no width'],
+    ['source=app&part=components/card&state=long&product=acme&surface=dark', 'takes no surface'],
+    ['source=app&part=components/card&state=long&product=acme&color=brand&scale=2', 'takes no color, scale'],
+  ])('answers 400 to %s', async (query, message) => {
+    const appShotOf = vi.fn(async () => Buffer.from('app png'));
+    const { shots } = acme(undefined, appShotOf);
+    const shot = await ask(shots, query);
+
+    expect(shot.status).toBe(400);
+    expect(String(shot.body)).toContain(message);
+    expect(appShotOf).not.toHaveBeenCalled();
+  });
+
+  it('answers 400 to source=app on a server that cannot shoot the app', async () => {
+    const { shots } = acme();
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long&source=app');
+
+    expect(shot.status).toBe(400);
+    expect(String(shot.body)).toContain('cannot shoot the app harness');
+    expect(drawnUrls()).toEqual([]);
+  });
+
+  it('draws the design with source=design', async () => {
+    const appShotOf = vi.fn(async () => Buffer.from('app png'));
+    const { shots } = acme(undefined, appShotOf);
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&source=design');
+
+    expect(shot.status).toBe(200);
+    expect(appShotOf).not.toHaveBeenCalled();
+    expect(drawnUrls()).toHaveLength(1);
+  });
+
+  it('draws a state at the preset width, at full height, under the asked theme', async () => {
+    const { shots } = acme();
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&surface=dark');
+
+    expect(shot).toMatchObject({ status: 200, type: 'image/png' });
+    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 390, height: 844 }, colorScheme: 'light' });
+    expect(drawnUrls()[0]).toBe(
+      'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&surface=dark',
+    );
+    expect(screenshot).toHaveBeenCalledWith(expect.objectContaining({ fullPage: true, type: 'png' }));
+  });
+
+  it('keeps one picture per part, state, preset and theme', async () => {
+    const { shots } = acme();
+
+    await ask(shots, 'product=acme&part=components/card&state=long&preset=phone');
+    await ask(shots, 'product=acme&part=components/card&state=long&preset=phone');
+    await ask(shots, 'product=acme&part=components/card&state=long&preset=desktop');
+    await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&color=brand');
+
+    expect(screenshot).toHaveBeenCalledTimes(3);
+  });
+
+  it('draws a state on the page fill it is asked for, as a picture of its own', async () => {
+    const { shots } = acme();
+
+    await ask(shots, 'product=acme&part=components/card&state=long&preset=phone');
+    await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&fill=surface');
+
+    expect(screenshot).toHaveBeenCalledTimes(2);
+    expect(drawnUrls()[1]).toBe(
+      'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&fill=surface',
+    );
+  });
+
+  it('drops the pictures of every part above a changed file, in the product that drew it', async () => {
+    const { target, config, shots } = acme();
+    const vite = await createDesignServer({ target, config, listen: false });
+
+    closing.push(() => vite.close());
+
+    const system = createSystemModules({ target, config });
+    const pageIds = ['pages/home', 'elements/hero'].map((part) =>
+      productModuleIdOf({ file: system.partOf({ product: 'acme', part })?.file ?? '', product: 'acme' }),
+    );
+
+    await Promise.all(pageIds.map((id) => vite.ssrLoadModule(id)));
+
+    for (const part of ['pages/home', 'components/card', 'elements/hero']) {
+      await ask(shots, `product=acme&part=${part}&state=default&preset=phone`);
+    }
+
+    const baseCardCss = join(target, DESIGN_DIR, 'acme-base/components/card/card.css');
+
+    shots.forget(
+      changedPartsOf({
+        target,
+        config,
+        system,
+        file: baseCardCss,
+        dependents: dependentIdsOf(vite.moduleGraph.getModulesByFile(baseCardCss) ?? []),
+      }),
+    );
+    screenshot.mockClear();
+
+    for (const part of ['pages/home', 'components/card', 'elements/hero']) {
+      await ask(shots, `product=acme&part=${part}&state=default&preset=phone`);
+    }
+
+    expect(
+      drawnUrls()
+        .slice(-2)
+        .map((url) => new URL(url).searchParams.get('part')),
+    ).toEqual(['pages/home', 'components/card']);
+    expect(screenshot).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws a part as a sketch variant holds it when the address names the sketch and the variant', async () => {
+    const { target, config, shots } = acme();
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a', 'b'] });
+
+    const part = 'product=acme&part=elements/hero&state=default&preset=phone';
+
+    expect(await ask(shots, `${part}&sketch=components/button&variant=b`)).toMatchObject({ status: 200 });
+    expect(await ask(shots, `${part}&sketch=components/button&variant=a`)).toMatchObject({ status: 200 });
+    expect(await ask(shots, part)).toMatchObject({ status: 200 });
+    expect(drawnUrls().map((url) => new URL(url).search)).toEqual([
+      '?product=acme&part=elements%2Fhero&state=default&sketch=components%2Fbutton&variant=b',
+      '?product=acme&part=elements%2Fhero&state=default&sketch=components%2Fbutton&variant=a',
+      '?product=acme&part=elements%2Fhero&state=default',
+    ]);
+  });
+
+  it('answers 400 with the variants when the address names a sketch without one of its variants', async () => {
+    const { target, config, shots } = acme();
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a', 'b'] });
+
+    const part = 'product=acme&part=elements/hero&state=default&preset=phone&sketch=components/button';
+    const want = { status: 400, body: 'design-explore: pass variant=<one of: a, b> with sketch=components/button' };
+
+    expect(await ask(shots, part)).toMatchObject(want);
+    expect(await ask(shots, `${part}&variant=z`)).toMatchObject(want);
+    expect(drawnUrls()).toEqual([]);
+  });
+
+  it('records a view of a sketch variant it hands out without priority=low, until the variant changes', async () => {
+    const { target, config, shots } = acme();
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    const sketch = createSketch({ merge: 'override', product, sketch: parsed, variants: ['a', 'b'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    const changes = [
+      { variant: 'a', changed: 1, change: 'variant a changes default' },
+      { variant: 'b', changed: 1, change: 'variant b changes default' },
+    ];
+    const unviewed = () =>
+      unviewedShotLinesOf({ target, invocation: 'et design', sketch, changes }).map((line) => line.split(' - ')[0]);
+    const part = 'product=acme&part=components/button&state=default&sketch=components/button';
+
+    expect(await ask(shots, `${part}&variant=a`)).toMatchObject({ status: 200 });
+    expect(await ask(shots, `${part}&variant=b&priority=low`)).toMatchObject({ status: 200 });
+    expect(unviewed()).toEqual(['SHOT-NOT-VIEWED variant b changes default']);
+
+    writeFileSync(join(sketch.dir, 'a/components/button/button.css'), '.et-button { color: red; }\n');
+
+    expect(unviewed()).toEqual([
+      'SHOT-NOT-VIEWED variant a changes default',
+      'SHOT-NOT-VIEWED variant b changes default',
+    ]);
+  });
+
+  it('draws a state at a container width, cropped to the height of its content', async () => {
+    const { shots } = acme();
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long&width=480');
+
+    expect(shot).toMatchObject({ status: 200, type: 'image/png' });
+    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 480, height: 800 }, colorScheme: 'light' });
+    expect(new URL(drawnUrls()[0] ?? '').searchParams.has('fit')).toBe(false);
+    expect(screenshot).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'png', clip: { x: 10, y: 20, width: 200, height: 80 } }),
+    );
+  });
+
+  it('fits a state without a preset or a width to its content', async () => {
+    const { shots } = acme();
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long');
+
+    expect(shot).toMatchObject({ status: 200, body: Buffer.from('png') });
+    expect(new URL(drawnUrls()[0] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=');
+    expect(screenshot).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'png', clip: { x: 10, y: 20, width: 200, height: 80 } }),
+    );
+  });
+
+  it('clips a fitted state to its root rounded to whole pixels', async () => {
+    const { shots } = acme();
+
+    boundingBox.mockResolvedValueOnce({ x: 0.25, y: 0, width: 173.046875, height: 29.5 });
+    await ask(shots, 'product=acme&part=components/card&state=long');
+
+    expect(screenshot).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'png', clip: { x: 0, y: 0, width: 173, height: 30 } }),
+    );
+  });
+
+  it('fits a bare state without the frame padding, as a picture of its own', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf(address);
+    await shots.pictureOf({ ...address, bare: true });
+    await shots.pictureOf({ ...address, bare: true });
+
+    expect(drawnUrls()).toHaveLength(2);
+    expect(new URL(drawnUrls()[0] ?? '').searchParams.has('bare')).toBe(false);
+    expect(new URL(drawnUrls()[1] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=&bare=');
+  });
+
+  it('names a picture drawn now apart from one kept in memory or bypassing the cache', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    expect((await shots.pictureOf(address)).source).toBe('drawn');
+    expect((await shots.pictureOf(address)).source).toBe('memory');
+    expect((await shots.pictureOf({ ...address, fresh: true })).source).toBe('drawn');
+  });
+
+  it('draws over the compare checkerboard, without omitting the background, as a picture of its own', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf(address);
+    expect(screenshot).toHaveBeenLastCalledWith(expect.objectContaining({ omitBackground: true }));
+
+    await shots.pictureOf({ ...address, checker: true });
+    expect(screenshot).toHaveBeenLastCalledWith(expect.objectContaining({ omitBackground: false }));
+    expect(drawnUrls()).toHaveLength(2);
+  });
+
+  it('empties the slot regions before the shot when asked, as a picture of its own', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: 'phone',
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+    const emptied = () =>
+      evaluate.mock.calls.filter(
+        ([script]) => script.includes('[data-et-projected]') && script.includes('replaceChildren'),
+      );
+
+    await shots.pictureOf(address);
+
+    expect(emptied()).toHaveLength(0);
+
+    await shots.pictureOf({ ...address, emptySlots: true });
+    await shots.pictureOf({ ...address, emptySlots: true });
+
+    expect(drawnUrls().length + switchedStates().length).toBe(2);
+    expect(emptied()).toHaveLength(1);
+    expect(evaluate.mock.invocationCallOrder[evaluate.mock.calls.indexOf(emptied()[0]!)]).toBeLessThan(
+      screenshot.mock.invocationCallOrder[1]!,
+    );
+  });
+
+  it('passes the interaction to the frame and keeps one picture per interaction', async () => {
+    const { shots } = acme();
+
+    await ask(shots, 'product=acme&part=components/card&state=long&interaction=hover');
+    await ask(shots, 'product=acme&part=components/card&state=long&interaction=hover');
+    await ask(shots, 'product=acme&part=components/card&state=long');
+
+    expect(drawnUrls()).toHaveLength(2);
+    expect(new URL(drawnUrls()[0] ?? '').searchParams.get('interaction')).toBe('hover');
+    expect(new URL(drawnUrls()[1] ?? '').searchParams.has('interaction')).toBe(false);
+  });
+
+  it('draws the merged part with the state props of a sketch variant as a picture of its own', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf({ ...address, props: { target: 'components/card', variant: 'a' } });
+    await shots.pictureOf(address);
+
+    expect(drawnUrls()).toHaveLength(2);
+    expect(new URL(drawnUrls()[0] ?? '').search).toBe(
+      '?product=acme&part=components%2Fcard&state=long&fit=&props=components%2Fcard&props-variant=a',
+    );
+    expect(new URL(drawnUrls()[1] ?? '').searchParams.has('props')).toBe(false);
+  });
+
+  it('draws a state again when pictureOf asks for a fresh picture', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf(address);
+    await shots.pictureOf(address);
+    await shots.pictureOf({ ...address, fresh: true });
+
+    expect(drawnUrls()).toHaveLength(1);
+    expect(switchedStates()).toHaveLength(1);
+  });
+
+  it('draws two fresh pictures of a state asked at once only once, with the time the draw began', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+    const askedAt = performance.now();
+
+    await shots.pictureOf(address);
+    const fresh = await Promise.all([
+      shots.pictureOf({ ...address, fresh: true }),
+      shots.pictureOf({ ...address, fresh: true }),
+    ]);
+
+    expect(drawnUrls().length + switchedStates().length).toBe(2);
+    expect(fresh.map(({ source }) => source)).toEqual(['drawn', 'drawn']);
+    expect(fresh[0]?.drawnAt).toBeGreaterThanOrEqual(askedAt);
+  });
+
+  it('loads the frame again instead of switching in place after a change to the drawn part', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf(address);
+    shots.forget({ all: false, parts: [{ product: 'acme', part: 'components/card', sketch: null }] });
+    await shots.pictureOf(address);
+
+    expect(switchedStates()).toHaveLength(0);
+    expect(drawnUrls()).toHaveLength(2);
+  });
+
+  it('loads the frame again when the page it drew on cannot switch the state in place', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+    const drawn = evaluate.getMockImplementation();
+
+    onTestFinished(() => void evaluate.mockImplementation(drawn ?? (async () => true)));
+    evaluate.mockImplementation(async (script) => (script.includes('"switching":true') ? false : drawn?.(script)));
+
+    await shots.pictureOf(address);
+    await shots.pictureOf({ ...address, fresh: true });
+
+    expect(switchedStates()).toHaveLength(1);
+    expect(drawnUrls()).toHaveLength(2);
+  });
+
+  it('reports a part whose picture changed unless a forget or an announced clear dropped it first', async () => {
+    const changed = vi.fn<(part: unknown) => void>();
+    const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-shot-')));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    const shots = createPartShooter({
+      target,
+      base: 'http://localhost:1',
+      system: createSystemModules({ target, config: readConfig(target) ?? {} }),
+      chromiumOf: withBrowser,
+      ledger: createDrawLedger(),
+      changed,
+    });
+
+    closing.push(() => shots.close());
+    onTestFinished(() => void screenshot.mockImplementation(async () => Buffer.from('png')));
+
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+    const card = { product: 'acme', part: 'components/card', sketch: null };
+    const drawing = async (png: string) => {
+      screenshot.mockResolvedValue(Buffer.from(png));
+      await shots.pictureOf({ ...address, fresh: true });
+    };
+
+    await drawing('a');
+    await drawing('a');
+    expect(changed).not.toHaveBeenCalled();
+
+    await drawing('b');
+    expect(changed).toHaveBeenCalledExactlyOnceWith(card);
+
+    shots.forget({ all: false, parts: [card] });
+    await drawing('c');
+    shots.clear({ announced: true });
+    await drawing('d');
+    expect(changed).toHaveBeenCalledOnce();
+
+    shots.clear({ announced: false });
+    await drawing('e');
+    expect(changed).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws the shots of pictureOf and of an ask without priority=low before the shots asked with it', async () => {
+    const { shots } = acme();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const card = 'product=acme&part=components/card&state=long';
+
+    const busy = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `busy-${at + 1}`);
+
+    busy.forEach(() => goto.mockImplementationOnce(() => held));
+
+    const asked = [
+      ...busy.map((name) => ask(shots, `${card}&interaction=${name}&priority=low`)),
+      ask(shots, `${card}&interaction=low&priority=low`),
+      ask(shots, `${card}&interaction=hurried&priority=low`),
+      ask(shots, `${card}&interaction=hurried`),
+      ask(shots, `${card}&interaction=asked`),
+      shots.pictureOf({
+        product: 'acme',
+        part: 'components/card',
+        state: 'long',
+        preset: null,
+        width: null,
+        sketch: null,
+        interaction: 'compared',
+        params: new URLSearchParams(),
+      }),
+    ];
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(DRAWS_AT_ONCE));
+    release();
+    await Promise.all(asked);
+
+    expect(drawnUrls().map((url) => new URL(url).searchParams.get('interaction'))).toEqual([
+      ...busy,
+      'hurried',
+      'asked',
+      'compared',
+      'low',
+    ]);
+  });
+
+  it('draws the active frame of a newly shown view next, then its visible cells, before the backlog of the old view', async () => {
+    const { shots } = acme();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const card = 'product=acme&part=components/card&state=long&priority=low';
+
+    const busy = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `busy-${at + 1}`);
+
+    busy.forEach(() => goto.mockImplementationOnce(() => held));
+
+    const asked = [
+      ...busy.map((name) => ask(shots, `${card}&interaction=${name}&view=1`)),
+      ask(shots, `${card}&interaction=old-active&view=1&rank=active`),
+      ask(shots, `${card}&interaction=old-rest&view=1`),
+      ask(shots, `${card}&interaction=unviewed`),
+      ask(shots, `${card}&interaction=new-visible&view=2&rank=visible`),
+      ask(shots, `${card}&interaction=new-active&view=2&rank=active`),
+    ];
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(DRAWS_AT_ONCE));
+    release();
+    await Promise.all(asked);
+
+    expect(drawnUrls().map((url) => new URL(url).searchParams.get('interaction'))).toEqual([
+      ...busy,
+      'new-active',
+      'new-visible',
+      'unviewed',
+      'old-active',
+      'old-rest',
+    ]);
+  });
+
+  it('moves a queued shot of the old view ahead when the shown view asks for it again', async () => {
+    const { shots } = acme();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const card = 'product=acme&part=components/card&state=long&priority=low';
+
+    const busy = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `busy-${at + 1}`);
+
+    busy.forEach(() => goto.mockImplementationOnce(() => held));
+
+    const asked = [
+      ...busy.map((name) => ask(shots, `${card}&interaction=${name}&view=1`)),
+      ask(shots, `${card}&interaction=first&view=1`),
+      ask(shots, `${card}&interaction=shared&view=1`),
+      ask(shots, `${card}&interaction=shared&view=2&rank=active`),
+    ];
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(DRAWS_AT_ONCE));
+    release();
+    await Promise.all(asked);
+
+    expect(drawnUrls().map((url) => new URL(url).searchParams.get('interaction'))).toEqual([
+      ...busy,
+      'shared',
+      'first',
+    ]);
+  });
+
+  it('drops a queued shot every asker hung up on, keeps drawing, and draws it again for a new ask', async () => {
+    const { shots, ledger } = acme();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const card = 'product=acme&part=components/card&state=long&priority=low';
+
+    const busy = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `busy-${at + 1}`);
+
+    busy.forEach(() => goto.mockImplementationOnce(() => held));
+
+    const busyAsks = busy.map((name) => ask(shots, `${card}&interaction=${name}`));
+    const gone = asking(shots, `${card}&interaction=gone&view=1`);
+    const twice = [
+      asking(shots, `${card}&interaction=twice&view=1`),
+      asking(shots, `${card}&interaction=twice&view=2`),
+    ];
+    const kept = ask(shots, `${card}&interaction=kept`);
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(DRAWS_AT_ONCE));
+    gone.hangUp();
+    twice[0]?.hangUp();
+    release();
+
+    await expect(kept).resolves.toMatchObject({ status: 200 });
+    await expect(twice[1]?.answer).resolves.toMatchObject({ status: 200 });
+    await Promise.all(busyAsks);
+
+    expect(drawnUrls().map((url) => new URL(url).searchParams.get('interaction'))).toEqual([...busy, 'twice', 'kept']);
+    expect(ledger.report()).toMatchObject({ queued: 0, rendering: 0, failedTotal: 0 });
+
+    await expect(ask(shots, `${card}&interaction=gone&view=3`)).resolves.toMatchObject({ status: 200 });
+    expect(drawnUrls().at(-1)).toContain('interaction=gone');
+  });
+
+  it('crops a picture to the asked clip from the part root or the page, and answers 400 for a bad clip', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    expect(await ask(shots, `${part}&clip=2,3,40,10`)).toMatchObject({ status: 200, body: Buffer.from('png') });
+    expect(screenshot).toHaveBeenLastCalledWith(
+      expect.objectContaining({ fullPage: true, clip: { x: 12, y: 23, width: 40, height: 10 } }),
+    );
+    expect(await ask(shots, `${part}&preset=phone&clip=2,3,40,10`)).toMatchObject({ status: 200 });
+    expect(screenshot).toHaveBeenLastCalledWith(
+      expect.objectContaining({ fullPage: true, clip: { x: 2, y: 3, width: 40, height: 10 } }),
+    );
+
+    for (const clip of ['1,2,3', '0,0,0,4', '-1,0,4,4', 'a,b,c,d']) {
+      const answer = await ask(shots, `${part}&clip=${clip}`);
+
+      expect(answer.status).toBe(400);
+      expect(String(answer.body)).toContain('clip');
+    }
+  });
+
+  it('answers a crop outside the content with an empty picture of the crop size and a note', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams('clip=900,900,40,10&scale=2'),
+    };
+
+    screenshot.mockRejectedValueOnce(
+      new Error('page.screenshot: Clipped area is either empty or outside the resulting image'),
+    );
+
+    const picture = await shots.pictureOf(address);
+
+    expect(picture.png.readUInt32BE(16)).toBe(80);
+    expect(picture.png.readUInt32BE(20)).toBe(20);
+    expect(picture.note).toBe(
+      'crop box 900,900,40,10 is outside the content (content box 0,0,200,80); the picture is empty',
+    );
+
+    screenshot.mockRejectedValueOnce(
+      new Error('page.screenshot: Clipped area is either empty or outside the resulting image'),
+    );
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&clip=900,900,40,12')).toMatchObject({
+      status: 200,
+      note: 'crop box 900,900,40,12 is outside the content (content box 0,0,200,80); the picture is empty',
+    });
+
+    screenshot.mockRejectedValueOnce(new Error('page.screenshot: Target closed'));
+    await expect(
+      shots.pictureOf({ ...address, params: new URLSearchParams('clip=900,900,40,10&scale=3') }),
+    ).rejects.toThrow('the screenshot failed');
+  });
+
+  it('waits for the draw another shooter on the same store holds and reads its picture without drawing', async () => {
+    const { first, second } = sharingShooters();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const query = 'product=acme&part=components/card&state=long';
+
+    goto.mockImplementationOnce(() => held);
+
+    const drawing = ask(first.shots, query);
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(1));
+
+    const waiting = ask(second.shots, query);
+
+    release();
+
+    await expect(drawing).resolves.toMatchObject({ status: 200 });
+    await expect(waiting).resolves.toMatchObject({ status: 200, type: 'image/png' });
+    expect(drawnUrls()).toHaveLength(1);
+    expect(first.ledger.report()).toMatchObject({ drawnTotal: 1, waitedTotal: 0 });
+    expect(second.ledger.report()).toMatchObject({ drawnTotal: 0, waitedTotal: 1 });
+  });
+
+  it('answers a picture drawn before from memory or disk without drawing, and refuses one never drawn', async () => {
+    const { first, second } = sharingShooters();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams({ scheme: 'light' }),
+      kept: true,
+    };
+
+    await ask(first.shots, 'product=acme&part=components/card&state=long&epoch=1&session=s&scheme=light&priority=low');
+
+    await expect(first.shots.pictureOf({ ...address, state: 'long' })).resolves.toMatchObject({ source: 'memory' });
+    await expect(second.shots.pictureOf({ ...address, state: 'long' })).resolves.toMatchObject({ source: 'disk' });
+    await expect(second.shots.pictureOf({ ...address, state: 'short' })).rejects.toBeInstanceOf(NotKeptError);
+    expect(drawnUrls()).toHaveLength(1);
+    expect(second.ledger.report()).toMatchObject({ drawnTotal: 0 });
+  });
+
+  it('draws a shot itself when the shooter it waited for failed to draw it', async () => {
+    const { first, second } = sharingShooters();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const query = 'product=acme&part=components/card&state=long';
+
+    goto.mockImplementationOnce(() => held.then(() => Promise.reject(new Error('net::ERR_ABORTED'))));
+
+    const drawing = ask(first.shots, query);
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(1));
+
+    const waiting = ask(second.shots, query);
+
+    release();
+
+    await expect(drawing).resolves.toMatchObject({ status: 500 });
+    await expect(waiting).resolves.toMatchObject({ status: 200, type: 'image/png' });
+    expect(second.ledger.report()).toMatchObject({ drawnTotal: 1, waitedTotal: 0 });
+  });
+
+  it('draws a state at the asked scale as a picture of its own, and answers 400 for a bad scale', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    expect(await ask(shots, `${part}&scale=3`)).toMatchObject({ status: 200 });
+    expect(newContext).toHaveBeenLastCalledWith({
+      viewport: { width: 1280, height: 800 },
+      deviceScaleFactor: 3,
+      colorScheme: 'light',
+    });
+    expect(await ask(shots, part)).toMatchObject({ status: 200 });
+    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 }, colorScheme: 'light' });
+
+    for (const scale of ['0', '5', '1.5', 'big']) {
+      const answer = await ask(shots, `${part}&scale=${scale}`);
+
+      expect(answer.status).toBe(400);
+      expect(String(answer.body)).toContain('scale');
+    }
+
+    expect(drawnUrls()).toHaveLength(2);
+  });
+
+  it('draws a state in the asked colour scheme as a picture of its own', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    expect(await ask(shots, `${part}&scheme=dark`)).toMatchObject({ status: 200 });
+    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 }, colorScheme: 'dark' });
+    expect(await ask(shots, `${part}&scheme=light`)).toMatchObject({ status: 200 });
+    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 }, colorScheme: 'light' });
+    await ask(shots, `${part}&scheme=dark`);
+
+    expect(drawnUrls()).toEqual([
+      'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&fit=',
+      'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&fit=',
+    ]);
+  });
+
+  it('answers an ask without a colour scheme with the picture of the light one', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    expect(await ask(shots, part)).toMatchObject({ status: 200 });
+    expect(await ask(shots, `${part}&scheme=light`)).toMatchObject({ status: 200 });
+
+    expect(drawnUrls()).toHaveLength(1);
+  });
+
+  it('draws a part and a call on a transparent page in either colour scheme, as a live frame does', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    for (const query of [
+      `${part}&scheme=dark`,
+      `${part}&scheme=light`,
+      `${part}&preset=phone`,
+      `${part}&clip=2,3,40,10`,
+    ]) {
+      expect(await ask(shots, query)).toMatchObject({ status: 200 });
+      expect(screenshot).toHaveBeenLastCalledWith(expect.objectContaining({ omitBackground: true }));
+    }
+
+    expect(await ask(shots, 'call=acme/login&variant=a&width=1280')).toMatchObject({ status: 200 });
+    expect(screenshot).toHaveBeenLastCalledWith(expect.objectContaining({ omitBackground: true }));
+  });
+
+  it('keeps one picture per preset, width and fit', async () => {
+    const { shots } = acme();
+
+    await ask(shots, 'product=acme&part=components/card&state=long');
+    await ask(shots, 'product=acme&part=components/card&state=long');
+    await ask(shots, 'product=acme&part=components/card&state=long&width=480');
+    await ask(shots, 'product=acme&part=components/card&state=long&width=480');
+    await ask(shots, 'product=acme&part=components/card&state=long&width=280');
+
+    expect(drawnUrls()).toHaveLength(3);
+  });
+
+  it('accepts a preset with the width the preset has, and names both values in the 400 when they differ', async () => {
+    const { shots } = acme();
+
+    expect((await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&width=390')).status).toBe(200);
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&width=480')).toMatchObject({
+      status: 400,
+      body: expect.stringMatching(/phone.*390.*480/),
+    });
+  });
+
+  it('answers 400 without a product, part or state, for a preset with a width or a bad width, and 404 for one the product lacks', async () => {
+    const { shots } = acme();
+
+    expect((await ask(shots, 'product=acme&part=components/card')).status).toBe(400);
+    expect((await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&width=480')).status).toBe(400);
+
+    for (const width of ['0', '-5', '12.5', 'wide']) {
+      expect((await ask(shots, `product=acme&part=components/card&state=long&width=${width}`)).status).toBe(400);
+    }
+
+    expect((await ask(shots, 'product=acme&part=components/nope&state=long&preset=phone')).status).toBe(404);
+    expect((await ask(shots, 'product=acme&part=components/card&state=long&preset=tv')).status).toBe(404);
+    expect(screenshot).not.toHaveBeenCalled();
+  });
+
+  it('names the states of the part in the 400 without a state', async () => {
+    const { target, config, shots } = acme(async ({ sketch }) =>
+      sketch ? ['short', 'long', 'new'] : ['short', 'long'],
+    );
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/card');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
+
+    const merged = await ask(shots, 'product=acme&part=components/card');
+    const variant = await ask(shots, 'product=acme&part=components/card&sketch=components/card&variant=a');
+
+    expect(merged.status).toBe(400);
+    expect(String(merged.body)).toContain('state=<one of: short, long>');
+    expect(String(variant.body)).toContain('state=<one of: short, long, new>');
+    expect(screenshot).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 with a reason, never a png, for a state the merged part or the variant lacks', async () => {
+    const { target, config, shots } = acme(async ({ sketch }) => (sketch ? ['short', 'new'] : ['short', 'long']));
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
+
+    const merged = await ask(shots, 'product=acme&part=components/button&state=new');
+    const variant = await ask(
+      shots,
+      'product=acme&part=components/button&state=long&sketch=components/button&variant=a',
+    );
+
+    expect(merged).toMatchObject({ status: 404, type: 'text/plain; charset=utf-8' });
+    expect(String(merged.body)).toContain('state "new" not in part components/button at HEAD - it has: short, long');
+    expect(String(variant.body)).toContain(
+      'state "long" is not in variant "a" of components/button - it has: short, new',
+    );
+    expect(screenshot).not.toHaveBeenCalled();
+  });
+
+  it('takes a sketch folder name as the sketch id, and names the known ids for an unknown sketch', async () => {
+    const { target, config, shots } = acme(async () => ['short', 'long']);
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button@notice');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
+
+    const part = 'product=acme&part=components/button&state=short&variant=a';
+
+    expect((await ask(shots, `${part}&sketch=components/button.notice`)).status).toBe(200);
+    expect((await ask(shots, `${part}&sketch=components-button.notice`)).status).toBe(200);
+
+    const unknown = await ask(shots, `${part}&sketch=components/button.nope`);
+
+    expect(unknown.status).toBe(404);
+    expect(String(unknown.body)).toContain('no sketch components/button.nope; did you mean components/button@notice');
+  });
+
+  it('answers 422 with a reason, never a png, when the part root has zero size or the screenshot fails', async () => {
+    const { shots } = acme();
+
+    boundingBox.mockResolvedValueOnce({ x: 0, y: 0, width: 320, height: 0 });
+    expect(await ask(shots, 'product=acme&part=components/card&state=long')).toMatchObject({
+      status: 422,
+      type: 'text/plain; charset=utf-8',
+      body: expect.stringContaining('part root has zero size'),
+    });
+
+    screenshot.mockRejectedValueOnce(new Error('Timeout 15000ms exceeded'));
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 422,
+      body: expect.stringContaining('Timeout 15000ms exceeded'),
+    });
+  });
+
+  it('keeps at most eight idle pages open on a shared queue however many shooters draw on it, each drawing afresh', async () => {
+    const { target, system } = acme();
+    const queue = createDrawQueue({ target, chromiumOf: withBrowser });
+    const open = new Set<unknown>();
+    const opening = newContext.getMockImplementation();
+
+    closing.push(() => queue.close());
+    onTestFinished(() => void newContext.mockImplementation(opening as never));
+    newContext.mockImplementation(async (options) => {
+      const context = { ...((await opening?.(options)) as object), close: async () => void open.delete(context) };
+
+      open.add(context);
+
+      return context;
+    });
+
+    for (let run = 0; run < 12; run++) {
+      const shots = createPartShooter({ target, base: 'http://localhost:1', system, queue });
+
+      expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+        status: 200,
+      });
+    }
+
+    expect(open.size).toBeLessThanOrEqual(8);
+    expect(drawnUrls()).toHaveLength(12);
+  });
+});
+
+describe('createPartShooter broken shots', () => {
+  it('answers 504 when the draw times out', async () => {
+    const { shots } = acme();
+
+    screenshot.mockRejectedValueOnce(Object.assign(new Error('Timeout 15000ms exceeded'), { name: 'TimeoutError' }));
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 504,
+      type: 'text/plain; charset=utf-8',
+      body: expect.stringContaining('timed out'),
+    });
+  });
+
+  it('answers 500 with the picture of the error when the frame drew its own error text', async () => {
+    const { shots } = acme();
+
+    frameError = 'design-explore: state "long" failed';
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 500,
+      type: 'image/png',
+      body: Buffer.from('png'),
+    });
+  });
+
+  it('answers 404 when the frame finds no such part, as when its sketch went away while the shot drew', async () => {
+    const { shots, ledger } = acme();
+
+    frameError =
+      'design-explore: variant "a" of the sketch on components/card in product "acme" has no part "components/card"';
+    frameMissing = '';
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 404,
+      body: frameError,
+    });
+    expect(ledger.report().failed).toMatchObject([{ status: 404 }]);
+  });
+
+  it('drops a queued shot of a sketch variant that is gone when its turn comes, as a 404', async () => {
+    const { target, config, system, shots } = acme();
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    const sketch = createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    const shot = ask(shots, 'product=acme&part=components/button&state=long&sketch=components/button&variant=a');
+
+    rmSync(sketch.dir, { recursive: true });
+    system.forget();
+
+    expect(await shot).toMatchObject({ status: 404, body: expect.stringContaining('has no part') });
+    expect(drawnUrls()).toEqual([]);
+  });
+
+  it('answers an error with the build message, never the overlay, when the frame has a build error', async () => {
+    const { shots } = acme();
+
+    overlayCount = 1;
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 422,
+      type: 'text/plain; charset=utf-8',
+      body: expect.stringContaining('Failed to resolve import "./nope"'),
+    });
+    expect(screenshot).not.toHaveBeenCalled();
+  });
+});
+
+describe('createPartShooter pictures', () => {
+  it('keeps the part roots of a picture, measured from the shot root of a fitted part or the page of a preset', async () => {
+    const { shots } = acme();
+    const ask = (preset: string | null) =>
+      shots.pictureOf({
+        product: 'acme',
+        part: 'components/card',
+        state: 'long',
+        preset,
+        width: null,
+        sketch: null,
+        interaction: null,
+        params: new URLSearchParams(),
+      });
+
+    expect(await ask(null)).toEqual({
+      png: Buffer.from('png'),
+      marks,
+      markup: '<p>card</p>',
+      source: 'drawn',
+      drawnAt: expect.any(Number),
+    });
+    expect(await ask('phone')).toEqual({
+      png: Buffer.from('png'),
+      marks,
+      markup: '<p>card</p>',
+      source: 'drawn',
+      drawnAt: expect.any(Number),
+    });
+    expect(
+      evaluate.mock.calls
+        .map(([script]) => script)
+        .filter((script) => script.includes("querySelectorAll('[data-et-part]')")),
+    ).toEqual([expect.stringContaining('true ?'), expect.stringContaining('false ?')]);
+  });
+  it('reads the markup with each element box only when asked for boxes, as a picture of its own', async () => {
+    const { shots } = acme();
+    const ask = (boxes: boolean) =>
+      shots.pictureOf({
+        product: 'acme',
+        part: 'components/card',
+        state: 'long',
+        preset: null,
+        width: null,
+        sketch: null,
+        interaction: null,
+        boxes,
+        params: new URLSearchParams(),
+      });
+    const markupReads = () =>
+      evaluate.mock.calls.map(([script]) => script).filter((script) => script.includes('innerHTML'));
+
+    await ask(false);
+    expect(markupReads()).toEqual([expect.not.stringContaining('data-box')]);
+
+    await ask(true);
+    expect(markupReads()).toEqual([expect.not.stringContaining('data-box'), expect.stringContaining('data-box')]);
+  });
+});
+
+describe('createPartShooter for a call', () => {
+  it('draws a variant at the asked width, at full height, under the asked theme', async () => {
+    const { shots } = acme();
+    const shot = await ask(shots, 'call=acme/login&variant=a&width=1280&color=brand');
+
+    expect(shot).toMatchObject({ status: 200, type: 'image/png' });
+    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 1280, height: 800 }, colorScheme: 'light' });
+    expect(drawnUrls()[0]).toBe('http://localhost:1/frame.html?call=acme%2Flogin&variant=a&color=brand');
+    expect(screenshot).toHaveBeenCalledWith(expect.objectContaining({ fullPage: true, type: 'png' }));
+  });
+
+  it('keeps one picture per variant, width and theme until a file of its call changes', async () => {
+    const { shots } = acme();
+
+    await ask(shots, 'call=acme/login&variant=a&width=1280');
+    await ask(shots, 'call=acme/login&variant=a&width=1280');
+    await ask(shots, 'call=acme/login&variant=a&width=390');
+    await ask(shots, 'call=acme/other&variant=a&width=1280');
+    expect(screenshot).toHaveBeenCalledTimes(3);
+
+    shots.forgetCalls('acme/login/call.ts');
+    await ask(shots, 'call=acme/login&variant=a&width=1280');
+    await ask(shots, 'call=acme/other&variant=a&width=1280');
+    expect(screenshot).toHaveBeenCalledTimes(4);
+
+    shots.forgetCalls('acme/shared.ts');
+    await ask(shots, 'call=acme/other&variant=a&width=1280');
+    expect(screenshot).toHaveBeenCalledTimes(5);
+  });
+
+  it('answers 400 without a call, a variant or a positive whole width', async () => {
+    const { shots } = acme();
+
+    for (const query of ['call=acme/login&variant=a', 'variant=a&width=1280', 'call=acme/login&width=1280']) {
+      expect((await ask(shots, query)).status).toBe(400);
+    }
+
+    for (const width of ['0', '-5', '12.5', 'wide']) {
+      expect((await ask(shots, `call=acme/login&variant=a&width=${width}`)).status).toBe(400);
+    }
+
+    expect(screenshot).not.toHaveBeenCalled();
+  });
+});
+
+describe('dependentIdsOf', () => {
+  it('walks every importer once, also around a cycle', () => {
+    type Node = { id: string | null; importers: Set<Node> };
+    const node = (id: string | null): Node => ({ id, importers: new Set() });
+    const [leaf, mid, top, unnamed] = [node('leaf'), node('mid'), node('top'), node(null)];
+
+    leaf.importers.add(mid);
+    mid.importers.add(top).add(unnamed);
+    top.importers.add(mid);
+
+    expect(dependentIdsOf([leaf]).sort()).toEqual(['leaf', 'mid', 'top']);
+  });
+});

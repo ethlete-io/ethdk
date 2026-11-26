@@ -1,0 +1,552 @@
+import ts from 'typescript';
+import { perSource, sourceFileOf } from '../ts-source';
+
+const definitionOf = perSource((source) => {
+  const file = sourceFileOf(source);
+  let found: ts.ObjectLiteralExpression | null = null;
+  const visit = (node: ts.Node) => {
+    if (found) return;
+
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'definePart' &&
+      node.arguments[0] &&
+      ts.isObjectLiteralExpression(node.arguments[0])
+    ) {
+      found = node.arguments[0];
+
+      return;
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(file);
+
+  return { file, definition: found as ts.ObjectLiteralExpression | null };
+});
+
+const nameOf = (name: ts.PropertyName) =>
+  ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name) ? name.text : null;
+
+/** The top-level `definePart` fields this file reads. Each must be a key of `Part`, which a spec checks. */
+export const PARSED_PART_FIELDS = [
+  'states',
+  'describe',
+  'note',
+  'madeBy',
+  'widths',
+  'interactions',
+  'controls',
+  'motions',
+  'rules',
+  'unreachable',
+  'instant',
+  'implements',
+  'data',
+  'dataStates',
+  'groups',
+] as const;
+
+type ParsedPartField = (typeof PARSED_PART_FIELDS)[number];
+
+const propertyOf = (definition: ts.ObjectLiteralExpression, name: string) =>
+  definition.properties.find(
+    (property): property is ts.PropertyAssignment =>
+      ts.isPropertyAssignment(property) && nameOf(property.name) === name,
+  );
+
+const fieldOf = (definition: ts.ObjectLiteralExpression, name: ParsedPartField) => propertyOf(definition, name);
+
+const fieldName = (name: ParsedPartField) => name;
+
+/**
+ * The state names a part file declares in `definePart({ states: { … } })`, read without running it.
+ * `null` when the states are not written as an object literal there, so they cannot be known.
+ */
+export const stateNamesOf = (source: string): string[] | null => {
+  const { definition } = definitionOf(source);
+  const states = definition ? fieldOf(definition, 'states')?.initializer : undefined;
+
+  if (!states || !ts.isObjectLiteralExpression(states)) return null;
+
+  const names = states.properties.map((property) =>
+    (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)) && property.name
+      ? nameOf(property.name)
+      : null,
+  );
+
+  return names.includes(null) ? null : (names as string[]);
+};
+
+/**
+ * The sentences a part file writes in `definePart({ describe: { … } })`, by state name, read without running it: `none`
+ * without the field, `unknown` when it is not an object literal of string literals there.
+ */
+export const stateSentencesOf = (source: string): 'none' | 'unknown' | Record<string, string> => {
+  const { definition } = definitionOf(source);
+  const field = definition ? fieldOf(definition, 'describe') : undefined;
+
+  if (!field) return 'none';
+  if (!ts.isObjectLiteralExpression(field.initializer)) return 'unknown';
+
+  const sentences = field.initializer.properties.map((property) => {
+    const name = ts.isPropertyAssignment(property) ? nameOf(property.name) : null;
+    const text = ts.isPropertyAssignment(property) ? literalOf(property.initializer) : null;
+
+    return name === null || text === null ? null : ([name, text] as const);
+  });
+
+  return sentences.includes(null) ? 'unknown' : Object.fromEntries(sentences as (readonly [string, string])[]);
+};
+
+/** The source text of each state of `definePart({ states: { … } })`, by state name, read without running it; `null` when the states are not an object literal of plain properties. */
+export const stateSourcesOf = (source: string): Record<string, string> | null => {
+  const { definition, file } = definitionOf(source);
+  const states = definition ? fieldOf(definition, 'states')?.initializer : undefined;
+
+  if (!states || !ts.isObjectLiteralExpression(states)) return null;
+
+  const entries = states.properties.map((property) =>
+    ts.isPropertyAssignment(property) ? ([nameOf(property.name), property.initializer.getText(file)] as const) : null,
+  );
+
+  return entries.some((entry) => !entry || entry[0] === null)
+    ? null
+    : Object.fromEntries(entries as (readonly [string, string])[]);
+};
+
+/** The string literal props each state of `definePart({ states: { … } })` writes, by state name, read without running it. */
+export const stateLiteralPropsOf = (source: string): Record<string, Record<string, string>> => {
+  const { definition } = definitionOf(source);
+  const states = definition ? fieldOf(definition, 'states')?.initializer : undefined;
+
+  if (!states || !ts.isObjectLiteralExpression(states)) return {};
+
+  return Object.fromEntries(
+    states.properties.flatMap((state) => {
+      const name = ts.isPropertyAssignment(state) ? nameOf(state.name) : null;
+
+      if (!ts.isPropertyAssignment(state) || name === null || !ts.isObjectLiteralExpression(state.initializer))
+        return [];
+
+      const props = state.initializer.properties.flatMap((prop) => {
+        const key = ts.isPropertyAssignment(prop) ? nameOf(prop.name) : null;
+        const value = ts.isPropertyAssignment(prop) ? literalOf(prop.initializer) : null;
+
+        return key !== null && value !== null ? [[key, value] as const] : [];
+      });
+
+      return [[name, Object.fromEntries(props)]];
+    }),
+  );
+};
+
+/** The model ids in the `madeBy` literal of a part file; none when it has no such array of strings. */
+export const madeByOf = (source: string): string[] => {
+  const { definition } = definitionOf(source);
+  const current = definition ? fieldOf(definition, 'madeBy')?.initializer : undefined;
+
+  if (!current || !ts.isArrayLiteralExpression(current)) return [];
+
+  return current.elements.flatMap((element) => (ts.isStringLiteralLike(element) ? [element.text] : []));
+};
+
+/** The `note` literal of a part file's `definePart({ … })`; `null` when it holds none. */
+export const noteOf = (source: string): string | null => {
+  const { definition } = definitionOf(source);
+  const current = definition ? fieldOf(definition, 'note')?.initializer : undefined;
+
+  return current && (ts.isStringLiteral(current) || ts.isNoSubstitutionTemplateLiteral(current)) ? current.text : null;
+};
+
+const quoted = (text: string) => `'${text.replace(/\\/gu, '\\\\').replace(/'/gu, "\\'").replace(/\r?\n/gu, '\\n')}'`;
+
+/** The part file with its `note` replaced, or `null` when it holds no `definePart({ note: '…' })` literal. */
+export const withNote = (source: string, note: string): string | null => {
+  const { file, definition } = definitionOf(source);
+  const current = definition ? fieldOf(definition, 'note')?.initializer : undefined;
+
+  if (!current || !(ts.isStringLiteral(current) || ts.isNoSubstitutionTemplateLiteral(current))) return null;
+
+  return `${source.slice(0, current.getStart(file))}${quoted(note)}${source.slice(current.getEnd())}`;
+};
+
+const lineStartOf = (source: string, position: number) => {
+  const newline = source.lastIndexOf('\n', position - 1);
+
+  return newline === -1 ? position : newline;
+};
+
+/**
+ * The part file with `madeBy` in its `definePart({ … })` set to the model ids, written next to `note`; an empty
+ * list removes it. `null` when the file holds no `definePart({ note })` to write it next to.
+ */
+export const withMadeBy = (source: string, madeBy: string[]): string | null => {
+  const { file, definition } = definitionOf(source);
+  const note = definition ? fieldOf(definition, 'note') : undefined;
+
+  if (!definition || !note) return null;
+
+  const current = fieldOf(definition, 'madeBy');
+  const value = `madeBy: [${madeBy.map(quoted).join(', ')}]`;
+
+  if (current) {
+    if (madeBy.length > 0) return `${source.slice(0, current.getStart(file))}${value}${source.slice(current.getEnd())}`;
+
+    const end = source[current.getEnd()] === ',' ? current.getEnd() + 1 : current.getEnd();
+
+    return `${source.slice(0, lineStartOf(source, current.getStart(file)))}${source.slice(end)}`;
+  }
+
+  if (madeBy.length === 0) return source;
+
+  const start = note.getStart(file);
+  const indent = /^\n?([ \t]*)/u.exec(source.slice(lineStartOf(source, start), start))?.[1] ?? '';
+
+  return `${source.slice(0, note.getEnd())},\n${indent}${value}${source.slice(note.getEnd())}`;
+};
+
+const LITERALS = [
+  ts.SyntaxKind.StringLiteral,
+  ts.SyntaxKind.NoSubstitutionTemplateLiteral,
+  ts.SyntaxKind.NumericLiteral,
+  ts.SyntaxKind.TrueKeyword,
+  ts.SyntaxKind.FalseKeyword,
+  ts.SyntaxKind.NullKeyword,
+  ts.SyntaxKind.ObjectLiteralExpression,
+  ts.SyntaxKind.TemplateExpression,
+];
+
+const isPositiveNumber = (node: ts.Expression) => ts.isNumericLiteral(node) && Number(node.text) > 0;
+
+/**
+ * Whether the `widths` a part file writes in `definePart({ widths })` break the rule: a literal that
+ * is not a non-empty list of positive numbers. A `widths` held in a variable cannot be read and passes.
+ */
+export const hasBadWidths = (source: string) => {
+  const { definition } = definitionOf(source);
+  const widths = definition ? fieldOf(definition, 'widths')?.initializer : undefined;
+
+  if (!widths) return false;
+  if (ts.isArrayLiteralExpression(widths))
+    return widths.elements.length === 0 || !widths.elements.every(isPositiveNumber);
+
+  return LITERALS.includes(widths.kind);
+};
+
+/**
+ * The widths a part file writes as a literal in `definePart({ widths: [...] })`, read without running it.
+ * An empty list when it has none; `null` when they are not a literal list of numbers, so they cannot be known.
+ */
+export const widthsOf = (source: string): number[] | null => {
+  const { definition } = definitionOf(source);
+  const widths = definition ? fieldOf(definition, 'widths')?.initializer : undefined;
+
+  if (!widths) return [];
+  if (!ts.isArrayLiteralExpression(widths) || !widths.elements.every(ts.isNumericLiteral)) return null;
+
+  return widths.elements.map((element) => Number((element as ts.NumericLiteral).text));
+};
+
+/**
+ * The names a part file writes as string literals in `definePart({ interactions: [...] })`, read
+ * without running it. An empty list when it has none or they are not written as a literal list.
+ */
+export const interactionNamesOf = (source: string): string[] => {
+  const { definition } = definitionOf(source);
+  const interactions = definition ? fieldOf(definition, 'interactions')?.initializer : undefined;
+
+  if (!interactions || !ts.isArrayLiteralExpression(interactions)) return [];
+
+  return interactions.elements.flatMap((element) =>
+    ts.isStringLiteral(element) || ts.isNoSubstitutionTemplateLiteral(element) ? [element.text] : [],
+  );
+};
+
+/**
+ * Whether a part file declares a control in `definePart({ controls: { … } })`, read without running it. A
+ * `controls` value that is not an object literal counts as declared, since it cannot be known.
+ */
+export const declaresControlsOf = (source: string) => {
+  const { definition } = definitionOf(source);
+  const property = definition?.properties.find(
+    (candidate) => candidate.name && nameOf(candidate.name) === fieldName('controls'),
+  );
+
+  if (!property) return false;
+
+  return (
+    !ts.isPropertyAssignment(property) ||
+    !ts.isObjectLiteralExpression(property.initializer) ||
+    property.initializer.properties.length > 0
+  );
+};
+
+/** Whether a part file writes an explicit empty `controls: {}`, the part saying it has none. */
+export const declaresNoControlsOf = (source: string) => {
+  const { definition } = definitionOf(source);
+  const property = definition?.properties.find(
+    (candidate) => candidate.name && nameOf(candidate.name) === fieldName('controls'),
+  );
+
+  return (
+    !!property &&
+    ts.isPropertyAssignment(property) &&
+    ts.isObjectLiteralExpression(property.initializer) &&
+    property.initializer.properties.length === 0
+  );
+};
+
+/** Whether a part file writes `data: 'list'`, the part showing a loaded list it gets through its inputs. */
+export const showsDataListOf = (source: string) => {
+  const { definition } = definitionOf(source);
+  const data = definition ? fieldOf(definition, 'data')?.initializer : undefined;
+
+  return !!data && (ts.isStringLiteral(data) || ts.isNoSubstitutionTemplateLiteral(data)) && data.text === 'list';
+};
+
+/** The state names a part file writes in `dataStates`, or null without a literal map that names all three. */
+export const dataStatesOf = (source: string): { loading: string; error: string; empty: string } | null => {
+  const { definition } = definitionOf(source);
+  const map = definition ? fieldOf(definition, 'dataStates')?.initializer : undefined;
+
+  if (!map || !ts.isObjectLiteralExpression(map)) return null;
+
+  const [loading, error, empty] = ['loading', 'error', 'empty'].map((key) =>
+    literalOf(propertyOf(map, key)?.initializer),
+  );
+
+  return loading && error && empty ? { loading, error, empty } : null;
+};
+
+/**
+ * The groups a part file writes in `definePart({ groups: [...] })`, read without running it: `none` without the field,
+ * `unknown` when it is not a literal list of `{ label, states }` with string literal states.
+ */
+export const stateGroupsOf = (source: string): 'none' | 'unknown' | { label: string; states: string[] }[] => {
+  const { definition } = definitionOf(source);
+  const field = definition ? fieldOf(definition, 'groups') : undefined;
+
+  if (!field) return 'none';
+  if (!ts.isArrayLiteralExpression(field.initializer)) return 'unknown';
+
+  const groups = field.initializer.elements.map((element) => {
+    if (!ts.isObjectLiteralExpression(element)) return null;
+
+    const label = literalOf(propertyOf(element, 'label')?.initializer);
+    const states = propertyOf(element, 'states')?.initializer;
+
+    if (label === null || !states || !ts.isArrayLiteralExpression(states)) return null;
+
+    const names = states.elements.map((state) => (ts.isExpression(state) ? literalOf(state) : null));
+
+    return names.includes(null) ? null : { label, states: names as string[] };
+  });
+
+  return groups.includes(null) ? 'unknown' : (groups as { label: string; states: string[] }[]);
+};
+
+/** The module a part imports the app picture of `state` from, the placeholder look a merged `built` pick draws. */
+export const builtPictureModuleOf = (state: string) => `./${state}.built`;
+
+const BUILT_PICTURE_IMPORT = /^import\s+\w+\s+from\s+['"]\.\/(.+)\.built['"];?\s*$/gmu;
+
+/** The states a part file draws as the app picture of a merged `built` pick: placeholders until a sketch redraws them. */
+export const builtPlaceholdersOf = (source: string): string[] =>
+  [...source.matchAll(BUILT_PICTURE_IMPORT)].map((match) => match[1] ?? '');
+
+const literalOf = (node: ts.Expression | undefined) =>
+  node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : null;
+
+/**
+ * The motions a part file writes in `definePart({ motions: { … } })` with the `from` and `to` it gives as string
+ * literals, and the `motion` each literal rule in `rules` names, read without running it.
+ */
+export const motionRefsOf = (source: string) => {
+  const { definition } = definitionOf(source);
+  const motions = definition ? fieldOf(definition, 'motions')?.initializer : undefined;
+  const rules = definition ? fieldOf(definition, 'rules')?.initializer : undefined;
+
+  return {
+    motions:
+      motions && ts.isObjectLiteralExpression(motions)
+        ? motions.properties.flatMap((property) => {
+            if (!ts.isPropertyAssignment(property) || !ts.isObjectLiteralExpression(property.initializer)) return [];
+
+            const name = nameOf(property.name);
+
+            if (name === null) return [];
+
+            const body = property.initializer;
+
+            return [
+              {
+                name,
+                from: literalOf(propertyOf(body, 'from')?.initializer),
+                to: literalOf(propertyOf(body, 'to')?.initializer),
+              },
+            ];
+          })
+        : [],
+    ruleMotions:
+      rules && ts.isArrayLiteralExpression(rules)
+        ? rules.elements.flatMap((rule) => {
+            const name = ts.isObjectLiteralExpression(rule) ? literalOf(propertyOf(rule, 'motion')?.initializer) : null;
+
+            return name === null ? [] : [name];
+          })
+        : [],
+  };
+};
+
+/**
+ * A pair a part file writes in `definePart({ unreachable: [ … ] })`. `literal` is false when the entry or one of its
+ * fields is written as something else than a literal; a field that is missing or not a string literal is null.
+ */
+export type UnreachableSource = { from: string | null; to: string | null; reason: string | null; literal: boolean };
+
+const isStringLiteral = (node: ts.Expression) => ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node);
+
+/**
+ * The pairs a part file marks unreachable, read without running it: none without `unreachable`, null when it is not
+ * an array literal.
+ */
+export const unreachableOf = (source: string): UnreachableSource[] | null => {
+  const { definition } = definitionOf(source);
+  const property = definition?.properties.find(
+    (candidate) => candidate.name && nameOf(candidate.name) === fieldName('unreachable'),
+  );
+
+  if (!property) return [];
+
+  if (!ts.isPropertyAssignment(property) || !ts.isArrayLiteralExpression(property.initializer)) return null;
+
+  return property.initializer.elements.map((element) => {
+    if (!ts.isObjectLiteralExpression(element)) return { from: null, to: null, reason: null, literal: false };
+
+    const fields = ['from', 'to', 'reason'].map((name) => propertyOf(element, name)?.initializer);
+
+    return {
+      from: literalOf(fields[0]),
+      to: literalOf(fields[1]),
+      reason: literalOf(fields[2]),
+      literal:
+        element.properties.every(ts.isPropertyAssignment) &&
+        fields.every((field) => field === undefined || isStringLiteral(field)),
+    };
+  });
+};
+
+/**
+ * What a part file writes in `definePart({ instant: '…' })`, read without running it: `none` without the field,
+ * `unreadable` when it is not a non-empty string literal.
+ */
+export type InstantSource = { kind: 'none' } | { kind: 'declared'; reason: string } | { kind: 'unreadable' };
+
+export const instantOf = (source: string): InstantSource => {
+  const { definition } = definitionOf(source);
+  const value = definition ? fieldOf(definition, 'instant')?.initializer : undefined;
+
+  if (!value) return { kind: 'none' };
+
+  const reason = literalOf(value)?.trim();
+
+  return reason ? { kind: 'declared', reason } : { kind: 'unreadable' };
+};
+
+/**
+ * What a part file writes in `definePart({ implements })`, read without running it: `none` without one, `unreadable`
+ * when it is not a string literal or a `{ route: '…', component?: '…' }` literal.
+ */
+export type PartLinkSource =
+  | { kind: 'none' }
+  | { kind: 'component'; path: string }
+  | { kind: 'route'; route: string; component: string | null }
+  | { kind: 'unreadable' };
+
+export const partLinkOf = (source: string): PartLinkSource => {
+  const { definition } = definitionOf(source);
+  const link = definition ? fieldOf(definition, 'implements')?.initializer : undefined;
+
+  if (!link) return { kind: 'none' };
+
+  const path = literalOf(link);
+
+  if (path !== null) return { kind: 'component', path };
+
+  if (!ts.isObjectLiteralExpression(link)) return { kind: 'unreadable' };
+
+  const route = literalOf(propertyOf(link, 'route')?.initializer);
+  const componentProperty = propertyOf(link, 'component');
+  const component = componentProperty ? literalOf(componentProperty.initializer) : null;
+
+  return route === null || (componentProperty && component === null)
+    ? { kind: 'unreadable' }
+    : { kind: 'route', route, component };
+};
+
+const linkFieldOf = (source: string) => {
+  const { file, definition } = definitionOf(source);
+  const field = definition ? fieldOf(definition, 'implements') : undefined;
+
+  return field ? { file, field } : null;
+};
+
+/** The source text of the `implements` field of a part file's `definePart`, `null` without one. */
+export const linkFieldTextOf = (source: string) => {
+  const found = linkFieldOf(source);
+
+  return found ? source.slice(found.field.getStart(found.file), found.field.getEnd()) : null;
+};
+
+/** `source` without the `implements` field of its `definePart`, its leading whitespace and its trailing comma. */
+export const withoutLinkFieldOf = (source: string) => {
+  const found = linkFieldOf(source);
+
+  if (!found) return source;
+
+  const end = found.field.getEnd();
+  const comma = /^\s*,/u.exec(source.slice(end))?.[0].length ?? 0;
+
+  return source.slice(0, found.field.getFullStart()) + source.slice(end + comma);
+};
+
+/** `source` with its `implements` field replaced by `field`, the source text of another one. */
+export const withLinkFieldOf = (source: string, field: string) => {
+  const found = linkFieldOf(source);
+
+  return found
+    ? source.slice(0, found.field.getStart(found.file)) + field + source.slice(found.field.getEnd())
+    : source;
+};
+
+/** `source` with `implements: '<path>'` in its `definePart`, replacing a link or added first; `null` without a `definePart`. */
+export const withLinkOf = (source: string, path: string): string | null => {
+  const { file, definition } = definitionOf(source);
+
+  if (!definition) return null;
+
+  const field = `implements: ${quoted(path)}`;
+  const current = fieldOf(definition, 'implements');
+
+  if (current) return source.slice(0, current.getStart(file)) + field + source.slice(current.getEnd());
+
+  const open = definition.getStart(file) + 1;
+
+  return `${source.slice(0, open)}\n  ${field},${source.slice(open)}`;
+};
+
+/** `source` with the `component` of its route link replaced by `path`; `null` without a route link that names one. */
+export const withRouteComponentOf = (source: string, path: string): string | null => {
+  const found = linkFieldOf(source);
+  const link = found?.field.initializer;
+  const component = link && ts.isObjectLiteralExpression(link) ? propertyOf(link, 'component') : undefined;
+
+  if (!found || !component) return null;
+
+  const value = component.initializer;
+
+  return source.slice(0, value.getStart(found.file)) + quoted(path) + source.slice(value.getEnd());
+};

@@ -1,0 +1,116 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import '../../test-helpers';
+import {
+  WINDOW_CONTROL_BUTTON_KINDS,
+  WINDOW_CONTROL_BUTTON_SHAPES,
+  WINDOW_CONTROL_BUTTON_SIZES,
+  WindowControlButtonComponent,
+} from './window-control-button.component';
+
+describe('WindowControlButtonComponent', () => {
+  let fixture: ComponentFixture<WindowControlButtonComponent>;
+  let host: HTMLElement;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [WindowControlButtonComponent] });
+    fixture = TestBed.createComponent(WindowControlButtonComponent);
+    host = fixture.nativeElement;
+  });
+
+  describe('emitAriaPressed', () => {
+    it('reports aria-pressed on a toggle by default', () => {
+      fixture.componentRef.setInput('pressed', false);
+      fixture.detectChanges();
+      expect(host.getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('omits aria-pressed when emitAriaPressed is false', () => {
+      fixture.componentRef.setInput('pressed', true);
+      fixture.componentRef.setInput('emitAriaPressed', false);
+      fixture.detectChanges();
+      expect(host.getAttribute('aria-pressed')).toBeNull();
+    });
+  });
+
+  describe('size', () => {
+    it('defaults to data-size="md"', () => {
+      fixture.detectChanges();
+      expect(host.getAttribute('data-size')).toBe('md');
+    });
+
+    it('reflects sm size in data-size', () => {
+      fixture.componentRef.setInput('size', WINDOW_CONTROL_BUTTON_SIZES.SM);
+      fixture.detectChanges();
+      expect(host.getAttribute('data-size')).toBe('sm');
+    });
+
+    it('reflects lg size in data-size', () => {
+      fixture.componentRef.setInput('size', WINDOW_CONTROL_BUTTON_SIZES.LG);
+      fixture.detectChanges();
+      expect(host.getAttribute('data-size')).toBe('lg');
+    });
+  });
+
+  describe('kind', () => {
+    it('defaults to data-kind="default"', () => {
+      fixture.detectChanges();
+      expect(host.getAttribute('data-kind')).toBe('default');
+    });
+
+    it('reflects close kind in data-kind', () => {
+      fixture.componentRef.setInput('kind', WINDOW_CONTROL_BUTTON_KINDS.CLOSE);
+      fixture.detectChanges();
+      expect(host.getAttribute('data-kind')).toBe('close');
+    });
+  });
+
+  describe('shape', () => {
+    it('defaults to data-shape="square"', () => {
+      fixture.detectChanges();
+      expect(host.getAttribute('data-shape')).toBe('square');
+    });
+
+    it('reflects round shape in data-shape', () => {
+      fixture.componentRef.setInput('shape', WINDOW_CONTROL_BUTTON_SHAPES.ROUND);
+      fixture.detectChanges();
+      expect(host.getAttribute('data-shape')).toBe('round');
+    });
+
+    it('reflects caption shape in data-shape', () => {
+      fixture.componentRef.setInput('shape', WINDOW_CONTROL_BUTTON_SHAPES.CAPTION);
+      fixture.detectChanges();
+      expect(host.getAttribute('data-shape')).toBe('caption');
+    });
+  });
+
+  describe('loading state', () => {
+    it('does not render spinner by default', () => {
+      fixture.detectChanges();
+      expect(host.querySelector('et-spinner')).toBeNull();
+    });
+
+    it('renders spinner when loading', () => {
+      fixture.componentRef.setInput('loading', true);
+      fixture.detectChanges();
+      expect(host.querySelector('et-spinner')).not.toBeNull();
+    });
+  });
+
+  it('renders the icon wrapper', () => {
+    fixture.detectChanges();
+    expect(host.querySelector('.et-window-control-button-icon')).not.toBeNull();
+  });
+
+  describe('focus ring', () => {
+    it('leaves the outline to the shared focus ring', () => {
+      const css = readFileSync(
+        fileURLToPath(import.meta.url).replace(/[^/]+$/, 'window-control-button.component.css'),
+        'utf8',
+      ).replace(/\/\*[\s\S]*?\*\//g, '');
+
+      expect(css).not.toMatch(/outline\s*:/);
+    });
+  });
+});

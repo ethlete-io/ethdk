@@ -1,0 +1,106 @@
+{
+  "sketches": [
+    { "label": "Farben", "match": "colou?r|farbe" },
+    { "label": "Marken-Logo", "match": "logo|brand|marke" },
+    {
+      "label": "Button",
+      "match": "button",
+      "base": true,
+      "traps": [
+        { "name": "Hover", "state": "hover", "source": "46 B: hero action Mehr erfahren, hover:bg-et-surface/90" },
+        { "name": "Fokus", "state": "focus", "source": "46 B: established focus ring (40 H)" },
+        {
+          "name": "gedrückt",
+          "state": "pressed|gedr[üu]ckt|selected|toggle",
+          "source": "46 B: tonal pills with aria-pressed (hero artwork switch, Art Alle/Filme/Serien in 45 C)"
+        },
+        { "name": "deaktiviert", "state": "disabled|deaktiv", "source": "46 B: A–Z disabled for non-title sorting" }
+      ]
+    },
+    {
+      "label": "App Shell",
+      "match": "shell|app-frame|rahmen",
+      "traps": [
+        { "name": "Desktop", "minWidth": 1024, "source": "46 B: desktop header with inline navigation (38 M)" },
+        { "name": "mobil", "maxWidth": 480, "source": "46 B: mobile viewport 390 px (38 M, 39 B)" },
+        {
+          "name": "Tab-Leiste",
+          "shows": "^(Neuheiten|Wunschliste|Rangliste)$",
+          "source": "46 B: mobile keeps the five bottom tabs Katalog, Neuheiten, Wunschliste, Rangliste, Konto (38 M)"
+        },
+        {
+          "name": "gescrollt",
+          "state": "scroll|sticky|kompakt|compact|collaps|eingeklappt",
+          "source": "46 B: past the hero the navigation collapses into the search capsule (38 M)"
+        },
+        {
+          "name": "versteckt",
+          "state": "hidden|hide|versteckt|ausgeblendet",
+          "source": "46 B: chrome hides on scrolling down, returns upward or on focus (38 M)"
+        }
+      ]
+    },
+    {
+      "label": "Hero",
+      "match": "hero",
+      "traps": [
+        { "name": "Desktop", "minWidth": 1024, "source": "46 B: hero viewport Desktop 1280 × 820 (call 25)" },
+        { "name": "mobil", "maxWidth": 480, "source": "46 B: hero viewport Mobile 390 × 844 (call 25)" },
+        {
+          "name": "Serie",
+          "shows": "\\d+ Staffeln?|\\d+ Folgen?",
+          "source": "46 B: hero sample A Knight of the Seven Kingdoms, meta 1 Staffel"
+        },
+        { "name": "FSK", "shows": "FSK \\d+", "source": "46 B: every hero sample shows its FSK rating" }
+      ]
+    },
+    {
+      "label": "Titelkarte",
+      "match": "title-card|titelkarte|card|karte|tile|kachel",
+      "variants": [2, 3],
+      "logoWhereExists": true,
+      "traps": [
+        {
+          "name": "ohne Plakat",
+          "shows": "vortex",
+          "source": "46 B, 40 H card sample Vortex: hasPoster false, title in the poster box"
+        },
+        { "name": "4K", "shows": "^4K$", "source": "46 B, 40 H format badge 4K" },
+        {
+          "name": "3D",
+          "shows": "^3D$",
+          "source": "46 B, 40 H format badge 3D (10 Cloverfield Lane, versions 3D, 1080p)"
+        },
+        { "name": "Neu", "shows": "^Neu$", "source": "46 B, 40 H novelty badge Neu (Smile 2)" },
+        {
+          "name": "Neue Staffel",
+          "shows": "^Neue Staffel$",
+          "source": "46 B, 40 H novelty badge Neue Staffel (Arcane)"
+        },
+        {
+          "name": "Neue Folge",
+          "shows": "^Neue Folgen?$",
+          "source": "46 B, 40 H novelty badge Neue Folge (A Knight of the Seven Kingdoms)"
+        },
+        {
+          "name": "Serie",
+          "shows": "\\d+ Staffeln?|\\d+ Folgen?",
+          "source": "46 B, 40 H type-specific subline: 2 Staffeln, 6 Folgen"
+        },
+        {
+          "name": "langer Titel",
+          "shows": "ballerina",
+          "source": "46 B: longest title Ballerina - From the World of John Wick, single line in 40 H"
+        },
+        {
+          "name": "mobil",
+          "state": "mobil|phone|handy",
+          "maxWidth": 160,
+          "source": "46 B: mobile grid of 3 columns (37 B), smaller title and subline (40 H)"
+        },
+        { "name": "Hover", "state": "hover", "source": "46 B, 40 H small hover lift" },
+        { "name": "Fokus", "state": "focus", "source": "46 B, 40 H established focus ring" }
+      ]
+    }
+  ]
+}

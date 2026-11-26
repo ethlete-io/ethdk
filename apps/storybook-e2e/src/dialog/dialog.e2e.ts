@@ -1,0 +1,517 @@
+import { Locator, Page, expect, test } from '@playwright/test';
+import { Box, boxOf, openStory, pressKey, setColorScheme, tap, touchSwipe, viewportOf } from '../support';
+
+const STORY_ID = 'components-overlays-overlay--default';
+
+const DIALOG_ROOT = '[role="dialog"]';
+const BACKDROP = '.et-overlay-runtime-backdrop';
+const PANE = '.et-overlay';
+
+const ORIGIN_CLONE = 'et-overlay-origin-clone';
+const FULL_SCREEN_DOCUMENT = /et-overlay--full-screen-dialog-document/;
+
+async function waitForEntered(page: Page): Promise<void> {
+  await expect(page.locator(PANE)).toHaveClass(/et-animation-enter-done/);
+}
+
+async function expectPaneCoversViewport(page: Page): Promise<void> {
+  const viewport = viewportOf(page);
+
+  await expect
+    .poll(async () => {
+      const box = await boxOf(page.locator(PANE));
+
+      return [box.x, box.y, box.width, box.height].map(Math.round);
+    })
+    .toEqual([0, 0, viewport.width, viewport.height]);
+  await expect(page.locator(PANE)).toHaveCSS('transform', 'none');
+}
+
+async function expectOriginRestored(page: Page, origin: Locator): Promise<void> {
+  await expect(page.locator(ORIGIN_CLONE)).toHaveCount(0);
+  await expect(origin).toHaveCSS('opacity', '1');
+  await expect(origin).not.toHaveAttribute('data-et-origin-hidden-count');
+  await expect(page.locator('html')).not.toHaveClass(FULL_SCREEN_DOCUMENT);
+}
+
+test.describe('dialog / focus', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
+
+  test('opening the dialog moves focus to the first tabbable element and sets dialog ARIA', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    await root.getByRole('button', { name: 'Dialog', exact: true }).click();
+
+    const cancelButton = page.locator(PANE).getByRole('button', { name: 'Cancel' });
+    await expect(cancelButton).toBeFocused();
+
+    const dialogRoot = page.locator(DIALOG_ROOT);
+    await expect(dialogRoot).toHaveAttribute('aria-modal', 'true');
+  });
+
+  test('Escape closes the dialog and returns focus to the element that opened it', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Dialog', exact: true });
+    await trigger.click();
+
+    await waitForEntered(page);
+
+    await pressKey(page, 'Escape');
+
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+
+  test('a press that opens a dialog keeps focus there while an anchored popover closes', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const popoverTrigger = root.getByRole('button', { name: 'Anchored popover' });
+    const dialogTrigger = root.getByRole('button', { name: 'Dialog', exact: true });
+
+    await popoverTrigger.click();
+    await waitForEntered(page);
+
+    await dialogTrigger.click();
+
+    await expect(page.locator(PANE)).toHaveCount(1);
+    await expect(page.locator(PANE).getByRole('button', { name: 'Cancel' })).toBeFocused();
+  });
+
+  test('a click on the backdrop closes the dialog', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    await root.getByRole('button', { name: 'Dialog', exact: true }).click();
+
+    await waitForEntered(page);
+
+    await page.locator(BACKDROP).click({ position: { x: 5, y: 5 } });
+
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
+  });
+
+  test('body scroll is locked while the dialog is open and restored after close', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    await page.evaluate(() => {
+      const spacer = document.createElement('div');
+      spacer.style.height = '3000px';
+      document.body.appendChild(spacer);
+    });
+
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).position)).not.toBe('fixed');
+
+    await root.getByRole('button', { name: 'Dialog', exact: true }).click();
+    await waitForEntered(page);
+
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).position)).toBe('fixed');
+
+    await pressKey(page, 'Escape');
+
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).position)).not.toBe('fixed');
+  });
+});
+
+test.describe('dialog / keyboard', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: focus trap navigation');
+
+  test('Tab cycles through the pane and wraps from the last tabbable element back to the first', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    await root.getByRole('button', { name: 'Dialog', exact: true }).click();
+
+    const pane = page.locator(PANE);
+    const cancelButton = pane.getByRole('button', { name: 'Cancel' });
+    const confirmButton = pane.getByRole('button', { name: 'Confirm' });
+
+    await expect(cancelButton).toBeFocused();
+
+    await pressKey(page, 'Tab');
+    await expect(confirmButton).toBeFocused();
+
+    await pressKey(page, 'Tab');
+    await expect(cancelButton).toBeFocused();
+  });
+
+  test('Shift+Tab wraps from the first tabbable element to the last', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    await root.getByRole('button', { name: 'Dialog', exact: true }).click();
+
+    const pane = page.locator(PANE);
+    const cancelButton = pane.getByRole('button', { name: 'Cancel' });
+    const confirmButton = pane.getByRole('button', { name: 'Confirm' });
+
+    await expect(cancelButton).toBeFocused();
+
+    await pressKey(page, 'Shift+Tab');
+    await expect(confirmButton).toBeFocused();
+  });
+});
+
+test.describe('dialog / touch', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only: tap dismissal and drag-to-dismiss');
+
+  test('a tap on the backdrop closes the dialog', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    await tap(root.getByRole('button', { name: 'Dialog', exact: true }));
+
+    await waitForEntered(page);
+
+    const viewport = viewportOf(page);
+
+    await page.locator(BACKDROP).tap({ position: { x: viewport.width / 2, y: 4 } });
+
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
+  });
+
+  test('a tap on the close control closes the dialog', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    await tap(root.getByRole('button', { name: 'Dialog', exact: true }));
+
+    const pane = page.locator(PANE);
+    const cancelButton = pane.getByRole('button', { name: 'Cancel' });
+
+    await waitForEntered(page);
+
+    await tap(cancelButton);
+
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
+  });
+
+  test('a downward drag past the dismiss threshold closes the bottom sheet', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    await tap(root.getByRole('button', { name: 'Bottom sheet', exact: true }));
+
+    await waitForEntered(page);
+
+    const pane = page.locator(PANE);
+    const box = await boxOf(pane);
+
+    const startX = box.x + box.width / 2;
+    const startY = box.y + 12;
+
+    await touchSwipe(page, { x: startX, y: startY }, { x: startX, y: startY + 260 });
+
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
+  });
+});
+
+test.describe('dialog / bottom sheet', () => {
+  test('the drag handle keeps its row when the content reaches the max height', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 240 });
+    const root = await openStory(page, STORY_ID);
+    await root.getByRole('button', { name: 'Bottom sheet', exact: true }).click();
+
+    await waitForEntered(page);
+
+    const handle = await boxOf(page.locator('.et-overlay-container-drag-handle'));
+    const content = await boxOf(page.locator(`${PANE} > :not(.et-overlay-container-drag-handle)`).first());
+
+    expect(handle.height).toBeGreaterThan(0);
+    expect(content.y).toBeGreaterThanOrEqual(handle.y + handle.height);
+  });
+});
+
+test.describe('dialog / full-screen', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: viewport sizes are set per test');
+
+  test('on a narrow viewport the pane grows out of its trigger, which stays hidden until the close', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 400, height: 720 });
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen dialog' });
+
+    await trigger.click();
+    await waitForEntered(page);
+
+    await expectPaneCoversViewport(page);
+    await expect(page.locator(ORIGIN_CLONE)).toHaveAttribute('inert', 'true');
+    await expect(trigger).toHaveCSS('opacity', '0');
+    await expect(page.locator('html')).toHaveClass(FULL_SCREEN_DOCUMENT);
+    await expect(page.locator(PANE).getByRole('button', { name: 'Cancel' })).toBeFocused();
+
+    await pressKey(page, 'Escape');
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectOriginRestored(page, trigger);
+    await expect(trigger).toBeFocused();
+  });
+
+  test('on a wide viewport the pane fills the viewport without cloning or hiding its trigger', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen dialog' });
+
+    await trigger.click();
+    await waitForEntered(page);
+
+    await expectPaneCoversViewport(page);
+    await expect(page.locator(ORIGIN_CLONE)).toHaveCount(0);
+    await expect(trigger).toHaveCSS('opacity', '1');
+
+    await pressKey(page, 'Escape');
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectOriginRestored(page, trigger);
+  });
+
+  test('a transforming dialog turns full-screen below its breakpoint and back, and its trigger reappears after the close', async ({
+    page,
+  }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen → dialog' });
+
+    await trigger.click();
+    await waitForEntered(page);
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--dialog/);
+    const dialogBox = await boxOf(page.locator(PANE));
+
+    await page.setViewportSize({ width: 500, height: 720 });
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--full-screen-dialog/);
+    await expectPaneCoversViewport(page);
+
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--dialog/);
+    await expect
+      .poll(async () => Math.round((await boxOf(page.locator(PANE))).width))
+      .toBe(Math.round(dialogBox.width));
+    await expect(page.locator('html')).not.toHaveClass(FULL_SCREEN_DOCUMENT);
+    await expect(page.locator(ORIGIN_CLONE)).toHaveCount(0);
+    await expect(trigger).toHaveCSS('opacity', '1');
+    await expect(page.locator(PANE).getByRole('button', { name: 'Cancel' })).toBeFocused();
+
+    await pressKey(page, 'Escape');
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectOriginRestored(page, trigger);
+    await expect(trigger).toBeFocused();
+  });
+
+  test('a transforming dialog closed while full-screen restores its trigger', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen → right sheet' });
+
+    await trigger.click();
+    await waitForEntered(page);
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--right-sheet/);
+
+    await page.setViewportSize({ width: 500, height: 720 });
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--full-screen-dialog/);
+
+    await pressKey(page, 'Escape');
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectOriginRestored(page, trigger);
+    await expect(trigger).toBeFocused();
+  });
+});
+
+test.describe('dialog / full-screen touch', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only: tap to open and close');
+
+  test('a tapped full-screen dialog covers the screen and a tap on Cancel brings its trigger back', async ({
+    page,
+  }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen dialog' });
+
+    await tap(trigger);
+    await waitForEntered(page);
+
+    await expectPaneCoversViewport(page);
+    await expect(trigger).toHaveCSS('opacity', '0');
+
+    await tap(page.locator(PANE).getByRole('button', { name: 'Cancel' }));
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectOriginRestored(page, trigger);
+  });
+});
+
+async function holdCloneMorph(page: Page): Promise<void> {
+  await page.waitForFunction((selector) => {
+    const running = document.querySelector(selector)?.getAnimations() ?? [];
+
+    running.forEach((animation) => animation.pause());
+
+    return running.length > 0;
+  }, ORIGIN_CLONE);
+}
+
+/**
+ * Also holds the pane: its own `leave` ending runs the cleanup, which removes a clone still
+ * leaving after a timeout.
+ */
+async function holdEveryMorph(page: Page): Promise<void> {
+  await page.waitForFunction((selector) => {
+    const cloneRunning = document.querySelector(selector)?.getAnimations().length ?? 0;
+
+    document.getAnimations().forEach((animation) => animation.pause());
+
+    return cloneRunning > 0;
+  }, ORIGIN_CLONE);
+}
+
+async function seekCloneMorph(page: Page, time: number): Promise<void> {
+  await page.locator(ORIGIN_CLONE).evaluate((clone, t) => {
+    clone.getAnimations().forEach((animation) => (animation.currentTime = t));
+  }, time);
+}
+
+async function releaseEveryMorph(page: Page): Promise<void> {
+  await page.evaluate(() => document.getAnimations().forEach((animation) => animation.play()));
+}
+
+async function roundedBoxOf(locator: Locator): Promise<number[]> {
+  const box = await boxOf(locator);
+
+  return [box.x, box.y, box.width, box.height].map(Math.round);
+}
+
+async function expectCloneOnBox(page: Page, expected: Box): Promise<void> {
+  await expect
+    .poll(() => roundedBoxOf(page.locator(ORIGIN_CLONE)))
+    .toEqual([expected.x, expected.y, expected.width, expected.height].map(Math.round));
+}
+
+function morphStylesLeftOn(page: Page): Promise<number> {
+  return page.evaluate(
+    () =>
+      document.querySelectorAll('[style*="--origin-"], [data-et-origin-opacity], [data-et-origin-hidden-count]').length,
+  );
+}
+
+async function expectNoMorphLeftovers(page: Page, origin: Locator): Promise<void> {
+  await expect(page.locator(ORIGIN_CLONE)).toHaveCount(0);
+  await expect.poll(() => morphStylesLeftOn(page)).toBe(0);
+  await expect.poll(() => origin.evaluate((el) => [el.style.opacity, el.style.transition])).toEqual(['', '']);
+  await expect(origin).toHaveCSS('opacity', '1');
+}
+
+test.describe('dialog / full-screen morph', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: viewport sizes are set per test');
+
+  test('the origin clone starts on the trigger box and grows to cover the viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 400, height: 720 });
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen dialog' });
+    const triggerBox = await boxOf(trigger);
+
+    await trigger.click();
+    await holdEveryMorph(page);
+
+    await seekCloneMorph(page, 0);
+    await expectCloneOnBox(page, triggerBox);
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-enter-active/);
+    await expect(trigger).toHaveCSS('opacity', '0');
+
+    await releaseEveryMorph(page);
+
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-enter-done/);
+    await expectCloneOnBox(page, { x: 0, y: 0, width: 400, height: 720 });
+    await expect(page.locator(ORIGIN_CLONE)).toHaveCSS('opacity', '0');
+    await waitForEntered(page);
+    await expectPaneCoversViewport(page);
+  });
+
+  test('on close the clone shrinks from the viewport back onto the trigger and is removed with its styles', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 400, height: 720 });
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen dialog' });
+    const triggerBox = await boxOf(trigger);
+
+    await trigger.click();
+    await waitForEntered(page);
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-enter-done/);
+
+    await pressKey(page, 'Escape', 0);
+    await holdEveryMorph(page);
+
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-leave-active/);
+    await seekCloneMorph(page, 0);
+    await expectCloneOnBox(page, { x: 0, y: 0, width: 400, height: 720 });
+
+    await releaseEveryMorph(page);
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectNoMorphLeftovers(page, trigger);
+    await expect(trigger).toHaveCSS('opacity', '1');
+    expect(await roundedBoxOf(trigger)).toEqual(
+      [triggerBox.x, triggerBox.y, triggerBox.width, triggerBox.height].map(Math.round),
+    );
+  });
+
+  test('closing during the morph reverses it and leaves no clone or origin styles behind', async ({ page }) => {
+    await page.setViewportSize({ width: 400, height: 720 });
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen dialog' });
+
+    await trigger.click();
+    await holdCloneMorph(page);
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-enter-active/);
+
+    await pressKey(page, 'Escape', 0);
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectNoMorphLeftovers(page, trigger);
+    await expect(page.locator('html')).not.toHaveClass(FULL_SCREEN_DOCUMENT);
+  });
+
+  test('a strategy switch during the morph aborts it and clears the clone and the pane origin styles', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 500, height: 720 });
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen → dialog' });
+
+    await trigger.click();
+    await holdCloneMorph(page);
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--full-screen-dialog/);
+    await expect.poll(() => morphStylesLeftOn(page)).toBeGreaterThan(0);
+
+    await page.setViewportSize({ width: 1280, height: 720 });
+
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--dialog/);
+    await expectNoMorphLeftovers(page, trigger);
+
+    await pressKey(page, 'Escape');
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectOriginRestored(page, trigger);
+  });
+});
+
+test.describe('dialog / busy', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard Escape');
+
+  test('Escape does not close a busy dialog, and the close button is disabled until the submit finishes', async ({
+    page,
+  }) => {
+    const root = await openStory(page, 'components-overlays-overlay-busy-state--default');
+    await root.getByRole('button', { name: 'Open dialog' }).click();
+    await waitForEntered(page);
+
+    await page.locator(PANE).getByRole('button', { name: 'Submit' }).click();
+    await expect(page.locator(PANE)).toHaveAttribute('aria-busy', 'true');
+    await expect(page.locator(PANE).getByRole('button', { name: 'Close' })).toBeDisabled();
+
+    await pressKey(page, 'Escape');
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(1);
+
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0, { timeout: 5000 });
+    await expect(root.getByText('Last close result: submitted')).toBeVisible();
+  });
+});
+
+test.describe('dialog / filled button edge', () => {
+  for (const [scheme, edge] of [
+    ['light', /^(?!rgba\(0, 0, 0, 0\)).*inset/],
+    ['dark', /^(none|rgba\(0, 0, 0, 0\) 0px 0px 0px 1px inset)$/],
+  ] as const) {
+    test(`a filled button in the dialog draws its ink edge only in the light scheme (${scheme})`, async ({ page }) => {
+      const root = await openStory(page, STORY_ID);
+      await setColorScheme(root, scheme);
+      await root.getByRole('button', { name: 'Dialog', exact: true }).click();
+
+      const confirm = page.locator(PANE).getByRole('button', { name: 'Confirm' });
+      await expect(confirm).toHaveAttribute('data-variant', 'filled');
+      await expect.poll(() => confirm.evaluate((el) => getComputedStyle(el).boxShadow)).toMatch(edge);
+    });
+  }
+});

@@ -1,0 +1,21 @@
+      }
+
+      ul {
+        list-style-type: square;
+      }
+
+      a {
+        color: rgba(var(--et-color-primary));
+        transition: color 0.2s var(--et-easing);
+        &:hover {
+          color: rgba(var(--et-color-primary-hover));
+        }
+
+        &:focus {
+          color: rgba(var(--et-color-primary-focus));
+        }
+
+        &:active {
+          color: rgba(var(--et-color-primary-active));
+        }
+      }

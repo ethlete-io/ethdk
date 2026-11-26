@@ -1,0 +1,30 @@
+import * as Selectors from './layout.selectors';
+import * as fromReducer from './layout.reducer';
+import { Actions as ActionsNative } from '@ngrx/effects';
+import { FacadeBase } from '@tomtomb/ngrx-toolkit';
+import { Injectable, inject } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { BreadcrumbItem } from '@app-b/types';
+import { BehaviorSubject } from 'rxjs';
+
+@Injectable({ providedIn: 'root' })
+export class LayoutFacade extends FacadeBase {
+  private store: Store<fromReducer.LayoutPartialState>;
+  private actions: ActionsNative;
+
+  breadcrumb$ = new BehaviorSubject<BreadcrumbItem[]>([]);
+
+  constructor() {
+    const store = inject<Store<fromReducer.LayoutPartialState>>(Store);
+    const actions = inject(ActionsNative);
+
+    super(store, actions, Selectors.entitySelectors);
+
+    this.store = store;
+    this.actions = actions;
+  }
+
+  setBreadcrumb(items: BreadcrumbItem[]) {
+    this.breadcrumb$.next(items);
+  }
+}

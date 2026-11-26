@@ -1,0 +1,104 @@
+<div #panes class="et-query-devtools-split">
+  <div class="et-query-devtools-scroll">
+    @for (entry of host.sequenceEntries(); track entry.id) {
+      @let sequence = host.asSequence(entry);
+      @if (sequence) {
+        <div class="et-query-devtools-card">
+          <div class="et-query-devtools-card-head">
+            <span class="et-query-devtools-chip">sequence</span>
+            <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ sequence.status() }}</span>
+            <span class="et-query-devtools-count">step {{ sequence.currentStep() }} / {{ sequence.total }}</span>
+          </div>
+
+          <dl class="et-query-devtools-meta">
+            <dt>Traffic</dt>
+            <dd>
+              @let activity = host.sequenceActivity(sequence);
+              @if (activity.hasActivity) {
+                {{ activity.stats.requests }} request{{ activity.stats.requests === 1 ? '' : 's' }} · ↓
+                {{ host.formatTransferred(activity.stats.receivedBytes, activity.stats.hasEstimatedBytes) }}
+                @if (activity.stats.sentBytes) {
+                  · ↑ {{ host.formatTransferred(activity.stats.sentBytes, activity.stats.hasEstimatedBytes) }}
+                }
+                @if (activity.cacheServed) {
+                  · {{ activity.cacheServed }} from cache
+                }
+                @if (activity.stats.errors) {
+                  · {{ activity.stats.errors }} failed
+                }
+              } @else {
+                —
+              }
+            </dd>
+          </dl>
+
+          <ol class="et-query-devtools-step-list">
+            @for (link of host.queriesForSequence(sequence); track $index; let i = $index) {
+              <li [attr.data-status]="host.sequenceStepStatus(sequence, i)" class="et-query-devtools-step-item">
+                <div class="et-query-devtools-step-head">
+                  <button
+                    [class.et-query-devtools-inner-row--active]="host.sequenceSelectedQueryId() === link.id"
+                    [disabled]="!link.id"
+                    (click)="host.sequenceSelectedQueryId.set(link.id)"
+                    class="et-query-devtools-inner-row"
+                    type="button"
+                  >
+                    <span
+                      [attr.data-status]="host.sequenceStepStatus(sequence, i)"
+                      class="et-query-devtools-status"
+                    ></span>
+                    <span class="et-query-devtools-method">{{ i + 1 }}. {{ link.method }}</span>
+                    <span class="et-query-devtools-route">
+                      <et-query-devtools-route [segments]="link.segments" [fallback]="'step ' + (i + 1)" />
+                    </span>
+                  </button>
+                  <button
+                    [attr.aria-expanded]="host.isStepExpanded(entry.id, i)"
+                    (click)="host.toggleStep(entry.id, i)"
+                    class="et-query-devtools-step-caret-btn"
+                    type="button"
+                    title="Toggle in / out"
+                  >
+                    {{ host.isStepExpanded(entry.id, i) ? '▾' : '▸' }}
+                  </button>
+                </div>
+
+                @if (host.isStepExpanded(entry.id, i)) {
+                  @let snap = host.stepSnapshot(sequence, i);
+                  <div class="et-query-devtools-step-io">
+                    <h5 class="et-query-devtools-section">In · args</h5>
+                    @if (sequence.stepArgs().length > i) {
+                      <et-query-devtools-json [value]="sequence.stepArgs()[i]" />
+                    } @else {
+                      <p class="et-query-devtools-empty">Not run yet.</p>
+                    }
+
+                    @if (snap?.error(); as error) {
+                      <h5 class="et-query-devtools-section">Out · error ({{ error.raw.status }})</h5>
+                      <et-query-devtools-json [value]="error.isList ? error.errors : error.error" />
+                    } @else {
+                      <h5 class="et-query-devtools-section">Out · response</h5>
+                      @if (snap) {
+                        <et-query-devtools-json [value]="snap.response()" />
+                      } @else {
+                        <p class="et-query-devtools-empty">Not run yet.</p>
+                      }
+                    }
+                  </div>
+                }
+              </li>
+            }
+          </ol>
+        </div>
+      }
+    } @empty {
+      <p class="et-query-devtools-empty">No sequences registered.</p>
+    }
+  </div>
+
+  <et-query-devtools-drawer
+    [sel]="host.sequenceSelectedQuery()"
+    [container]="panes"
+    (dismiss)="host.sequenceSelectedQueryId.set(null)"
+  />
+</div>

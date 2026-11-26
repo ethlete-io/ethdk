@@ -1,0 +1,105 @@
+import { Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { ButtonComponent } from '../button/button.component';
+import { BUTTON_SIZES, BUTTON_VARIANTS, ButtonSize, ButtonVariant } from '../button/button.types';
+import { EYE_ICON } from '../icon/headless/eye-icons';
+import { GRID_2X2_ICON } from '../icon/headless/grid-2x2-icon';
+import { provideIcons } from '../icon/headless/icon-provider';
+import { IconDirective } from '../icon/headless/icon.directive';
+import {
+  MenuCheckboxItemComponent,
+  MenuComponent,
+  MenuDirective,
+  MenuItemComponent,
+  MenuSeparatorComponent,
+  MenuSurfaceDirective,
+} from '../menu';
+import { MenuTriggerDirective } from '../menu/headless';
+import { TableFeatureHost } from './headless/table-features';
+
+/** The slice of the table a column chooser drives - any `et-table` satisfies it. */
+export type TableColumnVisibilityHost = Pick<
+  TableFeatureHost,
+  | 'availableColumns'
+  | 'visibleColumnsMeta'
+  | 'isColumnVisible'
+  | 'setColumnVisible'
+  | 'showAllColumns'
+  | 'resolvedLabels'
+>;
+
+/**
+ * A "columns" button and menu for toggling column visibility, placed wherever you like - a toolbar
+ * above the table, the `[etTableFooter]` slot, a page header.
+ *
+ * Deliberately *not* part of the per-column `⋮` menu. A list that hides columns cannot hang off a
+ * control inside the header it is editing: hiding a column relays the header out and drags the menu
+ * with it, and hiding the column the menu was opened from destroys its own anchor. Anchored to a
+ * button of yours, which nothing in the table can move, neither happens.
+ *
+ * @example
+ * <et-table #table [data]="rows()" [columns]="COLUMNS">
+ *   <div etTableFooter>
+ *     <et-table-column-chooser [table]="table" />
+ *   </div>
+ * </et-table>
+ */
+@Component({
+  selector: 'et-table-column-chooser',
+  templateUrl: './table-column-chooser.component.html',
+  styleUrl: './table-column-chooser.component.css',
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    MenuDirective,
+    MenuTriggerDirective,
+    MenuSurfaceDirective,
+    MenuComponent,
+    MenuItemComponent,
+    MenuSeparatorComponent,
+    MenuCheckboxItemComponent,
+    ButtonComponent,
+    IconDirective,
+  ],
+  providers: [provideIcons(GRID_2X2_ICON, EYE_ICON)],
+})
+export class TableColumnChooserComponent {
+  /** The table whose columns this toggles - bind a template ref to the `<et-table>`. */
+  public table = input.required<TableColumnVisibilityHost>();
+
+  /**
+   * Size of the trigger button. The default suits the chooser sitting in the table's own chrome; match
+   * it to the other controls when you put it in a toolbar of your own.
+   */
+  public size = input<ButtonSize>(BUTTON_SIZES.SM);
+
+  /**
+   * Shape of the trigger button, for the same reason as {@link size}: the default reads as table chrome,
+   * and a chooser standing among an app's own buttons has to read as one of them.
+   */
+  public variant = input<ButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
+
+  /**
+   * The bound table's wording, so the chooser needs no strings of its own - localize it with
+   * `provideTableLabels` or the table's `labels` input like everything else.
+   */
+  protected labels = computed(() => this.table().resolvedLabels());
+
+  protected hasHidden = computed(
+    () => this.table().visibleColumnsMeta().length < this.table().availableColumns().length,
+  );
+
+  /**
+   * The last column standing can't be hidden - a table with no columns has nothing to show. Its
+   * checkbox is disabled rather than absent, so the list still reads as the whole set.
+   */
+  protected isLastVisible(key: string) {
+    const table = this.table();
+
+    return table.isColumnVisible(key) && table.visibleColumnsMeta().length <= 1;
+  }
+
+  protected toggle(key: string) {
+    const table = this.table();
+
+    table.setColumnVisible(key, !table.isColumnVisible(key));
+  }
+}

@@ -1,0 +1,123 @@
+import { Page } from '@playwright/test';
+import {
+  AgentApproval,
+  AgentSessionCursor,
+  PeerDayRows,
+  TimetrackSettings,
+  parsePeerDayRows,
+  parseSharedApprovals,
+} from '@ethlete/timetrack';
+import {
+  FakeBackend,
+  TIMETRACK_E2E_APPROVAL_ATTENTION_KEY,
+  TIMETRACK_E2E_BACKEND_KEY,
+  TIMETRACK_E2E_CURSORS_KEY,
+  TIMETRACK_E2E_DAY_ROWS_KEY,
+  TIMETRACK_E2E_SEED_KEY,
+  TIMETRACK_E2E_SETTINGS_KEY,
+  TIMETRACK_E2E_SHARED_APPROVALS_KEY,
+  TIMETRACK_E2E_REPORT_FILE_KEY,
+  TIMETRACK_E2E_TRAY_KEY,
+  TimetrackWorldSeed,
+} from '@ethlete/timetrack/testing';
+
+export type TimetrackWorld = TimetrackWorldSeed & {
+  /**
+   * Frozen with `page.clock`, so every `new Date()` in the page reads it — the app itself has no
+   * clock port. Time does not advance: a spec that needs it to must install its own clock.
+   */
+  now?: Date | string;
+};
+
+/**
+ * Declares the world one spec needs, before the app boots.
+ *
+ * Call it before `page.goto`. Everything it does not name falls back to the default fixture in
+ * `@ethlete/timetrack/testing`, so a spec states only what it is about.
+ */
+export const seedWorld = async (page: Page, world: TimetrackWorld = {}) => {
+  const { now, ...seed } = world;
+
+  if (now !== undefined) {
+    // `setFixedTime` cannot be used here: RxJS 7's `debounceTime` reschedules while
+    // `scheduler.now()` has not passed its target, so a frozen clock means a debounced search never
+    // fires at all. `install` plus `resume` shifts the clock and lets it tick from there.
+    await page.clock.install({ time: now });
+    await page.clock.resume();
+  }
+
+  const raw = JSON.stringify(seed);
+
+  await page.addInitScript(
+    ([key, value]) => {
+      (globalThis as Record<string, unknown>)[key as string] = value;
+    },
+    [TIMETRACK_E2E_SEED_KEY, raw],
+  );
+};
+
+/**
+ * A snapshot of the fake backend, read at the wire. This is how a flow that writes is asserted: what
+ * the screen says is a second, weaker check.
+ */
+export const readBackend = (page: Page): Promise<FakeBackend> =>
+  page.evaluate((key) => (globalThis as Record<string, unknown>)[key] as FakeBackend, TIMETRACK_E2E_BACKEND_KEY);
+
+/**
+ * The agent-log cursors the app has stored, by pass. Empty until a collector has written one.
+ *
+ * Read it to assert what a cursor does not carry: a title an exclusion rule denied, or the path of a
+ * checkout the user marked private, are both in the log the collector just read.
+ */
+export const readStoredCursors = (page: Page): Promise<Record<string, AgentSessionCursor[]>> =>
+  page.evaluate(
+    (key) => ((globalThis as Record<string, unknown>)[key] as Record<string, AgentSessionCursor[]>) ?? {},
+    TIMETRACK_E2E_CURSORS_KEY,
+  );
+
+/** The settings the app last saved, or `undefined` before its first save. */
+export const readStoredSettings = (page: Page): Promise<TimetrackSettings | undefined> =>
+  page.evaluate(
+    (key) => (globalThis as Record<string, unknown>)[key] as TimetrackSettings | undefined,
+    TIMETRACK_E2E_SETTINGS_KEY,
+  );
+
+/** The tray menu's four lines, as the app words them. Declared here: the type lives in the app. */
+export type TrayLines = { activity: string; total: string; timer: string; pause: string };
+
+/** What the tray menu last said about today. A browser tab has no tray, so the fake port keeps it. */
+export const readTray = (page: Page): Promise<TrayLines | undefined> =>
+  page.evaluate((key) => (globalThis as Record<string, unknown>)[key] as TrayLines | undefined, TIMETRACK_E2E_TRAY_KEY);
+
+/** How often the window asked the host to surface the app for a newly queued approval. */
+export const readApprovalAttention = (page: Page): Promise<number> =>
+  page.evaluate(
+    (key) => ((globalThis as Record<string, unknown>)[key] as number | undefined) ?? 0,
+    TIMETRACK_E2E_APPROVAL_ATTENTION_KEY,
+  );
+
+export const readSavedReport = (page: Page) =>
+  page.evaluate(
+    (key) => (globalThis as Record<string, unknown>)[key] as { suggestedName: string; text: string } | undefined,
+    TIMETRACK_E2E_REPORT_FILE_KEY,
+  );
+
+/** The rows this machine last handed its paired machines for `day`, or `null` before it handed any. */
+export const readSentDayRows = async (page: Page, day: string): Promise<PeerDayRows | null> => {
+  const sent = await page.evaluate(
+    ([key, wanted]) => ((globalThis as Record<string, unknown>)[key] as Record<string, string> | undefined)?.[wanted],
+    [TIMETRACK_E2E_DAY_ROWS_KEY, day] as const,
+  );
+
+  return sent ? parsePeerDayRows(sent) : null;
+};
+
+/** The approval queue this machine last handed its paired machines, or `null` before it handed one. */
+export const readSentApprovals = async (page: Page): Promise<AgentApproval[] | null> => {
+  const sent = await page.evaluate(
+    (key) => (globalThis as Record<string, unknown>)[key] as string | undefined,
+    TIMETRACK_E2E_SHARED_APPROVALS_KEY,
+  );
+
+  return sent ? parseSharedApprovals(sent) : null;
+};

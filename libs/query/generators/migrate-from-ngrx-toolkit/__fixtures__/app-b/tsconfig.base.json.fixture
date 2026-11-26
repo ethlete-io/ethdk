@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@app-b/domain/public/store": ["libs/domain/public/store/src/index.ts"],
+      "@app-b/env": ["libs/env/src/index.ts"],
+      "@app-b/queries": ["libs/queries/src/index.ts"],
+      "@app-b/store/venue": ["libs/store/venue/src/index.ts"],
+      "@app-b/store/event": ["libs/store/event/src/index.ts"],
+      "@app-b/types": ["libs/types/src/index.ts"]
+    }
+  }
+}

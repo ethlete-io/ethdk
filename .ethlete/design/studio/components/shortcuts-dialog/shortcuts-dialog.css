@@ -1,0 +1,4 @@
+.sd-frame .et-overlay--dialog {
+  inline-size: 100%;
+  max-inline-size: 40rem;
+}

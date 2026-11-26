@@ -1,0 +1,51 @@
+import { isPlatformServer } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Inject, Injectable, InjectionToken, PLATFORM_ID } from '@angular/core';
+import { environment } from '@app-a/env';
+import { MemberItemAssignmentInvitationWithMemberView, ItemProfileView, ItemView } from '@app-a/types';
+import { ServiceBase, defineResponseType } from '@tomtomb/ngrx-toolkit';
+import * as Models from './item.models';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ItemService extends ServiceBase {
+  private readonly _ssrHeader = isPlatformServer(this._platformId) ? { 'X-SSR': '1' } : undefined;
+
+  constructor(
+    private _http: HttpClient,
+    @Inject(PLATFORM_ID) private _platformId: InjectionToken<unknown>,
+  ) {
+    super(_http, environment.apiBaseURL);
+  }
+
+  getItem(args: Models.GetItemArgs) {
+    return this.get({
+      apiRoute: (p) => `/public/item/${p.itemId}`,
+      httpOpts: args,
+      responseType: defineResponseType<ItemView>(),
+      extras: {
+        skipCache: args.skipCache ?? false,
+      },
+    });
+  }
+
+  getItemPublicProfileBySlug(args: Models.GetItemPublicProfileBySlugArgs) {
+    return this.get({
+      apiRoute: (p) => `/public/item/by-slug/${p.itemSlug}/profile`,
+      httpOpts: {
+        ...args,
+        headers: this._ssrHeader,
+      },
+      responseType: defineResponseType<ItemProfileView>(),
+    });
+  }
+
+  postCreateAndInviteMember(args: Models.PostCreateAndInviteMemberArgs) {
+    return this.post({
+      apiRoute: (p) => `/item/${p.itemId}/new-member-invitation/create`,
+      httpOpts: args,
+      responseType: defineResponseType<MemberItemAssignmentInvitationWithMemberView>(),
+    });
+  }
+}

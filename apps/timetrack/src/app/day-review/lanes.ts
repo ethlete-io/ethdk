@@ -1,0 +1,577 @@
+import { SchedulerTimeGridBlock } from '@ethlete/components';
+import {
+  BehindStretch,
+  BreakWindow,
+  CALL_LANE_KEY,
+  PeerBand,
+  ReviewedRow,
+  TIMER_LANE_KEY,
+  TimeWindow,
+  TimetrackProjectLink,
+  matchProjectLink,
+  sharingTicket,
+  streamKey,
+  streamKeyLabel,
+  streamKeyRepoPath,
+} from '@ethlete/timetrack';
+import { TimelineEntry, rowEntryOf, workedOnLabel } from './row-edit/row-appointment';
+
+/** The lane a row with no checkout and no application behind it falls into. */
+export const NO_LANE_KEY = 'lane:none';
+
+/** The lane the day's breaks are drawn in. */
+export const BREAK_LANE_KEY = 'lane:break';
+
+const BREAK_LANE_LABEL = 'Break';
+
+/**
+ * The lanes that hold no checkout, in the order they are drawn after the checkouts.
+ *
+ * They trail rather than sort by their first band, because their position is what says they are not
+ * one of the day's checkouts.
+ */
+const TRAILING_LANES = [CALL_LANE_KEY, TIMER_LANE_KEY, NO_LANE_KEY];
+
+const TRAILING_LABELS: Record<string, string> = {
+  [CALL_LANE_KEY]: 'Calls & meetings',
+  [TIMER_LANE_KEY]: 'Timed by hand',
+  [NO_LANE_KEY]: 'No checkout',
+};
+
+const PEER_LANE_PREFIX = 'lane:peer:';
+
+/** A paired machine's own lane, which holds its bands in checkouts this machine has no lane of, and no row. */
+export const isPeerLaneKey = (key: string) => key.startsWith(PEER_LANE_PREFIX);
+
+const rankOf = (key: string) => {
+  if (isPeerLaneKey(key)) return TRAILING_LANES.length + 1;
+
+  const at = TRAILING_LANES.indexOf(key);
+
+  return at === -1 ? 0 : at + 1;
+};
+
+const peerLaneKeyOf = (band: PeerBand) => `${PEER_LANE_PREFIX}${band.machineId}`;
+
+const PROJECT_LANE_PREFIX = 'project:';
+
+const isProjectLaneKey = (key: string) => key.startsWith(PROJECT_LANE_PREFIX);
+
+const labelOf = (key: string) =>
+  TRAILING_LABELS[key] ?? (isProjectLaneKey(key) ? key.slice(PROJECT_LANE_PREFIX.length) : streamKeyLabel(key));
+
+const DAY_MS = 24 * 60 * 60_000;
+
+/** One break, placed on the day axis the same way the grid places a block. */
+export type BreakBand = {
+  window: BreakWindow;
+  /** Percent of the day the break starts at. */
+  offset: number;
+  /** Percent of the day it holds. */
+  span: number;
+};
+
+/**
+ * One stretch a foreground band took, placed on the day axis the same way a break is.
+ *
+ * It is not packed against the lane's rows. A stretch is measured on the clock while a row is drawn on
+ * the increment it snapped to, so the two overlap by the odd minute — and a packed behind band would
+ * then halve the width of a real row that only touches it.
+ */
+export type BehindBand = {
+  stretch: BehindStretch;
+  offset: number;
+  span: number;
+  /**
+   * The key of the block drawn over the band's label, which then reads the label as a line of its own.
+   * A row is translucent, so a label left under it would show through the row's own text.
+   */
+  carrier: string | null;
+};
+
+/**
+ * A paired machine's work on a frozen day, placed on the day axis the same way a break is. `checkout` names
+ * the band's checkout where it sits in its machine's lane rather than in that checkout's own.
+ */
+export type PeerLaneBand = {
+  band: PeerBand;
+  offset: number;
+  span: number;
+  checkout: string | null;
+};
+
+export const peerBandLabel = (placed: PeerLaneBand) => {
+  const { band } = placed;
+  const label = band.booked ? `Booked on ${band.machineName}` : workedOnLabel(band.machineName);
+
+  return [label, placed.checkout, band.name].filter(Boolean).join(' · ');
+};
+
+/** How far a row may overrun a stretch and not carry its label: a snapped row overruns by the odd minute. */
+const CARRY_SLACK = ((5 * 60_000) / DAY_MS) * 100;
+
+const carrierOf = (band: Omit<BehindBand, 'carrier'>, blocks: readonly LaneBlock[]) =>
+  blocks.find(({ block }) => {
+    const end = block.offset + block.span;
+    const covered = Math.min(end, band.offset + band.span) - Math.max(block.offset, band.offset);
+
+    return (
+      block.offset - CARRY_SLACK <= band.offset && band.offset < end && covered >= Math.min(band.span, CARRY_SLACK)
+    );
+  })?.key ?? null;
+
+/** A stretch of a block drawn at one width. `from` and `to` are fractions of the block's own length. */
+export type LaneSegment = {
+  from: number;
+  to: number;
+  /** Percent of the lane's own width the stretch starts at. */
+  inlineOffset: number;
+  /** Percent of the lane's own width the stretch occupies. */
+  inlineSize: number;
+};
+
+/**
+ * A block placed in its lane: the grid's own vertical geometry, with the inline geometry re-read.
+ * `inlineOffset` and `inlineSize` bound every segment; `clipPath` cuts the box down to them.
+ */
+export type LaneBlock = {
+  block: SchedulerTimeGridBlock<TimelineEntry>;
+  key: string;
+  /** The window this piece of a sibling row covers, or null for a block that draws its whole row. */
+  piece: TimeWindow | null;
+  /** The stacking order of a cascaded sibling piece, later columns on top, or null for a packed block. */
+  layer: number | null;
+  inlineOffset: number;
+  inlineSize: number;
+  segments: LaneSegment[];
+  clipPath: string | null;
+};
+
+/** One checkout's column of the day. */
+export type DayLane = {
+  key: string;
+  label: string;
+  blocks: LaneBlock[];
+  /** The day's breaks. Only the break lane holds any; every other lane holds work. */
+  breaks: BreakBand[];
+  /** The stretches this checkout lost to another, drawn under its rows to explain the hole they left. */
+  behind: BehindBand[];
+  /** A paired machine's work in this checkout that a frozen day's rows do not hold. */
+  peers: PeerLaneBand[];
+  /** Keys of the labels with no free height of their own in this lane: the box keeps its `title`, not a drawn label. */
+  hiddenLabels: ReadonlySet<string>;
+};
+
+const BOX_GAP_PX = 1;
+
+/** The `top` and `height` of a box that leaves a gap above and below it, so boxes stacked in one column never touch. */
+export const gappedTop = (offset: number) => `calc(${offset}% + ${BOX_GAP_PX}px)`;
+export const gappedHeight = (span: number) => `calc(${span}% - ${BOX_GAP_PX * 2}px)`;
+
+export const behindLabelKey = (band: BehindBand) => `behind:${band.offset}`;
+export const peerLabelKey = (placed: PeerLaneBand) => `peer:${placed.band.machineId}:${placed.offset}`;
+
+type LabelClaim = { top: number; bottom: number; left: number; right: number };
+
+const CLAIM_EPSILON = 1e-6;
+
+const meets = (a: LabelClaim, b: LabelClaim) =>
+  a.top < b.bottom - CLAIM_EPSILON &&
+  b.top < a.bottom - CLAIM_EPSILON &&
+  a.left < b.right - CLAIM_EPSILON &&
+  b.left < a.right - CLAIM_EPSILON;
+
+const hiddenLabelsOf = (options: {
+  blocks: readonly LaneBlock[];
+  behind: readonly BehindBand[];
+  peers: readonly PeerLaneBand[];
+  labelSpan: number;
+}) => {
+  const hidden = new Set<string>();
+
+  if (!options.labelSpan) return hidden;
+
+  const claimOf = (box: { offset: number; span: number }, inline = { left: 0, right: 100 }): LabelClaim => ({
+    top: box.offset,
+    bottom: box.offset + Math.min(box.span, options.labelSpan),
+    ...inline,
+  });
+  const shown: LabelClaim[] = [];
+
+  for (const laid of [...options.blocks].sort((a, b) => a.block.offset - b.block.offset)) {
+    const claim = claimOf(laid.block, { left: laid.inlineOffset, right: laid.inlineOffset + laid.inlineSize });
+
+    if (shown.some((other) => meets(claim, other))) hidden.add(laid.key);
+    else shown.push(claim);
+  }
+
+  const peers: LabelClaim[] = [];
+
+  for (const placed of [...options.peers].sort((a, b) => a.offset - b.offset)) {
+    const claim = claimOf(placed);
+
+    if (peers.some((other) => meets(claim, other))) hidden.add(peerLabelKey(placed));
+    else peers.push(claim);
+  }
+
+  const boxes = options.blocks.map(({ block }) => ({
+    top: block.offset,
+    bottom: block.offset + block.span,
+    left: 0,
+    right: 100,
+  }));
+
+  for (const band of [...options.behind].sort((a, b) => a.offset - b.offset)) {
+    const claim = claimOf(band);
+
+    if ([...shown, ...boxes].some((other) => meets(claim, other))) hidden.add(behindLabelKey(band));
+    else shown.push(claim);
+  }
+
+  return hidden;
+};
+
+export const laneKeyOfRow = (row: ReviewedRow) => row.laneKey ?? NO_LANE_KEY;
+
+/**
+ * The column a row's lane is drawn in: a linked worktree's lane is drawn in its main checkout's, and a
+ * checkout a project link covers is drawn in that project's, so the checkouts of one project read as
+ * one lane. A checkout with no link, or a `private` one, keeps its own. The row keeps its own lane key,
+ * which is what its stand-in, its branch and its naming history are kept by.
+ */
+export const laneColumnOf =
+  (options: { worktrees: Readonly<Record<string, string>>; links: readonly TimetrackProjectLink[] }) =>
+  (laneKey: string) => {
+    const main = options.worktrees[streamKeyRepoPath(laneKey) ?? ''];
+    const checkout = main ? streamKey({ repoPath: main }) : laneKey;
+    const repoPath = streamKeyRepoPath(checkout);
+    const target = repoPath ? matchProjectLink({ context: { repoPath }, links: options.links })?.target : undefined;
+
+    return target?.kind === 'project' ? `${PROJECT_LANE_PREFIX}${target.projectKey}` : checkout;
+  };
+
+/** The lane key a row drawn on empty grid in `lane` is filed under: a project lane files it under its first checkout. */
+export const drawKeyOfLane = (lane: DayLane) =>
+  isProjectLaneKey(lane.key) ? (lane.blocks[0] ? laneKeyOfBlock(lane.blocks[0].block) : undefined) : lane.key;
+
+const laneKeyOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => {
+  const entry = rowEntryOf(block.node.appointment);
+
+  return entry ? laneKeyOfRow(entry.row) : NO_LANE_KEY;
+};
+
+/** The lane header's tooltip: a project lane names the checkouts it holds, any other lane its own key. */
+export const laneTitleOf = (lane: DayLane) =>
+  isProjectLaneKey(lane.key)
+    ? [
+        ...new Set(
+          [
+            ...lane.blocks.map((placed) => laneKeyOfBlock(placed.block)),
+            ...lane.behind.map((band) => band.stretch.laneKey),
+          ].map(streamKeyLabel),
+        ),
+      ].join(', ')
+    : lane.key;
+
+type Timed = {
+  block: SchedulerTimeGridBlock<TimelineEntry>;
+  start: number;
+  end: number;
+  column: number;
+  piece: TimeWindow | null;
+};
+
+type Sibling = { block: SchedulerTimeGridBlock<TimelineEntry>; row: ReviewedRow };
+
+const wholeOf = (block: SchedulerTimeGridBlock<TimelineEntry>): Timed => ({
+  block,
+  start: block.node.appointment.start.getTime(),
+  end: block.node.appointment.end.getTime(),
+  column: 0,
+  piece: null,
+});
+
+/**
+ * The rows of parallel agent sessions on one ticket (`sharingTicket`). A row being dragged is drawn
+ * whole, at the range the drag gives it.
+ */
+const siblingsOf = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Sibling[] => {
+  const rows = blocks.flatMap((block) => {
+    const row = rowEntryOf(block.node.appointment)?.row;
+    const { start, end } = block.node.appointment;
+
+    return row && start.getTime() === row.from.getTime() && end.getTime() === row.to.getTime()
+      ? [
+          {
+            block,
+            row,
+            from: row.from,
+            to: row.to,
+            laneKey: row.laneKey,
+            issueKey: row.issueKey,
+            standInId: row.standInId,
+          },
+        ]
+      : [];
+  });
+
+  return [...sharingTicket(rows)].map(({ block, row }) => ({ block, row }));
+};
+
+const siblingCardOf = ({ block, row }: Sibling): Timed => ({
+  block,
+  start: row.from.getTime(),
+  end: row.to.getTime(),
+  column: 0,
+  piece: { from: row.from, to: row.to },
+});
+
+/**
+ * Packs one lane's blocks into overlap-free columns, the same way a calendar packs a day, and splits
+ * the lane only while blocks overlap: a block is full width wherever nothing else in the lane runs.
+ * Where only parallel agent sessions on one ticket overlap, they cascade instead of splitting the lane
+ * (`cascadeOf`).
+ *
+ * Whether two blocks overlap is read off the clock and never off `offset` and `span`. The end of one
+ * row and the start of the next are the same instant, but the two percentages of the day computed
+ * for it differ in the last bit often enough that two rows meeting at 16:30 would each be drawn at
+ * half the lane's width.
+ */
+const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): LaneBlock[] => {
+  const siblings = siblingsOf(blocks);
+  const inPieces = new Set(siblings.map((sibling) => sibling.block));
+  const timed = [...blocks.filter((block) => !inPieces.has(block)).map(wholeOf), ...siblings.map(siblingCardOf)].sort(
+    (a, b) => a.start - b.start || a.end - b.end,
+  );
+
+  const endsPerColumn: number[] = [];
+
+  for (const entry of timed) {
+    const free = endsPerColumn.findIndex((taken) => taken <= entry.start);
+
+    entry.column = free === -1 ? endsPerColumn.length : free;
+    endsPerColumn[entry.column] = entry.end;
+  }
+
+  return timed.map((entry) => placeOf(entry, timed));
+};
+
+/**
+ * A sibling piece that overlaps only other sibling pieces, placed the way a calendar cascades
+ * overlapping events: each column is indented a step further and drawn over the columns before it,
+ * so every piece stays wider than an even split would leave it.
+ */
+const cascadeOf = (entry: Timed, others: readonly Timed[]): LaneBlock => {
+  const columns = Math.max(entry.column, ...others.map((other) => other.column)) + 1;
+  const inlineOffset = others.length ? (entry.column / (columns + 1)) * 100 : 0;
+  const inlineSize = 100 - inlineOffset;
+
+  return {
+    block: entry.block,
+    key: `${entry.block.node.appointment.id}@${entry.start}`,
+    piece: entry.piece,
+    layer: entry.column + 1,
+    inlineOffset,
+    inlineSize,
+    segments: [{ from: 0, to: 1, inlineOffset, inlineSize }],
+    clipPath: null,
+  };
+};
+
+const placeOf = (entry: Timed, lane: readonly Timed[]): LaneBlock => {
+  const others = lane.filter((other) => other !== entry && other.start < entry.end && other.end > entry.start);
+
+  if (entry.piece && others.every((other) => other.piece)) return cascadeOf(entry, others);
+
+  const cuts = [...new Set([entry.start, entry.end, ...others.flatMap((other) => [other.start, other.end])])]
+    .filter((at) => at >= entry.start && at <= entry.end)
+    .sort((a, b) => a - b);
+  const length = entry.end - entry.start || 1;
+  const segments: LaneSegment[] = [];
+
+  for (let at = 0; at < cuts.length - 1; at++) {
+    const from = cuts[at] ?? 0;
+    const to = cuts[at + 1] ?? 0;
+    const beside = others.filter((other) => other.start < to && other.end > from);
+    const columns = Math.max(entry.column, ...beside.map((other) => other.column)) + 1;
+    const inlineOffset = beside.length ? (entry.column / columns) * 100 : 0;
+    const inlineSize = beside.length ? 100 / columns : 100;
+    const last = segments.at(-1);
+
+    if (last && last.inlineOffset === inlineOffset && last.inlineSize === inlineSize) {
+      last.to = (to - entry.start) / length;
+    } else {
+      segments.push({ from: (from - entry.start) / length, to: (to - entry.start) / length, inlineOffset, inlineSize });
+    }
+  }
+
+  if (!segments.length) segments.push({ from: 0, to: 1, inlineOffset: 0, inlineSize: 100 });
+
+  const inlineOffset = Math.min(...segments.map((segment) => segment.inlineOffset));
+  const inlineSize = Math.max(...segments.map((segment) => segment.inlineOffset + segment.inlineSize)) - inlineOffset;
+
+  return {
+    block: entry.block,
+    key: entry.piece ? `${entry.block.node.appointment.id}@${entry.start}` : entry.block.node.appointment.id,
+    piece: entry.piece,
+    layer: null,
+    inlineOffset,
+    inlineSize,
+    segments,
+    clipPath: clipPathOf({ segments, inlineOffset, inlineSize }),
+  };
+};
+
+const clipPathOf = (options: { segments: readonly LaneSegment[]; inlineOffset: number; inlineSize: number }) => {
+  if (options.segments.length < 2) return null;
+
+  const x = (lanePercent: number) => ((lanePercent - options.inlineOffset) / options.inlineSize) * 100;
+  const left = options.segments.flatMap((segment) => [
+    [x(segment.inlineOffset), segment.from * 100],
+    [x(segment.inlineOffset), segment.to * 100],
+  ]);
+  const right = options.segments.flatMap((segment) => [
+    [x(segment.inlineOffset + segment.inlineSize), segment.from * 100],
+    [x(segment.inlineOffset + segment.inlineSize), segment.to * 100],
+  ]);
+  const points = [...left, ...right.reverse()].map(([px, py]) => `${px}% ${py}%`);
+
+  return `polygon(${points.join(', ')})`;
+};
+
+const offsetOf = (options: { at: Date; dayStart: Date }) =>
+  ((options.at.getTime() - options.dayStart.getTime()) / DAY_MS) * 100;
+
+const spanOf = (window: { from: Date; to: Date }) => ((window.to.getTime() - window.from.getTime()) / DAY_MS) * 100;
+
+const breakBandsOf = (options: { breaks: readonly BreakWindow[]; dayStart: Date }): BreakBand[] =>
+  options.breaks.map((window) => ({
+    window,
+    offset: offsetOf({ at: window.from, dayStart: options.dayStart }),
+    span: spanOf(window),
+  }));
+
+/**
+ * The day's blocks as one lane per checkout, in the order the checkouts were first touched, with the
+ * day's breaks in a leading lane of their own. A row nothing could place goes into a last lane rather
+ * than into somebody else's.
+ *
+ * A day whose breaks are all gone keeps the lane, empty: it is where a break is drawn, so a day that
+ * dropped the last one would otherwise offer no way to state a new one. A day with no work at all has
+ * no grid to draw on and gets no lane.
+ *
+ * A lane is fixed by the checkout and never by who overlaps whom, so a band's width says which
+ * checkout it is and a busy hour narrows nothing.
+ *
+ * A paired machine's band opens no lane: it sits in its checkout's lane, else in one last lane of its machine.
+ */
+export const lanesOf = (options: {
+  blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[];
+  breaks: readonly BreakWindow[];
+  behind?: readonly BehindStretch[];
+  peers?: readonly PeerBand[];
+  /** Midnight of the day on screen, which the break and behind geometry is measured from. */
+  dayStart: Date;
+  columnOf?: (laneKey: string) => string;
+  /** Lanes to draw even while no block is in them, for a band that previews a row not written yet. */
+  openLanes?: readonly string[];
+  /** The height of one label line as a percent of the day. Left out, no label is ever hidden. */
+  labelSpan?: number;
+}): DayLane[] => {
+  const columnOf = options.columnOf ?? ((laneKey: string) => laneKey);
+  const byLane = new Map<string, SchedulerTimeGridBlock<TimelineEntry>[]>();
+
+  for (const block of options.blocks) {
+    const key = columnOf(laneKeyOfBlock(block));
+
+    byLane.set(key, [...(byLane.get(key) ?? []), block]);
+  }
+
+  const behindByLane = new Map<string, Omit<BehindBand, 'carrier'>[]>();
+
+  for (const stretch of options.behind ?? []) {
+    const key = columnOf(stretch.laneKey);
+    const bands = (stretch.pieces ?? [stretch]).map((piece) => ({
+      stretch: stretch.pieces
+        ? { ...stretch, ...piece, durationMs: piece.to.getTime() - piece.from.getTime(), pieces: undefined }
+        : stretch,
+      offset: offsetOf({ at: piece.from, dayStart: options.dayStart }),
+      span: spanOf(piece),
+    }));
+
+    behindByLane.set(key, [...(behindByLane.get(key) ?? []), ...bands]);
+    // A checkout every one of whose minutes went elsewhere has no block left to open a lane with, and
+    // that is the hole this band exists to explain.
+    if (!byLane.has(key)) byLane.set(key, []);
+  }
+
+  for (const key of options.openLanes ?? []) if (!byLane.has(key)) byLane.set(key, []);
+
+  const peersByLane = new Map<string, PeerLaneBand[]>();
+  const peerLabels = new Map<string, string>();
+
+  for (const band of options.peers ?? []) {
+    const column = columnOf(band.laneKey);
+    const own = byLane.has(column);
+    const key = own ? column : peerLaneKeyOf(band);
+    const placed = {
+      band,
+      offset: offsetOf({ at: band.from, dayStart: options.dayStart }),
+      span: spanOf(band),
+      checkout: own ? null : labelOf(column),
+    };
+
+    peersByLane.set(key, [...(peersByLane.get(key) ?? []), placed]);
+    if (!own) peerLabels.set(key, band.machineName);
+  }
+
+  for (const key of peerLabels.keys()) byLane.set(key, []);
+
+  const startOf = (key: string, lane: SchedulerTimeGridBlock<TimelineEntry>[]) =>
+    Math.min(
+      ...lane.map((block) => block.offset),
+      ...(behindByLane.get(key) ?? []).map((band) => band.offset),
+      ...(peersByLane.get(key) ?? []).map((band) => band.offset),
+    );
+
+  const work = [...byLane]
+    .sort(
+      ([aKey, a], [bKey, b]) =>
+        rankOf(aKey) - rankOf(bKey) || startOf(aKey, a) - startOf(bKey, b) || aKey.localeCompare(bKey),
+    )
+    .map(([key, laneBlocks]) => {
+      const blocks = packLane(laneBlocks);
+      const behind = (behindByLane.get(key) ?? []).map((band) => ({ ...band, carrier: carrierOf(band, blocks) }));
+      const peers = peersByLane.get(key) ?? [];
+
+      return {
+        key,
+        label: peerLabels.get(key) ?? labelOf(key),
+        blocks,
+        breaks: [],
+        behind,
+        peers,
+        hiddenLabels: hiddenLabelsOf({
+          blocks,
+          behind: behind.filter((band) => !band.carrier),
+          peers,
+          labelSpan: options.labelSpan ?? 0,
+        }),
+      };
+    });
+
+  if (!work.length) return work;
+
+  return [
+    {
+      key: BREAK_LANE_KEY,
+      label: BREAK_LANE_LABEL,
+      blocks: [],
+      breaks: breakBandsOf(options),
+      behind: [],
+      peers: [],
+      hiddenLabels: new Set(),
+    },
+    ...work,
+  ];
+};

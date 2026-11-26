@@ -1,0 +1,292 @@
+import { BRACKET_ROUND_MIRROR_TYPE, COMMON_BRACKET_ROUND_TYPE } from '../core';
+import { CurveOptions, curvePath } from './curve';
+import { Dimensions } from './grid/core/types';
+import { BRACKET_FINAL_ALIGNMENT, ComputedBracketGrid } from './grid/types';
+import { isBracketContinueMatch } from './grid/prebuild/bracket-continue-master-column';
+import { gutterPath, linePath, LineOptions, verticalPath } from './line';
+import { BracketPosition } from './math';
+import { path, PathOptions } from './path';
+import { BracketDrawing, BracketEdge } from './shapes';
+
+export type DrawManDimensions<TRoundData, TMatchData> = {
+  columnWidth: number;
+  matchHeight: number;
+  roundHeaderHeight: number;
+  columnGap: number;
+  upperLowerGap: number;
+  rowGap: number;
+  bracketGrid: ComputedBracketGrid<TRoundData, TMatchData>;
+  path: Omit<PathOptions, 'className' | 'id'>;
+  curve: Omit<CurveOptions, 'path' | 'inverted'>;
+
+  /** Path options for the lines connecting the continuing matches to the continue element */
+  continuePath?: Omit<PathOptions, 'className' | 'id'>;
+};
+
+const makePos = (dimensions: Dimensions): BracketPosition => ({
+  block: {
+    start: dimensions.top,
+    end: dimensions.top + dimensions.height,
+    center: dimensions.top + dimensions.height / 2,
+  },
+  inline: {
+    start: dimensions.left,
+    end: dimensions.left + dimensions.width,
+    center: dimensions.left + dimensions.width / 2,
+  },
+});
+
+/**
+ * Two cards in the same column - the shape a stacked layout's centre chain makes, where a round hangs
+ * directly below the one that feeds it and every horizontal run has zero width.
+ */
+const isSameColumn = (from: BracketPosition, to: BracketPosition) =>
+  Math.abs(from.inline.center - to.inline.center) < 1;
+
+/** A one-to-one connector, whichever way round the two cards sit. */
+// eslint-disable-next-line max-params -- geometry helper: (from, to, options) reads naturally positional
+const straightPath = (from: BracketPosition, to: BracketPosition, options: LineOptions) =>
+  isSameColumn(from, to) ? verticalPath(from, to, options) : linePath(from, to, options);
+
+/** One arm of a merge, bending towards its card, collapsing to a straight run when the two share a column. */
+// eslint-disable-next-line max-params -- geometry helper: (from, to, options) reads naturally positional
+const mergePath = (from: BracketPosition, to: BracketPosition, options: CurveOptions) =>
+  isSameColumn(from, to)
+    ? verticalPath(from, to, { path: options.path })
+    : curvePath(from, to, to.block.center >= from.block.center ? 'down' : 'up', options);
+
+const edgeId = (fromMatchId: string, toMatchId: string) => `${fromMatchId}|${toMatchId}`;
+
+export const drawMan = <TRoundData, TMatchData>(
+  dimensions: DrawManDimensions<TRoundData, TMatchData>,
+): BracketDrawing => {
+  const edges: BracketEdge[] = [];
+  const takenIds = new Set<string>();
+
+  // A repeated id would make the host's `@for` throw, and a mirrored fold can draw the same pair of
+  // cards from both of its sides.
+  const pushEdge = (edge: BracketEdge) => {
+    let id = edge.id;
+
+    for (let attempt = 2; takenIds.has(id); attempt++) id = `${edge.id}#${attempt}`;
+
+    takenIds.add(id);
+    edges.push(id === edge.id ? edge : { ...edge, id });
+  };
+
+  const continueElement = dimensions.bracketGrid.columns
+    .flatMap((col) => col.elements)
+    .find((el) => el.type === 'continue');
+  const continuePos = continueElement ? makePos(continueElement.dimensions) : null;
+  const continueSources: { pos: BracketPosition; className: string; matchId: string }[] = [];
+
+  for (const col of dimensions.bracketGrid.columns) {
+    for (const el of col.elements) {
+      if (el.type !== 'match') continue;
+
+      const currentMatchParticipantsShortIds = [el.match.home?.shortId, el.match.away?.shortId]
+        .filter((id) => !!id)
+        .join(' ');
+
+      const currentPos = makePos(el.dimensions);
+
+      if (el.round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) continue;
+
+      if (continuePos && isBracketContinueMatch(el.match)) {
+        continueSources.push({
+          pos: currentPos,
+          className: el.match.winner?.shortId || '',
+          matchId: el.match.id,
+        });
+      }
+
+      // Crossing the middle of a fold. Every other line here is drawn by the match it flows *into*, but a
+      // round in the middle of a mirrored bracket is fed from both sides and its relation names only one
+      // of them - so the round on the way back draws its own line. Deliberately outside the switch below:
+      // which relation a match has says nothing about which side of a fold it sits on.
+      if (el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT && 'nextMatch' in el.match.relation) {
+        const { nextMatch, nextRound } = el.match.relation;
+
+        if (nextRound.mirrorRoundType === null) {
+          const next = dimensions.bracketGrid.matchElementMap.getOrThrow(nextMatch.id);
+
+          // The winner's short id, not both participants': this line is somebody advancing along it, and
+          // the journey highlight lights the path a participant actually travelled.
+          pushEdge(
+            straightPath(makePos(next.dimensions), currentPos, {
+              path: {
+                ...dimensions.path,
+                id: edgeId(nextMatch.id, el.match.id),
+                className: el.match.winner?.shortId || '',
+              },
+            }),
+          );
+        }
+      }
+
+      switch (el.match.relation.type) {
+        case 'none':
+        case 'nothing-to-one': {
+          continue;
+        }
+        case 'one-to-nothing':
+        case 'one-to-one': {
+          const prev = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.previousMatch.id);
+          const prevPos = makePos(prev.dimensions);
+
+          // The winner of the match it comes from, like every other connector, or the journey highlight
+          // lights the line for whoever arrived from somewhere else.
+          pushEdge(
+            straightPath(prevPos, currentPos, {
+              path: {
+                ...dimensions.path,
+                id: edgeId(el.match.relation.previousMatch.id, el.match.id),
+                className: el.match.relation.previousMatch.winner?.shortId || '',
+              },
+              // The way back runs right to left: the round it comes from sits on the *other* side.
+              inverted: el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT,
+            }),
+          );
+
+          break;
+        }
+
+        case 'two-to-nothing':
+        case 'two-to-one': {
+          const prevUpper = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.previousUpperMatch.id);
+          const prevLower = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.previousLowerMatch.id);
+
+          const prevUpperPos = makePos(prevUpper.dimensions);
+          const prevLowerPos = makePos(prevLower.dimensions);
+
+          const upperId = edgeId(el.match.relation.previousUpperMatch.id, el.match.id);
+          const lowerId = edgeId(el.match.relation.previousLowerMatch.id, el.match.id);
+
+          const isLowerUpperMerger =
+            el.match.relation.previousLowerRound.id !== el.match.relation.previousUpperRound.id;
+
+          const invertCurve = el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT;
+
+          const curveOptions: CurveOptions = {
+            ...dimensions.curve,
+            inverted: invertCurve,
+            path: { ...dimensions.path, id: upperId, className: '' },
+          };
+
+          if (isLowerUpperMerger && dimensions.bracketGrid.finalAlignment !== BRACKET_FINAL_ALIGNMENT.CENTER) {
+            pushEdge(
+              straightPath(prevUpperPos, currentPos, {
+                path: { ...dimensions.path, id: upperId, className: currentMatchParticipantsShortIds },
+                inverted: invertCurve,
+              }),
+            );
+          } else {
+            pushEdge(
+              mergePath(prevUpperPos, currentPos, {
+                ...curveOptions,
+                path: {
+                  ...curveOptions.path,
+                  className: el.match.relation.previousUpperMatch.winner?.shortId || '',
+                },
+              }),
+            );
+          }
+
+          const lowerPathOptions = {
+            ...curveOptions.path,
+            id: lowerId,
+            className: el.match.relation.previousLowerMatch.winner?.shortId || '',
+          };
+
+          // A feeder directly *below* in the same column is the one connector a stacked layout has that
+          // crosses its own cards - the losers champion coming up to the grand final, past everything
+          // hanging under it. Every other same-column pair is adjacent, so a straight run is clear.
+          const isBlockToBlock =
+            isSameColumn(prevLowerPos, currentPos) && prevLowerPos.block.start > currentPos.block.end;
+
+          pushEdge(
+            isBlockToBlock
+              ? gutterPath(prevLowerPos, currentPos, {
+                  // Dashed, like the continue column's: it runs the height of a block past cards it has
+                  // nothing to do with, and reads as a stray bracket edge if it looks like one.
+                  path: {
+                    ...(dimensions.continuePath ?? dimensions.path),
+                    id: lowerId,
+                    className: lowerPathOptions.className,
+                  },
+                  inverted: invertCurve,
+                  gutter: dimensions.columnGap / 2,
+                })
+              : mergePath(prevLowerPos, currentPos, { ...curveOptions, path: lowerPathOptions }),
+          );
+
+          break;
+        }
+      }
+    }
+  }
+
+  if (continuePos && continueSources.length) {
+    const continuePathOptions = dimensions.continuePath ?? dimensions.path;
+    const curveAmount = dimensions.curve.lineStartingCurveAmount;
+    const trunkInline = continuePos.inline.start - dimensions.columnGap / 2;
+    const continueBlockCenter = continuePos.block.center;
+    const sourceBlocks = continueSources.map((source) => source.pos.block.center);
+    const firstSourceBlock = Math.min(...sourceBlocks);
+    const lastSourceBlock = Math.max(...sourceBlocks);
+    const trunkBlocks: number[] = [continueBlockCenter];
+
+    for (const source of continueSources) {
+      const sourceBlockCenter = source.pos.block.center;
+      const blockDistance = continueBlockCenter - sourceBlockCenter;
+      const sourcePathOptions: PathOptions = {
+        ...continuePathOptions,
+        id: edgeId(source.matchId, 'continue'),
+        className: source.className,
+      };
+
+      const isTrunkCorner =
+        (sourceBlockCenter === firstSourceBlock && blockDistance > 0.5) ||
+        (sourceBlockCenter === lastSourceBlock && blockDistance < -0.5);
+
+      // The straight run into the trunk is the same three commands with a zero-radius corner, so that a
+      // source turning into a corner as the rows move animates rather than jumping.
+      const curve = isTrunkCorner ? Math.min(curveAmount, Math.abs(blockDistance)) : 0;
+      const curveEndBlock = sourceBlockCenter + curve * Math.sign(blockDistance);
+
+      pushEdge(
+        path(
+          `M ${source.pos.inline.end} ${sourceBlockCenter}
+           H ${trunkInline - curve}
+           Q ${trunkInline} ${sourceBlockCenter}, ${trunkInline} ${curveEndBlock}`,
+          sourcePathOptions,
+        ),
+      );
+
+      trunkBlocks.push(curveEndBlock);
+    }
+
+    const trunkBlockStart = Math.min(...trunkBlocks);
+    const trunkBlockEnd = Math.max(...trunkBlocks);
+
+    if (trunkBlockEnd - trunkBlockStart > 0.5) {
+      pushEdge(
+        path(`M ${trunkInline} ${trunkBlockStart} V ${trunkBlockEnd}`, {
+          ...continuePathOptions,
+          id: 'continue|trunk',
+          className: '',
+        }),
+      );
+    }
+
+    pushEdge(
+      path(`M ${trunkInline} ${continueBlockCenter} H ${continuePos.inline.start}`, {
+        ...continuePathOptions,
+        id: 'continue|element',
+        className: '',
+      }),
+    );
+  }
+
+  return { edges, rects: [], gradients: [] };
+};

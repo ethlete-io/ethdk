@@ -1,0 +1,151 @@
+@layer components.sdk {
+  et-date-time-input {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-date-time-input-field {
+      min-inline-size: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      caret-color: var(--et-tone-fill, currentColor);
+      font-variant-numeric: tabular-nums;
+
+      &::placeholder {
+        color: color-mix(in srgb, currentColor 60%, transparent);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+      }
+    }
+
+    .et-date-time-input-local-reading {
+      font-size: var(--et-form-field-hint-font-size);
+      line-height: 1.3;
+      color: var(--et-surface-text-muted, currentColor);
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    et-form-field[data-disabled] & .et-date-time-input-local-reading {
+      color: var(--et-surface-control-text-disabled, currentColor);
+    }
+
+    &[data-mixed] .et-date-time-input-field::placeholder {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+  }
+
+  .et-date-time-input-panel {
+    .et-date-time-input-panel-tabs {
+      display: none;
+    }
+
+    .et-date-time-input-panel-panes {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+    }
+
+    /* absorbs etDateTimePickerPanes' animated block-size: the overflow stays out of layout, so the
+       panel body snaps once instead of chasing a frame-by-frame moving target */
+    .et-date-time-input-panel-time-pane {
+      align-self: stretch;
+      display: flex;
+    }
+
+    .et-time-picker {
+      align-items: center;
+      border-inline-start: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.08));
+      padding-inline-start: 12px;
+    }
+  }
+
+  .et-overlay.et-date-picker-sheet .et-date-time-input-panel {
+    .et-date-time-input-panel-tabs {
+      display: block;
+      margin-block-end: 12px;
+
+      .et-segmented-button-group-buttons {
+        display: flex;
+        align-self: stretch;
+      }
+
+      et-segmented-button {
+        flex: 1;
+      }
+    }
+
+    .et-date-time-input-panel-panes {
+      display: grid;
+      justify-content: center;
+      justify-items: center;
+      align-items: center;
+
+      > et-calendar,
+      > .et-date-time-input-panel-time-pane {
+        grid-area: 1 / 1;
+      }
+    }
+
+    .et-date-time-input-panel-time-pane {
+      align-self: center;
+      align-items: center;
+    }
+
+    .et-time-picker {
+      border-inline-start: none;
+      padding-inline-start: 0;
+    }
+
+    .et-date-time-input-panel-panes[data-active-pane='date'] > .et-date-time-input-panel-time-pane {
+      visibility: hidden;
+    }
+
+    .et-date-time-input-panel-panes[data-active-pane='time'] > et-calendar {
+      visibility: hidden;
+    }
+
+    /* `data-nav` is unset on open, so the first render does not animate; the selector stops
+       matching while a pane is inactive, which restarts the animation on every re-activation */
+    .et-date-time-input-panel-panes[data-nav='forward'][data-active-pane='time'] > .et-date-time-input-panel-time-pane {
+      animation: et-date-time-input-pane-in-forward 200ms ease;
+    }
+
+    .et-date-time-input-panel-panes[data-nav='backward'][data-active-pane='date'] > et-calendar {
+      animation: et-date-time-input-pane-in-backward 200ms ease;
+    }
+  }
+
+  @keyframes et-date-time-input-pane-in-forward {
+    from {
+      opacity: 0;
+      transform: translateX(14px);
+    }
+  }
+
+  @keyframes et-date-time-input-pane-in-backward {
+    from {
+      opacity: 0;
+      transform: translateX(-14px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-date-time-input-panel-panes > et-calendar,
+    .et-date-time-input-panel-panes > .et-date-time-input-panel-time-pane {
+      animation: none;
+    }
+  }
+}

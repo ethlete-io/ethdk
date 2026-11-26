@@ -1,0 +1,25 @@
+import { Component, ViewEncapsulation, inject } from '@angular/core';
+import { DailymotionPlayerParamsDirective } from './headless/dailymotion-player-params.directive';
+import { DAILYMOTION_PLAYER_TOKEN, DailymotionPlayerDirective } from './headless/dailymotion-player.directive';
+
+@Component({
+  selector: 'et-dailymotion-player',
+  template: '',
+  encapsulation: ViewEncapsulation.None,
+  hostDirectives: [
+    {
+      directive: DailymotionPlayerParamsDirective,
+      inputs: ['videoId', 'startTime', 'width', 'height'],
+    },
+    DailymotionPlayerDirective,
+  ],
+  host: {
+    class: 'et-dailymotion-player et-stream-player',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
+  },
+})
+export class DailymotionPlayerComponent {
+  public player = inject(DAILYMOTION_PLAYER_TOKEN);
+}

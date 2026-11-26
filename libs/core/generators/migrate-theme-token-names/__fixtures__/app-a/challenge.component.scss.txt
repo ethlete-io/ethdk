@@ -1,0 +1,110 @@
+@reference '../../../../../../../theme/src/lib/tailwind.css';
+aa-challenge .et-segmented-button-group.et-segmented-button-group--tabs {
+  // The group must not scroll itself; `et-scrollable` around it does. Left standing here it clips the later tabs.
+  overflow-x: unset;
+
+  padding-inline: 0;
+
+  padding-block-end: 0;
+
+  .et-segmented-button-group-container {
+    grid-auto-columns: max-content;
+    inline-size: max-content;
+    min-inline-size: 100%;
+  }
+
+  .et-segmented-button-field,
+  .et-segmented-button {
+    inline-size: max-content;
+  }
+
+  .et-segmented-button-button-active-indicator {
+    inset-block-end: -0.1rem;
+  }
+}
+
+.aa-challenge-bracket-panel {
+  --et-bracket-line-color: var(--color-aa-light-1);
+  --et-bracket-move-duration: 300ms;
+  --et-bracket-move-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// The ring belongs to the pseudo element: an animation on `box-shadow` would overwrite the card's own.
+aa-challenge .aa-challenge-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: aa-challenge-pulse 2s ease-out infinite;
+}
+
+@keyframes aa-challenge-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(var(--et-color-primary) / 70%);
+  }
+
+  70% {
+    box-shadow: 0 0 0 1.2rem rgb(var(--et-color-primary) / 0%);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--et-color-primary) / 0%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  aa-challenge .aa-challenge-pulse::after {
+    animation: none;
+  }
+}
+
+// Single properties, never the `animation` shorthand: it resets the per-stage `animation-delay` the template sets.
+aa-challenge.aa-challenge-building .aa-challenge-rise {
+  animation-name: aa-challenge-rise;
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation-fill-mode: backwards;
+}
+
+// Opacity only, never `transform`: the save bar is `position: fixed` and would take a transformed ancestor as its box.
+aa-challenge.aa-challenge-building .aa-challenge-emerge {
+  animation-name: aa-challenge-emerge;
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation-fill-mode: backwards;
+}
+
+aa-challenge .aa-challenge-arrive {
+  animation: aa-challenge-rise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes aa-challenge-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.8rem);
+  }
+}
+
+@keyframes aa-challenge-emerge {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  aa-challenge.aa-challenge-building .aa-challenge-rise,
+  aa-challenge.aa-challenge-building .aa-challenge-emerge,
+  aa-challenge .aa-challenge-arrive {
+    animation: none;
+  }
+}
+
+// `etCursorDragScroll` sets both classes and the SDK ships their rules in a CSS file this app never loads.
+aa-challenge .et-cursor-drag-scroll--prepared * {
+  user-select: none;
+}
+
+aa-challenge .et-cursor-drag-scroll--scrolling * {
+  pointer-events: none;
+}

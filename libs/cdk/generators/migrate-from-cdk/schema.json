@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "migrate-from-cdk",
+  "title": "Migrate from @ethlete/cdk to @ethlete/components",
+  "type": "object",
+  "properties": {
+    "projects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Nx projects to migrate. Defaults to every project in the workspace.",
+      "alias": "project"
+    },
+    "include": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Path prefixes to migrate, relative to the workspace root (e.g. 'apps/shop'). Unioned with `projects`.",
+      "alias": "includePath"
+    },
+    "mapPath": {
+      "type": "string",
+      "description": "Path to migration-map.json. Defaults to the copy shipped with the installed @ethlete/cdk."
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after migration",
+      "default": false
+    }
+  },
+  "required": []
+}

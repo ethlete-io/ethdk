@@ -1,0 +1,396 @@
+import {
+  groupQueryParams,
+  isPlainObject,
+  pathParamsOf,
+  QueryParamKind,
+  queryParamKindOf,
+  routeNameOf,
+} from './query-devtools-export-utils';
+
+const MAX_DEPTH = 10;
+
+const DATE_TIME = /^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})$/;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export type QueryDevtoolsOpenApiMock = {
+  clientName: string;
+
+  method: string;
+
+  /** The route with its path params as `:name`; the document writes them as `{name}`. */
+  pattern: string;
+
+  query: string;
+
+  status: number;
+
+  body: unknown;
+
+  schemaName?: string | null;
+
+  capturedAt?: number | null;
+};
+
+export type BuildQueryDevtoolsOpenApiOptions = {
+  mocks: readonly QueryDevtoolsOpenApiMock[];
+
+  schemas?: Record<string, unknown>;
+
+  now: number;
+
+  title?: string;
+};
+
+export type QueryDevtoolsOpenApiDocument = {
+  openapi: '3.1.0';
+  info: { title: string; version: string; description: string };
+  paths: Record<string, Record<string, unknown>>;
+  components?: { schemas: Record<string, unknown> };
+};
+
+export type QueryDevtoolsOpenApiExport<TDocument> = {
+  document: TDocument;
+
+  notes: readonly string[];
+};
+
+const toBracePattern = (pattern: string) =>
+  pattern
+    .split('/')
+    .map((segment) => (segment.startsWith(':') ? `{${segment.slice(1)}}` : segment))
+    .join('/');
+
+export const inferQueryDevtoolsOpenApiSchema = (value: unknown, depth = 0): Record<string, unknown> => {
+  if (depth >= MAX_DEPTH) return {};
+
+  if (value === null || value === undefined) return {};
+
+  switch (typeof value) {
+    case 'string':
+      if (DATE_TIME.test(value)) return { type: 'string', format: 'date-time' };
+      if (UUID.test(value)) return { type: 'string', format: 'uuid' };
+
+      return { type: 'string' };
+    case 'number':
+      if (!Number.isFinite(value)) return { type: 'number' };
+
+      return { type: Number.isInteger(value) ? 'integer' : 'number' };
+    case 'boolean':
+      return { type: 'boolean' };
+    default:
+      break;
+  }
+
+  if (Array.isArray(value)) return { type: 'array', items: itemsOf(value, depth) };
+
+  if (isPlainObject(value)) {
+    const entries = Object.entries(value);
+
+    if (!entries.length) return { type: 'object' };
+
+    return {
+      type: 'object',
+      properties: Object.fromEntries(
+        entries.map(([key, entry]) => [key, inferQueryDevtoolsOpenApiSchema(entry, depth + 1)]),
+      ),
+      required: entries.map(([key]) => key),
+    };
+  }
+
+  return {};
+};
+
+const itemsOf = (value: readonly unknown[], depth: number): Record<string, unknown> => {
+  const members = new Map<string, Record<string, unknown>>();
+
+  for (const entry of value) {
+    const schema = inferQueryDevtoolsOpenApiSchema(entry, depth + 1);
+
+    members.set(JSON.stringify(schema), schema);
+  }
+
+  const distinct = [...members.values()];
+
+  if (!distinct.length) return {};
+  if (distinct.length === 1) return distinct[0] as Record<string, unknown>;
+
+  return { anyOf: distinct };
+};
+
+const queryParamSchema = (values: readonly string[]): Record<string, unknown> => {
+  const type: QueryParamKind = queryParamKindOf(values);
+
+  return values.length > 1 ? { type: 'array', items: { type } } : { type };
+};
+
+const parametersOf = (mocks: readonly QueryDevtoolsOpenApiMock[]) => {
+  const first = mocks[0] as QueryDevtoolsOpenApiMock;
+  const parameters: Record<string, unknown>[] = pathParamsOf(first.pattern).map((name) => ({
+    name,
+    in: 'path',
+    required: true,
+    schema: { type: 'string' },
+  }));
+
+  const seen = new Set<string>();
+
+  for (const mock of mocks) {
+    for (const [name, values] of groupQueryParams(mock.query)) {
+      if (seen.has(name)) continue;
+
+      seen.add(name);
+      parameters.push({
+        name,
+        in: 'query',
+        required: false,
+        schema: queryParamSchema(values),
+        example: values.length > 1 ? values : values[0],
+      });
+    }
+  }
+
+  return parameters;
+};
+
+const exampleNameOf = (mock: QueryDevtoolsOpenApiMock, taken: Set<string>) => {
+  const base = mock.query || mock.clientName || 'designed';
+  let name = base;
+
+  for (let attempt = 2; taken.has(name); attempt++) name = `${base} (${attempt})`;
+
+  taken.add(name);
+
+  return name;
+};
+
+const responseDescription = (mocks: readonly QueryDevtoolsOpenApiMock[], status: number) => {
+  const clients = [...new Set(mocks.map((mock) => mock.clientName).filter(Boolean))];
+  const served = clients.length ? ` served for ${clients.join(', ')}` : '';
+  const captured = mocks.some((mock) => mock.capturedAt) ? ' Captured from a real response.' : '';
+
+  return `${status >= 400 ? 'A designed failure' : 'The designed response'}${served}.${captured}`;
+};
+
+type ResponseContext = {
+  schemas: Record<string, unknown>;
+  notes: Set<string>;
+};
+
+const responseSchema = (mock: QueryDevtoolsOpenApiMock, ctx: ResponseContext): Record<string, unknown> => {
+  const name = mock.schemaName;
+
+  if (name && Object.hasOwn(ctx.schemas, name)) return { $ref: `#/components/schemas/${name}` };
+
+  if (name) {
+    ctx.notes.add(
+      `${mock.method} ${mock.pattern} was seeded from ${name}, which is not in this export - its schema was inferred from the body instead.`,
+    );
+  }
+
+  return inferQueryDevtoolsOpenApiSchema(mock.body);
+};
+
+const responsesOf = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseContext) => {
+  const byStatus = new Map<number, QueryDevtoolsOpenApiMock[]>();
+
+  for (const mock of mocks) {
+    const list = byStatus.get(mock.status);
+
+    if (list) list.push(mock);
+    else byStatus.set(mock.status, [mock]);
+  }
+
+  const responses: Record<string, unknown> = {};
+
+  for (const [status, list] of [...byStatus.entries()].sort(([a], [b]) => a - b)) {
+    const first = list[0] as QueryDevtoolsOpenApiMock;
+    const schema = responseSchema(first, ctx);
+
+    if (list.length > 1) {
+      ctx.notes.add(
+        `${first.method} ${first.pattern} has ${list.length} designed ${status} responses - the first one's schema was exported, and all of them as examples.`,
+      );
+    }
+
+    const taken = new Set<string>();
+    const examples =
+      list.length === 1
+        ? { example: first.body }
+        : {
+            examples: Object.fromEntries(
+              list.map((mock) => [exampleNameOf(mock, taken), { value: mock.body }] as const),
+            ),
+          };
+
+    responses[String(status)] = {
+      description: responseDescription(list, status),
+      content: { 'application/json': { schema, ...examples } },
+    };
+  }
+
+  return responses;
+};
+
+const SENDS_BODY: ReadonlySet<string> = /* @__PURE__ */ new Set(['POST', 'PUT', 'PATCH']);
+
+const operationDescription = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseContext) => {
+  const first = mocks[0] as QueryDevtoolsOpenApiMock;
+  const named = mocks.map((mock) => mock.schemaName).find((name) => !!name && Object.hasOwn(ctx.schemas, name));
+  const lines = [
+    named
+      ? `The response is this description's own ${named}, which the mock was seeded from.`
+      : "The response schema was inferred from the designed body - see this document's description.",
+  ];
+
+  if (SENDS_BODY.has(first.method.toUpperCase())) {
+    lines.push('The devtools design a response only, so no request body is declared here.');
+  }
+
+  return lines.join(' ');
+};
+
+const operationOf = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseContext) => {
+  const first = mocks[0] as QueryDevtoolsOpenApiMock;
+  const path = toBracePattern(first.pattern);
+  const tags = [...new Set(mocks.map((mock) => mock.clientName).filter(Boolean))];
+  const parameters = parametersOf(mocks);
+
+  return {
+    ...(tags.length ? { tags } : {}),
+    summary: `Designed response for ${first.method.toUpperCase()} ${path}`,
+    description: operationDescription(mocks, ctx),
+    operationId: routeNameOf(first, 'operation'),
+    ...(parameters.length ? { parameters } : {}),
+    responses: responsesOf(mocks, ctx),
+  };
+};
+
+const pathsOf = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseContext) => {
+  const groups = new Map<string, QueryDevtoolsOpenApiMock[]>();
+
+  for (const mock of mocks) {
+    const key = `${toBracePattern(mock.pattern)}|${mock.method.toLowerCase()}`;
+    const group = groups.get(key);
+
+    if (group) group.push(mock);
+    else groups.set(key, [mock]);
+  }
+
+  const paths: Record<string, Record<string, unknown>> = {};
+  const ids = new Set<string>();
+
+  for (const group of groups.values()) {
+    const first = group[0] as QueryDevtoolsOpenApiMock;
+    const path = toBracePattern(first.pattern);
+    const operation = operationOf(group, ctx);
+
+    let id = operation.operationId;
+
+    for (let attempt = 2; ids.has(id); attempt++) id = `${operation.operationId}${attempt}`;
+
+    ids.add(id);
+    paths[path] = { ...paths[path], [first.method.toLowerCase()]: { ...operation, operationId: id } };
+  }
+
+  return paths;
+};
+
+const INFO_DESCRIPTION = /* @__PURE__ */ [
+  'Responses designed in the @ethlete/query devtools and served to the application in place of real requests.',
+  '',
+  'Every schema here was inferred from one example, so it says what that example held and nothing more:',
+  'each property the example carried is listed as required, no property is marked nullable, and one whose',
+  'example was null carries no type at all. A route seeded from a named schema references that schema',
+  'instead, and the schema is copied in unchanged.',
+].join('\n');
+
+export const buildQueryDevtoolsOpenApiDocument = (
+  options: BuildQueryDevtoolsOpenApiOptions,
+): QueryDevtoolsOpenApiExport<QueryDevtoolsOpenApiDocument> => {
+  const ctx: ResponseContext = { schemas: options.schemas ?? {}, notes: new Set() };
+  const paths = pathsOf(options.mocks, ctx);
+  const used = referencedSchemas(paths, ctx.schemas);
+
+  return {
+    document: {
+      openapi: '3.1.0',
+      info: {
+        title: options.title ?? 'Designed mocks',
+        version: new Date(options.now).toISOString().slice(0, 10),
+        description: INFO_DESCRIPTION,
+      },
+      paths,
+      ...(Object.keys(used).length ? { components: { schemas: used } } : {}),
+    },
+    notes: [...ctx.notes],
+  };
+};
+
+export const buildQueryDevtoolsOpenApiPathItem = (
+  options: Pick<BuildQueryDevtoolsOpenApiOptions, 'mocks' | 'schemas'>,
+): QueryDevtoolsOpenApiExport<Record<string, Record<string, unknown>>> => {
+  const ctx: ResponseContext = { schemas: options.schemas ?? {}, notes: new Set() };
+  const paths = pathsOf(options.mocks, ctx);
+  const referenced = [...collectRefNames(paths)].filter((name) => Object.hasOwn(ctx.schemas, name));
+
+  if (referenced.length) {
+    ctx.notes.add(
+      `This fragment references ${referenced.join(', ')} - paste it into the description that declares ${referenced.length > 1 ? 'them' : 'it'}.`,
+    );
+  }
+
+  return { document: paths, notes: [...ctx.notes] };
+};
+
+const referencedSchemas = (paths: unknown, schemas: Record<string, unknown>) => {
+  const used: Record<string, unknown> = {};
+  const pending = [...collectRefNames(paths)];
+
+  while (pending.length) {
+    const name = pending.shift() as string;
+
+    if (Object.hasOwn(used, name) || !Object.hasOwn(schemas, name)) continue;
+
+    used[name] = schemas[name];
+    pending.push(...collectRefNames(schemas[name]));
+  }
+
+  return used;
+};
+
+const REF_PREFIX = '#/components/schemas/';
+
+type RefScan = { into: Set<string>; seen: WeakSet<object> };
+
+const newRefScan = (): RefScan => ({ into: new Set(), seen: new WeakSet() });
+
+const collectRefNames = (value: unknown, scan: RefScan = newRefScan()) => {
+  const { into, seen } = scan;
+
+  if (!value || typeof value !== 'object') return into;
+
+  if (seen.has(value)) return into;
+
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    for (const entry of value) collectRefNames(entry, scan);
+
+    return into;
+  }
+
+  if (!isPlainObject(value)) return into;
+
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === '$ref' && typeof entry === 'string' && entry.startsWith(REF_PREFIX)) {
+      into.add(entry.slice(REF_PREFIX.length));
+
+      continue;
+    }
+
+    collectRefNames(entry, scan);
+  }
+
+  return into;
+};

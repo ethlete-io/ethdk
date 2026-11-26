@@ -1,0 +1,151 @@
+import { randomId } from '@ethlete/core';
+import { shouldCacheQuery } from '../query-cache-utils';
+import { createQueryInvalidationFilter } from '../query-invalidation';
+import { QueryRepository, QueryRepositoryEvent } from '../query-repository';
+import { QueryKeyLockManager } from './query-key-lock-manager';
+import { QueryMultiTabSyncConfig } from './query-sync-config';
+import { QuerySyncMessage } from './query-sync-message';
+import { QuerySyncTransport } from './query-sync-transport';
+
+/**
+ * The per-client machinery behind the {@link withMultiTabSync} feature: it broadcasts
+ * what settles in this tab, applies what settles in the others, and owns the lock manager that
+ * decides which tab polls a given cache key.
+ *
+ * Reachable from query features via `deps.client.subtle.sync`, and `null` on a client that did not
+ * enable sync (or on the server).
+ */
+export type QuerySyncEngine = {
+  /**
+   * Whether polling should be deduplicated across tabs. Already accounts for response sharing being
+   * a prerequisite, so a feature can act on this alone.
+   */
+  isPollingDedupeEnabled: boolean;
+
+  /** Elects the one tab responsible for a cache key. */
+  lockManager: QueryKeyLockManager;
+
+  /**
+   * Tells the other tabs to refresh the queries they have in use below `url` and tagged `tag`, or all
+   * of them for two `null`s. What {@link QueryClient.invalidateQueries} broadcasts.
+   */
+  postInvalidation: (url: string | null, tag?: string | null) => void;
+
+  /** Stops broadcasting and listening, and closes the channel. */
+  destroy: () => void;
+};
+
+export type CreateQuerySyncEngineOptions = {
+  config: QueryMultiTabSyncConfig;
+  repository: QueryRepository;
+  transport: QuerySyncTransport;
+  lockManager: QueryKeyLockManager;
+};
+
+/** @internal */
+export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): QuerySyncEngine => {
+  const { config, repository, transport, lockManager } = options;
+
+  const syncResponses = config.syncResponses ?? true;
+  const refreshOnMutation = config.refreshOnMutation ?? true;
+
+  // Suppressing a poll is only safe while the suppressed tab still gets the data, so dedup without
+  // response sharing would just make a tab stop updating. Enforced here rather than documented.
+  const isPollingDedupeEnabled =
+    (config.dedupePolling ?? true) && syncResponses && transport.isSupported && lockManager.isSupported;
+
+  const mutationFilter = typeof refreshOnMutation === 'object' ? refreshOnMutation.filter : null;
+
+  let outgoingBatch: string | null = null;
+
+  const currentOutgoingBatch = () => {
+    if (outgoingBatch === null) {
+      outgoingBatch = randomId();
+      queueMicrotask(() => (outgoingBatch = null));
+    }
+
+    return outgoingBatch;
+  };
+
+  const broadcast = (event: QueryRepositoryEvent) => {
+    if (event.type !== 'request-success' || !event.isMultiTabSyncEnabled) return;
+
+    if (event.isCached) {
+      // `subtle.useQueryRepositoryCache` lets a mutation (the auth queries) reach the cache; only a
+      // refreshable read (a GET, or a GraphQL query sent via POST) may leave this tab. Returning
+      // instead of falling through also keeps a token refresh from refreshing every other tab.
+      if (!event.isRefreshable || !syncResponses) return;
+
+      transport.post({
+        type: 'response',
+        key: event.key,
+        body: event.request.response(),
+        expiresAt: event.request.expiresAt(),
+      });
+
+      return;
+    }
+
+    // Everything else is either a mutation or a read that opted out of the cache. Only the former is
+    // worth telling the other tabs about - and an uncacheable read has no shared key to send anyway.
+    if (!refreshOnMutation || shouldCacheQuery(event.request.method)) return;
+
+    transport.post({
+      type: 'mutation',
+      method: event.request.method,
+      url: event.request.url,
+      batch: currentOutgoingBatch(),
+    });
+  };
+
+  const apply = (message: QuerySyncMessage) => {
+    if (message.type === 'response') {
+      if (!syncResponses) return;
+
+      repository.applyExternalResponse({ key: message.key, body: message.body, expiresAt: message.expiresAt });
+
+      return;
+    }
+
+    // An invalidation is something the other tab's app code asked for explicitly, so unlike the
+    // mutation heuristic it is not something `refreshOnMutation: false` opts out of.
+    if (message.type === 'invalidate') {
+      repository.refreshInUse(
+        createQueryInvalidationFilter({ url: message.url, tag: message.tag }),
+        {
+          type: 'invalidation',
+          url: message.url,
+          otherTab: true,
+          ...(message.tag && { tag: message.tag }),
+        },
+        message.batch,
+      );
+
+      return;
+    }
+
+    if (!refreshOnMutation) return;
+
+    const mutation = { method: message.method, url: message.url };
+
+    repository.refreshInUse(
+      mutationFilter ? (request) => mutationFilter(mutation, request) : undefined,
+      { type: 'mutation', url: message.url, otherTab: true },
+      message.batch,
+    );
+  };
+
+  const postInvalidation = (url: string | null, tag?: string | null) =>
+    transport.post({ type: 'invalidate', url, ...(tag && { tag }), batch: currentOutgoingBatch() });
+
+  const eventSubscription = repository.events$.subscribe(broadcast);
+  const unlisten = transport.listen(apply);
+
+  const destroy = () => {
+    unlisten();
+    eventSubscription.unsubscribe();
+    transport.destroy();
+  };
+
+  return { isPollingDedupeEnabled, lockManager, postInvalidation, destroy };
+};

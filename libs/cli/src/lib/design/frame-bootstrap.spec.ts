@@ -1,0 +1,156 @@
+// @vitest-environment jsdom
+import { spawnSync } from 'child_process';
+import { resolve } from 'path';
+import { describe, expect, it } from 'vitest';
+
+type Result = {
+  initial: { evaluated: boolean; body: string; messages: { type: string }[] };
+  body: string;
+  error: string | null;
+  building: boolean;
+  first: string;
+  ticked: string;
+  pageFill: string;
+  styles: string[];
+  messages: { type: string; errored?: boolean; error?: string }[];
+  imports: number;
+  frames: number;
+};
+
+const bootstrap = (
+  outcome: 'resolve' | 'reject',
+  tokens?: 'tokens',
+  query = '',
+  failedImports = 0,
+  rejection?: string,
+  part?: string,
+): Result => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--experimental-vm-modules',
+      resolve(__dirname, '__fixtures__/frame-bootstrap.mjs'),
+      resolve(__dirname, '../../../design/web/frame.ts'),
+      outcome,
+      ...(tokens ? [tokens] : []),
+    ],
+    {
+      encoding: 'utf8',
+      timeout: 10000,
+      env: {
+        ...process.env,
+        FRAME_QUERY: query,
+        FRAME_FAILED_IMPORTS: String(failedImports),
+        ...(rejection ? { FRAME_REJECT: rejection } : {}),
+        ...(part ? { FRAME_PART: part } : {}),
+      },
+    },
+  );
+
+  expect(result.status, result.stderr).toBe(0);
+
+  return JSON.parse(result.stdout) as Result;
+};
+
+describe('design frame bootstrap', { timeout: 30_000 }, () => {
+  it('finishes module evaluation while the drawing environment is still loading', () => {
+    const result = bootstrap('resolve');
+
+    expect(result.initial).toEqual({ evaluated: true, body: '', messages: [{ type: 'design-explore:loading' }] });
+    expect(result.body).toBe('<b>Ready</b>');
+    expect(result.messages.at(-2)).toMatchObject({ type: 'design-explore:height' });
+  });
+
+  it('reports the page painted two frames after its first height report', () => {
+    const result = bootstrap('resolve');
+
+    expect(result.messages.map(({ type }) => type)).toEqual([
+      'design-explore:loading',
+      'design-explore:height',
+      'design-explore:painted',
+    ]);
+    expect(result.frames).toBe(2);
+  });
+
+  it('shows and reports an environment failure after synchronous module evaluation', () => {
+    const result = bootstrap('reject');
+
+    expect(result.initial.evaluated).toBe(true);
+    expect(result.body).toContain('Environment failed');
+    expect(result.error).toContain('Environment failed');
+    expect(result.messages.at(-2)).toMatchObject({ type: 'design-explore:height', errored: true });
+    expect(result.messages.at(-2)?.error).toContain('Environment failed');
+    expect(result.messages.at(-1)).toMatchObject({ type: 'design-explore:painted' });
+  });
+
+  it('shows a building state, not the error, while a missing build is being built', () => {
+    const result = bootstrap('reject', undefined, '', 0, 'design-explore: wird gebaut … (nx build core)');
+
+    expect(result.building).toBe(true);
+    expect(result.error).toBeNull();
+    expect(result.body).toContain('wird gebaut …');
+  });
+
+  it('shows the elapsed build time and ticks it', () => {
+    const result = bootstrap('reject', undefined, '', 0, 'design-explore: wird gebaut … (nx build core)');
+
+    expect(result.first).toBe('design-explore: wird gebaut … (nx build core) 0 s');
+    expect(result.ticked).toBe('design-explore: wird gebaut … (nx build core) 12 s');
+  });
+
+  it("loads the product's tokens once, before the part's own styles", () => {
+    expect(bootstrap('resolve', 'tokens').styles).toEqual([':root{--token:1}', '.part{}']);
+  });
+
+  it('adds only the part styles when the product has no tokens', () => {
+    expect(bootstrap('resolve').styles).toEqual(['.part{}']);
+  });
+
+  it('paints the page with the token `fill` names in place of the product fill', () => {
+    expect(bootstrap('resolve', undefined, '&fill=surface').pageFill).toBe('surface');
+  });
+
+  it('leaves the page fill to the product without `fill`', () => {
+    expect(bootstrap('resolve').pageFill).toBe('');
+  });
+
+  it('draws the part when its import fails once while the part file changes', () => {
+    const result = bootstrap('resolve', undefined, '', 2);
+
+    expect(result.body).toBe('<b>Ready</b>');
+    expect(result.error).toBeNull();
+  });
+
+  it('shows the import error once the retries fail too', () => {
+    const result = bootstrap('resolve', undefined, '', 99);
+
+    expect(result.error).toContain('Failed to fetch dynamically imported module');
+    expect(result.imports).toBe(6);
+  });
+
+  it('draws every state of a part into one table laid out by its grid with `sheet`', () => {
+    const result = bootstrap('resolve', undefined, '&sheet', 0, undefined, 'components/button');
+    const sheet = document.createElement('div');
+
+    sheet.innerHTML = result.body;
+    const rows = [...sheet.querySelectorAll('tbody tr')].map((row) =>
+      [...row.children].map((cell) => cell.textContent),
+    );
+
+    expect(result.error).toBeNull();
+    expect([...sheet.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['', 'rest', 'hover']);
+    expect(rows).toEqual([
+      ['primary', 'P', 'P'],
+      ['secondary', 'S', ''],
+      ['small', 's', ''],
+    ]);
+    expect(sheet.querySelector('[data-et-sheet-state="primary-hover"] button')?.getAttribute('data-force')).toBe(
+      'hover',
+    );
+    expect(result.styles.filter((style) => style.includes('.button'))).toEqual([
+      '.button.hover{}',
+      expect.stringContaining('.button{}'),
+    ]);
+    expect(result.messages.at(-2)).toMatchObject({ type: 'design-explore:height', variant: 'sheet' });
+  });
+});

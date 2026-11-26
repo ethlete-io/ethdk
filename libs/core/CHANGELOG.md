@@ -1,0 +1,2345 @@
+# @ethlete/core
+
+## 5.0.0-next.79
+
+### Minor Changes
+
+- Add an optional `layer: 'page' | 'overlay'` to the head title, meta and link bindings so an overlay always outranks page bindings
+
+### Patch Changes
+
+- Stop `MetaStore.addTag` and `removeTag` from tracking the current locale when called inside an `effect()`.
+
+## 5.0.0-next.78
+
+### Minor Changes
+
+- Add `markInsideOverlay(foreignLayer, owner)`, which marks a panel another library renders (e.g. an Angular CDK select panel) as part of an SDK overlay, so a press inside it no longer closes that overlay.
+
+### Patch Changes
+
+- `autoFocus: 'container'` now moves focus onto the overlay host, the focusable element that carries the dialog role, instead of the pane, which cannot take focus and left it on the trigger.
+- End-aligned anchored overlays no longer end a fraction of a pixel short of their reference, and their arrow points at the reference centre exactly.
+- An overlay opened from an Escape keydown no longer closes in that same keydown.
+- An outside click before an overlay's enter transition starts, such as the first click after a keyboard open, now closes it instead of being ignored.
+- Anchored overlay panes and their arrows now sit on whole pixels, so pane borders no longer smear across two pixel columns; the tooltip design mock is drawn the same way.
+- The overlay runtime no longer moves initial focus after the enter animation when focus already sits inside the pane, so a field the user focused while the overlay was entering keeps it.
+
+## 5.0.0-next.77
+
+### Minor Changes
+
+- `closeOnOutsidePointer` accepts `'except-origin'`: a press on the anchored origin no longer closes the overlay or swallows its click, so the origin's own click handler decides.
+
+## 5.0.0-next.76
+
+### Minor Changes
+
+- Add `backdropClick()` to the overlay ref and a `backdropClick` output to the headless overlay directive, emitting on every backdrop click whether or not the overlay closes.
+
+## 5.0.0-next.75
+
+### Minor Changes
+
+- Title parts keep the place they got when they were bound, so a part that empties and comes back no longer moves to the end. The new `order: 'child-first'` option of `provideTitleConfig` builds `Child | Parent | Suffix`.
+- `provideDragHandleDefaults` sets the `etDragHandle` input defaults (`touchHoldDelay`) for the handle on the same element only, so a directive that hosts it can change them without reaching handles in its content.
+- `etDragHandle` and `dragGestureFrom` take `touchHoldDelay`: a touch must hold still that long before it drags, and a touch that moves first scrolls the page.
+- SDK component styles now sit in `@layer components.sdk`, so an app rule in `@layer components` overrides them; `et update` leaves a task to check those rules.
+
+### Patch Changes
+
+- The `tailwind-4-surface-theme` generator reads a negative `elevation` such as `-1`. A theme the generator cannot parse now rejects with the theme name instead of being skipped with a warning.
+- A meta or link binding now keeps the place it got when it was bound. An earlier binding whose value updates no longer jumps ahead of a later one, so a child's tag stays in front of its parent's.
+- A meta tag that was in the page before a binding took its selector (e.g. from `index.html`) now comes back once the last binding for that selector is released, instead of staying removed.
+- `etDragHandle` accepts `commitThreshold` as a plain attribute (`commitThreshold="0"`).
+- A loading button keeps its normal colours and opacity instead of looking disabled. Only a truly disabled button gets the disabled look.
+
+## 5.0.0-next.74
+
+### Minor Changes
+
+- Anchored overlays take `arrowAnchor`, an element the arrow points at instead of the origin; the `anchoredDialog()` design mock takes a matching `anchor` selector.
+
+## 5.0.0-next.73
+
+### Minor Changes
+
+- The theme generators write a color theme's `type` as `--et-color-theme-type` and a surface's `colorThemeVariants` as `--et-surface-color-theme-variants`, so design frames can resolve semantic colors and surface swaps.
+
+### Patch Changes
+
+- The `color-theme-variants` migration declares `ts-morph`, so `et update` adds it before the codemod runs.
+- `AnimatedLifecycleDirective` no longer throws `Cannot read properties of undefined (reading 'directive')` when a bundle evaluates `AnimatableDirective` first, for example in a lazy chunk that uses `NotificationComponent`.
+- Removes every circular import inside the package, so no module can be read before it has finished loading, and adds a test that fails on a new one.
+- `et migrations` now lists `migrate-create-destroy`, `migrate-color-theme-variants` and `migrate-from-ngrx-toolkit`, all at level `optional`.
+
+## 5.0.0-next.72
+
+### Patch Changes
+
+- Add `resizeHandlesStyles` under `@ethlete/core/design/resize-handles`: the `et-resize-handles` stylesheet for a design drawing.
+
+## 5.0.0-next.71
+
+### Patch Changes
+
+- Overlay runtime: while the overlay enters, a backdrop click closes it; the second click of a double-click does not, so a double-click on the trigger no longer opens and closes it at once.
+
+## 5.0.0-next.70
+
+### Patch Changes
+
+- The `migrate-to-v5` codemod now reports each `toSignal(…, { requireSync: true })`, `take(1)`, `first()` or `withLatestFrom` that reads an observable it rewrote to `toObservable()`, because that observable no longer emits synchronously.
+- The `surface-interaction-swatch` migration declares that it needs `ts-morph`, so `et update` installs it first. The `@nx/devkit` peer range is now `>=23.0.0`, matching the Nx floor of the migration guide.
+- Overlay runtime: Escape now closes an overlay during its enter transition instead of being dropped; outside-pointer closes stay ignored until the transition starts.
+
+## 5.0.0-next.69
+
+### Patch Changes
+
+- Update all dependencies to their latest versions (Nx 24, Vitest 5, jsdom 30, ts-morph 28, @types/node 26 and others). The optional `@nx/devkit` peer dependency now requires `^24.0.0`, and the optional `ts-morph` peer of `@ethlete/core` requires `^28.0.0`.
+- Update dependencies (Angular 22.2, Nx 23.3, Vitest 4.1.12 and others) and keep the `max-params` lint exceptions in the bracket layout types on the line ESLint 10.13 reports.
+
+## 5.0.0-next.68
+
+### Minor Changes
+
+- Add `attributes` and `movingClass` options to `injectAnimatedListItems`: watch items a filter hides, and clip overflow while items move.
+- Add `injectAnimatedListItems`: items of a list that stay slide to their new place, new items fade in, and removed items fade out where they were.
+- `injectAnimatedListItems` takes an `animateChange` callback; returning `false` measures a change without moving or fading items.
+
+### Patch Changes
+
+- Place anchored overlays on whole device pixels, so their content no longer shifts by a pixel when an animation ends.
+- Round a shifted anchored overlay inward, so snapping to device pixels no longer pushes it past the viewport padding.
+- The fade-out copy in `injectAnimatedListItems` keeps the padding, border, colour and text styles its item had from ancestor selectors.
+- `createCanAnimateSignal` cancels its pending frame when its host is destroyed, and `matchesReducedMotion` returns `false` in an environment without `matchMedia` instead of throwing.
+- `injectAnimatedListItems` fades a new item in only after the removed items have faded out, so a select's "No results" or loading row cross-fades with the options instead of overlapping them.
+- `registerScrollRestorationState` now restores a page that registers after the navigation ended, such as a route component behind a nested `<router-outlet>`, on reload and back/forward navigation. The offset waits for that state before it is applied.
+- A quick mouse flick on a snapping scrollable or carousel now carries on to the next child in its direction instead of gliding back to the nearest one.
+
+## 5.0.0-next.67
+
+### Patch Changes
+
+- Keep `et-animation-leave-to` on an `AnimatedLifecycleDirective` host after its leave finishes, until the next `enter()`. An element removed a frame after its leave no longer flashes back to full opacity first.
+
+## 5.0.0-next.66
+
+### Minor Changes
+
+- `injectRouterState()` now carries the navigation `id` and `trigger` (`'imperative' | 'popstate' | 'hashchange'`).
+- Scroll restoration can restore page state, such as a paged list's page count, before it applies the offset (`registerScrollRestorationState`), and can restore after a reload (`restore.restoreOnReload`).
+
+### Patch Changes
+
+- `injectIsRouterInitialized()` is now `true` only once the first navigation has ended, so a component created during it sees `false`.
+
+## 5.0.0-next.65
+
+### Minor Changes
+
+- New `@ethlete/core/design/theme-css`: `themeCss()`, `surfaceThemeCss()` and `colorThemeCss()` turn surface and color themes into static CSS, sharing one implementation with the Tailwind theme generators.
+- Add `hasAnchoredOverlayPositionExtras()`, which reports whether `enableAnchoredOverlayPositionExtras()` has run.
+- `provideLocale(locale?)` now accepts the initial locale: `provideLocale('de')` starts `injectLocale().currentLocale` at `'de'`. Without an argument it still starts at `'en'`.
+
+### Patch Changes
+
+- An anchored overlay strategy's `width`, such as `anchoredDialogOverlayStrategy({ width: '42rem' })`, now sizes the pane instead of being cleared by anchored positioning.
+- Render an `etAutoSurface` above the root as inherited on the server in system color scheme mode, so a dark OS no longer sees a light surface before hydration.
+- Remove the light accent variant class a server painted on `<html>` when `provideColorScheme()` hydrates in dark mode, so root-scoped accents no longer stay on the light variant.
+- The style manager hides its container with the `hidden` attribute instead of an inline style, so server-rendered pages pass a CSP without `'unsafe-inline'` for style attributes.
+
+## 5.0.0-next.64
+
+### Minor Changes
+
+- Theming: add the `migrate-color-theme-variants` generator. Run `nx g @ethlete/core:migrate-color-theme-variants` to rewrite the deprecated `colorTheme` and `semanticColorThemes` of your surface themes into `colorThemeVariants`.
+- Theming: `provideColorScheme()` now swaps the default accent of the root surface through its `colorThemeVariants`, so the app root needs no `[etProvideSurface]` for it.
+- Theming: add `SurfaceTheme.colorThemeVariants`, which swaps any chosen accent for a version that reads well on the surface, and deprecate `colorTheme` and `semanticColorThemes`.
+- `provideColorScheme()` and `injectColorScheme().setMode()` switch between the default light and dark surface with an `et-scheme--*` class on `<html>`; regenerate the surface CSS to get the rule.
+
+### Patch Changes
+
+- Surface and color directives no longer bundle the `provideColorScheme()` state (media query observer and root class painting) into apps that never call it.
+- Theming: a surface now paints its swapped accent when it sits outside its parent surface in the DOM. A dialog or alert dialog opened with an opener from a light surface used the default accent instead of the variant.
+
+## 5.0.0-next.63
+
+### Patch Changes
+
+- Fix modal focus trap tab stops, overlay stacking order for Escape and outside clicks, focus restore to disabled openers, `afterOpened()` on early close, and scroll restoration under a base href.
+- Fix edge cases in `AnimatedLifecycleDirective` classes, `getScrollSnapTarget`, `[etClickOutside]`, `signalElementIntersection` order, `isElementVisible().intersectionRatio` and `createUnsavedChangesTracker` with a `null` default.
+- `htmlToMarkdown` drops empty headings and list items, and normalizes block alignment to `center`, `right` or `justify`; other values serialize as plain Markdown.
+- The modal focus trap treats a native radio group as one Tab stop, so Tab no longer escapes a dialog through it.
+
+## 5.0.0-next.62
+
+### Major Changes
+
+- `AnimatedLifecycleDirective` gains a read-only `state` signal, and `state$` is now a read-only observable; read `state()` instead of `state$.value`.
+- `OverlayRuntimeRef` no longer exposes the runtime's internal state mutators, and the runtime's style helpers and ref factory are no longer exported; the `OverlayRuntime` type is.
+- Breaking: `ResizeMoveEvent` `dx`/`dy` are now `totalDx`/`totalDy`, and `resizeEnded` emits the final `ResizeMoveEvent` instead of `void`.
+
+### Minor Changes
+
+- `*etAnimatedIf` narrows its `as` value like `@if`, and throws `ET9000` naming the missing `[etAnimatedLifecycle]` ancestor instead of a bare NG0201.
+- `provideColorPalette` also takes one list per registered surface theme name plus a `default` list. The new `injectSurfaceColorPalette()` returns a signal of the list for the surface the caller sits on. `injectColorPalette()` returns the `default` list.
+- Deprecate `createDestroy` in favour of `takeUntilDestroyed()` and add the hand-run `migrate-create-destroy` generator that rewrites the common pattern.
+- Add the recommended assisted migration `legacy-color-themes`: `nx g @ethlete/core:migrate-legacy-color-themes` rewrites `provideColorThemes` into `provideColorThemesWithTailwind4` and lists the Tailwind 4 and surface theme setup that is left.
+- Add `optionalBooleanAttribute`, a `booleanAttribute` that keeps `null` and `undefined`, for tri-state inputs.
+- Adds `injectQueryParamAll` and an `injector` option on every router `inject*` helper; `injectQueryParam` now always returns the first value of a repeated param, and `KeyPressManager` is deprecated.
+- Add `SurfaceTheme.semanticColorThemes`, which names the color theme serving `success`, `warning` or `error` on that surface, and `injectSemanticColorTheme(type)`, a signal of that theme for the nearest surface, else of the theme with that `type`.
+- `OverlayRuntimeCloseSource` gains `'navigation'`, the source `@ethlete/components` overlays close with on a route change.
+- Add a shared `et-visually-hidden` class and `mountVisuallyHidden()` to core, replacing 16 per-component copies of the clip rule in components.
+- Add `colorTheme` to `SurfaceTheme`: an `[etProvideSurface]` that resolves the surface applies that color theme to its subtree, e.g. a darker `brand-on-light` on a light surface. An `[etProvideColor]` with a color on or above the surface element wins
+- Unsaved changes: `confirm` is optional now - set it once with `provideUnsavedChangesConfirm()`, or use `provideUnsavedChangesAlertDialog()` for a ready-made dialog worded by `UNSAVED_CHANGES_LABELS`.
+
+### Patch Changes
+
+- `*etAnimatedIf` no longer replays the enter animation when a shown value is swapped for another truthy value.
+- `signalAnimatedNumber` with `duration: 0` now jumps to the target instead of setting `NaN`, and a first frame stamped before `play()` no longer moves the value backwards. `*etRepeat` with a non-numeric count now renders nothing instead of keeping the previous views.
+- `writeViewportSizeToCssVariables()` and `writeScrollbarSizeToCssVariables()` keep updating their CSS variables after the component that first called them is destroyed. Before, the writer stopped with that component and every later call was skipped.
+- Deprecate `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` in favor of `injectSemanticColorTheme(type)`, which follows the surface.
+- Fixes unsaved-changes tracking of a `null` signal, `[etClickOutside]` misfires, cookies on `*.co.uk` hosts, 2D `nearest` scrolling and element swaps, and warns about missing breakpoint and color providers.
+- `equal` no longer treats two Maps as equal when their keys differ but their values are `undefined`. `isSafeUrl`, `isSafeLinkUrl` and Markdown rendering no longer throw on an out-of-range character reference such as `&#99999999;`. `getObjectProperty` follows chained array indexes like `a[0][1]`.
+- `applyFaviconOverlay` loads the base icon with a CORS request, so an overlay now shows over a favicon served from a CORS-enabled CDN instead of being dropped on a tainted canvas.
+- `injectUrl`, `injectRoute` and `injectRouterEvent` read the url before the first navigation through Angular's `Location`, so it no longer carries the base href or, under a hash location strategy, the `#`.
+- `initials()` and the `initials` pipe take a whole character from each word, so a name starting outside the basic multilingual plane no longer yields half a surrogate pair, and a decomposed accent stays on its letter.
+- The `legacy-color-themes` migration keeps the name a shorthand property or a local `export { provideColorThemes }` publishes, and also reports the Tailwind 3 helpers in a JavaScript Tailwind config.
+- `createLogger` now goes quiet on a bare `?et-logger-quiet` query param, not only on one with a value. The JSDoc of `TitleConfig.prefixPart` and `suffixPart` no longer describes each other, and `UnsavedChangesTabConfig.title` no longer names the removed `etSeo` directive.
+- A press on an anchored overlay's origin that closes it no longer swallows a later, unrelated click on that origin when the press ended without a click.
+- The overlay ref's lifecycle observables now replay their event, so `mount(...).beforeOpened()` or a subscribe after `close()` still emits.
+- `scrollToElement` with the `nearest` origin no longer hides the visible edge of an element larger than its container, and no longer scrolls toward an element that is not inside the container.
+- A static provider override no longer erases a default with a key set to `undefined`, so `provideXDefaults({ size: undefined })` keeps the default size; `null` still overrides.
+- The published typings no longer contain `@internal` members.
+- An `Observable` returned from an unsaved-changes `confirm` is now unsubscribed when the session ends while it is open (`abandonAll()`, e.g. on logout), so it no longer keeps running - and a confirm dialog opened through it closes.
+- Peer dependencies are ranges (`^22.1.0` for Angular, `^7.8.0` for RxJS, ...) instead of the workspace's exact versions. `migrate-to-v5` now reports every dropped 4.x export, such as `ObserveResizeDirective` and `LetDirective`, with its successor.
+- `signalElementIntersection` now takes its first reading after render instead of before layout, and a `rootMargin` or `threshold` signal re-creates the observer when it changes.
+- `htmlToMarkdown` and `markdownToHtml` keep the start number of an ordered list (`<ol start="3">` and `3.`) instead of renumbering from 1.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- An overlay opened from inside another overlay that closes first (a dialog opened from a menu item) now returns focus to that overlay's own restore target instead of `<body>`.
+
+## 5.0.0-next.61
+
+### Minor Changes
+
+- Breaking: `injectAppUpdates().check()` is now `check$()` and `fetchDeployedBuildFingerprint()` is now `fetchDeployedBuildFingerprint$()`; both return cold Observables instead of Promises.
+- Markdown: `htmlToMarkdown` now backslash-escapes literal text (except code, rich-text editor tokens and `data-markdown-verbatim` spans) and drops links with unsafe URL schemes, which the rich-text editor's link tools also refuse.
+- Markdown: `markdownToHtml` takes a `verbatim` pattern whose matches render as plain text. The rich-text editor and viewer pass their token codec's new `markdownPattern`, so `{{field:__x__}}` no longer loses its chip on reload.
+- Rich text editor: an image upload that resolves to an unsafe URL reports `upload-failed`; core exports `isSafeUrl`.
+
+### Patch Changes
+
+- The `provideAppUpdates` check no longer logs CSP `style-src` violations under a nonce policy. It reads the entry scripts from the fetched HTML text instead of parsing it with `DOMParser`.
+- An anchored overlay with `autoResize` now flips to the roomier side when its content grows after it opened, instead of staying squeezed on its first side.
+- Drag gestures now also suppress text selection in Safari and WebKitGTK, which ignore the unprefixed `user-select`.
+- `migrate-to-v5` takes a `projects`/`include` scope, migrates every usage it used to skip, and prints what to review by hand. `tailwind-4-color-theme` resolves imported spreads or warns.
+- The `migrate-to-v5` generator no longer rewrites `.foo$` when it migrates `.foo` from `ViewportService` or `RouterStateService`.
+- `fromNextFrame()` now cancels its animation frames on unsubscribe, so an animated lifecycle destroyed mid-transition (e.g. an open menu when its page goes away) leaves no frame pending; `nextFrame()` returns a cancel function.
+- Fix a service-worker notification that the user dismissed natively keeping its click handler. Handlers of notifications no longer shown are now dropped when the next service-worker notification is shown.
+- Overlay runtime: a component that throws during `mount` no longer leaves its host element, its overlay root or its injectors behind.
+- Internal cleanup from the core lib scan; no behaviour change. Exported API no longer carries `@internal` tags.
+- `scrollToElement` with the `nearest` origin now scrolls an element that starts exactly at a container edge into view.
+- `applyStructuredDataBinding` escapes `<` in its JSON-LD, so a value holding `</script>` or `<!--` no longer corrupts or breaks the script in SSR output.
+- The `migrate-to-v5` generator now migrates `ViewportService` and `RouterStateService` per class, leaves classes that do not inject them untouched, and handles aliased imports.
+- The `migrate-to-v5` generator now renames `ProvideThemeDirective` to `ProvideColorDirective` in files that import it from `@ethlete/theming`. Before, it left the old name, and the cdk migration then imported that old name from `@ethlete/core`.
+- `markdownToHtml` now renders a link with a scheme the link editor refuses (`file:`, `intent:`, `ftp:`, ...) as its text.
+- The rich text editor keeps an image whose URL holds parentheses or spaces an image after a save and reload. `htmlToMarkdown` escapes brackets and backslashes in image alt text, so the alt text comes back exactly as written.
+- `getScrollItemTarget` no longer rounds a half-visible item up to fully visible, so element-mode paging in a scrollable lands on that item instead of skipping it.
+
+## 5.0.0-next.60
+
+### Minor Changes
+
+- `provideSurfaceThemesWithTailwind4` now warns in dev mode when the page leaves the root font size at the browser default instead of setting `html { font-size: 62.5%; }`.
+
+### Patch Changes
+
+- Element signals such as `signalElementIntersection` now accept a signal of a read-only array, so a `viewChildren` signal can be passed directly.
+- `htmlToMarkdown` keeps block alignment as an `et-rte-align-*` class instead of a `style` attribute a strict CSP blocks, and structured-data scripts carry the `CSP_NONCE`. Other renderers need CSS for that class.
+- The `provideX` functions from `defineProvider`, `defineRootProvider` and `defineStaticProvider` return `StaticProvider[]` instead of `Provider[]`. You can now spread them into a `StaticProvider[]`, for example into `Injector.create` or an overlay's `providers`.
+- `defineStaticProvider` and `defineStaticRootProvider` now replace an array or other non-object default with the override, instead of spreading the array into an object. Only two plain objects are merged.
+- `migrate-to-v5` lists every file that still uses the removed `@Memo` decorator or props module (`createProps`, `[etProps]`, …), which have no replacement.
+
+## 5.0.0-next.59
+
+### Patch Changes
+
+- The legacy theme stylesheets carry the page's `ngCspNonce`, and `et-structured-data` no longer writes a static `style` attribute, so both pass a strict `style-src`.
+- `markdownToHtml` renders block and table-cell alignment as an `et-rte-align-*` class instead of an inline `text-align` style, which a strict `style-src` dropped; `htmlToMarkdown` reads both.
+
+## 5.0.0-next.58
+
+### Minor Changes
+
+- Add `signalCountdown(deadline)`, a signal of the days, hours, minutes and seconds left until a deadline, recounted on the whole second.
+- Overlays and `[etTooltip]` can anchor to an SVG element, and `[etTooltip]` takes an `anchor` input to point at an element other than its trigger; core exports `isElement` and `isHTMLOrSVGElement`.
+
+### Patch Changes
+
+- Place `takeUntilDestroyed()` last in every pipe, so operators after it no longer run or stay subscribed after destroy.
+
+## 5.0.0-next.57
+
+### Major Changes
+
+- `signalElementMutations` now returns `Signal<MutationRecord[]>` with every record of a batch, where it returned only the first record or `null`. Read `.at(-1)` for the old single record.
+
+### Minor Changes
+
+- The Angular peer dependency moves from 22.0.7 to 22.1.6. Angular 22.0.x is affected by
+  GHSA-hh8m-fm6v-7cvg, a sanitization bypass through directive host bindings, fixed in 22.1.0.
+- `createOverlayOpener(definition, { single: 'replace' })` keeps one overlay open and replaces it on the next `open()`, through the unsaved-changes guard (`dismissSources.replace`); share one slot across openers with `createOverlaySingleSlot()`.
+
+### Patch Changes
+
+- An anchored overlay near a side edge now keeps its placement and shifts along the edge. Before, a `top` pane next to the right edge flipped to `left`.
+- `provideAppUpdates` detects a new deploy again when the entry scripts sit at the end of `<body>`, as the Angular CLI emits them, and ignores scripts the app appended itself.
+- Core: overlays close and restore focus in a pop-up window, `unbindProps` undoes everything `bindProps` applied, cookie helpers no-op on the server, `equal()` compares `Date`s by tag, and `memoizeSignal` caches per application.
+- Animations: `@ethlete/core` now ships the `--ease-*` tokens its own stylesheets transition with, through `mountEasingTokens()`, so an app that loads no `@ethlete/cdk` stylesheet no longer loses every overlay animation.
+- `signalElementDimensions` now accepts a `viewChild.required(...)`. Before, it read the element while the component was created and threw NG0951.
+- The focus-visible tracker now reports keyboard focus after a bare Shift press, like the browser's `:focus-visible`.
+- Tearing down an app with an open overlay no longer logs Angular's NG0406 "ApplicationRef has already been destroyed" warning.
+- Overlays can be mounted `passive` and are then skipped as the top layer, so a dialog still closes on a backdrop press while a tooltip shows inside it.
+- An overlay now restores focus to its opener only when focus is still inside it at teardown, so an outside press that focuses another control keeps focus there.
+- Title bindings created after the first navigation has completed apply at once instead of waiting for the next navigation.
+- A meta or link binding that switches to another tag (a resource hint whose URL changes, an alternate link whose `hreflang` changes) removes the old tag instead of leaving it in `<head>`.
+- Type `SurfaceTheme['name']` as `RegisteredSurfaceThemeName`. An app that augments
+  `EthleteSurfaceThemeNameRegistry` now gets its theme definitions checked against the same union as
+  `etProvideSurface`, and the internal provider sync compiles again. Apps that register no names keep
+  plain `string`.
+
+## 5.0.0-next.56
+
+### Patch Changes
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1d38e7e`](https://github.com/ethlete-io/ethdk/commit/1d38e7e0a025769f065d8ca7d506cb75ad89139a) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et update` moves the `@ethlete/*` packages to a newer version, runs the codemods those versions
+  declare in their own `migrations.json`, and reports what needs a decision or an agent.
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`f19d4ae`](https://github.com/ethlete-io/ethdk/commit/f19d4ae835dc5171f328c660d44870aaf3bc8f77) Thanks [@github-actions](https://github.com/apps/github-actions)! - Let overlay content handle `Escape` first, so the command palette clears its query
+  before closing. A `strategies` array without a breakpoint-less entry now falls back
+  to its smallest one instead of throwing.
+
+## 5.0.0-next.55
+
+### Patch Changes
+
+- [`c067767`](https://github.com/ethlete-io/ethdk/commit/c06776704a32d7d78ba057389ac9efb157f0e4fc) Thanks [@TomTomB](https://github.com/TomTomB)! - An overlay opened without an `injector` or a `viewContainerRef` now reaches its own `providers` from
+  the content component, instead of resolving them against the opener's environment injector.
+
+## 5.0.0-next.54
+
+### Major Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a9113cb`](https://github.com/ethlete-io/ethdk/commit/a9113cb6ce63942ffce0e26ca7df7f0556a14838) Thanks [@github-actions](https://github.com/apps/github-actions)! - Core: correct framework primitive behavior; breakpoint transforms now require explicit fallbacks, unresolved surface types return `null`, and the validator aggregate is renamed to `EthleteValidators`.
+
+### Minor Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a9113cb`](https://github.com/ethlete-io/ethdk/commit/a9113cb6ce63942ffce0e26ca7df7f0556a14838) Thanks [@github-actions](https://github.com/apps/github-actions)! - `MatchStateType` is now a const object plus a derived union type instead of an `enum`. Dotted access
+  and type-position use are unchanged.
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`56e301f`](https://github.com/ethlete-io/ethdk/commit/56e301f6e3b455b1e7e2de54f101206bb890b557) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query: harden auth, caching, forms, GraphQL, WebSockets and legacy lifecycle behavior; add lifecycle-scoped form branches and secure host-only auth cookies.
+
+## 5.0.0-next.53
+
+### Major Changes
+
+- [`2352137`](https://github.com/ethlete-io/ethdk/commit/235213735ede4c3542b7796d378e008bcab50bdc) Thanks [@TomTomB](https://github.com/TomTomB)! - An overlay strategy switch between a backdropped and a backdrop-less shape now adds or
+  removes the backdrop instead of keeping the one it mounted with. `elements.backdropElement`
+  is a signal.
+
+### Patch Changes
+
+- [`0b4b4eb`](https://github.com/ethlete-io/ethdk/commit/0b4b4eb779218d6c70b27c212b03703ca8b64564) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay: an overlay's own providers are destroyed when it closes, so an overlay router with `syncUrl` removes its query param from the url again.
+
+## 5.0.0-next.52
+
+### Major Changes
+
+- [`4044a00`](https://github.com/ethlete-io/ethdk/commit/4044a0007de55d25b5a697c6e4190e21d68d022f) Thanks [@TomTomB](https://github.com/TomTomB)! - - Notifications: a toast keeps one elevation, paints above overlays, and keeps out of every reserved viewport edge.
+  - Query devtools: a side dock reserves the edge it covers.
+  - `SurfaceContextTracker` drops `topType` / `topElevation`.
+
+### Minor Changes
+
+- [`3122607`](https://github.com/ethlete-io/ethdk/commit/3122607d1727844a2d987032f45ad631f678c2ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlays and floating chrome now keep out of space a surface above the page reserved with `reserveOverlayViewportSpace()` - so a dialog, menu or toast is no longer stacked under the docked query devtools panel.
+
+### Patch Changes
+
+- [`0116464`](https://github.com/ethlete-io/ethdk/commit/0116464f3efc92bfa7dc094a2b20ae9d813a8c45) Thanks [@TomTomB](https://github.com/TomTomB)! - - `etAnimatedLifecycle` no longer ends an enter or leave before its animation started, which destroyed a routed overlay page without playing its exit animation.
+  - Adds `AnimatableDirective.getRunningAnimations()`.
+
+- [`68db91f`](https://github.com/ethlete-io/ethdk/commit/68db91fb975378cccebc4ad99f59365eba90fb43) Thanks [@TomTomB](https://github.com/TomTomB)! - - `etAutoSurface`, `et-grid-item` and `et-form-field` elevate above an app's root surface, instead of staying inherited.
+  - An unset `etProvideSurface` reports the surface it inherits, so content below it no longer resolves one elevation too low.
+  - Adds `injectParentSurface()`.
+
+## 5.0.0-next.51
+
+### Minor Changes
+
+- [`5c1190a`](https://github.com/ethlete-io/ethdk/commit/5c1190ac76c244ff1c293b390dd599ed016d26de) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlays: a press on a surface stacked above them no longer counts as an outside press, so working in the query devtools leaves an open dialog, sheet, menu, select or tooltip alone.
+
+## 5.0.0-next.50
+
+### Minor Changes
+
+- [#3062](https://github.com/ethlete-io/ethdk/pull/3062) [`79cb555`](https://github.com/ethlete-io/ethdk/commit/79cb5551c987c4584aabeae3c39d1415c3e79d6e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `provideAppUpdates()`, which stops a tab that was open across a deploy from breaking on a lazy chunk that no longer exists - reloading on its own when no form would lose changes.
+
+- [#3063](https://github.com/ethlete-io/ethdk/pull/3063) [`37067ce`](https://github.com/ethlete-io/ethdk/commit/37067cee67c5cd360360a5f59c29f58afc08e62c) Thanks [@TomTomB](https://github.com/TomTomB)! - A single-scheme app no longer needs a root `etProvideSurface`: its default surface paints `:root` unconditionally once the surface CSS is regenerated, and the outermost provider resolves it through the new `injectDefaultSurfaceTheme()` / `injectSurfaceType()`.
+
+## 5.0.0-next.49
+
+### Minor Changes
+
+- [#3061](https://github.com/ethlete-io/ethdk/pull/3061) [`7cd3da8`](https://github.com/ethlete-io/ethdk/commit/7cd3da8342d0d619f06154d4155cfafedbed28f4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlays: `data-et-overlay-layer` (or a per-open `zIndex`) puts an overlay above the default stacking level, which is how the query devtools panel and its toggle now stay visible over an app's own modals and tooltips.
+
+## 5.0.0-next.48
+
+### Minor Changes
+
+- [`15d88c6`](https://github.com/ethlete-io/ethdk/commit/15d88c6abb6ead4596357705b9c899e1f6474567) Thanks [@TomTomB](https://github.com/TomTomB)! - Loading indicators wait before they show and hold once shown, so a fast response leaves no flicker - via the new `signalDeferredLoading` from `@ethlete/core`, applied across form field, select, cascader, menu and table.
+
+## 5.0.0-next.47
+
+### Patch Changes
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`2e83ba8`](https://github.com/ethlete-io/ethdk/commit/2e83ba8233c30eead4b5f99d37fedb2629764304) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `nx g @ethlete/core:migrate-surface-interaction-swatch` failing with `Cannot find module` instead
+  of running.
+
+## 5.0.0-next.46
+
+### Minor Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`1f72eb9`](https://github.com/ethlete-io/ethdk/commit/1f72eb9453b6b7726cfe312720299b913f5c565f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `provideColorPalette` - the labelled color themes an app offers a user to pick from. The scheduler's color field becomes a swatch picker when one is in scope, and stays a text box when none is.
+
+- [`512750a`](https://github.com/ethlete-io/ethdk/commit/512750a654bda671b4078fc726914ed5eecda14e) Thanks [@TomTomB](https://github.com/TomTomB)! - `[etProvideColor]="'surface'"` renders a component in the ambient surface's neutral instead of an accent. **Breaking:** `SurfaceTheme['interactionColor']` is now a swatch - run `nx g @ethlete/core:migrate-surface-interaction-swatch`, then regenerate.
+
+## 5.0.0-next.45
+
+### Minor Changes
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`19ac925`](https://github.com/ethlete-io/ethdk/commit/19ac92556c91563cda0b9639d985639e48255075) Thanks [@github-actions](https://github.com/apps/github-actions)! - Drag and resize gestures no longer sweep a text selection across the page, and `suppressTextSelection()` is exported for gestures you drive yourself.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`ebcff36`](https://github.com/ethlete-io/ethdk/commit/ebcff36d21695414d8ea93e32a88f262110f8883) Thanks [@github-actions](https://github.com/apps/github-actions)! - The overlay mount config takes an optional `document`, so an overlay anchored inside a same-origin pop-up window now opens in that window.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`f426563`](https://github.com/ethlete-io/ethdk/commit/f4265630749f162d097b147da55256e8bfa056ad) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: an About tab reporting the loaded `@ethlete/*` and Angular versions plus `provideQueryDevtools({ about })`, mirrored on `window.ethlete` and in the session export.
+
+### Patch Changes
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`8459c8b`](https://github.com/ethlete-io/ethdk/commit/8459c8b38595133b97e33615ba8fa6f685dddb8a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Anchored overlays no longer fly to the viewport corner when their reference element is removed while they are open - the pane keeps its last position, or closes at once with `autoCloseIfReferenceHidden`.
+
+## 5.0.0-next.44
+
+### Minor Changes
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`2d44597`](https://github.com/ethlete-io/ethdk/commit/2d44597f07b165a83c19f049a022c4247a8e3eb1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Slider and rating now drag on `dragGestureFrom`, so a gesture the browser takes away reverts
+  instead of committing. `dragEnded` carries the release position.
+
+## 5.0.0-next.43
+
+### Minor Changes
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`6bd6057`](https://github.com/ethlete-io/ethdk/commit/6bd6057398465ecd24a2f187321934e12430d127) Thanks [@github-actions](https://github.com/apps/github-actions)! - New `injectFileDownload()` and `createObjectUrlHandle()` in core replace four hand-rolled object URLs. The query devtools exports now append their anchor before clicking it, which Firefox ignored.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`6c95aa0`](https://github.com/ethlete-io/ethdk/commit/6c95aa00bb0df0aa4c3638453a35c4f14a9364eb) Thanks [@github-actions](https://github.com/apps/github-actions)! - A gesture the browser takes away mid-drag now emits `dragCancelled` / `resizeCancelled` instead of `dragEnded`. Grid moves and resizes, table column reorder and column resize revert instead of committing a drop the user never made.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`5008c81`](https://github.com/ethlete-io/ethdk/commit/5008c81d726021d078e87ecb37cfb1d5d4eee6cb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid resize strips grow into the gap - a 14px target at the default gap, with the marker unmoved - via the new `--et-resize-handles-outset`. Touch sizes now key on `any-pointer: coarse`, so a touchscreen laptop gets them too.
+
+## 5.0.0-next.42
+
+### Minor Changes
+
+- [#3047](https://github.com/ethlete-io/ethdk/pull/3047) [`309dc57`](https://github.com/ethlete-io/ethdk/commit/309dc576d296efe39d9ff85030102c10db834b9b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scroll restoration: mark a "back to the overview" link with `etRestoreScroll` (or `routerRestoreScroll()` in the navigation state) and it restores that page's last offset instead of scrolling to top.
+
+## 5.0.0-next.41
+
+### Major Changes
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`263dae8`](https://github.com/ethlete-io/ethdk/commit/263dae89d864db2a05541f373a2a1b7d2e75c42f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove the deprecated, SSR-unsafe `SeoDirective` and its `SeoConfig` types - use the `apply*Binding` functions instead (the SEO guide has a per-key migration table).
+
+### Minor Changes
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`5b94adc`](https://github.com/ethlete-io/ethdk/commit/5b94adc97abb32555fb462fad71cbe27fc733a4a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Select and cascader panels now stay below the field with a shorter list instead of flipping
+  above it or sliding over it, via the new anchored-overlay `minAvailableSpace` option.
+
+## 5.0.0-next.40
+
+### Minor Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`e660b34`](https://github.com/ethlete-io/ethdk/commit/e660b34d6b791296733824b6ae2bf48ab7a1c5b6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectDefaultColorTheme()`, resolving the `ColorTheme` marked `isDefault: true` for components with no themed ancestor to inherit from.
+
+### Patch Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`26909f9`](https://github.com/ethlete-io/ethdk/commit/26909f9bce86f379e900e588b733719414ea7add) Thanks [@github-actions](https://github.com/apps/github-actions)! - The deprecated `createTailwindRgbVar` now returns `string` instead of `string | null` when called with
+  a defined value.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`1fb193c`](https://github.com/ethlete-io/ethdk/commit/1fb193c0e494357cbfb8a6a6428643b114c177f8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay dialogs, sheets and full-screen dialogs now skip their enter/leave motion under `prefers-reduced-motion`, matching tooltip/menu/toggletip. Fixes the animation lifecycle getting stuck under reduced motion, which could leave focus and `overlayRef.afterOpened()` never firing.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`019edcc`](https://github.com/ethlete-io/ethdk/commit/019edcc95e372166ec6332a9fb99758de50af178) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: raise the shared overlay root's z-index above the query devtools panel, so a menu/tooltip/dialog opened from inside the devtools (e.g. its response override menu) is no longer rendered behind the panel.
+
+## 5.0.0-next.39
+
+### Patch Changes
+
+- [`74850e3`](https://github.com/ethlete-io/ethdk/commit/74850e3a62339565c13bdeb89c4334993eefd2b3) Thanks [@TomTomB](https://github.com/TomTomB)! - The provider-definition doc comments no longer spell the pure annotation out verbatim, so Rollup stops warning about (and stripping) an annotation it cannot attach to a call while bundling `@ethlete/core`.
+
+## 5.0.0-next.38
+
+### Minor Changes
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`eeb8db3`](https://github.com/ethlete-io/ethdk/commit/eeb8db366907058d9f8357ab84582580dc5ab7d9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a browser notification API: `injectNotifications()` exposes a reactive `permission` signal,
+  `request()`, `show(config)` returning a `NotificationRef`, and `closeAll()` - over both the
+  `Notification` constructor and the service-worker path, SSR-safe.
+
+## 5.0.0-next.37
+
+### Major Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`6c9d38d`](https://github.com/ethlete-io/ethdk/commit/6c9d38d7e6b41586d7c9abb3296e5f45ccc3767c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay runtime: build anchored strategies with `anchoredOverlayPosition({ referenceElement, … })`
+  instead of a `{ kind: 'anchored', … }` literal - it is what pulls `@floating-ui/dom` in, so apps
+  that only center dialogs no longer bundle it (~7 kB gz). `autoResize`, `autoHide`,
+  `autoCloseIfReferenceHidden` and arrows additionally need `enableAnchoredOverlayPositionExtras()`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`6c9d38d`](https://github.com/ethlete-io/ethdk/commit/6c9d38d7e6b41586d7c9abb3296e5f45ccc3767c) Thanks [@github-actions](https://github.com/apps/github-actions)! - `@ethlete/core` no longer depends on `@angular/cdk`: `injectBreakpointObserver()` is a plain
+  `matchMedia` implementation (same API), and `AnimatedOverlayDirective` moved to `@ethlete/cdk` -
+  import it from there.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`42ec970`](https://github.com/ethlete-io/ethdk/commit/42ec970d6963bb5a3aa3af4e207ef2cac801c915) Thanks [@github-actions](https://github.com/apps/github-actions)! - DI: `createProvider` / `createRootProvider` / `createStaticProvider` / `createStaticRootProvider` /
+  `createLabels` are replaced by `defineProvider` & co., which return a definition you read with
+  `toProvideFn` / `toInjectFn` / `toToken`; `createQueryClient`, `createBearerAuthProvider` and
+  `createWebSocketClient` return that definition instead of a tuple. Every `provideX` / `injectX` /
+  token export keeps its name - run `nx g @ethlete/core:migrate-provider-shape` for your own call sites.
+  Cuts the `@ethlete/components` import floor from 89.9 to 2.4 kB gz.
+
+### Minor Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`62b03f9`](https://github.com/ethlete-io/ethdk/commit/62b03f937274d68139be12df3778ce7d316600ea) Thanks [@github-actions](https://github.com/apps/github-actions)! - Carousel & Scrollable: much smoother swiping on a phone - 85% less style recalculation and 88% less
+  paint with `transition="wipe"`, and no observer work during a scroll. Snapping is native CSS scroll
+  snap (`ScrollableDirective.suspendSnap()` holds it off while something writes an offset itself), and
+  the built-in transitions run as composited keyframes. New `transition="custom"` fills
+  `--et-carousel-slide-progress` without applying an effect, for CSS of your own; new
+  `--et-carousel-wipe-dim-color`; `signalElementChildren` / `signalElementScrollState` take a
+  `mutations` option to narrow their observers.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`7e444d6`](https://github.com/ethlete-io/ethdk/commit/7e444d6d11f65b00ae22b9d0f9d553ff3b45b733) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: block quote and fenced code block tools (`'blockquote'` / `'codeBlock'`, also
+  typed as `> ` / ` ``` `), both in the default toolbar. Quotes nest with Tab/Shift+Tab; a code block
+  holds literal text, so the marks that can't serialize inside one disable themselves. `htmlToMarkdown`
+  / `markdownToHtml` now round-trip nested quotes (`>>`).
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`30d3dfb`](https://github.com/ethlete-io/ethdk/commit/30d3dfbfd0ffa08f4eb6c9a95a0d0a7739576264) Thanks [@github-actions](https://github.com/apps/github-actions)! - `unsavedChanges`: a tracker now locks the browser tab while the value differs from its baseline - a
+  `beforeunload` listener attached only while changes exist - through the new `tab` option (`false` opts
+  out), with opt-in `titleMarker`, `flash`, `favicon` and `badge` extras.
+  `createUnsavedChangesTabLock()` is the same guard standalone, for state that isn't a form.
+
+  - New `injectUnsavedChangesCoordinator()`: one confirm on screen at a time app-wide, plus
+    `abandonAll(reason?)` for a session that ends underneath a guard. `confirm` now receives a
+    `{ signal }` argument so a dialog can close itself instead of being stranded.
+  - New favicon store and `applyFaviconOverlay(binding)`, plus title-store `addMarker` / `removeMarker`
+    behind the public `applyHeadTitleMarker(binding)`.
+
+### Patch Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`c622e2c`](https://github.com/ethlete-io/ethdk/commit/c622e2c82b1a64956e3b5d14e7f44ea03c677b81) Thanks [@github-actions](https://github.com/apps/github-actions)! - Breakpoint inputs: warn in dev mode when a breakpoint map mixes valid and unknown keys. One bad key (a
+  `default` entry, say) makes the whole map inert - it becomes a plain value, which for an attribute binding
+  renders as `[object Object]` and does nothing - and that failed silently until now.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`fba7ed8`](https://github.com/ethlete-io/ethdk/commit/fba7ed852d7f4bfb7791cce13f5062b8c4fa4c59) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `applyStructuredDataBinding` writing its JSON into a `text` **attribute** on the `<script>` instead
+  of into the script's content - the tag was emitted, but empty, so no crawler ever read the structured
+  data. (`StructuredDataComponent` was unaffected.)
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark build-tooling peer dependencies (`vite`, `typescript`, `ts-morph`, `@nx/devkit`, `@analogjs/*`) and feature-scoped runtime peers (`date-fns` in components) as optional via `peerDependenciesMeta`. They are only needed when running the Nx generators or using the date/time components - consumers no longer have to install them just to use the libraries.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`6c9d38d`](https://github.com/ethlete-io/ethdk/commit/6c9d38d7e6b41586d7c9abb3296e5f45ccc3767c) Thanks [@github-actions](https://github.com/apps/github-actions)! - `RuntimeError` logs its `data` directly instead of deep-cloning it first, which keeps the clone
+  helper out of every package's baseline bundle.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Adopt the `@ethlete/eslint-plugin` styleguide flat configs in `core`, `query`, `contentful` and
+  `types`, and apply the resulting auto-fixes. Runtime behavior is unchanged; three fixes are visible to
+  TypeScript consumers: exported `types` shapes are `type` aliases rather than `interface` declarations
+  (so they can no longer be extended by declaration merging), `core`'s `PropsDirective.destroyRef` and
+  `SeoDirective.parent` are `private`, and `ConsentHandler` is a `type`. The theme name registries stay
+  interfaces so consumers can keep augmenting them.
+
+## 5.0.0-next.36
+
+### Minor Changes
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`e052061`](https://github.com/ethlete-io/ethdk/commit/e0520614647b784f19ad55a4d7f6df47acec154e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Localization: one mechanism for every string the library renders. `createLabels` (core) backs a
+  `provide<Domain>Labels` / `inject<Domain>Labels` pair per domain - 22 of them, all locale-reactive and
+  signal-shaped. See the [localization guide](https://ethlete-sdk-docs-next.web.app/components/localization).
+
+  - New tokens make the rich text editor, stream, grid, loader, chip, calendar, time picker, dropzone,
+    select, cascader, phone input, slider, date/time and notification strings overridable.
+  - **Breaking:** `inject*Labels()` now returns a signal; the string fields left `StreamConsentConfig`,
+    `StreamPlayerErrorConfig`, `PipSlotPlaceholderConfig`, `GridConfig` and `NotificationManagerConfig`
+    (with their `transformer` hooks); per-instance label inputs default to `null` instead of English.
+  - Fixes the PiP close/back buttons, which set an attribute literally named `attr.aria-label`.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`38bb816`](https://github.com/ethlete-io/ethdk/commit/38bb8165006c4ebfba6a34623468ded140002188) Thanks [@github-actions](https://github.com/apps/github-actions)! - Card presets and a tabs variant: `et-radio` and `et-choice-field` take `variant="card"` (full-width clickable
+  panel, label leading, selection on the border and label), and `et-segmented-button-group` takes `variant="tabs"` (underlined
+  selection instead of a filled pill). Closes the last cdk parity gaps.
+
+  `@ethlete/core` adds `injectRouterNavigationState<T>()` for reading the state a navigation was given.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`4624559`](https://github.com/ethlete-io/ethdk/commit/4624559c81ed9b6efffc539b8f1dd0db0556420c) Thanks [@github-actions](https://github.com/apps/github-actions)! - RTL and reduced-motion consistency pass:
+
+  - Side sheets and the notification stack dock, animate and drag toward their logical inline edge under `dir="rtl"` - `dragToDismiss.direction` gains `'to-inline-start'` / `'to-inline-end'`.
+  - `createFlipAnimation` and the PiP animations now skip to their end state under `prefers-reduced-motion`; `ignoreReducedMotion` opts out, and `matchesReducedMotion()` is exported for helpers with no injection context.
+  - The full-screen overlay animation throws `ET1209` when it has no origin element, instead of a bare `Error`.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`f6061e1`](https://github.com/ethlete-io/ethdk/commit/f6061e162aacd3c847ad1a9c9c9ef13d2e494b7f) Thanks [@github-actions](https://github.com/apps/github-actions)! - `createSwipeTracker` now reports the release velocity - measured over the trailing
+  100ms of the gesture (`SWIPE_VELOCITY_WINDOW_MS`) - in `pixelPerSecondX/Y` instead
+  of the whole-gesture average. A slow drag ending in a flick reports the flick, and a
+  flick parked before release reports ~0.
+
+### Patch Changes
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`b06ed44`](https://github.com/ethlete-io/ethdk/commit/b06ed44db47a52d2a07a4d9a6b3bd3b04011decb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: the anchored arrow no longer rides into a pane's rounded corner on aligned placements or when a pane
+  shifts near a viewport edge. `arrowPadding` now measures the arrow's actual base, so it means "how close the
+  arrow may get to the corners" - tooltip and toggletip default to `20` (was `8`), a bare anchored strategy to
+  `12` (was `4`).
+
+## 5.0.0-next.35
+
+### Minor Changes
+
+- [`a20d0ce`](https://github.com/ethlete-io/ethdk/commit/a20d0cee2f9937ad45ac1fd5eaec3c1a6ac1d27c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectIsDocumentVisible()` - a signal for whether the page is the tab in front, which an
+  IntersectionObserver cannot tell you.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`d787b1d`](https://github.com/ethlete-io/ethdk/commit/d787b1de041da31b6974a9f1b06ceb6ba6f5f6c5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Export `dragGestureFrom(event, element, { commitThreshold })` - the pointer-drag primitive that
+  `etDragHandle` is built on, now usable directly. It takes a `pointerdown` and returns an observable of
+  `start` / `move` / `end` (or a single `tapped` when the pointer never crossed the commit threshold),
+  completing with the gesture.
+
+  Prefer the directive. Reach for the primitive when the draggable element belongs to someone else's
+  template and you only have a delegated `pointerdown` - the case that motivated this: `et-table`'s
+  opt-in column-reorder feature attaches a drag to header cells the table itself renders, without the
+  table having to import any drag code.
+
+  `DragHandleDirective` is unchanged and now uses this primitive internally; `DragStartEvent` /
+  `DragMoveEvent` keep their import path.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`929e355`](https://github.com/ethlete-io/ethdk/commit/929e3554770a132b4791edd2c063fa677f758762) Thanks [@github-actions](https://github.com/apps/github-actions)! - `setupScrollRestoration` can now restore the previous scroll offset on browser back/forward navigation instead of scrolling to top, via `restore: { enabled: true }`.
+
+  - The offset is applied only once the content is tall enough to reach it, so query-driven pages no longer land at the wrong place while their skeleton/loading state is on screen. Options: `timeout`, `maxTimeout`, `clampOnTimeout`.
+  - `holdScrollRestoration(() => query.isLoading())` suspends the wait from inside a route component when the data takes longer than `timeout` to arrive.
+  - `scrollElement` now also accepts a getter (`() => HTMLElement | null`), for scroll containers that only exist after the app shell rendered or are created per route.
+
+### Patch Changes
+
+- [`4ffabfb`](https://github.com/ethlete-io/ethdk/commit/4ffabfbe1830d4560b98dcda7d262155273dd62e) Thanks [@TomTomB](https://github.com/TomTomB)! - `useCursorDragScroll` no longer starts a drag on a secondary click, and ends one when a context menu opens -
+  previously a right-click left it latched on, so every later mouse move scrolled the container.
+
+## 5.0.0-next.34
+
+### Patch Changes
+
+- [`ef65231`](https://github.com/ethlete-io/ethdk/commit/ef65231ed04184345200f1e6f2e80d3207778157) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto-surface: content that is grafted into an overlay pane after it first renders (e.g. a select option's `etAutoSurface` avatar) now re-resolves its elevation once it lands in the pane, instead of staying stuck one level too low.
+
+## 5.0.0-next.33
+
+### Patch Changes
+
+- [#3034](https://github.com/ethlete-io/ethdk/pull/3034) [`9dd2a23`](https://github.com/ethlete-io/ethdk/commit/9dd2a2335f4cb677e3eb8120098cfb1b8a67d87d) Thanks [@github-actions](https://github.com/apps/github-actions)! - `injectAnimatedBlockSize`: keep the `resizingClass` applied when a resize animation is interrupted by a new one, so overlay panels (select, cascader, date-picker, menu) no longer flash a scrollbar during rapid successive content changes such as async search typing.
+
+## 5.0.0-next.32
+
+### Patch Changes
+
+- [`ed58b19`](https://github.com/ethlete-io/ethdk/commit/ed58b19b1957f2051e0f1ef68c3814747af9ccd0) Thanks [@TomTomB](https://github.com/TomTomB)! - `etAutoSurface`: opening an overlay (date-picker, select, menu, …) no longer elevates unrelated surfaces on the base page. The overlay surface-context tracker is now matched by DOM containment, so an `etAutoSurface` only adopts an overlay's elevation when it actually renders inside that overlay's pane.
+
+## 5.0.0-next.31
+
+### Minor Changes
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`1a6849f`](https://github.com/ethlete-io/ethdk/commit/1a6849fa37e8f6907d08766846a50d3d9de8211b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the `unsavedChanges` family for guarding forms against accidental discard, and a close-veto seam in the overlay runtime that powers it.
+  - `createUnsavedChangesTracker` - snapshots a default value, tracks whether the watched form/value differs from it (deep-equal snapshot semantics, not signal-forms `dirty()`), and normalizes an async `confirm` (value / Promise / Observable) to a `Promise<boolean>`. Signal-forms `FieldTree` is the first-class source; `Signal<FieldTree | null>` (late/async forms), `AbstractControl` (migration), and `WritableSignal` (escape hatch) are also supported. Includes `refreshDefaultValue` (re-baseline after a save-and-keep-open) and `restoreDefaultValue`.
+  - `createUnsavedChangesGuard` - the router/manual flavor, adding a `canDeactivate` bridge for Angular route guards.
+  - Overlay runtime: `overlayRef.registerCloseGuard(guard)` (synchronous veto for pending closes, returns an unregister fn) and `overlayRef.forceClose(result?, source?)` (commit a close bypassing guards). `reference-detached` closes always bypass guards. This is the seam `createOverlayUnsavedChangesGuard` in `@ethlete/components` builds on.
+
+### Patch Changes
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`4d70fb1`](https://github.com/ethlete-io/ethdk/commit/4d70fb1fd173e7e9d25031551f752196abb6f94e) Thanks [@github-actions](https://github.com/apps/github-actions)! - `etAutoSurface` now elevates correctly for content rendered inside an overlay. Projected/portaled content keeps the injector of where it was _declared_ (the trigger location), not the pane it renders into, so an `etAutoSurface` inside a select body, menu, date-picker, etc. resolved its parent surface from the outer trigger context and came out one elevation too low - the same level as the overlay's own panel instead of one above it.
+
+  `AutoSurfaceDirective` now also consults the root surface-context tracker (which records the innermost open overlay's surface across the portal boundary) and takes whichever parent surface sits higher. Overlay panels that are themselves the overlay's surface (menu, select/date/cascader panels, tooltip, toggletip) opt out via the new `AutoSurfaceDirective.ignoreOverlaySurfaceContext()` so they keep adopting their overlay's elevation rather than stacking above it - their rendered surface is unchanged.
+
+- [`eee0451`](https://github.com/ethlete-io/ethdk/commit/eee0451642bfbce97991e539b938fc7c4c84e846) Thanks [@TomTomB](https://github.com/TomTomB)! - `ColorInteractiveDirective`: a readonly control (`aria-readonly="true"`) now keeps its resting accent - hover/active/focus no longer retint it, matching the view-only intent (previously a readonly switch still showed a press color shift).
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`008fca5`](https://github.com/ethlete-io/ethdk/commit/008fca57ad434e6d996b1af21f95c55902f74dcd) Thanks [@github-actions](https://github.com/apps/github-actions)! - `ColorInteractiveHasFocusDirective` (`[etColorInteractiveHasFocus]`) now resolves the theme's **base** accent while a descendant is `:focus-visible`, instead of the `-focus` variant. A container merely mirroring a child's focus (e.g. a form field's frame) should read as the plain accent color; the `-focus` variant remains reserved for an element that is itself focused (`[etColorInteractive]:focus-visible`). Effect: focused form fields now paint their focus border/label in the base accent rather than the focus-adjusted shade.
+
+## 5.0.0-next.30
+
+### Patch Changes
+
+- [#3028](https://github.com/ethlete-io/ethdk/pull/3028) [`d8f50c5`](https://github.com/ethlete-io/ethdk/commit/d8f50c530b976390a8e655f3b1a4c0b9eaaae6ab) Thanks [@github-actions](https://github.com/apps/github-actions)! - Hover styles across all interactive components (buttons, chips, form controls, selects, cascader, menu, tabs, calendar, time picker, notification) no longer stick after tapping on touch devices - including the `etColorInteractive`/`etSurfaceInteractive` hover token resolution (guarded by `@media (hover: hover)`).
+
+## 5.0.0-next.29
+
+### Minor Changes
+
+- [`2fca323`](https://github.com/ethlete-io/ethdk/commit/2fca323a6beac0299b8e0ec6724fffd4149ad7cd) Thanks [@TomTomB](https://github.com/TomTomB)! - `injectAnimatedBlockSize` can now animate the inline axis too via the new `axes` option (`['block' | 'inline']`, static or signal-based; default `['block']` as before). Used by the cascader panel to grow/shrink its width as columns drill in and out.
+
+- [`4b7cf51`](https://github.com/ethlete-io/ethdk/commit/4b7cf51a6f68cdaf364169945586fedc5621cad6) Thanks [@TomTomB](https://github.com/TomTomB)! - Theme generators: pick the default theme at generation time - `--defaultTheme=<name>` on `tailwind-4-color-theme` and `--defaultLightTheme=<name>` / `--defaultDarkTheme=<name>` on `tailwind-4-surface-theme` override any `isDefault` flags in the definitions, so apps sharing one theme definition set (e.g. in a monorepo) can each generate a different default.
+
+### Patch Changes
+
+- [`ddb3413`](https://github.com/ethlete-io/ethdk/commit/ddb3413c2673a4f2f513598a208f376b36b7535b) Thanks [@TomTomB](https://github.com/TomTomB)! - Grid items can now be moved with touch: `[etDragHandle]` sets `touch-action: none` on its host while enabled (the browser was claiming touch pointermoves for scrolling and cancelling the gesture), and read-only grids keep normal touch scrolling.
+
+- [`06377b6`](https://github.com/ethlete-io/ethdk/commit/06377b6312fd32c7d1f497816fa91a655bf72d19) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay: a color theme provided on the app root component (e.g. `ProvideColorDirective` via `hostDirectives` plus `forceColor()`) now propagates into overlays even when they are opened without a `viewContainerRef`, and updates reactively while the overlay is open.
+
+## 5.0.0-next.28
+
+### Minor Changes
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`9431073`](https://github.com/ethlete-io/ethdk/commit/9431073bb693aa10bbb84d5196597cb2c4b7463f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlays and menus now open on insecure origins (plain-HTTP pages on a LAN IP, not just `localhost`/HTTPS). Id generation used `crypto.randomUUID()`, which is `undefined` outside a secure context, so opening any dialog, sheet, anchored overlay or menu threw and only the backdrop appeared. A new `randomId()` helper in `@ethlete/core` uses `crypto.randomUUID()` when available and falls back to `getRandomValues` otherwise.
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`9431073`](https://github.com/ethlete-io/ethdk/commit/9431073bb693aa10bbb84d5196597cb2c4b7463f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the link flow is now a responsive popover (arrow-anchored on wider screens, a keyboard-pinned top sheet on touch) to edit a link's text and URL, with an open-in-new-tab toggle - replacing the browser `prompt()`. New-tab links persist through the Markdown value as raw HTML (`<a target="_blank" rel="noopener noreferrer">`); ordinary links stay `[text](url)`. `htmlToMarkdown` / `markdownToHtml` in `@ethlete/core` now round-trip `target="_blank"` anchors (sanitized href + forced `rel`). After applying a link the caret moves just past it, with a trailing space added when the link ends the line.
+
+### Patch Changes
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`49591f4`](https://github.com/ethlete-io/ethdk/commit/49591f4e529552fde07ef88b9754bf7c0cd91a3b) Thanks [@github-actions](https://github.com/apps/github-actions)! - `injectAnimatedBlockSize`: growing panels (menu, select) no longer flash at their final size for one frame before the resize animation plays - the animation now starts inside the `ResizeObserver` callback, before the browser paints the new layout.
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`d262f59`](https://github.com/ethlete-io/ethdk/commit/d262f596a4f0e3dda315447d0173cba301237c01) Thanks [@github-actions](https://github.com/apps/github-actions)! - `htmlToMarkdown`: boundary whitespace inside bold/italic/strikethrough now serializes outside the delimiters (`<strong> x</strong>` → ` **x**` instead of the invalid `** x**`).
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`00b7c33`](https://github.com/ethlete-io/ethdk/commit/00b7c337e5ae0ac1bfc7186237b1ac2879eb018d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Theming: overlay panes (menu, select) now resolve their color context through passive providers and apply it before the first painted frame.
+  - `ProvideColorDirective` gains `resolvedColor` - the color that actually applies at the provider's location, falling through passive providers like the CSS cascade does. `syncWithProvider` uses it, so a passive in-between provider (e.g. a form field's) no longer erases the theme inside a detached overlay pane.
+  - The menu and select panels install the context sync during construction instead of in an effect, eliminating a wrong-theme flash during the enter animation.
+
+## 5.0.0-next.27
+
+### Minor Changes
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`1d7aaca`](https://github.com/ethlete-io/ethdk/commit/1d7aacaec10f3d3d7278733ebf5d834e8a89b1f7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectAnimatedBlockSize` - a core util that smoothly animates an element's `block-size` as its
+  content resizes (baseline captured on first render so the initial layout never plays as a
+  grow-from-0, interruption-safe, respects `prefers-reduced-motion`). `et-menu` and the rich text
+  editor's trigger popup now share it, giving a more consistent, smoother resize.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Add clipboard utilities: `copyToClipboard(text)` writes text to the clipboard (async Clipboard API with an `execCommand('copy')` fallback) and resolves to a success boolean, `readFromClipboard()` resolves to the clipboard text or `null`. Both are SSR-safe and never throw.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Markdown: GFM table column alignment round-trips - `markdownToHtml` applies `:---` / `:---:` / `---:` separators as `text-align` on every cell of the column, and `htmlToMarkdown` serializes the header cells' `text-align` back into the separator line.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Markdown: `markdownToHtml` now escapes raw HTML in text (only the deliberate `<u>` / aligned-block passthroughs render, with aligned blocks reduced to a safe inline vocabulary) and rejects script-running URL schemes in links/images. Round-trip fixes and additions:
+  - Soft line breaks (`<br>`) survive in paragraphs and block quotes, and degrade to a space in table cells and list items instead of being dropped.
+  - Whitespace-flanked delimiters stay literal (`2 * 3 * 4` is no longer italicized), and `_emphasis_` is now supported without firing inside snake_case words.
+  - `<div>` boundaries in converted HTML act as paragraph boundaries.
+
+### Patch Changes
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`c68d2b2`](https://github.com/ethlete-io/ethdk/commit/c68d2b2e2e64316bb67bf58ec16d3aad9bd84f34) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: added an opt-in **alignment** tool. Provide `provideRichTextEditorAlignmentTool()` and include `'align'` in the editor's `tools` to get a block-alignment menu (left / center / right / justify) that also works inside table cells. The button reflects the caret's current alignment live. Alignment has no Markdown form, so it persists as a native `text-align` style and round-trips as raw HTML.
+
+  `@ethlete/core`: `markdownToHtml`/`htmlToMarkdown` now round-trip block elements carrying a `text-align` style (preserved verbatim as native HTML).
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`af660e3`](https://github.com/ethlete-io/ethdk/commit/af660e346204d18ad39cc700c8698bb897fba339) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: added **inline code** and **underline** formatting tools (in the static and selection toolbars, and the default toolbar). Inline code round-trips as `` `code` ``; underline is preserved as native `<u>` since Markdown has no underline form.
+
+  `@ethlete/core`: `htmlToMarkdown`/`markdownToHtml` now round-trip `<u>` (underline) instead of dropping it.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`c68d2b2`](https://github.com/ethlete-io/ethdk/commit/c68d2b2e2e64316bb67bf58ec16d3aad9bd84f34) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: list items can now be nested. **Tab** nests the current item under the previous one, **Shift+Tab** lifts it out one level, and **Enter**/**Backspace** on an empty item step out one level at a time (leaving the list entirely only at the top level). Marker styles cycle by depth (disc → circle → square, and decimal → lower-alpha → lower-roman).
+
+  `@ethlete/core`: `markdownToHtml`/`htmlToMarkdown` now round-trip **nested** lists (two-space indentation per level), instead of flattening them.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`af660e3`](https://github.com/ethlete-io/ethdk/commit/af660e346204d18ad39cc700c8698bb897fba339) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the toolbar is now configurable. A new `tools` input takes an ordered list of tool tokens (`'bold' | 'italic' | 'strike' | 'heading' | 'bulletedList' | 'numberedList' | 'link' | 'divider'`), and `provideRichTextEditorTools(...)` sets the default for a scope. The block style is now picked from a `heading` menu (Normal / Heading 1–3) shown first in the toolbar, and toolbar buttons are larger and squarer.
+
+  Form field: read-only text controls (`et-input`, `et-rich-text-editor`) now keep their normal box but drop all interactive affordances - no hover/focus border change, default cursor - so read-only reads as view-only content, distinct from disabled.
+
+  Icon button: added an `--et-icon-button-border-radius` custom property so an ancestor context (e.g. a toolbar) can square off the otherwise fully-round button.
+
+  Overlay (`@ethlete/core`): anchored overlay positions accept an optional `boundary`, so an anchored pane (e.g. the editor's selection toolbar) can be kept inside a region and flip instead of overflowing it.
+
+## 5.0.0-next.26
+
+### Minor Changes
+
+- [#3018](https://github.com/ethlete-io/ethdk/pull/3018) [`5d26649`](https://github.com/ethlete-io/ethdk/commit/5d266491805f5f0af4a5912a08beab02dafb629b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add an `initials` util and `InitialsPipe` (`| initials`) that extract uppercased initials from a name, capped at a configurable number of characters (defaults to 2).
+
+- [#3018](https://github.com/ethlete-io/ethdk/pull/3018) [`5d26649`](https://github.com/ethlete-io/ethdk/commit/5d266491805f5f0af4a5912a08beab02dafb629b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a `slugify` util and `SlugifyPipe` (`| slugify`) that convert a string into a URL-friendly slug - diacritics stripped, lowercased, non-alphanumeric runs collapsed to single hyphens.
+
+## 5.0.0-next.25
+
+### Patch Changes
+
+- [#3017](https://github.com/ethlete-io/ethdk/pull/3017) [`83853d6`](https://github.com/ethlete-io/ethdk/commit/83853d6138bc7d0a481b5b982c2a7137b9cc65e6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: anchored overlays with `autoCloseIfReferenceHidden` now close instantly when their anchor is removed, instead of jumping to the viewport corner and animating out from there.
+
+## 5.0.0-next.24
+
+### Minor Changes
+
+- [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`2f18e43`](https://github.com/ethlete-io/ethdk/commit/2f18e4344759dbbcd17ba0dbeca138f1f7043cdf) Thanks [@github-actions](https://github.com/apps/github-actions)! - Anchored overlays: the `shift` option now also accepts `{ crossAxis?: boolean }` in addition to a boolean. With `crossAxis: true`, an overlay that fits on neither side of its reference is shifted along the placement's cross axis to stay inside the viewport (it may then overlap the reference) instead of overflowing off-screen.
+
+  Menus enable this by default: a nested submenu near the viewport edge first flips to the other side and, when neither side fits, slides over its parent menu - matching native OS menu behavior - instead of being cut off by the viewport.
+
+  The `size` middleware (`autoResize`) now runs after `shift` instead of before it, so `--et-overlay-max-width` / `--et-overlay-max-height` are measured from the pane's shifted position. Previously a cross-axis-shifted pane had its max size capped to the unshifted leftover space, squeezing e.g. a submenu to a sliver instead of letting it keep its width while overlapping its parent.
+
+### Patch Changes
+
+- [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`2f18e43`](https://github.com/ethlete-io/ethdk/commit/2f18e4344759dbbcd17ba0dbeca138f1f7043cdf) Thanks [@github-actions](https://github.com/apps/github-actions)! - Animations: fix overlays getting stuck in the DOM in an invisible but click-blocking state when their leave transition never reported completion.
+
+  When several anchored overlays close at once (e.g. clicking an item inside a nested menu closes the whole menu tree), destroying an ancestor pane shifts the anchored position of a still-leaving descendant. The browser then cancels and restarts the running transition, so its end event arrives either flagged as cancelled or under a stale transition id - and the animated lifecycle waited forever for an event that could no longer arrive, leaving the pane orphaned at `opacity: 0` while still intercepting pointer events. The lifecycle now treats the transition as settled once no animation is running anymore, matching the fallback the interrupted-transition path already had, so the overlay is torn down reliably.
+
+- [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`3b359e5`](https://github.com/ethlete-io/ethdk/commit/3b359e52c5efa1cd9b0e79216fc578525aafa8e8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tailwind surface & color theme generators: fix the dynamic `--color-*-surface-*` /
+  `--color-*-theme-*` variables not resolving per scope. They were emitted only inside
+  `@theme`, which lands on `:root`, so `rgb(var(--<runtime>-surface-background))` resolved
+  once against the root surface and inherited that concrete color into descendants. As a
+  result `bg-<prefix>-surface-*` / `bg-<prefix>-theme-*` utilities ignored nested
+  `.<runtime>-surface--*` / `.<runtime>-color--*` scopes (e.g. an elevated surface would
+  still paint the root background). The dynamic colors are now also re-declared on each
+  surface/color selector in the alias block, so the utilities resolve against the nearest
+  scope while still being generated from `@theme`.
+
+## 5.0.0-next.23
+
+### Major Changes
+
+- [`11ce5e1`](https://github.com/ethlete-io/ethdk/commit/11ce5e1795249a6b975dab2eab7e8e2a9c9bc979) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay: replace the `inputBindings` / `outputBindings` config objects with a
+  single `bindings` array using Angular's native binding API. Bind overlay
+  component inputs, outputs, and two-way models with `inputBinding`,
+  `outputBinding`, and `twoWayBinding` from `@angular/core`.
+
+## 5.0.0-next.22
+
+### Minor Changes
+
+- [`ea1eb65`](https://github.com/ethlete-io/ethdk/commit/ea1eb656b4f1144602830a3cd27a521ca50a9d06) Thanks [@TomTomB](https://github.com/TomTomB)! - Theming: add `AutoSurfaceDirective` (`etAutoSurface`), which resolves the surface
+  theme one elevation above its parent (or an explicitly provided) surface context
+  and applies it through a host `ProvideSurfaceDirective`. Meant to be used as a
+  host directive on components that render inside a detached overlay pane, where
+  surface context can't cascade through the DOM.
+
+  Tooltip and toggletip now use `AutoSurfaceDirective` as a host directive instead
+  of duplicating the auto-surface resolution logic. No change to their rendered
+  surface.
+
+## 5.0.0-next.21
+
+### Minor Changes
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Enrich the drag and resize gesture events:
+  - `DragHandleDirective`'s `dragStarted` output now emits a `DragStartEvent` with the `clientX` / `clientY` of the initial pointerdown (previously it emitted `void`).
+  - `DragMoveEvent` now includes `totalDx` / `totalDy`, the cumulative delta from the pointerdown position, alongside the per-step deltas.
+  - `ResizeMoveEvent` now includes `clientX` / `clientY`.
+
+  These give consumers absolute pointer information without having to accumulate the per-step deltas themselves.
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: anchored positioning now accepts a `VirtualElement` (from `@floating-ui/dom`) as the `referenceElement`, not just an `HTMLElement`. This makes it possible to anchor an overlay to an arbitrary point or region - for example positioning a context menu at the pointer. When a virtual reference is used, `mirrorWidth` and origin-element based behaviors gracefully fall back since there is no real element to measure.
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectPrefersReducedMotion`, a signal that reflects the `(prefers-reduced-motion: reduce)` media query so components can opt out of animations for users who prefer reduced motion.
+
+### Patch Changes
+
+- [`4e9f2b4`](https://github.com/ethlete-io/ethdk/commit/4e9f2b4d12335fafef192350aef8ffc584996a91) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove the now-redundant `changeDetection: ChangeDetectionStrategy.OnPush` declaration (and its `ChangeDetectionStrategy` import) from all components. OnPush is the default change detection strategy since Angular 22, so this is a no-op cleanup with no behavioral change.
+
+## 5.0.0-next.20
+
+### Minor Changes
+
+- [#3007](https://github.com/ethlete-io/ethdk/pull/3007) [`74974ff`](https://github.com/ethlete-io/ethdk/commit/74974ff36e64b80c750358441d8f5e8647557bdc) Thanks [@github-actions](https://github.com/apps/github-actions)! - Support satisfies for theme definitions
+
+- [#3007](https://github.com/ethlete-io/ethdk/pull/3007) [`6539c72`](https://github.com/ethlete-io/ethdk/commit/6539c727c6d56ed9add30fa41039a0880d5c5121) Thanks [@github-actions](https://github.com/apps/github-actions)! - Gave surface theming the same treatment as color theming:
+  - Added an augmentable `EthleteSurfaceThemeNameRegistry` (mirroring `EthleteColorThemeNameRegistry`), so `etProvideSurface` and `provideSurfaceThemesWithTailwind4` can be narrowed to your app's actual surface theme names instead of a plain `string`.
+  - `tailwind-4-surface-theme` now also generates a `.d.ts` (next to the CSS output by default, or at a custom `typesOutputPath`) that augments the registry automatically.
+  - Fixed `tailwind-4-surface-theme` failing to parse individual surface theme objects written with `satisfies X` instead of `as const`, matching the same fix in `tailwind-4-color-theme`.
+  - Added a `runtimePrefix` option to `tailwind-4-surface-theme`, decoupling the Tailwind utility surface prefix from the runtime theme-swap prefix used by `ProvideSurfaceDirective`/`etProvideSurface` (the `.et-surface--<name>` selectors and `--et-surface-*` CSS variables) - the same fix already applied to `tailwind-4-color-theme`. Defaults to `prefix`, so existing usages are unaffected.
+
+- [#3007](https://github.com/ethlete-io/ethdk/pull/3007) [`6539c72`](https://github.com/ethlete-io/ethdk/commit/6539c727c6d56ed9add30fa41039a0880d5c5121) Thanks [@github-actions](https://github.com/apps/github-actions)! - `tailwind-4-color-theme` now also generates a `.d.ts` file (next to the CSS output by default, or at a custom `typesOutputPath`) that augments `EthleteColorThemeNameRegistry` with your theme names. Previously this had to be hand-written; now it's kept in sync automatically whenever you regenerate. Also fixed the generator failing to parse individual theme objects written with `satisfies X` instead of `as const` (e.g. `export const RED = { ... } satisfies ColorTheme;`).
+
+### Patch Changes
+
+- [#3009](https://github.com/ethlete-io/ethdk/pull/3009) [`9a029a5`](https://github.com/ethlete-io/ethdk/commit/9a029a551b5e2d8d30cba5382384dcbd47565f66) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `setupScrollRestoration` scrolling to top only after the new route had already painted under zoneless change detection, causing a visible jump from the previous scroll offset on tall pages. It is now driven synchronously off `router.events` (`NavigationEnd` / `NavigationSkipped`) instead of going through signal interop plus `debounceTime`, so `scrollTop = 0` lands before the first paint of the new route. All existing behavior (query param triggers, fragment scrolling, `routerDisableScrollTop`) is unchanged.
+
+## 5.0.0-next.19
+
+### Minor Changes
+
+- [#3006](https://github.com/ethlete-io/ethdk/pull/3006) [`f6b9c10`](https://github.com/ethlete-io/ethdk/commit/f6b9c10b9702722d55a8a815ad9539a92c65e20a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `runtimePrefix` option to the `tailwind-4-color-theme` generator. This decouples the Tailwind utility color prefix (`prefix`, e.g. `bg-fut-primary`) from the runtime theme-swap prefix used by `ProvideColorDirective`/`etProvideColor` (the `.et-color--<name>` selectors and `--et-color-primary` CSS variables). Previously both were driven by the same `prefix` value, which broke consumers whose Tailwind utility naming convention differs from their runtime theme-switching convention. `runtimePrefix` defaults to `prefix`, so existing usages are unaffected.
+
+### Patch Changes
+
+- [#3003](https://github.com/ethlete-io/ethdk/pull/3003) [`e7f482b`](https://github.com/ethlete-io/ethdk/commit/e7f482bc170b27374c03cd84b1a5df23ceda9bf6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix markdown headings not being parsed when directly followed by a list or paragraph without a blank line
+
+## 5.0.0-next.18
+
+### Patch Changes
+
+- [`d7c4fbe`](https://github.com/ethlete-io/ethdk/commit/d7c4fbe23359ebf68e4f769ac6eda05ce01f90c8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix broken heading support in markdown utils
+
+## 5.0.0-next.17
+
+### Minor Changes
+
+- [`edea44b`](https://github.com/ethlete-io/ethdk/commit/edea44bf1c494420f02b545202f4b24db9a6395c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to angular 22
+
+## 5.0.0-next.16
+
+### Minor Changes
+
+- [#2999](https://github.com/ethlete-io/ethdk/pull/2999) [`0232803`](https://github.com/ethlete-io/ethdk/commit/0232803afcee04ddc5d8c6ab57a8e920a908e1ac) Thanks [@github-actions](https://github.com/apps/github-actions)! - Update overlay runtime to support stategies
+
+## 5.0.0-next.15
+
+### Patch Changes
+
+- [#2995](https://github.com/ethlete-io/ethdk/pull/2995) [`05da5f2`](https://github.com/ethlete-io/ethdk/commit/05da5f2c9ac78907f8be5003690332eea1f99ff8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `injectRoute`, `injectUrl` and the `injectRouterState` based signals (`injectPathParams`, `injectQueryParams`, `injectRouteData`, etc.) returning the previous route when read synchronously inside a component constructor during navigation. They now read the already committed router state instead of waiting for the `NavigationEnd` event.
+
+## 5.0.0-next.14
+
+### Minor Changes
+
+- [`7dcbb8e`](https://github.com/ethlete-io/ethdk/commit/7dcbb8e3f3823728bc370fb89d1a89ee831e779b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add utils for converting between markdown and html
+
+## 5.0.0-next.13
+
+### Patch Changes
+
+- [`8f77e78`](https://github.com/ethlete-io/ethdk/commit/8f77e78d39a8fa91b9ccb8e038e9b3f62a9f1b94) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix theme class name generation for legacy tailwind 3 themes
+
+## 5.0.0-next.12
+
+### Patch Changes
+
+- [`b73a127`](https://github.com/ethlete-io/ethdk/commit/b73a127002a06e3aa0c4e7e977b1ad1f3e04e7e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump yet again, final one for sure, pinky promise
+
+## 5.0.0-beta.11
+
+### Patch Changes
+
+- [`ddb5d09`](https://github.com/ethlete-io/ethdk/commit/ddb5d09e4bc56e18cc8c228aa78a200441e7a766) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump to beta
+
+- Updated dependencies [[`ddb5d09`](https://github.com/ethlete-io/ethdk/commit/ddb5d09e4bc56e18cc8c228aa78a200441e7a766)]:
+  - @ethlete/types@2.0.0-beta.4
+
+## 5.0.0-next.10
+
+### Patch Changes
+
+- [`a690217`](https://github.com/ethlete-io/ethdk/commit/a6902172efd9bd1956a16237e79acbfbd816d946) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump only
+
+## 5.0.0-next.9
+
+### Minor Changes
+
+- [`5d1d3ac`](https://github.com/ethlete-io/ethdk/commit/5d1d3accbd4a7657bc50cdc0653a7ca24fe761e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add overlay runtime
+
+- [`5d1d3ac`](https://github.com/ethlete-io/ethdk/commit/5d1d3accbd4a7657bc50cdc0653a7ca24fe761e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Cleanup surface and color theming
+
+## 5.0.0-next.8
+
+### Minor Changes
+
+- [#2958](https://github.com/ethlete-io/ethdk/pull/2958) [`8ecdfc0`](https://github.com/ethlete-io/ethdk/commit/8ecdfc00d785b0b535601b5d95ca7e2cd55455b6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add surface theming support alongside color theming
+
+## 5.0.0-next.7
+
+### Patch Changes
+
+- [`5ef2e15`](https://github.com/ethlete-io/ethdk/commit/5ef2e15369fcc1939a1a4b157960280571e14b55) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump for internal api changes
+
+## 5.0.0-next.6
+
+### Minor Changes
+
+- [#2926](https://github.com/ethlete-io/ethdk/pull/2926) [`26966e3`](https://github.com/ethlete-io/ethdk/commit/26966e316e58694ef898f60cab7f5fd8a8d34381) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add user consent provider for bridging the gap to cookie banners
+
+## 5.0.0-next.5
+
+### Minor Changes
+
+- [`9c59877`](https://github.com/ethlete-io/ethdk/commit/9c5987733133b9baa18b53eb5190f64c1ef010ba) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scroll observer directives
+
+- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `breakpointTransformBase`, `boolBreakpointTransform`, `numberBreakpointTransform` and `typedBreakpointTransform` for creating inputs that react to breakpoint changes if configured as such
+
+## 5.0.0-next.4
+
+### Patch Changes
+
+- [#2923](https://github.com/ethlete-io/ethdk/pull/2923) [`5c5fc57`](https://github.com/ethlete-io/ethdk/commit/5c5fc57e2e45b5fd78f0d20bacf0ec310cc84e2b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Support inferring mime types from data uris
+
+## 5.0.0-next.3
+
+### Patch Changes
+
+- [`58525cd`](https://github.com/ethlete-io/ethdk/commit/58525cd7123c8e20739b0841b2f0abf5920296f1) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix error NG0600 created by using the focus visible provider
+
+## 5.0.0-next.2
+
+### Patch Changes
+
+- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix angular root element discovery failing if its not there during the first check
+
+- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix animated lifecycle skipping interrupted transitions
+
+- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollbar dimensions signal not returning the actual scrollbar dimensions
+
+## 5.0.0-next.1
+
+### Patch Changes
+
+- [#2920](https://github.com/ethlete-io/ethdk/pull/2920) [`377bd7a`](https://github.com/ethlete-io/ethdk/commit/377bd7a00b89aef516d312c909e236fcc1ed5077) Thanks [@github-actions](https://github.com/apps/github-actions)! - Change renderer.removeStyle function signature to support style flags
+
+- Updated dependencies [[`d99c3f0`](https://github.com/ethlete-io/ethdk/commit/d99c3f0fc3d6b3b0e7105d21d1f7119cde68b561)]:
+  - @ethlete/types@2.0.0-next.0
+
+## 5.0.0-next.0
+
+### Major Changes
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ScrollObserverLastElementDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `IsActiveElementDirective`. If used inside a `ScrollableComponent`, the `ScrollableIsActiveChildDirective` should be used instead.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ObserveResizeDirective`. Use `signalElementDimensions()` instead.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ObserveScrollStateDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ScrollObserverFirstElementDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `LetDirective`. The migration will try to auto migrate all usages, but manual review is required (applies to `*etLet` and `*ngLet`)
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - The `ViewportService` has been removed. The migration will try to auto migrate all usages, but manual review is required.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`f4847d4`](https://github.com/ethlete-io/ethdk/commit/f4847d4eb25b70706a4ee8c81addcd58a7d99995) Thanks [@github-actions](https://github.com/apps/github-actions)! - You must run yarn nx generate @ethlete/core:migrate-to-v5 after updating to this version. **Please check the console output for warnings about any manual code changes that may be needed.**
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove `RootBoundaryDirective`. Replaced by `provideBoundaryElement()` function
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`55dc627`](https://github.com/ethlete-io/ethdk/commit/55dc627a6a49f3a8a5c8f80f63f163e443e07099) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `CursorDragScrollDirective`. Use `useCursorDragScroll()` function instead
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `IsElementDirective`. Usages will be migrated to the (now about 2 years old) "new" `ScrollableIsActiveChildDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ResizeObserverService`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove `DelayableDirective` since it's only used specifically inside the now legacy `InfinityQueryDirective`. If this functionality was needed, use the new `provideInfinityQueryResponseDelay()` provider instead.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove deprecated `provideThemes` call. Usages will be migrated to `provideColorThemes`. Also migrate all theming usages from @ethlete/cdk to @ethlete/core.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ScrollObserverIgnoreTargetDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`6e41e09`](https://github.com/ethlete-io/ethdk/commit/6e41e09668d2077fba27de1e11bacc98480becfe) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ClickObserverService`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ObserveContentDirective`. Use `signalElementMutations()` instead.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ObserveVisibilityDirective`. `signalElementIntersection()` function should be used instead
+
+### Minor Changes
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`99b3f64`](https://github.com/ethlete-io/ethdk/commit/99b3f646701cb763512e7148592457dc509f55e5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add generator to create a Tailwind CSS v4 theme based on predefined themes.
+  Run it via `nx g @ethlete/core:tailwind-4-theme --themesPath=<path-to-themes> --outputPath=<output-css-file-path>`.
+  You should also replace all usages of `provideColorThemes(themes)` with `provideColorThemesWithTailwind4(themes)` after.
+  Don't forget to add the generated css file to you main css entry point.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Expose the created injection token as a third element returned by the `createProvider()` function
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectAngularRootElement` util to get access to the application's root html element
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `applyHeadTitleBinding` util for easier management of document titles
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`451e170`](https://github.com/ethlete-io/ethdk/commit/451e170f2df1c49fca07bde053efa75bd23ca22f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `createRootProvider` and `createStaticRootProvider` utils. Providers created by these utils are automatically provided in the root injector.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectIsRouterInitialized` util
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Allow container to be null inside `isElementVisible()` function to check against the viewport
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `createStaticProviderWithDefaults` util
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`8a85984`](https://github.com/ethlete-io/ethdk/commit/8a859841acaf7c10c876c7eb921f4c7e25e41764) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `signalAnimatedNumber()` util
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Allow element to be null inside `elementCanScroll()` function to check the viewport
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add optional inject flag options to the inject function returned by `createProvider()`
+
+## 4.33.0
+
+### Minor Changes
+
+- [`4dfebf6`](https://github.com/ethlete-io/ethdk/commit/4dfebf65b4a21be3ae101580bc68a6ddf011dd5c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update all dependencies to their latest versions. The peer dependencies now require Angular 22.2 and Angular CDK 22.2, and `@ethlete/core` requires TypeScript 6.0 and `@nx/devkit` 24.
+
+### Patch Changes
+
+- [`bc313e1`](https://github.com/ethlete-io/ethdk/commit/bc313e1fd84e421cb4344745cdf7a8f06c9f530c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update dependencies and the pinned peer dependency versions (Angular 20.3.34, Angular CDK 20.2.14, @floating-ui/dom 1.8.0, @contentful/rich-text-types 17.2.7).
+
+## 4.32.1
+
+### Patch Changes
+
+- [`ba5501f`](https://github.com/ethlete-io/ethdk/commit/ba5501f9d86878d1d02a2dea68ccaf591ff48611) Thanks [@TomTomB](https://github.com/TomTomB)! - Let a user selection change in `SelectionModel` cancel a pending `setSelectionFromValue$`, and expose `isSyncingSelectionFromValue` while it waits for options.
+
+## 4.32.0
+
+### Minor Changes
+
+- [`2dd0e34`](https://github.com/ethlete-io/ethdk/commit/2dd0e346802aa2d0bc38e1a2111082294ff51199) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `createProvider`, `createRootProvider`, `createStaticProvider` and `createStaticRootProvider` utilities for building typed injection-token based providers
+
+## 4.31.0
+
+### Minor Changes
+
+- [`76d9819`](https://github.com/ethlete-io/ethdk/commit/76d98196e2ad33b3c0eeb19c8864ef94f9a2c994) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `requireSync` option to `injectQueryParam` util to explicitly tell the function to read its initial value from the url instead of waiting for the router
+
+## 4.30.0
+
+### Minor Changes
+
+- [`0f5452d`](https://github.com/ethlete-io/ethdk/commit/0f5452d559063458aa83aa4dea2eb15b59117b4e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et-animation-enter-done` and `et-animation-leave-done` classes to animated lifecycle directive to allow styling of elements after enter/leave animations complete.
+
+## 4.29.9
+
+### Patch Changes
+
+- [`808f15c`](https://github.com/ethlete-io/ethdk/commit/808f15ceefce740464c7cd91bd4dc7d8771c2e13) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix initial value not being correct inside injectUrl
+
+## 4.29.8
+
+### Patch Changes
+
+- [`1e9dca5`](https://github.com/ethlete-io/ethdk/commit/1e9dca56ca6cf57b6a65a93e971649cacaa5428f) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not try to create a router state based on the native browser url
+
+## 4.29.7
+
+### Patch Changes
+
+- [`b79cf6a`](https://github.com/ethlete-io/ethdk/commit/b79cf6a845496d4e5c1df63c851c96dceba50881) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix router event signal skipping the initial navigation
+
+## 4.29.6
+
+### Patch Changes
+
+- [`452c6f9`](https://github.com/ethlete-io/ethdk/commit/452c6f9d3ff446fee37b719c233daf1216930e98) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix initial values inside router state being null by default
+
+## 4.29.5
+
+### Patch Changes
+
+- [`0ffe4f9`](https://github.com/ethlete-io/ethdk/commit/0ffe4f9b629ab47e0632fa1fdb8eb99a6552ca4b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix router state not getting updated on initial load once the router is ready
+
+## 4.29.4
+
+### Patch Changes
+
+- [`183ca54`](https://github.com/ethlete-io/ethdk/commit/183ca540f7d4bd3a760a2f37fc28fac80b937d34) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix initial values of router signals
+
+## 4.29.3
+
+### Patch Changes
+
+- [`6b05b76`](https://github.com/ethlete-io/ethdk/commit/6b05b7603cfd0038dda1336c7c0acf590556a4fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `controlValueSignal` not reporting the initial value if the passed control is a required input
+
+## 4.29.2
+
+### Patch Changes
+
+- [`11dc4d3`](https://github.com/ethlete-io/ethdk/commit/11dc4d32d6ae7f3681c50029d3c7e2468cbec3a0) Thanks [@TomTomB](https://github.com/TomTomB)! - Raise an error if signal utils detect a non html element being used as an element
+
+## 4.29.1
+
+### Patch Changes
+
+- [`25546d0`](https://github.com/ethlete-io/ethdk/commit/25546d09c1f996393db7b979e8c996bd36db39b1) Thanks [@TomTomB](https://github.com/TomTomB)! - Try to read the control passed to `controlValueSignal` synchronous for using its value as initial value instead of always using `null`.
+
+## 4.29.0
+
+### Minor Changes
+
+- [`10802c0`](https://github.com/ethlete-io/ethdk/commit/10802c0ecef8907b2ab27f42680aa5b47db76f7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular v20
+
+## 4.28.0
+
+### Minor Changes
+
+- [`b746fd5`](https://github.com/ethlete-io/ethdk/commit/b746fd56098c25252eb0169a4d0d019f86b5bc22) Thanks [@TomTomB](https://github.com/TomTomB)! - Add time to `signalElementLastScrollDirection` util
+
+## 4.27.1
+
+### Patch Changes
+
+- [`03fcea4`](https://github.com/ethlete-io/ethdk/commit/03fcea4f680ded762296e9a643e1b66456a87f92) Thanks [@TomTomB](https://github.com/TomTomB)! - Update the url of injectUrl if the navigation gets skipped
+
+## 4.27.0
+
+### Minor Changes
+
+- [`58cafaa`](https://github.com/ethlete-io/ethdk/commit/58cafaa7db6d339798425ba7b24e153c54e646ee) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `signalElementLastScrollDirection` and `signalHostElementLastScrollDirection` utils
+
+## 4.26.1
+
+### Patch Changes
+
+- [`7bac305`](https://github.com/ethlete-io/ethdk/commit/7bac305e9d5777607e8d867ce70660f9162b0a19) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix flickering when opening a toggletip
+
+## 4.26.0
+
+### Minor Changes
+
+- [`19d461c`](https://github.com/ethlete-io/ethdk/commit/19d461c3f942ed2ed67793a3d8b7e7232158f82b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add media query utils `injectIsPortrait`, `injectIsLandscape`, `injectDisplayOrientation`, `injectHasTouchInput`, `injectHasPrecisionInput`, `injectDeviceInputType` and `injectCanHover`
+
+## 4.25.1
+
+### Patch Changes
+
+- [`91b6a3b`](https://github.com/ethlete-io/ethdk/commit/91b6a3ba51f6a60abe71b27d1eb88099e29b2418) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix class defines
+
+## 4.25.0
+
+### Minor Changes
+
+- [`40fd002`](https://github.com/ethlete-io/ethdk/commit/40fd0023407ff7c9aa652a74317861ffd0d1abbf) Thanks [@TomTomB](https://github.com/TomTomB)! - Add logger util
+
+## 4.24.1
+
+### Patch Changes
+
+- [`4e688a1`](https://github.com/ethlete-io/ethdk/commit/4e688a1bfb8ff20af33852f5beef4d0b766027d9) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix sidebar dialogs not showing up
+
+## 4.24.0
+
+### Minor Changes
+
+- [`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update angular 19
+
+## 4.23.8
+
+### Patch Changes
+
+- [`f923dd1`](https://github.com/ethlete-io/ethdk/commit/f923dd144bea5ea60ad85dfbaed5a46370e744eb) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix mime type inferring for srcsets with modifiers like x1 and 320w
+
+## 4.23.7
+
+### Patch Changes
+
+- [`45e7631`](https://github.com/ethlete-io/ethdk/commit/45e7631063df1b55c8697c300cbbe0b3a2d89732) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow a `fm` query param to be anywhere inside the query string, not just at the beginning for the `inferMimeType` util
+
+## 4.23.6
+
+### Patch Changes
+
+- [`bedc406`](https://github.com/ethlete-io/ethdk/commit/bedc4061e38b9da67e270c9689af789bb384db67) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix mime types not getting inferred for some urls
+
+## 4.23.5
+
+### Patch Changes
+
+- [`6d4bc5c`](https://github.com/ethlete-io/ethdk/commit/6d4bc5c468263814a95ceb116829758e079bb793) Thanks [@TomTomB](https://github.com/TomTomB)! - Fail silently inside `syncSignal` if the initial read fails. This will log a warning in dev mode. Set `skipSyncRead` to `true` to skip the initial read.
+
+## 4.23.4
+
+### Patch Changes
+
+- [`1c250cd`](https://github.com/ethlete-io/ethdk/commit/1c250cd0ca1c34dc0404dd3254b6a3f6434b1f49) Thanks [@TomTomB](https://github.com/TomTomB)! - Clear selection inside selection model in single select mode if the selected value does not exist
+
+## 4.23.3
+
+### Patch Changes
+
+- [`0ff7785`](https://github.com/ethlete-io/ethdk/commit/0ff7785431e71abcd45cf72d21e4ef200c7dac81) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix combobox track by function warnings getting spammed in the console.
+
+## 4.23.2
+
+### Patch Changes
+
+- [`bf2aa1b`](https://github.com/ethlete-io/ethdk/commit/bf2aa1bdef86edb4b633105b4377117b78245699) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll blocking and focus traps when overlays are open
+
+## 4.23.1
+
+### Patch Changes
+
+- [`4f4c337`](https://github.com/ethlete-io/ethdk/commit/4f4c3376b8b7d6f507e51a654a4322d25ee3f51e) Thanks [@TomTomB](https://github.com/TomTomB)! - Deprecate LetDirective
+
+## 4.23.0
+
+### Minor Changes
+
+- [`2032030`](https://github.com/ethlete-io/ethdk/commit/203203080dcd1e1b800135667a84232074f9250f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add referenceElement input to animated overlay directive
+
+## 4.22.0
+
+### Minor Changes
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectUrl` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectQueryParamChanges` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove the option to pass an injector to router inject utils
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectRoute` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectRouterEvent` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectPathParamChanges` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove `injectOrRunInContext` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectRouterState` util
+
+## 4.21.4
+
+### Patch Changes
+
+- [`5ce9f36`](https://github.com/ethlete-io/ethdk/commit/5ce9f36a62797e734ad624346139c7a3884caa4f) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to angular 18.1
+
+## 4.21.3
+
+### Patch Changes
+
+- [`9f88907`](https://github.com/ethlete-io/ethdk/commit/9f889073e1a32afacd35ef3fdbb0a4f21ea4ade3) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `controlValueSignal` not including disabled form control values
+
+## 4.21.2
+
+### Patch Changes
+
+- [`69ee325`](https://github.com/ethlete-io/ethdk/commit/69ee32561bf0df78569a1649053a37edf9741b9c) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump only for updating peer deps
+
+## 4.21.1
+
+### Patch Changes
+
+- [`42a4415`](https://github.com/ethlete-io/ethdk/commit/42a44152807316c57a739ae9ccc6e607ec934141) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not debounce by default inside `controlValueSignal` util.
+
+## 4.21.0
+
+### Minor Changes
+
+- [`88730d5`](https://github.com/ethlete-io/ethdk/commit/88730d5b4110c4fd29185caad403feabf7695bf5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for required input signals inside `controlValueSignal`
+
+### Patch Changes
+
+- [`88730d5`](https://github.com/ethlete-io/ethdk/commit/88730d5b4110c4fd29185caad403feabf7695bf5) Thanks [@TomTomB](https://github.com/TomTomB)! - Return the effect ref created inside `syncSignal`
+
+## 4.20.0
+
+### Minor Changes
+
+- [#1917](https://github.com/ethlete-io/ethdk/pull/1917) [`5d6d49e`](https://github.com/ethlete-io/ethdk/commit/5d6d49eb030e5d4530e1fedca41902a9974b4f95) Thanks [@Gw3i](https://github.com/Gw3i)! - Add signal type for control parameter for `controlValueSignal`
+
+## 4.19.4
+
+### Patch Changes
+
+- [`8bc0c1d`](https://github.com/ethlete-io/ethdk/commit/8bc0c1dfa133c2de51980f3ff75e1465201289f2) Thanks [@TomTomB](https://github.com/TomTomB)! - Correctly apply the default debounce to `controlValueSignal`
+
+## 4.19.3
+
+### Patch Changes
+
+- [`ba2e546`](https://github.com/ethlete-io/ethdk/commit/ba2e54669666038da926808fcfdeacac93483eb3) Thanks [@TomTomB](https://github.com/TomTomB)! - Enhance performance by caching `getBoundingClientRect()` calls
+
+## 4.19.2
+
+### Patch Changes
+
+- [`8a08672`](https://github.com/ethlete-io/ethdk/commit/8a086726225de55877358780bfbc5a624d8f56d5) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix styles not getting cleaned up inside signal styles util
+
+## 4.19.1
+
+### Patch Changes
+
+- [`241b099`](https://github.com/ethlete-io/ethdk/commit/241b09936c7e49b0adafb53b6124542a904e324c) Thanks [@TomTomB](https://github.com/TomTomB)! - Performance enhancements for signal utils
+
+## 4.19.0
+
+### Minor Changes
+
+- [`56dd26e`](https://github.com/ethlete-io/ethdk/commit/56dd26ec34310da6d344c4851a7e34518c88b678) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `deferredSignal` util
+
+## 4.18.4
+
+### Patch Changes
+
+- [`142b855`](https://github.com/ethlete-io/ethdk/commit/142b855bd19a219eb90d56999724001a8ce5e50b) Thanks [@TomTomB](https://github.com/TomTomB)! - Return the state signal as read only inside `createCanAnimateSignal` function. This value should not be modified by the user.
+
+## 4.18.3
+
+### Patch Changes
+
+- [`9f8f7ee`](https://github.com/ethlete-io/ethdk/commit/9f8f7ee6bb6bcd494709f822b861ef023b717254) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove temp logging
+
+## 4.18.2
+
+### Patch Changes
+
+- [`92709a5`](https://github.com/ethlete-io/ethdk/commit/92709a53c8f9a32afa72ca509387be3d7b4b0217) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal util logging
+
+## 4.18.1
+
+### Patch Changes
+
+- [`2c27678`](https://github.com/ethlete-io/ethdk/commit/2c27678f9e48f241df37073d43f736c9d08f3511) Thanks [@TomTomB](https://github.com/TomTomB)! - disable user select and user drag once cursor dragging is started
+
+## 4.18.0
+
+### Minor Changes
+
+- [`1aaff43`](https://github.com/ethlete-io/ethdk/commit/1aaff43d46418a17c84eb5edfd7ae38e7226d093) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal viewport utils:
+  - `injectIsXs()`
+  - `injectIsSm()`
+  - `injectIsMd()`
+  - `injectIsLg()`
+  - `injectIsXl()`
+  - `injectIs2Xl()`
+  - `injectBreakpointIsMatched()`
+  - `injectObserveBreakpoint()`
+  - `injectCurrentBreakpoint()`
+
+### Patch Changes
+
+- [`d7ea5c7`](https://github.com/ethlete-io/ethdk/commit/d7ea5c74b2a76354b74956ce01ec95a37b04c42e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix cursor drag getting stuck due due to it being statet on a anchor html element
+
+- [`d7ea5c7`](https://github.com/ethlete-io/ethdk/commit/d7ea5c74b2a76354b74956ce01ec95a37b04c42e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix intersection observer entries getting out of order if elements change after the first render
+
+## 4.17.0
+
+### Minor Changes
+
+- [`aeb1134`](https://github.com/ethlete-io/ethdk/commit/aeb1134f80f0bcf53e11131d64b8b2d8c1434295) Thanks [@TomTomB](https://github.com/TomTomB)! - Add computedTillFalsy util
+
+- [`aeb1134`](https://github.com/ethlete-io/ethdk/commit/aeb1134f80f0bcf53e11131d64b8b2d8c1434295) Thanks [@TomTomB](https://github.com/TomTomB)! - Add computedTillTruthy util
+
+## 4.16.0
+
+### Minor Changes
+
+- [`bc0c0c6`](https://github.com/ethlete-io/ethdk/commit/bc0c0c69bdaaa11e1f6808a49da1b2255f795ed5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add useCursorDragScroll as a replacement for the CursorDragScrollDirective
+
+### Patch Changes
+
+- [`c6530e0`](https://github.com/ethlete-io/ethdk/commit/c6530e02d0c3f6e8303f87967891dc307017dc0a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix endless loop when using signalElementIntersection in certain cases
+
+## 4.15.0
+
+### Minor Changes
+
+- [`6a46084`](https://github.com/ethlete-io/ethdk/commit/6a460843b241a14ba550d8c82ec5df74f1945229) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `getElementScrollCoordinates` util. This util computes a `ScrollToOptions` object based on the provided element and scrollable container. This object can be used to scroll the scrollable container to the element.
+
+### Patch Changes
+
+- [`6a46084`](https://github.com/ethlete-io/ethdk/commit/6a460843b241a14ba550d8c82ec5df74f1945229) Thanks [@TomTomB](https://github.com/TomTomB)! - Use renderer instead of setting properties directly using native dom apis inside signal utils
+
+## 4.14.0
+
+### Minor Changes
+
+- [`abb8d8c`](https://github.com/ethlete-io/ethdk/commit/abb8d8c1ceac7f2d482b153991ed7a4222d409c9) Thanks [@TomTomB](https://github.com/TomTomB)! - Support multiple elements inside `signalAttributes` and `signalStyles` util
+
+## 4.13.0
+
+### Minor Changes
+
+- [`bc0339f`](https://github.com/ethlete-io/ethdk/commit/bc0339f854fa6f69543187206df0025c4be9c551) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `initialScrollPosition` option to `signalElementScrollState` util
+
+- [`bc0339f`](https://github.com/ethlete-io/ethdk/commit/bc0339f854fa6f69543187206df0025c4be9c551) Thanks [@TomTomB](https://github.com/TomTomB)! - Return initial intersections sync when using `signalElementIntersection` util
+
+- [`52840d2`](https://github.com/ethlete-io/ethdk/commit/52840d26ea4390a92a497f5940dc5d3921b69c8f) Thanks [@TomTomB](https://github.com/TomTomB)! - Support multiple elements inside `signalClasses` util
+
+- [`bc0339f`](https://github.com/ethlete-io/ethdk/commit/bc0339f854fa6f69543187206df0025c4be9c551) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `createCanAnimateSignal` util
+
+- [`bc0339f`](https://github.com/ethlete-io/ethdk/commit/bc0339f854fa6f69543187206df0025c4be9c551) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `createIsRenderedSignal` util
+
+## 4.12.1
+
+### Patch Changes
+
+- [`c8d8395`](https://github.com/ethlete-io/ethdk/commit/c8d8395b07e4b87885c59bf446b3a54854e20980) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typings for injectQueryParam
+
+## 4.12.0
+
+### Minor Changes
+
+- [#1792](https://github.com/ethlete-io/ethdk/pull/1792) [`69f4c3a`](https://github.com/ethlete-io/ethdk/commit/69f4c3ab1227f915edac10f1d335beabae69bc47) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Rename `getFirstAndLastPartialIntersection` to `getIntersectionInfo` and return additional information about the intersection. This change is backward compatible.
+
+- [`dc5e27f`](https://github.com/ethlete-io/ethdk/commit/dc5e27ffa0a4b94a8dabab68295e6510f34a20c0) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal utils for injecting router data. Data can be transformed just like Angular inputs using the `transform` option.
+  - `injectQueryParams()`
+  - `injectQueryParam()`
+  - `injectPathParams()`
+  - `injectPathParam()`
+  - `injectRouteData()`
+  - `injectRouteDataItem()`
+  - `injectFragment()`
+  - `injectRouteTitle()`
+
+## 4.11.0
+
+### Minor Changes
+
+- [`4fc95a8`](https://github.com/ethlete-io/ethdk/commit/4fc95a85c6c6181585e205b6cd1db2ee83964bd4) Thanks [@TomTomB](https://github.com/TomTomB)! - Emit state change events inside animated lifecycle directive
+
+- [`4fc95a8`](https://github.com/ethlete-io/ethdk/commit/4fc95a85c6c6181585e205b6cd1db2ee83964bd4) Thanks [@TomTomB](https://github.com/TomTomB)! - Add isActive property to carousel item directive
+
+## 4.10.0
+
+### Minor Changes
+
+- [`689ecc1`](https://github.com/ethlete-io/ethdk/commit/689ecc1d7480e56a871ba46cd75a0c26c200d198) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove style bindings that would result in null or undefined
+
+## 4.9.0
+
+### Minor Changes
+
+- [`67e00ce`](https://github.com/ethlete-io/ethdk/commit/67e00ce24def5d7f274195f29eb44139f891446f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `isObject`, `isArray` and `getObjectProperty` utils
+
+## 4.8.0
+
+### Minor Changes
+
+- [`9ee71f4`](https://github.com/ethlete-io/ethdk/commit/9ee71f413d8046a8ccdcabbc9ab6258692efd832) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectHostElement` and `injectTemplateRef` utils
+
+- [`9509b78`](https://github.com/ethlete-io/ethdk/commit/9509b78b9f0b65a553b6afba10866461441bee88) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `controlValueSignal` and `controlValueSignalWithPrevious` utils
+
+### Patch Changes
+
+- [`b2828c8`](https://github.com/ethlete-io/ethdk/commit/b2828c8807a3fdba53bf07ef3291872a19a8d8ba) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto close tooltips ans toggletips as soon as their reference element exits the viewport
+
+## 4.7.0
+
+### Minor Changes
+
+- [`969c3ef`](https://github.com/ethlete-io/ethdk/commit/969c3ef83bfc0840e5fa658484a27a50bebf72f7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `skipNextEnter` option to `AnimatedLifecycleDirective`
+
+## 4.6.0
+
+### Minor Changes
+
+- [#1640](https://github.com/ethlete-io/ethdk/pull/1640) [`7c1214a`](https://github.com/ethlete-io/ethdk/commit/7c1214a8c8107591986e811e8a63629fcc251077) Thanks [@Gw3i](https://github.com/Gw3i)! - Add `debouncedControlValueSignal` util
+
+## 4.5.2
+
+### Patch Changes
+
+- [#1614](https://github.com/ethlete-io/ethdk/pull/1614) [`5f414b9`](https://github.com/ethlete-io/ethdk/commit/5f414b96362366f650945835b87d3cf8ce292bc1) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix various circular dependencies
+
+## 4.5.1
+
+### Patch Changes
+
+- [`4ef84f5`](https://github.com/ethlete-io/ethdk/commit/4ef84f5e63a82e80f5125457a0b8f35a23b05010) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing export
+
+## 4.5.0
+
+### Minor Changes
+
+- [`526f8db`](https://github.com/ethlete-io/ethdk/commit/526f8dbf3e511302bc765ffc8401b7c91c22c814) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to set same site option in cookie util
+
+- [`9bc5fd0`](https://github.com/ethlete-io/ethdk/commit/9bc5fd0741444afebe34bf9a926f1e744cba7e84) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createComponentId util
+
+## 4.4.1
+
+### Patch Changes
+
+- [`55f4e8c`](https://github.com/ethlete-io/ethdk/commit/55f4e8c67591acb955cf5844e2ce3b08eb04f059) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `etAnimatedIf` directive missing `ngIf` as host directive
+
+## 4.4.0
+
+### Minor Changes
+
+- [`00b4ebf5`](https://github.com/ethlete-io/ethdk/commit/00b4ebf5ab2ff363b01c5ef24e777e96d77223a5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to disable `shift` inside `AnimatedOverlayDirective`
+
+### Patch Changes
+
+- [`57cecd4c`](https://github.com/ethlete-io/ethdk/commit/57cecd4c6e529c97af730c9280aee1bdaebd7e59) Thanks [@TomTomB](https://github.com/TomTomB)! - Don't check for children in `signalElementChildren` util if the component is not yet rendered
+
+## 4.3.0
+
+### Minor Changes
+
+- [`7806a21d`](https://github.com/ethlete-io/ethdk/commit/7806a21db827e68002c512ffe6ad86bae072755b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `signalElementChildren` util
+
+- [`89fea95d`](https://github.com/ethlete-io/ethdk/commit/89fea95d371e43a52eb5bfa9c049d6f3b6068554) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `getFirstAndLastPartialIntersection` util
+
+## 4.2.3
+
+### Patch Changes
+
+- [`db305a50`](https://github.com/ethlete-io/ethdk/commit/db305a50f6cb17e35036288443f9f9b12f8b511c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix nearest scrolling in `scrollToElement` util
+
+## 4.2.2
+
+### Patch Changes
+
+- [`7c9ac832`](https://github.com/ethlete-io/ethdk/commit/7c9ac8320faf63447c69928160c9eda0354e39d0) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow setting a `SignalElementBinding` as root for the `signalElementIntersection` method instead of only allowing the `HTMLElement` type
+
+## 4.2.1
+
+### Patch Changes
+
+- [`da7616e2`](https://github.com/ethlete-io/ethdk/commit/da7616e2181607ebef184be314102806abebdd27) Thanks [@TomTomB](https://github.com/TomTomB)! - Cleanup signal utils and types
+
+## 4.2.0
+
+### Minor Changes
+
+- [`8a714a01`](https://github.com/ethlete-io/ethdk/commit/8a714a0147a58fa84c9258fd4b14ffdc835b3442) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 17
+
+- [`e7b4e79b`](https://github.com/ethlete-io/ethdk/commit/e7b4e79b282b8b650b8a0596e07b32ffaefeedd5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal utils for `signalElementMutations`, `signalElementScrollState` and `signalElementIntersection`
+
+## 4.1.0
+
+### Minor Changes
+
+- [`873b108b`](https://github.com/ethlete-io/ethdk/commit/873b108b2df3c2aa242ad9a38ae621d40e169119) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `signalElementDimensions()` and `signalHostElementDimensions()` utils
+
+## 4.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`ce7e1055`](https://github.com/ethlete-io/ethdk/commit/ce7e1055cc24018d8e0ac3550a7ceb8ad96253f0)]:
+  - @ethlete/types@1.6.2
+
+## 4.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`3216a9aa`](https://github.com/ethlete-io/ethdk/commit/3216a9aaa6baa0c846d1702562b3959bec5fbac7)]:
+  - @ethlete/types@1.6.1
+
+## 4.0.1
+
+### Patch Changes
+
+- [`3f77e8d5`](https://github.com/ethlete-io/ethdk/commit/3f77e8d52a5ba45c4f3da4e34dcc08e0561ae04d) Thanks [@TomTomB](https://github.com/TomTomB)! - Init router state with data from window.location
+
+## 4.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`82f62921`](https://github.com/ethlete-io/ethdk/commit/82f629215c085a4f6d78f36a8981e34f4e626bbd)]:
+  - @ethlete/types@1.6.0
+
+## 3.13.2
+
+### Patch Changes
+
+- [`0328fb76`](https://github.com/ethlete-io/ethdk/commit/0328fb769ca53042835826c1967b8d2f25072d63) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency sync only
+
+- Updated dependencies [[`0328fb76`](https://github.com/ethlete-io/ethdk/commit/0328fb769ca53042835826c1967b8d2f25072d63)]:
+  - @ethlete/theming@2.3.1
+  - @ethlete/types@1.5.1
+
+## 3.13.1
+
+### Patch Changes
+
+- [`acfb8522`](https://github.com/ethlete-io/ethdk/commit/acfb852234a177ba9d4b4fab78905a586656a9fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix selection model options always being disabled
+
+## 3.13.0
+
+### Minor Changes
+
+- [`3a827a8e`](https://github.com/ethlete-io/ethdk/commit/3a827a8e2fd23186e2c83ffacff45d0c791f2f47) Thanks [@TomTomB](https://github.com/TomTomB)! - Add RootBoundaryDirective
+
+### Patch Changes
+
+- [`2b56c1d8`](https://github.com/ethlete-io/ethdk/commit/2b56c1d86b6d1c23aa8b924a959d75328a401ee2) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor selection model enhancements
+
+- [`3a827a8e`](https://github.com/ethlete-io/ethdk/commit/3a827a8e2fd23186e2c83ffacff45d0c791f2f47) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlays not being positioned correctly inside an other overlay
+
+## 3.12.0
+
+### Minor Changes
+
+- [#1034](https://github.com/ethlete-io/ethdk/pull/1034) [`1d69f6c1`](https://github.com/ethlete-io/ethdk/commit/1d69f6c129eb4457a5089083813fc3ff6e65bd41) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Add inferMimeTypePipe and util
+
+## 3.11.2
+
+### Patch Changes
+
+- [`1a92753f`](https://github.com/ethlete-io/ethdk/commit/1a92753faaf16977fe59af0080c03ba3244b642c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add function to set the active option inside active selection model
+
+## 3.11.1
+
+### Patch Changes
+
+- [`df887bf2`](https://github.com/ethlete-io/ethdk/commit/df887bf295417edf634d0a2b7be3d94739548fa1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing support for theming inside overlays
+
+## 3.11.0
+
+### Minor Changes
+
+- [`e5cc3133`](https://github.com/ethlete-io/ethdk/commit/e5cc3133a7fe81d008644da1be2fcdfb3e4cb3d8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add angular utils
+
+### Patch Changes
+
+- [`f1b8cd9f`](https://github.com/ethlete-io/ethdk/commit/f1b8cd9f401b0c75a4d4621fe585baaa82b2f111) Thanks [@TomTomB](https://github.com/TomTomB)! - Switch from createReactiveBindings to signal versions
+
+## 3.10.0
+
+### Minor Changes
+
+- [`12f0305c`](https://github.com/ethlete-io/ethdk/commit/12f0305cb96e22b845634b2b10ca40a38316048d) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose current visibility in observe visibility directive
+
+## 3.9.0
+
+### Minor Changes
+
+- [`9370f45e`](https://github.com/ethlete-io/ethdk/commit/9370f45eb349441f8907ea4f404a5ab66ecca2e9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add getFormGroupValue util that includes undefined values
+
+## 3.8.1
+
+### Patch Changes
+
+- [`986f3fcd`](https://github.com/ethlete-io/ethdk/commit/986f3fcdf694415ece4182b00261b9f9911c71b0) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix animated lifecycle getting stuck if leave is triggered while entering is active
+
+## 3.8.0
+
+### Minor Changes
+
+- [`fe654949`](https://github.com/ethlete-io/ethdk/commit/fe654949e47909e82a00de34aed1894c5d4afeb7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal utils for manipulating classes and attributes of elements
+
+## 3.7.0
+
+### Minor Changes
+
+- [`0397e8c7`](https://github.com/ethlete-io/ethdk/commit/0397e8c73c8e239fe4df92718127cd397519d549) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional properties to visibility observer events
+
+## 3.6.1
+
+### Patch Changes
+
+- [`63067a60`](https://github.com/ethlete-io/ethdk/commit/63067a609227694a897c8cfcd425250f1eaff7d2) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix initial visibility change event value
+
+## 3.6.0
+
+### Minor Changes
+
+- [`ef7716c9`](https://github.com/ethlete-io/ethdk/commit/ef7716c9eca17fbf62c8ce1647e6865ad8189d47) Thanks [@TomTomB](https://github.com/TomTomB)! - Add observe visibility directive and intersection observer service
+
+## 3.5.0
+
+### Minor Changes
+
+- [`116b3802`](https://github.com/ethlete-io/ethdk/commit/116b380246675ad2c9ad105b76a3a0fcd6260e99) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createResizeObservable util
+
+- [`4a705a0b`](https://github.com/ethlete-io/ethdk/commit/4a705a0bfb048c586682482f62379d15cdaecbf2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add form clone util and animated if directive
+
+### Patch Changes
+
+- [`116b3802`](https://github.com/ethlete-io/ethdk/commit/116b380246675ad2c9ad105b76a3a0fcd6260e99) Thanks [@TomTomB](https://github.com/TomTomB)! - Monitor page size in smart scroll block and only block once its scrollable
+
+## 3.4.0
+
+### Minor Changes
+
+- [`4c6bd7fc`](https://github.com/ethlete-io/ethdk/commit/4c6bd7fc34f6d283ddd7b329e39337e0126ed5e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional cookie util config options
+
+## 3.3.1
+
+### Patch Changes
+
+- [`27080405`](https://github.com/ethlete-io/ethdk/commit/27080405555d9153044945a32a21238b93748ae5) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove undefined from typed query list
+
+## 3.3.0
+
+### Minor Changes
+
+- [`80cf4767`](https://github.com/ethlete-io/ethdk/commit/80cf476749f5ca457ac2d7e9ac033e2c724f87c1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add key press manager util
+
+## 3.2.0
+
+### Minor Changes
+
+- [`249e72a9`](https://github.com/ethlete-io/ethdk/commit/249e72a9ce447863ab3552fcb0d550c2e8bc6bd4) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow using functions instead of property paths for selection model bindings
+
+### Patch Changes
+
+- [`a5f3f7b6`](https://github.com/ethlete-io/ethdk/commit/a5f3f7b64ab5d2689c4673f443ddcfd362937148) Thanks [@TomTomB](https://github.com/TomTomB)! - Move some combobox logic into core
+
+## 3.1.0
+
+### Minor Changes
+
+- [#861](https://github.com/ethlete-io/ethdk/pull/861) [`0ba88b49`](https://github.com/ethlete-io/ethdk/commit/0ba88b49f2ffff30d4c70d95a3bd2f766ee7ef25) Thanks [@Gw3i](https://github.com/Gw3i)! - Add validateAtLeastOneRequired validator to validate keys of form controls in a supplied form group where at least one need to be selected
+
+## 3.0.1
+
+### Patch Changes
+
+- [`f382cecd`](https://github.com/ethlete-io/ethdk/commit/f382cecd6eaf4dab1730c45bbf52ee385fd72880) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typings in must match validator
+
+## 3.0.0
+
+### Major Changes
+
+- [`93405c62`](https://github.com/ethlete-io/ethdk/commit/93405c623ca06bd395776624d5e9f9c03fcbba4b) Thanks [@TomTomB](https://github.com/TomTomB)! - Switch from popperjs to floating ui
+
+  ```
+  npm uninstall @popperjs/core
+  npm install @floating-ui/dom
+  ```
+
+  Update attribute names in css styles
+
+  ```css
+  /* before */
+  [data-popper-placement^='top'] {
+  }
+
+  /* after */
+  [et-floating-placement^='top'] {
+  }
+  ```
+
+## 2.9.0
+
+### Minor Changes
+
+- [`27b08e8d`](https://github.com/ethlete-io/ethdk/commit/27b08e8d9a399c255194463b60ec228bd09084b4) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove subject utils
+
+## 2.8.1
+
+### Patch Changes
+
+- [`2075620`](https://github.com/ethlete-io/ethdk/commit/207562029beaaa6486f1704f87a595ff2843bdb2) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont emit wrong viewport values
+
+## 2.8.0
+
+### Minor Changes
+
+- [`83f669a`](https://github.com/ethlete-io/ethdk/commit/83f669aca4fff6a05491a3cefb4031eafa34b65e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createMutationObservable util
+
+### Patch Changes
+
+- [`729054e`](https://github.com/ethlete-io/ethdk/commit/729054e40a9ad8b6a8623e3cf90c9c07e8be59d8) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrollable fixes
+
+- [`761c829`](https://github.com/ethlete-io/ethdk/commit/761c829811223998e8ac48338bd47241e7466e14) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for ip as hostname for cookies
+
+## 2.7.4
+
+### Patch Changes
+
+- [`55af23e`](https://github.com/ethlete-io/ethdk/commit/55af23e37f477f5321b606a94cecf91d9073aa01) Thanks [@TomTomB](https://github.com/TomTomB)! - Improve perf of viewport monitor
+
+## 2.7.3
+
+### Patch Changes
+
+- [`cbd9385`](https://github.com/ethlete-io/ethdk/commit/cbd93850ada03effdfb7e2954fbb0338856b3267) Thanks [@TomTomB](https://github.com/TomTomB)! - Prevent events after cursor dragging completed
+
+## 2.7.2
+
+### Patch Changes
+
+- [`f972a3d`](https://github.com/ethlete-io/ethdk/commit/f972a3dcd3dc202ca572c655fa9536ea8ed6f77c) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrolling and scrollable fixups
+
+## 2.7.1
+
+### Patch Changes
+
+- [`f8df5b6`](https://github.com/ethlete-io/ethdk/commit/f8df5b66eea7c2cbf9e0143ecac0972f13c0befb) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont wait for the next frame inside reactive bindings if eager option is set to true to avoid flickering
+
+## 2.7.0
+
+### Minor Changes
+
+- [`cbfaaec`](https://github.com/ethlete-io/ethdk/commit/cbfaaece5879ce19578446c8462ad28c4814605d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add getElementVisibleStates scroll util
+
+## 2.6.1
+
+### Patch Changes
+
+- [`495e422`](https://github.com/ethlete-io/ethdk/commit/495e422baed0ed5fcfdfa3662545c75b67bbff8a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option for cursor drag scroll to only allow for specific directions
+
+## 2.6.0
+
+### Minor Changes
+
+- [`ae600ae`](https://github.com/ethlete-io/ethdk/commit/ae600aeb3726d11c433e7f48677471db34b0e3ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Add isElement helper directive
+
+## 2.5.1
+
+### Patch Changes
+
+- [`e353a84`](https://github.com/ethlete-io/ethdk/commit/e353a841abac16b8eb75a94d287f91ea41041412) Thanks [@TomTomB](https://github.com/TomTomB)! - Wait for next frame inside reactive bindings before changing them on the html element
+
+## 2.5.0
+
+### Minor Changes
+
+- [`84eabbe`](https://github.com/ethlete-io/ethdk/commit/84eabbe126fd418f75f4577c13ff3200f787b31a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add active selection model util
+
+## 2.4.3
+
+### Patch Changes
+
+- [`8d826df`](https://github.com/ethlete-io/ethdk/commit/8d826df4882bbfdf32aa6ee7ba985289bfb66c5f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add aditional checks to prevent overlays from getting stuck during animation
+
+## 2.4.2
+
+### Patch Changes
+
+- [`9ac46dc`](https://github.com/ethlete-io/ethdk/commit/9ac46dcc5e0f48e862ce5289c054c4f99eb4a3e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option for allowed auto placements inside animated overlay
+
+## 2.4.1
+
+### Patch Changes
+
+- [`cb4c725`](https://github.com/ethlete-io/ethdk/commit/cb4c725802dde5301006aa68662d1b934109dd4c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add docs for router state service methods
+
+## 2.4.0
+
+### Minor Changes
+
+- [`dc03f1a`](https://github.com/ethlete-io/ethdk/commit/dc03f1ae29f411c40d5194be83c907864aa2b01a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing sync getter for route inside RouterStateService
+
+- [`6f32c36`](https://github.com/ethlete-io/ethdk/commit/6f32c36a273bbfd7b87fe16937947b806746c61a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add monitorViewport method to ViewportService for monitoring viewport and scrollbar sizes
+
+### Patch Changes
+
+- [`7376a9c`](https://github.com/ethlete-io/ethdk/commit/7376a9ca8db516ba4fb532990b264858a74797be) Thanks [@TomTomB](https://github.com/TomTomB)! - Use elementRef if etAnimateable input is an empty string
+
+## 2.3.0
+
+### Minor Changes
+
+- [`4ed2d76`](https://github.com/ethlete-io/ethdk/commit/4ed2d765881843143af8fde26d97fca095cb3ed5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add selection model and runtime error utils
+
+## 2.2.1
+
+### Patch Changes
+
+- [`e917beb`](https://github.com/ethlete-io/ethdk/commit/e917beb55fde0585906e1c32755b969f6427030f) Thanks [@TomTomB](https://github.com/TomTomB)! - Keep track of mounted status inside animated overlay directive
+
+## 2.2.0
+
+### Minor Changes
+
+- [`901b4e4`](https://github.com/ethlete-io/ethdk/commit/901b4e49afd87eec5574686fc7e5606cae5c7f87) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional observables to RouterStateService
+
+## 2.1.0
+
+### Minor Changes
+
+- [`6f2f3e5`](https://github.com/ethlete-io/ethdk/commit/6f2f3e5962f225b1d3b2aed6170222c5431cec93) Thanks [@TomTomB](https://github.com/TomTomB)! - Add IsActiveElementDirective
+
+## 2.0.0
+
+### Major Changes
+
+- [`6f30804`](https://github.com/ethlete-io/ethdk/commit/6f308042b9912d0a4b9ebd71e79afb5ab5269194) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove `DestroyService` in favor of `createDestroy()` method. `createDestroy()` can only be used from within an injection context and will assert otherwise.
+
+  Before:
+
+  ```ts
+  import { DestroyService } from '@ethlete/core';
+
+  @Component({
+    selector: 'my-component',
+    template: `...`,
+    providers: [DestroyService],
+  })
+  export class MyComponent {
+    private readonly _destroy$ = inject(DestroyService).destroy$;
+  }
+  ```
+
+  After:
+
+  ```ts
+  import { createDestroy } from '@ethlete/core';
+
+  @Component({
+    selector: 'my-component',
+    template: `...`,
+  })
+  export class MyComponent {
+    private readonly _destroy$ = createDestroy();
+  }
+  ```
+
+### Minor Changes
+
+- [`8897054`](https://github.com/ethlete-io/ethdk/commit/88970546ffd9b98071767892833a7509532627db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add AnimatedOverlay directive
+
+## 1.10.1
+
+### Patch Changes
+
+- [`04e0db6`](https://github.com/ethlete-io/ethdk/commit/04e0db6c0007d58705f88605f3f8ed2d0ad05ce3) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 16
+
+## 1.10.0
+
+### Minor Changes
+
+- [`a69bb1d`](https://github.com/ethlete-io/ethdk/commit/a69bb1d9a40891968c12b45031b4a73dc77ab205) Thanks [@TomTomB](https://github.com/TomTomB)! - Add host directive type def
+
+## 1.9.1
+
+### Patch Changes
+
+- [`258b391`](https://github.com/ethlete-io/ethdk/commit/258b391370d69e2e496ec0ddd8b13d4eb5ede36a) Thanks [@TomTomB](https://github.com/TomTomB)! - Ignore delayable updates if the values doesnt change
+
+## 1.9.0
+
+### Minor Changes
+
+- [`902ce1a`](https://github.com/ethlete-io/ethdk/commit/902ce1a60322e011e7b5e1c01d5875f68266f334) Thanks [@TomTomB](https://github.com/TomTomB)! - Add DelayableDirective
+
+## 1.8.2
+
+### Patch Changes
+
+- [`dad4625`](https://github.com/ethlete-io/ethdk/commit/dad4625e17756ecf3321c016d9f9d0501303e1e0) Thanks [@TomTomB](https://github.com/TomTomB)! - Use distinctUntilChanged() inside router state observables
+
+## 1.8.1
+
+### Patch Changes
+
+- [`717949c`](https://github.com/ethlete-io/ethdk/commit/717949cc020e248561213502aaea001b187b8c68) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for more than 4 chars after the last dot in an email adress
+
+## 1.8.0
+
+### Minor Changes
+
+- [`400405d`](https://github.com/ethlete-io/ethdk/commit/400405dfded6a2b64ff69ce6a4b745c306ea5da2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to supply a origin element to createFlipAnimation
+
+## 1.7.0
+
+### Minor Changes
+
+- [#534](https://github.com/ethlete-io/ethdk/pull/534) [`03211cb`](https://github.com/ethlete-io/ethdk/commit/03211cb9915e6ab796649d19309fb1bbc631e09b) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Add option to add inline/block-scroll-margin to scrollToElement
+
+## 1.6.0
+
+### Minor Changes
+
+- [`686f3cb`](https://github.com/ethlete-io/ethdk/commit/686f3cb7d9cd7a924da499dea1054beba9dbd10f) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose scrolling utils `scrollToElement` and `isElementVisible`
+
+## 1.5.1
+
+### Patch Changes
+
+- [`4cf410b`](https://github.com/ethlete-io/ethdk/commit/4cf410bcd336a74fbd79e36b17d870f1a1a9e56e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix viewport service share replay having a buffer size of infinity
+
+## 1.5.0
+
+### Minor Changes
+
+- [`dce8411`](https://github.com/ethlete-io/ethdk/commit/dce8411e198e4e8b4dec37781b5f7cfbea9c4be6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add smart block scroll stategy
+
+## 1.4.3
+
+### Patch Changes
+
+- [`a37d5b8`](https://github.com/ethlete-io/ethdk/commit/a37d5b8f713d57c23ba857d31b2c59601efeebb6) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix endless loop when scrollable content changes a lot
+
+## 1.4.2
+
+### Patch Changes
+
+- [`d460577`](https://github.com/ethlete-io/ethdk/commit/d4605771f787d0505c83c2ad945b1d12ce7f3502) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll observer having issues with decimals
+
+## 1.4.1
+
+### Patch Changes
+
+- [`f092450`](https://github.com/ethlete-io/ethdk/commit/f092450e661121dde9c3a7a56d53edd982a20136) Thanks [@TomTomB](https://github.com/TomTomB)! - Mark DestroyService as deprecated
+
+## 1.4.0
+
+### Minor Changes
+
+- [`033c740`](https://github.com/ethlete-io/ethdk/commit/033c740e78a561fdf9652dc0b0e6fc84abe36dc8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add util to create a behavior subject that exposes a subscriber count
+
+## 1.3.0
+
+### Minor Changes
+
+- [`6006f19`](https://github.com/ethlete-io/ethdk/commit/6006f199078516109749437611a9356d7897ef7f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add create flip animation group util
+
+## 1.2.0
+
+### Minor Changes
+
+- [#487](https://github.com/ethlete-io/ethdk/pull/487) [`b5180bd`](https://github.com/ethlete-io/ethdk/commit/b5180bd849f458b3efc640616db6bbd0b408fbd2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add flip animation builder
+
+## 1.1.1
+
+### Patch Changes
+
+- [`b2f75c2`](https://github.com/ethlete-io/ethdk/commit/b2f75c27422b6eec2956a1780a34b21253bb4561) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix dialog and bottom sheet getting stuck in an open position
+
+## 1.1.0
+
+### Minor Changes
+
+- [#480](https://github.com/ethlete-io/ethdk/pull/480) [`920e5f2`](https://github.com/ethlete-io/ethdk/commit/920e5f2f77cd46cb9af42abccd3b66f08cf40896) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow passing element or selector to animatable directive
+
+## 1.0.0
+
+### Major Changes
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`44ac6e6`](https://github.com/ethlete-io/ethdk/commit/44ac6e621c9b2c2e02b45f7abc2c1b3111604d56) Thanks [@TomTomB](https://github.com/TomTomB)! - Initial stable release
+
+### Minor Changes
+
+- [#460](https://github.com/ethlete-io/ethdk/pull/460) [`220baf3`](https://github.com/ethlete-io/ethdk/commit/220baf35ae75fe46e7e5b9b9fa089ee6da824070) Thanks [@nziermann](https://github.com/nziermann)! - Add createMediaQueryObservable util
+
+- [#455](https://github.com/ethlete-io/ethdk/pull/455) [`820a761`](https://github.com/ethlete-io/ethdk/commit/820a761d923982d3bb25fe9d5b0f89e8bfdb9e96) Thanks [@nziermann](https://github.com/nziermann)! - Add more options to router state enableScrollEnhancements fn
+
+- [#446](https://github.com/ethlete-io/ethdk/pull/446) [`f8a8d5c`](https://github.com/ethlete-io/ethdk/commit/f8a8d5c9c4750b979f73fb866aa15d65d3c5971a) Thanks [@nziermann](https://github.com/nziermann)! - Add router state service
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`e1e2f74`](https://github.com/ethlete-io/ethdk/commit/e1e2f7405641a47cd608f375f1174d367538da89) Thanks [@TomTomB](https://github.com/TomTomB)! - Add normalize game result type pipe
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`834dab4`](https://github.com/ethlete-io/ethdk/commit/834dab4317f6bafd7919263c56bd6638a0a9ad09) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove destroy directive in favor of destroy service
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`210e892`](https://github.com/ethlete-io/ethdk/commit/210e892bcb20003f7d3d3535a65aaa2ac9d41602) Thanks [@TomTomB](https://github.com/TomTomB)! - - Feat: Add `currentViewport# @ethlete/core and `currentViewport` to get the current viewport string to the viewport service
+  - Feat: Add resize & content observer directives & services
+  - Fix: Append less decimals to breakpoints created by the viewport service
+  - Fix: Use all available args to create a cache id by the @Memo default resolver
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`24ded48`](https://github.com/ethlete-io/ethdk/commit/24ded48c0bf6ce2239f2a831dda2d3c3b9a74a37) Thanks [@TomTomB](https://github.com/TomTomB)! - Add animated lifecycle directive
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`e55f055`](https://github.com/ethlete-io/ethdk/commit/e55f055306dbeac226cb9d3e989d3bca2804bd3f) Thanks [@nziermann](https://github.com/nziermann)! - Add some missing methods to typed query list
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`c8c5ac8`](https://github.com/ethlete-io/ethdk/commit/c8c5ac80b4dd71c628776aa6aaaef67d9eda8b51) Thanks [@TomTomB](https://github.com/TomTomB)! - Add animateable directive
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`b3577c6`](https://github.com/ethlete-io/ethdk/commit/b3577c65bacf9a9b27a967fa9fe44d29d6531cf8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add seo directive
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`9ea8477`](https://github.com/ethlete-io/ethdk/commit/9ea847781fb53dc6cb2c00c7f4be15a0244534fb) Thanks [@nziermann](https://github.com/nziermann)! - Add structured data component
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`429709e`](https://github.com/ethlete-io/ethdk/commit/429709ef74d4728e2b7019a0bb7dd0dd94ff2c79) Thanks [@nziermann](https://github.com/nziermann)! - Allow customizing the element ref for reactive bindings
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`2ffd101`](https://github.com/ethlete-io/ethdk/commit/2ffd1014a15812d31c07f0e55c12b34727f03d9a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add click observer service
+
+- [#49](https://github.com/ethlete-io/ethdk/pull/49) [`5c95058`](https://github.com/ethlete-io/ethdk/commit/5c9505837ee3e5f2457169591acd01c79eade565) Thanks [@TomTomB](https://github.com/TomTomB)! - - Add memo decorator
+  - Add let & repeat directives
+  - Add toArray pipe
+  - Add focus visible service
+  - Add clamp utils
+
+- [#469](https://github.com/ethlete-io/ethdk/pull/469) [`33bec45`](https://github.com/ethlete-io/ethdk/commit/33bec45637946013c6a647701a58e678734fd6fd) Thanks [@nziermann](https://github.com/nziermann)! - Add common form validators
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`0c07f13`](https://github.com/ethlete-io/ethdk/commit/0c07f13d36fe4d79f63d0cbb72c77b94379ed2d6) Thanks [@nziermann](https://github.com/nziermann)! - Support classes in reactive bindings
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`756141c`](https://github.com/ethlete-io/ethdk/commit/756141c6b1eb78f1adc170d90cdcf9f2910e9ba3) Thanks [@nziermann](https://github.com/nziermann)! - Add cookie utils
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`42da540`](https://github.com/ethlete-io/ethdk/commit/42da54003a3b1c7a313b888a97938692e8e43370) Thanks [@TomTomB](https://github.com/TomTomB)! - Add normalize match participants pipe
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`72e0911`](https://github.com/ethlete-io/ethdk/commit/72e0911cac1784f112270e78bc1f2b6a4ffff6cc) Thanks [@nziermann](https://github.com/nziermann)! - Add reactive binding util
+
+### Patch Changes
+
+- [#455](https://github.com/ethlete-io/ethdk/pull/455) [`ab20501`](https://github.com/ethlete-io/ethdk/commit/ab2050107a217647cc03c0ba96cf7151896d7f7f) Thanks [@nziermann](https://github.com/nziermann)! - Rename observe directive change events
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`38042f4`](https://github.com/ethlete-io/ethdk/commit/38042f40b4db21ac617aaa841a5869b285baf4a4) Thanks [@TomTomB](https://github.com/TomTomB)! - Replace destroy service with destroy directive since providedIn any is deprecated
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`b7e087c`](https://github.com/ethlete-io/ethdk/commit/b7e087c096aea289fdc81806839ea7dede72e5db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add NgClassType type def
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`90612d8`](https://github.com/ethlete-io/ethdk/commit/90612d8083a41e2fb64db893791ab1f576d564c6) Thanks [@TomTomB](https://github.com/TomTomB)! - Bring back DestoryService to pevent error NG0309
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`222d87b`](https://github.com/ethlete-io/ethdk/commit/222d87b67186d7d97e4d2a8a4d5a611d79a05e43) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to enable and disable cursor drag scroll directive
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`1816e3e`](https://github.com/ethlete-io/ethdk/commit/1816e3e9bd7d2a3c8505a8b5050026d7f23ff75a) Thanks [@TomTomB](https://github.com/TomTomB)! - Move directives and utils into core from components
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`dcca3cb`](https://github.com/ethlete-io/ethdk/commit/dcca3cb38bd00bab40ec3f3880500ef3bd449f72) Thanks [@TomTomB](https://github.com/TomTomB)! - Fixup minior issues in animated lifecycle directive
+
+- [#433](https://github.com/ethlete-io/ethdk/pull/433) [`e385e30`](https://github.com/ethlete-io/ethdk/commit/e385e304974cf562804ae358092fc47475509f21) Thanks [@nziermann](https://github.com/nziermann)! - Fix clone returning undefined if value to clone is not an object
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`b5086c0`](https://github.com/ethlete-io/ethdk/commit/b5086c05df81588791ac5bc5a6497691e51dab5d) Thanks [@nziermann](https://github.com/nziermann)! - Add missing type def for TypedQueryList.find
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`4dad6d6`](https://github.com/ethlete-io/ethdk/commit/4dad6d643f3d5bf5bb7b322781dc4871cef5d956) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scrollable directives to set a custom first and last element
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`4dad6d6`](https://github.com/ethlete-io/ethdk/commit/4dad6d643f3d5bf5bb7b322781dc4871cef5d956) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable scroll state not getting checked correctly on screen resize
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`50dc199`](https://github.com/ethlete-io/ethdk/commit/50dc199faad225c49350c6595f4664cedb51bc6f) Thanks [@TomTomB](https://github.com/TomTomB)! - Update view if repeat directive input changes
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`83e3c88`](https://github.com/ethlete-io/ethdk/commit/83e3c88011f1808e9f019c2aa6bc5a4b7449e73c) Thanks [@TomTomB](https://github.com/TomTomB)! - Missing release for scroll observer fixes
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`0ce1f51`](https://github.com/ethlete-io/ethdk/commit/0ce1f51b0ffe8b69f2774d283bab8fa3b3d10c91) Thanks [@nziermann](https://github.com/nziermann)! - Use faster versions of cloning and comparing objects
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`b5c4ec9`](https://github.com/ethlete-io/ethdk/commit/b5c4ec9bff52f255b8bf14f17c589c9fa696f265) Thanks [@TomTomB](https://github.com/TomTomB)! - Add classes to current scroll observed elements
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`9ab3ac6`](https://github.com/ethlete-io/ethdk/commit/9ab3ac6e84dbd8ac08abb8ab23c612c93bfc8f72) Thanks [@TomTomB](https://github.com/TomTomB)! - Make ObserveContentDirective standalone
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`bb74015`](https://github.com/ethlete-io/ethdk/commit/bb740155333084777c57ca4082b0a7d504c1b4ae) Thanks [@nziermann](https://github.com/nziermann)! - Fix typedefs for TypedQueryList
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`2be3d4b`](https://github.com/ethlete-io/ethdk/commit/2be3d4b3307995385cde6326057d14eb08b67072) Thanks [@nziermann](https://github.com/nziermann)! - Skip reactive bildings where values are invalid
+
+## 0.2.0-next.25
+
+### Minor Changes
+
+- [`24ded48`](https://github.com/ethlete-io/ethdk/commit/24ded48c0bf6ce2239f2a831dda2d3c3b9a74a37) Thanks [@TomTomB](https://github.com/TomTomB)! - Add animated lifecycle directive
+
+- [`c8c5ac8`](https://github.com/ethlete-io/ethdk/commit/c8c5ac80b4dd71c628776aa6aaaef67d9eda8b51) Thanks [@TomTomB](https://github.com/TomTomB)! - Add animateable directive
+
+## 0.2.0-next.24
+
+### Minor Changes
+
+- [`33bec45`](https://github.com/ethlete-io/ethdk/commit/33bec45637946013c6a647701a58e678734fd6fd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add common form validators
+
+## 0.2.0-next.23
+
+### Minor Changes
+
+- [`220baf3`](https://github.com/ethlete-io/ethdk/commit/220baf35ae75fe46e7e5b9b9fa089ee6da824070) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createMediaQueryObservable util
+
+## 0.2.0-next.22
+
+### Patch Changes
+
+- [#455](https://github.com/ethlete-io/ethdk/pull/455) [`ab20501`](https://github.com/ethlete-io/ethdk/commit/ab2050107a217647cc03c0ba96cf7151896d7f7f) Thanks [@nziermann](https://github.com/nziermann)! - Rename observe directive change events
+
+## 0.2.0-next.21
+
+### Minor Changes
+
+- [`820a761`](https://github.com/ethlete-io/ethdk/commit/820a761d923982d3bb25fe9d5b0f89e8bfdb9e96) Thanks [@TomTomB](https://github.com/TomTomB)! - Add more options to router state enableScrollEnhancements fn
+
+## 0.2.0-next.20
+
+### Minor Changes
+
+- [`f8a8d5c`](https://github.com/ethlete-io/ethdk/commit/f8a8d5c9c4750b979f73fb866aa15d65d3c5971a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add router state service
+
+## 0.2.0-next.19
+
+### Patch Changes
+
+- [`e385e30`](https://github.com/ethlete-io/ethdk/commit/e385e304974cf562804ae358092fc47475509f21) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix clone returning undefined if value to clone is not an object
+
+## 0.2.0-next.18
+
+### Patch Changes
+
+- [`0ce1f51`](https://github.com/ethlete-io/ethdk/commit/0ce1f51b0ffe8b69f2774d283bab8fa3b3d10c91) Thanks [@TomTomB](https://github.com/TomTomB)! - Use faster versions of cloning and comparing objects
+
+## 0.2.0-next.17
+
+### Patch Changes
+
+- [`b5086c0`](https://github.com/ethlete-io/ethdk/commit/b5086c05df81588791ac5bc5a6497691e51dab5d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing type def for TypedQueryList.find
+
+## 0.2.0-next.16
+
+### Minor Changes
+
+- [`756141c`](https://github.com/ethlete-io/ethdk/commit/756141c6b1eb78f1adc170d90cdcf9f2910e9ba3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add cookie utils
+
+## 0.2.0-next.15
+
+### Minor Changes
+
+- [#309](https://github.com/ethlete-io/ethdk/pull/309) [`e55f055`](https://github.com/ethlete-io/ethdk/commit/e55f055306dbeac226cb9d3e989d3bca2804bd3f) Thanks [@renovate](https://github.com/apps/renovate)! - Add some missing methods to typed query list
+
+## 0.2.0-next.14
+
+### Patch Changes
+
+- [`2be3d4b`](https://github.com/ethlete-io/ethdk/commit/2be3d4b3307995385cde6326057d14eb08b67072) Thanks [@TomTomB](https://github.com/TomTomB)! - Skip reactive bildings where values are invalid
+
+## 0.2.0-next.13
+
+### Patch Changes
+
+- [`bb74015`](https://github.com/ethlete-io/ethdk/commit/bb740155333084777c57ca4082b0a7d504c1b4ae) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typedefs for TypedQueryList
+
+## 0.2.0-next.12
+
+### Minor Changes
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`429709e`](https://github.com/ethlete-io/ethdk/commit/429709ef74d4728e2b7019a0bb7dd0dd94ff2c79) Thanks [@renovate](https://github.com/apps/renovate)! - Allow customizing the element ref for reactive bindings
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`0c07f13`](https://github.com/ethlete-io/ethdk/commit/0c07f13d36fe4d79f63d0cbb72c77b94379ed2d6) Thanks [@renovate](https://github.com/apps/renovate)! - Support classes in reactive bindings
+
+## 0.2.0-next.11
+
+### Minor Changes
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`9ea8477`](https://github.com/ethlete-io/ethdk/commit/9ea847781fb53dc6cb2c00c7f4be15a0244534fb) Thanks [@renovate](https://github.com/apps/renovate)! - Add structured data component
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`72e0911`](https://github.com/ethlete-io/ethdk/commit/72e0911cac1784f112270e78bc1f2b6a4ffff6cc) Thanks [@renovate](https://github.com/apps/renovate)! - Add reactive binding util
+
+## 0.2.0-next.10
+
+### Minor Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`834dab4`](https://github.com/ethlete-io/ethdk/commit/834dab4317f6bafd7919263c56bd6638a0a9ad09) Thanks [@renovate](https://github.com/apps/renovate)! - Remove destroy directive in favor of destroy service
+
+### Patch Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`50dc199`](https://github.com/ethlete-io/ethdk/commit/50dc199faad225c49350c6595f4664cedb51bc6f) Thanks [@renovate](https://github.com/apps/renovate)! - Update view if repeat directive input changes
+
+- [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
+## 0.2.0-next.9
+
+### Minor Changes
+
+- [#167](https://github.com/ethlete-io/ethdk/pull/167) [`e1e2f74`](https://github.com/ethlete-io/ethdk/commit/e1e2f7405641a47cd608f375f1174d367538da89) Thanks [@renovate](https://github.com/apps/renovate)! - Add normalize game result type pipe
+
+- [#167](https://github.com/ethlete-io/ethdk/pull/167) [`42da540`](https://github.com/ethlete-io/ethdk/commit/42da54003a3b1c7a313b888a97938692e8e43370) Thanks [@renovate](https://github.com/apps/renovate)! - Add normalize match participants pipe
+
+## 0.2.0-next.8
+
+### Minor Changes
+
+- [`b3577c6`](https://github.com/ethlete-io/ethdk/commit/b3577c65bacf9a9b27a967fa9fe44d29d6531cf8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add seo directive
+
+## 0.2.0-next.7
+
+### Patch Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`38042f4`](https://github.com/ethlete-io/ethdk/commit/38042f40b4db21ac617aaa841a5869b285baf4a4) Thanks [@renovate](https://github.com/apps/renovate)! - Replace destroy service with destroy directive since providedIn any is deprecated
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`90612d8`](https://github.com/ethlete-io/ethdk/commit/90612d8083a41e2fb64db893791ab1f576d564c6) Thanks [@renovate](https://github.com/apps/renovate)! - Bring back DestoryService to pevent error NG0309
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`222d87b`](https://github.com/ethlete-io/ethdk/commit/222d87b67186d7d97e4d2a8a4d5a611d79a05e43) Thanks [@renovate](https://github.com/apps/renovate)! - Add option to enable and disable cursor drag scroll directive
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`4dad6d6`](https://github.com/ethlete-io/ethdk/commit/4dad6d643f3d5bf5bb7b322781dc4871cef5d956) Thanks [@renovate](https://github.com/apps/renovate)! - Add scrollable directives to set a custom first and last element
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`4dad6d6`](https://github.com/ethlete-io/ethdk/commit/4dad6d643f3d5bf5bb7b322781dc4871cef5d956) Thanks [@renovate](https://github.com/apps/renovate)! - Fix scrollable scroll state not getting checked correctly on screen resize
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`b5c4ec9`](https://github.com/ethlete-io/ethdk/commit/b5c4ec9bff52f255b8bf14f17c589c9fa696f265) Thanks [@renovate](https://github.com/apps/renovate)! - Add classes to current scroll observed elements
+
+## 0.2.0-next.6
+
+### Patch Changes
+
+- [`83e3c88`](https://github.com/ethlete-io/ethdk/commit/83e3c88011f1808e9f019c2aa6bc5a4b7449e73c) Thanks [@TomTomB](https://github.com/TomTomB)! - Missing release for scroll observer fixes
+
+## 0.2.0-next.5
+
+### Patch Changes
+
+- [`1816e3e`](https://github.com/ethlete-io/ethdk/commit/1816e3e9bd7d2a3c8505a8b5050026d7f23ff75a) Thanks [@TomTomB](https://github.com/TomTomB)! - Move directives and utils into core from components
+
+## 0.2.0-next.4
+
+### Minor Changes
+
+- [`2ffd101`](https://github.com/ethlete-io/ethdk/commit/2ffd1014a15812d31c07f0e55c12b34727f03d9a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add click observer service
+
+## 0.2.0-next.3
+
+### Patch Changes
+
+- [`9ab3ac6`](https://github.com/ethlete-io/ethdk/commit/9ab3ac6e84dbd8ac08abb8ab23c612c93bfc8f72) Thanks [@TomTomB](https://github.com/TomTomB)! - Make ObserveContentDirective standalone
+
+## 0.2.0-next.2
+
+### Minor Changes
+
+- [`210e892`](https://github.com/ethlete-io/ethdk/commit/210e892bcb20003f7d3d3535a65aaa2ac9d41602) Thanks [@TomTomB](https://github.com/TomTomB)! - - Feat: Add `currentViewport# @ethlete/core and `currentViewport` to get the current viewport string to the viewport service
+  - Feat: Add resize & content observer directives & services
+  - Fix: Append less decimals to breakpoints created by the viewport service
+  - Fix: Use all available args to create a cache id by the @Memo default resolver
+
+## 0.2.0-next.1
+
+### Patch Changes
+
+- [`b7e087c`](https://github.com/ethlete-io/ethdk/commit/b7e087c096aea289fdc81806839ea7dede72e5db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add NgClassType type def
+
+## 0.2.0-next.0
+
+### Minor Changes
+
+- [#49](https://github.com/ethlete-io/ethdk/pull/49) [`5c95058`](https://github.com/ethlete-io/ethdk/commit/5c9505837ee3e5f2457169591acd01c79eade565) Thanks [@TomTomB](https://github.com/TomTomB)! - - Add memo decorator
+  - Add let & repeat directives
+  - Add toArray pipe
+  - Add focus visible service
+  - Add clamp utils
+
+## 0.1.0
+
+### Minor Changes
+
+- [#23](https://github.com/ethlete-io/ethdk/pull/23) [`cb4f96f`](https://github.com/ethlete-io/ethdk/commit/cb4f96f732c31ea6511ee5398d094474d8023244) Thanks [@TomTomB](https://github.com/TomTomB)! - Add viewport service

@@ -1,0 +1,48 @@
+{
+  "HIDDEN-CONTENT": {
+    "components/floating-action: floating at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: floating-active at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: floating-danger at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: floating-danger-hover at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: floating-focus-visible at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: floating-hover at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: floating-icon at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: floating-inset at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: floating-over-row at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: inline at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    },
+    "components/floating-action: inline-focus-visible at 480px: div[data-et-part=components/floating-action]": {
+      "finding": "181",
+      "sketch": "components/floating-action: not opened yet - the page frame scrolls (overflow-y: auto) or grows instead of cutting the rows at its bottom"
+    }
+  }
+}

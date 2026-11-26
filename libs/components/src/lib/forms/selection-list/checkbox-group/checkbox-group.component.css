@@ -1,0 +1,142 @@
+@layer components.sdk {
+  @property --et-checkbox-group-support-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 180ms;
+  }
+
+  @property --et-checkbox-group-error-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-checkbox-group-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-checkbox-group-hint-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-checkbox-group-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
+  }
+
+  /* Horizontal only: options sitting side by side need more air between them than stacked ones, where
+     the gap is only separating lines of text. */
+  @property --et-checkbox-group-column-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 20px;
+  }
+
+  @property --et-checkbox-group-label-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  et-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-checkbox-group-gap);
+    color: var(--et-surface-text, currentColor);
+
+    --et-form-support-duration: var(--et-checkbox-group-support-duration);
+    --et-form-support-error-font-size: var(--et-checkbox-group-error-font-size);
+    --et-form-support-warning-font-size: var(--et-checkbox-group-warning-font-size);
+    --et-form-support-hint-font-size: var(--et-checkbox-group-hint-font-size);
+
+    &[data-disabled] {
+      cursor: not-allowed;
+
+      .et-form-support {
+        cursor: auto;
+      }
+    }
+
+    &[data-readonly] {
+      cursor: default;
+    }
+
+    > et-label,
+    .et-checkbox-group-label {
+      font-size: var(--et-checkbox-group-label-font-size);
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--et-surface-text-muted, currentColor);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    &:where([data-size='sm']) {
+      --et-checkbox-group-label-font-size: 12px;
+      --et-checkbox-group-gap: 8px;
+
+      et-checkbox-option {
+        --et-checkbox-option-size: 16px;
+        --et-checkbox-option-gap: 8px;
+      }
+
+      .et-checkbox-option-label {
+        font-size: 12px;
+        line-height: 16px;
+      }
+
+      .et-checkbox-option-check {
+        inline-size: 10px;
+        block-size: 8px;
+      }
+    }
+
+    &:where([data-size='lg']) {
+      --et-checkbox-group-label-font-size: 14px;
+      --et-checkbox-group-gap: 12px;
+
+      et-checkbox-option {
+        --et-checkbox-option-size: 24px;
+        --et-checkbox-option-gap: 12px;
+      }
+
+      .et-checkbox-option-label {
+        font-size: 16px;
+        line-height: 24px;
+      }
+
+      .et-checkbox-option-check {
+        inline-size: 14px;
+        block-size: 12px;
+      }
+    }
+
+    &[data-error] {
+      --_et-control-border: var(--et-tone-fill);
+    }
+
+    &[data-mixed] .et-checkbox-option-box {
+      border-style: dashed;
+      border-color: var(--et-tone-fill, currentColor);
+    }
+  }
+
+  et-checkbox-group:where([data-orientation='horizontal']) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--et-checkbox-group-column-gap);
+  }
+
+  et-checkbox-group:where([data-orientation='horizontal']) > et-label,
+  et-checkbox-group:where([data-orientation='horizontal']) > .et-checkbox-group-label,
+  et-checkbox-group:where([data-orientation='horizontal']) > .et-form-support {
+    flex-basis: 100%;
+  }
+}

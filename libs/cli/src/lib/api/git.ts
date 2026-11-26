@@ -1,0 +1,124 @@
+import { spawnSync } from 'child_process';
+import { spawnPlain } from '../plain-output';
+
+export type GitResult = { status: number; stdout: string; stderr: string };
+
+const git = (cwd: string, args: string[]): GitResult => {
+  const result = spawnPlain(['git', ...args], { cwd });
+
+  return {
+    status: result.status ?? 1,
+    stdout: (result.stdout ?? '').trim(),
+    stderr: (result.stderr ?? '').trim(),
+  };
+};
+
+const gitInherit = (cwd: string, args: string[]) => spawnSync('git', args, { cwd, stdio: 'inherit' }).status ?? 1;
+
+export const currentBranch = (cwd: string) => {
+  const result = git(cwd, ['rev-parse', '--abbrev-ref', 'HEAD']);
+
+  return result.status === 0 ? result.stdout : undefined;
+};
+
+/** The commit `HEAD` names, or `undefined` outside a git checkout. */
+export const headCommit = (cwd: string) => {
+  const result = git(cwd, ['rev-parse', 'HEAD']);
+
+  return result.status === 0 && result.stdout !== '' ? result.stdout : undefined;
+};
+
+/** Modified tracked files and untracked files, as git's own porcelain lines, or `undefined` when git fails. */
+export const uncommittedChanges = (cwd: string) => {
+  const { status, stdout } = git(cwd, ['status', '--porcelain']);
+
+  if (status !== 0) return undefined;
+
+  return stdout.length > 0 ? stdout.split('\n') : [];
+};
+
+/** Whether git ignores a repo-relative path, or `undefined` outside a git checkout. */
+export const ignoredByGit = (cwd: string, path: string) => {
+  const { status } = git(cwd, ['check-ignore', '--quiet', '--no-index', path]);
+
+  if (status === 0) return true;
+
+  return status === 1 ? false : undefined;
+};
+
+export const hasUncommittedChanges = (cwd: string) => (uncommittedChanges(cwd)?.length ?? 0) > 0;
+
+/**
+ * Commits on any local branch or a detached `HEAD` that no remote holds, so work is never removed
+ * with a checkout, or `undefined` when git fails.
+ */
+export const unpushedCommits = (cwd: string) => {
+  const { status, stdout } = git(cwd, ['log', 'HEAD', '--branches', '--not', '--remotes', '--oneline']);
+
+  if (status !== 0) return undefined;
+
+  return stdout.length > 0 ? stdout.split('\n') : [];
+};
+
+/** The checkout's stash entries, or `undefined` when git fails. */
+export const stashEntries = (cwd: string) => {
+  const { status, stdout } = git(cwd, ['stash', 'list']);
+
+  if (status !== 0) return undefined;
+
+  return stdout.length > 0 ? stdout.split('\n') : [];
+};
+
+/** Switches the API checkout to the branch configured for it. Git's own refusal is passed through. */
+export const checkoutApiBranch = (options: { repoPath: string; branch: string }) => {
+  const { repoPath, branch } = options;
+
+  if (currentBranch(repoPath) === branch) {
+    console.log(`Already on ${branch}.`);
+
+    return 0;
+  }
+
+  if (branch.startsWith('-')) {
+    console.error(`"${branch}" is not a branch name.`);
+
+    return 1;
+  }
+
+  return gitInherit(repoPath, ['switch', branch]);
+};
+
+/**
+ * Fast-forwards the checked-out branch. `force` throws away local commits and uncommitted tracked
+ * changes on it; untracked files such as `vendor/` and `.env` are never touched.
+ */
+export const pullApiBranch = (options: { repoPath: string; expectedBranch?: string; force: boolean }) => {
+  const { repoPath, expectedBranch, force } = options;
+  const branch = currentBranch(repoPath);
+
+  if (!branch) {
+    console.error(`${repoPath} is not a git checkout.`);
+
+    return 1;
+  }
+
+  if (expectedBranch && branch !== expectedBranch) {
+    console.warn(`On ${branch}, but apiRepoBranches expects ${expectedBranch}. Pulling ${branch}.\n`);
+  }
+
+  if (!force && hasUncommittedChanges(repoPath)) {
+    console.error(`${repoPath} has uncommitted changes. Commit or stash them, or pass --force to discard them.`);
+
+    return 1;
+  }
+
+  const fetched = gitInherit(repoPath, ['fetch', 'origin', branch]);
+
+  if (fetched !== 0) return fetched;
+
+  if (!force) return gitInherit(repoPath, ['merge', '--ff-only', `origin/${branch}`]);
+
+  console.log(`Discarding local commits and tracked changes on ${branch}.`);
+
+  return gitInherit(repoPath, ['reset', '--hard', `origin/${branch}`]);
+};

@@ -1,0 +1,179 @@
+# Signal utilities
+
+Inject-style signal helpers for media queries, router state, form controls and animation, plus general signal plumbing. Everything here requires an injection context; unless noted otherwise, the return value is a `Signal`.
+
+## Media queries & breakpoints
+
+Sugar on top of the [breakpoint observer](/core/providers#breakpoint-observer). Most `inject*` helpers below are **memoized per application** - calling them repeatedly returns the same signal instance, wherever you call them from, so they're cheap to use everywhere. The exceptions are `injectObserveBreakpoint()` and `injectObserveMediaQuery()`, which delegate to the breakpoint observer (it returns the same signal for the same query, so they are cheap too):
+
+| Helper                                                                      | Returns                                                                                                                                                               |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `injectIsXs()` … `injectIs2Xl()`                                            | `Signal<boolean>` per breakpoint band.                                                                                                                                |
+| `injectCurrentBreakpoint()`                                                 | `Signal<Breakpoint>`                                                                                                                                                  |
+| `injectObserveBreakpoint({ min?, max? })`                                   | `Signal<boolean>` for a custom range.                                                                                                                                 |
+| `injectObserveMediaQuery(query)`                                            | `Signal<boolean>` for a raw query.                                                                                                                                    |
+| `injectPrefersReducedMotion()`                                              | `Signal<boolean>`                                                                                                                                                     |
+| `injectCanHover()`                                                          | `Signal<boolean>` (`hover: hover`)                                                                                                                                    |
+| `injectHasTouchInput()` / `injectHasPrecisionInput()`                       | `Signal<boolean>` (`pointer: coarse` / `fine`)                                                                                                                        |
+| `injectDeviceInputType()`                                                   | `Signal<'touch' \| 'mouse'>`                                                                                                                                          |
+| `injectIsPortrait()` / `injectIsLandscape()` / `injectDisplayOrientation()` | orientation signals                                                                                                                                                   |
+| `injectViewportDimensions()`                                                | `Signal<NullableElementDimensions>` of `<html>` - the layout viewport; see `injectViewportSize()` in [Element signals](/core/element-signals) for the visual viewport |
+| `injectIsDocumentVisible()`                                                 | `Signal<boolean>` - `false` for a backgrounded tab or minimised window; an IntersectionObserver does not report this                                                  |
+| `injectScrollbarDimensions()`                                               | `Signal<{ width, height } \| null>` - live measurement                                                                                                                |
+
+`injectBreakpointIsMatched(options)` and `injectMediaQueryIsMatched(query)` are the non-reactive variants - they return a plain `boolean`, not a signal.
+
+### Breakpoint inputs
+
+Let a component input accept either a plain value or a per-breakpoint map (`{ xs: 1, md: 3 }`), resolved mobile-first against the current breakpoint:
+
+```ts
+import {
+  provideBreakpointInstance,
+  numberBreakpointTransform,
+  boolBreakpointTransform,
+  typedBreakpointTransform,
+} from '@ethlete/core';
+
+@Component({
+  providers: [provideBreakpointInstance(MyGridComponent)],
+})
+export class MyGridComponent {
+  columns = input(1, { transform: numberBreakpointTransform(1) });
+  snap = input(false, { transform: boolBreakpointTransform(false) });
+  itemSize = input('auto', { transform: typedBreakpointTransform<ItemSize>('auto') });
+}
+```
+
+Each transform receives the input's default explicitly and uses it when no map key applies at the current breakpoint. `provideBreakpointInstance(ComponentClass)` in the component's `providers` makes transforms re-resolve when the breakpoint changes; without it, the initial resolution still works, the value stays at what the first render resolved, and dev mode logs one warning that names `provideBreakpointInstance()`. For a signal you already hold, `injectBreakpointInput(signal, defaultValue)` resolves it into a plain `Signal<T>`.
+
+::: warning The keys are `xs sm md lg xl 2xl` - and only those
+A map with **one** unrecognized key stops being a breakpoint map entirely: it is passed through as a plain value, which for an attribute binding means `[object Object]` and no effect at all. There is no `default` key: the transform's explicit default applies below the smallest key, so `{ lg: 'third' }` remains `'auto'` below `lg` in the example. Dev mode warns when a map has some valid keys and some not.
+:::
+
+## Router signals
+
+Committed router state as signals - safe to read in child-component constructors, with SSR-aware initial values:
+
+| Helper                                           | Returns                                                                                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `injectUrl()`                                    | `Signal<string>` - full URL incl. query & fragment.                                                                    |
+| `injectRoute()`                                  | `Signal<string>` - URL without query/fragment.                                                                         |
+| `injectQueryParams()` / `injectQueryParam(key)`  | All query params / a single one (the first value of a repeated param).                                                 |
+| `injectQueryParamAll(key)`                       | Every value of a query param as `string[]`.                                                                            |
+| `injectPathParams()` / `injectPathParam(key)`    | Path params (deepest route).                                                                                           |
+| `injectRouteData()` / `injectRouteDataItem(key)` | Route `data`.                                                                                                          |
+| `injectRouteTitle()`                             | `Signal<string \| null>`                                                                                               |
+| `injectFragment()`                               | `Signal<string \| null>`                                                                                               |
+| `injectRouterState()`                            | `Signal<RouterState>` - data, params, query params, title, fragment and the navigation `id` / `trigger` in one object. |
+| `injectIsRouterInitialized()`                    | `Signal<boolean>` - true once the first navigation has ended.                                                          |
+
+The single-value helpers accept `{ transform }` (Angular-input-style) - e.g. `injectQueryParam('page', { transform: numberAttribute })`. The router helpers that take a config (`injectFragment`, `injectQueryParams`, `injectQueryParam`, `injectQueryParamAll`, `injectPathParams`, `injectPathParam`, `injectRouteData`, `injectRouteDataItem`, `injectRouteTitle`, `injectRouterNavigationState`) also accept `{ injector }` for use outside an injection context; the memoized ones (`injectUrl`, `injectRoute`, `injectRouterState`, `injectIsRouterInitialized`, `injectQueryParamChanges`, `injectPathParamChanges`) do not. `injectQueryParam` and `injectQueryParamAll` additionally accept `requireSync: true`, which falls back to the browser URL while the router has no value for the key yet (not usable for arrays or complex objects).
+
+`injectRouterState()` also carries the `id` and `trigger` (`'imperative' | 'popstate' | 'hashchange'`, from `NavigationStart`) of the current navigation, or of the last one once it has ended; both are `null` before the first navigation. They replace reads of `router.currentNavigation` and `router.lastSuccessfulNavigation`. Use `injectRouterNavigationState()` for the state a navigation carried.
+
+`injectQueryParamChanges()` / `injectPathParamChanges()` emit only the keys that changed in the latest navigation; removed keys carry the `ET_PROPERTY_REMOVED` sentinel.
+
+For synchronous, non-injected use inside `router.events` handlers there are `createRouterState(router)` and `createRoute(router, location?)`. Pass `Location` to `createRoute` so a read before the first navigation leaves out the base href.
+
+`injectRouterNavigationState<T>()` reads the state a navigation was given - what `router.navigate(…, { state })` passed. It returns `T | null` **synchronously** and is deliberately not a signal: navigation state exists only for the duration of the navigation carrying it, so by the time an effect flushed the answer would always be `null`. Call it in a constructor or a resolver, and always handle `null` - a page arrived at by typing its URL has no navigation state.
+
+Use it for what a URL should not carry (a "you were redirected because…" reason, an object the previous page already had, a scroll intent). Anything that must survive a reload belongs in the URL.
+
+## Form control values
+
+`controlValueSignal(control, options?)` turns an `AbstractControl` (or a signal of one) into a `Signal` of its **raw** value - including disabled controls - deduplicated by deep equality. Options: `debounceTime` and `debounceFirst` (default `false`: the initial value is emitted immediately). `controlValueSignalWithPrevious` yields `[previous, current]` tuples.
+
+## Animated numbers
+
+`signalAnimatedNumber(source, options?)` returns a read-only signal that tweens from its current value to the source value - for count-up stats and animated meters. The source (a number or a signal) is read each time `.play()` is called; later changes to it do not animate until the next `.play()`:
+
+```ts
+import { signalAnimatedNumber } from '@ethlete/core';
+
+score = signal(50);
+animatedScore = signalAnimatedNumber(this.score).play();
+```
+
+| Option                                | Default      | Description                    |
+| ------------------------------------- | ------------ | ------------------------------ |
+| `initialValue`                        | `0`          | Start value.                   |
+| `duration`                            | `1000`       | Tween duration in ms.          |
+| `easing`                              | `easeOut`    | Any `(t: number) => number`.   |
+| `round`                               | `Math.round` | Applied to each emitted value. |
+| `onAnimationStart` / `onAnimationEnd` | -            | Callbacks.                     |
+
+Nothing animates until you call `.play()`; `.stop()` (keeps the current value) and `.reset()` (back to `initialValue`) are also chainable. The RAF loop runs outside the Angular zone. Easing presets ship alongside (plain functions - pass them uncalled): `easeLinear`, `easeIn`, `easeOut`, `easeInOut`, `easeElastic`, `easeOutBack`, `easeOutBackStrong`.
+
+## Deferred loading
+
+`signalDeferredLoading(source, options?)` gates a loading **indicator** on a loading **flag**, so work
+that finishes quickly never flashes one. The returned signal turns true only once `source` has been
+true for `delay` ms, and then stays true for at least `minDuration` ms:
+
+```ts
+import { signalDeferredLoading } from '@ethlete/core';
+
+protected showSpinner = signalDeferredLoading(this.loading);
+```
+
+| Option        | Default | Description                                                              |
+| ------------- | ------- | ------------------------------------------------------------------------ |
+| `delay`       | `200`   | How long the source must stay true before the indicator turns on, in ms. |
+| `minDuration` | `300`   | How long it stays on once it turned on, in ms.                           |
+
+Call it in an injection context. Drive off it only what the reader _sees_ - a spinner, a busy bar, a
+skeleton - and keep the raw flag for everything else: `aria-busy` must report the truth from the first
+moment, and any geometry that would otherwise jump (a row that reserves the height its content will
+need) has to be there from the first frame too. Fading the indicator in over content that is already
+laid out beats mounting it, for the same reason.
+
+The two timings work together: the delay swallows a short request entirely, and the minimum duration
+keeps a request that lands just past the delay from blinking an indicator out again. Both defaults are
+what the SDK's own components use - the [form field](/components/forms#busy-state)'s busy spinner, the
+[select](/components/select#how-a-wait-is-reported) and cascader panels, the menu's search spinner and
+the [table](/components/table#loading-error-states)'s busy bar.
+
+## Countdown
+
+`signalCountdown(deadline)` counts down to a deadline - a `Date`, an ISO string or a timestamp, read
+from a signal or getter so it can change:
+
+```ts
+import { signalCountdown } from '@ethlete/core';
+
+protected timeLeft = signalCountdown(computed(() => this.round()?.startsAt));
+```
+
+The result is `Signal<Countdown | null>`: `null` while the deadline is missing or not a valid date,
+otherwise `{ totalSeconds, days, hours, minutes, seconds, hasPassed }`. Seconds round **up**, so the
+display reads `1` for the last second and turns `hasPassed` exactly when the deadline arrives, never
+showing a zero that has not happened yet.
+
+The helper recounts on each whole second of the remaining time rather than on a free-running
+interval, so the value changes when the displayed second changes. Its timer stops once the deadline
+has passed or turns `null`, and restarts if the deadline moves into the future again. On the server
+it computes a single value and starts no timer - a pending interval would keep the app from ever
+becoming stable.
+
+Formatting is left to the caller: the breakdown carries numbers, not labels, so a template decides
+whether to show days, when to drop to seconds and how to pad them.
+
+## Signal plumbing
+
+| Helper                                                     | Purpose                                                                                                                                       |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `syncSignal(from, to, options?)`                           | Keep a writable signal in sync with a source signal; returns the `EffectRef`. Options: `skipSyncRead`, `skipFirstRun` (both default `false`). |
+| `previousSignalValue(signal)`                              | Signal of the source's previous value (initially `undefined`).                                                                                |
+| `computedTillTruthy(source)` / `computedTillFalsy(source)` | Track the source only until it first becomes truthy/falsy, then freeze.                                                                       |
+| `deferredSignal(valueFn)`                                  | `null` until after the next render, then `valueFn()` - for values that need inputs to be set.                                                 |
+| `memoizeSignal(factory)`                                   | Cache a signal factory once per application, against the root environment injector (how the `inject*` helpers above are built).               |
+| `MaybeSignal<T>` / `maybeSignalValue(v)`                   | The "value or signal" input type used across the SDK, and its unwrapper.                                                                      |
+
+## Recipes
+
+Higher-level behaviors composed from the primitives:
+
+- **`useCursorDragScroll(el, options?)`** - click-and-drag ("grab") scrolling on any scrollable element. Options: `enabled` (signal, default `true`), `allowedDirection` (`'horizontal' | 'vertical' | 'both'`, default `'both'`), `canScroll` (signal; pass it when you already track overflow, otherwise the recipe measures it with its own observers). Returns `{ isDragging, currentDragAmount, releaseVelocity }` signals - `releaseVelocity` is the scroll velocity in px/ms over the last 100ms of the drag, set just before `isDragging` turns `false`; the [scrollable component](/components/scrollable) uses it under the hood.
+- **`setupScrollRestoration(config?)`** - app-wide navigation scroll management: scroll-to-top, fragment scrolling and - opt-in - real scroll restoration on back/forward. See [scroll restoration](/core/scroll-restoration).
+- **`writeScrollbarSizeToCssVariables()`** / **`writeViewportSizeToCssVariables()`** - write `--et-sw`/`--et-sh` (scrollbar size) and `--et-vw`/`--et-vh` (viewport size excl. scrollbar) onto `<html>`. Call once at app start (idempotent, browser-only).

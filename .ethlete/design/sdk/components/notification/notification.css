@@ -1,0 +1,32 @@
+.notification-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background);
+  color: var(--et-surface-text);
+}
+
+@layer components {
+  .et-notification {
+    border-inline-start-color: var(--et-tone-text);
+  }
+
+  .et-notification .et-notification-icon {
+    color: var(--et-tone-text);
+  }
+
+  .et-notification .et-notification-spinner {
+    --et-spinner-color: var(--et-tone-text);
+  }
+
+  .et-notification .et-focus-ring {
+    --_et-focus-ring-color: var(--et-tone-text);
+  }
+}
+
+@layer components {
+  .et-notification-dismiss-btn:focus-visible {
+    opacity: 1;
+  }
+}

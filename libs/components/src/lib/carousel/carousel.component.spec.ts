@@ -1,0 +1,886 @@
+import { Component, signal, viewChild } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import '../../test-helpers';
+import { flushFrames } from '../testing/driver-core';
+import { LayoutRule, fakeElementScroll, fakeLayout, fakeResizeObserver, stackedChildren } from '../testing/fake-layout';
+import { CarouselComponent } from './carousel.component';
+import { CAROUSEL_IMPORTS } from './carousel.imports';
+import { provideCarouselLabels } from './carousel-labels';
+import { CarouselAutoplayDirective, CarouselDirective } from './headless';
+import { CAROUSEL_SLIDE_PROGRESS_PROPERTY } from './headless/internals/carousel-slide-progress';
+
+type Slide = { title: string };
+
+@Component({
+  selector: 'et-test-carousel-host',
+  template: `
+    <et-carousel
+      [autoplay]="autoplay()"
+      [autoplayTime]="autoplayTime()"
+      [loop]="loop()"
+      [itemSize]="itemSize()"
+      [slideAlign]="slideAlign()"
+      [transition]="transition()"
+      [transitionDriver]="transitionDriver()"
+      [controlsPosition]="controlsPosition()"
+      [pauseTogglePosition]="pauseTogglePosition()"
+    >
+      <ng-template [etCarouselSlide]="slides()" [autoplayTimeFor]="autoplayTimeFor()" let-slide let-index="index">
+        <span>{{ index + 1 }}. {{ slide.title }}</span>
+      </ng-template>
+    </et-carousel>
+  `,
+  imports: [CAROUSEL_IMPORTS],
+})
+class CarouselHostComponent {
+  public carouselComponent = viewChild.required(CarouselComponent);
+  public carousel = viewChild.required(CarouselComponent, { read: CarouselDirective });
+  public autoplayDirective = viewChild.required(CarouselComponent, { read: CarouselAutoplayDirective });
+
+  public slides = signal<Slide[]>([{ title: 'one' }, { title: 'two' }, { title: 'three' }]);
+  public autoplay = signal(false);
+  public autoplayTime = signal(5000);
+  public loop = signal(false);
+  public itemSize = signal('full');
+  public slideAlign = signal<'start' | 'center'>('start');
+  public transition = signal<'none' | 'dim' | 'wipe' | 'custom'>('none');
+  public transitionDriver = signal<'auto' | 'scroll-timeline' | 'js' | 'none'>('auto');
+  public controlsPosition = signal<'below' | 'overlay'>('below');
+  public pauseTogglePosition = signal<'controls' | 'start' | 'end' | 'top-start' | 'top-end'>('controls');
+  public autoplayTimeFor = signal<((slide: Slide, index: number) => number | null) | null>(null);
+}
+
+const createHost = (): ComponentFixture<CarouselHostComponent> => {
+  const fixture = TestBed.createComponent(CarouselHostComponent);
+  fixture.detectChanges();
+
+  return fixture;
+};
+
+const host = (fixture: ComponentFixture<CarouselHostComponent>) => fixture.nativeElement as HTMLElement;
+
+const slideElements = (fixture: ComponentFixture<CarouselHostComponent>) =>
+  Array.from(host(fixture).querySelectorAll('.et-carousel-item'));
+
+/**
+ * The track's children reach the carousel through the scrollable's mutation observer, which reports
+ * asynchronously - so anything reading `domCount()` (the clone count among it) needs a turn of the event
+ * loop. The slide *count* does not: that comes from the slides array.
+ */
+const settleChildren = async (fixture: ComponentFixture<CarouselHostComponent>) => {
+  await new Promise((resolve) => setTimeout(resolve));
+  fixture.detectChanges();
+};
+
+const SLIDE_SIZE = 300;
+
+const CAROUSEL_LAYOUT: LayoutRule[] = [
+  stackedChildren('.et-carousel-item', SLIDE_SIZE),
+  { match: '.et-scrollable-container', clientWidth: SLIDE_SIZE },
+];
+
+describe('CarouselComponent', () => {
+  it('is a labelled carousel region wrapping the track and its controls', () => {
+    const fixture = createHost();
+    const carousel = host(fixture).querySelector('et-carousel');
+
+    expect(carousel?.getAttribute('role')).toBe('region');
+    expect(carousel?.getAttribute('aria-roledescription')).toBe('carousel');
+    expect(carousel?.getAttribute('aria-label')).toBe('Carousel');
+    expect(carousel?.querySelector('[etCarouselNext]')).toBeTruthy();
+  });
+
+  it('stamps the slide template once per slide, with the slide role and a typed context', () => {
+    const fixture = createHost();
+    const slides = slideElements(fixture);
+
+    expect(slides.length).toBe(3);
+    expect(slides[0]?.getAttribute('role')).toBe('group');
+    expect(slides[0]?.getAttribute('aria-roledescription')).toBe('slide');
+    expect(slides[1]?.textContent?.trim()).toBe('2. two');
+    expect(fixture.componentInstance.carousel().count()).toBe(3);
+  });
+
+  it('takes the slide count from the slides array, so it does not wait for the DOM', () => {
+    const fixture = createHost();
+
+    fixture.componentInstance.slides.set([{ title: 'only one' }]);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.carousel().count()).toBe(1);
+  });
+
+  it('reports hasMultipleSlides and a single-slide attribute for one slide versus two, looping or not', () => {
+    const fixture = createHost();
+    const carousel = () => fixture.componentInstance.carousel();
+    const el = () => host(fixture).querySelector('et-carousel') as HTMLElement;
+
+    for (const loop of [true, false]) {
+      fixture.componentInstance.loop.set(loop);
+      fixture.componentInstance.slides.set([{ title: 'one' }]);
+      fixture.detectChanges();
+      expect(carousel().hasMultipleSlides()).toBe(false);
+      expect(el().hasAttribute('data-single-slide')).toBe(true);
+      expect(fixture.componentInstance.autoplayDirective().isPlaying()).toBe(false);
+
+      fixture.componentInstance.slides.set([{ title: 'one' }, { title: 'two' }]);
+      fixture.detectChanges();
+      expect(carousel().hasMultipleSlides()).toBe(true);
+      expect(el().hasAttribute('data-single-slide')).toBe(false);
+    }
+  });
+
+  // A carousel with fewer than two slides renders no navigation.
+  it('renders no navigation for fewer than two slides', () => {
+    const fixture = createHost();
+    const navigation = '.et-carousel-controls, .et-carousel-control, .et-carousel-dot, .et-carousel-play-toggle-corner';
+
+    expect(host(fixture).querySelectorAll(navigation).length).toBeGreaterThan(0);
+
+    for (const slides of [[{ title: 'only one' }], []]) {
+      fixture.componentInstance.slides.set(slides);
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelectorAll(navigation).length).toBe(0);
+    }
+
+    fixture.componentInstance.slides.set([{ title: 'one' }, { title: 'two' }]);
+    fixture.detectChanges();
+
+    expect(host(fixture).querySelectorAll('.et-carousel-dot').length).toBe(2);
+  });
+
+  it('renders a labelled dot per slide', () => {
+    const fixture = createHost();
+    const dots = host(fixture).querySelectorAll('.et-carousel-dot');
+
+    expect(dots.length).toBe(3);
+    expect(dots[1]?.getAttribute('aria-label')).toBe('Go to slide 2');
+
+    fixture.componentInstance.slides.set([{ title: 'one' }, { title: 'two' }]);
+    fixture.detectChanges();
+
+    expect(host(fixture).querySelectorAll('.et-carousel-dot').length).toBe(2);
+  });
+
+  it('keeps both controls operable while looping, and marks them aria-disabled without it', () => {
+    const fixture = createHost();
+    const carousel = fixture.componentInstance.carousel();
+
+    fixture.componentInstance.loop.set(true);
+    fixture.detectChanges();
+
+    expect(carousel.canGoNext()).toBe(true);
+    expect(carousel.canGoPrevious()).toBe(true);
+
+    fixture.componentInstance.loop.set(false);
+    fixture.detectChanges();
+
+    // jsdom has no layout, so the active slide stays at the start - which is where `previous` runs out
+    expect(carousel.canGoPrevious()).toBe(false);
+    expect(host(fixture).querySelector('[etCarouselPrevious]')?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('takes localized labels from the provider', () => {
+    TestBed.configureTestingModule({ providers: [provideCarouselLabels({ carousel: 'Karussell' })] });
+
+    const fixture = createHost();
+
+    expect(host(fixture).querySelector('et-carousel')?.getAttribute('aria-label')).toBe('Karussell');
+  });
+
+  it('does not autoplay unless asked to', () => {
+    TestBed.resetTestingModule();
+
+    @Component({
+      selector: 'et-test-carousel-bare',
+      template: `
+        <et-carousel>
+          <ng-template [etCarouselSlide]="slides" let-slide>
+            <span>{{ slide.title }}</span>
+          </ng-template>
+        </et-carousel>
+      `,
+      imports: [CAROUSEL_IMPORTS],
+    })
+    class BareHostComponent {
+      public autoplayDirective = viewChild.required(CarouselComponent, { read: CarouselAutoplayDirective });
+      public slides: Slide[] = [{ title: 'one' }, { title: 'two' }];
+    }
+
+    const fixture = TestBed.createComponent(BareHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.autoplayDirective().isEnabled()).toBe(false);
+    expect(fixture.componentInstance.autoplayDirective().pauseReason()).toBe('disabled');
+    expect((fixture.nativeElement as HTMLElement).querySelector('[etCarouselPlayToggle]')).toBeNull();
+  });
+
+  it('mounts the autoplay styles only once autoplay is turned on', () => {
+    const fixture = createHost();
+    const autoplayStyles = () => document.querySelector('.et-style-manager et-carousel-autoplay-styles');
+
+    expect(autoplayStyles()).toBeNull();
+
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    expect(autoplayStyles()).not.toBeNull();
+  });
+
+  it('renders no play control while autoplay is off, and one that reports the state while it is on', () => {
+    const fixture = createHost();
+
+    expect(host(fixture).querySelector('[etCarouselPlayToggle]')).toBeNull();
+
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    const toggle = host(fixture).querySelector('[etCarouselPlayToggle]');
+
+    expect(toggle?.getAttribute('aria-pressed')).toBeNull();
+    expect(toggle?.getAttribute('aria-label')).toBe('Pause automatic slide show');
+
+    (toggle as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(toggle?.getAttribute('aria-pressed')).toBeNull();
+    expect(toggle?.getAttribute('aria-label')).toBe('Start automatic slide show');
+  });
+
+  it('reports where its control bar sits, below the track unless laid over it', () => {
+    const fixture = createHost();
+    const carousel = host(fixture).querySelector('et-carousel');
+
+    expect(carousel?.getAttribute('data-controls-position')).toBe('below');
+
+    fixture.componentInstance.controlsPosition.set('overlay');
+    fixture.detectChanges();
+
+    expect(carousel?.getAttribute('data-controls-position')).toBe('overlay');
+  });
+
+  it('renders exactly one play control wherever it is placed, in the bar or a corner over the track', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+
+    const barChildren = () =>
+      Array.from(host(fixture).querySelector('.et-carousel-controls')?.children ?? []).map((child) =>
+        child.hasAttribute('etCarouselPlayToggle')
+          ? 'toggle'
+          : child.hasAttribute('etCarouselPrevious')
+            ? 'previous'
+            : child.hasAttribute('etCarouselNext')
+              ? 'next'
+              : 'dots',
+      );
+
+    const toggles = () => host(fixture).querySelectorAll('[etCarouselPlayToggle]');
+
+    fixture.detectChanges();
+    expect(barChildren()).toEqual(['previous', 'dots', 'toggle', 'next']);
+
+    fixture.componentInstance.pauseTogglePosition.set('start');
+    fixture.detectChanges();
+    expect(barChildren()).toEqual(['toggle', 'previous', 'dots', 'next']);
+
+    fixture.componentInstance.pauseTogglePosition.set('end');
+    fixture.detectChanges();
+    expect(barChildren()).toEqual(['previous', 'dots', 'next', 'toggle']);
+
+    fixture.componentInstance.pauseTogglePosition.set('top-end');
+    fixture.detectChanges();
+    expect(barChildren()).toEqual(['previous', 'dots', 'next']);
+    expect(toggles().length).toBe(1);
+    expect(toggles()[0]?.parentElement?.classList).toContain('et-carousel-play-toggle-corner');
+    expect(fixture.componentInstance.autoplayDirective().pauseControl()).not.toBeNull();
+
+    fixture.componentInstance.autoplay.set(false);
+    fixture.detectChanges();
+    expect(toggles().length).toBe(0);
+    expect(host(fixture).querySelector('.et-carousel-play-toggle-corner')).toBeNull();
+  });
+
+  it('disables the play control under reduced motion, where starting changes nothing', () => {
+    const matchMedia = vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches: query.includes('reduce'),
+          media: query,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        }) as unknown as MediaQueryList,
+    );
+
+    try {
+      const fixture = createHost();
+      fixture.componentInstance.autoplay.set(true);
+      fixture.detectChanges();
+
+      const autoplay = fixture.componentInstance.autoplayDirective();
+      const toggle = host(fixture).querySelector('[etCarouselPlayToggle]') as HTMLButtonElement;
+
+      expect(autoplay.pauseReason()).toBe('reduced-motion');
+      expect(toggle.getAttribute('aria-disabled')).toBe('true');
+
+      toggle.click();
+      fixture.detectChanges();
+
+      expect(autoplay.isStopped()).toBe(false);
+      expect(autoplay.pauseReason()).toBe('reduced-motion');
+    } finally {
+      matchMedia.mockRestore();
+    }
+  });
+
+  it('observes its own visibility only while autoplay is on', async () => {
+    const observe = vi.spyOn(IntersectionObserver.prototype, 'observe');
+
+    try {
+      const fixture = createHost();
+      const carouselElement = host(fixture).querySelector('et-carousel');
+      await flushFrames();
+      fixture.detectChanges();
+
+      expect(observe.mock.calls.some(([target]) => target === carouselElement)).toBe(false);
+
+      fixture.componentInstance.autoplay.set(true);
+      fixture.detectChanges();
+      await flushFrames();
+      fixture.detectChanges();
+
+      expect(observe.mock.calls.some(([target]) => target === carouselElement)).toBe(true);
+    } finally {
+      observe.mockRestore();
+    }
+  });
+
+  it('stays stopped when playOnInit is off, which is only bound after the directive is constructed', () => {
+    TestBed.resetTestingModule();
+
+    @Component({
+      selector: 'et-test-carousel-no-play-on-init',
+      template: `
+        <et-carousel playOnInit="false" autoplay>
+          <ng-template [etCarouselSlide]="slides" let-slide>
+            <span>{{ slide.title }}</span>
+          </ng-template>
+        </et-carousel>
+      `,
+      imports: [CAROUSEL_IMPORTS],
+    })
+    class NoPlayOnInitHostComponent {
+      public autoplayDirective = viewChild.required(CarouselComponent, { read: CarouselAutoplayDirective });
+      public slides: Slide[] = [{ title: 'one' }, { title: 'two' }];
+    }
+
+    const fixture = TestBed.createComponent(NoPlayOnInitHostComponent);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+    const toggle = (fixture.nativeElement as HTMLElement).querySelector('[etCarouselPlayToggle]');
+
+    expect(autoplay.playOnInit()).toBe(false);
+    expect(autoplay.isStopped()).toBe(true);
+    expect(autoplay.pauseReason()).toBe('stopped');
+    expect(autoplay.isPlaying()).toBe(false);
+    expect(toggle?.getAttribute('aria-label')).toBe('Start automatic slide show');
+  });
+
+  it('reports the play control as not playing for any pause, not only an explicit stop', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+    const toggle = host(fixture).querySelector('[etCarouselPlayToggle]');
+
+    expect(toggle?.getAttribute('data-playing')).toBe('');
+
+    autoplay.isHovered.set(true);
+    fixture.detectChanges();
+
+    expect(autoplay.isStopped()).toBe(false);
+    expect(autoplay.pauseReason()).toBe('hover');
+    expect(toggle?.getAttribute('data-playing')).toBeNull();
+    expect(toggle?.getAttribute('aria-label')).toBe('Start automatic slide show');
+
+    (toggle as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(autoplay.isStopped()).toBe(false);
+    expect(autoplay.pauseReason()).toBe('hover');
+  });
+
+  it('can be paused and restarted from its own control, which the pointer and focus are on', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+    const toggle = host(fixture).querySelector('[etCarouselPlayToggle]') as HTMLButtonElement;
+
+    autoplay.isHovered.set(true);
+    autoplay.isFocusWithin.set(true);
+    autoplay.isPointerOnPauseControl.set(true);
+    autoplay.isFocusOnPauseControl.set(true);
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(autoplay.pauseReason()).toBe('stopped');
+
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBeNull();
+    expect(autoplay.isPlaying()).toBe(true);
+
+    autoplay.isPointerOnPauseControl.set(false);
+    expect(autoplay.pauseReason()).toBe('hover');
+  });
+
+  it('pauses for a hovering mouse but not for a touch tap', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+    const carousel = host(fixture).querySelector('et-carousel') as HTMLElement;
+
+    carousel.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'touch' }));
+    carousel.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBeNull();
+
+    carousel.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBe('hover');
+
+    carousel.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBeNull();
+  });
+
+  it('pauses while a finger is on the carousel, through the swipe it starts', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+    const carousel = host(fixture).querySelector('et-carousel') as HTMLElement;
+
+    carousel.dispatchEvent(new TouchEvent('touchstart', { bubbles: true }));
+    carousel.dispatchEvent(new PointerEvent('pointercancel', { pointerType: 'touch', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBe('touch');
+
+    carousel.dispatchEvent(new TouchEvent('touchend', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBeNull();
+  });
+
+  it('reports why autoplay is not running', () => {
+    const fixture = createHost();
+    const autoplay = fixture.componentInstance.autoplayDirective();
+
+    expect(autoplay.pauseReason()).toBe('disabled');
+
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBeNull();
+    expect(autoplay.isPlaying()).toBe(true);
+
+    autoplay.isHovered.set(true);
+    expect(autoplay.pauseReason()).toBe('hover');
+
+    autoplay.isHovered.set(false);
+    autoplay.stop();
+    expect(autoplay.pauseReason()).toBe('stopped');
+
+    autoplay.start();
+    fixture.componentInstance.slides.set([{ title: 'only one' }]);
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBe('no-slides');
+  });
+
+  it('reports a reason while the duration is zero, from the carousel and from the active slide', async () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.componentInstance.autoplayTime.set(0);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+
+    expect(autoplay.duration()).toBe(0);
+    expect(autoplay.isPlaying()).toBe(false);
+    expect(autoplay.pauseReason()).toBe('no-duration');
+
+    fixture.componentInstance.autoplayTime.set(5000);
+    fixture.componentInstance.autoplayTimeFor.set(() => 0);
+    await settleChildren(fixture);
+
+    expect(autoplay.duration()).toBe(0);
+    expect(autoplay.isPlaying()).toBe(false);
+    expect(autoplay.pauseReason()).toBe('no-duration');
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY])(
+    'reports no-duration rather than advancing every tick for an autoplayTime of %s',
+    (autoplayTime) => {
+      const fixture = createHost();
+      fixture.componentInstance.autoplay.set(true);
+      fixture.componentInstance.autoplayTime.set(autoplayTime);
+      fixture.detectChanges();
+
+      const autoplay = fixture.componentInstance.autoplayDirective();
+
+      expect(autoplay.isPlaying()).toBe(false);
+      expect(autoplay.pauseReason()).toBe('no-duration');
+    },
+  );
+
+  it('falls back to the carousel’s autoplayTime when no slide overrides it', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.componentInstance.autoplayTime.set(4000);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.autoplayDirective().duration()).toBe(4000);
+  });
+
+  it('hands each slide the duration autoplayTimeFor returns for it', async () => {
+    const fixture = createHost();
+
+    fixture.componentInstance.autoplayTimeFor.set((_slide, index) => (index === 0 ? 9000 : null));
+    await settleChildren(fixture);
+
+    const slides = fixture.componentInstance.carousel().items();
+
+    expect(slides[0]?.autoplayTime()).toBe(9000);
+    expect(slides[1]?.autoplayTime()).toBeNull();
+  });
+
+  describe('looping', () => {
+    const FOUR_SLIDES: Slide[] = [{ title: 'one' }, { title: 'two' }, { title: 'three' }, { title: 'four' }];
+
+    const createLoopingHost = async (slides: Slide[] = FOUR_SLIDES) => {
+      const fixture = createHost();
+
+      fixture.componentInstance.loop.set(true);
+      fixture.componentInstance.slides.set(slides);
+      await settleChildren(fixture);
+
+      return fixture;
+    };
+
+    it('leaves the clones once layout arrives, even when the first alignment pass could not measure', async () => {
+      const resizeObserver = fakeResizeObserver();
+      const scroll = fakeElementScroll();
+
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+
+      expect(carousel.cloneCount()).toBe(2);
+      expect(carousel.domCount()).toBe(8);
+      expect(scroll.calls()).toEqual([]);
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      resizeObserver.fire();
+      fixture.detectChanges();
+
+      const restingOffset = (carousel.cloneCount() + carousel.activeIndex()) * SLIDE_SIZE;
+
+      expect(restingOffset).toBeGreaterThan(0);
+      expect(scroll.lastCall()?.options).toEqual({ left: restingOffset, behavior: 'instant' });
+    });
+
+    it('crosses the seam once the scroll settles on a clone, landing on the same picture a track away', async () => {
+      const resizeObserver = fakeResizeObserver();
+      const scroll = fakeElementScroll();
+
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      resizeObserver.fire();
+      fixture.detectChanges();
+
+      const container = host(fixture).querySelector('.et-scrollable-container') as HTMLElement;
+      const cloneCount = carousel.cloneCount();
+      const trackLength = carousel.count() * SLIDE_SIZE;
+
+      await flushFrames();
+
+      container.scrollLeft = 0;
+      container.dispatchEvent(new Event('scrollend'));
+      fixture.detectChanges();
+
+      expect(scroll.lastCall()?.options).toEqual({ left: trackLength, behavior: 'instant' });
+
+      await flushFrames();
+
+      const trailingOffset = (cloneCount + carousel.count()) * SLIDE_SIZE;
+
+      container.scrollLeft = trailingOffset;
+      container.dispatchEvent(new Event('scrollend'));
+      fixture.detectChanges();
+
+      expect(scroll.lastCall()?.options).toEqual({ left: trailingOffset - trackLength, behavior: 'instant' });
+    });
+
+    it('waits for the glide after a mouse drag before crossing the seam', async () => {
+      const resizeObserver = fakeResizeObserver();
+      const scroll = fakeElementScroll();
+
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+      const scrollable = fixture.componentInstance.carouselComponent().track();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      resizeObserver.fire();
+      fixture.detectChanges();
+      await flushFrames();
+
+      const container = host(fixture).querySelector('.et-scrollable-container') as HTMLElement;
+      const trackLength = carousel.count() * SLIDE_SIZE;
+      const leadingCloneOffset = (carousel.cloneCount() - 1) * SLIDE_SIZE;
+
+      container.dispatchEvent(new Event('pointerdown'));
+      const releaseGlide = scrollable.suspendSnap();
+      container.scrollLeft = leadingCloneOffset;
+      container.dispatchEvent(new Event('scrollend'));
+      document.dispatchEvent(new Event('pointerup'));
+      fixture.detectChanges();
+
+      const callsDuringGlide = scroll.calls().length;
+
+      container.dispatchEvent(new Event('scrollend'));
+      fixture.detectChanges();
+
+      expect(scroll.calls().length).toBe(callsDuringGlide);
+
+      releaseGlide();
+      fixture.detectChanges();
+
+      expect(scroll.lastCall()?.options).toEqual({ left: leadingCloneOffset + trackLength, behavior: 'instant' });
+    });
+
+    it('does not cross the seam while a real slide is resting, even though it settled', async () => {
+      const resizeObserver = fakeResizeObserver();
+      const scroll = fakeElementScroll();
+
+      const fixture = await createLoopingHost();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      resizeObserver.fire();
+      fixture.detectChanges();
+
+      const container = host(fixture).querySelector('.et-scrollable-container') as HTMLElement;
+      const callsBeforeSettle = scroll.calls().length;
+
+      container.scrollLeft = SLIDE_SIZE * 2;
+      container.dispatchEvent(new Event('scrollend'));
+      fixture.detectChanges();
+
+      expect(scroll.calls().length).toBe(callsBeforeSettle);
+    });
+
+    it('renders clones either side of the slides, marked hidden and inert and left out of the count', async () => {
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+      const cloneCount = carousel.cloneCount();
+
+      expect(cloneCount).toBe(2);
+      expect(carousel.count()).toBe(4);
+      expect(carousel.isLooping()).toBe(true);
+      expect(carousel.domCount()).toBe(4 + cloneCount * 2);
+
+      const slides = slideElements(fixture);
+      const clones = slides.filter((slide) => slide.hasAttribute('data-clone'));
+
+      expect(slides.length).toBe(8);
+      expect(clones.length).toBe(4);
+      expect(clones.every((clone) => clone.getAttribute('aria-hidden') === 'true')).toBe(true);
+      expect(clones.every((clone) => clone.hasAttribute('inert'))).toBe(true);
+      expect(clones.every((clone) => !clone.hasAttribute('aria-label'))).toBe(true);
+
+      expect(host(fixture).querySelectorAll('.et-carousel-dot').length).toBe(4);
+      expect(slides[cloneCount]?.getAttribute('aria-label')).toBe('1 of 4');
+    });
+
+    it('leads with clones of the last slides and trails with clones of the first', async () => {
+      const fixture = await createLoopingHost();
+      const text = slideElements(fixture).map((slide) => slide.textContent?.trim());
+
+      expect(text).toEqual(['3. three', '4. four', '1. one', '2. two', '3. three', '4. four', '1. one', '2. two']);
+    });
+
+    it('maps a clone back onto the slide it clones', async () => {
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+      const cloneCount = carousel.cloneCount();
+
+      expect(carousel.slideIndexOf(0)).toBe(2);
+      expect(carousel.slideIndexOf(1)).toBe(3);
+      expect(carousel.slideIndexOf(cloneCount)).toBe(0);
+      expect(carousel.slideIndexOf(cloneCount + 3)).toBe(3);
+      expect(carousel.slideIndexOf(cloneCount + 4)).toBe(0);
+      expect(carousel.slideIndexOf(cloneCount + 5)).toBe(1);
+    });
+
+    it('does not clone when every slide fits a viewport, so there is no seam to cross', async () => {
+      const fixture = await createLoopingHost([{ title: 'only one' }]);
+      const carousel = fixture.componentInstance.carousel();
+
+      expect(carousel.cloneCount()).toBe(0);
+      expect(carousel.isLooping()).toBe(false);
+      expect(slideElements(fixture).length).toBe(1);
+      expect(carousel.canGoNext()).toBe(false);
+    });
+
+    it('does not clone with loop off', async () => {
+      const fixture = createHost();
+
+      fixture.componentInstance.slides.set(FOUR_SLIDES);
+      await settleChildren(fixture);
+
+      expect(fixture.componentInstance.carousel().cloneCount()).toBe(0);
+      expect(slideElements(fixture).length).toBe(4);
+      expect(slideElements(fixture).some((slide) => slide.hasAttribute('data-clone'))).toBe(false);
+    });
+
+    it('follows a change to the slides, clones included', async () => {
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+
+      expect(carousel.domCount()).toBe(8);
+
+      fixture.componentInstance.slides.update((slides) => [...slides, { title: 'five' }]);
+      await settleChildren(fixture);
+
+      expect(carousel.count()).toBe(5);
+      expect(carousel.domCount()).toBe(5 + carousel.cloneCount() * 2);
+      expect(slideElements(fixture).at(-1)?.textContent?.trim()).toBe('2. two');
+    });
+
+    it('grows the clone run with a multi-item view, capped at the number of slides', async () => {
+      const fixture = await createLoopingHost(Array.from({ length: 8 }, (_, index) => ({ title: `slide ${index}` })));
+      const carousel = fixture.componentInstance.carousel();
+
+      fixture.componentInstance.itemSize.set('third');
+      await settleChildren(fixture);
+
+      expect(carousel.cloneCount()).toBe(4);
+
+      fixture.componentInstance.slides.set(FOUR_SLIDES);
+      await settleChildren(fixture);
+
+      expect(carousel.cloneCount()).toBe(4);
+      expect(carousel.domCount()).toBe(12);
+    });
+  });
+
+  describe('transitions', () => {
+    it('reports the effect and the driver actually filling the progress property', () => {
+      const fixture = createHost();
+      const carousel = host(fixture).querySelector('et-carousel');
+
+      expect(carousel?.getAttribute('data-transition')).toBe('none');
+      expect(carousel?.getAttribute('data-transition-driver')).toBe('none');
+
+      fixture.componentInstance.transition.set('dim');
+      fixture.componentInstance.transitionDriver.set('js');
+      fixture.detectChanges();
+
+      expect(carousel?.getAttribute('data-transition')).toBe('dim');
+      expect(carousel?.getAttribute('data-transition-driver')).toBe('js');
+    });
+
+    it('centres the current slide when asked to, and tells the track to snap that way', () => {
+      const fixture = createHost();
+      const track = host(fixture).querySelector('et-scrollable');
+
+      expect(track?.hasAttribute('snap')).toBe(true);
+      expect(track?.getAttribute('snap-origin')).toBe('start');
+
+      fixture.componentInstance.slideAlign.set('center');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.carousel().slideAlign()).toBe('center');
+      expect(track?.getAttribute('snap-origin')).toBe('center');
+    });
+
+    it('reports a custom transition so a consumer can hang their own effect on the progress property', () => {
+      const fixture = createHost();
+
+      fixture.componentInstance.transition.set('custom');
+      fixture.detectChanges();
+
+      const carousel = host(fixture).querySelector('et-carousel');
+
+      expect(carousel?.getAttribute('data-transition')).toBe('custom');
+      expect(fixture.componentInstance.carousel().resolvedTransitionDriver()).not.toBe('none');
+    });
+
+    it('turns the driver off when asked for none, whatever the effect', () => {
+      const fixture = createHost();
+
+      fixture.componentInstance.transition.set('wipe');
+      fixture.componentInstance.transitionDriver.set('none');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.carousel().resolvedTransitionDriver()).toBe('none');
+      expect(host(fixture).querySelector('et-carousel')?.getAttribute('data-transition')).toBe('wipe');
+    });
+  });
+
+  describe('slide progress', () => {
+    const progressOf = (slide: Element | undefined) =>
+      (slide as HTMLElement | undefined)?.style.getPropertyValue(CAROUSEL_SLIDE_PROGRESS_PROPERTY);
+
+    it('fills the progress property for every slide once the js driver takes over', () => {
+      const fixture = createHost();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      fixture.componentInstance.transition.set('dim');
+      fixture.componentInstance.transitionDriver.set('js');
+      fixture.detectChanges();
+
+      const slides = slideElements(fixture);
+
+      expect(progressOf(slides[0])).toBe('0.000');
+      expect(progressOf(slides[1])).toBe('-1.000');
+      expect(progressOf(slides[2])).toBe('-1.000');
+    });
+
+    it('recomputes the progress as the track scrolls, and clears it when the driver hands back off', async () => {
+      const fixture = createHost();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      fixture.componentInstance.transition.set('dim');
+      fixture.componentInstance.transitionDriver.set('js');
+      fixture.detectChanges();
+
+      const container = host(fixture).querySelector('.et-scrollable-container') as HTMLElement;
+      const slides = slideElements(fixture);
+
+      container.scrollLeft = SLIDE_SIZE;
+      container.dispatchEvent(new Event('scroll'));
+      await flushFrames();
+
+      expect(progressOf(slides[1])).toBe('0.000');
+
+      fixture.componentInstance.transitionDriver.set('none');
+      fixture.detectChanges();
+
+      expect(progressOf(slides[1])).toBe('');
+    });
+  });
+});

@@ -1,0 +1,259 @@
+@layer components.sdk {
+  .et-button {
+    --_et-button-background: color-mix(
+      in srgb,
+      var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+      transparent
+    );
+    --_et-button-color: var(--et-tone-on-fill);
+    --_et-button-border-color: transparent;
+    --_et-button-gap: var(--et-button-gap);
+    --_et-button-padding: var(--et-button-padding);
+    --_et-button-border-radius: var(--et-button-border-radius);
+    --_et-button-shadow: var(--et-button-shadow, 0 0 #0000);
+
+    display: inline-flex;
+    position: relative;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--et-button-gap);
+    --_et-button-cap-middle: 0.5cap;
+    background: var(--_et-button-state-background, var(--_et-button-background));
+    color: var(--_et-button-color);
+    border-radius: var(--_et-button-border-radius);
+    padding: var(--_et-button-padding);
+    font-size: var(--et-button-font-size);
+    font-weight: var(--et-button-font-weight);
+    letter-spacing: var(--et-button-letter-spacing, revert-layer);
+    text-transform: var(--et-button-text-transform, revert-layer);
+    border: var(--et-button-border-width, 0.1rem) solid
+      var(--_et-button-state-border-color, var(--_et-button-border-color));
+    box-shadow: var(--_et-button-shadow);
+    cursor: var(--et-button-cursor);
+    text-decoration: none;
+    appearance: none;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    user-select: none;
+    /* no double-tap-zoom wait on touch — taps activate immediately */
+    touch-action: manipulation;
+    /* the grey WebKit/Blink flash duplicates our own :active state, and it is inherited, so setting
+     it here also covers the icons and labels inside */
+    -webkit-tap-highlight-color: transparent;
+    line-height: var(--et-button-line-height);
+    white-space: nowrap;
+
+    &[data-can-animate] {
+      transition:
+        background 120ms ease,
+        color 120ms ease,
+        border-color 120ms ease,
+        box-shadow 120ms ease,
+        outline-color 120ms ease,
+        opacity 120ms ease;
+    }
+
+    &:where([data-size='xs']) {
+      --et-button-padding: 0.2rem 0.8rem;
+      --et-button-font-size: 1.2rem;
+      --et-button-border-radius: 0.3rem;
+      --et-button-gap: 0.4rem;
+    }
+
+    &:where([data-size='sm']) {
+      --et-button-padding: 0.4rem 1.2rem;
+      --et-button-font-size: 1.4rem;
+      --et-button-border-radius: 0.4rem;
+      --et-button-gap: 0.5rem;
+    }
+
+    &:where([data-size='md']) {
+      --et-button-padding: 0.8rem 1.6rem;
+      --et-button-font-size: 1.4rem;
+      --et-button-border-radius: 0.4rem;
+      --et-button-gap: 0.6rem;
+    }
+
+    &:where([data-size='lg']) {
+      --et-button-padding: 1rem 2rem;
+      --et-button-font-size: 1.6rem;
+      --et-button-border-radius: 0.6rem;
+      --et-button-gap: 0.7rem;
+    }
+
+    &:where([data-size='xl']) {
+      --et-button-padding: 1.4rem 2.8rem;
+      --et-button-font-size: 1.8rem;
+      --et-button-border-radius: 0.8rem;
+      --et-button-gap: 0.8rem;
+    }
+
+    &:where([disabled]),
+    &:where([aria-disabled='true']) {
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    &:where([disabled], [aria-disabled='true']:not([data-loading='true'])):where([data-variant='outline']),
+    &:where([disabled], [aria-disabled='true']:not([data-loading='true'])):where([data-variant='tonal']),
+    &:where([disabled], [aria-disabled='true']:not([data-loading='true'])):where([data-variant='transparent']),
+    &:where([disabled], [aria-disabled='true']:not([data-loading='true']))[data-pressed='true'] {
+      opacity: var(--et-button-opacity-disabled);
+    }
+
+    &:where([data-variant='outline']) {
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-text);
+      --_et-button-border-color: var(--et-button-outline-border-color, var(--et-tone-text));
+    }
+
+    &[data-pressed='true']:where([data-pressed-variant='outline']) {
+      --_et-tone-fill-opacity: 0;
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-text);
+      --_et-button-border-color: var(--et-button-outline-border-color, var(--et-tone-text));
+
+      @media (hover: hover) {
+        &:not([disabled], [aria-disabled='true']):hover {
+          --_et-tone-fill-opacity: var(--et-button-variant-opacity-hover-delta);
+        }
+      }
+
+      &:focus-visible {
+        --_et-tone-fill-opacity: var(--et-button-variant-opacity-focus-delta);
+      }
+
+      &:not([disabled], [aria-disabled='true']):active {
+        --_et-tone-fill-opacity: var(--et-button-variant-opacity-active-delta);
+      }
+
+      &[data-loading='true']:not([disabled], [aria-disabled='true']) {
+        --_et-button-color: var(--et-tone-fill);
+        --_et-button-border-color: var(--et-tone-fill);
+      }
+    }
+
+    &:where([data-variant='tonal']),
+    &[data-pressed='true']:where([data-pressed-variant='tonal']) {
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-text);
+      --_et-button-border-color: transparent;
+    }
+
+    &:where([data-variant='transparent']) {
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-text);
+      --_et-button-border-color: transparent;
+    }
+
+    &:where([data-variant='filled']) {
+      @media (hover: hover) {
+        &:not([disabled], [aria-disabled='true']):hover {
+          --et-tone-fill: var(
+            --et-button-filled-hover,
+            var(--et-tone-fill-active, var(--et-tone-fill-focus, var(--et-tone-fill-hover, var(--et-tone-fill-rest))))
+          );
+        }
+      }
+
+      &:not([disabled], [aria-disabled='true']):active {
+        --_et-button-background: color-mix(in srgb, var(--et-tone-fill-rest) 96%, var(--et-tone-on-fill));
+      }
+    }
+
+    &[data-pressed='true']:where([data-pressed-variant='filled']) {
+      --_et-tone-fill-opacity: 1;
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-on-fill);
+      --_et-button-border-color: transparent;
+
+      @media (hover: hover) {
+        &:not([disabled], [aria-disabled='true']):hover {
+          --_et-tone-fill-opacity: 1;
+        }
+      }
+
+      &:focus-visible {
+        --_et-tone-fill-opacity: 1;
+      }
+
+      &:not([disabled], [aria-disabled='true']):active {
+        --_et-tone-fill-opacity: 1;
+      }
+    }
+
+    .et-button-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: var(--et-button-icon-size, 1em);
+      transition: opacity 120ms ease;
+      /* baseline alignment puts the icon's bottom edge on the label baseline; this moves its centre to the
+       label's cap-height middle, so it does not depend on the font's ascent and descent */
+      translate: 0 calc(0.5em - var(--_et-button-cap-middle));
+      margin-block-start: calc(var(--_et-button-cap-middle) - 0.5em);
+
+      &:empty {
+        display: none;
+      }
+
+      .et-icon {
+        width: 1em;
+        height: 1em;
+      }
+    }
+
+    &:has(> .et-button-contents:empty) {
+      align-items: center;
+
+      .et-button-icon {
+        translate: none;
+        margin-block-start: 0;
+      }
+    }
+
+    .et-button-contents {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--_et-button-gap);
+      min-width: 0;
+      transition: opacity 120ms ease;
+    }
+
+    &:where([data-stretch-contents]) .et-button-contents {
+      flex: 1;
+    }
+
+    &[data-loading='true'] {
+      .et-button-icon,
+      .et-button-contents {
+        opacity: 0;
+      }
+
+      .et-button-loader {
+        opacity: 1;
+      }
+    }
+  }
+}

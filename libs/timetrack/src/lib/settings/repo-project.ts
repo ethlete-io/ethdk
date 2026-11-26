@@ -1,0 +1,181 @@
+import { normalizeLinkPath } from '../model/link-path';
+import { TimetrackProjectLink, matchProjectLink, withWorktreeLinks } from '../model/project-link';
+import { TimetrackFavoriteProject } from './model';
+
+/** A word short enough to appear in any directory name says nothing about which project it is. */
+const MIN_NAME_WORD_LENGTH = 4;
+
+const segmentsOf = (path: string) => normalizeLinkPath(path).split('/').filter(Boolean);
+
+const tokensOf = (value: string) =>
+  value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+
+const nameWordsOf = (name: string) => tokensOf(name).filter((word) => word.length >= MIN_NAME_WORD_LENGTH);
+
+/**
+ * Whether a repository's own directory name names this project — its key as a whole token, or every
+ * long word of its name. Token-wise on purpose: `abc-frontend` names `ABC`, and `abcdefg` does not.
+ */
+const namesProject = (options: { tokens: readonly string[]; project: TimetrackFavoriteProject }) => {
+  const { tokens, project } = options;
+
+  if (tokens.includes(project.key.toLowerCase())) return true;
+
+  const words = nameWordsOf(project.name);
+
+  return words.length > 0 && words.every((word) => tokens.includes(word));
+};
+
+/**
+ * The project a repository's path suggests, or nothing when the path names none or names two.
+ *
+ * It reads only the directory name, which makes it a suggestion and never a decision: nothing here is
+ * evidence of what the work belongs to, and a link is written when the user confirms one. Two matching
+ * projects yield nothing — filing into the wrong project is worse than an empty field, because a ticket
+ * cannot be moved by the person who has to explain it.
+ */
+export const suggestProjectForRepo = (options: {
+  repoPath: string;
+  projects: readonly TimetrackFavoriteProject[];
+}): TimetrackFavoriteProject | undefined => {
+  const segment = segmentsOf(options.repoPath).pop();
+
+  if (!segment) return undefined;
+
+  const tokens = tokensOf(segment);
+  const found = options.projects.filter((project) => namesProject({ tokens, project }));
+
+  return found.length === 1 ? found[0] : undefined;
+};
+
+/** One watched repository as the settings screen lists it: what it is linked to, and what it could be. */
+type RepoProjectRow = {
+  repoPath: string;
+  /** The last segment of the path, which is what the user recognises the repository by. */
+  label: string;
+  /** The link that already covers this path, whether it names this repository or a root above it. */
+  link?: TimetrackProjectLink;
+  /** The project the link names, or nothing when the link marks the path private. */
+  projectKey?: string;
+  /** Whether the link covering it names a directory above it rather than this repository itself. */
+  inherited: boolean;
+  private: boolean;
+  /** What the path suggests, offered only while nothing covers it yet. */
+  suggestion?: TimetrackFavoriteProject;
+  /** How many linked worktrees of this checkout it answers for. */
+  worktreeCount?: number;
+};
+
+/**
+ * Every watched repository beside what it is logged into, so the mapping is one list rather than a set
+ * of paths typed by hand.
+ *
+ * A repository covered by a root above it is reported as inherited rather than as unlinked: the answer
+ * for `~/dev` is already there, and offering to write it again per repository would fill the document
+ * with links that say what one link already said.
+ */
+const repoProjectRows = (options: {
+  repoPaths: readonly string[];
+  links: readonly TimetrackProjectLink[];
+  projects: readonly TimetrackFavoriteProject[];
+}): RepoProjectRow[] =>
+  [...options.repoPaths]
+    .sort((a, b) => a.localeCompare(b))
+    .map((repoPath) => {
+      const link = matchProjectLink({ context: { repoPath }, links: options.links });
+      const target = link?.target;
+      const inherited = !!link && normalizeLinkPath(link.path) !== normalizeLinkPath(repoPath);
+
+      return {
+        repoPath,
+        label: segmentsOf(repoPath).pop() ?? repoPath,
+        link,
+        projectKey: target?.kind === 'project' ? target.projectKey : undefined,
+        inherited,
+        private: target?.kind === 'private',
+        suggestion: link ? undefined : suggestProjectForRepo({ repoPath, projects: options.projects }),
+      };
+    });
+
+/** Whether a path row was found by the repository discovery, or only stated as a link. */
+export type ProjectPathKind = 'repo' | 'folder';
+
+/** One path the settings screen lists, whether a repository was found at it or a link merely names it. */
+export type ProjectPathRow = {
+  path: string;
+  /** The last segment of the path, which is what the user recognises it by. */
+  label: string;
+  kind: ProjectPathKind;
+  /** The link that already covers this path, whether it names the path itself or a root above it. */
+  link?: TimetrackProjectLink;
+  /** The project the link names, or nothing when the link marks the path private. */
+  projectKey?: string;
+  /** Whether the link covering it names a directory above it rather than this path itself. */
+  inherited: boolean;
+  private: boolean;
+  /** What the path suggests, offered only while nothing covers it yet. */
+  suggestion?: TimetrackFavoriteProject;
+  /** How many linked worktrees of this checkout it answers for. */
+  worktreeCount?: number;
+};
+
+/**
+ * Every path the user can answer for, in one list: the repositories the discovery found, and the links
+ * that name a directory no repository sits at.
+ *
+ * The two used to be two lists, and a link written on a repository appeared in both — once as that
+ * repository's answer and once as a bare path underneath it. Sorted by path, a directory sorts above
+ * the repositories it covers, which is the order its inherited rows read in.
+ */
+export const projectPathRows = (options: {
+  repoPaths: readonly string[];
+  /** Each linked worktree mapped to its main checkout, as `linkedWorktreesOf` builds it. */
+  worktrees?: Readonly<Record<string, string>>;
+  links: readonly TimetrackProjectLink[];
+  projects: readonly TimetrackFavoriteProject[];
+}): ProjectPathRow[] => {
+  const worktrees = options.worktrees ?? {};
+  const mainOf = new Map(Object.entries(worktrees).map(([worktree, main]) => [normalizeLinkPath(worktree), main]));
+  const counts = new Map<string, number>();
+
+  for (const main of mainOf.values())
+    counts.set(normalizeLinkPath(main), (counts.get(normalizeLinkPath(main)) ?? 0) + 1);
+
+  const checkouts = new Map<string, string>();
+
+  for (const repoPath of options.repoPaths) {
+    const path = mainOf.get(normalizeLinkPath(repoPath)) ?? repoPath;
+
+    if (!checkouts.has(normalizeLinkPath(path))) checkouts.set(normalizeLinkPath(path), path);
+  }
+
+  const links = withWorktreeLinks({ links: options.links, worktrees });
+  const repos = repoProjectRows({ ...options, repoPaths: [...checkouts.values()], links }).map(
+    ({ repoPath, ...row }): ProjectPathRow => {
+      const worktreeCount = counts.get(normalizeLinkPath(repoPath));
+
+      return { ...row, path: repoPath, kind: 'repo', ...(worktreeCount ? { worktreeCount } : {}) };
+    },
+  );
+  const found = new Set(repos.map((row) => normalizeLinkPath(row.path)));
+  const answered = new Set(
+    [...mainOf.keys()].filter((path) => repos.some((row) => row.link && mainOf.get(path) === row.path)),
+  );
+
+  const folders = options.links
+    .filter((link) => !found.has(normalizeLinkPath(link.path)) && !answered.has(normalizeLinkPath(link.path)))
+    .map((link): ProjectPathRow => ({
+      path: link.path,
+      label: segmentsOf(link.path).pop() ?? link.path,
+      kind: 'folder',
+      link,
+      projectKey: link.target.kind === 'project' ? link.target.projectKey : undefined,
+      inherited: false,
+      private: link.target.kind === 'private',
+    }));
+
+  return [...repos, ...folders].sort((a, b) => a.path.localeCompare(b.path));
+};

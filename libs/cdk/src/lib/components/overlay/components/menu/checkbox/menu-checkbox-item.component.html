@@ -1,0 +1,9 @@
+<div class="et-menu-checkbox">
+  <div [ngClass]="{ 'et-menu-checkbox-check--active': checkbox.checked$ | async }" class="et-menu-checkbox-check"></div>
+  <div
+    [ngClass]="{ 'et-menu-checkbox-indeterminate--active': checkbox.indeterminate$ | async }"
+    class="et-menu-checkbox-indeterminate"
+  ></div>
+</div>
+
+<ng-content />

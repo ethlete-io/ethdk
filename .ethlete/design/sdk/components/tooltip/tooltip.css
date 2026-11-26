@@ -1,0 +1,15 @@
+.sdk-tooltip-stage {
+  display: inline-block;
+  padding: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .et-tooltip-panel {
+    --sdk-surface-ring: color-mix(in srgb, var(--et-surface-text) 24%, var(--et-surface-background));
+    --et-overlay-arrow-border: var(--sdk-surface-ring);
+  }
+
+  .et-tooltip {
+    --_et-floating-tip-border: var(--sdk-surface-ring);
+  }
+}

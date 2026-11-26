@@ -1,0 +1,3 @@
+export const QUERY_ERROR_ERROR_CODES = {
+  PART_OUTSIDE_QUERY_ERROR: 4000,
+} as const;

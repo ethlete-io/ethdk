@@ -1,0 +1,25 @@
+@layer components.sdk {
+  .et-form-field-support-counter {
+    flex: none;
+    margin-inline-start: auto;
+    padding-inline-end: calc(var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width));
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .et-counter {
+    display: block;
+    flex: none;
+    font-size: var(--et-form-field-hint-font-size);
+    color: var(--et-surface-text-muted, currentColor);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    &:where([data-over-limit]) {
+      color: var(--et-tone-text);
+      font-weight: var(--et-form-field-counter-over-limit-font-weight, 600);
+    }
+  }
+}

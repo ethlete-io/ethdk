@@ -1,0 +1,353 @@
+# @ethlete/agent-rules
+
+Portable coding guidance for repos built on the Ethlete SDK - the styleguide, Angular
+patterns, signals vs RxJS, theming, query usage and commit conventions - compiled into
+whichever coding agent your repo uses: **Claude Code**, **Codex**, **Cursor** and
+**GitHub Copilot**.
+
+One canonical content source lives in the SDK; `ethlete-agents sync` renders it into
+each tool's native format, so the guidance an agent follows in your app repo is the
+same guidance the SDK itself is built with.
+
+## Install & quick start
+
+```bash
+yarn add --dev @ethlete/agent-rules
+yarn ethlete-agents init   # writes ethlete-agents.config.json
+yarn ethlete-agents sync   # writes the generated rules and skills
+```
+
+`init` pre-fills `vars` with the lint, format and Storybook commands it derives from your `package.json`; check them before the first sync. `sync`, `check`, `init` and `migrate` reject a flag they do not know (`--dryrun`, `--target`) and print the usage instead of running, and a config file that does not parse is reported by name. Unknown top-level keys in the config are a `sync` warning.
+
+Commit the generated files, and add a drift check to CI:
+
+```bash
+yarn ethlete-agents check  # exits non-zero when the generated files are stale
+```
+
+Install [`@ethlete/cli`](/cli/update) too. The `sdk-update` skill is only written while it is
+installed, and it is what teaches an agent to update the SDK with `et update`.
+
+## Updating
+
+Update the package with `et update`, not by hand. It regenerates the rules and skills with
+`ethlete-agents sync` after the install, and a release that corrects guidance ships a migration
+for the code the old guidance produced: an `assisted` task under `.ethlete/update` that names the
+grep patterns, the correct pattern and the call sites to leave alone. Workspace layout changes are
+`manual` tasks, because moving projects is the team's decision.
+
+## What gets written
+
+Content comes in two kinds. **Rules** are short and always loaded; **skills** are
+on-demand guides in the cross-tool [Agent Skills](https://agentskills.io) `SKILL.md`
+format, compiled once into `.agents/skills/ethlete-*/` where Codex, Cursor, Copilot and
+VS Code discover them natively - each skill's body loads only when its `description`
+matches the task, so the always-on context cost stays at a few lines per skill. Claude
+Code only scans `.claude/skills/`, so the claude target writes its own copies there.
+
+|                     | Claude Code                         | Cursor                        | Copilot                                        | Codex                       |
+| ------------------- | ----------------------------------- | ----------------------------- | ---------------------------------------------- | --------------------------- |
+| Always-loaded rules | `.claude/rules/ethlete/*.md`        | `.cursor/rules/ethlete-*.mdc` | inlined into `.github/copilot-instructions.md` | inlined into `AGENTS.md`    |
+| On-demand skills    | `.claude/skills/ethlete-*/SKILL.md` | `.agents/skills/ethlete-*/`   | `.agents/skills/ethlete-*/`                    | `.agents/skills/ethlete-*/` |
+
+Marker-block files (`AGENTS.md`, `.github/copilot-instructions.md`) are only rewritten
+between `<!-- ethlete:agent-rules:start -->` and `:end` - everything you wrote around
+them survives. Every generated file carries a `DO NOT EDIT` banner, and files that
+disappear from the package are pruned on the next `sync`; nothing outside an `ethlete`
+directory or `ethlete-` prefix is ever touched.
+
+When the repo has `@ethlete/cli` installed, `sync` also registers its design MCP server
+(`et design mcp` through the `packageRunner`, for example `yarn et design mcp`) as `ethlete-design`: in `.mcp.json` for Claude Code and in
+`.codex/config.toml` for Codex. Only that entry is written; other servers and tables
+stay as they are.
+
+Content that declares `requires` is only emitted when those packages are installed, so
+a repo without `@ethlete/query` never sees the query guide.
+
+See the [content catalog](/agent-rules/catalog) for every rule, skill, agent hook, git
+hook and output style shipped by the package, including the exact names used in config.
+
+## Migrating to the AGENTS.md layout
+
+`AGENTS.md` is the cross-tool instruction standard, and Claude Code officially supports
+reading it through a one-line `CLAUDE.md` import. `migrate` restructures a repo around
+that so every agent reads the same file:
+
+```bash
+yarn ethlete-agents migrate --dry-run   # prints the plan
+yarn ethlete-agents migrate
+```
+
+- `CLAUDE.md` content moves to the top of `AGENTS.md`; `CLAUDE.md` becomes `@AGENTS.md`.
+- Hand-written `.claude/skills/<name>` directories move to `.agents/skills/<name>`, with
+  a symlink left behind so Claude Code still finds them. (Symlinks need Developer Mode
+  on Windows checkouts.)
+- A short layout note is added to `AGENTS.md` so agents know the symlinked skills are
+  the same files, not duplicates - skipped if yours already explains it.
+- The config gains the `codex` target (when `targets` lists them explicitly) and `claudeMdImportsAgentsMd: true`, which stops the claude target from
+  writing `.claude/rules/ethlete/` - the rules already reach Claude through the
+  `AGENTS.md` marker block, and a second copy would load twice.
+- A `sync` runs, which also prunes output from older layouts.
+
+The command is idempotent - every step detects the migrated state and skips itself.
+
+## Commands
+
+| Command        | What it does                                                                                         |
+| -------------- | ---------------------------------------------------------------------------------------------------- |
+| `sync`         | Writes the generated rules, skills, hooks and git hooks. Flags: `--targets`, `--root`, `--dry-run`.  |
+| `check`        | Exits non-zero when the generated files are stale. Flags: `--targets`, `--root`.                     |
+| `init`         | Writes a starter `ethlete-agents.config.json`; refuses when one exists. Flag: `--root`.              |
+| `migrate`      | Converts the repo to the AGENTS.md layout. Flags: `--targets`, `--root`, `--dry-run`.                |
+| `git-flow`     | `start`, `check`, `repair` and `explain` for branches against the repo's git flow.                   |
+| `timetrack`    | Asks the running Timetrack app about Jira (`status`, `issue`, `search`, `project`, `create`, `log`). |
+| `output-style` | Installs an Ethlete output style into this machine's Claude Code config.                             |
+
+`--targets` takes a comma-separated subset of `claude`, `codex`, `cursor` and `copilot`. `sync`, `check`,
+`init` and `migrate` reject a flag they do not know and print the usage.
+
+## Configuration
+
+`ethlete-agents.config.json` at the repo root:
+
+```json
+{
+  "targets": "auto",
+  "profile": "consumer",
+  "vars": {
+    "lintCommand": "yarn nx lint my-app",
+    "lintFixCommand": "yarn nx lint my-app --fix",
+    "storybookUrl": "http://localhost:6006",
+    "themeStylesheet": "apps/web/src/styles/tailwind.css",
+    "commitScopes": ["app", "shared", "deps"]
+  },
+  "exclude": ["git-commit"],
+  "hooks": [],
+  "gitHooks": []
+}
+```
+
+| Option                    | Default      | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `targets`                 | `"auto"`     | `"auto"` always emits `codex` (`AGENTS.md` + `.agents/skills/` is the cross-tool baseline) and adds `claude`, `cursor`, `copilot` when their directory exists; or list an explicit subset.                                                                                                                                                                                                                                                                                       |
+| `profile`                 | `"consumer"` | `"consumer"` emits `scope: consumer` and `scope: both` content; `"sdk"` emits `scope: sdk` and `scope: both` content (used by the SDK repo itself).                                                                                                                                                                                                                                                                                                                              |
+| `vars`                    | -            | Values for the template tokens a guide declares. A guide whose variable has no default and no value is skipped with a warning. `packageRunner` (`yarn`, `pnpm exec`, `bunx`, `npx`) is derived from `packageManager` or the lockfile. `lintCommand`/`lintFixCommand` run the repo's `lint` script, else `nx lint <project>` when Nx is installed; `storybookStartCommand` runs its `storybook` script. `sync` warns when a lint var names a script `package.json` does not have. |
+| `exclude`                 | `[]`         | Rule or skill names to skip for every configured agent and developer. `sync` removes previously generated copies and warns about unknown names.                                                                                                                                                                                                                                                                                                                                  |
+| `claudeMdImportsAgentsMd` | `false`      | Set (usually by `migrate`) when `CLAUDE.md` imports `AGENTS.md`; skips `.claude/rules/ethlete/` so rules don't load twice. `sync` warns when the flag is set but the import is missing.                                                                                                                                                                                                                                                                                          |
+| `gitFlow`                 | -            | The branch grammar read by `git-flow`, the git hooks and CI: `keyPrefixes`, `baseBranches`, `enforcement`, `severity`, `subPrefix`, `deprecatedShapes`.                                                                                                                                                                                                                                                                                                                          |
+| `jira`                    | `{}`         | `typeByIssueType` maps a Jira issue type to a branch type for `git-flow start`; anything unlisted becomes `feat`.                                                                                                                                                                                                                                                                                                                                                                |
+| `hooks`                   | `[]`         | Opt-in Claude Code and Codex hooks, see below.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `gitHooks`                | `[]`         | Opt-in checks appended to existing Husky hooks, see below.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `mods`                    | `[]`         | Opt-in Claude Code mods that the package ships, see below.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+
+If your repo runs Prettier over everything, exclude the generated paths - otherwise
+Prettier rewrites them and `check` reports drift on every run:
+
+```gitignore
+# .prettierignore
+/.claude
+/.agents
+/.cursor/rules/ethlete-*
+```
+
+## Hooks
+
+Hooks run commands on the developer's machine, so none are emitted by default - opt in
+per hook. The one exception is [`design-live-check`](#design-live-check): a repo with
+`.ethlete/design/config.json` gets it without listing it.
+
+```json
+{
+  "hooks": ["context-warning", "subagent-model-policy"]
+}
+```
+
+`sync` emits hooks for whichever `claude` and `codex` targets are enabled. It leaves
+your own registrations untouched; removing a name from `hooks` unregisters and deletes
+the generated script again.
+
+| Target      | Script directory         | Registration file       |
+| ----------- | ------------------------ | ----------------------- |
+| Claude Code | `.claude/hooks/ethlete/` | `.claude/settings.json` |
+| Codex       | `.codex/hooks/ethlete/`  | `.codex/hooks.json`     |
+
+### `context-warning`
+
+Warns once per tier, and instructs the agent, when the session context crosses 70%, 85%
+and 95% of its effective budget. Claude's budget is capped at its 200k long-context
+pricing boundary. Codex uses the 272k pricing boundary for GPT-5.6, GPT-5.5 and GPT-5.4,
+and the rollout's reported window for models without that pricing rule. A reported window
+smaller than a pricing boundary always wins.
+
+The 85% tier does not force a handoff. A session is often a step or two from done when it
+fires, and handing off then costs a fresh session to finish work that already fits. The
+agent must choose instead - finish the task, or hand off - under a test it can fail
+honestly: name every remaining step now, or hand off. The 95% tier takes the choice away,
+so "nearly done" cannot be claimed forever.
+
+Every prompt after the first warning carries a short reminder in its place: how much budget
+is left, and how to work so that either ending stays cheap. One warning at 70% is stale by
+the time the budget is tight, and an agent cannot read its own token count between prompts.
+The `handoff` skill calls this handoff mode and describes how to work under it.
+
+#### Where the warning reaches the agent
+
+A hook on `UserPromptSubmit` alone only fires when the user types. A long autonomous run
+makes many model requests without one, so it never learns its token count. Under Claude the
+hook therefore runs on four events:
+
+| Event              | What it does                                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `SessionStart`     | Names the budget and how to scope the session to it, before the first request.                                        |
+| `UserPromptSubmit` | The tiered warning, then a short reminder on every later prompt.                                                      |
+| `PostToolBatch`    | The same tiered warning, delivered between the agent's own model requests.                                            |
+| `Stop`             | From 85% on, as a turn ends: the turn continues so the agent can act, and it must say which of three options it took. |
+
+Each event speaks once per tier, so crossing 85% mid-run costs one notice while working and
+one demand at the end of the turn. The third option at `Stop` is to cross the boundary on
+purpose, for a reason the agent states in one sentence - a task one step from done, or a
+session holding reasoning no handoff file survives, is worth the premium rate. Codex has
+none of the three extra events, so its registration stays on `UserPromptSubmit`.
+
+The `PostToolBatch` hook runs once per model request, so the script reads only the tail of
+the transcript rather than parsing all of it.
+
+Claude additionally gets a separate user-facing warning and can save a handoff
+automatically in auto mode from the critical tier on. Codex receives the warning through
+the hook's additional context; its permission-mode values are not documented, so the
+hook never enables automatic saving there.
+
+### `subagent-model-policy`
+
+Claude Code only. On every call to the subagent tool, a call that names no `model` is denied
+and the model table goes back to the agent instead: haiku for a lookup, opus for real work,
+sonnet in between, fable for judgment-heavy work. A subagent therefore never inherits the
+session's model by accident, and the mistake costs one tool call rather than a whole run.
+
+A call that names `fable` asks the user, because it is the most expensive option and only
+the user knows whether the task is judgment-heavy. Two calls pass untouched, because `model`
+would change nothing: a fork, which always inherits the parent model, and an agent type whose
+own definition under `.claude/agents/` sets a model.
+
+### `design-live-check`
+
+Claude Code only. After each `Edit`, `Write` or `MultiEdit` of a `.ts`, `.css` or `.html` file under
+`.ethlete/design/`, it runs `et design lint <file>`: the static design rules of the part or sketch variant the
+file belongs to, and eslint on it - no draw and no type check. Each finding goes back to the agent at once, one
+line each with what to change, so a sketch never reaches a human with open findings. A clean file stays silent.
+
+It runs `et` the way the `ethlete-design` server in `.mcp.json` does, with `lint` in place of `mcp`, else
+`node_modules/.bin/et`; a repo with neither gets no check. Besides the rules `et design check` runs, the live
+check flags an `et-surface--*` or `et-color--*` class outside foundations (`THEME-CLASS`: a part takes its
+surface from `data-et-auto-surface` and its colour from the inherited theme), and a page that calls
+`anchoredDialog()` while the product has a `components/anchored-dialog` part (`PAGE-ANCHORED-DIALOG`).
+
+`sync` registers it in every repo that has `.ethlete/design/config.json`, whether `hooks` lists it or not. A
+repo that adds its design system after the last `sync` gets it at the next one.
+
+Hooks can be turned off per machine - see the local config below.
+
+## Git hooks
+
+Git hooks are separate from agent hooks and are also opt-in:
+
+```json
+{
+  "gitHooks": ["pre-push", "post-checkout"]
+}
+```
+
+`sync` appends a generated block to the matching `.husky/<name>` file and preserves
+the rest of the hook. `pre-push` checks the current branch before a push;
+`post-checkout` reports a non-conforming local branch while renaming it is still cheap.
+Removing a name takes only the generated block back out. Without a `.husky/` directory,
+`sync` warns and writes nothing. Set `ETHLETE_GIT_FLOW_SKIP=1` to silence both hooks on
+one machine.
+
+## Claude Code mods
+
+The package ships a Claude Code plugin marketplace, `ethlete`, in `content/mods/`. A mod runs code
+in every Claude Code session of the repo, so it is opt-in:
+
+```json
+{
+  "mods": ["e2e-progress"]
+}
+```
+
+`sync` writes the marketplace into `extraKnownMarketplaces` of `.claude/settings.json`, with the
+path `./node_modules/@ethlete/agent-rules/content/mods`, and turns each mod on in `enabledPlugins`.
+Claude Code registers the marketplace at the first interactive start after a developer trusts the
+folder. No `/plugin` step is necessary. Removing a name takes its entry back out. The path needs a
+real `node_modules` folder, so Yarn Plug'n'Play does not work.
+
+The version of each mod is the package version. An update of the package therefore also updates
+the mod.
+
+| Mod            | What it does                                                                                                                                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `e2e-progress` | Shows the progress of a Playwright run log under `.claude/handoffs` or `.agents/handoffs` in the status line, and in a pane with `/e2e`. If the log names a failures file of the [`@ethlete/cli` failure reporter](../cli/e2e), the mod reads the failures from it. |
+
+## Per-machine local config
+
+A gitignored `ethlete-agents.config.local.json` at the repo root holds the agent behaviour
+that differs per developer, without touching any committed file:
+
+```json
+{
+  "disableHooks": true,
+  "disableAutoHandoffSave": true
+}
+```
+
+| Option                   | What it does                                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `disableHooks`           | `true` disables every generated hook; an array (`["context-warning"]`) just the named ones.                                                                                    |
+| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends a handoff instead of saving the handoff file itself. |
+
+Everything in this file is read at runtime - by the generated hook scripts and by the
+agent while following a skill - never by `sync`: the generated files stay identical on
+every machine and in CI, which is what lets `check` diff them. That is also why the file
+takes nothing beyond these keys - `sync`/`check` warn about unknown keys. Add the
+filename to your repo's `.gitignore`.
+
+### Where the sibling checkouts live
+
+`sdkSourcePath`, `apiRepoPaths` and `apiRepoBranches` used to live in the file above. They
+moved to `ethlete.config.local.json`, which [`@ethlete/cli`](/cli/config) owns, because
+`et api` needs the same values the skills do. The old file is still read as a fallback, and
+`sync`/`check` report any of the three keys still found there so you can move them.
+
+Validation of those paths now lives with the file: run [`et doctor`](/cli/config#et-doctor)
+to check that `sdkSourcePath` is really an SDK checkout and that every `apiRepoPaths` entry
+points at a directory that exists.
+
+## Authoring content
+
+The canonical content lives in the SDK repo under `libs/agent-rules/content/` -
+`rules/<name>.md` for always-loaded rules, `skills/<name>/SKILL.md` (plus resource
+files) for on-demand guides. Frontmatter controls the kind, scope, required packages
+and template variables; see the package README for the authoring reference.
+
+Package skill links use `{% skill:name %}` markers and are strict dependencies. After
+profile, package requirement, variable, and explicit-exclusion filtering, `sync` and
+`check` fail with the source skill and missing target instead of emitting a dangling
+name. Optional guidance must remain self-contained when the other skill is absent.
+
+Consumer repositories can contain three skill categories: package-generated
+`ethlete-*` directories updated by `ethlete-agents sync`, third-party installed skills
+tracked by `skills-lock.json`, and hand-written repository skills maintained directly.
+The generated `AGENTS.md` block names this ownership so one update workflow is not
+mistaken for another.
+
+Inside the SDK the package is the source rather than a dependency, so `npx
+ethlete-agents` has nothing to resolve. Format the content, then regenerate from the
+local build:
+
+```bash
+yarn prettier --write libs/agent-rules/content/<file>
+yarn agents:sync    # yarn agents:check is the same drift check CI runs
+```
+
+Formatting after the sync leaves the generated copies stale - they are Prettier-ignored,
+so nothing rewrites them and only `agents:check` notices.

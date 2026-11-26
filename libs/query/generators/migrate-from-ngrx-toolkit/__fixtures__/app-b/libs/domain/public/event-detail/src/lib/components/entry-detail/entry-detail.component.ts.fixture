@@ -1,0 +1,77 @@
+import { NgClass } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  OnChanges,
+  OnDestroy,
+  SimpleChanges,
+  TrackByFunction,
+  ViewEncapsulation,
+  inject,
+} from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
+import { MappedEntityState, NgRxToolkitModule } from '@tomtomb/ngrx-toolkit';
+import { EventFacade, getEventEntry } from '@app-b/store/event';
+import { EntryListView, EventDetailView, MemberListViewUnion } from '@app-b/types';
+import {
+  LoadingComponent,
+  NormalizeColorPipe,
+  NormalizeParticipantPipe,
+  TabBarComponent,
+  TabBarItemComponent,
+} from '@app-b/uikit/common';
+import { EntryHistoryComponent, EventArrangementsComponent, StatisticListComponent } from '@app-b/uikit/events';
+import { MemberCardComponent } from '@app-b/uikit/member';
+import { Subject } from 'rxjs';
+import { ReplayVideoComponent } from '../replay-video/replay-video.component';
+
+@Component({
+  selector: 'app-b-entry-detail',
+  templateUrl: './entry-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  standalone: true,
+  imports: [
+    LoadingComponent,
+    TabBarComponent,
+    TabBarItemComponent,
+    NgClass,
+    MemberCardComponent,
+    ReplayVideoComponent,
+    EntryHistoryComponent,
+    StatisticListComponent,
+    EventArrangementsComponent,
+    NgRxToolkitModule,
+    NormalizeParticipantPipe,
+    NormalizeColorPipe,
+    TranslateModule,
+  ],
+})
+export class EntryDetailComponent implements OnChanges, OnDestroy {
+  private _eventFacade = inject(EventFacade);
+
+  @Input()
+  entry?: EntryListView | null;
+
+  @Input()
+  event?: EventDetailView | null;
+
+  entryStore!: MappedEntityState<typeof getEventEntry>;
+
+  private _destroy$ = new Subject<boolean>();
+
+  ngOnDestroy(): void {
+    this._destroy$.next(true);
+    this._destroy$.complete();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['entry'] || !this.entry) {
+      return;
+    }
+    this.entryStore = this._eventFacade.getEventEntry({ queryParams: { entryId: this.entry.id } });
+  }
+
+  protected trackByMemberFn: TrackByFunction<MemberListViewUnion> = (index, member) => member.id;
+}

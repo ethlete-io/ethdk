@@ -1,0 +1,24 @@
+{
+  "name": "csp-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/csp-e2e/src",
+  "tags": ["type:e2e", "scope:components"],
+  "implicitDependencies": ["csp-app"],
+  "targets": {
+    "e2e": {
+      "dependsOn": [
+        {
+          "projects": ["csp-app"],
+          "target": "build"
+        }
+      ]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/csp-e2e/tsconfig.json --noEmit"
+      }
+    }
+  }
+}

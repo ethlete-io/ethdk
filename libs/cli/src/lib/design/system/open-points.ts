@@ -1,0 +1,406 @@
+import { Layer } from './layers';
+import { DATA_STATES, DataState, OPEN_POINT_KINDS, OpenPoint, OpenPointKind } from './open-point';
+import { SketchDecision, SketchStatus } from './sketch/sketch';
+
+export { DATA_STATES, OPEN_POINT_KINDS } from './open-point';
+export type { DataState, OpenPoint, OpenPointKind } from './open-point';
+
+/** The kinds a sketch closes in its own variant; the others exist only after a merge or outside the sketch. */
+export const SKETCH_KINDS: readonly OpenPointKind[] = ['missing-state', 'missing-motion'];
+
+/** The state pairs of a part as its file declares them, read without running it. */
+export type PartMotions = {
+  states: string[];
+  motions: { from: string; to: string }[];
+  unreachable: { from: string; to: string }[];
+  instant?: boolean;
+};
+
+/**
+ * What the open points are read from. `controls` is whether the part declares any, `declaredNoControls` that it says outright it has none, `takesData` that it loads data, `dataStates` the state it names for each data state (the
+ * state names are then not read as words), `motion` is left out when its
+ * states cannot be read; `missingStates` comes
+ * from drawing the parts, so a check without a browser leaves them out. `busyStates` are drawn states whose render
+ * holds `aria-busy="true"` or a loading button: each is ongoing work whatever its name.
+ */
+export type OpenPointsInput = {
+  parts: {
+    key: string;
+    layer: Layer;
+    controls: boolean;
+    declaredNoControls?: boolean;
+    takesData?: boolean;
+    dataStates?: Record<DataState, string>;
+    motion?: PartMotions;
+    placeholders?: string[];
+  }[];
+  comments: { id: string; part: string; state: string; answered: boolean; resolved: boolean }[];
+  sketches: {
+    name: string;
+    target: string;
+    targets: string[];
+    status: SketchStatus;
+    decision: SketchDecision['kind'] | null;
+  }[];
+  missingStates?: { part: string; control: string }[];
+  busyStates?: { part: string; state: string }[];
+  directEdits?: { part: string; sketch: string | null }[];
+  staleSketchBases?: { part: string; sketch: string; changed: string[] }[];
+  sketchProblems?: { part: string; sketch: string; variant: string; rule: string; message: string }[];
+};
+
+const STATELESS_LAYERS: Layer[] = ['foundations', 'pages'];
+
+const ONGOING_WORK = ['loading', 'pending', 'busy', 'progress', 'indeterminate', 'spinner'];
+
+const DATA_STATE_WORDS: Record<DataState, string[]> = {
+  loading: ONGOING_WORK,
+  error: ['error', 'errored', 'failed', 'failure'],
+  empty: ['empty', 'none', 'no'],
+};
+
+const missingDataStatesOf = (states: string[], named?: Record<DataState, string>) => {
+  if (named) {
+    return DATA_STATES.filter((data) => !states.includes(named[data])).map((data) => ({
+      kind: 'missing-state' as const,
+      control: null,
+      data,
+      state: named[data],
+    }));
+  }
+
+  const words = new Set(states.flatMap((state) => state.split('-')));
+
+  return DATA_STATES.filter((data) => !DATA_STATE_WORDS[data].some((word) => words.has(word))).map((data) => ({
+    kind: 'missing-state' as const,
+    control: null,
+    data,
+  }));
+};
+
+const isOngoingWork = (state: string, busy: string[]) =>
+  busy.includes(state) || ONGOING_WORK.some((word) => state.includes(word));
+
+const INTERACTION_WORDS = [
+  'hover',
+  'active',
+  'pressed',
+  'disabled',
+  'open',
+  'closed',
+  'expanded',
+  'collapsed',
+  'checked',
+  'unchecked',
+  'selected',
+  'dragging',
+  ...ONGOING_WORK,
+];
+
+const REST_WORDS = ['rest', 'idle', 'default'];
+
+const showcaseWordsOf = (state: string) =>
+  state
+    .split('-')
+    .filter((word) => !INTERACTION_WORDS.includes(word) && !REST_WORDS.includes(word))
+    .sort()
+    .join('-');
+
+const interactionWordsOf = (state: string) =>
+  state
+    .split('-')
+    .filter((word) => INTERACTION_WORDS.includes(word))
+    .sort()
+    .join('-');
+
+/**
+ * Whether a user interaction moves the part from one state to the other: the two names differ in their interaction
+ * words (hover, open, loading, …) and in nothing else. A name of interaction words alone stands on the first state.
+ */
+const interactionConnects = ({ from, to, first }: { from: string; to: string; first: string }) => {
+  const base = showcaseWordsOf(first);
+  const showcase = (state: string) => showcaseWordsOf(state) || base;
+
+  return interactionWordsOf(from) !== interactionWordsOf(to) && showcase(from) === showcase(to);
+};
+
+const missingMotionsOf = ({
+  layer,
+  motion,
+  busy,
+}: {
+  layer: Layer;
+  motion: PartMotions | undefined;
+  busy: string[];
+}): OpenPoint[] => {
+  if (!motion || STATELESS_LAYERS.includes(layer)) return [];
+
+  const covered = (from: string, to: string) =>
+    (motion.instant && from !== to) ||
+    [...motion.motions, ...motion.unreachable].some((pair) => pair.from === from && pair.to === to);
+
+  return motion.states.flatMap((from) =>
+    motion.states.flatMap((to) => {
+      const needed =
+        from === to
+          ? isOngoingWork(from, busy)
+          : !from.includes('focus') &&
+            !to.includes('focus') &&
+            interactionConnects({ from, to, first: motion.states[0] ?? '' });
+
+      return needed && !covered(from, to) ? [{ kind: 'missing-motion' as const, from, to }] : [];
+    }),
+  );
+};
+
+export type PartOpenPoints = { part: string; points: OpenPoint[] };
+
+const rankOf = (point: OpenPoint) => OPEN_POINT_KINDS.indexOf(point.kind);
+
+const keyedPointsOf = (input: OpenPointsInput, key: string): OpenPoint[] => [
+  ...(input.directEdits ?? [])
+    .filter((edit) => edit.part === key)
+    .map(({ sketch }) => ({ kind: 'direct-edit' as const, sketch })),
+  ...input.sketches
+    .filter((sketch) => sketch.targets.includes(key))
+    .map((sketch) => ({
+      kind: 'unmerged-sketch' as const,
+      sketch: sketch.name,
+      primary: sketch.targets[0] === key,
+      status: sketch.status,
+      decision: sketch.decision,
+    })),
+  ...(input.staleSketchBases ?? [])
+    .filter((stale) => stale.part === key)
+    .map(({ sketch, changed }) => ({ kind: 'stale-sketch-base' as const, sketch, changed })),
+  ...(input.sketchProblems ?? [])
+    .filter((problem) => problem.part === key)
+    .map(({ sketch, variant, rule, message }) => ({ kind: 'sketch-problem' as const, sketch, variant, rule, message })),
+  ...input.comments
+    .filter((comment) => comment.part === key && !comment.resolved)
+    .map((comment) => ({
+      kind: 'open-comment' as const,
+      comment: comment.id,
+      state: comment.state,
+      answered: comment.answered,
+    })),
+];
+
+/**
+ * The open points of each part that has any, in the order of `parts`, then each part only an unmerged sketch targets;
+ * each list in the order of `OPEN_POINT_KINDS`.
+ */
+export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] => {
+  const known = new Set(input.parts.map(({ key }) => key));
+  const sketchOnly = [
+    ...new Set([
+      ...input.sketches.flatMap(({ targets }) => targets),
+      ...(input.sketchProblems ?? []).map(({ part }) => part),
+    ]),
+  ].filter((key) => !known.has(key));
+  const listed = [
+    ...input.parts.map(
+      ({ key, layer, controls, declaredNoControls, takesData, dataStates, motion, placeholders = [] }) => {
+        const stateful = !STATELESS_LAYERS.includes(layer);
+
+        return {
+          key,
+          points: [
+            ...(stateful && !controls && !declaredNoControls
+              ? [{ kind: 'missing-state' as const, control: null }]
+              : []),
+            ...(stateful ? (input.missingStates ?? []) : [])
+              .filter((missing) => missing.part === key)
+              .map(({ control }) => ({ kind: 'missing-state' as const, control })),
+            ...(takesData && layer !== 'foundations' && motion ? missingDataStatesOf(motion.states, dataStates) : []),
+            ...placeholders.map((state) => ({ kind: 'redraw' as const, state })),
+            ...missingMotionsOf({
+              layer,
+              motion,
+              busy: (input.busyStates ?? []).filter((busy) => busy.part === key).map(({ state }) => state),
+            }),
+            ...keyedPointsOf(input, key),
+          ],
+        };
+      },
+    ),
+    ...sketchOnly.map((key) => ({ key, points: keyedPointsOf(input, key) })),
+  ];
+
+  return listed.flatMap(({ key, points }) =>
+    points.length > 0 ? [{ part: key, points: [...points].sort((a, b) => rankOf(a) - rankOf(b)) }] : [],
+  );
+};
+
+const subjectOf = (point: OpenPoint) => {
+  switch (point.kind) {
+    case 'missing-state':
+      return point.data ? `data:${point.data}` : (point.control ?? '');
+    case 'redraw':
+      return point.state;
+    case 'missing-motion':
+      return `${point.from} -> ${point.to}`;
+    case 'open-comment':
+      return point.comment;
+    case 'direct-edit':
+      return point.sketch ?? '';
+    case 'stale-sketch-base':
+      return `${point.sketch} ${point.changed.join(',')}`;
+    case 'sketch-problem':
+      return `${point.sketch} ${point.variant} ${point.rule} ${point.message}`;
+    default:
+      return '';
+  }
+};
+
+const pointKeyOf = (part: string, point: OpenPoint) => `${part}\n${point.kind}\n${subjectOf(point)}`;
+
+const groupedOf = (pairs: { part: string; point: OpenPoint }[]): PartOpenPoints[] =>
+  [...new Set(pairs.map(({ part }) => part))].map((part) => ({
+    part,
+    points: pairs.filter((pair) => pair.part === part).map(({ point }) => point),
+  }));
+
+/**
+ * Splits the open points of a sketch variant into the ones it adds and the ones the merged parts already have,
+ * matched by part, kind and subject (control, state and path, or state pair). A part with no merged points adds all of
+ * its points.
+ */
+export const sketchAddedPointsOf = (
+  merged: PartOpenPoints[],
+  sketched: PartOpenPoints[],
+): { added: PartOpenPoints[]; inherited: PartOpenPoints[] } => {
+  const before = new Set(merged.flatMap(({ part, points }) => points.map((point) => pointKeyOf(part, point))));
+  const pairs = sketched.flatMap(({ part, points }) => points.map((point) => ({ part, point })));
+
+  return {
+    added: groupedOf(pairs.filter(({ part, point }) => !before.has(pointKeyOf(part, point)))),
+    inherited: groupedOf(pairs.filter(({ part, point }) => before.has(pointKeyOf(part, point)))),
+  };
+};
+
+const sketchText = (point: Extract<OpenPoint, { kind: 'unmerged-sketch' }>) => {
+  const state =
+    point.decision === 'pick'
+      ? 'picked, not merged'
+      : point.decision === 'discard'
+        ? 'discarded, not removed'
+        : point.status === 'ready'
+          ? 'is ready, not merged'
+          : 'is in progress - missing: sketch check, then sketch ready; the designer sees it only when ready';
+
+  return `sketch ${point.sketch} ${state}${point.primary ? '' : ' (it also targets this part)'}`;
+};
+
+const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+const missingStateText = (points: OpenPoint[]) => {
+  const states = points.flatMap((point) => (point.kind === 'missing-state' ? [point] : []));
+  const controls = states.flatMap((point) => (point.control ? [point.control] : []));
+  const data = states.flatMap((point) =>
+    point.data ? [point.state ? `${point.data} (${point.state})` : point.data] : [],
+  );
+
+  return [
+    ...(states.some((point) => !point.control && !point.data) ? ['no controls declared'] : []),
+    ...(controls.length > 0 ? [`${plural(controls.length, 'missing state')} (${controls.join(', ')})`] : []),
+    ...(data.length > 0 ? [`data part without the states ${data.join(', ')}`] : []),
+  ].join('; ');
+};
+
+const LISTED_MOTIONS = 6;
+
+const loopEntriesOf = (states: string[]) =>
+  states.map((state) => `${state}: { from: '${state}', to: '${state}' }`).join(', ');
+
+const missingMotionText = (points: OpenPoint[]) => {
+  const missing = points.flatMap((point) => (point.kind === 'missing-motion' ? [point] : []));
+  const pairs = missing.filter(({ from, to }) => from !== to).map(({ from, to }) => `${from} -> ${to}`);
+  const loops = missing.filter(({ from, to }) => from === to).map(({ from }) => from);
+  const listed = pairs.slice(0, LISTED_MOTIONS).join(', ');
+  const more = pairs.length > LISTED_MOTIONS ? `, +${pairs.length - LISTED_MOTIONS} more` : '';
+
+  return [
+    ...(pairs.length === 1 ? [`no motion ${pairs[0]}`] : []),
+    ...(pairs.length > 1 ? [`${plural(pairs.length, 'missing motion')} (${listed}${more})`] : []),
+    ...(loops.length > 0 ? [`no looping motion in ${loops.join(', ')} (add to motions: ${loopEntriesOf(loops)})`] : []),
+  ].join('; ');
+};
+
+const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
+  if (kind === 'missing-state') return missingStateText(points);
+
+  if (kind === 'missing-motion') return missingMotionText(points);
+
+  if (kind === 'redraw')
+    return points
+      .map((point) =>
+        point.kind === 'redraw'
+          ? `state ${point.state} shows the app picture as a placeholder - redraw it in a sketch`
+          : '',
+      )
+      .join('; ');
+
+  if (kind === 'open-comment') {
+    const ids = points.map((point) =>
+      point.kind !== 'open-comment'
+        ? ''
+        : point.answered
+          ? `${point.comment} addressed, waits on the user`
+          : point.comment,
+    );
+
+    return `${ids.length} open comment${ids.length === 1 ? '' : 's'} (${ids.join(', ')})`;
+  }
+
+  if (kind === 'sketch-problem')
+    return points
+      .map((point) =>
+        point.kind === 'sketch-problem'
+          ? `sketch ${point.sketch} variant ${point.variant} breaks ${point.rule}: ${point.message}`
+          : '',
+      )
+      .join('; ');
+
+  if (kind === 'stale-sketch-base')
+    return points
+      .map((point) =>
+        point.kind === 'stale-sketch-base'
+          ? `sketch ${point.sketch} needs a rebase before merge (${point.changed.join(', ')} changed since its base)`
+          : '',
+      )
+      .join('; ');
+
+  if (kind === 'direct-edit')
+    return points
+      .map((point) =>
+        point.kind === 'direct-edit' && point.sketch
+          ? `changed outside a sketch - pick old or new in sketch ${point.sketch}`
+          : 'changed outside a sketch - design check draws it',
+      )
+      .join('; ');
+
+  return points.map((point) => (point.kind === 'unmerged-sketch' ? sketchText(point) : point.kind)).join('; ');
+};
+
+/** One text per kind of open point in `points`, in the order of `OPEN_POINT_KINDS`. */
+export const openPointGroupsOf = (points: OpenPoint[]): string[] =>
+  OPEN_POINT_KINDS.flatMap((kind) => {
+    const ofKind = points.filter((point) => point.kind === kind);
+
+    return ofKind.length > 0 ? [groupText(kind, ofKind)] : [];
+  });
+
+/** One header line with the total, then one line per part with its points, as `design check` prints them. */
+export const openPointsText = (product: string, list: PartOpenPoints[]): string[] => {
+  const total = list.reduce((sum, part) => sum + part.points.length, 0);
+
+  if (total === 0) return [`OPEN POINTS ${product}: none`];
+
+  return [
+    `OPEN POINTS ${product}: ${total} in ${list.length} part${list.length === 1 ? '' : 's'}`,
+    ...list.map(({ part, points }) => {
+      return `  ${part}: ${openPointGroupsOf(points).join('; ')}`;
+    }),
+  ];
+};

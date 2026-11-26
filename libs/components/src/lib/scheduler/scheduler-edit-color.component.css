@@ -1,0 +1,16 @@
+@layer components.sdk {
+  .et-scheduler-edit-color-swatch {
+    display: inline-block;
+    vertical-align: middle;
+    margin-inline-end: 6px;
+    inline-size: 14px;
+    block-size: 14px;
+    border-radius: 4px;
+    background: var(--et-tone-fill, currentColor);
+
+    &:where([data-empty]) {
+      background: transparent;
+      border: 1px solid var(--et-surface-border, currentColor);
+    }
+  }
+}

@@ -1,0 +1,227 @@
+@layer components.sdk {
+  @property --et-choice-field-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-choice-field-support-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 180ms;
+  }
+
+  @property --et-choice-field-label-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-choice-field-error-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-choice-field-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-choice-field-hint-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  et-choice-field {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    gap: 4px;
+    color: var(--et-surface-text, currentColor);
+
+    --et-form-support-duration: var(--et-choice-field-support-duration);
+    --et-form-support-error-font-size: var(--et-choice-field-error-font-size);
+    --et-form-support-warning-font-size: var(--et-choice-field-warning-font-size);
+    --et-form-support-hint-font-size: var(--et-choice-field-hint-font-size);
+
+    .et-choice-field-control {
+      display: flex;
+      align-items: center;
+      gap: var(--et-choice-field-gap);
+    }
+
+    /* The row carries the state cursor, not the control: a disabled checkbox/radio/switch sets
+       `pointer-events: none` on itself, so its own cursor never reaches the pointer. */
+    &:where(:has([aria-disabled='true'])) .et-choice-field-control {
+      cursor: not-allowed;
+    }
+
+    &:where(:has([data-readonly])) .et-choice-field-control {
+      cursor: default;
+    }
+
+    .et-choice-field-control-slot {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+    }
+
+    &:where([data-size='sm']) {
+      --et-choice-field-label-font-size: 12px;
+
+      et-checkbox {
+        --et-checkbox-size: 16px;
+      }
+
+      et-switch {
+        --et-switch-track-width: 34px;
+        --et-switch-track-height: 19px;
+        --et-switch-thumb-size: 13px;
+      }
+    }
+
+    &:where([data-size='lg']) {
+      --et-choice-field-label-font-size: 16px;
+
+      et-checkbox {
+        --et-checkbox-size: 24px;
+      }
+
+      et-switch {
+        --et-switch-track-width: 46px;
+        --et-switch-track-height: 25px;
+        --et-switch-thumb-size: 19px;
+      }
+    }
+
+    .et-choice-field-label-area {
+      display: flex;
+      align-items: baseline;
+      font-size: var(--et-choice-field-label-font-size);
+      font-weight: var(--et-choice-field-label-font-weight, 500);
+      line-height: 1.2;
+      letter-spacing: var(--et-choice-field-label-letter-spacing, -0.01em);
+      color: var(--et-surface-text-muted, currentColor);
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+      min-inline-size: 0;
+      flex: 1;
+      overflow: hidden;
+      transition:
+        color 150ms ease,
+        opacity 150ms ease;
+
+      et-label {
+        display: inline;
+        min-inline-size: 0;
+      }
+
+      &:where(:has(et-description)) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
+
+      et-description {
+        font-weight: 400;
+        letter-spacing: normal;
+      }
+    }
+
+    /* view-only controls keep the resting look — no hover/active brighten (matches the
+       [data-readonly] gating inside checkbox/radio/switch) */
+    @media (hover: hover) {
+      &:where(:has(.et-choice-field-control:hover)):where(:not(:has([data-readonly]))) .et-choice-field-label-area {
+        color: var(--et-surface-text, currentColor);
+      }
+    }
+
+    &:where(:has(.et-choice-field-control:active)):where(:not(:has([data-readonly]))) .et-choice-field-label-area {
+      color: var(--et-surface-text, currentColor);
+    }
+
+    &:where(:has([data-readonly])) .et-choice-field-label-area {
+      cursor: default;
+    }
+
+    &:where(:has(:focus-visible)) .et-choice-field-label-area {
+      color: var(--et-surface-text, currentColor);
+    }
+
+    &:has([aria-disabled='true']) .et-choice-field-label-area,
+    &:has(:disabled) .et-choice-field-label-area {
+      cursor: not-allowed;
+      color: var(--et-surface-control-text-disabled, currentColor);
+      pointer-events: none;
+    }
+
+    &:has([aria-disabled='true']) .et-form-support-hint,
+    &:has(:disabled) .et-form-support-hint {
+      color: var(--et-surface-control-text-disabled, currentColor);
+    }
+
+    .et-form-support {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .et-form-support-errors,
+    .et-form-support-warnings,
+    .et-form-support-hint {
+      padding-block-start: 0;
+      padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px));
+    }
+
+    &:where([data-label-position='start']) {
+      .et-choice-field-label-area {
+        order: -1;
+      }
+
+      .et-form-support-errors,
+      .et-form-support-warnings,
+      .et-form-support-hint {
+        padding-inline-start: 0;
+      }
+    }
+
+    &:where([data-layout='subgrid']) {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: span 2;
+      align-items: center;
+      column-gap: normal;
+      width: auto;
+
+      .et-choice-field-control {
+        display: contents;
+      }
+
+      .et-form-support {
+        grid-column: 2 / -1;
+      }
+
+      &:where([data-label-position='start']) .et-form-support {
+        grid-column: 1 / -1;
+      }
+
+      .et-form-support-errors,
+      .et-form-support-warnings,
+      .et-form-support-hint {
+        padding-inline-start: 0;
+      }
+    }
+
+    /* Must stay after the rule above: same specificity, so source order is what makes it win. */
+    &:where([data-variant='card']) {
+      .et-form-support-errors,
+      .et-form-support-warnings,
+      .et-form-support-hint {
+        padding-inline-start: 0;
+      }
+    }
+  }
+}

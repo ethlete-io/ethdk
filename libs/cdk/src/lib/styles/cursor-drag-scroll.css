@@ -1,0 +1,12 @@
+.et-cursor-drag-scroll--scrolling * {
+  pointer-events: none !important;
+}
+
+.et-cursor-drag-scroll--init * {
+  user-select: none !important;
+}
+
+.et-cursor-drag-scroll--init a,
+.et-cursor-drag-scroll--init img {
+  -webkit-user-drag: none;
+}

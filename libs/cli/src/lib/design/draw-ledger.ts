@@ -1,0 +1,116 @@
+export const QUEUE_PATH = '/__design/queue';
+
+export const KEPT_FAILURES = 20;
+
+export type DrawFailure = {
+  part: string;
+  state: string;
+  status: number;
+  message: string;
+  at: string;
+  sketch?: { product: string; target: string; variant: string } | null;
+};
+
+export type QueueReport = {
+  queued: number;
+  rendering: number;
+  oldestMs: number | null;
+  failedTotal: number;
+  failed: DrawFailure[];
+  /** Drawings started since the server started; a picture served from memory or disk starts none. */
+  drawnTotal: number;
+  /** Pictures this server waited for while another server drew them, and then read from the shared store. */
+  waitedTotal: number;
+  /** Writes in flight, such as a sketch merge, that a restart would cut off. */
+  working: number;
+  /** Milliseconds since the last drawing or write ended, null before the first one. */
+  quietMs: number | null;
+};
+
+type Asked = { since: number; drawing: boolean };
+
+/**
+ * Counts the drawings every draw queue of a design server holds, and keeps the last `KEPT_FAILURES` shots
+ * that failed, newest first. A failure `applies` rejects, such as one of a sketch variant that is gone, leaves
+ * the list and the count.
+ */
+export const createDrawLedger = (
+  now: () => number = Date.now,
+  applies: (failure: DrawFailure) => boolean = () => true,
+) => {
+  const asked = new Set<Asked>();
+  const failed: DrawFailure[] = [];
+  let failedTotal = 0;
+  let drawnTotal = 0;
+  let waitedTotal = 0;
+  let working = 0;
+  let lastActiveAt: number | null = null;
+
+  return {
+    /** Records a drawing as queued; `start` marks it drawing and `end` drops it. */
+    ask: () => {
+      const entry: Asked = { since: now(), drawing: false };
+
+      asked.add(entry);
+
+      return {
+        start: () => {
+          if (!entry.drawing) drawnTotal++;
+          entry.drawing = true;
+        },
+        end: () => {
+          asked.delete(entry);
+          lastActiveAt = now();
+        },
+      };
+    },
+    /** Records a write as running until the returned function is called. */
+    work: () => {
+      working++;
+      lastActiveAt = now();
+
+      let ended = false;
+
+      return () => {
+        if (ended) return;
+
+        ended = true;
+        working--;
+        lastActiveAt = now();
+      };
+    },
+    /** Records a picture another server drew while this one waited for it. */
+    waited: () => {
+      waitedTotal++;
+    },
+    fail: (failure: Omit<DrawFailure, 'at'>) => {
+      failedTotal++;
+      failed.unshift({ ...failure, at: new Date(now()).toISOString() });
+      failed.splice(KEPT_FAILURES);
+    },
+    report: (): QueueReport => {
+      const stale = failed.filter((failure) => !applies(failure));
+
+      failedTotal -= stale.length;
+      failed.splice(0, failed.length, ...failed.filter((failure) => !stale.includes(failure)));
+
+      const entries = [...asked];
+      const rendering = entries.filter((entry) => entry.drawing).length;
+      const oldest = Math.min(...entries.map((entry) => entry.since));
+
+      return {
+        queued: entries.length - rendering,
+        rendering,
+        oldestMs: entries.length ? now() - oldest : null,
+        failedTotal,
+        failed: [...failed],
+        drawnTotal,
+        waitedTotal,
+        working,
+        quietMs: lastActiveAt === null ? null : now() - lastActiveAt,
+      };
+    },
+  };
+};
+
+export type DrawLedger = ReturnType<typeof createDrawLedger>;

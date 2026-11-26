@@ -1,0 +1,38 @@
+import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
+import { ColorInteractiveDirective } from '@ethlete/core';
+import { injectColorInputLabels } from './color-input-labels';
+import { ColorPickerPanelComponent } from './color-picker-panel.component';
+import { ColorInputDirective, ColorPickerSurfaceDirective, ColorPickerTriggerDirective } from './headless';
+import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
+
+@Component({
+  selector: 'et-color-input',
+  templateUrl: './color-input.component.html',
+  styleUrl: './color-input.component.css',
+  encapsulation: ViewEncapsulation.None,
+  imports: [ColorPickerPanelComponent, ColorPickerSurfaceDirective, ColorPickerTriggerDirective],
+  hostDirectives: [
+    {
+      directive: ColorInputDirective,
+      inputs: ['value', 'alpha', 'swatches', 'notations', 'pickerOpen', ...TEXT_FIELD_CONTROL_INPUTS],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'pickerOpenChange'],
+    },
+    ColorInteractiveDirective,
+  ],
+  host: {
+    class: 'et-color-input',
+    '(click)': 'colorInputDir.activate()',
+  },
+})
+export class ColorInputComponent {
+  protected colorInputDir = inject(ColorInputDirective);
+  public labels = injectColorInputLabels();
+
+  protected fallbackTriggerLabel = computed(() =>
+    this.colorInputDir.hasCustomAccessibleName() || this.colorInputDir.labelId() ? null : this.labels().pickerTrigger,
+  );
+
+  public focus(options?: FocusOptions) {
+    this.colorInputDir.focus(options);
+  }
+}

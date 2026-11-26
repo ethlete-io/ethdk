@@ -1,0 +1,218 @@
+@layer components.sdk {
+  @keyframes et-otp-input-caret-blink {
+    0% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @property --et-otp-input-segment-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 44px;
+  }
+
+  @property --et-otp-input-segment-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-otp-input-segment-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-otp-input-label-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  @property --et-otp-input-support-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 180ms;
+  }
+
+  @property --et-otp-input-error-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-otp-input-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-otp-input-hint-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  et-otp-input {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    color: var(--et-surface-text, currentColor);
+
+    --et-form-support-duration: var(--et-otp-input-support-duration);
+    --et-form-support-error-font-size: var(--et-otp-input-error-font-size);
+    --et-form-support-warning-font-size: var(--et-otp-input-warning-font-size);
+    --et-form-support-hint-font-size: var(--et-otp-input-hint-font-size);
+
+    > et-label {
+      font-size: var(--et-otp-input-label-font-size);
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--et-surface-text-muted, currentColor);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    > et-label .et-label-required-marker {
+      color: light-dark(var(--et-tone-text), var(--et-tone-fill));
+    }
+
+    .et-otp-input-field {
+      position: relative;
+      inline-size: fit-content;
+      max-inline-size: 100%;
+    }
+
+    .et-otp-input-segments {
+      display: flex;
+      gap: var(--et-otp-input-segment-gap);
+    }
+
+    .et-otp-input-segment {
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: var(--et-otp-input-segment-size);
+      min-inline-size: 0;
+      aspect-ratio: 1;
+      border: 1px solid
+        color-mix(in oklab, var(--et-surface-text, currentColor) 43%, var(--et-surface-background, transparent));
+      border-radius: var(--et-otp-input-segment-radius);
+      font-size: calc(var(--et-otp-input-segment-size) * 0.45);
+      font-variant-numeric: tabular-nums;
+      -webkit-user-select: none;
+      user-select: none;
+
+      &[data-caret] {
+        border-color: var(--et-tone-text, currentColor);
+        outline: 1px solid var(--et-tone-text, currentColor);
+        outline-offset: -1px;
+      }
+
+      .et-otp-input-segment-char {
+        display: block;
+      }
+
+      /* synthetic caret bar in the active empty segment */
+      .et-otp-input-caret {
+        inline-size: 2px;
+        block-size: 1.1em;
+        border-radius: 1px;
+        background: var(--et-tone-text, currentColor);
+        animation: et-otp-input-caret-blink 1.1s steps(2, jump-none) infinite;
+      }
+    }
+
+    /* the real input covers the segments invisibly — it carries focus, autofill and paste */
+    .et-otp-input-native {
+      position: absolute;
+      inset: 0;
+      inline-size: 100%;
+      block-size: 100%;
+      border: none;
+      outline: none;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      color: transparent;
+      caret-color: transparent;
+      /* 16px floors away the iOS focus zoom */
+      font-size: max(1em, 16px);
+
+      &::selection {
+        background: transparent;
+      }
+
+      /* nothing can be typed into a readonly code - an I-beam over the segments would say otherwise.
+         Before the disabled rule: a disabled input is :read-only too, and there not-allowed wins. */
+      &:read-only {
+        cursor: default;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+      }
+    }
+
+    &[data-error] .et-otp-input-segment {
+      border-color: var(--et-tone-fill, currentColor);
+    }
+
+    @media (hover: hover) {
+      &:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {
+        border-color: var(--et-surface-text, currentColor);
+      }
+
+      &:not([data-error]):not(:has(.et-otp-input-native:read-only)):hover > et-label {
+        color: var(--et-surface-text, currentColor);
+      }
+
+      &[data-error]:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {
+        border-color: var(--et-tone-text);
+      }
+    }
+
+    &:has(.et-otp-input-native:disabled) {
+      opacity: 0.4;
+
+      .et-otp-input-segment {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+    }
+
+    &[data-can-animate] {
+      .et-otp-input-segment {
+        transition:
+          border-color 120ms ease,
+          outline-color 120ms ease;
+      }
+
+      /* typed characters pop in */
+      .et-otp-input-segment-char {
+        transition:
+          transform 140ms cubic-bezier(0.2, 1.4, 0.4, 1),
+          opacity 100ms ease;
+
+        @starting-style {
+          transform: scale(0.4);
+          opacity: 0;
+        }
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .et-otp-input-caret {
+        animation: none;
+      }
+    }
+  }
+}

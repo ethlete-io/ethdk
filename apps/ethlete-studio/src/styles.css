@@ -1,0 +1,179 @@
+@layer studio-tokens, studio-farn, theme, base, components, studio-sdk, utilities;
+
+@import 'tailwindcss' source('../');
+
+/* Keep this layer lowest: its sdk part redefines the SDK themes and the body rule, which Studio's own must beat. */
+@import '../../../.ethlete/design/studio/foundations/colors/colors.css' layer(studio-tokens);
+@import '../../../.ethlete/design/studio/foundations/type/type.css' layer(studio-tokens);
+@import '../../../.ethlete/design/studio/foundations/spacing/spacing.css' layer(studio-tokens);
+@import '../../../.ethlete/design/studio/foundations/motion/motion.css' layer(studio-tokens);
+
+@import './styles/reset-colors.css';
+@import './styles/themes.css';
+@import './styles/surface-themes.css';
+@import './styles/farn-themes.css' layer(studio-farn);
+@import './styles/farn-surface-themes.css' layer(studio-farn);
+@import './styles/sdk-token-map.css' layer(studio-sdk);
+
+/* The sizes design compare passes as a part's class prop; no app template uses them. */
+@source inline('h-56 w-128 w-250 w-300');
+
+@theme {
+  --spacing: 0.4rem;
+
+  --animate-studio-bob: studio-bob calc(var(--duration-state) * 13) var(--ease-standard) infinite;
+  --animate-studio-blink: studio-blink calc(var(--duration-state) * 13) var(--ease-standard) infinite;
+
+  @keyframes studio-bob {
+    50% {
+      transform: translateY(-0.6px);
+    }
+  }
+
+  @keyframes studio-blink {
+    48% {
+      transform: scaleY(0.12);
+    }
+  }
+
+  --shadow-*: initial;
+  --shadow-sm:
+    0 1px 3px 0 color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent),
+    0 1px 2px -1px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent);
+  --shadow-md:
+    0 4px 6px -1px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent);
+  --shadow-lg:
+    0 10px 15px -3px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent),
+    0 4px 6px -4px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent);
+
+  --text-*: initial;
+
+  --text-h1: 3.2rem;
+  --text-h1--line-height: 112%;
+  --text-h1--font-weight: 600;
+
+  --text-h2: 2.4rem;
+  --text-h2--line-height: 116%;
+  --text-h2--font-weight: 600;
+
+  --text-h3: 1.8rem;
+  --text-h3--line-height: 124%;
+  --text-h3--font-weight: 600;
+
+  --text-h4: 1.6rem;
+  --text-h4--line-height: 130%;
+  --text-h4--font-weight: 600;
+
+  --text-large: 1.8rem;
+  --text-large--line-height: 145%;
+  --text-large--font-weight: 400;
+
+  --text-base: 1.5rem;
+  --text-base--line-height: 150%;
+  --text-base--font-weight: 400;
+
+  --text-small: 1.3rem;
+  --text-small--line-height: 150%;
+  --text-small--font-weight: 400;
+
+  --text-mono: 1.3rem;
+  --text-mono--line-height: 150%;
+}
+
+@theme inline {
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-focus-ring: var(--focus-ring);
+
+  --text-ui-xs: var(--text-xs);
+  --text-ui-xs--line-height: var(--text-xs-line);
+  --text-ui-sm: var(--text-sm);
+  --text-ui-sm--line-height: var(--text-sm-line);
+  --text-ui-md: var(--text-md);
+  --text-ui-md--line-height: var(--text-md-line);
+  --text-ui-lg: var(--text-lg);
+  --text-ui-lg--line-height: var(--text-lg-line);
+  --text-ui-xl: var(--text-xl);
+  --text-ui-xl--line-height: var(--text-xl-line);
+
+  --font-weight-ui-regular: var(--weight-regular);
+  --font-weight-ui-medium: var(--weight-medium);
+  --font-weight-ui-strong: var(--weight-strong);
+
+  --spacing-space-1: var(--space-1);
+  --spacing-space-2: var(--space-2);
+  --spacing-space-3: var(--space-3);
+  --spacing-space-4: var(--space-4);
+  --spacing-space-5: var(--space-5);
+  --spacing-space-6: var(--space-6);
+  --spacing-space-7: var(--space-7);
+
+  --spacing-control-sm: var(--control-sm);
+  --spacing-control-md: var(--control-md);
+  --spacing-row: var(--row);
+}
+
+/* These names equal the token names: emitted, each would read itself and leave the token invalid. */
+@theme inline reference {
+  --font-ui: var(--font-ui);
+  --font-code: var(--font-code);
+
+  --radius-control-sm: var(--radius-control-sm);
+  --radius-control-md: var(--radius-control-md);
+  --radius-control-lg: var(--radius-control-lg);
+  --radius-pill: var(--radius-pill);
+}
+
+/* 1rem = 10px, so every rem in the app and in @ethlete/components lines up with the design system. */
+html {
+  font-size: 62.5%;
+}
+
+/* Only the root: on any other box (an overflow-hidden label too) Chromium stops the wheel's scroll chain there. */
+@layer base {
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+body {
+  margin: 0;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+  /* 1rem is 10px here, so text that inherits its size would read at 10px without this. */
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+}
+
+/* Under CEF on Linux the native list of a select never shows. base-select draws the list in the page. */
+@supports (appearance: base-select) {
+  select,
+  ::picker(select) {
+    appearance: base-select;
+  }
+
+  ::picker(select) {
+    margin-block: 0.4rem;
+    border: 0.1rem solid var(--surface-border);
+    border-radius: 0.6rem;
+    padding: 0.4rem;
+    background: var(--et-surface-background);
+    color: var(--text);
+    box-shadow: 0 0.8rem 2.4rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 35%, transparent);
+  }
+
+  option {
+    border-radius: 0.4rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  option:hover,
+  option:focus-visible {
+    background: color-mix(in srgb, var(--et-surface-tint) 14%, transparent);
+    outline: none;
+  }
+}

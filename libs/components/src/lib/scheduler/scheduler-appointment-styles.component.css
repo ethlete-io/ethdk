@@ -1,0 +1,129 @@
+@layer components.sdk {
+  et-scheduler-badge-color-dot,
+  et-scheduler-badge-title,
+  et-scheduler-badge-time-range,
+  et-scheduler-badge-location,
+  et-scheduler-badge-chain-count {
+    display: contents;
+  }
+
+  .et-scheduler-appointment {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 6px;
+    border: none;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--et-tone-fill) 14%, transparent);
+    color: var(--et-tone-text);
+    font: inherit;
+    font-size: 12px;
+    text-align: start;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+
+    @media (hover: hover) {
+      &:hover {
+        background: color-mix(in srgb, var(--et-tone-fill) 22%, transparent);
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
+      outline-offset: 1px;
+    }
+
+    &:where([data-selected]) {
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
+    }
+
+    &:where([data-draggable]) {
+      cursor: grab;
+
+      /* a move arms on a long press, which is also what raises iOS' selection callout */
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    &:where([data-dragging]) {
+      box-shadow: var(
+        --et-scheduler-appointment-drag-shadow,
+        0 2px 8px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 25%, transparent)
+      );
+      cursor: grabbing;
+    }
+  }
+
+  .et-scheduler-appointment-title {
+    overflow: hidden;
+    font-weight: 600;
+    min-inline-size: 0;
+    flex: 1 1 auto;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-scheduler-appointment-dot {
+    flex-shrink: 0;
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: 999px;
+    background: var(--et-tone-fill);
+  }
+
+  :where(.et-scheduler-appointment, .et-scheduler-time-grid-block):where([data-selected])
+    .et-scheduler-appointment-dot {
+    background: var(--et-tone-on-fill);
+  }
+
+  .et-scheduler-appointment-time-range {
+    overflow: hidden;
+    min-inline-size: 0;
+    flex-shrink: 100;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-scheduler-appointment-location {
+    display: flex;
+    overflow: hidden;
+    min-inline-size: 0;
+    flex-shrink: 100;
+    align-items: center;
+    gap: 3px;
+    max-inline-size: 40%;
+  }
+
+  .et-scheduler-appointment-location-icon {
+    flex-shrink: 0;
+    inline-size: 10px;
+    block-size: 10px;
+  }
+
+  .et-scheduler-appointment-location-text {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-scheduler-appointment-chain-count {
+    display: flex;
+    overflow: hidden;
+    min-inline-size: 0;
+    flex-shrink: 100;
+    align-items: center;
+    gap: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .et-scheduler-appointment-chain-count-icon {
+    inline-size: 8px;
+    block-size: 8px;
+    transform: rotate(90deg);
+  }
+}

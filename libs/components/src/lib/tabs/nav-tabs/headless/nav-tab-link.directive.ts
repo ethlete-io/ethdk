@@ -1,0 +1,92 @@
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLinkActive } from '@angular/router';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
+import { tap } from 'rxjs';
+import { ScrollableActiveChildRef } from '../../../scrollable/headless/scrollable.directive';
+import { OVERLAY_ROUTER_LINK_TOKEN } from '../../../overlay/routing/overlay-router-link.directive';
+import { TabBarTriggerDirective } from '../../headless/tab-bar-trigger.directive';
+import { TabBarDirective } from '../../headless/tab-bar.directive';
+import { TAB_ERROR_CODES } from '../../tab-errors';
+import { NAV_TABS_TOKEN } from './nav-tabs.tokens';
+
+@Directive({
+  selector: '[etNavTabLink]',
+})
+export class NavTabLinkDirective {
+  private routerLinkActive = inject(RouterLinkActive, { self: true, optional: true });
+  private overlayRouterLink = inject(OVERLAY_ROUTER_LINK_TOKEN, { self: true, optional: true });
+  private navTabs = inject(NAV_TABS_TOKEN, { optional: true });
+  private tabBar = inject(TabBarDirective, { optional: true });
+  private destroyRef = inject(DestroyRef);
+  private hostElement = injectHostElement();
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  public trigger = inject(TabBarTriggerDirective);
+
+  private routerLinkIsActive = signal(this.routerLinkActive?.isActive ?? false);
+
+  public isActive = computed(() => this.overlayRouterLink?.isActive() ?? this.routerLinkIsActive());
+
+  constructor() {
+    effect((onCleanup) => {
+      const scrollable = this.navTabs?.scrollable();
+
+      if (!scrollable) return;
+
+      const ref: ScrollableActiveChildRef = {
+        elementRef: this.elementRef,
+        isActiveChildEnabled: this.isActive,
+      };
+
+      scrollable.registerActiveChild(ref);
+      onCleanup(() => scrollable.unregisterActiveChild(ref));
+    });
+
+    // The router owns the selection: a click only asks to navigate, so a guard that vetoes or stalls
+    // the navigation leaves the tab bar where it is.
+    this.trigger.deferSelection.set(true);
+
+    this.routerLinkActive?.isActiveChange
+      .pipe(
+        tap((active) => {
+          this.routerLinkIsActive.set(active);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    // Reads no selection state: with two links active at once (RouterLinkActive settles in a microtask
+    // after NavigationEnd), each would select itself in turn and freeze change detection.
+    effect(() => {
+      const tabBar = this.tabBar;
+
+      if (!tabBar || !this.isActive()) return;
+
+      tabBar.triggers();
+      untracked(() => tabBar.selectTrigger(this.trigger));
+    });
+
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.navTabs) {
+          throw new RuntimeError(
+            TAB_ERROR_CODES.MISSING_NAV_TABS,
+            '[NavTabLinkDirective] a nav tab link must be placed inside an et-nav-tabs element.',
+            { element: this.hostElement },
+          );
+        }
+      });
+    }
+  }
+}

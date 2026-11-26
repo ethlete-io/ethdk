@@ -1,0 +1,19 @@
+export interface GetVenueArgs {
+  pathParams: {
+    venueUuid: string;
+  };
+}
+
+export interface GetVenueSearchArgs {
+  queryParams: {
+    search?: string | null;
+    resultsPerPage?: number | null;
+    page?: number | null;
+  };
+}
+
+export interface GetVenueRankingArgs {
+  pathParams: {
+    venueId: string;
+  };
+}

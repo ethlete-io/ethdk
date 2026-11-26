@@ -1,0 +1,138 @@
+import { signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { defineRootProvider, toInjectFn } from '@ethlete/core';
+import {
+  CalendarOccurrenceEvent,
+  applyExclusionRules,
+  effectiveExclusionRules,
+  fetchGoogleCalendarEvents$,
+  redactEventTitles,
+} from '@ethlete/timetrack';
+import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, from, of, tap, timer, toArray } from 'rxjs';
+import { injectCollectionPause } from '../app/collection-pause';
+import { injectGoogleAccount } from '../app/google';
+import { injectTimetrackSettings } from '../app/settings/settings';
+import { injectHostPorts } from '../host';
+
+/**
+ * How often the calendar is read again. Meetings are created, moved and cancelled while the day runs,
+ * and a quarter of an hour is well inside the window in which any of that still matters.
+ */
+export const CALENDAR_POLL_INTERVAL_MS = 15 * 60_000;
+
+/** How far each read reaches. Wide enough that yesterday evening and tomorrow morning are both in it. */
+export const CALENDAR_WINDOW_BEFORE_MS = 26 * 60 * 60_000;
+export const CALENDAR_WINDOW_AFTER_MS = 12 * 60 * 60_000;
+
+export type CalendarCollectorRun = {
+  at: Date;
+  calendars: number;
+  /** Occurrences the read produced, including the ones the store already had. */
+  seen: number;
+  stored: number;
+  /** Occurrences a rule denied. A meeting is named after the work, like everything else. */
+  excluded: number;
+};
+
+/**
+ * Reads the picked calendars into the event store, so a meeting reaches `streamDay` through the same
+ * path as a commit or a focus sample.
+ *
+ * Every read overlaps the last one by design — a moved meeting is only visible by reading its window
+ * again — and `dedupeKeyOf` is what keeps the overlap from storing the same occurrence twice. A meeting the
+ * read no longer returns was declined, cancelled or moved, and the store deletes it.
+ */
+const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
+  const ports = injectHostPorts();
+  const settings = injectTimetrackSettings();
+  const pause = injectCollectionPause();
+  const account = injectGoogleAccount();
+  const lastRun = signal<CalendarCollectorRun | null>(null);
+  const failure = signal<string | null>(null);
+
+  const read$ = (calendarIds: string[]): Observable<unknown> => {
+    const at = new Date();
+    const span = {
+      from: new Date(at.getTime() - CALENDAR_WINDOW_BEFORE_MS),
+      to: new Date(at.getTime() + CALENDAR_WINDOW_AFTER_MS),
+    };
+
+    return account
+      .withCredentials$((credentials) => {
+        if (!credentials) return EMPTY;
+
+        return from(calendarIds).pipe(
+          concatMap((calendarId) =>
+            fetchGoogleCalendarEvents$({
+              transport: ports.transport,
+              credentials,
+              calendarId,
+              from: span.from,
+              to: span.to,
+            }),
+          ),
+          toArray(),
+        );
+      })
+      .pipe(
+        concatMap((perCalendar: CalendarOccurrenceEvent[][]) => {
+          const events = perCalendar.flat();
+          // A meeting title is written by whoever sent the invitation, so it carries a customer name as
+          // readily as a window title does. Both passes run here for the same reason they run on a
+          // window: the rule is written against the title the user saw, and the store keeps neither a
+          // denied occurrence nor the query string of a URL somebody pasted into the invitation.
+          const { kept, excluded } = applyExclusionRules({
+            events,
+            rules: effectiveExclusionRules(settings.settings()),
+          });
+
+          return ports.events.appendCalendarRead$({ events: redactEventTitles(kept), span }).pipe(
+            tap((stored) => {
+              lastRun.set({
+                at,
+                calendars: calendarIds.length,
+                seen: events.length,
+                stored,
+                excluded: excluded.length,
+              });
+            }),
+          );
+        }),
+      );
+  };
+
+  const collect$ = (): Observable<unknown> =>
+    defer(() =>
+      settings.ready$.pipe(
+        concatMap(() => {
+          const calendarIds = settings.settings().google.calendarIds;
+
+          return calendarIds.length ? read$(calendarIds) : of(undefined);
+        }),
+        // The one owner of clearing the failure, for the reason the GitLab collector names: a run
+        // with no calendar picked or no credential short-circuits before the success `tap`, so
+        // clearing there left a dead failure on screen for good.
+        tap({ complete: () => failure.set(null) }),
+        catchError((error: unknown) => {
+          failure.set(error instanceof Error ? error.message : String(error));
+
+          return EMPTY;
+        }),
+      ),
+    );
+
+  /**
+   * A paused collector asks Google nothing. A read reaches over a day either way, so the store refuses
+   * the meetings that fall inside the pause once collection comes back.
+   */
+  timer(0, CALENDAR_POLL_INTERVAL_MS)
+    .pipe(
+      exhaustMap(() => (pause.isPaused() ? EMPTY : collect$())),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  return { lastRun, failure };
+});
+
+export const injectCalendarCollector = /* @__PURE__ */ toInjectFn(CALENDAR_COLLECTOR_DEF);

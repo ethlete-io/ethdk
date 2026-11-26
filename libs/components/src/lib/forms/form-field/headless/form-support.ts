@@ -1,0 +1,310 @@
+import { computed, DestroyRef, effect, ElementRef, inject, Signal, signal, untracked } from '@angular/core';
+import { ValidationError } from '@angular/forms/signals';
+import {
+  AnimatableDirective,
+  defineProvider,
+  injectSemanticColorTheme,
+  nextFrame,
+  ProvideColorDirective,
+  signalElementDimensions,
+  toInjectFn,
+  toProvideFn,
+} from '@ethlete/core';
+import { FormFieldDirective } from './form-field.directive';
+import {
+  clearLeavingSupportStateOnExit,
+  INITIAL_SUPPORT_PRESENTATION_STATE,
+  reduceSupportPresentation,
+  SUPPORT_CONTENT_STATE,
+  SupportContentState,
+} from './support-presentation';
+
+const formSupportFactory = () => {
+  const provideColor = inject(ProvideColorDirective, { optional: true });
+  const formFieldDir = inject(FormFieldDirective);
+  const errorColorTheme = injectSemanticColorTheme('error');
+  const warningTheme = injectSemanticColorTheme('warning');
+
+  const errorContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
+  const warningContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
+  const hintContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
+  const counterContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
+  const errorAnimatable = signal<AnimatableDirective | undefined>(undefined);
+  const warningAnimatable = signal<AnimatableDirective | undefined>(undefined);
+  const hintAnimatable = signal<AnimatableDirective | undefined>(undefined);
+
+  const errorDimensions = signalElementDimensions(errorContent);
+  const warningDimensions = signalElementDimensions(warningContent);
+  const hintDimensions = signalElementDimensions(hintContent);
+  const counterDimensions = signalElementDimensions(counterContent);
+  const hostDimensions = signalElementDimensions(inject<ElementRef<HTMLElement>>(ElementRef));
+  const hostShown = computed(() => (hostDimensions().offset?.width ?? 0) > 0);
+
+  const effectiveErrors = computed<readonly ValidationError.WithOptionalFieldTree[]>(() => {
+    const parseMessage = formFieldDir.parseError() ? formFieldDir.parseErrorMessage() : null;
+
+    return parseMessage ? [{ kind: 'etParseError', message: parseMessage }] : formFieldDir.errors();
+  });
+
+  const semanticSupportState = computed<SupportContentState>(() => {
+    if (formFieldDir.shouldDisplayError() && effectiveErrors().length > 0) {
+      return SUPPORT_CONTENT_STATE.ERROR;
+    }
+
+    if (formFieldDir.warnings().length > 0) {
+      return SUPPORT_CONTENT_STATE.WARNING;
+    }
+
+    if (formFieldDir.registeredHint()) {
+      return SUPPORT_CONTENT_STATE.HINT;
+    }
+
+    return SUPPORT_CONTENT_STATE.NONE;
+  });
+
+  const displaysError = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
+  const displaysWarning = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING);
+
+  const supportPresentation = signal(INITIAL_SUPPORT_PRESENTATION_STATE);
+
+  const shouldRenderSupport = computed(() => {
+    const presentation = supportPresentation();
+
+    return (
+      !!formFieldDir.registeredCounter() ||
+      semanticSupportState() !== SUPPORT_CONTENT_STATE.NONE ||
+      presentation.leavingState !== SUPPORT_CONTENT_STATE.NONE
+    );
+  });
+
+  const shouldRenderError = computed(() => {
+    return (
+      semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR ||
+      supportPresentation().leavingState === SUPPORT_CONTENT_STATE.ERROR
+    );
+  });
+
+  const shouldRenderWarning = computed(() => {
+    return (
+      semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING ||
+      supportPresentation().leavingState === SUPPORT_CONTENT_STATE.WARNING
+    );
+  });
+
+  const shouldRenderHint = computed(() => {
+    return (
+      semanticSupportState() === SUPPORT_CONTENT_STATE.HINT ||
+      supportPresentation().leavingState === SUPPORT_CONTENT_STATE.HINT
+    );
+  });
+
+  const errorActive = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
+  const warningActive = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING);
+  const hintActive = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.HINT);
+
+  const leavingStateOf = (state: SupportContentState) =>
+    computed(() => (supportPresentation().leavingState === state ? 'leaving' : 'active'));
+
+  const errorState = leavingStateOf(SUPPORT_CONTENT_STATE.ERROR);
+  const warningState = leavingStateOf(SUPPORT_CONTENT_STATE.WARNING);
+  const hintState = leavingStateOf(SUPPORT_CONTENT_STATE.HINT);
+
+  const errorDirection = computed(() => supportPresentation().directions.error);
+  const warningDirection = computed(() => supportPresentation().directions.warning);
+  const hintDirection = computed(() => supportPresentation().directions.hint);
+
+  // resolved only once a warning renders, so a control that never warns doesn't force the app to
+  // register a `type: 'warning'` theme
+  const warningColorTheme = computed(() => (shouldRenderWarning() ? warningTheme() : null));
+
+  const visibleErrors = computed(() => {
+    if (semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR) {
+      return effectiveErrors();
+    }
+
+    return supportPresentation().renderedErrors;
+  });
+
+  const visibleWarnings = computed(() => {
+    if (semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING) {
+      return formFieldDir.warnings();
+    }
+
+    return supportPresentation().renderedWarnings;
+  });
+
+  const supportCanAnimate = signal(false);
+
+  const supportHeight = computed(() => {
+    if (!supportCanAnimate()) return null;
+
+    const stackHeight = (() => {
+      switch (semanticSupportState()) {
+        case SUPPORT_CONTENT_STATE.ERROR:
+          return errorDimensions().offset?.height ?? 0;
+        case SUPPORT_CONTENT_STATE.WARNING:
+          return warningDimensions().offset?.height ?? 0;
+        case SUPPORT_CONTENT_STATE.HINT:
+          return hintDimensions().offset?.height ?? 0;
+        default:
+          return 0;
+      }
+    })();
+
+    const counterHeight = formFieldDir.registeredCounter() ? (counterDimensions().offset?.height ?? 0) : 0;
+
+    return Math.max(stackHeight, counterHeight);
+  });
+
+  const activeContentWidth = computed(() => {
+    switch (semanticSupportState()) {
+      case SUPPORT_CONTENT_STATE.ERROR:
+        return errorDimensions().offset?.width ?? 0;
+      case SUPPORT_CONTENT_STATE.WARNING:
+        return warningDimensions().offset?.width ?? 0;
+      case SUPPORT_CONTENT_STATE.HINT:
+        return hintDimensions().offset?.width ?? 0;
+      default:
+        return null;
+    }
+  });
+
+  // support content already there when the control lays out - first, or again after a hidden
+  // ancestor (an inactive tab panel) shows it - must sit in place in that frame without animating;
+  // the measured height lands a frame late, so the region keeps its natural height until this arms
+  effect((onCleanup) => {
+    if (!hostShown()) {
+      supportCanAnimate.set(false);
+
+      return;
+    }
+
+    if (supportCanAnimate() || activeContentWidth() === 0) return;
+
+    onCleanup(nextFrame(() => supportCanAnimate.set(true)));
+  });
+
+  for (const [state, animatable] of [
+    [SUPPORT_CONTENT_STATE.ERROR, errorAnimatable],
+    [SUPPORT_CONTENT_STATE.WARNING, warningAnimatable],
+    [SUPPORT_CONTENT_STATE.HINT, hintAnimatable],
+  ] as const) {
+    clearLeavingSupportStateOnExit({ state, animatable, presentation: supportPresentation, semanticSupportState });
+  }
+
+  effect(() => {
+    const state = semanticSupportState();
+    const errors = effectiveErrors();
+    const warnings = formFieldDir.warnings();
+
+    supportPresentation.update((presentation) =>
+      reduceSupportPresentation({ presentation, semanticSupportState: state, errors, warnings }),
+    );
+  });
+
+  effect(() => {
+    const theme = displaysError() ? errorColorTheme() : null;
+
+    untracked(() => {
+      if (!provideColor) return;
+
+      if (theme) {
+        provideColor.forceColor(theme);
+
+        return;
+      }
+
+      provideColor.clearForcedColor();
+    });
+  });
+
+  return {
+    errorColorTheme,
+    warningColorTheme,
+    formFieldDir,
+    errorId: formFieldDir.errorId,
+    warningId: formFieldDir.warningId,
+    hintId: formFieldDir.hintId,
+    errorContent,
+    warningContent,
+    hintContent,
+    counterContent,
+    errorAnimatable,
+    warningAnimatable,
+    hintAnimatable,
+    effectiveErrors,
+    semanticSupportState,
+    displaysError,
+    displaysWarning,
+    shouldRenderSupport,
+    shouldRenderError,
+    shouldRenderWarning,
+    shouldRenderHint,
+    errorActive,
+    warningActive,
+    hintActive,
+    errorState,
+    warningState,
+    hintState,
+    errorDirection,
+    warningDirection,
+    hintDirection,
+    visibleErrors,
+    visibleWarnings,
+    supportHeight,
+    supportCanAnimate: supportCanAnimate.asReadonly(),
+  };
+};
+
+const FORM_SUPPORT_DEF = /* @__PURE__ */ defineProvider(formSupportFactory, {
+  name: 'FormSupport',
+});
+
+/** @internal */
+export const provideFormSupport = /* @__PURE__ */ toProvideFn(FORM_SUPPORT_DEF);
+export const injectFormSupport = /* @__PURE__ */ toInjectFn(FORM_SUPPORT_DEF);
+
+export type FormSupport = ReturnType<typeof formSupportFactory>;
+
+/**
+ * Forwards a support-region view children into its `FormSupport`, and drops them again when the
+ * region is torn down. The `viewChild` queries themselves must stay as class fields (`NG8110` - the
+ * compiler only accepts them in direct field initializers). Call from the constructor (needs an
+ * injection context for the effect).
+ *
+ * @internal
+ */
+export const wireFormSupport = (
+  support: FormSupport,
+  refs: {
+    errorContent: Signal<ElementRef<HTMLElement> | undefined>;
+    warningContent: Signal<ElementRef<HTMLElement> | undefined>;
+    hintContent: Signal<ElementRef<HTMLElement> | undefined>;
+    counterContent?: Signal<ElementRef<HTMLElement> | undefined>;
+    errorAnimatable: Signal<AnimatableDirective | undefined>;
+    warningAnimatable: Signal<AnimatableDirective | undefined>;
+    hintAnimatable: Signal<AnimatableDirective | undefined>;
+  },
+) => {
+  effect(() => {
+    support.errorContent.set(refs.errorContent());
+    support.warningContent.set(refs.warningContent());
+    support.hintContent.set(refs.hintContent());
+    support.counterContent.set(refs.counterContent?.());
+    support.errorAnimatable.set(refs.errorAnimatable());
+    support.warningAnimatable.set(refs.warningAnimatable());
+    support.hintAnimatable.set(refs.hintAnimatable());
+  });
+
+  // the region can be torn down while the `FormSupport` lives on (it belongs to the control), and a
+  // measured height read off a detached element would keep the closed region open
+  inject(DestroyRef).onDestroy(() => {
+    support.errorContent.set(undefined);
+    support.warningContent.set(undefined);
+    support.hintContent.set(undefined);
+    support.counterContent.set(undefined);
+    support.errorAnimatable.set(undefined);
+    support.warningAnimatable.set(undefined);
+    support.hintAnimatable.set(undefined);
+  });
+};

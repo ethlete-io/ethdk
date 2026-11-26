@@ -1,0 +1,42 @@
+{
+  "name": "eslint-plugin",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/eslint-plugin/src",
+  "projectType": "library",
+  "tags": ["scope:tooling"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/eslint-plugin",
+        "command": "node tools/scripts/build-eslint-plugin.js"
+      }
+    },
+    "lint": {
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/eslint-plugin/tsconfig.lib.json --noEmit"
+      }
+    },
+    "test": {
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/eslint-plugin"],
+      "options": {
+        "coverage.reportsDirectory": "../../../coverage/libs/eslint-plugin"
+      }
+    }
+  }
+}

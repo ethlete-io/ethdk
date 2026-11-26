@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      button {
+        width: 100px;
+        height: 40px;
+        border-radius: 10px;
+        border: none;
+        background: yellow;
+        margin-top: 50px;
+        margin-left: 40px;
+      }
+
+      #overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 500px;
+        height: 700px;
+        background: red;
+        border-radius: 20px;
+        opacity: 0;
+        pointer-events: none;
+        transform-origin: center;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="button">Click me</button>
+
+    <div id="overlay">
+      <p>Overlay stuff</p>
+    </div>
+
+    <script>
+      const button = document.getElementById('button');
+      const overlay = document.getElementById('overlay');
+
+      const buttonRect = button.getBoundingClientRect();
+      const overlayRect = overlay.getBoundingClientRect();
+
+      const scaleX = buttonRect.width / overlayRect.width;
+      const scaleY = buttonRect.height / overlayRect.height;
+      const scale = `scale(${scaleX}, ${scaleY})`;
+
+      const spaceAfterScaleX = (overlayRect.width - buttonRect.width) / 2;
+      const spaceAfterScaleY = (overlayRect.height - buttonRect.height) / 2;
+
+      const inverseScaleX = 1 / scaleX;
+      const inverseScaleY = 1 / scaleY;
+
+      const translateX = -spaceAfterScaleX * inverseScaleX;
+      const translateY = -spaceAfterScaleY * inverseScaleY;
+
+      // now that its in the top left position we need to move it to the top left of the button while keeping the inverse scale in mind
+
+      const translate = `translate(${translateX}px, ${translateY}px)`;
+
+      overlay.style.transform = `${scale} ${translate}`;
+
+      overlay.style.opacity = 1;
+
+      button.addEventListener('click', (e) => {});
+    </script>
+  </body>
+</html>

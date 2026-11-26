@@ -1,0 +1,58 @@
+import { Directive, booleanAttribute, computed, input, inputBinding, numberAttribute } from '@angular/core';
+import { randomId } from '@ethlete/core';
+import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-player-slot.directive';
+import { streamSizeAttribute } from '../../../stream-size';
+
+const MATCH_VIDEO = /(?:www\.|go\.)?twitch\.tv\/(?:videos?\/)([\d]+)/;
+const MATCH_CHANNEL = /(?:www\.|go\.)?twitch\.tv\/(?!videos?(?:[/?#]|$))([a-zA-Z0-9_]+)/;
+const BARE_CHANNEL = /^[a-zA-Z0-9_]+$/;
+
+@Directive({
+  providers: [{ provide: STREAM_PLAYER_PARAMS_TOKEN, useExisting: TwitchPlayerParamsDirective }],
+})
+export class TwitchPlayerParamsDirective implements StreamPlayerParams {
+  public src = input.required<string>();
+  public width = input<string | number, string | number>('100%', { transform: streamSizeAttribute });
+  public height = input<string | number, string | number>('100%', { transform: streamSizeAttribute });
+  public autoplay = input(false, { transform: booleanAttribute });
+  public chat = input(false, { transform: booleanAttribute });
+  public startTime = input(0, { transform: numberAttribute });
+
+  public channel = computed(() => {
+    const s = this.src();
+    if (MATCH_VIDEO.test(s)) return null;
+    const m = s.match(MATCH_CHANNEL);
+    if (m) return m[1] ?? null;
+    return BARE_CHANNEL.test(s) && !/^\d+$/.test(s) ? s : null;
+  });
+
+  public video = computed(() => {
+    const s = this.src();
+    const m = s.match(MATCH_VIDEO);
+    if (m) return m[1] ?? null;
+    if (MATCH_CHANNEL.test(s)) return null;
+    return /^\d+$/.test(s) ? s : null;
+  });
+
+  private missingSourceId = `twitch-missing-${randomId()}`;
+
+  public playerId = computed(() => {
+    const channel = this.channel();
+    const video = this.video();
+
+    if (channel) return `twitch-channel-${channel}`;
+
+    return video ? `twitch-video-${video}` : this.missingSourceId;
+  });
+
+  public createBindings() {
+    return [
+      inputBinding('src', () => this.src()),
+      inputBinding('width', () => this.width()),
+      inputBinding('height', () => this.height()),
+      inputBinding('autoplay', () => this.autoplay()),
+      inputBinding('chat', () => this.chat()),
+      inputBinding('startTime', () => this.startTime()),
+    ];
+  }
+}

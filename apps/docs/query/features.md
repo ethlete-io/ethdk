@@ -1,0 +1,248 @@
+# Query features
+
+Features configure a [query's](/query/queries) behavior and are passed to the creator call. Each feature type can be used **once per query** (using one twice throws).
+
+```ts
+import { withArgs, withErrorHandling, withPolling } from '@ethlete/query';
+
+const matchQuery = getMatch(
+  withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
+  withPolling({ interval: 10_000 }),
+  withErrorHandling({ handler: (e) => console.error(e) }),
+);
+```
+
+## withArgs
+
+Reactively supplies request args. The function runs in a reactive context - like a `computed`, it re-runs when a signal it reads changes, and new args re-execute [auto-executable](/query/queries#auto-execution) queries:
+
+```ts
+withArgs(() => ({ queryParams: { page: this.page(), search: this.search() } }));
+```
+
+Return `null` to **park** the query: it is reset - `args()`, `response()` and `executionState()` become `null` - and polling and auto-refresh pause until args are set again. A mutation (POST, PUT, PATCH, DELETE) that is still in flight when its args park is not aborted: it finishes, and the query parks once it has settled - unless args return first, in which case the query is not parked. A GET is aborted at once. While new non-null args load, the previous args' response stays in `response()` (see [`keepPreviousResponse`](/query/queries#the-query-object)). That is how a query waits for something it depends on - see [dependent queries](/query/dependent-queries). An `execute({ args })` on a parked query runs those args and keeps their response; the feature's next non-null args replace it. A bare `execute()` on a parked query does nothing: it sends no request, and in dev mode it logs a warning that names the route.
+
+`withArgs` is the way to give args to every query, mutations included. A mutation never auto-executes, so `withArgs` only declares its args, and `.execute()` sends the current ones:
+
+```ts
+updateUserQuery = updateUser(withArgs(() => ({ pathParams: { userId: this.userId() }, body: this.form.value() })));
+
+save() {
+  this.updateUserQuery.execute();
+}
+```
+
+A function route (one using `pathParams`) requires a `withArgs` feature. Calling the creator without one is a type error, and throws `ET100` at runtime where the compiler cannot tell (an `any`-typed creator). A spread `getPost(...features)` is never checked at compile time; a missing `withArgs` in it surfaces as `ET100` at runtime. The check reads the type `withArgs()` returns, so a feature stored in a variable annotated as plain `QueryFeature` does not count - drop the annotation, or annotate it as `WithArgsQueryFeature<TArgs>`. A helper generic over the args type that passes `withArgs` is fine; one that calls the creator without `withArgs` is a type error, since the compiler cannot rule out `pathParams` - set `silenceMissingWithArgsFeatureError` there. The `silenceMissingWithArgsFeatureError` [query config](/query/queries#query-creators) is an escape hatch for args that only exist at call time, passed to `execute({ args })`; it satisfies the type check only as the literal `true`. Setting that config together with a `withArgs` feature is an error too, at compile time and at runtime, since the two contradict each other.
+
+```ts
+getPost(); // type error: withArgs() is required: this query's route uses pathParams. …
+getPost(withArgs(() => ({ pathParams: { postId: this.postId() } }))); // ok
+getPost({ silenceMissingWithArgsFeatureError: true }); // ok, pass the args to execute({ args })
+```
+
+The check needs the concrete args type, so a helper that is generic over the creator cannot call it: for an unresolved `T` it fails with `TS2684`. Let the helper take a function that creates the query instead, and call the creator where its type is known.
+
+```ts
+const track = <T extends QueryArgs>(creator: QueryCreator<T>) => creator(); // TS2684
+const track = <T extends QueryArgs>(create: () => Query<T>) => create(); // ok
+
+track(() => getPost(withArgs(() => ({ pathParams: { postId: this.postId() } }))));
+```
+
+## withPolling
+
+Re-executes the query on an interval. The interval restarts when args change, and stops when the query's scope is destroyed.
+
+| Option               | Default      | Description                                                                                                 |
+| -------------------- | ------------ | ----------------------------------------------------------------------------------------------------------- |
+| `interval`           | - (required) | Polling interval in milliseconds, or a signal of it - a new value re-times the next tick from the last one. |
+| `executeInitially`   | `false`      | Also execute immediately on creation.                                                                       |
+| `pauseWhileHidden`   | `false`      | Stop polling while the document is hidden.                                                                  |
+| `enabled`            | `() => true` | Poll only while this returns `true`. Read reactively - pass a signal or a `computed`.                       |
+| `refetchOnFocus`     | `false`      | Execute when the window regains focus.                                                                      |
+| `refetchOnReconnect` | `false`      | Execute when the browser comes back online.                                                                 |
+
+```ts
+const interval = signal(10_000);
+
+const matchQuery = getMatch(
+  withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
+  withPolling({ interval, pauseWhileHidden: true, refetchOnFocus: true, refetchOnReconnect: true }),
+);
+```
+
+`enabled` stops and resumes polling from app state, including the query's own response - a match feed that stops once the match is over:
+
+```ts
+readonly match = getMatch(
+  withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
+  withPolling({ interval: 5_000, enabled: (): boolean => !this.finished() }),
+);
+
+readonly finished = computed(() => this.match.response()?.status === 'finished');
+```
+
+The `enabled` function reads `finished`, which reads `match`, so TypeScript cannot infer its type - the explicit `boolean` return type breaks that cycle.
+
+While `enabled` is `false` no tick runs - neither `executeInitially` nor a focus or reconnect refetch. When it turns `true`, a tick that fell due in the meantime runs at once; otherwise polling resumes on its cadence. It does not stop a manual `execute()` or an args change from fetching.
+
+Every tick sets `loading()`, like any execution. To show a spinner only on the first load and keep a polled screen still, check for a response too:
+
+```html
+@if (feed.loading() && !feed.response()) {
+<et-spinner />
+}
+```
+
+A background refresh is `executionState()` `{ type: 'loading', hasCachedResponse: true }`, with the previous data in `cachedResponse`. `triggeredBy()` names what started the current execution: `'polling'` for a tick, `executeInitially`, or a focus or reconnect refetch; `'long-polling'` and `'auto-refresh'` for the features below; `null` for a manual `execute()`.
+
+With `pauseWhileHidden`, no timer runs while the tab is hidden. When it becomes visible again, a tick that fell due in the meantime runs at once; a tab hidden for less than one interval just resumes its cadence. A focus or reconnect refetch counts as a tick: the interval restarts from it. With multi-tab sync, a tab that is not polling the key (see below) skips these refetches too, like any tick.
+
+Only for reads - `GET`/`HEAD`/`OPTIONS` and GraphQL queries - anything else throws.
+
+With the [multi-tab sync](/query/multi-tab#polling-dedup) client feature, the same query polled in several tabs is polled by one of them; the rest keep their interval but skip each tick and receive the data instead. Pass `withMultiTabSync({ dedupePolling: false })` if you want every tab to poll for itself, and leave the feature out entirely to keep every tab on its own.
+
+## withLongPolling
+
+Long polling: a chain of requests where each round starts once the previous one settled, with args derived from what it returned. There is no interval - the server sets the cadence by holding each request open until it has something to report.
+
+```ts
+import { withArgs, withLongPolling } from '@ethlete/query';
+
+const eventsQuery = getEvents(
+  withArgs(() => ({ queryParams: { cursor: null } })),
+  withLongPolling({
+    nextArgs: (response) => (response ? { queryParams: { cursor: response.cursor } } : null),
+  }),
+);
+```
+
+| Option            | Default      | Description                                                                                    |
+| ----------------- | ------------ | ---------------------------------------------------------------------------------------------- |
+| `nextArgs`        | - (required) | `(response, args) => args \| null`. `null` ends the chain.                                     |
+| `delay`           | `250`        | Pause between one round settling and the next starting.                                        |
+| `errorDelay`      | `1000`       | Wait before repeating a failed round. Doubles per consecutive failure.                         |
+| `maxErrorDelay`   | `30000`      | Ceiling for the doubling `errorDelay`.                                                         |
+| `stopAfterErrors` | `10`         | Consecutive failures that end the chain.                                                       |
+| `enabled`         | `() => true` | Run the chain only while this returns `true`. Read reactively - pass a signal or a `computed`. |
+
+`response` is `null` when the server answered without a body - a `204` on timeout, which is the usual way to say "nothing yet". Returning the args unchanged is what re-asks the same question; returning `null` ends the chain, and only a new `withArgs` value or a manual `execute()` starts it again.
+
+`nextArgs` is handed the args the settled round was actually sent with, not the query's `args()` signal - so a cursor chain reads its own last position even though the `withArgs` source never changes.
+
+A **failed** round is repeated after a growing delay rather than ending the chain, so a transient 502 or a dropped connection does not silently deaden a live feed. That backoff sits on top of the request's own [retry policy](/query/errors#retries): a round counts as failed once its retries are exhausted. After `stopAfterErrors` consecutive failures the chain stops and the query keeps its error.
+
+A new value from the `withArgs` source cancels the pending round - the source's own re-execution starts the new chain from it. `reset()` cancels it too.
+
+When `enabled` turns `false`, the round in flight is aborted - it sets no response and no error - and a pending round is cancelled; no round starts until it turns `true`, which runs that round again at once with the same args. A chain that already ended (`nextArgs` returned `null`, or `stopAfterErrors`) stays ended.
+
+Two things this feature deliberately does not do:
+
+- **Rounds are not cached.** Each one is requested with `keepUnusedFor: 0`, because a cursor is asked for once and never again; retaining them would leave one dead entry per round behind for the whole retention window.
+- **Rounds are not deduped across tabs.** [Multi-tab sync](/query/multi-tab#polling-dedup) elects a poller per cache key, and a chain's key moves with every round, so every tab drives its own chain.
+
+Only for reads - `GET`/`HEAD`/`OPTIONS` and GraphQL queries - anything else throws, as does combining it with `withPolling`, since both would drive the same query's re-execution.
+
+`delay` exists because a server that already has data answers a long poll immediately: on a busy feed, rounds would otherwise follow each other with no pause at all. Raise it to put a floor under how often a chatty endpoint is asked.
+
+## withAutoRefresh
+
+Re-executes the query whenever one of the given signals changes:
+
+```ts
+import { withAutoRefresh } from '@ethlete/query';
+
+withAutoRefresh({ onSignalChanges: [this.locale, this.currency] });
+```
+
+Throws when combined with `onlyManualExecution` unless you pass `ignoreOnlyManualExecution: true`, and (like polling) is limited to reads - `GET`/`HEAD`/`OPTIONS` and GraphQL queries.
+
+Pass `enabled` (a signal or a `computed`, default always on) to drop signal changes while it is `false`. Turning it `true` does not execute by itself - the next signal change does.
+
+## Side-effect handlers
+
+| Feature                        | Called with                                            |
+| ------------------------------ | ------------------------------------------------------ |
+| `withSuccessHandling(options)` | `handler(response)` on every response.                 |
+| `withErrorHandling(options)`   | `handler(error: QueryErrorResponse)` on every failure. |
+| `withLogging(options)`         | `logFn(event)` for every raw HTTP event.               |
+
+These listen to the query's discrete event stream, so they never miss a terminal transition - use them for toasts, tracking and debugging rather than deriving state (that's what the [signals](/query/queries#the-query-object) are for).
+
+## withResponseUpdate
+
+Reactively patches the current response without re-fetching - made for pushing websocket messages into an already-loaded query. Return `null` to skip an update; the next real server response overwrites patches. The updater works on the shape `response()` has, after `transformResponse` (or the GraphQL `data` unwrapping), and its value is not transformed again.
+
+```ts
+import { withResponseUpdate } from '@ethlete/query';
+
+const matchQuery = getMatch(
+  withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
+  withResponseUpdate({
+    updater: ({ currentResponse }) => {
+      const message = this.matchRoom()?.latestMessage();
+      if (!message || !currentResponse) return null;
+
+      return { ...currentResponse, ...message.data };
+    },
+  }),
+);
+```
+
+See [WebSockets](/query/ws) for the room client this pairs with, and a live demo of this feature below:
+
+@example query-features/live-response-update 440px
+
+## withPageResetOnError
+
+Resets the page when the current page becomes out of range - e.g. after a filter shrinks the result set below the current page. It reacts to the query's error events and resets the **page source** (a signal or a [query form](/query/query-forms) field), so the normal reactive re-execution then runs with the corrected page. Fixing the source (rather than patching args) is what makes the change stick, since query args are reactively sourced.
+
+```ts
+import { withArgs, withPageResetOnError } from '@ethlete/query';
+
+// signal-driven page
+const users = getUsers(
+  withArgs(() => ({ queryParams: { page: this.page() } })),
+  withPageResetOnError({ page: this.page }),
+);
+
+// query-form-driven page
+const users = getUsers(
+  withArgs(() => ({ queryParams: this.qf.value() })),
+  withPageResetOnError({ reset: () => this.qf.resetFieldToDefault('page') }),
+);
+```
+
+| Option    | Default                 | Description                                                                                                        |
+| --------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `page`    | -                       | A `WritableSignal<number>` to reset (use this **or** `reset`).                                                     |
+| `resetTo` | `1`                     | Value to reset `page` to.                                                                                          |
+| `reset`   | -                       | Callback to reset any page source (use this **or** `page`).                                                        |
+| `when`    | `isPageOutOfRangeError` | Which errors trigger the reset. The default matches HTTP `416` and a dev-mode `500` Pagerfanta out-of-range error. |
+
+The `isPageOutOfRangeError` predicate is exported too, so you can reuse it inside a plain `withErrorHandling` handler when you need custom behavior.
+
+## Authoring custom features
+
+`createQueryFeature()` is the extension point behind all the built-in `with*` features - use it to package your own reusable query behavior:
+
+```ts
+import { createQueryFeature, nestedEffect, QueryArgs } from '@ethlete/query';
+
+const withLogging = <TArgs extends QueryArgs>(options: { prefix: string }) =>
+  createQueryFeature<TArgs>({
+    type: 'withLogging',
+    devtools: () => [{ label: 'prefix', value: options.prefix }],
+    fn: ({ state, execute, deps, flags }) => {
+      nestedEffect(() => console.log(options.prefix, state.args()));
+    },
+  });
+```
+
+`type` is any string that names the feature; the built-in ones use the `QueryFeatureType` constants. Two features of the same `type` on one query throw. The feature `fn` runs once during query creation and receives the query's internals: its `state` (args, response, error, loading signals), the internal `execute` function, DI `deps` and the resolved feature `flags`. Use `nestedEffect()` (also exported) instead of `effect()` when reacting to signals inside a feature - it creates the effect outside the current reactive context so the feature setup itself never becomes a dependency.
+
+The optional `devtools` describer is what the [devtools panel](/query-devtools/#features-show-what-they-were-configured-with) lists under the feature's name. It is only called while an entry is being built, so a feature keeps costing nothing without `provideQueryDevtools()`.
+
+The pieces are named: a feature is a `QueryFeature<TArgs>` (`{ type, fn, devtools? }`), its `fn` a `QueryFeatureFn<TArgs>` taking a `QueryFeatureContext<TArgs>` - `{ state, execute, deps, flags }`, where `state` is a `QueryState<TArgs>` of writable signals, `deps` a `QueryDependencies` and `flags` a `QueryFeatureFlags` (what the creator resolved about this query: its method, whether it auto-executes, whether `withArgs` is present). `QueryDevtoolsFeatureDescriber` is the `devtools` callback's type.
+
+The built-in features' option bags follow one naming rule - `withPolling` takes `WithPollingFeatureOptions`, and so on through `WithLongPollingFeatureOptions`, `WithAutoRefreshFeatureOptions`, `WithSuccessHandlingFeatureOptions`, `WithErrorHandlingFeatureOptions`, `WithLoggingFeatureOptions`, `WithResponseUpdateFeatureOptions` (whose `updater` receives a `WithResponseUpdateFeatureFnData`) and `WithPageResetOnErrorFeatureOptions`.

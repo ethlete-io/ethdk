@@ -1,0 +1,153 @@
+# Testing
+
+Queries run on Angular's `HttpClient`, so a spec answers them with Angular's own HTTP testing
+backend. The `@ethlete/query/testing` entry point adds helpers on top of that, plus in-memory fakes
+for the browser APIs jsdom lacks.
+
+```ts
+import { expectFlushAndWait, setupQueryTest } from '@ethlete/query/testing';
+```
+
+## Testing a view that fetches
+
+A client made with [`createQueryClient`](/query/queries#the-query-client) is provided in root, so
+the spec only provides the HTTP backend:
+
+```ts
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+
+beforeEach(() => {
+  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+});
+
+afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+it('renders the players', async () => {
+  const http = TestBed.inject(HttpTestingController);
+  const fixture = TestBed.createComponent(PlayersComponent);
+  fixture.detectChanges();
+  TestBed.tick();
+
+  http.expectOne((req) => req.url.includes('/players')).flush({ items: ['Müller'] });
+  await fixture.whenStable();
+
+  expect(fixture.nativeElement.textContent).toContain('Müller');
+});
+```
+
+A GET query [auto-executes](/query/queries#auto-execution) once its args resolve, which happens on
+change detection: `TestBed.tick()` before `expectOne`, and again after `flush` before reading
+`response()`, `loading()` or `error()`. The request's `url` includes the query string. Mutations
+never auto-execute - call `.execute()` first.
+
+A view whose [`withArgs`](/query/features#withargs) reads `injectQueryParam` from `@ethlete/core`
+also needs `provideRouter([])`. Change the param by navigating
+(`TestBed.inject(Router).navigateByUrl('/?search=mul')`), then `TestBed.tick()` and expect the next
+request.
+
+## Helpers
+
+| Export                                                                          | What it does                                                                                               |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `expectAndFlush(httpTesting, url, response, status?)`                           | `httpTesting.expectOne(url).flush(response)`, with `status` as `{ status, statusText }`.                   |
+| `expectFlushAndWait(httpTesting, url, response, status?)`                       | The same, followed by `TestBed.tick()`.                                                                    |
+| `setupQueryTest(config?)`                                                       | Configures `TestBed` and creates a scratch client. Returns a `QueryTestSetup`.                             |
+| `setupAuthTest(config)`                                                         | A bearer auth provider over a `QueryTestSetup`. Returns an `AuthTestSetup`.                                |
+| `createFakeQueryPersistenceStore()`                                             | An in-memory persistence adapter - see [Persisted responses](/query/persistence#testing-it).               |
+| `installFakeBroadcastChannel()`, `installFakeWebLocks()`, `flushMultiTabSync()` | Two clients in one spec as two tabs - see [Multi-tab sync](/query/multi-tab#testing-it).                   |
+| `createWebSocketTestDouble()`                                                   | A scripted socket.io `io` factory - see [WebSockets](/query/ws#testing-it).                                |
+| `mintTestToken(options?)`                                                       | An unsigned JWT the auth provider decodes - see [Testing a view behind auth](#testing-a-view-behind-auth). |
+
+### setupQueryTest
+
+For code that takes a client or a creator as input - a custom [query feature](/query/features), a
+helper that wraps a creator - rather than a view bound to the app's own client:
+
+```ts
+import { QueryTestSetup, setupQueryTest } from '@ethlete/query/testing';
+
+let query: QueryTestSetup;
+
+beforeEach(() => {
+  query = setupQueryTest();
+});
+
+it('reads the count', () => {
+  const count = TestBed.runInInjectionContext(() => query.createGet<{ response: number }>('/count')());
+  TestBed.tick();
+
+  query.httpTesting.expectOne('https://api.test.com/count').flush(3);
+  TestBed.tick();
+
+  expect(count.response()).toBe(3);
+});
+```
+
+It calls `TestBed.configureTestingModule` with `provideHttpClient()`, `provideHttpClientTesting()`
+and `provideRouter([])`, and returns:
+
+| Field                                                                 | Value                                                    |
+| --------------------------------------------------------------------- | -------------------------------------------------------- |
+| `queryClient`, `queryClientRef`                                       | The injected client and the definition it was made from. |
+| `httpTesting`, `httpClient`, `injector`                               | From `TestBed`.                                          |
+| `baseUrl`                                                             | The client's base URL.                                   |
+| `createGet`, `createPost`, `createPut`, `createPatch`, `createDelete` | Creators bound to the client.                            |
+| `restoreConsole()`                                                    | Removes the console filter described below.              |
+
+| Option             | Default                  | Description                                                                                                                                                                                                                              |
+| ------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `baseUrl`          | `'https://api.test.com'` | The scratch client's base URL.                                                                                                                                                                                                           |
+| `name`             | `'test'`                 | The scratch client's name.                                                                                                                                                                                                               |
+| `mockErrorHandler` | `true`                   | `true` swallows the failed requests a query reports to Angular's `ErrorHandler` and rethrows every other error, so a throwing effect or template still fails the spec. `'all'` swallows everything, `false` keeps Angular's own handler. |
+
+Every call also filters `console.error` for `HttpErrorResponse` objects, bearer-token decode failures
+and token-extraction failures. The filter is removed when the `TestBed` module is reset; call `restoreConsole()` to remove
+it earlier, for example when the spec spies on `console` itself.
+
+### setupAuthTest
+
+Builds a [bearer auth provider](/query/auth) named `test-auth` over a `QueryTestSetup`, with a
+`login` and a `refresh` query:
+
+```ts
+const query = setupQueryTest();
+const { auth, login } = setupAuthTest({ querySetup: query });
+
+login({ username: 'max' }, { accessToken: 'a', refreshToken: 'r' });
+
+expect(auth.accessToken()).toBe('a');
+```
+
+`login(body, response)` and `refresh(token, response)` execute the query and answer its request.
+`refresh` sends what the real provider would: `buildRefreshArgs(token)` when it is configured,
+`{ body: { token } }` otherwise. `makeSecureRequest(route)` sends a secure `GET` through the client.
+
+| Option                                                                                                   | Default                                | What it sets                                                                                                          |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `querySetup`                                                                                             | required                               | The `QueryTestSetup` whose client the provider uses                                                                   |
+| `loginPath` / `refreshPath`                                                                              | `'/auth/login'` / `'/auth/refresh'`    | The routes of the two `POST` queries                                                                                  |
+| `autoRetryOn401`                                                                                         | `true`, as in production               | Refresh and retry a secure request that answers `401`                                                                 |
+| `extractLoginTokens` / `extractRefreshTokens`                                                            | reads `accessToken` and `refreshToken` | Maps each response to its tokens                                                                                      |
+| `buildRefreshArgs`                                                                                       | `{ body: { token } }`                  | The refresh request for a refresh token (`withRefreshQuery`'s `buildArgs`)                                            |
+| `features`                                                                                               | none                                   | Auth [features](/query/auth#features) such as `withPersistentAuth()`, typed against the `login` and `refresh` queries |
+| `bearerDecryptFn`                                                                                        | JWT decoding                           | Turns an access token into the provider's bearer data                                                                 |
+| `refreshStrategy`, `minRefreshInterval`, `refreshIfExpired`, `expiresInPropertyName`, `onRefreshFailure` | the provider's own                     | Passed through to [`withRefreshQuery`](/query/auth#token-refresh)                                                     |
+
+## Testing a view behind auth
+
+`setupAuthTest` builds a provider of its own, so it cannot run the app's secure queries - their
+creators take the app's own provider. Seed that provider with `setTokens()` and a token from
+`mintTestToken()`: an unsigned JWT with `iat`, `exp` and the claims you pass, which `bearerData()`,
+the refresh schedule and the [route guards](/query/auth#route-guards) all read.
+
+```ts
+import { mintTestToken } from '@ethlete/query/testing';
+
+TestBed.runInInjectionContext(() =>
+  authProviderRef.inject().setTokens(mintTestToken({ claims: { sub: '1', roles: ['admin'] } }), 'refresh-token'),
+);
+```
+
+`expiresInMs` sets the lifetime (15 minutes by default). Every call returns a distinct token.

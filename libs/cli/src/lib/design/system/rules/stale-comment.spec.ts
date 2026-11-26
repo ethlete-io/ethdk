@@ -1,0 +1,160 @@
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { describe, expect, it } from 'vitest';
+import { DESIGN_DIR, readConfig } from '../../design-config';
+import { MISSING_NOTE_SIZE } from '../notes/note';
+import { resolveProduct } from '../resolve-product';
+import { createSketch, parseTarget } from '../sketch/sketch';
+import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './stale-comment';
+
+const acme = () => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-design-stale-comment-'));
+
+  cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
+
+  return target;
+};
+
+const resolveAcme = (target: string) =>
+  resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+const comment = (target: string, id: string, body: object) => {
+  const dir = join(target, DESIGN_DIR, 'acme/comments');
+
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    join(dir, `${id}.json`),
+    JSON.stringify({
+      part: 'pages/home',
+      state: 'empty',
+      size: 'phone',
+      text: 'x',
+      createdAt: '2026-10-27T10:00:00Z',
+      ...body,
+    }),
+  );
+
+  return join(dir, `${id}.json`);
+};
+
+describe('staleCommentsOf', () => {
+  it('passes a comment that still points at its part and state', () => {
+    const target = acme();
+
+    comment(target, 'ok', {});
+
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([]);
+  });
+
+  it('passes a resolved comment whose part is gone, and fails a malformed resolution', () => {
+    const target = acme();
+    const resolved = { by: 'agent', author: 'gpt-5.6-sol', reason: 'merge', resolvedAt: '2026-10-28T10:00:00Z' };
+
+    comment(target, 'resolved', { part: 'elements/footer', resolved });
+    const broken = comment(target, 'broken', { resolved: { ...resolved, reason: 'gone' } });
+
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([
+      { rule: 'COMMENT', file: broken, message: expect.stringContaining('resolved must be') },
+    ]);
+  });
+
+  it('fails a comment whose part or state is gone', () => {
+    const target = acme();
+    const state = comment(target, 'state', { state: 'loading' });
+    const part = comment(target, 'part', { part: 'elements/footer' });
+
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([
+      { rule: 'COMMENT', file: part, message: 'part elements/footer no longer exists - answer or drop the comment' },
+      { rule: 'COMMENT', file: state, message: 'pages/home has no state "loading" - answer or drop the comment' },
+    ]);
+  });
+
+  it('fails once the part is deleted', () => {
+    const target = acme();
+    const file = comment(target, 'hero', { part: 'elements/hero', state: 'default' });
+
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([]);
+
+    rmSync(join(target, DESIGN_DIR, 'acme/elements/hero'), { recursive: true });
+
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([
+      expect.objectContaining({ file, message: expect.stringContaining('part elements/hero no longer exists') }),
+    ]);
+  });
+
+  it('warns instead of failing for a comment whose sketch was merged', () => {
+    const target = acme();
+    comment(target, 'merged', { sketch: { target: 'pages/home', variant: 'a', createdAt: 'old' } });
+
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([]);
+    expect(goneSketchCommentWarningsOf(resolveAcme(target))).toEqual([
+      expect.stringContaining('the sketch on pages/home no longer exists - reply with `comment reply --by`'),
+    ]);
+    expect(goneSketchCommentWarningsOf(resolveAcme(target))[0]).toContain('comments/merged.json');
+  });
+
+  it('keeps an open comment of the current sketch as it was', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({ product, sketch: parseTarget('pages/home') as never, variants: ['a'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    comment(target, 'live', { sketch: { target: 'pages/home', variant: 'a', createdAt: sketch.createdAt } });
+    const bad = comment(target, 'bad', {
+      sketch: { target: 'pages/home', variant: 'a', createdAt: sketch.createdAt },
+      state: 'nope',
+    });
+
+    expect(goneSketchCommentWarningsOf(resolveAcme(target))).toEqual([]);
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([
+      expect.objectContaining({ file: bad, message: expect.stringContaining('has no state "nope"') }),
+    ]);
+  });
+
+  it('fails a comment file it cannot read', () => {
+    const target = acme();
+    const file = comment(target, 'bad', { text: '' });
+
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([
+      { rule: 'COMMENT', file, message: 'text must be a non-empty string' },
+    ]);
+  });
+});
+
+const note = (target: string, id: string, body: object) => {
+  const dir = join(target, DESIGN_DIR, 'acme/notes');
+
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `${id}.json`), JSON.stringify({ part: 'pages/home', state: 'empty', text: 'x', ...body }));
+
+  return join(dir, `${id}.json`);
+};
+
+describe('staleNotesOf', () => {
+  it('passes a note that still points at its part and state', () => {
+    const target = acme();
+
+    note(target, 'ok', { point: { x: 4, y: 8 }, size: 'phone' });
+
+    expect(staleNotesOf(resolveAcme(target))).toEqual([]);
+  });
+
+  it('fails a note whose part or state is gone, and a note file it cannot read', () => {
+    const target = acme();
+    const part = note(target, 'a-part', { part: 'elements/footer' });
+    const state = note(target, 'b-state', { state: 'loading' });
+    const bad = note(target, 'c-bad', { point: { x: -1, y: 0 } });
+    const sizeless = note(target, 'd-sizeless', { point: { x: 4, y: 8 } });
+    const goneSize = note(target, 'e-gone-size', { point: { x: 4, y: 8 }, size: 'tablet' });
+
+    expect(staleNotesOf(resolveAcme(target))).toEqual([
+      { rule: 'NOTE', file: bad, message: 'point must be { x, y } in CSS pixels, both >= 0' },
+      { rule: 'NOTE', file: part, message: 'part elements/footer no longer exists - move or drop the note' },
+      { rule: 'NOTE', file: state, message: 'pages/home has no state "loading" - move or drop the note' },
+      { rule: 'NOTE', file: sizeless, message: MISSING_NOTE_SIZE },
+      { rule: 'NOTE', file: goneSize, message: 'preset "tablet" no longer exists - move or drop the note' },
+    ]);
+  });
+});

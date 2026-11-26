@@ -1,0 +1,381 @@
+import { Injector, signal } from '@angular/core';
+import { Subject } from 'rxjs';
+import { describe, expect, it } from 'vitest';
+import {
+  AnyLegacyQuery,
+  createLegacyQueryCreator,
+  createQueryCollectionSignal,
+  queryComputed,
+  QueryStateType,
+} from '../index';
+import {
+  createLegacyClient,
+  LEGACY_CLIENT_KINDS,
+  LegacyClientKind,
+  LegacyClientQuery,
+  Scenario,
+  useScenario,
+} from './harness';
+
+const BASE_URL = 'https://api.test';
+
+type User = { id: string; name: string };
+type GetUserArgs = { response: User; pathParams: { id: string } };
+type CreateUserArgs = { response: User; body: { name: string } };
+
+type GetUserArgs0 = { pathParams: { id: string } };
+
+const withLegacyClient = (
+  s: Scenario,
+  kind: LegacyClientKind,
+  body: (prepare: (id: string) => LegacyClientQuery) => void,
+) => {
+  const client = createLegacyClient(s, kind, { baseUrl: BASE_URL });
+  const owner = s.consumer();
+  const getUser = client.get<GetUserArgs0>((p) => `/users/${p.id}`);
+
+  try {
+    body((id) => getUser.prepare({ pathParams: { id }, injector: owner.injector }));
+  } finally {
+    client.destroy();
+    owner.destroy();
+  }
+};
+
+const holdQuery = (injector: Injector, source: () => LegacyClientQuery | null) => queryComputed(source, { injector });
+
+const isUnderlyingQueryDestroyed = (query: AnyLegacyQuery) =>
+  (query.newQuery.subtle.injector as unknown as { destroyed: boolean }).destroyed;
+
+describe.each(LEGACY_CLIENT_KINDS)('legacy query container scenario on the %s client', (kind) => {
+  const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
+
+  it('aborts the in-flight request when its only container is destroyed', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
+
+    withLegacyClient(s, kind, (prepare) => {
+      const query = prepare('1').execute();
+
+      const consumer = s.consumer();
+      holdQuery(consumer.injector, () => query);
+      s.tick(100);
+
+      expect(s.api.pending()).toHaveLength(1);
+
+      consumer.destroy();
+      s.tick();
+
+      expect(s.api.requests[0]?.aborted).toBe(true);
+      expect(query.rawState.type).toBe(QueryStateType.Cancelled);
+    });
+  });
+
+  it('aborts the shared query only once both containers let go', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
+
+    withLegacyClient(s, kind, (prepare) => {
+      const query = prepare('1').execute();
+
+      const first = s.consumer();
+      const second = s.consumer();
+      holdQuery(first.injector, () => query);
+      holdQuery(second.injector, () => query);
+      s.tick(100);
+
+      first.destroy();
+      s.tick();
+
+      expect(s.api.requests[0]?.aborted).toBe(false);
+      expect(query.rawState.type).toBe(QueryStateType.Loading);
+
+      second.destroy();
+      s.tick();
+
+      expect(s.api.requests[0]?.aborted).toBe(true);
+      expect(query.rawState.type).toBe(QueryStateType.Cancelled);
+    });
+  });
+
+  it('keeps the shared query in flight when a container is destroyed before its first emission', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
+
+    withLegacyClient(s, kind, (prepare) => {
+      const query = prepare('1').execute();
+
+      const holder = s.consumer();
+      holdQuery(holder.injector, () => query);
+      s.tick(100);
+
+      const shortLived = s.consumer();
+      holdQuery(shortLived.injector, () => query);
+      shortLived.destroy();
+      s.tick();
+
+      expect(s.api.requests[0]?.aborted).toBe(false);
+      expect(query.rawState.type).toBe(QueryStateType.Loading);
+
+      s.tick(1_000);
+
+      expect(query.rawState.type).toBe(QueryStateType.Success);
+
+      holder.destroy();
+    });
+  });
+
+  it('stops polling the previous query when its only container switches away', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+    withLegacyClient(s, kind, (prepare) => {
+      const polled = prepare('1').execute();
+      const next = prepare('2');
+      const selected = signal<LegacyClientQuery | null>(polled);
+
+      const consumer = s.consumer();
+      holdQuery(consumer.injector, () => selected());
+      s.tick();
+
+      const stopPolling$ = new Subject<void>();
+      polled.poll({ interval: 1_000, takeUntil: stopPolling$ });
+      s.tick(2_000);
+
+      expect(polled.isPolling).toBe(true);
+
+      const polledCount = s.api.requestCount('GET', '/users/1');
+
+      selected.set(next);
+      s.tick(5_000);
+
+      expect(polled.isPolling).toBe(false);
+      expect(s.api.requestCount('GET', '/users/1')).toBe(polledCount);
+
+      consumer.destroy();
+    });
+  });
+
+  it('keeps polling the shared query when only one of two containers switches away', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+    withLegacyClient(s, kind, (prepare) => {
+      const polled = prepare('1').execute();
+      const next = prepare('2');
+      const switched = signal<LegacyClientQuery | null>(polled);
+      const kept = signal<LegacyClientQuery | null>(polled);
+
+      const switching = s.consumer();
+      const keeping = s.consumer();
+      holdQuery(switching.injector, () => switched());
+      holdQuery(keeping.injector, () => kept());
+      s.tick();
+
+      const stopPolling$ = new Subject<void>();
+      polled.poll({ interval: 1_000, takeUntil: stopPolling$ });
+      s.tick(2_000);
+
+      switched.set(next);
+      s.tick(2_000);
+
+      expect(polled.isPolling).toBe(true);
+
+      const polledCount = s.api.requestCount('GET', '/users/1');
+
+      kept.set(next);
+      s.tick(5_000);
+
+      expect(polled.isPolling).toBe(false);
+      expect(s.api.requestCount('GET', '/users/1')).toBe(polledCount);
+
+      switching.destroy();
+      keeping.destroy();
+    });
+  });
+  it('stops polling when the last container of a polling query is destroyed', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+    withLegacyClient(s, kind, (prepare) => {
+      const polled = prepare('1').execute();
+
+      const consumer = s.consumer();
+      holdQuery(consumer.injector, () => polled);
+      s.tick();
+
+      const stopPolling$ = new Subject<void>();
+      polled.poll({ interval: 1_000, takeUntil: stopPolling$ });
+      s.tick(2_000);
+
+      expect(polled.isPolling).toBe(true);
+
+      const polledCount = s.api.requestCount('GET', '/users/1');
+
+      consumer.destroy();
+      s.tick(3_000);
+
+      expect(polled.isPolling).toBe(false);
+      expect(s.api.requestCount('GET', '/users/1')).toBe(polledCount);
+    });
+  });
+});
+
+describe('legacy query container scenario on interop creators', () => {
+  const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
+
+  it('keeps a shared query alive when one of two containers switches away', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+    const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+    const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+    const owner = s.consumer();
+    const shared = owner.run(() => legacyGetUser.prepare({ pathParams: { id: '1' } }).execute());
+    const other = owner.run(() => legacyGetUser.prepare({ pathParams: { id: '2' } }));
+    const switched = signal<AnyLegacyQuery | null>(shared);
+
+    const switching = s.consumer();
+    const keeping = s.consumer();
+    holdQuery(switching.injector, () => switched());
+    holdQuery(keeping.injector, () => shared);
+    s.tick();
+
+    const stopPolling$ = new Subject<void>();
+    shared.poll({ interval: 1_000, takeUntil: stopPolling$ });
+    s.tick(2_000);
+
+    switched.set(other);
+    s.tick(2_000);
+
+    expect(shared.isPolling).toBe(true);
+
+    const polledCount = s.api.requestCount('GET', '/users/1');
+
+    s.tick(2_000);
+
+    expect(s.api.requestCount('GET', '/users/1')).toBeGreaterThan(polledCount);
+
+    shared.stopPolling();
+    s.tick(1);
+
+    expect(shared.rawState.type).toBe(QueryStateType.Success);
+
+    switching.destroy();
+    keeping.destroy();
+    owner.destroy();
+  });
+
+  it('destroys an interop POST query when its container is torn down', () => {
+    const s = scenario();
+    s.api.on('POST', '/users', () => ({ body: { id: '1', name: 'Ada' } }));
+
+    const createUser = s.post<CreateUserArgs>('/users');
+    const legacyCreateUser = createLegacyQueryCreator({ creator: createUser, name: 'legacyCreateUser' });
+
+    const owner = s.consumer();
+    const query = owner.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute());
+
+    const container = s.consumer();
+    container.run(() => legacyCreateUser.createSignal(query));
+    s.tick();
+
+    const stopPolling$ = new Subject<void>();
+    query.poll({ interval: 1_000, takeUntil: stopPolling$ });
+    s.tick(2_000);
+
+    expect(query.isPolling).toBe(true);
+
+    const polledCount = s.api.requestCount('POST', '/users');
+
+    container.destroy();
+    s.tick(3_000);
+
+    expect(query.isPolling).toBe(false);
+    expect(s.api.requestCount('POST', '/users')).toBe(polledCount);
+    expect(isUnderlyingQueryDestroyed(query)).toBe(true);
+
+    owner.destroy();
+  });
+
+  it('lets an in-flight POST finish when its collection is destroyed, then tears it down', () => {
+    const s = scenario();
+    s.api.on('POST', '/users', ({ body }) => ({ status: 201, body, delay: 1_000 }));
+
+    const legacyCreateUser = createLegacyQueryCreator({
+      creator: s.post<CreateUserArgs>('/users'),
+      name: 'legacyCreateUser',
+    });
+
+    const page = s.consumer();
+    const query = page.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute());
+
+    let wasDestroyed = false;
+    query.state$.subscribe({ complete: () => (wasDestroyed = true) });
+
+    const overlay = s.consumer();
+    const collection = overlay.run(() => createQueryCollectionSignal({ createUser: legacyCreateUser }));
+    collection.set({ type: 'createUser', query });
+    s.tick(100);
+
+    overlay.destroy();
+    s.tick();
+
+    expect(s.api.pending()).toHaveLength(1);
+    expect(wasDestroyed).toBe(false);
+
+    s.flush();
+
+    expect(s.api.requests.find((request) => request.method === 'POST')?.aborted).toBe(false);
+    expect(query.rawState.type).toBe(QueryStateType.Success);
+    expect(wasDestroyed).toBe(true);
+
+    page.destroy();
+  });
+
+  it('does not throw when the owner of a released in-flight POST is destroyed before it settles', () => {
+    const s = scenario();
+    s.api.on('POST', '/users', ({ body }) => ({ status: 201, body, delay: 1_000 }));
+
+    const legacyCreateUser = createLegacyQueryCreator({
+      creator: s.post<CreateUserArgs>('/users'),
+      name: 'legacyCreateUser',
+    });
+
+    const page = s.consumer();
+    const query = page.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute());
+
+    const overlay = s.consumer();
+    const collection = overlay.run(() => createQueryCollectionSignal({ createUser: legacyCreateUser }));
+    collection.set({ type: 'createUser', query });
+    s.tick(100);
+
+    overlay.destroy();
+    s.tick();
+
+    expect(() => page.destroy()).not.toThrow();
+    s.flush();
+  });
+
+  it('does not throw when the owner of a superseded in-flight POST is destroyed before it settles', () => {
+    const s = scenario();
+    s.api.on('POST', '/users', ({ body }) => ({ status: 201, body, delay: 1_000 }));
+
+    const legacyCreateUser = createLegacyQueryCreator({
+      creator: s.post<CreateUserArgs>('/users'),
+      name: 'legacyCreateUser',
+    });
+
+    const page = s.consumer();
+    const holder = legacyCreateUser.createSignal(null, { injector: page.injector });
+    holder.set(page.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute()));
+    s.tick(100);
+
+    holder.set(page.run(() => legacyCreateUser.prepare({ body: { name: 'Grace' } })));
+    s.tick();
+
+    expect(() => page.destroy()).not.toThrow();
+    s.flush();
+  });
+});

@@ -1,0 +1,141 @@
+import { execFileSync } from 'child_process';
+import { stripRefPrefix } from './git-flow';
+
+export const git = (options: { root: string; args: string[] }) =>
+  execFileSync('git', options.args, {
+    cwd: options.root,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    maxBuffer: 256 * 1024 * 1024,
+  }).trim();
+
+/** Runs a command whose output belongs on the terminal — a push, a fetch, a branch creation. */
+export const gitLoud = (options: { root: string; args: string[] }) =>
+  execFileSync('git', options.args, { cwd: options.root, encoding: 'utf8', stdio: ['ignore', 'inherit', 'inherit'] });
+
+export const currentBranch = (root: string) => git({ root, args: ['rev-parse', '--abbrev-ref', 'HEAD'] });
+
+/**
+ * The identity a checkout commits under, which is how somebody else's commits stay out of a repair.
+ * A work checkout and a personal one are often two addresses, so this is read per checkout.
+ */
+export const commitAuthorOf = (root: string) => {
+  try {
+    return git({ root, args: ['config', '--get', 'user.email'] }) || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export const allBranches = (root: string) => {
+  const refs = git({ root, args: ['for-each-ref', '--format=%(refname)', 'refs/heads', 'refs/remotes'] });
+  const names = refs
+    .split('\n')
+    .filter((ref) => ref && !ref.endsWith('/HEAD'))
+    .map(stripRefPrefix);
+
+  return [...new Set(names)].sort();
+};
+
+/**
+ * The directories a checkout declares as projects, relative to it, deepest last.
+ *
+ * A repository states its own boundaries in the files its tooling reads, and those beat any depth a
+ * rule could pick: two sibling libraries stay apart, and one library's own subdirectories fold into
+ * it. The checkout root is left out on purpose - it is the whole checkout under another name.
+ *
+ * Read through `git ls-files` rather than the filesystem, so an ignored or vendored copy under
+ * `node_modules` never counts as a project.
+ */
+export const projectRootsOf = (root: string) => {
+  const out = git({ root, args: ['ls-files', '--', '*/project.json', '*/package.json'] });
+
+  const roots = out
+    .split('\n')
+    .filter(Boolean)
+    .filter((path) => !path.includes('node_modules/'))
+    .map((path) => path.slice(0, path.lastIndexOf('/')));
+
+  return [...new Set(roots)].sort();
+};
+
+export const isDirty = (root: string) => git({ root, args: ['status', '--porcelain'] }).length > 0;
+
+const refExists = (options: { root: string; ref: string }) => {
+  try {
+    git({ root: options.root, args: ['rev-parse', '--verify', '--quiet', options.ref] });
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const localBranchExists = (options: { root: string; branch: string }) =>
+  refExists({ root: options.root, ref: `refs/heads/${options.branch}` });
+
+export const remoteBranchExists = (options: { root: string; remote: string; branch: string }) =>
+  git({ root: options.root, args: ['ls-remote', '--heads', options.remote, `refs/heads/${options.branch}`] }).length >
+  0;
+
+/** `origin` when it exists, otherwise the only remote — a repo with several and no `origin` is ambiguous. */
+export const defaultRemote = (root: string) => {
+  const remotes = git({ root, args: ['remote'] })
+    .split('\n')
+    .filter(Boolean);
+
+  if (remotes.includes('origin')) return 'origin';
+
+  return remotes.length === 1 ? remotes[0] : undefined;
+};
+
+export const remoteUrl = (options: { root: string; remote: string }) =>
+  git({ root: options.root, args: ['remote', 'get-url', options.remote] });
+
+/** One commit as a repair reads it: the local day it was made on, and the files it changed. */
+export type CommitPaths = { day: string; paths: string[] };
+
+/**
+ * The commits of the given local days, with the files each changed.
+ *
+ * `%cd` with `--date=format-local:%F` is the day in the machine's own zone, which is the grain
+ * Timetrack keys a day by. The span is read from the days given, so one `git log` answers them all,
+ * and a commit on a day outside the list is dropped.
+ *
+ * `--branches` and the author filter must stay in step with the collector that opened the record
+ * (`gitLogArgs` in `libs/timetrack/src/lib/git/scan.ts`). Read a narrower history than the collector
+ * did and a day the record holds looks empty, which makes a repair refuse or drop it.
+ */
+export const commitPathsOnDays = (options: { root: string; days: readonly string[]; author?: string }) => {
+  const wanted = new Set(options.days);
+  const sorted = [...wanted].sort();
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+
+  if (!first || !last) return [];
+
+  const out = git({
+    root: options.root,
+    args: [
+      'log',
+      '--branches',
+      '--name-only',
+      '--no-merges',
+      '--pretty=format:%x00%cd',
+      '--date=format-local:%F',
+      `--since=${first} 00:00`,
+      `--until=${last} 23:59:59`,
+      ...(options.author ? [`--author=${options.author}`] : []),
+    ],
+  });
+
+  return out
+    .split('\0')
+    .flatMap((block): CommitPaths | [] => {
+      const lines = block.split('\n').filter(Boolean);
+      const day = lines.shift() ?? '';
+
+      return wanted.has(day) && lines.length ? { day, paths: lines } : [];
+    })
+    .reverse();
+};

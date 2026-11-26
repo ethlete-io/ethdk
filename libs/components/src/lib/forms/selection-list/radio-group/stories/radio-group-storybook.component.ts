@@ -1,0 +1,128 @@
+import { JsonPipe } from '@angular/common';
+import { Component, input, linkedSignal, resource, ViewEncapsulation } from '@angular/core';
+import { disabled, form, FormField, readonly, required, validateAsync } from '@angular/forms/signals';
+import { ProvideColorDirective } from '@ethlete/core';
+import { firstValueFrom, map, timer } from 'rxjs';
+import {
+  CIRCLE_CHECK_ICON,
+  ICON_IMPORTS,
+  provideIcons,
+  RegisteredIconName,
+  STAR_ICON,
+  TROPHY_ICON,
+} from '../../../../icon';
+import { DescriptionComponent } from '../../../description';
+import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
+import { SelectionCardControlPosition } from '../../../selection-card.types';
+import { SelectionListOrientation } from '../../selection-list.types';
+import { RadioGroupComponent } from '../radio-group.component';
+import { RadioComponent, RadioVariant } from '../radio.component';
+
+const STOCK_CHECK_MS = 1200;
+const OUT_OF_STOCK = ['red'];
+
+@Component({
+  selector: 'et-sb-radio-group',
+  template: `
+    <!-- Frame width in px, not Tailwind's rem-based max-w-* scale: Storybook runs a 62.5% root
+         font, which shrinks max-w-md to ~280px and would make the horizontal row wrap after two
+         options regardless of how much room a real app has. -->
+    <div
+      [style.max-inline-size.px]="orientation() === 'horizontal' ? 560 : 448"
+      [etProvideColor]="color()"
+      class="flex flex-col gap-4 p-8 font-sans"
+    >
+      <et-radio-group [(mixed)]="mixedState" [formField]="demoForm.color" [size]="size()" [orientation]="orientation()">
+        <et-label>{{ label() }}</et-label>
+
+        @for (option of options(); track option.value) {
+          <et-radio [value]="option.value" [variant]="variant()" [controlPosition]="controlPosition()">
+            @if (variant() === 'card' && option.icon) {
+              <i [etIcon]="option.icon" etSelectionCardLeading></i>
+            }
+
+            {{ option.label }}
+
+            @if (variant() === 'card' && option.description) {
+              <et-description>{{ option.description }}</et-description>
+            }
+
+            @if (variant() === 'card' && option.price) {
+              <span class="text-medium" etSelectionCardTrailing>{{ option.price }}</span>
+            }
+          </et-radio>
+        }
+        @if (hint()) {
+          <et-hint>{{ hint() }}</et-hint>
+        }
+      </et-radio-group>
+
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.color().value() | json }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      }
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    RadioGroupComponent,
+    RadioComponent,
+    FormField,
+    JsonPipe,
+    ProvideColorDirective,
+    HintComponent,
+    LabelDirective,
+    DescriptionComponent,
+    ...ICON_IMPORTS,
+  ],
+  providers: [provideIcons(STAR_ICON, CIRCLE_CHECK_ICON, TROPHY_ICON)],
+})
+export class RadioGroupStorybookComponent {
+  public label = input('Favorite color');
+  public orientation = input<SelectionListOrientation>('vertical');
+  public hint = input('');
+  public value = input<string | null>(null);
+  public mixed = input(false);
+  public showMixedState = input(false);
+  public disabled = input(false);
+  public readonly = input(false);
+  public required = input(false);
+  public color = input('brand');
+  public size = input<FormFieldSize>('md');
+  public variant = input<RadioVariant>('plain');
+  public controlPosition = input<SelectionCardControlPosition>('end');
+  public asyncValidation = input(false);
+
+  public options = input<
+    { value: string; label: string; description?: string; icon?: RegisteredIconName; price?: string }[]
+  >([
+    { value: 'red', label: 'Red', description: 'Warm, and hard to miss.' },
+    { value: 'green', label: 'Green', description: 'Calm, and easy on the eyes.' },
+    { value: 'blue', label: 'Blue', description: 'Cool, and the default nearly everywhere.' },
+  ]);
+
+  public mixedState = linkedSignal(() => this.mixed());
+
+  private formModel = linkedSignal(() => ({ color: this.value() }));
+
+  public demoForm = form(this.formModel, (s) => {
+    disabled(s, () => this.disabled());
+    readonly(s, () => this.readonly());
+    required(s.color, { when: () => this.required(), message: 'Please select a color' });
+
+    validateAsync(s.color, {
+      params: ({ value }) => (this.asyncValidation() ? (value() ?? undefined) : undefined),
+      factory: (params) =>
+        resource({
+          params: () => params(),
+          loader: ({ params: color }) =>
+            firstValueFrom(timer(STOCK_CHECK_MS).pipe(map(() => OUT_OF_STOCK.includes(color)))),
+        }),
+      onSuccess: (isOutOfStock) =>
+        isOutOfStock ? { kind: 'outOfStock', message: 'That color is out of stock' } : null,
+      onError: () => null,
+    });
+  });
+}

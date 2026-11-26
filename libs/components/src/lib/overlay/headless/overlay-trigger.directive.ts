@@ -1,0 +1,60 @@
+import { DestroyRef, Directive, ElementRef, afterNextRender, inject } from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
+import { OVERLAY_ERROR_CODES } from '../overlay-errors';
+import { OverlayDirective } from './overlay.directive';
+
+@Directive({
+  selector: '[etOverlayTrigger]',
+  exportAs: 'etOverlayTrigger',
+  host: {
+    '(click)': 'toggle()',
+    '[attr.aria-expanded]': 'expanded()',
+    '[attr.aria-haspopup]': 'hasPopup()',
+    '[attr.aria-controls]': 'overlay?.panelId ?? null',
+    '[attr.aria-disabled]': 'overlay?.disabled() || null',
+    '[attr.data-overlay-open]': 'isOpen() || null',
+  },
+})
+export class OverlayTriggerDirective {
+  protected overlay = inject(OverlayDirective, { optional: true });
+  private destroyRef = inject(DestroyRef);
+  public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  constructor() {
+    this.overlay?.registeredTrigger.set(this);
+
+    this.destroyRef.onDestroy(() => {
+      this.overlay?.unregisterTrigger(this);
+    });
+
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.overlay) {
+          throw new RuntimeError(
+            OVERLAY_ERROR_CODES.TRIGGER_OUTSIDE_OVERLAY,
+            '[OverlayTriggerDirective] etOverlayTrigger must be placed inside an [etOverlay] element.',
+            { element: this.elementRef.nativeElement },
+          );
+        }
+      });
+    }
+  }
+
+  public toggle() {
+    this.overlay?.toggle();
+  }
+
+  public isOpen() {
+    return this.overlay?.open() ?? false;
+  }
+
+  public expanded() {
+    return this.overlay?.open() ?? null;
+  }
+
+  protected hasPopup() {
+    if (!this.overlay) return null;
+
+    return this.overlay.role() || this.overlay.mode() === 'modal' ? 'dialog' : null;
+  }
+}

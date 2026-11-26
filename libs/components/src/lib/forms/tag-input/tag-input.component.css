@@ -1,0 +1,54 @@
+@layer components.sdk {
+  et-tag-input {
+    display: block;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+    cursor: text;
+
+    &[data-disabled] {
+      cursor: not-allowed;
+    }
+
+    /* no tag can be typed here - an I-beam over the row would promise one */
+    &[data-readonly] {
+      cursor: default;
+    }
+
+    .et-tag-input-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      min-inline-size: 0;
+    }
+
+    .et-tag-input-field {
+      flex: 1 1 60px;
+      min-inline-size: 60px;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      caret-color: var(--et-tone-fill, currentColor);
+
+      &::placeholder {
+        color: color-mix(in srgb, currentColor 60%, transparent);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+      }
+    }
+
+    /* an unresolved bulk-edit value reads as provisional — the mixedLabel placeholder sits
+       between committed text (full strength) and the regular placeholder (60%). Consumers
+       restyle via [data-mixed]. */
+    &[data-mixed] .et-tag-input-field::placeholder {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+  }
+}

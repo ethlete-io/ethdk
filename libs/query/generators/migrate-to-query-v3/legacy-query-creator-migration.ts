@@ -1,0 +1,1212 @@
+import { Tree } from '@nx/devkit';
+import * as ts from 'typescript';
+import {
+  V2BearerAuthConfig,
+  collectV2BearerAuthConfigs,
+  rebaseModuleSpecifier,
+  renderAuthProviderBody,
+} from './auth-provider-scaffold.js';
+import { MigrationScope } from './migration-scope.js';
+import { createModuleGraph } from './module-graph.js';
+import { pruneUnusedNamedImports, renameImportedReferences } from './rename-symbols.js';
+import { QueryV3MigrationReport } from './report.js';
+import {
+  capitalizeFirstLetter,
+  createSourceFile,
+  ensureConfigSuffix,
+  ensureImportFromEthleteCore,
+  ensureImportFromQuery,
+  legacyQueryDeprecationTag,
+} from './shared.js';
+
+const LEGACY_HTTP_METHOD = {
+  GET: 'get',
+  POST: 'post',
+  PUT: 'put',
+  PATCH: 'patch',
+  DELETE: 'delete',
+} as const;
+
+const LEGACY_GQL_METHODS: readonly string[] = ['gqlQuery', 'gqlMutate'];
+
+const HTTP_OPTION_NAMES: readonly string[] = ['reportProgress', 'responseType', 'transferCache', 'withCredentials'];
+
+type LegacyHttpMethod = (typeof LEGACY_HTTP_METHOD)[keyof typeof LEGACY_HTTP_METHOD];
+
+type LegacyQueryCreatorInfo = {
+  name: string;
+  clientName: string;
+  method: LegacyHttpMethod;
+  route: string;
+  typeArgs?: string;
+  typeResponse?: string;
+  typeBody?: string;
+  secure: boolean;
+  httpOptions: Map<string, string>;
+  entity?: string;
+};
+
+const isLegacyHttpMethod = (value: string): value is LegacyHttpMethod => {
+  return Object.values(LEGACY_HTTP_METHOD).includes(value as LegacyHttpMethod);
+};
+
+export const createNewQueryCreators = (
+  tree: Tree,
+  queryClientFiles: Map<string, string[]>,
+  report: QueryV3MigrationReport,
+  scope: MigrationScope,
+  gqlGetClients: ReadonlySet<string> = new Set(),
+) => {
+  const createdFiles: string[] = [];
+  const authProvidersNeeded = new Map<string, string>();
+  const clientNameToFilePath = new Map<string, string>();
+  const creatorToClient = new Map<string, string>();
+
+  queryClientFiles.forEach((configNames, filePath) => {
+    configNames.forEach((configName) => {
+      clientNameToFilePath.set(configName, filePath);
+    });
+  });
+
+  scope.visit(tree, (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content) {
+      return;
+    }
+
+    const legacyCreators = analyzeLegacyQueryCreators(content, queryClientFiles, filePath, report, gqlGetClients);
+
+    if (legacyCreators.length === 0) {
+      return;
+    }
+
+    legacyCreators.forEach((creator) => {
+      creatorToClient.set(creator.name, creator.clientName);
+
+      if (!creator.secure) {
+        return;
+      }
+
+      const clientFilePath = clientNameToFilePath.get(creator.clientName);
+
+      if (clientFilePath) {
+        authProvidersNeeded.set(creator.clientName, clientFilePath);
+      }
+    });
+
+    const nextContent = transformLegacyQueryCreators(content, legacyCreators);
+
+    if (nextContent !== content) {
+      tree.write(filePath, nextContent);
+      createdFiles.push(filePath);
+    }
+  });
+
+  if (authProvidersNeeded.size > 0) {
+    createAuthProviders({
+      tree,
+      authProvidersNeeded,
+      report,
+      v2Configs: collectV2BearerAuthConfigs(tree, scope),
+      creatorToClient,
+    });
+  }
+
+  if (createdFiles.length > 0) {
+    console.log('\n✅ Created new query creators in:');
+    createdFiles.forEach((filePath) => console.log(`   - ${filePath}`));
+  }
+};
+
+/** Where a `legacy*` wrapper was generated, so consumers can be matched against the real symbol. */
+type LegacyWrapperRegistration = {
+  legacyName: string;
+  definedIn: string;
+};
+
+export const updateLegacyCreatorImportsAndUsages = (
+  tree: Tree,
+  scope: MigrationScope,
+  report: QueryV3MigrationReport,
+) => {
+  const legacyCreators = new Map<string, LegacyWrapperRegistration[]>();
+  const updatedFiles: string[] = [];
+
+  scope.visit(tree, (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content) {
+      return;
+    }
+
+    findLegacyWrappers(content).forEach((legacyName, originalName) => {
+      legacyCreators.set(originalName, [
+        ...(legacyCreators.get(originalName) ?? []),
+        { legacyName, definedIn: filePath },
+      ]);
+    });
+  });
+
+  if (legacyCreators.size === 0) {
+    return;
+  }
+
+  console.log(`\n✅ Found ${legacyCreators.size} legacy query creator wrappers`);
+
+  const moduleGraph = createModuleGraph(tree);
+  const pendingWrites = new Map<string, string>();
+
+  scope.visit(tree, (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content || containsLegacyWrapperDefinitions(content)) {
+      return;
+    }
+
+    const nextContent = pointFileAtLegacyWrappers({
+      content,
+      filePath,
+      legacyCreators,
+      moduleGraph,
+      report,
+    });
+
+    if (nextContent !== content) {
+      pendingWrites.set(filePath, nextContent);
+    }
+  });
+
+  // Writing a barrel mid-pass would hide its original re-exports from consumers visited after it.
+  pendingWrites.forEach((nextContent, filePath) => {
+    tree.write(filePath, nextContent);
+    updatedFiles.push(filePath);
+  });
+
+  if (updatedFiles.length > 0) {
+    console.log('\n✅ Updated legacy creator imports and usages in:');
+    updatedFiles.forEach((filePath) => console.log(`   - ${filePath}`));
+  }
+};
+
+type PointFileAtLegacyWrappersOptions = {
+  content: string;
+  filePath: string;
+  legacyCreators: Map<string, LegacyWrapperRegistration[]>;
+  moduleGraph: ReturnType<typeof createModuleGraph>;
+  report: QueryV3MigrationReport;
+};
+
+/**
+ * Rewrites this file's imports of migrated creators to the `legacy*` wrappers.
+ *
+ * Two rules keep the rewrite honest, and both exist because the first version of this pass did not
+ * have them:
+ *
+ * - An import is only touched when the module it comes from really does resolve to the file that
+ *   defines the wrapper. A same-named export from an unrelated package stays as it is.
+ * - An alias is preserved (`legacyGetPerson as getPersonQuery`) instead of being dropped, so the
+ *   call sites using that alias keep compiling.
+ */
+const pointFileAtLegacyWrappers = ({
+  content,
+  filePath,
+  legacyCreators,
+  moduleGraph,
+  report,
+}: PointFileAtLegacyWrappersOptions) => {
+  const sourceFile = createSourceFile(content, filePath);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+  const referenceRenames = new Map<string, string>();
+
+  const resolvesToWrapper = (specifier: string, importedName: string, registration: LegacyWrapperRegistration) =>
+    moduleGraph.findDeclaringFile(filePath, specifier, importedName) === registration.definedIn;
+
+  const rewriteSpecifiers = (
+    elements: readonly (ts.ImportSpecifier | ts.ExportSpecifier)[],
+    moduleSpecifier: string,
+  ) => {
+    let changed = false;
+
+    const nextElements = elements.map((element) => {
+      const importedName = element.propertyName?.text ?? element.name.text;
+      const registration = legacyCreators
+        .get(importedName)
+        ?.find((candidate) => resolvesToWrapper(moduleSpecifier, importedName, candidate));
+
+      if (!registration) {
+        return element.getText(sourceFile);
+      }
+
+      changed = true;
+
+      // Aliased: only the imported half changes, so nothing in the file body has to move.
+      if (element.propertyName) {
+        return `${registration.legacyName} as ${element.name.text}`;
+      }
+
+      referenceRenames.set(element.name.text, registration.legacyName);
+
+      return registration.legacyName;
+    });
+
+    return changed ? nextElements : null;
+  };
+
+  for (const node of sourceFile.statements) {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    ) {
+      const nextElements = rewriteSpecifiers(node.importClause.namedBindings.elements, node.moduleSpecifier.text);
+
+      if (nextElements) {
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: `import { ${nextElements.join(', ')} } from '${node.moduleSpecifier.text}';`,
+        });
+      }
+
+      continue;
+    }
+
+    // Re-exports need the same treatment, or a barrel keeps pointing at the v3 creator.
+    if (
+      ts.isExportDeclaration(node) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.exportClause &&
+      ts.isNamedExports(node.exportClause)
+    ) {
+      const nextElements = rewriteSpecifiers(node.exportClause.elements, node.moduleSpecifier.text);
+
+      if (nextElements) {
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: `export { ${nextElements.join(', ')} } from '${node.moduleSpecifier.text}';`,
+        });
+      }
+    }
+  }
+
+  let result = content;
+
+  replacements.sort((left, right) => right.start - left.start);
+
+  replacements.forEach(({ start, end, replacement }) => {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  });
+
+  const renamed = renameImportedReferences(result, referenceRenames);
+
+  renamed.shadowed.forEach((name) => {
+    report.addManualReview({
+      title: `Point ${name} at its legacy wrapper by hand`,
+      summary: `${filePath} imports the migrated creator \`${name}\` but also declares something with that name, so the migration left its usages alone to avoid rewriting the wrong symbol.`,
+      action: `Rename the local declaration or the import alias, then point the query usages at \`${legacyCreators.get(name)?.[0]?.legacyName ?? `legacy${capitalizeFirstLetter(name)}`}\`.`,
+      locations: [{ filePath }],
+      source: 'legacy-query-creator-migration',
+      dedupeKey: `shadowed-rename:${filePath}:${name}`,
+    });
+  });
+
+  return renamed.content;
+};
+
+const toLegacyName = (name: string) => `legacy${capitalizeFirstLetter(name)}`;
+
+const analyzeLegacyQueryCreators = (
+  content: string,
+  queryClientFiles: Map<string, string[]>,
+  filePath: string,
+  report: QueryV3MigrationReport,
+  gqlGetClients: ReadonlySet<string>,
+) => {
+  const sourceFile = createSourceFile(content, filePath);
+  const creators: LegacyQueryCreatorInfo[] = [];
+  const oldClientNames = new Set<string>();
+  const renamedOwnClients = new Map<string, string>();
+
+  queryClientFiles.forEach((configNames) => {
+    configNames.forEach((configName) => oldClientNames.add(configName));
+  });
+
+  queryClientFiles.get(filePath)?.forEach((configName) => {
+    renamedOwnClients.set(ensureConfigSuffix(configName), configName);
+  });
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer) &&
+      ts.isPropertyAccessExpression(node.initializer.expression)
+    ) {
+      const objectExpression = node.initializer.expression.expression;
+      const methodExpression = node.initializer.expression.name;
+
+      if (!ts.isIdentifier(objectExpression) || !ts.isIdentifier(methodExpression)) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      const clientName = renamedOwnClients.get(objectExpression.text) ?? objectExpression.text;
+
+      if (!oldClientNames.has(clientName) || !isLegacyHttpMethod(methodExpression.text)) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      const creatorName = node.name.text;
+
+      const info: LegacyQueryCreatorInfo = {
+        name: creatorName,
+        clientName,
+        method: methodExpression.text,
+        route: '',
+        secure: false,
+        httpOptions: new Map<string, string>(),
+      };
+
+      const warnUnreadableConfigValue = (
+        property: ts.ShorthandPropertyAssignment | ts.PropertyAssignment,
+        passedAs: string,
+      ) => {
+        const propertyName = property.name.getText(sourceFile);
+
+        report.addWarning({
+          title: `Carry over \`${propertyName}\` of ${creatorName}`,
+          summary: `${creatorName} passes \`${propertyName}\` ${passedAs} in its v2 config. The migration cannot read its value, so it was not carried over to the v3 creator.`,
+          action:
+            propertyName === 'secure'
+              ? 'If the value is true, switch the generated creator to the matching *Secure creator of the client by hand.'
+              : 'Move what it configures onto the generated creator by hand.',
+          locations: [
+            { filePath, line: sourceFile.getLineAndCharacterOfPosition(property.getStart(sourceFile)).line + 1 },
+          ],
+          source: 'legacy-query-creator-migration',
+          dedupeKey: `unreadable-config:${filePath}:${creatorName}:${propertyName}`,
+        });
+      };
+
+      const configObject = node.initializer.arguments[0];
+
+      if (configObject && ts.isObjectLiteralExpression(configObject)) {
+        configObject.properties.forEach((property) => {
+          if (ts.isSpreadAssignment(property)) {
+            report.addWarning({
+              title: `Restore the spread config of ${creatorName}`,
+              summary: `${creatorName} spreads \`${property.expression.getText(sourceFile)}\` into its v2 config. The migration cannot see what it contains, so none of it was carried over to the v3 creator.`,
+              action:
+                'Move the route, secure flag, types and http options it provides onto the generated creator by hand.',
+              locations: [
+                { filePath, line: sourceFile.getLineAndCharacterOfPosition(property.getStart(sourceFile)).line + 1 },
+              ],
+              source: 'legacy-query-creator-migration',
+              dedupeKey: `spread-config:${filePath}:${creatorName}`,
+            });
+
+            return;
+          }
+
+          if (ts.isShorthandPropertyAssignment(property)) {
+            if (property.name.text === 'route') {
+              info.route = property.name.text;
+            }
+
+            if (HTTP_OPTION_NAMES.includes(property.name.text)) {
+              info.httpOptions.set(property.name.text, property.name.text);
+            }
+
+            if (property.name.text === 'entity') {
+              info.entity = property.name.text;
+            }
+
+            if (!['route', 'entity'].includes(property.name.text) && !HTTP_OPTION_NAMES.includes(property.name.text)) {
+              warnUnreadableConfigValue(property, 'as a shorthand property');
+            }
+
+            return;
+          }
+
+          if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
+            return;
+          }
+
+          if (property.name.text === 'route') {
+            info.route = property.initializer.getText(sourceFile);
+          }
+
+          if (property.name.text === 'entity') {
+            info.entity = property.initializer.getText(sourceFile);
+          }
+
+          if (property.name.text === 'secure') {
+            if (property.initializer.kind === ts.SyntaxKind.TrueKeyword) {
+              info.secure = true;
+            } else if (property.initializer.kind !== ts.SyntaxKind.FalseKeyword) {
+              warnUnreadableConfigValue(property, 'with a value that is not a literal');
+            }
+          }
+
+          if (property.name.text === 'types' && ts.isObjectLiteralExpression(property.initializer)) {
+            property.initializer.properties.forEach((typeProperty) => {
+              if (!ts.isPropertyAssignment(typeProperty) || !ts.isIdentifier(typeProperty.name)) {
+                return;
+              }
+
+              const extractedType = extractTypeFromDef(typeProperty.initializer, sourceFile);
+
+              if (!extractedType) {
+                report.addManualReview({
+                  title: `Verify generated types for ${creatorName}`,
+                  summary: `The migration could not extract the \`${typeProperty.name.text}\` type for ${creatorName} automatically.`,
+                  action:
+                    'Check the generated creator type arguments and restore any missing args/body/response types manually.',
+                  locations: [
+                    {
+                      filePath,
+                      line: sourceFile.getLineAndCharacterOfPosition(typeProperty.getStart(sourceFile)).line + 1,
+                    },
+                  ],
+                  source: 'legacy-query-creator-migration',
+                  dedupeKey: `type-extraction:${filePath}:${creatorName}:${typeProperty.name.text}`,
+                });
+
+                return;
+              }
+
+              if (typeProperty.name.text === 'args') {
+                info.typeArgs = extractedType;
+              }
+
+              if (typeProperty.name.text === 'response') {
+                info.typeResponse = extractedType;
+              }
+
+              if (typeProperty.name.text === 'body') {
+                info.typeBody = extractedType;
+              }
+            });
+          }
+
+          if (HTTP_OPTION_NAMES.includes(property.name.text)) {
+            info.httpOptions.set(property.name.text, property.initializer.getText(sourceFile));
+          }
+        });
+      }
+
+      if (info.route) {
+        creators.push(info);
+
+        if (info.entity) {
+          report.addFollowUp({
+            title: `Check the entity config carried onto ${toLegacyName(creatorName)}`,
+            summary: `${creatorName} had an \`entity\` config. It was moved onto the \`${toLegacyName(creatorName)}\` interop wrapper, which still writes to the EntityStore; the v3 creator \`${creatorName}\` does not, and v3 has no EntityStore.`,
+            action:
+              'Keep the call sites that rely on the store on the legacy wrapper. `set` now only runs on a real response, never on `prepare()` or a failure. To leave the store, declare `invalidates` on the mutation creators that change the entity and `tags` on the reads that show it, and add `withOptimisticUpdate` where the UI must change before the response - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2#entitystore-becomes-invalidates-and-tags.',
+            locations: [
+              { filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 },
+            ],
+            source: 'legacy-query-creator-migration',
+            dedupeKey: `entity-config:${filePath}:${creatorName}`,
+          });
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  reportLegacyGqlCalls(sourceFile, filePath, oldClientNames, gqlGetClients, report);
+
+  return creators;
+};
+
+const collectClientAliases = (sourceFile: ts.SourceFile, oldClientNames: ReadonlySet<string>) => {
+  const aliases = new Map<string, string>();
+  const resolve = (expression: ts.Expression): string | undefined => {
+    if (!ts.isIdentifier(expression)) {
+      return undefined;
+    }
+
+    return aliases.get(expression.text) ?? (oldClientNames.has(expression.text) ? expression.text : undefined);
+  };
+
+  const visitImports = (node: ts.Node) => {
+    if (ts.isImportSpecifier(node) && node.propertyName && oldClientNames.has(node.propertyName.text)) {
+      aliases.set(node.name.text, node.propertyName.text);
+    }
+
+    ts.forEachChild(node, visitImports);
+  };
+
+  visitImports(sourceFile);
+
+  const aliasDeclarations: Array<{ name: string; initializer: ts.Expression }> = [];
+
+  const collectDeclarations = (node: ts.Node) => {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+      aliasDeclarations.push({ name: node.name.text, initializer: node.initializer });
+    }
+
+    ts.forEachChild(node, collectDeclarations);
+  };
+
+  collectDeclarations(sourceFile);
+
+  const addAlias = ({ name, initializer }: { name: string; initializer: ts.Expression }) => {
+    const clientName = resolve(initializer);
+
+    if (!clientName || clientName === name || aliases.has(name)) {
+      return false;
+    }
+
+    aliases.set(name, clientName);
+
+    return true;
+  };
+
+  while (aliasDeclarations.filter(addAlias).length > 0) {
+    continue;
+  }
+
+  return resolve;
+};
+
+const describeGqlCall = (call: ts.CallExpression, sourceFile: ts.SourceFile) => {
+  const path: string[] = [];
+  let node: ts.Node = call;
+
+  while (node.parent && !ts.isSourceFile(node.parent)) {
+    node = node.parent;
+
+    if (ts.isPropertyAssignment(node)) {
+      path.unshift(node.name.getText(sourceFile));
+      continue;
+    }
+
+    if (ts.isVariableDeclaration(node) || ts.isFunctionDeclaration(node)) {
+      if (node.name && ts.isIdentifier(node.name)) {
+        path.unshift(node.name.text);
+      }
+
+      break;
+    }
+
+    if (ts.isPropertyDeclaration(node) || ts.isMethodDeclaration(node)) {
+      path.unshift(node.name.getText(sourceFile));
+
+      if (ts.isClassLike(node.parent) && node.parent.name) {
+        path.unshift(node.parent.name.text);
+      }
+
+      break;
+    }
+  }
+
+  return path.length > 0
+    ? path.join('.')
+    : `at line ${sourceFile.getLineAndCharacterOfPosition(call.getStart(sourceFile)).line + 1}`;
+};
+
+const reportLegacyGqlCalls = (
+  sourceFile: ts.SourceFile,
+  filePath: string,
+  oldClientNames: ReadonlySet<string>,
+  gqlGetClients: ReadonlySet<string>,
+  report: QueryV3MigrationReport,
+) => {
+  const resolveClient = collectClientAliases(sourceFile, oldClientNames);
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      LEGACY_GQL_METHODS.includes(node.expression.name.text)
+    ) {
+      const receiver = node.expression.expression;
+      const receiverText = receiver.getText(sourceFile);
+      const method = node.expression.name.text;
+      const clientName = resolveClient(receiver);
+      const name = describeGqlCall(node, sourceFile);
+      const isQuery = method === 'gqlQuery';
+      const viaGet = isQuery && !!clientName && gqlGetClients.has(clientName);
+      const creator = !isQuery
+        ? '`createGqlMutationViaPost`'
+        : viaGet
+          ? '`createGqlQueryViaGet`'
+          : clientName || gqlGetClients.size === 0
+            ? '`createGqlQueryViaPost`'
+            : "`createGqlQueryViaPost` (or `createGqlQueryViaGet` if its client set `request.gql.transferVia: 'GET'`)";
+      const builtWith = clientName
+        ? `\`${receiverText}.${method}()\``
+        : `\`${receiverText}.${method}()\`, which the migration takes for a v2 query client`;
+      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+
+      report.addManualReview({
+        title: `Rewrite the GraphQL creator ${name} by hand`,
+        summary: `${name} is built with ${builtWith}. The migration only rewrites REST creators, so this one still calls a method the migrated client no longer has, and the callback parameters in its config lose their types: expect implicit-any errors (TS7006) there until it is rebuilt.${viaGet ? " The v2 client sent GraphQL queries with `request.gql.transferVia: 'GET'`, which v3 sets per creator." : ''}`,
+        action: `Rebuild it on the v3 client with ${creator} and a \`gql\` document, then wrap it in \`createLegacyQueryCreator\` if its call sites stay on v2. See https://ethlete-sdk-docs.web.app/query/gql.`,
+        locations: [{ filePath, line }],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `gql-creator:${filePath}:${name}:${line}`,
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+};
+
+const extractTypeFromDef = (node: ts.Expression, sourceFile: ts.SourceFile) => {
+  if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'def') {
+    if (node.typeArguments && node.typeArguments.length > 0) {
+      return node.typeArguments[0]!.getText(sourceFile);
+    }
+  }
+
+  return undefined;
+};
+
+const transformLegacyQueryCreators = (content: string, legacyCreators: LegacyQueryCreatorInfo[]) => {
+  const sourceFile = createSourceFile(content);
+  const creatorsByClient = new Map<string, LegacyQueryCreatorInfo[]>();
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  legacyCreators.forEach((creator) => {
+    if (!creatorsByClient.has(creator.clientName)) {
+      creatorsByClient.set(creator.clientName, []);
+    }
+
+    creatorsByClient.get(creator.clientName)!.push(creator);
+  });
+
+  const wrappersByStatement = new Map<ts.VariableStatement, string[]>();
+
+  legacyCreators.forEach((creator) => {
+    let variableStatement: ts.VariableStatement | undefined;
+    let declaration: ts.VariableDeclaration | undefined;
+
+    const visit = (node: ts.Node) => {
+      if (variableStatement) return;
+
+      if (ts.isVariableStatement(node)) {
+        declaration = node.declarationList.declarations.find(
+          (candidate) => ts.isIdentifier(candidate.name) && candidate.name.text === creator.name,
+        );
+
+        if (declaration) {
+          variableStatement = node;
+          return;
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    };
+
+    visit(sourceFile);
+
+    if (!variableStatement || !declaration) return;
+
+    const isTopLevel = ts.isSourceFile(variableStatement.parent);
+    const exportPrefix = isTopLevel ? 'export ' : '';
+    const nextCreator = `${creator.name} = ${generateNewQueryCreator(creator)}`;
+    const legacyWrapper = generateLegacyWrapper(creator, exportPrefix);
+
+    if (variableStatement.declarationList.declarations.length === 1) {
+      replacements.push({
+        start: variableStatement.getStart(sourceFile),
+        end: variableStatement.getEnd(),
+        replacement: `${exportPrefix}const ${nextCreator};\n${legacyWrapper}`,
+      });
+
+      return;
+    }
+
+    replacements.push({ start: declaration.getStart(sourceFile), end: declaration.getEnd(), replacement: nextCreator });
+    wrappersByStatement.set(variableStatement, [...(wrappersByStatement.get(variableStatement) ?? []), legacyWrapper]);
+  });
+
+  wrappersByStatement.forEach((wrappers, statement) => {
+    replacements.push({ start: statement.getEnd(), end: statement.getEnd(), replacement: `\n${wrappers.join('\n')}` });
+  });
+
+  let result = content;
+
+  replacements.sort((left, right) => right.start - left.start);
+
+  replacements.forEach(({ start, end, replacement }) => {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  });
+
+  result = ensureImportFromQuery(result, ['createLegacyQueryCreator']);
+  result = addCreatorImports(result, creatorsByClient);
+
+  // The rewritten creators no longer go through `def<T>()` or the v2 client object, so whatever is
+  // left over from those constructs would land as a lint error the moment `formatFiles` runs.
+  return pruneUnusedNamedImports(result);
+};
+
+const addCreatorImports = (content: string, creatorsByClient: Map<string, LegacyQueryCreatorInfo[]>) => {
+  const sourceFile = createSourceFile(content);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+  const importsByClient = new Map<string, Set<string>>();
+
+  creatorsByClient.forEach((creators, clientName) => {
+    const clientBaseName = clientName.replace(/Client$/, '');
+    const importsNeeded = new Set<string>([ensureConfigSuffix(clientName)]);
+    let hasSecureCreators = false;
+
+    creators.forEach((creator) => {
+      hasSecureCreators ||= creator.secure;
+
+      const capitalizedMethod = capitalizeFirstLetter(creator.method);
+      importsNeeded.add(`${clientBaseName}${capitalizedMethod}`);
+
+      if (creator.secure) {
+        importsNeeded.add(`${clientBaseName}${capitalizedMethod}Secure`);
+      }
+    });
+
+    if (hasSecureCreators) {
+      ['Get', 'Post', 'Put', 'Patch', 'Delete'].forEach((methodName) => {
+        const secureImport = `${clientBaseName}${methodName}Secure`;
+
+        if (creators.some((creator) => capitalizeFirstLetter(creator.method) === methodName && creator.secure)) {
+          importsNeeded.add(secureImport);
+        }
+      });
+    }
+
+    importsByClient.set(clientName, importsNeeded);
+  });
+
+  const visit = (node: ts.Node) => {
+    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+      const clientsInImport: string[] = [];
+      const existingImports = new Set<string>();
+
+      if (node.importClause?.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
+        node.importClause.namedBindings.elements.forEach((element) => {
+          existingImports.add(element.name.text);
+
+          if (importsByClient.has(element.name.text)) {
+            clientsInImport.push(element.name.text);
+          }
+        });
+      }
+
+      if (clientsInImport.length === 0) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      const nextImports = new Set<string>();
+
+      clientsInImport.forEach((clientName) => {
+        importsByClient.get(clientName)?.forEach((importName) => nextImports.add(importName));
+      });
+
+      existingImports.forEach((importName) => {
+        if (!clientsInImport.includes(importName)) {
+          nextImports.add(importName);
+        }
+      });
+
+      replacements.push({
+        start: node.getStart(sourceFile),
+        end: node.getEnd(),
+        replacement: `import { ${Array.from(nextImports).sort().join(', ')} } from '${node.moduleSpecifier.text}';`,
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  let result = content;
+
+  replacements.sort((left, right) => right.start - left.start);
+
+  replacements.forEach(({ start, end, replacement }) => {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  });
+
+  return result;
+};
+
+const generateNewQueryCreator = (creator: LegacyQueryCreatorInfo) => {
+  const clientBaseName = creator.clientName.replace(/Client$/, '');
+  const capitalizedMethod = capitalizeFirstLetter(creator.method);
+  const creatorFunction = creator.secure
+    ? `${clientBaseName}${capitalizedMethod}Secure`
+    : `${clientBaseName}${capitalizedMethod}`;
+  const typeParameter = getTypeParameter(creator);
+  const options = [
+    'reportErrors: false',
+    ...Array.from(creator.httpOptions.entries()).map(([key, value]) => `${key}: ${value}`),
+  ];
+  const optionsBlock = `, {\n  ${options.join(',\n  ')}\n}`;
+
+  return `${creatorFunction}${typeParameter}(${creator.route}${optionsBlock})`;
+};
+
+const getTypeParameter = (creator: LegacyQueryCreatorInfo) => {
+  if (creator.typeArgs && (creator.typeBody || creator.typeResponse)) {
+    const additionalTypes: string[] = [];
+
+    if (creator.typeBody) {
+      additionalTypes.push(`body: ${creator.typeBody}`);
+    }
+
+    if (creator.typeResponse) {
+      additionalTypes.push(`response: ${creator.typeResponse}`);
+    }
+
+    return `<${creator.typeArgs} & { ${additionalTypes.join('; ')} }>`;
+  }
+
+  if (creator.typeArgs) {
+    return `<${creator.typeArgs}>`;
+  }
+
+  if (creator.typeBody || creator.typeResponse) {
+    const typeProperties: string[] = [];
+
+    if (creator.typeBody) {
+      typeProperties.push(`body: ${creator.typeBody}`);
+    }
+
+    if (creator.typeResponse) {
+      typeProperties.push(`response: ${creator.typeResponse}`);
+    }
+
+    return `<{ ${typeProperties.join('; ')} }>`;
+  }
+
+  return '';
+};
+
+const generateLegacyWrapper = (creator: LegacyQueryCreatorInfo, exportPrefix: string) => {
+  // `name` is what lets a `prepare()` called outside an injection context name itself in the error
+  // instead of surfacing as a bare NG0203.
+  return `/**\n * ${legacyQueryDeprecationTag(creator.name)}\n */\n${exportPrefix}const ${toLegacyName(creator.name)} = createLegacyQueryCreator({ name: '${toLegacyName(creator.name)}', creator: ${creator.name}${creator.entity ? `, entity: ${creator.entity}` : ''} });`;
+};
+
+type CreateAuthProvidersOptions = {
+  tree: Tree;
+  authProvidersNeeded: Map<string, string>;
+  report: QueryV3MigrationReport;
+  v2Configs: V2BearerAuthConfig[];
+
+  /** Which client each migrated creator belongs to, used to match a v2 provider to a client. */
+  creatorToClient: Map<string, string>;
+};
+
+const createAuthProviders = ({
+  tree,
+  authProvidersNeeded,
+  report,
+  v2Configs,
+  creatorToClient,
+}: CreateAuthProvidersOptions) => {
+  const createdProviders: string[] = [];
+
+  authProvidersNeeded.forEach((filePath, clientName) => {
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content) {
+      return;
+    }
+
+    const authProviderName = `${clientName}AuthProvider`;
+
+    if (content.includes(`export const ${authProviderName} = createBearerAuthProvider(`)) {
+      return;
+    }
+
+    // Match on the refresh creator: it is the one thing a v2 provider config always names, and it
+    // belongs to exactly one client.
+    const v2Config = v2Configs.find(
+      (candidate) => candidate.refreshCreatorName && creatorToClient.get(candidate.refreshCreatorName) === clientName,
+    );
+
+    const body = renderAuthProviderBody(v2Config);
+    const nextContent = generateSecureQueryCreators(
+      addAuthProviderToFile(content, clientName, body, v2Config, filePath),
+      clientName,
+    );
+
+    if (nextContent === content) {
+      return;
+    }
+
+    tree.write(filePath, nextContent);
+    createdProviders.push(filePath);
+
+    if (v2Config && v2Config.localNames.length > 0) {
+      report.addWarning({
+        title: 'Import the names the scaffolded auth provider copied',
+        summary: `The scaffolded provider uses ${v2Config.localNames.join(', ')}, declared in ${v2Config.filePath} and not exported to ${filePath}.`,
+        action: 'Move each declaration into the provider file, or export it and import it there.',
+        locations: [{ filePath }, { filePath: v2Config.filePath, line: v2Config.line }],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `auth-provider-local-names:${filePath}:${authProviderName}`,
+      });
+    }
+
+    body.warnings.forEach((warning) => {
+      report.addWarning({
+        ...warning,
+        locations: [{ filePath }, ...(v2Config ? [{ filePath: v2Config.filePath, line: v2Config.line }] : [])],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `auth-provider-warning:${filePath}:${authProviderName}:${warning.title}`,
+      });
+    });
+
+    if (body.isScaffolded) {
+      report.addFollowUp({
+        title: `Finish the scaffolded auth provider ${authProviderName}`,
+        summary: `${authProviderName} was scaffolded from the v2 BearerAuthProvider at ${v2Config?.filePath}:${v2Config?.line}. The refresh query and cookie config carried over; the adapters were copied verbatim and their parameter shapes changed between v2 and v3.`,
+        action:
+          'Resolve the TODO(query-v3) comments in the generated provider, add the login query via withAuthenticationQuery, and delete the v2 provider once the app logs in again.',
+        locations: [{ filePath }, ...(v2Config ? [{ filePath: v2Config.filePath, line: v2Config.line }] : [])],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `auth-provider:${filePath}:${authProviderName}`,
+      });
+    } else {
+      report.addFollowUp({
+        title: `Configure auth queries for ${authProviderName}`,
+        summary: `The migration created ${authProviderName} with an empty \`queries\` array because no v2 BearerAuthProvider config could be matched to this client.`,
+        action:
+          'Add authQuery/tokenRefreshQuery builders, verify token extraction, and remove the placeholder empty array once the provider is configured.',
+        locations: [{ filePath }],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `auth-provider:${filePath}:${authProviderName}`,
+      });
+    }
+
+    // The generated layout only works if the auth queries live next to the provider: the provider
+    // needs the login/refresh creators, and the secure creators need the provider. Leaving them in
+    // an `auth.queries.ts` that imports the client's `post` creator closes the loop.
+    report.addManualReview({
+      title: `Keep the auth queries in ${filePath}`,
+      summary: `${authProviderName} needs the login and refresh creators, and the secure creators below it need the provider. If those creators stay in a separate auth queries file that imports this client, the two files form an import cycle.`,
+      action: `Move the login/refresh creators into ${filePath} above the provider, and have the auth queries file import them back for its legacy* wrappers.`,
+      locations: [{ filePath }],
+      source: 'legacy-query-creator-migration',
+      dedupeKey: `auth-provider-cycle:${filePath}`,
+    });
+  });
+
+  if (createdProviders.length > 0) {
+    console.log('\n✅ Created auth providers in:');
+    createdProviders.forEach((filePath) => console.log(`   - ${filePath}`));
+  }
+};
+
+const addCopiedImports = (content: string, v2Config: V2BearerAuthConfig | undefined, filePath: string) => {
+  if (!v2Config || v2Config.filePath === filePath) {
+    return content;
+  }
+
+  const sourceFile = createSourceFile(content);
+  const bound = new Set<string>();
+  let lastImportEnd = 0;
+
+  sourceFile.statements.forEach((statement) => {
+    if (!ts.isImportDeclaration(statement)) {
+      return;
+    }
+
+    lastImportEnd = Math.max(lastImportEnd, statement.getEnd());
+
+    const clause = statement.importClause;
+
+    if (clause?.name) bound.add(clause.name.text);
+    if (clause?.namedBindings && ts.isNamespaceImport(clause.namedBindings)) bound.add(clause.namedBindings.name.text);
+    if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+      clause.namedBindings.elements.forEach((element) => bound.add(element.name.text));
+    }
+  });
+
+  const statements = v2Config.copiedImports
+    .filter(({ names }) => names.every((name) => !bound.has(name)))
+    .map(({ moduleSpecifier, statement }) =>
+      statement(rebaseModuleSpecifier(moduleSpecifier, v2Config.filePath, filePath)),
+    );
+
+  if (statements.length === 0) {
+    return content;
+  }
+
+  return content.slice(0, lastImportEnd) + `\n${statements.join('\n')}` + content.slice(lastImportEnd);
+};
+
+const addAuthProviderToFile = (
+  content: string,
+  clientName: string,
+  body: ReturnType<typeof renderAuthProviderBody>,
+  v2Config: V2BearerAuthConfig | undefined,
+  filePath: string,
+) => {
+  const nextContent = addCopiedImports(
+    ensureImportFromEthleteCore(ensureImportFromQuery(content, ['createBearerAuthProvider', ...body.importsNeeded]), [
+      'toInjectFn',
+      'toProvideFn',
+    ]),
+    v2Config,
+    filePath,
+  );
+  const sourceFile = createSourceFile(nextContent);
+  const configName = ensureConfigSuffix(clientName);
+  const configPosition = findVariableStatementEnd(sourceFile, configName, 'createQueryClient');
+
+  if (!configPosition) {
+    return content;
+  }
+
+  const authProviderName = `${clientName}AuthProvider`;
+  const capitalizedClientName = capitalizeFirstLetter(clientName);
+
+  const authProviderBlock = [
+    '',
+    `export const ${authProviderName} = createBearerAuthProvider({`,
+    `  name: '${clientName}',`,
+    `  queryClientRef: ${configName},`,
+    body.queries,
+    ...(body.features ? [body.features] : []),
+    '});',
+    '',
+    `export const provide${capitalizedClientName}AuthProvider = toProvideFn(${authProviderName});`,
+    `export const inject${capitalizedClientName}AuthProvider = toInjectFn(${authProviderName});`,
+  ].join('\n');
+
+  return nextContent.slice(0, configPosition) + authProviderBlock + nextContent.slice(configPosition);
+};
+
+const findVariableStatementEnd = (sourceFile: ts.SourceFile, variableName: string, initializerName: string) => {
+  let variableStatementEnd: number | undefined;
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === variableName &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer) &&
+      ts.isIdentifier(node.initializer.expression) &&
+      node.initializer.expression.text === initializerName
+    ) {
+      let parent: ts.Node | undefined = node.parent;
+
+      while (parent && !ts.isVariableStatement(parent)) {
+        parent = parent.parent;
+      }
+
+      if (parent && ts.isVariableStatement(parent)) {
+        variableStatementEnd = parent.getEnd();
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return variableStatementEnd;
+};
+
+const generateSecureQueryCreators = (content: string, clientName: string) => {
+  const nextContent = ensureImportFromQuery(content, [
+    'createSecureDeleteQuery',
+    'createSecureGetQuery',
+    'createSecurePatchQuery',
+    'createSecurePostQuery',
+    'createSecurePutQuery',
+  ]);
+
+  const sourceFile = createSourceFile(nextContent);
+  const authProviderName = `${clientName}AuthProvider`;
+  const authProviderPosition = findVariableStatementEnd(sourceFile, authProviderName, 'createBearerAuthProvider');
+
+  if (!authProviderPosition) {
+    return content;
+  }
+
+  const clientBaseName = clientName.replace(/Client$/, '');
+  const configName = ensureConfigSuffix(clientName);
+  const secureCreatorBlock = [
+    `export const ${clientBaseName}GetSecure = createSecureGetQuery(${configName}, ${authProviderName});`,
+    `export const ${clientBaseName}PostSecure = createSecurePostQuery(${configName}, ${authProviderName});`,
+    `export const ${clientBaseName}PutSecure = createSecurePutQuery(${configName}, ${authProviderName});`,
+    `export const ${clientBaseName}PatchSecure = createSecurePatchQuery(${configName}, ${authProviderName});`,
+    `export const ${clientBaseName}DeleteSecure = createSecureDeleteQuery(${configName}, ${authProviderName});`,
+  ].join('\n');
+
+  return (
+    nextContent.slice(0, authProviderPosition) + `\n\n${secureCreatorBlock}` + nextContent.slice(authProviderPosition)
+  );
+};
+
+const containsLegacyWrapperDefinitions = (content: string) => content.includes('createLegacyQueryCreator');
+
+const findLegacyWrappers = (content: string) => {
+  const wrappers = new Map<string, string>();
+  const sourceFile = createSourceFile(content);
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text.startsWith('legacy') &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer) &&
+      ts.isIdentifier(node.initializer.expression) &&
+      node.initializer.expression.text === 'createLegacyQueryCreator'
+    ) {
+      const legacyWrapperName = node.name.text;
+      const configObject = node.initializer.arguments[0];
+
+      if (configObject && ts.isObjectLiteralExpression(configObject)) {
+        configObject.properties.forEach((property) => {
+          if (
+            ts.isPropertyAssignment(property) &&
+            ts.isIdentifier(property.name) &&
+            property.name.text === 'creator' &&
+            ts.isIdentifier(property.initializer)
+          ) {
+            wrappers.set(property.initializer.text, legacyWrapperName);
+          }
+        });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return wrappers;
+};

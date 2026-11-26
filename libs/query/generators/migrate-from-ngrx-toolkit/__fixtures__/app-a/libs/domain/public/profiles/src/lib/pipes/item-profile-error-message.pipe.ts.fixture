@@ -1,0 +1,29 @@
+import { Pipe, PipeTransform } from '@angular/core';
+import { Error } from '@tomtomb/ngrx-toolkit';
+
+@Pipe({
+  name: 'itemProfileErrorMessage',
+  standalone: true,
+})
+export class ItemProfileErrorMessagePipe implements PipeTransform {
+  transform(value: Error | null) {
+    if (!value) {
+      return '';
+    }
+    const valueAsNum = +value.status;
+
+    if (!Number.isNaN(valueAsNum)) {
+      if (valueAsNum >= 500) {
+        return 'An internal server error occurred. Please try again later!';
+      }
+    }
+
+    switch (value.status) {
+      case 404:
+        return 'The requested item does not exist!';
+
+      default:
+        return 'An error occurred. Please try again later!';
+    }
+  }
+}

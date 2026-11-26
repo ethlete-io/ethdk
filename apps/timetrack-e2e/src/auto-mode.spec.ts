@@ -1,0 +1,711 @@
+import { Page } from '@playwright/test';
+import {
+  E2E_ISSUE_BRANCH,
+  E2E_ISSUE_ID,
+  E2E_ISSUE_KEY,
+  E2E_PARENT_ID,
+  E2E_PARENT_KEY,
+  E2E_REPO,
+  defaultSettings,
+  tempoWorklogOn,
+} from '@ethlete/timetrack/testing';
+import { CollectedEvent, TimetrackSettings, shiftDayKey } from '@ethlete/timetrack';
+import {
+  E2E_DAY_KEY,
+  E2E_NOW,
+  askAgent,
+  closeStandIns,
+  editSurface,
+  expect,
+  openApprovals,
+  openAutoModeReadout,
+  openStandIns,
+  queuedId,
+  readBackend,
+  readStoredSettings,
+  seedWorld,
+  test,
+} from './support';
+
+const LINKS_THE_CHECKOUT = {
+  id: 'link-fut',
+  path: E2E_REPO,
+  target: { kind: 'project' as const, projectKey: 'ABC' },
+  createdAt: new Date(0),
+};
+
+const withAutoMode = (settings: TimetrackSettings): TimetrackSettings => ({
+  ...settings,
+  reasoning: { ...settings.reasoning, autoMode: true },
+});
+
+const openSuggestions = async (page: Page) => {
+  await page.getByRole('link', { name: 'Settings' }).click();
+  await page.getByRole('tab', { name: 'Suggestions' }).click();
+};
+
+type DayRows = {
+  rows: { issueKey?: string; description: string; sources: { issue: string; description: string } }[];
+};
+
+const FAKE_WORKLOG = 'Worked by the fake agent.';
+
+const describedRow = async (page: Page) => {
+  const answer = await askAgent<DayRows>(page, { op: 'day.rows', day: E2E_DAY_KEY });
+
+  if (!answer.ok) return undefined;
+
+  const row = answer.value.rows.find((entry) => entry.issueKey === E2E_ISSUE_KEY);
+
+  return row && { description: row.description, source: row.sources.description };
+};
+
+test.describe('auto mode on a band no issue matches', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: withAutoMode(defaultSettings()) });
+    await page.goto('/day');
+  });
+
+  test('queues one create from auto mode and names the band once it is approved', async ({ page }) => {
+    const dialog = await openApprovals(page);
+    const item = dialog.locator('[data-approval]');
+
+    await expect(item).toHaveCount(1);
+    await expect(item).toContainText('Drafted feat/pdf-export → new issue in ABC');
+    await expect(item).toContainText('auto mode');
+    expect((await readBackend(page)).jira.created).toEqual([]);
+
+    await item.getByRole('button', { name: 'Approve' }).click();
+    await expect(item).toBeHidden();
+
+    const [created] = (await readBackend(page)).jira.created;
+
+    expect(created?.summary).toMatch(/^Drafted/);
+
+    await expect
+      .poll(async () => {
+        const answer = await askAgent<DayRows>(page, { op: 'day.rows', day: E2E_DAY_KEY });
+
+        return answer.ok ? answer.value.rows.filter((row) => row.sources.issue === 'auto').length : 0;
+      })
+      .toBeGreaterThan(0);
+
+    const band = page.locator(`[data-kind="row"][title^="${created?.key ?? ''} "]`).first();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await band.click();
+    await expect(editSurface(page).locator('[data-auto-named]')).toBeVisible();
+  });
+});
+
+const YESTERDAY = shiftDayKey(E2E_DAY_KEY, -1);
+
+const showsYesterday = (page: Page) =>
+  page.addInitScript((day) => localStorage.setItem('ethlete.timetrack.view-state', JSON.stringify({ day })), YESTERDAY);
+
+const savedDay = (page: Page) =>
+  page.evaluate(() => JSON.parse(localStorage.getItem('ethlete.timetrack.view-state') ?? '{}').day as string);
+
+test.describe('auto mode while the screen shows another day', () => {
+  test('asks about a band of today and leaves the screen where it is', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: withAutoMode(defaultSettings()) });
+    await showsYesterday(page);
+    await page.goto('/day');
+
+    const dialog = await openApprovals(page);
+
+    await expect(dialog.locator('[data-approval]')).toContainText('Drafted feat/pdf-export → new issue in ABC');
+    expect(await savedDay(page)).toBe(YESTERDAY);
+  });
+
+  test('opens the stand-in of today and queues the match no evidence names', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
+    });
+    await showsYesterday(page);
+    await page.goto('/day');
+
+    await expect
+      .poll(() => askAgent(page, { op: 'approvals.list' }))
+      .toEqual({ ok: true, value: [expect.objectContaining({ op: 'autoMode.apply', client: 'auto mode' })] });
+
+    await openStandIns(page);
+
+    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toHaveAttribute('data-state', 'open');
+    expect(await savedDay(page)).toBe(YESTERDAY);
+  });
+});
+
+test.describe('auto mode on a stand-in of today', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
+    });
+    await page.goto('/day');
+  });
+
+  const approveTheMatch = async (page: Page) => {
+    await expect(page.locator('[data-band-approval][data-op="autoMode.apply"]')).toContainText(
+      `Auto · Name ${E2E_ISSUE_KEY}`,
+    );
+    await page.locator('[data-kind="row"][data-stand-in][data-pending]').click();
+
+    const section = editSurface(page).locator('[data-row-approval]');
+
+    await expect(section).toContainText(`${E2E_ISSUE_KEY} User management`);
+    await expect(section).toContainText('it names the same work');
+    await section.getByRole('button', { name: 'Approve' }).click();
+    await expect(section).toBeHidden();
+  };
+
+  test('queues the match no evidence names, resolves it once approved, and files nothing', async ({ page }) => {
+    await openStandIns(page);
+    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toHaveAttribute('data-state', 'open');
+    await closeStandIns(page);
+
+    await approveTheMatch(page);
+    await openStandIns(page);
+
+    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toContainText('by auto mode');
+    expect((await readBackend(page)).jira.created).toEqual([]);
+  });
+
+  test('reads out the stand-in it resolved', async ({ page }) => {
+    await approveTheMatch(page);
+
+    const readout = await openAutoModeReadout(page);
+
+    const applied = readout.locator('[data-auto-entry][data-status="applied"]');
+
+    await expect(applied).toHaveCount(1);
+    await expect(applied).toContainText('applied');
+  });
+
+  test('lists the ask it ran this session as done', async ({ page }) => {
+    const activity = await openAutoModeReadout(page);
+
+    await expect(
+      activity.locator('[data-auto-activity][data-state="done"]').filter({ hasText: 'Asks about' }),
+    ).toHaveCount(1);
+  });
+
+  test('shows what the ask sent to the model and what came back', async ({ page }) => {
+    const readout = await openAutoModeReadout(page);
+    const call = readout.locator('[data-model-call]').filter({ hasText: 'a ticket' }).first();
+
+    await call.locator('summary').click();
+
+    await expect(call.locator('[data-model-call-sent]')).not.toBeEmpty();
+    await expect(call.locator('[data-model-call-reply]')).not.toBeEmpty();
+  });
+});
+
+test.describe('auto mode on a stand-in whose issue is done but still logged on', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
+      jira: {
+        issues: [
+          { id: E2E_ISSUE_ID, key: E2E_ISSUE_KEY, summary: 'User management', issueType: 'Task', status: 'Done' },
+          { id: E2E_PARENT_ID, key: E2E_PARENT_KEY, summary: 'Member onboarding', issueType: 'Story', status: 'Done' },
+        ],
+      },
+      tempo: { worklogs: [tempoWorklogOn({ day: '2026-08-05', minutes: 60, issueId: E2E_ISSUE_ID })] },
+    });
+    await page.goto('/day');
+  });
+
+  const doneApply = (page: Page) => page.locator('[data-band-approval][data-op="autoMode.apply"]');
+
+  const standInState = async (page: Page) => {
+    await openStandIns(page);
+
+    return page.locator('ethlete-stand-ins-list [data-stand-in]').first();
+  };
+
+  test('offers the done issue to the match and queues the match for the user’s approval', async ({ page }) => {
+    await expect(doneApply(page)).toContainText(`Auto · Name ${E2E_ISSUE_KEY} (done)`);
+
+    const readout = await openAutoModeReadout(page);
+    const entry = readout.locator('[data-auto-entry^="stand-in:"]');
+
+    await expect(entry).toHaveAttribute('data-status', 'waiting');
+    await expect(entry).toContainText(`${E2E_ISSUE_KEY} waits for your approval`);
+    await expect(
+      readout.locator('[data-auto-activity][data-state="done"]').filter({ hasText: 'Asks about' }),
+    ).toContainText(`${E2E_ISSUE_KEY} is done, waits for your approval`);
+    expect((await readBackend(page)).jira.created).toEqual([]);
+
+    await expect(await standInState(page)).toHaveAttribute('data-state', 'open');
+  });
+
+  test('resolves the stand-in to the done issue once the card on its band is approved', async ({ page }) => {
+    await page.locator('[data-kind="row"][data-stand-in][data-pending]').click();
+
+    const section = editSurface(page).locator('[data-row-approval]');
+
+    await expect(section).toContainText(`${E2E_ISSUE_KEY} User management (done)`);
+    await section.getByRole('button', { name: 'Approve' }).click();
+    await expect(section).toBeHidden();
+
+    const standIn = await standInState(page);
+
+    await expect(standIn).toHaveAttribute('data-state', 'resolved');
+    await expect(standIn).toContainText(E2E_ISSUE_KEY);
+  });
+
+  test('leaves the stand-in open once the card is rejected', async ({ page }) => {
+    await doneApply(page)
+      .getByRole('button', { name: /^Reject:/ })
+      .click();
+    await expect(doneApply(page)).toBeHidden();
+
+    const readout = await openAutoModeReadout(page);
+
+    await expect(readout.locator('[data-auto-entry^="stand-in:"]')).toHaveAttribute('data-status', 'rejected');
+    await expect(await standInState(page)).toHaveAttribute('data-state', 'open');
+  });
+
+  test('reads rejected once an agent rejects the card through the endpoint', async ({ page }) => {
+    await expect(doneApply(page)).toBeVisible();
+
+    const listed = await askAgent(page, { op: 'approvals.list' });
+
+    expect(listed).toEqual({
+      ok: true,
+      value: [expect.objectContaining({ op: 'autoMode.apply', client: 'auto mode' })],
+    });
+
+    const [apply] = (listed as { value: { approvalId: string }[] }).value;
+
+    expect(await askAgent(page, { op: 'approval.reject', id: apply?.approvalId })).toMatchObject({ ok: true });
+    await expect(doneApply(page)).toBeHidden();
+
+    const readout = await openAutoModeReadout(page);
+
+    await expect(readout.locator('[data-auto-entry^="stand-in:"]')).toHaveAttribute('data-status', 'rejected');
+    await expect(await standInState(page)).toHaveAttribute('data-state', 'open');
+  });
+});
+
+test.describe('an agent asking auto mode again about a stand-in whose create was rejected', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
+      jira: {
+        issues: [
+          { id: E2E_ISSUE_ID, key: E2E_ISSUE_KEY, summary: 'User management', issueType: 'Task', status: 'Done' },
+          { id: E2E_PARENT_ID, key: E2E_PARENT_KEY, summary: 'Member onboarding', issueType: 'Story', status: 'Done' },
+        ],
+      },
+    });
+    await page.goto('/day');
+  });
+
+  type Waiting = { approvalId: string; op: string; client?: string };
+
+  const waitingCreates = async (page: Page) => {
+    const answer = await askAgent<Waiting[]>(page, { op: 'approvals.list' });
+
+    return answer.ok ? answer.value.filter((item) => item.op === 'jira.create' && item.client === 'auto mode') : [];
+  };
+
+  const rejectTheCreate = async (page: Page) => {
+    await expect.poll(async () => (await waitingCreates(page)).length).toBe(1);
+
+    const [create] = await waitingCreates(page);
+
+    expect(await askAgent(page, { op: 'approval.reject', id: create?.approvalId })).toMatchObject({ ok: true });
+
+    return create?.approvalId;
+  };
+
+  const standInId = async (page: Page) => {
+    const answer = await askAgent<{ standIns: { id: string }[] }>(page, { op: 'standIn.list' });
+
+    return answer.ok ? answer.value.standIns[0]?.id : undefined;
+  };
+
+  const askedFor = (id: string | undefined) => ({
+    ok: true,
+    value: {
+      status: 'queued',
+      day: E2E_DAY_KEY,
+      subject: { kind: 'stand-in', standInId: id },
+      label: expect.stringMatching(/^Asks about /),
+    },
+  });
+
+  test('queues a new answer through the endpoint, and the day heading does not move', async ({ page }) => {
+    const heading = page.locator('ethlete-day-review header h2');
+
+    await expect(heading).toBeVisible();
+
+    const shown = await heading.textContent();
+    const rejected = await rejectTheCreate(page);
+    const id = await standInId(page);
+    const rows = await askAgent<{ rows: { autoModeSubject?: unknown }[] }>(page, { op: 'day.rows', day: E2E_DAY_KEY });
+
+    expect(rows.ok && rows.value.rows.map((row) => row.autoModeSubject)).toContainEqual({
+      kind: 'stand-in',
+      standInId: id,
+    });
+    expect(await askAgent(page, { op: 'autoMode.ask', day: E2E_DAY_KEY, standInId: id })).toEqual(askedFor(id));
+    await expect.poll(async () => (await waitingCreates(page)).map((item) => item.approvalId)).not.toEqual([]);
+    expect((await waitingCreates(page)).map((item) => item.approvalId)).not.toContain(rejected);
+
+    const readout = await openAutoModeReadout(page);
+
+    await expect(readout.locator('[data-auto-entry^="stand-in:"]')).toHaveAttribute('data-status', 'waiting');
+    await expect(heading).toHaveText(shown ?? '');
+    expect((await readBackend(page)).jira.created).toEqual([]);
+  });
+
+  test('asks about the day while another one is on screen, and leaves that one there', async ({ page }) => {
+    const heading = page.locator('ethlete-day-review header h2');
+    const rejected = await rejectTheCreate(page);
+    const id = await standInId(page);
+    const today = await heading.textContent();
+
+    await page.getByRole('button', { name: 'Previous day' }).click();
+    await expect(heading).not.toHaveText(today ?? '');
+
+    const shown = await heading.textContent();
+
+    expect(await askAgent(page, { op: 'autoMode.ask', day: E2E_DAY_KEY, standInId: id })).toEqual(askedFor(id));
+    await expect.poll(async () => (await waitingCreates(page)).map((item) => item.approvalId)).not.toEqual([]);
+    expect((await waitingCreates(page)).map((item) => item.approvalId)).not.toContain(rejected);
+    await expect(heading).toHaveText(shown ?? '');
+  });
+
+  test('refuses a stand-in it does not hold, and one the day holds no time of', async ({ page }) => {
+    const heading = page.locator('ethlete-day-review header h2');
+
+    await expect(heading).toBeVisible();
+
+    const shown = await heading.textContent();
+    const id = await standInId(page);
+
+    expect(await askAgent(page, { op: 'autoMode.ask', day: E2E_DAY_KEY, standInId: 'nope' })).toEqual({
+      ok: false,
+      message: 'Timetrack holds no stand-in nope. Nothing was asked.',
+    });
+    expect(await askAgent(page, { op: 'autoMode.ask', day: '2026-08-11', standInId: id })).toEqual({
+      ok: false,
+      message: `Stand-in ${id} holds no time on 2026-08-11. Nothing was asked.`,
+    });
+    await expect(heading).toHaveText(shown ?? '');
+  });
+});
+
+test.describe('auto mode on a stand-in whose day names a done issue Tempo does not hold', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
+      jira: {
+        issues: [
+          { id: E2E_ISSUE_ID, key: E2E_ISSUE_KEY, summary: 'User management', issueType: 'Task', status: 'Done' },
+          { id: E2E_PARENT_ID, key: E2E_PARENT_KEY, summary: 'Member onboarding', issueType: 'Story', status: 'Done' },
+        ],
+      },
+      reviewOverrides: { [E2E_DAY_KEY]: { 'unnamed:@named-by-hand': { issueKey: E2E_ISSUE_KEY } } },
+    });
+    await page.goto('/day');
+  });
+
+  test('offers the issue the user named the day with and queues the match for approval', async ({ page }) => {
+    await expect(page.locator('[data-band-approval][data-op="autoMode.apply"]')).toContainText(
+      `Auto · Name ${E2E_ISSUE_KEY} (done)`,
+    );
+
+    const listed = await askAgent(page, { op: 'approvals.list' });
+
+    expect(listed).toEqual({ ok: true, value: [expect.objectContaining({ op: 'autoMode.apply' })] });
+    expect((await readBackend(page)).jira.created).toEqual([]);
+  });
+});
+
+test.describe('a class the settings make stricter', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/day');
+  });
+
+  test('keeps a CLI create out of approve all once it is set to one by one', async ({ page }) => {
+    const id = queuedId(
+      await askAgent(page, { op: 'jira.create', summary: 'Pdf export', projectKey: 'ABC', client: 'Claude Code' }),
+    );
+
+    await openSuggestions(page);
+    await page.locator('[data-action="jira.create"] et-select').click();
+    await page.getByRole('option', { name: 'Approved one by one' }).click();
+
+    await expect
+      .poll(async () => (await readStoredSettings(page))?.actionClasses)
+      .toEqual({ 'jira.create': 'human-only' });
+
+    const dialog = await openApprovals(page);
+
+    await expect(dialog.locator(`[data-approval="${id}"]`)).toContainText('Only approved one by one');
+    await expect(dialog.getByRole('button', { name: /^Approve all/ })).toBeHidden();
+  });
+});
+
+test.describe('the parent the ticket form of a stand-in fills in by itself', () => {
+  const UPDATED = `${E2E_DAY_KEY}T08:00:00.000Z`;
+  const SUGGESTED = 'ABC-2100';
+
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      jira: {
+        issues: [
+          {
+            id: E2E_PARENT_ID,
+            key: E2E_PARENT_KEY,
+            summary: 'Member onboarding',
+            issueType: 'Story',
+            updated: UPDATED,
+          },
+          { id: '10210', key: SUGGESTED, summary: 'Pdf export tooling', issueType: 'Story', updated: UPDATED },
+        ],
+      },
+      settings: { ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] },
+    });
+    await page.goto('/day');
+  });
+
+  test('is never stored as the user’s pick, which only a pick in the select is', async ({ page }) => {
+    await openStandIns(page);
+
+    const card = page.locator('ethlete-stand-ins-list [data-stand-in]').first();
+    const parent = card.locator('et-form-field').filter({ hasText: 'Parent' }).locator('et-select');
+    const storedParent = async () => {
+      const [standIn] = (await readStoredSettings(page))?.standIns ?? [];
+
+      return { parentKey: standIn?.parentKey, parentSource: standIn?.parentSource };
+    };
+
+    await card.getByRole('button', { name: 'File a ticket' }).click();
+    await expect(parent).toContainText(SUGGESTED);
+    await page.clock.runFor(1_000);
+
+    expect(await storedParent()).toEqual({ parentKey: undefined, parentSource: undefined });
+
+    await parent.click();
+    await page.getByRole('option', { name: new RegExp(E2E_PARENT_KEY) }).click();
+
+    await expect.poll(storedParent).toEqual({ parentKey: E2E_PARENT_KEY, parentSource: 'human' });
+  });
+});
+
+test.describe('the sidebar line of auto mode', () => {
+  const statusLine = (page: Page) => page.locator('ethlete-sidebar [data-auto-mode-status]');
+
+  test('shows auto mode on with its waiting count and opens the queue', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: withAutoMode(defaultSettings()) });
+    await page.goto('/day');
+
+    await expect(statusLine(page)).toHaveText('Auto mode · on · 1 waiting');
+    await statusLine(page).click();
+    await expect(page.locator('ethlete-approval-queue [data-approval]')).toHaveCount(1);
+  });
+
+  test('stays out of the sidebar while auto mode is off', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: defaultSettings() });
+    await page.goto('/day');
+
+    await expect(page.getByRole('link', { name: /Settings/ })).toBeVisible();
+    await expect(statusLine(page)).toHaveCount(0);
+  });
+});
+
+test.describe('auto mode on a settled code row with a ticket', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: withAutoMode(defaultSettings()) });
+    await page.goto('/day');
+  });
+
+  test('writes its worklog description and reads it out', async ({ page }) => {
+    await expect.poll(() => describedRow(page)).toEqual({ description: FAKE_WORKLOG, source: 'auto' });
+
+    const readout = await openAutoModeReadout(page);
+    const entry = readout.locator('[data-auto-entry^="description:"]');
+
+    await expect(entry).toHaveCount(1);
+    await expect(entry).toHaveAttribute('data-status', 'written');
+    await expect(entry).toContainText(`Worklog: ${FAKE_WORKLOG}`);
+  });
+
+  test('opens the row it described from the readout, marked as written by auto mode', async ({ page }) => {
+    await expect.poll(() => describedRow(page)).toEqual({ description: FAKE_WORKLOG, source: 'auto' });
+
+    const readout = await openAutoModeReadout(page);
+
+    await readout.locator('[data-auto-entry^="description:"] [data-show-row]').click();
+
+    await expect(readout).toBeHidden();
+    await expect(editSurface(page).locator('[data-auto-described]')).toBeVisible();
+  });
+});
+
+test.describe('auto mode on a code row that has not settled yet', () => {
+  const at = (clock: string) => new Date(`${E2E_DAY_KEY}T${clock}:00.000Z`);
+  const focus = (clock: string, title: string): CollectedEvent => ({
+    at: at(clock),
+    source: 'window',
+    kind: 'window-focus',
+    appId: 'com.microsoft.VSCode',
+    title,
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: at('10:58'),
+      // Every collector run reloads the day, which asks again by itself. Paused, only the clock can.
+      collectionPausedAt: at('10:40'),
+      events: [
+        { at: at('09:00'), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_ISSUE_BRANCH },
+        focus('09:01', 'user-management.ts - fut-frontend - Visual Studio Code'),
+        focus('09:25', 'invite.ts - fut-frontend - Visual Studio Code'),
+        focus('09:50', 'invite.spec.ts - fut-frontend - Visual Studio Code'),
+        focus('10:15', 'member.ts - fut-frontend - Visual Studio Code'),
+        {
+          at: at('10:20'),
+          source: 'git',
+          kind: 'git-commit',
+          repoPath: E2E_REPO,
+          branch: E2E_ISSUE_BRANCH,
+          sha: 'a1b2c3d',
+          subject: 'Invite members by email',
+        },
+        { at: at('10:30'), source: 'idle', kind: 'idle-start' },
+      ],
+      settings: withAutoMode(defaultSettings()),
+    });
+    await page.goto('/day');
+  });
+
+  test('describes it once the clock alone has carried it past the settle time', async ({ page }) => {
+    await expect.poll(() => describedRow(page)).toBeDefined();
+    await page.clock.runFor(2_000);
+
+    expect((await describedRow(page))?.source).not.toBe('auto');
+
+    await page.clock.runFor('04:00');
+
+    await expect.poll(() => describedRow(page)).toEqual({ description: FAKE_WORKLOG, source: 'auto' });
+  });
+});
+
+test.describe('auto mode on a band two answers disagree about', () => {
+  const at = (minutes: number) => new Date(new Date(`${E2E_DAY_KEY}T14:00:00.000Z`).getTime() + minutes * 60_000);
+  const helper = 'com.hnc.Discord.helper.Renderer';
+  const REASON = 'The fake agent reads the other answer.';
+
+  const disputedWorld = (settings: Partial<TimetrackSettings> = {}) => ({
+    now: E2E_NOW,
+    events: [
+      {
+        at: at(0),
+        until: at(60),
+        source: 'calendar',
+        kind: 'calendar-event',
+        occurrenceId: 'o-weekly',
+        recurringEventId: 'weekly',
+        title: 'Weekly sync',
+        accepted: true,
+        conferenceUrl: 'https://call.example.com/qzx-room-71',
+      },
+      { at: at(0), source: 'window', kind: 'window-focus', appId: helper, title: 'Open Room #1 | Braune Digital' },
+      { at: at(1), source: 'call', kind: 'call-start', appId: helper },
+      { at: at(41), source: 'call', kind: 'call-end', appId: helper },
+    ] satisfies CollectedEvent[],
+    settings: withAutoMode({
+      ...defaultSettings(),
+      callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] },
+      nudge: { ...defaultSettings().nudge, enabled: false },
+      meetingNamings: [{ seriesKey: 'weekly', issueKey: E2E_PARENT_KEY, title: 'Weekly sync', createdAt: at(-60) }],
+      callNamings: [
+        {
+          appId: helper.toLowerCase(),
+          weekday: 3,
+          durationBand: '30-60',
+          startMinute: 14 * 60 + 1,
+          target: { kind: 'issue' as const, issueKey: E2E_ISSUE_KEY },
+          label: 'Open Room #1',
+          createdAt: at(-60),
+        },
+      ],
+      ...settings,
+    }),
+  });
+  const band = (page: Page) => page.locator('[data-kind="row"]').first();
+
+  test('settles it with the answer the model gave, and says what it did and why', async ({ page }) => {
+    await seedWorld(page, disputedWorld());
+    await page.goto('/day');
+
+    await expect(band(page)).toContainText(E2E_PARENT_KEY);
+    await expect(band(page)).not.toContainText('or ');
+    await expect(page.locator('[data-warning="naming-disagreement"]')).toHaveCount(0);
+
+    const readout = await openAutoModeReadout(page);
+    const entry = readout.locator('[data-auto-entry^="dispute:"]');
+
+    await expect(entry).toHaveAttribute('data-status', 'applied');
+    await expect(entry).toContainText(`Why: ${REASON}`);
+    await expect(
+      readout.locator('[data-auto-activity][data-state="done"]').filter({ hasText: `Settles ${E2E_ISSUE_KEY}` }),
+    ).toContainText(`Takes ${E2E_PARENT_KEY} over ${E2E_ISSUE_KEY}: ${REASON}`);
+  });
+
+  test('changes nothing where the answer it picked is done in Jira, and says so', async ({ page }) => {
+    const world = disputedWorld();
+
+    await seedWorld(page, {
+      ...world,
+      jira: {
+        issues: [
+          { id: E2E_ISSUE_ID, key: E2E_ISSUE_KEY, summary: 'User management', issueType: 'Task' },
+          { id: E2E_PARENT_ID, key: E2E_PARENT_KEY, summary: 'Member onboarding', issueType: 'Story', status: 'Done' },
+        ],
+      },
+    });
+    await page.goto('/day');
+
+    const readout = await openAutoModeReadout(page);
+    const entry = readout.locator('[data-auto-entry^="dispute:"]');
+
+    await expect(entry).toHaveAttribute('data-status', 'done');
+    await expect(entry).toContainText(`${E2E_PARENT_KEY} is done, left to you`);
+    await expect(
+      readout.locator('[data-auto-activity][data-state="done"]').filter({ hasText: `Settles ${E2E_ISSUE_KEY}` }),
+    ).toContainText(`${E2E_PARENT_KEY} is done, left to you`);
+    await expect(band(page)).toContainText(`or ${E2E_PARENT_KEY}?`);
+  });
+
+  test('waits for the approval where applying is set to approve first', async ({ page }) => {
+    await seedWorld(page, disputedWorld({ actionClasses: { 'autoMode.apply': 'external' } }));
+    await page.goto('/day');
+
+    const dialog = await openApprovals(page);
+    const item = dialog.locator('[data-approval]').filter({ hasText: 'instead of' });
+
+    await expect(item).toContainText(`Takes ${E2E_PARENT_KEY} instead of ${E2E_ISSUE_KEY}`);
+    await expect(band(page)).toContainText(`or ${E2E_PARENT_KEY}?`);
+
+    await item.getByRole('button', { name: 'Approve' }).click();
+    await expect(item).toBeHidden();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+
+    await expect(band(page)).not.toContainText('or ');
+    await expect(band(page)).toContainText(E2E_PARENT_KEY);
+  });
+});

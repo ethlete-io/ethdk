@@ -1,0 +1,36 @@
+@layer components.sdk {
+  .et-menu-item {
+    .et-menu-item-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+
+      &:not(:has(*)) {
+        display: none;
+      }
+
+      svg {
+        inline-size: var(--et-menu-item-icon-size);
+        block-size: var(--et-menu-item-icon-size);
+      }
+    }
+
+    /* `.et-menu-item-content` is shared with the selection items, so its layout lives in
+       `menu.component.css` — see the note there. */
+
+    .et-menu-item-trailing {
+      display: inline-flex;
+      align-items: center;
+      flex: none;
+
+      &:not(:has(*)) {
+        display: none;
+      }
+    }
+
+    .et-menu-item-loader {
+      display: inline-flex;
+    }
+  }
+}

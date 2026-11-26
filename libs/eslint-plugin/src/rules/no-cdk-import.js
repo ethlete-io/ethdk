@@ -1,0 +1,172 @@
+// @ts-check
+'use strict';
+
+const { createRequire } = require('node:module');
+const path = require('node:path');
+const fs = require('node:fs');
+const { MODULE_REFERENCE_SELECTOR, getModuleReference } = require('./internals/import-resolution');
+
+/**
+ * Disallows importing from `@ethlete/cdk`, the maintenance-mode predecessor of `@ethlete/components`,
+ * and names the successor of each imported symbol in the message.
+ *
+ *   import { ButtonComponent } from '@ethlete/cdk';
+ *   → `ButtonComponent` is legacy @ethlete/cdk. Use `ButtonComponent` from @ethlete/components
+ *     (https://…/components/button): a real button system - variant, size and color inputs plus
+ *     theming instead of CSS-only classes.
+ *
+ * The successors come from `migration-map.json`, which ships inside the `@ethlete/cdk` package - so
+ * the advice is always the installed version's, and this rule holds no copy of it. Without the map on
+ * disk the rule still reports, pointing at the migration guide instead of a specific symbol.
+ *
+ * Off by default: it is only useful once an app has decided to leave the cdk behind.
+ */
+
+const CDK_PACKAGE = '@ethlete/cdk';
+const MIGRATION_MAP = '@ethlete/cdk/migration-map.json';
+const DEFAULT_DOCS_BASE_URL = 'https://ethlete-sdk-docs.web.app';
+
+/** @typedef {Record<string, { kind: string, to?: string, package?: string, docs?: string, note?: string }>} TMigrationMap */
+
+/** @type {Map<string, { mtimeMs: number | null, map: TMigrationMap }>} */
+const mapCache = new Map();
+
+/**
+ * @param {string} path
+ */
+const getMtimeMs = (path) => {
+  try {
+    return fs.statSync(path).mtimeMs;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * @param {string | undefined} mapPath
+ * @param {string} cwd
+ * @returns {TMigrationMap | null}
+ */
+const loadMigrationMap = (mapPath, cwd) => {
+  const cacheKey = mapPath ? path.resolve(cwd, mapPath) : `${cwd}:${MIGRATION_MAP}`;
+  const mtimeMs = mapPath ? getMtimeMs(cacheKey) : null;
+  const cached = mapCache.get(cacheKey);
+
+  if (cached && cached.mtimeMs === mtimeMs) return cached.map;
+
+  let map;
+
+  try {
+    map = mapPath
+      ? JSON.parse(fs.readFileSync(cacheKey, 'utf8'))
+      : createRequire(path.join(cwd, 'noop.js'))(MIGRATION_MAP);
+  } catch {
+    return null;
+  }
+
+  mapCache.set(cacheKey, { mtimeMs, map });
+
+  return map;
+};
+
+/**
+ * @param {string} note
+ */
+const formatNote = (note) => {
+  const sentence = note.charAt(0).toUpperCase() + note.slice(1);
+
+  return /[.!?]$/u.test(sentence) ? sentence : `${sentence}.`;
+};
+
+/** @type {import('eslint').Rule.RuleModule} */
+const noCdkImport = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Disallow importing from the maintenance-mode @ethlete/cdk; name the @ethlete/components successor.',
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          /** Where to read the migration map from, when `@ethlete/cdk` is not resolvable from the linted project. */
+          migrationMapPath: { type: 'string' },
+          /** Base URL the migration map's doc paths are appended to. */
+          docsBaseUrl: { type: 'string' },
+        },
+        additionalProperties: false,
+      },
+    ],
+    messages: {
+      successor: '`{{ name }}` is legacy {{ cdk }}. Use `{{ to }}` from {{ package }} instead ({{ docs }}).{{ note }}',
+      noSuccessor: '`{{ name }}` is legacy {{ cdk }} and has no successor{{ note }} - see {{ docs }}.',
+      unmapped: '`{{ name }}` is legacy {{ cdk }}. Move it to @ethlete/components - see {{ docs }}.',
+      module: 'Do not depend on the legacy {{ cdk }} - move to @ethlete/components, see {{ docs }}.',
+    },
+  },
+  create(context) {
+    const options = context.options[0] ?? {};
+    const docsBaseUrl = (options.docsBaseUrl ?? DEFAULT_DOCS_BASE_URL).replace(/\/$/, '');
+    const migrationDocs = `${docsBaseUrl}/cdk/migration`;
+    const map = loadMigrationMap(options.migrationMapPath, context.cwd);
+
+    /** @param {string} name */
+    const entryFor = (name) => (map && Object.hasOwn(map, name) ? map[name] : null);
+
+    return {
+      [MODULE_REFERENCE_SELECTOR](node) {
+        const reference = getModuleReference(node);
+        const source = reference?.source;
+
+        if (!reference || (source !== CDK_PACKAGE && !source?.startsWith(`${CDK_PACKAGE}/`))) return;
+
+        const { named } = reference;
+
+        if (!named.length) {
+          context.report({ node, messageId: 'module', data: { cdk: CDK_PACKAGE, docs: migrationDocs } });
+
+          return;
+        }
+
+        for (const { name, node: specifier } of named) {
+          const entry = entryFor(name);
+
+          if (!entry) {
+            context.report({
+              node: specifier,
+              messageId: 'unmapped',
+              data: { name, cdk: CDK_PACKAGE, docs: migrationDocs },
+            });
+
+            continue;
+          }
+
+          if (!entry.to) {
+            context.report({
+              node: specifier,
+              messageId: 'noSuccessor',
+              data: { name, cdk: CDK_PACKAGE, note: entry.note ? ` (${entry.note})` : '', docs: migrationDocs },
+            });
+
+            continue;
+          }
+
+          context.report({
+            node: specifier,
+            messageId: 'successor',
+            data: {
+              name,
+              cdk: CDK_PACKAGE,
+              to: entry.to,
+              package: entry.package ?? '@ethlete/components',
+              docs: entry.docs ? `${docsBaseUrl}${entry.docs}` : migrationDocs,
+              note: entry.note ? ` ${formatNote(entry.note)}` : '',
+            },
+          });
+        }
+      },
+    };
+  },
+};
+
+module.exports = noCdkImport;

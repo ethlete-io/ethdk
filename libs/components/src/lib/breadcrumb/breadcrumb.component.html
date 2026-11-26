@@ -1,0 +1,34 @@
+<ol class="et-breadcrumb-list">
+  @for (slot of breadcrumb.renderedItems(); track $index) {
+    <li [attr.data-type]="slot.type" class="et-breadcrumb-slot">
+      @if (slot.type === 'item') {
+        <ng-container [ngTemplateOutlet]="crumb" [ngTemplateOutletContext]="{ $implicit: slot.item }" />
+      } @else {
+        <ng-container
+          [ngComponentOutlet]="breadcrumb.overflowComponent"
+          [ngComponentOutletInputs]="{ items: slot.items, crumbTemplate: crumb }"
+        />
+      }
+
+      @if (!$last) {
+        <span class="et-breadcrumb-separator" aria-hidden="true">
+          @if (breadcrumb.separatorTemplate(); as separator) {
+            <ng-container [ngTemplateOutlet]="separator.templateRef" />
+          } @else {
+            <i class="et-breadcrumb-chevron" etIcon="et-chevron"></i>
+          }
+        </span>
+      }
+    </li>
+  }
+</ol>
+
+<ng-template #crumb let-item>
+  @if (item.loading()) {
+    <et-skeleton class="et-breadcrumb-loading">
+      <et-skeleton-item shape="text" />
+    </et-skeleton>
+  } @else {
+    <ng-container [ngTemplateOutlet]="item.templateRef" />
+  }
+</ng-template>

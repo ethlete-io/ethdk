@@ -1,0 +1,8 @@
+:where(.et-segmented-button-group) {
+  --et-segmented-button-group-gap: 1rem;
+}
+
+.et-segmented-button-group-container {
+  display: flex;
+  gap: var(--et-segmented-button-group-gap);
+}

@@ -1,0 +1,61 @@
+:where(.et-scrollable-placeholder) {
+  --mask: #121212 0, transparent 100%;
+  --mask-size: 25px;
+
+  position: relative;
+  display: block;
+}
+
+.et-scrollable-placeholder {
+  .et-scroll-observer-first-element,
+  .et-scroll-observer-last-element {
+    position: absolute;
+  }
+
+  .et-scrollable-mask {
+    inline-size: var(--mask-size);
+    block-size: 100%;
+    position: absolute;
+  }
+
+  .et-scrollable-mask--start {
+    background: linear-gradient(to right, var(--mask));
+    inset-block-start: 0;
+    inset-inline: 0 0;
+  }
+
+  .et-scrollable-mask--end {
+    background: linear-gradient(to left, var(--mask));
+    inset-inline: calc(100% - var(--mask-size)) 100%;
+    inset-block-start: 0;
+  }
+
+  .et-scrollable-masks {
+    grid-row: 1 / 1;
+    grid-column: 1 / 1;
+    pointer-events: none;
+  }
+}
+
+.et-scrollable-placeholder-overlay {
+  grid-row: 1 / 1;
+  grid-column: 1 / 1;
+  display: grid;
+}
+
+.et-scrollable-placeholder-wrapper {
+  display: grid;
+  block-size: 100%;
+  inline-size: 100%;
+}
+
+.et-scrollable-placeholder-container {
+  display: grid;
+  position: relative;
+  grid-row: 1 / 1;
+  grid-column: 1 / 1;
+  overflow: hidden;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}

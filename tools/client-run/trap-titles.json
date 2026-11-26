@@ -1,0 +1,57 @@
+[
+  {
+    "title": "Vortex",
+    "poster": false,
+    "source": "46 B, call 40 H card samples (qn[4]): hasPoster false, the title stands in the poster box"
+  },
+  {
+    "title": "Ocean's Eleven",
+    "versions": ["4K", "1080p"],
+    "source": "46 B catalog fixture: versions 4K, 1080p, not new; the 40 H badge shows 4K"
+  },
+  {
+    "title": "10 Cloverfield Lane",
+    "versions": ["3D", "1080p"],
+    "source": "46 B, call 40 H card samples (qn[10]): versions 3D, 1080p; the 40 H badge shows 3D"
+  },
+  {
+    "title": "Smile 2 - Siehst du es auch?",
+    "isNew": true,
+    "source": "46 B, call 40 H contextual badge I(1, new): the badge shows Neu; also a hero sample of 25"
+  },
+  {
+    "title": "Arcane",
+    "newContent": "season",
+    "seasonCount": 2,
+    "episodeCount": 18,
+    "source": "46 B, call 40 H contextual badge I(2, season): Neue Staffel; subline 2 Staffeln"
+  },
+  {
+    "title": "A Knight of the Seven Kingdoms",
+    "newContent": "episode",
+    "addedEpisodeCount": 1,
+    "seasonCount": 1,
+    "episodeCount": 6,
+    "source": "46 B, call 40 H contextual badge I(0, episode): Neue Folge; subline 6 Folgen; hero sample of 25 with 1 Staffel"
+  },
+  {
+    "title": "Ballerina - From the World of John Wick",
+    "isNew": true,
+    "source": "46 B catalog fixture: longest card title, 40 H keeps the title on one line (truncate)"
+  },
+  {
+    "title": "Triangle - Die Angst kommt in Wellen",
+    "versions": ["1080p"],
+    "source": "46 B, call 40 H card samples (qn[2]): 1080p only and not new, the card shows no badge"
+  },
+  {
+    "title": "Dune: Part Two",
+    "isNew": true,
+    "versions": ["4K", "HDR", "3D"],
+    "source": "46 B catalog fixture: new film; hero sample of call 25"
+  },
+  {
+    "title": "Smile - Siehst du es auch?",
+    "source": "46 B, hero samples of call 25 (Knight, Smile, Smile 2, Dune)"
+  }
+]

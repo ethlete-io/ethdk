@@ -1,0 +1,161 @@
+import { CommentPlace, CommentResolution, ListedComment } from '../../host/design';
+import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
+import { CanvasPin, FramePoint } from '../components/design-canvas/canvas-pin';
+import { PlacedComment } from '../design-parts/system-page/system-page-sample';
+import { inboxCommentOf, senderOf } from './inbox-comments';
+
+export type NumberedComment = ListedComment & { number: number };
+
+export const isQuestion = (comment: Pick<ListedComment, 'threadState'>) => comment.threadState === 'question';
+
+export const isAnswered = (comment: Pick<ListedComment, 'threadState'>) => comment.threadState === 'answered';
+
+/** Numbers the open comments of a product from 1, oldest first, so the list and the pins agree. */
+export const numberedCommentsOf = (comments: ListedComment[]): NumberedComment[] =>
+  [...comments]
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))
+    .map((comment, index) => ({ ...comment, number: index + 1 }));
+
+type ResolvedComment = ListedComment & { resolved: CommentResolution };
+
+/** The resolved threads among `comments`, the latest resolved first. */
+export const resolvedCommentsOf = (comments: ListedComment[]): ResolvedComment[] =>
+  comments
+    .filter((comment): comment is ResolvedComment => !!comment.resolved)
+    .sort((a, b) => b.resolved.resolvedAt.localeCompare(a.resolved.resolvedAt) || a.id.localeCompare(b.id));
+
+const interactionOf = (place: { interaction?: string }) => place.interaction ?? REST;
+
+type LiveSketches = { liveSketches?: ReadonlySet<string> };
+
+type PlacedOn = CommentPlace & Pick<ListedComment, 'addressed'> & LiveSketches;
+
+const isOnPlace = (comment: PlacedOn, place: FramePlace) => {
+  const { liveSketches } = comment;
+  const gone =
+    comment.addressed?.reason === 'merge' ||
+    (!!liveSketches && !!comment.sketch?.createdAt && !liveSketches.has(comment.sketch.createdAt));
+  const sketch = gone ? undefined : comment.sketch;
+
+  return (
+    comment.part === place.part &&
+    comment.state === place.state &&
+    comment.size === place.size &&
+    interactionOf(comment) === interactionOf(place) &&
+    sketch?.target === place.sketch?.target &&
+    sketch?.variant === place.sketch?.variant
+  );
+};
+
+/** Whether the sketch view shows a comment: one made in this sketch, or one on a page the target is used in. */
+export const isInSketch = (
+  comment: CommentPlace,
+  { sketch, contextPages }: { sketch: { createdAt: string }; contextPages: ReadonlySet<string> },
+) => (comment.sketch ? comment.sketch.createdAt === sketch.createdAt : contextPages.has(comment.part));
+
+/**
+ * The frame to move the camera to for a comment: its state and interaction at the size on show, else its state in
+ * the interaction on show.
+ */
+export const otherSizeFrameOf = (frames: CanvasFrame[], comment: PlacedOn) => {
+  const placed = frames.filter((frame): frame is CanvasFrame & { place: FramePlace } => !!frame.place);
+  const frame =
+    placed.find((candidate) => isOnPlace({ ...comment, size: candidate.place.size }, candidate.place)) ??
+    placed.find((candidate) =>
+      isOnPlace({ ...comment, size: candidate.place.size, interaction: candidate.place.interaction }, candidate.place),
+    );
+
+  return frame?.id ?? null;
+};
+
+/**
+ * One pin per comment on the place of one of `frames` at its own size and interaction, so a comment made at another
+ * size or interaction gets none.
+ */
+export const pinsOnPlaceOf = (
+  frames: CanvasFrame[],
+  { comments }: { comments: (ListedComment & { number?: number })[] },
+) =>
+  pinsOf(frames, {
+    comments: comments.filter((comment) => frames.some((frame) => frame.place && isOnPlace(comment, frame.place))),
+  });
+
+/** How many of `comments` are on the state of `frame` at another size. */
+export const otherSizeCountOf = (frame: CanvasFrame, comments: ListedComment[]) => {
+  const place = frame.place;
+
+  return place
+    ? comments.filter((comment) => comment.size !== place.size && isOnPlace({ ...comment, size: place.size }, place))
+        .length
+    : 0;
+};
+
+/**
+ * One pin per comment that sits on one of `frames`, on the frame `otherSizeFrameOf` picks for it. With `liveSketches`
+ * (the `createdAt` of every sketch still listed) a comment of a sketch not in it pins on the part frame.
+ */
+export const pinsOf = (
+  frames: CanvasFrame[],
+  { comments, liveSketches }: { comments: (ListedComment & { number?: number })[] } & LiveSketches,
+): CanvasPin[] =>
+  comments.flatMap((comment) => {
+    const frameId = otherSizeFrameOf(frames, { ...comment, liveSketches });
+    const last = comment.replies.at(-1);
+
+    return frameId
+      ? [
+          {
+            id: comment.id,
+            frameId,
+            label: String(comment.number ?? ''),
+            text: comment.text,
+            ...senderOf(last?.by ?? 'user', last?.author),
+            count: comment.replies.length + 1,
+            ...(comment.resolved ? { resolved: true } : {}),
+            ...(comment.point ? { point: comment.point } : {}),
+          },
+        ]
+      : [];
+  });
+
+const atOf = (frame: CanvasFrame | undefined, point: CanvasPin['point']) =>
+  point && frame?.width && frame.height
+    ? { x: (point.x / frame.width) * 100, y: (point.y / frame.height) * 100 }
+    : { x: 100, y: 0 };
+
+/** The comments behind `pins`, in pin order, each `at` its pin in percent of the frame. */
+export const placedCommentsOf = (
+  { frames, pins, comments }: { frames: CanvasFrame[]; pins: CanvasPin[]; comments: ListedComment[] },
+  context: { now: number; userName?: string | null },
+): PlacedComment[] =>
+  pins.flatMap((pin) => {
+    const comment = comments.find((candidate) => candidate.id === pin.id);
+
+    return comment
+      ? [
+          {
+            ...inboxCommentOf(comment, context),
+            at: atOf(
+              frames.find((frame) => frame.id === pin.frameId),
+              pin.point,
+            ),
+          },
+        ]
+      : [];
+  });
+
+/** A comment the user is typing, on a frame and optionally at a point on it. */
+export type CommentDraft = { frameId: string; place: FramePlace; point: { x: number; y: number } | null };
+
+/** The draft for a click in comment mode, or `null` when the frame has no place to comment on. */
+export const commentDraftOf = (frames: CanvasFrame[], pick: FramePoint): CommentDraft | null => {
+  const place = frames.find((frame) => frame.id === pick.frameId)?.place;
+
+  return place ? { frameId: pick.frameId, place, point: pick.point } : null;
+};
+
+/** Where a new comment sits: the frame's place, and the point on it the user clicked, if any. */
+export const commentPlaceOf = (place: FramePlace, point: { x: number; y: number } | null): CommentPlace => ({
+  ...place,
+  ...(point ? { point: { x: Math.round(point.x), y: Math.round(point.y) } } : {}),
+});

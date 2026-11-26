@@ -1,0 +1,516 @@
+import { DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { defineRootProvider, toInjectFn } from '@ethlete/core';
+import {
+  CalendarOccurrenceEvent,
+  CallFeatures,
+  callNamingKey,
+  rememberCallNaming,
+  rememberMeetingNaming,
+  AttributionRule,
+  ClockStyle,
+  DateStyle,
+  DEFAULT_TIMETRACK_SETTINGS,
+  NamedTarget,
+  ProjectLinkTarget,
+  PeerSharedSettings,
+  StandIn,
+  StandInRefusal,
+  TIMETRACK_SECRET_KEYS,
+  TimetrackCredentialStatus,
+  TimetrackExclusionRule,
+  TimetrackGitLabSettings,
+  TimetrackReasoningSettings,
+  TimetrackGoogleSettings,
+  TimetrackJiraSettings,
+  TimetrackSettings,
+  TranscribeLanguage,
+  TimetrackCallRules,
+  TimetrackTicketSettings,
+  clampDayTargetMs,
+  clampDayStartHour,
+  clampGapFillMs,
+  clampLockAfterIdleMs,
+  clampMinuteOfDay,
+  clampStandInOverdueMs,
+  clampEpicChildLimit,
+  clampStandInOverdueWorkdays,
+  forgetRetiredSecrets$,
+  timetrackCredentialStatus,
+  withAttributionRule,
+  withBackgroundProjects,
+  withFavoriteProjects,
+  withMaskedName,
+  withProjectLink,
+  withProjectLinkEpics,
+  withNamedStandIn,
+  withStandIn,
+  withStandInDay,
+  withStandInsKeyedByHand,
+  withReplacedAttributionRule,
+  withRepointedAttributionRules,
+  withoutAttributionRule,
+  withoutFavoriteProject,
+  withoutMaskedName,
+  withoutProjectLink,
+  withStandInCheckoutAllowed,
+  withoutStandIn,
+  splitStandIn,
+  withRenamedStandIn,
+  mergeStandIn,
+  StandInSplitPiece,
+  reopenStandIn,
+  resolveStandIn,
+  withStandInParent,
+  withStandInResolutionReset,
+  withStandInsHidden,
+  withStandInIssue,
+  WriteSource,
+  ClassedAction,
+  ModelPrice,
+  OpClass,
+  withActionClass,
+  withModelPrice,
+  withoutModelPrice,
+  stampSharedSettings,
+  withPeerSharedSettings,
+} from '@ethlete/timetrack';
+import {
+  Subject,
+  catchError,
+  combineLatest,
+  concatMap,
+  debounceTime,
+  filter,
+  map,
+  of,
+  switchMap,
+  take,
+  tap,
+} from 'rxjs';
+import { injectHostPorts } from '../../host';
+import { injectBuiltInGoogleClient } from '../google/built-in-client';
+import { setDisplaySettings } from '../display';
+
+/** How long an edit settles before the settings document is written. */
+const SAVE_DEBOUNCE_MS = 400;
+
+/**
+ * The keychain accounts the screen asks about. The client secret is not a credential in its own right —
+ * it is half of one — so it is held here rather than in the provider status.
+ */
+type HeldSecrets = TimetrackCredentialStatus & { googleClientSecret: boolean };
+
+const NOTHING_HELD: HeldSecrets = {
+  jira: false,
+  tempo: false,
+  google: false,
+  googleClientSecret: false,
+};
+
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+const sameRule = (a: TimetrackExclusionRule, b: TimetrackExclusionRule) =>
+  a.kind === 'app-id' && b.kind === 'app-id'
+    ? a.appId.toLowerCase() === b.appId.toLowerCase()
+    : a.kind === 'title-pattern' && b.kind === 'title-pattern' && a.pattern === b.pattern;
+
+/**
+ * What the user configured, and the only place the app writes it.
+ *
+ * Nothing here holds a token. A token is written straight to the keychain and only ever asked about —
+ * `credentials` says which providers are configured, and there is no path back into the window for the
+ * value itself.
+ */
+const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
+  const ports = injectHostPorts();
+  const builtInGoogleClient = injectBuiltInGoogleClient();
+  const destroyRef = inject(DestroyRef);
+
+  const local = signal<TimetrackSettings | null>(null);
+  const secretRevision = signal(0);
+  const failure = signal<string | null>(null);
+  const saves$ = new Subject<TimetrackSettings>();
+
+  const loaded = toSignal(
+    ports.settings.read$().pipe(
+      map((stored) => stored ?? DEFAULT_TIMETRACK_SETTINGS),
+      catchError((error: unknown) => {
+        failure.set(messageOf(error));
+
+        return of(DEFAULT_TIMETRACK_SETTINGS);
+      }),
+    ),
+    { initialValue: null },
+  );
+
+  const settings = computed(() => local() ?? loaded() ?? DEFAULT_TIMETRACK_SETTINGS);
+  const isLoading = computed(() => !loaded());
+
+  effect(() => setDisplaySettings(settings().display));
+
+  const held = toSignal(
+    toObservable(secretRevision).pipe(
+      switchMap(() =>
+        combineLatest({
+          jira: ports.secrets.has$(TIMETRACK_SECRET_KEYS.jiraToken),
+          tempo: ports.secrets.has$(TIMETRACK_SECRET_KEYS.tempoToken),
+          google: ports.secrets.has$(TIMETRACK_SECRET_KEYS.googleRefreshToken),
+          googleClientSecret: ports.secrets.has$(TIMETRACK_SECRET_KEYS.googleClientSecret),
+        }).pipe(
+          catchError((error: unknown) => {
+            failure.set(messageOf(error));
+
+            return of(NOTHING_HELD);
+          }),
+        ),
+      ),
+    ),
+    { initialValue: NOTHING_HELD },
+  );
+
+  saves$
+    .pipe(
+      debounceTime(SAVE_DEBOUNCE_MS),
+      concatMap((next) =>
+        ports.settings.save$(next).pipe(
+          catchError((error: unknown) => {
+            failure.set(messageOf(error));
+
+            return of(undefined);
+          }),
+        ),
+      ),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  const store = (next: TimetrackSettings) => {
+    local.set(next);
+    saves$.next(next);
+  };
+
+  const apply = (next: TimetrackSettings) =>
+    store(stampSharedSettings({ before: settings(), after: next, atMs: Date.now() }));
+
+  const patch = (change: Partial<TimetrackSettings>) => apply({ ...settings(), ...change });
+
+  /** A `null` value removes the entry, which is how a provider is disconnected. */
+  const secretWrites$ = new Subject<{ key: string; value: string | null }>();
+
+  secretWrites$
+    .pipe(
+      concatMap(({ key, value }) =>
+        (value === null ? ports.secrets.delete$(key) : ports.secrets.write$(key, value)).pipe(
+          catchError((error: unknown) => {
+            failure.set(messageOf(error));
+
+            return of(undefined);
+          }),
+        ),
+      ),
+      tap(() => secretRevision.update((count) => count + 1)),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  forgetRetiredSecrets$(ports.secrets).pipe(takeUntilDestroyed(destroyRef)).subscribe();
+
+  return {
+    settings,
+    isLoading,
+    failure: failure.asReadonly(),
+    credentials: computed(() =>
+      timetrackCredentialStatus({ held: held(), settings: settings(), builtInGoogleClient: !!builtInGoogleClient() }),
+    ),
+    hasGoogleClientSecret: computed(() => held().googleClientSecret),
+
+    /**
+     * Emits the settings once they have been read, so a collector never runs with the wrong rules while
+     * the document is still on its way.
+     */
+    ready$: toObservable(computed(() => (isLoading() ? null : settings()))).pipe(
+      filter((current): current is TimetrackSettings => !!current),
+      take(1),
+    ),
+
+    /** Asks the keychain again, for a caller that stored or removed a secret through another route. */
+    recheckCredentials: () => secretRevision.update((count) => count + 1),
+
+    /** Takes the rules and stand-ins the paired machines changed later than this machine. */
+    mergePeerSettings: (peers: readonly PeerSharedSettings[]) => {
+      const current = settings();
+      const next = withPeerSharedSettings({ settings: current, peers });
+
+      if (next !== current) store(next);
+    },
+
+    setDateStyle: (dateStyle: DateStyle) => patch({ display: { ...settings().display, dateStyle } }),
+    setClock: (clock: ClockStyle) => patch({ display: { ...settings().display, clock } }),
+    setDayTargetMs: (dayTargetMs: number) => patch({ dayTargetMs: clampDayTargetMs(dayTargetMs) }),
+    setGapFillMs: (gapFillMs: number) => patch({ gapFillMs: clampGapFillMs(gapFillMs) }),
+    setDayStartHour: (dayStartHour: number) => patch({ dayStartHour: clampDayStartHour(dayStartHour) }),
+    setNudgeEnabled: (enabled: boolean) => patch({ nudge: { ...settings().nudge, enabled } }),
+    setNudgeAtMinute: (atMinute: number) =>
+      patch({ nudge: { ...settings().nudge, atMinute: clampMinuteOfDay(atMinute) } }),
+    setStandInOverdueWorkdays: (workdays: number) =>
+      patch({ standIn: { ...settings().standIn, overdueAfterWorkdays: clampStandInOverdueWorkdays(workdays) } }),
+    setStandInOverdueMs: (overdueAfterMs: number) =>
+      patch({ standIn: { ...settings().standIn, overdueAfterMs: clampStandInOverdueMs(overdueAfterMs) } }),
+    setEpicChildLimit: (epicChildLimit: number) => patch({ epicChildLimit: clampEpicChildLimit(epicChildLimit) }),
+    setJira: (jira: TimetrackJiraSettings) => patch({ jira }),
+    setGoogle: (google: TimetrackGoogleSettings) => patch({ google }),
+    setGitLab: (gitlab: TimetrackGitLabSettings) => patch({ gitlab }),
+    setGitHubEnabled: (enabled: boolean) => patch({ github: { enabled } }),
+    setReasoning: (reasoning: TimetrackReasoningSettings) => patch({ reasoning }),
+    setActionClass: (change: { action: ClassedAction; opClass: OpClass }) =>
+      patch({ actionClasses: withActionClass(settings().actionClasses, change) }),
+
+    addMaskedName: (name: string) => apply(withMaskedName({ settings: settings(), name })),
+    removeMaskedName: (name: string) => apply(withoutMaskedName({ settings: settings(), name })),
+    setTicket: (ticket: TimetrackTicketSettings) => patch({ ticket }),
+    setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),
+    setLockWindow: (lockWindow: boolean) => patch({ lockWindow }),
+    setLockAfterIdleMs: (lockAfterIdleMs: number) => patch({ lockAfterIdleMs: clampLockAfterIdleMs(lockAfterIdleMs) }),
+    setTranscribeCalls: (transcribeCalls: boolean) => patch({ transcribeCalls }),
+    setTranscribeLanguage: (transcribeLanguage: TranscribeLanguage) => patch({ transcribeLanguage }),
+    setPriceCurrency: (currency: string) =>
+      patch({ priceTable: { ...settings().priceTable, currency: currency.trim().toUpperCase() } }),
+    addModelPrice: (price: ModelPrice) =>
+      patch({ priceTable: withModelPrice({ table: settings().priceTable, price }) }),
+    removeModelPrice: (price: ModelPrice) =>
+      patch({ priceTable: withoutModelPrice({ table: settings().priceTable, price }) }),
+
+    addExclusionRule: (rule: TimetrackExclusionRule) => {
+      const rules = settings().exclusionRules;
+
+      if (rules.some((existing) => sameRule(existing, rule))) return;
+
+      patch({ exclusionRules: [...rules, rule] });
+    },
+
+    removeExclusionRule: (rule: TimetrackExclusionRule) =>
+      patch({ exclusionRules: settings().exclusionRules.filter((existing) => !sameRule(existing, rule)) }),
+
+    addCallRule: (list: keyof TimetrackCallRules, pattern: string) => {
+      const trimmed = pattern.trim();
+      const rules = settings().callRules;
+
+      if (!trimmed || rules[list].includes(trimmed)) return;
+
+      patch({ callRules: { ...rules, [list]: [...rules[list], trimmed] } });
+    },
+
+    removeCallRule: (list: keyof TimetrackCallRules, pattern: string) => {
+      const rules = settings().callRules;
+
+      patch({ callRules: { ...rules, [list]: rules[list].filter((existing) => existing !== pattern) } });
+    },
+
+    /**
+     * Records whether an application holds work at all.
+     *
+     * It writes both lists, because a shipped default is only reversible by naming the application on
+     * the other one — filtering `noWorkContextApps` alone would leave the row unchanged.
+     */
+    setAppHoldsWork: (appId: string, holdsWork: boolean) => {
+      const trimmed = appId.trim();
+
+      if (!trimmed) return;
+
+      const without = (list: readonly string[]) => list.filter((existing) => existing !== trimmed);
+      const { noWorkContextApps, holdsWorkApps } = settings();
+
+      patch(
+        holdsWork
+          ? { noWorkContextApps: without(noWorkContextApps), holdsWorkApps: [...without(holdsWorkApps), trimmed] }
+          : { noWorkContextApps: [...without(noWorkContextApps), trimmed], holdsWorkApps: without(holdsWorkApps) },
+      );
+    },
+
+    addGitScanRoot: (root: string) => {
+      const trimmed = root.trim();
+      const roots = settings().gitScanRoots;
+
+      if (!trimmed || roots.includes(trimmed)) return;
+
+      patch({ gitScanRoots: [...roots, trimmed] });
+    },
+
+    removeGitScanRoot: (root: string) =>
+      patch({ gitScanRoots: settings().gitScanRoots.filter((existing) => existing !== root) }),
+
+    /**
+     * Remembers which issue a meeting belongs to, against the calendar series it repeats in. Every
+     * later occurrence of that series is named from this, which is what the app asks once for.
+     */
+    nameMeeting: (options: { event: CalendarOccurrenceEvent; issueKey: string }) =>
+      patch({
+        meetingNamings: rememberMeetingNaming({ namings: settings().meetingNamings, ...options, at: new Date() }),
+      }),
+
+    forgetMeetingNaming: (seriesKey: string) =>
+      patch({ meetingNamings: settings().meetingNamings.filter((naming) => naming.seriesKey !== seriesKey) }),
+
+    /**
+     * The same, for a call the calendar never held. It is remembered against the call's own features
+     * rather than a series, because there is no series to key it on.
+     */
+    nameCall: (options: { features: CallFeatures; label: string; target: NamedTarget }) =>
+      patch({
+        callNamings: rememberCallNaming({ namings: settings().callNamings, ...options, at: new Date() }),
+      }),
+
+    forgetCallNaming: (key: string) =>
+      patch({ callNamings: settings().callNamings.filter((naming) => callNamingKey(naming) !== key) }),
+
+    /**
+     * Writes the projects a picker chose. It is one write of the whole list rather than an add and a
+     * remove: the control is a multi-select, and the list it holds is the answer.
+     */
+    setFavoriteProjects: (projects: readonly { key: string; name?: string }[]) =>
+      apply(withFavoriteProjects({ settings: settings(), projects })),
+
+    removeFavoriteProject: (key: string) => apply(withoutFavoriteProject({ settings: settings(), key })),
+
+    setBackgroundProjects: (keys: readonly string[]) => apply(withBackgroundProjects({ settings: settings(), keys })),
+
+    addAttributionRule: (rule: AttributionRule) => apply(withAttributionRule({ settings: settings(), rule })),
+    removeAttributionRule: (id: string) => apply(withoutAttributionRule({ settings: settings(), id })),
+
+    /** Writes a rule and takes back the one it stands in for, as the one write they are. */
+    replaceAttributionRule: (options: { rule: AttributionRule; supersededIds?: readonly string[] }) =>
+      apply(withReplacedAttributionRule({ settings: settings(), ...options })),
+
+    /** Points every rule naming issue `from` at `to`, and answers the ids of the rules it changed. */
+    repointAttributionRules: (options: { from: string; to: string; repoPath?: string }) => {
+      const repoint = withRepointedAttributionRules({ settings: settings(), ...options });
+
+      if (repoint.repointedIds.length) apply(repoint.settings);
+
+      return repoint.repointedIds;
+    },
+
+    addStandIn: (standIn: StandIn) => apply(withStandIn({ settings: settings(), standIn })),
+
+    /** Opens a stand-in and names a context with it, as the one write the two halves are. */
+    nameWithStandIn: (options: { standIn: StandIn; rule: AttributionRule; supersededIds?: readonly string[] }) =>
+      apply(withNamedStandIn({ settings: settings(), ...options })),
+
+    removeStandIn: (id: string) => apply(withoutStandIn({ settings: settings(), id })),
+
+    /** Gives one placeholder another name, leaving its days and the rules that name it alone. */
+    renameStandIn: (options: { id: string; name: string }) =>
+      apply(withRenamedStandIn({ settings: settings(), ...options })),
+
+    /** Folds one open placeholder into another. A refused merge writes nothing. */
+    mergeStandIn: (options: { fromId: string; intoId: string }) => {
+      const merge = mergeStandIn({ settings: settings(), ...options });
+
+      if (!merge.problem) apply(merge.settings);
+
+      return merge;
+    },
+
+    /**
+     * Cuts one placeholder into one per directory it covered. Answers what it did, or why it refused:
+     * a refused split writes nothing, so the caller can say what is missing.
+     */
+    splitStandIn: (options: {
+      id: string;
+      branch: string;
+      repoPath?: string;
+      pieces: readonly StandInSplitPiece[];
+      claim?: string;
+      now: Date;
+    }) => {
+      const result = splitStandIn({ settings: settings(), ...options });
+
+      if (!result.refused) apply(result.settings);
+
+      return result;
+    },
+
+    /** Lets the app open a placeholder for the work again, after a delete refused it. */
+    allowStandInCheckout: (refusal: StandInRefusal) =>
+      apply(withStandInCheckoutAllowed({ settings: settings(), ...refusal })),
+    markStandInDay: (options: {
+      id: string;
+      day: string;
+      branches?: readonly string[];
+      baseBranches?: readonly string[];
+    }) => apply(withStandInDay({ settings: settings(), ...options })),
+    resolveStandIn: (options: {
+      id: string;
+      issueKey: string;
+      source?: WriteSource;
+      bookedDays?: ReadonlySet<string>;
+    }) => apply(resolveStandIn({ settings: settings(), ...options })),
+    resolveStandInsKeyedByHand: (
+      rows: Parameters<typeof withStandInsKeyedByHand>[0]['rows'],
+      bookedDays?: ReadonlySet<string>,
+    ) => {
+      const current = settings();
+      const next = withStandInsKeyedByHand({ settings: current, rows, bookedDays });
+
+      if (next !== current) apply(next);
+    },
+    reopenStandIn: (id: string) => apply(reopenStandIn({ settings: settings(), id })),
+    setStandInIssue: (options: { id: string; issueKey: string; bookedDays?: ReadonlySet<string> }) =>
+      apply(withStandInIssue({ settings: settings(), ...options })),
+    /** Hands a stand-in the user reopened back to auto mode. */
+    resetStandInResolution: (id: string) => apply(withStandInResolutionReset({ settings: settings(), id })),
+    /** Hides stand-ins as of `day`, or shows them again when `day` is empty. */
+    setStandInsHidden: (ids: readonly string[], day: string) =>
+      apply(withStandInsHidden({ settings: settings(), ids, day })),
+    setStandInParent: (options: { id: string; parentKey: string; source?: WriteSource }) =>
+      apply(withStandInParent({ settings: settings(), ...options })),
+
+    addProjectLink: (options: { path: string; target: ProjectLinkTarget }) => {
+      const path = options.path.trim();
+
+      if (!path) return;
+
+      apply(
+        withProjectLink({
+          settings: settings(),
+          link: { id: `link-${path}#${Date.now()}`, path, target: options.target, createdAt: new Date() },
+        }),
+      );
+    },
+
+    removeProjectLink: (id: string) => apply(withoutProjectLink({ settings: settings(), id })),
+    setProjectLinkEpics: (options: { id: string; epicKeys: readonly string[] }) =>
+      apply(withProjectLinkEpics({ settings: settings(), ...options })),
+
+    /** An empty key takes the alias off the checkout again. */
+    setRepoAlias: (options: { path: string; key: string }) => {
+      const path = options.path.trim();
+      const key = options.key.trim().toLowerCase();
+
+      if (!path) return;
+
+      const { [path]: _replaced, ...rest } = settings().repoAliases;
+
+      patch({ repoAliases: key ? { ...rest, [path]: key } : rest });
+    },
+    /** Adds worktrees to `knownWorktrees`; writes nothing when every one is already known. */
+    rememberWorktrees: (found: Readonly<Record<string, string>>) => {
+      const known = settings().knownWorktrees;
+      const added = Object.entries(found).filter(([worktree, main]) => known[worktree] !== main);
+
+      if (added.length) patch({ knownWorktrees: { ...known, ...Object.fromEntries(added) } });
+    },
+
+    saveJiraToken: (token: string) => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.jiraToken, value: token.trim() }),
+    saveTempoToken: (token: string) =>
+      secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.tempoToken, value: token.trim() }),
+    forgetJiraToken: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.jiraToken, value: null }),
+    forgetTempoToken: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.tempoToken, value: null }),
+    saveGoogleClientSecret: (secret: string) =>
+      secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.googleClientSecret, value: secret.trim() }),
+    forgetGoogleClientSecret: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.googleClientSecret, value: null }),
+  };
+});
+
+export const injectTimetrackSettings = /* @__PURE__ */ toInjectFn(SETTINGS_DEF);

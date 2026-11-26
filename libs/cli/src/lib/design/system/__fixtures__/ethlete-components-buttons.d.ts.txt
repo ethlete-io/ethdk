@@ -1,0 +1,85 @@
+declare const BUTTON_TYPES: {
+    readonly BUTTON: "button";
+    readonly SUBMIT: "submit";
+    readonly RESET: "reset";
+};
+type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
+declare class ButtonDirective {
+    private elementRef;
+    disabled: _angular_core.InputSignalWithTransform<boolean, unknown>;
+    loading: _angular_core.InputSignalWithTransform<boolean, unknown>;
+    type: _angular_core.InputSignal<ButtonType>;
+    pressed: _angular_core.InputSignalWithTransform<boolean, unknown>;
+    emitAriaPressed: _angular_core.InputSignalWithTransform<boolean, unknown>;
+    mutedUntilPressed: _angular_core.InputSignalWithTransform<boolean, unknown>;
+    readonly IS_BUTTON: boolean;
+    readonly IS_ANCHOR: boolean;
+    isInactive: _angular_core.Signal<boolean>;
+    static ɵfac: _angular_core.ɵɵFactoryDeclaration<ButtonDirective, never>;
+    static ɵdir: _angular_core.ɵɵDirectiveDeclaration<ButtonDirective, "[etButton]", ["etButton"], { "disabled": { "alias": "disabled"; "required": false; "isSignal": true; }; "loading": { "alias": "loading"; "required": false; "isSignal": true; }; "type": { "alias": "type"; "required": false; "isSignal": true; }; "pressed": { "alias": "pressed"; "required": false; "isSignal": true; }; "emitAriaPressed": { "alias": "emitAriaPressed"; "required": false; "isSignal": true; }; "mutedUntilPressed": { "alias": "mutedUntilPressed"; "required": false; "isSignal": true; }; }, {}, never, never, true, [{ directive: typeof _ethlete_core.SurfaceInteractiveDirective; inputs: {}; outputs: {}; }]>;
+}
+declare const BUTTON_SIZES: {
+    readonly XS: "xs";
+    readonly SM: "sm";
+    readonly MD: "md";
+    readonly LG: "lg";
+    readonly XL: "xl";
+};
+type ButtonSize = (typeof BUTTON_SIZES)[keyof typeof BUTTON_SIZES];
+declare const BUTTON_ICON_ALIGNMENTS: {
+    readonly START: "start";
+    readonly END: "end";
+};
+type ButtonIconAlignment = (typeof BUTTON_ICON_ALIGNMENTS)[keyof typeof BUTTON_ICON_ALIGNMENTS];
+declare const BUTTON_VARIANTS: {
+    readonly FILLED: "filled";
+    readonly OUTLINE: "outline";
+    readonly TONAL: "tonal";
+    readonly TRANSPARENT: "transparent";
+};
+type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
+declare const BUTTON_SPINNER_CONFIG: Record<ButtonSize, {
+    diameter: number;
+    strokeWidth: number;
+}>;
+declare class ButtonComponent {
+    protected buttonDir: ButtonDirective;
+    variant: _angular_core.InputSignal<ButtonVariant>;
+    size: _angular_core.InputSignal<ButtonSize>;
+    iconAlignment: _angular_core.InputSignal<ButtonIconAlignment>;
+    canAnimate: {
+        state: _angular_core.Signal<boolean>;
+    };
+    spinnerConfig: _angular_core.Signal<{
+        diameter: number;
+        strokeWidth: number;
+    }>;
+    pressedVariant: _angular_core.Signal<string | null>;
+    static ɵfac: _angular_core.ɵɵFactoryDeclaration<ButtonComponent, never>;
+    static ɵcmp: _angular_core.ɵɵComponentDeclaration<ButtonComponent, "[et-button]", never, { "variant": { "alias": "variant"; "required": false; "isSignal": true; }; "size": { "alias": "size"; "required": false; "isSignal": true; }; "iconAlignment": { "alias": "iconAlignment"; "required": false; "isSignal": true; }; }, {}, never, ["*", "[etIcon]"], true, [{ directive: typeof ButtonDirective; inputs: { "disabled": "disabled"; "loading": "loading"; "type": "type"; "pressed": "pressed"; "mutedUntilPressed": "mutedUntilPressed"; }; outputs: {}; }, { directive: typeof ButtonStylesDirective; inputs: {}; outputs: {}; }, { directive: typeof _ethlete_core.ColorInteractiveDirective; inputs: {}; outputs: {}; }, { directive: typeof FocusRingDirective; inputs: {}; outputs: {}; }, { directive: typeof _ethlete_core.ProvideColorDirective; inputs: { "etProvideColor": "color"; }; outputs: {}; }]>;
+}
+declare const WINDOW_CONTROL_BUTTON_SIZES: {
+    readonly SM: "sm";
+    readonly MD: "md";
+    readonly LG: "lg";
+};
+type WindowControlButtonSize = (typeof WINDOW_CONTROL_BUTTON_SIZES)[keyof typeof WINDOW_CONTROL_BUTTON_SIZES];
+declare const WINDOW_CONTROL_BUTTON_KINDS: {
+    readonly DEFAULT: "default";
+    readonly CLOSE: "close";
+};
+type WindowControlButtonKind = (typeof WINDOW_CONTROL_BUTTON_KINDS)[keyof typeof WINDOW_CONTROL_BUTTON_KINDS];
+declare class WindowControlButtonComponent {
+    protected buttonDir: ButtonDirective;
+    size: _angular_core.InputSignal<WindowControlButtonSize>;
+    kind: _angular_core.InputSignal<WindowControlButtonKind>;
+    canAnimate: {
+        state: _angular_core.Signal<boolean>;
+    };
+    protected spinnerConfig: _angular_core.Signal<{
+        diameter: number;
+        strokeWidth: number;
+    }>;
+    static ɵfac: _angular_core.ɵɵFactoryDeclaration<WindowControlButtonComponent, never>;
+    static ɵcmp: _angular_core.ɵɵComponentDeclaration<WindowControlButtonComponent, "[et-window-control-button]", never, { "size": { "alias": "size"; "required": false; "isSignal": true; }; "kind": { "alias": "kind"; "required": false; "isSignal": true; }; }, {}, never, ["*"], true, [{ directive: typeof ButtonDirective; inputs: { "disabled": "disabled"; "loading": "loading"; "type": "type"; "pressed": "pressed"; }; outputs: {}; }, { directive: typeof ButtonStylesDirective; inputs: {}; outputs: {}; }, { directive: typeof _ethlete_core.ColorInteractiveDirective; inputs: {}; outputs: {}; }, { directive: typeof FocusRingDirective; inputs: {}; outputs: {}; }, { directive: typeof _ethlete_core.ProvideColorDirective; inputs: { "etProvideColor": "color"; }; outputs: {}; }]>;
+}

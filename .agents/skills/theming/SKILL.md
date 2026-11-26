@@ -1,0 +1,170 @@
+---
+name: theming
+description: The two runtime theming systems in this repo - surface theming (elevation-aware neutrals) and color theming (semantic accent palettes) - and how components in libs/components must consume them. Read BEFORE writing or reviewing component CSS that involves any color, background, border, or interaction state, and when wiring theme context across overlay/portal boundaries.
+---
+
+# Surface & color theming
+
+Everything lives in `libs/core/src/lib/theming/`. There are **two independent
+systems**; most components consume both:
+
+- **Surface theming** - neutral, elevation-aware colors of the box a component
+  sits on: background, text, muted/subtle text, borders, and a neutral
+  "interaction" color for hover/active tints. Set via `[etProvideSurface]`.
+- **Color theming** - semantic accent palettes (brand/primary, success,
+  warning, error): a primary color, an on-primary contrast color, and an "ink"
+  color for text/borders on transparent fills. Set via `[etProvideColor]`.
+
+Apps register themes with `provideSurfaceThemesWithTailwind4(SURFACE_THEMES)` and
+`provideColorThemesWithTailwind4(THEMES)`, and generate the raw CSS variables with
+the Nx generators in `libs/core/generators/tailwind-4-{surface,color}-theme/`.
+The generated CSS defines the raw vars on `.et-surface--<name>` / `.et-color--<name>`
+classes (plus `:root` defaults) and derives the public tokens below on `:root`
+and every scope class - so the tokens are **always resolvable**; components just
+read them.
+
+Storybook (`apps/storybook`) registers both systems globally
+(`.storybook/preview.ts`, themes in `src/themes.ts` / `src/surface-themes.ts`),
+including a `danger` theme with `type: 'error'`.
+
+**Theme names are app-defined - the SDK ships none.** Names like `brand`,
+`danger`, `neutral` or `dark-elevated` are just what this repo's Storybook
+registers. Never hardcode a theme-name union in component types, docs, or
+examples - present such names as app examples only. The portable handle is the
+theme **`type`** (`injectSemanticColorTheme('error')` finds the app's `type: 'error'` theme),
+not the name.
+
+## Tokens components may consume
+
+Component CSS must use these **derived** tokens - never the old
+`--et-surface-*-solid` / `-rgb` and `--et-theme-color-*` names, and never
+hardcoded colors (a static fallback after the token is fine).
+
+Surface (each a ready color):
+
+| Token | Use for |
+| --- | --- |
+| `--et-surface-background` | component/panel background |
+| `--et-surface-text` | text |
+| `--et-surface-text-muted` | secondary text, placeholders, group labels |
+| `--et-surface-text-subtle` | tertiary text |
+| `--et-surface-border` | borders, separators |
+| `--et-surface-tint` | neutral hover/active tint source (set by the theme's `tint`) - mix it: `color-mix(in srgb, var(--et-surface-tint) 12%, transparent)`. `--et-surface-control-text` and `-hover/-focus/-active/-disabled` are the text of a neutral control per state; never use one as a hover background |
+
+Color (from the nearest `[etProvideColor]` scope):
+
+| Token | Use for |
+| --- | --- |
+| `--et-tone-fill` | filled backgrounds; live alias of the current state. `--et-tone-fill-rest` and `-hover/-focus/-active/-disabled` are the fixed per-state colors. To tint per state, set a private opacity (`--_et-tone-fill-opacity`) and compose `color-mix(in srgb, var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%), transparent)` (see button tonal/outline variants) |
+| `--et-tone-on-fill` | text/icons on a filled background (`-rest/-hover/-focus/-active/-disabled` per state) |
+| `--et-tone-text` | tinted text/border on transparent/tonal fills and accents at full strength: focus borders, selected marks, the strokes of a `color`-set spinner and progress bar (`-rest/-hover/-focus/-active/-disabled` per state) |
+
+`[etColorInteractive]` re-resolves the color tokens per CSS state. Put it on the
+interactive element itself, never on a wrapper. Neutral hover and pressed feedback mixes
+`--et-surface-tint` per state at the consumer; `etSurfaceInteractive` is removed.
+
+**Never use `hover:bg-et-surface-control-text-hover` for a hover row.** The token is a
+full-strength text colour, so in dark mode it gives a light row with near-white text. Mix
+the tint instead: `hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15`.
+
+## Providing context
+
+- `[etProvideSurface]="'dark-elevated'"` / `[etAutoSurface]` (auto-picks the next
+  elevation) set the surface scope; `[etProvideColor]="'brand'"` sets the color
+  scope. Tier-3 components usually add `ProvideColorDirective` /
+  `ProvideSurfaceDirective` as `hostDirectives`.
+- **Detached overlay panes (menu, dialog, tooltip…) do not inherit DOM context.**
+  Re-apply it: inject `COLOR_PROVIDER` / `SURFACE_PROVIDER` with
+  `{ optional: true, skipSelf: true }`, then `ownProvider.syncWithProvider(ctx)`
+  for color and `resolveSurfaceByElevation(themes, type, elevation + 1)` for the
+  surface. Reference: `libs/components/src/lib/menu/menu.component.ts`.
+- **Semantic colors are provided via DI, not CSS.** There is no global "error
+  color" variable - error/warning/success are just color themes. To render
+  something in the error color, inject `injectSemanticColorTheme('error')` (a signal;
+  reading it throws if the app registered no `type: 'error'` theme) and either bind it
+  (`[etProvideColor]="errorColorTheme()"`, see form-field's error text and the
+  menu search error) or force it programmatically
+  (`provideColor.forceColor(theme)` / `clearForcedColor()`, see form-field's
+  error state and the menu item destructive variant). Inside that scope,
+  `--et-tone-*` *is* the error color.
+- **A surface swaps a chosen accent; it never picks one.** The chosen accent is the
+  nearest `[etProvideColor]`, else the `isDefault` theme, or for
+  `injectSemanticColorTheme(type)` the theme of that `type`. The nearest surface's
+  `colorThemeVariants` (`{ brand: 'brand-on-light', success: 'success-on-light' }`, variants
+  registered without a `type`) swaps it; an accent without an entry stays the same on every
+  surface, and a dark surface inside a light one draws the chosen accent again. The resolver
+  is `resolveColorThemeVariant()` in `color-theme.util.ts`. With no surface above, the root
+  surface swaps, and `provideColorScheme()` paints its swap of the default accent on `<html>`. `colorTheme` and
+  `semanticColorThemes` are deprecated. Every component in `libs/components` and
+  `libs/query-devtools` uses `injectSemanticColorTheme()` (helpers in
+  `libs/components/src/lib/internals/semantic-theme.ts`; `injectOptionalSemanticTheme` where
+  a missing theme must not throw). Do not use the deprecated `injectErrorTheme()` and its
+  siblings: they ignore the surface. Never put surface logic into a color theme or add CSS
+  vars for it.
+- **Semantic themes in overlay panels.** The lookup reads the surface of the injector
+  that calls it. Content a component declares but stamps into a detached panel (select,
+  cascader, menu content in query-devtools) must read it from inside the panel: put
+  `etSemanticThemes` (`internals/semantic-themes.directive.ts`) on the panel element and
+  bind `#ref="etSemanticThemes"`, or `viewChild` it when the content sits in a sibling
+  `ng-template` (cascader). A field on the declaring component reads the trigger's surface.
+
+## Pitfalls
+
+- A surface theme may have `elevation: -1` (a literal unary minus); the generator fails on a theme it cannot
+  parse. Filled form fields, table card rows and grid items resolve `parent.elevation + 1`; toasts and
+  `@ethlete/cdk` overlays with a backdrop always resolve elevation 1 (without a backdrop, `parent + 1`), and the
+  overlay scope class goes from `et-surface--inherited` to `et-surface--<theme>`. `@ethlete/cdk` CSS reads no
+  `--et-surface-*` token, so `etProvideSurface` on a cdk host does nothing.
+- Elevation lookup is an exact match; with no theme at a level, the scope stays inherited. Registering a
+  new level (e.g. the first elevation-1 theme of a type) re-themes existing UI with no template edit:
+  backdrop overlays (components and cdk), toasts, and under elevation 0 also filled form fields, table
+  card rows, grid items, `etAutoSurface` panels and backdrop-less overlays. Tell an app adding a level to
+  copy every token but the background from the level below.
+- `@property` `initial-value` cannot contain `var()`, so a public `--et-*`
+  token declared via `@property` can never default to a theme token. If the
+  default should come from the theme, don't declare an `@property` - consume the
+  theme token directly (optionally behind a `--_et-*` indirection var).
+- `@property` `initial-value` also cannot use a **font-relative or container
+  unit** (`em`, `rem`, `ex`, `ch`, `lh`, `cap`, `ic`, `cq*`). The value must be
+  computationally independent, so the browser drops the whole rule and leaves the
+  token unregistered - with no error. Percentages and viewport units (`vh`, `vw`,
+  `dvh`) are fine. When the default has to be relative, use `syntax: '*'` with no
+  `initial-value` and put the default in a fallback at each use site:
+  `var(--et-skeleton-size, 1em)`. `yarn lint:css-properties` checks this, and
+  pre-commit runs it on staged files.
+- `--et-tone-*` always resolves to the **nearest color scope** -
+  a hardcoded semantic color in CSS can't be replaced by it unless the right
+  theme is provided on that element (see DI point above).
+- Fallbacks: tokens resolve wherever themes are registered, but keep a static
+  fallback (`var(--et-surface-border, rgb(255 255 255 / 0.1))`) so
+  components degrade in theme-less setups. A `type: 'error'` theme however is a
+  hard requirement - form-field and menu throw on rendering without one.
+- **Cascade layers, not `:where()`, are what make Tailwind utilities override
+  component CSS.** Every component CSS file is wrapped in `@layer components.sdk { … }`
+  - keep doing so in new/edited files. Component styles are injected unlayered
+  otherwise, which beats Tailwind's `@layer utilities` by layer precedence, so a
+  consumer would need `!important`; specificity (and therefore `:where()`) never
+  enters into it across layers. Use `:where()` only to keep a component's own
+  config modifiers at single-class specificity. Full explanation in the "Cascade
+  layers" note in `CLAUDE.md`.
+
+## Reference implementations
+
+- `libs/components/src/lib/button/button.component.css` - canonical color-system
+  consumer (opacity mechanic per variant/state) + neutral `color-mix` tints over
+  `--et-surface-tint` ("muted until pressed" block).
+- `libs/components/src/lib/forms/form-field/form-field.component.css` +
+  `.component.ts` - borders/hover from surface tokens, focus border
+  `--et-tone-text`, error state via `forceColor(errorColorTheme())`.
+- `libs/components/src/lib/menu/` - full pattern in an overlay: context re-sync,
+  surface tokens for chrome, error theme for destructive items/search error.
+
+Full docs: `libs/core/src/lib/theming/surface-theming.docs.mdx` and
+`color-theming.docs.mdx` (Storybook pages with the complete token tables and
+theme structure).
+
+Styling a **story** file rather than a component? The same colour rule applies (no
+hardcoded colours, no `dark:` - a story sits inside a surface theme too), but the
+Tailwind side has its own traps: Storybook's theme resets `--color-*` and
+`--text-*`, so most utilities you'd reach for don't exist. See the
+**`storybook-styling`** skill.

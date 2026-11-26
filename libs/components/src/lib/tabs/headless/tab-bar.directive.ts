@@ -1,0 +1,271 @@
+import { DOCUMENT } from '@angular/common';
+import {
+  afterNextRender,
+  booleanAttribute,
+  computed,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { tap, timer } from 'rxjs';
+import { sortByDomOrder } from '../../internals/dom-order';
+import { ScrollableButtonsConfig } from '../../scrollable/headless/scrollable-buttons.directive';
+import { TabBarTriggerDirective } from './tab-bar-trigger.directive';
+import { TAB_BAR_TOKEN } from './tab-bar.tokens';
+import {
+  TAB_BAR_ALIGNS,
+  TAB_BAR_FITS,
+  TAB_BAR_ORIENTATIONS,
+  TAB_BAR_VARIANTS,
+  TabBarAlign,
+  TabBarFit,
+  TabBarOrientation,
+  TabBarVariant,
+} from './tab-bar.types';
+import { injectTabsConfig, TAB_UNDERLINE_WIDTHS, TabUnderlineWidth } from '../tabs-config';
+
+let nextTabBarId = 0;
+
+@Directive({
+  selector: '[etTabBar]',
+  providers: [{ provide: TAB_BAR_TOKEN, useExisting: TabBarDirective }],
+  host: {
+    '[attr.data-active-underline]': 'activeUnderlineResolved()',
+    '[attr.data-underline-width]': 'underlineWidthResolved()',
+    '[attr.role]': 'hostRole()',
+    '[attr.aria-orientation]': "hostRole() === 'tablist' ? orientation() : null",
+    '(keydown)': 'handleKeydown($event)',
+    '(focusout)': 'handleFocusout($event)',
+  },
+})
+export class TabBarDirective {
+  private destroyRef = inject(DestroyRef);
+  private document = inject(DOCUMENT);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  private config = injectTabsConfig();
+  public orientation = input<TabBarOrientation>(TAB_BAR_ORIENTATIONS.HORIZONTAL);
+  public fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
+  /** Where a horizontal bar places its triggers when they do not fill it. */
+  public align = input<TabBarAlign>(TAB_BAR_ALIGNS.START);
+  public variant = input<TabBarVariant>(TAB_BAR_VARIANTS.SECONDARY);
+  public divider = input(true, { transform: booleanAttribute });
+  /** Shows the underline under the active tab. Falls back to `provideTabsConfig`, then `true`. */
+  public activeUnderline = input<boolean | undefined, unknown>(undefined, {
+    transform: (v: unknown) => (v === undefined ? undefined : booleanAttribute(v)),
+  });
+  /** Whether the active underline spans the whole tab or only its label. Falls back to `provideTabsConfig`, then `'tab'`. */
+  public underlineWidth = input<TabUnderlineWidth | undefined>(undefined);
+  /**
+   * Shows the scroll buttons of the bar's scrollable. A boolean, or `{ enabled: { md: true } }` for one value
+   * per breakpoint; other `etScrollableButtons` options are accepted too. Wins over `provideScrollableConfig`.
+   */
+  public scrollableButtons = input<boolean | ScrollableButtonsConfig | undefined>(undefined);
+  /** @internal */
+  public scrollableButtonsConfig = computed<ScrollableButtonsConfig | ''>(() => {
+    const value = this.scrollableButtons();
+
+    if (value === undefined) return '';
+
+    return typeof value === 'boolean' ? { enabled: value } : value;
+  });
+  /** @internal */
+  public activeUnderlineResolved = computed(() => this.activeUnderline() ?? true);
+  /** @internal */
+  public underlineWidthResolved = computed(
+    () => this.underlineWidth() ?? this.config.underlineWidth ?? TAB_UNDERLINE_WIDTHS.TAB,
+  );
+  /** @internal */
+  public hostRole = signal<'tablist' | 'none'>('tablist');
+  private registeredTriggers = signal<TabBarTriggerDirective[]>([]);
+  /**
+   * @internal The triggers in DOM order - registration follows creation order, so a tab inserted
+   * anywhere but the end would otherwise desync every `$index`-keyed consumer from the rendered bar.
+   */
+  public triggers = computed(() => sortByDomOrder(this.registeredTriggers(), (trigger) => trigger.getElement()));
+  public focusedIndex = signal(-1);
+  public selectedIndex = signal(0);
+
+  /** @internal */
+  public readonly ID = `et-tab-bar-${nextTabBarId++}`;
+
+  /** @internal */
+  public lastActiveUnderlineElement = signal<HTMLElement | null>(null);
+
+  /**
+   * @internal Cancel this before the next transition measures its origin - a rect taken mid-flight
+   * reports the animated position, leaving the new transition nothing to travel.
+   */
+  public runningUnderlineFlip = signal<{ cancel: () => void } | null>(null);
+
+  /** @internal */
+  public animationsReady = signal(false);
+
+  public activeTrigger = computed(() => {
+    const idx = this.selectedIndex();
+    const all = this.triggers();
+
+    return all[idx] ?? null;
+  });
+
+  /** @internal The bar's tab stop while nothing in it has focus, or `-1` when every trigger is disabled. */
+  public tabStopIndex = computed(() => {
+    const all = this.triggers();
+    const selected = this.selectedIndex();
+    const selectedTrigger = all[selected];
+
+    if (selectedTrigger && !selectedTrigger.disabled()) {
+      return selected;
+    }
+
+    return all.findIndex((trigger) => !trigger.disabled());
+  });
+
+  constructor() {
+    afterNextRender(() => {
+      timer(0)
+        .pipe(
+          tap(() => {
+            this.animationsReady.set(true);
+          }),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe();
+    });
+  }
+
+  /** @internal */
+  public registerTrigger(trigger: TabBarTriggerDirective) {
+    this.registeredTriggers.update((list) => [...list, trigger]);
+  }
+
+  /** @internal */
+  public unregisterTrigger(trigger: TabBarTriggerDirective) {
+    this.registeredTriggers.update((list) => list.filter((t) => t !== trigger));
+  }
+
+  /** @internal */
+  public selectTrigger(trigger: TabBarTriggerDirective) {
+    const idx = this.triggers().indexOf(trigger);
+
+    if (idx !== -1) {
+      this.selectedIndex.set(idx);
+    }
+  }
+
+  public handleKeydown(event: KeyboardEvent) {
+    if (!this.triggers().some((trigger) => trigger.getElement() === event.target)) {
+      return;
+    }
+
+    const isHorizontal = this.orientation() === TAB_BAR_ORIENTATIONS.HORIZONTAL;
+    const isRtl = isHorizontal && getComputedStyle(this.elementRef.nativeElement).direction === 'rtl';
+    const nextKey = isHorizontal ? (isRtl ? 'ArrowLeft' : 'ArrowRight') : 'ArrowDown';
+    const prevKey = isHorizontal ? (isRtl ? 'ArrowRight' : 'ArrowLeft') : 'ArrowUp';
+
+    if (event.key === nextKey) {
+      event.preventDefault();
+      this.moveFocus(1);
+    } else if (event.key === prevKey) {
+      event.preventDefault();
+      this.moveFocus(-1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      this.focusFirst();
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      this.focusLast();
+    } else if (event.key === 'Enter' && this.focusedIndex() !== -1) {
+      event.preventDefault();
+      this.activateFocused();
+    }
+  }
+
+  public handleFocusout(event: FocusEvent) {
+    const relatedTarget = event.relatedTarget as HTMLElement | null;
+    const triggers = this.triggers();
+    const isFocusStillInBar = relatedTarget !== null && triggers.some((t) => t.getElement() === relatedTarget);
+
+    if (!isFocusStillInBar) {
+      this.focusedIndex.set(-1);
+    }
+  }
+
+  private moveFocus(direction: 1 | -1) {
+    const all = this.triggers();
+
+    if (all.length === 0) {
+      return;
+    }
+
+    const activeElement = this.document.activeElement;
+    let currentIndex = all.findIndex((trigger) => trigger.getElement() === activeElement);
+
+    if (currentIndex === -1) {
+      currentIndex = this.focusedIndex() === -1 ? this.selectedIndex() : this.focusedIndex();
+    }
+
+    let nextIndex = currentIndex;
+    const length = all.length;
+
+    for (let i = 0; i < length; i++) {
+      nextIndex = (nextIndex + direction + length) % length;
+      const trigger = all[nextIndex];
+
+      if (trigger && !trigger.disabled()) {
+        this.focusedIndex.set(nextIndex);
+        trigger.focus();
+
+        return;
+      }
+    }
+  }
+
+  private focusFirst() {
+    const all = this.triggers();
+
+    for (let i = 0; i < all.length; i++) {
+      const trigger = all[i];
+
+      if (trigger && !trigger.disabled()) {
+        this.focusedIndex.set(i);
+        trigger.focus();
+
+        return;
+      }
+    }
+  }
+
+  private focusLast() {
+    const all = this.triggers();
+
+    for (let i = all.length - 1; i >= 0; i--) {
+      const trigger = all[i];
+
+      if (trigger && !trigger.disabled()) {
+        this.focusedIndex.set(i);
+        trigger.focus();
+
+        return;
+      }
+    }
+  }
+
+  private activateFocused() {
+    const idx = this.focusedIndex();
+
+    if (idx === -1) {
+      return;
+    }
+
+    const trigger = this.triggers()[idx];
+
+    if (trigger && !trigger.disabled()) {
+      trigger.getElement().click();
+    }
+  }
+}

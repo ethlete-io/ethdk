@@ -1,0 +1,140 @@
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  afterNextRender,
+  contentChild,
+  effect,
+  inject,
+  untracked,
+} from '@angular/core';
+import { injectPrefersReducedMotion } from '@ethlete/core';
+import { CalendarComponent } from '../../../calendar';
+
+const COMPENSATION_DURATION = 160;
+const COMPENSATION_EASING = 'ease';
+
+const PICKER_RING = '.et-time-picker-ring';
+
+/**
+ * @internal Applied to the pane row of a date-time picker panel: when month navigation changes the
+ * calendar height, the stretched time picker's vertically centered ring jumps by half the delta,
+ * and this slides it from its old visual position to the new one.
+ *
+ * Must stay a transform, never an animated `block-size`: animating the height would feed every
+ * frame back into the row height this observes, so the panel would chase a moving target.
+ */
+@Directive({
+  selector: '[etDateTimePickerPanes]',
+})
+export class DateTimePickerPanesDirective {
+  private destroyRef = inject(DestroyRef);
+  private prefersReducedMotion = injectPrefersReducedMotion();
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  private calendar = contentChild<CalendarComponent, ElementRef<HTMLElement>>(CalendarComponent, {
+    read: ElementRef,
+  });
+
+  private lastBlockSize: number | null = null;
+  private ready = false;
+  private animations: Animation[] = [];
+
+  constructor() {
+    // runs synchronously inside the resize-observer callback - after layout, before paint - so the
+    // ring never paints a frame at the jumped position; a signal-routed observer would be one
+    // painted frame late
+    // eslint-disable-next-line ethlete/no-native-observers -- pre-paint timing, see above
+    const observer = new ResizeObserver(() => {
+      if (this.ready) {
+        this.compensate();
+      }
+    });
+
+    effect(() => {
+      const calendar = this.calendar()?.nativeElement;
+
+      untracked(() => {
+        observer.disconnect();
+
+        if (calendar) {
+          observer.observe(calendar);
+        }
+      });
+    });
+
+    // the settled first-render height is the baseline - opening never animates
+    afterNextRender(() => {
+      this.lastBlockSize = this.measure();
+      this.ready = true;
+    });
+
+    this.destroyRef.onDestroy(() => {
+      observer.disconnect();
+      this.cancelAnimations();
+    });
+  }
+
+  private compensate() {
+    const blockSize = this.measure();
+
+    if (blockSize === null || blockSize === 0) {
+      return;
+    }
+
+    const previous = this.lastBlockSize;
+
+    this.lastBlockSize = blockSize;
+
+    if (previous === null || Math.abs(previous - blockSize) < 1 || this.prefersReducedMotion()) {
+      return;
+    }
+
+    // eslint-disable-next-line ethlete/no-dom-query -- the ring lives inside et-time-picker's own view, out of reach of a content query from here
+    const rows = Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>(PICKER_RING));
+    const firstRow = rows[0];
+
+    if (!firstRow) {
+      return;
+    }
+
+    const offset = (previous - blockSize) / 2 + this.currentOffset(firstRow);
+
+    this.cancelAnimations();
+
+    this.animations = rows.map((row) =>
+      row.animate([{ transform: `translateY(${offset}px)` }, { transform: 'translateY(0)' }], {
+        duration: COMPENSATION_DURATION,
+        easing: COMPENSATION_EASING,
+      }),
+    );
+  }
+
+  // the panes are stretched to one row, so every time picker has the same height
+  private measure() {
+    // eslint-disable-next-line ethlete/no-dom-query -- see compensate()
+    const timePicker = this.host.nativeElement.querySelector('.et-time-picker');
+
+    return timePicker?.getBoundingClientRect().height ?? null;
+  }
+
+  private currentOffset(row: HTMLElement) {
+    if (!this.animations.some((animation) => animation.playState === 'running')) {
+      return 0;
+    }
+
+    const transform = getComputedStyle(row).transform;
+    const translateY = /matrix\(([^)]+)\)/.exec(transform)?.[1]?.split(',')[5];
+    const offset = translateY === undefined ? 0 : Number(translateY);
+
+    return Number.isFinite(offset) ? offset : 0;
+  }
+
+  private cancelAnimations() {
+    for (const animation of this.animations) {
+      animation.cancel();
+    }
+
+    this.animations = [];
+  }
+}

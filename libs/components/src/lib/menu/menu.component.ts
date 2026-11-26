@@ -1,0 +1,101 @@
+import {
+  Component,
+  ElementRef,
+  ViewContainerRef,
+  ViewEncapsulation,
+  computed,
+  effect,
+  inject,
+  viewChild,
+} from '@angular/core';
+import {
+  AutoSurfaceDirective,
+  COLOR_PROVIDER,
+  ProvideColorDirective,
+  createComponentId,
+  injectAnimatedBlockSize,
+  injectSemanticColorTheme,
+} from '@ethlete/core';
+import { MenuDirective, MenuPanelDirective } from './headless';
+
+const RESIZE_ANIMATION_CLASS = 'et-menu--resizing';
+
+@Component({
+  selector: 'et-menu',
+  templateUrl: './menu.component.html',
+  styleUrl: './menu.component.css',
+  encapsulation: ViewEncapsulation.None,
+  imports: [ProvideColorDirective],
+  hostDirectives: [MenuPanelDirective, ProvideColorDirective, AutoSurfaceDirective],
+  host: {
+    class: 'et-menu',
+  },
+})
+export class MenuComponent {
+  private ownColorProvider = inject(ProvideColorDirective);
+  private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
+  private menu = inject(MenuDirective, { optional: true });
+  protected errorColorTheme = injectSemanticColorTheme('error');
+
+  // both must stay content-sized: the host's used size is overridden by the resize animation and
+  // the scroller is sized by the host, so observing either would feed the animation back in
+  private headerElement = viewChild<ElementRef<HTMLElement>>('menuHeader');
+  private bodyElement = viewChild<ElementRef<HTMLElement>>('menuBody');
+  private bodyContentElement = viewChild<ElementRef<HTMLElement>>('menuBodyContent');
+  private searchChrome = viewChild('menuSearchChrome', { read: ViewContainerRef });
+  private scrollbarChrome = viewChild('menuScrollbarChrome', { read: ViewContainerRef });
+
+  public search = computed(() => this.menu?.registeredSearch() ?? null);
+  protected searchError = computed(() => this.search()?.error() ?? null);
+  protected searchErrorId = createComponentId('et-menu-search-error');
+
+  constructor() {
+    // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,
+    // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
+    inject(AutoSurfaceDirective).matchOverlaySurface();
+
+    // the panel renders inside a detached overlay pane, so color context from the
+    // trigger location has to be re-applied here instead of cascading via the DOM
+    // (the surface context is handled the same way by AutoSurfaceDirective). Synced
+    // in the constructor so the theme is applied before the first painted frame of
+    // the enter animation - an effect would flush one render too late.
+    if (this.contextColorProvider) {
+      this.ownColorProvider.syncWithProvider(this.contextColorProvider);
+    }
+
+    // lets the search input reference the error line rendered below it via aria-describedby
+    effect(() => {
+      this.search()?.errorElementId.set(this.searchErrorId);
+    });
+
+    effect((onCleanup) => {
+      const search = this.search();
+      const target = this.bodyElement()?.nativeElement;
+      const searchChrome = this.searchChrome();
+      const scrollbarChrome = this.scrollbarChrome();
+
+      if (!search || !target || !searchChrome || !scrollbarChrome) {
+        return;
+      }
+
+      const chrome = search.getChrome();
+      const spinner = searchChrome.createComponent(chrome.spinner);
+      spinner.setInput('search', search);
+
+      const scrollbar = scrollbarChrome.createComponent(chrome.scrollbar);
+      scrollbar.setInput('target', target);
+
+      onCleanup(() => {
+        spinner.destroy();
+        scrollbar.destroy();
+      });
+    });
+
+    // animate the menu's block size when its content changes while open
+    // (e.g. search filtering items away or the search error line appearing)
+    injectAnimatedBlockSize({
+      observe: [this.headerElement, this.bodyContentElement],
+      resizingClass: RESIZE_ANIMATION_CLASS,
+    });
+  }
+}

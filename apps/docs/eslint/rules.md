@@ -1,0 +1,412 @@
+# Rules
+
+Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used with the `ethlete/` prefix (e.g. `ethlete/no-inject-chain`). Only `no-impure-top-level-provider`, `no-legacy-prepare-without-injector` and the two [migration rules](#legacy-packages-migration) take options; the rest take none.
+
+- **Fix** - 🔧 means the rule has an auto-fixer applied by `eslint --fix` / `nx lint --fix`; 💡 means it only offers an editor suggestion, which `--fix` does not apply.
+- **Default** - the severity set by the [`recommended` config](/eslint/). `warn` is used for migration-style rules where existing code may reasonably still violate them.
+
+## TypeScript & code style
+
+| Rule                                | What it enforces                                                                                                                                                                                                                           | Fix | Default |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- | ------- |
+| `consistent-type-definitions`       | `type` instead of `interface`; an interface inside `declare module`, `declare global` or a `namespace` is exempt, because only an interface merges into an augmented declaration                                                           | 🔧  | error   |
+| `no-enum`                           | No `enum` and no `const enum` - use a const object with `as const` plus a derived union type                                                                                                                                               | 🔧  | error   |
+| `no-trivial-return-type`            | No explicit return types TypeScript can infer on block-bodied implementations; concise arrows keep annotations that may narrow their API contract                                                                                          | 💡  | error   |
+| `no-type-only-import`               | No `import type { Foo }` or `import { type Foo }` - use a regular value import                                                                                                                                                             | 🔧  | error   |
+| `no-trivial-wrapper-method`         | No wrapper methods that only forward all arguments to another call; a method more visible than the member it calls through (a public `setItems` over a private signal), inherited, implemented and Angular/DOM contract methods are exempt |     | error   |
+| `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies, or for function-valued variables at any scope                                                                                                                                     |     | error   |
+| `guard-return-newline`              | Empty line before a `return` in a multi-statement if-block (guard clause)                                                                                                                                                                  | 🔧  | error   |
+| `no-empty-newlines-between-imports` | No blank lines between consecutive import declarations                                                                                                                                                                                     | 🔧  | error   |
+
+```ts
+// ❌
+import { type User } from './user';
+const getName = (user: User): string => user.name;
+
+// ✅
+import { User } from './user';
+const getName = (user: User) => user.name;
+```
+
+An enum is the only TypeScript construct that emits runtime code from a type declaration, so it
+cannot be erased and it cannot be tree-shaken. Its members are nominal, so a matching plain string
+is not assignable to an enum-typed parameter. A `const enum` is worse: a transpile-only consumer
+(esbuild, SWC, Babel) has no cross-file type information, so it cannot inline the member.
+
+```ts
+// ❌
+export enum MatchState {
+  Live = 'live',
+}
+
+// ✅
+export const MatchState = {
+  Live: 'live',
+} as const;
+
+export type MatchState = (typeof MatchState)[keyof typeof MatchState];
+```
+
+`consistent-type-definitions` replaces `@typescript-eslint/consistent-type-definitions`, which the recommended config turns off. The upstream fix rewrites a module augmentation into a type alias; a type alias merges into nothing, and under `skipLibCheck` the registration silently disappears. Keep augmentations as interfaces, and rename an existing `eslint-disable` for the upstream rule to `ethlete/consistent-type-definitions`.
+
+[`et update`](/cli/update) repairs both when it moves a repo past `1.0.0-next.24`: it turns every object-literal type alias directly inside a `declare module` or `declare global` block back into an interface, lists the aliases of any other shape for review, and renames the rule in `eslint-disable` and `eslint-enable` directives. Run it by hand with `nx g @ethlete/eslint-plugin:restore-module-augmentation-interfaces`.
+
+```ts
+// ✅ stays an interface
+declare module '@ethlete/core' {
+  interface EthleteColorThemeNameRegistry {
+    name: 'brand' | 'danger';
+  }
+}
+```
+
+`no-enum` fixes an enum whose members all have a string literal initializer; a numeric or computed
+enum is reported without a fix. After the fix, a member used in a type position needs `typeof` -
+`type: MatchState.Live` becomes `type: typeof MatchState.Live`.
+
+## Dependency injection
+
+| Rule                                 | What it enforces                                                                                                                                                  | Fix | Default |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-inject-chain`                    | No member access chained directly off `inject()` - assign the injected value to a `const` first; `inject(X).method()` and `new (inject(X).Y)()` calls are allowed |     | error   |
+| `no-typed-injected-element-ref`      | `inject<ElementRef<HTMLElement>>(ElementRef)` - the generic goes on `inject()`, not on `ElementRef`                                                               | 🔧  | error   |
+| `no-impure-top-level-provider`       | No module-scope destructuring of a factory call; optionally require `@__PURE__` on module-scope calls                                                             | 🔧  | error   |
+| `no-legacy-prepare-without-injector` | A legacy query creator's `prepare()` passes an explicit `injector` when it runs from a callback, outside the injection context that created it                    | 🔧  | error   |
+
+```ts
+// ❌ chaining off inject()
+const apiUrl = inject(APP_CONFIG).apiUrl;
+
+// ✅ assign to a const first
+const config = inject(APP_CONFIG);
+const apiUrl = config.apiUrl;
+```
+
+### `no-impure-top-level-provider`
+
+```ts
+// ❌ no bundler can drop this - destructuring invokes the iterator protocol, so everything the
+//    factory closes over ships to every consumer of the package
+export const [provideThing, injectThing] = defineRootProvider(() => new Thing());
+
+// ✅ one binding per exported name, each a call the bundler can prove pure
+const THING_DEF = /* @__PURE__ */ defineRootProvider(() => new Thing());
+
+export const provideThing = /* @__PURE__ */ toProvideFn(THING_DEF);
+export const injectThing = /* @__PURE__ */ toInjectFn(THING_DEF);
+```
+
+The destructuring half is always on. The second half - requiring `/* @__PURE__ */` on every module-scope
+call - is opt-in, because it only pays off in a **publishable library**, where a retained statement lands
+in every consumer's bundle; in an application every top-level statement is reachable anyway:
+
+```js
+'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true }],
+```
+
+A second opt-in, `forbidImpureReads`, flags member reads (`A.b`), spreads and arithmetic on identifiers in module-scope initializers, because a bundler cannot prove them side-effect free and keeps the whole declaration. Write the literal key or number instead:
+
+```js
+'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true, forbidImpureReads: true }],
+```
+
+The fixer inserts the annotation. If the call is genuinely not side-effect free at import time, do not
+annotate it - move it inside a function, because a library must not do work when it is imported.
+
+### `no-legacy-prepare-without-injector`
+
+A legacy query creator's `prepare()` throws `ET950` when it runs outside the injection context that created it - typically inside a `computed()`, an `effect()` or an RxJS operator. The rule requires an explicit `injector` there; the fixer adds one from an `inject(Injector)` member. Calls that already run in a context (constructors, field initializers, `runInInjectionContext()`, the `queryComputed` family) are left alone.
+
+```ts
+// ❌ ET950 once the field initializer's context is gone
+users = computed(() => legacyGetUsers.prepare({ queryParams: { page: this.page() } }));
+
+// ✅
+private injector = inject(Injector);
+users = computed(() => legacyGetUsers.prepare({ queryParams: { page: this.page() }, injector: this.injector }));
+```
+
+Creators are recognised by name (`^legacy` by default); set `creatorPattern` to match a different prefix:
+
+```js
+'ethlete/no-legacy-prepare-without-injector': ['error', { creatorPattern: '^oldClient' }],
+```
+
+## Class members & accessibility
+
+| Rule                                 | What it enforces                                                                                                                                                                                                                                   | Fix | Default |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `inject-member-accessibility`        | Injected members are `private` by default and `protected` for template/host use or abstract bases; explicit `public` only to intentionally expose an API                                                                                           | 🔧  | error   |
+| `template-member-accessibility`      | Non-injected members referenced from templates/host bindings need an explicit accessibility modifier; implicitly public surface members must be explicit `public`; `protected` members of an `abstract` base class are left to its subclasses      | 🔧  | error   |
+| `no-redundant-internal`              | No `@internal` JSDoc tag on members already hidden by `private`; protected members may need it for `stripInternal`                                                                                                                                 | 🔧  | error   |
+| `no-leading-underscore-class-member` | No leading underscores on class members, including `static`, `abstract`, `accessor` and parameter properties (renames instance private members automatically when safe)                                                                            | 🔧  | error   |
+| `no-member-alias`                    | No members that are pure aliases for a nested property of another member - widen the source member's accessibility instead                                                                                                                         |     | error   |
+| `no-unused-class-member`             | No members that are never referenced via `this.x` (a write-only member counts as used); `private` always, `protected` only in `@Directive` / `@Pipe` / `@Injectable` classes; framework-decorated, overridden and abstract-base members are exempt |     | error   |
+| `class-constant-property`            | True class constants use `readonly` and SCREAMING_CASE (the fixer adds `readonly`; renaming is manual)                                                                                                                                             | 🔧  | error   |
+| `class-member-order`                 | Class members follow the styleguide order: inject members, inputs, outputs, queries, properties, constructor, methods                                                                                                                              | 🔧  | error   |
+
+```ts
+// ❌
+export class ProfileAvatarComponent {
+  _sanitizer = inject(DomSanitizer); // leading underscore, implicitly public
+  userName = this.user().name; // pure alias for a nested property
+}
+
+// ✅
+export class ProfileAvatarComponent {
+  private sanitizer = inject(DomSanitizer);
+}
+```
+
+## RxJS & signals
+
+| Rule                                   | What it enforces                                                                                                                                                          | Fix | Default |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `require-dollar-suffix`                | Observable variables and class properties end with `$`                                                                                                                    |     | error   |
+| `no-subscribe-with-body`               | `subscribe()` is called with an empty body - side effects go into `tap()` inside the pipe                                                                                 |     | error   |
+| `no-subscribe-in-pipe`                 | No `.subscribe()` calls inside `.pipe()` callbacks                                                                                                                        |     | error   |
+| `take-until-destroyed-last`            | `takeUntilDestroyed()` is the last operator in a `.pipe()` - an operator after it can keep the subscription alive                                                         |     | error   |
+| `no-async-await`                       | No `async` / `await` - asynchronous work returns a cold Observable; a Storybook `play` function in a story file is exempt                                                 |     | error   |
+| `no-rxjs-in-effect`                    | No `.subscribe()` inside `effect()`, `computed()`, `afterRenderEffect()` or `linkedSignal()` - bridge with `toObservable()` instead                                       |     | error   |
+| `no-effect-cleanup-return`             | No cleanup function returned from `effect()` - Angular ignores it; use the `onCleanup` parameter or `DestroyRef`                                                          | 🔧  | error   |
+| `no-readonly-signal`                   | No `readonly` on class properties initialized with reactive APIs (`signal`, `input`, `computed`, `inject`, …)                                                             | 🔧  | error   |
+| `prefer-linked-signal`                 | `linkedSignal()` instead of an `effect()` that only calls `.set()` on a signal, also behind an `if`/`else`                                                                |     | warn    |
+| `prefer-computed-linked-signal-source` | `linkedSignal()` takes a `computed()` as its source, not an inline function over an input or model                                                                        |     | warn    |
+| `prefer-rxjs-timer`                    | RxJS `timer` / `interval` / `fromEvent` instead of `setTimeout` / `setInterval` / `addEventListener`; also flags `clearTimeout` / `clearInterval` / `removeEventListener` |     | error   |
+
+```ts
+// ❌ logic in the subscribe callback
+source$.subscribe((value) => this.handleValue(value));
+
+// ✅ side effects in tap(), limiting operator last, empty subscribe
+source$
+  .pipe(
+    tap((value) => this.handleValue(value)),
+    takeUntilDestroyed(),
+  )
+  .subscribe();
+```
+
+## Angular components & metadata
+
+| Rule                                         | What it enforces                                                                                                                                                          | Fix | Default |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `require-on-push-change-detection`           | `changeDetection: ChangeDetectionStrategy.OnPush` on every `@Component` (version-aware: inert on Angular 22+)                                                             | 🔧  | error   |
+| `no-redundant-on-push-change-detection`      | No redundant `OnPush` metadata - it is the default since Angular 22 (version-aware: inert on older Angular)                                                               | 🔧  | error   |
+| `require-view-encapsulation-none`            | `encapsulation: ViewEncapsulation.None` on every `@Component`                                                                                                             | 🔧  | error   |
+| `no-legacy-angular-decorators`               | No `@Input`, `@Output`, `@ViewChild`, `@HostBinding`, … - use signal-based APIs (`input()`, `output()`, …) and `host: {}`                                                 | 🔧  | error   |
+| `no-standalone-flag`                         | No `standalone: true` metadata - standalone is the default; `standalone: false` remains explicit and supported                                                            | 🔧  | error   |
+| `no-empty-angular-metadata-arrays`           | No empty `imports: []` / `hostDirectives: []` metadata noise                                                                                                              | 🔧  | error   |
+| `angular-decorator-property-order`           | Consistent property order in `@Component` / `@Directive` metadata                                                                                                         | 🔧  | error   |
+| `prefer-concise-angular-host-directives`     | Shorthand `hostDirectives` entries when only `directive` is needed; extended configs ordered `directive`, `inputs`, `outputs`                                             | 🔧  | error   |
+| `prefer-concise-angular-style-metadata`      | `styleUrl` over single-item `styleUrls`; no array around a single `styles` entry                                                                                          | 🔧  | error   |
+| `no-template-literal-before-inline-template` | No interpolated template literal above an inline `template:` - it silently disables Angular language service completions, hover and go-to-definition inside that template |     | error   |
+| `no-pipe-logic`                              | No logic inside a pipe's `transform` - extract a utility function and assign it (`transform = myUtil;`)                                                                   |     | error   |
+| `enforce-routing-view-naming`                | A route object's (with a `path`) `loadComponent` imports from a path containing `-view` and reads a class name ending in `ViewComponent`                                  |     | error   |
+
+::: info The OnPush pair is version-aware
+`require-on-push-change-detection` and `no-redundant-on-push-change-detection` are both part of `recommended` and detect the Angular version installed next to the linted file: on Angular ≤ 21 the first enforces explicit `OnPush` and the second is inert; on Angular 22+ (where `OnPush` is the default) the roles flip and the redundant metadata - including the now-unused import - is removed. To pin the version instead of detecting it, set `settings: { ethlete: { angularMajor: 21 } }` in the flat config.
+:::
+
+```ts
+// ❌
+@Component({
+  standalone: true,
+  imports: [],
+  styleUrls: ['./example.component.css'],
+})
+
+// ✅
+@Component({
+  styleUrl: './example.component.css',
+  encapsulation: ViewEncapsulation.None,
+})
+```
+
+## Component inputs & outputs
+
+Naming conventions for signal-based `input()` / `model()` / `output()`. The `on`-prefix and native-event-name checks for outputs are covered by `@angular-eslint/no-output-on-prefix` and `@angular-eslint/no-output-native`.
+
+| Rule                          | What it enforces                                                                                                                                                                          | Fix | Default |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-native-html-input-name`   | An `input()` / `model()` must not share its name with a global HTML attribute (`title`, `id`, `hidden`, `role`, `tabindex`, …) - the host element carries it natively, so the two collide |     | error   |
+| `prefer-present-tense-output` | Outputs read in the present tense like native DOM events (`playerSelect`, not `playerSelected`)                                                                                           |     | warn    |
+
+Element-specific attributes that components routinely mirror on purpose (`disabled`, `value`, `placeholder`, `type`, `size`, `min`, …) are **not** flagged by `no-native-html-input-name` - only the global attributes valid on any element are. When mirroring a global attribute is genuinely intended (e.g. a directive that deliberately drives the host `id` or `autofocus`), disable the rule on that line with a reason.
+
+::: info `prefer-present-tense-output` is a heuristic
+It flags an output whose final word ends in `-ed` (the common past-participle pattern), excluding base-form words that merely end that way (`succeed`, `speed`, `feed`, …). Irregular past tenses that don't end in `-ed` (`sent`, `shown`, `built`) are not detected - hence `warn`, not `error`.
+:::
+
+```ts
+// ❌ collides with the host element's native `title`; past-tense event name
+@Directive()
+export class WidgetComponent {
+  title = input('Chart');
+  playerSelected = output<Player>();
+}
+
+// ✅
+@Directive()
+export class WidgetComponent {
+  heading = input('Chart');
+  playerSelect = output<Player>();
+}
+```
+
+## Angular templates
+
+The custom rules that run on `**/*.html` files (via `recommendedTemplate`) instead of TypeScript. The first complements `@angular-eslint/template/prefer-static-string-properties`, which covers the string-literal case.
+
+| Rule                               | What it enforces                                                                                                                                                | Fix | Default |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `prefer-static-boolean-properties` | No property bindings for static booleans (`[isReadonly]="true"` / `"false"`) - use a static attribute for coercing component inputs; native booleans are exempt |     | warn    |
+| `require-form-submit`              | Every `<form>` handles its own submission through `[etForm]`, `[formRoot]`, `(ngSubmit)`, `(submit)` or native submission                                       |     | error   |
+| `no-native-title`                  | No native `title` (`title="…"`, `[title]`, `[attr.title]`) on an HTML element - use the SDK tooltip; components keep their own `title` input                    |     | off     |
+
+The rewrite is only equivalent when the input declares a `booleanAttribute` transform - otherwise a static attribute passes the _string_ `'true'` / `'false'` instead of a boolean. A template rule has no type information to verify that, so the fix is offered as an editor **suggestion** (💡) rather than applied by `--fix`, and the severity stays at `warn`. Keep the binding for inputs that take a plain boolean without a transform.
+
+```html
+<!-- ❌ static booleans bound as expressions -->
+<my-cmp [isReadonly]="true" [showHeader]="false" />
+
+<!-- ✅ static attributes (input uses booleanAttribute) -->
+<my-cmp isReadonly showHeader="false" />
+```
+
+`require-form-submit` checks the form itself: a `<form>` with no handler does nothing when the user presses Enter in a field (or reloads the page, without an Angular form directive to call `preventDefault`). A `[etForm]` or `[formRoot]` binding counts as handling submission because both directives submit the signal form themselves. Submit controls are not checked across templates because projection and `ng-template` composition can associate them with a form outside the file being linted.
+
+```html
+<!-- ❌ nothing handles submission -->
+<form [formGroup]="form"></form>
+<button type="submit">Save</button>
+
+<!-- ✅ handled, and the control reaches the form -->
+<form (ngSubmit)="save()">
+  <button type="submit">Save</button>
+</form>
+
+<!-- ✅ signal forms: the directive submits the field tree -->
+<form [etForm]="form">
+  <button type="submit">Save</button>
+</form>
+
+<!-- ✅ outside the form's subtree, associated by id -->
+<button type="submit" form="edit-user">Save</button>
+```
+
+A form that declares native submission is left alone (`action`, `ngNoForm`, `method="dialog"`) - the platform handles those. A `[type]` _binding_ is also left alone, since a template rule cannot resolve what it evaluates to.
+
+`no-native-title` is off in `recommendedTemplate`; turn it on per project. It replaces the browser tooltip with the SDK tooltip: a native `title` is unstyled, ignores the theme, cannot be opened on touch and is not controllable. An element with a dash in its name is a component or custom element, so its own `title` input or attribute is left alone; `[attr.title]` is reported on every element.
+
+```html
+<!-- ❌ native browser tooltip -->
+<button title="Save"></button>
+<button [title]="label()"></button>
+
+<!-- ✅ SDK tooltip -->
+<button etTooltip="Save"></button>
+
+<!-- ✅ a component's own title input -->
+<et-card title="Heading" />
+```
+
+## Legacy packages & migration
+
+Two opt-in rules for an app leaving a maintenance-mode API behind. Both are **off by default** - they are only useful once that decision is made, and they name the successor of each symbol in the message so a migration does not need the guide open next to the editor.
+
+| Rule                     | What it enforces                                                                                | Fix | Default |
+| ------------------------ | ----------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-cdk-import`          | No imports from `@ethlete/cdk` - names the `@ethlete/components` (or `@ethlete/core`) successor |     | off     |
+| `no-legacy-query-import` | No imports of the legacy (v2) query system from `@ethlete/query` - names the current API        |     | off     |
+
+```js
+// eslint.config.mjs
+{
+  files: ['**/*.ts'],
+  rules: {
+    'ethlete/no-cdk-import': 'error',
+    'ethlete/no-legacy-query-import': 'error',
+  },
+}
+```
+
+`no-cdk-import` reads its successors from `migration-map.json`, which ships **inside the `@ethlete/cdk` package** - so the advice is the installed version's, and the rule holds no copy that can go stale. Where that package is not resolvable from the linted project, point the rule at the file with `migrationMapPath`; without a map it still reports every cdk import, pointing at the [migration guide](/cdk/migration) instead of a specific symbol. `docsBaseUrl` sets the host the map's doc paths are appended to.
+
+```
+`ButtonComponent` is legacy @ethlete/cdk. Use `ButtonComponent` from @ethlete/components instead
+(https://…/components/button). a real button system: variant, size and color inputs plus theming
+instead of CSS-only classes.
+```
+
+`no-legacy-query-import` matches every `V2`/`AnyV2`-prefixed export - the prefix the library gives the legacy system's half of a colliding name - plus the legacy APIs that never collided (`def`, `filterSuccess`, `InfinityQuery`, `EntityStore`, `QueryDirective`, `toQuerySignal`, …), each carrying its counterpart from the [legacy migration map](/query/legacy#migrating-to-the-current-system). A namespace import (`import * as q from '@ethlete/query'`) is reported at each legacy name read off it, such as `new q.V2QueryClient()`. `createLegacyQueryCreator` is deliberately never reported: it is the interop seam a migration runs on until its call sites are converted. It is not type-aware on purpose; for the whole deprecated surface - including the types this rule leaves alone - enable `@typescript-eslint/no-deprecated` alongside it.
+
+### `no-old-theme-token`
+
+An opt-in rule for an app that finished the theme token rename (`@ethlete/core:migrate-theme-token-names`). It flags the retired names: the `-rgb` / `-solid` surface tokens, `--et-theme-color-*`, `--et-color-primary*` (and the secondary / tertiary palettes), `rgb(var(--et-surface-…))` triplet reads, the surface `interaction` tokens and utilities (`--et-surface-interaction*`, `on-interaction`, `interaction-ink`; a fill or tint read is now `-tint`, a control text read `-control-text`, see `@ethlete/core:migrate-surface-roles`) and, for each configured Tailwind `prefixes` entry, the old `<prefix>-theme`, `<prefix>-on-theme`, `<prefix>-theme-ink` and `<prefix>-surface-bg` / `-muted` / `-subtle` utilities. It reads the file text, so it also runs on TypeScript and templates. It has no fixer; the migration rewrites the names.
+
+ESLint lints no CSS by default. The plugin ships a text language, `ethlete/css`, so the rule can lint stylesheets:
+
+```js
+// eslint.config.mjs
+{
+  files: ['**/*.{css,scss}'],
+  plugins: { ethlete },
+  language: 'ethlete/css',
+  rules: { 'ethlete/no-old-theme-token': ['error', { prefixes: ['et', 'app'], themeFiles: ['src/styles/*themes.css'] }] },
+},
+{
+  files: ['**/*.{ts,html}'],
+  rules: { 'ethlete/no-old-theme-token': ['error', { prefixes: ['et', 'app'], themeFiles: ['src/styles/*themes.css'] }] },
+}
+```
+
+`prefixes` defaults to `['et']`; add the prefix your generated Tailwind theme uses.
+
+The old tone and surface classes carry the app's own theme names (`bg-app-brand`, `text-app-danger-ink`, `text-app-surface-dark`), so the rule reads them from the generated theme CSS the way the migration does: `themeFiles` is a list of paths or globs, relative to the working directory, of the files the `tailwind-4-color-theme` and `tailwind-4-surface-theme` generators wrote. The Tailwind prefix comes from each file's `--prefix=` header (default `et`) and the names from its `/* <name> theme */` and `/* <name> surface */` comments. Without `themeFiles` (or when they match no generated file) the rule cannot tell an old name from a new one, so it never passes silently: it reports once per file that the theme names are unknown as soon as a color utility followed by a configured prefix and a word looks like an old tone or surface class.
+
+## DOM, platform & `@ethlete/core`
+
+These rules steer code away from raw browser and Angular platform APIs toward the reactive utilities in `@ethlete/core`.
+
+| Rule                         | What it enforces                                                                                                                                                                                                 | Fix | Default |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-direct-dom-manipulation` | No direct DOM manipulation, including `Object.assign(el.style, …)` and bracket access - use `injectRenderer()`                                                                                                   |     | error   |
+| `no-dom-query`               | No `querySelector`, `getElementById`, … - use `viewChild()` / `viewChildren()` / `contentChild()` / `contentChildren()`                                                                                          |     | error   |
+| `no-native-observers`        | No raw `IntersectionObserver` / `MutationObserver` / `ResizeObserver` / `PerformanceObserver`, also through `window.`, a `const` alias or `extends` - use the signal-based observer utilities                    |     | error   |
+| `prefer-match-media`         | No `window.matchMedia()` - use `injectMediaQueryIsMatched()` for a one-shot boolean or `injectObserveMediaQuery()` for a reactive signal; also flags CDK `BreakpointObserver` (use `injectBreakpointObserver()`) |     | error   |
+| `prefer-viewport-size`       | `injectViewportSize()` instead of `window.innerWidth` / `innerHeight`                                                                                                                                            |     | warn    |
+| `prefer-element-dimensions`  | `signalElementDimensions()` / `signalHostElementDimensions()` instead of reading element size properties in reactive contexts                                                                                    |     | warn    |
+| `prefer-scroll-state`        | Scroll signal utilities or `ScrollableComponent` from `@ethlete/components` instead of raw scroll event listeners                                                                                                |     | warn    |
+| `no-document-cookie`         | No direct `document.cookie` access - use `getCookie` / `setCookie` / `hasCookie` / `deleteCookie`                                                                                                                |     | error   |
+| `no-window-location`         | No URL state reads from `window.location.*` - use `injectUrl()` / `injectRoute()` / `injectQueryParam()` etc.                                                                                                    |     | warn    |
+| `no-angular-router-api`      | No injecting `ActivatedRoute` (fully replaced) and no state reads off an injected `Router` - use the `inject*` router utilities (`injectRouterState().id` / `.trigger` for the navigation id and trigger)        |     | warn    |
+| `no-angular-seo-services`    | No Angular `Title` / `Meta` services - use `applyHeadTitleBinding()`, `applyMetaBinding()` and `applyLinkBinding()`                                                                                              |     | error   |
+| `no-locale-id`               | No `inject(LOCALE_ID)` for application locale state - use `injectLocale()`; Angular provider registration remains allowed                                                                                        |     | error   |
+| `prefer-clone-equal`         | `clone()` / `equal()` instead of JSON round-trips, `structuredClone` or lodash `cloneDeep` / `isEqual`                                                                                                           |     | error   |
+| `no-csp-unsafe`              | No code a strict CSP (no `'unsafe-inline'` / `'unsafe-eval'`) blocks - see below                                                                                                                                 | 🔧  | error   |
+
+`prefer-viewport-size` reports `innerWidth` / `innerHeight` read bare, off `window` / `globalThis` / `self` (dotted or bracketed), off a `defaultView`, or off a variable or `this` member that stores one of those.
+
+`prefer-element-dimensions` reports a size read only when it runs in the `effect()` or `computed()` callback itself, or in a synchronous array callback inside it (`items.forEach(…)`). A callback handed to anything else - `untracked`, `setTimeout`, `addEventListener`, `afterNextRender` - runs outside the reactive read and is left alone. The receiver must be an element: a `nativeElement`, a DOM query result (`querySelector`, `closest`, `document.documentElement`, …), an `inject*Element()` result, a binding typed or initialized as one, or an item looped or mapped over an element list (`children`, `querySelectorAll()`, a `…Children()` / `…Elements()` list) - `this.layout().scrollWidth` on an arbitrary object is not reported.
+
+`no-csp-unsafe` keeps code working under a policy like `script-src 'self' 'nonce-…'; style-src 'self' 'nonce-…'`. In TypeScript it flags `setAttribute('style', …)` (on an element or a renderer), a `style` key in `setAttributes()` or in a decorator's `host` (including `'[attr.style]'`), a `createElement('script' | 'style')` whose element never gets a `nonce` in the same function (`el.nonce = …`, `el.setAttribute('nonce', …)`, `renderer.setAttribute(el, 'nonce', …)`), `eval`, `new Function`, and `setTimeout` / `setInterval` with a string, plus any string or template literal that looks like HTML with a `style=` attribute (`<p style="…">`). It also runs in `recommendedTemplate`, where it flags a static `style="…"` attribute and an `[attr.style]` binding. The fixer rewrites a static `style="width: 40%; margin-top: 4px"` to `[style]="{ width: '40%', 'margin-top': '4px' }"`, which Angular applies through CSSOM. It leaves the attribute for a manual fix when a value holds a quote, `url(`, `!important` or a comment, when the element already has a `[style]` binding, or when the inline `template:` string uses quotes instead of backticks - inline `template:` strings are covered there through `processInlineTemplates`, so the TypeScript check skips them. CSSOM writes stay allowed: `el.style.x = …`, `style.setProperty()`, `[style.x]` and `[style]` bindings. The rule is off in `recommendedSpec`.
+
+```html
+<!-- ❌ a static style attribute is blocked without 'unsafe-inline' -->
+<et-skeleton-item style="block-size: 120px" />
+
+<!-- ✅ a style binding goes through CSSOM -->
+<et-skeleton-item [style.block-size.px]="120" />
+```
+
+```ts
+// ❌ one-shot read, not reactive
+const isMobile = window.matchMedia('(max-width: 600px)').matches;
+
+// ✅ one-shot SSR-safe boolean
+const isMobile = injectMediaQueryIsMatched('(max-width: 600px)');
+
+// ✅ reactive signal
+const isMobileReactive = injectObserveMediaQuery('(max-width: 600px)');
+```

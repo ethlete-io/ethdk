@@ -1,0 +1,51 @@
+import { afterNextRender, Component, ElementRef, inject, viewChild, ViewEncapsulation } from '@angular/core';
+import { ColorInteractiveDirective } from '@ethlete/core';
+import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
+import { InputDirective } from './headless';
+
+@Component({
+  selector: 'et-input',
+  templateUrl: './input.component.html',
+  styleUrl: './input.component.css',
+  encapsulation: ViewEncapsulation.None,
+  hostDirectives: [
+    {
+      directive: InputDirective,
+      inputs: ['type', 'placeholder', 'autocomplete', 'textAlign', 'value', ...TEXT_FIELD_CONTROL_INPUTS],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
+    },
+    ColorInteractiveDirective,
+  ],
+  host: {
+    class: 'et-input',
+    '(click)': 'inputDir.activate()',
+  },
+})
+export class InputComponent {
+  protected inputDir = inject(InputDirective);
+
+  private nativeInput = viewChild<ElementRef<HTMLInputElement>>('nativeInput');
+
+  constructor() {
+    afterNextRender(() => {
+      const nativeInput = this.nativeInput()?.nativeElement ?? null;
+
+      this.inputDir.focusTarget.set(nativeInput);
+      this.inputDir.nativeControl.set(nativeInput);
+    });
+  }
+
+  /** Empties the value, as the clear control does. A no-op while disabled or readonly. */
+  public clear() {
+    if (this.inputDir.disabled() || this.inputDir.readonly()) {
+      return;
+    }
+
+    this.inputDir.mixed.set(false);
+    this.inputDir.value.set('');
+  }
+
+  public focus(options?: FocusOptions) {
+    this.inputDir.focus(options);
+  }
+}

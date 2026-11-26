@@ -1,0 +1,4262 @@
+{
+  "events": [
+    {
+      "at": "2026-11-20T23:00:01.252Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-1",
+      "turnId": "turn-1",
+      "agentId": "agent-1",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt1/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:00:17.940Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:00:17.940Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-1",
+      "promptId": "prompt-1",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-20T23:00:39.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt5",
+      "sha": "0000001000000000000000000000000000000000",
+      "branch": "branch-1",
+      "subject": "fix(app): Change 1",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:00:39.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt1",
+      "sha": "0000002000000000000000000000000000000000",
+      "branch": "branch-2",
+      "subject": "fix(app): Change 1",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:01:10.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt3",
+      "sha": "0000003000000000000000000000000000000000",
+      "branch": "branch-3",
+      "subject": "fix(app): Change 2",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:01:10.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000004000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 2",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:01:10.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt6",
+      "sha": "0000004000000000000000000000000000000000",
+      "branch": "branch-4",
+      "subject": "fix(app): Change 2",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:01:46.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-20T23:01:47.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-20T23:02:01.580Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-1",
+      "turnId": "turn-77",
+      "agentId": "agent-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt2/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:02:02.829Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "agentId": "agent-3",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:02:31.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt5",
+      "branch": "branch-1",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-20T23:03:11.693Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:03:12.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000005000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 3",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:03:12.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt4",
+      "sha": "0000006000000000000000000000000000000000",
+      "branch": "branch-5",
+      "subject": "fix(app): Change 3",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:03:12.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt7",
+      "sha": "0000005000000000000000000000000000000000",
+      "branch": "branch-6",
+      "subject": "fix(app): Change 3",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:03:14.321Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-2",
+      "turnId": "turn-116",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:04:01.463Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-1",
+      "turnId": "turn-153",
+      "agentId": "agent-4",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:04:01.576Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:04:05.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-20T23:04:10.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt8",
+      "branch": "branch-7",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-20T23:04:26.950Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:04:29.415Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-2",
+      "turnId": "turn-164",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:06:07.558Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-1",
+      "turnId": "turn-204",
+      "agentId": "agent-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt2/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:06:15.547Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "agentId": "agent-5",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt3",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:08:04.470Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-1",
+      "turnId": "turn-232",
+      "agentId": "agent-5",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt3",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:08:16.761Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "agentId": "agent-5",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt3/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:10:01.412Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-1",
+      "turnId": "turn-246",
+      "agentId": "agent-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt2/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:10:05.523Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "agentId": "agent-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt5/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:10:26.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt2",
+      "sha": "0000007000000000000000000000000000000000",
+      "branch": "branch-8",
+      "subject": "fix(app): Change 4",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:10:26.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000008000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 4",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:10:26.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt6",
+      "sha": "0000008000000000000000000000000000000000",
+      "branch": "branch-4",
+      "subject": "fix(app): Change 4",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:11:22.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt8",
+      "sha": "0000009000000000000000000000000000000000",
+      "branch": "branch-7",
+      "subject": "fix(app): Change 5",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:11:22.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "000000a000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 5",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:11:22.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt7",
+      "sha": "000000a000000000000000000000000000000000",
+      "branch": "branch-6",
+      "subject": "fix(app): Change 5",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:11:27.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt2",
+      "sha": "000000b000000000000000000000000000000000",
+      "branch": "branch-8",
+      "subject": "fix(app): Change 6",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:11:27.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "000000c000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 6",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:11:27.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt6",
+      "sha": "000000c000000000000000000000000000000000",
+      "branch": "branch-4",
+      "subject": "fix(app): Change 6",
+      "paths": []
+    },
+    {
+      "at": "2026-11-20T23:11:29.261Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-1",
+      "promptId": "prompt-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/.claude/handoffs",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-20T23:12:00.325Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-1",
+      "turnId": "turn-281",
+      "agentId": "agent-7",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt8/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:12:11.612Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-1",
+      "agentId": "agent-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt5/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:12:43.715Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-20T23:12:43.715Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-3",
+      "promptId": "prompt-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-20T23:12:45.737Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-308",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-20T23:14:19.656Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-1",
+      "turnId": "turn-313",
+      "agentId": "agent-7",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt8/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:14:21.007Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-20T23:15:24.838Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-314",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-20T23:47:51.679Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-3",
+      "promptId": "prompt-4",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-20T23:47:51.739Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-20T23:47:54.218Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-315",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-20T23:48:00.293Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-317",
+      "cwd": "/home/human/dev/client-app",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-20T23:48:20.389Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:48:20.389Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-2",
+      "promptId": "prompt-5",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-20T23:48:22.238Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-2",
+      "turnId": "turn-318",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-20T23:48:51.551Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:03:06.282Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:03:06.282Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-3",
+      "promptId": "prompt-6",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:03:10.143Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-332",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:03:31.044Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:03:32.959Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-2",
+      "turnId": "turn-336",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:04:11.312Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-348",
+      "agentId": "agent-8",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:04:31.710Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "agentId": "agent-8",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:06:02.728Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-373",
+      "agentId": "agent-8",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:06:45.769Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "agentId": "agent-8",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:07:23.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/client-app",
+      "sha": "000000d000000000000000000000000000000000",
+      "branch": "main",
+      "subject": "fix(app): Change 7",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:07:55.833Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-3",
+      "promptId": "prompt-7",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:08:43.319Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "agentId": "agent-8",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:08:45.948Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-397",
+      "agentId": "agent-8",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:17:27.308Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:17:27.308Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-2",
+      "promptId": "prompt-8",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:17:30.291Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-2",
+      "turnId": "turn-404",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:18:01.571Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-2",
+      "turnId": "turn-413",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:18:12.633Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-4",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:18:12.887Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "sessionId": "session-4",
+      "promptId": "prompt-9",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:18:14.368Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-4",
+      "turnId": "turn-416",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:18:51.114Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:20:01.196Z",
+      "source": "idle",
+      "kind": "idle-end"
+    },
+    {
+      "at": "2026-11-21T00:20:01.196Z",
+      "source": "input",
+      "kind": "input-active"
+    },
+    {
+      "at": "2026-11-21T00:20:10.723Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:11.823Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:12.287Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:12.794Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-2",
+      "turnId": "turn-454",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:20:16.446Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:16.807Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:16.814Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:16.822Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:17.116Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:17.124Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:17.140Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:17.343Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:24.494Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:26.076Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:39.763Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:40.678Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:41.762Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:47.088Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:20:47.257Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-5",
+      "promptId": "prompt-10",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:20:49.268Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:49.399Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-457",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:20:51.243Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:51.246Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:20:55.395Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:03.236Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-5",
+      "promptId": "prompt-11",
+      "cwd": "/home/human/dev/ethlete-sdk/.claude/handoffs",
+      "workedIn": "/home/human/dev/ethlete-sdk/.claude/handoffs",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:21:11.620Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:21:13.067Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:14.926Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:14.928Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:28.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:21:43.541Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:43.543Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:47.069Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:52.800Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:53.152Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:53.186Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:53.249Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:53.636Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:53.814Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:53.974Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:54.449Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:21:54.554Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:09.020Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:22:10.248Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-472",
+      "agentId": "agent-14",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:22:27.233Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-2",
+      "turnId": "turn-499",
+      "agentId": "agent-13",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:22:30.686Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-2",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:22:31.183Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:32.012Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:32.921Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-5",
+      "promptId": "prompt-12",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:22:33.300Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:33.469Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.slack.Slack",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:33.990Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.slack.Slack",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:35.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-6",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:22:35.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt7",
+      "branch": "branch-6",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:22:37.329Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.slack.Slack",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:41.112Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:42.737Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:45.038Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:52.567Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:53.988Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:22:55.620Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:23:05.454Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:23:19.513Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-5",
+      "promptId": "prompt-13",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:23:20.896Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:23:28.872Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:00.380Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-637",
+      "agentId": "agent-14",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt2/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:24:05.269Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:05.493Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-2",
+      "turnId": "turn-643",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:24:17.687Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:17.721Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-20",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:24:20.724Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:20.785Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:21.173Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:21.221Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:21.279Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:23.375Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:27.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-9",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:24:27.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt9",
+      "branch": "branch-9",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:24:27.077Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:27.642Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:28.297Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:24:28.297Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-6",
+      "promptId": "prompt-14",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:24:30.953Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:31.207Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:33.277Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "session",
+      "sessionId": "session-6",
+      "promptId": "prompt-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:24:34.311Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-6",
+      "turnId": "turn-675",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:24:35.394Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:35.864Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:24:39.051Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-5",
+      "promptId": "prompt-16",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:25:23.309Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-5",
+      "promptId": "prompt-17",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:25:32.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "000000e000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 8",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:25:32.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt5",
+      "sha": "000000f000000000000000000000000000000000",
+      "branch": "branch-1",
+      "subject": "fix(app): Change 8",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:25:32.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt6",
+      "sha": "000000e000000000000000000000000000000000",
+      "branch": "branch-4",
+      "subject": "fix(app): Change 8",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:25:36.196Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:25:46.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:26:00.683Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-747",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt3",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:26:19.086Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-20",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:26:33.113Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-5",
+      "promptId": "prompt-18",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:26:39.295Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:26:41.010Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:26:41.348Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:26:52.570Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:26:52.576Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:26:58.453Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:27:00.086Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:27:00.510Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:27:00.520Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:27:00.528Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:27:02.450Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:27:05.374Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:27:21.886Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:27:40.732Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-5",
+      "promptId": "prompt-19",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:27:48.889Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:27:51.283Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:28:02.441Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-826",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt3/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:28:21.178Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:28:23.890Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:28:47.284Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt3/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:28:49.657Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:28:50.688Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:28:51.124Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:28:51.785Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:28:59.563Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:00.781Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:02.544Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:13.113Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:18.182Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:22.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:29:26.614Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:29.450Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:33.222Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:38.463Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:39.888Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:42.489Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:29:52.821Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:30:00.363Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-916",
+      "agentId": "agent-18",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt7/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:30:05.478Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:30:06.681Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-17",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt8",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:31:04.772Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:31:06.243Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-6",
+      "turnId": "turn-954",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:31:13.993Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:31:15.327Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:31:36.598Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:31:49.407Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:32:00.026Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1002",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:32:04.931Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-18",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt7/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:32:31.086Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:32:38.846Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:32:54.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt8",
+      "sha": "0000010000000000000000000000000000000000",
+      "branch": "branch-7",
+      "subject": "fix(app): Change 9",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:32:54.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000011000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 9",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:32:54.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt10",
+      "sha": "0000011000000000000000000000000000000000",
+      "branch": "branch-10",
+      "subject": "fix(app): Change 9",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:34:00.568Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1094",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:34:19.776Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:35:22.372Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:28.035Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:31.786Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:32.196Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:32.245Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:32.666Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:33.028Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:33.391Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:34.721Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:36.066Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:37.447Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:38.889Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "PrusaSlicer",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:35:38.988Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:36:02.206Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1178",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:36:12.834Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-20",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt9/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:36:24.437Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:36:43.385Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:37:16.817Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:37:43.323Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "org.gnome.Nautilus",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:37:45.299Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:37:46.245Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:37:46.937Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:37:52.933Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:37:55.296Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "com.microsoft.VSCode",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:38:00.456Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:38:00.986Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:38:00.993Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1261",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:38:02.224Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:38:06.229Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:38:07.432Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:38:09.416Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt3/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:38:09.600Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:38:10.994Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:38:32.530Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:38:35.369Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-6",
+      "turnId": "turn-1277",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:38:44.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000012000000000000000000000000000000000",
+      "branch": "branch-9",
+      "subject": "fix(app): Change 10",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:38:44.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000013000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 10",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:38:44.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt9",
+      "sha": "0000012000000000000000000000000000000000",
+      "branch": "branch-9",
+      "subject": "fix(app): Change 10",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:38:44.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt6",
+      "sha": "0000013000000000000000000000000000000000",
+      "branch": "branch-4",
+      "subject": "fix(app): Change 10",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:39:17.434Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-5",
+      "promptId": "prompt-20",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:39:24.588Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-6",
+      "promptId": "prompt-21",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:39:38.402Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:39:40.715Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:39:40.715Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-3",
+      "promptId": "prompt-22",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:39:43.927Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-1338",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:39:56.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt3",
+      "sha": "0000014000000000000000000000000000000000",
+      "branch": "branch-3",
+      "subject": "fix(app): Change 10",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:40:02.053Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1349",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:40:07.884Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-3",
+      "promptId": "prompt-23",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:40:08.848Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-1351",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:40:13.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:40:13.556Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-15",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt3/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:40:24.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt8",
+      "sha": "0000015000000000000000000000000000000000",
+      "branch": "branch-7",
+      "subject": "fix(app): Change 11",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:40:24.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000016000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 11",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:40:24.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt10",
+      "sha": "0000016000000000000000000000000000000000",
+      "branch": "branch-10",
+      "subject": "fix(app): Change 11",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:40:31.272Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-6",
+      "turnId": "turn-1360",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:40:35.624Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:41:00.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000017000000000000000000000000000000000",
+      "branch": "branch-6",
+      "subject": "fix(app): Change 12",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:41:00.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000018000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 12",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:41:00.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt7",
+      "sha": "0000017000000000000000000000000000000000",
+      "branch": "branch-6",
+      "subject": "fix(app): Change 12",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:41:00.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt6",
+      "sha": "0000018000000000000000000000000000000000",
+      "branch": "branch-4",
+      "subject": "fix(app): Change 12",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:41:21.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:41:45.806Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:41:45.806Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-3",
+      "promptId": "prompt-24",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:41:54.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000019000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 13",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:41:54.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt6",
+      "sha": "0000019000000000000000000000000000000000",
+      "branch": "branch-4",
+      "subject": "fix(app): Change 13",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:42:03.953Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-1376",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:42:17.315Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1378",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:42:33.519Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "sessionId": "session-3",
+      "promptId": "prompt-25",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:42:33.538Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "sessionId": "session-3",
+      "promptId": "prompt-26",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:42:55.804Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:43:01.560Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:43:01.560Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-3",
+      "promptId": "prompt-27",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:43:04.065Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:43:28.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-4",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:43:28.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt6",
+      "branch": "branch-4",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:43:29.367Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:43:29.367Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-6",
+      "promptId": "prompt-28",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:43:30.693Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-6",
+      "turnId": "turn-1400",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:43:41.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt8",
+      "sha": "000001a000000000000000000000000000000000",
+      "branch": "branch-7",
+      "subject": "fix(app): Change 14",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:43:41.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "000001b000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 14",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:43:41.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt10",
+      "sha": "000001b000000000000000000000000000000000",
+      "branch": "branch-10",
+      "subject": "fix(app): Change 14",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:43:55.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "000001c000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 15",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:43:55.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt10",
+      "sha": "000001c000000000000000000000000000000000",
+      "branch": "branch-10",
+      "subject": "fix(app): Change 15",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:44:00.207Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1421",
+      "agentId": "agent-22",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt8/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:44:08.728Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-6",
+      "turnId": "turn-1426",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:44:22.664Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-6",
+      "promptId": "prompt-29",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:44:33.536Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:44:38.030Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-22",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:44:53.222Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-5",
+      "promptId": "prompt-30",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/.claude/handoffs",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:45:13.912Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-6",
+      "promptId": "prompt-31",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:46:21.481Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-21",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt6/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:46:21.481Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1459",
+      "agentId": "agent-21",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt6/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:46:32.240Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-6",
+      "promptId": "prompt-32",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:46:35.220Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-6",
+      "turnId": "turn-1467",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:46:36.977Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:46:39.700Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-5",
+      "promptId": "prompt-33",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/.claude/handoffs",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:46:54.591Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-6",
+      "promptId": "prompt-34",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:47:04.864Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-3",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:47:06.080Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-3",
+      "turnId": "turn-1482",
+      "cwd": "/home/human/dev/client-app/.claude/handoffs",
+      "workedIn": "/home/human/dev/client-app/.claude/handoffs",
+      "gitBranch": "main"
+    },
+    {
+      "at": "2026-11-21T00:47:30.690Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:31.164Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:31.198Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:31.237Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:31.695Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:32.108Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:32.155Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:32.648Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:35.712Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:37.208Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:37.546Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "google-chrome",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:39.980Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:40.530Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:40.843Z",
+      "source": "window",
+      "kind": "window-focus",
+      "appId": "Alacritty",
+      "title": ""
+    },
+    {
+      "at": "2026-11-21T00:47:48.843Z",
+      "source": "idle",
+      "kind": "idle-start"
+    },
+    {
+      "at": "2026-11-21T00:47:48.852Z",
+      "source": "input",
+      "kind": "input-idle"
+    },
+    {
+      "at": "2026-11-21T00:48:06.835Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1499",
+      "agentId": "agent-21",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt6/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:48:08.766Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/.claude/handoffs",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:48:12.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:48:28.067Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:48:29.458Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-6",
+      "turnId": "turn-1506",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:52:28.042Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-5",
+      "agentId": "agent-21",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:52:29.181Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1521",
+      "agentId": "agent-21",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:53:07.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "000001d000000000000000000000000000000000",
+      "branch": "branch-4",
+      "subject": "fix(app): Change 16",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:53:07.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "000001e000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 16",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:53:07.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt10",
+      "sha": "000001e000000000000000000000000000000000",
+      "branch": "branch-10",
+      "subject": "fix(app): Change 16",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:53:07.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt6",
+      "sha": "000001d000000000000000000000000000000000",
+      "branch": "branch-4",
+      "subject": "fix(app): Change 16",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T00:53:53.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:54:02.136Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-5",
+      "turnId": "turn-1540",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:54:02.260Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-6",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:54:03.800Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-6",
+      "turnId": "turn-1541",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:54:38.713Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:54:38.939Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "session",
+      "sessionId": "session-7",
+      "promptId": "prompt-35",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:54:41.936Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-7",
+      "turnId": "turn-1551",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:55:10.414Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:55:10.672Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "human",
+      "sessionId": "session-8",
+      "promptId": "prompt-36",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:55:12.783Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-8",
+      "turnId": "turn-1562",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:55:52.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-11",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:55:52.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-12",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:55:52.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt11",
+      "branch": "branch-11",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:55:53.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-13",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:55:53.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-14",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:55:53.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt12",
+      "branch": "branch-13",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:55:53.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt13",
+      "branch": "branch-14",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:56:01.878Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-7",
+      "turnId": "turn-1580",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:56:06.346Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-8",
+      "turnId": "turn-1581",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:56:07.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-10",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:56:07.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt10",
+      "branch": "branch-10",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:56:24.082Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:57:07.361Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:58:01.720Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-8",
+      "turnId": "turn-1635",
+      "agentId": "agent-25",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt11/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:58:07.020Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "agentId": "agent-26",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt13/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T00:58:34.762Z",
+      "source": "agent-prompt",
+      "kind": "agent-prompt",
+      "provider": "claude-code",
+      "askedBy": "machine",
+      "senderKind": "system",
+      "sessionId": "session-8",
+      "promptId": "prompt-37",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next",
+      "text": ""
+    },
+    {
+      "at": "2026-11-21T00:59:44.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-15",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:59:44.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt15",
+      "branch": "branch-15",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T00:59:59.693Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:00:00.814Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-8",
+      "turnId": "turn-1699",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:00:01.380Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-7",
+      "turnId": "turn-1700",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:00:02.131Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "agentId": "agent-27",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt15/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:01:12.337Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:02:00.410Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-8",
+      "turnId": "turn-1744",
+      "agentId": "agent-28",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt13/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:02:09.809Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "agentId": "agent-27",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt15/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:03:23.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "000001f000000000000000000000000000000000",
+      "branch": "branch-15",
+      "subject": "fix(app): Change 17",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T01:03:23.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000020000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 17",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T01:03:23.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt15",
+      "sha": "000001f000000000000000000000000000000000",
+      "branch": "branch-15",
+      "subject": "fix(app): Change 17",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T01:03:57.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T01:04:00.609Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "agentId": "agent-24",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt14",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:04:04.045Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:04:05.602Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-8",
+      "turnId": "turn-1796",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:04:06.995Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-7",
+      "turnId": "turn-1798",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:04:24.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000021000000000000000000000000000000000",
+      "branch": "branch-12",
+      "subject": "fix(app): Change 18",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T01:05:19.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "branch-16",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T01:05:19.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt14",
+      "branch": "branch-16",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T01:06:02.827Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-8",
+      "turnId": "turn-1834",
+      "agentId": "agent-28",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt13",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:06:09.258Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "agentId": "agent-25",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt11/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:08:00.452Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-8",
+      "turnId": "turn-1893",
+      "agentId": "agent-29",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt14",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:08:10.671Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "agentId": "agent-25",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt11/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:08:43.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000022000000000000000000000000000000000",
+      "branch": "branch-11",
+      "subject": "fix(app): Change 19",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T01:08:43.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt11",
+      "sha": "0000022000000000000000000000000000000000",
+      "branch": "branch-11",
+      "subject": "fix(app): Change 19",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T01:08:48.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000023000000000000000000000000000000000",
+      "branch": "branch-14",
+      "subject": "fix(app): Change 20",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T01:08:48.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "sha": "0000024000000000000000000000000000000000",
+      "branch": "next",
+      "subject": "fix(app): Change 20",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T01:08:48.000Z",
+      "source": "git",
+      "kind": "git-commit",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt13",
+      "sha": "0000023000000000000000000000000000000000",
+      "branch": "branch-14",
+      "subject": "fix(app): Change 20",
+      "paths": []
+    },
+    {
+      "at": "2026-11-21T01:09:29.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk",
+      "branch": "next",
+      "action": "commit: fix(app): Change"
+    },
+    {
+      "at": "2026-11-21T01:09:36.104Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-7",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:09:37.761Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-7",
+      "turnId": "turn-1918",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:10:00.931Z",
+      "source": "agent-usage",
+      "kind": "agent-usage",
+      "provider": "claude-code",
+      "usage": {
+        "input": 1,
+        "output": 1,
+        "cacheWrite": 0,
+        "cacheRead": 0
+      },
+      "sessionId": "session-8",
+      "turnId": "turn-1926",
+      "agentId": "agent-30",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt12/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:10:08.085Z",
+      "source": "agent-session",
+      "kind": "agent-session",
+      "sessionId": "session-8",
+      "agentId": "agent-25",
+      "cwd": "/home/human/dev/ethlete-sdk",
+      "workedIn": "/home/human/dev/ethlete-sdk-wt11/",
+      "gitBranch": "next"
+    },
+    {
+      "at": "2026-11-21T01:11:48.000Z",
+      "source": "git",
+      "kind": "git-branch-update",
+      "repoPath": "/home/human/dev/ethlete-sdk-wt13",
+      "branch": "branch-17",
+      "action": "commit: fix(app): Change"
+    }
+  ]
+}

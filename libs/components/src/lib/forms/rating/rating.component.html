@@ -1,0 +1,44 @@
+<ng-content />
+
+<div
+  [style.--_et-rating-fill-icons]="fillIcons()"
+  [style.--_et-rating-fill-gaps]="fillGaps()"
+  (pointerdown)="handlePointerDown($event)"
+  (pointermove)="handlePointerMove($event)"
+  class="et-rating-icons"
+>
+  @if (rating.registeredIconTemplate(); as iconTemplate) {
+    <div class="et-rating-row" aria-hidden="true">
+      @for (index of iconIndexes(); track index) {
+        <span
+          #baseIcon
+          [attr.data-state]="rating.iconState(index)"
+          (click)="handleIconClick(index, $event)"
+          class="et-rating-icon"
+        >
+          <ng-template [ngTemplateOutlet]="iconTemplate.templateRef" [ngTemplateOutletContext]="iconContext(index)" />
+        </span>
+      }
+    </div>
+  } @else {
+    <div class="et-rating-row" aria-hidden="true">
+      @for (index of iconIndexes(); track index) {
+        <span #baseIcon (click)="handleIconClick(index, $event)" class="et-rating-icon">
+          <i class="et-rating-icon-base" etIcon="et-star"></i>
+        </span>
+      }
+    </div>
+
+    <div class="et-rating-row et-rating-row--fill" aria-hidden="true">
+      @for (index of iconIndexes(); track index) {
+        <span class="et-rating-icon">
+          <i class="et-rating-icon-fill" etIcon="et-star"></i>
+        </span>
+      }
+    </div>
+  }
+</div>
+
+@if (support.shouldRenderSupport()) {
+  <et-form-support><ng-content select="et-hint" /></et-form-support>
+}

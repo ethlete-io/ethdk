@@ -1,0 +1,18 @@
+import { CommonModule } from '@angular/common';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { NgModule } from '@angular/core';
+import { EffectsModule } from '@ngrx/effects';
+import { StoreModule } from '@ngrx/store';
+import { JWTInterceptor } from './interceptors/jwt.interceptor';
+
+@NgModule({
+  imports: [CommonModule, StoreModule.forRoot({}), EffectsModule.forRoot()],
+  providers: [
+    {
+      multi: true,
+      provide: HTTP_INTERCEPTORS,
+      useClass: JWTInterceptor,
+    },
+  ],
+})
+export class StoreRootModule {}

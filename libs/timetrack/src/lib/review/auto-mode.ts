@@ -1,0 +1,1566 @@
+import { AUTO_MODE_CLIENT, ActionClasses, actionClassOf } from '../agent-api/action-classes';
+import {
+  AgentApproval,
+  AgentApprovalRequest,
+  AutoModeApplyRequest,
+  sameAutoModeApply,
+} from '../agent-api/approval-queue';
+import { AgentApiRequest } from '../agent-api/model';
+import { GitFlowConfig, parseBranch } from '@ethlete/agent-rules/git-flow';
+import { JiraIssue } from '../jira/issue';
+import { JiraMirrorIssue } from '../jira/mirror';
+import { strongMirrorMatchOf } from '../ticket/mirror-rank';
+import { maskIssueKey, pseudonymMap } from '../reason/pseudonym';
+import { StandInBand, contextHasTicketText, draftTicket, standInHasTicketText } from '../ticket/draft';
+import { WorkFacts } from '../ticket/work-facts';
+import { TicketCandidate } from '../ticket/match-candidates';
+import { UnnamedContext } from '../model/attribution';
+import { contextKey, dominantContext, streamKeyLabel } from '../model/block';
+import { RowFieldSources, mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
+import { StandIn, standInResolutionSourceOf } from '../model/stand-in';
+import { WorkGroup } from '../rows/merge';
+import { unnamedRowId } from '../rows/propose';
+import { setRowIssue } from './edits';
+import { WorklogWritingRequest } from '../ticket/worklog';
+import { TicketWritingRequest, callWritingRequest, standInWritingRequest, ticketWritingRequest } from '../ticket/write';
+import { isAutoModeCallRow } from './auto-call';
+import { AUTO_MODE_SETTLE_MS, autoDescriptionRowId, storedDescriptionSource } from './auto-description';
+import { autoDisputeApplied, autoDisputeDoneChoice, autoDisputeOverruled, autoModeResolveTarget } from './auto-dispute';
+import { DisputeResolvingRequest } from '../ticket/dispute';
+import { disputedTargetLabel } from '../agent-api/approval-queue';
+import { AutoModeAnswer, AutoModeExisting, AutoModeSubject, DayReviewEdits, ReviewedRow } from './model';
+
+export const autoModeSubjectKey = (subject: AutoModeSubject) => {
+  switch (subject.kind) {
+    case 'context':
+      return `context:${subject.contextId}`;
+    case 'stand-in':
+      return `stand-in:${subject.standInId}`;
+    case 'call':
+      return `call:${subject.rowId}`;
+  }
+};
+
+/** What the approval queue keys an auto-mode create by, so a second ask for the same subject reuses it. */
+export const autoModeApprovalTarget = (day: string, subject: AutoModeSubject) =>
+  `${day}|${autoModeSubjectKey(subject)}`;
+
+/** What the queue keys a queued apply by. It differs from the create's, which a subject may also hold. */
+export const autoModeApplyTarget = (day: string, subject: AutoModeSubject) =>
+  `${autoModeApprovalTarget(day, subject)}|apply`;
+
+const subjectOfTarget = (target: string | undefined, day: string): AutoModeSubject | null => {
+  const key = target?.startsWith(`${day}|`) ? target.slice(day.length + 1) : null;
+
+  if (key?.startsWith('stand-in:')) return { kind: 'stand-in', standInId: key.slice('stand-in:'.length) };
+  if (key?.startsWith('context:')) return { kind: 'context', contextId: key.slice('context:'.length) };
+  if (key?.startsWith('call:')) return { kind: 'call', rowId: key.slice('call:'.length) };
+
+  return null;
+};
+
+/** The day and subject auto mode queued a create or apply for, read from its target. `null` for any other target. */
+export const autoModeTargetOf = (target: string | undefined) => {
+  const day = /^(\d{4}-\d{2}-\d{2})\|/.exec(target ?? '')?.[1];
+  const subject = day ? subjectOfTarget(target?.replace(/\|apply$/, ''), day) : null;
+
+  return day && subject ? { day, subject } : null;
+};
+
+const subjectRowIds = (options: {
+  subject: AutoModeSubject;
+  rows: readonly ReviewedRow[];
+  unattributed: readonly WorkGroup[];
+}) => {
+  const { subject, rows } = options;
+
+  if (subject.kind === 'stand-in') {
+    return rows.filter((row) => row.standInId === subject.standInId).map((row) => row.id);
+  }
+
+  if (subject.kind === 'call') {
+    return rows.filter((row) => autoDescriptionRowId(row) === subject.rowId).map((row) => row.id);
+  }
+
+  const ids = new Set(
+    options.unattributed.flatMap((group) => {
+      const context = dominantContext(group.blocks);
+
+      return context && contextKey(context) === subject.contextId ? [unnamedRowId(group)] : [];
+    }),
+  );
+
+  return rows.filter((row) => ids.has(row.id) || ids.has(row.recutOf ?? '')).map((row) => row.id);
+};
+
+/**
+ * The rows of a day a waiting approval previews on: the band an auto mode create, apply or hide is for, or
+ * the row a `worklog.add` falls on. Empty when the item has no band on that day.
+ */
+export const approvalRowIdsOf = (options: {
+  item: Pick<AgentApproval, 'request' | 'target'>;
+  day: string;
+  rows: readonly ReviewedRow[];
+  /** The day's unattributed groups, which say which context each unnamed row came from. */
+  unattributed: readonly WorkGroup[];
+  /** The stand-ins, which say what a resolved one's rows are keyed by now. */
+  standIns?: readonly Pick<StandIn, 'id' | 'state' | 'issueKey'>[];
+}): string[] => {
+  const { item, day, rows } = options;
+  const { request } = item;
+
+  if (request.op === 'standIn.resolve' || request.op === 'standIn.remove' || request.op === 'standIn.rename') {
+    const standIn = options.standIns?.find((entry) => entry.id === request.id);
+    const issueKey = standIn?.state === 'resolved' ? standIn.issueKey : undefined;
+
+    return rows
+      .filter((row) => row.standInId === request.id || (!!issueKey && row.issueKey === issueKey))
+      .map((row) => row.id);
+  }
+
+  if (request.op === 'autoMode.apply') {
+    return request.day === day
+      ? subjectRowIds({ subject: request.subject, rows, unattributed: options.unattributed })
+      : [];
+  }
+
+  if (request.op === 'autoMode.resolve') {
+    return request.day === day
+      ? rows.filter((row) => autoDescriptionRowId(row) === request.rowId).map((row) => row.id)
+      : [];
+  }
+
+  if (request.op === 'autoMode.hide') {
+    return request.day === day && rows.some((row) => row.id === request.rowId) ? [request.rowId] : [];
+  }
+
+  if (request.op === 'jira.create') {
+    const subject = subjectOfTarget(item.target, day);
+
+    return subject ? subjectRowIds({ subject, rows, unattributed: options.unattributed }) : [];
+  }
+
+  if (request.op === 'worklog.add') {
+    const from = request.fromMs;
+    const to = from + request.durationMs;
+    const overlapping = rows.filter((row) => row.from.getTime() < to && row.to.getTime() > from);
+    const overlapOf = (entry: ReviewedRow) => Math.min(entry.to.getTime(), to) - Math.max(entry.from.getTime(), from);
+    const named = overlapping.filter((entry) => entry.issueKey === request.issueKey);
+    const row = (named.length ? named : overlapping).reduce<ReviewedRow | undefined>(
+      (best, entry) => (best && overlapOf(best) >= overlapOf(entry) ? best : entry),
+      undefined,
+    );
+
+    return row ? [row.id] : [];
+  }
+
+  return [];
+};
+
+/**
+ * Whether a create stays queued for the drafts that share it: a stored answer of a subject other than the
+ * one that queued it still points at it, and `closed` does not say that subject is done with.
+ */
+export const autoModeCreateStillShared = (
+  item: Pick<AgentApproval, 'id' | 'request' | 'target'>,
+  options: { answers?: readonly AutoModeAnswer[]; closed: (subject: AutoModeSubject) => boolean },
+) => {
+  if (item.request.op !== 'jira.create' || !options.answers) return false;
+
+  const owner = autoModeTargetOf(item.target);
+  const ownerKey = owner ? autoModeSubjectKey(owner.subject) : undefined;
+
+  return options.answers.some(
+    ({ subject, outcome }) =>
+      outcome.kind === 'draft' &&
+      outcome.approvalId === item.id &&
+      !outcome.createdKey &&
+      autoModeSubjectKey(subject) !== ownerKey &&
+      !options.closed(subject),
+  );
+};
+
+/**
+ * Expires each waiting auto mode create for a stand-in that no longer waits: once it resolved, or was
+ * removed, the drafted ticket would file work that already has an answer.
+ */
+export const withStaleStandInCreatesExpired = (
+  queue: readonly AgentApproval[],
+  options: { standIns: readonly Pick<StandIn, 'id' | 'state'>[]; answers?: readonly AutoModeAnswer[] },
+): AgentApproval[] => {
+  const { standIns, answers } = options;
+  const open = new Set(standIns.filter((standIn) => standIn.state === 'open').map((standIn) => standIn.id));
+  const closed = (subject: AutoModeSubject) => subject.kind === 'stand-in' && !open.has(subject.standInId);
+
+  return queue.map((item) => {
+    if (item.state !== 'queued' || item.client !== AUTO_MODE_CLIENT || item.request.op !== 'jira.create') return item;
+
+    const subject = subjectOfTarget(item.target, item.day);
+
+    return subject && closed(subject) && !autoModeCreateStillShared(item, { answers, closed })
+      ? { ...item, state: 'expired' }
+      : item;
+  });
+};
+
+type ApprovalView = Pick<AgentApproval, 'id' | 'request' | 'target' | 'state' | 'result' | 'error'>;
+
+const applyApprovalOf = (options: {
+  approvals: readonly ApprovalView[];
+  day: string;
+  subject: AutoModeSubject;
+  issueKey: string;
+}) => {
+  const target = autoModeApplyTarget(options.day, options.subject);
+
+  return [...options.approvals]
+    .reverse()
+    .find(
+      ({ request, ...item }) =>
+        request.op === 'autoMode.apply' && (item.target === target || sameAutoModeApply(request, options)),
+    );
+};
+
+/**
+ * Expires the waiting auto mode create and apply a subject holds on a day. A new answer for the subject
+ * replaces them, and the queue would otherwise hand the new ask the old create's wording.
+ */
+export const withAutoModeSubjectItemsExpired = (
+  queue: readonly AgentApproval[],
+  options: { day: string; subject: AutoModeSubject; answers?: readonly AutoModeAnswer[] },
+): AgentApproval[] => {
+  const targets = new Set([
+    autoModeApprovalTarget(options.day, options.subject),
+    autoModeApplyTarget(options.day, options.subject),
+  ]);
+  const askedKey = autoModeSubjectKey(options.subject);
+  const closed = (subject: AutoModeSubject) => autoModeSubjectKey(subject) === askedKey;
+
+  return queue.map((item) =>
+    item.state === 'queued' &&
+    item.client === AUTO_MODE_CLIENT &&
+    item.target &&
+    targets.has(item.target) &&
+    !autoModeCreateStillShared(item, { answers: options.answers, closed })
+      ? { ...item, state: 'expired' }
+      : item,
+  );
+};
+
+/**
+ * Expires each waiting auto mode create and apply for a context of `day` that is no longer open: a rule,
+ * a match or a stand-in named it after auto mode asked.
+ */
+export const withNamedContextItemsExpired = (
+  queue: readonly AgentApproval[],
+  options: { day: string; openContextIds: ReadonlySet<string>; answers?: readonly AutoModeAnswer[] },
+): AgentApproval[] => {
+  const closed = (subject: AutoModeSubject) =>
+    subject.kind === 'context' && !options.openContextIds.has(subject.contextId);
+
+  return queue.map((item) => {
+    if (item.state !== 'queued' || item.client !== AUTO_MODE_CLIENT || item.day !== options.day) return item;
+    if (item.request.op !== 'jira.create' && item.request.op !== 'autoMode.apply') return item;
+
+    const subject = subjectOfTarget(item.target?.replace(/\|apply$/, ''), options.day);
+
+    return subject && closed(subject) && !autoModeCreateStillShared(item, { answers: options.answers, closed })
+      ? { ...item, state: 'expired' }
+      : item;
+  });
+};
+
+type TextlessOptions = {
+  day: string;
+  contexts: readonly UnnamedContext[];
+  standIns: readonly AskStandIn[];
+  bands: readonly StandInBand[];
+  unattributed: readonly WorkGroup[];
+  config: GitFlowConfig;
+  answers?: readonly AutoModeAnswer[];
+};
+
+const isTextless = (subject: AutoModeSubject | null, options: TextlessOptions) => {
+  if (subject?.kind === 'context') {
+    const context = options.contexts.find((entry) => entry.id === subject.contextId);
+
+    return !!context && !contextHasTicketText({ context, unattributed: options.unattributed, config: options.config });
+  }
+
+  if (subject?.kind === 'stand-in') {
+    const standIn = options.standIns.find((entry) => entry.id === subject.standInId);
+
+    return !!standIn && !standInHasTicketText({ standIn, bands: options.bands, config: options.config });
+  }
+
+  return false;
+};
+
+/**
+ * Expires each waiting auto mode create and apply of `day` whose context or stand-in no longer says
+ * anything a ticket could be written from, such as one asked about a note that does not read as words.
+ */
+export const withTextlessSubjectItemsExpired = (
+  queue: readonly AgentApproval[],
+  options: TextlessOptions,
+): AgentApproval[] =>
+  queue.map((item) => {
+    if (item.state !== 'queued' || item.client !== AUTO_MODE_CLIENT || item.day !== options.day) return item;
+    if (item.request.op !== 'jira.create' && item.request.op !== 'autoMode.apply') return item;
+
+    const subject = subjectOfTarget(item.target?.replace(/\|apply$/, ''), options.day);
+
+    const closed = (entry: AutoModeSubject) => isTextless(entry, options);
+
+    return subject && closed(subject) && !autoModeCreateStillShared(item, { answers: options.answers, closed })
+      ? { ...item, state: 'expired' }
+      : item;
+  });
+
+/** The payload an ask about a subject sends. `null` for a context or stand-in the day no longer holds. */
+type AskStandIn = Pick<StandIn, 'id' | 'name' | 'description' | 'days'> &
+  Partial<Pick<StandIn, 'author' | 'openedFor' | 'openedForBranch'>>;
+
+export const autoModeSubjectRequest = (options: {
+  subject: AutoModeSubject;
+  contexts: readonly UnnamedContext[];
+  unattributed: readonly WorkGroup[];
+  standIns: readonly AskStandIn[];
+  /** The day's bands, which say what a stand-in's work was. */
+  bands?: readonly StandInBand[];
+  config: GitFlowConfig;
+  maskedNames: readonly string[];
+  parents?: readonly JiraIssue[];
+  issues?: readonly TicketCandidate[];
+  /** The days Tempo already holds, which a stand-in's request does not count. */
+  bookedDays?: ReadonlySet<string>;
+  /** What the day's events say about each subject beyond its notes, by `autoModeSubjectKey`. */
+  workFacts?: ReadonlyMap<string, WorkFacts>;
+  /** The call a `call` subject asks about, with the excerpt of its transcript where one may be sent. */
+  call?: { label: string; observedMs: number; transcript?: string };
+  /** The summaries of the creates already waiting for other subjects of the day, from `autoModeSameDayChoices`. */
+  drafts?: readonly string[];
+}): TicketWritingRequest | null => {
+  const { subject, maskedNames } = options;
+  const jira = { parents: options.parents ?? [], issues: options.issues ?? [] };
+  const facts = options.workFacts?.get(autoModeSubjectKey(subject));
+
+  if (subject.kind === 'call') {
+    return options.call ? callWritingRequest({ ...options.call, issues: jira.issues, maskedNames }) : null;
+  }
+
+  if (subject.kind === 'stand-in') {
+    const standIn = options.standIns.find((entry) => entry.id === subject.standInId);
+
+    return standIn
+      ? standInWritingRequest({
+          standIn,
+          bands: options.bands,
+          maskedNames,
+          bookedDays: options.bookedDays,
+          facts,
+          ...(options.drafts ? { drafts: options.drafts } : {}),
+          ...jira,
+        })
+      : null;
+  }
+
+  const context = options.contexts.find((entry) => entry.id === subject.contextId);
+
+  if (!context) return null;
+
+  const { notes } = draftTicket({ context, unattributed: options.unattributed, config: options.config });
+
+  return ticketWritingRequest({
+    context,
+    notes,
+    maskedNames,
+    facts,
+    ...(options.drafts ? { drafts: options.drafts } : {}),
+    ...jira,
+  });
+};
+
+/**
+ * The evidence an ask was built from, as a string that changes only when that evidence does: the
+ * checkout, the application, the notes and the stand-in's own wording. A band that only grows longer
+ * keeps it, and so does a change to the issues Jira offers.
+ */
+export const autoModeEvidenceOf = (request: TicketWritingRequest) =>
+  JSON.stringify([
+    request.repo ?? null,
+    request.branch ?? null,
+    request.app ?? null,
+    [...new Set(request.notes)].sort(),
+    request.standIn ? [request.standIn.name, request.standIn.description ?? null] : null,
+    request.spec ?? null,
+    request.call ?? null,
+    ...(request.mergeRequest ? [request.mergeRequest] : []),
+  ]);
+
+const escapedForRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Whether the evidence an ask sent names `issueKey` itself: its branch, its notes, the stand-in's own
+ * words or its spec. Pass the name list the request was masked with.
+ */
+export const autoModeKeyInEvidence = (options: {
+  request: TicketWritingRequest;
+  issueKey: string;
+  maskedNames?: readonly string[];
+}) => {
+  const { request } = options;
+  const masked = maskIssueKey({ issueKey: options.issueKey, map: pseudonymMap(options.maskedNames ?? []) });
+  const key = new RegExp(`(?<![\\p{L}\\p{N}])${escapedForRegExp(masked)}(?!\\p{N})`, 'iu');
+  const texts = [
+    request.repo,
+    request.branch,
+    ...request.notes,
+    request.standIn?.name,
+    request.standIn?.description,
+    request.spec?.epicKey,
+    request.spec?.title,
+    request.spec?.intent,
+    request.call?.label,
+    request.call?.transcript,
+    request.mergeRequest?.issueKey,
+  ];
+
+  return texts.some((text) => !!text && key.test(text));
+};
+
+const stillAutos = (state: AgentApproval['state'] | undefined) => !state || state === 'queued' || state === 'expired';
+
+/**
+ * Whether an answer is still auto mode's to replace: no create of it was approved, and no apply of it
+ * was approved or rejected.
+ */
+const autoModeOwns = (options: { day: string; answer: AutoModeAnswer; approvals: readonly ApprovalView[] }) => {
+  const { outcome, subject } = options.answer;
+
+  if (outcome.kind === 'draft') {
+    if (outcome.createdKey) return false;
+
+    return stillAutos(options.approvals.find((item) => item.id === outcome.approvalId)?.state);
+  }
+
+  if (outcome.kind === 'match') {
+    return stillAutos(
+      applyApprovalOf({ approvals: options.approvals, day: options.day, subject, issueKey: outcome.issueKey })?.state,
+    );
+  }
+
+  return true;
+};
+
+type AskRow = Pick<ReviewedRow, 'standInId' | 'issueKey' | 'sources'> &
+  Partial<
+    Pick<
+      ReviewedRow,
+      | 'id'
+      | 'recutOf'
+      | 'to'
+      | 'activeUntil'
+      | 'observedMs'
+      | 'evidence'
+      | 'laneKey'
+      | 'hidden'
+      | 'unattended'
+      | 'excluded'
+      | 'state'
+    >
+  >;
+
+/** The id a call row is asked about by: the one an edit to it is written against. */
+const callRowIdOf = (row: AskRow) => row.recutOf ?? row.id;
+
+const contextIdsByRowId = (unattributed: readonly WorkGroup[]) => {
+  const contextOfRow = new Map<string, string>();
+
+  for (const group of unattributed) {
+    const context = dominantContext(group.blocks);
+
+    if (context) contextOfRow.set(unnamedRowId(group), contextKey(context));
+  }
+
+  return contextOfRow;
+};
+
+const handNamedContextIds = (options: { rows: readonly AskRow[]; unattributed: readonly WorkGroup[] }) => {
+  const contextOfRow = contextIdsByRowId(options.unattributed);
+
+  return new Set(
+    options.rows.flatMap((row) => {
+      const contextId = contextOfRow.get(row.id ?? '') ?? contextOfRow.get(row.recutOf ?? '');
+
+      return contextId && rowFieldSourceOf(row, 'issue') === 'human' ? [contextId] : [];
+    }),
+  );
+};
+
+const attendedSubjectKeys = (options: { rows: readonly AskRow[]; unattributed: readonly WorkGroup[] }) => {
+  const contextOfRow = contextIdsByRowId(options.unattributed);
+  const attendedBySubject = new Map<string, boolean>();
+
+  for (const row of options.rows) {
+    const contextId = contextOfRow.get(row.id ?? '') ?? contextOfRow.get(row.recutOf ?? '');
+    const subject: AutoModeSubject | null = row.standInId
+      ? { kind: 'stand-in', standInId: row.standInId }
+      : contextId
+        ? { kind: 'context', contextId }
+        : null;
+
+    if (!subject) continue;
+
+    const key = autoModeSubjectKey(subject);
+
+    attendedBySubject.set(key, !!attendedBySubject.get(key) || !row.unattended);
+  }
+
+  return new Set([...attendedBySubject].flatMap(([key, attended]) => (attended ? [key] : [])));
+};
+
+/** When each subject of a day settles, so auto mode may ask about it. A stand-in with no row has settled. */
+export const autoModeSettledAt = (options: {
+  contexts: readonly UnnamedContext[];
+  rows: readonly AskRow[];
+  unattributed: readonly WorkGroup[];
+}) => {
+  const lastActivity = new Map(
+    options.contexts.map((context) => [
+      autoModeSubjectKey({ kind: 'context', contextId: context.id }),
+      context.to.getTime(),
+    ]),
+  );
+  const extendContext = (contextId: string | undefined, atMs: number) => {
+    const key = contextId && autoModeSubjectKey({ kind: 'context', contextId });
+    const held = lastActivity.get(key ?? '');
+
+    if (key && held !== undefined && atMs > held) lastActivity.set(key, atMs);
+  };
+  const extendStandIn = (standInId: string, atMs: number) => {
+    const key = autoModeSubjectKey({ kind: 'stand-in', standInId });
+
+    lastActivity.set(key, Math.max(lastActivity.get(key) ?? atMs, atMs));
+  };
+  const groupEndOfRow = new Map<string, number>();
+
+  for (const group of options.unattributed) {
+    const context = dominantContext(group.blocks);
+
+    groupEndOfRow.set(unnamedRowId(group), group.to.getTime());
+    extendContext(context ? contextKey(context) : undefined, group.to.getTime());
+  }
+
+  const contextOfRow = contextIdsByRowId(options.unattributed);
+
+  for (const row of options.rows) {
+    if (row.standInId) {
+      const groupEnd = groupEndOfRow.get(row.id ?? '') ?? groupEndOfRow.get(row.recutOf ?? '') ?? 0;
+
+      extendStandIn(row.standInId, Math.max(row.to?.getTime() ?? 0, row.activeUntil?.getTime() ?? 0, groupEnd));
+    } else if (row.activeUntil) {
+      extendContext(contextOfRow.get(row.id ?? '') ?? contextOfRow.get(row.recutOf ?? ''), row.activeUntil.getTime());
+    }
+  }
+
+  for (const row of options.rows) {
+    const rowId = callRowIdOf(row);
+
+    if (rowId && isAutoModeCallRow(row) && row.to) {
+      const key = autoModeSubjectKey({ kind: 'call', rowId });
+
+      lastActivity.set(key, Math.max(lastActivity.get(key) ?? 0, row.to.getTime()));
+    }
+  }
+
+  const settledAt = new Map([...lastActivity].map(([key, atMs]) => [key, atMs + AUTO_MODE_SETTLE_MS]));
+
+  return (subject: AutoModeSubject) =>
+    settledAt.get(autoModeSubjectKey(subject)) ?? (subject.kind === 'stand-in' ? -Infinity : Infinity);
+};
+
+/**
+ * The subject a press of "Ask auto mode again" on a row asks about, on any day and with auto mode off:
+ * the open stand-in the row stands for, or the unnamed context behind it. `null` for a row whose issue
+ * the user set by hand, one named by anything but auto mode, a hidden, unattended or excluded one, and
+ * one a standing rule answers. Asking again replaces the stored answer through {@link withAutoModeAnswer}
+ * and expires what the old one left waiting through {@link withAutoModeSubjectItemsExpired}.
+ */
+export const autoModeReaskSubjectOf = (options: {
+  row: Pick<ReviewedRow, 'id' | 'standInId' | 'issueKey' | 'sources' | 'hidden' | 'unattended' | 'excluded'> &
+    Partial<Pick<ReviewedRow, 'recutOf'>>;
+  day: string;
+  contexts: readonly Pick<UnnamedContext, 'id'>[];
+  ruledContextIds?: ReadonlySet<string>;
+  /** The day's unattributed groups, which say which context each unnamed row came from. */
+  unattributed: readonly WorkGroup[];
+  standIns: readonly Pick<StandIn, 'id' | 'state' | 'days' | 'resolutionSource'>[];
+}): AutoModeSubject | null => {
+  const { row } = options;
+  const source = rowFieldSourceOf(row, 'issue');
+
+  if (source === 'human' || (row.issueKey && source !== 'auto')) return null;
+  if (row.hidden || row.unattended || row.excluded) return null;
+
+  if (row.standInId) {
+    const standIn = options.standIns.find((entry) => entry.id === row.standInId);
+
+    return standIn?.state === 'open' &&
+      standIn.days.includes(options.day) &&
+      mayAutoWrite(standInResolutionSourceOf(standIn))
+      ? { kind: 'stand-in', standInId: standIn.id }
+      : null;
+  }
+
+  const contextOfRow = contextIdsByRowId(options.unattributed);
+  const contextId = contextOfRow.get(row.id) ?? contextOfRow.get(row.recutOf ?? '');
+
+  if (!contextId || options.ruledContextIds?.has(contextId)) return null;
+
+  return options.contexts.some((context) => context.id === contextId) ? { kind: 'context', contextId } : null;
+};
+
+/**
+ * Why an agent may not ask auto mode about a subject of a day, or `null` where it may. It refuses what
+ * "Ask auto mode again" is never offered on: a stand-in Timetrack does not hold, one the day holds no
+ * time of, a resolved one or one the user reopened, and a context the day holds no unnamed work of,
+ * one a standing rule answers or one the user named by hand, and a context or stand-in with no attended row
+ * on the day.
+ */
+export const autoModeAskRefusal = (options: {
+  subject: AutoModeSubject;
+  day: string;
+  contexts: readonly Pick<UnnamedContext, 'id'>[];
+  ruledContextIds?: ReadonlySet<string>;
+  unattributed: readonly WorkGroup[];
+  rows: readonly AskRow[];
+  standIns: readonly Pick<StandIn, 'id' | 'state' | 'days' | 'resolutionSource'>[];
+}): string | null => {
+  const { subject, day } = options;
+
+  if (subject.kind === 'call') return 'Auto mode asks about a call by itself only.';
+
+  const withoutAttendedRow = () =>
+    attendedSubjectKeys({ rows: options.rows, unattributed: options.unattributed }).has(autoModeSubjectKey(subject))
+      ? null
+      : `${autoModeSubjectKey(subject)} has no attended row on ${day}, so auto mode names nothing.`;
+
+  if (subject.kind === 'stand-in') {
+    const id = subject.standInId;
+    const standIn = options.standIns.find((entry) => entry.id === id);
+
+    if (!standIn) return `Timetrack holds no stand-in ${id}.`;
+    if (!standIn.days.includes(day)) return `Stand-in ${id} holds no time on ${day}.`;
+    if (standIn.state !== 'open') return `Stand-in ${id} is resolved already, so auto mode has nothing to ask.`;
+    if (!mayAutoWrite(standInResolutionSourceOf(standIn))) {
+      return `The user reopened stand-in ${id}, so auto mode leaves it to them.`;
+    }
+
+    return withoutAttendedRow();
+  }
+
+  const id = subject.contextId;
+
+  if (!options.contexts.some((context) => context.id === id)) {
+    const contextIds = options.contexts.map((context) => context.id);
+    const standInIds = options.standIns.filter((entry) => entry.days.includes(day)).map((entry) => entry.id);
+    const held = [
+      contextIds.length ? `contexts ${contextIds.join(', ')}` : '',
+      standInIds.length ? `stand-ins ${standInIds.join(', ')}` : '',
+    ].filter(Boolean);
+
+    return `${day} holds no unnamed work of context ${id}.${held.length ? ` It holds ${held.join(' and ')}.` : ''}`;
+  }
+  if (options.ruledContextIds?.has(id)) return `A standing rule names context ${id}, so auto mode is not asked.`;
+  if (handNamedContextIds({ rows: options.rows, unattributed: options.unattributed }).has(id)) {
+    return `The user named context ${id} by hand on ${day}, so auto mode leaves it to them.`;
+  }
+
+  return withoutAttendedRow();
+};
+
+/**
+ * Whether a stretch that changed nothing sits beside a merge request that names no issue. Auto mode
+ * then names it nothing, and files nothing for it either.
+ */
+export const leavesUnnamed = (facts: WorkFacts | undefined) => !!facts?.mergeRequest && !facts.mergeRequest.issueKey;
+
+/**
+ * What auto mode still has to ask about on a day: each unnamed context and each open stand-in the day
+ * holds that holds no answer yet, or whose answer is still auto mode's and was built from evidence the
+ * day no longer holds. A context or stand-in is asked only once its work settled, {@link AUTO_MODE_SETTLE_MS}
+ * after its last activity, and an answer asked before that counts as outdated once it has. Nothing on any day
+ * but today, nothing on a day whose rows are frozen, and nothing while auto mode is off. A stand-in the user reopened is theirs, so it is left
+ * alone until a reset hands it back, and so is one whose row the user gave a ticket by hand today. A
+ * context with a row the user named by hand is never asked again. Nor is a context or stand-in whose every
+ * row of the day is unattended: nobody was there, so auto mode names and proposes nothing for it.
+ */
+export const autoModeAsks = (options: {
+  enabled: boolean;
+  day: string;
+  today: string;
+  /** Whether the day's rows are frozen, as on a day a paired machine booked (`withFrozenRows`). */
+  frozen?: boolean;
+  nowMs: number;
+  contexts: readonly UnnamedContext[];
+  /** The contexts a standing rule already answers, which the day still lists but never asks about. */
+  ruledContextIds?: ReadonlySet<string>;
+  standIns: readonly (AskStandIn & Pick<StandIn, 'state' | 'resolutionSource'>)[];
+  rows: readonly AskRow[];
+  answers: readonly AutoModeAnswer[];
+  /** What the day's evidence is built from now. Absent, an answered subject is never asked again. */
+  evidence?: {
+    unattributed: readonly WorkGroup[];
+    config: GitFlowConfig;
+    maskedNames: readonly string[];
+    /** What the day's events say about each subject beyond its notes, by `autoModeSubjectKey`. */
+    workFacts?: ReadonlyMap<string, WorkFacts>;
+  };
+  /** The approval queue. Absent, an answered subject is never asked again. */
+  approvals?: readonly ApprovalView[];
+  /** The call rows an excerpt of transcript exists for now, where auto mode may send it. */
+  transcribedCalls?: ReadonlySet<string>;
+  /** The stand-ins {@link mirrorMatchedStandInIds} names, asked a first time before their work settles. */
+  mirrorMatchedStandInIds?: ReadonlySet<string>;
+}): AutoModeSubject[] => {
+  if (!options.enabled || options.day !== options.today || options.frozen) return [];
+
+  const { evidence, approvals } = options;
+  const answers = new Map(options.answers.map((answer) => [autoModeSubjectKey(answer.subject), answer]));
+  const handNamed = evidence ? handNamedContextIds({ rows: options.rows, unattributed: evidence.unattributed }) : null;
+  const keyedByHand = new Set(
+    options.rows
+      .filter((row) => row.standInId && row.issueKey && rowFieldSourceOf(row, 'issue') === 'human')
+      .map((row) => row.standInId),
+  );
+  const settledAt = autoModeSettledAt({
+    contexts: options.contexts,
+    rows: options.rows,
+    unattributed: evidence?.unattributed ?? [],
+  });
+  const contexts = options.contexts
+    .filter((context) => !options.ruledContextIds?.has(context.id))
+    .filter(
+      (context) =>
+        !evidence || contextHasTicketText({ context, unattributed: evidence.unattributed, config: evidence.config }),
+    )
+    .map((context): AutoModeSubject => ({ kind: 'context', contextId: context.id }));
+  const standIns = options.standIns
+    .filter(
+      (standIn) =>
+        standIn.state === 'open' &&
+        standIn.days.includes(options.day) &&
+        !keyedByHand.has(standIn.id) &&
+        mayAutoWrite(standInResolutionSourceOf(standIn)) &&
+        (!evidence || standInHasTicketText({ standIn, bands: options.rows, config: evidence.config })),
+    )
+    .map((standIn): AutoModeSubject => ({ kind: 'stand-in', standInId: standIn.id }));
+  const calls = [
+    ...new Set(options.rows.flatMap((row) => (isAutoModeCallRow(row) ? [callRowIdOf(row) ?? ''] : [])).filter(Boolean)),
+  ].map((rowId): AutoModeSubject => ({ kind: 'call', rowId }));
+  const attended = attendedSubjectKeys({
+    rows: options.rows,
+    unattributed: evidence?.unattributed ?? [],
+  });
+
+  const outdated = (subject: AutoModeSubject, answer: AutoModeAnswer) => {
+    if (subject.kind === 'call' || !evidence || !approvals || !handNamed) return false;
+    if (subject.kind === 'context' && handNamed.has(subject.contextId)) return false;
+
+    if (answer.askedAtMs < settledAt(subject) && autoModeOwns({ day: options.day, answer, approvals })) return true;
+
+    const request = autoModeSubjectRequest({
+      subject,
+      contexts: options.contexts,
+      unattributed: evidence.unattributed,
+      standIns: options.standIns,
+      bands: options.rows,
+      config: evidence.config,
+      maskedNames: evidence.maskedNames,
+      workFacts: evidence.workFacts,
+    });
+
+    return (
+      !!request &&
+      autoModeEvidenceOf(request) !== autoModeEvidenceOf(answer.request) &&
+      autoModeOwns({ day: options.day, answer, approvals })
+    );
+  };
+
+  return [...contexts, ...standIns, ...calls].filter((subject) => {
+    if (subject.kind === 'stand-in' && !attended.has(autoModeSubjectKey(subject))) return false;
+    if (subject.kind === 'context' && evidence && !attended.has(autoModeSubjectKey(subject))) return false;
+
+    const answer = answers.get(autoModeSubjectKey(subject));
+    const askedEarly =
+      !answer && subject.kind === 'stand-in' && !!options.mirrorMatchedStandInIds?.has(subject.standInId);
+
+    if (settledAt(subject) > options.nowMs && !askedEarly) return false;
+    if (leavesUnnamed(evidence?.workFacts?.get(autoModeSubjectKey(subject)))) return false;
+
+    if (!answer || outdated(subject, answer)) return true;
+
+    return subject.kind === 'call' && !!options.transcribedCalls?.has(subject.rowId) && !autoModeSentTranscript(answer);
+  });
+};
+
+/**
+ * The open stand-ins whose branch subject names exactly one open issue in their project's mirror, by
+ * {@link strongMirrorMatchOf}. `issuesOf` reads the mirror held for a project, `undefined` while none is.
+ */
+export const mirrorMatchedStandInIds = (options: {
+  standIns: readonly Pick<StandIn, 'id' | 'state' | 'projectKey' | 'openedForBranch'>[];
+  issuesOf: (projectKey: string) => readonly JiraMirrorIssue[] | undefined;
+  config: GitFlowConfig;
+}): ReadonlySet<string> =>
+  new Set(
+    options.standIns.flatMap((standIn) => {
+      const { projectKey, openedForBranch } = standIn;
+
+      if (standIn.state !== 'open' || !projectKey || !openedForBranch) return [];
+
+      const issues = options.issuesOf(projectKey.trim().toUpperCase());
+      const text = parseBranch({ branch: openedForBranch, config: options.config }).subject ?? '';
+
+      return issues && strongMirrorMatchOf({ issues, projectKey, text }) ? [standIn.id] : [];
+    }),
+  );
+
+/** Whether an answer holds an ask that sent an excerpt of the call's transcript, or already was the re-ask for one. */
+export const autoModeSentTranscript = (answer: AutoModeAnswer) =>
+  !!answer.request.call?.transcript || !!answer.transcriptTried;
+
+/** The issue an answer names: the one the match found, or the one its approved create filed. */
+export const autoModeIssueKeyOf = (answer: AutoModeAnswer) => {
+  const { outcome } = answer;
+
+  if (outcome.kind === 'match') return outcome.issueKey;
+  if (outcome.kind !== 'draft') return undefined;
+
+  return outcome.createdKey ?? (outcome.existing?.leads ? outcome.existing.issueKey : undefined);
+};
+
+/** Stores an answer, replacing the one the same subject held. */
+export const withAutoModeAnswer = (edits: DayReviewEdits, answer: AutoModeAnswer): DayReviewEdits => {
+  const key = autoModeSubjectKey(answer.subject);
+  const held = (edits.auto ?? []).find((entry) => autoModeSubjectKey(entry.subject) === key);
+  const heldKey =
+    held && (autoModeIssueKeyOf(held) ?? (held.outcome.kind === 'draft' ? held.outcome.supersededKey : undefined));
+  const { outcome } = answer;
+  const stored: AutoModeAnswer =
+    outcome.kind === 'draft' && !outcome.createdKey && heldKey && heldKey !== outcome.supersededKey
+      ? { ...answer, outcome: { ...outcome, supersededKey: heldKey } }
+      : answer;
+
+  return {
+    ...edits,
+    auto: [...(edits.auto ?? []).filter((entry) => autoModeSubjectKey(entry.subject) !== key), stored],
+  };
+};
+
+/** Records the issue the approved create of a draft filed. An unknown approval changes nothing. */
+export const withAutoModeCreated = (
+  edits: DayReviewEdits,
+  options: { approvalId: string; issueKey: string },
+): DayReviewEdits => {
+  const answers = edits.auto ?? [];
+  const found = answers.some(
+    (answer) => answer.outcome.kind === 'draft' && answer.outcome.approvalId === options.approvalId,
+  );
+
+  if (!found) return edits;
+
+  return {
+    ...edits,
+    auto: answers.map((answer) =>
+      answer.outcome.kind === 'draft' && answer.outcome.approvalId === options.approvalId
+        ? { ...answer, outcome: { ...answer.outcome, createdKey: options.issueKey } }
+        : answer,
+    ),
+  };
+};
+
+/**
+ * The create a draft queues, for any subject. `null` for any other answer, and for a draft already queued or filed:
+ * a second create would file the ticket twice.
+ */
+export const autoModeCreateRequest = (
+  answer: AutoModeAnswer,
+): Extract<AgentApiRequest, { op: 'jira.create' }> | null => {
+  const { outcome } = answer;
+
+  if (outcome.kind !== 'draft' || outcome.approvalId || outcome.createdKey) return null;
+
+  return {
+    op: 'jira.create',
+    summary: outcome.summary,
+    description: outcome.description,
+    ...(outcome.projectKey ? { projectKey: outcome.projectKey } : {}),
+    ...(outcome.parentKey ? { parentKey: outcome.parentKey } : {}),
+    ...(outcome.existing ? { existing: outcome.existing } : {}),
+  };
+};
+
+const branchOf = (context: { repoPath?: string; branch?: string } | undefined) =>
+  context?.repoPath && context.branch ? `${context.repoPath}@${context.branch}` : undefined;
+
+/**
+ * The existing issue a draft for `subject` carries beside its new one. It leads where the
+ * subject's held answer named one, or where a band of the same checkout branch already books one that
+ * day; otherwise it is the best-ranked candidate the ask offered that is no parent.
+ */
+export const autoModeExistingOf = (options: {
+  subject: AutoModeSubject;
+  candidates: readonly TicketCandidate[];
+  parentKeys?: ReadonlySet<string>;
+  unattributed: readonly WorkGroup[];
+  rows: readonly Pick<ReviewedRow, 'id' | 'issueKey'>[];
+  held?: readonly AutoModeAnswer[];
+}): AutoModeExisting | undefined => {
+  const { subject, candidates } = options;
+  const summaryOf = (issueKey: string) =>
+    candidates.find((issue) => issue.key.toUpperCase() === issueKey.toUpperCase())?.summary;
+  const withSummary = (issueKey: string, leads?: true): AutoModeExisting => {
+    const summary = summaryOf(issueKey);
+
+    return { issueKey, ...(summary ? { summary } : {}), ...(leads ? { leads } : {}) };
+  };
+  const ownKey = autoModeSubjectKey(subject);
+  const held = options.held?.find((answer) => autoModeSubjectKey(answer.subject) === ownKey);
+  const heldKey =
+    held && (autoModeIssueKeyOf(held) ?? (held.outcome.kind === 'draft' ? held.outcome.supersededKey : undefined));
+
+  if (heldKey) return withSummary(heldKey, true);
+
+  if (subject.kind === 'context') {
+    const contexts = options.unattributed.flatMap((group) => {
+      const context = dominantContext(group.blocks);
+
+      return context ? [{ rowId: unnamedRowId(group), context }] : [];
+    });
+    const branch = branchOf(contexts.find(({ context }) => contextKey(context) === subject.contextId)?.context);
+    const booked = branch
+      ? contexts.flatMap(({ rowId, context }) => {
+          const issueKey = branchOf(context) === branch ? options.rows.find((row) => row.id === rowId)?.issueKey : '';
+
+          return issueKey ? [issueKey] : [];
+        })
+      : [];
+
+    if (booked[0]) return withSummary(booked[0], true);
+  }
+
+  const best = candidates.find((issue) => !options.parentKeys?.has(issue.key));
+
+  return best ? withSummary(best.key) : undefined;
+};
+
+/**
+ * A draft answer pointed at the queued create that files it. The draft takes that create's wording,
+ * which differs from its own where an earlier ask for the same subject queued it.
+ */
+export const autoModeQueuedAnswer = (
+  answer: AutoModeAnswer,
+  approval: { id: string; request: AgentApprovalRequest },
+): AutoModeAnswer => {
+  const { outcome } = answer;
+  const { request } = approval;
+
+  if (outcome.kind !== 'draft') return answer;
+  if (request.op !== 'jira.create') return { ...answer, outcome: { ...outcome, approvalId: approval.id } };
+
+  return {
+    ...answer,
+    outcome: {
+      kind: 'draft',
+      summary: request.summary,
+      description: request.description,
+      ...(request.projectKey ? { projectKey: request.projectKey } : {}),
+      ...(request.parentKey ? { parentKey: request.parentKey } : {}),
+      ...(outcome.existing ? { existing: outcome.existing } : {}),
+      approvalId: approval.id,
+    },
+  };
+};
+
+/** How alike two draft summaries must be to file one ticket: the Jaccard index of their words of three letters or more. */
+export const AUTO_MODE_SAME_SUMMARY_JACCARD = 0.6;
+
+const summaryText = (summary: string) =>
+  summary
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+
+const summaryWords = (summary: string) =>
+  new Set(
+    summaryText(summary)
+      .split(' ')
+      .filter((word) => [...word].length >= 3),
+  );
+
+/** Whether two draft summaries name the same ticket: equal but for case, spacing and punctuation, or nearly equal. */
+export const sameDraftSummary = (left: string, right: string) => {
+  const text = summaryText(left);
+
+  if (text && text === summaryText(right)) return true;
+
+  const leftWords = summaryWords(left);
+  const rightWords = summaryWords(right);
+  const shared = [...leftWords].filter((word) => rightWords.has(word)).length;
+  const union = leftWords.size + rightWords.size - shared;
+
+  return union > 0 && shared / union >= AUTO_MODE_SAME_SUMMARY_JACCARD;
+};
+
+type DayCreateView = Pick<AgentApproval, 'id' | 'state' | 'day' | 'target' | 'request' | 'result'>;
+
+const dayCreatesOf = <T extends DayCreateView>(
+  approvals: readonly T[],
+  options: { day: string; subject: AutoModeSubject; rejected?: boolean },
+) => {
+  const own = autoModeApprovalTarget(options.day, options.subject);
+
+  return approvals.filter(
+    (item) =>
+      item.request.op === 'jira.create' &&
+      (item.state === 'queued' ||
+        item.state === 'running' ||
+        item.state === 'approved' ||
+        (!!options.rejected && item.state === 'rejected')) &&
+      (autoModeTargetOf(item.target)?.day ?? item.day) === options.day &&
+      item.target !== own,
+  );
+};
+
+/**
+ * The create of `day` a draft points at instead of queuing its own: one of another subject, waiting or
+ * approved, in the same project, whose summary is the same or nearly. One approval then files one ticket
+ * for every draft that points at it. `undefined` where none fits or the answer queues no create.
+ */
+export const autoModeSharedCreate = <T extends DayCreateView>(options: {
+  day: string;
+  answer: AutoModeAnswer;
+  approvals: readonly T[];
+}): T | undefined => {
+  const create = autoModeCreateRequest(options.answer);
+
+  if (!create) return undefined;
+
+  return dayCreatesOf(options.approvals, { day: options.day, subject: options.answer.subject, rejected: true }).find(
+    ({ request }) =>
+      request.op === 'jira.create' &&
+      request.projectKey === create.projectKey &&
+      sameDraftSummary(request.summary, create.summary),
+  );
+};
+
+/**
+ * What auto mode already chose for the other subjects of `day`, offered to the next ask so it picks one
+ * rather than drafting the same work again: the issues it matched or filed, marked `sameDay`, and the
+ * summaries of the creates still waiting.
+ */
+export const autoModeSameDayChoices = (options: {
+  day: string;
+  subject: AutoModeSubject;
+  answers: readonly AutoModeAnswer[];
+  approvals: readonly DayCreateView[];
+}): { issues: TicketCandidate[]; drafts: string[] } => {
+  const ownKey = autoModeSubjectKey(options.subject);
+  const creates = dayCreatesOf(options.approvals, options);
+  const named = options.answers.flatMap(({ subject, outcome }) => {
+    if (autoModeSubjectKey(subject) === ownKey) return [];
+    if (outcome.kind === 'match' && !outcome.gone && outcome.summary) {
+      return [{ key: outcome.issueKey, summary: outcome.summary }];
+    }
+
+    return outcome.kind === 'draft' && outcome.createdKey
+      ? [{ key: outcome.createdKey, summary: outcome.summary }]
+      : [];
+  });
+  const filed = creates.flatMap(({ state, request, result }) => {
+    const key = state === 'approved' ? createdIssueKeyOf(result) : undefined;
+
+    return key && request.op === 'jira.create' ? [{ key, summary: request.summary }] : [];
+  });
+  const issues = [...new Map([...filed, ...named].map((issue) => [issue.key, issue])).values()].map(
+    (issue): TicketCandidate => ({ ...issue, id: '', issueType: '', sameDay: true }),
+  );
+  const drafts = creates.flatMap(({ state, request }) =>
+    state !== 'approved' && request.op === 'jira.create' ? [request.summary] : [],
+  );
+
+  return { issues, drafts: [...new Set(drafts)] };
+};
+
+/** The issues an ask may name, with the day's own choices marked `sameDay` and put first. */
+export const withSameDayCandidates = (
+  candidates: readonly TicketCandidate[],
+  sameDay: readonly TicketCandidate[],
+): TicketCandidate[] => {
+  const keyOf = (issue: TicketCandidate) => issue.key.toUpperCase();
+  const keys = new Set(sameDay.map(keyOf));
+  const marked = sameDay.map((issue): TicketCandidate => ({
+    ...(candidates.find((candidate) => keyOf(candidate) === keyOf(issue)) ?? issue),
+    sameDay: true,
+  }));
+
+  return [...marked, ...candidates.filter((candidate) => !keys.has(keyOf(candidate)))];
+};
+
+/**
+ * Names the day's unnamed rows with the issue auto mode found for the context behind each one, stamped
+ * `auto`, over the name an earlier answer gave it. A row the user named or cleared keeps their answer,
+ * and a band nobody was at the machine for, or one a rule says is not work, stays the user's to name.
+ * Where a new draft replaced a match, the rows that match named lose its issue until the create is approved.
+ */
+export const withAutoModeRowNames = (options: {
+  edits: DayReviewEdits;
+  rows: readonly ReviewedRow[];
+  /** The day's unattributed groups, which say which context each unnamed row came from. */
+  unattributed: readonly WorkGroup[];
+  /** Which answers may be written now. See {@link autoModeApplies}. Absent, every one may. */
+  applies?: (answer: AutoModeAnswer) => boolean;
+}): DayReviewEdits => {
+  const keys = new Map<string, string>();
+  const callKeys = new Map<string, string>();
+
+  for (const answer of options.edits.auto ?? []) {
+    if (options.applies && !options.applies(answer)) continue;
+    if (answer.outcome.kind === 'match' && (answer.outcome.done || answer.outcome.gone)) continue;
+
+    const issueKey = autoModeIssueKeyOf(answer);
+
+    if (answer.subject.kind === 'context' && issueKey) keys.set(answer.subject.contextId, issueKey);
+    if (answer.subject.kind === 'call' && issueKey) callKeys.set(answer.subject.rowId, issueKey);
+  }
+
+  const superseded = new Map<string, string>();
+
+  for (const answer of options.edits.auto ?? []) {
+    const { outcome } = answer;
+
+    if (
+      answer.subject.kind === 'context' &&
+      outcome.kind === 'draft' &&
+      !outcome.createdKey &&
+      outcome.supersededKey &&
+      !outcome.existing?.leads
+    ) {
+      superseded.set(answer.subject.contextId, outcome.supersededKey);
+    }
+  }
+
+  if (!keys.size && !superseded.size && !callKeys.size) return options.edits;
+
+  const contextOfRow = new Map<string, string>();
+
+  for (const group of options.unattributed) {
+    const context = dominantContext(group.blocks);
+
+    if (context) contextOfRow.set(unnamedRowId(group), contextKey(context));
+  }
+
+  return options.rows.reduce((edits, row) => {
+    const source = rowFieldSourceOf(row, 'issue');
+
+    if (row.standInId || row.hidden || row.unattended || row.excluded) return edits;
+    if (source === 'human' || (row.issueKey && source !== 'auto')) return edits;
+
+    const callKey = callKeys.get(autoDescriptionRowId(row));
+
+    if (callKey) {
+      return callKey !== row.issueKey ? setRowIssue({ edits, row, issueKey: callKey, source: 'auto' }) : edits;
+    }
+
+    const contextId = contextOfRow.get(row.id);
+
+    if (contextId && source === 'auto' && row.issueKey && row.issueKey === superseded.get(contextId)) {
+      return setRowIssue({ edits, row, issueKey: '', source: 'auto' });
+    }
+
+    const issueKey = contextId ? keys.get(contextId) : undefined;
+
+    return issueKey && issueKey !== row.issueKey ? setRowIssue({ edits, row, issueKey, source: 'auto' }) : edits;
+  }, options.edits);
+};
+
+/** The approved creates auto mode queued whose filed issue the day does not record yet. */
+export const autoModeCreatedKeys = (options: {
+  answers: readonly AutoModeAnswer[];
+  approvals: readonly { id: string; state: string; result?: unknown }[];
+}) =>
+  options.answers.flatMap((answer) => {
+    const { outcome } = answer;
+
+    if (outcome.kind !== 'draft' || !outcome.approvalId || outcome.createdKey) return [];
+
+    const approval = options.approvals.find((item) => item.id === outcome.approvalId);
+    const issueKey = approval?.state === 'approved' ? createdIssueKeyOf(approval.result) : undefined;
+
+    return issueKey ? [{ answer, approvalId: outcome.approvalId, issueKey }] : [];
+  });
+
+/**
+ * The creates auto mode queued that were rejected or expired while the draft carries an existing issue,
+ * which the band then keeps as its proposal.
+ */
+export const autoModeDeclinedCreates = (options: {
+  answers: readonly AutoModeAnswer[];
+  approvals: readonly { id: string; state: string }[];
+}) =>
+  options.answers.flatMap((answer) => {
+    const { outcome } = answer;
+
+    if (outcome.kind !== 'draft' || !outcome.approvalId || outcome.createdKey || !outcome.existing) return [];
+
+    const state = options.approvals.find((item) => item.id === outcome.approvalId)?.state;
+
+    return state === 'rejected' || state === 'expired' ? [{ answer, approvalId: outcome.approvalId }] : [];
+  });
+
+/** A draft as the match on the existing issue it carries. Any other answer stays as it is. */
+export const autoModeDeclinedAnswer = (answer: AutoModeAnswer): AutoModeAnswer => {
+  const { outcome } = answer;
+
+  if (outcome.kind !== 'draft' || !outcome.existing) return answer;
+
+  const { issueKey, summary } = outcome.existing;
+
+  return { ...answer, outcome: { kind: 'match', issueKey, ...(summary ? { summary } : {}) } };
+};
+
+/** Turns the draft whose create was declined into a match on the existing issue it carried. */
+export const withAutoModeDeclined = (edits: DayReviewEdits, options: { approvalId: string }): DayReviewEdits => {
+  const answers = edits.auto ?? [];
+  const declined = (answer: AutoModeAnswer) =>
+    answer.outcome.kind === 'draft' && answer.outcome.approvalId === options.approvalId && !!answer.outcome.existing;
+
+  if (!answers.some(declined)) return edits;
+
+  return { ...edits, auto: answers.map((answer) => (declined(answer) ? autoModeDeclinedAnswer(answer) : answer)) };
+};
+
+const createdIssueKeyOf = (result: unknown) => {
+  const issue = typeof result === 'object' && result !== null ? (result as { issue?: unknown }).issue : undefined;
+  const key = typeof issue === 'object' && issue !== null ? (issue as { key?: unknown }).key : undefined;
+
+  return typeof key === 'string' && key ? key : undefined;
+};
+
+/**
+ * The apply a match queues where the user made `autoMode.apply` stricter than `local`, and `null`
+ * for any other answer or class. A stand-in's match on a done issue queues at `local` too, marked
+ * `done`, since only an approval writes it; a band's stays the user's. A match on a parent issue queues
+ * at `local` too, marked `parent`, and so does one only the offered list named, marked `listOnly`.
+ */
+export const autoModeApplyRequest = (options: {
+  day: string;
+  answer: AutoModeAnswer;
+  label: string;
+  classes: ActionClasses;
+}): AutoModeApplyRequest | null => {
+  const { outcome, subject } = options.answer;
+
+  if (outcome.kind !== 'match' || outcome.gone) return null;
+
+  const opClass = actionClassOf('autoMode.apply', options.classes);
+  const request = { op: 'autoMode.apply' as const, day: options.day, subject, label: options.label };
+
+  const marks = {
+    ...(outcome.done ? { done: true as const } : {}),
+    ...(outcome.parent ? { parent: true as const } : {}),
+    ...(outcome.listOnly ? { listOnly: true as const } : {}),
+  };
+  const words = {
+    ...(outcome.summary ? { summary: outcome.summary } : {}),
+    ...(outcome.reason ? { reason: outcome.reason } : {}),
+  };
+
+  if (outcome.done && subject.kind !== 'stand-in') return null;
+  if (outcome.done || outcome.parent || outcome.listOnly) {
+    return opClass === 'human-only' ? null : { ...request, issueKey: outcome.issueKey, ...marks, ...words };
+  }
+
+  return opClass === 'external' ? { ...request, issueKey: outcome.issueKey, ...words } : null;
+};
+
+/**
+ * Whether auto mode may write what an answer found now. A match writes at `local`, at `external` once
+ * its queued apply is approved, and never at `human-only` or after a rejected apply. The key an
+ * approved create filed is written whatever the class. A match Jira had done is never written here:
+ * only the approval of its queued apply writes it.
+ */
+export const autoModeApplies = (options: {
+  day: string;
+  answer: AutoModeAnswer;
+  classes: ActionClasses;
+  approvals: readonly ApprovalView[];
+}) => {
+  const { outcome, subject } = options.answer;
+
+  if (outcome.kind === 'draft') {
+    return (
+      !!outcome.createdKey ||
+      (!!outcome.existing?.leads && actionClassOf('autoMode.apply', options.classes) === 'local')
+    );
+  }
+  if (outcome.kind !== 'match' || outcome.done || outcome.gone) return false;
+
+  const approval = applyApprovalOf({
+    approvals: options.approvals,
+    day: options.day,
+    subject,
+    issueKey: outcome.issueKey,
+  });
+
+  if (approval?.state === 'rejected') return false;
+
+  const opClass = actionClassOf('autoMode.apply', options.classes);
+
+  if (opClass === 'local' && !outcome.parent && !outcome.listOnly) return true;
+  if (opClass === 'human-only') return false;
+
+  return approval?.state === 'approved' && approval.error === undefined;
+};
+
+/** A band's context id as a short name: the checkout's folder and branch, or the application. */
+export const autoModeContextLabel = (contextId: string) => {
+  if (contextId.startsWith('app:')) return contextId.slice('app:'.length) || 'an application';
+
+  const match = /^repo:(.*?)(?:@([^#]*)(?:#(.*))?|~.*)$/.exec(contextId);
+
+  if (!match) return contextId;
+
+  const [, path = '', branch, workPath] = match;
+  const folder = path.split('/').filter(Boolean).at(-1) ?? path;
+
+  return [folder, branch, workPath].filter(Boolean).join(' · ');
+};
+
+export type AutoModeReadoutStatus =
+  | 'applied'
+  | 'approved'
+  | 'waiting'
+  | 'rejected'
+  | 'expired'
+  | 'filed'
+  | 'held'
+  | 'overruled'
+  | 'unused'
+  | 'done'
+  | 'not-queued'
+  | 'written'
+  | 'unsure'
+  | 'failed';
+
+/** One thing auto mode asked about today, and what came of it, read from what the app stored. */
+export type AutoModeReadoutEntry = {
+  key: string;
+  kind: AutoModeSubject['kind'] | 'description' | 'dispute';
+  label: string;
+  askedAtMs: number;
+  status: AutoModeReadoutStatus;
+  issueKey?: string;
+  /** The title of the ticket it drafted. */
+  summary?: string;
+  /** The rows of the day that carry `issueKey` as auto mode's naming. */
+  namedRows: number;
+  /** The worklog line it wrote for a row. */
+  description?: string;
+  /** Why the model settled a disputed band the way it did. */
+  reason?: string;
+  error?: string;
+  /** The masked payload that left the machine. */
+  request: TicketWritingRequest | WorklogWritingRequest | DisputeResolvingRequest;
+  /** The row of the day the entry wrote to, where the day still draws one. */
+  rowId?: string;
+};
+
+const autoNamedRows = (edits: DayReviewEdits, issueKey: string | undefined) => {
+  if (!issueKey) return 0;
+
+  const named = (row: { issueKey?: string; sources?: RowFieldSources }) =>
+    row.issueKey === issueKey && row.sources?.issue === 'auto';
+
+  return Object.values(edits.overrides).filter(named).length + edits.pinned.filter(named).length;
+};
+
+const approvalStatusFor = (approval: ApprovalView): AutoModeReadoutStatus | undefined => {
+  if (approval.state === 'queued' || approval.state === 'running') return 'waiting';
+  if (approval.state === 'rejected' || approval.state === 'expired') return approval.state;
+
+  return approval.error === undefined ? undefined : 'failed';
+};
+
+const descriptionReadout = (options: {
+  edits: DayReviewEdits;
+  rows: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey' | 'issueKey'>[];
+}): AutoModeReadoutEntry[] =>
+  (options.edits.autoDescriptions ?? []).map((answer): AutoModeReadoutEntry => {
+    const rowIds = answer.rowIds ?? [answer.rowId];
+    const row = options.rows.find((entry) => rowIds.includes(autoDescriptionRowId(entry)));
+    const perTicket = !!answer.rowIds;
+    const base = {
+      key: `description:${answer.rowId}`,
+      kind: 'description' as const,
+      label: perTicket
+        ? `${rowIds.length} row(s) of the day`
+        : row?.laneKey
+          ? streamKeyLabel(row.laneKey)
+          : (answer.request.repo ?? 'a code row'),
+      askedAtMs: answer.askedAtMs,
+      namedRows: 0,
+      request: answer.request,
+      ...(row?.issueKey ? { issueKey: row.issueKey } : {}),
+      ...(row ? { rowId: row.id } : {}),
+    };
+
+    if (!answer.description) return { ...base, status: 'failed' };
+
+    const overruled = rowIds.every((id) => storedDescriptionSource(options.edits, id) === 'human');
+
+    return { ...base, status: overruled ? 'overruled' : 'written', description: answer.description };
+  });
+
+const disputeReadout = (options: {
+  day: string;
+  edits: DayReviewEdits;
+  approvals: readonly ApprovalView[];
+  classes: ActionClasses;
+  rows: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey'>[];
+}): AutoModeReadoutEntry[] =>
+  (options.edits.autoDisputes ?? []).map((dispute): AutoModeReadoutEntry => {
+    const row = options.rows.find((entry) => autoDescriptionRowId(entry) === dispute.rowId);
+    const { answer } = dispute;
+    const chosen =
+      answer?.choice === 'keep'
+        ? dispute.booked
+        : answer?.choice === 'use'
+          ? disputedTargetLabel(dispute.other)
+          : undefined;
+    const base = {
+      key: `dispute:${dispute.rowId}`,
+      kind: 'dispute' as const,
+      label: row?.laneKey ? streamKeyLabel(row.laneKey) : (dispute.request.repo ?? 'a disputed band'),
+      askedAtMs: dispute.askedAtMs,
+      namedRows: 0,
+      request: dispute.request,
+      ...(chosen ? { issueKey: chosen } : {}),
+      ...(answer?.reason ? { reason: answer.reason } : {}),
+    };
+
+    if (!answer) return { ...base, status: 'failed' };
+    if (answer.choice === 'unsure') return { ...base, status: 'unsure' };
+    if (autoDisputeDoneChoice(dispute)) return { ...base, status: 'done' };
+    if (autoDisputeApplied(options.edits, dispute)) return { ...base, status: 'applied' };
+    if (autoDisputeOverruled(options.edits, dispute)) return { ...base, status: 'overruled' };
+
+    const target = autoModeResolveTarget(options.day, dispute.rowId);
+    const approval = [...options.approvals].reverse().find((item) => item.target === target);
+
+    if (approval) {
+      const waiting = approvalStatusFor(approval);
+
+      if (waiting) return { ...base, status: waiting, ...(approval.error ? { error: approval.error } : {}) };
+
+      return { ...base, status: 'approved' };
+    }
+
+    if (actionClassOf('autoMode.apply', options.classes) === 'human-only') return { ...base, status: 'held' };
+
+    return { ...base, status: 'unused' };
+  });
+
+const ticketReadout = (options: {
+  day: string;
+  edits: DayReviewEdits;
+  approvals: readonly ApprovalView[];
+  classes: ActionClasses;
+  standIns: readonly Pick<StandIn, 'id' | 'name' | 'state' | 'issueKey' | 'resolutionSource'>[];
+  rows: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'evidence'>[];
+}): AutoModeReadoutEntry[] =>
+  (options.edits.auto ?? []).map((answer): AutoModeReadoutEntry => {
+    const { subject, outcome } = answer;
+    const standIn =
+      subject.kind === 'stand-in' ? options.standIns.find((entry) => entry.id === subject.standInId) : undefined;
+    const callRow =
+      subject.kind === 'call' ? options.rows.find((entry) => autoDescriptionRowId(entry) === subject.rowId) : undefined;
+    const label = {
+      context: () => (subject.kind === 'context' ? autoModeContextLabel(subject.contextId) : ''),
+      'stand-in': () => standIn?.name ?? 'a deleted stand-in',
+      call: () =>
+        callRow?.evidence.find((entry) => entry.kind === 'call')?.summary ?? answer.request.call?.label ?? 'a call',
+    }[subject.kind]();
+    const base = {
+      key: autoModeSubjectKey(subject),
+      kind: subject.kind,
+      label,
+      askedAtMs: answer.askedAtMs,
+      request: answer.request,
+      ...(callRow ? { rowId: callRow.id } : {}),
+    };
+
+    if (outcome.kind === 'failed') return { ...base, status: 'failed', namedRows: 0 };
+
+    if (outcome.kind === 'draft') {
+      const approval = outcome.approvalId
+        ? options.approvals.find((item) => item.id === outcome.approvalId)
+        : undefined;
+      const issueKey =
+        outcome.createdKey ?? (approval?.state === 'approved' ? createdIssueKeyOf(approval.result) : undefined);
+      const draft = { ...base, summary: outcome.summary, namedRows: autoNamedRows(options.edits, issueKey) };
+      const waiting = approval ? approvalStatusFor(approval) : undefined;
+
+      if (waiting) return { ...draft, status: waiting, ...(approval?.error ? { error: approval.error } : {}) };
+      if (issueKey) return { ...draft, status: 'filed', issueKey };
+      if (actionClassOf('autoMode.create', options.classes) === 'human-only') return { ...draft, status: 'held' };
+
+      return { ...draft, status: 'not-queued' };
+    }
+
+    const { issueKey } = outcome;
+    const found = { ...base, issueKey, namedRows: autoNamedRows(options.edits, issueKey) };
+    const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject, issueKey });
+    const applied =
+      subject.kind === 'context' || subject.kind === 'call'
+        ? found.namedRows > 0
+        : standIn?.state === 'resolved' && standIn.issueKey === issueKey && standIn.resolutionSource === 'auto';
+
+    if (applied) return { ...found, status: 'applied' };
+    if (standIn && standInResolutionSourceOf(standIn) === 'human') return { ...found, status: 'overruled' };
+    if (approval) {
+      const waiting = approvalStatusFor(approval);
+
+      if (waiting) return { ...found, status: waiting, ...(approval.error ? { error: approval.error } : {}) };
+
+      return { ...found, status: 'approved' };
+    }
+
+    if (outcome.gone) return { ...found, status: 'failed', error: `Jira no longer holds ${issueKey}.` };
+    if (outcome.done) return { ...found, status: 'done' };
+
+    if (actionClassOf('autoMode.apply', options.classes) === 'human-only') return { ...found, status: 'held' };
+
+    return { ...found, status: 'unused' };
+  });
+
+/**
+ * What auto mode did on a day, one entry per band or stand-in it asked about, per row it described and
+ * per disputed band it settled, oldest first. Every status is read from the stored answers, rows, stand-ins and queue, never from
+ * what it meant to do.
+ */
+export const autoModeReadout = (options: {
+  day: string;
+  edits: DayReviewEdits;
+  approvals: readonly ApprovalView[];
+  classes: ActionClasses;
+  standIns: readonly Pick<StandIn, 'id' | 'name' | 'state' | 'issueKey' | 'resolutionSource'>[];
+  rows?: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey' | 'issueKey' | 'evidence'>[];
+}): AutoModeReadoutEntry[] =>
+  [
+    ...ticketReadout({ ...options, rows: options.rows ?? [] }),
+    ...descriptionReadout({ edits: options.edits, rows: options.rows ?? [] }),
+    ...disputeReadout({ ...options, rows: options.rows ?? [] }),
+  ].sort((left, right) => left.askedAtMs - right.askedAtMs);

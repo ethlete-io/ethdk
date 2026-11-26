@@ -1,0 +1,14 @@
+Running 1719 tests using 20 workers
+
+[failure-reporter] Writing failures to C:\app-e2e\repo\apps\e2e\e2e-failures.jsonl
+  ok   16 [chromium] › apps\e2e\src\login\smoke\login-smoke.spec.ts:13:7 › smoke / @smoke @login (1.9s)
+  ok   11 [chromium] › apps\e2e\src\login\flows\login-keyboard.spec.ts:10:7 › login keyboard › login-keyboard @login @a11y @forms (2.5s)
+  ok   21 [chromium] › apps\e2e\src\login\smoke\login-smoke.spec.ts:13:7 › smoke /login @smoke @login (2.3s)
+  ok   15 [chromium] › apps\e2e\src\admin\smoke\admin-smoke.spec.ts:13:9 › admin/smoke › smoke / @smoke @admin (5.2s)
+  ok   13 [chromium] › apps\e2e\src\login\login.spec.ts:19:7 › login › login: player @auth (8.0s)
+  ok   12 [chromium] › apps\e2e\src\login\flows\login-flows.spec.ts:23:7 › login flows › email-login @login @auth (9.0s)
+  x   126 [chromium] › apps\e2e\src\management\flows\match-lobby-check-in.spec.ts:201:7 › management/flows/match-lobby-check-in › match-lobby-check-in: the engine refuses a check-in before the window opens @dashboard @match-lobby @competition @engine (16.6s)
+  ok  179 [chromium] › apps\e2e\src\admin\smoke\admin-smoke.spec.ts:13:9 › admin/smoke › smoke /organizations/create @smoke @admin (1.2s)
+  ok  180 [chromium] › apps\e2e\src\login\flows\mail-links.spec.ts:205:9 › login/mail-links › mail link /link/admin/team-management-claim/:unusedId (admin) (1.2s)
+  -  1287 [visual] › apps\e2e\src\visual\visual.spec.ts:144:11 › visual › visual-baseline public broadcast participating-teams @visual @login @public @dashboard @admin
+  -  1288 [visual] › apps\e2e\src\visual\visual.spec.ts:144:11 › visual › visual-baseline public broadcast participating-teams phone @visual @login @public @dashboard @admin

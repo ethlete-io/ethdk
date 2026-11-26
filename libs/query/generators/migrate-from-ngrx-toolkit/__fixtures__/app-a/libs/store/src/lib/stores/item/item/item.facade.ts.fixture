@@ -1,0 +1,30 @@
+import { Injectable } from '@angular/core';
+import { Actions as ActionsFeed } from '@ngrx/effects';
+import { Store } from '@ngrx/store';
+import { FacadeBase } from '@tomtomb/ngrx-toolkit';
+import * as Actions from './item.actions';
+import * as Models from './item.models';
+import * as fromReducer from './item.reducer';
+import * as Selectors from './item.selectors';
+
+@Injectable({ providedIn: 'root' })
+export class ItemFacade extends FacadeBase {
+  constructor(
+    private _store: Store<fromReducer.ItemPartialState>,
+    private _actions$: ActionsFeed,
+  ) {
+    super(_store, _actions$, Selectors.entity);
+  }
+
+  getItem(args: Models.GetItemArgs) {
+    return this.call(Actions.getItem, args);
+  }
+
+  getItemPublicProfileBySlug(args: Models.GetItemPublicProfileBySlugArgs) {
+    return this.call(Actions.getItemPublicProfileBySlug, args);
+  }
+
+  postCreateAndInviteMember(args: Models.PostCreateAndInviteMemberArgs) {
+    return this.call(Actions.postCreateAndInviteMember, args);
+  }
+}

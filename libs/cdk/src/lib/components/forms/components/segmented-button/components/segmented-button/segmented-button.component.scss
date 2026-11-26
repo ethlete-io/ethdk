@@ -1,0 +1,39 @@
+:where(.et-segmented-button) {
+  --et-segmented-button-active-indicator-color: #e0e0e0;
+  --et-segmented-button-active-indicator-radius: 1px;
+
+  --et-segmented-button-tab-active-underline-height: 3px;
+}
+
+.et-segmented-button-button {
+  position: relative;
+}
+
+.et-segmented-button-button-content {
+  position: relative;
+  z-index: 2;
+}
+
+.et-segmented-button-button-active-indicator {
+  position: absolute;
+  background-color: var(--et-segmented-button-active-indicator-color);
+  border-radius: var(--et-segmented-button-active-indicator-radius);
+  opacity: 0;
+  z-index: 1;
+
+  .et-segmented-button--checked & {
+    opacity: 1;
+  }
+}
+
+.et-segmented-button-group {
+  &.et-segmented-button-group--buttons .et-segmented-button-button-active-indicator {
+    inset: 0;
+  }
+
+  &.et-segmented-button-group--tabs .et-segmented-button-button-active-indicator {
+    inset-block-end: 0;
+    inset-inline: 0;
+    block-size: var(--et-segmented-button-tab-active-underline-height);
+  }
+}

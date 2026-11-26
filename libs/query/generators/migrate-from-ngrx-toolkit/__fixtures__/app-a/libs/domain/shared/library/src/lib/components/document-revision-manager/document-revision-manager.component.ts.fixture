@@ -1,0 +1,89 @@
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  Input,
+  OnInit,
+  ViewEncapsulation,
+  type TrackByFunction,
+} from '@angular/core';
+import { createDestroy } from '@ethlete/core';
+import { getLibraryRevisions, LibraryFacade } from '@app-a/store';
+import { AbstractContentWithRecipientView, RequestRecipientVersionView } from '@app-a/types';
+import { createActionId, MappedEntityState, NgRxToolkitModule } from '@tomtomb/ngrx-toolkit';
+import { BehaviorSubject } from 'rxjs';
+import { CreatorImagePipe } from '../../pipes/creator-image.pipe';
+import { CreatorNamePipe } from '../../pipes/creator-name.pipe';
+import { HasOpenVersionPipe } from '../../pipes/has-open-version.pipe';
+import { MapToInfoContent } from '../../pipes/map-to-info-content.pipe';
+import { ContentManagerService } from '../../services';
+import { VersionAdminInfoComponent } from '../version-admin-info/version-admin-info.component';
+import { VersionAdminRequestComponent } from '../version-admin-request/version-admin-request.component';
+import { VersionHostComponent } from '../version-host/version-host.component';
+import { VersionUserInfoComponent } from '../revision-info/revision-info.component';
+import { RevisionUploadComponent } from '../revision-upload/revision-upload.component';
+import { VersionUserRequestViewComponent } from '../version-user-request-view/version-user-request-view.component';
+
+@Component({
+  selector: 'app-a-document-revision-manager',
+  templateUrl: './document-revision-manager.component.html',
+  styles: [],
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    VersionHostComponent,
+    VersionAdminInfoComponent,
+    VersionUserInfoComponent,
+    VersionAdminRequestComponent,
+    NgTemplateOutlet,
+    VersionUserRequestViewComponent,
+    RevisionUploadComponent,
+    AsyncPipe,
+    NgRxToolkitModule,
+    HasOpenVersionPipe,
+    MapToInfoContent,
+    CreatorImagePipe,
+    CreatorNamePipe,
+  ],
+})
+export class DocumentRevisionManagerComponent implements OnInit {
+  private _libraryFacade = inject(LibraryFacade);
+  private _contentManagerService = inject(ContentManagerService);
+
+  @Input()
+  viewMode: 'admin' | 'user' = 'user';
+
+  content$!: BehaviorSubject<AbstractContentWithRecipientView | null>;
+  recipient$!: BehaviorSubject<string | null>;
+
+  actionId: number | null = null;
+  recipientVersionStore?: MappedEntityState<typeof getLibraryRevisions>;
+
+  private _destroy$ = createDestroy();
+
+  ngOnInit(): void {
+    this.content$ = this._contentManagerService.selectedContent$;
+    this.recipient$ = this._contentManagerService.selectedRecipient$;
+
+    if (this.content$.value?.type === 'info') {
+      return;
+    }
+
+    if (this.recipient$.value) {
+      this.recipientVersionStore = this._libraryFacade.getLibraryRevisions({
+        queryParams: { recipientId: this.recipient$.value },
+      });
+
+      this.actionId = createActionId(
+        getLibraryRevisions.call({
+          args: {
+            queryParams: { recipientId: this.recipient$.value },
+          },
+        }),
+      );
+    }
+  }
+
+  trackByFn: TrackByFunction<RequestRecipientVersionView> = (index, item) => item.id;
+}

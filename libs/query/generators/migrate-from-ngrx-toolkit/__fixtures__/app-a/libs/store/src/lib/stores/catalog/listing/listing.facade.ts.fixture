@@ -1,0 +1,22 @@
+import { Injectable } from '@angular/core';
+import { FacadeBase } from '@tomtomb/ngrx-toolkit';
+import { Actions as ActionsFeed } from '@ngrx/effects';
+import { Store } from '@ngrx/store';
+import * as Actions from './listing.actions';
+import * as Models from './listing.models';
+import * as fromReducer from './listing.reducer';
+import * as Selectors from './listing.selectors';
+
+@Injectable({ providedIn: 'root' })
+export class CatalogListingFacade extends FacadeBase {
+  constructor(
+    private _store: Store<fromReducer.CatalogListingPartialState>,
+    private _actions$: ActionsFeed,
+  ) {
+    super(_store, _actions$, Selectors.entity);
+  }
+
+  getCatalogListingTopMembers(args: Models.GetCatalogListingTopMembersArgs) {
+    return this.call(Actions.getCatalogListingTopMembers, args);
+  }
+}

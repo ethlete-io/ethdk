@@ -1,0 +1,798 @@
+import { CollectedEvent, GIT_FIELD_SEPARATOR, TIMETRACK_PROVIDER } from '@ethlete/timetrack';
+import { FakePairedMachine, defaultSettings } from '@ethlete/timetrack/testing';
+import { E2E_DAY_KEY, E2E_NOW, expect, openDayNotes, openStreams, openTotals, seedWorld, test } from './support';
+
+/** The checkout the fake git backend discovers, so its subdirectories fold into it. */
+const FUT = '/Users/e2e/dev/fut-frontend';
+
+/** A second checkout the host discovers. An agent ran in it and no window ever showed it. */
+const SDK = '/Users/e2e/dev/ethlete-sdk';
+
+/**
+ * What the fake host reports as the repositories on this machine, beside `FUT`.
+ *
+ * A prompt and a turn are the two marks kept for a checkout no project link covers, so a directory
+ * they name is only a stream of its own when something says it is a checkout. Here the git discovery
+ * is that something, as it is on a real machine.
+ */
+const DISCOVERED = { extraRepos: [SDK] };
+
+/** Nine in the morning on the seeded day. The browser is pinned to UTC, so this is 09:00 on screen. */
+const at = (minutes: number) => new Date(new Date(`${E2E_DAY_KEY}T09:00:00.000Z`).getTime() + minutes * 60_000);
+
+const focus = (minutes: number, appId: string, title: string): CollectedEvent => ({
+  at: at(minutes),
+  source: 'window',
+  kind: 'window-focus',
+  appId,
+  title,
+});
+
+const editing = (minutes: number) => focus(minutes, 'code', 'invite.ts - fut-frontend - Visual Studio Code');
+
+const session = (minutes: number): CollectedEvent => ({
+  at: at(minutes),
+  source: 'agent-session',
+  kind: 'agent-session',
+  sessionId: 'session-sdk',
+  cwd: SDK,
+  gitBranch: 'next',
+  title: 'Read a day as streams',
+});
+
+/**
+ * One two-hour morning that ran three streams: an editor in one checkout, an agent in another that
+ * nothing ever focused, and half an hour in Slack. It is the shape slice 1 exists to report — the
+ * numbers each line must show are worked out in the test below.
+ */
+const day = (): CollectedEvent[] => [
+  { at: at(0), source: 'git', kind: 'git-checkout', repoPath: FUT, branch: 'next' },
+  ...[0, 15, 30, 45, 90, 105, 120].map(editing),
+  ...[60, 75].map((minutes) => focus(minutes, 'slack', 'Slack')),
+  ...Array.from({ length: 13 }, (_, step) => session(32 + step * 5)),
+  {
+    at: at(60),
+    source: 'agent-usage',
+    kind: 'agent-usage',
+    provider: 'claude-code',
+    sessionId: 'session-sdk',
+    turnId: 'turn-1',
+    cwd: SDK,
+    model: 'claude-opus-5',
+    usage: { input: 12_000, output: 1_200_000, cacheWrite: 40_000, cacheRead: 604_000_000, thinking: 30_000 },
+  },
+];
+
+/**
+ * One Claude Code record. A `user` record whose content is a plain string is a prompt the person
+ * typed; an `assistant` record with `message.usage` is a turn the machine spent.
+ */
+const claudeRecord = (options: { minutes: number; typed?: boolean; id: string }) =>
+  JSON.stringify({
+    type: options.typed ? 'user' : 'assistant',
+    uuid: options.id,
+    timestamp: at(options.minutes).toISOString(),
+    cwd: SDK,
+    sessionId: 'session-rebuilt',
+    gitBranch: 'next',
+    message: options.typed
+      ? { role: 'user', content: 'read the day back' }
+      : {
+          id: options.id,
+          model: 'claude-opus-5',
+          role: 'assistant',
+          usage: {
+            input_tokens: 100,
+            output_tokens: 2_000,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 500_000,
+            output_tokens_details: { thinking_tokens: 0 },
+          },
+        },
+  });
+
+/**
+ * A log of a morning nothing watched: three prompts twenty minutes apart, with the agent's turns
+ * between them. The turns are what carry the stretch over the gaps the prompts leave.
+ */
+const rebuiltLog = (): string[] => [
+  claudeRecord({ minutes: 0, typed: true, id: 'prompt-0' }),
+  claudeRecord({ minutes: 5, id: 'msg_5' }),
+  claudeRecord({ minutes: 12, id: 'msg_12' }),
+  claudeRecord({ minutes: 20, typed: true, id: 'prompt-20' }),
+  claudeRecord({ minutes: 28, id: 'msg_28' }),
+  claudeRecord({ minutes: 35, id: 'msg_35' }),
+  claudeRecord({ minutes: 40, typed: true, id: 'prompt-40' }),
+];
+
+/** One record of a Codex rollout log. `ordinal` is what a `token_count` is identified as a turn by. */
+const codexRecord = (options: { minutes: number; type: string; payload: Record<string, unknown>; ordinal: number }) =>
+  JSON.stringify({
+    timestamp: at(options.minutes).toISOString(),
+    type: options.type,
+    payload: options.payload,
+    ordinal: options.ordinal,
+  });
+
+const codexCounts = (output: number) => ({
+  input_tokens: 4_000,
+  cached_input_tokens: 1_000,
+  cache_write_input_tokens: 0,
+  output_tokens: output,
+  reasoning_output_tokens: 500,
+  total_tokens: 4_000 + output,
+});
+
+/**
+ * A rollout log the Codex passes read: the session it belongs to, the turn's checkout and model, and
+ * two turns that spent something. The zero-valued `token_count` Codex opens a turn with is the
+ * context window rather than spend, so this holds none.
+ */
+const codexRollout = (): string[] => [
+  codexRecord({
+    minutes: 30,
+    type: 'session_meta',
+    payload: { session_id: 'codex-e2e', cwd: SDK, cli_version: '0.147.0' },
+    ordinal: 0,
+  }),
+  codexRecord({
+    minutes: 31,
+    type: 'turn_context',
+    payload: { turn_id: 't1', cwd: SDK, model: 'gpt-5-codex' },
+    ordinal: 1,
+  }),
+  ...[35, 45].map((minutes, step) =>
+    codexRecord({
+      minutes,
+      type: 'event_msg',
+      payload: {
+        type: 'token_count',
+        info: { last_token_usage: codexCounts(200_000 * (step + 1)), total_token_usage: codexCounts(999_999) },
+      },
+      ordinal: 2 + step,
+    }),
+  ),
+];
+
+/** A title with no whitespace to break at, which is what a browser writes while a page has none of its own. */
+const UNBROKEN = `accounts.google.com/signin/oauth/v3/consent${'/segment'.repeat(40)}`;
+
+const stream = (page: Parameters<typeof seedWorld>[0], key: string) => page.locator(`[data-stream="${key}"]`);
+
+/** What the reporter posts while its window has focus. It names the checkout the title does not. */
+const heartbeat = (minutes: number, directory: string): CollectedEvent => ({
+  at: at(minutes),
+  source: 'editor',
+  kind: 'editor-heartbeat',
+  reporter: 'vscode',
+  repoPath: FUT,
+  branch: 'next',
+  directory,
+  editing: true,
+});
+
+/** One line of `git reflog show`, in the format the app asks for. */
+const reflogLine = (options: { stamp: string; from: string; to: string }) =>
+  `HEAD@{${options.stamp}}${GIT_FIELD_SEPARATOR}checkout: moving from ${options.from} to ${options.to}`;
+
+test.describe('the day view, as streams', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: day(), git: DISCOVERED });
+    await page.goto('/day');
+  });
+
+  test('is where the window opens, with nothing remembered', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('/');
+
+    await expect(await openTotals(page)).toContainText('present');
+    expect(new URL(page.url()).hash).toBe('#/day');
+  });
+
+  test('reports presence, engaged time and the ratio between them', async ({ page }) => {
+    const totals = await openTotals(page);
+
+    // The morning was two hours at the machine. The editor held 90 minutes of it and Slack 30, and
+    // the agent's hour ran alongside — so the day was engaged for three hours in two.
+    await expect(totals).toContainText('2h 0m present');
+    await expect(totals).toContainText('3h 0m engaged');
+    await expect(totals).toContainText('1.5× at once');
+  });
+
+  test('keeps what was measured off the day, so it is never read against the bands', async ({ page }) => {
+    await expect(page.locator('[data-presence]')).toHaveCount(0);
+
+    await openTotals(page);
+
+    await expect(page.locator('[data-presence]')).toBeVisible();
+  });
+
+  test('marks a day that ran something beside you with a fire', async ({ page }) => {
+    const footer = page.locator('ethlete-day-review footer');
+
+    // 1.5× reaches the first tier and no further, so the readout carries one flame.
+    await expect(footer.locator('[data-heat]')).toHaveAttribute('data-heat', 'warm');
+    await expect(footer.locator('[data-heat-flame]')).toHaveCount(1);
+  });
+
+  test('shows one line per checkout, ordered by when it started', async ({ page }) => {
+    await openStreams(page);
+
+    await expect(page.locator('[data-stream] [data-label]')).toHaveText([
+      'fut-frontend',
+      'ethlete-sdk',
+      'Other applications',
+    ]);
+  });
+
+  test('gives the focused window its checkout, and the rest to one folded line', async ({ page }) => {
+    await openStreams(page);
+
+    await expect(stream(page, `repo:${FUT}`).locator('[data-engaged]')).toHaveText('1h 30m engaged');
+    await expect(stream(page, 'other-applications').locator('[data-engaged]')).toHaveText('30m engaged');
+    await expect(stream(page, 'other-applications')).toContainText('Slack');
+  });
+
+  test('books a checkout an agent ran in, and says nobody ever looked at it', async ({ page }) => {
+    await openStreams(page);
+
+    const agentOnly = stream(page, `repo:${SDK}`);
+
+    await expect(agentOnly.locator('[data-engaged]')).toHaveText('1h 0m engaged');
+    await expect(agentOnly.locator('[data-agent-sessions]')).toHaveText('1 agent session');
+    await expect(agentOnly.locator('[data-never-focused]')).toHaveText('agent only, never focused');
+    await expect(agentOnly).toContainText('Read a day as streams');
+  });
+
+  test("holds a stream's evidence closed until its header is opened", async ({ page }) => {
+    await openStreams(page);
+
+    const agentOnly = stream(page, `repo:${SDK}`);
+    const evidence = agentOnly.getByText('Read a day as streams');
+
+    await expect(evidence).toBeHidden();
+
+    await agentOnly.getByRole('button', { name: /ethlete-sdk/ }).click();
+
+    await expect(evidence).toBeVisible();
+  });
+
+  test('holds an evidence row that has nowhere to wrap on one line', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, git: DISCOVERED, events: [...day(), focus(61, 'google-chrome', UNBROKEN)] });
+    await page.goto('/day');
+
+    await openStreams(page);
+
+    const folded = stream(page, 'other-applications');
+
+    await folded.getByRole('button', { name: /Other applications/ }).click();
+
+    const list = folded.locator('ul').first();
+
+    await expect(folded.getByTitle(UNBROKEN, { exact: true })).toBeVisible();
+
+    // The row is clipped to the list either way, so its own box says nothing. What the title costs is
+    // the width the list has to scroll, and a clamped row costs none.
+    expect(await list.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
+  });
+
+  test('reads the branch out of the reflog for a checkout the day named none for', async ({ page }) => {
+    // Nothing that day says which branch the checkout was on: no commit, no switch, and an agent
+    // session that carried no branch. The reflog is the only thing left that knows.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day().map((event) => (event.kind === 'agent-session' ? { ...event, gitBranch: undefined } : event)),
+      git: {
+        ...DISCOVERED,
+        reflog: {
+          [SDK]: reflogLine({ stamp: '2026-07-01T09:00:00+02:00', from: 'main', to: 'feature/read-a-day' }),
+        },
+      },
+    });
+    await page.goto('/day');
+
+    await openStreams(page);
+
+    await expect(stream(page, `repo:${SDK}`).locator('[data-branches]')).toHaveText('feature/read-a-day');
+  });
+
+  test('says nothing about a branch for a checkout whose reflog holds no switch', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: day().map((event) => (event.kind === 'agent-session' ? { ...event, gitBranch: undefined } : event)),
+    });
+    await page.goto('/day');
+
+    await openStreams(page);
+
+    await expect(stream(page, `repo:${SDK}`).locator('[data-branches]')).toHaveCount(0);
+  });
+
+  test('shows what the turns spent, in the classes they are priced in', async ({ page }) => {
+    await openStreams(page);
+
+    await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toHaveText('1 turn · 1.2 M out · 604 M cached');
+  });
+
+  test('reads a codex rollout log and books its turns on the checkout the turn ran in', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: day(),
+      // The backfill keeps only a checkout a project link covers, the same filter the session
+      // collector applies. Without the link the rollout's turns are dropped before the store.
+      settings: {
+        ...defaultSettings(),
+        projectLinks: [
+          { id: 'link-sdk', path: SDK, target: { kind: 'project', projectKey: 'ABC' }, createdAt: new Date(0) },
+        ],
+      },
+      codexLogs: [
+        {
+          id: 'rollout-codex-e2e',
+          path: '/Users/e2e/.codex/sessions/2026/08/12/rollout-codex-e2e.jsonl',
+          modifiedAt: `${E2E_DAY_KEY}T12:00:00.000Z`,
+          lines: codexRollout(),
+        },
+      ],
+    });
+    await page.goto('/day');
+
+    // One claude-code turn is already in the day's events; the two the rollout holds join it.
+    await openStreams(page);
+
+    await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toContainText('3 turns');
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test('books what an agent spent while nobody was at the machine, and names the agent for it', async ({ page }) => {
+    // The machine locks at noon and the agent works on in the SDK checkout for another hour. The
+    // customer pays for that hour's turns, so the checkout books them; the day does not call it presence.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [
+        ...day(),
+        { at: at(121), source: 'idle', kind: 'lock' },
+        ...Array.from({ length: 7 }, (_, step) => session(180 + step * 10)),
+        {
+          at: at(200),
+          source: 'agent-usage',
+          kind: 'agent-usage',
+          provider: 'claude-code',
+          sessionId: 'session-sdk',
+          turnId: 'turn-away',
+          cwd: SDK,
+          model: 'claude-opus-5',
+          usage: { input: 500, output: 800_000, cacheWrite: 0, cacheRead: 90_000_000, thinking: 0 },
+        },
+      ],
+    });
+    await page.goto('/day');
+
+    await openStreams(page);
+
+    const agentOnly = stream(page, `repo:${SDK}`);
+
+    await expect(agentOnly.locator('[data-unattended]')).toHaveText('1h 0m agent alone');
+    await expect(agentOnly.locator('[data-engaged]')).toHaveText('1h 0m engaged');
+    await expect(agentOnly.locator('[data-spend]')).toContainText('2 turns');
+    await expect(await openTotals(page)).toContainText('+ 1h 0m agent alone');
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test('gives a checkout the backfill found turns for a line of its own, with spend and no time', async ({ page }) => {
+    // What a replayed day looks like: the spend pass read an old log the session collector never saw.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [
+        ...day().filter((event) => event.source !== 'agent-session'),
+        {
+          at: at(65),
+          source: 'agent-usage',
+          kind: 'agent-usage',
+          provider: 'codex',
+          sessionId: 'session-codex',
+          turnId: 'turn-codex',
+          cwd: SDK,
+          model: 'gpt-5-codex',
+          usage: { input: 500, output: 800_000, cacheWrite: 0, cacheRead: 90_000_000, thinking: 0 },
+        },
+      ],
+    });
+    await page.goto('/day');
+
+    await openStreams(page);
+
+    const backfilled = stream(page, `repo:${SDK}`);
+
+    await expect(backfilled.locator('[data-engaged]')).toHaveText('0m engaged');
+    await expect(backfilled.locator('[data-spend]')).toContainText('2 turns');
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test('names a checkout name two checkouts share, rather than folding the time in silence', async ({ page }) => {
+    const ONE = '/Users/e2e/dev/elrond';
+    const OTHER = '/Users/e2e/archive/elrond';
+
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [...day(), focus(10, 'code', 'boot.md - elrond - Visual Studio Code')],
+      git: { extraRepos: [...DISCOVERED.extraRepos, ONE, OTHER] },
+    });
+    await page.goto('/day');
+
+    await openStreams(page);
+
+    await expect(page.locator('[data-ambiguous]')).toHaveText('elrond');
+    await expect(page.locator('[data-stream="repo:' + ONE + '"]')).toHaveCount(0);
+  });
+
+  test('names only the spend that carries no checkout at all', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [
+        ...day(),
+        {
+          at: at(60),
+          source: 'agent-usage',
+          kind: 'agent-usage',
+          provider: 'claude-code',
+          sessionId: 'session-nowhere',
+          turnId: 'turn-nowhere',
+          cwd: '',
+          model: 'claude-opus-5',
+          usage: { input: 500, output: 800_000, cacheWrite: 0, cacheRead: 90_000_000, thinking: 0 },
+        },
+      ],
+    });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    await expect(page.locator('[data-unattributed]')).toHaveText('1 turn · 800 k out · 90.0 M cached');
+  });
+
+  test("reports what the app itself spent on a line of its own, and on no checkout's", async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [
+        ...day(),
+        {
+          at: at(60),
+          source: 'agent-usage',
+          kind: 'agent-usage',
+          provider: TIMETRACK_PROVIDER,
+          sessionId: 'the day',
+          turnId: 'own-run-1',
+          cwd: '',
+          model: 'claude-opus-5',
+          usage: { input: 120, output: 340, cacheWrite: 80, cacheRead: 9_000, thinking: 0 },
+        },
+      ],
+    });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    await expect(page.locator('[data-own-spend]')).toHaveText('1 turn · 340 out · 9.0 k cached');
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test("shows no line for the app's own spend on a day it never asked the model", async ({ page }) => {
+    await openDayNotes(page);
+
+    await expect(page.locator('[data-own-spend]')).toHaveCount(0);
+  });
+
+  test('shows no unbooked line for a day every turn belongs to a stream', async ({ page }) => {
+    await openDayNotes(page);
+
+    await expect(page.locator('[data-unattributed]')).toHaveCount(0);
+  });
+
+  test('rebuilds a day no window watched from the prompts the user typed', async ({ page }) => {
+    // Nothing was collected on the day itself: no focus sample, no idle transition and no session.
+    // The prompt pass reads the log afterwards, and the turns between two prompts carry the stretch.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [],
+      agentLogs: [
+        {
+          id: 'session-rebuilt',
+          path: '/Users/e2e/.claude/projects/-Users-e2e-dev-ethlete-sdk/session-rebuilt.jsonl',
+          modifiedAt: `${E2E_DAY_KEY}T12:00:00.000Z`,
+          lines: rebuiltLog(),
+        },
+      ],
+    });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    await expect(page.getByText(/Part of this day was rebuilt/)).toBeVisible();
+
+    await openStreams(page);
+
+    const rebuilt = stream(page, `repo:${SDK}`);
+
+    await expect(rebuilt.locator('[data-engaged]')).toHaveText('40m engaged');
+    await expect(rebuilt.locator('[data-rebuilt]')).toHaveText('40m rebuilt');
+    await openTotals(page);
+
+    await expect(page.locator('[data-presence]')).toHaveText('40m present');
+    await expect(page.locator('[data-rebuilt-total]')).toHaveText('40m rebuilt');
+  });
+
+  test('names the checkout from what an editor reported, when no window title could', async ({ page }) => {
+    // macOS reports the application and no document, so this is the shape a real Mac day arrives in:
+    // every title reads `Visual Studio Code` and only the reporter knows which checkout was open.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [
+        ...[0, 10, 20, 30].map((minutes) => focus(minutes, 'code', 'Visual Studio Code')),
+        ...[0, 10, 20, 30].map((minutes) => heartbeat(minutes, 'src/app/invite')),
+      ],
+    });
+    await page.goto('/day');
+
+    await openStreams(page);
+
+    const editor = stream(page, `repo:${FUT}`);
+
+    await expect(editor.locator('[data-label]')).toHaveText('fut-frontend');
+    await expect(editor.locator('[data-engaged]')).toHaveText('30m engaged');
+    await openTotals(page);
+
+    await expect(page.locator('[data-presence]')).toHaveText('30m present');
+    await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
+
+    await editor.getByRole('button').first().click();
+
+    await expect(editor.getByText('edited src/app/invite')).toBeVisible();
+  });
+
+  test('makes no rebuilt claim for a sliver the readout rounds to nothing', async ({ page }) => {
+    // A prompt seconds after the last window sample holds presence open past what the machine
+    // watched. Every observed day ends in such a sliver, and `0m rebuilt` reads as a broken screen.
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: DISCOVERED,
+      events: [
+        ...day(),
+        {
+          at: new Date(at(120).getTime() + 15_000),
+          source: 'agent-prompt',
+          kind: 'agent-prompt',
+          provider: 'claude-code',
+          sessionId: 'session-sdk',
+          promptId: 'prompt-sliver',
+          cwd: SDK,
+          gitBranch: 'next',
+        },
+      ],
+    });
+    await page.goto('/day');
+
+    await openStreams(page);
+
+    await expect(await openTotals(page)).toContainText('2h 0m present');
+    await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
+    await expect(page.locator('[data-rebuilt]')).toHaveCount(0);
+    await expect(page.locator('[data-rebuilt-label]')).toHaveCount(0);
+  });
+
+  test('says so for a day nothing observed', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: [] });
+    await page.goto('/day');
+
+    await openStreams(page);
+
+    await expect(page.getByText(/Nothing observed this day/)).toBeVisible();
+  });
+});
+
+test.describe('the day view, on a day something held the microphone', () => {
+  const DISCORD = 'com.hnc.Discord';
+  const HELPER = 'com.hnc.Discord.helper.Renderer';
+
+  const call = (minutes: number, kind: 'call-start' | 'call-end'): CollectedEvent => ({
+    at: at(minutes),
+    source: 'call',
+    kind,
+    appId: HELPER,
+  });
+
+  const meeting = [focus(0, DISCORD, '#standup | Braune Digital'), call(2, 'call-start'), call(50, 'call-end')];
+
+  test('names the call from the window in front of it, and says it is not counted', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: meeting });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    const row = page.locator(`[data-call="${HELPER}"]`);
+
+    await expect(row).toContainText('#standup | Braune Digital');
+    await expect(row).toContainText('48m');
+    await expect(row.locator('[data-call-unclassified]')).toBeVisible();
+  });
+
+  test('counts the call as presence once a rule names it', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: meeting,
+      settings: { ...defaultSettings(), callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
+    });
+    await page.goto('/day');
+
+    await openTotals(page);
+
+    await expect(page.locator('[data-presence]')).toHaveText('48m present');
+    await expect(page.locator('[data-call-unclassified]')).toHaveCount(0);
+    await expect(page.locator('[data-rebuilt-total]')).toHaveCount(0);
+  });
+
+  test('counts no call the user never brought to the front, whatever the rule says', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        focus(0, DISCORD, '#standup | Braune Digital'),
+        focus(1, 'code', 'calls.ts - timetrack'),
+        ...meeting.slice(1),
+      ],
+      settings: { ...defaultSettings(), callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] } },
+    });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    const row = page.locator(`[data-call="${HELPER}"]`);
+
+    await expect(row.locator('[data-call-attended]')).toHaveText('0m in front');
+    await expect(row.locator('[data-call-unclassified]')).toBeVisible();
+  });
+
+  test('shows no call panel at all on a day nothing held the microphone', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, git: DISCOVERED, events: day() });
+    await page.goto('/day');
+
+    await expect(page.locator('[data-calls]')).toHaveCount(0);
+  });
+});
+
+/**
+ * A folded Other applications line is either a defect or a capability this machine does not have.
+ * The day screen has to say which, or the number reads as a fault the user cannot act on.
+ */
+test.describe('the day view, on a day some window named no checkout', () => {
+  const day = (): CollectedEvent[] => [
+    { at: at(0), source: 'git', kind: 'git-checkout', repoPath: FUT, branch: 'next' },
+    ...[0, 15].map((minutes) => focus(minutes, 'code', 'invite.ts - fut-frontend - Visual Studio Code')),
+    ...[30, 45].map((minutes) => focus(minutes, 'discord', 'Meeting - Discord')),
+  ];
+
+  test('says how much of the day no checkout was named for', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: day(), ...DISCOVERED });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    await expect(page.locator('[data-unnamed-today]')).toHaveText('15m');
+  });
+
+  test('says the machine cannot read a working directory, when the source says it cannot', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day(),
+      ...DISCOVERED,
+      windowSource: {
+        kind: 'wayland-wlr',
+        detail: null,
+        capabilities: [
+          { reads: 'app-id', available: true, detail: null },
+          { reads: 'title', available: true, detail: null },
+          { reads: 'working-directory', available: false, detail: 'The wlr toplevel protocol reports no process id.' },
+        ],
+      },
+    });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    await expect(page.getByText('cannot read the directory a focused window works in')).toBeVisible();
+  });
+
+  test('claims no missing capability on a machine whose source reads the directory', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day(),
+      ...DISCOVERED,
+      windowSource: {
+        kind: 'macos',
+        detail: null,
+        capabilities: [
+          { reads: 'app-id', available: true, detail: null },
+          { reads: 'title', available: true, detail: null },
+          { reads: 'working-directory', available: true, detail: null },
+        ],
+      },
+    });
+    await page.goto('/day');
+
+    await openDayNotes(page);
+
+    await expect(page.getByText('cannot read the directory a focused window works in')).toHaveCount(0);
+    await expect(page.getByText('folds into Other applications')).toBeVisible();
+  });
+
+  test('says nothing on a day every window named a checkout', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        { at: at(0), source: 'git', kind: 'git-checkout', repoPath: FUT, branch: 'next' },
+        ...[0, 15, 30].map((minutes) => focus(minutes, 'code', 'invite.ts - fut-frontend - Visual Studio Code')),
+      ],
+      ...DISCOVERED,
+    });
+    await page.goto('/day');
+
+    await expect(page.locator('[data-unnamed-today]')).toHaveCount(0);
+  });
+});
+
+test.describe('the day view, as streams, with a paired machine', () => {
+  const MAC_SDK = '/Users/mac/code/ethlete-sdk';
+  const KEY_OF_EVERY_FAKE_CHECKOUT = 'gitlab.example.com/braune-digital/fut-frontend';
+  const MACBOOK: FakePairedMachine = {
+    machineId: 'mac-1',
+    label: 'MacBook',
+    certFingerprint: 'fp-mac',
+    lastAddr: '192.168.1.20:52741',
+    lastSeenMs: new Date(E2E_NOW).getTime() - 30_000,
+    clockOffsetMs: 0,
+    pairedAtMs: new Date(E2E_NOW).getTime() - 86_400_000,
+    lastPullMs: null,
+  };
+
+  const macTurn = (minutes: number, turnId: string): CollectedEvent => ({
+    at: at(minutes),
+    source: 'agent-usage',
+    kind: 'agent-usage',
+    provider: 'claude-code',
+    sessionId: 'session-mac',
+    turnId,
+    cwd: MAC_SDK,
+    model: 'claude-opus-5',
+    usage: { input: 1_000, output: 100_000, cacheWrite: 0, cacheRead: 1_000_000, thinking: 0 },
+  });
+
+  test('says how many of a checkout’s turns ran on the paired machine', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day(),
+      git: DISCOVERED,
+      peers: {
+        paired: [MACBOOK],
+        received: [macTurn(70, 'mac-turn-1'), macTurn(80, 'mac-turn-2')].map((event) => ({
+          machineId: MACBOOK.machineId,
+          event,
+        })),
+        repoKeys: { [MACBOOK.machineId]: { [MAC_SDK]: KEY_OF_EVERY_FAKE_CHECKOUT } },
+        ownRepoKeys: { [SDK]: KEY_OF_EVERY_FAKE_CHECKOUT },
+      },
+    });
+    await page.goto('/day');
+    await openStreams(page);
+
+    await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toContainText('3 turns');
+    await expect(stream(page, `repo:${SDK}`).locator('[data-spend-peers]')).toHaveText('2 turns on MacBook');
+    await expect(stream(page, `repo:${FUT}`).locator('[data-spend-peers]')).toHaveCount(0);
+  });
+});

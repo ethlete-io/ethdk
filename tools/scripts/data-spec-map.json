@@ -1,0 +1,7 @@
+{
+  "libs/cli/src/lib/design/commit-hunks.spec.ts": [".ethlete/design/**/*.json"],
+  "libs/cli/src/lib/design/product-tailwind.spec.ts": [".ethlete/design/config.json"],
+  "libs/cli/src/lib/design/system/real-open-points.spec.ts": [".ethlete/design/**"],
+  "tools/scripts/generate-studio-themes.spec.mjs": [".ethlete/design/studio/foundations/colors/colors.css"],
+  "tools/scripts/check-workflow-commit-messages.spec.mjs": [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+}

@@ -1,0 +1,22 @@
+<et-scheduler-edit-surface-header>
+  <et-scheduler-edit-surface-actions>
+    <et-scheduler-edit-add-sub-appointment-item />
+    <et-scheduler-edit-delete-item />
+  </et-scheduler-edit-surface-actions>
+</et-scheduler-edit-surface-header>
+
+<et-overlay-body>
+  <et-scheduler-edit-surface-breadcrumb />
+
+  <et-scheduler-edit-surface-fields>
+    <et-scheduler-edit-title #title [draft]="surface.draft" />
+    <et-scheduler-edit-time-range #timeRange [draft]="surface.draft" />
+    <et-scheduler-edit-location [draft]="surface.draft" />
+    <et-scheduler-edit-description [draft]="surface.draft" />
+    <et-scheduler-edit-color [draft]="surface.draft" />
+  </et-scheduler-edit-surface-fields>
+
+  <et-scheduler-edit-surface-children />
+</et-overlay-body>
+
+<et-scheduler-edit-surface-footer [canSave]="title.valid() && timeRange.valid()" />

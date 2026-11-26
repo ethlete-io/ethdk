@@ -1,0 +1,52 @@
+import * as Actions from './event.actions';
+import * as Models from './event.models';
+import * as Selectors from './event.selectors';
+import * as fromReducer from './event.reducer';
+import { Actions as ActionsNative } from '@ngrx/effects';
+import { FacadeBase } from '@tomtomb/ngrx-toolkit';
+import { Injectable, inject } from '@angular/core';
+import { Store } from '@ngrx/store';
+
+@Injectable({ providedIn: 'root' })
+export class EventFacade extends FacadeBase {
+  private store: Store<fromReducer.EventPartialState>;
+  private actions: ActionsNative;
+
+  constructor() {
+    const store = inject<Store<fromReducer.EventPartialState>>(Store);
+    const actions = inject(ActionsNative);
+
+    super(store, actions, Selectors.entitySelectors);
+
+    this.store = store;
+    this.actions = actions;
+  }
+
+  /**
+   * Retrieve the details of a event entry.
+   */
+  getEventEntry(args: Models.GetEventEntryArgs) {
+    return this.call(Actions.getEventEntry, args);
+  }
+
+  /**
+   * Retrieve the feeds of a event entry.
+   */
+  getEventFeeds(args: Models.GetEventFeedsArgs) {
+    return this.call(Actions.getEventFeeds, args);
+  }
+
+  /**
+   * Public route for getting the details of a event by its slug.
+   */
+  getEventBySlug(args: Models.GetEventBySlugArgs) {
+    return this.call(Actions.getEventBySlug, args);
+  }
+
+  /**
+   * Public route for listing all events
+   */
+  getEventResults(args: Models.GetEventResultsArgs) {
+    return this.call(Actions.getEventResults, args);
+  }
+}

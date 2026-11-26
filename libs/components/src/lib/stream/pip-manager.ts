@@ -1,0 +1,232 @@
+import { DOCUMENT, computed, inject, signal } from '@angular/core';
+import {
+  defineRootProvider,
+  injectRenderer,
+  injectViewportSize,
+  matchesReducedMotion,
+  toInjectFn,
+  toProvideFn,
+} from '@ethlete/core';
+import { animateWithFixedWrapper } from './pip/headless/internals/pip-animation';
+import { DEFAULT_PIP_CHROME_CONFIG } from './pip/pip-chrome.config';
+import { injectStreamManager } from './stream-manager';
+import { PipManager, StreamPipEntry, StreamPlayerId } from './stream-manager.types';
+import { resolveStreamAspectRatio } from './stream-size';
+
+const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
+  (): PipManager => {
+    const document = inject(DOCUMENT);
+    const renderer = injectRenderer();
+    const streamManager = injectStreamManager();
+
+    const viewportSize = injectViewportSize();
+
+    const pips = signal<StreamPipEntry[]>([]);
+    const featuredPipId = signal<StreamPlayerId | null>(null);
+    const pipInitialRects = new Map<StreamPlayerId, DOMRect>();
+    const pendingBackPulses = new Set<StreamPlayerId>();
+    const backPulseCounter = signal(0);
+    const latestPip = computed(() => {
+      const currentPips = pips();
+
+      return currentPips[currentPips.length - 1] ?? null;
+    });
+    const pipChromeComponent = computed(() => latestPip()?.pipChromeComponent ?? null);
+    const pipChromeConfig = computed(() => latestPip()?.pipChromeConfig ?? DEFAULT_PIP_CHROME_CONFIG);
+
+    const setFeaturedPip = (playerId: StreamPlayerId | null) => {
+      featuredPipId.set(playerId);
+    };
+
+    const notifyBackPressed = (playerId: StreamPlayerId) => {
+      pendingBackPulses.add(playerId);
+      backPulseCounter.update((n) => n + 1);
+    };
+
+    const consumeBackPulse = (playerId: StreamPlayerId) => {
+      if (pendingBackPulses.has(playerId)) {
+        pendingBackPulses.delete(playerId);
+
+        return true;
+      }
+      return false;
+    };
+
+    const isInViewport = (r: DOMRect) =>
+      r.width > 0 &&
+      r.height > 0 &&
+      r.right > 0 &&
+      r.bottom > 0 &&
+      r.left < viewportSize().width &&
+      r.top < viewportSize().height;
+
+    const isInPip = (playerId: StreamPlayerId) => pips().some((p) => p.playerId === playerId);
+
+    const pipActivate = (
+      element: HTMLElement,
+      options?: {
+        onBack?: () => void;
+        aspectRatio?: number;
+        pipChromeComponent?: StreamPipEntry['pipChromeComponent'];
+        pipChromeConfig?: StreamPipEntry['pipChromeConfig'];
+      },
+    ) => {
+      const slot = streamManager.getSlot(element);
+      if (!slot) return false;
+
+      const playerEntry = streamManager.getPlayerEntry(slot.playerId);
+      if (!playerEntry || isInPip(slot.playerId)) return false;
+
+      const initialRect = playerEntry.element.getBoundingClientRect();
+      if (isInViewport(initialRect)) {
+        pipInitialRects.set(slot.playerId, initialRect);
+      }
+
+      streamManager.setPlayerInPip(slot.playerId, true);
+      streamManager.movePlayerToContainer(slot.playerId);
+      pips.update((current) => [
+        ...current,
+        {
+          playerId: slot.playerId,
+          onBack: options?.onBack ?? slot.onPipBack,
+          thumbnail: playerEntry.thumbnail,
+          pipChromeComponent: options?.pipChromeComponent,
+          pipChromeConfig: options?.pipChromeConfig ?? DEFAULT_PIP_CHROME_CONFIG,
+          aspectRatio: resolveStreamAspectRatio(options?.aspectRatio),
+        },
+      ]);
+
+      return true;
+    };
+
+    const endPip = (playerId: StreamPlayerId) => {
+      pips.update((current) => current.filter((p) => p.playerId !== playerId));
+      streamManager.setPlayerInPip(playerId, false);
+    };
+
+    const beginExitAnimation = (playerId: StreamPlayerId) => {
+      streamManager.setPlayerAnimatingOut(playerId, true);
+
+      return () => {
+        streamManager.setPlayerAnimatingOut(playerId, false);
+
+        const playerEl = streamManager.getPlayerElement(playerId);
+        if (!playerEl || streamManager.isPlayerInPip(playerId)) return;
+
+        const bestSlot = streamManager.resolveBestSlot(playerId);
+
+        if (!bestSlot) {
+          streamManager.unregisterPlayer(playerId);
+        } else if (playerEl.parentElement !== bestSlot.element) {
+          renderer.moveBefore({ newParent: bestSlot.element, child: playerEl });
+        }
+      };
+    };
+
+    const pipDeactivate = (
+      playerId: StreamPlayerId,
+      options?: { skipAnimation?: boolean; animation?: 'flip' | 'scaleFadeIn' },
+    ) => {
+      if (!isInPip(playerId)) return false;
+
+      pipInitialRects.delete(playerId);
+
+      const playerEl = streamManager.getPlayerElement(playerId);
+      if (!playerEl) {
+        endPip(playerId);
+
+        return true;
+      }
+
+      const bestSlot = streamManager.resolveBestSlot(playerId);
+
+      if (!bestSlot) {
+        endPip(playerId);
+        streamManager.unregisterPlayer(playerId);
+
+        return true;
+      }
+
+      const targetParent = bestSlot.element;
+
+      if (!options?.skipAnimation) {
+        const requestedAnim = options?.animation ?? 'flip';
+        const fromRect = playerEl.getBoundingClientRect();
+
+        const featuredId = featuredPipId();
+        const animMode =
+          requestedAnim === 'flip' && featuredId !== null && playerId !== featuredId ? 'scaleFadeIn' : requestedAnim;
+
+        if (animMode === 'scaleFadeIn') {
+          const endExitAnimation = beginExitAnimation(playerId);
+          renderer.moveBefore({ newParent: targetParent, child: playerEl });
+          const anim = playerEl.animate(
+            [
+              { transform: 'scale(0.85)', opacity: '0' },
+              { transform: 'scale(1)', opacity: '1' },
+            ],
+            // Zeroed rather than skipped under reduced motion so `onfinish` still runs and clears
+            // the animating-out latch.
+            { duration: matchesReducedMotion(playerEl) ? 0 : 200, easing: 'ease-out' },
+          );
+          anim.onfinish = endExitAnimation;
+          endPip(playerId);
+
+          return true;
+        }
+
+        const toRect = targetParent.getBoundingClientRect();
+
+        if (fromRect.width > 0 && fromRect.height > 0 && toRect.width > 0 && toRect.height > 0) {
+          const endExitAnimation = beginExitAnimation(playerId);
+          animateWithFixedWrapper({
+            playerEl,
+            fromRect,
+            toRect,
+            document,
+            renderer,
+            onFinish: endExitAnimation,
+          });
+          endPip(playerId);
+
+          return true;
+        }
+      }
+
+      renderer.moveBefore({ newParent: targetParent, child: playerEl });
+      endPip(playerId);
+
+      return true;
+    };
+
+    const getInitialRect = (playerId: StreamPlayerId): DOMRect | null => {
+      const rect = pipInitialRects.get(playerId) ?? null;
+      pipInitialRects.delete(playerId);
+      return rect;
+    };
+
+    const parkPlayerElement = (playerId: StreamPlayerId) => {
+      if (!streamManager.isPlayerInPip(playerId)) return;
+      streamManager.movePlayerToContainer(playerId);
+    };
+
+    return {
+      pips: pips.asReadonly(),
+      pipChromeComponent,
+      pipChromeConfig,
+      featuredPipId: featuredPipId.asReadonly(),
+      setFeaturedPip,
+      backPulseCounter: backPulseCounter.asReadonly(),
+      notifyBackPressed,
+      consumeBackPulse,
+      pipActivate,
+      pipDeactivate,
+      getInitialRect,
+      parkPlayerElement,
+    };
+  },
+  { name: 'Pip Manager' },
+);
+
+export const providePipManager = /* @__PURE__ */ toProvideFn(PIP_MANAGER_DEF);
+export const injectPipManager = /* @__PURE__ */ toInjectFn(PIP_MANAGER_DEF);

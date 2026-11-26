@@ -1,0 +1,109 @@
+import { Directive, computed, input, signal } from '@angular/core';
+import { FormValueControl } from '@angular/forms/signals';
+import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
+import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
+import { injectTimeFormat } from '../../date-time-formats';
+import {
+  DateRangePickerInputDirective,
+  DateRangeSide,
+  DateRangeValue,
+} from '../../internals/date-range-picker-input.directive';
+import { parseTimeText, timeReferenceDay } from '../../internals/time-parse';
+import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
+import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
+
+export type { DateRangeSide as TimeRangeInputSide } from '../../internals/date-range-picker-input.directive';
+export type { DateRangeValue as TimeRangeValue } from '../../internals/date-range-picker-input.directive';
+
+/**
+ * Rejects individual times in the picker. The candidate is the picked time of day, and `side` says
+ * which end is being filled.
+ */
+export type TimeRangeTimeFilterFn = (date: Date, side: DateRangeSide) => boolean;
+
+/**
+ * A time *range* form control: one registered field-control containing two text inputs that share a
+ * single range-mode time picker. The value is `{ start, end }` of `valueFormat` wire strings (`HH:mm`
+ * by default); each side parses leniently on blur/Enter (`930` → 09:30), exactly like the single time
+ * input.
+ *
+ * The picker never closes on its own.
+ */
+@Directive({
+  selector: '[etTimeRangeInput]',
+  exportAs: 'etTimeRangeInput',
+  providers: [{ provide: DATE_PICKER_HOST, useExisting: TimeRangeInputDirective }],
+})
+export class TimeRangeInputDirective extends DateRangePickerInputDirective implements FormValueControl<DateRangeValue> {
+  private dateTimeLabels = injectDateTimeLabels();
+
+  public defaultValueFormat = injectTimeFormat();
+
+  /** Message the form field shows when either side's typed text can't be parsed as a time. */
+  public parseErrorMessage = input<string | null>(null);
+
+  /** date-fns format shown in (and parsed from) both fields. Locale-aware by default. */
+  public displayFormat = input<string | null>(null);
+
+  /**
+   * Forwarded to the picker's time picker. (`min`/`max` are reserved by signal forms.) Only the time
+   * of day of `minTime`/`maxTime` is read; `timeFilter` receives the candidate together with the side
+   * it belongs to. Bounds shape the picker - validate typed entry with a schema validator.
+   */
+  public minTime = input<Date | null>(null);
+  public maxTime = input<Date | null>(null);
+  public timeFilter = input<TimeRangeTimeFilterFn | null>(null);
+
+  /** The format in effect: this instance's `displayFormat`, else `'p'`. */
+  public effectiveDisplayFormat = computed(() => this.displayFormat() ?? 'p');
+
+  public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidTimeRange);
+
+  public controlType = signal(FORM_FIELD_CONTROL_TYPES.TIME_RANGE_INPUT);
+
+  private referenceDate = timeReferenceDay();
+
+  constructor() {
+    super();
+
+    warnOnUnparsedValue({
+      selector: 'et-time-range-input',
+      formatProvider: 'provideTimeFormat',
+      readings: () =>
+        this.mixed()
+          ? []
+          : [
+              { value: this.value().start, parsed: this.startDate() },
+              { value: this.value().end, parsed: this.endDate() },
+            ],
+      format: this.effectiveValueFormat,
+      locale: this.effectiveLocale,
+    });
+  }
+
+  /** Commits a picker-selected time onto one end. The picker stays open. */
+  public selectTime(side: DateRangeSide, time: Date | null) {
+    if (time === null || !this.interactive()) {
+      return;
+    }
+
+    this.commitSideDate(side, time);
+    this.touched.set(true);
+  }
+
+  public override pickerAutoFocus() {
+    return '[etTimePickerRingHandle][data-active]:not([data-empty]), .et-overlay--bottom-sheet [etTimePickerRingHandle][data-active]';
+  }
+
+  public override valueReferenceDate() {
+    return this.referenceDate;
+  }
+
+  public parseSideCommit(raw: string) {
+    return parseTimeText(raw, {
+      format: this.effectiveDisplayFormat(),
+      locale: this.effectiveLocale(),
+      referenceDate: this.referenceDate,
+    });
+  }
+}

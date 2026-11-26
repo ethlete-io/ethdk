@@ -1,0 +1,557 @@
+# @ethlete/contentful
+
+## 4.0.0-next.18
+
+### Minor Changes
+
+- SDK component styles now sit in `@layer components.sdk`, so an app rule in `@layer components` overrides them; `et update` leaves a task to check those rules.
+
+## 4.0.0-next.17
+
+### Patch Changes
+
+- Allow `@contentful/rich-text-types` as a regular dependency in the package build.
+- Ship `@contentful/rich-text-types` as a dependency instead of a required peer dependency, since its node type constants are used at runtime.
+
+## 4.0.0-next.16
+
+### Patch Changes
+
+- The `@nx/devkit` peer range is now `>=23.0.0`, matching the Nx floor of the migration guide.
+
+## 4.0.0-next.15
+
+### Patch Changes
+
+- Update all dependencies to their latest versions (Nx 24, Vitest 5, jsdom 30, ts-morph 28, @types/node 26 and others). The optional `@nx/devkit` peer dependency now requires `^24.0.0`, and the optional `ts-morph` peer of `@ethlete/core` requires `^28.0.0`.
+
+## 4.0.0-next.14
+
+### Major Changes
+
+- **Breaking:** an `internalHosts` entry now matches its host exactly; list a subdomain or write `*.example.com`. Also adds `entryHref`, embedded entry rich text, and fixes several embed and SSR hydration bugs.
+
+## 4.0.0-next.13
+
+### Major Changes
+
+- Breaking: the video, audio, file and link components drop their class inputs for static `et-contentful-*` classes on every inner element; `et update` removes the old bindings and lists each replacement.
+
+### Minor Changes
+
+- Add a `[gqlRichText]` input to the rich-text renderer that takes a GraphQL rich-text field (`{ json, links }`) as-is, with the exported `ContentfulGqlRichText` type. `content` and `richTextPath` are now optional; setting `gqlRichText` together with either throws ET011 in dev mode.
+
+### Patch Changes
+
+- The rich text renderer skips an embedded asset whose file has a content type but no URL, instead of mounting an empty image, video, audio or file component for it.
+- `et-contentful-audio` leaves the `<figcaption>` out for an asset with neither a title nor a file name, instead of rendering an empty one.
+- `provideContentfulConfig()` falls back to the defaults for `internalHosts`, `customComponents` and image options passed as `undefined`, instead of crashing links and embedded entries.
+- Rich-text links resolve against the current page instead of `<base href>`, `imageOptions` accepts a partial object, and dev mode warns about a mistyped `richTextPath` or invalid image size.
+- The rich text renderer no longer renders an empty, unlabelled link for a hyperlink node without text.
+- `et-contentful-image` and `generateDefaultContentfulImageSource` keep the fallback `<img>` for an asset with a URL but no content type, instead of rendering no image.
+- `migrate-to-contentful-v5` now says it migrates to `@ethlete/contentful` 4, the major it actually targets.
+- `et-contentful-video` leaves the `type` off its `<source>` for an asset without a content type, instead of writing `type="null"`, which no browser plays.
+- Peer dependencies are ranges (`^22.1.0` for Angular, `^7.8.0` for RxJS, ...) instead of the workspace's exact versions.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+
+## 4.0.0-next.12
+
+### Major Changes
+
+- Breaking: `provideContentfulConfig` no longer registers the asset and link components; spread `CONTENTFUL_DEFAULT_COMPONENTS` into it to keep them. `et update` migrates existing calls.
+
+## 4.0.0-next.11
+
+### Major Changes
+
+- `generateContentfulImageSources(asset, options)` now takes an options object (`srcsetSizes`, `backgroundColor`, `quality`, `focusArea`, `resizeBehavior`) instead of five positional parameters.
+
+### Minor Changes
+
+- `ContentfulRestAsset.fields.file` is now optional, so an asset without a file no longer throws. Rich text also keeps moved content in its new parent, and only the current host counts as internal.
+- `et-contentful-file`: the file size now scales to a readable unit (`(1.5 MB)` instead of `(1536000 Bytes)`) and can be localized with `provideContentfulFileLabels`.
+- `et-contentful-link`: the rich-text classes now come from the renderer through a new `anchorClass` input, so a standalone link no longer carries them.
+
+### Patch Changes
+
+- `provideContentfulConfig` now merges `components` and `imageOptions` one level deep, so overriding one component keeps the other defaults.
+- `et-contentful-link` resolves query-only and relative hrefs against the current router URL. The file link and audio caption fall back to the file name when the asset has no title; the GQL asset fragment selects `fileName`.
+- Rich text renderer: internal render-state failures now throw coded `RuntimeError`s (ET009-ET011) instead of plain `Error`s.
+- The rich-text renderer renders unsupported inlines as `span` and warns about unsupported node types in dev mode, keeps partial marks inside a hyperlink, opens external fallback anchors in a new tab, and finds parents and siblings in constant time.
+- The rich text renderer's node lookup tables no longer stay in bundles that do not render rich text.
+- The rich-text renderer skips an embedded entry or asset missing from `includes`, or an entry without a custom component, with a dev-mode warning instead of throwing ET004-ET006 and rendering nothing.
+
+## 4.0.0-next.10
+
+### Minor Changes
+
+- The Angular peer dependency moves from 22.0.7 to 22.1.6. Angular 22.0.x is affected by
+  GHSA-hh8m-fm6v-7cvg, a sanitization bypass through directive host bindings, fixed in 22.1.0.
+
+## 4.0.0-next.9
+
+### Patch Changes
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1d38e7e`](https://github.com/ethlete-io/ethdk/commit/1d38e7e0a025769f065d8ca7d506cb75ad89139a) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et update` moves the `@ethlete/*` packages to a newer version, runs the codemods those versions
+  declare in their own `migrations.json`, and reports what needs a decision or an agent.
+
+## 4.0.0-next.8
+
+### Major Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`1aabd4e`](https://github.com/ethlete-io/ethdk/commit/1aabd4ebc8b5f28a72b6d5cc2079ccaa6318b842) Thanks [@github-actions](https://github.com/apps/github-actions)! - Contentful: correct rich-text ordering, URL handling, nullable assets and responsive images; the GraphQL asset fragment is now named `ContentfulAssetData` to avoid document collisions.
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`55736ec`](https://github.com/ethlete-io/ethdk/commit/55736ec21189efa86fd107043579fc4c65e4452e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Correct reactive state mutability declarations across Query, Contentful and Query Devtools.
+
+## 4.0.0-next.7
+
+### Major Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`9c71ed3`](https://github.com/ethlete-io/ethdk/commit/9c71ed3c7d1bd92b58e9a183a3213f3439986844) Thanks [@github-actions](https://github.com/apps/github-actions)! - The built-in embedded components now only exist when `provideContentfulConfig()` is in scope - without it embedded assets are skipped and hyperlinks render as plain `<a href>`. Apps that render embedded content must add the provider (no arguments is enough). In exchange, `ContentfulLinkComponent` and text-only rich text no longer bundle the image/video/audio/file components.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`9c71ed3`](https://github.com/ethlete-io/ethdk/commit/9c71ed3c7d1bd92b58e9a183a3213f3439986844) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text: marks now render as semantic elements (`<strong>`, `<em>`, `<u>`, `<code>`, `<s>`, `<sub>`, `<sup>`) instead of Tailwind classes; marks inside hyperlinks become `et-contentful-rich-text-mark-*` classes on the link's `textClass`. `marksToClass` changed accordingly, `marksToTags` is new.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`0817cc8`](https://github.com/ethlete-io/ethdk/commit/0817cc888a4cb5e981437096bf7df5351a4c5de6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Contentful v5: the package peers on `@ethlete/components` instead of `@ethlete/cdk` (and drops
+  `@angular/cdk` and `rxjs`). `et-contentful-image` renames `hasPriority` to `priority` and loses its
+  `*Class` inputs - style the static `et-picture-*` classes instead. The rich text renderer now diffs
+  keyed, so element DOM and embedded component instances survive updates and reorders; the
+  `useTailwindClasses` option is gone. Run `nx g @ethlete/contentful:migrate-to-contentful-v5`.
+
+### Patch Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`9c71ed3`](https://github.com/ethlete-io/ethdk/commit/9c71ed3c7d1bd92b58e9a183a3213f3439986844) Thanks [@github-actions](https://github.com/apps/github-actions)! - Smaller bundles: the rich-text renderer no longer pulls the `@contentful/rich-text-types` runtime enums (~2.4 kB gz), and the renderer error codes plus `GQL_FRAGMENT_CONTENTFUL_ASSET` are now droppable literals. `@contentful/rich-text-types` stays a peer dependency for its types.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark build-tooling peer dependencies (`vite`, `typescript`, `ts-morph`, `@nx/devkit`, `@analogjs/*`) and feature-scoped runtime peers (`date-fns` in components) as optional via `peerDependenciesMeta`. They are only needed when running the Nx generators or using the date/time components - consumers no longer have to install them just to use the libraries.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Adopt the `@ethlete/eslint-plugin` styleguide flat configs in `core`, `query`, `contentful` and
+  `types`, and apply the resulting auto-fixes. Runtime behavior is unchanged; three fixes are visible to
+  TypeScript consumers: exported `types` shapes are `type` aliases rather than `interface` declarations
+  (so they can no longer be extended by declaration merging), `core`'s `PropsDirective.destroyRef` and
+  `SeoDirective.parent` are `private`, and `ConsentHandler` is a `type`. The theme name registries stay
+  interfaces so consumers can keep augmenting them.
+
+## 4.0.0-next.6
+
+### Patch Changes
+
+- [`4e9f2b4`](https://github.com/ethlete-io/ethdk/commit/4e9f2b4d12335fafef192350aef8ffc584996a91) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove the now-redundant `changeDetection: ChangeDetectionStrategy.OnPush` declaration (and its `ChangeDetectionStrategy` import) from all components. OnPush is the default change detection strategy since Angular 22, so this is a no-op cleanup with no behavioral change.
+
+## 4.0.0-next.5
+
+### Minor Changes
+
+- [`edea44b`](https://github.com/ethlete-io/ethdk/commit/edea44bf1c494420f02b545202f4b24db9a6395c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to angular 22
+
+## 4.0.0-next.4
+
+### Patch Changes
+
+- [`b73a127`](https://github.com/ethlete-io/ethdk/commit/b73a127002a06e3aa0c4e7e977b1ad1f3e04e7e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump yet again, final one for sure, pinky promise
+
+## 4.0.0-beta.3
+
+### Patch Changes
+
+- [`ddb5d09`](https://github.com/ethlete-io/ethdk/commit/ddb5d09e4bc56e18cc8c228aa78a200441e7a766) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump to beta
+
+- Updated dependencies [[`ddb5d09`](https://github.com/ethlete-io/ethdk/commit/ddb5d09e4bc56e18cc8c228aa78a200441e7a766)]:
+  - @ethlete/query@6.0.0-beta.8
+  - @ethlete/core@5.0.0-beta.11
+  - @ethlete/cdk@5.0.0-beta.12
+
+## 4.0.0-next.2
+
+### Patch Changes
+
+- [`a690217`](https://github.com/ethlete-io/ethdk/commit/a6902172efd9bd1956a16237e79acbfbd816d946) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump only
+
+## 4.0.0-next.1
+
+### Patch Changes
+
+- [`b71e18f`](https://github.com/ethlete-io/ethdk/commit/b71e18fba16c08be9da03a16ba9bd74239626485) Thanks [@TomTomB](https://github.com/TomTomB)! - Use router link for internal links in contentful renderer
+
+## 4.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`99b3f64`](https://github.com/ethlete-io/ethdk/commit/99b3f646701cb763512e7148592457dc509f55e5), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`5503fbb`](https://github.com/ethlete-io/ethdk/commit/5503fbb21d948d4e2d59928afa4be9846eb2102d), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`58678e9`](https://github.com/ethlete-io/ethdk/commit/58678e9d57f7ff85e2a3159657bda15f06b8e5cd), [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b), [`27aa7a8`](https://github.com/ethlete-io/ethdk/commit/27aa7a825573a12c3360530d1d32df7c4690e7e8), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`6816054`](https://github.com/ethlete-io/ethdk/commit/68160548e8df8cd8fbaff61afa684442f7f7a7e5), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`f4847d4`](https://github.com/ethlete-io/ethdk/commit/f4847d4eb25b70706a4ee8c81addcd58a7d99995), [`451e170`](https://github.com/ethlete-io/ethdk/commit/451e170f2df1c49fca07bde053efa75bd23ca22f), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b), [`55dc627`](https://github.com/ethlete-io/ethdk/commit/55dc627a6a49f3a8a5c8f80f63f163e443e07099), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`5d7ae57`](https://github.com/ethlete-io/ethdk/commit/5d7ae57859077357e2e8a1761286c4744e58d4b9), [`ee5014f`](https://github.com/ethlete-io/ethdk/commit/ee5014f33dc7d79b43774aaafc2fd187073871be), [`da0ef0a`](https://github.com/ethlete-io/ethdk/commit/da0ef0a6425c1ac40c42fd13906af49860418a29), [`7e0f4d9`](https://github.com/ethlete-io/ethdk/commit/7e0f4d943abe6ae61719fcb7003cc8c19496320e), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`6816054`](https://github.com/ethlete-io/ethdk/commit/68160548e8df8cd8fbaff61afa684442f7f7a7e5), [`6e41e09`](https://github.com/ethlete-io/ethdk/commit/6e41e09668d2077fba27de1e11bacc98480becfe), [`8a85984`](https://github.com/ethlete-io/ethdk/commit/8a859841acaf7c10c876c7eb921f4c7e25e41764), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb)]:
+  - @ethlete/cdk@5.0.0-next.0
+  - @ethlete/core@5.0.0-next.0
+  - @ethlete/query@6.0.0-next.0
+
+## 3.10.0
+
+### Minor Changes
+
+- [`4dfebf6`](https://github.com/ethlete-io/ethdk/commit/4dfebf65b4a21be3ae101580bc68a6ddf011dd5c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update all dependencies to their latest versions. The peer dependencies now require Angular 22.2 and Angular CDK 22.2, and `@ethlete/core` requires TypeScript 6.0 and `@nx/devkit` 24.
+
+### Patch Changes
+
+- [`bc313e1`](https://github.com/ethlete-io/ethdk/commit/bc313e1fd84e421cb4344745cdf7a8f06c9f530c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update dependencies and the pinned peer dependency versions (Angular 20.3.34, Angular CDK 20.2.14, @floating-ui/dom 1.8.0, @contentful/rich-text-types 17.2.7).
+
+## 3.9.0
+
+### Minor Changes
+
+- [`8816a31`](https://github.com/ethlete-io/ethdk/commit/8816a3184693002fcdc795c81e5f39771ec57c52) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et-contentful-rich-text-default-element` class to every native html element rendered by the rich text renderer
+
+## 3.8.0
+
+### Minor Changes
+
+- [`10802c0`](https://github.com/ethlete-io/ethdk/commit/10802c0ecef8907b2ab27f42680aa5b47db76f7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular v20
+
+## 3.7.2
+
+### Patch Changes
+
+- [`91b6a3b`](https://github.com/ethlete-io/ethdk/commit/91b6a3ba51f6a60abe71b27d1eb88099e29b2418) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix class defines
+
+## 3.7.1
+
+### Patch Changes
+
+- [`e34e60b`](https://github.com/ethlete-io/ethdk/commit/e34e60b26df11baf7d9c8dd305f91b60902294cc) Thanks [@TomTomB](https://github.com/TomTomB)! - Gracefully handle contentful assets where the file is missing (e.g. when no file is uploaded to the asset in Contentful for the current locale).
+
+## 3.7.0
+
+### Minor Changes
+
+- [`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update angular 19
+
+## 3.6.4
+
+### Patch Changes
+
+- [`df7b967`](https://github.com/ethlete-io/ethdk/commit/df7b9670a1f53d5ea7f331ea4c47be253f36ddc0) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful renderer breaking after auto removal of empty tags
+
+- [`df7b967`](https://github.com/ethlete-io/ethdk/commit/df7b9670a1f53d5ea7f331ea4c47be253f36ddc0) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful renderer not rendering br tags
+
+- [`df7b967`](https://github.com/ethlete-io/ethdk/commit/df7b9670a1f53d5ea7f331ea4c47be253f36ddc0) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful renderer not rendering self closing elements such as hr
+
+## 3.6.3
+
+### Patch Changes
+
+- [`5ce9f36`](https://github.com/ethlete-io/ethdk/commit/5ce9f36a62797e734ad624346139c7a3884caa4f) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to angular 18.1
+
+## 3.6.2
+
+### Patch Changes
+
+- [`69ee325`](https://github.com/ethlete-io/ethdk/commit/69ee32561bf0df78569a1649053a37edf9741b9c) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump only for updating peer deps
+
+## 3.6.1
+
+### Patch Changes
+
+- [`ba2e546`](https://github.com/ethlete-io/ethdk/commit/ba2e54669666038da926808fcfdeacac93483eb3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing exports for `ComponentLikeWithAsset` and `ComponentLikeWithContentfulRendererInputs` types.
+
+## 3.6.0
+
+### Minor Changes
+
+- [`f744c9f`](https://github.com/ethlete-io/ethdk/commit/f744c9fb31f4807608834de8d2f6cd424208b177) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `ContentfulGqlCollectionFilterVariables`, `ContentfulGqlOrder` and `ContentfulGqlWhereFilter` types
+
+## 3.5.0
+
+### Minor Changes
+
+- [`0933d21`](https://github.com/ethlete-io/ethdk/commit/0933d21ac5dace9904f35b7f09d10403ee91f568) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `isContentfulEntryType` type guard util
+
+## 3.4.1
+
+### Patch Changes
+
+- [`bea3854`](https://github.com/ethlete-io/ethdk/commit/bea38548565087d05cbe23af9f67495835a7f100) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful sys object typings for rest assets
+
+## 3.4.0
+
+### Minor Changes
+
+- [`41a269c`](https://github.com/ethlete-io/ethdk/commit/41a269cd03c61d41f159116cf26b4c7be1312155) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `createContentfulIncludeMap` util
+
+## 3.3.0
+
+### Minor Changes
+
+- [`7c71af5`](https://github.com/ethlete-io/ethdk/commit/7c71af5fd7544395577a30b4ff541f26debc575f) Thanks [@TomTomB](https://github.com/TomTomB)! - Support the `ContentfulGqlImage` type inside the `ContentfulImageComponent`
+
+- [`7c71af5`](https://github.com/ethlete-io/ethdk/commit/7c71af5fd7544395577a30b4ff541f26debc575f) Thanks [@TomTomB](https://github.com/TomTomB)! - Rename `ContentfulAsset` to `ContentfulRestAsset` to make it clear that it's a asset that is fetched from the REST API.
+
+## 3.2.1
+
+### Patch Changes
+
+- [`6695e2b`](https://github.com/ethlete-io/ethdk/commit/6695e2b8f006d81b000cb93fbadaeed051760725) Thanks [@TomTomB](https://github.com/TomTomB)! - Add back missing contentful graph ql asset type
+
+## 3.2.0
+
+### Minor Changes
+
+- [`4835e46`](https://github.com/ethlete-io/ethdk/commit/4835e46abcb0d2377d20a722e079641661cec2e3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `getEntries` and `getAssets` methods to the `ContentfulIncludeMap`
+
+## 3.1.0
+
+### Minor Changes
+
+- [`9dae37f`](https://github.com/ethlete-io/ethdk/commit/9dae37f2ead003cbce892f636ba35ceb503afe16) Thanks [@TomTomB](https://github.com/TomTomB)! - Change the type of `ContentfulIncludeMap` to be more ergonomic. Instead of returning raw maps for assets and entries, it now returns a generic `getEntry` function as well as a `getAsset` function. This makes it easier to work with the included assets and entries.
+
+  ```ts
+  // The type of the fields property inside a contentful entry. Could be just about anything.
+  interface MyImageCollectionFields {
+    title: string;
+    images: ContentfulAsset[];
+  }
+
+  // Inside a component class that gets rendered by the rich-text renderer
+  includes = input.required<ContentfulIncludeMap>();
+
+  // "my-content-type" is the type defined by contentful inside entry.sys.id
+  // This is needed to make sure the entry is of the correct type since the user could put any entry here.
+  myImageCollection = computed(() =>
+    this.includes().getEntry<MyImageCollectionFields>('someId', 'my-image-collection'),
+  );
+  ```
+
+## 3.0.1
+
+### Patch Changes
+
+- [`de8fe79`](https://github.com/ethlete-io/ethdk/commit/de8fe79e35010fd9eac502a8f3187dab3a5d83d7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing input transforms for booleans and numbers
+
+## 3.0.0
+
+### Major Changes
+
+- [`ef63100`](https://github.com/ethlete-io/ethdk/commit/ef6310039b70c0321021a532b5818822518f47c6) Thanks [@TomTomB](https://github.com/TomTomB)! - The `rich-text-renderer` component was rebuild from scratch.
+  - The `richText` input was renamed to `content` and is required.
+  - The value of the `content` input should be a `ContentfulCollection` object. This can be directly fetched using the Contentful REST API. Do not use their GraphQL API for this purpose.
+  - A `richTextPath` input was added to allow for the customization of the path to the `richText` field in the `ContentfulCollection` object. It is required and should point to the start of the rich text object inside the `ContentfulCollection` object. The start contains a `nodeType` property with the value `document`.
+  - All custom components now can contain the following input signals. They are optional and will be used by the renderer to expose the entry's data.
+    - `fields` with your custom type defined inside Contentful.
+    - `includes` with a type of `ContentfulIncludeMap`. Using this map you can access linked entries and assets.
+    - `metadata` with a type of `ContentfulMetadata`
+    - `sys` with a type of `ContentfulSys`
+  - Inside the `ContentfulAudioComponent`, `ContentfulFileComponent`, `ContentfulImageComponent`, and `ContentfulVideoComponent` components, the `data` input was renamed to `asset`.
+  - If you supply custom components for the ones mentioned above, they must also contain an `asset` signal with a type of `ContentfulAsset`.
+  - Everything evolving around the `RICH_TEXT_RENDERER_COMPONENT_DATA` DI token was removed. The renderer now sets and updates inputs instead of using dependency injection.
+  - The `GQL_FRAGMENT_CONTENTFUL_IMAGE` constant has been removed without replacement.
+
+## 2.1.2
+
+### Patch Changes
+
+- [#1614](https://github.com/ethlete-io/ethdk/pull/1614) [`5f414b9`](https://github.com/ethlete-io/ethdk/commit/5f414b96362366f650945835b87d3cf8ce292bc1) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix various circular dependencies
+
+## 2.1.1
+
+### Patch Changes
+
+- [`2a75a9d8`](https://github.com/ethlete-io/ethdk/commit/2a75a9d856b6f5190570ac2bebcc02afdd409745) Thanks [@TomTomB](https://github.com/TomTomB)! - Migrate to new control flow
+
+## 2.1.0
+
+### Minor Changes
+
+- [`8a714a01`](https://github.com/ethlete-io/ethdk/commit/8a714a0147a58fa84c9258fd4b14ffdc835b3442) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 17
+
+## 2.0.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @ethlete/cdk@4.0.3
+  - @ethlete/core@4.0.3
+  - @ethlete/query@5.0.3
+
+## 2.0.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @ethlete/cdk@4.0.2
+  - @ethlete/core@4.0.2
+  - @ethlete/query@5.0.2
+
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`3f77e8d5`](https://github.com/ethlete-io/ethdk/commit/3f77e8d52a5ba45c4f3da4e34dcc08e0561ae04d)]:
+  - @ethlete/core@4.0.1
+  - @ethlete/cdk@4.0.1
+  - @ethlete/query@5.0.1
+
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`2ded18ef`](https://github.com/ethlete-io/ethdk/commit/2ded18ef14115c9c9e2fb4f86c688d436c807766)]:
+  - @ethlete/cdk@4.0.0
+  - @ethlete/core@4.0.0
+  - @ethlete/query@5.0.0
+
+## 1.0.3
+
+### Patch Changes
+
+- [`0328fb76`](https://github.com/ethlete-io/ethdk/commit/0328fb769ca53042835826c1967b8d2f25072d63) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency sync only
+
+- Updated dependencies [[`0328fb76`](https://github.com/ethlete-io/ethdk/commit/0328fb769ca53042835826c1967b8d2f25072d63)]:
+  - @ethlete/cdk@3.22.7
+  - @ethlete/core@3.13.2
+  - @ethlete/query@4.20.5
+
+## 1.0.2
+
+### Patch Changes
+
+- [`04e0db6`](https://github.com/ethlete-io/ethdk/commit/04e0db6c0007d58705f88605f3f8ed2d0ad05ce3) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 16
+
+## 1.0.1
+
+### Patch Changes
+
+- [`3fe7e30`](https://github.com/ethlete-io/ethdk/commit/3fe7e30756f24543c96ac62aec86a0efba7fddac) Thanks [@TomTomB](https://github.com/TomTomB)! - Update deps to use cdk instead of components
+
+## 1.0.0
+
+### Major Changes
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`44ac6e6`](https://github.com/ethlete-io/ethdk/commit/44ac6e621c9b2c2e02b45f7abc2c1b3111604d56) Thanks [@TomTomB](https://github.com/TomTomB)! - Initial stable release
+
+### Minor Changes
+
+- [#63](https://github.com/ethlete-io/ethdk/pull/63) [`8b05caa`](https://github.com/ethlete-io/ethdk/commit/8b05caa7234aa2ea22efe59c6c955b6981d50f18) Thanks [@TomTomB](https://github.com/TomTomB)! - Add contentful rich text renderer
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`24b5fd2`](https://github.com/ethlete-io/ethdk/commit/24b5fd2bc443cb31752c01d7afaaa7c881714e41) Thanks [@TomTomB](https://github.com/TomTomB)! - Add contentful image and asset fragments
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`4cfa96d`](https://github.com/ethlete-io/ethdk/commit/4cfa96d6b13c8ea51c9428b6fe0badf692f776d6) Thanks [@TomTomB](https://github.com/TomTomB)! - Update contentful image to use the new picture component
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`36e6462`](https://github.com/ethlete-io/ethdk/commit/36e6462b46ff8241e666f5e4355b28a4f40fa4b5) Thanks [@TomTomB](https://github.com/TomTomB)! - Make image sizes only defineable via code
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`07e8687`](https://github.com/ethlete-io/ethdk/commit/07e8687f3771b6286ab6bb621fe05816fc09066f) Thanks [@nziermann](https://github.com/nziermann)! - Switch from modules to pure array exports
+
+### Patch Changes
+
+- [#278](https://github.com/ethlete-io/ethdk/pull/278) [`d3555ab`](https://github.com/ethlete-io/ethdk/commit/d3555abdb5279967b95b34a9ce1e4c0401fde0f2) Thanks [@manuelschulte](https://github.com/manuelschulte)! - Clear childNodes to prevent appending to existing ones
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`ba8071c`](https://github.com/ethlete-io/ethdk/commit/ba8071caa08636193bebc0fdcb986205b41b7023) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not use injected rich text data if custom data is provided
+
+- [#183](https://github.com/ethlete-io/ethdk/pull/183) [`1521117`](https://github.com/ethlete-io/ethdk/commit/152111770cd33dec9aa81288e8a596f86e32b154) Thanks [@baltruschat](https://github.com/baltruschat)! - Add source types to contentful image component
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`516b56b`](https://github.com/ethlete-io/ethdk/commit/516b56bf8d913a17370ea07e71facc534adb73bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove no longer existing properties from contentful image gql fragment
+
+- [#65](https://github.com/ethlete-io/ethdk/pull/65) [`1cf9a35`](https://github.com/ethlete-io/ethdk/commit/1cf9a35a39885c1054721db20ce23424c81bad74) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing exports
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`4491262`](https://github.com/ethlete-io/ethdk/commit/4491262c1d1575f20dacf5abd34e382fd8eb32b3) Thanks [@TomTomB](https://github.com/TomTomB)! - Use ngSrc directive for contentful image
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`4d5247f`](https://github.com/ethlete-io/ethdk/commit/4d5247ffaa6f1dab2370328c5a84ffcf88664445) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix rich text renderer data injector using the wrong data
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`516b56b`](https://github.com/ethlete-io/ethdk/commit/516b56bf8d913a17370ea07e71facc534adb73bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful image api jpeg source type naming
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`d92c892`](https://github.com/ethlete-io/ethdk/commit/d92c892b567903cb6118a1c72f1251a362af5b15) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix rich text rendering of embedded entries
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`08dedb4`](https://github.com/ethlete-io/ethdk/commit/08dedb4644d0a77f975bd01f500d51d345b39a18) Thanks [@TomTomB](https://github.com/TomTomB)! - Switch from config classes to objects
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`b7e087c`](https://github.com/ethlete-io/ethdk/commit/b7e087c096aea289fdc81806839ea7dede72e5db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add inputs to configure classes inside contentful components
+
+## 0.1.0-next.14
+
+### Minor Changes
+
+- [#309](https://github.com/ethlete-io/ethdk/pull/309) [`07e8687`](https://github.com/ethlete-io/ethdk/commit/07e8687f3771b6286ab6bb621fe05816fc09066f) Thanks [@renovate](https://github.com/apps/renovate)! - Switch from modules to pure array exports
+
+## 0.1.0-next.13
+
+### Patch Changes
+
+- [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
+## 0.1.0-next.12
+
+### Patch Changes
+
+- [`516b56b`](https://github.com/ethlete-io/ethdk/commit/516b56bf8d913a17370ea07e71facc534adb73bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove no longer existing properties from contentful image gql fragment
+
+- [`516b56b`](https://github.com/ethlete-io/ethdk/commit/516b56bf8d913a17370ea07e71facc534adb73bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful image api jpeg source type naming
+
+## 0.1.0-next.11
+
+### Minor Changes
+
+- [`36e6462`](https://github.com/ethlete-io/ethdk/commit/36e6462b46ff8241e666f5e4355b28a4f40fa4b5) - Make image sizes only defineable via code
+
+## 0.1.0-next.10
+
+### Minor Changes
+
+- [`4cfa96d`](https://github.com/ethlete-io/ethdk/commit/4cfa96d6b13c8ea51c9428b6fe0badf692f776d6) Thanks [@TomTomB](https://github.com/TomTomB)! - Update contentful image to use the new picture component
+
+## 0.1.0-next.9
+
+### Minor Changes
+
+- [`24b5fd2`](https://github.com/ethlete-io/ethdk/commit/24b5fd2bc443cb31752c01d7afaaa7c881714e41) Thanks [@TomTomB](https://github.com/TomTomB)! - Add contentful image and asset fragments
+
+## 0.1.0-next.8
+
+### Patch Changes
+
+- [#278](https://github.com/ethlete-io/ethdk/pull/278) [`d3555ab`](https://github.com/ethlete-io/ethdk/commit/d3555abdb5279967b95b34a9ce1e4c0401fde0f2) Thanks [@manuelschulte](https://github.com/manuelschulte)! - Clear childNodes to prevent appending to existing ones
+
+## 0.1.0-next.7
+
+### Patch Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`4491262`](https://github.com/ethlete-io/ethdk/commit/4491262c1d1575f20dacf5abd34e382fd8eb32b3) Thanks [@renovate](https://github.com/apps/renovate)! - Use ngSrc directive for contentful image
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`08dedb4`](https://github.com/ethlete-io/ethdk/commit/08dedb4644d0a77f975bd01f500d51d345b39a18) Thanks [@renovate](https://github.com/apps/renovate)! - Switch from config classes to objects
+
+## 0.1.0-next.6
+
+### Patch Changes
+
+- [#183](https://github.com/ethlete-io/ethdk/pull/183) [`1521117`](https://github.com/ethlete-io/ethdk/commit/152111770cd33dec9aa81288e8a596f86e32b154) Thanks [@baltruschat](https://github.com/baltruschat)! - Add source types to contentful image component
+
+## 0.1.0-next.5
+
+### Patch Changes
+
+- [`ba8071c`](https://github.com/ethlete-io/ethdk/commit/ba8071caa08636193bebc0fdcb986205b41b7023) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not use injected rich text data if custom data is provided
+
+## 0.1.0-next.4
+
+### Patch Changes
+
+- [`4d5247f`](https://github.com/ethlete-io/ethdk/commit/4d5247ffaa6f1dab2370328c5a84ffcf88664445) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix rich text renderer data injector using the wrong data
+
+## 0.1.0-next.3
+
+### Patch Changes
+
+- [`d92c892`](https://github.com/ethlete-io/ethdk/commit/d92c892b567903cb6118a1c72f1251a362af5b15) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix rich text rendering of embedded entries
+
+## 0.1.0-next.2
+
+### Patch Changes
+
+- [`b7e087c`](https://github.com/ethlete-io/ethdk/commit/b7e087c096aea289fdc81806839ea7dede72e5db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add inputs to configure classes inside contentful components
+
+## 0.1.0-next.1
+
+### Patch Changes
+
+- [#65](https://github.com/ethlete-io/ethdk/pull/65) [`1cf9a35`](https://github.com/ethlete-io/ethdk/commit/1cf9a35a39885c1054721db20ce23424c81bad74) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing exports
+
+## 0.1.0-next.0
+
+### Minor Changes
+
+- [#63](https://github.com/ethlete-io/ethdk/pull/63) [`8b05caa`](https://github.com/ethlete-io/ethdk/commit/8b05caa7234aa2ea22efe59c6c955b6981d50f18) Thanks [@TomTomB](https://github.com/TomTomB)! - Add contentful rich text renderer

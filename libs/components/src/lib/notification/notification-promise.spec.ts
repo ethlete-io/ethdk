@@ -1,0 +1,341 @@
+import { HttpResponse } from '@angular/common/http';
+import { ApplicationRef, EnvironmentInjector, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { AnyLegacyQuery, QueryArgs, ReadonlyQuery } from '@ethlete/query';
+import { Subject, of, throwError } from 'rxjs';
+import '../../test-helpers';
+import { NotificationConfig, NotificationManagerConfig } from './notification-config';
+import { createNotificationPromiseFn } from './notification-promise';
+import { NotificationRef, createNotificationRef } from './notification-ref';
+
+const MANAGER_CONFIG: NotificationManagerConfig = {
+  position: 'bottom-end',
+  maxVisible: 3,
+  defaultDuration: { success: 0, info: 0, loading: 0, error: 0 },
+};
+
+type QueryExecutionState = NonNullable<ReturnType<ReadonlyQuery<QueryArgs>['executionState']>>;
+
+describe('notification promise', () => {
+  let opened: NotificationConfig[];
+  let ref: NotificationRef;
+
+  const flushEffects = () => TestBed.inject(ApplicationRef).tick();
+
+  const promise = () =>
+    createNotificationPromiseFn({
+      open: (config) => {
+        opened.push(config);
+        ref = createNotificationRef(config, { managerConfig: MANAGER_CONFIG });
+
+        return ref;
+      },
+      injector: TestBed.inject(EnvironmentInjector),
+    });
+
+  beforeEach(() => {
+    opened = [];
+    TestBed.configureTestingModule({});
+  });
+
+  it('opens as loading, taking a bare string as the title', () => {
+    promise()(new Promise<string>(() => undefined), { loading: 'Saving…', success: 'Saved', error: 'Failed' });
+
+    expect(opened).toEqual([{ status: 'loading', title: 'Saving…' }]);
+  });
+
+  it('replaces the loading content with the success content, keeping nothing of it', async () => {
+    promise()(Promise.resolve({ name: 'Report' }), {
+      loading: { title: 'Saving…', message: 'Hold on' },
+      success: (value) => ({ title: `Saved ${value.name}` }),
+      error: 'Failed',
+    });
+
+    await Promise.resolve();
+
+    expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved Report' });
+  });
+
+  it('leaves the toast alone once a later open with the same id replaced it', async () => {
+    promise()(Promise.resolve('done'), {
+      loading: { id: 'save', title: 'Saving…' },
+      success: 'Saved',
+      error: 'Failed',
+    });
+
+    ref.replaceConfig({ status: 'info', title: 'Newer' });
+    await Promise.resolve();
+
+    expect(ref.entry().config).toEqual({ id: 'save', status: 'info', title: 'Newer' });
+  });
+
+  it('still settles after the caller merged an update into the loading toast', async () => {
+    promise()(Promise.resolve('done'), { loading: 'Saving…', success: 'Saved', error: 'Failed' });
+
+    ref.update({ message: 'Almost there' });
+    await Promise.resolve();
+
+    expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved' });
+  });
+
+  it('turns into the error content when the promise rejects', async () => {
+    promise()(Promise.reject(new Error('nope')), {
+      loading: 'Saving…',
+      success: 'Saved',
+      error: (error) => ({ title: 'Failed', message: (error as Error).message }),
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(ref.entry().config).toEqual({ status: 'error', title: 'Failed', message: 'nope' });
+  });
+
+  it('settles an observable on completion, carrying its last value', () => {
+    const work = new Subject<number>();
+
+    promise()(work, { loading: 'Working…', success: (value) => `Got ${value}`, error: 'Failed' });
+
+    work.next(1);
+    work.next(2);
+    expect(ref.entry().config.status).toBe('loading');
+
+    work.complete();
+
+    expect(ref.entry().config).toEqual({ status: 'success', title: 'Got 2' });
+  });
+
+  it('treats an observable that completes without emitting as a failure', () => {
+    promise()(of<number>(), { loading: 'Working…', success: 'Done', error: 'Nothing came back' });
+
+    expect(ref.entry().config).toEqual({ status: 'error', title: 'Nothing came back' });
+  });
+
+  it('reports an observable error without letting it escape', () => {
+    promise()(
+      throwError(() => new Error('boom')),
+      {
+        loading: 'Working…',
+        success: 'Done',
+        error: (error) => `Failed: ${(error as Error).message}`,
+      },
+    );
+
+    expect(ref.entry().config).toEqual({ status: 'error', title: 'Failed: boom' });
+  });
+
+  describe('with a query', () => {
+    const createFakeQuery = (initial: QueryExecutionState | null = null) => {
+      const executionState = signal<QueryExecutionState | null>(initial);
+      const latestHttpEvent = signal<HttpResponse<unknown> | null>(null);
+
+      const respond = (response: unknown) => {
+        latestHttpEvent.set(new HttpResponse({ body: response }));
+        executionState.set({ type: 'success', response } as QueryExecutionState);
+      };
+
+      return {
+        executionState,
+        latestHttpEvent,
+        respond,
+        query: { executionState, latestHttpEvent } as unknown as ReadonlyQuery<QueryArgs>,
+      };
+    };
+
+    const loadingState = (percentage?: number): QueryExecutionState => ({
+      type: 'loading',
+      hasCachedResponse: false,
+      loading: {
+        executeTime: 0,
+        progress:
+          percentage === undefined
+            ? null
+            : { total: 100, loaded: percentage, percentage, speed: null, remainingTime: null },
+      },
+    });
+
+    it('settles on the query’s success, handing the response to the success content', () => {
+      const { respond, query } = createFakeQuery(loadingState());
+
+      promise()(query, { loading: 'Saving…', success: (res) => `Saved ${res.name}`, error: 'Failed' });
+
+      flushEffects();
+      expect(ref.entry().config.status).toBe('loading');
+
+      respond({ name: 'Report' });
+      flushEffects();
+
+      expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved Report' });
+    });
+
+    it('settles on the query’s failure, handing the error to the error content', () => {
+      const { executionState, query } = createFakeQuery(loadingState());
+
+      promise()(query, {
+        loading: 'Saving…',
+        success: 'Saved',
+        error: (error) => `Failed with ${error.code}`,
+      });
+
+      executionState.set({
+        type: 'failure',
+        error: { code: 500, isList: false, error: { message: 'Server Error' } },
+      } as QueryExecutionState);
+      flushEffects();
+
+      expect(ref.entry().config).toEqual({ status: 'error', title: 'Failed with 500' });
+    });
+
+    it('follows the request’s upload progress, but only when the loading content asked for a bar', () => {
+      const { executionState, query } = createFakeQuery(loadingState(0));
+
+      promise()(query, { loading: { title: 'Uploading…', progress: 0 }, success: 'Done', error: 'Failed' });
+
+      executionState.set(loadingState(42));
+      flushEffects();
+
+      expect(ref.entry().config.progress).toBe(42);
+    });
+
+    it('leaves the progress alone when the loading content has no bar', () => {
+      const { executionState, query } = createFakeQuery(loadingState(0));
+
+      promise()(query, { loading: 'Uploading…', success: 'Done', error: 'Failed' });
+
+      executionState.set(loadingState(42));
+      flushEffects();
+
+      expect(ref.entry().config.progress).toBeUndefined();
+    });
+
+    it('stops following once it has settled, so a later execution leaves the notification alone', () => {
+      const { executionState, respond, query } = createFakeQuery(loadingState());
+
+      promise()(query, { loading: 'Saving…', success: 'Saved', error: 'Failed' });
+
+      respond({});
+      flushEffects();
+
+      executionState.set({ type: 'failure', error: { code: 500 } } as QueryExecutionState);
+      flushEffects();
+
+      expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved' });
+    });
+
+    it('says nothing once the notification has been dismissed', () => {
+      const { respond, query } = createFakeQuery(loadingState());
+
+      promise()(query, { loading: 'Saving…', success: 'Saved', error: 'Failed' });
+
+      ref.dismiss();
+      ref.markDismissed();
+
+      respond({});
+      flushEffects();
+
+      expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
+    it('dismisses the notification silently when the first execution is aborted', () => {
+      const { executionState, query } = createFakeQuery(loadingState());
+
+      promise()(query, { loading: 'Saving…', success: 'Saved', error: 'Failed' });
+      flushEffects();
+
+      executionState.set(null);
+      flushEffects();
+
+      expect(ref.entry().isDismissing).toBe(true);
+      expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
+    it('dismisses the notification silently when a re-execution is aborted, never showing the previous response', () => {
+      const { executionState, latestHttpEvent, query } = createFakeQuery();
+      const previousResponse = new HttpResponse({ body: { name: 'Old' } });
+
+      latestHttpEvent.set(previousResponse);
+      executionState.set({
+        type: 'loading',
+        hasCachedResponse: true,
+        cachedResponse: { name: 'Old' },
+        loading: { executeTime: 0, progress: null },
+      } as QueryExecutionState);
+
+      promise()(query, { loading: 'Saving…', success: (res) => `Saved ${res.name}`, error: 'Failed' });
+      flushEffects();
+
+      executionState.set({ type: 'success', response: { name: 'Old' } } as QueryExecutionState);
+      flushEffects();
+
+      expect(ref.entry().isDismissing).toBe(true);
+      expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
+    it('dismisses the notification silently when the execution is aborted before the first effect run', () => {
+      const { executionState, query } = createFakeQuery(loadingState());
+
+      promise()(query, { loading: 'Saving…', success: 'Saved', error: 'Failed' });
+
+      executionState.set(null);
+      flushEffects();
+
+      expect(ref.entry().isDismissing).toBe(true);
+      expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
+    it('never shows the previous response when a re-execution is aborted before the first effect run', () => {
+      const { executionState, latestHttpEvent, query } = createFakeQuery();
+
+      latestHttpEvent.set(new HttpResponse({ body: { name: 'Old' } }));
+      executionState.set({
+        type: 'loading',
+        hasCachedResponse: true,
+        cachedResponse: { name: 'Old' },
+        loading: { executeTime: 0, progress: null },
+      } as QueryExecutionState);
+
+      promise()(query, { loading: 'Saving…', success: (res) => `Saved ${res.name}`, error: 'Failed' });
+
+      executionState.set({ type: 'success', response: { name: 'Old' } } as QueryExecutionState);
+      flushEffects();
+
+      expect(ref.entry().isDismissing).toBe(true);
+      expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
+    it('settles a re-execution on its own new response', () => {
+      const { executionState, latestHttpEvent, respond, query } = createFakeQuery();
+
+      latestHttpEvent.set(new HttpResponse({ body: { name: 'Old' } }));
+      executionState.set({
+        type: 'loading',
+        hasCachedResponse: true,
+        cachedResponse: { name: 'Old' },
+        loading: { executeTime: 0, progress: null },
+      } as QueryExecutionState);
+
+      promise()(query, { loading: 'Saving…', success: (res) => `Saved ${res.name}`, error: 'Failed' });
+      flushEffects();
+
+      respond({ name: 'New' });
+      flushEffects();
+
+      expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved New' });
+    });
+
+    it('follows a legacy interop query through the query it wraps', () => {
+      const { respond, query } = createFakeQuery(loadingState());
+      const legacyQuery = { newQuery: query } as unknown as AnyLegacyQuery;
+
+      promise()(legacyQuery, { loading: 'Saving…', success: 'Saved', error: (e) => `Failed: ${e.code}` });
+
+      flushEffects();
+      expect(ref.entry().config.status).toBe('loading');
+
+      respond({});
+      flushEffects();
+
+      expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved' });
+    });
+  });
+});

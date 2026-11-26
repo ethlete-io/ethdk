@@ -1,0 +1,15 @@
+import { Directive, booleanAttribute, input } from '@angular/core';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+@Directive({
+  selector: '[etLabelSuffix]',
+  exportAs: 'etLabelSuffix',
+  host: {
+    '[attr.aria-hidden]': 'this.showToScreenReader() ? null : "true"',
+  },
+})
+export class LabelSuffixDirective {
+  readonly showToScreenReader = input(false, { transform: booleanAttribute });
+}

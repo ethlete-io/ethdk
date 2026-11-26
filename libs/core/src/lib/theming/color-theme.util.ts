@@ -1,0 +1,167 @@
+import { isDevMode } from '@angular/core';
+import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
+import { RuntimeError } from '../utils/runtime-error';
+import { THEMING_ERROR_CODES } from './theming-errors';
+
+export type ThemeRGBColor = `${number} ${number} ${number}`;
+export type ThemeHSLColor = `${number} ${number}% ${number}%`;
+
+export type ThemeColor = ThemeRGBColor | ThemeHSLColor;
+
+export type ThemeColorMap = {
+  default: ThemeColor;
+  hover: ThemeColor;
+  focus?: ThemeColor;
+  active: ThemeColor;
+  disabled: ThemeColor;
+};
+
+export type OnThemeColorMap = {
+  default: ThemeColor;
+  hover?: ThemeColor;
+  focus?: ThemeColor;
+  active?: ThemeColor;
+  disabled?: ThemeColor;
+};
+
+export type ThemeInkColorMap = {
+  default: ThemeColor;
+  hover?: ThemeColor;
+  focus?: ThemeColor;
+  active?: ThemeColor;
+  disabled?: ThemeColor;
+};
+
+export type ThemeSwatch = {
+  color: ThemeColorMap;
+  onColor: OnThemeColorMap;
+  inkColor?: ThemeInkColorMap;
+};
+
+export type ColorThemeType = 'success' | 'warning' | 'error';
+
+export type ColorTheme = {
+  name: string;
+  type?: ColorThemeType;
+  isDefault?: boolean;
+  primary: ThemeSwatch;
+  secondary?: ThemeSwatch;
+  tertiary?: ThemeSwatch;
+};
+
+/**
+ * Augmentable registry for the literal set of color theme names an app defines. Left
+ * empty by default, which keeps theme-name-accepting APIs (like `etProvideColor`) typed
+ * as plain `string`.
+ *
+ * Add one `true` member per theme name to `EthleteColorThemeNames`; several sheets can each add their own:
+ *
+ * ```ts
+ * declare module '@ethlete/core' {
+ *   interface EthleteColorThemeNames {
+ *     'pitch-green': true;
+ *     red: true;
+ *   }
+ * }
+ * ```
+ */
+// This must stay an `interface`: consumers register their theme names by augmenting it from a
+// `declare module` block, which only works for interfaces.
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface, ethlete/consistent-type-definitions
+export interface EthleteColorThemeNames {
+  // Intentionally empty - see doc comment above.
+}
+
+/**
+ * @deprecated Add one `true` member per theme name to `EthleteColorThemeNames` instead. A single `name`
+ * member cannot be augmented by more than one sheet.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface, ethlete/consistent-type-definitions
+export interface EthleteColorThemeNameRegistry {
+  // Intentionally empty - see doc comment above.
+}
+
+type LegacyColorThemeName = EthleteColorThemeNameRegistry extends { name: infer N extends string } ? N : never;
+
+export type RegisteredColorThemeName = [keyof EthleteColorThemeNames | LegacyColorThemeName] extends [never]
+  ? string
+  : Extract<keyof EthleteColorThemeNames, string> | LegacyColorThemeName;
+
+/**
+ * Reserved color name. Resolves the color tokens from the ambient surface's control text
+ * (`SurfaceTheme['controlText']`) instead of a registered accent, so a secondary action can
+ * read as chrome without the app registering a neutral color theme. Apps must not register a color
+ * theme under this name.
+ */
+export const SURFACE_COLOR = 'surface';
+
+export type SurfaceColor = typeof SURFACE_COLOR;
+
+/** Everything `[etProvideColor]` accepts: a registered theme name, a theme object, `surface`, or nothing. */
+export type ColorThemeInput = RegisteredColorThemeName | SurfaceColor | ColorTheme | null;
+
+export const createCssColorThemeName = (name: string) => name.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
+
+const COLOR_THEMES_DEF = /* @__PURE__ */ defineStaticProvider<ColorTheme[]>(undefined, {
+  name: 'Color Themes',
+});
+
+export const ɵProvideColorThemes = /* @__PURE__ */ toProvideFn(COLOR_THEMES_DEF);
+export const injectColorThemes = /* @__PURE__ */ toInjectFn(COLOR_THEMES_DEF);
+const COLOR_THEMES_PREFIX_DEF = /* @__PURE__ */ defineStaticProvider('et', {
+  name: 'Themes Prefix',
+});
+
+export const ɵProvideColorThemesPrefix = /* @__PURE__ */ toProvideFn(COLOR_THEMES_PREFIX_DEF);
+export const injectColorThemesPrefix = /* @__PURE__ */ toInjectFn(COLOR_THEMES_PREFIX_DEF);
+
+export const provideColorThemesWithTailwind4 = (themes: ColorTheme[], prefix = 'et') => {
+  if (isDevMode() && themes.some((theme) => theme.name === SURFACE_COLOR)) {
+    console.error(
+      `[provideColorThemesWithTailwind4] "${SURFACE_COLOR}" is a reserved color name that resolves to the ambient surface's neutral swatch. Rename your theme.`,
+    );
+  }
+
+  if (isDevMode()) {
+    const defaults = themes.filter((theme) => theme.isDefault);
+
+    if (defaults.length > 1) {
+      throw new RuntimeError(
+        THEMING_ERROR_CODES.DUPLICATE_DEFAULT_COLOR_THEME,
+        `[provideColorThemesWithTailwind4] Color themes ${defaults.map((t) => `"${t.name}"`).join(' and ')} are both marked isDefault: true. Keep isDefault on one.`,
+      );
+    }
+  }
+
+  return [ɵProvideColorThemes(themes), ɵProvideColorThemesPrefix(prefix)];
+};
+
+export const injectDefaultColorTheme = () => {
+  const themes = injectColorThemes({ optional: true });
+
+  if (!themes) {
+    throw new Error(
+      `[injectDefaultColorTheme] No color themes provided. Call provideColorThemesWithTailwind4() in your app config.`,
+    );
+  }
+
+  const theme = themes.find((t) => t.isDefault);
+
+  if (!theme) {
+    throw new Error(
+      `[injectDefaultColorTheme] No color theme with isDefault: true found. Mark one theme as the default in provideColorThemesWithTailwind4().`,
+    );
+  }
+
+  if (isDevMode()) {
+    const duplicates = themes.filter((t) => t.isDefault);
+
+    if (duplicates.length > 1) {
+      console.error(
+        `[injectDefaultColorTheme] Multiple themes with isDefault: true found: ${duplicates.map((t) => t.name).join(', ')}. Only the first one will be used.`,
+      );
+    }
+  }
+
+  return theme;
+};

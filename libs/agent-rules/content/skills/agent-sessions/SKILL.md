@@ -1,0 +1,98 @@
+---
+name: agent-sessions
+description: 'Run agents in tmux sessions of one checkout: message, wake, restart them, claim paths. Read before editing a shared file while another agent may be active, or on "mailbox", "claim a file", "restart the session".'
+kind: skill
+scope: both
+---
+
+# Agent sessions
+
+One script, {%resource:agent-sessions.mjs%}, does three jobs for the agents of one checkout:
+
+- **Sessions.** It runs each agent in a `tmux` session, and it can clear a session and start it with a prompt.
+- **Messages.** Agents send each other messages through an append-only JSON-lines file, the mailbox. A dispatcher wakes an idle agent.
+- **Claims.** An agent announces the paths it edits, so two agents do not overwrite each other.
+
+Below, `<skill-dir>` is the directory this file sits in, and `<name>` is your own sender name. Where
+the `ethlete-agents` package is a dependency, `npx ethlete-agents sessions <command>` runs the same
+script, so you do not need `<skill-dir>`. The older name `npx ethlete-agents mailbox` works too.
+
+```bash
+node <skill-dir>/agent-sessions.mjs run <name> <command...> [--role builder] [--dry-run]
+node <skill-dir>/agent-sessions.mjs up <name>[=<command>]...
+node <skill-dir>/agent-sessions.mjs restart <name> [--after <seconds>] [--notify <agent,...>] [--process] [--role builder|none] <prompt...>
+node <skill-dir>/agent-sessions.mjs down [<name>...]
+node <skill-dir>/agent-sessions.mjs shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
+node <skill-dir>/agent-sessions.mjs shell-init [<agent>...]
+node <skill-dir>/agent-sessions.mjs send <name> [--to <agent>] '<message>'
+node <skill-dir>/agent-sessions.mjs inbox <name> [--wait <seconds>]
+node <skill-dir>/agent-sessions.mjs read [--last <n>] [--all]
+node <skill-dir>/agent-sessions.mjs watch <name>
+node <skill-dir>/agent-sessions.mjs dispatch
+node <skill-dir>/agent-sessions.mjs claim <name> <path...> [--ttl <hours>] [--force]
+node <skill-dir>/agent-sessions.mjs release <name> [path...]
+node <skill-dir>/agent-sessions.mjs claims
+```
+
+## Quick start for a person
+
+Nothing runs until you start it, so a person who does not use this does nothing. To try it:
+
+1. Run `node <skill-dir>/agent-sessions.mjs shell-install`. It adds one function per agent to your shell file.
+2. Open a new terminal. In the repo, type `claude` or `codex` as usual. The function starts the agent in a `tmux` session and starts the dispatcher.
+3. Ask one agent to message the other. An idle agent wakes when a message carries `--to <agent>`.
+4. Run `node <skill-dir>/agent-sessions.mjs down` to stop the dispatcher. Run `shell-install --remove` to undo step 1.
+
+## Sessions
+
+`run <name> <command...>` starts the command in the `tmux` session `<name>@<repo>`, or attaches if it runs already. It also starts the dispatcher when none runs, as do `up` and `restart`. Session names carry the repo name, so `codex` in two repos never collides. If that session has a terminal attached already, `run` starts `<name>-2`, then `<name>-3`, and so on. A detached session is attached again. Without a terminal, for example from an agent's shell tool, `run` starts the session detached and prints how to attach. `--role builder` sets `ETHLETE_AGENT_ROLE=builder` and, for `claude`, appends a system prompt that keeps the chat silent and sends reports to the grill session. Every agent `run` starts, and every process `restart --process` starts, gets `CLAUDE_CODE_TMPDIR=~/.cache/claude-tmp`, so a full `/tmp` does not stop its shell. `--dry-run` prints the command instead of starting it.
+
+`up codex=codex gemini=gemini` starts a detached `tmux` session per agent, named like its sender name, and runs the command in it. It also starts a session named `mailbox-dispatch` that runs `dispatch`. A running session is left alone. Attach to a session with `tmux attach -t <name>`. Detach with `Ctrl-b`, then `d`. The session and its agent keep running. Use `down` to stop the dispatcher and the named sessions.
+
+`restart <name> <prompt...>` types the clear command (`/clear`, or `/new` for a `codex` name) and then the prompt into the session `<name>@<repo>`. With background shells or agents in the pane it takes the `--process` path and logs why. The command returns at once, so end your turn after it. While a restart is pending, a second one is refused, and the dispatcher types no message into that session until the resumed agent started its first turn; the marker is `.ethlete/restart.lock.<session>`.
+
+- **When it types.** No sooner than `--after` seconds (default 5), and only when the pane is idle and its prompt holds no typed text. It gives up after 30 minutes. The prompt is the text between the two rules of the input box; the background-agent panel below does not count (it presses Up out of that panel and clears the line with C-u first).
+- **Busy.** A pane is busy only when "esc to interrupt" or "Waiting for" shows in the spinner line above the input box or in the footer below it (a turn that waits on background agents is busy). A chat line that starts with `●` or `⎿` never counts, so an agent that ends its turn with its own "Waiting for ..." text is idle.
+- **Typed text.** After 2 minutes of it, and when it gives up, it sends one mailbox line to `<name>` and to each `--notify` agent. After 60 seconds, it saves the prompt to `.ethlete/restart.prompt.<session>.txt` and logs why in `.ethlete/restart.log`.
+- **Who may restart whom.** Only your own session (from `$TMUX_PANE`) and the paired session (the builder started with `run --role builder`, or the non-builder session opposite it). Other targets are refused, and the error names your sender name. A restart of the paired session is logged as `peer restart: <caller> restarted <target>`.
+- **Denied by permissions.** If the permission system denies your own `restart`, send one mailbox line to the grill/docs session, for example `send <you> --to <grill> 'restart denied, please /clear my pane and type: <prompt>'`. It types into your pane only when the pane is idle by the rule above.
+- **Open questions.** For a `claude` session, `restart` reads the transcript and refuses while a chat line that starts with `❓` has no later message the human typed, unless the handoff the prompt resumes (`/handoff resume <name>`) names that question verbatim under "Open for the human". The refusal lists the questions to copy there.
+
+`restart --process` ends the agent process instead of clearing it: it types `/exit` (`/quit` for a `codex` name) and starts the agent command again in the same tmux pane, through a login shell, with the prompt as its first message.After a change to an installed plugin, a settings file, an MCP server or `PATH`, use `--process`. The agent command is the one `run` started, without its prompt. It starts with `command`, so the shell function of the same name does not start a new session. If the exit opens the background work dialog, it selects "exit and stop tasks" and writes the stopped jobs to `restart.log` and a mailbox notice.
+
+The new process takes the target's role, not the caller's: `--role`, else a resumed `builder-*` or `doc-agent-*` handoff's (`doc-agent-*` is none), else its own. A builder process gets `ETHLETE_AGENT_ROLE=builder` and, for `claude`, the builder system prompt once. A session with no role next to another agent session in the repo, none of them a builder, is refused unless the prompt resumes a `builder-*` or `doc-agent-*` handoff or `--role` is passed (`--role none` restarts it without a role).
+
+`shell-install` writes one shell function per agent into `~/.zshrc` or `~/.bashrc`, between two marker lines. A second run replaces the block, and `--remove` deletes it. Use `--file` for another startup file and `--dry-run` to preview. After a new terminal opens, typing `claude` or `codex` in a repo with this skill runs the agent through `run`. Elsewhere the function starts the plain command. Run `shell-install` only when the user asks: it changes a file the user owns. `shell-init` prints the same functions without writing a file.
+
+Choose a `<name>` that no other agent uses, for example `agent-a` or `agent-b`. Two sessions with one name look like one agent.
+
+## Messages
+
+The mailbox file is `.ethlete/mailbox.jsonl` in the git root. The first write also creates `.ethlete/.gitignore`, so the file stays out of git. Set `AGENT_MAILBOX` to use another path. For two Claude Code sessions, the `SendMessage` tool is the better channel. The mailbox is for agents that cannot reach each other directly.
+
+An idle agent cannot read the mailbox. One `dispatch` process outside every agent fixes this. It polls the mailbox for free. When a message carries `--to <agent>`, it waits a short grace period and then, if the agent has not read the message, types the unread messages addressed to it into the `tmux` session `<agent>@<repo>`, or a session named only `<agent>` whose pane runs in this checkout, one line each as `Mailbox message from <sender>: <text>` with newlines collapsed. It never types a message from before the dispatcher started. Once the agent has run `inbox`, the wake marks them read as `inbox` does; until then `inbox` still lists them. The agent acts on them. A message without `--to` wakes nobody and is never typed. The dispatcher never types into a session of another checkout, and `send --to <agent>` refuses with a non-zero exit when no such session of this checkout runs.
+
+If the prompt of the agent holds typed text, the dispatcher waits until that text is sent or cleared. It checks again every 2 seconds. An open menu, for example a permission dialog, also makes it wait. If the agent is in the middle of a turn, the wake-up line waits as its next prompt. An agent in a `tmux` session does not need the `--wait` loop, which costs a turn at every timeout. If you wait for an answer in a session without `tmux`, run `inbox <name> --wait 120`: it blocks until a message arrives or 120 seconds pass. If it prints "No new messages.", run it again. A background `--wait` ends after one message, so it is not a lasting watch.
+
+- `inbox` keeps one cursor per sender name, so it never repeats a message. The first call shows the last 20.
+- `read` shows the last 20 messages. Use `--all` for the full history.
+- `send` with no message reads it from standard input, so a long message needs no shell quoting.
+- `watch` is optional. It runs until you stop it. In Claude Code, start it with the `Monitor` tool, so a new message wakes the session. Without such a feature, rely on `inbox`.
+- Never rewrite or truncate the file. Only the script appends to it.
+- Keep credentials and personal data out of the mailbox.
+
+## Claims
+
+1. At the start of a task, run `claims` and `inbox`. They show what other agents hold and said.
+2. Before you edit a file, run `claim` with the exact paths. A directory path claims everything below it. `claim` also prints the messages you have not seen yet.
+3. If `claim` reports a conflict, do not edit. Run `send` to ask the holder for a handoff, then wait.
+4. After each larger step, run `inbox` again. Most agents cannot wake on new output, so you must pull messages yourself.
+5. When you finish, run `release`. A claim also expires after 4 hours, or after `--ttl` hours.
+
+In this repo commit with `yarn commit -m "..." -- <paths>`: it adds untracked paths and waits for `.git/index.lock`. The hook lints staged files; typecheck and most specs run later.
+
+A claim is advisory, not a lock. `--force` claims over another agent: use it only after the holder agreed. Silence is not approval. Acknowledge each handoff in words. No agent starts automatically. The user starts each one.
+
+## Stop own processes
+
+`stop-own [--dry-run]` stops what a session leaves behind, with no raw `kill`: processes that carry the caller's `CLAUDE_PID` but are reparented (no longer below that Claude process), and orphans of a dead session whose cwd lies in this checkout or its scratch dir, each with its whole subtree. Background tasks still attached to a live Claude process always stay: stop those with TaskStop first. Subagents share their session's `CLAUDE_PID`, so a process below the live session is never touched, and a reparented process counts as own only when its `ET_AGENT_ID` (stamped on every subagent Bash call by the `background-design-commands` hook) equals the caller's: a subagent never stops a sibling's runs, and the main session never stops a subagent's. `--dry-run` lists without signalling; otherwise SIGTERM, up to 5 s, then SIGKILL. Linux only, same uid.

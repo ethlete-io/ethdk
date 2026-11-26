@@ -1,0 +1,63 @@
+<div class="et-query-devtools-scroll">
+  <div class="et-query-devtools-toolbar">
+    <p class="et-query-devtools-hint et-query-devtools-locks-hint">
+      The
+      <a href="https://developer.mozilla.org/docs/Web/API/Web_Locks_API" target="_blank" rel="noreferrer">Web Locks</a>
+      held across this whole origin - every other tab, worker and service worker included, which is the one thing in
+      this panel that is not about this tab alone. Read only: a tab cannot release another tab's lock. Polled once a
+      second while this tab is open and the page is visible.
+    </p>
+  </div>
+
+  @if (host.lockRows(); as rows) {
+    <table class="et-query-devtools-table">
+      <thead>
+        <tr>
+          <th>Lock</th>
+          <th>Kind</th>
+          <th>Taking part</th>
+          <th>This tab</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows; track row.name) {
+          <tr>
+            <td [title]="row.name">
+              <span class="et-query-devtools-lock-name">
+                <span class="et-query-devtools-url">{{ row.label }}</span>
+                @if (row.channel) {
+                  <span class="et-query-devtools-count">{{ row.channel }}</span>
+                }
+              </span>
+            </td>
+            <td>{{ kindLabel(row.kind) }}</td>
+            <td>{{ row.tabs }}</td>
+            <td>
+              @let standing = host.lockStanding(row);
+              <span
+                [class.et-query-devtools-chip--success]="standing.tone === 'success'"
+                [class.et-query-devtools-chip--muted]="standing.tone === 'muted'"
+                [title]="standing.title"
+                class="et-query-devtools-chip"
+              >
+                {{ standing.label }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="et-query-devtools-empty" colspan="4">
+              Nothing holds a lock on this origin. Multi-tab auth sync and cache polling both take one - without either,
+              there is nothing to coordinate.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  } @else {
+    <p class="et-query-devtools-empty">
+      This browser has no Web Locks API, so nothing is coordinated across tabs at all: every tab refreshes its own
+      tokens and polls its own cache keys.
+    </p>
+  }
+</div>

@@ -1,0 +1,252 @@
+import { of, throwError } from 'rxjs';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
+import { ForgeRequestError, forgeApi$, forgeApiPaged$, isForgeHostname, isMissingCliError } from './cli';
+
+const runnerOf = (results: ProcessResult[]) => {
+  const specs: ProcessSpec[] = [];
+  let call = 0;
+  const runner: TimetrackProcessRunner = {
+    run$: vi.fn((spec: ProcessSpec) => {
+      specs.push(spec);
+      const result = results[call] ?? results.at(-1)!;
+      call += 1;
+
+      return of(result);
+    }),
+  };
+
+  return { runner, specs };
+};
+
+const ok = (body: unknown): ProcessResult => ({ code: 0, stdout: JSON.stringify(body), stderr: '' });
+
+const read = <T>(runner: TimetrackProcessRunner, query?: Record<string, string>) => {
+  const seen = vi.fn();
+  const failed = vi.fn();
+
+  forgeApi$<T>({
+    runner,
+    cli: 'glab',
+    hostname: 'git.example.com',
+    path: '/events',
+    query,
+    describe: 'your activity',
+  }).subscribe({ next: seen, error: failed });
+
+  return { body: seen.mock.calls[0]?.[0] as T | undefined, error: failed.mock.calls[0]?.[0] as Error | undefined };
+};
+
+describe('forgeApi$', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('runs a rate-limited call again after a backoff', () => {
+    vi.useFakeTimers();
+
+    const { runner } = runnerOf([
+      { code: 1, stdout: '', stderr: 'glab: 429 Too Many Requests (HTTP 429)' },
+      ok({ id: 1 }),
+    ]);
+    const seen = vi.fn();
+
+    forgeApi$({ runner, cli: 'glab', hostname: 'git.example.com', path: '/events', describe: 'x' }).subscribe(seen);
+    vi.runAllTimers();
+
+    expect(seen).toHaveBeenCalledWith({ id: 1 });
+    expect(runner.run$).toHaveBeenCalledTimes(2);
+  });
+
+  it('calls the CLI with the endpoint, the host and no leading slash', () => {
+    const { runner, specs } = runnerOf([ok([])]);
+
+    read(runner, { after: '2026-08-10' });
+
+    expect(specs[0]).toMatchObject({
+      command: 'glab',
+      args: ['api', '--hostname', 'git.example.com', 'events?after=2026-08-10'],
+    });
+  });
+
+  it('reads the status out of the line the CLI puts on stderr', () => {
+    const { runner } = runnerOf([{ code: 1, stdout: '{"message":"404"}', stderr: 'glab: 404 Not Found (HTTP 404)' }]);
+    const { error } = read(runner);
+
+    expect((error as ForgeRequestError).status).toBe(404);
+    expect(error?.message).toContain('your activity');
+  });
+
+  it('says a 401 is a login problem, because a shell-out holds no token this app could have expired', () => {
+    const { runner } = runnerOf([{ code: 1, stdout: '', stderr: 'glab: 401 Unauthorized (HTTP 401)' }]);
+
+    expect(read(runner).error?.message).toContain('not logged in');
+  });
+
+  it("reads GitHub's rate limit, which it answers with a 403, as a rate limit rather than a login problem", () => {
+    const { runner } = runnerOf([
+      { code: 1, stdout: '', stderr: 'gh: API rate limit exceeded for user ID 1. (HTTP 403)' },
+    ]);
+
+    expect(read(runner).error?.message).toContain('rate-limited');
+  });
+
+  it('reports a failure with no status line as unreachable, and strips the boxed error furniture', () => {
+    const { runner } = runnerOf([
+      { code: 1, stdout: '', stderr: '   \n   ERROR   \n\n  dial tcp: lookup git.example.com: no such host.   \n' },
+    ]);
+    const { error } = read(runner);
+
+    expect((error as ForgeRequestError).status).toBe(0);
+    expect(error?.message).toContain('dial tcp: lookup git.example.com: no such host.');
+    expect(error?.message).not.toContain('ERROR');
+  });
+
+  it('refuses a body that is not JSON rather than handing back undefined', () => {
+    const { runner } = runnerOf([{ code: 0, stdout: 'not json at all', stderr: '' }]);
+
+    expect(read(runner).error?.message).toContain('not JSON');
+  });
+});
+
+describe('forgeApi$ writing', () => {
+  const write = (runner: TimetrackProcessRunner) => {
+    const seen = vi.fn();
+    const failed = vi.fn();
+
+    forgeApi$<{ iid: number }>({
+      runner,
+      cli: 'glab',
+      hostname: 'git.example.com',
+      path: '/projects/group%2Frepo/merge_requests',
+      method: 'POST',
+      body: { title: 'Draft: FIP-1 "quoted" $(not run)', remove_source_branch: true },
+      describe: 'a merge request from feat/x into next',
+    }).subscribe({ next: seen, error: failed });
+
+    return { body: seen.mock.calls[0]?.[0] as unknown, error: failed.mock.calls[0]?.[0] as Error | undefined };
+  };
+
+  it('sends the method as a flag and the body as JSON on stdin, with the endpoint still last', () => {
+    const { runner, specs } = runnerOf([ok({ iid: 7 })]);
+
+    expect(write(runner).body).toEqual({ iid: 7 });
+    expect(specs[0]?.args).toEqual([
+      'api',
+      '--hostname',
+      'git.example.com',
+      '--method',
+      'POST',
+      '--header',
+      'Content-Type: application/json',
+      '--input',
+      '-',
+      'projects/group%2Frepo/merge_requests',
+    ]);
+    expect(JSON.parse(specs[0]?.stdin ?? '')).toEqual({
+      title: 'Draft: FIP-1 "quoted" $(not run)',
+      remove_source_branch: true,
+    });
+  });
+
+  it('sends no stdin and no method on a read', () => {
+    const { runner, specs } = runnerOf([ok([])]);
+
+    read(runner);
+
+    expect(specs[0]?.stdin).toBeUndefined();
+    expect(specs[0]?.args).not.toContain('--method');
+  });
+
+  it('names the missing scope when the login may not write', () => {
+    const { runner } = runnerOf([{ code: 1, stdout: '{"message":"403 Forbidden"}', stderr: 'glab: 403 (HTTP 403)' }]);
+    const { error } = write(runner);
+
+    expect((error as ForgeRequestError).status).toBe(403);
+    expect(error?.message).toContain('may not write a merge request from feat/x into next');
+    expect(error?.message).toContain('`api` scope');
+  });
+
+  it('says why GitLab refused, out of the body the CLI prints on stdout', () => {
+    const { runner } = runnerOf([
+      {
+        code: 1,
+        stdout: '{"message":["Another open merge request already exists for this source branch: !12"]}',
+        stderr: 'glab: 409 Conflict (HTTP 409)',
+      },
+    ]);
+
+    expect(write(runner).error?.message).toBe(
+      'The forge answered 409 for a merge request from feat/x into next. The forge said: Another open merge request already exists for this source branch: !12',
+    );
+  });
+
+  it('says a 401 on a write is a login problem', () => {
+    const { runner } = runnerOf([{ code: 1, stdout: '', stderr: 'glab: 401 Unauthorized (HTTP 401)' }]);
+
+    expect(write(runner).error?.message).toContain('not logged in, so it could not write');
+  });
+});
+
+describe('forgeApiPaged$', () => {
+  const paged = (results: ProcessResult[], maxPages = 20) => {
+    const { runner, specs } = runnerOf(results);
+    const seen = vi.fn();
+
+    forgeApiPaged$<number>({
+      runner,
+      cli: 'glab',
+      hostname: 'git.example.com',
+      path: '/events',
+      describe: 'your activity',
+      paging: { pageSize: 2, maxPages },
+    }).subscribe(seen);
+
+    return { items: (seen.mock.calls[0]?.[0] ?? []) as number[], specs };
+  };
+
+  it('reads on while a page comes back full, and stops on the first short one', () => {
+    const { items, specs } = paged([ok([1, 2]), ok([3, 2]), ok([4])]);
+
+    expect(items).toEqual([1, 2, 3, 2, 4]);
+    expect(specs).toHaveLength(3);
+    expect(specs[1]?.args.at(-1)).toContain('page=2');
+  });
+
+  it('stops at the cap, so a wide window cannot page forever against a rate-limited instance', () => {
+    const { items, specs } = paged([ok([1, 2])], 3);
+
+    expect(items).toHaveLength(6);
+    expect(specs).toHaveLength(3);
+  });
+});
+
+describe('isMissingCliError', () => {
+  it('tells a missing binary apart by the prefix the host writes, and nothing else', () => {
+    const missing = vi.fn();
+
+    forgeApi$({
+      runner: { run$: () => throwError(() => new Error('not installed: glab')) },
+      cli: 'glab',
+      hostname: 'git.example.com',
+      path: '/events',
+      describe: 'your activity',
+    }).subscribe({ error: missing });
+
+    expect(isMissingCliError(missing.mock.calls[0]?.[0])).toBe(true);
+    expect(isMissingCliError(new Error('glab: 404 Not Found (HTTP 404)'))).toBe(false);
+  });
+});
+
+describe('isForgeHostname', () => {
+  it('takes a host however the field spells it', () => {
+    expect(isForgeHostname('git.example.com')).toBe(true);
+    expect(isForgeHostname('https://git.example.com/')).toBe(true);
+    expect(isForgeHostname('localhost:8080')).toBe(true);
+  });
+
+  it('refuses an email address and a git remote, which name an account and not an instance', () => {
+    expect(isForgeHostname('someone@example.com')).toBe(false);
+    expect(isForgeHostname('https://someone@git.example.com')).toBe(false);
+    expect(isForgeHostname('git@git.example.com:group/repo.git')).toBe(false);
+    expect(isForgeHostname('')).toBe(false);
+  });
+});

@@ -1,0 +1,177 @@
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { provideGridConfig } from '../headless/grid-config';
+import {
+  GridConstraintsStorybookComponent,
+  GridDataStorybookComponent,
+  GridPartnerStorybookComponent,
+  GridStorybookComponent,
+} from './components';
+import { DummyChartComponent, DummyTableComponent, DummyTextComponent } from './components/dummy-components';
+
+export default {
+  title: 'Components/Layout/Grid',
+  component: GridStorybookComponent,
+  decorators: [
+    moduleMetadata({
+      imports: [GridStorybookComponent],
+      providers: [
+        ...provideGridConfig({
+          registrations: [
+            {
+              type: 'chart',
+              component: DummyChartComponent,
+              constraints: { minColSpan: 3, maxColSpan: 12, minRowSpan: 2, maxRowSpan: 4 },
+            },
+            {
+              type: 'table',
+              component: DummyTableComponent,
+              constraints: { minColSpan: 2, maxColSpan: 12, minRowSpan: 2, maxRowSpan: 4 },
+            },
+            {
+              type: 'text',
+              component: DummyTextComponent,
+              constraints: { minColSpan: 2, maxColSpan: 12, minRowSpan: 1, maxRowSpan: 4 },
+            },
+          ],
+        }),
+      ],
+    }),
+  ],
+  args: {
+    rowHeight: 100,
+    gap: 16,
+    readOnly: false,
+  },
+  argTypes: {
+    rowHeight: { control: { type: 'range', min: 50, max: 300, step: 10 } },
+    gap: { control: { type: 'range', min: 0, max: 48, step: 4 } },
+    readOnly: { control: 'boolean' },
+  },
+} as Meta<GridStorybookComponent>;
+
+type Story = StoryObj<GridStorybookComponent>;
+
+export const Default: Story = {};
+
+export const ReadOnly: Story = {
+  args: {
+    readOnly: true,
+  },
+};
+
+export const CompactGrid: Story = {
+  args: {
+    rowHeight: 80,
+    gap: 8,
+  },
+};
+
+export const LargeItems: Story = {
+  args: {
+    rowHeight: 150,
+    gap: 24,
+  },
+};
+
+export const SixColumnGrid: Story = {
+  args: {
+    breakpoints: [
+      { name: 'lg', columns: 6, minWidth: 900 },
+      { name: 'md', columns: 3, minWidth: 500 },
+      { name: 'sm', columns: 1, minWidth: 0 },
+    ],
+  },
+};
+
+export const ScrollableContainer: Story = {
+  render: (args) => ({
+    props: args,
+    template: `
+      <div class="overflow-y-auto" style="height: 280px" data-testid="grid-scroll-container">
+        <et-sb-grid [rowHeight]="rowHeight" [gap]="gap" [readOnly]="readOnly" />
+      </div>
+    `,
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The grid inside a fixed-height scroll container. Dragging or resizing an item near the ' +
+          "container's top or bottom edge scrolls the container instead of the page.",
+      },
+    },
+  },
+};
+
+export const PerBreakpointConstraints: StoryObj<GridConstraintsStorybookComponent> = {
+  // Drops the meta's registrations: this story writes its own et-grid-item per widget, and an item
+  // covered by both a registration and a projected item renders twice (ET1905).
+  decorators: [
+    moduleMetadata({
+      imports: [GridConstraintsStorybookComponent],
+      providers: [...provideGridConfig({ registrations: [] })],
+    }),
+  ],
+  render: () => ({ template: '<et-sb-grid-constraints />' }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Span bounds that differ per breakpoint. Each item declares base bounds plus a ' +
+          '`perBreakpointConstraints` override; the table reads back what the grid resolved at the ' +
+          'active breakpoint. Resize the viewport across 1200px and 768px: the chart drops to a ' +
+          '3-6 column range at `md` and to full width at `sm`, and an item whose bounds collapse to ' +
+          'one value loses its horizontal resize handles.',
+      },
+    },
+  },
+};
+
+export const PartnerDashboard: StoryObj<GridPartnerStorybookComponent> = {
+  // Drops the meta's registrations: this story writes its own et-grid-item for every widget, and an
+  // item covered by both a registration and a projected item renders twice (ET1905).
+  decorators: [
+    moduleMetadata({
+      imports: [GridPartnerStorybookComponent],
+      providers: [...provideGridConfig({ registrations: [] })],
+    }),
+  ],
+  render: () => ({ template: '<et-sb-grid-real-world />' }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Real-world dashboard layout with mixed widget types across three breakpoints. ' +
+          'Widget types include: team, contacts, summary, text, attribute_list. ' +
+          'Drag and resize widgets, then click **Show API Payload** to inspect the converted output.',
+      },
+    },
+  },
+};
+
+export const BackendIntegration: StoryObj<GridDataStorybookComponent> = {
+  decorators: [
+    moduleMetadata({
+      imports: [GridDataStorybookComponent],
+      providers: [...provideGridConfig({ registrations: [] })],
+    }),
+  ],
+  render: () => ({ template: '<et-sb-grid-data />' }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Demonstrates the adapter pattern for backend-integrated dashboards. ' +
+          'Widget layout is stored per-breakpoint on the backend as `{x, y, cols, rows}` - ' +
+          "a different shape from the grid's internal `{col, row, colSpan, rowSpan}`. " +
+          '`createGridAdapter()` bridges the two: `fromExternal` maps backend widgets to ' +
+          '`GridItemConfig[]` for the grid to render, and `toExternal` converts back to ' +
+          'the API shape for `PATCH /partners/dashboard/:uuid`. Both directions map every ' +
+          'breakpoint the adapter declares, and the grid renders those same breakpoints via ' +
+          '`adapter.breakpoints`. ' +
+          'Click **Show API Payload** after dragging, resizing, or adding widgets to inspect ' +
+          'the exact JSON the adapter produces.',
+      },
+    },
+  },
+};

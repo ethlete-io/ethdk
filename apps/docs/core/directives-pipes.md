@@ -1,0 +1,76 @@
+# Directives & pipes
+
+Small standalone directives and pipes that don't belong to a larger system.
+
+## Click outside
+
+`ClickOutsideDirective` (`[etClickOutside]`) emits the `MouseEvent` when a click lands outside the host element:
+
+```html
+<div (etClickOutside)="close()" etClickOutside>…</div>
+```
+
+```ts
+import { ClickOutsideDirective } from '@ethlete/core';
+```
+
+A click counts as outside only when the press started outside the host too, so selecting text or dragging a slider from inside the host and releasing outside does not emit. The check uses the event's composed path, so a click on a node that its own handler removed (a chip's remove button) still counts as inside. A press on a surface that paints on a [higher overlay level](/core/overlay-runtime#a-press-on-a-level-above-never-closes-what-is-below) never emits.
+
+## Repeat
+
+`*etRepeat` renders its template N times (default `2`) - for skeletons and placeholder rows:
+
+```html
+<et-skeleton-row *etRepeat="5" />
+```
+
+```ts
+import { RepeatDirective } from '@ethlete/core';
+```
+
+## Restore scroll
+
+`RestoreScrollDirective` (`[routerLink][etRestoreScroll]`) marks a `routerLink` as a return to a page the user has already seen, so the navigation restores that page's last scroll offset instead of scrolling to top. It needs `restore.enabled` on `setupScrollRestoration` - see [Scroll restoration](/core/scroll-restoration#returning-through-a-link-instead-of-the-back-button).
+
+```html
+<a routerLink="/teams" etRestoreScroll>Teams</a>
+```
+
+```ts
+import { RestoreScrollDirective } from '@ethlete/core';
+```
+
+## Scroll observer
+
+`ScrollObserverDirective` (`[etScrollObserver]`, exportAs `etScrollObserver`) reports whether sentinel children are inside the host's scroll viewport - the classic "show a shadow while not at the edge" primitive:
+
+```html
+<div #observer="etScrollObserver" etScrollObserver>
+  <div etScrollObserverStart></div>
+  <ng-content />
+  <div etScrollObserverEnd></div>
+</div>
+```
+
+```ts
+import { ScrollObserverDirective, ScrollObserverStartDirective, ScrollObserverEndDirective } from '@ethlete/core';
+```
+
+Place `etScrollObserverStart` / `etScrollObserverEnd` sentinels as first/last children; the directive exposes `isAtStart` and `isAtEnd` signals (both default `false`). The `enabled` model input (default `true`) accepts a boolean or a signal.
+
+## Pipes
+
+| Pipe             | Signature                                   | Description                                                                                                                                  |
+| ---------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `markdownToHtml` | `(string, { verbatim?: RegExp }?) → string` | Dependency-free Markdown → HTML (headings, emphasis, code blocks, links, images, lists, GFM tables, blockquotes).                            |
+| `htmlToMarkdown` | `string → string`                           | The reverse conversion.                                                                                                                      |
+| `inferMimeType`  | `string → string \| null`                   | Infers a MIME type from a URL or srcset - handles `data:` URIs, Contentful `?fm=` params and a large extension map.                          |
+| `toArray`        | `number → number[]`                         | `3` → `[0, 1, 2]`, for index-based iteration. `toArrayTrackByFn` is the matching `track` function.                                           |
+| `initials`       | `(string, maxLength?) → string`             | `'John Doe'` → `'JD'`. Uppercased initials of each whitespace-separated word, capped at `maxLength` (default `2`).                           |
+| `slugify`        | `string → string`                           | `'Crème brûlée!'` → `'creme-brulee'`. URL-friendly slug: diacritics stripped, lowercased, non-alphanumeric runs collapsed to single hyphens. |
+
+The conversion logic behind `markdownToHtml` / `htmlToMarkdown` and `inferMimeType`, plus `initials` and `slugify`, is also exported as plain functions - see [Utilities](/core/utilities).
+
+### Match normalization pipes
+
+A set of sport-domain pipes (`etNormalizeMatchState`, `etNormalizeMatchScore`, `etNormalizeMatchParticipants`, `etNormalizeMatchType`, `etNormalizeGameResultType`) that normalize `@ethlete/types` match views into render-ready view models with `Translatable` labels (`{ i18n, text }` - a translation key plus English fallback). Only relevant for apps rendering Ethlete match data.

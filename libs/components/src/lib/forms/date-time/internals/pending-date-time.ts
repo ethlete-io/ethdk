@@ -1,0 +1,107 @@
+import { Signal, computed, signal } from '@angular/core';
+import { Locale, startOfDay } from 'date-fns';
+import { formatDateValue } from './date-value';
+import { withTimeOfDay } from './date-time-merge';
+import { splitDateTimeFormat } from './date-time-format-split';
+
+const blankOut = (text: string, placeholderChar: string) => text.replace(/[\p{L}\p{N}]/gu, placeholderChar);
+
+export type RenderPartialDateTimeOptions = {
+  day: Date | null;
+  time: Date | null;
+  format: string;
+  locale: Locale | null;
+  placeholderChar?: string;
+};
+
+export const renderPartialDateTime = (options: RenderPartialDateTimeOptions) => {
+  const reference = options.day ?? options.time;
+
+  if (reference === null) {
+    return null;
+  }
+
+  const split = splitDateTimeFormat(options.format, options.locale);
+
+  if (split === null) {
+    return null;
+  }
+
+  const placeholderChar = options.placeholderChar ?? '_';
+  const render = (format: string, source: Date | null) => {
+    // date-fns throws on an empty pattern, and a split whose time span sits at either end has one
+    if (format === '') {
+      return '';
+    }
+
+    const text = formatDateValue(source ?? reference, { format, locale: options.locale }) ?? '';
+
+    return source === null ? blankOut(text, placeholderChar) : text;
+  };
+
+  return (
+    render(split.datePrefix, options.day) + render(split.time, options.time) + render(split.dateSuffix, options.day)
+  );
+};
+
+/**
+ * One date-time slot's half-picked state: a day picked before a time (or the other way round) is
+ * held here until its other half arrives.
+ */
+export type PendingDateTime = {
+  day: Signal<Date | null>;
+  time: Signal<Date | null>;
+  active: Signal<boolean>;
+  /** Takes a picked day: the completed date-time when a time was already held, else `null`. */
+  holdDay: (day: Date) => Date | null;
+  /** Takes a picked time: the completed date-time when a day was already held, else `null`. */
+  holdTime: (time: Date) => Date | null;
+  /** Drops a held day on its own. A time held for the same slot is a separate pick and survives. */
+  clearDay: () => void;
+  clear: () => void;
+};
+
+/** `merge` builds the completed instant out of the held day and the held time. */
+export const createPendingDateTime = (merge: (day: Date, time: Date) => Date = withTimeOfDay): PendingDateTime => {
+  const day = signal<Date | null>(null);
+  const time = signal<Date | null>(null);
+
+  const clear = () => {
+    day.set(null);
+    time.set(null);
+  };
+
+  return {
+    day: day.asReadonly(),
+    time: time.asReadonly(),
+    active: computed(() => day() !== null || time() !== null),
+    holdDay: (picked) => {
+      const held = time();
+
+      if (held === null) {
+        day.set(startOfDay(picked));
+
+        return null;
+      }
+
+      clear();
+
+      return merge(picked, held);
+    },
+    holdTime: (picked) => {
+      const held = day();
+
+      if (held === null) {
+        time.set(picked);
+
+        return null;
+      }
+
+      clear();
+
+      return merge(held, picked);
+    },
+    clearDay: () => day.set(null),
+    clear,
+  };
+};

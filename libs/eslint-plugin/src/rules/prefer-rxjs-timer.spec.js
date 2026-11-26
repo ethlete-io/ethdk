@@ -1,0 +1,69 @@
+// @ts-check
+'use strict';
+
+const { RuleTester } = require('eslint');
+const tsParser = require('@typescript-eslint/parser');
+const rule = require('./prefer-rxjs-timer');
+
+const tester = new RuleTester({
+  languageOptions: { ecmaVersion: 2022, sourceType: 'module', parser: tsParser },
+});
+
+tester.run('prefer-rxjs-timer', rule, {
+  valid: [
+    { code: `obj.setTimeout(fn, 1);` },
+    { code: `this.setTimeout(fn, 1);` },
+    { code: `foo.window.setTimeout(fn, 1);` },
+    {
+      code: `const setTimeout = (fn) => fn;
+setTimeout(() => {});`,
+    },
+    {
+      code: `import { setInterval, clearInterval } from './scheduler';
+clearInterval(setInterval(() => {}, 10));`,
+    },
+    // RxJS alternatives — fine
+    { code: `timer(500).pipe(takeUntilDestroyed()).subscribe();` },
+    { code: `interval(2000).pipe(takeUntilDestroyed()).subscribe();` },
+    { code: `fromEvent(el, 'click').pipe(takeUntilDestroyed()).subscribe();` },
+    { code: `this.scheduler.setTimeout(() => {}, 10);` },
+    { code: `const window = { setTimeout() {} }; window.setTimeout(() => {}, 10);` },
+    // Unrelated calls
+    { code: `Math.random();` },
+    { code: `Promise.resolve();` },
+  ],
+  invalid: [
+    {
+      code: `setTimeout(handler, 10);`,
+      errors: [{ messageId: 'preferTimer' }],
+    },
+    {
+      code: `setTimeout(() => this.refresh(), 500);`,
+      errors: [{ messageId: 'preferTimer' }],
+    },
+    {
+      code: `setInterval(() => this.poll(), 2000);`,
+      errors: [{ messageId: 'preferInterval' }],
+    },
+    {
+      code: `clearTimeout(handle);`,
+      errors: [{ messageId: 'preferUnsubscribe' }],
+    },
+    {
+      code: `clearInterval(handle);`,
+      errors: [{ messageId: 'preferUnsubscribe' }],
+    },
+    {
+      code: `el.addEventListener('click', handler);`,
+      errors: [{ messageId: 'preferFromEvent' }],
+    },
+    {
+      code: `el.removeEventListener('click', handler);`,
+      errors: [{ messageId: 'preferFromEventRemove' }],
+    },
+    { code: `this.win.setTimeout(() => {}, 10);`, errors: [{ messageId: 'preferTimer' }] },
+    { code: `globalThis.setTimeout(() => {}, 10);`, errors: [{ messageId: 'preferTimer' }] },
+    { code: `window.setInterval(() => {}, 10);`, errors: [{ messageId: 'preferInterval' }] },
+    { code: `this.window.clearTimeout(handle);`, errors: [{ messageId: 'preferUnsubscribe' }] },
+  ],
+});

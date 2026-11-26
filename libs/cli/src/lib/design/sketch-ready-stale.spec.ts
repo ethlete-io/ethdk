@@ -1,0 +1,155 @@
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DESIGN_DIR } from './design-config';
+import { designSketch } from './sketch-command';
+import { renderIssuesOf } from './system/render-check';
+import { gitExec } from '../git-test-env.fixtures';
+
+vi.mock('./ready-shots', () => {
+  const identicalRenderLines = vi.fn<(options: object) => Promise<string[]>>(async () => []);
+
+  return {
+    aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
+    identicalRenderLines,
+    sketchRenderLines: vi.fn(async (options: object) => ({
+      refusals: await identicalRenderLines(options),
+      warnings: [],
+    })),
+    sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
+    stateInnerLines: vi.fn(async (): Promise<string[]> => []),
+    interactionRepeatLines: vi.fn(async (): Promise<string[]> => []),
+    interactionRoundLines: vi.fn(async (): Promise<string[]> => []),
+    weakStateWarnings: vi.fn(async (): Promise<string[]> => []),
+    identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
+    variantChangesShown: vi.fn(async () => [{ variant: 'a', changed: 1, change: 'variant a changes default' }]),
+    variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
+  };
+});
+
+vi.mock('./system/sketch/viewed-shots', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./system/sketch/viewed-shots')>()),
+  unviewedShotLinesOf: vi.fn((): string[] => []),
+}));
+
+vi.mock('./system/render-check', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./system/render-check')>()),
+  renderIssuesOf: vi.fn(async (): Promise<Awaited<ReturnType<typeof renderIssuesOf>>> => ({
+    issues: [],
+    warnings: [],
+    grids: [],
+    drawn: [],
+  })),
+}));
+
+vi.mock('./system/read-open-points', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./system/read-open-points')>()),
+  sketchOpenPointsOf: vi.fn(() => ({ added: [], inherited: [] })),
+}));
+
+const acme = () => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-named-'));
+
+  cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+  writeFileSync(join(target, '.prettierignore'), '*\n');
+
+  return target;
+};
+
+const output = () => {
+  const lines: string[] = [];
+  const push = (line: unknown) => void lines.push(String(line));
+
+  vi.spyOn(console, 'log').mockImplementation(push);
+  vi.spyOn(console, 'error').mockImplementation(push);
+  vi.spyOn(console, 'warn').mockImplementation(push);
+
+  return lines;
+};
+
+const write = (target: string, ...argv: string[]) =>
+  designSketch({ target, argv: [...argv, '--by', 'claude-opus-5-5'], invocation: 'et design' });
+
+describe('sketch ready on a stale base', { timeout: 120_000 }, () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('refuses with the SKETCH-BASE-STALE line the check prints', async () => {
+    const target = acme();
+    const lines = output();
+
+    expect(await write(target, 'new', 'pages/home', '--variants', 'a', '--note', 'n', '--product', 'acme')).toBe(0);
+    const git = (...args: string[]) => gitExec(args, { cwd: target, encoding: 'utf8' }).trim();
+    const commit = (message: string) =>
+      git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', message);
+
+    git('init', '-q');
+    git('add', '-A');
+    commit('drawn');
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+    git('add', '-A');
+    commit('hero');
+
+    const heroCommit = git('rev-parse', '--short', 'HEAD');
+
+    expect(await write(target, 'ready', 'pages/home', '--product', 'acme')).toBe(1);
+
+    const line =
+      'SKETCH-BASE-STALE acme pages/home: elements/hero changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase pages/home --product acme --by <model id>';
+
+    expect(lines.some((entry) => entry.includes(line))).toBe(true);
+    expect(
+      lines.some((entry) =>
+        entry.includes(`pages/home is stale (base changed in ${heroCommit}) - rebase it before ready`),
+      ),
+    ).toBe(true);
+
+    lines.length = 0;
+    expect(await designSketch({ target, argv: ['check', '--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(lines).toContain(line);
+  });
+
+  it('carries a declaration-only change of the part into every open variant and keeps ready passing', async () => {
+    const target = acme();
+    const lines = output();
+    const part = join(target, DESIGN_DIR, 'acme/components/button/button.ts');
+    const variants = ['a', 'b'];
+
+    expect(
+      await write(
+        target,
+        'new',
+        'components/button',
+        '--override',
+        '--variants',
+        'a,b',
+        '--round',
+        'R',
+        '--note',
+        'n',
+        '--product',
+        'acme',
+      ),
+    ).toBe(0);
+    const git = (...args: string[]) => gitExec(args, { cwd: target, encoding: 'utf8' }).trim();
+
+    git('init', '-q');
+    git('add', '-A');
+    git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'drawn');
+    writeFileSync(part, readFileSync(part, 'utf8').replace('  states:', '  controls: {},\n  states:'));
+    git('add', '-A');
+    git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'controls');
+
+    lines.length = 0;
+    expect(await write(target, 'rebase', 'components/button', '--product', 'acme')).toBe(0);
+
+    for (const variant of variants) {
+      const file = join(target, DESIGN_DIR, 'acme/sketches/components-button', variant, 'components/button/button.ts');
+
+      expect(readFileSync(file, 'utf8')).toContain('controls: {},');
+      expect(lines.some((line) => line.startsWith(`PORTED ${variant}: components/button/button.ts`))).toBe(true);
+    }
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+  });
+});

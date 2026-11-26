@@ -1,0 +1,119 @@
+import {
+  Binding,
+  Directive,
+  InjectionToken,
+  Signal,
+  Type,
+  booleanAttribute,
+  computed,
+  createComponent,
+  effect,
+  inject,
+  input,
+  untracked,
+} from '@angular/core';
+import {
+  ProvideSurfaceDirective,
+  injectSurfaceType,
+  SURFACE_PROVIDER,
+  injectStyleManager,
+  injectSurfaceThemes,
+  resolveSurfaceByElevation,
+  setInputSignal,
+} from '@ethlete/core';
+import { STREAM_SLOT_PLAYER_ID_TOKEN, StreamPlayerId } from './stream-manager.types';
+import { createStreamPlayerSlot } from './stream-player-slot';
+import { StreamPlayerSlotStylesComponent } from './stream-player-slot-styles.component';
+import { resolveStreamAspectRatio } from './stream-size';
+
+export type StreamPlayerParams = {
+  readonly playerId: Signal<StreamPlayerId>;
+  /** Natural aspect ratio (width / height) of the player. Defaults to 16/9 if absent. */
+  readonly ASPECT_RATIO?: number;
+  createBindings(): Binding[];
+};
+
+export const STREAM_PLAYER_PARAMS_TOKEN = new InjectionToken<StreamPlayerParams>('STREAM_PLAYER_PARAMS_TOKEN');
+export const STREAM_PLAYER_COMPONENT_TOKEN = new InjectionToken<Type<unknown>>('STREAM_PLAYER_COMPONENT_TOKEN');
+export const STREAM_PLAYER_SLOT_TOKEN = new InjectionToken<StreamPlayerSlotDirective>('STREAM_PLAYER_SLOT_TOKEN');
+
+@Directive({
+  providers: [
+    { provide: STREAM_PLAYER_SLOT_TOKEN, useExisting: StreamPlayerSlotDirective },
+    {
+      provide: STREAM_SLOT_PLAYER_ID_TOKEN,
+      useFactory: () => {
+        const directive = inject(StreamPlayerSlotDirective);
+        return directive.slot.currentPlayerId;
+      },
+    },
+  ],
+  hostDirectives: [
+    {
+      directive: ProvideSurfaceDirective,
+      inputs: ['etProvideSurface:surface'],
+    },
+  ],
+  host: {
+    class: 'et-stream-player-slot',
+  },
+})
+export class StreamPlayerSlotDirective {
+  private params = inject(STREAM_PLAYER_PARAMS_TOKEN);
+  private playerComponent = inject(STREAM_PLAYER_COMPONENT_TOKEN);
+  private provideSurface = inject(ProvideSurfaceDirective);
+  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private surfaceType = injectSurfaceType();
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private styleManager = injectStyleManager();
+
+  public streamSlotPriority = input(false, { transform: booleanAttribute });
+  public streamSlotOnPipBack = input<() => void>();
+
+  /** Loading component for this slot. `undefined` uses `StreamConfig.loadingComponent`, `null` shows none. */
+  public streamSlotLoadingComponent = input<Type<unknown> | null | undefined>(undefined);
+
+  private resolvedSurface = computed(() => {
+    const themes = this.surfaceThemes;
+    const type = this.surfaceType();
+    if (!themes || !type) return null;
+
+    const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
+    return resolveSurfaceByElevation(themes, type, elevation);
+  });
+
+  public slot = createStreamPlayerSlot({
+    playerId: this.params.playerId,
+    aspectRatio: resolveStreamAspectRatio(this.params.ASPECT_RATIO),
+    streamSlotPriority: this.streamSlotPriority,
+    streamSlotOnPipBack: this.streamSlotOnPipBack,
+    streamSlotLoadingComponent: this.streamSlotLoadingComponent,
+    createPlayer: (envInjector, elementInjector) =>
+      createComponent(this.playerComponent, {
+        environmentInjector: envInjector,
+        elementInjector,
+        bindings: this.params.createBindings(),
+      }),
+  });
+
+  constructor() {
+    this.styleManager.mount(StreamPlayerSlotStylesComponent);
+
+    if (this.surfaceThemes) {
+      effect(() => {
+        const surface = this.resolvedSurface();
+
+        untracked(() => {
+          setInputSignal(this.provideSurface.surface, surface?.name ?? null);
+        });
+      });
+    }
+  }
+}
+
+/** The handle of the stream player slot in scope: its state, capabilities, playback controls and PiP. */
+export const injectStreamPlayerSlot = () => {
+  const directive = inject(STREAM_PLAYER_SLOT_TOKEN);
+
+  return directive.slot;
+};

@@ -1,0 +1,287 @@
+import { BehaviorSubject, Observable, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
+import { AnyLegacyQuery, AnyLegacyQueryCreator } from '../interop';
+import { filterSuccess, isQueryStateFailure, isQueryStateLoading } from '../query';
+import { AnyV2QueryCreator, ConstructQuery, QueryDataOf, V2QueryArgsOf } from '../query-creator';
+import { destroyOnceSettled } from '../utils/destroy-once-settled.util';
+import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
+
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export class InfinityQuery<
+  QueryCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
+  Query extends ConstructQuery<QueryCreator>,
+  Args extends V2QueryArgsOf<QueryCreator>,
+  QueryResponse extends QueryDataOf<QueryCreator>,
+  InfinityResponse extends unknown[],
+> {
+  private readonly queries$ = new BehaviorSubject<Query[]>([]);
+  private readonly _currentPage$ = new BehaviorSubject<number | null>(null);
+  private readonly _currentCalculatedPage$ = new BehaviorSubject<number | null>(null);
+  private readonly _totalPages$ = new BehaviorSubject<number | null>(null);
+  private readonly _itemsPerPage$ = new BehaviorSubject<number>(10);
+
+  private readonly _data$ = this.queries$.pipe(
+    switchMap((queries) => {
+      if (!queries.length) {
+        return of([]);
+      }
+
+      return combineLatest(
+        queries.map((query) =>
+          query.state$.pipe(
+            filterSuccess(),
+            map((state) => ({ state, query })),
+          ),
+        ),
+      );
+    }),
+    tap((stateMaps) => {
+      const lastState = stateMaps[stateMaps.length - 1]?.state;
+      const lastQuery = stateMaps[stateMaps.length - 1]?.query;
+
+      if (!lastState || !lastQuery) {
+        return;
+      }
+
+      const totalPages =
+        this._config.response.totalPagesExtractor?.({
+          response: lastState.response as QueryResponse,
+          itemsPerPage: this.itemsPerPage,
+          args: lastQuery._arguments,
+        }) ??
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (lastState.response as any)?.totalPages ??
+        null;
+
+      this._totalPages$.next(totalPages);
+    }),
+    map((stateMaps) => {
+      if (!stateMaps.length) {
+        return null;
+      }
+
+      const fullData = stateMaps.reduce(
+        (acc, stateMap) => {
+          const valExtractFn = this._config?.response?.valueExtractor;
+          let data = valExtractFn
+            ? valExtractFn?.(stateMap.state.response as QueryResponse)
+            : (stateMap.state.response as InfinityResponse);
+
+          if (this._config.response.reverse) {
+            data = [...data].reverse() as InfinityResponse;
+          }
+
+          if (this._config.response.appendItemsTo === 'start') {
+            acc.unshift(...data);
+          } else {
+            acc.push(...data);
+          }
+          return acc;
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [] as any as InfinityResponse,
+      );
+
+      return fullData;
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  private readonly lastQuery$ = this.queries$.pipe(
+    map((queries) => queries[queries.length - 1] ?? null),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  constructor(
+    private _config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>,
+    private _destroy$: Observable<boolean>,
+  ) {
+    this._itemsPerPage$.next(this._config.limitParam?.value ?? 10);
+  }
+
+  get currentPage$() {
+    return this._currentPage$.asObservable();
+  }
+
+  get currentPage() {
+    return this._currentPage$.getValue();
+  }
+
+  get currentCalculatedPage$() {
+    return this._currentCalculatedPage$.asObservable();
+  }
+
+  get currentCalculatedPage() {
+    return this._currentCalculatedPage$.getValue();
+  }
+
+  get totalPages$() {
+    return this._totalPages$.asObservable();
+  }
+
+  get totalPages() {
+    return this._totalPages$.getValue();
+  }
+
+  get itemsPerPage$() {
+    return this._itemsPerPage$.asObservable();
+  }
+
+  get itemsPerPage() {
+    return this._itemsPerPage$.getValue();
+  }
+
+  get data$() {
+    return this._data$;
+  }
+
+  get currentQuery$() {
+    return this.lastQuery$;
+  }
+
+  nextPage() {
+    const lastQuery = this.queries$.value[this.queries$.value.length - 1];
+
+    if (lastQuery && isQueryStateFailure(lastQuery.rawState)) {
+      lastQuery.execute({ skipCache: true });
+
+      return;
+    }
+
+    const newPage = (this._currentPage$.value ?? 0) + 1;
+    const calculatedPage =
+      this._config?.pageParam?.valueCalculator?.({
+        page: newPage,
+        totalPages: this.totalPages,
+        itemsPerPage: this.itemsPerPage,
+      }) ?? newPage;
+
+    if (this.totalPages !== null && newPage > this.totalPages) {
+      console.error(
+        'Cannot load more pages, already at the end. Make sure to not render the infinity query trigger using *ngIf canLoadMore',
+      );
+
+      return;
+    }
+
+    const args = this.prepareArgs(this._config, calculatedPage);
+
+    const query = this._config.queryCreator.prepare(args).execute() as Query;
+
+    if (this._config.pollingInterval) {
+      query.poll({ interval: this._config.pollingInterval, takeUntil: this._destroy$ });
+    }
+
+    this.queries$.next([...this.queries$.value, query]);
+
+    this._currentPage$.next(newPage);
+    this._currentCalculatedPage$.next(calculatedPage);
+  }
+
+  reset(
+    newConfig?: Omit<
+      InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>,
+      'queryCreator' | 'response'
+    >,
+  ) {
+    this._config = { ...this._config, ...(newConfig ?? {}) };
+
+    this.destroyQueries();
+
+    this._currentPage$.next(null);
+    this._currentCalculatedPage$.next(null);
+    this._totalPages$.next(null);
+    this._itemsPerPage$.next(this._config.limitParam?.value ?? 10);
+    this.queries$.next([]);
+
+    this.nextPage();
+  }
+
+  destroy() {
+    this.destroyQueries();
+    this.queries$.next([]);
+  }
+
+  private destroyQueries() {
+    for (const query of this.queries$.value) {
+      query.stopPolling();
+
+      if (query.canBeCached) query.abort();
+
+      if (!('destroy' in query) || typeof query.destroy !== 'function') continue;
+
+      if (!query.canBeCached && isQueryStateLoading(query.rawState)) {
+        destroyOnceSettled(query as unknown as AnyLegacyQuery);
+      } else {
+        query.destroy();
+      }
+    }
+  }
+
+  private prepareArgs(config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>, page: number) {
+    const pageParamLocation = this.getPageParamLocation(config?.pageParam?.location);
+
+    const pageArgs = {
+      [pageParamLocation]: {
+        [config?.pageParam?.key ?? 'page']: page,
+      },
+    };
+
+    const limitParamLocation = this.getPageParamLocation(config?.limitParam?.location);
+
+    const limitArgs = {
+      [limitParamLocation]: {
+        [config?.limitParam?.key ?? 'limit']: config?.limitParam?.value ?? 10,
+      },
+    };
+
+    const defaultConfig = {
+      ...(config?.defaultArgs ?? {}),
+      ...(config?.injector ? { injector: config.injector } : {}),
+    };
+
+    const mergedArgs =
+      pageParamLocation === limitParamLocation
+        ? {
+            ...defaultConfig,
+            [pageParamLocation]: {
+              ...(config?.defaultArgs?.[pageParamLocation] ?? {}),
+              ...pageArgs[limitParamLocation],
+              ...limitArgs[limitParamLocation],
+            },
+          }
+        : {
+            ...defaultConfig,
+            [pageParamLocation]: {
+              ...(config?.defaultArgs?.[pageParamLocation] ?? {}),
+              ...pageArgs[pageParamLocation],
+            },
+            [limitParamLocation]: {
+              ...(config?.defaultArgs?.[limitParamLocation] ?? {}),
+              ...limitArgs[limitParamLocation],
+            },
+          };
+
+    return mergedArgs;
+  }
+
+  private getPageParamLocation(location: InfinityQueryParamLocation | undefined) {
+    const loc = location ?? 'query';
+
+    switch (loc) {
+      case 'path':
+        return 'pathParams';
+      case 'query':
+        return 'queryParams';
+      case 'body':
+        return 'body';
+      case 'header':
+        return 'headers';
+      case 'variable':
+        return 'variables';
+      default:
+        throw new Error(`Invalid pageParamLocation: ${loc}`);
+    }
+  }
+}

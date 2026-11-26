@@ -1,0 +1,25 @@
+import { Component, ViewEncapsulation, inject } from '@angular/core';
+import { KickPlayerParamsDirective } from './headless/kick-player-params.directive';
+import { KICK_PLAYER_TOKEN, KickPlayerDirective } from './headless/kick-player.directive';
+
+@Component({
+  selector: 'et-kick-player',
+  template: '',
+  encapsulation: ViewEncapsulation.None,
+  hostDirectives: [
+    {
+      directive: KickPlayerParamsDirective,
+      inputs: ['channel', 'width', 'height', 'muted'],
+    },
+    KickPlayerDirective,
+  ],
+  host: {
+    class: 'et-kick-player et-stream-player',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
+  },
+})
+export class KickPlayerComponent {
+  public player = inject(KICK_PLAYER_TOKEN);
+}

@@ -1,0 +1,100 @@
+<ng-content select="[etBarChartTitle]" />
+
+@if (chart.legendItems().length) {
+  <et-chart-legend [items]="chart.legendItems()" [etProvideColor]="colorToken()" class="et-bar-chart-legend" />
+}
+
+<div [attr.data-orientation]="chart.orientation()" class="et-bar-chart-figure">
+  <et-chart-axis
+    [labels]="chart.isEmpty() ? [] : chart.valueLabels()"
+    [orientation]="chart.isHorizontal() ? 'horizontal' : 'vertical'"
+    [style.block-size.px]="chart.isHorizontal() ? null : chart.height()"
+    class="et-bar-chart-value-axis"
+  />
+
+  <div [style.block-size.px]="chart.height()" class="et-bar-chart-plot" etChartPlot>
+    @if (chart.plotWidth()) {
+      <svg
+        [attr.width]="chart.plotWidth()"
+        [attr.height]="chart.height()"
+        [attr.aria-label]="chart.label()"
+        [style.--_et-bar-chart-baseline.px]="chart.baseline()"
+        class="et-bar-chart-svg"
+        role="group"
+      >
+        <svg:g
+          [ticks]="chart.ticks()"
+          [direction]="chart.isHorizontal() ? 'vertical' : 'horizontal'"
+          [length]="chart.isHorizontal() ? chart.height() : chart.plotWidth()"
+          et-chart-grid
+        />
+
+        <svg:g [etProvideColor]="colorToken()" class="et-bar-chart-bars">
+          @for (bar of chart.bars(); track bar.key) {
+            <svg:g
+              [etChartMark]="barTooltips()[bar.index] ?? null"
+              [etChartMarkDescription]="bar.valueText"
+              [etChartMarkAnchor]="anchor"
+              [etChartMarkPlacement]="bar.placement"
+              [etProvideColor]="bar.colorToken"
+              [style.--_et-chart-accent-mix.%]="bar.accentMix"
+              [attr.aria-label]="bar.name"
+              [attr.data-negative]="bar.isNegative ? '' : null"
+              (click)="activate($event, bar)"
+              (keydown.enter)="activate($event, bar)"
+              (keydown.space)="activate($event, bar)"
+              class="et-bar-chart-bar"
+            >
+              <svg:rect
+                [attr.x]="bar.target.x"
+                [attr.y]="bar.target.y"
+                [attr.width]="bar.target.width"
+                [attr.height]="bar.target.height"
+                class="et-bar-chart-bar-target"
+                rx="4"
+              />
+              <svg:path [attr.d]="bar.path" class="et-bar-chart-bar-mark" />
+              <svg:rect
+                #anchor
+                [attr.x]="bar.anchor.x"
+                [attr.y]="bar.anchor.y"
+                [attr.width]="bar.anchor.width"
+                [attr.height]="bar.anchor.height"
+                class="et-bar-chart-bar-anchor"
+              />
+            </svg:g>
+          }
+        </svg:g>
+      </svg>
+    }
+  </div>
+
+  @if (chart.isEmpty()) {
+    <div [style.block-size.px]="chart.height()" class="et-bar-chart-empty">
+      <ng-content select="[etBarChartEmpty]" />
+    </div>
+  }
+
+  <et-chart-axis
+    [labels]="chart.categoryLabels()"
+    [orientation]="chart.isHorizontal() ? 'vertical' : 'horizontal'"
+    [style.block-size.px]="chart.isHorizontal() ? chart.height() : null"
+    class="et-bar-chart-category-axis"
+  />
+</div>
+
+@for (bar of chart.bars(); track bar.key) {
+  <ng-template #barTooltip>
+    <et-chart-tooltip
+      [value]="bar.valueText"
+      [label]="bar.datum.label"
+      [series]="bar.series?.label ?? null"
+      [colorToken]="bar.colorToken"
+      [accentMix]="bar.accentMix"
+    />
+  </ng-template>
+}
+
+<ng-content select="[etBarChartNote]" />
+
+<et-chart-data-table [caption]="chart.label()" [model]="chart.table()" />

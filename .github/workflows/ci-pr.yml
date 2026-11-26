@@ -1,0 +1,27 @@
+name: CI (PR)
+
+on:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    # Generator PRs are checked by api-models.yml.
+    if: >-
+      ${{ !(github.event.pull_request.user.login == 'nziermann' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.title, ' from API (')) }}
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+      checks: write
+    with:
+      # A fork has no access to the deploy secret.
+      deploy: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+      storybook_target: storybook-next
+    secrets: inherit

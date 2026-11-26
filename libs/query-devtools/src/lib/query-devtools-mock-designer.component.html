@@ -1,0 +1,64 @@
+<div class="et-query-devtools-designer">
+  <div class="et-query-devtools-designer-head">
+    <span class="et-query-devtools-section">Body</span>
+    <div class="et-query-devtools-designer-modes">
+      <button
+        [attr.aria-pressed]="mode() === 'design'"
+        [class.et-query-devtools-btn--primary]="mode() === 'design'"
+        (click)="showDesign()"
+        class="et-query-devtools-btn"
+        type="button"
+        title="Edit field by field, with the same menu the value explorer tampers with a real response through"
+      >
+        Design
+      </button>
+      <button
+        [attr.aria-pressed]="mode() === 'json'"
+        [class.et-query-devtools-btn--primary]="mode() === 'json'"
+        (click)="showJson()"
+        class="et-query-devtools-btn"
+        type="button"
+        title="Edit the whole body as raw JSON"
+      >
+        JSON
+      </button>
+    </div>
+    @if (editCount()) {
+      <span class="et-query-devtools-count">{{ editCount() }} {{ editCount() === 1 ? 'edit' : 'edits' }}</span>
+      <button (click)="undoAll()" class="et-query-devtools-btn" type="button">Undo all</button>
+    }
+  </div>
+
+  @if (mode() === 'design') {
+    <div class="et-query-devtools-designer-tree">
+      <et-query-devtools-json [value]="designed()" [overrides]="recorder()" [annotations]="annotations()" />
+    </div>
+  } @else {
+    <textarea
+      #jsonInput
+      [value]="jsonDraft()"
+      (input)="jsonDraft.set(jsonInput.value)"
+      class="et-query-devtools-input et-query-devtools-mock-textarea"
+      rows="12"
+      spellcheck="false"
+      aria-label="The designed body as JSON"
+    ></textarea>
+  }
+
+  @if (jsonError(); as error) {
+    <p class="et-query-devtools-settings-warn">{{ error }}</p>
+  }
+
+  @if (notes().length) {
+    <ul class="et-query-devtools-designer-notes">
+      @for (note of notes(); track note) {
+        <li>{{ note }}</li>
+      }
+    </ul>
+  }
+
+  <div class="et-query-devtools-mock-head">
+    <button (click)="apply()" class="et-query-devtools-btn et-query-devtools-btn--primary" type="button">Apply</button>
+    <button (click)="dismiss.emit()" class="et-query-devtools-btn" type="button">Cancel</button>
+  </div>
+</div>

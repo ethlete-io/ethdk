@@ -1,0 +1,119 @@
+@layer components.sdk {
+  /* The stamped component host is layout-transparent, so the checkbox itself is the cell's flex item
+     and picks up its `align-items: center`. As a block box the host would instead establish a line
+     box and the inline-flex checkbox would sit on its text baseline — a few px above centre. */
+  et-table-select-cell,
+  et-table-select-all-cell {
+    display: contents;
+  }
+
+  /* Leading checkbox column for multi-selection. The checkbox's own size token (inherited) is dialed
+     down so it sits in scale with the table text rather than the 20px form default. */
+  .et-table-select-cell {
+    justify-content: center;
+    padding: 0 4px;
+    --et-checkbox-size: 16px;
+
+    /* `et-checkbox`'s own click handler lives on its host, not on this cell - stretching the host to
+       the cell's full box (rather than sizing it to the 16px visual box) is what makes the whole
+       column tappable, matching --et-table-select-width. The visual box stays centered and 16px;
+       dropping the block padding here lets `align-self: stretch` reach the full (grid-stretched)
+       row height instead of just the padded-down content box. */
+    et-checkbox {
+      flex: 1;
+      justify-content: center;
+      align-self: stretch;
+    }
+  }
+
+  /* The cell clips its overflow like every other one, so the checkbox's own ring - 3px outside it by
+     default - would be cut off on all four sides. Pulled inside instead, and set on the checkbox rather
+     than on the cell: `et-focus-ring` declares the offset on itself, and a property an element declares
+     beats one it inherits. */
+  .et-table-select-cell et-checkbox {
+    --_et-focus-ring-offset: -2px;
+  }
+
+  /* Selected rows carry a persistent accent tint (opaque variant on pinned cells, like stripe/hover).
+     `.et-table-row.et-table-row--selected` outweighs the base sheet's stripe, hover and pressed rules
+     instead of tying with them: Angular re-appends that sheet after this one when a table mounts again. */
+  .et-table-row.et-table-row--selected {
+    --_et-table-selected-accent: var(--et-table-row-selected-tint, var(--et-tone-fill, gray));
+  }
+
+  .et-table-row.et-table-row--selected .et-table-cell {
+    background: light-dark(
+      color-mix(in srgb, var(--_et-table-selected-accent) 32%, transparent),
+      color-mix(in srgb, var(--_et-table-selected-accent) 12%, transparent)
+    );
+  }
+
+  .et-table-row.et-table-row--selected .et-table-cell.et-table-sticky-start,
+  .et-table-row.et-table-row--selected .et-table-cell.et-table-sticky-end {
+    background: light-dark(
+      color-mix(
+        in srgb,
+        var(--_et-table-selected-accent) 32%,
+        var(--_et-table-row-surface, var(--et-surface-background, Canvas))
+      ),
+      color-mix(
+        in srgb,
+        var(--_et-table-selected-accent) 12%,
+        var(--_et-table-row-surface, var(--et-surface-background, Canvas))
+      )
+    );
+  }
+
+  /* A hovered selected row keeps its accent (slightly stronger) rather than reverting to the grey the
+     base table paints on hover. */
+  @media (hover: hover) {
+    .et-table-row.et-table-row--selected:hover .et-table-cell {
+      background: light-dark(
+        color-mix(in srgb, var(--_et-table-selected-accent) 38%, transparent),
+        color-mix(in srgb, var(--_et-table-selected-accent) 18%, transparent)
+      );
+    }
+
+    .et-table-row.et-table-row--selected:hover .et-table-cell.et-table-sticky-start,
+    .et-table-row.et-table-row--selected:hover .et-table-cell.et-table-sticky-end {
+      background: light-dark(
+        color-mix(
+          in srgb,
+          var(--_et-table-selected-accent) 38%,
+          var(--_et-table-row-surface, var(--et-surface-background, Canvas))
+        ),
+        color-mix(
+          in srgb,
+          var(--_et-table-selected-accent) 18%,
+          var(--_et-table-row-surface, var(--et-surface-background, Canvas))
+        )
+      );
+    }
+  }
+
+  /* A held selected row escalates within its accent, for the same reason. */
+  .et-table-row.et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell {
+    background: light-dark(
+      color-mix(in srgb, var(--_et-table-selected-accent) 44%, transparent),
+      color-mix(in srgb, var(--_et-table-selected-accent) 26%, transparent)
+    );
+  }
+
+  .et-table-row.et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
+    .et-table-cell.et-table-sticky-start,
+  .et-table-row.et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
+    .et-table-cell.et-table-sticky-end {
+    background: light-dark(
+      color-mix(
+        in srgb,
+        var(--_et-table-selected-accent) 44%,
+        var(--_et-table-row-surface, var(--et-surface-background, Canvas))
+      ),
+      color-mix(
+        in srgb,
+        var(--_et-table-selected-accent) 26%,
+        var(--_et-table-row-surface, var(--et-surface-background, Canvas))
+      )
+    );
+  }
+}

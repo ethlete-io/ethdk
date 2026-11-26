@@ -1,0 +1,473 @@
+import { streamKeyLabel, streamKeyRepoPath } from '../model/block';
+import { formatDurationMs, formatTimeOfDay } from '../model/duration';
+import { AgedNaming } from '../model/naming-age';
+import { WorklogProposal, syncsInState } from '../model/proposal';
+import { CALL_LANE_KEY, TIMER_LANE_KEY, laneKeyOf } from './lane';
+import { WorkGroup } from './merge';
+
+export type RoundOptions = {
+  /** Worklogs are logged in whole multiples of this. */
+  incrementMs: number;
+};
+
+export const DEFAULT_ROUND_OPTIONS: RoundOptions = {
+  incrementMs: 15 * 60_000,
+};
+
+/**
+ * Rounds a duration up to whole increments; any part of an increment counts as the whole of it. A
+ * proposal books its snapped span, which is at least this long.
+ */
+export const roundDurationUp = (durationMs: number, options?: Partial<RoundOptions>) => {
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options };
+
+  return Math.ceil(durationMs / incrementMs) * incrementMs;
+};
+
+type TicketRow = { from: Date; to: Date; laneKey?: string; issueKey?: string; standInId?: string };
+
+export const ticketOf = (row: TicketRow) =>
+  row.issueKey ? `issue:${row.issueKey}` : row.standInId ? `stand-in:${row.standInId}` : undefined;
+
+/**
+ * The rows that share their issue or stand-in with another row of their lane over the same minutes: the
+ * rows of two agent sessions on one ticket. `cutUnwatched` gave each shared minute to one of the sessions,
+ * so their spans interleave, and booking both spans would book the same hour twice.
+ */
+export const sharingTicket = <T extends TicketRow>(rows: readonly T[]): Set<T> => {
+  const shared = new Set<T>();
+
+  rows.forEach((row, at) => {
+    const ticket = ticketOf(row);
+
+    if (!ticket || !row.laneKey) return;
+
+    for (const other of rows.slice(at + 1)) {
+      if (ticketOf(other) !== ticket || other.laneKey !== row.laneKey) continue;
+      if (other.from >= row.to || row.from >= other.to) continue;
+
+      shared.add(row);
+      shared.add(other);
+    }
+  });
+
+  return shared;
+};
+
+/** The rows {@link sharingTicket} returns, grouped by ticket and lane into runs that overlap on the clock. */
+export const siblingGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => {
+  const groups: { ticket: string; end: number; members: T[] }[] = [];
+
+  for (const row of [...sharingTicket(rows)].sort((a, b) => a.from.getTime() - b.from.getTime())) {
+    const ticket = `${row.laneKey}|${ticketOf(row)}`;
+    const group = groups.find((open) => open.ticket === ticket && open.end > row.from.getTime());
+
+    if (group) {
+      group.members.push(row);
+      group.end = Math.max(group.end, row.to.getTime());
+    } else {
+      groups.push({ ticket, end: row.to.getTime(), members: [row] });
+    }
+  }
+
+  return groups.map((group) => group.members);
+};
+
+/**
+ * What each row {@link sharingTicket} returned books. A group of overlapping sibling rows rounds its summed
+ * observed minutes up once, never past the clock the group covers, and shares the increments out by
+ * observed minutes: one to each row first, then the largest remainder first. No row books past `spanMsOf`.
+ */
+export const siblingBookingsOf = <T extends TicketRow & { observedMs: number }>(
+  rows: readonly T[],
+  options?: { spanMsOf?: (row: T) => number; round?: Partial<RoundOptions> },
+): Map<T, number> => {
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options?.round };
+  const spanMsOf = options?.spanMsOf ?? ((row: T) => row.to.getTime() - row.from.getTime());
+  const booked = new Map<T, number>();
+
+  for (const group of siblingGroupsOf(rows)) {
+    const clockMs = group.reduce(
+      (clock, row) => ({
+        ms: clock.ms + Math.max(0, row.to.getTime() - Math.max(clock.end, row.from.getTime())),
+        end: Math.max(clock.end, row.to.getTime()),
+      }),
+      { ms: 0, end: -Infinity },
+    ).ms;
+    const observedMs = group.reduce((sum, row) => sum + row.observedMs, 0);
+    let left = Math.min(Math.ceil(observedMs / incrementMs), Math.floor(clockMs / incrementMs));
+    const room = new Map(group.map((row) => [row, Math.floor(spanMsOf(row) / incrementMs)]));
+    const given = new Map(group.map((row) => [row, 0]));
+    const give = (row: T) => {
+      given.set(row, (given.get(row) ?? 0) + 1);
+      left--;
+    };
+    const canTake = (row: T) => left > 0 && (given.get(row) ?? 0) < (room.get(row) ?? 0);
+    const byObserved = [...group].sort((a, b) => b.observedMs - a.observedMs);
+
+    for (const row of byObserved) if (canTake(row)) give(row);
+    for (const row of byObserved) {
+      while (canTake(row) && (given.get(row) ?? 0) < Math.floor(row.observedMs / incrementMs)) give(row);
+    }
+    while (left > 0) {
+      const [next] = byObserved
+        .filter(canTake)
+        .sort(
+          (a, b) =>
+            b.observedMs / incrementMs - (given.get(b) ?? 0) - (a.observedMs / incrementMs - (given.get(a) ?? 0)),
+        );
+
+      if (!next) break;
+
+      give(next);
+    }
+
+    for (const row of group) booked.set(row, (given.get(row) ?? 0) * incrementMs);
+  }
+
+  return booked;
+};
+
+export type DayWarningKind =
+  | 'under-target'
+  | 'over-target'
+  | 'unattributed-time'
+  /** Part of the day an agent worked alone, which is the machine's time rather than the user's. */
+  | 'unattended-time'
+  | 'too-many-rows'
+  | 'zero-duration'
+  | 'meeting-overlap'
+  /** Two rungs named different work for one band. The row books the higher one and says so. */
+  | 'naming-disagreement'
+  /** The day books a remembered answer whose ticket nobody has touched in Jira for a long time. */
+  | 'aged-naming'
+  /** An accepted or edited row lies, wholly or partly, between 00:00 and 06:00 local time. Visibility only. */
+  | 'night-row'
+  /** A timer ran while the machine saw almost nothing, which is what a forgotten timer looks like. */
+  | 'timer-unobserved'
+  /** The day claims idle gaps that `fillGaps` joined to the work around them. */
+  | 'filled-time'
+  /** Collection was stopped for part of the day, so the day is short by design. */
+  | 'paused-time'
+  /** Raised by `reviewDay`, not here: new evidence under a row a reviewer had already edited. */
+  | 'edited-row-drift'
+  /** Raised by `reviewDay`, not here: an edited row whose proposals the engine no longer builds. */
+  | 'stale-edit'
+  /** Raised by `reviewDay`, not here: two rows a sync would write claim the same minutes. */
+  | 'rows-overlap';
+
+/**
+ * A call the day also observed work during. It is time the day proposes twice, so the reviewer is told
+ * which call it was and when: without both they cannot find the pair of rows on screen.
+ */
+export type MeetingOverlap = {
+  /** What the call reads as: the issue its row was named for, or the call's own label. */
+  label: string;
+  from: Date;
+  overlapMs: number;
+};
+
+export type DayWarning = {
+  kind: DayWarningKind;
+  detail: string;
+};
+
+export type DayCheck = {
+  /** Sum of the rounded proposals — what a sync would write. */
+  proposedMs: number;
+  /** Time Tempo already holds for the day and no sync will write again. */
+  coveredMs: number;
+  /** What Tempo holds for the day: time logged outside this app plus the rows this app has booked. */
+  loggedMs: number;
+  /**
+   * Observed time nothing could attribute, and that a person was there for. Never folded into the
+   * proposals. Time nobody was there for is `unattendedMs` instead: it is not work waiting for a name,
+   * so counting it here would read as a question the reviewer has to answer.
+   *
+   * Only bookable bands count: a band with no checkout and no call behind it is drawn, and asking the
+   * reviewer to name time no worklog could ever hold is asking a question with no answer.
+   */
+  unattributedMs: number;
+  /** Observed time an agent worked alone. Drawn, counted, and never proposed. */
+  unattendedMs: number;
+  targetMs?: number;
+  /** What the day holds after a sync (proposed plus covered) minus target. Positive is over. */
+  deltaMs?: number;
+  warnings: DayWarning[];
+};
+
+export type CheckDayOptions = {
+  targetMs?: number;
+  /**
+   * Time Tempo already holds for the day that this app did not write, from `TempoDayCoverage`.
+   *
+   * A day logged by hand proposes nothing — every row is reduced to zero by the same foreign time —
+   * so without this the target compares against `0m` and reports a finished day as short.
+   */
+  coveredMs?: number;
+  /** What Tempo holds of this app's rows. A row accepted but not booked is proposed, never logged. */
+  bookedMs?: number;
+  /** A day this close to the target is not worth a warning. Defaults to one rounding increment. */
+  toleranceMs?: number;
+  /**
+   * Whether the day is over. A day still being worked is short of its target by definition, so
+   * `under-target` is raised only once the day can no longer grow. `over-target` is raised either way.
+   */
+  finished?: boolean;
+  maxRowsPerDay?: number;
+  /** The calls whose minutes observed activity also claims, from `matchCalls`. */
+  meetingOverlaps?: readonly MeetingOverlap[];
+  /** Time a timer claimed with no activity observed inside it, from `matchTimerRuns`. */
+  timerUnobservedMs?: number;
+  /** Idle time joined to the work around it, from `fillGaps`. */
+  filledMs?: number;
+  /** Time the user had stopped collection for, from `pauseWindows`. */
+  pausedMs?: number;
+  /** The remembered namings whose ticket has gone quiet in Jira, from `agedNamings`. */
+  agedNamings?: readonly AgedNaming[];
+};
+
+/**
+ * Whether a band is time a worklog could hold: a checkout's work, or a call. Time in an application
+ * alone is neither, and it is drawn on the day without being counted — a reviewer asked to name an
+ * hour of browsing is asked a question that has no answer.
+ *
+ * The lane decides it, and not the blocks, so the footer, the warnings and the bands on screen all
+ * read the same day. A group that already answered the question itself is taken at its word: a call a
+ * rule excluded is drawn in the call lane and is still not time the day is short of.
+ */
+const isBookable = (group: WorkGroup) => {
+  if (group.bookable !== undefined) return group.bookable;
+
+  const lane = group.laneKey ?? laneKeyOf(group.blocks);
+
+  return lane === CALL_LANE_KEY || lane === TIMER_LANE_KEY || (!!lane && !!streamKeyRepoPath(lane));
+};
+
+/** What a lane with no checkout behind it reads as in a warning. */
+const LANE_LABELS: Record<string, string> = { [CALL_LANE_KEY]: 'calls', [TIMER_LANE_KEY]: 'timed runs' };
+
+/**
+ * Which lane each band of unnamed work sits in, longest first, so the reviewer reads where to look
+ * rather than how many bands there are. A day runs several lanes at once, so the parts sum past the
+ * clock, and naming them is what makes that legible.
+ */
+const laneDetail = (options: { groups: readonly WorkGroup[]; totalMs: number }) => {
+  const byLane = new Map<string, number>();
+
+  for (const group of options.groups) {
+    const lane = group.laneKey ?? laneKeyOf(group.blocks);
+    const label = !lane ? 'other work' : (LANE_LABELS[lane] ?? streamKeyLabel(lane));
+
+    byLane.set(label, (byLane.get(label) ?? 0) + group.observedMs);
+  }
+
+  const lanes = [...byLane].sort(([, left], [, right]) => right - left);
+  const [only] = lanes;
+
+  if (lanes.length === 1 && only) return `${formatDurationMs(only[1])} in ${only[0]}`;
+
+  return `${formatDurationMs(options.totalMs)}: ${lanes
+    .map(([label, ms]) => `${label} ${formatDurationMs(ms)}`)
+    .join(', ')}`;
+};
+
+/** Each call the day also observed work during, named and placed on the clock, longest first. */
+const callDetail = (overlaps: readonly MeetingOverlap[]) =>
+  [...overlaps]
+    .sort((left, right) => right.overlapMs - left.overlapMs)
+    .map(
+      (overlap) =>
+        `${formatDurationMs(overlap.overlapMs)} during the ${formatTimeOfDay(overlap.from)} call ${overlap.label}`,
+    )
+    .join(', ');
+
+/**
+ * Each band two rungs named different work for, placed on the clock so the reviewer can find it.
+ *
+ * It names the key the row books first, because that is the one the band already reads as. A rung that
+ * named a stand-in reads as the work having no ticket, which is what the band shows too.
+ */
+const disputeDetail = (proposals: readonly WorklogProposal[]) =>
+  proposals
+    .map(
+      (proposal) =>
+        `${formatTimeOfDay(proposal.from)} ${proposal.issueKey} may be ${
+          proposal.disputedIssueKey ?? 'work with no ticket yet'
+        }`,
+    )
+    .join(', ');
+
+/**
+ * Each remembered naming this day books to whose ticket has gone quiet, placed on the clock.
+ *
+ * Only a record the day actually books is reported. A record that named nothing today says something
+ * about the store rather than about this day, and a warning that points at no band on screen is one
+ * the reviewer cannot act on.
+ */
+const agedDetail = (options: { aged: readonly AgedNaming[]; proposals: readonly WorklogProposal[] }) =>
+  options.aged
+    .flatMap((naming) => {
+      const booked = options.proposals
+        .filter((proposal) => proposal.issueKey === naming.issueKey)
+        .sort((left, right) => left.from.getTime() - right.from.getTime());
+      const first = booked[0];
+
+      if (!first) return [];
+
+      return `${formatTimeOfDay(first.from)} ${naming.issueKey} for ${naming.label}, unchanged in Jira for ${naming.quietDays} days`;
+    })
+    .join(', ');
+
+const NIGHT_END_HOUR = 6;
+
+const touchesNight = (proposal: WorklogProposal) => {
+  const day = new Date(proposal.from);
+  day.setHours(0, 0, 0, 0);
+
+  while (day.getTime() < proposal.to.getTime()) {
+    const nightEnd = new Date(day);
+    nightEnd.setHours(NIGHT_END_HOUR, 0, 0, 0);
+
+    if (proposal.from.getTime() < nightEnd.getTime() && proposal.to.getTime() > day.getTime()) return true;
+
+    day.setDate(day.getDate() + 1);
+  }
+
+  return false;
+};
+
+const nightDetail = (proposals: readonly WorklogProposal[]) =>
+  proposals
+    .map((proposal) => `${proposal.issueKey} ${formatTimeOfDay(proposal.from)}-${formatTimeOfDay(proposal.to)}`)
+    .join(', ');
+
+/**
+ * Compares a proposed day against its target and reports what a reviewer should look at. It never
+ * changes a duration: a day under target is a day under target, and filling it silently would be
+ * inventing time.
+ */
+export const checkDay = (options: {
+  proposals: WorklogProposal[];
+  /**
+   * The worklogs a sync would write for `proposals`, rows that overlap already separated. They count
+   * toward `proposedMs` in place of the rows, so time two rows share is counted once, as Tempo holds it.
+   */
+  writes?: readonly WorklogProposal[];
+  unattributed?: WorkGroup[];
+  options?: CheckDayOptions;
+}): DayCheck => {
+  const { targetMs, toleranceMs, finished, maxRowsPerDay, meetingOverlaps, timerUnobservedMs, filledMs, pausedMs } =
+    options.options ?? {};
+  const unattributed = options.unattributed ?? [];
+  const bookable = unattributed.filter(isBookable);
+  const proposedMs = (options.writes ?? options.proposals).reduce((sum, proposal) => sum + proposal.durationMs, 0);
+  const coveredMs = options.options?.coveredMs ?? 0;
+  const loggedMs = (options.options?.bookedMs ?? 0) + coveredMs;
+  const afterSyncMs = proposedMs + coveredMs;
+  const waiting = bookable.filter((group) => group.attended !== false);
+  const unattributedMs = waiting.reduce((sum, group) => sum + group.observedMs, 0);
+  const unattended = bookable.filter((group) => group.attended === false);
+  const unattendedMs = unattended.reduce((sum, group) => sum + group.observedMs, 0);
+  const tolerance = toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
+  const warnings: DayWarning[] = [];
+
+  if (targetMs !== undefined) {
+    const delta = afterSyncMs - targetMs;
+    const proposed = `${formatDurationMs(proposedMs)} proposed`;
+    const against =
+      coveredMs > 0
+        ? `${proposed} and ${formatDurationMs(coveredMs)} already in Tempo, against a ${formatDurationMs(targetMs)} target`
+        : `${proposed} against a ${formatDurationMs(targetMs)} target`;
+
+    if (delta < -tolerance && finished !== false) warnings.push({ kind: 'under-target', detail: against });
+    else if (delta > tolerance) warnings.push({ kind: 'over-target', detail: against });
+  }
+
+  if (unattributedMs > 0) {
+    warnings.push({
+      kind: 'unattributed-time',
+      detail: laneDetail({ groups: waiting, totalMs: unattributedMs }),
+    });
+  }
+
+  const alone = unattended.filter((group) => !group.workedOn);
+  const aloneMs = alone.reduce((sum, group) => sum + group.observedMs, 0);
+
+  if (aloneMs > 0) {
+    warnings.push({
+      kind: 'unattended-time',
+      detail: `${formatDurationMs(aloneMs)} across ${alone.length} block(s) ran with nobody at the machine`,
+    });
+  }
+
+  const rows = options.proposals.length + unattributed.length;
+
+  if (maxRowsPerDay !== undefined && rows > maxRowsPerDay) {
+    warnings.push({ kind: 'too-many-rows', detail: `${rows} rows to review, above the ${maxRowsPerDay} row cap` });
+  }
+
+  const overlapping = (meetingOverlaps ?? []).filter((overlap) => overlap.overlapMs > 0);
+  const meetingOverlapMs = overlapping.reduce((sum, overlap) => sum + overlap.overlapMs, 0);
+
+  if (meetingOverlapMs >= tolerance) {
+    warnings.push({ kind: 'meeting-overlap', detail: callDetail(overlapping) });
+  }
+
+  if (timerUnobservedMs !== undefined && timerUnobservedMs >= tolerance) {
+    warnings.push({
+      kind: 'timer-unobserved',
+      detail: `${formatDurationMs(timerUnobservedMs)} of timer time has no observed activity behind it`,
+    });
+  }
+
+  if (filledMs !== undefined && filledMs >= tolerance) {
+    warnings.push({
+      kind: 'filled-time',
+      detail: `${formatDurationMs(filledMs)} of idle time was joined to the work around it`,
+    });
+  }
+
+  if (pausedMs !== undefined && pausedMs >= tolerance) {
+    warnings.push({
+      kind: 'paused-time',
+      detail: `${formatDurationMs(pausedMs)} was not collected because you paused it`,
+    });
+  }
+
+  const disputed = options.proposals.filter((proposal) => proposal.disputedIssueKey ?? proposal.disputedStandInId);
+
+  if (disputed.length > 0) {
+    warnings.push({ kind: 'naming-disagreement', detail: disputeDetail(disputed) });
+  }
+
+  const aged = agedDetail({ aged: options.options?.agedNamings ?? [], proposals: options.proposals });
+
+  if (aged) warnings.push({ kind: 'aged-naming', detail: aged });
+
+  const night = options.proposals
+    .filter((proposal) => syncsInState(proposal.state) && touchesNight(proposal))
+    .sort((left, right) => left.from.getTime() - right.from.getTime());
+
+  if (night.length > 0) warnings.push({ kind: 'night-row', detail: nightDetail(night) });
+
+  const zeroed = options.proposals.filter((proposal) => proposal.durationMs === 0);
+
+  if (zeroed.length > 0) {
+    warnings.push({
+      kind: 'zero-duration',
+      detail: `${zeroed.length} row(s) rounded to nothing: ${zeroed.map((proposal) => proposal.issueKey).join(', ')}`,
+    });
+  }
+
+  return {
+    proposedMs,
+    coveredMs,
+    loggedMs,
+    unattributedMs,
+    unattendedMs,
+    targetMs,
+    deltaMs: targetMs === undefined ? undefined : afterSyncMs - targetMs,
+    warnings,
+  };
+};

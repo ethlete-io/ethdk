@@ -1,0 +1,259 @@
+# Standings
+
+A league or group table: positions, participants, played/won/drawn/lost, the points they rank by, and recent
+form where the competition reports it. With position **zones** - promotion, playoffs, relegation, advancing
+out of a group - that band the rows and draw their own legend.
+
+Letting a viewer **predict** an order rather than read one is a separate component - see
+[standings pick](/components/standings-pick).
+
+Import `STANDINGS_IMPORTS`. No provider is required; `provideStandingsLabels()` localizes the strings.
+
+```html
+<et-standings [rows]="rows()" [zones]="zones" [highlightedRowId]="myTeamId()" />
+```
+
+```ts
+import { STANDINGS_IMPORTS, StandingsZone, normalizeEthletePlacement } from '@ethlete/components';
+
+@Component({ imports: [STANDINGS_IMPORTS] })
+export class GroupTableComponent {
+  protected rows = computed(() => this.query.response()?.placements.map(normalizeEthletePlacement) ?? []);
+
+  // `color` names one of your registered color themes - this library ships none
+  protected readonly zones: StandingsZone[] = [
+    { from: 1, to: 2, color: 'success', label: 'Advances to the playoffs' },
+    { from: 18, to: 20, color: 'danger', label: 'Relegated' },
+  ];
+}
+```
+
+## Live demo
+
+@example standings/standings-default 480px
+
+## Any backend: the normalized row
+
+Same philosophy as the [match card](/components/match#any-backend-the-normalized-match) - the table takes a
+view-model this library owns, and an adapter maps your API into it:
+
+```ts
+type NormalizedStandingRow = {
+  id: string; // stable identity, for tracking rows across updates
+  position: number; // 1-based; rows are drawn in the order given, never re-sorted
+  participant: NormalizedMatchParticipant | null; // null renders the TBD placeholder
+  played: number;
+  wins: number;
+  ties: number;
+  losses: number;
+  points: number; // what the table ranks by
+  difference: number | null; // goal/game difference, when the competition tracks one
+  form: (StandingsFormResult | StandingsFormEntry)[] | null; // recent results, oldest first
+  extraStats?: Record<string, string | number | null>; // values for `extraColumns`, by key
+};
+```
+
+The table **does not sort**. Whatever order you pass is the order drawn, because the tiebreakers that decide
+a real table (head-to-head, goals scored, fair-play points) live in the competition's rules, not in a UI
+component.
+
+| Export                                 | Maps                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `normalizeEthletePlacement(placement)` | `EthletePlacementInput` → `NormalizedStandingRow`                                                      |
+| `normalizeEthleteGroupRanking(opts)`   | `EthleteGroupRankingInput` → `{ caption, rows, zones }`, with `qualifiedPlayers` as the advancing zone |
+
+Both input types list only the fields the adapter reads, so the generated `PlacementView` / `GroupRankingView`
+from `@ethlete/types` fit them, and so does an API variant's own model.
+
+Mapping notes: `score` is what the API ranks by so it becomes `points`, `difference` is `ownPoints - enemyPoints`,
+and the list views carry no form history - fill `form` in yourself if you have it elsewhere. Without an
+`advancingColor` (or with no `qualifiedPlayers`) `normalizeEthleteGroupRanking` returns no zone.
+
+The advancing zone's label defaults to the English `'Advances'`, which a screen reader reads on every row in
+the zone. **Pass `advancingLabel` in a localized app**: `normalizeEthleteGroupRanking({ group, advancingColor,
+advancingLabel: 'Weiter' })`.
+
+## Zones
+
+A zone is a band of positions that means something. One config drives both the row banding and the legend,
+which is what stops the two from drifting apart:
+
+```ts
+{ from: 1, to: 2, color: 'success', label: 'Advances to the playoffs' }
+```
+
+`color` names one of **your** registered color themes - this library ships none and hardcodes none, so what
+"advancing" looks like is your app's decision (see [theming](/core/theming)). The row is scoped to that
+theme, so its accent bar and tint come out in it. It is typed `RegisteredColorThemeName | ColorTheme`, like `et-match-card`'s `liveColor`: a
+theme object works too, and once your app registers its theme names a typo no longer compiles.
+
+Zones must not overlap: a row in two bands has no defined appearance, and dev mode throws
+[`ET4400`](/components/error-codes#standings-et44xx) naming the two zones. Set `showLegend` to `false` to
+band the rows without explaining them.
+
+### Zone strength
+
+Two zones of the same type (say two promotion steps in a Swiss stage) look identical. Give each a `strength`
+from 0 to 1 to tell them apart:
+
+```ts
+{ from: 1, to: 8, color: 'success', label: 'Direct qualification', strength: 1 },
+{ from: 9, to: 24, color: 'success', label: 'Playoff round', strength: 0.4 },
+```
+
+The value is clamped to 0-1 and exposed as `--et-standings-zone-strength` on the band's row and on its legend
+swatch. The default stylesheet scales the tint and the accent bar by it; unset, or not a finite number, the zone
+is drawn at full strength. The library sets no opacity per strength, so a stylesheet of yours can read the same
+variable for anything else.
+
+## Two densities
+
+Like the match card, the table measures itself and drops columns rather than scrolling sideways:
+
+| Width     | Columns                                           |
+| --------- | ------------------------------------------------- |
+| < 560px   | Position, participant, points                     |
+| 560–719px | …plus played, won, drawn, lost and the difference |
+| ≥ 720px   | …plus recent form                                 |
+
+@example standings/standings-compact 420px
+
+A column nobody reports is dropped entirely: no row with a `difference` means no difference column, and no
+row with `form` means no form column - an empty column is worse than a missing one.
+
+## Expandable rows
+
+Give the table an `ng-template[etStandingsRowDetail]` and every row gets a chevron toggle in a trailing
+column. The template renders its own `<tr>`s straight into the table, under the row, so a sub-row that reuses
+`et-standings-cell` and the `data-column` values lines up with the team's columns and collapses with them
+when the table narrows. The context is the row (`let-row`), its `renderRow`, and `columnCount` for a single
+full-width cell (`<td [attr.colspan]="columnCount">`).
+
+@example standings/standings-expandable 360px
+
+- **Only the toggle expands.** The row itself stays free for your own click handler, and the toggle's click
+  does not bubble to it. Buttons and links inside the detail work as usual.
+- **Rows open independently** by default. `expandMode="single"` keeps one open.
+- **`expandedRows`** holds the open rows' `id`s and is two-way bindable: `[(expandedRows)]="expanded"`.
+- The detail fades in and out; with reduced motion it appears at once. A zone's accent bar and tint
+  continue down the detail rows.
+- The headless `StandingsDirective` owns the state - `toggleRow(id)`, `isRowExpanded(id)`,
+  `registeredRowDetailTemplate()` and each render row's `isExpanded` / `detailId` - so a custom renderer can
+  reuse it.
+
+Without the template nothing changes: no toggle column, one `<tbody>`, no extra attributes.
+
+## Extra columns, form labels and links
+
+Three optional additions; without them the table renders exactly as before.
+
+```html
+<et-standings [rows]="rows()" [extraColumns]="extraColumns" [participantLink]="teamLink" />
+```
+
+```ts
+protected extraColumns: StandingsExtraColumn[] = [
+  { key: 'scored', label: 'S', labelFull: 'Scored' },
+  { key: 'conceded', label: 'C', labelFull: 'Conceded' },
+];
+
+protected teamLink = (row: NormalizedStandingRow) => ['/teams', row.participant?.id];
+```
+
+- **`extraColumns`** adds stat columns after the built-in ones (before points). Each cell shows the row's
+  `extraStats[key]`; a missing key leaves the cell empty. They are detail columns, so they drop below 560px
+  with played, won, drawn and lost. `labelFull` becomes the header's `abbr`.
+- **A form entry** is a result (`'win'`) or `{ result, label }`. A label shows as a tooltip on the square and
+  is part of its accessible name (`formEntry`: "Loss: vs Harbor City 1:2").
+- **`etStandingsFormTooltip`** swaps the text tooltip of a labelled form result for your own template, a
+  match card say. Put it on an `ng-template` inside `<et-standings>`; it receives the form entry as the
+  implicit value and the row as `row`. The label stays its accessible description; without the template
+  it stays the tooltip.
+
+  ```html
+  <et-standings [rows]="rows()">
+    <ng-template let-entry let-row="row" etStandingsFormTooltip>
+      <app-match-card [label]="entry.label" [team]="row.participant" />
+    </ng-template>
+  </et-standings>
+  ```
+
+- **`participantLink`** is called per row and answers with an `href` string, router commands (rendered
+  through `routerLink`, so router commands need `provideRouter`), or `null` for no link. The participant is
+  then an `<a et-match-participant>`, like a [linked match participant](/components/match). A TBD slot never
+  links.
+
+## Options
+
+| Input              | Type                                                  | Default      | What it does                                                        |
+| ------------------ | ----------------------------------------------------- | ------------ | ------------------------------------------------------------------- |
+| `rows`             | `readonly NormalizedStandingRow[]`                    | -            | Required. Drawn in the order given.                                 |
+| `zones`            | `readonly StandingsZone[]`                            | `[]`         | Position bands (see [Zones](#zones)).                               |
+| `highlightedRowId` | `string \| null`                                      | `null`       | The `id` of the row to single out - "your team".                    |
+| `showLegend`       | `boolean`                                             | `true`       | Draw the legend under the table. No zones, no legend either way.    |
+| `labels`           | `Partial<StandingsLabels> \| null`                    | `null`       | Per-instance string overrides.                                      |
+| `expandedRows`     | `readonly string[]`                                   | `[]`         | The `id`s of the open rows. Two-way bindable.                       |
+| `expandMode`       | `'single' \| 'multiple'`                              | `'multiple'` | Whether opening a row closes the open one.                          |
+| `extraColumns`     | `readonly StandingsExtraColumn[]`                     | `[]`         | Stat columns after the built-in ones, from each row's `extraStats`. |
+| `participantLink`  | `((row) => StandingsParticipantLink \| null) \| null` | `null`       | Makes each participant a link: an `href` or router commands.        |
+
+## Localization
+
+Every string comes from `provideStandingsLabels()`, app-wide or per instance via `labels`. Column headers
+have two labels each - the abbreviation on screen and the word for assistive tech:
+
+```ts
+provideStandingsLabels({
+  caption: 'Tabelle',
+  participant: 'Verein',
+  points: 'Pkt',
+  pointsFull: 'Punkte',
+  ties: 'U',
+  tiesFull: 'Unentschieden',
+  highlightedRow: 'Dein Verein',
+  formResultShort: (result) => (result === 'win' ? 'S' : result === 'loss' ? 'N' : 'U'),
+});
+```
+
+## Accessibility
+
+- **A real `<table>`**, so it can be navigated cell by cell with the column and row announced. The
+  `<caption>` names it (visually hidden - the page's own heading usually says it already), every column
+  header is a `<th scope="col">`, and each **position is a `<th scope="row">`** because that is what
+  identifies the row.
+- **Abbreviations are spelled out.** Every abbreviated header carries `abbr`, so "P" is read as "Played".
+- **Zones are never colour-only.** A banded row carries its zone's label as visually hidden text, so a
+  screen reader hears "Advances to the playoffs" on the row itself - the legend is a separate element a
+  row-by-row reader never reaches.
+- **The highlighted row** is `aria-current="true"` and carries the `highlightedRow` label the same way.
+- **Form is never opacity-only.** Each square carries a letter (`formResultShort`: "W", "D", "L") and a
+  visually hidden word (`formResult`: "Win", "Draw", "Loss"); the letter is `aria-hidden`, so it is not read
+  twice. A square with a `label` is instead a `role="img"` named by `formEntry`, with the label as its tooltip.
+- **The row toggle** is a real `<button>` named by `rowDetailToggle` ("Details for FC Berlin"), with
+  `aria-expanded` and `aria-controls` pointing at the detail's `<tbody>`. Its column header carries the
+  visually hidden `rowDetailColumn` label.
+- Dropped columns are dropped from the DOM or set to `display: none`, so assistive tech never announces a
+  column the reader can't see.
+
+## Theming
+
+Colors come from the app-registered [surface and color theme](/core/theming) systems: surface tokens for the
+table's text, borders and row banding, and the zone's own color theme for its accent bar and tint. Recent
+form is drawn from surface tokens rather than a green/amber/red this library invents - the letter inside
+each square, not its fill, tells the results apart.
+
+| Token                                | Default | What it sets                                          |
+| ------------------------------------ | ------- | ----------------------------------------------------- |
+| `--et-standings-row-height`          | `44px`  | Row and header height                                 |
+| `--et-standings-cell-padding-inline` | `8px`   | Horizontal cell padding                               |
+| `--et-standings-zone-bar-width`      | `3px`   | Width of a zone's inline-start accent bar             |
+| `--et-standings-zone-strength`       | `1`     | Set per zone from `strength`; scales its tint and bar |
+| `--et-standings-font-size`           | `13px`  | Table text, including participant names               |
+| `--et-standings-expand-toggle-size`  | `28px`  | Size of the row detail toggle                         |
+| `--et-standings-expand-chevron-size` | `16px`  | Size of the toggle's chevron                          |
+| `--et-standings-expand-duration`     | `180ms` | Detail fade and chevron turn                          |
+
+## Error codes
+
+The standings domain owns `ET4400`–`ET4499` - see
+[error codes](/components/error-codes#standings-et44xx).

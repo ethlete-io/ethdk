@@ -1,0 +1,266 @@
+import { InjectionToken, Provider, Type } from '@angular/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
+import { RichTextEditorDirective } from './headless/rich-text-editor.directive';
+import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from './rich-text-editor-labels';
+
+/**
+ * The formatting controls the rich text editor can render in its toolbar. `'divider'` renders a
+ * visual separator and `'heading'` renders the block-style menu; every other token renders a toggle
+ * button. Consumers pick and order them via the `tools` input or {@link provideRichTextEditorTools}.
+ */
+export const RICH_TEXT_EDITOR_TOOLS = {
+  UNDO: 'undo',
+  REDO: 'redo',
+  BOLD: 'bold',
+  ITALIC: 'italic',
+  UNDERLINE: 'underline',
+  STRIKE: 'strike',
+  CODE: 'code',
+  HEADING: 'heading',
+  ALIGN: 'align',
+  BULLETED_LIST: 'bulletedList',
+  NUMBERED_LIST: 'numberedList',
+  BLOCKQUOTE: 'blockquote',
+  CODE_BLOCK: 'codeBlock',
+  LINK: 'link',
+  TABLE: 'table',
+  IMAGE: 'image',
+  DIVIDER: 'divider',
+} as const;
+
+/**
+ * A toolbar tool token. History, the inline marks and the lists are built in; every other tool is
+ * opt-in and only renders when its provider is present, so its code tree-shakes away otherwise -
+ * `provideRichTextEditorHeadingTool` / `…BlockquoteTool` / `…CodeBlockTool` / `…LinkTool` /
+ * `…AlignmentTool` / `…TableTool` / `…ImageTool`. `(string & {})` keeps the union open for custom
+ * tools.
+ */
+export type RichTextEditorTool = (typeof RICH_TEXT_EDITOR_TOOLS)[keyof typeof RICH_TEXT_EDITOR_TOOLS] | (string & {});
+
+/** The default toolbar: history, then the block-style menu, inline marks, lists, quotes/fences and
+ *  links. The opt-in tokens in it render nothing until their provider is registered, so the bar an
+ *  editor actually shows is this list intersected with what was provided. */
+export const DEFAULT_RICH_TEXT_EDITOR_TOOLS: readonly RichTextEditorTool[] = [
+  'undo',
+  'redo',
+  'divider',
+  'heading',
+  'divider',
+  'bold',
+  'italic',
+  'underline',
+  'strike',
+  'code',
+  'divider',
+  'bulletedList',
+  'numberedList',
+  'divider',
+  'blockquote',
+  'codeBlock',
+  'divider',
+  'link',
+];
+
+/** The inline marks the selection (floating) toolbar can offer - headings/lists are block-level. */
+export const RICH_TEXT_EDITOR_INLINE_TOOLS: readonly RichTextEditorTool[] = [
+  'bold',
+  'italic',
+  'underline',
+  'strike',
+  'code',
+  'link',
+];
+
+export type RichTextEditorToolsConfig = { tools: readonly RichTextEditorTool[] };
+
+const RICH_TEXT_EDITOR_TOOLS_DEF = /* @__PURE__ */ defineStaticRootProvider<RichTextEditorToolsConfig>(
+  { tools: DEFAULT_RICH_TEXT_EDITOR_TOOLS },
+  { name: 'RichTextEditorTools' },
+);
+
+const ɵprovideRichTextEditorTools = /* @__PURE__ */ toProvideFn(RICH_TEXT_EDITOR_TOOLS_DEF);
+const injectRichTextEditorTools = /* @__PURE__ */ toInjectFn(RICH_TEXT_EDITOR_TOOLS_DEF);
+
+/**
+ * Sets the default set (and order) of toolbar tools for every `et-rich-text-editor` in scope. A
+ * per-instance `[tools]` input still wins over this. Omit both for the full default toolbar.
+ */
+export const provideRichTextEditorTools = (tools: readonly RichTextEditorTool[]) =>
+  ɵprovideRichTextEditorTools({ tools });
+
+export { injectRichTextEditorTools };
+
+/**
+ * Icon + label + wiring for a single toggle-button tool.
+ *
+ * `label` is only the fallback: what the toolbar renders comes from `RICH_TEXT_EDITOR_LABELS`, keyed by
+ * the tool's token - which is why the built-in tables below read their labels from that set's defaults
+ * rather than repeating them.
+ */
+export type RichTextEditorToolButton = {
+  icon: string;
+  label: string;
+  isActive?: (editor: RichTextEditorDirective) => boolean;
+  run: (editor: RichTextEditorDirective) => void;
+  /** Disables the button in contexts where the tool cannot apply (e.g. lists inside a table cell). */
+  isDisabled?: (editor: RichTextEditorDirective) => boolean;
+  /** Link keeps its brand color, so its icon opts out of the neutral icon recolor. */
+  allowHardcodedColor?: boolean;
+};
+
+const richTextEditorToolButtons = (): Partial<Record<RichTextEditorTool, RichTextEditorToolButton>> => ({
+  // Undo/redo are actions, not toggles: they never report an active state, and disable themselves
+  // at the ends of the history so the bar shows whether there is anything left to take back.
+  undo: {
+    icon: 'et-undo',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.undo,
+    run: (e) => e.undo(),
+    isDisabled: (e) => !e.canUndo(),
+  },
+  redo: {
+    icon: 'et-redo',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.redo,
+    run: (e) => e.redo(),
+    isDisabled: (e) => !e.canRedo(),
+  },
+  bold: {
+    icon: 'et-bold',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.bold,
+    isActive: (e) => e.boldActive(),
+    run: (e) => e.toggleBold(),
+    isDisabled: (e) => e.codeBlockActive(),
+  },
+  italic: {
+    icon: 'et-italic',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.italic,
+    isActive: (e) => e.italicActive(),
+    run: (e) => e.toggleItalic(),
+    isDisabled: (e) => e.codeBlockActive(),
+  },
+  strike: {
+    icon: 'et-strikethrough',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.strike,
+    isActive: (e) => e.strikeActive(),
+    run: (e) => e.toggleStrikethrough(),
+    isDisabled: (e) => e.codeBlockActive(),
+  },
+  underline: {
+    icon: 'et-underline',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.underline,
+    isActive: (e) => e.underlineActive(),
+    run: (e) => e.toggleUnderline(),
+    isDisabled: (e) => e.codeBlockActive(),
+  },
+  code: {
+    icon: 'et-code',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.code,
+    isActive: (e) => e.codeActive(),
+    run: (e) => e.toggleInlineCode(),
+    isDisabled: (e) => e.codeBlockActive(),
+  },
+  bulletedList: {
+    icon: 'et-list-bulleted',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.bulletedList,
+    isActive: (e) => e.unorderedListActive(),
+    run: (e) => e.toggleUnorderedList(),
+    isDisabled: (e) => e.listToolDisabled(),
+  },
+  numberedList: {
+    icon: 'et-list-numbered',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.numberedList,
+    isActive: (e) => e.orderedListActive(),
+    run: (e) => e.toggleOrderedList(),
+    isDisabled: (e) => e.listToolDisabled(),
+  },
+});
+
+/** The toggle-button tools, keyed by token (`divider`/`heading` are rendered specially). */
+export const RICH_TEXT_EDITOR_TOOL_BUTTONS = /* @__PURE__ */ richTextEditorToolButtons();
+
+/**
+ * A tool contributed to the toolbar via DI. Base tools are the static {@link RICH_TEXT_EDITOR_TOOL_BUTTONS};
+ * opt-in tools (table, alignment, or app-defined ones) register a definition through
+ * {@link RICH_TEXT_EDITOR_TOOL} so their code only ships when provided. A tool renders either as a
+ * toggle button (`icon` + `isActive`/`run`) or as a custom `control` component (given an `editor` input).
+ */
+export type RichTextEditorToolDefinition = {
+  /** The `tools` token this definition renders for (e.g. `'table'`). */
+  token: string;
+  /** Fallback text only: the toolbar renders the entry for `token` from `RICH_TEXT_EDITOR_LABELS`. */
+  label: string;
+  icon?: string;
+  /** Opts the icon out of the neutral icon recolor, e.g. to keep a brand color. */
+  allowHardcodedColor?: boolean;
+  isActive?: (editor: RichTextEditorDirective) => boolean;
+  run?: (editor: RichTextEditorDirective) => void;
+  /** Disables the button in contexts where the tool cannot apply (e.g. lists inside a table cell). */
+  isDisabled?: (editor: RichTextEditorDirective) => boolean;
+  /** Custom control rendered instead of a toggle button; it receives the editor as an `editor` input. */
+  control?: Type<unknown>;
+  /**
+   * Intercepts a keydown inside the editor content before the editor's own handling (but after
+   * list Tab/Enter handling). Runs for every provided tool - even when its `token` is not in the
+   * visible toolbar, since it acts on content, not the button (e.g. table caret navigation must
+   * work whenever the value can contain a table). Return `true` when the event was handled - the
+   * editor then calls `preventDefault()` and syncs its value from the DOM.
+   */
+  keydown?: (editor: RichTextEditorDirective, event: KeyboardEvent) => boolean;
+
+  /**
+   * Intercepts a paste into the editor content **before** the editor's own HTML/text handling - the
+   * hook for a payload only this tool understands (the image tool takes the clipboard's image
+   * files). Return `true` when it was handled; the editor then calls `preventDefault()`.
+   */
+  paste?: (editor: RichTextEditorDirective, event: ClipboardEvent) => boolean;
+
+  /**
+   * Intercepts a drop into the editor content. Return `true` when it was handled; the editor then
+   * calls `preventDefault()`, so the browser never inserts the dropped payload itself.
+   */
+  drop?: (editor: RichTextEditorDirective, event: DragEvent) => boolean;
+
+  /**
+   * Intercepts a click inside the editor content - for content this tool owns and lets the user act
+   * on (clicking an image opens its popover). Return `true` when it was handled.
+   */
+  click?: (editor: RichTextEditorDirective, event: MouseEvent) => boolean;
+
+  /**
+   * Normalizes the editor's content into the shape this tool needs, after every render and every
+   * value sync - the hook for structure the Markdown cannot carry (the image tool marks image blocks
+   * `contenteditable="false"` and keeps a line after a trailing image). It must be **value-neutral**
+   * and idempotent: whatever it changes has to serialize to the same Markdown, or the editor would
+   * write a value it never got.
+   */
+  normalize?: (root: HTMLElement) => void;
+
+  /**
+   * Called once when an editor using this tool is destroyed - the hook to cancel what the tool
+   * started for that editor (the image tool aborts its uploads and closes its popover).
+   */
+  editorDestroyed?: (editor: RichTextEditorDirective) => void;
+};
+
+/** Multi-provider token opt-in tools register their {@link RichTextEditorToolDefinition} into.
+ *  Register through {@link provideRichTextEditorTool}, which always sets `multi: true`. */
+export const RICH_TEXT_EDITOR_TOOL = new InjectionToken<RichTextEditorToolDefinition[]>('RichTextEditorTool');
+
+/**
+ * Registers a custom toolbar tool for every editor in scope; include its `token` in the editor's
+ * `tools` to place it. The factory form runs in an injection context, so it can `inject()` services.
+ *
+ * @example
+ * providers: [
+ *   provideRichTextEditorTool(() => {
+ *     const analytics = inject(Analytics);
+ *
+ *     return { token: 'clear', icon: 'et-close', label: 'Clear', run: (editor) => (analytics.track('clear'), editor.value.set('')) };
+ *   }),
+ * ]
+ */
+export const provideRichTextEditorTool = (
+  definition: RichTextEditorToolDefinition | (() => RichTextEditorToolDefinition),
+): Provider =>
+  typeof definition === 'function'
+    ? { provide: RICH_TEXT_EDITOR_TOOL, useFactory: definition, multi: true }
+    : { provide: RICH_TEXT_EDITOR_TOOL, useValue: definition, multi: true };

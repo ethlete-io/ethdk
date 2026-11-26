@@ -1,0 +1,41 @@
+                          Request #{{ order.orderNumber }}
+                        </span>
+                        @for (row of platformRows(); track row.platform) {
+                          <span
+                            [style.background-color]="
+                              (order.amounts[row.platform] ?? 0) > 0
+                                ? 'color-mix(in srgb, var(--et-surface-interaction) 12%, var(--et-surface-background))'
+                                : null
+                            "
+                            [attr.aria-label]="'Request #' + order.orderNumber + ' ' + row.label"
+                            class="flex min-w-0 items-center rounded-[5px] bg-[color-mix(in_srgb,var(--et-surface-interaction)_8%,var(--et-surface-background))] px-3 text-body-medium"
+                            role="cell"
+                          >
+                            {{ order.amounts[row.platform] ?? 0 }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </et-scrollable>
+                } @else {
+                  <div class="grid min-w-0 max-w-[668px] grid-cols-5 gap-x-3" aria-hidden="true">
+                    @for (column of [0, 1, 2, 3, 4]; track column) {
+                      <div [style.grid-template-rows]="gridTemplateRows()" class="grid min-w-0 gap-y-4">
+                        @for (row of platformRows(); track row.platform) {
+                          <span
+                            [style.opacity]="1 - column * 0.1"
+                            class="rounded-[5px] bg-[color-mix(in_srgb,var(--et-surface-interaction)_8%,var(--et-surface-background))]"
+                          ></span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (canCreateRequest()) {
+                  <div
+                    [style.grid-template-rows]="gridTemplateRows()"
+                    class="grid min-w-0 gap-y-4 bg-[var(--et-surface-background,#000)]"
+                  >
+                    @if (orderColumns().length) {
+                      <span aria-hidden="true"></span>

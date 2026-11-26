@@ -1,0 +1,94 @@
+import ethlete from '@ethlete/eslint-plugin';
+import nx from '@nx/eslint-plugin';
+import baseConfig from '../../eslint.config.mjs';
+
+export default [
+  ...baseConfig,
+  {
+    files: ['**/*.json'],
+    rules: {
+      '@nx/dependency-checks': [
+        'error',
+        {
+          ignoredFiles: [
+            '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
+            '{projectRoot}/src/**/stories/**',
+            '{projectRoot}/src/scenarios/**',
+            '{projectRoot}/src/test-setup.{js,mjs,ts}',
+            '{projectRoot}/vite.config.{js,cjs,mjs,ts,mts}',
+          ],
+          checkObsoleteDependencies: false,
+        },
+      ],
+    },
+    languageOptions: {
+      parser: await import('jsonc-eslint-parser'),
+    },
+  },
+  ...nx.configs['flat/angular'],
+  ...nx.configs['flat/angular-template'],
+  // Ethlete styleguide rules — TypeScript files
+  {
+    ...ethlete.configs.recommendedTs,
+    files: ['**/*.ts'],
+    // Generators are Node/nx tooling scripts, not Angular library code — the Angular/RxJS
+    // styleguide (no function declarations, no async/await, etc.) does not apply to them.
+    // `testing/` holds spec-only helpers (excluded from the lib build) that run inside the
+    // test harness, so they share the spec exemption — async/await et al. are fine there.
+    ignores: ['**/*.spec.ts', '**/*.test.ts', '**/test-helpers.ts', '**/testing/**', '**/generators/**'],
+    rules: {
+      ...ethlete.configs.recommendedTs.rules,
+      ...ethlete.configs.recommendedAngularTs.rules,
+      // Angular selector conventions (project-specific)
+      '@angular-eslint/directive-selector': [
+        'error',
+        {
+          type: 'attribute',
+          prefix: 'et',
+          style: 'camelCase',
+        },
+      ],
+      '@angular-eslint/component-selector': [
+        'error',
+        {
+          type: ['element', 'attribute'],
+          prefix: 'et',
+          style: 'kebab-case',
+        },
+      ],
+      '@angular-eslint/no-input-rename': 'off',
+      '@angular-eslint/prefer-on-push-component-change-detection': 'error',
+      '@angular-eslint/no-output-on-prefix': 'error',
+    },
+  },
+  // `requirePureAnnotation` only pays off in publishable source, so it is off in the shipped config.
+  {
+    files: ['**/*.ts'],
+    ignores: [
+      '**/*.spec.ts',
+      '**/*.test.ts',
+      '**/test-helpers.ts',
+      '**/testing/**',
+      '**/generators/**',
+      '**/stories/**',
+    ],
+    rules: {
+      'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true, forbidImpureReads: true }],
+    },
+  },
+  // Ethlete styleguide rules — HTML templates
+  ethlete.configs.recommendedTemplate,
+  // Relaxed rules for spec files (non-null assertions are common and intentional in tests).
+  // `testing/` holds the spec-only drivers those specs call, so it needs the same exemption.
+  {
+    ...ethlete.configs.recommendedSpec,
+    files: [...ethlete.configs.recommendedSpec.files, '**/testing/**/*.ts', '**/test-helpers.ts'],
+  },
+  // Storybook and the spec-only drivers never run under an application's CSP.
+  {
+    files: ['**/stories/**', '**/*.stories.ts', '**/testing/**'],
+    rules: {
+      'ethlete/no-csp-unsafe': 'off',
+    },
+  },
+];

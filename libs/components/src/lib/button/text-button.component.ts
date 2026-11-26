@@ -1,0 +1,83 @@
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
+import { FocusRingDirective } from '../focus-ring';
+import { SpinnerComponent } from '../loader';
+import { ButtonStylesDirective } from './button-styles.directive';
+import {
+  BUTTON_ICON_ALIGNMENTS,
+  BUTTON_SIZES,
+  BUTTON_SPINNER_CONFIG,
+  ButtonIconAlignment,
+  ButtonSize,
+} from './button.types';
+import { ButtonDirective } from './headless';
+
+@Component({
+  selector: '[et-text-button]',
+  template: `
+    @if (iconAlignment() === 'start') {
+      <div class="et-text-button-icon">
+        <ng-container *ngTemplateOutlet="iconTpl" />
+      </div>
+    }
+
+    <div class="et-text-button-contents">
+      <ng-content />
+    </div>
+
+    @if (iconAlignment() === 'end') {
+      <div class="et-text-button-icon">
+        <ng-container *ngTemplateOutlet="iconTpl" />
+      </div>
+    }
+
+    @if (buttonDir.isLoading()) {
+      <div class="et-button-loader" aria-hidden="true">
+        <et-spinner
+          [diameter]="spinnerConfig().diameter"
+          [strokeWidth]="spinnerConfig().strokeWidth"
+          [track]="buttonDir.hasProgress()"
+          [value]="buttonDir.currentProgress()"
+          class="et-button-loader-spinner"
+        />
+      </div>
+    }
+
+    <ng-template #iconTpl>
+      <ng-content select="[etIcon]" />
+    </ng-template>
+  `,
+  styleUrl: './text-button.component.css',
+  encapsulation: ViewEncapsulation.None,
+  imports: [NgTemplateOutlet, SpinnerComponent],
+  hostDirectives: [
+    {
+      directive: ButtonDirective,
+      inputs: ['disabled', 'loading', 'progress', 'type'],
+    },
+    ButtonStylesDirective,
+    ColorInteractiveDirective,
+    FocusRingDirective,
+    {
+      directive: ProvideColorDirective,
+      inputs: ['etProvideColor:color'],
+    },
+  ],
+  host: {
+    class: 'et-text-button',
+    '[attr.data-icon-alignment]': 'iconAlignment()',
+    '[attr.data-size]': 'size()',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
+  },
+})
+export class TextButtonComponent {
+  protected buttonDir = inject(ButtonDirective);
+
+  public size = input<ButtonSize>(BUTTON_SIZES.MD);
+  public iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
+
+  public canAnimate = createCanAnimateSignal();
+
+  public spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
+}

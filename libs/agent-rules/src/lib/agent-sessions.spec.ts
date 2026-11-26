@@ -1,0 +1,2433 @@
+import { spawn, spawnSync } from 'child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { basename, dirname, join } from 'path';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
+const SCRIPT = join(__dirname, '../../content/skills/agent-sessions/agent-sessions.mjs');
+
+const hasTmux = spawnSync('tmux', ['-V']).status === 0;
+const userBus = {
+  XDG_RUNTIME_DIR: process.env['XDG_RUNTIME_DIR'] ?? '',
+  DBUS_SESSION_BUS_ADDRESS: process.env['DBUS_SESSION_BUS_ADDRESS'] ?? '',
+};
+
+describe('agent-sessions', () => {
+  let dir: string;
+  let tmuxDir: string;
+  const outerTmux = {
+    TMUX: process.env['TMUX'],
+    TMUX_PANE: process.env['TMUX_PANE'],
+    TMUX_TMPDIR: process.env['TMUX_TMPDIR'],
+    ETHLETE_AGENT_ROLE: process.env['ETHLETE_AGENT_ROLE'],
+  };
+
+  // Every tmux call of the spec and of the script must reach a private server: on the default server a
+  // switch-client or a new session moves the attached clients of the user.
+  beforeAll(() => {
+    // A tmux socket path must fit the 108-byte sun_path; the nested spec temp dirs of CI already pass it.
+    tmuxDir = mkdtempSync('/tmp/et-tmux-');
+    delete process.env['TMUX'];
+    delete process.env['TMUX_PANE'];
+    delete process.env['ETHLETE_AGENT_ROLE'];
+    process.env['TMUX_TMPDIR'] = tmuxDir;
+    // A case that kills the last session leaves a server that exits after kill-session returns; the next case's
+    // first tmux call then reaches the exiting server and fails with "server exited unexpectedly".
+    if (hasTmux) spawnSync('tmux', ['new-session', '-d', '-s', 'spec-keepalive', 'cat']);
+  });
+
+  afterAll(() => {
+    spawnSync('tmux', ['kill-server']);
+    Object.entries(outerTmux).forEach(([key, value]) =>
+      value === undefined ? delete process.env[key] : (process.env[key] = value),
+    );
+    rmSync(tmuxDir, { recursive: true, force: true });
+  });
+
+  const run = (args: string[], input?: string, env: NodeJS.ProcessEnv = {}) =>
+    spawnSync('node', [SCRIPT, ...args], {
+      cwd: dir,
+      input,
+      encoding: 'utf8',
+      timeout: 25_000,
+      env: {
+        ...process.env,
+        TMUX_PANE: '',
+        AGENT_MAILBOX: join(dir, 'mailbox.jsonl'),
+        CLAUDE_CONFIG_DIR: join(dir, 'claude'),
+        CLAUDE_CODE_SESSION_ID: '',
+        AGENT_RESTART_RESUME_WAIT_MS: '500',
+        AGENT_RESTART_EXIT_WAIT_MS: '1000',
+        XDG_RUNTIME_DIR: '',
+        DBUS_SESSION_BUS_ADDRESS: '',
+        ...env,
+      },
+    });
+
+  const paneOf = (session: string) =>
+    spawnSync('tmux', ['list-panes', '-t', `=${session}:`, '-F', '#{pane_id}'], { encoding: 'utf8' }).stdout.trim();
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'agent-mailbox-'));
+  });
+
+  const isAlive = (pid: number) => {
+    try {
+      process.kill(pid, 0);
+
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // A restart starts the dispatcher session of the checkout, which keeps writing the mailbox in `dir`: it must be
+  // gone before `dir` is removed, or the removal fails with ENOTEMPTY.
+  const stopDispatcher = () => {
+    const session = `=mailbox-dispatch@${basename(dir)}`;
+    const pids = spawnSync('tmux', ['list-panes', '-s', '-t', session, '-F', '#{pane_pid}'], { encoding: 'utf8' })
+      .stdout.split('\n')
+      .filter(Boolean)
+      .map(Number);
+
+    spawnSync('tmux', ['kill-session', '-t', session]);
+
+    const end = Date.now() + 5_000;
+
+    while (pids.some(isAlive) && Date.now() < end) spawnSync('sleep', ['0.05']);
+  };
+
+  afterEach(() => {
+    if (hasTmux) stopDispatcher();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('sends a message from the arguments and reads it back', () => {
+    run(['send', 'codex', 'hello', 'there']);
+
+    expect(run(['read']).stdout).toMatch(/codex: hello there\n$/);
+  });
+
+  it('sends a multi-line message from stdin', () => {
+    run(['send', 'codex'], 'line one\nline two\n');
+
+    expect(run(['read']).stdout).toContain('codex: line one\nline two');
+  });
+
+  it('limits read to the last messages unless --all is given', () => {
+    for (const n of [1, 2, 3]) run(['send', 'codex', `m${n}`]);
+
+    expect(run(['read', '--last', '1']).stdout).toMatch(/m3/);
+    expect(run(['read', '--last', '1']).stdout).not.toMatch(/m2/);
+    expect(run(['read', '--all']).stdout).toMatch(/m1/);
+  });
+
+  it('lists a claim and refuses an overlapping claim from another sender', () => {
+    run(['claim', 'codex', 'src/a']);
+
+    expect(run(['claims']).stdout).toContain('src/a  codex');
+
+    const conflict = run(['claim', 'claude', 'src/a/file.ts']);
+
+    expect(conflict.status).toBe(2);
+    expect(conflict.stderr).toContain('Claimed by codex');
+    expect(run(['claim', 'claude', 'src/a/file.ts', '--force']).status).toBe(0);
+  });
+
+  it('drops a claim after release and after expiry', () => {
+    run(['claim', 'codex', 'src/a']);
+    run(['release', 'codex', 'src/a']);
+
+    expect(run(['claims']).stdout).toBe('No active claims.\n');
+
+    run(['claim', 'codex', 'src/b', '--ttl', '0']);
+
+    expect(run(['claims']).stdout).toBe('No active claims.\n');
+  });
+
+  it('releases every claim of a sender when no path is given', () => {
+    run(['claim', 'codex', 'src/a', 'src/b']);
+    run(['release', 'codex']);
+
+    expect(run(['claims']).stdout).toBe('No active claims.\n');
+  });
+
+  it('shows each message in the inbox once and skips the own messages', () => {
+    run(['send', 'codex', 'first']);
+    run(['send', 'gemini', 'mine']);
+
+    expect(run(['inbox', 'gemini']).stdout).toMatch(/codex: first\n$/);
+    expect(run(['inbox', 'gemini']).stdout).toBe('No new messages.\n');
+
+    run(['send', 'codex', 'second']);
+
+    const next = run(['inbox', 'gemini']).stdout;
+
+    expect(next).toContain('second');
+    expect(next).not.toContain('first');
+  });
+
+  it('keeps a separate cursor for each sender', () => {
+    run(['send', 'codex', 'hello']);
+    run(['inbox', 'gemini']);
+
+    expect(run(['inbox', 'claude']).stdout).toContain('codex: hello');
+  });
+
+  it('prints the unread messages when a claim is made', () => {
+    run(['send', 'codex', 'please wait']);
+
+    expect(run(['claim', 'gemini', 'src/a']).stdout).toContain('codex: please wait');
+  });
+
+  it('returns from inbox --wait when a message arrives', async () => {
+    const waiting = new Promise<string>((resolve) => {
+      const child = spawn('node', [SCRIPT, 'inbox', 'gemini', '--wait', '20'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+      let out = '';
+      child.stdout.on('data', (chunk) => (out += chunk));
+      child.on('close', () => resolve(out));
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    run(['send', 'codex', 'ping']);
+
+    expect(await waiting).toContain('codex: ping');
+  });
+
+  it('gives up inbox --wait when no message arrives', () => {
+    expect(run(['inbox', 'gemini', '--wait', '1']).stdout).toBe('No new messages.\n');
+  });
+
+  it.skipIf(!hasTmux)(
+    'wakes the tmux session of the recipient for a message sent --to it',
+    async () => {
+      const agent = `mailbox-spec-${process.pid}`;
+      const session = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+
+      spawnSync('tmux', ['new-session', '-d', '-s', session, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        run(['send', 'codex', '--to', agent], 'line one\nline two\n');
+        run(['send', 'gemini', '--to', agent, 'hello']);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe(
+          'Mailbox message from codex: line one line two\nMailbox message from gemini: hello\n',
+        );
+        expect(run(['inbox', agent]).stdout).toContain('gemini: hello');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${session}`]);
+      }
+    },
+    10000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'keeps the messages unread while a restart of the session is pending',
+    async () => {
+      const agent = `mailbox-spec-restart-${process.pid}`;
+      const session = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      const lock = join(dir, `restart.lock.${session}`);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', session, `cat > ${log}`]);
+      writeFileSync(lock, JSON.stringify({ pid: process.pid, since: Date.now() }));
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        run(['send', 'codex', '--to', agent, 'hello']);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe('');
+
+        rmSync(lock);
+
+        await expect
+          .poll(() => readFileSync(log, 'utf8'), { timeout: 5_000, interval: 250 })
+          .toBe('Mailbox message from codex: hello\n');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${session}`]);
+      }
+    },
+    20_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'does not wake a session whose inbox already holds the message',
+    async () => {
+      const agent = `mailbox-spec-read-${process.pid}`;
+      const session = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+
+      spawnSync('tmux', ['new-session', '-d', '-s', session, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        run(['send', 'codex', '--to', agent, 'hello']);
+        expect(run(['inbox', agent]).stdout).toContain('hello');
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe('');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${session}`]);
+      }
+    },
+    10000,
+  );
+
+  const seedHistory = () =>
+    writeFileSync(
+      join(dir, 'mailbox.jsonl'),
+      [
+        { sender: 'claude2', to: 'claude2-2', message: 'old one' },
+        { sender: 'claude2-2', to: 'claude2', message: 'old two' },
+        { sender: 'claude2', message: 'old broadcast' },
+      ]
+        .map((entry) => JSON.stringify({ timestamp: new Date().toISOString(), ...entry }))
+        .join('\n') + '\n',
+    );
+
+  it.skipIf(!hasTmux)(
+    'refuses send --to a session of another checkout and types nothing into it',
+    async () => {
+      const foreign = `fifa-${process.pid}`;
+      const otherCheckout = join(dir, 'fifagg');
+      const log = join(dir, 'pane.log');
+      mkdirSync(otherCheckout);
+      spawnSync('git', ['init', '-q'], { cwd: otherCheckout });
+      writeFileSync(log, '');
+      seedHistory();
+
+      spawnSync('tmux', ['new-session', '-d', '-s', foreign, '-c', otherCheckout, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const sent = run(['send', 'claude2', '--to', foreign, 'hello']);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(sent.status).not.toBe(0);
+        expect(sent.stderr).toContain(foreign);
+        expect(sent.stderr).toContain('fifagg');
+        expect(run(['read']).stdout).not.toContain('hello');
+        expect(readFileSync(log, 'utf8')).toBe('');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${foreign}`]);
+      }
+    },
+    10000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'accepts and wakes a plain-named session whose pane runs in this checkout',
+    async () => {
+      const agent = `mailbox-plain-${process.pid}`;
+      const log = join(dir, 'pane.log');
+      spawnSync('git', ['init', '-q'], { cwd: dir });
+
+      spawnSync('tmux', ['new-session', '-d', '-s', agent, '-c', dir, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        expect(run(['send', 'codex', '--to', agent, 'hello']).status).toBe(0);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe('Mailbox message from codex: hello\n');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${agent}`]);
+      }
+    },
+    10000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'types no message from before the dispatcher started on the first wake of an agent',
+    async () => {
+      const agent = `mailbox-first-wake-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      writeFileSync(
+        join(dir, 'mailbox.jsonl'),
+        `${JSON.stringify({ timestamp: new Date().toISOString(), sender: 'claude2', to: agent, message: 'old addressed' })}\n`,
+      );
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        run(['send', 'codex', '--to', agent, 'new']);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe('Mailbox message from codex: new\n');
+        expect(run(['inbox', agent]).stdout).toContain('claude2: old addressed');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    10000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'wakes an agent with only the messages addressed to it',
+    async () => {
+      const agent = `mailbox-addressed-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      seedHistory();
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        expect(run(['send', 'codex', '--to', agent, 'hello']).status).toBe(0);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe('Mailbox message from codex: hello\n');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    10000,
+  );
+
+  it('adds no builder flags to a claude run without the builder role', () => {
+    const result = run(['run', 'claude', 'claude', '--dry-run'], undefined, { HOME: dir });
+
+    expect(result.stdout).not.toMatch(/mcp-config|disallowedTools|append-system-prompt/);
+  });
+
+  it('builds a builder run with the role env and a quoted system prompt for claude', () => {
+    const result = run(['run', 'claude', 'claude', '--role', 'builder', '--dry-run'], undefined, { HOME: dir });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe(
+      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' CLAUDE_CONFIG_DIR='${dir}/claude' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.' '--strict-mcp-config' '--mcp-config=${realpathSync(dir)}/.mcp.json' '--disallowedTools=${DENIED_TOOLS}'\n`,
+    );
+    expect(existsSync(join(dir, '.cache/claude-tmp'))).toBe(true);
+  });
+
+  it('runs a one-shot command outside tmux with the temp dir under the home folder', () => {
+    const printer = join(dir, 'printer');
+    writeFileSync(printer, `#!/bin/sh\nprintf '%s' "$CLAUDE_CODE_TMPDIR"\n`, { mode: 0o755 });
+
+    const result = run(['run', 'claude', printer, '--version'], undefined, { HOME: dir });
+
+    expect(result.stdout).toBe(`${dir}/.cache/claude-tmp`);
+  });
+
+  const SSH_ENV = {
+    SSH_CONNECTION: '10.0.0.2 5000 10.0.0.1 22',
+    SSH_CLIENT: '10.0.0.2 5000 22',
+    SSH_TTY: '/dev/pts/9',
+  };
+
+  it.skipIf(!hasTmux)('starts the agent without the SSH variables of the launching process', async () => {
+    const agent = `claude-ssh-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const dispatch = `dispatch-ssh-${process.pid}`;
+    const started = join(dir, 'started.log');
+    const fakeAgent = join(dir, 'fake-agent.sh');
+    writeFileSync(
+      fakeAgent,
+      `env | grep -E '^SSH_(CONNECTION|CLIENT|TTY)=' > ${started}; echo done >> ${started}; exec cat\n`,
+    );
+
+    try {
+      const result = run(['run', agent, 'sh', fakeAgent], undefined, {
+        HOME: dir,
+        AGENT_MAILBOX_DISPATCH_SESSION: dispatch,
+        ...SSH_ENV,
+      });
+
+      expect(result.status).toBe(0);
+      await expect
+        .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+        .toBe('done\n');
+    } finally {
+      [scoped, dispatch].forEach((name) => spawnSync('tmux', ['kill-session', '-t', `=${name}`]));
+    }
+  });
+
+  it.skipIf(!hasTmux)(
+    'restarts the agent without the SSH variables of the restarting process',
+    async () => {
+      const agent = `claude-sshr-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(
+        fakeAgent,
+        `#!/bin/sh\nenv | grep -E '^SSH_(CONNECTION|CLIENT|TTY)=' > ${started}; echo done >> ${started}; exec cat\n`,
+        {
+          mode: 0o755,
+        },
+      );
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          HOME: dir,
+          ...SSH_ENV,
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe('done\n');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  const GUI_ENV = { WAYLAND_DISPLAY: 'wayland-fake', DISPLAY: ':fake', XDG_SESSION_TYPE: 'wayland' };
+  const callerWithoutGui = { WAYLAND_DISPLAY: '', DISPLAY: '', XDG_SESSION_TYPE: 'tty' };
+  const grepGui = (started: string) =>
+    `env | grep -E '^(WAYLAND_DISPLAY|DISPLAY|XDG_SESSION_TYPE)=' | sort > ${started}; echo done >> ${started}; exec cat`;
+  const expectedGui = 'DISPLAY=:fake\nWAYLAND_DISPLAY=wayland-fake\nXDG_SESSION_TYPE=wayland\ndone\n';
+  const setTmuxGui = () =>
+    Object.entries(GUI_ENV).forEach(([name, value]) => spawnSync('tmux', ['set-environment', '-g', name, value]));
+  const unsetTmuxGui = () =>
+    Object.keys(GUI_ENV).forEach((name) => spawnSync('tmux', ['set-environment', '-g', '-u', name]));
+
+  it.skipIf(!hasTmux)('starts the agent with the GUI variables of the tmux global environment', async () => {
+    const agent = `claude-gui-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const dispatch = `dispatch-gui-${process.pid}`;
+    const started = join(dir, 'started.log');
+    const fakeAgent = join(dir, 'fake-agent.sh');
+    writeFileSync(fakeAgent, `${grepGui(started)}\n`);
+    setTmuxGui();
+
+    try {
+      const result = run(['run', agent, 'sh', fakeAgent], undefined, {
+        HOME: dir,
+        AGENT_MAILBOX_DISPATCH_SESSION: dispatch,
+        ...callerWithoutGui,
+      });
+
+      expect(result.status).toBe(0);
+      await expect
+        .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+        .toBe(expectedGui);
+    } finally {
+      [scoped, dispatch].forEach((name) => spawnSync('tmux', ['kill-session', '-t', `=${name}`]));
+      unsetTmuxGui();
+    }
+  });
+
+  it.skipIf(!hasTmux)(
+    'restarts the agent with the GUI variables of the tmux global environment',
+    async () => {
+      const agent = `claude-guir-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(fakeAgent, `#!/bin/sh\n${grepGui(started)}\n`, { mode: 0o755 });
+      setTmuxGui();
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          HOME: dir,
+          ...callerWithoutGui,
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(expectedGui);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        unsetTmuxGui();
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)('starts the agent in a detached tmux session when run has no terminal', async () => {
+    const agent = `claude-notty-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const dispatch = `dispatch-notty-${process.pid}`;
+    const started = join(dir, 'started.log');
+    const fakeAgent = join(dir, 'fake-agent.sh');
+    writeFileSync(fakeAgent, `printf '%s\\n' "$*" > ${started}; exec cat\n`);
+
+    try {
+      const result = run(['run', agent, 'sh', fakeAgent, 'do it'], undefined, {
+        HOME: dir,
+        AGENT_MAILBOX_DISPATCH_SESSION: dispatch,
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain(`Started ${scoped}`);
+      await expect
+        .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+        .toBe('do it\n');
+      expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
+    } finally {
+      [scoped, dispatch].forEach((name) => spawnSync('tmux', ['kill-session', '-t', `=${name}`]));
+    }
+  });
+
+  it('adds no system prompt for another program and rejects an unknown role', () => {
+    expect(run(['run', 'codex', 'codex', '--role', 'builder', '--dry-run'], undefined, { HOME: dir }).stdout).toBe(
+      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' CLAUDE_CONFIG_DIR='${dir}/claude' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'codex'\n`,
+    );
+    expect(run(['run', 'claude', 'claude', '--role', 'x', '--dry-run']).status).toBe(1);
+  });
+
+  it.skipIf(!hasTmux)('starts and stops the tmux sessions for up and down', () => {
+    const suffix = process.pid;
+    const dispatchSession = `mailbox-dispatch-${suffix}`;
+    const agent = `mailbox-agent-${suffix}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const env = {
+      ...process.env,
+      AGENT_MAILBOX: join(dir, 'mailbox.jsonl'),
+      AGENT_MAILBOX_DISPATCH_SESSION: dispatchSession,
+    };
+    const has = (name: string) => spawnSync('tmux', ['has-session', '-t', `=${name}`]).status === 0;
+    const mailbox = (...args: string[]) => spawnSync('node', [SCRIPT, ...args], { cwd: dir, env, encoding: 'utf8' });
+
+    try {
+      expect(mailbox('up', `${agent}=cat`).stdout).toContain(`Started ${scoped}`);
+      expect(has(scoped)).toBe(true);
+      expect(has(dispatchSession)).toBe(true);
+      expect(mailbox('up', `${agent}=cat`).stdout).toContain(`Session ${scoped} already runs.`);
+
+      mailbox('down', agent);
+
+      expect(has(scoped)).toBe(false);
+      expect(has(dispatchSession)).toBe(false);
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${dispatchSession}`]);
+    }
+  });
+
+  it.skipIf(!hasTmux)(
+    'wakes the repo-scoped session of the recipient',
+    async () => {
+      const agent = `mailbox-scoped-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
+
+      const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        run(['send', 'codex', '--to', agent, 'hello']);
+        await new Promise((resolve) => setTimeout(resolve, 4500));
+
+        expect(readFileSync(log, 'utf8')).toBe('Mailbox message from codex: hello\n');
+      } finally {
+        dispatch.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    10000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'types the clear command and the prompt into the session for restart',
+    async () => {
+      const agent = `claude-restart-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
+
+      try {
+        expect(
+          run(['restart', agent, '--after', '1', 'resume', 'slug'], undefined, { TMUX_PANE: paneOf(scoped) }).stdout,
+        ).toContain('Restarting');
+
+        await expect
+          .poll(() => readFileSync(log, 'utf8'), { timeout: 20_000, interval: 250 })
+          .toMatch(/\/clear\s+resume slug/);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux).each([
+    ['restart', []],
+    ['restart --process', ['--process']],
+  ])(
+    'starts the dispatcher for %s when none runs',
+    (_name, flags) => {
+      const agent = `claude-dispatch-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const dispatchSession = `mailbox-dispatch-restart-${process.pid}`;
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', ...flags, 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          AGENT_MAILBOX_DISPATCH_SESSION: dispatchSession,
+        });
+
+        expect(spawnSync('tmux', ['has-session', '-t', `=${dispatchSession}`]).status).toBe(0);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        spawnSync('tmux', ['kill-session', '-t', `=${dispatchSession}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)('refuses a second restart while one of the same session is pending', () => {
+    const agent = `claude-twice-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const lock = join(dir, `restart.lock.${scoped}`);
+
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat > /dev/null']);
+
+    try {
+      const env = { TMUX_PANE: paneOf(scoped) };
+
+      expect(run(['restart', agent, '--after', '60', 'resume', 'one'], undefined, env).status).toBe(0);
+
+      const second = run(['restart', agent, '--after', '60', 'resume', 'two'], undefined, env);
+
+      expect(second.status).toBe(1);
+      expect(second.stderr).toContain(`a restart of ${scoped} is already pending`);
+    } finally {
+      if (existsSync(lock)) process.kill(JSON.parse(readFileSync(lock, 'utf8')).pid);
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    }
+  });
+
+  it.skipIf(!hasTmux)(
+    'holds the restart marker until the resumed session took its first turn',
+    async () => {
+      const agent = `claude-marker-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      const lock = join(dir, `restart.lock.${scoped}`);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
+
+      const restart = spawn('node', [SCRIPT, 'restart', agent, '--now', '--after', '0', 'resume', 'slug'], {
+        cwd: dir,
+        env: {
+          ...process.env,
+          TMUX_PANE: paneOf(scoped),
+          AGENT_MAILBOX: join(dir, 'mailbox.jsonl'),
+          CLAUDE_CONFIG_DIR: join(dir, 'claude'),
+          AGENT_RESTART_RESUME_WAIT_MS: '4000',
+        },
+      });
+
+      try {
+        await expect.poll(() => readFileSync(log, 'utf8'), { timeout: 15_000, interval: 250 }).toContain('resume slug');
+
+        expect(existsSync(lock)).toBe(true);
+
+        spawnSync('tmux', ['send-keys', '-t', `=${scoped}:`, '-l', 'esc to interrupt']);
+
+        await expect.poll(() => existsSync(lock), { timeout: 3_000, interval: 250 }).toBe(false);
+      } finally {
+        restart.kill();
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'types the prompt when a message wakes the session right after the clear',
+    async () => {
+      const agent = `claude-busy-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "esc to interrupt"; cat > ${log}`]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+        });
+
+        await expect.poll(() => readFileSync(log, 'utf8'), { timeout: 5_000, interval: 250 }).toContain('resume slug');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  describe.skipIf(!hasTmux)('restart with a question to the human', () => {
+    const transcript = readFileSync(join(__dirname, 'fixtures/restart-transcript.jsonl'), 'utf8');
+    const question = '**Q1** - **Order**: findings or status rows first?';
+    let agent: string;
+    let scoped: string;
+
+    const restartWith = (lines: string, openForHuman: string) => {
+      const sessions = join(dir, 'claude/sessions');
+      const project = join(dir, 'claude/projects/-tmp-repo');
+      const handoffs = join(dir, '.claude/handoffs');
+      [sessions, project, handoffs].forEach((path) => mkdirSync(path, { recursive: true }));
+      writeFileSync(
+        join(sessions, `${process.pid}.json`),
+        JSON.stringify({ pid: process.pid, sessionId: 'fixture-session', tmux: `${scoped}:@1.%1`, updatedAt: 1 }),
+      );
+      writeFileSync(join(project, 'fixture-session.jsonl'), lines);
+      writeFileSync(
+        join(handoffs, 'doc-agent-a.md'),
+        `# Handoff\n\n## Open for the human\n\n${openForHuman}\n\n## Next\n\nGo on.\n`,
+      );
+      return run(['restart', agent, '--after', '0', '/handoff', 'resume', 'doc-agent-a'], undefined, {
+        TMUX_PANE: paneOf(scoped),
+        AGENT_RESTART_WAIT_MS: '1000',
+      });
+    };
+
+    beforeEach(() => {
+      agent = `claude-question-${process.pid}`;
+      scoped = `${agent}@${basename(dir)}`;
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat > /dev/null']);
+    });
+
+    afterEach(() => {
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    });
+
+    it('refuses while a question has no later human message and the handoff says none', () => {
+      const result = restartWith(transcript, 'none');
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(`Refused: ${scoped} asked the human`);
+      expect(result.stderr).toContain(`❓ ${question}`);
+      expect(result.stderr).not.toContain('❓-question');
+    });
+
+    it('restarts when the handoff names the question verbatim', () => {
+      const result = restartWith(transcript, `- ${question}`);
+
+      expect(result.stderr).toBe('');
+      expect(result.stdout).toContain('Restarting');
+    });
+
+    it('restarts when a human message follows the question', () => {
+      const [command] = transcript.split('\n');
+      const answer = JSON.parse(command ?? '');
+      answer.message.content = 'status rows first';
+
+      const result = restartWith(`${transcript}${JSON.stringify(answer)}\n`, 'none');
+
+      expect(result.stderr).toBe('');
+      expect(result.stdout).toContain('Restarting');
+    });
+  });
+
+  it.skipIf(!hasTmux)(
+    'ends the agent and starts its command again with the prompt for restart --process',
+    async () => {
+      const agent = `claude-process-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const exited = join(dir, 'exited.log');
+      const started = join(dir, 'started.log');
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$*" > ${started}; exec cat\n`, { mode: 0o755 });
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "$line" > ${exited}`]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', '/handoff', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        expect(readFileSync(exited, 'utf8')).toBe('/exit\n');
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe('/handoff resume slug [typed by agent-sessions]\n');
+        expect(
+          spawnSync('tmux', ['display-message', '-p', '-t', `=${scoped}:`, '#{pane_dead}'], { encoding: 'utf8' })
+            .stdout,
+        ).toBe('0\n');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'gives the restarted process the temp dir under the home folder for restart --process',
+    async () => {
+      const agent = `claude-tmpdir-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$CLAUDE_CODE_TMPDIR" > ${started}; exec cat\n`, {
+        mode: 0o755,
+      });
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          HOME: dir,
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(`${dir}/.cache/claude-tmp\n`);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'drops a prompt that an older run stored with the command for restart --process',
+    async () => {
+      const agent = `claude-stale-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$*" > ${started}; exec cat\n`, { mode: 0o755 });
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `'${fakeAgent}' '/handoff resume old'`,
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          HOME: dir,
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe('resume [typed by agent-sessions]\n');
+        expect(
+          spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
+            .stdout,
+        ).toBe(`CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' '${fakeAgent}'\n`);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'starts the program itself and not the shell function of the same name for restart --process',
+    async () => {
+      const agent = `claude-bypass-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const viaFunction = join(dir, 'via-function.log');
+      const fakeAgent = fakeAgentPath();
+      const rc = join(dir, 'rc.sh');
+      writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$*" > ${started}; exec cat\n`, { mode: 0o755 });
+      writeFileSync(rc, `claude() { echo function > ${viaFunction}; }\n`);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `PATH=${dirname(fakeAgent)}:${process.env['PATH']} claude`,
+      ]);
+      spawnSync('tmux', ['set-environment', '-t', `=${scoped}:`, 'ENV', rc]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe('resume [typed by agent-sessions]\n');
+        expect(existsSync(viaFunction)).toBe(false);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  const DENIED_TOOLS =
+    'Artifact Workflow ScheduleWakeup SendFeedback ShareOnboardingGuide ReportFindings AskUserQuestion';
+
+  const BUILDER_RULE =
+    'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.';
+
+  const fakeAgentPath = () => {
+    mkdirSync(join(dir, 'agent-bin'), { recursive: true });
+
+    return join(dir, 'agent-bin', 'claude');
+  };
+
+  const fakeClaude = (started: string) => {
+    const bin = join(dir, 'bin');
+    mkdirSync(bin);
+    writeFileSync(
+      join(bin, 'claude'),
+      `#!/bin/sh\nprintf 'role=%s\\n' "$ETHLETE_AGENT_ROLE" > ${started}; for arg; do printf '%s\\n' "$arg" >> ${started}; done; exec cat\n`,
+      { mode: 0o755 },
+    );
+    return join(bin, 'claude');
+  };
+
+  it.skipIf(!hasTmux)(
+    'gives the builder rule to a stored env CLAUDE_CONFIG_DIR claude command for restart --process',
+    async () => {
+      const agent = `claude-envrole-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const claude = fakeClaude(started);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `'env' 'CLAUDE_CONFIG_DIR=${join(dir, 'claude')}' '${claude}'`,
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', '/handoff resume builder-x'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toContain(`--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n`);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it('adds the builder flags to a run whose claude follows env', () => {
+    const result = run(['run', 'claude', 'env', 'FOO=1', 'claude', '--role', 'builder', '--dry-run'], undefined, {
+      HOME: dir,
+    });
+
+    expect(result.stdout).toContain(`'--disallowedTools=${DENIED_TOOLS}'`);
+  });
+
+  it.skipIf(!hasTmux)(
+    'gives the builder role and rule to a session without a role that resumes a builder handoff for restart --process',
+    async () => {
+      const agent = `claude-role-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const peer = `claude-grill-${process.pid}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const claude = fakeClaude(started);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', peer, 'cat']);
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', `'${claude}' '/handoff resume old'`]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', '/handoff resume builder-x'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(
+            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${realpathSync(dir)}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\n/handoff resume builder-x [typed by agent-sessions]\n`,
+          );
+        expect(
+          spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_role'], { encoding: 'utf8' }).stdout,
+        ).toBe('builder\n');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        spawnSync('tmux', ['kill-session', '-t', `=${peer}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'adds the builder rule once when the stored command already has it for restart --process',
+    async () => {
+      const agent = `claude-once-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const claude = fakeClaude(started);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_role', 'builder']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 '${claude}' '--append-system-prompt' '${BUILDER_RULE}' '--strict-mcp-config' '--mcp-config=${realpathSync(dir)}/.mcp.json' '--disallowedTools=${DENIED_TOOLS}'`,
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(
+            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${realpathSync(dir)}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\nresume [typed by agent-sessions]\n`,
+          );
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux || spawnSync('zsh', ['-c', 'true']).status !== 0)(
+    'round-trips a command a login shell wraps and puts the prompt inside it for restart --process',
+    async () => {
+      const agent = `claude-wrapped-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const claude = fakeClaude(started);
+      const inner = `CLAUDE_CODE_TMPDIR='${dir}/tmp' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 env CLAUDE_CONFIG_DIR=${join(dir, 'claude')} ${claude} '/handoff resume builder-night-queue' --append-system-prompt '${BUILDER_RULE}' --strict-mcp-config --mcp-config=${realpathSync(dir)}/.mcp.json '--disallowedTools=${DENIED_TOOLS}'`;
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_role', 'builder']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', `zsh -lic "${inner}"`]);
+
+      try {
+        run(
+          ['restart', agent, '--now', '--after', '0', '--process', '/handoff resume builder-night-queue'],
+          undefined,
+          {
+            TMUX_PANE: paneOf(scoped),
+            SHELL: 'sh',
+          },
+        );
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(
+            `role=builder\n--append-system-prompt\n${BUILDER_RULE}\n--strict-mcp-config\n--mcp-config=${realpathSync(dir)}/.mcp.json\n--disallowedTools=${DENIED_TOOLS}\n/handoff resume builder-night-queue [typed by agent-sessions]\n`,
+          );
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'takes the role of a peer restart from the target and not from the caller for restart --process',
+    async () => {
+      const agent = `claude-peerdoc-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const caller = `claude-callerb-${process.pid}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const claude = fakeClaude(started);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', caller, 'cat']);
+      spawnSync('tmux', ['set-option', '-t', `=${caller}:`, '@ethlete_role', 'builder']);
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 '${claude}' '--strict-mcp-config'`,
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', '/handoff resume doc-agent-x'], undefined, {
+          TMUX_PANE: paneOf(caller),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe('role=\n/handoff resume doc-agent-x [typed by agent-sessions]\n');
+        expect(
+          spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_role'], { encoding: 'utf8' }).stdout,
+        ).toBe('');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        spawnSync('tmux', ['kill-session', '-t', `=${caller}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'drops a stale builder role of a session that resumes a doc-agent handoff for restart --process',
+    async () => {
+      const agent = `claude-staledoc-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const claude = fakeClaude(started);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_role', 'builder']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', `'${claude}'`]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', '/handoff resume doc-agent-x'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe('role=\n/handoff resume doc-agent-x [typed by agent-sessions]\n');
+        expect(
+          spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_role'], { encoding: 'utf8' }).stdout,
+        ).toBe('');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)('refuses restart --process of a session without a role next to a peer session', () => {
+    const agent = `claude-norole-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const peer = `claude-peer-${process.pid}@${basename(dir)}`;
+    const exited = join(dir, 'exited.log');
+
+    spawnSync('tmux', ['new-session', '-d', '-s', peer, 'cat']);
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "$line" > ${exited}`]);
+    spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', 'claude']);
+
+    try {
+      const result = run(
+        ['restart', agent, '--now', '--after', '0', '--process', '/handoff resume topic-x'],
+        undefined,
+        {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        },
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(`Refused: ${scoped} has no role`);
+      expect(existsSync(exited)).toBe(false);
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${peer}`]);
+    }
+  });
+
+  it.skipIf(!hasTmux)(
+    'answers the background work dialog with exit and stop tasks and reports the stopped jobs',
+    async () => {
+      const agent = `claude-dialog-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const answered = join(dir, 'answered.log');
+      const fakeAgent = fakeAgentPath();
+      const dialog = [
+        'Background work is running',
+        'The following will stop when you exit:',
+        '  shell · gh run watch 42',
+        '❯ 1. Exit and stop tasks',
+        '  2. Move to background and exit',
+        '  3. Stay',
+      ].join('\\n');
+      writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
+
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-s',
+        scoped,
+        `read line; printf '${dialog}\\n'; read answer; echo answered > ${answered}`,
+      ]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          AGENT_RESTART_EXIT_WAIT_MS: '5000',
+        });
+
+        expect(existsSync(answered)).toBe(true);
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain('gh run watch 42');
+        expect(readFileSync(join(dir, 'mailbox.jsonl'), 'utf8')).toContain('gh run watch 42');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  describe.skipIf(!hasTmux)('plain restart with background work', () => {
+    const rule = '─'.repeat(40);
+    const startPane = (agent: string, footer: string) => {
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, `${agent}.started`);
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(fakeAgent, `#!/bin/sh\necho started > ${started}; exec cat\n`, { mode: 0o755 });
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-s',
+        scoped,
+        `printf '${rule}\\n❯ \\n${rule}\\n${footer}\\n'; read line; exec cat`,
+      ]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+      return { scoped, started };
+    };
+    const restartIn = (agent: string, scoped: string) =>
+      run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
+        TMUX_PANE: paneOf(scoped),
+        SHELL: 'sh',
+        AGENT_RESTART_EXIT_WAIT_MS: '1000',
+      });
+
+    it('takes the process path when the footer shows shells', async () => {
+      const agent = `claude-bgshell-${process.pid}`;
+      const { scoped, started } = startPane(agent, '  2 shells · ↓ to manage');
+      try {
+        restartIn(agent, scoped);
+        await expect.poll(() => existsSync(started), { timeout: 5_000, interval: 250 }).toBe(true);
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain('shows background work (2 shells');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    }, 30_000);
+
+    it('clears the context when the pane shows no background work', () => {
+      const agent = `claude-bgclean-${process.pid}`;
+      const { scoped, started } = startPane(agent, '  ? for shortcuts');
+      try {
+        restartIn(agent, scoped);
+        expect(existsSync(started)).toBe(false);
+        expect(
+          existsSync(join(dir, 'restart.log')) ? readFileSync(join(dir, 'restart.log'), 'utf8') : '',
+        ).not.toContain('background work');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    }, 30_000);
+  });
+
+  describe.skipIf(!hasTmux)('restart with the captured fifagg log of a bare shell', () => {
+    const [footerLine, startedLine] = readFileSync(join(__dirname, 'fixtures/restart-log-bare-shell.txt'), 'utf8')
+      .trim()
+      .split('\n');
+    const footer = (footerLine ?? '').match(/shows background work \((.*)\), restart goes through/)?.[1] ?? '';
+    const storedCommand = (startedLine ?? '').split('started a new process: ')[1] ?? '';
+    const rule = '─'.repeat(40);
+
+    it.each([
+      ['--process with the captured footer', ['--process'], footer],
+      ['with background shells in the footer', [], '2 shells · ↓ to manage'],
+    ])(
+      'refuses and leaves the pane alone for restart %s',
+      (_name, flags, paneFooter) => {
+        const agent = `claude-bareshell-${process.pid}`;
+        const scoped = `${agent}@${basename(dir)}`;
+        const exited = join(dir, 'exited.log');
+        spawnSync('tmux', [
+          'new-session',
+          '-d',
+          '-s',
+          scoped,
+          `printf '${rule}\\n❯ \\n${rule}\\n  ${paneFooter}\\n'; read line; echo "$line" > ${exited}; exec cat`,
+        ]);
+        spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', storedCommand]);
+        for (
+          let wait = 0;
+          wait < 50 &&
+          !spawnSync('tmux', ['capture-pane', '-p', '-t', `=${scoped}:`], { encoding: 'utf8' }).stdout.includes(
+            paneFooter.slice(0, 7),
+          );
+          wait++
+        )
+          spawnSync('sleep', ['0.1']);
+
+        try {
+          const result = run(['restart', agent, '--now', '--after', '0', ...flags, 'resume'], undefined, {
+            TMUX_PANE: paneOf(scoped),
+            SHELL: 'sh',
+            AGENT_RESTART_EXIT_WAIT_MS: '1000',
+          });
+
+          expect(result.stderr).toContain('has no claude or codex program');
+          expect(existsSync(exited)).toBe(false);
+          expect(
+            spawnSync('tmux', ['display-message', '-p', '-t', `=${scoped}:`, '#{pane_dead}'], { encoding: 'utf8' })
+              .stdout,
+          ).toBe('0\n');
+        } finally {
+          spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        }
+      },
+      30_000,
+    );
+
+    it('does not take the process path for a footer that only offers to manage a feedback draft', () => {
+      const agent = `claude-draftfooter-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-s',
+        scoped,
+        `printf '${rule}\\n❯ \\n${rule}\\n  ${footer}\\n'; read line; exec cat`,
+      ]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', 'claude']);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          AGENT_RESTART_EXIT_WAIT_MS: '1000',
+        });
+
+        expect(
+          existsSync(join(dir, 'restart.log')) ? readFileSync(join(dir, 'restart.log'), 'utf8') : '',
+        ).not.toContain('background work');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    }, 30_000);
+  });
+
+  it.skipIf(!hasTmux)(
+    'stores the command of run without the prompt',
+    async () => {
+      const agent = `claude-stored-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const runner = `runner-${process.pid}`;
+      const dispatch = `dispatch-${process.pid}`;
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(fakeAgent, 'exec cat\n');
+
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-s',
+        runner,
+        '-c',
+        dir,
+        '-e',
+        `AGENT_MAILBOX=${join(dir, 'mailbox.jsonl')}`,
+        '-e',
+        `AGENT_MAILBOX_DISPATCH_SESSION=${dispatch}`,
+        '-e',
+        `HOME=${dir}`,
+        '-e',
+        'CLAUDE_CONFIG_DIR=',
+        `node ${SCRIPT} run ${agent} sh ${fakeAgent} --flag value 'do the thing'; cat`,
+      ]);
+
+      try {
+        await expect
+          .poll(
+            () =>
+              spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
+                .stdout,
+            { timeout: 5_000, interval: 250 },
+          )
+          .toBe(`CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' 'sh' '${fakeAgent}' '--flag' 'value'\n`);
+      } finally {
+        [runner, scoped, dispatch].forEach((name) => spawnSync('tmux', ['kill-session', '-t', `=${name}`]));
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'keeps the agent binary of an env wrapper command that run stores',
+    async () => {
+      const agent = `claude-envbin-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const runner = `runner-${process.pid}`;
+      const dispatch = `dispatch-${process.pid}`;
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
+
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-s',
+        runner,
+        '-c',
+        dir,
+        '-e',
+        `AGENT_MAILBOX=${join(dir, 'mailbox.jsonl')}`,
+        '-e',
+        `AGENT_MAILBOX_DISPATCH_SESSION=${dispatch}`,
+        '-e',
+        `HOME=${dir}`,
+        '-e',
+        'CLAUDE_CONFIG_DIR=/x',
+        `node ${SCRIPT} run ${agent} env CLAUDE_CONFIG_DIR=/x ${fakeAgent}; cat`,
+      ]);
+
+      try {
+        await expect
+          .poll(
+            () =>
+              spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
+                .stdout,
+            { timeout: 5_000, interval: 250 },
+          )
+          .toBe(`CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' 'env' 'CLAUDE_CONFIG_DIR=/x' '${fakeAgent}'\n`);
+      } finally {
+        [runner, scoped, dispatch].forEach((name) => spawnSync('tmux', ['kill-session', '-t', `=${name}`]));
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'heals a stored command without an agent program before restart --process stops the pane',
+    () => {
+      const agent = `claude-nobin-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const rule = '─'.repeat(40);
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `printf '${rule}\\n❯ \\n${rule}\\n'; read line; exec cat`]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', "'env' 'CLAUDE_CONFIG_DIR=/x'"]);
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          CLAUDE_CONFIG_DIR: '/x',
+          AGENT_RESTART_EXIT_WAIT_MS: '1000',
+        });
+
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain("'env' 'CLAUDE_CONFIG_DIR=/x' 'claude'");
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'refuses restart --process when the stored command has no program and none can be inferred',
+    () => {
+      const agent = `gizmo-nobin-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', "'env' 'FOO=1'"]);
+      try {
+        const result = run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+        });
+
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain('no claude or codex program');
+        expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it('fails run loudly when the words hold no program to start', () => {
+    const result = run(['run', 'claude', 'env', 'CLAUDE_CONFIG_DIR=/x']);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('no agent was started');
+  });
+
+  it.skipIf(!hasTmux)('fails run loudly when the started program ends at once', () => {
+    const agent = `claude-dies-${process.pid}`;
+    const result = run(['run', agent, 'false'], undefined, {
+      HOME: dir,
+      AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+      AGENT_RUN_EXIT_CHECK_MS: '800',
+    });
+    spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('No agent stayed up');
+  });
+
+  const fakeClientTmux = () => {
+    const bin = join(dir, 'bin');
+    const log = join(dir, 'tmux.log');
+    const real = spawnSync('which', ['tmux'], { encoding: 'utf8' }).stdout.trim();
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(
+      join(bin, 'tmux'),
+      `#!/bin/sh\ncase "$1" in\n  list-clients) [ "$4" = -F ] && echo /dev/fake-client; exit 0;;\n  switch-client) echo "$@" >> '${log}'; exit 0;;\nesac\nunset TMUX\nexec '${real}' "$@"\n`,
+      { mode: 0o755 },
+    );
+    return { log, env: { PATH: `${bin}:${process.env['PATH']}`, TMUX: 'fake', HOME: dir } };
+  };
+
+  it.skipIf(!hasTmux)(
+    'run inside a tmux pane with a terminal switches the calling client to the session it created',
+    () => {
+      const agent = `claude-pane-${process.pid}`;
+      const { log, env } = fakeClientTmux();
+      const result = spawnSync(
+        'python3',
+        ['-I', '-c', 'import pty,sys; sys.exit(pty.spawn(sys.argv[1:]) >> 8)', 'node', SCRIPT, 'run', agent, 'cat'],
+        {
+          cwd: dir,
+          encoding: 'utf8',
+          timeout: 25_000,
+          env: {
+            ...process.env,
+            ...env,
+            TMUX_PANE: paneOf('spec-keepalive'),
+            AGENT_MAILBOX: join(dir, 'mailbox.jsonl'),
+            CLAUDE_CONFIG_DIR: join(dir, 'claude'),
+            CLAUDE_CODE_SESSION_ID: '',
+            XDG_RUNTIME_DIR: '',
+            DBUS_SESSION_BUS_ADDRESS: '',
+            AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+          },
+        },
+      );
+      spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+      const switched = existsSync(log) ? readFileSync(log, 'utf8') : '';
+      spawnSync('tmux', ['kill-session', '-t', `=${agent}@${basename(dir)}`]);
+
+      expect(result.status).toBe(0);
+      expect(switched).toContain(`-c /dev/fake-client -t =${agent}@${basename(dir)}`);
+    },
+  );
+
+  it.skipIf(!hasTmux)('run inside a tmux pane without a terminal starts detached and leaves the client alone', () => {
+    const agent = `claude-agent-shell-${process.pid}`;
+    const { log, env } = fakeClientTmux();
+    const result = run(['run', agent, 'cat'], undefined, {
+      ...env,
+      TMUX_PANE: paneOf('spec-keepalive'),
+      AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+    });
+    spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+    const switched = existsSync(log) ? readFileSync(log, 'utf8') : '';
+    spawnSync('tmux', ['kill-session', '-t', `=${agent}@${basename(dir)}`]);
+
+    expect(result.status).toBe(0);
+    expect(switched).toBe('');
+    expect(result.stdout).toContain(`Started ${agent}@${basename(dir)}. Attach with: tmux attach -t`);
+  });
+
+  it.skipIf(!hasTmux)('run inside a tmux pane refuses when the session of that name already exists', () => {
+    const agent = `claude-twice-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const { log, env } = fakeClientTmux();
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+    const result = run(['run', agent, 'cat'], undefined, {
+      ...env,
+      TMUX_PANE: paneOf('spec-keepalive'),
+      AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+    });
+    spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+    spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(scoped);
+    expect(existsSync(log)).toBe(false);
+  });
+
+  it('lets a human shell without CLAUDECODE and CLAUDE_CONFIG_DIR run claude2', () => {
+    const result = run(
+      ['run', 'claude2', 'env', 'CLAUDE_CONFIG_DIR=/home/human/.claude-second', 'claude', '--dry-run'],
+      undefined,
+      { CLAUDECODE: '', CLAUDE_CONFIG_DIR: '' },
+    );
+
+    expect(result.stderr).not.toContain('Refused');
+    expect(result.stdout).toContain("'env' 'CLAUDE_CONFIG_DIR=/home/human/.claude-second' 'claude'");
+  });
+
+  it('refuses run when the command sets another CLAUDE_CONFIG_DIR than the caller', () => {
+    const result = run(['run', 'claude', 'env', 'CLAUDE_CONFIG_DIR=/other', 'claude'], undefined, {
+      CLAUDE_CONFIG_DIR: '/mine',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('CLAUDE_CONFIG_DIR=/other');
+  });
+
+  it.skipIf(!hasTmux)('run starts the agent under the caller CLAUDE_CONFIG_DIR', () => {
+    const agent = `claude-cfg-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const result = run(['run', agent, 'cat'], undefined, {
+      HOME: dir,
+      CLAUDE_CONFIG_DIR: '/mine',
+      AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+    });
+    const stored = spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], {
+      encoding: 'utf8',
+    }).stdout;
+    spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+    spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+
+    expect(result.status).toBe(0);
+    expect(stored).toContain("CLAUDE_CONFIG_DIR='/mine'");
+  });
+
+  it.skipIf(!hasTmux)(
+    'refuses restart --process when the stored command sets another CLAUDE_CONFIG_DIR than the caller',
+    () => {
+      const agent = `claude-cfgr-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        "'env' 'CLAUDE_CONFIG_DIR=/second' 'claude'",
+      ]);
+      try {
+        const result = run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          CLAUDE_CONFIG_DIR: '/first',
+        });
+
+        expect(result.status).toBe(1);
+        expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'keeps the session alive for restart --process when the stored command is a run of itself',
+    async () => {
+      const agent = `claude-rerun-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const config = join(dir, 'claude');
+      const started = join(dir, 'started.log');
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(
+        fakeAgent,
+        `#!/bin/sh\nprintf '%s|%s|%s\\n' "$*" "$CLAUDE_CONFIG_DIR" "$ETHLETE_AGENT_ROLE" > ${started}; exec cat\n`,
+        { mode: 0o755 },
+      );
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder CLAUDE_CODE_SILENT_TURN_REMINDER=0 'node' '${SCRIPT}' 'run' '${agent}' '--role' 'builder' 'env' 'CLAUDE_CONFIG_DIR=${config}' '${fakeAgent}' '/handoff resume builder-night-queue;' 'exec'`,
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          HOME: dir,
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toMatch(
+            new RegExp(`${BUILDER_RULE.slice(0, 20)}.* resume \\[typed by agent-sessions\\]\\|${config}\\|builder\\n$`),
+          );
+        expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
+        expect(
+          spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
+            .stdout,
+        ).not.toContain('agent-sessions.mjs');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        spawnSync('tmux', ['kill-session', '-t', `=mailbox-dispatch@${basename(dir)}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)('run inside the pane of its own session starts the agent in place', () => {
+    const agent = `claude-inplace-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const started = join(dir, 'started.log');
+    const { log, env } = fakeClientTmux();
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+    try {
+      const result = run(
+        ['run', agent, 'sh', '-c', `echo "$ETHLETE_AGENT_ROLE" > ${started}`, '--role', 'builder'],
+        undefined,
+        {
+          ...env,
+          TMUX_PANE: paneOf(scoped),
+          AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+        },
+      );
+
+      expect(result.status).toBe(0);
+      expect(readFileSync(started, 'utf8')).toBe('builder\n');
+      expect(existsSync(log)).toBe(false);
+      expect(spawnSync('tmux', ['list-sessions', '-F', '#{session_name}'], { encoding: 'utf8' }).stdout).not.toContain(
+        `${agent}-2@`,
+      );
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    }
+  });
+
+  const inAgentScope = (() => {
+    try {
+      return /\/agent-[^/]*\.scope$/.test(readFileSync('/proc/self/cgroup', 'utf8').trim());
+    } catch {
+      return false;
+    }
+  })();
+
+  const scopeFixture = () => {
+    const agent = `claude-scope-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const preloaded = join(dir, 'preload.log');
+    const { env } = fakeClientTmux();
+    spawnSync('git', ['init', '-q'], { cwd: dir });
+    mkdirSync(join(dir, 'tools/scripts'), { recursive: true });
+    writeFileSync(
+      join(dir, 'tools/scripts/own-scope-preload.mjs'),
+      `import { appendFileSync } from 'node:fs'; appendFileSync(${JSON.stringify(preloaded)}, 'loaded\\n');`,
+    );
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat']);
+    const runAgent = (command: string, extraEnv: Record<string, string>) =>
+      run(['run', agent, 'sh', '-c', command], undefined, {
+        ...env,
+        ...extraEnv,
+        TMUX_PANE: paneOf(scoped),
+        AGENT_MAILBOX_DISPATCH_SESSION: `dispatch-${process.pid}`,
+      });
+    const cleanup = () => {
+      spawnSync('tmux', ['kill-session', '-t', `=dispatch-${process.pid}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    };
+    return { agent, env, preloaded, runAgent, cleanup };
+  };
+
+  it.skipIf(!hasTmux || process.platform !== 'linux' || inAgentScope)(
+    'run starts the agent in its own scope that systemd-oomd avoids, with the own-scope preload',
+    () => {
+      const { env, preloaded, runAgent, cleanup } = scopeFixture();
+      const bin = join(dir, 'bin');
+      const argv = join(dir, 'systemd-run.argv');
+      writeFileSync(join(bin, 'busctl'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+      writeFileSync(
+        join(bin, 'systemd-run'),
+        `#!/bin/sh\nprintf '%s\\n' "$@" > '${argv}'\nwhile [ "$1" != -- ]; do\n  case "$1" in --setenv=*) kv="\${1#--setenv=}"; export "\${kv%%=*}=\${kv#*=}";; esac\n  shift\ndone\nshift\nexec "$@"\n`,
+        { mode: 0o755 },
+      );
+      try {
+        const result = runAgent('node -e 0', {});
+
+        expect(result.status).toBe(0);
+        const words = readFileSync(argv, 'utf8').trim().split('\n');
+        expect(words.slice(0, 4)).toEqual(['--user', '--scope', '--quiet', '--collect']);
+        expect(words[4]).toMatch(new RegExp(`^--unit=agent-claude-scope-${process.pid}-[^/]+$`));
+        expect(words.slice(5, 7)).toEqual(['-p', 'ManagedOOMPreference=avoid']);
+        expect(words.slice(-4)).toEqual(['--', 'sh', '-c', 'node -e 0']);
+        expect(readFileSync(preloaded, 'utf8')).toBe('loaded\n');
+      } finally {
+        cleanup();
+      }
+    },
+  );
+
+  it.skipIf(!hasTmux || !process.env['AGENT_SESSIONS_REAL_SCOPE'] || inAgentScope)(
+    'run starts the agent in a real systemd user scope (local only: AGENT_SESSIONS_REAL_SCOPE=1)',
+    () => {
+      const { preloaded, runAgent, cleanup } = scopeFixture();
+      const started = join(dir, 'scope.log');
+      try {
+        const result = runAgent(
+          `cg=$(cut -d: -f3 /proc/self/cgroup); echo "$cg" > ${started}; systemctl --user show -p ManagedOOMPreference --value "$(basename $cg)" >> ${started}; node -e 0`,
+          userBus,
+        );
+
+        expect(result.status).toBe(0);
+        const [cgroup, avoid] = readFileSync(started, 'utf8').split('\n');
+        expect(cgroup).toMatch(new RegExp(`/agent-claude-scope-${process.pid}-[^/]+\\.scope$`));
+        expect(avoid).toBe('avoid');
+        expect(readFileSync(preloaded, 'utf8')).toBe('loaded\n');
+      } finally {
+        cleanup();
+      }
+    },
+  );
+
+  it('shows the caller CLAUDE_CONFIG_DIR in a dry run', () => {
+    const result = run(['run', 'claude', 'claude', '--dry-run'], undefined, { HOME: dir, CLAUDE_CONFIG_DIR: '/mine' });
+
+    expect(result.stdout).toContain("CLAUDE_CONFIG_DIR='/mine' ");
+  });
+
+  it.skipIf(!hasTmux)(
+    'types the prompt when only the IDE context chip sits on the prompt line',
+    async () => {
+      const agent = `claude-chip-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "❯ [⧉ In merged.json]"; cat > ${log}`]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+        });
+
+        await expect.poll(() => readFileSync(log, 'utf8'), { timeout: 5_000, interval: 250 }).toContain('resume slug');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'saves the prompt and logs why when the prompt holds typed text after the clear',
+    async () => {
+      const agent = `claude-draft-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line; echo "❯ half a sentence"; cat']);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+        });
+
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toMatch(/waits, draft: half a sentence/);
+        expect(readFileSync(join(dir, `restart.prompt.${scoped}.txt`), 'utf8')).toBe(
+          'resume slug [typed by agent-sessions]\n',
+        );
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  const panelPane = (
+    log: string,
+    focusedFixture = 'claude-pane-agent-panel.txt',
+    unfocusedFixture: string | null = null,
+  ) => {
+    const fixture = join(__dirname, 'fixtures', focusedFixture);
+    const unfocused = unfocusedFixture ? join(__dirname, 'fixtures', unfocusedFixture) : null;
+    const program = join(dir, 'pane.js');
+
+    writeFileSync(
+      program,
+      `const fs = require('fs');
+const pane = fs.readFileSync(${JSON.stringify(fixture)}, 'utf8');
+const left = ${JSON.stringify(unfocused)} ? fs.readFileSync(${JSON.stringify(unfocused)}, 'utf8') : pane.replace('❯ ⏺', '  ⏺');
+let focused = true;
+const draw = () => process.stdout.write('\\x1b[2J\\x1b[H' + (focused ? pane : left));
+draw();
+process.stdin.setRawMode(true);
+process.stdin.on('data', (data) => {
+  fs.appendFileSync(${JSON.stringify(log)}, data);
+  if (focused && data.includes('\\x1b[A')) { focused = false; draw(); }
+});`,
+    );
+    return `node ${program}`;
+  };
+
+  it.skipIf(!hasTmux)(
+    'leaves the agent panel before it types the exit command into a captured pane',
+    async () => {
+      const agent = `claude-panel-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      writeFileSync(log, '');
+
+      spawnSync('tmux', ['new-session', '-d', '-x', '120', '-y', '30', '-s', scoped, panelPane(log)]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', 'claude']);
+
+      try {
+        run(['restart', agent, '--now', '--after', '1', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_EXIT_WAIT_MS: '1000',
+        });
+
+        const typed = readFileSync(log, 'utf8');
+        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/exit\r`))).toBe(true);
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain('shows background work');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'leaves a focused footer pill of a captured pane before it types the exit command',
+    async () => {
+      const agent = `claude-pill-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      writeFileSync(log, '');
+
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-x',
+        '120',
+        '-y',
+        '30',
+        '-s',
+        scoped,
+        panelPane(log, 'claude-pane-footer-pill-focused.txt', 'claude-pane-footer-pill-unfocused.txt'),
+      ]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', 'claude']);
+
+      try {
+        run(['restart', agent, '--now', '--after', '1', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_EXIT_WAIT_MS: '1000',
+        });
+
+        const typed = readFileSync(log, 'utf8');
+        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/exit\r`))).toBe(true);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'treats a pane that waits for background agents as busy',
+    () => {
+      const agent = `claude-waiting-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'echo "Waiting for 2 background agents"; cat']);
+      for (let tries = 0; tries < 100; tries++) {
+        const pane = spawnSync('tmux', ['capture-pane', '-p', '-t', `=${scoped}:`], { encoding: 'utf8' }).stdout;
+        if (pane.includes('Waiting for 2')) break;
+        spawnSync('sleep', ['0.05']);
+      }
+
+      try {
+        const result = run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_WAIT_MS: '2000',
+        });
+
+        expect(result.status).toBe(1);
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toMatch(/waits, busy: Waiting for 2 background agents/);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  const restartOverFixture = (name: string, fixture: string) => {
+    const agent = `claude-${name}-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+
+    const fakeAgent = fakeAgentPath();
+    writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
+
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat ${join(__dirname, 'fixtures', fixture)}; cat`]);
+    spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+    const end = Date.now() + 5000;
+    while (
+      !spawnSync('tmux', ['capture-pane', '-p', '-t', `=${scoped}:`], { encoding: 'utf8' }).stdout.includes('─') &&
+      Date.now() < end
+    )
+      spawnSync('sleep', ['0.05']);
+
+    try {
+      const result = run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
+        TMUX_PANE: paneOf(scoped),
+        AGENT_RESTART_WAIT_MS: '6000',
+        AGENT_RESTART_CLEAR_WAIT_MS: '1000',
+      });
+      const log = readFileSync(join(dir, 'restart.log'), 'utf8');
+      return { result, log };
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    }
+  };
+
+  it.skipIf(!hasTmux)(
+    'treats a captured pane with a spinner line above the input box as busy',
+    () => {
+      const { result, log } = restartOverFixture('real-busy', 'claude-pane-busy.txt');
+
+      expect(result.status).toBe(1);
+      expect(log).toMatch(/waits, busy: ✻ Waiting for 1 background agent to finish/);
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'treats a captured idle pane with a "Waiting for" transcript line as idle',
+    () => {
+      const { log } = restartOverFixture('real-idle', 'claude-pane-idle-waiting-text.txt');
+
+      expect(log).not.toMatch(/busy:/);
+      expect(log).not.toMatch(/gave up after/);
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'tells the caller and each --notify agent when a draft blocks the restart and when it gives up',
+    () => {
+      const agent = `claude-notice-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'echo "❯ half a sentence"; cat']);
+
+      try {
+        const result = run(['restart', agent, '--now', '--after', '0', '--notify', 'grill', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_WAIT_MS: '5000',
+          AGENT_RESTART_DRAFT_NOTICE_MS: '1000',
+        });
+
+        expect(result.status).toBe(1);
+        const notices = readFileSync(join(dir, 'mailbox.jsonl'), 'utf8')
+          .trim()
+          .split('\n')
+          .map((line) => JSON.parse(line) as { to: string; message: string });
+        expect(notices.map(({ to, message }) => `${to}: ${message.replace(/waits \d+s/, 'waits Ns')}`)).toEqual([
+          `${agent}: restart of ${scoped} waits Ns, draft: half a sentence`,
+          `grill: restart of ${scoped} waits Ns, draft: half a sentence`,
+          `${agent}: restart of ${scoped} gave up after 5s, reason in restart.log`,
+          `grill: restart of ${scoped} gave up after 5s, reason in restart.log`,
+        ]);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)('refuses to restart a session the caller does not run in', () => {
+    const target = `claude-target-${process.pid}`;
+    const caller = `claude-caller-${process.pid}`;
+    const scopedTarget = `${target}@${basename(dir)}`;
+    const scopedCaller = `${caller}@${basename(dir)}`;
+
+    spawnSync('tmux', ['new-session', '-d', '-s', scopedTarget, 'cat']);
+    spawnSync('tmux', ['new-session', '-d', '-s', scopedCaller, 'cat']);
+
+    try {
+      const result = run(['restart', target, '--after', '1', 'resume'], undefined, { TMUX_PANE: paneOf(scopedCaller) });
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(`You run in ${scopedCaller}, so pass ${caller}`);
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${scopedTarget}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${scopedCaller}`]);
+    }
+  });
+
+  it.skipIf(!hasTmux)('restarts the paired builder session and logs who restarted whom', () => {
+    const builder = `claude-builder-${process.pid}`;
+    const doc = `claude-doc-${process.pid}`;
+    const scopedBuilder = `${builder}@${basename(dir)}`;
+    const scopedDoc = `${doc}@${basename(dir)}`;
+
+    spawnSync('tmux', ['new-session', '-d', '-s', scopedBuilder, 'cat']);
+    spawnSync('tmux', ['new-session', '-d', '-s', scopedDoc, 'cat']);
+    spawnSync('tmux', ['set-option', '-t', `=${scopedBuilder}:`, '@ethlete_role', 'builder']);
+
+    try {
+      const result = run(['restart', builder, '--after', '30', 'resume'], undefined, { TMUX_PANE: paneOf(scopedDoc) });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain('Restarting');
+      expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain(
+        `peer restart: ${scopedDoc} restarted ${scopedBuilder}`,
+      );
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${scopedBuilder}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${scopedDoc}`]);
+    }
+  });
+
+  it('fails restart when no tmux session exists for the agent', () => {
+    const result = run(['restart', `nobody-${process.pid}`, 'resume']);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('No tmux session');
+  });
+
+  it('prints a shell function for each agent that falls back to the plain command', () => {
+    const output = run(['shell-init', 'codex', 'gemini']).stdout;
+
+    expect(output).toContain('codex() {');
+    expect(output).toContain('gemini() {');
+    expect(output).toContain('command gemini "$@"');
+    expect(spawnSync('bash', ['-n'], { input: output }).status).toBe(0);
+  });
+
+  it.each(['.agents/skills', '.claude/skills'])('finds the script under %s in the shell functions', (skillsDir) => {
+    const repo = join(dir, `repo-${skillsDir.replace(/\W/g, '')}`);
+    const script = join(repo, skillsDir, 'ethlete-agent-sessions/agent-sessions.mjs');
+    mkdirSync(join(repo, skillsDir, 'ethlete-agent-sessions'), { recursive: true });
+    writeFileSync(script, '');
+    spawnSync('git', ['init', '-q'], { cwd: repo });
+    const functions = run(['shell-init', 'claude']).stdout;
+
+    const located = spawnSync('bash', ['-c', `${functions}\n_ethlete_agent_sessions_script`], {
+      cwd: repo,
+      encoding: 'utf8',
+    });
+
+    expect(located.stdout.trim()).toBe(realpathSync(script));
+  });
+
+  it('replaces a block written under the old agent-mailbox marker', () => {
+    const file = join(dir, 'rc');
+    writeFileSync(file, 'export A=1\n# >>> ethlete agent-mailbox >>>\nold() {}\n# <<< ethlete agent-mailbox <<<\n');
+
+    run(['shell-install', 'claude', '--file', file]);
+
+    const installed = readFileSync(file, 'utf8');
+    expect(installed).not.toContain('agent-mailbox >>>');
+    expect(installed).not.toContain('old() {}');
+    expect(installed.match(/>>> ethlete agent-sessions/g)).toHaveLength(1);
+  });
+
+  it('writes the shell functions once, replaces them on a second run and removes them', () => {
+    const rc = join(dir, 'rc');
+    writeFileSync(rc, 'export A=1\n');
+
+    run(['shell-install', 'codex', '--file', rc]);
+    run(['shell-install', 'codex', 'gemini', '--file', rc]);
+
+    const installed = readFileSync(rc, 'utf8');
+
+    expect(installed).toContain('export A=1');
+    expect(installed.match(/>>> ethlete agent-sessions/g)).toHaveLength(1);
+    expect(installed).toContain('gemini() {');
+
+    run(['shell-install', '--remove', '--file', rc]);
+
+    expect(readFileSync(rc, 'utf8')).toBe('export A=1\n');
+  });
+});
+
+describe('agent-sessions stop-own', () => {
+  const started: number[] = [];
+  let checkout: string;
+
+  const isRunning = (pid: number) => {
+    try {
+      process.kill(pid, 0);
+      return !readFileSync(`/proc/${pid}/stat`, 'utf8').includes(') Z');
+    } catch {
+      return false;
+    }
+  };
+
+  const deadPid = () => {
+    const child = spawnSync('true');
+    return child.pid ?? 0;
+  };
+
+  const sh = (script: string, env: Record<string, string>, cwd: string) => {
+    const childEnv = { ...process.env, ...env };
+    if (!env['CLAUDE_PID']) delete childEnv['CLAUDE_PID'];
+    if (!env['ET_AGENT_ID']) delete childEnv['ET_AGENT_ID'];
+    const result = spawnSync('sh', ['-c', script], {
+      cwd,
+      env: childEnv,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const pids = result.stdout.trim().split(' ').filter(Boolean).map(Number);
+    started.push(...pids);
+    return pids;
+  };
+
+  const sleeper = (env: Record<string, string>, cwd: string) =>
+    sh('sleep 300 >/dev/null 2>&1 & echo $!', env, cwd)[0] ?? 0;
+
+  const standIn = (cwd: string) => {
+    const file = join(checkout, 'standin.pids');
+    const child = spawn('sh', ['-c', `CLAUDE_PID=$$ sleep 300 & echo $$ $! > ${file}; wait`], {
+      cwd,
+      env: Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'CLAUDE_PID')),
+      stdio: 'ignore',
+      detached: true,
+    });
+    child.unref();
+    spawnSync('sleep', ['0.3']);
+    const [claude = 0, attached = 0] = readFileSync(file, 'utf8').trim().split(' ').map(Number);
+    started.push(claude, attached);
+    return [claude, attached] as const;
+  };
+
+  const stopOwn = (callerPid: string, flags: string[] = [], agentId?: string) =>
+    spawnSync('node', [SCRIPT, 'stop-own', ...flags], {
+      cwd: checkout,
+      env: { ...process.env, CLAUDE_PID: callerPid, ET_AGENT_ID: agentId ?? '' },
+      encoding: 'utf8',
+    });
+
+  const settle = () => spawnSync('sleep', ['0.3']);
+
+  beforeEach(() => {
+    checkout = realpathSync(mkdtempSync(join(tmpdir(), 'et-stop-own-')));
+  });
+
+  afterEach(() => {
+    started.splice(0).forEach((pid) => {
+      if (isRunning(pid)) process.kill(pid, 'SIGKILL');
+    });
+    rmSync(checkout, { recursive: true, force: true });
+  });
+
+  it('stops reparented processes of the caller and of a dead session, and leaves the rest', () => {
+    const [claude, attached] = standIn(checkout);
+    const live = sleeper({}, checkout);
+    const orphan = sleeper({ CLAUDE_PID: String(deadPid()) }, checkout);
+    const own = sleeper({ CLAUDE_PID: String(claude) }, checkout);
+    const unmarked = sleeper({}, checkout);
+    const otherSession = sleeper({ CLAUDE_PID: String(live) }, checkout);
+    const elsewhere = sleeper({ CLAUDE_PID: String(deadPid()) }, tmpdir());
+    settle();
+
+    const result = stopOwn(String(claude));
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain(`${orphan} orphan`);
+    expect(result.stdout).toContain(`${own} own`);
+    settle();
+    expect(isRunning(orphan)).toBe(false);
+    expect(isRunning(own)).toBe(false);
+    expect(isRunning(attached)).toBe(true);
+    expect(isRunning(claude)).toBe(true);
+    expect(isRunning(unmarked)).toBe(true);
+    expect(isRunning(otherSession)).toBe(true);
+    expect(isRunning(elsewhere)).toBe(true);
+    expect(isRunning(live)).toBe(true);
+  });
+
+  it('stops only the calling subagent runs, never a sibling or the main session', () => {
+    const [claude] = standIn(checkout);
+    const session = String(claude);
+    const mineA = sleeper({ CLAUDE_PID: session, ET_AGENT_ID: 'agent-a' }, checkout);
+    const siblingB = sleeper({ CLAUDE_PID: session, ET_AGENT_ID: 'agent-b' }, checkout);
+    const main = sleeper({ CLAUDE_PID: session }, checkout);
+    settle();
+
+    const asAgentA = stopOwn(session, [], 'agent-a');
+    settle();
+
+    expect(asAgentA.stdout).toContain(`${mineA} own`);
+    expect(isRunning(mineA)).toBe(false);
+    expect(isRunning(siblingB)).toBe(true);
+    expect(isRunning(main)).toBe(true);
+
+    stopOwn(session);
+    settle();
+
+    expect(isRunning(main)).toBe(false);
+    expect(isRunning(siblingB)).toBe(true);
+  });
+
+  it('lists without signalling on --dry-run', () => {
+    const orphan = sleeper({ CLAUDE_PID: String(deadPid()) }, checkout);
+    settle();
+
+    const result = stopOwn(String(process.pid), ['--dry-run']);
+
+    expect(result.stdout).toContain(`${orphan} orphan`);
+    expect(isRunning(orphan)).toBe(true);
+  });
+});

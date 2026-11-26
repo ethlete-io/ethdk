@@ -1,0 +1,37 @@
+@layer components.sdk {
+  @property --et-nav-tab-link-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-nav-tab-link-padding-block {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  .et-nav-tab-link {
+    --et-nav-tab-link-padding-inline: var(--et-tab-padding-inline);
+    --et-nav-tab-link-padding-block: var(--et-tab-padding-block);
+
+    gap: 8px;
+    padding-inline: var(--et-nav-tab-link-padding-inline);
+    padding-block: var(--et-nav-tab-link-padding-block);
+    text-decoration: none;
+    font-size: var(--et-nav-tabs-font-size, inherit);
+    font-weight: var(--et-tab-font-weight, inherit);
+    line-height: var(--et-tab-line-height, inherit);
+    letter-spacing: var(--et-tab-letter-spacing, inherit);
+    text-transform: var(--et-tab-text-transform, inherit);
+
+    .et-nav-tab-link__content {
+      display: inline-flex;
+      gap: inherit;
+    }
+  }
+
+  [data-orientation='vertical'][data-fit='fill'] .et-nav-tab-link {
+    justify-content: start;
+  }
+}

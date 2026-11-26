@@ -1,0 +1,65 @@
+{
+  "name": "agent-rules",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/agent-rules/src",
+  "projectType": "library",
+  "tags": [],
+  "namedInputs": {
+    "default": ["{projectRoot}/*", "{projectRoot}/src/**/*", "{projectRoot}/migrations/**/*", "sharedGlobals"],
+    "content": ["{projectRoot}/content/**/*"]
+  },
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/agent-rules",
+        "main": "libs/agent-rules/src/index.ts",
+        "tsConfig": "libs/agent-rules/tsconfig.lib.json",
+        "assets": [
+          "libs/agent-rules/*.md",
+          "libs/agent-rules/content/**/*",
+          "libs/agent-rules/migrations.json",
+          "libs/agent-rules/migrations/**/*"
+        ]
+      },
+      "inputs": ["production", "^production", "content"]
+    },
+    "lint": {
+      "inputs": [
+        "default",
+        "content",
+        "^default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
+    },
+    "test": {
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/agent-rules"],
+      "options": {
+        "coverage.reportsDirectory": "../../../coverage/libs/agent-rules"
+      },
+      "inputs": ["default", "^production", "content"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/agent-rules/tsconfig.spec.json --noEmit && tsc -p libs/agent-rules/tsconfig.lib.json --noEmit"
+      },
+      "inputs": [
+        "default",
+        "^production",
+        "content",
+        "{workspaceRoot}/tsconfig.base.json",
+        {
+          "externalDependencies": ["typescript"]
+        }
+      ]
+    }
+  }
+}

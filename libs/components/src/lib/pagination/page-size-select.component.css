@@ -1,0 +1,6 @@
+@layer components.sdk {
+  :where(.et-page-size-select-host) {
+    display: inline-flex;
+    align-items: center;
+  }
+}

@@ -1,0 +1,386 @@
+import { writeDesignFile } from './design-file';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
+import { dirname, join, resolve } from 'path';
+import { appFilesOf } from './app-files';
+import {
+  ACTION_LOST_RULE,
+  COMPARE_RULE,
+  CONTRAST_PAIR_RULE,
+  CONTROL_STATE_RULE,
+  DROPPED_PROP_RULE,
+  STATE_INNER_RULE,
+  SDK_ERROR_RULE,
+  APP_ERROR_RULE,
+  SlowProblemsOf,
+  STATE_NO_SOURCE_RULE,
+  STATE_UNDESIGNED_RULE,
+} from './build-ready-contract';
+import { DesignHash, designHashOf, designHolds, FileHashes, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
+import { harnessOf } from './harness-map';
+import { readRecordedActions } from './part-ready';
+import { readImplemented } from './part-task';
+import { Problem } from './problem';
+import { repoRootOf } from './reachable-files';
+import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
+import { APP_SPEC_RULE } from './rules/app-spec';
+import { isJudgedForVisibleChange, NO_VISIBLE_CHANGE_RULE } from './rules/no-visible-change';
+import { UNCOVERED_REGION_RULE } from './rules/uncovered-region';
+import { partHashOf } from './sketch/baseline';
+import { listSketches, Sketch } from './sketch/sketch';
+import { unbaselinedProblemsOf } from './rule-baseline';
+import { withoutWaitingUndesigned } from './sketch/undesigned-sketch';
+import { appSourcesOf } from './rules/implemented-components';
+import { checksInnerStates } from './rules/state-inner';
+import { partLinkOf } from './sketch/part-definition';
+
+export const PRODUCT_PART = '(product)';
+
+export const isDrawRule = (rule: string) =>
+  [
+    CONTROL_STATE_RULE,
+    DROPPED_PROP_RULE,
+    STATE_NO_SOURCE_RULE,
+    STATE_UNDESIGNED_RULE,
+    ACTION_LOST_RULE,
+    CONTRAST_PAIR_RULE,
+    STATE_INNER_RULE,
+  ].includes(rule);
+
+/** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
+export const isSlowRule = (rule: string) =>
+  isDrawRule(rule) ||
+  [APP_SPEC_RULE, UNCOVERED_REGION_RULE, COMPARE_RULE, SDK_ERROR_RULE, APP_ERROR_RULE, NO_VISIBLE_CHANGE_RULE].includes(
+    rule,
+  );
+
+const DECLARES_CONTROLS = /\bcontrols\s*:/u;
+
+/** Whether a part measures theme token pairs with `measureContrastPairs`, so `CONTRAST-PAIR` draws it. */
+export const measuresContrastPairs = (part: ResolvedPart) =>
+  part.origin !== 'base' && /\bmeasureContrastPairs\b/u.test(part.source);
+
+/** A state of a part whose app picture a slow run could not take, and why. */
+export type UnjudgedState = { state: string; why: string };
+
+/** One part's slow-rule problems and the input hash they were found at. */
+export type SlowEntry = { hash: string; problems: Problem[]; at: string; unjudged?: UnjudgedState[] };
+
+export type SlowCache = Record<string, SlowEntry>;
+
+const SLOW_RESULT_FORMAT = 'app-errors';
+
+const SPEC_SIBLING = /\.(?:ts|html|css)$/u;
+
+/** The gitignored file that holds a product's slow results, under `node_modules/.cache` and keyed by the checkout root, so worktrees that share `node_modules` do not overwrite each other. */
+export const slowCacheFileOf = (product: ResolvedProduct) => {
+  const root = repoRootOf(product);
+
+  return join(root, 'node_modules', '.cache', 'ethlete-design', product.name, sha16(root), 'slow-checks.json');
+};
+
+/** The problems of a slow result that fail its part: neither baselined nor waiting for an undesigned state. */
+export const blockingSlowProblemsOf = (product: ResolvedProduct, problems: Problem[]) =>
+  withoutWaitingUndesigned(product, unbaselinedProblemsOf(product, problems));
+
+/** Every stored slow result, failing ones included: the design server's slow runner replays a failure at unchanged inputs instead of running it again. */
+export const readStoredSlowResults = (product: ResolvedProduct): SlowCache => {
+  try {
+    const parsed = JSON.parse(readFileSync(slowCacheFileOf(product), 'utf8')) as unknown;
+
+    return !parsed || typeof parsed !== 'object' || Array.isArray(parsed) ? {} : (parsed as SlowCache);
+  } catch {
+    return {};
+  }
+};
+
+/** The stored slow results that pass; a failing one counts as missing, so `design check` runs it again. */
+export const readSlowCache = (product: ResolvedProduct): SlowCache =>
+  Object.fromEntries(
+    Object.entries(readStoredSlowResults(product)).filter(
+      ([, entry]) => blockingSlowProblemsOf(product, entry.problems).length === 0,
+    ),
+  );
+
+/** Stores the result of every part of `hashes` at its hash, failing ones included. */
+export const writeSlowResults = (options: {
+  product: ResolvedProduct;
+  hashes: Record<string, string>;
+  results: Map<string, Problem[]>;
+  unjudged?: Map<string, UnjudgedState[]>;
+}) => {
+  const file = slowCacheFileOf(options.product);
+  const cache = readStoredSlowResults(options.product);
+  const at = new Date().toISOString();
+
+  for (const [part, hash] of Object.entries(options.hashes)) {
+    const unjudged = options.unjudged?.get(part) ?? [];
+    const problems = options.results.get(part) ?? [];
+
+    cache[part] = { hash, problems, at, ...(unjudged.length > 0 ? { unjudged } : {}) };
+  }
+
+  mkdirSync(dirname(file), { recursive: true });
+  writeDesignFile(file, `${JSON.stringify(cache, null, 2)}\n`);
+};
+
+/** The component a part's `implements` link names, `null` for none. */
+export const linkedComponentOf = (part: ResolvedPart) => {
+  const link = partLinkOf(part.source);
+
+  return link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
+};
+
+const livePagesOf = (root: string, live: string | undefined) => {
+  if (!live) return null;
+
+  try {
+    const spec = JSON.parse(readFileSync(resolve(root, live), 'utf8')) as { pages?: Record<string, unknown> };
+
+    return new Set(Object.keys(spec.pages ?? {}));
+  } catch {
+    return new Set<string>();
+  }
+};
+
+/** What a part's slow result depends on, and the rules that check it; no rules means it has no slow result. */
+export type SlowInputs = { rules: string[]; hash: string; designOnly?: true; panesOnly?: true };
+
+type PartContext = {
+  product: ResolvedProduct;
+  root: string;
+  harness: Exclude<ReturnType<typeof harnessOf>, string>;
+  pages: Set<string> | null;
+  designs: Map<string, DesignHash>;
+  judged: Map<string, Sketch>;
+};
+
+const designOf = (context: PartContext, part: ResolvedPart) => {
+  const key = partKeyOf(part);
+  const known = context.designs.get(key);
+
+  if (known !== undefined) return known;
+
+  const design = designHashOf({ product: context.product, part });
+
+  context.designs.set(key, design);
+
+  return design;
+};
+
+const judgedSketchesOf = (product: ResolvedProduct) =>
+  new Map(
+    listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
+      typeof sketch === 'string' || !isJudgedForVisibleChange({ product, sketch })
+        ? []
+        : [[sketch.target, sketch] as const],
+    ),
+  );
+
+const contextOf = (product: ResolvedProduct): PartContext => {
+  const root = repoRootOf(product);
+  const found = harnessOf(product);
+  const harness = typeof found === 'string' ? null : found;
+
+  return {
+    product,
+    root,
+    harness,
+    pages: livePagesOf(root, harness?.live),
+    designs: new Map(),
+    judged: judgedSketchesOf(product),
+  };
+};
+
+const consumersOf = (root: string, component: string | null): FileHashes => {
+  const src = component?.match(/^(.*?\/src)\//u)?.[1];
+  const dir = src ? resolve(root, src) : null;
+
+  return dir && existsSync(dir)
+    ? fileHashesOf(
+        root,
+        appSourcesOf(dir).map(({ path }) => path),
+      )
+    : {};
+};
+
+const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
+  const { product, root, harness, pages } = context;
+  const key = partKeyOf(part);
+  const own = part.origin !== 'base';
+  const linked = linkedComponentOf(part);
+  const component = harness ? linked : null;
+  const design = designOf(context, part);
+  const implemented = readImplemented(product.dir)[key]?.hash;
+  const current = typeof implemented === 'string' && designHolds(implemented, design);
+  const designOnly = component !== null && implemented !== undefined && !current;
+  const panesOnly = component !== null && implemented === undefined;
+  const app = linked === null ? {} : appFilesOf({ root, component: linked });
+  const sketch = context.judged.get(key);
+  const rules = [
+    ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
+    ...(measuresContrastPairs(part) ? [CONTRAST_PAIR_RULE] : []),
+    ...(checksInnerStates(part) ? [STATE_INNER_RULE] : []),
+    ...(own && linked !== null && existsSync(resolve(root, linked))
+      ? [DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, STATE_UNDESIGNED_RULE]
+      : []),
+    ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
+    ...(pages?.has(key) ? [UNCOVERED_REGION_RULE] : []),
+    ...(component !== null && current ? [COMPARE_RULE, SDK_ERROR_RULE, APP_ERROR_RULE] : []),
+    ...(designOnly || panesOnly ? [COMPARE_RULE, APP_ERROR_RULE] : []),
+    ...(context.judged.has(key) ? [NO_VISIBLE_CHANGE_RULE] : []),
+  ];
+
+  if (rules.length === 0) return { rules, hash: '' };
+
+  const specs = fileHashesOf(
+    root,
+    Object.keys(app)
+      .filter((file) => SPEC_SIBLING.test(file))
+      .map((file) => resolve(root, file.replace(SPEC_SIBLING, '.spec.ts')))
+      .filter((file) => existsSync(file)),
+  );
+  const live =
+    harness?.live && rules.includes(UNCOVERED_REGION_RULE) ? fileHashesOf(root, [resolve(root, harness.live)]) : {};
+
+  return {
+    rules,
+    hash: sha16(
+      [
+        SLOW_RESULT_FORMAT,
+        rules.join(','),
+        design.withLinks,
+        hashOfFiles(app),
+        hashOfFiles(specs),
+        hashOfFiles(live),
+        rules.includes(STATE_NO_SOURCE_RULE) ? hashOfFiles(consumersOf(root, linked)) : '',
+        sketch ? partHashOf({ product, dir: sketch.dir }) : '',
+      ].join('\0'),
+    ),
+    ...(designOnly ? { designOnly: true as const } : {}),
+    ...(panesOnly ? { panesOnly: true as const } : {}),
+  };
+};
+
+const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>): SlowInputs => {
+  const { product, root, harness } = context;
+  const recorded = Object.entries(readRecordedActions(product.dir));
+  const actions = recorded.some(([, record]) => record.actions.length > 0);
+  const rules = [
+    ...(harness?.specs ? [APP_SPEC_RULE] : []),
+    ...(harness?.live ? [UNCOVERED_REGION_RULE] : []),
+    ...(actions ? [ACTION_LOST_RULE] : []),
+  ];
+
+  if (rules.length === 0) return { rules, hash: '' };
+
+  const files = fileHashesOf(root, [
+    ...(harness ? [harness.map, harness.live, harness.specs] : []).flatMap((file) =>
+      file ? [resolve(root, file)] : [],
+    ),
+  ]);
+  const designs = actions
+    ? product.parts.filter((part) => part.origin !== 'base').map((part) => designOf(context, part).withLinks)
+    : [];
+
+  return {
+    rules,
+    hash: sha16(
+      [
+        rules.join(','),
+        hashOfFiles(files),
+        ...(actions ? recorded.map(([part, record]) => `${part}=${record.actions.join(',')}`) : []),
+        ...Object.entries(parts).map(([part, { hash }]) => `${part}=${hash}`),
+        ...designs,
+      ].join('\0'),
+    ),
+  };
+};
+
+/** The slow inputs of every part of the product that has a slow rule, and of `(product)`; with `only` naming no `(product)`, of those parts alone. */
+export const slowInputsOf = (options: {
+  product: ResolvedProduct;
+  only?: readonly string[];
+}): Record<string, SlowInputs> => {
+  const context = contextOf(options.product);
+  const parts: Record<string, SlowInputs> = {};
+  const { only } = options;
+  const partsOnly = only !== undefined && !only.includes(PRODUCT_PART);
+
+  for (const part of options.product.parts) {
+    if (partsOnly && !only.includes(partKeyOf(part))) continue;
+
+    const inputs = partInputsOf(context, part);
+
+    if (inputs.rules.length > 0) parts[partKeyOf(part)] = inputs;
+  }
+
+  if (partsOnly) return parts;
+
+  const product = productInputsOf(context, parts);
+
+  return product.rules.length > 0 ? { ...parts, [PRODUCT_PART]: product } : parts;
+};
+
+/** The parts, `(product)` included, whose slow result is missing or found at other inputs. */
+export const staleSlowPartsOf = (product: ResolvedProduct) => {
+  const cache = readSlowCache(product);
+
+  return Object.entries(slowInputsOf({ product }))
+    .filter(([part, { hash }]) => cache[part]?.hash !== hash)
+    .map(([part]) => part);
+};
+
+const freshSlowEntryOf = ({
+  product,
+  part,
+  failures = false,
+}: {
+  product: ResolvedProduct;
+  part: string;
+  failures?: boolean;
+}) => {
+  const context = contextOf(product);
+  const inputs =
+    part === PRODUCT_PART
+      ? slowInputsOf({ product })[PRODUCT_PART]
+      : (() => {
+          const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
+
+          return found ? partInputsOf(context, found) : undefined;
+        })();
+
+  if (!inputs || inputs.rules.length === 0) return null;
+
+  const entry = (failures ? readStoredSlowResults(product) : readSlowCache(product))[part];
+
+  return entry?.hash === inputs.hash ? entry : 'pending';
+};
+
+const slowProblemsFrom = (options: { product: ResolvedProduct; part: string; failures: boolean }) => {
+  const { product } = options;
+  const entry = freshSlowEntryOf(options);
+
+  if (entry === null) return [];
+  if (entry === 'pending') return 'pending';
+
+  return blockingSlowProblemsOf(product, entry.problems);
+};
+
+export const slowProblemsOf: SlowProblemsOf = ({ product, part }) =>
+  slowProblemsFrom({ product, part, failures: false });
+
+/** Like `slowProblemsOf`, but a stored failing result at the current inputs answers with its findings instead of `'pending'`. */
+export const storedSlowProblemsOf: SlowProblemsOf = ({ product, part }) =>
+  slowProblemsFrom({ product, part, failures: true });
+
+/** One warning line per state of `parts` whose current slow result could not judge it, naming the product, part, state and why. */
+export const unjudgedStateWarningsOf = (options: { product: ResolvedProduct; parts: string[] }) =>
+  options.parts.flatMap((part) => {
+    const entry = freshSlowEntryOf({ product: options.product, part });
+
+    return entry === null || entry === 'pending'
+      ? []
+      : (entry.unjudged ?? []).map(
+          ({ state, why }) => `WARNING ${options.product.name} ${part}: state ${state} cannot be judged - ${why}`,
+        );
+  });

@@ -1,0 +1,761 @@
+<ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="Sketches">
+  <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
+    @if (empty()) {
+      <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
+    } @else {
+      <ethlete-part-tree
+        [layers]="tree().layers"
+        [sketches]="tree().sketches"
+        [legacy]="tree().legacy"
+        (expandedChange)="expandedChange.emit($event)"
+        (activate)="pick.emit($event)"
+      />
+      @if (comments(); as comments) {
+        <ethlete-comment-list
+          [comments]="comments"
+          [selectedId]="selectedComment()"
+          (pick)="commentPick.emit($event)"
+        />
+      }
+    }
+  </div>
+  @if (empty()) {
+    <div
+      class="flex h-full flex-col items-center justify-center gap-space-1 ps-(--st-shell-inset-left) text-center"
+      data-sketches-empty
+    >
+      <svg
+        class="mb-space-2 size-5 text-et-theme-ink"
+        width="14"
+        height="14"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m3.5 8.5 3 3 6-7" />
+      </svg>
+      <p class="m-0 text-(length:--text-sm) text-et-surface">{{ LABELS.emptyTitle }}</p>
+      <p class="m-0 text-(length:--text-xs) text-et-surface-muted">{{ LABELS.emptyText }}</p>
+    </div>
+  }
+  <div
+    [class.hidden]="empty()"
+    class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
+    data-sketches-page
+  >
+    <div
+      class="relative -m-space-5 -ml-[calc(var(--st-shell-inset-left)+var(--space-5))] box-border flex min-h-0 flex-1 flex-col overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+    >
+      @if (portNote(); as note) {
+        <p
+          [attr.title]="note"
+          class="m-0 shrink-0 truncate pt-space-3 text-ui-sm text-et-surface-muted"
+          data-sk-round-note
+        >
+          {{ note }}
+        </p>
+      }
+      <ethlete-canvas-viewport
+        #list
+        [attr.data-sk-fit]="canvas.zoom() === 'fit' ? '' : null"
+        class="min-h-0 w-full flex-1 [--st-shell-inset-left:0px]"
+        data-sk-rows
+      >
+        <div
+          #world
+          [attr.data-sk-sizing]="sizing() ? '' : null"
+          [class.invisible]="sizing()"
+          [class.w-max]="transposed() || canvas.zoom() !== 'fit'"
+          [class.min-w-full]="!transposed() || screenMode()"
+          [style.transform]="canvas.transform()"
+          [style.will-change]="canvas.preview() ? 'transform' : null"
+          class="flex origin-top-left flex-col gap-space-2 pb-16"
+        >
+          @if (transposed()) {
+            <div
+              #matrix
+              [style.grid-template-columns]="matrixColumns()"
+              [style.column-gap.px]="COLUMN_GAP"
+              class="grid gap-y-space-3"
+              data-sk-matrix
+            >
+              @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
+                @let offset = blockIndex * matrixStride();
+                @for (state of block.states; track part() + ' ' + state; let line = $index) {
+                  @let group = headHidden() ? undefined : groupOfState().get(state);
+                  <div
+                    #gutter
+                    [style.font-size.px]="noteSize()"
+                    [style.width.px]="group ? noteSize() * 15 : null"
+                    [style.grid-row]="matrixTop() + 1 + line * 2 + ' / span 2'"
+                    [style.grid-column]="offset + 1"
+                    [style.padding-left.px]="blockIndex > 0 ? COLUMN_GAP : null"
+                    [attr.data-sk-block]="blockIndex"
+                    [class]="headHidden() ? 'text-transparent' : 'text-et-surface'"
+                    class="flex flex-col justify-center gap-space-1 self-stretch pr-space-3 leading-[1.35]"
+                    data-sk-gutter
+                  >
+                    <span class="font-code">{{ state }}</span>
+                    @if (group && group.states.length > 1) {
+                      <span data-sk-crop-count>{{ LABELS.sameCrop(group.states.length) }}</span>
+                    }
+                    @if (group && !group.whole) {
+                      @let whole = !croppedOf(state);
+                      @for (reason of group.reasons; track $index; let last = $last) {
+                        <span [class.text-et-surface-muted]="!headHidden()" data-sk-crop-reason
+                          >{{ reasonTextOf(reason)
+                          }}{{ whole || !last ? '' : LABELS.magnified(magnifyTextOf(group)) }}</span
+                        >
+                      }
+                      <span class="mt-space-1 flex items-end gap-space-2">
+                        @let locator = locatorOf(group);
+                        <span
+                          [style.width.px]="noteSize() * 9"
+                          [style.aspect-ratio]="locator.ratio"
+                          class="relative block rounded-control-sm bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                          data-sk-crop-locator
+                        >
+                          <span
+                            class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border-solid)]"
+                          ></span>
+                          <span
+                            [style.left]="locator.left"
+                            [style.top]="locator.top"
+                            [style.width]="locator.width"
+                            [style.height]="locator.height"
+                            class="absolute rounded-[2px] border-2 border-et-theme"
+                          ></span>
+                        </span>
+                        <button
+                          (click)="toggleScreen(state)"
+                          et-button
+                          type="button"
+                          variant="transparent"
+                          size="sm"
+                          data-sk-screen-toggle
+                        >
+                          {{ whole ? LABELS.cropScreen : LABELS.wholeScreen }}
+                        </button>
+                      </span>
+                    }
+                  </div>
+                }
+                @for (row of matrixRows(); track row.key; let column = $index) {
+                  <section
+                    #section
+                    [attr.data-sk-row]="row.key"
+                    [attr.data-sk-unsized]="row.sized === false ? '' : null"
+                    [attr.data-selected]="row.key === selected() ? '' : null"
+                    [style.grid-column]="offset + column + 2"
+                    [style.grid-row]="matrixTop()"
+                    class="relative min-w-0 rounded-control-md p-space-2 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
+                  >
+                    @if (blockIndex === 0) {
+                      <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
+                    } @else {
+                      <span
+                        class="inline-flex max-w-full items-center truncate rounded-full px-1 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                        data-sk-head-tag
+                        >{{ SHORT_LABEL_OF(row.label ?? (row.key === CURRENT ? LABELS.current : row.key)) }}</span
+                      >
+                    }
+                  </section>
+                  @for (item of row.shots; track item.state) {
+                    @if (block.states.includes(item.state)) {
+                      <ng-container
+                        *ngTemplateOutlet="
+                          cellTemplate;
+                          context: {
+                            $implicit: row,
+                            item,
+                            column: offset + column + 2,
+                            line: matrixLineOf(block.states, item.state),
+                          }
+                        "
+                      />
+                    }
+                  }
+                  @for (state of block.states; track state) {
+                    @if (!shotOf(row, state)) {
+                      <div
+                        [style.grid-column]="offset + column + 2"
+                        [style.grid-row]="matrixLineOf(block.states, state)"
+                        [attr.data-sk-state]="state"
+                        [attr.data-sk-variant]="row.key"
+                        [attr.data-sk-failed-cell]="failures()[row.key] === undefined ? null : ''"
+                        class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
+                        data-sk-missing
+                      >
+                        <div
+                          [style.width.px]="row.width * scale()"
+                          [style.font-size.px]="labelFont()"
+                          class="row-start-2 box-border flex items-center justify-center self-start rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center font-code leading-[1.35] text-et-surface-muted"
+                        >
+                          {{ matrixMissingLabelOf(row) }}
+                        </div>
+                      </div>
+                    }
+                  }
+                }
+              }
+              @if (sameRows().length > 0) {
+                @if (sameOpen()) {
+                  @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
+                    <div
+                      [style.grid-column]="blockIndex * matrixStride() + sameColumn() + ' / span ' + sameRows().length"
+                      class="row-start-1 self-end rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                      data-sk-same
+                      data-open
+                    >
+                      <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
+                    </div>
+                  }
+                } @else {
+                  <div
+                    #fold
+                    [style.grid-column]="matrixFoldColumn()"
+                    [style.grid-row]="'1 / span ' + (matrixTallest() * 2 + 1)"
+                    class="flex w-36 flex-col gap-space-2 rounded-control-md p-space-1 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                    data-sk-same
+                  >
+                    <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
+                  </div>
+                }
+              }
+            </div>
+          } @else if (listMeasured()) {
+            @let lines = grid();
+            <div
+              [class.flex-col]="!sideBySide() && !lines"
+              [class.items-stretch]="!sideBySide() && !lines"
+              [class.grid]="!!lines || sideBySide()"
+              [class.grid-flow-col]="sideBySide() && !lines"
+              [class.auto-cols-max]="sideBySide() && !lines"
+              [class.grid-rows-[auto_auto]]="sideBySide() && !lines"
+              [class.justify-start]="sideBySide() && !lines"
+              [class.flex]="!lines && !sideBySide()"
+              [style.grid-template-columns]="
+                lines ? 'repeat(' + (stacked() ? 2 : changedRows().length + 1) + ', max-content)' : null
+              "
+              [style.grid-template-rows]="
+                lines
+                  ? 'repeat(' + (2 + lines.lines.length * 2) * (stacked() ? changedRows().length : 1) + ', auto)'
+                  : null
+              "
+              [attr.data-sk-side-by-side]="sideBySide() ? '' : null"
+              [attr.data-sk-stacked]="stacked() ? '' : null"
+              [attr.data-sk-grid]="lines ? '' : null"
+              class="gap-space-2"
+              data-sk-changed
+            >
+              @if (lines) {
+                @for (block of stacked() ? changedRows() : [null]; track $index; let blockIndex = $index) {
+                  <div
+                    #lineHeads
+                    [class.row-span-full]="!stacked()"
+                    [style.grid-row]="stackedGridRowOf(blockIndex)"
+                    class="col-start-1 grid grid-rows-subgrid"
+                    data-sk-line-heads
+                  >
+                    @for (line of lines.lines; track line.base; let index = $index) {
+                      <span
+                        [style.grid-row]="3 + index * 2 + ' / span 2'"
+                        [style.font-size.px]="labelFont()"
+                        class="self-center pr-space-1 font-code leading-[1.35] whitespace-nowrap text-et-surface"
+                        data-sk-line-head
+                        >{{ line.base }}</span
+                      >
+                    }
+                  </div>
+                }
+              }
+              @for (row of changedRows(); track row.key; let block = $index) {
+                <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row, block }" />
+              }
+            </div>
+            @if (sameRows().length > 0) {
+              <section
+                [attr.data-open]="sameOpen() ? '' : null"
+                class="rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                data-sk-same
+              >
+                <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs">
+                  @if (sameOpen()) {
+                    <div class="flex flex-col gap-space-2 pt-space-2">
+                      @for (row of sameRows(); track row.key) {
+                        <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row }" />
+                      }
+                    </div>
+                  }
+                </ethlete-disclosure>
+              </section>
+            }
+          }
+          @if (foldedStates().size > 0) {
+            <section
+              [attr.data-sk-pending]="pendingStates().size > 0 ? '' : null"
+              class="overflow-clip rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+              data-sk-folded
+            >
+              <span
+                [style.transform]="'translateX(' + canvas.stickyLeft() + 'px)'"
+                class="flex items-center gap-space-3"
+              >
+                <span class="text-ui-sm text-et-surface-muted">{{ foldLabel() }}</span>
+                <ethlete-disclosure
+                  [(open)]="statesOpen"
+                  [label]="statesOpen() ? LABELS.hideStates : LABELS.showAllStates"
+                  (openChange)="showListTop()"
+                  hug
+                  size="xs"
+                />
+              </span>
+            </section>
+          }
+        </div>
+      </ethlete-canvas-viewport>
+    </div>
+    <div
+      class="pointer-events-none absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 flex items-end gap-space-3"
+    >
+      <ethlete-sketch-head
+        [(reasonOpen)]="reasonOpen"
+        [(roundsOpen)]="roundsOpen"
+        [(commentMode)]="commentMode"
+        [(withdrawn)]="withdrawn"
+        [status]="shownStatus()"
+        [subSketch]="subSketch()"
+        [approved]="approved() !== null"
+        [subSketchesOpen]="subSketchesOpen()"
+        [hold]="hold()"
+        [autoMerge]="autoMerge()"
+        [error]="errorInRow() ? null : error()"
+        [commentable]="comments() !== null"
+        [discardable]="discardable()"
+        [busy]="merging()"
+        [listError]="!!listError()"
+        [rounds]="rounds()"
+        [round]="round()"
+        [withdrawnCount]="withdrawnCount()"
+        (roundChange)="roundChange.emit($event)"
+        (retry)="retry.emit()"
+        (discard)="askDiscard()"
+        class="pointer-events-auto mx-auto min-w-0"
+      />
+      <ethlete-zoom-chip
+        [percent]="percent()"
+        (zoomOut)="zoomOut()"
+        (zoomReset)="zoomReset()"
+        (zoomIn)="zoomIn()"
+        (fit)="fit()"
+        class="pointer-events-auto shrink-0"
+      />
+    </div>
+    @if (live()) {
+      <div class="pointer-events-none absolute top-space-3 right-space-3 z-3 flex text-ui-sm">
+        <span
+          class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)"
+          data-live-badge
+          >{{ CANVAS_LABELS.live }}</span
+        >
+      </div>
+    }
+  </div>
+</ethlete-shell-page>
+<ng-template #rowTemplate let-row let-block="block">
+  @let aligned = sideBySide() && !grid() && block !== undefined;
+  <section
+    #section
+    [attr.data-sk-row]="row.key"
+    [attr.data-sk-unsized]="row.sized === false ? '' : null"
+    [attr.data-selected]="row.key === selected() ? '' : null"
+    [attr.data-sk-head-hidden]="headHidden() ? '' : null"
+    [class.gap-space-2]="headHidden()"
+    [class.gap-space-5]="!headHidden()"
+    [class.row-span-full]="!!grid() && stackedGridRowOf(block) === null"
+    [style.grid-row]="stackedGridRowOf(block)"
+    [style.grid-column]="stackedGridRowOf(block) === null ? null : 2"
+    [class.grid-rows-subgrid]="!!grid() || aligned"
+    [class.row-span-2]="aligned"
+    class="grid grid-cols-[minmax(0,1fr)] rounded-control-md p-space-3 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
+  >
+    <div [class.min-w-full]="sideBySide()" [class.w-0]="sideBySide()" class="min-w-0" data-sk-head-row>
+      <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
+    </div>
+    <div
+      [class.opacity-60]="IS_WITHDRAWN(row)"
+      [class.grid]="!!grid()"
+      [style.grid-row]="grid() ? '2 / -1' : null"
+      [class.grid-rows-subgrid]="!!grid()"
+      class="relative min-w-0"
+    >
+      @if (unplacedCommentsOf(row); as unplaced) {
+        @if (unplaced.length > 0) {
+          <span class="absolute top-0 left-0 z-10 flex">
+            @for (comment of unplaced; track comment.id) {
+              <ng-container *ngTemplateOutlet="commentPinTemplate; context: { $implicit: comment }" />
+            }
+          </span>
+        }
+      }
+      @if (
+        row.shots.length > 0 ||
+        ((row.key === CURRENT || isEdit() || dropping().has(row.key) || sideBySide()) && stageStates().length > 0)
+      ) {
+        <div
+          #stage
+          [attr.data-sk-stage-row]="row.key"
+          [style.grid-template-columns]="gridOf(row)"
+          [style.column-gap.px]="columnGap()"
+          [class.row-span-full]="!!grid()"
+          [class.grid-rows-subgrid]="!!grid()"
+          class="grid min-w-0 gap-y-space-3"
+          data-sk-stage
+        >
+          @if (grid(); as lines) {
+            @for (name of lines.interactions; track name; let column = $index) {
+              <span
+                [style.grid-column]="column + 1"
+                [style.font-size.px]="labelFont()"
+                class="row-start-1 self-end font-code leading-[1.35] text-et-surface-muted"
+                data-sk-column-head
+              >
+                @for (part of headPartsOf(name); track $index) {
+                  <span #columnHeadPart [attr.data-sk-head-column]="column" class="inline-block whitespace-nowrap">{{
+                    part
+                  }}</span>
+                }
+              </span>
+            }
+            @for (line of lines.lines; track line.base; let index = $index) {
+              @for (state of line.states; track $index; let column = $index) {
+                @if (state !== null) {
+                  @if (shotOf(row, state); as item) {
+                    <ng-container
+                      *ngTemplateOutlet="
+                        cellTemplate;
+                        context: { $implicit: row, item, column: column + 1, line: gridLineOf(index) }
+                      "
+                    />
+                  } @else if (restOfIn(row, state)) {
+                    <span
+                      [style.grid-column]="column + 1"
+                      [style.grid-row]="gridLineOf(index)"
+                      [style.font-size.px]="labelFont()"
+                      [attr.data-sk-folded-cell]="state"
+                      class="self-center font-code leading-[1.35] whitespace-nowrap text-et-surface-muted"
+                      >{{ LABELS.foldedToRest }}</span
+                    >
+                  } @else {
+                    <div
+                      [style.grid-column]="column + 1"
+                      [style.grid-row]="gridLineOf(index)"
+                      [style.width.px]="row.width * scale()"
+                      [style.height.px]="stateHeightOf(state) * scale()"
+                      [attr.data-sk-state]="state"
+                      [attr.data-sk-variant]="row.key"
+                      [attr.title]="missingLabelOf(row)"
+                      [attr.data-sk-failed-cell]="failures()[row.key] === undefined ? null : ''"
+                      class="box-border self-end rounded-control-sm border border-dashed border-(--et-surface-border-solid)"
+                      data-sk-missing
+                    ></div>
+                  }
+                }
+              }
+            }
+          } @else {
+            @for (state of stageStates(); track part() + ' ' + state) {
+              @if (shotOf(row, state); as item) {
+                <ng-container
+                  *ngTemplateOutlet="cellTemplate; context: { $implicit: row, item, column: null, line: null }"
+                />
+              } @else {
+                <div
+                  [attr.data-sk-state]="state"
+                  [attr.data-sk-variant]="row.key"
+                  class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
+                  data-sk-missing
+                >
+                  <span
+                    [class.hidden]="labelSize() === null"
+                    class="row-start-1 flex w-0 min-w-full items-center"
+                    data-sk-label
+                    ><span
+                      [style.font-size.px]="labelFont()"
+                      class="min-w-0 font-code leading-[1.35] text-et-surface-muted wrap-anywhere"
+                      >{{ state }}</span
+                    ></span
+                  >
+                  @if (failures()[row.key] === undefined) {
+                    <div
+                      [style.width.px]="row.width * scale()"
+                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
+                    >
+                      {{ missingLabelOf(row) }}
+                    </div>
+                  } @else {
+                    <div
+                      [style.width.px]="row.width * scale()"
+                      [etProvideColor]="errorTheme()"
+                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-et-theme p-space-2 text-center text-ui-xs text-et-theme-ink"
+                      data-sk-failed-cell
+                    >
+                      {{ missingLabelOf(row) }}
+                    </div>
+                  }
+                </div>
+              }
+            }
+          }
+        </div>
+      }
+    </div>
+  </section>
+</ng-template>
+<ng-template #mergeTemplate let-row>
+  @let mergeOpen = status() === 'waiting';
+  @let take = (mergeOpen || status() === 'drawing') && errored().length === 0 && !sameKeys().has(row.key);
+  @let points = openPoints().length > 0 && row.key === selected();
+  @let offer = take && !(subSketch() && row.key === approved());
+  @if (offer || points) {
+    <span #pointsHead class="relative flex flex-wrap items-center gap-space-2">
+      @if (offer && mergeOpen) {
+        <span #take [attr.data-sk-take]="row.key" class="relative flex">
+          <button
+            [loading]="merging() && row.key === selected()"
+            [disabled]="merging() && row.key !== selected()"
+            (click)="askMerge(row)"
+            et-button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-sk-merge
+          >
+            {{ subSketch() ? LABELS.approve : LABELS.merge }}
+          </button>
+        </span>
+      } @else if (offer) {
+        <span class="relative flex">
+          <button et-button type="button" variant="outline" size="sm" disabled data-sk-merge>
+            {{ subSketch() ? LABELS.approve : LABELS.merge }}
+          </button>
+        </span>
+      }
+      @if (points) {
+        <span class="flex" data-sk-points>
+          <ethlete-open-points-chip
+            [(closed)]="pointsClosed"
+            [part]="part()"
+            [groups]="openPoints()"
+            [popoverOrigin]="pointsHead"
+            (openPoint)="openPoint.emit($event)"
+            dividers="false"
+            popoverPlacement="bottom-start"
+          />
+        </span>
+      }
+    </span>
+  }
+  @if (errorInRow() && row.key === selected()) {
+    <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert" data-sk-merge-error>
+      {{ error() }}
+    </p>
+  }
+</ng-template>
+<ng-template #headTemplate let-row>
+  @let drawn = isDrawn(row);
+  @if (headHidden()) {
+    <span
+      class="inline-flex w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+      data-sk-head-tag
+      >{{ row.label ?? (row.key === CURRENT ? LABELS.current : row.key) }}</span
+    >
+    @if (row.note) {
+      <p
+        [attr.title]="row.note"
+        class="m-0 mt-space-1 line-clamp-2 text-ui-xs text-et-surface-muted wrap-anywhere"
+        data-sk-tag-note
+      >
+        {{ row.note }}
+      </p>
+    }
+  }
+  <div [class.hidden]="headHidden()" class="flex min-w-0 flex-col gap-space-2">
+    <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
+      @if (row.key === CURRENT) {
+        <span class="text-ui-sm font-ui-medium text-et-surface">{{ row.label ?? LABELS.current }}</span>
+      } @else {
+        <span class="font-code text-ui-sm text-et-surface">{{ row.label ?? LABELS.variant(row.key) }}</span>
+      }
+      @if (row.model; as model) {
+        <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted" data-sk-model
+          ><svg [agent]="model.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ model.short }}</span
+        >
+      }
+      @if (failures()[row.key]; as failure) {
+        <span
+          [etProvideColor]="errorTheme()"
+          [attr.title]="LABELS.rowFailed(failure)"
+          class="line-clamp-3 text-ui-xs text-et-theme-ink wrap-anywhere"
+          role="alert"
+          data-sk-row-failed
+          >{{ LABELS.rowFailed(failure) }}</span
+        >
+      }
+      @if (isPending(row)) {
+        @if (listError(); as message) {
+          <span
+            [etProvideColor]="errorTheme()"
+            class="text-ui-xs text-et-theme-ink"
+            role="alert"
+            data-sk-compare-failed
+            >{{ LABELS.compareFailed(message) }}</span
+          >
+        } @else if (!isEditSide(row)) {
+          <span class="text-ui-xs whitespace-nowrap text-et-surface-muted" data-sk-comparing>{{
+            LABELS.comparing
+          }}</span>
+        }
+      }
+    </div>
+    <p
+      #note
+      [style.font-size.px]="noteSize()"
+      class="m-0 leading-[1.35] text-et-surface-muted wrap-anywhere"
+      data-sk-note
+    >
+      {{ row.note }}
+    </p>
+    @if (row.subParts; as subParts) {
+      <div class="flex flex-col gap-space-1 text-ui-xs text-et-surface-muted" data-sk-sub-parts>
+        <span class="font-ui-medium">{{ LABELS.subParts }}</span>
+        <ul class="m-0 flex list-none flex-col gap-space-1 p-0">
+          @for (subPart of subParts; track subPart.key) {
+            <li class="wrap-anywhere" data-sk-sub-part>
+              <span class="font-code text-et-surface">{{ subPart.key }}</span>
+              @if (subPart.notRebuild; as stated) {
+                <span> · {{ LABELS.notRebuild(stated.of, stated.difference) }}</span>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+    @if (row.key !== CURRENT) {
+      @if (IS_WITHDRAWN(row)) {
+        <span
+          [style.font-size.px]="noteSize()"
+          class="leading-[1.35] text-et-surface-muted italic wrap-anywhere"
+          data-sk-withdrawn
+          >{{ withdrawnMarkOf(row.withdrawn) }}</span
+        >
+      } @else if (drawn) {
+        <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
+          ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
+          >{{ LABELS.drawingMark }}</span
+        >
+      } @else {
+        <ng-container *ngTemplateOutlet="mergeTemplate; context: { $implicit: row }" />
+      }
+    }
+  </div>
+  @if (!IS_WITHDRAWN(row) && comments() === null) {
+    @if (pinOf(row.key); as pin) {
+      <span [class.hidden]="headHidden()" class="absolute top-space-1 right-space-1 z-1 flex">
+        <ethlete-comment-pin
+          [author]="pin.author"
+          [initials]="pin.initials"
+          [agent]="pin.agent"
+          [count]="pin.count"
+          [resolved]="!!pin.resolved"
+          (pinToggle)="pinToggle.emit(row.key)"
+        />
+      </span>
+    }
+  }
+</ng-template>
+<ng-template #cellTemplate let-row let-item="item" let-column="column" let-line="line">
+  @let cropTransform = cropTransformOf(row, item);
+  @let marks = marksOf(row, item);
+  @let key = FRAME_KEY_OF(row, item.state);
+  @let cellScale = lineScaleOf(item.state);
+  <ethlete-variant-cell
+    [state]="item.state"
+    [variant]="row.key"
+    [changed]="item.changed ?? 'pending'"
+    [column]="column"
+    [line]="line"
+    [scale]="cellScale"
+    [labelFont]="labelFont()"
+    [labelHidden]="labelSize() === null"
+    [stateHidden]="transposed() || !!grid()"
+    [same]="isSame(row, item.changed)"
+    [inherited]="!!item.inherited"
+    [sameAsRest]="statesOpen() || grid() ? [] : (item.restOf ?? [])"
+    [loading]="loadingShots().has(key)"
+    [frameKey]="key"
+    [width]="item.width ?? row.width"
+    [height]="item.height"
+    [shown]="shownHeightOf(row, item)"
+    [crop]="cropTransform"
+    [marks]="marks"
+    [stacked]="cropTransform && marks.length > 0 ? foldedOf(item.state) : []"
+    [selected]="key === selectedFrame()"
+  >
+    <ng-container ngProjectAs="[overlay]">
+      @if (commentTargeting() && row.key !== CURRENT) {
+        <ethlete-comment-target
+          [frame]="key"
+          (comment)="startComment($event, { row, shot: item.state })"
+          class="absolute inset-0 z-2"
+        />
+      }
+      @for (comment of commentsOn(row, item.state); track comment.id) {
+        <span
+          [style.left.px]="(comment.point?.x ?? 0) * cellScale"
+          [style.top.px]="(comment.point?.y ?? 0) * cellScale"
+          class="absolute z-10 flex -translate-y-full"
+        >
+          <ng-container *ngTemplateOutlet="commentPinTemplate; context: { $implicit: comment }" />
+        </span>
+      }
+      @if (draftOn(row, item.state); as draft) {
+        <span
+          [style.left.px]="(draft.point?.x ?? 0) * cellScale"
+          [style.top.px]="(draft.point?.y ?? 0) * cellScale"
+          class="absolute z-10 flex -translate-y-full"
+        >
+          <ethlete-comment-pin [author]="draft.author" [initials]="draft.initials" [selected]="true" />
+        </span>
+        <ethlete-comment-draft
+          [(text)]="draftText"
+          [phase]="sendPhase()"
+          [reason]="sendReason()"
+          [style.left]="'calc(' + (draft.point?.x ?? 0) * cellScale + 'px + var(--space-6))'"
+          [style.top.px]="(draft.point?.y ?? 0) * cellScale"
+          (send)="sendComment.emit($event)"
+          (discard)="commentCancel.emit()"
+          class="absolute z-20"
+        />
+      }
+    </ng-container>
+    @if (shot(); as template) {
+      <ng-container *ngTemplateOutlet="template; context: { $implicit: row, state: item.state }" />
+    }
+  </ethlete-variant-cell>
+</ng-template>
+<ng-template #commentPinTemplate let-comment>
+  <ethlete-comment-pin
+    [author]="comment.author"
+    [initials]="comment.initials"
+    [agent]="comment.agent"
+    [count]="comment.replies + 1"
+    [selected]="comment.id === selectedComment()"
+    [resolved]="!!comment.resolved"
+    (pinToggle)="commentPick.emit(comment.id)"
+  />
+</ng-template>

@@ -1,0 +1,42 @@
+{
+  "success": false,
+  "testResults": [
+    {
+      "name": "/fixture/crash.spec.ts",
+      "status": "failed",
+      "message": "",
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "fullName": "crashes on a missing function",
+          "status": "failed",
+          "title": "crashes on a missing function",
+          "failureMessages": ["TypeError: m.twice is not a function\n    at /fixture/crash.spec.ts:4:20"]
+        }
+      ]
+    },
+    {
+      "name": "/fixture/mixed.spec.ts",
+      "status": "failed",
+      "message": "",
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "fullName": "crashes on a missing function",
+          "status": "failed",
+          "title": "crashes on a missing function",
+          "failureMessages": ["TypeError: m.twice is not a function\n    at /fixture/mixed.spec.ts:4:20"]
+        },
+        {
+          "ancestorTitles": [],
+          "fullName": "fails on an assertion",
+          "status": "failed",
+          "title": "fails on an assertion",
+          "failureMessages": [
+            "AssertionError: expected 2 to be 3 // Object.is equality\n    at /fixture/mixed.spec.ts:7:17"
+          ]
+        }
+      ]
+    }
+  ]
+}

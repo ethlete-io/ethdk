@@ -1,0 +1,425 @@
+import { Component, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import '../../test-helpers';
+import { provideMatchDefaults } from './match-defaults';
+import { provideMatchLabels } from './match-labels';
+import { MatchEmblemFallback } from './match-defaults';
+import { MatchParticipantComponent } from './match-participant.component';
+import { NormalizedMatchParticipant } from './match.types';
+
+const TEAM: NormalizedMatchParticipant = {
+  id: 'fcb',
+  name: 'FC Berlin',
+  code: 'FCB',
+  subtitle: 'Berlin eSports',
+  emblem: { defaultSrc: '/fcb.png' },
+  seed: 3,
+};
+
+@Component({
+  template: `
+    <et-match-participant
+      [participant]="participant()"
+      [compact]="compact()"
+      [showSeed]="showSeed()"
+      [loading]="loading()"
+      [side]="side()"
+      [emblemFallback]="emblemFallback()"
+      [labels]="{ tbdHome: 'Select Home Team' }"
+    />
+  `,
+  imports: [MatchParticipantComponent],
+})
+class HostComponent {
+  public participant = signal<NormalizedMatchParticipant | null>(TEAM);
+  public compact = signal(false);
+  public showSeed = signal(false);
+  public loading = signal(false);
+  public side = signal<'home' | 'away' | null>(null);
+  public emblemFallback = signal<MatchEmblemFallback | null>(null);
+}
+
+@Component({
+  template: `<a [participant]="participant()" et-match-participant href="#"></a>`,
+  imports: [MatchParticipantComponent],
+})
+class LinkHostComponent {
+  public participant = signal<NormalizedMatchParticipant | null>(TEAM);
+}
+
+@Component({
+  template: `<div [participant]="participant()" et-match-participant interactive></div>`,
+  imports: [MatchParticipantComponent],
+})
+class BareInteractiveHostComponent {
+  public participant = signal<NormalizedMatchParticipant | null>(TEAM);
+}
+
+const create = () => {
+  const fixture = TestBed.createComponent(HostComponent);
+
+  fixture.detectChanges();
+
+  return fixture;
+};
+
+const host = (fixture: ComponentFixture<HostComponent>) => fixture.nativeElement as HTMLElement;
+const name = (fixture: ComponentFixture<HostComponent>) =>
+  host(fixture).querySelector('.et-match-participant-name')?.textContent?.trim();
+
+describe('MatchParticipantComponent', () => {
+  it('shows the full name and the emblem', () => {
+    const fixture = create();
+
+    expect(name(fixture)).toBe('FC Berlin');
+    expect(host(fixture).querySelector('et-picture')).not.toBeNull();
+  });
+
+  it('prefers the short code when compact', () => {
+    const fixture = create();
+
+    fixture.componentInstance.compact.set(true);
+    fixture.detectChanges();
+
+    expect(name(fixture)).toBe('FCB');
+  });
+
+  it('falls back to the name when compact and there is no code', () => {
+    const fixture = create();
+
+    fixture.componentInstance.participant.set({ ...TEAM, code: null });
+    fixture.componentInstance.compact.set(true);
+    fixture.detectChanges();
+
+    expect(name(fixture)).toBe('FC Berlin');
+  });
+
+  it('falls back to the code when there is no name', () => {
+    const fixture = create();
+
+    fixture.componentInstance.participant.set({ ...TEAM, name: null });
+    fixture.detectChanges();
+
+    expect(name(fixture)).toBe('FCB');
+  });
+
+  it('names a blank name by its code, and a participant with neither as TBD', () => {
+    const fixture = create();
+
+    fixture.componentInstance.participant.set({ ...TEAM, name: '' });
+    fixture.detectChanges();
+
+    expect(name(fixture)).toBe('FCB');
+
+    fixture.componentInstance.participant.set({ ...TEAM, name: ' ', code: '' });
+    fixture.detectChanges();
+
+    expect(name(fixture)).toBe('TBD');
+  });
+
+  describe('a TBD slot', () => {
+    const tbd = () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set(null);
+      fixture.detectChanges();
+
+      return fixture;
+    };
+
+    it('uses the side label when the side is known, and tbd otherwise', () => {
+      const fixture = tbd();
+
+      fixture.componentInstance.side.set('home');
+      fixture.detectChanges();
+      expect(name(fixture)).toBe('Select Home Team');
+
+      fixture.componentInstance.side.set('away');
+      fixture.detectChanges();
+      expect(name(fixture)).toBe('TBD');
+    });
+
+    it('names itself rather than rendering blank', () => {
+      expect(name(tbd())).toBe('TBD');
+    });
+
+    it('is marked, so the row can style it as the placeholder it is', () => {
+      expect(host(tbd()).querySelector('et-match-participant')?.hasAttribute('data-tbd')).toBe(true);
+    });
+
+    it('keeps the emblem frame, so nothing jumps when the name arrives', () => {
+      expect(host(tbd()).querySelector('.et-match-participant-emblem')).not.toBeNull();
+      expect(host(tbd()).querySelector('et-picture')).toBeNull();
+    });
+  });
+
+  describe('the emblem', () => {
+    const mark = (fixture: ComponentFixture<HostComponent>) =>
+      host(fixture).querySelector('.et-match-participant-emblem-mark')?.getAttribute('data-mark');
+
+    it('stands in with the participant’s first letter when there is none', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, emblem: null });
+      fixture.detectChanges();
+
+      expect(mark(fixture)).toBe('F');
+    });
+
+    it('stands in the same way when the file fails to load', () => {
+      const fixture = create();
+      const img = host(fixture).querySelector('img');
+
+      img?.dispatchEvent(new Event('error'));
+      fixture.detectChanges();
+
+      expect(mark(fixture)).toBe('F');
+    });
+
+    describe('the shield fallback', () => {
+      const shield = (fixture: ComponentFixture<HostComponent>) =>
+        host(fixture).querySelector('.et-match-participant-emblem-mark svg.et-match-participant-shield');
+
+      it('draws no shield by default', () => {
+        const fixture = create();
+
+        fixture.componentInstance.participant.set({ ...TEAM, emblem: null });
+        fixture.detectChanges();
+
+        expect(shield(fixture)).toBeNull();
+        expect(host(fixture).querySelector('.et-match-participant-emblem-mark')?.hasAttribute('data-fallback')).toBe(
+          false,
+        );
+      });
+
+      it('draws a shield around the initial when asked to', () => {
+        const fixture = create();
+
+        fixture.componentInstance.emblemFallback.set('shield');
+        fixture.componentInstance.participant.set({ ...TEAM, emblem: null });
+        fixture.detectChanges();
+
+        expect(shield(fixture)).not.toBeNull();
+        expect(mark(fixture)).toBe('F');
+      });
+
+      it('draws it when the file fails to load', () => {
+        const fixture = create();
+
+        fixture.componentInstance.emblemFallback.set('shield');
+        fixture.detectChanges();
+        host(fixture).querySelector('img')?.dispatchEvent(new Event('error'));
+        fixture.detectChanges();
+
+        expect(shield(fixture)).not.toBeNull();
+      });
+
+      it('takes the app-wide default, which the input overrides', () => {
+        TestBed.configureTestingModule({ providers: [provideMatchDefaults({ emblemFallback: 'shield' })] });
+
+        const fixture = create();
+
+        fixture.componentInstance.participant.set({ ...TEAM, emblem: null });
+        fixture.detectChanges();
+
+        expect(shield(fixture)).not.toBeNull();
+
+        fixture.componentInstance.emblemFallback.set('initial');
+        fixture.detectChanges();
+
+        expect(shield(fixture)).toBeNull();
+      });
+    });
+
+    it('takes a whole emoji, not half of its surrogate pair', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, name: '🦊 Foxes', emblem: null });
+      fixture.detectChanges();
+
+      expect(mark(fixture)).toBe('🦊');
+    });
+
+    it('leaves a TBD slot unmarked - it is nobody yet', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set(null);
+      fixture.detectChanges();
+
+      expect(mark(fixture)).toBeUndefined();
+    });
+  });
+
+  it('draws bones while loading - a pending slot is not the same as a decided TBD', () => {
+    const fixture = create();
+
+    fixture.componentInstance.participant.set(null);
+    fixture.componentInstance.loading.set(true);
+    fixture.detectChanges();
+
+    expect(host(fixture).querySelectorAll('et-skeleton-item').length).toBeGreaterThan(0);
+    expect(name(fixture)).toBeUndefined();
+  });
+
+  describe('the seed', () => {
+    it('is hidden unless asked for', () => {
+      expect(host(create()).querySelector('.et-match-participant-seed')).toBeNull();
+    });
+
+    it('shows with an accessible label, since the bare number says nothing', () => {
+      const fixture = create();
+
+      fixture.componentInstance.showSeed.set(true);
+      fixture.detectChanges();
+
+      const seed = host(fixture).querySelector('.et-match-participant-seed');
+
+      expect(seed?.querySelector('[aria-hidden="true"]')?.textContent?.trim()).toBe('3');
+      expect(seed?.querySelector('.et-match-participant-seed-label')?.textContent?.trim()).toBe('Seed 3');
+      expect(seed?.hasAttribute('aria-label')).toBe(false);
+    });
+
+    it('stays hidden for a participant that has none', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, seed: null });
+      fixture.componentInstance.showSeed.set(true);
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelector('.et-match-participant-seed')).toBeNull();
+    });
+  });
+
+  describe('the subtitle', () => {
+    it('is a second line under the name', () => {
+      expect(host(create()).querySelector('.et-match-participant-subtitle')?.textContent?.trim()).toBe(
+        'Berlin eSports',
+      );
+    });
+
+    it('is dropped when compact - a second line is the first thing that stops fitting', () => {
+      const fixture = create();
+
+      fixture.componentInstance.compact.set(true);
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelector('.et-match-participant-subtitle')).toBeNull();
+    });
+
+    it('is absent for a participant that has none', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, subtitle: null });
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelector('.et-match-participant-subtitle')).toBeNull();
+    });
+  });
+
+  describe('the country', () => {
+    const GERMANY = { code: 'DE', name: 'Germany', flag: { defaultSrc: '/flags/de.svg' } };
+
+    it('draws a decorative flag beside the country name', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, country: GERMANY });
+      fixture.detectChanges();
+
+      const country = host(fixture).querySelector('.et-match-participant-country');
+
+      expect(country?.querySelector('.et-match-participant-country-name')?.textContent?.trim()).toBe('Germany');
+      expect(country?.querySelector('img')?.getAttribute('alt')).toBe('');
+    });
+
+    it('draws the name alone without a flag', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, country: { ...GERMANY, flag: null } });
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelector('.et-match-participant-country img')).toBeNull();
+      expect(host(fixture).querySelector('.et-match-participant-country')?.textContent?.trim()).toBe('Germany');
+    });
+
+    it('is dropped when compact, like the subtitle', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, country: GERMANY });
+      fixture.componentInstance.compact.set(true);
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelector('.et-match-participant-country')).toBeNull();
+    });
+
+    it('is absent for a participant without one', () => {
+      expect(host(create()).querySelector('.et-match-participant-country')).toBeNull();
+    });
+  });
+
+  describe('on an interactive host', () => {
+    const link = () => {
+      const fixture = TestBed.createComponent(LinkHostComponent);
+
+      fixture.detectChanges();
+
+      return fixture;
+    };
+
+    it('marks itself interactive from the host tag alone', () => {
+      const anchor = (link().nativeElement as HTMLElement).querySelector('a');
+
+      expect(anchor?.hasAttribute('data-interactive')).toBe(true);
+      expect(anchor?.classList.contains('et-focus-ring')).toBe(true);
+    });
+
+    it('reads a bare interactive attribute as true', () => {
+      const fixture = TestBed.createComponent(BareInteractiveHostComponent);
+
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('div')?.hasAttribute('data-interactive')).toBe(true);
+    });
+
+    it('names itself after the participant, so the link is not its emblem alt plus the same name', () => {
+      expect((link().nativeElement as HTMLElement).querySelector('a')?.getAttribute('aria-label')).toBe('FC Berlin');
+    });
+
+    it('stays unnamed when it is only a span, where the surrounding text is the name', () => {
+      expect(host(create()).querySelector('et-match-participant')?.hasAttribute('aria-label')).toBe(false);
+    });
+  });
+
+  it('takes its strings from the match labels', () => {
+    TestBed.configureTestingModule({ providers: [provideMatchLabels({ tbd: 'Offen' })] });
+
+    const fixture = create();
+
+    fixture.componentInstance.participant.set(null);
+    fixture.detectChanges();
+
+    expect(name(fixture)).toBe('Offen');
+  });
+
+  describe('edit slot', () => {
+    @Component({
+      template: `
+        <et-match-participant [participant]="null">
+          <button etMatchParticipantEdit type="button">Select team</button>
+        </et-match-participant>
+      `,
+      imports: [MatchParticipantComponent],
+    })
+    class EditHostComponent {}
+
+    it('projects the marked control into the participant, after the names', () => {
+      const fixture = TestBed.createComponent(EditHostComponent);
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement.querySelector('et-match-participant') as HTMLElement;
+      const button = host.querySelector(':scope > button');
+
+      expect(button?.textContent).toBe('Select team');
+      expect(host.querySelector('.et-match-participant-names')?.nextElementSibling).toBe(button);
+    });
+  });
+});

@@ -1,0 +1,401 @@
+import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import '../../test-helpers';
+import { OverlayRef } from '../overlay';
+import { CommandPaletteComponent } from './command-palette.component';
+import { COMMAND_PALETTE_IMPORTS } from './command-palette.imports';
+import { provideCommandPaletteRegistry, registerCommands } from './command-palette-registry';
+import { createCommandPaletteOpener } from './command-palette.overlay';
+import { CommandPaletteCommand } from './command-palette.types';
+
+@Component({
+  selector: 'et-test-command-palette-host',
+  template: `<et-command-palette />`,
+  imports: [COMMAND_PALETTE_IMPORTS],
+  providers: [provideCommandPaletteRegistry()],
+})
+class CommandPaletteHostComponent {
+  public ran: string[] = [];
+
+  constructor() {
+    registerCommands([
+      { id: 'row.add', label: 'Add row', group: 'Rows', run: () => this.ran.push('row.add') },
+      { id: 'table.create', label: 'Create table', group: 'Tables', run: () => this.ran.push('table.create') },
+      {
+        id: 'table.export',
+        label: 'Export as spreadsheet',
+        group: 'Tables',
+        keywords: ['csv'],
+        run: () => this.ran.push('table.export'),
+      },
+      { id: 'loose', label: 'Ungrouped command', run: () => this.ran.push('loose') },
+    ]);
+
+    registerCommands(
+      signal<CommandPaletteCommand[]>([
+        {
+          id: 'row.delete',
+          label: 'Delete row',
+          group: 'Rows',
+          disabled: true,
+          run: () => this.ran.push('row.delete'),
+        },
+      ]),
+    );
+  }
+}
+
+const create = () => {
+  const fixture = TestBed.createComponent(CommandPaletteHostComponent);
+  fixture.detectChanges();
+
+  const host = fixture.nativeElement.querySelector('et-command-palette') as HTMLElement;
+  const input = host.querySelector('input') as HTMLInputElement;
+
+  const type = (value: string) => {
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  };
+
+  const press = (key: string) => {
+    input.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    fixture.detectChanges();
+  };
+
+  const rows = () => [...host.querySelectorAll('et-command-palette-item')] as HTMLElement[];
+
+  const labels = () =>
+    rows().map((row) => row.querySelector('.et-command-palette-item-label')?.textContent?.replace(/\s+/g, ' ').trim());
+
+  const activeLabel = () =>
+    host
+      .querySelector('.et-command-palette-item--active .et-command-palette-item-label')
+      ?.textContent?.replace(/\s+/g, ' ')
+      .trim();
+
+  return { fixture, host, input, type, press, rows, labels, activeLabel };
+};
+
+describe('CommandPaletteComponent', () => {
+  it('lists every registered command before anything is typed', () => {
+    const { host, labels } = create();
+
+    expect(host.classList.contains('et-command-palette')).toBe(true);
+    expect(labels()).toEqual(['Ungrouped command', 'Add row', 'Delete row', 'Create table', 'Export as spreadsheet']);
+  });
+
+  it('renders a heading per group, and none for the ungrouped commands', () => {
+    const { host } = create();
+    const headings = [...host.querySelectorAll('.et-command-palette-group-label')].map((el) => el.textContent?.trim());
+
+    expect(headings).toEqual(['Rows', 'Tables']);
+  });
+
+  it('filters and ranks as the reader types', () => {
+    const { type, labels } = create();
+
+    type('table');
+
+    expect(labels()).toEqual(['Create table']);
+  });
+
+  it('marks the matched characters of a label', () => {
+    const { type, host } = create();
+
+    type('table');
+
+    const marks = [...host.querySelectorAll('.et-command-palette-item-match')].map((el) => el.textContent);
+
+    expect(marks).toEqual(['table']);
+  });
+
+  it('finds a command by a keyword its label does not contain', () => {
+    const { type, labels } = create();
+
+    type('csv');
+
+    expect(labels()).toEqual(['Export as spreadsheet']);
+  });
+
+  it('shows the empty message when nothing matches', () => {
+    const { type, host, rows } = create();
+
+    expect(rows().length).toBeGreaterThan(0);
+
+    type('zzzz');
+
+    expect(rows()).toHaveLength(0);
+    expect(host.querySelector('.et-command-palette-empty')?.textContent?.trim()).toBe('No matching command');
+  });
+
+  it('collapses the combobox while the query matches nothing', () => {
+    const { host, input, type } = create();
+
+    type('zzzz');
+
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+    expect(input.getAttribute('aria-controls')).toBeNull();
+
+    type('');
+
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    expect(input.getAttribute('aria-controls')).toBe(host.querySelector('[role="listbox"]')?.id);
+  });
+
+  it('marks the first result active without anyone choosing it', () => {
+    const { activeLabel } = create();
+
+    expect(activeLabel()).toBe('Ungrouped command');
+  });
+
+  it('moves the active row with the arrow keys', () => {
+    const { press, activeLabel } = create();
+
+    press('ArrowDown');
+
+    expect(activeLabel()).toBe('Add row');
+
+    press('ArrowUp');
+
+    expect(activeLabel()).toBe('Ungrouped command');
+  });
+
+  it('skips a disabled command when moving', () => {
+    const { press, activeLabel } = create();
+
+    press('ArrowDown');
+    press('ArrowDown');
+
+    // 'Delete row' sits between them in the list but is disabled.
+    expect(activeLabel()).toBe('Create table');
+  });
+
+  it('keeps the active row when the pointer crosses a disabled one', () => {
+    const { fixture, press, rows, activeLabel } = create();
+
+    press('ArrowDown');
+    press('ArrowDown');
+
+    rows()[2]?.dispatchEvent(new MouseEvent('mousemove'));
+    fixture.detectChanges();
+
+    expect(activeLabel()).toBe('Create table');
+  });
+
+  it('marks the row the pointer moves over active', () => {
+    const { fixture, rows, activeLabel } = create();
+
+    rows()[3]?.dispatchEvent(new MouseEvent('mousemove'));
+    fixture.detectChanges();
+
+    expect(activeLabel()).toBe('Create table');
+  });
+
+  it('keeps the active row when scrolling brings a row under a pointer that did not move', () => {
+    const { fixture, press, rows, activeLabel } = create();
+
+    press('ArrowDown');
+
+    rows()[3]?.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    expect(activeLabel()).toBe('Add row');
+  });
+
+  it('wraps around at the end of the list', () => {
+    const { press, activeLabel } = create();
+
+    press('ArrowUp');
+
+    expect(activeLabel()).toBe('Export as spreadsheet');
+  });
+
+  it('runs the active command on Enter', () => {
+    const { fixture, press } = create();
+
+    press('ArrowDown');
+    press('Enter');
+
+    expect(fixture.componentInstance.ran).toEqual(['row.add']);
+  });
+
+  it('runs a command when its row is clicked', () => {
+    const { fixture, rows } = create();
+
+    rows()[3]?.click();
+
+    expect(fixture.componentInstance.ran).toEqual(['table.create']);
+  });
+
+  it('does not run a disabled command that is clicked', () => {
+    const { fixture, rows } = create();
+
+    rows()[2]!.click();
+
+    expect(fixture.componentInstance.ran).toEqual([]);
+  });
+
+  it('ignores Enter and arrow keys that belong to an IME composition', () => {
+    const { fixture, input, activeLabel } = create();
+    const compose = (init: KeyboardEventInit) => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, ...init }));
+      fixture.detectChanges();
+    };
+
+    compose({ key: 'ArrowDown', isComposing: true });
+    compose({ key: 'Enter', isComposing: true });
+    compose({ key: 'Enter', keyCode: 229 });
+
+    expect(activeLabel()).toBe('Ungrouped command');
+    expect(fixture.componentInstance.ran).toEqual([]);
+  });
+
+  it('points aria-activedescendant at the active row', () => {
+    const { input, host, press } = create();
+
+    press('ArrowDown');
+
+    const activeRow = host.querySelector('.et-command-palette-item--active') as HTMLElement;
+
+    expect(input.getAttribute('aria-activedescendant')).toBe(activeRow.id);
+  });
+});
+
+describe('CommandPaletteComponent opened as an overlay', () => {
+  let openedRef: OverlayRef<CommandPaletteComponent, unknown> | null = null;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    openedRef = null;
+  });
+
+  afterEach(() => {
+    openedRef?.close();
+  });
+
+  const flushFrames = () =>
+    new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+  const open = async () => {
+    TestBed.runInInjectionContext(() =>
+      registerCommands([
+        { id: 'row.add', label: 'Add row', run: () => undefined },
+        { id: 'table.create', label: 'Create table', run: () => undefined },
+      ]),
+    );
+
+    const overlayRef = TestBed.runInInjectionContext(() => createCommandPaletteOpener().open());
+    let closedVia: string | null = null;
+
+    overlayRef.afterClosedEvent().subscribe((event) => (closedVia = event.source ?? 'unknown'));
+
+    openedRef = overlayRef;
+    TestBed.tick();
+    await flushFrames();
+    await flushFrames();
+    await flushFrames();
+
+    const input = overlayRef.elements?.paneElement.querySelector('input') as HTMLInputElement;
+
+    const type = (value: string) => {
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      TestBed.tick();
+    };
+
+    const pressEscape = async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      TestBed.tick();
+      await flushFrames();
+      await flushFrames();
+    };
+
+    return { input, type, pressEscape, closedVia: () => closedVia };
+  };
+
+  it('clears the query on the first Escape and stays open', async () => {
+    const { input, type, pressEscape, closedVia } = await open();
+
+    type('table');
+    await pressEscape();
+
+    expect(input.value).toBe('');
+    expect(closedVia()).toBeNull();
+  });
+
+  it('closes on Escape once the query is empty', async () => {
+    const { type, pressEscape, closedVia } = await open();
+
+    type('table');
+    await pressEscape();
+
+    expect(closedVia()).toBeNull();
+
+    await pressEscape();
+
+    expect(closedVia()).toBe('escape');
+  });
+});
+
+describe('CommandPaletteComponent group labels', () => {
+  @Component({
+    template: `<et-command-palette />`,
+    imports: [COMMAND_PALETTE_IMPORTS],
+    providers: [provideCommandPaletteRegistry()],
+  })
+  class NonLatinGroupsHostComponent {
+    constructor() {
+      registerCommands([
+        { id: 'date', label: 'Heute', group: 'Дата', run: () => undefined },
+        { id: 'settings', label: 'Konto', group: '設定', run: () => undefined },
+      ]);
+    }
+  }
+
+  it('labels each group by its own heading, whatever script the label uses', () => {
+    const fixture = TestBed.createComponent(NonLatinGroupsHostComponent);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const groups = [...host.querySelectorAll<HTMLElement>('[role="group"]')];
+
+    expect(
+      groups.map((group) => host.querySelector(`[id="${group.getAttribute('aria-labelledby')}"]`)?.textContent?.trim()),
+    ).toEqual(['Дата', '設定']);
+  });
+});
+
+describe('CommandPaletteComponent group labels', () => {
+  @Component({
+    template: `<et-command-palette />`,
+    imports: [COMMAND_PALETTE_IMPORTS],
+    providers: [provideCommandPaletteRegistry()],
+  })
+  class SimilarGroupsHostComponent {
+    constructor() {
+      registerCommands([
+        { id: 'a', label: 'Alpha', group: 'Rows', run: () => undefined },
+        { id: 'b', label: 'Beta', group: 'rows', run: () => undefined },
+        { id: 'c', label: 'Gamma', group: 'Add row', run: () => undefined },
+        { id: 'd', label: 'Delta', group: 'add-row', run: () => undefined },
+        { id: 'e', label: 'Epsilon', group: 'Rows', run: () => undefined },
+      ]);
+    }
+  }
+
+  it('gives every group heading its own id and labels each group by its own heading', () => {
+    const fixture = TestBed.createComponent(SimilarGroupsHostComponent);
+
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const headings = [...host.querySelectorAll<HTMLElement>('.et-command-palette-group-label')];
+    const groups = [...host.querySelectorAll<HTMLElement>('[role="group"]')];
+
+    expect(headings.map((heading) => heading.textContent?.trim())).toEqual(['Rows', 'rows', 'Add row', 'add-row']);
+    expect(new Set(headings.map((heading) => heading.id)).size).toBe(4);
+    expect(groups.map((group) => group.getAttribute('aria-labelledby'))).toEqual(headings.map((heading) => heading.id));
+    expect(groups[0]?.querySelectorAll('et-command-palette-item')).toHaveLength(2);
+  });
+});

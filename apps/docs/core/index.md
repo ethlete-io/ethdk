@@ -1,0 +1,45 @@
+# @ethlete/core
+
+Angular framework primitives - the component-less foundation every other Ethlete library builds on: signal-based DOM observation, the theming systems, the animation and overlay engines, and a toolbox of directives, pipes and utilities.
+
+Everything is imported from the single package entry:
+
+```ts
+import { signalElementDimensions, injectCurrentBreakpoint, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
+```
+
+## Signals
+
+- [Element signals](/core/element-signals) - element dimensions, intersection, mutations, scroll state and children as signals, plus signal-driven class/attribute/style bindings. **Start here.**
+- [Signal utilities](/core/signal-utils) - media-query and router signals, breakpoint-aware inputs, `controlValueSignal`, animated numbers, signal plumbing (`syncSignal`, `previousSignalValue`, …) and recipes like cursor drag scroll.
+
+## Theming & motion
+
+- [Theming](/core/theming) - the surface (elevation-aware neutrals) and color (semantic accent palettes) theming systems: registering themes, the CSS token contract and the provide/interactive directives.
+- [Animations](/core/animations) - the CSS-class-driven enter/leave lifecycle (`etAnimatedLifecycle`, `*etAnimatedIf`), animation observation and FLIP helpers.
+- [Overlay runtime](/core/overlay-runtime) - the low-level floating-layer engine behind the [components overlay system](/components/overlays).
+
+## Interaction
+
+- [Scrolling](/core/scrolling) - pure scroll-geometry primitives: `scrollToElement`, visibility checks and snap-target math.
+- [Scroll restoration](/core/scroll-restoration) - app-wide navigation scrolling: scroll-to-top, fragment scrolling and opt-in offset restoration on back/forward.
+- [Drag & resize](/core/drag-resize) - the drag-handle directive and resize-handles component that power grid and PIP interactions.
+- [Directives & pipes](/core/directives-pipes) - click-outside, `*etRepeat`, the scroll observer, markdown/MIME pipes and the match-normalization pipes.
+
+## App services
+
+- [Providers](/core/providers) - breakpoint observer, locale, focus-visible tracker, renderer, style manager, boundary element and user consent.
+- [SEO](/core/seo) - signal-based head management: title composition, meta/Open Graph/Twitter tags, links and JSON-LD structured data.
+- [Notifications](/core/notifications) - system notifications behind one service: a reactive permission signal and a `show()` that spans both the page and service-worker delivery paths.
+- [App updates](/core/app-updates) - keeps a tab open across a deploy from dying on a chunk that no longer exists, with no version file to generate.
+
+## Foundation
+
+- [Utilities](/core/utilities) - the DI provider-definition pattern, `RuntimeError`, host listeners, form helpers and validators, cookies and session memory, deep clone/equal, swipe tracking and more.
+
+## Also in the package
+
+- **Nx generators** - `tailwind-4-color-theme` and `tailwind-4-surface-theme` generate the theme CSS and type registrations described in [Theming](/core/theming). `migrate-surface-interaction-swatch` upgrades legacy surface swatches, `migrate-legacy-color-themes` moves `provideColorThemes` to the Tailwind 4 provider ([Migrating from runtime theming](/core/theming#migrating-from-runtime-theming)), and `devtools-about` wires build metadata into query devtools.
+- **v5 migration** - `yarn nx g @ethlete/core:migrate-to-v5` codemods an app from v4: it rewrites `ViewportService` usage to the viewport signal utilities, moves `createProvider` imports from `@ethlete/cdk` to `@ethlete/core`, converts `RouterStateService` usage to signal-based router helpers (`injectQueryParams`, `injectRoute`, …) and applies the theme→color rename (`etProvideTheme` → `etProvideColor`, `THEME_PROVIDER` → `COLOR_PROVIDER`, …) across TypeScript, templates, and specs. Every other 4.x export that core 5 dropped is not rewritten but reported with its successor - the observer directives (`ObserveResizeDirective` → `signalElementDimensions()`, …), `LetDirective` (`@let`), `IsActiveElementDirective`, the scroll observer (`ScrollObserverScrollState` → `signalElementScrollState()`), `SeoDirective` and `SEO_DIRECTIVE_TOKEN`, and the `@Memo` decorator and props module, which have no replacement. The run ends with one summary line per sub-migration - files changed and files to review - followed by a warning for each file that imports or binds a removed export, or that it could not fully migrate. It also warns where a rewritten observable now comes from `toObservable()` and its consumer needs a value at once - `toSignal(…, { requireSync: true })`, `take(1)`, `first()` or `withLatestFrom` - because `toObservable()` emits only after its first effect run; read the signal directly or use `computed()` there. Scope it with `--projects` or `--include <path prefix>`; each sub-migration can be disabled via a flag; review the diff afterwards. The [`@ethlete/cdk` v5 migration](/cdk/#migrating-from-v4) complements it, and [Migrating from the v4 line](/migrating-from-v4) has the order of the whole move.
+- **`createDestroy` migration** - `createDestroy` is deprecated in favour of `takeUntilDestroyed()` from `@angular/core/rxjs-interop`. The optional, hand-run `yarn nx g @ethlete/core:migrate-create-destroy` rewrites `private _destroy$ = createDestroy()` plus every `takeUntil(this._destroy$)` in the class into `takeUntilDestroyed(this._destroyRef)` (adding or reusing an `inject(DestroyRef)` field), or a plain `takeUntilDestroyed()` where every use sits in a field initializer or the constructor body, then removes the field and unused imports. Any other use of the field (`.next()`, passed on, piped) is left alone and reported with file and line in `create-destroy-migration-tasks.md`. Scope it with `--projects` or `--include`.
+- **Provider-shape migration** - `yarn nx g @ethlete/core:migrate-provider-shape` rewrites every `export const [provideX, injectX] = createRootProvider(…)` into the droppable definition + extractor shape the [utilities guide](/core/utilities#why-four-statements-instead-of-one) describes, since the `create*Provider` / `createLabels` factories are gone. Scope it with `--projects`; anything it cannot rewrite lands in `provider-shape-migration-tasks.md`.

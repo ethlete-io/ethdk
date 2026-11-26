@@ -1,0 +1,297 @@
+import { Browser, DRAW_TIMEOUT_MS } from '../thumb';
+
+type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
+type Locator = ReturnType<Page['locator']>;
+
+/** The computed style of an element that draws a focus ring. */
+export type RingStyle = {
+  outlineStyle: string;
+  outlineWidth: string;
+  outlineColor: string;
+  boxShadow: string;
+  border?: string;
+  backgroundColor?: string;
+  stroke?: string;
+  fill?: string;
+};
+
+const FOCUS_STYLE_KEYS = ['border', 'backgroundColor', 'stroke', 'fill'] as const;
+
+/**
+ * What a probe reads from an element: its ring style, whether it holds focus, whether it takes text input, and whether
+ * it is a control (a native interactive element or one with an ARIA widget role).
+ */
+export type RingProbe = { style: RingStyle; focused: boolean; textEntry: boolean; control: boolean };
+
+const TRANSPARENT = /^transparent$|\/\s*0(\.0+)?\s*\)$|,\s*0(\.0+)?\s*\)$/;
+
+/** Whether a computed outline draws a visible ring: a style other than none, a width above 0 and an opaque-enough colour. */
+export const ringVisibleOf = (style: RingStyle) =>
+  style.outlineStyle !== 'none' &&
+  style.outlineStyle !== 'hidden' &&
+  Number.parseFloat(style.outlineWidth) > 0 &&
+  !TRANSPARENT.test(style.outlineColor.trim());
+
+/**
+ * Whether focusing marked the element: a visible outline, a box-shadow, or a border, background, SVG stroke or SVG fill
+ * that differs from the unfocused one.
+ */
+export const focusMarkedOf = (options: { before: RingStyle; after: RingStyle }) =>
+  ringVisibleOf(options.after) ||
+  (options.after.boxShadow !== 'none' && options.after.boxShadow !== options.before.boxShadow) ||
+  FOCUS_STYLE_KEYS.some((key) => options.after[key] !== undefined && options.after[key] !== options.before[key]);
+
+const ringAfter = (probe: RingProbe | null | undefined): probe is RingProbe =>
+  !!probe && !probe.textEntry && probe.focused && ringVisibleOf(probe.style);
+
+const outlineOf = (style: RingStyle) => `outline ${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`;
+
+/**
+ * The verdict of a pointer-focus check. A pointer click must leave no ring (text entry is exempt: browsers always match
+ * `:focus-visible` there). A focus target that is no control - neither a `control` probe nor `activatable`, an element
+ * the design declares an action for - must also stay without ring after a following key press that moves no focus;
+ * on a control, browsers match `:focus-visible` after any key. Keyboard focus without a ring is a warning, not a
+ * failure: another indicator, such as a focus-within wrapper, may draw it.
+ */
+export const pointerFocusVerdictOf = (options: {
+  click: RingProbe | null;
+  clickThenKey?: RingProbe | null;
+  keyboard: { before: RingStyle; probe: RingProbe } | null;
+  activatable?: boolean;
+}): { failure: string | null; warning: string | null } => {
+  const { click, clickThenKey, keyboard } = options;
+  const failure = ringAfter(click)
+    ? `shows a focus ring after a pointer click (${outlineOf(click.style)})`
+    : !options.activatable && !clickThenKey?.control && ringAfter(clickThenKey)
+      ? `shows a focus ring after a pointer click and a Shift press (${outlineOf(clickThenKey.style)})`
+      : null;
+  const warning =
+    keyboard && (!keyboard.probe.focused || !focusMarkedOf({ before: keyboard.before, after: keyboard.probe.style }))
+      ? keyboard.probe.focused
+        ? 'shows no focus ring on keyboard focus, so the click check proves nothing about it'
+        : 'could not take keyboard focus'
+      : null;
+
+  return { failure, warning };
+};
+
+/** The elements the pointer-focus check visits. */
+export const POINTER_FOCUS_SELECTOR =
+  '[tabindex]:not([tabindex="-1"]), button, a[href], input:not([type="hidden"]), select, textarea, [contenteditable]';
+
+const TEXT_FREE_INPUTS = ['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file', 'image'];
+
+const CONTROL_SELECTOR = [
+  'button',
+  'a[href]',
+  'input',
+  'select',
+  'textarea',
+  'summary',
+  ...[
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'tab',
+    'option',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'treeitem',
+    'gridcell',
+    'combobox',
+    'textbox',
+    'searchbox',
+    'slider',
+    'spinbutton',
+  ].map((role) => `[role="${role}"]`),
+].join(', ');
+
+export const RING_PROBE_TIMEOUT_MS = 1000;
+
+export class RingProbeTimeoutError extends Error {}
+
+/**
+ * Reads the ring probe of the element a locator names; `null` when it is not one the check visits or is gone from the
+ * page. Throws a `RingProbeTimeoutError` when the element does not answer within `timeout`.
+ */
+export const readRingProbe = async (locator: Locator, timeout = RING_PROBE_TIMEOUT_MS): Promise<RingProbe | null> => {
+  if ((await locator.count()) === 0) return null;
+
+  return (
+    locator.evaluate(
+      (element, { selector, textFree, control }) => {
+        if (!element.matches(selector)) return null;
+
+        const style = getComputedStyle(element);
+        const type = element instanceof HTMLInputElement ? element.type : '';
+
+        return {
+          style: {
+            outlineStyle: style.outlineStyle,
+            outlineWidth: style.outlineWidth,
+            outlineColor: style.outlineColor,
+            boxShadow: style.boxShadow,
+            border: [style.borderTopStyle, style.borderTopWidth, style.borderTopColor].join(' '),
+            backgroundColor: style.backgroundColor,
+            stroke: style.stroke,
+            fill: style.fill,
+          },
+          focused: element.ownerDocument.activeElement === element,
+          textEntry:
+            element instanceof HTMLTextAreaElement ||
+            (element instanceof HTMLElement && element.isContentEditable) ||
+            (element instanceof HTMLInputElement && !textFree.includes(type)),
+          control: element.matches(control),
+        };
+      },
+      { selector: POINTER_FOCUS_SELECTOR, textFree: TEXT_FREE_INPUTS, control: CONTROL_SELECTOR },
+      { timeout },
+    ) as Promise<RingProbe | null>
+  ).catch((error: unknown) => {
+    if (error instanceof Error && error.name === 'TimeoutError')
+      throw new RingProbeTimeoutError(`the element did not answer the focus ring probe within ${timeout} ms`);
+
+    throw error;
+  });
+};
+
+/** `readRingProbe`, with `null` for any failure except a `RingProbeTimeoutError`. */
+export const ringProbeOrNullOf = (locator: Locator) =>
+  readRingProbe(locator).catch((error: unknown) => {
+    if (error instanceof RingProbeTimeoutError) throw error;
+
+    return null;
+  });
+
+/**
+ * Presses Shift so the last input is a key, then moves focus off the element: with Tab, except for an element inside
+ * an open menu, dialog or listbox, which is blurred instead because a Tab from there closes the overlay it sits in.
+ */
+export const tabAwayFrom = async (page: Page, locator: Locator) => {
+  await page.keyboard.press('Shift');
+
+  for (let tab = 0; tab < 2; tab++) {
+    const state = await locator.evaluate(
+      (element) => {
+        let inOverlay = false;
+
+        for (let node = element.parentElement; node; node = node.parentElement) {
+          if (['menu', 'dialog', 'listbox'].includes(node.getAttribute('role') ?? '')) inOverlay = true;
+        }
+
+        return { focused: element.ownerDocument.activeElement === element, inOverlay };
+      },
+      undefined,
+      { timeout: RING_PROBE_TIMEOUT_MS },
+    );
+
+    if (!state.focused) return;
+
+    if (state.inOverlay) {
+      await locator.evaluate((element) => (element as HTMLElement).blur(), undefined, {
+        timeout: RING_PROBE_TIMEOUT_MS,
+      });
+
+      return;
+    }
+
+    await page.keyboard.press('Tab');
+  }
+};
+
+/** Presses Shift, which moves no focus but makes the browser treat the last input as a key, and reads the probe again. */
+export const readRingAfterKey = async (options: {
+  page: Page;
+  locator: Locator;
+  settle: (page: Page) => Promise<void>;
+}) => {
+  await options.page.keyboard.press('Shift');
+  await options.settle(options.page);
+
+  return ringProbeOrNullOf(options.locator);
+};
+
+/** The ring probes of one element: after a pointer click, after a Shift press that follows it, and after keyboard focus. */
+export type PointerFocusProbes = {
+  click: RingProbe | null;
+  clickThenKey?: RingProbe | null;
+  keyboard: { before: RingStyle; probe: RingProbe } | null;
+};
+
+const POINTER_REACH_STEPS = 6;
+
+const pointerReachOf = (element: Element, steps: number) => {
+  const box = element.getBoundingClientRect();
+  const fractions = [0.5, ...Array.from({ length: steps }, (_, index) => (index + 0.5) / steps)];
+  const page = element.ownerDocument.documentElement;
+  const reaches = (x: number, y: number) => {
+    const hit =
+      x >= 0 && y >= 0 && x < page.clientWidth && y < page.clientHeight
+        ? element.ownerDocument.elementFromPoint(x, y)
+        : null;
+
+    return hit !== null && element.contains(hit);
+  };
+
+  for (const fy of fractions)
+    for (const fx of fractions) {
+      const x = box.width * fx;
+      const y = box.height * fy;
+
+      if (reaches(box.left + x, box.top + y)) return { x, y };
+    }
+
+  return null;
+};
+
+/**
+ * Probes an element in two fresh pages: `open` returns the locator of the element on a freshly loaded page. The click
+ * is a real mouse click after Tab presses that leave focus elsewhere, because a script focus after a pointer press paints the ring only when the last input was a key; keyboard focus follows a Shift press so the browser treats it as keyboard
+ * focus. The click lands on a point of the element nothing covers; it answers `null` for an element no pointer reaches
+ * (`pointer-events: none`, or covered all over).
+ */
+export const probePointerFocus = async (options: {
+  open: () => Promise<{ page: Page; locator: Locator; close: () => Promise<void> }>;
+  settle: (page: Page) => Promise<void>;
+}): Promise<PointerFocusProbes | null> => {
+  const clicked = await options.open();
+  let click: RingProbe | null;
+  let clickThenKey: RingProbe | null = null;
+
+  try {
+    await clicked.locator.scrollIntoViewIfNeeded({ timeout: DRAW_TIMEOUT_MS });
+
+    const position = await clicked.locator.evaluate(pointerReachOf, POINTER_REACH_STEPS, { timeout: DRAW_TIMEOUT_MS });
+
+    if (position === null) return null;
+
+    await tabAwayFrom(clicked.page, clicked.locator);
+    await clicked.locator.click({ position, timeout: DRAW_TIMEOUT_MS });
+    await options.settle(clicked.page);
+    click = await ringProbeOrNullOf(clicked.locator);
+    if (click) clickThenKey = await readRingAfterKey({ ...clicked, settle: options.settle });
+  } finally {
+    await clicked.close();
+  }
+
+  if (click === null) return null;
+
+  const focused = await options.open();
+
+  try {
+    const before = (await readRingProbe(focused.locator))?.style;
+
+    await focused.page.keyboard.press('Shift');
+    await focused.locator.focus({ timeout: DRAW_TIMEOUT_MS });
+    await options.settle(focused.page);
+
+    const probe = await readRingProbe(focused.locator);
+
+    return { click, clickThenKey, keyboard: before && probe ? { before, probe } : null };
+  } finally {
+    await focused.close();
+  }
+};

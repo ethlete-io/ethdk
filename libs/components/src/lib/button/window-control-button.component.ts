@@ -1,0 +1,96 @@
+import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
+import { FocusRingDirective } from '../focus-ring';
+import { SpinnerComponent } from '../loader';
+import { ButtonStylesDirective } from './button-styles.directive';
+import { ButtonDirective } from './headless';
+
+export const WINDOW_CONTROL_BUTTON_SIZES = {
+  SM: 'sm',
+  MD: 'md',
+  LG: 'lg',
+} as const;
+
+export type WindowControlButtonSize = (typeof WINDOW_CONTROL_BUTTON_SIZES)[keyof typeof WINDOW_CONTROL_BUTTON_SIZES];
+
+export const WINDOW_CONTROL_BUTTON_KINDS = {
+  DEFAULT: 'default',
+  CLOSE: 'close',
+} as const;
+
+export type WindowControlButtonKind = (typeof WINDOW_CONTROL_BUTTON_KINDS)[keyof typeof WINDOW_CONTROL_BUTTON_KINDS];
+
+export const WINDOW_CONTROL_BUTTON_SHAPES = {
+  SQUARE: 'square',
+  ROUND: 'round',
+  CAPTION: 'caption',
+} as const;
+
+export type WindowControlButtonShape = (typeof WINDOW_CONTROL_BUTTON_SHAPES)[keyof typeof WINDOW_CONTROL_BUTTON_SHAPES];
+
+const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG: Record<WindowControlButtonSize, { diameter: number; strokeWidth: number }> =
+  {
+    sm: { diameter: 12, strokeWidth: 2 },
+    md: { diameter: 14, strokeWidth: 2 },
+    lg: { diameter: 16, strokeWidth: 2.5 },
+  };
+
+@Component({
+  selector: '[et-window-control-button]',
+  template: `
+    <div class="et-window-control-button-icon">
+      <ng-content />
+    </div>
+
+    @if (buttonDir.isLoading()) {
+      <div class="et-button-loader" aria-hidden="true">
+        <et-spinner
+          [diameter]="spinnerConfig().diameter"
+          [strokeWidth]="spinnerConfig().strokeWidth"
+          [track]="buttonDir.hasProgress()"
+          [value]="buttonDir.currentProgress()"
+          class="et-button-loader-spinner"
+        />
+      </div>
+    }
+  `,
+  styleUrl: './window-control-button.component.css',
+  encapsulation: ViewEncapsulation.None,
+  imports: [SpinnerComponent],
+  hostDirectives: [
+    {
+      directive: ButtonDirective,
+      inputs: ['disabled', 'loading', 'progress', 'type', 'pressed', 'emitAriaPressed'],
+    },
+    ButtonStylesDirective,
+    ColorInteractiveDirective,
+    FocusRingDirective,
+    {
+      directive: ProvideColorDirective,
+      inputs: ['etProvideColor:color'],
+    },
+  ],
+  host: {
+    class: 'et-window-control-button',
+    '[attr.data-kind]': 'kind()',
+    '[attr.data-size]': 'size()',
+    '[attr.data-shape]': 'shape()',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
+  },
+})
+export class WindowControlButtonComponent {
+  protected buttonDir = inject(ButtonDirective);
+
+  public size = input<WindowControlButtonSize>(WINDOW_CONTROL_BUTTON_SIZES.MD);
+  public kind = input<WindowControlButtonKind>(WINDOW_CONTROL_BUTTON_KINDS.DEFAULT);
+
+  /**
+   * `square` is a Windows-style tile with a red close hover; `round` is a GNOME (Adwaita) style circle;
+   * `caption` is a 46px wide, full-height Windows caption tile with a 10px glyph.
+   */
+  public shape = input<WindowControlButtonShape>(WINDOW_CONTROL_BUTTON_SHAPES.SQUARE);
+
+  public canAnimate = createCanAnimateSignal();
+
+  protected spinnerConfig = computed(() => WINDOW_CONTROL_BUTTON_SPINNER_CONFIG[this.size()]);
+}

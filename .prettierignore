@@ -1,0 +1,30 @@
+# Add files here to ignore them from prettier formatting
+
+/dist
+/coverage
+/.yarn
+node_modules
+
+yarn.lock
+# nx migrate writes this one at the root. A lib's own migrations.json is formatted.
+/migrations.json
+
+libs/types/src/lib/api
+/.nx/cache
+.angular
+
+.changeset/pre.json
+.changeset/*.md
+CHANGELOG.md
+/.nx/workspace-data
+.nx/self-healing
+
+/.claude
+/.agents
+/.mcp.json
+
+# Design-tool exports, written by the tool.
+*.dc.html
+
+tools/changesets-action
+.changeset/pre/

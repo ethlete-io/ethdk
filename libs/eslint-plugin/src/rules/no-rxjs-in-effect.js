@@ -1,0 +1,94 @@
+// @ts-check
+'use strict';
+
+const { ANGULAR_CORE, getImportedName } = require('./internals/import-resolution');
+
+/**
+ * Disallows calling .subscribe() inside Angular's effect(), computed(), afterRenderEffect() or linkedSignal() callbacks.
+ *
+ * This creates unmanaged subscriptions and causes memory leaks because neither
+ * effect() nor computed() provides a lifecycle-tied cleanup mechanism for subscriptions.
+ *
+ * BAD:
+ *   effect(() => {
+ *     const page = this.page();
+ *     this.api.fetch(page).subscribe(res => this.data.set(res)); // ❌
+ *   });
+ *
+ * GOOD:
+ *   toObservable(this.page)
+ *     .pipe(
+ *       switchMap(page => this.api.fetch(page)),
+ *       takeUntilDestroyed(),
+ *     )
+ *     .subscribe();
+ */
+
+const REACTIVE_CONTEXTS = new Set(['effect', 'computed', 'afterRenderEffect', 'linkedSignal']);
+
+/**
+ * @param {any} node
+ */
+const isStringLiteral = (node) => node?.type === 'Literal' && typeof node.value === 'string';
+
+/** @type {import('eslint').Rule.RuleModule} */
+const noRxjsInEffect = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Disallow .subscribe() inside effect(), computed(), afterRenderEffect() or linkedSignal() callbacks.',
+      recommended: true,
+    },
+    messages: {
+      noSubscribeInEffect:
+        'Avoid calling .subscribe() inside {{context}}(). Use toObservable() + switchMap() + takeUntilDestroyed() instead.',
+    },
+    schema: [],
+  },
+  create(context) {
+    /**
+     * Returns the name of the wrapping reactive context if the given node is inside one, or null otherwise.
+     * @param {import('eslint').Rule.Node} node
+     * @returns {string | null}
+     */
+    const getReactiveContext = (node) => {
+      let crossedFunctionBoundary = false;
+      let current = node.parent;
+      while (current) {
+        if (current.type === 'ArrowFunctionExpression' || current.type === 'FunctionExpression') {
+          crossedFunctionBoundary = true;
+        }
+        if (crossedFunctionBoundary && current.type === 'CallExpression') {
+          const calleeName = getImportedName(context.sourceCode, current.callee, ANGULAR_CORE);
+          if (calleeName && REACTIVE_CONTEXTS.has(calleeName)) return calleeName;
+        }
+        current = current.parent;
+      }
+      return null;
+    };
+
+    return {
+      CallExpression(node) {
+        const { callee } = node;
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.property.type === 'Identifier' &&
+          callee.property.name === 'subscribe' &&
+          !isStringLiteral(node.arguments[0])
+        ) {
+          const reactiveContext = getReactiveContext(node);
+          if (reactiveContext) {
+            context.report({
+              node,
+              messageId: 'noSubscribeInEffect',
+              data: { context: reactiveContext },
+            });
+          }
+        }
+      },
+    };
+  },
+};
+
+module.exports = noRxjsInEffect;

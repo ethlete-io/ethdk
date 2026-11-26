@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/nx-generators",
+  "generators": {
+    "restore-module-augmentation-interfaces": {
+      "implementation": "./restore-module-augmentation-interfaces/migration",
+      "schema": "./restore-module-augmentation-interfaces/schema.json",
+      "description": "Turn type aliases in declare module / declare global blocks back into interfaces, and rename consistent-type-definitions eslint directives"
+    }
+  }
+}

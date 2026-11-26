@@ -1,0 +1,212 @@
+import { Tree } from '@nx/devkit';
+import * as ts from 'typescript';
+import { MigrationScope } from '../migrate-provider-shape/migration-scope.js';
+import { collectFiles, TransformReport } from './migration-files.js';
+
+export default async function migrateCreateProvider(tree: Tree, scope?: MigrationScope): Promise<TransformReport> {
+  const review: string[] = [];
+  let filesModified = 0;
+
+  for (const filePath of collectFiles(tree, scope, ['.ts'])) {
+    const reexportsModified = migrateCreateProviderReexports(tree, filePath, review);
+    const wasModified = migrateCreateProviderInFile(tree, filePath) || reexportsModified;
+    if (wasModified) filesModified++;
+  }
+
+  return { filesChanged: filesModified, review };
+}
+
+function migrateCreateProviderReexports(tree: Tree, filePath: string, review: string[]): boolean {
+  const content = tree.read(filePath, 'utf-8');
+  if (!content || !content.includes('createProvider')) return false;
+
+  const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+  const edits: { start: number; end: number; text: string }[] = [];
+
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) continue;
+    if (!statement.moduleSpecifier || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    if (statement.moduleSpecifier.text !== '@ethlete/cdk') continue;
+
+    if (ts.isImportDeclaration(statement)) {
+      const bindings = statement.importClause?.namedBindings;
+
+      if (bindings && ts.isNamespaceImport(bindings) && content.includes(`${bindings.name.text}.createProvider`)) {
+        review.push(
+          `${filePath}: ${bindings.name.text}.createProvider is used through a namespace import of @ethlete/cdk. Switch it to createProvider from @ethlete/core manually.`,
+        );
+      }
+      continue;
+    }
+
+    const clause = statement.exportClause;
+
+    if (!clause) {
+      review.push(
+        `${filePath}: "export * from '@ethlete/cdk'" may re-export createProvider. Re-export it from @ethlete/core manually.`,
+      );
+      continue;
+    }
+
+    if (ts.isNamespaceExport(clause)) continue;
+
+    const isCreateProvider = (element: ts.ExportSpecifier) =>
+      (element.propertyName?.text ?? element.name.text) === 'createProvider';
+    const moved = clause.elements.filter(isCreateProvider);
+    if (moved.length === 0) continue;
+
+    const rest = clause.elements.filter((element) => !isCreateProvider(element));
+    const typeOnly = statement.isTypeOnly ? 'type ' : '';
+    const lines = [
+      ...(rest.length > 0
+        ? [`export ${typeOnly}{ ${rest.map((el) => el.getText(sourceFile)).join(', ')} } from '@ethlete/cdk';`]
+        : []),
+      `export ${typeOnly}{ ${moved.map((el) => el.getText(sourceFile)).join(', ')} } from '@ethlete/core';`,
+    ];
+
+    edits.push({ start: statement.getStart(sourceFile), end: statement.getEnd(), text: lines.join('\n') });
+  }
+
+  if (edits.length === 0) return false;
+
+  let updatedContent = content;
+  for (const edit of edits.reverse()) {
+    updatedContent = updatedContent.slice(0, edit.start) + edit.text + updatedContent.slice(edit.end);
+  }
+
+  tree.write(filePath, updatedContent);
+  return true;
+}
+
+function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
+  const content = tree.read(filePath, 'utf-8');
+  if (!content || !content.includes('createProvider')) return false;
+
+  const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+
+  let cdkImport: ts.ImportDeclaration | undefined;
+  let hasCreateProviderInCdk = false;
+  let createProviderImport = 'createProvider';
+
+  for (const statement of sourceFile.statements) {
+    if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)) {
+      const modulePath = statement.moduleSpecifier.text;
+
+      if (modulePath === '@ethlete/cdk') {
+        cdkImport = statement;
+        if (statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings)) {
+          const specifier = statement.importClause.namedBindings.elements.find(
+            (element) => (element.propertyName?.text ?? element.name.text) === 'createProvider',
+          );
+          hasCreateProviderInCdk = !!specifier;
+          createProviderImport = specifier?.getText(sourceFile) ?? createProviderImport;
+        }
+      }
+    }
+  }
+
+  if (!hasCreateProviderInCdk) return false;
+
+  let updatedContent = content;
+
+  if (cdkImport && cdkImport.importClause?.namedBindings && ts.isNamedImports(cdkImport.importClause.namedBindings)) {
+    const namedBindings = cdkImport.importClause.namedBindings;
+    const otherImports = namedBindings.elements.filter(
+      (element) => (element.propertyName?.text ?? element.name.text) !== 'createProvider',
+    );
+
+    const importStart = cdkImport.getStart(sourceFile);
+    const importEnd = cdkImport.getEnd();
+
+    if (otherImports.length === 0) {
+      let lineStart = importStart;
+      while (lineStart > 0 && content[lineStart - 1] !== '\n') {
+        lineStart--;
+      }
+      let lineEnd = importEnd;
+      while (lineEnd < content.length && content[lineEnd] !== '\n') {
+        lineEnd++;
+      }
+      if (content[lineEnd] === '\n') {
+        lineEnd++;
+      }
+
+      updatedContent = content.slice(0, lineStart) + content.slice(lineEnd);
+    } else {
+      const newImports = otherImports.map((el) => el.getText(sourceFile)).join(', ');
+      const newImportText = `import { ${newImports} } from '@ethlete/cdk';`;
+      updatedContent = content.slice(0, importStart) + newImportText + content.slice(importEnd);
+    }
+  }
+
+  const intermediateSourceFile = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+
+  let updatedCoreImport: ts.ImportDeclaration | undefined;
+  for (const statement of intermediateSourceFile.statements) {
+    if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)) {
+      if (statement.moduleSpecifier.text === '@ethlete/core') {
+        updatedCoreImport = statement;
+        break;
+      }
+    }
+  }
+
+  if (
+    updatedCoreImport?.importClause?.namedBindings &&
+    ts.isNamedImports(updatedCoreImport.importClause.namedBindings)
+  ) {
+    const namedBindings = updatedCoreImport.importClause.namedBindings;
+
+    const hasCreateProvider = namedBindings.elements.some(
+      (element) => (element.propertyName?.text ?? element.name.text) === 'createProvider',
+    );
+
+    if (!hasCreateProvider) {
+      const importStart = updatedCoreImport.getStart(intermediateSourceFile);
+      const importEnd = updatedCoreImport.getEnd();
+
+      const existingImports = namedBindings.elements.map((el) => el.getText(intermediateSourceFile));
+      const allImports = [...existingImports, createProviderImport].sort();
+      const newImportText = `import { ${allImports.join(', ')} } from '@ethlete/core';`;
+
+      updatedContent = updatedContent.slice(0, importStart) + newImportText + updatedContent.slice(importEnd);
+    }
+  } else {
+    const firstImportIndex = updatedContent.indexOf('import');
+
+    if (firstImportIndex !== -1) {
+      let insertPosition: number;
+      let lastImportEnd = firstImportIndex;
+
+      for (const statement of intermediateSourceFile.statements) {
+        if (ts.isImportDeclaration(statement)) {
+          lastImportEnd = statement.getEnd();
+        } else {
+          break;
+        }
+      }
+
+      insertPosition = lastImportEnd;
+      while (insertPosition < updatedContent.length && updatedContent[insertPosition] !== '\n') {
+        insertPosition++;
+      }
+      if (updatedContent[insertPosition] === '\n') {
+        insertPosition++;
+      }
+
+      updatedContent =
+        updatedContent.slice(0, insertPosition) +
+        `import { ${createProviderImport} } from '@ethlete/core';\n` +
+        updatedContent.slice(insertPosition);
+    } else {
+      updatedContent = `import { ${createProviderImport} } from '@ethlete/core';\n\n` + updatedContent;
+    }
+  }
+
+  if (updatedContent !== content) {
+    tree.write(filePath, updatedContent);
+    return true;
+  }
+
+  return false;
+}

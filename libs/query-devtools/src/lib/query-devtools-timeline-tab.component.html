@@ -1,0 +1,137 @@
+@let tl = timeline();
+<div #panes class="et-query-devtools-split">
+  <div class="et-query-devtools-pane">
+    <div class="et-query-devtools-toolbar">
+      <div class="et-query-devtools-toolbar-row">
+        @if (host.inspectFilterIds(); as ids) {
+          <span class="et-query-devtools-filter-chip">
+            <span class="et-query-devtools-filter-icon" aria-hidden="true">⌖</span>
+            Inspected element
+            <span class="et-query-devtools-filter-count">{{ ids.length }}</span>
+          </span>
+        } @else {
+          <label class="et-query-devtools-field">
+            <span>Client</span>
+            <select
+              #timelineClientSelect
+              [value]="host.selectedClientName() ?? ''"
+              (change)="host.selectClient(timelineClientSelect.value || null)"
+              class="et-query-devtools-select"
+            >
+              <option value="">All clients</option>
+              @for (name of host.clientNames(); track name) {
+                <option [value]="name">{{ name }}</option>
+              }
+            </select>
+          </label>
+        }
+        <span class="et-query-devtools-count">
+          {{ tl.rows.length }} run{{ tl.rows.length === 1 ? '' : 's' }}
+          @if (tl.hidden) {
+            · {{ tl.hidden }} older not shown
+          }
+          @if (tl.rows.length) {
+            · over {{ host.formatDuration(tl.windowMs) }} from {{ host.formatTime(tl.startedAt) }}
+          }
+        </span>
+        <button
+          [disabled]="!tl.rows.length"
+          (click)="resetTimeline()"
+          class="et-query-devtools-btn et-query-devtools-toolbar-btn"
+          type="button"
+          title="Clear the run history and the counters of every listed query"
+        >
+          ⟲ Reset
+        </button>
+      </div>
+    </div>
+
+    @if (tl.rows.length) {
+      <div class="et-query-devtools-scroll">
+        <div class="et-query-devtools-timeline">
+          <div class="et-query-devtools-timeline-axis">
+            <span class="et-query-devtools-timeline-ticks">
+              @for (tick of timelineTicks(); track tick.pct) {
+                <span [style.left.%]="tick.pct" class="et-query-devtools-timeline-tick">{{ tick.label }}</span>
+              }
+            </span>
+          </div>
+
+          @for (row of tl.rows; track row.key) {
+            <button
+              [class.et-query-devtools-timeline-row--active]="host.timelineSelectedQueryId() === row.entryId"
+              (click)="selectTimelineRow(row)"
+              class="et-query-devtools-timeline-row"
+              type="button"
+              title="{{ row.method }} {{ row.path }} · run {{ row.run.index }} · {{ row.run.status }}"
+            >
+              <span class="et-query-devtools-timeline-label">
+                <span class="et-query-devtools-method">{{ row.method }}</span>
+                <span class="et-query-devtools-url">{{ row.path }}</span>
+              </span>
+              <span class="et-query-devtools-timeline-track">
+                <span
+                  [attr.data-status]="host.runStatus(row.run)"
+                  [style.left.%]="row.leftPct"
+                  [style.width.%]="row.widthPct"
+                  class="et-query-devtools-timeline-bar"
+                ></span>
+              </span>
+              <span class="et-query-devtools-timeline-duration">
+                @if (row.durationMs === null) {
+                  in flight
+                } @else {
+                  {{ host.formatDuration(row.durationMs) }}
+                }
+              </span>
+              <span class="et-query-devtools-timeline-size">
+                @if (row.run.receivedBytes) {
+                  {{ host.formatBytes(row.run.receivedBytes) }}
+                }
+              </span>
+              <span class="et-query-devtools-timeline-flags">
+                @if (row.run.attempts > 1) {
+                  <span
+                    class="et-query-devtools-chip et-query-devtools-chip--loading"
+                    title="Took {{
+                      row.run.attempts
+                    }} attempts - so this bar is mostly retry backoff, not one slow round trip"
+                  >
+                    <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+                    {{ row.run.attempts }}
+                  </span>
+                }
+                @if (!row.run.didRequest) {
+                  <span
+                    class="et-query-devtools-chip et-query-devtools-chip--muted"
+                    title="Arrived without a request of this query's own - a poll, another consumer of the same cache entry, or another tab"
+                  >
+                    shared
+                  </span>
+                }
+                @if (row.run.status === 'aborted') {
+                  <span
+                    class="et-query-devtools-chip et-query-devtools-chip--muted"
+                    title="The query requested again before this run's response arrived"
+                  >
+                    aborted
+                  </span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+      </div>
+    } @else {
+      <p class="et-query-devtools-empty">
+        No requests recorded yet. Every request a listed query makes shows up here as a bar.
+      </p>
+    }
+  </div>
+
+  <et-query-devtools-drawer
+    [sel]="host.timelineSelectedQuery()"
+    [container]="panes"
+    (dismiss)="host.timelineSelectedQueryId.set(null)"
+  />
+</div>

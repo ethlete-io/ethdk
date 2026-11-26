@@ -1,0 +1,9 @@
+✻ Waiting for 1 background agent to finish
+
+───────────────────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────────────────
+  ⏵⏵ auto mode on · 1 shell · ↓ to manage
+
+  ● main
+  ◯ general-purpose  Fix restart busy detection      22s · ↓ 45.9k tokens

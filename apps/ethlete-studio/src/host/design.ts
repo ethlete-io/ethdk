@@ -1,0 +1,907 @@
+import { Channel, invoke } from '@tauri-apps/api/core';
+import { EMPTY, Observable, defer, from, map, merge, of, switchMap, throwError, timeout } from 'rxjs';
+import { fromFetch } from 'rxjs/fetch';
+import { designEvents$, designStreamIsOpen } from './design-events';
+import { preferredScheme } from './color-scheme';
+import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
+
+/** What the user ruled about a variant. A variant without one is still open. */
+export type Verdict = 'chosen' | 'rejected';
+
+/** One drawn answer to a call, as the call file declares it. */
+export type CallVariant = {
+  key: string;
+  name: string;
+  round: string | null;
+  verdict: Verdict | null;
+  claim: string;
+  cost: string;
+};
+
+/**
+ * How a call is drawn. A wireframe shows the bare workflow with mocked values, and draws no logic
+ * and no interaction state. A design call draws the real thing.
+ */
+export type CallMode = 'wireframe' | 'design';
+
+/** The design order, from the foundations to a clickable prototype. */
+export const CALL_STAGES = ['themes', 'ci', 'wireframe', 'component', 'element', 'page', 'prototype'] as const;
+
+export type CallStage = (typeof CALL_STAGES)[number];
+
+/** A quick exploration of an idea, outside the ordered stages. */
+export const SKETCH_STAGE = 'sketch';
+
+/** Where calls made before a stage was required are listed. */
+export const LEGACY_STAGE = 'legacy';
+
+/** One pass over a call, as the call file declares it. */
+export type CallRound = {
+  key: string;
+  title: string;
+};
+
+/** One part of a wireframe's inventory: an SDK component, or a new one with its own component call. */
+export type InventoryPart = {
+  part: string;
+  sdk: string | null;
+  new: boolean;
+  /** The slug of the component call a new part is drawn in. */
+  call: string | null;
+};
+
+export type CallClosed = 'shipped' | 'superseded';
+
+/** One open question of an exploration, and every variant drawn for it. */
+export type Call = {
+  slug: string;
+  /** The feature the call belongs to. A call without one is loose. */
+  feature: string | null;
+  /** Where the call sits in the design order, or `sketch`. A call without one is invalid unless it is legacy. */
+  stage: CallStage | typeof SKETCH_STAGE | null;
+  /** A call made before the stage was required. It needs no stage. */
+  legacy: boolean;
+  /** A closed call is settled, whatever its variants say. */
+  closed: CallClosed | null;
+  /** The slug of the call this one is parked on. It is on hold until that call settles. */
+  waitsFor: string | null;
+  /** The parts a wireframe lists, the queue of component calls. Empty when it declares none. */
+  inventory: InventoryPart[];
+  eyebrow: string;
+  headline: string;
+  intro: string;
+  frameWidth: number;
+  /** The mode every variant of the call is drawn in. A call that names none is in `design`. */
+  mode: CallMode;
+  /** True when a full agent session already wrote its state into the call's folder. */
+  handoff: boolean;
+  /** When the call's folder was last written, in seconds since the epoch. */
+  touched: number;
+  /** Every round the call declares, in the order it wrote them. A call may declare none. */
+  rounds: CallRound[];
+  variants: CallVariant[];
+};
+
+/** A checkout's design work: where its calls live, which port draws them, and the calls themselves. */
+export type Project = {
+  callsRoot: string;
+  port: number;
+  defaultCall: string | null;
+  /** The themes each design project names, keyed by the project. The first name of a list is the default. */
+  themes: Record<string, Themes>;
+  calls: Call[];
+};
+
+/** The surface and colour themes a design project draws in. */
+export type Themes = {
+  surface: string[];
+  color: string[];
+};
+
+/** Reads every call of a checkout. The checkout must carry a `.ethlete/design/config.json`. */
+export const designProject$ = (checkout: string): Observable<Project> =>
+  invokeHost$<Project>('design_project', { checkout });
+
+/** Reports every change to a recorded call state or sketch report, such as a new line from the agent drawing a sketch. */
+export const designStatusChanges$ = (): Observable<void> =>
+  new Observable<void>((subscriber) => {
+    if (!hasHostShell()) {
+      subscriber.error(new HostShellMissingError());
+
+      return;
+    }
+
+    const changes = new Channel<void>();
+
+    changes.onmessage = () => subscriber.next();
+
+    invoke('design_status_watch', { changes }).catch((error: unknown) => subscriber.error(error));
+  });
+
+/** Reports each checkout an agent asked Studio to open with `et design studio open`. Studio has kept it by then. */
+export const designOpenRequests$ = (): Observable<string> =>
+  new Observable<string>((subscriber) => {
+    if (!hasHostShell()) {
+      subscriber.error(new HostShellMissingError());
+
+      return;
+    }
+
+    const requests = new Channel<string>();
+
+    requests.onmessage = (checkout) => subscriber.next(checkout);
+
+    invoke('design_open_watch', { requests }).catch((error: unknown) => subscriber.error(error));
+  });
+
+/** The crash-log entry a design server wrote before it died. `time` is an ISO timestamp. */
+export type DesignServerCrash = { time: string; pid: number; port: number; path: string; stack: string[] };
+
+/** What a checkout's design server is doing, and what Studio may do about it. */
+export type ServerState = {
+  port: number;
+  listening: boolean;
+  /** True when this Studio started the server. Only then can Studio stop it again. */
+  managed: boolean;
+  /** True when something listens that this Studio did not start. */
+  foreign: boolean;
+  /** True when the server runs another cli build than the one on disk, or reports none. */
+  stale: boolean;
+  /** Why `stale` is set: this repository's cli build is older than its sources, or the server's stamp differs. */
+  staleReason: 'cli-build-outdated' | 'stamp' | null;
+  /** True when a server Studio started has since ended. `log` holds its last output. */
+  exited: boolean;
+  /** The exited server's own crash-log entry, when it died of an uncaught error. */
+  crash: DesignServerCrash | null;
+  log: string[];
+  logRevision: number;
+  /** The step a start or restart is in, `null` when none runs. */
+  phase: 'starting' | 'cli-build' | 'app-build' | null;
+  /** Milliseconds spent in `phase`, 0 without one. */
+  phaseMs: number;
+};
+
+/** Reads whether the checkout's design server answers on its port. `known` saves resending an unchanged log. */
+export const designServerState$ = (checkout: string, known?: ServerState | null): Observable<ServerState> =>
+  invokeHost$<Omit<ServerState, 'log'> & { log: string[] | null }>('design_server_state', {
+    checkout,
+    logRevision: known?.logRevision ?? null,
+  }).pipe(map((state) => ({ ...state, log: state.log ?? known?.log ?? [] })));
+
+/** Starts the checkout's design server. Answers once the port accepts connections. */
+export const designServerStart$ = (checkout: string): Observable<ServerState> =>
+  invokeHost$<ServerState>('design_server_start', { checkout });
+
+/** Stops the server this Studio started. A server somebody else started stays up. */
+export const designServerStop$ = (checkout: string): Observable<ServerState> =>
+  invokeHost$<ServerState>('design_server_stop', { checkout });
+
+/** Stops whatever listens on the checkout's port, whoever started it, and starts Studio's own server. */
+export const designServerRestart$ = (checkout: string): Observable<ServerState> =>
+  invokeHost$<ServerState>('design_server_restart', { checkout });
+
+/** Builds this repository's cli and the app's design runtime, then restarts the checkout's server. */
+export const designServerRebuild$ = (checkout: string): Observable<ServerState> =>
+  invokeHost$<ServerState>('design_server_rebuild', { checkout });
+
+/** Where one variant is drawn: the checkout's design server port, the call and the variant. */
+export type FrameAddress = {
+  port: number;
+  slug: string;
+  variant: string;
+  /** Changes when the server started again, so a frame that met a dead port loads once more. */
+  epoch?: number;
+  /** Changes with each design change, so the frame and its shot draw anew. */
+  revision?: number;
+  /** The surface theme the frame root wears. */
+  surface?: string;
+  /** The colour theme the frame root wears. */
+  color?: string;
+};
+
+/** The address the checkout's design server draws one variant at. */
+export const frameUrl = ({ port, slug, variant, epoch, revision, surface, color }: FrameAddress) =>
+  `http://localhost:${port}/frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(variant)}` +
+  (surface ? `&surface=${encodeURIComponent(surface)}` : '') +
+  (color ? `&color=${encodeURIComponent(color)}` : '') +
+  (epoch ? `&epoch=${epoch}` : '') +
+  (revision ? `&revision=${revision}` : '');
+
+// The browser keeps a picture by its URL past a Studio reload, when epoch and revision count from the start again.
+export const SHOT_SESSION = Date.now().toString(36);
+
+const sessionQuery = () => `&session=${SHOT_SESSION}`;
+
+const schemeQuery = () => {
+  const scheme = preferredScheme();
+
+  return scheme ? `&scheme=${scheme}` : '';
+};
+
+/**
+ * The address of a PNG of a whole variant at `width`, drawn like a part shot, renewed with each `revision`.
+ * The design server draws it after every shot asked without `priority=low`.
+ */
+export const callShotUrl = ({ width, ...address }: FrameAddress & { width: number }) =>
+  `${frameUrl(address).replace('/frame.html?', '/__design/shot?')}&width=${width}${sessionQuery()}${schemeQuery()}&priority=low`;
+
+export type DesignRoots = {
+  /** The folder a scan walks. Empty until the user names one. */
+  search: string;
+  /** Every checkout the user keeps, in alphabetical order. */
+  roots: string[];
+};
+
+/** Reads the checkouts Studio keeps. */
+export const designRoots$ = (): Observable<DesignRoots> => invokeHost$<DesignRoots>('design_roots');
+
+/** Keeps a checkout. A checkout that carries no design work is refused. */
+export const designRootsAdd$ = (checkout: string): Observable<DesignRoots> =>
+  invokeHost$<DesignRoots>('design_roots_add', { checkout });
+
+/** Stops keeping a checkout. The checkout itself stays on disk. */
+export const designRootsForget$ = (checkout: string): Observable<DesignRoots> =>
+  invokeHost$<DesignRoots>('design_roots_forget', { checkout });
+
+/** Names the folder a scan walks. An empty name drops it again. */
+export const designRootsSearch$ = (folder: string): Observable<DesignRoots> =>
+  invokeHost$<DesignRoots>('design_roots_search', { folder });
+
+/** Reports every checkout under the folder that carries design work, kept or not. */
+export const designScan$ = (folder: string): Observable<string[]> => invokeHost$<string[]>('design_scan', { folder });
+
+export type PartOrigin = 'product' | 'base' | 'overridden';
+
+/** What a rule, or the loading of a part's module, finds wrong. `LOAD` means the part does not render. */
+export type SystemProblem = {
+  rule: string;
+  file: string;
+  message: string;
+};
+
+/** A viewport a product's parts are drawn at. Without a height, the frame grows with its content. */
+export type SystemPreset = { width: number; height?: number };
+
+export type ListedPart = {
+  layer: string;
+  name: string;
+  origin: PartOrigin;
+  /** The part's module file, relative to the checkout. Missing from an `@ethlete/cli` older than part files. */
+  file?: string;
+  /** The app component file the part's `implements` names. Missing from an `@ethlete/cli` older than listed links. */
+  implements?: string;
+  note: string | null;
+  states: string[];
+  /** The sentence each state declares: what it shows and what to check. Missing from an `@ethlete/cli` older than state sentences. */
+  descriptions?: Record<string, string>;
+  widths?: number[];
+  /** The interactions each state is also drawn in besides rest. Missing from an `@ethlete/cli` older than interactions. */
+  interactions?: string[];
+  /** The states drawn as one table in rest, a row and a column label for each. Missing without a `grid` or from an `@ethlete/cli` older than grids. */
+  grid?: { columns: string[]; rows: string[]; cells: { row: string; column: string; state: string }[] };
+  /** The groups of the part's states in flow order, each a row under its label. Missing without `groups` or from an `@ethlete/cli` older than state groups. */
+  groups?: { label: string; states: string[] }[];
+  /** The model ids that drew the part, empty when unknown. Missing from an `@ethlete/cli` older than agent authors. */
+  madeBy?: string[];
+  /** The id of the part the part's design names as its family. Missing without one or from an `@ethlete/cli` older than part families. */
+  family?: string;
+  /** The wireframe kit calls in a page's source. Missing from an `@ethlete/cli` older than the kit. */
+  /** Set on a part with no control of its own that is no page. Missing from an `@ethlete/cli` older than composition parts. */
+  composition?: true;
+  kitUses?: number;
+  /** The pages that use the part, in its product and in products built on it. Missing from an `@ethlete/cli` older than page uses. */
+  usedIn?: { product: string; part: string }[];
+  /** The keys of the product's parts that import the part directly. Missing from an `@ethlete/cli` older than part users. */
+  usedBy?: string[];
+  /** Set on a base part no part of the product imports. Missing from an `@ethlete/cli` older than unused base parts. */
+  unusedInProduct?: true;
+  /** Whether the part changed since its last sketch merge while no open sketch holds it. Missing from an `@ethlete/cli` older than merge records. */
+  changedOutsideSketch?: boolean;
+  /** The states a problem is placed at. Missing when none is, or from an `@ethlete/cli` older than state marks. */
+  problemStates?: string[];
+  /** The states whose picture differs from the one the last sketch merge accepted. Missing when none is known to, or from an `@ethlete/cli` older than state marks. */
+  changedStates?: string[];
+  problems: SystemProblem[];
+};
+
+export type ListedProduct = {
+  name: string;
+  base: string | null;
+  /** The declared logo as a data URL; missing from an `@ethlete/cli` older than product logos. */
+  logo?: string | null;
+  presets: Record<string, SystemPreset>;
+  /** The colour schemes the product draws; missing from an `@ethlete/cli` older than product schemes. */
+  schemes?: ('light' | 'dark')[];
+  /** Missing from an `@ethlete/cli` older than product themes. */
+  themes?: Themes;
+  parts: ListedPart[];
+  problems: SystemProblem[];
+};
+
+/** What a failed read of the system or the calls tells the user. A 404 means a cli older than the route. */
+export const designReadError = (status: number) =>
+  status === 404
+    ? "This checkout's @ethlete/cli has no system view. Update it."
+    : `The design server answered ${status}.`;
+
+export const OLDER_SERVER_MESSAGE = 'The design server is older than Studio - restart it.';
+
+/** Reads a design server answer as JSON. An older server answers a path it does not know with its HTML index, which fails here. */
+export const designJson = (response: Response): Promise<unknown> => {
+  if (response.headers.get('content-type')?.includes('text/html')) throw new Error(OLDER_SERVER_MESSAGE);
+
+  return response.json();
+};
+
+export const listedSystem$ = (port: number): Observable<ListedProduct[]> =>
+  fromFetch(`http://localhost:${port}/__design/system`).pipe(
+    switchMap((response) => {
+      if (!response.ok) throw new Error(designReadError(response.status));
+
+      return designJson(response) as Promise<ListedProduct[]>;
+    }),
+  );
+
+export type PartAddress = {
+  port: number;
+  product: string;
+  /** `<layer>/<name>`. */
+  part: string;
+  state: string;
+  epoch?: number;
+  /** Changes with each design change, so the frame and its shot draw anew. */
+  revision?: number;
+  surface?: string;
+  color?: string;
+  /** The token (without `--`) the page paints its background with, in place of the product's page fill. */
+  fill?: string;
+  /** Draws the part at the size of its content instead of the size of the frame. */
+  fit?: boolean;
+  /** With `variant`, draws the part as that variant of the sketch of `sketch` (a `<layer>/<name>`) has it. */
+  sketch?: string;
+  variant?: string;
+  /** Forces an interaction (hover, focus-visible, active, disabled) on the part's root element; rest without one. */
+  interaction?: string;
+};
+
+const themeQuery = ({ surface, color, fill }: { surface?: string; color?: string; fill?: string }) =>
+  (surface ? `&surface=${encodeURIComponent(surface)}` : '') +
+  (color ? `&color=${encodeURIComponent(color)}` : '') +
+  (fill ? `&fill=${encodeURIComponent(fill)}` : '');
+
+const partQuery = ({ product, part, state, sketch, variant, interaction }: PartAddress) =>
+  `product=${encodeURIComponent(product)}&part=${encodeURIComponent(part)}&state=${encodeURIComponent(state)}` +
+  (sketch && variant ? `&sketch=${encodeURIComponent(sketch)}&variant=${encodeURIComponent(variant)}` : '') +
+  (interaction ? `&interaction=${encodeURIComponent(interaction)}` : '');
+
+export const partFrameUrl = (address: PartAddress) =>
+  `http://localhost:${address.port}/frame.html?${partQuery(address)}${themeQuery(address)}` +
+  (address.fit ? '&fit' : '') +
+  (address.epoch ? `&epoch=${address.epoch}` : '') +
+  (address.revision ? `&revision=${address.revision}` : '');
+
+/**
+ * The address of a PNG of one state of a part at one preset or one container width, or fitted to its
+ * content with neither, renewed with each `revision`. The design server draws it after every shot asked
+ * without `priority=low`.
+ */
+export const partShotUrl = (address: PartAddress & { preset?: string; width?: number }) =>
+  `http://localhost:${address.port}/__design/shot?${partQuery(address)}` +
+  (address.preset ? `&preset=${encodeURIComponent(address.preset)}` : '') +
+  (address.width ? `&width=${address.width}` : '') +
+  themeQuery(address) +
+  (address.epoch ? `&epoch=${address.epoch}` : '') +
+  (address.revision ? `&revision=${address.revision}` : '') +
+  sessionQuery() +
+  schemeQuery() +
+  '&priority=low';
+
+/** The box around the pixels one state of a part changes against its `base` state at rest, in the picture `frame` the box was found in. */
+export type StateDiff = {
+  box: { x: number; y: number; width: number; height: number } | null;
+  frame: { width: number; height: number };
+};
+
+/** Where the design server answers the `StateDiff` of a state, fitted or at `width`, against the part's `base` state, drawn like its shot. */
+export const partStateDiffUrl = (address: PartAddress & { base: string; width?: number }) =>
+  `http://localhost:${address.port}/__design/state-diff?${partQuery(address)}&base=${encodeURIComponent(address.base)}` +
+  (address.width ? `&width=${address.width}` : '') +
+  themeQuery(address) +
+  (address.epoch ? `&epoch=${address.epoch}` : '') +
+  (address.revision ? `&revision=${address.revision}` : '') +
+  sessionQuery() +
+  schemeQuery();
+
+/** Reads the `StateDiff` at `url`, a `partStateDiffUrl`. */
+export const stateDiff$ = (url: string): Observable<StateDiff> =>
+  fromFetch(url).pipe(
+    switchMap((response) => {
+      if (!response.ok) throw new Error(designReadError(response.status));
+
+      return designJson(response) as Promise<StateDiff>;
+    }),
+  );
+
+/** A call of the old design-call workflow, as the design server lists it. One that fails to load carries its error. */
+export type ListedCall =
+  | {
+      slug: string;
+      project: string;
+      eyebrow: string;
+      headline: string;
+      stage: string | null;
+      legacy: boolean;
+      transferred: boolean;
+      closed: string | null;
+      frameWidth: number;
+      variants: { key: string; name: string }[];
+    }
+  | { slug: string; project: string; error: string };
+
+export const listedCalls$ = (port: number): Observable<ListedCall[]> =>
+  fromFetch(`http://localhost:${port}/__design/calls`).pipe(
+    switchMap((response) => {
+      if (!response.ok) throw new Error(designReadError(response.status));
+
+      return designJson(response) as Promise<ListedCall[]>;
+    }),
+  );
+
+export type TransferResult = 'marked' | 'already' | 'missing' | 'unreadable';
+
+/** Writes `transferred: true` into a call's `call.ts`. A missing or unreadable call fails. */
+export const transferCall$ = (port: number, slug: string): Observable<TransferResult> =>
+  fromFetch(`http://localhost:${port}/__design/transfer?call=${encodeURIComponent(slug)}`, { method: 'POST' }).pipe(
+    switchMap((response) =>
+      from(designJson(response) as Promise<{ result: TransferResult }>).pipe(
+        map(({ result }) => {
+          if (!response.ok) throw new Error(`The design server could not mark ${slug} transferred: ${result}.`);
+
+          return result;
+        }),
+      ),
+    ),
+  );
+
+export type SketchDecision =
+  | { kind: 'pick'; variant: string; comment?: string; decidedAt: string }
+  | { kind: 'discard'; comment?: string; decidedAt: string };
+
+export type SketchVerdictBy = 'designer' | 'agent';
+
+/** One rejection of a variant; it holds while it has no `reopened`. */
+export type SketchRejection = {
+  by: SketchVerdictBy;
+  decidedAt: string;
+  reason?: string;
+  reasonBy?: SketchVerdictBy;
+  reopened?: { by: SketchVerdictBy; decidedAt: string; reason?: string };
+  /** `withdrawn`: the agent that drew the variant took it out, `withdrawnBy` is its model id. */
+  status?: 'withdrawn';
+  withdrawnBy?: string;
+};
+
+/** An open sketch of a product: `target` is `<layer>/<name>`, and each variant lists the rule problems it has laid over the product. */
+export type ListedSketch = {
+  target: string;
+  status: 'in progress' | 'ready';
+  createdAt: string;
+  decision?: SketchDecision;
+  product: string;
+  layer: string;
+  name: string;
+  dir: string;
+  variants: string[];
+  /** Every part the sketch targets, `target` first. Missing from an `@ethlete/cli` older than sketches with several targets. */
+  targetParts?: string[];
+  /** Missing from the quick list (`quick: true`) and from an `@ethlete/cli` older than it. */
+  problems?: { variant: string; problems: SystemProblem[] }[];
+  /** Each target part as each variant draws it, the first target's entries first. Missing from an `@ethlete/cli` older than the sketch matrix, and from its quick list before the one that lists them. */
+  targets?: SketchTarget[];
+  /** The size of each shot's picture the design server keeps, so a cell is sized before it loads. Missing from the names-only list and from an `@ethlete/cli` older than it. */
+  shotFrames?: ShotFrame[];
+  /** What the agent draws right now, `null` when it reports nothing. */
+  report?: SketchReport | null;
+  /** The model ids that reported on each variant, in the order of their first report, and the round of each variant. Missing in old data. */
+  variantInfo?: Record<
+    string,
+    {
+      authors?: string[];
+      round?: string;
+      note?: string;
+      subParts?: string[];
+      notRebuilds?: { part: string; of: string; difference: string }[];
+    }
+  >;
+  /** Oldest first; the last one runs. Missing from an `@ethlete/cli` older than sketch rounds. */
+  rounds?: SketchRound[];
+  /** Per variant, every rejection it had, oldest first. Missing from an `@ethlete/cli` without variant rejection. */
+  rejections?: Record<string, SketchRejection[]>;
+  /** Set while `sketch hold` pauses the sketch: what it waits on, the model id that held it and when. */
+  hold?: { until: string; by: string; heldAt: string; untilSketch?: { target: string; mergedHash: string | null } };
+  /** How the sketch `hold.untilSketch` waits on ended, `null` while it is open. Missing from an `@ethlete/cli` older than it. */
+  holdTargetEnd?: 'merged' | 'discarded' | null;
+  /**
+   * Set while a ready sketch could not merge itself: why, when it tried, and the uncommitted files that refused it
+   * (the design server retries once they are committed).
+   */
+  mergeHold?: { reason: string; at: string; dirty?: string[] };
+  /** The variants of a ready sketch whose files changed since `sketch ready` judged them. Missing from an `@ethlete/cli` older than it. */
+  changedSinceReady?: string[];
+  /** The parts that changed since the sketch was drawn or rebased, `[]` without a baseline, `null` while current. Missing from an `@ethlete/cli` older than it. */
+  staleBase?: string[] | null;
+  /** Set while its agent ports the sketch by hand after a merge or commit changed its base: the merged parts and when it started. Missing from an `@ethlete/cli` older than it. */
+  portAfterMerge?: { merged: string[]; parts: string[]; reasons: string[]; at: string };
+  /** The commit whose rebase of the sketch the post-commit hook could not commit, `null` once nothing of it is left uncommitted. Missing from an `@ethlete/cli` older than it. */
+  rebaseUncommitted?: { commit: string } | null;
+  /** What `sketch ready` forecast for the sketch's current variants: `merges` when it would merge itself, else why not. `null` before a run or once a variant changed. Missing from an `@ethlete/cli` older than it. */
+  autoMergeForecast?: { merges: boolean; reason?: string; at: string } | null;
+  /** Why the last `sketch ready` of the running round refused the sketch, `null` without one or once ready. Missing from an `@ethlete/cli` older than it. */
+  readyRefusal?: { lines: string[]; round: string; at: string } | null;
+  /** The sketch whose pick opened this one for a marked sub-part. Missing from an `@ethlete/cli` older than it. */
+  parent?: string;
+  /** The sketches its pick opened, one per marked sub-part; it does not merge while it has them. Missing from an `@ethlete/cli` older than it. */
+  subSketches?: string[];
+  /** The sub-sketches in `subSketches` not approved yet. Missing from an `@ethlete/cli` older than it. */
+  openSubSketches?: string[];
+  /** On a sub-sketch: the variant the designer approved for the merge of its parent. Missing from an `@ethlete/cli` older than it. */
+  approved?: { variant: string; decidedAt: string };
+};
+
+/** The key of the sketch's first target part; `target` names the sketch, as `pages/flows@edit` does for a direct edit. */
+export const sketchPartOf = (sketch: Pick<ListedSketch, 'target' | 'targetParts'>) =>
+  sketch.targetParts?.[0] ?? sketch.target;
+
+/** The rejection that holds on a variant now, or `null` when it is live. */
+export const rejectionOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: string): SketchRejection | null => {
+  const last = sketch.rejections?.[variant]?.at(-1);
+
+  return last && !last.reopened ? last : null;
+};
+
+/** A round of a sketch: `note` says what it shows, `lost` why its variants lost once a newer round runs. */
+export type SketchRound = { key: string; title: string; note: string; lost?: string };
+
+/** The size of the picture of one state of a target part as the product (`variant: null`) or one variant draws it. */
+export type ShotFrame = {
+  part: string;
+  variant: string | null;
+  state: string;
+  preset: string | null;
+  width: number | null;
+  frame: { width: number; height: number };
+};
+
+export type SketchTarget = {
+  /** Missing from an `@ethlete/cli` older than sketches with several targets. */
+  part?: string;
+  variant: string;
+  states: string[];
+  widths?: number[];
+  /** Missing from an `@ethlete/cli` older than interactions. */
+  interactions?: string[];
+  /** The states this variant draws as the part is now. Missing from the quick list and from an `@ethlete/cli` older than folded states. */
+  unchanged?: string[];
+  /** The states this variant adds and drops against the part now, and its part note when that differs. Missing from an `@ethlete/cli` older than this field. */
+  changes?: SketchTargetChanges;
+  /** Where each changed state differs from the part now, by state. Missing while no compare is kept and from an `@ethlete/cli` older than this field. */
+  crops?: Record<string, SketchChange>;
+  /** Each state this variant draws the same as its grid row's rest state, with that rest state. Missing while no compare is kept. */
+  sameAsRest?: Record<string, string>;
+  /** Each state this variant draws like its rest state at some sizes only, with that rest state and those sizes. Missing while none is kept. */
+  sameAsRestAtSizes?: Record<string, { rest: string; sizes: string[] }>;
+  /** For a part inherited from the base, the base states this variant does not draw. Missing from an `@ethlete/cli` older than this field. */
+  inherited?: string[];
+  error?: string;
+};
+
+export type SketchChange = {
+  width: number;
+  height: number;
+  box: { x: number; y: number; width: number; height: number };
+  pixels: number;
+  regions: number;
+  /** One box per separate changed area. Missing from an `@ethlete/cli` older than this field. */
+  areas?: { x: number; y: number; width: number; height: number }[];
+  /** Each area whose content moved to another area, both among `areas`. Missing while nothing moved, and from an `@ethlete/cli` older than this field. */
+  moves?: {
+    from: { x: number; y: number; width: number; height: number };
+    to: { x: number; y: number; width: number; height: number };
+  }[];
+};
+
+export type SketchTargetChanges = {
+  added: string[];
+  dropped: string[];
+  note: { before: string | null; after: string | null } | null;
+};
+
+/** `variant` and `author` are `null` or missing in a report written before they were recorded. */
+export type SketchReport = { message: string; updatedAt: string; variant: string | null; author?: string | null };
+
+export type ListedSketches = { sketches: ListedSketch[]; unreadable: SystemProblem[] };
+
+export type SketchAddress = { port: number; product: string; sketch: string };
+
+const sketchUrl = ({ path, port, product, sketch, extra = '' }: SketchAddress & { path: string; extra?: string }) =>
+  `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}&sketch=${encodeURIComponent(sketch)}${extra}`;
+
+/** A merge refused because the sketch's baseline is stale: the parts that changed in the product, `[]` without a baseline, and the command that records the product again. */
+export class MergeNeedsRebaseError extends Error {
+  public readonly changed: string[];
+  public readonly rebase: string;
+
+  public constructor(options: { message: string; changed: string[]; rebase: string }) {
+    super(options.message);
+    this.changed = options.changed;
+    this.rebase = options.rebase;
+  }
+}
+
+/** A design server answer that is not ok: its HTTP `status` and the server's own `error` message. */
+export class DesignAnswerError extends Error {
+  public readonly status: number;
+
+  public constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+/** A design server refusal that names its `reason`, with the `findings` lines that caused it, if any. */
+export class DesignRefusalError extends Error {
+  public readonly reason: string;
+  public readonly findings: string[];
+
+  public constructor(options: { message: string; reason: string; findings: string[] }) {
+    super(options.message);
+    this.reason = options.reason;
+    this.findings = options.findings;
+  }
+}
+
+const refusalOf = (body: unknown, status: number) => {
+  const answer = body !== null && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+  const message = typeof answer['error'] === 'string' ? answer['error'] : designReadError(status);
+  const changed = answer['changed'];
+  const rebase = answer['rebase'];
+
+  const reason = answer['reason'];
+  const findings = answer['findings'];
+
+  if (Array.isArray(changed) && typeof rebase === 'string')
+    return new MergeNeedsRebaseError({ message, changed: changed.map(String), rebase });
+
+  return typeof reason === 'string'
+    ? new DesignRefusalError({ message, reason, findings: Array.isArray(findings) ? findings.map(String) : [] })
+    : new DesignAnswerError(message, status);
+};
+
+const logRefusedAction = ({ url, status, message }: { url: string; status: number; message: string }) => {
+  if (!hasHostShell()) return;
+
+  try {
+    const { pathname, searchParams } = new URL(url);
+
+    invoke('design_action_refused', {
+      at: new Date().toISOString(),
+      command: pathname.split('/').pop() ?? '',
+      part: searchParams.get('part') ?? searchParams.get('sketch') ?? '',
+      status,
+      message,
+    }).catch(() => undefined);
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- reporting a refusal is best effort, a bad url must not mask the refusal
+  } catch {
+    return;
+  }
+};
+
+/** Reads a design server answer, and fails with the server's own `error` message when it refuses. */
+export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observable<TResult> =>
+  fromFetch(url, init).pipe(
+    switchMap((response) =>
+      from(designJson(response).catch(() => null)).pipe(
+        map((body) => {
+          if (response.ok) return body as TResult;
+
+          const refusal = refusalOf(body, response.status);
+          logRefusedAction({ url, status: response.status, message: refusal.message });
+
+          throw refusal;
+        }),
+      ),
+    ),
+  );
+
+// A string body goes as text/plain, a simple request: the design server answers no CORS preflight.
+export const postJson = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
+
+export type ShownShots = { view: number; shown: string[]; active: string[] };
+
+/** Names the shot URLs the viewer shows now to the design server at `origin`, which draws those first. */
+export const showShots = (origin: string, shots: ShownShots) =>
+  fetch(`${origin}/__design/view`, postJson(shots)).then(
+    () => undefined,
+    () => undefined,
+  );
+
+/** Tells the design server on `port` how wide the sketch list is, so its look-alike check zooms as Studio does. */
+export const saveListWidth = (port: number, width: number) =>
+  fetch(`http://localhost:${port}/__design/list-width`, postJson({ width })).then(
+    () => undefined,
+    () => undefined,
+  );
+
+/** A full sketch listing renders and compares every variant, which takes 30 s and more on a cold server. */
+export const LISTED_SKETCHES_TIMEOUT_MS = 120_000;
+
+export const listedSketches$ = ({
+  port,
+  product,
+  quick = false,
+}: {
+  port: number;
+  product: string;
+  quick?: boolean;
+}): Observable<ListedSketches> =>
+  designAnswer$<ListedSketches>(
+    `http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}${quick ? '&unchanged=no' : ''}`,
+  ).pipe(
+    map((listed) => {
+      if (Array.isArray(listed?.sketches)) return listed;
+
+      const error = (listed as { error?: unknown } | null)?.error;
+
+      throw new Error(typeof error === 'string' ? error : 'the design server answered no sketch listing');
+    }),
+    timeout(LISTED_SKETCHES_TIMEOUT_MS),
+  );
+
+/**
+ * Picks `variant` and merges it into the product in one step, and answers the merged parts. A refused merge leaves no
+ * pick behind; a stale baseline fails with {@link MergeNeedsRebaseError}. A variant with marked sub-parts merges nothing
+ * and answers the sub-sketches the pick opened. A pick of another variant than the picked one that discards sub-sketches
+ * needs `discardSubSketches`.
+ */
+export const pickSketch$ = (
+  address: SketchAddress,
+  pick: { variant: string; discardSubSketches?: boolean },
+): Observable<{ merged: string[]; subSketches: string[] }> =>
+  designAnswer$<{ merged: string[]; subSketches?: string[] }>(
+    sketchUrl({ ...address, path: 'sketch-decision' }),
+    postJson({ kind: 'pick', variant: pick.variant, ...(pick.discardSubSketches ? { discardSubSketches: true } : {}) }),
+  ).pipe(map(({ merged, subSketches = [] }) => ({ merged, subSketches })));
+
+/** Approves `variant` of a sub-sketch; it merges later together with its parent. */
+export const approveSketch$ = (address: SketchAddress, variant: string): Observable<void> =>
+  designAnswer$<unknown>(sketchUrl({ ...address, path: 'sketch-approve' }), postJson({ variant })).pipe(
+    map(() => undefined),
+  );
+
+/** Deletes the sketch with all its variants. */
+export const discardSketch$ = (address: SketchAddress): Observable<void> =>
+  designAnswer$<unknown>(sketchUrl({ ...address, path: 'sketch-discard' }), { method: 'POST' }).pipe(
+    map(() => undefined),
+  );
+
+/** Makes `product` inherit from the Ethlete SDK, or with `none` from no base. */
+export const setProductBase$ = (options: {
+  port: number;
+  product: string;
+  base: '@ethlete/components' | 'none';
+}): Observable<void> =>
+  designAnswer$<unknown>(
+    `http://localhost:${options.port}/__design/product-base`,
+    postJson({ name: options.product, base: options.base }),
+  ).pipe(map(() => undefined));
+
+/** A frame's size: a preset name, a width in CSS pixels, or `fitted` to its content. */
+export type FrameSize = string | number;
+
+/** Where on which frame a comment sits. Without `point` the comment is on the whole state. */
+export type CommentPlace = {
+  /** `<layer>/<name>`. */
+  part: string;
+  state: string;
+  size: FrameSize;
+  /** `rest` when missing, else the interaction forced on the frame. */
+  interaction?: string;
+  /** CSS pixels from the frame's top left corner. */
+  point?: { x: number; y: number };
+  /** `createdAt` is the sketch's own; a comment shows only in the sketch it was made in. */
+  sketch?: { target: string; variant: string; createdAt?: string };
+};
+
+/** One answer in a comment thread, by the user in Studio or by the agent through the CLI. */
+export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string; question?: true };
+
+/**
+ * How a thread was answered: by `inbox done`, a new sketch round from its variant, or the merge or discard of its sketch.
+ * `author` is the model id of the agent; `round` is the key of the round a `round` answer started.
+ */
+export type CommentAddressed = {
+  by: 'user' | 'agent';
+  author?: string;
+  reason: 'done' | 'round' | 'merge' | 'discard';
+  addressedAt: string;
+  note?: string;
+  round?: string;
+};
+
+/** How the user closed a thread. */
+export type CommentResolution = { by: 'user'; resolvedAt: string; note?: string };
+
+/** Who a thread waits for: the agent, the user to answer a question, or the user to close an answered thread. */
+export type ThreadState = 'agent' | 'question' | 'answered';
+
+export type ListedComment = CommentPlace & {
+  id: string;
+  text: string;
+  createdAt: string;
+  /** The answers after the first text, oldest first. */
+  replies: CommentReply[];
+  threadState: ThreadState;
+  /** Why the comment points at nothing any more, or `null`. */
+  stale: string | null;
+  /** Set once the agent or a sketch round, merge or discard answered the thread; a reply by the user clears it. */
+  addressed?: CommentAddressed;
+  /** Set once the user closed the thread. */
+  resolved?: CommentResolution;
+};
+
+export type ListedComments = {
+  comments: ListedComment[];
+  unreadable: { file: string; problem: string }[];
+  userName?: string | null;
+};
+
+export type ProductAddress = { port: number; product: string };
+
+const productUrl = ({ port, product }: ProductAddress, path: string) =>
+  `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}`;
+
+/** The comments of a product, open and resolved, oldest first. */
+export const listedComments$ = (address: ProductAddress): Observable<ListedComments> =>
+  designAnswer$<ListedComments>(productUrl(address, 'comments'));
+
+/** Writes a comment into the product's `comments/` folder. */
+export const writeComment$ = (
+  address: ProductAddress,
+  comment: CommentPlace & { text: string },
+): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment'), postJson(comment));
+
+/** Adds a reply by the user to the open thread `id`; answers with the updated comment. */
+export const replyToComment$ = (
+  address: ProductAddress,
+  reply: { id: string; text: string },
+): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment-reply'), postJson(reply));
+
+/** Closes the open thread `id` as done by the user. */
+export const resolveComment$ = (address: ProductAddress, id: string): Observable<{ id: string }> =>
+  designAnswer$<{ id: string }>(productUrl(address, 'comment-done'), postJson({ id }));
+
+/** Deletes the comment `id` with its thread, as the user withdraws it; with `reply` (0-based) only that reply of the user. */
+export const withdrawComment$ = (
+  address: ProductAddress,
+  withdrawn: { id: string; reply?: number },
+): Observable<{ id: string }> =>
+  designAnswer$<{ id: string }>(productUrl(address, 'comment-withdraw'), postJson(withdrawn));
+
+/** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
+export type CommentEvent = 'connected' | 'changed';
+
+/**
+ * The comment events of the design server: `connected` when the stream opens, `changed` when a comment changes.
+ * Errors when the stream drops, so a subscriber sees the gap instead of the browser's silent reconnect.
+ */
+export const commentChanges$ = (port: number): Observable<CommentEvent> =>
+  defer(() =>
+    merge(
+      designStreamIsOpen(port) ? of<CommentEvent>('connected') : EMPTY,
+      designEvents$(port, 'open').pipe(map((): CommentEvent => 'connected')),
+      designEvents$(port, 'comments').pipe(map((): CommentEvent => 'changed')),
+      designEvents$(port, 'error').pipe(
+        switchMap(() => throwError(() => new Error('The comment events stream dropped.'))),
+      ),
+    ),
+  );

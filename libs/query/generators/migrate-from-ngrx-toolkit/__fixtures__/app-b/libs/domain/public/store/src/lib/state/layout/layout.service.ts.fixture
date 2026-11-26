@@ -1,0 +1,19 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { ServiceBase } from '@tomtomb/ngrx-toolkit';
+import { environment } from '@app-b/env';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class LayoutService extends ServiceBase {
+  private _http: HttpClient;
+
+  constructor() {
+    const _http = inject(HttpClient);
+
+    super(_http, environment.apiBaseURL);
+
+    this._http = _http;
+  }
+}

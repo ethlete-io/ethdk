@@ -1,0 +1,14 @@
+export interface WithPagination {
+  page?: number;
+  resultsPerPage?: number;
+}
+
+export interface WithSorting<T extends string> {
+  sort?: T;
+  sortDirection?: 'asc' | 'desc';
+}
+
+export enum EventStatusEnum {
+  Scheduled = 'scheduled',
+  Finished = 'finished',
+}

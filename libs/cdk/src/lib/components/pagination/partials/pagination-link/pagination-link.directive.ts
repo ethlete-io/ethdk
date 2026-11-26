@@ -1,0 +1,28 @@
+import { Directive, input, output } from '@angular/core';
+import { applyHostListener } from '@ethlete/core';
+import { PaginationItem } from '../../types';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+@Directive({
+  selector: '[etPaginationLink]',
+})
+export class PaginationLinkDirective {
+  readonly page = input.required<PaginationItem>({ alias: 'etPaginationLink' });
+
+  readonly pageClick = output<PaginationItem>();
+
+  constructor() {
+    applyHostListener('click', (event) => {
+      event.preventDefault();
+
+      const page = this.page();
+      if (page.disabled || page.current) {
+        return;
+      }
+
+      this.pageClick.emit(page);
+    });
+  }
+}

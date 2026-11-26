@@ -1,0 +1,182 @@
+// @ts-check
+'use strict';
+
+const {
+  getAngularMetadata,
+  getMemberName,
+  isReferencedFromTemplateOrHost,
+} = require('./internals/angular-member-visibility');
+const { getImplementedContractMemberNames } = require('./internals/implemented-contract-members');
+const { isImportedAs } = require('./internals/import-resolution');
+const { buildAccessibilityFix } = require('./internals/member-accessibility-fix');
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} node
+ */
+const isInjectCall = (sourceCode, node) => {
+  if (!node || node.type !== 'PropertyDefinition' || !node.value) return false;
+  if (node.value.type !== 'CallExpression') return false;
+  return isImportedAs(sourceCode, node.value.callee, 'inject');
+};
+
+const MEMBER_TYPES = new Set([
+  'PropertyDefinition',
+  'AccessorProperty',
+  'TSAbstractPropertyDefinition',
+  'TSAbstractAccessorProperty',
+]);
+
+/**
+ * @param {any} node
+ */
+const isSupportedMember = (node) => {
+  if (MEMBER_TYPES.has(node.type)) {
+    return true;
+  }
+
+  if (node.type === 'MethodDefinition' || node.type === 'TSAbstractMethodDefinition') {
+    return node.kind !== 'constructor';
+  }
+
+  return false;
+};
+
+/** @type {import('eslint').Rule.RuleModule} */
+const templateMemberAccessibility = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Require non-injected Angular class members referenced from templates or host bindings to use an explicit accessibility modifier, require explicit public on implicitly public surface members, and disallow unnecessary protected on other members.',
+      recommended: true,
+    },
+    fixable: 'code',
+    schema: [],
+    messages: {
+      shouldBePublic: 'Member `{{name}}` implements a public contract and should use an explicit `public` modifier.',
+      shouldBeExplicitPublic:
+        'Member `{{name}}` is implicitly public. Use an explicit `public` modifier. Keep or add `@internal` when it is only technically reachable.',
+      shouldBeExplicit:
+        'Member `{{name}}` is referenced from a template or host binding. Use `public` when it is intentionally exposed outside the component; otherwise use `protected`.',
+      shouldNotBeProtected:
+        'Member `{{name}}` should not be protected because it is not referenced from a template or host binding. If a subclass reads it, mark this class `abstract`.',
+    },
+  },
+  create(context) {
+    const sourceCode = context.sourceCode;
+    /** @type {WeakMap<any, Set<string>>} */
+    const contractMembersCache = new WeakMap();
+
+    /**
+     * @param {any} classNode
+     */
+    const getContractMembers = (classNode) => {
+      if (contractMembersCache.has(classNode)) {
+        return contractMembersCache.get(classNode);
+      }
+      const result = getImplementedContractMemberNames({ classNode, context });
+      contractMembersCache.set(classNode, result);
+      return result;
+    };
+
+    /**
+     * @param {any} node
+     */
+    const checkMember = (node) => {
+      if (!isSupportedMember(node)) return;
+      if (node.type === 'PropertyDefinition' && isInjectCall(context.sourceCode, node)) return;
+
+      const classNode = node.parent && node.parent.type === 'ClassBody' ? node.parent.parent : null;
+      if (!classNode || (classNode.type !== 'ClassDeclaration' && classNode.type !== 'ClassExpression')) return;
+      if (!getAngularMetadata(context.sourceCode, classNode)) return;
+
+      const memberName = getMemberName(node);
+      if (!memberName) return;
+
+      const implementedContractMembers = getContractMembers(classNode);
+      const implementsPublicContract = implementedContractMembers.has(memberName);
+
+      if (implementsPublicContract) {
+        if (node.accessibility === 'public') return;
+
+        context.report({
+          node,
+          messageId: 'shouldBePublic',
+          data: { name: memberName },
+          fix: buildAccessibilityFix(node, sourceCode, 'public'),
+        });
+
+        return;
+      }
+
+      const isTemplateVisible = isReferencedFromTemplateOrHost(classNode, memberName, context);
+
+      if (isTemplateVisible) {
+        if (node.accessibility === 'protected' || node.accessibility === 'public') return;
+
+        context.report({
+          node,
+          messageId: 'shouldBeExplicit',
+          data: { name: memberName },
+          fix: buildAccessibilityFix(node, sourceCode, 'public'),
+        });
+
+        return;
+      }
+
+      if (node.accessibility !== 'protected') return;
+      if (node.type.startsWith('TSAbstract') || classNode.abstract) return;
+
+      context.report({
+        node,
+        messageId: 'shouldNotBeProtected',
+        data: { name: memberName },
+        fix: buildAccessibilityFix(node, sourceCode, 'public'),
+      });
+
+      return;
+    };
+
+    /**
+     * @param {any} node
+     */
+    const checkImplicitPublicMember = (node) => {
+      if (!isSupportedMember(node)) return;
+      if (node.type === 'PropertyDefinition' && isInjectCall(context.sourceCode, node)) return;
+
+      const classNode = node.parent && node.parent.type === 'ClassBody' ? node.parent.parent : null;
+      if (!classNode || (classNode.type !== 'ClassDeclaration' && classNode.type !== 'ClassExpression')) return;
+      if (!getAngularMetadata(context.sourceCode, classNode)) return;
+
+      const memberName = getMemberName(node);
+      if (!memberName) return;
+
+      const implementedContractMembers = getContractMembers(classNode);
+      if (implementedContractMembers.has(memberName)) return;
+
+      if (isReferencedFromTemplateOrHost(classNode, memberName, context)) return;
+      if (node.accessibility) return;
+
+      context.report({
+        node,
+        messageId: 'shouldBeExplicitPublic',
+        data: { name: memberName },
+        fix: buildAccessibilityFix(node, sourceCode, 'public'),
+      });
+    };
+
+    return {
+      'PropertyDefinition, AccessorProperty, TSAbstractPropertyDefinition, TSAbstractAccessorProperty'(node) {
+        checkMember(node);
+        checkImplicitPublicMember(node);
+      },
+      'MethodDefinition, TSAbstractMethodDefinition'(node) {
+        checkMember(node);
+        checkImplicitPublicMember(node);
+      },
+    };
+  },
+};
+
+module.exports = templateMemberAccessibility;

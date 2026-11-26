@@ -1,0 +1,36 @@
+@layer components.sdk {
+  .et-calendar {
+    .et-calendar-cell {
+      &::after {
+        content: '';
+        position: absolute;
+        inset-block-end: 1px;
+        inset-inline: 0;
+        display: none;
+        block-size: 3px;
+        background: var(--et-surface-text-muted);
+      }
+
+      &:where([data-comparison-band])::after {
+        display: block;
+      }
+
+      &:where([data-comparison-band='start'])::after {
+        inset-inline-start: 50%;
+        border-start-start-radius: 999px;
+        border-end-start-radius: 999px;
+      }
+
+      &:where([data-comparison-band='end'])::after {
+        inset-inline-end: 50%;
+        border-start-end-radius: 999px;
+        border-end-end-radius: 999px;
+      }
+
+      &:where([data-comparison-band='single'])::after {
+        inset-inline: 25%;
+        border-radius: 999px;
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+@let showSuccess = queryButton.showSuccess$ | async;
+@let showFailure = queryButton.showFailure$ | async;
+
+<span *etQuery="queryButton.query$ | async; loading as loading" class="et-button-content et-query-button-content">
+  <span
+    [attr.aria-hidden]="(loading && !queryButton.skipLoading) || showSuccess || showFailure ? 'true' : undefined"
+    class="et-button-text et-query-button-text et-query-button-text--default"
+  >
+    <ng-content />
+  </span>
+
+  @if (loading && !queryButton.skipLoading) {
+    <span class="et-query-button-loading"> </span>
+  }
+  @if (loading && !queryButton.skipLoading) {
+    <span class="et-button-text et-query-button-text et-query-button-text--loading">Loading</span>
+  }
+
+  @if (showSuccess) {
+    <span class="et-button-text et-query-button-text et-query-button-text--success">Success</span>
+  }
+  @if (showFailure) {
+    <span class="et-button-text et-query-button-text et-query-button-text--failure">Failure</span>
+  }
+</span>

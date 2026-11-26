@@ -1,0 +1,310 @@
+import { chromium, type Browser } from 'playwright';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { EMIT_WAIT_MS, watchMutations } from './action-press';
+import {
+  awaitEmitted,
+  LiveControl,
+  LiveOutcome,
+  liveControlsScriptOf,
+  liveDriftOf,
+  liveOutcomeOf,
+  liveStateCompareOf,
+  nearestControlOf,
+  openedOf,
+  toggleStepOf,
+  toggleSyncFailureOf,
+} from './live-actions';
+
+const control = (key: string, extra: Partial<LiveControl> = {}): LiveControl => ({
+  key,
+  occurrence: 0,
+  probe: 0,
+  action: null,
+  control: null,
+  x: 0,
+  y: 0,
+  expanded: null,
+  current: null,
+  overlay: false,
+  parts: [],
+  ...extra,
+});
+
+const OUTCOME: LiveOutcome = { emitted: ['sectionChange'], expanded: [], current: null, added: [], removed: [] };
+
+const press = (page: string, outcome: Partial<LiveOutcome> = {}) => ({
+  page,
+  control: 'button "System"',
+  action: 'emit:sectionChange',
+  input: 'click' as const,
+  outcome: { ...OUTCOME, ...outcome },
+  parts: ['elements/shell-rail'],
+});
+
+describe('liveDriftOf', () => {
+  it('fails once for a control whose outcome differs between pages, naming each page with the differing field', () => {
+    const lines = liveDriftOf([
+      press('pages/inbox', { current: 'button "System"=page' }),
+      press('pages/flows', { current: 'button "System"=page' }),
+      press('pages/sketches'),
+    ]);
+
+    expect(lines).toEqual([
+      {
+        page: 'drift',
+        element: 'button "System"',
+        input: 'click',
+        parts: ['pages/flows', 'elements/shell-rail', 'pages/inbox', 'pages/sketches'],
+        failure:
+          'behaves differently per page: pages/flows: current button "System"=page | pages/inbox: current button "System"=page | pages/sketches: current unchanged',
+      },
+    ]);
+  });
+
+  it('passes a control that behaves the same on every page, and skips one pressed on a single page', () => {
+    expect(liveDriftOf([press('pages/inbox'), press('pages/flows')]).map((line) => line.failure)).toEqual([null]);
+    expect(liveDriftOf([press('pages/inbox')])).toEqual([]);
+  });
+
+  it('compares a control per declared action and input', () => {
+    const lines = liveDriftOf([press('pages/inbox'), { ...press('pages/flows', { emitted: [] }), input: 'Enter' }]);
+
+    expect(lines).toEqual([]);
+  });
+});
+
+describe('liveOutcomeOf', () => {
+  it('names only the controls that gained an aria-current, and the expanded ones after the press', () => {
+    const before = [control('button "Inbox"', { current: 'page' }), control('button "System"')];
+    const after = [
+      control('button "Inbox"', { current: 'page' }),
+      control('button "System"', { current: 'page', expanded: 'true' }),
+    ];
+
+    expect(liveOutcomeOf({ before, after, emitted: ['sectionChange', 'sectionChange'] })).toEqual({
+      emitted: ['sectionChange'],
+      expanded: ['button "System"'],
+      current: 'button "System"=page',
+      added: [],
+      removed: [],
+    });
+  });
+
+  it('names the controls a press added and removed, by occurrence', () => {
+    const before = [control('menuitem "a"'), control('menuitem "a"', { occurrence: 1 })];
+    const after = [control('menuitem "a"'), control('button "b"')];
+
+    expect(liveOutcomeOf({ before, after, emitted: [] })).toEqual({
+      emitted: [],
+      expanded: [],
+      current: null,
+      added: ['button "b"'],
+      removed: ['menuitem "a" (2.)'],
+    });
+  });
+
+  it('names the pressed control when it already held its aria-current, so the outcome matches a page where it gained it', () => {
+    const before = [control('button "System"', { current: 'page' }), control('button "Inbox"', { current: 'true' })];
+    const after = [control('button "System"', { current: 'page' }), control('button "Inbox"', { current: 'true' })];
+
+    expect(liveOutcomeOf({ before, after, emitted: [], pressed: control('button "System"') }).current).toBe(
+      'button "System"=page',
+    );
+  });
+});
+
+describe('liveStateCompareOf', () => {
+  it('passes when every drawn aria-expanded control matches, and names each one that does not', () => {
+    const after = [control('button "Projekt"', { expanded: 'true' })];
+
+    expect(liveStateCompareOf({ state: 'open', expected: { 'button "Projekt"': 'true' }, after })).toEqual({
+      ok: true,
+      detail: '',
+    });
+    expect(
+      liveStateCompareOf({
+        state: 'closed',
+        expected: { 'button "Projekt"': 'false', 'button "Menü"': 'false' },
+        after,
+      }),
+    ).toEqual({
+      ok: false,
+      detail: 'button "Projekt" aria-expanded true, not false, button "Menü" aria-expanded absent, not false',
+    });
+  });
+
+  it('reads the aria-expanded control of a key that a plain button shares', () => {
+    const after = [control('button "studio"', { expanded: null }), control('button "studio"', { expanded: 'true' })];
+
+    expect(liveStateCompareOf({ state: 'open', expected: { 'button "studio"': 'true' }, after })).toEqual({
+      ok: true,
+      detail: '',
+    });
+  });
+
+  it('fails a state that draws no aria-expanded control', () => {
+    expect(liveStateCompareOf({ state: 'open', expected: {}, after: [] })).toEqual({
+      ok: false,
+      detail: 'state open draws no aria-expanded control, so a live page cannot tell it',
+    });
+  });
+});
+
+describe('openedOf', () => {
+  it('opens a part when the press added an overlay and, for an implemented part, its component is on the page', () => {
+    const closed = { overlays: 1, present: false };
+
+    expect(openedOf({ before: closed, after: { overlays: 2, present: false }, selector: null })).toBe(true);
+    expect(openedOf({ before: closed, after: { overlays: 1, present: false }, selector: null })).toBe(false);
+    expect(openedOf({ before: closed, after: { overlays: 2, present: false }, selector: 'et-palette' })).toBe(false);
+    expect(openedOf({ before: closed, after: { overlays: 2, present: true }, selector: 'et-palette' })).toBe(true);
+  });
+});
+
+describe('nearestControlOf', () => {
+  it('picks the design control of the same key nearest to the app control', () => {
+    const app = { key: 'button "a"', x: 100, y: 100 };
+    const design = [
+      { key: 'button "a"', x: 0, y: 0 },
+      { key: 'button "b"', x: 100, y: 100 },
+      { key: 'button "a"', x: 110, y: 90 },
+    ];
+
+    expect(nearestControlOf(app, design)).toBe(design[2]);
+    expect(nearestControlOf({ ...app, key: 'button "c"' }, design)).toBeNull();
+  });
+});
+
+describe('liveControlsScriptOf', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it('places a design control by its drawn data-box, not by the unstyled layout of the copied markup', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(
+      `<div data-et-part="pages/flows" data-box="x:0 y:0 w:1280 h:900"><nav data-box="x:0 y:0 w:56 h:900"><button data-box="x:12 y:760 w:32 h:32">studio</button></nav><aside data-box="x:68 y:12 w:248 h:876"><button data-box="x:76 y:48 w:120 h:32">studio</button></aside></div>`,
+    );
+
+    const controls = (await page.evaluate(
+      liveControlsScriptOf({ roots: ['body'], frame: '[data-et-part~="pages/flows"]', shell: null }),
+    )) as LiveControl[];
+
+    await page.close();
+
+    expect(controls.map(({ occurrence, x, y }) => [occurrence, x, y])).toEqual([
+      [0, 28, 776],
+      [1, 136, 64],
+    ]);
+  });
+}, 30_000);
+
+describe('toggleSyncFailureOf', () => {
+  const step = (pressed: string | null, overlays: number, expanded: string | null = null) => ({
+    pressed,
+    expanded,
+    overlays,
+  });
+
+  it('passes a toggle whose pressed state follows its overlay on every click', () => {
+    expect(toggleSyncFailureOf([step('true', 1), step('false', 0), step('true', 1), step('false', 0)])).toBeNull();
+  });
+
+  it('names the click where the pressed state and the overlay part', () => {
+    expect(toggleSyncFailureOf([step('true', 1), step('true', 0), step('false', 0), step('true', 1)])).toBe(
+      'click 2 leaves aria-pressed true, but its overlay is closed',
+    );
+  });
+
+  it('reads aria-expanded when the control has no aria-pressed', () => {
+    expect(toggleSyncFailureOf([step(null, 1, 'true'), step(null, 1, 'false')])).toBe(
+      'click 2 leaves aria-expanded false, but its overlay is open',
+    );
+  });
+
+  it('skips a control without toggle state or without an overlay', () => {
+    expect(toggleSyncFailureOf([step(null, 1), step(null, 0)])).toBeNull();
+    expect(toggleSyncFailureOf([step('true', 0), step('false', 0)])).toBeNull();
+  });
+});
+
+describe('awaitEmitted', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it('returns once the declared output fired, without the fixed emit wait, while the DOM keeps changing', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(`<div id="busy"></div><script>
+      window.__etDesignEmits = [];
+      setInterval(() => (document.getElementById('busy').textContent = String(Math.random())), 5);
+      setTimeout(() => window.__etDesignEmits.push({ output: 'go' }), 60);
+    </script>`);
+    await watchMutations(page);
+
+    const start = Date.now();
+
+    await awaitEmitted(page, 'go');
+
+    const waited = Date.now() - start;
+
+    await page.close();
+
+    expect(waited).toBeLessThan(EMIT_WAIT_MS - 100);
+  });
+}, 30_000);
+
+describe('toggleStepOf', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it('answers null at once for a control its click removed, and reads a kept toggle', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    page.setDefaultTimeout(3000);
+    await page.setContent(
+      `<button id="item" onclick="this.remove()">Item</button><button id="kept" aria-expanded="true">Kept</button>`,
+    );
+    await page.locator('#item').click();
+
+    const start = Date.now();
+    const removed = await toggleStepOf({ page, control: page.locator('#item'), overlaysBefore: 0 }).catch(
+      (error: unknown) => error,
+    );
+    const waited = Date.now() - start;
+    const kept = await toggleStepOf({ page, control: page.locator('#kept'), overlaysBefore: 0 });
+
+    await page.close();
+
+    expect(removed).toBeNull();
+    expect(waited).toBeLessThan(1000);
+    expect(kept).toEqual({ pressed: null, expanded: 'true', overlays: 0 });
+  });
+}, 30_000);

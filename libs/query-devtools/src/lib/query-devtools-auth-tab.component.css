@@ -1,0 +1,135 @@
+@layer components.sdk {
+  .et-query-devtools-auth-real-expiry {
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-auth-ttl {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.8rem;
+  }
+
+  .et-query-devtools-auth-ttl-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.8rem 1.6rem;
+  }
+
+  .et-query-devtools-auth-ttl-row .et-query-devtools-field {
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-auth-ttl-row .et-query-devtools-field small {
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-auth-ttl-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  /* `flex: 0 0 auto` undoes the shared hint's `flex: 1 1 24rem`, whose basis would otherwise be read as a
+     240px block size in these column containers - a paragraph of empty space above whatever follows. */
+  :is(.et-query-devtools-auth-ttl, .et-query-devtools-auth-vault) > .et-query-devtools-hint {
+    flex: 0 0 auto;
+    max-inline-size: 90ch;
+  }
+
+  .et-query-devtools-auth-vault {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .et-query-devtools-auth-vault-actions,
+  .et-query-devtools-auth-account-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* The shared input is full-width, which would put every part of this row on a line of its own. */
+  .et-query-devtools-auth-account-add .et-query-devtools-input {
+    flex: 1 1 14rem;
+    inline-size: auto;
+  }
+
+  .et-query-devtools-auth-vault-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin-block-start: 0.8rem;
+  }
+
+  .et-query-devtools-auth-vault-other {
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-auth-session,
+  .et-query-devtools-auth-account {
+    padding: 0.8rem;
+    border-radius: var(--_et-qdt-radius-lg);
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, var(--_et-qdt-bg));
+    box-shadow: inset 0 0 0 1px var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-auth-session {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.8rem;
+  }
+
+  .et-query-devtools-auth-session--active {
+    box-shadow: inset 0 0 0 1px var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-auth-session-label {
+    inline-size: 18rem;
+  }
+
+  .et-query-devtools-auth-session-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-inline-start: auto;
+  }
+
+  .et-query-devtools-auth-account {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .et-query-devtools-auth-account-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.8rem;
+  }
+
+  .et-query-devtools-auth-account-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.8rem 1.6rem;
+  }
+
+  .et-query-devtools-auth-account-fields .et-query-devtools-field {
+    color: var(--_et-qdt-fg);
+  }
+
+  /* Undoes the shared hint's `flex: 1 1 24rem`, whose basis is read as a block size in this row. */
+  .et-query-devtools-auth-account-fields .et-query-devtools-hint {
+    flex: 1 1 100%;
+    max-inline-size: 90ch;
+  }
+}

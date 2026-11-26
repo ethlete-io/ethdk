@@ -1,0 +1,488 @@
+import { Component, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { vi } from 'vitest';
+import { expectAriaTablist } from '../../testing/aria-structure';
+import { fakeElementScroll, fakeIntersectionObserver, fakeResizeObserver } from '../../testing/fake-layout';
+import { TabBarDirective } from '../headless/tab-bar.directive';
+import { TabBarTriggerDirective } from '../headless/tab-bar-trigger.directive';
+import { TabGroupDirective } from './headless/tab-group.directive';
+import { TabPanelDirective } from './headless/tab-panel.directive';
+import { TabGroupComponent } from './tab-group.component';
+import { TabComponent } from './tab.component';
+
+const SESSION_MEMORY_KEY = 'test-tabs';
+const SESSION_MEMORY_STORAGE_KEY = 'et-tab-group:' + SESSION_MEMORY_KEY;
+
+@Component({
+  imports: [TabGroupComponent, TabComponent],
+  template: `
+    <et-tab-group
+      [selectedIndex]="selectedIndex"
+      [sessionMemoryKey]="sessionMemoryKey"
+      (selectedIndexChange)="selectedIndex = $event"
+    >
+      <et-tab label="First">First content</et-tab>
+      <et-tab [disabled]="secondTabDisabled" label="Second">Second content</et-tab>
+      <et-tab label="Third">Third content</et-tab>
+    </et-tab-group>
+  `,
+})
+class TestHostComponent {
+  selectedIndex = 0;
+  sessionMemoryKey: string | null = null;
+  secondTabDisabled = false;
+}
+
+@Component({
+  imports: [TabGroupComponent, TabComponent],
+  template: `
+    <et-tab-group [sessionMemoryKey]="sessionMemoryKey" (selectedIndexChange)="selectedIndex = $event">
+      <et-tab label="First">First content</et-tab>
+      <et-tab [disabled]="secondTabDisabled" label="Second">Second content</et-tab>
+      <et-tab label="Third">Third content</et-tab>
+    </et-tab-group>
+  `,
+})
+class RememberingHostComponent {
+  selectedIndex = 0;
+  sessionMemoryKey: string | null = null;
+  secondTabDisabled = false;
+}
+
+@Component({
+  imports: [TabGroupComponent, TabComponent],
+  template: `
+    <div>
+      @for (size of sizes; track size) {
+        <div>
+          <et-tab-group [size]="size">
+            <et-tab label="First">First content</et-tab>
+            <et-tab label="Second">Second content</et-tab>
+          </et-tab-group>
+        </div>
+      }
+    </div>
+  `,
+})
+class RepeatedTabGroupsHostComponent {
+  sizes = ['sm', 'md', 'lg'] as const;
+}
+
+@Component({
+  imports: [TabGroupComponent, TabComponent],
+  template: `
+    <et-tab-group>
+      <et-tab ariaLabel="Settings">Settings content</et-tab>
+      <et-tab label="Labelled">Labelled content</et-tab>
+    </et-tab-group>
+  `,
+})
+class IconOnlyTabsHostComponent {}
+
+describe('TabGroupComponent', () => {
+  let fixture: ComponentFixture<TestHostComponent>;
+  let hostComponent: TestHostComponent;
+  let storageEntries: Map<string, string>;
+  let sessionStorageMock: Storage;
+  let originalSessionStorageDescriptor: PropertyDescriptor | undefined;
+
+  const getTabGroupDirective = () =>
+    fixture.debugElement.query(By.directive(TabGroupDirective)).injector.get(TabGroupDirective);
+
+  const getTriggerButtons = () => {
+    const hostElement = fixture.nativeElement as HTMLElement;
+
+    return Array.from(hostElement.querySelectorAll('.et-tab-group__trigger') as NodeListOf<HTMLButtonElement>);
+  };
+
+  const getRepeatedTabGroupElements = (repeatedFixture: ComponentFixture<RepeatedTabGroupsHostComponent>) => {
+    const hostElement = repeatedFixture.nativeElement as HTMLElement;
+
+    return Array.from(hostElement.querySelectorAll('et-tab-group') as NodeListOf<HTMLElement>);
+  };
+
+  beforeEach(() => {
+    fakeResizeObserver();
+    fakeIntersectionObserver();
+    fakeElementScroll();
+    originalSessionStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
+    storageEntries = new Map<string, string>();
+    sessionStorageMock = {
+      get length() {
+        return storageEntries.size;
+      },
+      clear: vi.fn(() => {
+        storageEntries.clear();
+      }),
+      getItem: vi.fn((key: string) => storageEntries.get(key) ?? null),
+      key: vi.fn((index: number) => Array.from(storageEntries.keys())[index] ?? null),
+      removeItem: vi.fn((key: string) => {
+        storageEntries.delete(key);
+      }),
+      setItem: vi.fn((key: string, value: string) => {
+        storageEntries.set(key, value);
+      }),
+    } as Storage;
+
+    Object.defineProperty(globalThis, 'sessionStorage', {
+      configurable: true,
+      value: sessionStorageMock,
+    });
+
+    TestBed.configureTestingModule({
+      imports: [IconOnlyTabsHostComponent, RepeatedTabGroupsHostComponent, RememberingHostComponent, TestHostComponent],
+    });
+    fixture = TestBed.createComponent(TestHostComponent);
+    hostComponent = fixture.componentInstance;
+  });
+
+  afterEach(() => {
+    if (originalSessionStorageDescriptor) {
+      Object.defineProperty(globalThis, 'sessionStorage', originalSessionStorageDescriptor);
+
+      return;
+    }
+
+    Reflect.deleteProperty(globalThis, 'sessionStorage');
+  });
+
+  it('names an icon-only trigger from the tab ariaLabel and leaves a labelled trigger without one', () => {
+    const iconFixture = TestBed.createComponent(IconOnlyTabsHostComponent);
+    iconFixture.detectChanges();
+
+    const triggers = Array.from(
+      (iconFixture.nativeElement as HTMLElement).querySelectorAll('.et-tab-group__trigger'),
+    ) as HTMLButtonElement[];
+
+    expect(triggers[0]?.getAttribute('aria-label')).toBe('Settings');
+    expect(triggers[1]?.hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('owns its triggers from the tablist', () => {
+    fixture.detectChanges();
+
+    expectAriaTablist(fixture.nativeElement.querySelector('[role="tablist"]') as HTMLElement);
+  });
+
+  it('exposes one tablist, with its orientation on the tablist and not on the host', () => {
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement.querySelector('et-tab-group') as HTMLElement;
+    const tablists = fixture.nativeElement.querySelectorAll('[role="tablist"]') as NodeListOf<HTMLElement>;
+
+    expect(host.getAttribute('role')).toBe('none');
+    expect(host.hasAttribute('aria-orientation')).toBe(false);
+    expect(tablists).toHaveLength(1);
+    expect(tablists[0]?.getAttribute('aria-orientation')).toBe('horizontal');
+  });
+
+  it('clamps an out-of-range bound selectedIndex to the last tab', () => {
+    hostComponent.selectedIndex = 99;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).toBe(2);
+    expect(hostComponent.selectedIndex).toBe(2);
+    expect(getTriggerButtons().map((b) => b.getAttribute('aria-selected'))).toEqual(['false', 'false', 'true']);
+  });
+
+  it('clamps a negative bound selectedIndex to the first tab', () => {
+    hostComponent.selectedIndex = -3;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).toBe(0);
+    expect(hostComponent.selectedIndex).toBe(0);
+  });
+
+  it('selects the first tab for a NaN bound selectedIndex', () => {
+    hostComponent.selectedIndex = NaN;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).toBe(0);
+    expect(getTriggerButtons().map((b) => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
+  });
+
+  it('truncates a fractional bound selectedIndex', () => {
+    hostComponent.selectedIndex = 1.5;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).toBe(1);
+    expect(getTriggerButtons().map((b) => b.getAttribute('aria-selected'))).toEqual(['false', 'true', 'false']);
+  });
+
+  it('skips a disabled tab bound as the initial selection', () => {
+    hostComponent.selectedIndex = 1;
+    hostComponent.secondTabDisabled = true;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).not.toBe(1);
+    expect(getTriggerButtons()[1]?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('links every trigger and panel to each other', () => {
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+
+    for (const trigger of getTriggerButtons()) {
+      const panelId = trigger.getAttribute('aria-controls');
+
+      expect(panelId).toBeTruthy();
+
+      const panel = host.querySelector(`[id="${panelId}"]`);
+
+      if (panel) {
+        expect(panel.getAttribute('role')).toBe('tabpanel');
+        expect(panel.getAttribute('aria-labelledby')).toBe(trigger.id);
+      }
+    }
+
+    expect(host.querySelector('[role="tabpanel"]')).not.toBeNull();
+  });
+
+  const mountRemembering = () => {
+    fixture.destroy();
+
+    const rememberingFixture = TestBed.createComponent(RememberingHostComponent);
+
+    rememberingFixture.componentInstance.sessionMemoryKey = SESSION_MEMORY_KEY;
+    rememberingFixture.detectChanges();
+
+    const group = rememberingFixture.debugElement
+      .query(By.directive(TabGroupDirective))
+      .injector.get(TabGroupDirective);
+
+    return { rememberingFixture, group, host: rememberingFixture.componentInstance };
+  };
+
+  it('restores the selected tab from session storage', () => {
+    storageEntries.set(SESSION_MEMORY_STORAGE_KEY, '2');
+
+    const { group, host } = mountRemembering();
+
+    expect(group.selectedIndex()).toBe(2);
+    expect(host.selectedIndex).toBe(2);
+  });
+
+  it('lets the stored value win over a bound selectedIndex', () => {
+    storageEntries.set(SESSION_MEMORY_STORAGE_KEY, '2');
+    hostComponent.sessionMemoryKey = SESSION_MEMORY_KEY;
+    hostComponent.selectedIndex = 0;
+
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).toBe(2);
+    expect(hostComponent.selectedIndex).toBe(2);
+  });
+
+  it('persists tab changes to session storage', () => {
+    hostComponent.sessionMemoryKey = SESSION_MEMORY_KEY;
+
+    fixture.detectChanges();
+    getTriggerButtons()[1]?.click();
+    fixture.detectChanges();
+
+    expect(hostComponent.selectedIndex).toBe(1);
+    expect(storageEntries.get(SESSION_MEMORY_STORAGE_KEY)).toBe('1');
+  });
+
+  it('clamps persisted indices to the available tab range', () => {
+    storageEntries.set(SESSION_MEMORY_STORAGE_KEY, '99');
+
+    const { group, host } = mountRemembering();
+
+    expect(group.selectedIndex()).toBe(2);
+    expect(host.selectedIndex).toBe(2);
+  });
+
+  it('does not restore a disabled tab from session memory', () => {
+    storageEntries.set(SESSION_MEMORY_STORAGE_KEY, '1');
+    fixture.destroy();
+
+    const rememberingFixture = TestBed.createComponent(RememberingHostComponent);
+
+    rememberingFixture.componentInstance.secondTabDisabled = true;
+    rememberingFixture.componentInstance.sessionMemoryKey = SESSION_MEMORY_KEY;
+    rememberingFixture.detectChanges();
+
+    const group = rememberingFixture.debugElement
+      .query(By.directive(TabGroupDirective))
+      .injector.get(TabGroupDirective);
+
+    expect(group.selectedIndex()).toBe(0);
+    expect(rememberingFixture.componentInstance.selectedIndex).toBe(0);
+  });
+
+  it('stores nothing when no key is configured', () => {
+    fixture.detectChanges();
+    getTriggerButtons()[1]?.click();
+    fixture.detectChanges();
+
+    expect(hostComponent.selectedIndex).toBe(1);
+    expect(storageEntries.size).toBe(0);
+  });
+
+  it('skips session memory when sessionStorage is unavailable', () => {
+    fixture.destroy();
+
+    Object.defineProperty(globalThis, 'sessionStorage', {
+      configurable: true,
+      get: () => {
+        throw new Error('sessionStorage unavailable');
+      },
+    });
+
+    const unavailableFixture = TestBed.createComponent(TestHostComponent);
+    const unavailableHost = unavailableFixture.componentInstance;
+    const unavailableElement = unavailableFixture.nativeElement as HTMLElement;
+
+    unavailableHost.sessionMemoryKey = SESSION_MEMORY_KEY;
+    unavailableFixture.detectChanges();
+    (unavailableElement.querySelectorAll('.et-tab-group__trigger') as NodeListOf<HTMLButtonElement>)[1]?.click();
+    unavailableFixture.detectChanges();
+
+    expect(unavailableHost.selectedIndex).toBe(1);
+
+    unavailableFixture.destroy();
+  });
+
+  it('stores nothing for repeated tab groups without a key', () => {
+    fixture.destroy();
+    storageEntries.clear();
+
+    const repeatedFixture = TestBed.createComponent(RepeatedTabGroupsHostComponent);
+
+    repeatedFixture.detectChanges();
+
+    const tabGroups = getRepeatedTabGroupElements(repeatedFixture);
+
+    tabGroups.forEach((tabGroup) => {
+      (tabGroup.querySelectorAll('.et-tab-group__trigger') as NodeListOf<HTMLButtonElement>)[1]?.click();
+      repeatedFixture.detectChanges();
+    });
+
+    expect(storageEntries.size).toBe(0);
+
+    repeatedFixture.destroy();
+  });
+
+  it('skips trigger transitions on initial render', () => {
+    fixture.detectChanges();
+
+    expect(getTriggerButtons().length).toBeGreaterThan(0);
+    expect(
+      getTriggerButtons().every((button) => button.classList.contains('et-tab-bar-trigger--no-initial-transition')),
+    ).toBe(true);
+  });
+
+  it('reenables trigger transitions after initial render settles', () => {
+    vi.useFakeTimers();
+
+    try {
+      fixture.detectChanges();
+      vi.runAllTimers();
+      fixture.detectChanges();
+
+      expect(getTriggerButtons().length).toBeGreaterThan(0);
+      expect(
+        getTriggerButtons().every((button) => !button.classList.contains('et-tab-bar-trigger--no-initial-transition')),
+      ).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+@Component({
+  imports: [TabGroupDirective, TabBarDirective, TabBarTriggerDirective, TabPanelDirective],
+  template: `
+    <div etTabBar etTabGroup>
+      @for (label of labels(); track label) {
+        <button etTabBarTrigger type="button">{{ label }}</button>
+        <div etTabPanel>{{ label }} content</div>
+      }
+    </div>
+  `,
+})
+class HeadlessTabsHostComponent {
+  labels = signal(['First', 'Second', 'Third']);
+}
+
+describe('TabBarDirective trigger order', () => {
+  it('keeps the triggers in DOM order when a tab is inserted before existing ones', () => {
+    const fixture = TestBed.createComponent(HeadlessTabsHostComponent);
+    fixture.detectChanges();
+
+    const bar = fixture.debugElement.query(By.directive(TabBarDirective)).injector.get(TabBarDirective);
+
+    fixture.componentInstance.labels.set(['Zeroth', 'First', 'Second', 'Third']);
+    fixture.detectChanges();
+
+    expect(bar.triggers().map((trigger) => trigger.getElement().textContent?.trim())).toEqual([
+      'Zeroth',
+      'First',
+      'Second',
+      'Third',
+    ]);
+  });
+
+  it('shows the matching panel when a tab is inserted before existing ones', () => {
+    const fixture = TestBed.createComponent(HeadlessTabsHostComponent);
+    fixture.detectChanges();
+
+    const group = fixture.debugElement.query(By.directive(TabGroupDirective)).injector.get(TabGroupDirective);
+
+    fixture.componentInstance.labels.set(['Zeroth', 'First', 'Second', 'Third']);
+    fixture.detectChanges();
+    group.selectedIndex.set(0);
+    fixture.detectChanges();
+
+    const visiblePanels = fixture.debugElement
+      .queryAll(By.directive(TabPanelDirective))
+      .map((panel) => panel.nativeElement as HTMLElement)
+      .filter((panel) => !panel.hasAttribute('hidden'));
+
+    expect(visiblePanels.map((panel) => panel.textContent?.trim())).toEqual(['Zeroth content']);
+  });
+
+  it('shows the matching panel after a keyed re-order', async () => {
+    const fixture = TestBed.createComponent(HeadlessTabsHostComponent);
+    fixture.detectChanges();
+
+    const group = fixture.debugElement.query(By.directive(TabGroupDirective)).injector.get(TabGroupDirective);
+
+    fixture.componentInstance.labels.set(['Third', 'First', 'Second']);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    group.selectedIndex.set(0);
+    fixture.detectChanges();
+
+    const visiblePanels = fixture.debugElement
+      .queryAll(By.directive(TabPanelDirective))
+      .map((panel) => panel.nativeElement as HTMLElement)
+      .filter((panel) => !panel.hasAttribute('hidden'));
+
+    expect(visiblePanels.map((panel) => panel.textContent?.trim())).toEqual(['Third content']);
+  });
+});
+
+describe('TabPanelDirective registration', () => {
+  it('unregisters a panel that is removed from the DOM', () => {
+    const fixture = TestBed.createComponent(HeadlessTabsHostComponent);
+    fixture.detectChanges();
+
+    const group = fixture.debugElement.query(By.directive(TabGroupDirective)).injector.get(TabGroupDirective);
+
+    expect(group.panels().length).toBe(3);
+
+    fixture.componentInstance.labels.set(['First']);
+    fixture.detectChanges();
+
+    expect(group.panels().length).toBe(1);
+  });
+});

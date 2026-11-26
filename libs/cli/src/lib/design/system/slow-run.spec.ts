@@ -1,0 +1,553 @@
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { dirname, join } from 'path';
+import { describe, expect, it } from 'vitest';
+import { DESIGN_DIR, readConfig } from '../design-config';
+import { StatePictures } from './accepted-pictures';
+import { openPointsOf, PartOpenPointsAnswer } from './open-points-runner';
+import { recordSettledBuildReady } from './record-settled';
+import { openPointsInWorker } from './open-points.fixtures';
+import { createPartPictureCache } from './part-picture-cache';
+import { partKeyOf, resolveProduct } from './resolve-product';
+import { runSlowChecks, startSlowRunner } from './slow-run';
+import { createSketch, Sketch } from './sketch/sketch';
+import { NO_VISIBLE_CHANGE_RULE } from './rules/no-visible-change';
+import { readStampText, withStampsInMemory } from './stamp-files';
+import { upgradeLegacyMarksOf } from './stale-parts';
+import { designStatus } from '../status';
+import { partHashOf } from './sketch/baseline';
+import { HeldEdits } from './sketch/held-edits';
+import { openEditSketch } from './sketch/edit-sketch';
+import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
+import { gitExec } from '../../git-test-env.fixtures';
+
+const CHIP = 'components/chip';
+
+const readyOf = (dir: string) =>
+  JSON.parse(readStampText(join(dir, 'ready.json')) ?? '{}') as Record<string, Record<string, unknown>>;
+
+const harness = { app: 'apps/acme', map: 'apps/acme/src/map.ts' };
+
+const staleChip = () => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-design-slow-run-'));
+
+  cpSync(join(__dirname, '__fixtures__'), target, { recursive: true });
+  mkdirSync(join(target, 'apps/acme/src'), { recursive: true });
+  writeFileSync(join(target, 'apps/acme/src/chip.component.ts'), '@Component({})\nexport class Chip {}\n');
+
+  const dir = join(target, DESIGN_DIR, 'acme');
+
+  mkdirSync(join(dir, 'components/chip'), { recursive: true });
+  writeFileSync(
+    join(dir, 'components/chip/chip.ts'),
+    "export default definePart({ implements: 'apps/acme/src/chip.component.ts', controls: {}, describe: {}, states: {} });\n",
+  );
+  writeFileSync(
+    join(dir, 'ready.json'),
+    JSON.stringify({ 'components/chip': { hash: 'h', at: '2026-11-06T00:00:00Z', actions: ['open'] } }),
+  );
+
+  const loaded = readConfig(target) ?? {};
+  const config = { ...loaded, products: { acme: { ...loaded.products?.['acme'], harness } } };
+  const product = () => resolveProduct({ target, name: 'acme', config: config.products.acme });
+
+  return { target, dir, config, product };
+};
+
+describe('the slow runner of the design server', { timeout: 60_000 }, () => {
+  it('records the check record of a settled part whose checks are green, without a design check', async () => {
+    const { target, dir, config, product } = staleChip();
+    const buildReadyOf = () =>
+      (openPointsOf({ product: product(), part: 'components/chip' }) as PartOpenPointsAnswer).buildReady;
+
+    expect(buildReadyOf().ready).toBe(false);
+
+    const runner = startSlowRunner({
+      target,
+      configOf: () => config,
+      log: () => undefined,
+      intervalMs: 3_600_000,
+      runners: {
+        specs: async () => [],
+        start: async () => ({ url: 'http://app', stop: async () => undefined }),
+        live: async () => [],
+        controlState: async () => [],
+        droppedProps: async () => [],
+        actionLost: async () => [],
+        stateInner: async () => [],
+        shoot: async () => ({ states: {}, shots: [] }),
+      },
+      record: (request) =>
+        recordSettledBuildReady({ ...request, actionsOf: async () => [], declaredActionsOf: async () => ['open'] }),
+    });
+
+    await runner.poll();
+    await runner.poll();
+    runner.stop();
+
+    expect(buildReadyOf()).toEqual({ ready: true });
+    expect(readyOf(dir)['components/chip']?.['actions']).toEqual(['open']);
+    expect(readyOf(dir)['components/chip']).toMatchObject({ by: 'et design serve', cmd: 'serve' });
+  });
+
+  it('replays a failing part at unchanged inputs on later polls and reruns it once its inputs change', async () => {
+    const { target, dir, config: plain } = staleChip();
+    const config = {
+      ...plain,
+      products: { acme: { ...plain.products.acme, harness: { ...harness, specs: 'vitest.config.mts' } } },
+    };
+    const lines: string[] = [];
+    let specRuns = 0;
+    const runner = startSlowRunner({
+      target,
+      configOf: () => config,
+      log: (line) => lines.push(line),
+      intervalMs: 3_600_000,
+      runners: {
+        specs: async () => {
+          specRuns++;
+
+          return [];
+        },
+        start: async () => ({ url: 'http://app', stop: async () => undefined }),
+        live: async () => [],
+        controlState: async () => [],
+        droppedProps: async () => [
+          { rule: 'DROPPED-PROP', file: join(dir, CHIP, 'chip.ts'), message: 'submenu is dropped' },
+        ],
+        actionLost: async () => [],
+        stateInner: async () => [],
+        shoot: async () => ({ states: {}, shots: [] }),
+      },
+      record: async () => undefined,
+    });
+
+    await runner.poll();
+    await runner.poll();
+
+    const firstRuns = specRuns;
+
+    expect(firstRuns).toBeGreaterThan(0);
+    expect(lines.filter((line) => line.includes(CHIP))).not.toEqual([]);
+
+    await runner.poll();
+    await runner.poll();
+    await runner.poll();
+
+    expect(specRuns).toBe(firstRuns);
+
+    writeFileSync(join(target, 'apps/acme/src/chip.component.ts'), '@Component({})\nexport class Chip { a = 1; }\n');
+    await runner.poll();
+    await runner.poll();
+    runner.stop();
+
+    expect(specRuns).toBeGreaterThan(firstRuns);
+  });
+
+  it('writes no tracked file through a serve slow run, the legacy upgrade of design check and design status', async () => {
+    const { target, dir, config, product } = staleChip();
+    const legacy = partHashOf({ product: product(), dir: join(dir, CHIP) });
+    const at = '2026-11-06T00:00:00.000Z';
+
+    writeFileSync(join(dir, 'ready.json'), JSON.stringify({ [CHIP]: { hash: legacy, at, actions: ['open'] } }));
+    gitExec(['init', '-q'], { cwd: target });
+    gitExec(['add', '-A'], { cwd: target });
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'x'], { cwd: target });
+
+    const tracked = () =>
+      gitExec(['status', '--porcelain', '--untracked-files=all', '--', DESIGN_DIR], { cwd: target }).toString();
+    const runner = startSlowRunner({
+      target,
+      configOf: () => config,
+      log: () => undefined,
+      intervalMs: 3_600_000,
+      runners: {
+        specs: async () => [],
+        start: async () => ({ url: 'http://app', stop: async () => undefined }),
+        live: async () => [],
+        controlState: async () => [],
+        droppedProps: async () => [],
+        actionLost: async () => [],
+        stateInner: async () => [],
+        shoot: async () => ({ states: {}, shots: [] }),
+      },
+      record: (request) =>
+        recordSettledBuildReady({ ...request, actionsOf: async () => [], declaredActionsOf: async () => ['open'] }),
+    });
+
+    await runner.poll();
+    await runner.poll();
+    runner.stop();
+
+    expect(await withStampsInMemory(async () => upgradeLegacyMarksOf({ product: product() }))).toEqual([
+      { part: CHIP, marks: ['ready'] },
+    ]);
+    await designStatus({ target, argv: [], invocation: 'et design' });
+    expect(tracked()).toBe('');
+    expect(openPointsOf({ product: product(), part: CHIP })).toMatchObject({ buildReady: { ready: true } });
+    expect(readyOf(dir)['pages/home']).toMatchObject({ by: 'et design serve', cmd: 'serve' });
+  });
+
+  it('records an unlinked part with its declared actions through the default checks', async () => {
+    const { target, dir, config, product } = staleChip();
+
+    rmSync(join(target, 'apps/acme/src/chip.component.ts'));
+    writeFileSync(
+      join(dir, 'components/chip/chip.ts'),
+      "import { definePart } from '@design-system';\nexport default definePart({ controls: {}, describe: {}, states: {} });\n",
+    );
+    writeFileSync(
+      join(dir, 'elements/hero/hero.ts'),
+      `import '@system/components/chip';\n${readFileSync(join(dir, 'elements/hero/hero.ts'), 'utf8')}`,
+    );
+
+    const runner = startSlowRunner({
+      target,
+      configOf: () => config,
+      log: () => undefined,
+      intervalMs: 3_600_000,
+      runners: {
+        controlState: async () => [],
+        droppedProps: async () => [],
+        actionLost: async () => [],
+        stateInner: async () => [],
+      },
+    });
+
+    await runner.poll();
+    await runner.poll();
+    runner.stop();
+
+    expect(openPointsOf({ product: product(), part: 'components/chip' })).toMatchObject({
+      buildReady: { ready: true },
+    });
+    expect(readyOf(dir)['components/chip']?.['actions']).toEqual([]);
+  });
+
+  it('blocks each part of a product without a harness definitely, not as pending', async () => {
+    const { target, config } = staleChip();
+    const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
+    const bareProduct = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
+    const runner = startSlowRunner({
+      target,
+      configOf: () => bare,
+      log: () => undefined,
+      intervalMs: 3_600_000,
+      runners: {
+        controlState: async () => [],
+        droppedProps: async () => [],
+        actionLost: async () => [],
+        stateInner: async () => [],
+      },
+    });
+
+    await runner.poll();
+    await runner.poll();
+    runner.stop();
+
+    const answer = openPointsOf({ product: bareProduct(), part: 'components/chip' }) as PartOpenPointsAnswer;
+    const kinds = answer.buildReady.ready ? [] : answer.buildReady.blockers.map((blocker) => blocker.kind);
+
+    expect(kinds).toContain('no-harness');
+    expect(kinds).not.toContain('pending');
+    expect(kinds).not.toContain('stale-record');
+  });
+
+  it('opens the new-only sketch of an edit with no old design once and reports it once over several polls', async () => {
+    const { target, dir, config } = staleChip();
+    const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
+    const chip = join(dir, 'components/chip/chip.ts');
+    const lines: string[] = [];
+
+    writeFileSync(chip, "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
+    recordMerged({
+      product: resolveProduct({ target, name: 'acme', config: bare.products.acme }),
+      parts: ['components/chip'],
+    });
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { hover: 'hovered', default: 'at rest' }, states: { hover: {}, default: {} } });\n",
+    );
+    gitExec(['init', '-q'], { cwd: target });
+    gitExec(['add', '.'], { cwd: target });
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+    gitExec(['rm', '-r', '--cached', '-q', join(dir, 'components/chip')], { cwd: target });
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'untrack'], { cwd: target });
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { hover: 'hovered', active: 'pressed', default: 'at rest' }, states: { hover: {}, active: {}, default: {} } });\n",
+    );
+
+    const runner = startSlowRunner({
+      target,
+      configOf: () => bare,
+      log: (line) => lines.push(line),
+      intervalMs: 3_600_000,
+    });
+
+    for (let poll = 0; poll < 4; poll++) await runner.poll();
+    runner.stop();
+
+    const sketchFile = join(dir, 'sketches', 'components-chip.edit', 'sketch.json');
+
+    expect(lines.filter((line) => line.startsWith('EDIT-OLD-NOT-FOUND'))).toHaveLength(1);
+    expect(existsSync(sketchFile)).toBe(true);
+
+    const sketch = JSON.parse(readFileSync(sketchFile, 'utf8'));
+
+    expect([sketch.status, Object.keys(sketch.variantInfo)]).toEqual(['ready', ['new']]);
+  });
+
+  it('deletes an untracked edit sketch whose edit HEAD already holds and leaves merged.json to design check', async () => {
+    const { target, dir, config } = staleChip();
+    const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
+    const product = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
+    const chip = join(dir, 'components/chip/chip.ts');
+    const commit = () =>
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+
+    writeFileSync(chip, "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
+    recordMerged({ product: product(), parts: ['components/chip'] });
+    gitExec(['init', '-q'], { cwd: target });
+    gitExec(['add', '.'], { cwd: target });
+    commit();
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { hover: 'hovered', default: 'at rest' }, states: { hover: {}, default: {} } });\n",
+    );
+    expect(typeof (await openEditSketch({ target, product: product(), part: 'components/chip' }))).toBe('object');
+    gitExec(['add', chip], { cwd: target });
+    commit();
+
+    const lines: string[] = [];
+    const runner = startSlowRunner({
+      target,
+      configOf: () => bare,
+      log: (line) => lines.push(line),
+      intervalMs: 3_600_000,
+    });
+
+    const mergedBefore = readMerged(dir)['components/chip'];
+
+    await runner.poll();
+    runner.stop();
+
+    expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
+    expect(readMerged(dir)['components/chip']).toBe(mergedBefore);
+    expect(mergedBefore).not.toBe(partHashOf({ product: product(), dir: join(dir, 'components/chip') }));
+    expect(lines).toEqual([]);
+  });
+
+  it('writes no tracked file for a committed direct edit and its committed edit sketch', async () => {
+    const { target, dir, config } = staleChip();
+    const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
+    const product = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
+    const chip = join(dir, 'components/chip/chip.ts');
+    const commitAll = () => {
+      gitExec(['add', '.'], { cwd: target });
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+    };
+
+    writeFileSync(chip, "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
+    writeFileSync(join(target, '.gitignore'), '.ethlete/cache/\n.ethlete/design/*/pictures.json\n');
+    gitExec(['init', '-q'], { cwd: target });
+    recordMerged({ product: product(), parts: ['components/chip'] });
+    commitAll();
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { hover: 'hovered', default: 'at rest' }, states: { hover: {}, default: {} } });\n",
+    );
+    expect(typeof (await openEditSketch({ target, product: product(), part: 'components/chip' }))).toBe('object');
+    commitAll();
+
+    const runner = startSlowRunner({ target, configOf: () => bare, log: () => undefined, intervalMs: 3_600_000 });
+
+    for (let poll = 0; poll < 3; poll++) await runner.poll();
+    runner.stop();
+
+    expect(gitExec(['status', '--porcelain', '--untracked-files=no'], { cwd: target, encoding: 'utf8' })).toBe('');
+    expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'sketch.json'))).toBe(true);
+  });
+
+  const directEdit = async (now: StatePictures, { commits = false }: { commits?: boolean } = {}) => {
+    const { target, dir, config } = staleChip();
+    const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
+    const product = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
+    const chip = join(dir, 'components/chip/chip.ts');
+    const writeCache = (states: StatePictures) => {
+      const current = product();
+      const part = current.parts.find((each) => partKeyOf(each) === CHIP);
+
+      if (!part) throw new Error('no chip');
+
+      createPartPictureCache({ target, product: current }).write({
+        part,
+        partHash: partHashOf({ product: current, dir: join(dir, CHIP) }),
+        states,
+      });
+    };
+
+    writeFileSync(chip, "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
+    writeFileSync(join(target, '.gitignore'), '.ethlete/cache/\n.ethlete/design/*/pictures.json\n');
+    gitExec(['init', '-q'], { cwd: target });
+    recordMerged({ product: product(), parts: [CHIP] });
+    writeCache({ default: 'a1' });
+    gitExec(['add', '.'], { cwd: target });
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'merged'], { cwd: target });
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n// direct edit\n",
+    );
+    writeCache(now);
+
+    if (commits)
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qam', 'direct edit'], { cwd: target });
+
+    const lines: string[] = [];
+    const told: HeldEdits[] = [];
+    const runner = startSlowRunner({
+      target,
+      configOf: () => bare,
+      log: (line) => lines.push(line),
+      intervalMs: 3_600_000,
+      onHeld: (held) => told.push(held),
+    });
+
+    for (let poll = 0; poll < 3; poll++) await runner.poll();
+    runner.stop();
+
+    const tracked = gitExec(['status', '--porcelain', '--untracked-files=no'], { cwd: target, encoding: 'utf8' })
+      .split('\n')
+      .filter((line) => line && !line.endsWith('chip.ts'));
+    const answer = (await openPointsInWorker({ product: product(), part: CHIP })) as PartOpenPointsAnswer;
+    const here = openPointsOf({ product: product(), part: CHIP }) as PartOpenPointsAnswer;
+    const kindsOf = ({ points }: PartOpenPointsAnswer) => points.map(({ kind }) => kind);
+
+    return { lines, told, tracked, answer, here, kindsOf, product, chip, target };
+  };
+
+  it('shows no open point for a direct edit that draws as before while it runs, and writes no tracked file', async () => {
+    const { lines, told, tracked, answer, here, kindsOf, product } = await directEdit({ default: 'a1' });
+
+    expect(lines).toEqual([`HELD acme ${CHIP}: changed outside a sketch, every state draws as before`]);
+    expect(told.map((held) => held[product().dir])).toEqual([{ [CHIP]: expect.any(String) }]);
+    expect(tracked).toEqual([]);
+    expect([here.directEdit, kindsOf(here)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
+    expect([answer.directEdit, kindsOf(answer)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
+    expect(changedOutsideSketchOf(product())).toEqual([CHIP]);
+  });
+
+  it('shows no open point for a committed direct edit while it runs, until the part changes again', async () => {
+    const { tracked, answer, here, kindsOf, product, chip, target } = await directEdit(
+      { default: 'b2' },
+      { commits: true },
+    );
+
+    expect(tracked).toEqual([]);
+    expect(gitExec(['status', '--porcelain', '--untracked-files=no'], { cwd: target, encoding: 'utf8' })).toBe('');
+    expect([here.directEdit, kindsOf(here)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
+    expect([answer.directEdit, kindsOf(answer)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
+    expect(readMerged(product().dir)[CHIP]).not.toBe(partHashOf({ product: product(), dir: dirname(chip) }));
+
+    writeFileSync(
+      chip,
+      "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n// another edit\n",
+    );
+
+    const again = openPointsOf({ product: product(), part: CHIP }) as PartOpenPointsAnswer;
+    const againInWorker = (await openPointsInWorker({ product: product(), part: CHIP })) as PartOpenPointsAnswer;
+
+    expect(kindsOf(again)).toContain('direct-edit');
+    expect(kindsOf(againInWorker)).toContain('direct-edit');
+  });
+
+  it('still shows a direct edit that draws differently as open while it runs', async () => {
+    const { lines, tracked, answer, here, kindsOf } = await directEdit({ default: 'b2' });
+
+    expect(lines[0]).toBe(`PICTURES CHANGED acme ${CHIP}: default`);
+    expect(tracked).toEqual([]);
+    expect(kindsOf(here)).toContain('direct-edit');
+    expect(kindsOf(answer)).toContain('direct-edit');
+  });
+});
+
+describe('NO-VISIBLE-CHANGE in the slow run', { timeout: 60_000 }, () => {
+  it('hands the runner the in-progress sketches of a part and stores its problem on that part', async () => {
+    const { target, config, product } = staleChip();
+    const sketch = createSketch({
+      product: product(),
+      sketch: { layer: 'components', name: 'chip' },
+      variants: ['a'],
+    }) as Sketch;
+    const seen: string[] = [];
+    const run = () =>
+      runSlowChecks({
+        target,
+        config,
+        product: product(),
+        runners: {
+          specs: async () => [],
+          start: async () => ({ url: 'http://app', stop: async () => undefined }),
+          live: async () => [],
+          controlState: async () => [],
+          droppedProps: async () => [],
+          actionLost: async () => [],
+          stateInner: async () => [],
+          shoot: async () => ({ states: {}, shots: [] }),
+          noVisibleChange: async ({ sketches }) =>
+            sketches.map((entry) => {
+              seen.push(entry.target);
+
+              return { rule: NO_VISIBLE_CHANGE_RULE, file: 'x', part: entry.target, message: 'no change' };
+            }),
+        },
+      });
+
+    const results = await run();
+
+    expect(seen).toEqual([CHIP]);
+    expect(results.get(CHIP)?.map(({ rule }) => rule)).toEqual([NO_VISIBLE_CHANGE_RULE]);
+    expect(sketch.status).toBe('in progress');
+  });
+});
+
+describe('the app specs of a slow run', { timeout: 60_000 }, () => {
+  it('runs them only after the harness app has built and stopped, and keeps their problems ahead of the compare ones', async () => {
+    const { target, config } = staleChip();
+    const withSpecs = {
+      ...config,
+      products: { acme: { ...config.products.acme, harness: { ...harness, specs: 'apps/acme/vite.config.mts' } } },
+    };
+    const steps: string[] = [];
+    const results = await runSlowChecks({
+      target,
+      config: withSpecs,
+      product: resolveProduct({ target, name: 'acme', config: withSpecs.products.acme }),
+      runners: {
+        specs: async () => {
+          steps.push('specs started');
+          await new Promise((done) => setTimeout(done, 20));
+          steps.push('specs done');
+
+          return 'vitest failed';
+        },
+        start: async () => {
+          steps.push('harness build started');
+          await new Promise((done) => setTimeout(done, 50));
+          steps.push('harness build done');
+
+          return 'no harness';
+        },
+        live: async () => [],
+        controlState: async () => [],
+        droppedProps: async () => [],
+        actionLost: async () => [],
+        stateInner: async () => [],
+        shoot: async () => ({ states: {}, shots: [] }),
+      },
+    });
+
+    expect(steps).toEqual(['harness build started', 'harness build done', 'specs started', 'specs done']);
+    expect(results.get('(product)')?.map(({ rule }) => rule)).toEqual(['APP-SPEC', 'COMPARE']);
+  });
+});

@@ -1,0 +1,23 @@
+{
+  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../dist/libs/contentful",
+  "assets": [
+    "CHANGELOG.md",
+    "migrations.json",
+    "generators/generators.json",
+    {
+      "glob": "**/*.js",
+      "input": "generators/dist",
+      "output": "./generators"
+    },
+    {
+      "glob": "**/schema.json",
+      "input": "generators",
+      "output": "./generators"
+    }
+  ],
+  "lib": {
+    "entryFile": "src/index.ts"
+  },
+  "allowedNonPeerDependencies": ["@contentful/rich-text-types"]
+}

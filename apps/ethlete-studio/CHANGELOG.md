@@ -1,0 +1,1147 @@
+# ethlete-studio
+
+## 0.2.0-next.36
+
+### Patch Changes
+
+- A change crop in a sketch is sized by its shot width, so a shot narrower than its row gets a box as high as its picture.
+- A sketch variant that shows no state, side by side with others, keeps the width of a cell instead of collapsing to nothing, and a part whose variants list no state shows at once instead of staying blank.
+- A sketch variant that failed to render marks its cells as Fehler, and a long row error no longer pushes its cells below the other side-by-side variants.
+- A sketch view stays blank on its first open until a row reports its size, instead of showing a stack at 100 % and then jumping to the fit.
+- Each state line of the sketch matrix has its own scale: narrow shots fill the column instead of shrinking to the scale of the widest line.
+- A sketch drops the Aktuell row when no variant draws one of its states, so a new part shows no empty dashed boxes.
+- A one-column table sheet gives each cell its content width, so a narrow frame no longer sits in a box as wide as the widest.
+- The sketch bar shows one status of one word: Wahl, Freigabe, Unterteile, Fehler, Übernahme, and Automatisch in place of the separate auto-merge badge.
+- The sketches view names the merged parts that triggered a port run in a note above the rows, since the bar no longer does.
+- The sketch pick view shows the round note above the canvas, keeps variant notes at small zoom, and marks each changed area of a cropped state.
+- The sketch-head design part passes its rounds as `{ value, label }` objects like the app component, so the round menu radio items carry a value.
+- The sketch pick view keeps a variant that drops a state of Aktuell out of the "Unverändert" fold and marks the
+  dropped state as "entfällt in Variante a". The sketch bar no longer shows the "Kein Verwerfen" hint.
+- The sketch bar shows only its controls and one status; a variant that fails to render names its error in its own row head.
+- The sketch-head design part declares what the app does: the round button opens the round menu and a radio item changes the round, the Kommentar button fires `commentModeChange`, and the paused state passes its hold to the app.
+- The "Runde wählen" capability starts at the round menu trigger of the sketches page.
+
+## 0.2.0-next.35
+
+### Minor Changes
+
+- `design sketch approve` approves a variant of a sub-sketch, and every merge of a sub-sketch is refused with the name of its parent. Studio shows "Freigeben" in place of "Übernehmen" on a sub-sketch.
+- A pick of a sketch variant with marked sub-parts opens one sub-sketch per sub-part instead of merging, and Studio shows them under their parent sketch.
+- Picking another variant of a parent sketch now discards the sub-sketches it no longer marks, after a confirmation in `sketch pick` (`--discard-sub-sketches`) and in Studio.
+- Marked sub-parts may differ between composition variants, a name match with an existing part needs `--not-rebuild-of` and a stated difference, a mark change reopens a ready sketch, and Studio shows the marks at the variant header.
+
+### Patch Changes
+
+- A sketch cell shows its final width from the first paint instead of resizing as its frames load.
+- The Design-Server menu of a development build names an outdated CLI build ("CLI-Build veraltet") and offers "CLI bauen und neu starten", which rebuilds the CLI and its design runtime before the restart.
+- The design server start counts its seconds up again, and the side panel and title search show a start state instead of looking empty.
+- The package no longer ships the two Noto fallback fonts (about 650 KB) of the sdk design base; Studio keeps drawing its arrows and keyboard symbols in them.
+- The sdk design base ships a 6.5 KB Noto subset with the 12 `et-kbd` key glyphs (⌘ ⇧ ⌥ ↑ …), so they no longer fall back to a system font.
+- The sdk design base ships its own faces.css and font files, so its colors sheet no longer imports a Studio file the package does not contain; Studio's type sheet imports the faces from the sdk.
+- The sketch bar shows its status as a dot with a label, like its agent and port lines, instead of a tonal pill next to its icon buttons.
+- The Sketches fold bar reads "n unveränderte Zustände ausgeklappt" and its button "Zustände einklappen" once the states are open, instead of keeping the folded wording.
+- Übernehmen shows a loading state while its merge runs, and the other Übernehmen buttons and Verwerfen wait until the merge answers.
+- Sketches Fit stops at frames 160 px wide and lets the list scroll, and wraps states into side-by-side blocks only when they fit at that size.
+- Sketches Fit stacks interaction-grid variants below each other when side by side their frames would draw narrower than 160 px, so no frame runs past the right edge of the list.
+- "Alle Zustände zeigen" on a sketch returns the camera to the top of the list, so frames stay on screen after a wheel down to the toggle.
+- An approved sub-sketch shows no disabled button in its variant header, its bar dot takes the success tone, and its tree check reads "Freigegeben".
+- The host no longer crashes in CEF shutdown when it quits right after start, for example on a signal.
+- `et design studio open` keeps a queued request in a folder that survives a reboot (`~/.local/state/ethlete-studio/open-requests` on Linux, `~/Library/Application Support/ethlete-studio/open-requests` on macOS, `%LOCALAPPDATA%\ethlete-studio\open-requests` on Windows) instead of the temp folder, and Studio reads it from there at its next start.
+- `et design studio open` keeps its request when Studio is not running and exits 3 (queued); Studio adds the checkout at its next start and drops requests older than 7 days or whose checkout lost its design config.
+- A sub-sketch shows its sub-part name and its own status mark in the tree, and its approval state in the sketch bar.
+- The sketch view shows a difference stated on a target for markup a variant draws inline, beside the marked sub-parts.
+
+## 0.2.0-next.34
+
+### Minor Changes
+
+- A pick in Studio merges the variant at once; the "Variante gewählt" state is gone, and a refused merge leaves no pick.
+- A part's design can name its `family`, and the Studio part tree shows the part under that part whatever number of parts use it.
+- The sketch view lays the changed variants side by side and fits the canvas to their combined width, instead of stacking them one below the other.
+- A part's design names the groups of its states in flow order (`definePart({ groups })`); Studio draws each group as one headed row with its count, and `design check` flags a many-state part without groups (STATE-GROUPS).
+- Ask for confirmation in a dialog before the project menu removes a project from the list.
+- Add `et design studio open [<dir>]`: it adds a checkout to the running Studio and switches Studio to it, after the agent asks the human.
+
+### Patch Changes
+
+- The sketches view stacks the variants of wide frames instead of drawing them side by side in a matrix below 45 %, when stacked they reach 45 %.
+- A shown sketch view no longer turns invisible for up to 4 s when a state becomes unsized later (a zoom to 30 %, refused pictures); the sizing hold applies to the first open only.
+- Show the sketch view at once again: the hold that hid it until every row had a size is removed, because it hid a view already on screen.
+- A sketch with no stored shots now stays hidden until every shown state reported a size, so its phone cells no longer shrink from the desktop width just after the view appears.
+- A sketch with no stored shots no longer opens in a stacked layout that jumps to the matrix once its frames report a size; the view stays hidden until the rows are sized, at most 4 s.
+- A sketch row whose shots the design server lists only in part waits for its live frames instead of sizing every cell from the listed ones, so its column no longer grows when the unlisted shots load.
+- A sketch cell no longer shows the picture or frame size of the sketch opened before while its own shot loads.
+- A changed sketch state whose change covers the whole picture no longer lists pixel counts, a 1,0× magnification and a screen toggle beside it.
+- A sketch draws each cell and its loader at the shot's finished size from the first paint, from the frame sizes the design server lists, so cells and variant columns no longer move when the shots load.
+- The start page of a repo without products asks for the colour base (Hell, Dunkel or Beides) and the accent, and the prompt it copies for the agent carries both answers.
+- Studio no longer shows agent-only states: the agent badge in the build-ready footer, the drawing pill on frames, the silent-report note, open points the agent fixes, the agent-handoff tree warnings and the in-progress tooltip.
+- Studio no longer shows the agent's report text in the drawing line of a variant.
+- Studio drops more agent-only info: the CLI uncommitted notice in the title bar, the merge-hold line with its dirty files, the task and step in the agent line, and the model in the hold reason.
+- Studio drops agent-only info: the push and uncommitted pills in the title bar, the neu and not-ready badges, reasons, last change and description line in the sketch head, and the geändert and erste Änderung marks in variant cells.
+- Studio drops the last agent-only labels and reads a product without a harness as Nicht baubereit instead of Wird geprüft.
+- The warning icon next to a sketch in the system tree has a tooltip again. It says in plain German what is wrong and what to do, with no rule IDs, agent text or SHAs.
+- The start page asks whether the new product inherits from the Ethlete SDK; the copied prompt names the answer, and says nothing about a base without one.
+- The design-system picker asks "Ethlete SDK" for the open product: Erbt vom SDK or Eigenständig. A pick writes the product's base.
+- The Sketches page drops its head and title; a floating toolbar at the bottom of the canvas carries the status, Kommentar and Verwerfen as icon buttons, and the round choice as a history icon button with a menu.
+- An old checkout opens in Studio even when its installed design tool predates the app's, and its comment, flow and sketch requests no longer fail.
+- The Studio logo part gets anatomy, clear space, minimum size, colour variants, misuse and motion sections and owns the busy animation; the design check reports a merged logo part that lacks one.
+- Keep the nested rows of a Studio part open on the click that selects the part; a second click closes them
+- Drop the ADR plan-question open point and ADR numbers from design CLI texts and comments.
+- Rebuild the committed Studio frontend on "Neu starten" for every project, not only this repository.
+- Update the Rust `cookie` crate to 0.18.3 to fix RUSTSEC-2026-0594 (private cookie nonces can repeat in processes that fork).
+- Let the sketch canvas reach the bottom of the window, so the last row is not cut 20 px above it.
+- A measured cell of a fitted sketch part takes its own width, so its picture is as tall as its frame: no picture runs out at the bottom, no live frame shows an empty strip beside narrower content.
+- A comment on a sketch part without widths is sent as fitted, so "Senden" no longer fails with "has no width".
+- The comment button in a sketch starts comment mode on wide frames too: a click on a frame of a sketch laid out in columns places the draft pin.
+- Sketch views fold a state a variant draws exactly like its `rest` state; the rest cell names it (`hover = rest`).
+- A double click on a sketch frame now swaps its picture for the live render of that variant and state, and Esc or a part switch returns to the picture.
+- The sketches view marks an interaction state every variant folds into rest as "= rest" in the grid, instead of leaving its cell empty.
+- A sketch variant the agent still builds now draws its frames live, labelled in progress with the agent's latest report line, and shows no changed mark or merge action until it is finished.
+- A sketch variant the agent still builds now shows as in progress with the agent's latest report line, and a frame label no longer wraps in a narrow frame.
+- A sketch cell narrower than its label wraps the label, so the full state name and the chips stay visible.
+- A double-clicked sketch frame stays live when the sketch listing refreshes.
+- Sketch view: a part without `widths` in a sketch with several target parts now draws at its full content width, and narrow cells no longer overlap their labels.
+- A sketch cell shown by its picture takes its height from the picture at the cell's own width, so a
+  wider cell of a part with several widths no longer cuts its content.
+- A sketch cell that draws like its rest state at its own width is folded into the rest cell at that width, even when the same state differs at another width. The design server lists these as `sameAsRestAtSizes` per target.
+- Switching to another part in a sketch no longer logs Angular warning NG0956: the states of the row
+  stage and the transposed matrix are tracked by part and state name.
+- A target row of a sketch with several parts always opens that part in the sketch view, also for a part the product lists, and carries no "nicht in der Sketch-Ansicht" hint.
+- The floating sketch toolbar no longer shows a lone divider at its left edge when no status or note precedes it.
+- Keep the target rows of a Studio sketch open on the click that opens the sketch; a second click closes them
+- A click on a sketch target row in the part tree selects its frame without activating it, so the wheel keeps panning the canvas.
+- A click on a target row of a sketch with several parts shows that part's frames in the sketch view, also for a part the product does not list.
+- A target row of a sketch in the part tree focuses its frame through a canvas API instead of a synthetic double click, and an e2e case covers each row kind.
+- Keep every Studio sketch with several targets an expandable subtree in the tree, and mark the row of the part the sketch shows
+- A state group heading on the canvas sits just above its own row, with the large gap above it.
+- A double-click on a frame of the inventory page or on a projected Flow frame no longer zooms the canvas.
+- A live sketch frame shows a "Live · Esc" badge on the canvas, and Esc inside the frame now ends live mode too.
+- The blank canvas shows no Kommentar button and no open-points chip until a part is loaded.
+- A canvas pan ends when the window loses focus, the pointer capture is lost or another part opens, so the canvas no longer stops reacting after a pan that never saw its pointer release.
+- Draw the geändert badge of a sketch cell with on-theme text on the theme fill, so it reads at 7:1 instead of 1.5:1.
+- Reload the comments when the live comment stream opens, so a comment written before it opened shows its pin.
+- A double click on a design frame makes it live without zooming or panning the canvas.
+- A state grid draws no outline around a changed element; what did not change is dimmed to 50 %, as in the sketch compare.
+- An `@edit` sketch keeps the "fehlt in dieser Variante" placeholder in a row whose every other state is folded, so the row keeps its width and its head stays readable.
+- Studio opens a part with Fit all the first time, instead of at 100 % at the panel edge.
+- No Studio text names a CLI command: the start page drops its terminal line and the stale-record point says the agent has not checked the design yet.
+- The Studio menu keeps projects by checkout path, so two checkouts with one folder name no longer both show the radio dot, and `et design studio open` refuses inside a client run sandbox.
+- A remembered sketch that no longer exists opens the product's first part instead of a "Sketch nicht gefunden" card.
+- Studio no longer shows raw check findings or added skip markers to the human: the part tree warning icon has no finding list and the variant head has no skip line.
+- A selected design frame draws no outline any more, after a click or a tree-row click; only a live frame keeps its dashed outline on the system canvas.
+- The not-ready line of a sketch with no known reason names no command.
+- Allow the open-watch host command in the Studio capability.
+- The sketch view draws each page variant once per viewport preset of the product, each at its preset size; a comment on a preset frame keeps its state and preset.
+- Every variant of a page sketch draws at the page's frame size, never at a zero or too-tall content measure.
+- After a project switch, Studio no longer shows another project's design server that holds the same port.
+- Toggle the Studio tree on a click on the marked System rail item while a sketch is open
+- The "Oberfläche geändert - neu starten" button reloads the page after the server restart, so the new UI loads and the notice clears.
+- The sketch round picker uses the ghost select without a clear button, and the form field design mock draws the ghost variant.
+- A shot that errors once loads again after a second and shows neutral meanwhile; only a second error draws the red render-failed state.
+- A sketch variant's cell for a state it inherits from the SDK shows the SDK's state, dimmed and labelled "vom SDK", instead of "fehlt in dieser Variante".
+- The sketch head ends 8 px below its round picker, and the sketch canvas starts below it with a hairline edge, so a frame cut at the canvas top reads as the canvas edge, not as a hidden head.
+- Cut the Sketches page head (title, status, actions, round question and round picker) out into its own `components/sketch-head` part and fold the `components/sketch-question` part into its states.
+- The sketch view shows interaction states as one aligned grid per variant and draws every picture at its natural size times one sketch scale.
+- A state label in the sketch view keeps its on-screen size when you zoom in.
+- A page sketch frame draws as tall as its content, so it shows no scrollbar, and a page with presets never turns its variants into columns.
+- The sketch view draws a part sketch state at every width the part declares, not only the narrowest.
+- A page sketch variant shows its phone and desktop frames side by side, phone on the left, at one scale.
+- The sketch view stacks the variants below each other when side by side they would draw below about 45 % scale, so each variant gets the full width.
+- No target row of a multi-part sketch in the part tree is a dead click any more, and the sketch row shows its round title.
+- The start page takes the colour base and the accent as inputs, so a design state can set them.
+- Offer the repos Studio opened before as buttons on the start page, so a switch needs no folder dialog.
+- The Studio menu puts client runs in a submenu named by date and time, lists projects apart from the actions, opens the design server as a submenu and marks "Projekt entfernen" as dangerous; the Start page tells same-name checkouts apart.
+- A light column of the states grid backs its cells with a light surface, so a transparent shot (a dark button) no longer sits on the dark app surface.
+- A project switch stops the server of the project before only when the switched project needs the same port.
+- After a project switch, the start page names no product of the project before while the switched project builds.
+- While a switched project lists its products, Studio shows a blank canvas and the project name in the picker instead of a read error, an empty name and the call tree.
+- The system page design and its part drop the sketch-missing note the app no longer shows.
+- Name the folded states under a stacked sketch cell, draw the stack as card edges, and end the folded-states label with the cell's own state (`hover, active = default`).
+- A part switch in the tree never opens an empty canvas: a remembered view that shows no frame fits the part instead.
+- A sketch target the sketch view does not draw keeps its full name in the Studio tree; the note is the row tooltip, no tag.
+- Write the fold bar height of a stacked variant cell as a canonical Tailwind class.
+
+## 0.2.0-next.33
+
+### Patch Changes
+
+- Update the Rust `url` crate to 2.5.9 to fix RUSTSEC-2026-0592 (stack overflow in `Url::origin()` on nested `blob:` URLs).
+
+## 0.2.0-next.32
+
+### Patch Changes
+
+- The release smoke probe counts the live frames the sketch view renders (`iframe[data-state]` with `data-painted`) and reports painted frames and pictures apart.
+- Run Ethlete Studio on the CEF runtime on Windows too, so every platform renders with Chromium.
+- A Studio sketch cell that is still loading no longer lets its Lädt text spill out of a very short frame: the text goes first, then the spinner.
+- design compare checks the part root and each open overlay pane as boxes of their own (size, offset from the root, pixels), and a fitted design frame grows left over a pane drawn before its root
+- Inventory canvas markers keep the marker gap from the frame edges instead of touching them.
+- Show the product rail tooltip on the right of its logo, as the shell-main design draws it.
+- Keep each shortcuts dialog row as tall as its 18 px key cap.
+- The Sketches harness sample draws focused zoom-chip shots 30 px tall like the design, without the old tooltip room.
+- The Sketches view draws the auto-merge badge in the success colour like the design.
+- The Sketches design keeps the row's right inset in the pan room, like the app, when its frames overflow.
+- The Sketches design sizes its rows to their frames when zoomed, like the app, so a row's comment pin sits at
+  its frames' right edge.
+- The Sketches harness neighbourhood sample shows its own round and the neighbour variants' looks.
+- The Sketches page no longer refits when a listing or shot answer repeats the same rows, and it reads frame sizes before it writes styles, so the page stays responsive while shots arrive.
+- The Sketches harness sample puts its comment pins and draft at the design's spots again after the 30 px chip shots.
+- A Sketches matrix of 30 wide states now wraps into 3 blocks in the real 1076 px list and keeps its cell labels hidden after Fit.
+- The shell page sample shows the product logos from the design config, so the bottom rail matches the design.
+- The release smoke probe skips the CEF placeholder page and waits 110 s, inside the smoke's 120 s, for a cold design server before it reports nothing painted.
+
+## 0.2.0-next.31
+
+### Patch Changes
+
+- Studio shows the last English texts in German: a failed shot, an undrawn grid cell, the grid group heads, the zoom tooltips and the reason a frame did not load.
+- A part page with many states now wraps its rows into several columns that fit the canvas, so Fit shows most or all frames instead of one tiny tall column.
+- The About and Shortcuts dialog titles use the design's line height, and the shortcuts list sits inside the dialog body, so the pane height matches the design.
+- The design harness opens dialog parts in a real overlay pane over a viewport-filling host. Compare sizes their viewport to the design picture, and check asserts overlay panes for never-implemented parts.
+- Remove the Inventory row from the Studio menu. Inventory now opens from the command palette as the command "Inventory".
+- The about dialog names Braune Digital GmbH as license holder, 2025 to the current year, like the repo LICENSE.
+- The Studio menu and title bar open their own dialogs, and the title bar embeds the error toast, so the parts tree nests dialogs under their openers. The unused list-row design is gone.
+- A product declares its rail logo once as `logo` in `.ethlete/design/config.json`; the design listing sends it and the Studio rail draws it, falling back to the product's initials.
+- "Checkouts suchen" skips git worktrees and `scratch-` folders, so throwaway copies of a checkout no longer land in the project menu.
+- The empty sketches page binds `[empty]="true"`, so the design check sees a source for its no-sketches state.
+- The Sketches matrix of a part with many states wraps its states into blocks laid side by side, each with its own state names and variant heads, instead of one column as tall as the state count.
+- A Sketches matrix with many states now wraps into blocks that fit the list by height as well as width, so Fit shows most or all states.
+- The design check reads a bare boolean attribute (`<x empty />`) as a `true` source for STATE-NO-SOURCE, so templates keep the static attribute the lint rule asks for.
+- Studio menu: the panel stays level with the logo tile instead of sliding 4 px up to keep its arrow clear of the corner.
+- Studio menu: "Projekt entfernen" stops keeping the open project and switches to the first one left. The menu panel now draws its arrow toward the logo tile.
+- Studio's two smallest text steps grow (xs 11 px, sm 12 px), and disclosure bodies and command-palette hints read at the sm step.
+
+## 0.2.0-next.30
+
+### Patch Changes
+
+- An open comment thread on the Flows page shows its card on the pin from the first render, placed where the design draws it.
+- The design check and actions now fail at once with the harness's error text when a part has no sample for a prop, instead of timing out.
+- The Studio sketches page gets an `empty` input that draws the no-sketches state from the design: an empty side panel note and a centred check with the empty title and text.
+- Add the neighbours sample to the design harness so the sketches page renders its neighbourhood state.
+- A pin on the Flows page opens the comment thread card, and a sidebar jump to a flow comment opens its pin in the shown flow, or the part when the comment sits outside that flow.
+- Flows show comment pins and the comment draft: the Kommentar button turns on comment mode, a click on a frame opens a draft, and a frame shows only comments of its size and interaction.
+
+## 0.2.0-next.29
+
+### Minor Changes
+
+- Inventory in the studio menu shows the Inventory of every page of a product on one canvas; the Inventory toggle on a page is gone.
+
+### Patch Changes
+
+- A ready sketch whose base changed in the product (a merge would be refused until a rebase) is a `stale-sketch-base` open point on each of its targets, in `design check` and in the Studio sketch view.
+- A comment made in a merged sketch now has a pin on the part frame, and the resolved comments of a sketch keep their pins in the Sketches view.
+- A comment thread of a merged sketch keeps its pin on the part frame after the user replied to it.
+- The inbox shows the server's own message when the list fails to load, and a notice with Erneut laden above the kept list when the live connection is interrupted.
+- List the flow notes that lie far from every frame as orphan notes in the flows side panel and jump the canvas to one on click.
+- Show free notes on the flow canvas: add one with Notiz, write it in place, drag it to move it and delete it, each change written to the flow file.
+- Studio lists a `plan-question` open point (an ADR naming the part that is decided but not built) with the comments, and takes its open-point type from the CLI, so a new open-point kind fails Studio's build instead of being dropped.
+- Start the Flows page camera at the stage's top left inside the viewport, so the flow graph no longer sits 64 px right and 32 px down of the design.
+- Add Tastenkürzel, Hilfe and Über Studio to the Studio menu: Tastenkürzel and Über Studio open dialogs, Hilfe opens the Studio docs in the system browser, and Ctrl+/ (⌘/) opens Tastenkürzel.
+- Show the design server state in the Studio menu (läuft, veraltet, gestoppt) with Neu laden and Checkouts suchen…, and put the restart first when the server runs an older build.
+- A legacy call on the System page has no header bar any more: its headline and slug sit top left on the canvas, and the theme switches with Als übertragen markieren float top right, like the part view's actions.
+- Redesign the "Ausnahmen" group in the open-points popup: one compact row per exception with a status badge and an outline Freigeben button.
+- The sketch view folds a changed control's whole interaction group and marks the changed cell with a geändert chip; the Sketches page tree lists each component once.
+- The rail product buttons show two letters that are unique within the rail (St, Sl, Sd) and name the full product in an SDK tooltip.
+- The Studio quick switch draws a product's logo mark when the product has a foundations/logo part (studio today) and keeps the two unique letters for the others.
+- Mark sketches that `sketch ready` would merge by itself: the CLI records the forecast on the sketch and the sketch page header shows "Übernimmt sich selbst".
+- The system view binds the send phase and the refusal reason of the comment draft on the system page, and the known-unbound list no longer names its comment inputs.
+- Block the build-ready pick of a part that reports a load error, through one shared part-errors function.
+- The Sketches canvas keeps its live frames while a zoom or pan gesture runs and recomputes them once the camera rested, so a gesture no longer mounts new live iframes.
+- A part with no control of its own is flagged as composition: no interaction columns, and `design check` reports its interactions.
+- Draw the Lädt badge of a sketch cell in its empty frame instead of in the label row, so a long state label no longer runs under it and the label lays out the same loading or not.
+- The states the "Aktuell" matrix folds away are computed by one `keptStatesOf` that the Studio system view and the sketch placeholder warning both use.
+- The sketch hold trigger and the sketch status badge are app components of their design parts; the sketches page uses them instead of its own copies.
+- The shell panel resize handle is its own app component, linked to the components/shell-resize-handle design part.
+- Build the design-system picker of the shell panel head as an app component.
+- Build the sketch variant cell as an app component and draw its selected, cropped, stacked and pinned states in the design.
+- Build the comment target as one app component and use it in the design canvas, sketches and the system page, with hover and pressed wash steps and an inset focus ring.
+- The sketch matrix cell shows an empty busy box and a Lädt badge while its shot has not loaded.
+- The About and Shortcuts dialogs expose a `close` output on their close button, closed by the menu call site.
+- Keep the Inventory panel title clear of the reload button and draw marker numbers in the on-colour.
+- Place the Inventory canvas markers without overlap, nearest their control and inside the frame.
+- Name the title search without a trailing comma when no part is open, label the panel button in German, and keep a gap between the Inventory canvas markers.
+- Draw the Studio menu tile mark with real eye cut-outs so the pressed tile shows the eyes like the design.
+- The orphan note jump in the flows page now centres the note on its rendered height instead of an assumed one (it ended 23 px above the stage centre). An e2e case measures it.
+- Draw the Studio rail logo mark at 20 px and feed the design harness the rail products and diff-mark boxes its designs draw.
+- Draw every sketch variant head as a row above its frames and drop the opaque sticky name column (B664).
+- The sketch matrix mounts a live frame for every cell inside the canvas viewport, taken from the camera and the cell geometry, up to a measured cap.
+- The sketch view reads the canvas viewport from the sketches component instead of a DOM query.
+- Debug builds of Studio open the CEF remote debugging port named by `ETHLETE_STUDIO_CDP_PORT` and add the checkout named by `ETHLETE_STUDIO_OPEN_ROOT` to the roots at start. Release builds compile neither in.
+- The canvas-frames design draws its state grid columns at the same width as the app render.
+- Pad each state grid cell by 12 px and draw the difference mark outside the changed box with a lighter scrim, so a ring at a cell edge is neither clipped nor glued to the cell
+- Flow frame boxes on the flows page take the height-to-width ratio of the picked device preset, so a phone page is no longer clipped to its top.
+- Show the Flows page on the shared design canvas, so it pans, zooms and fits like System
+- The Studio menu tile keeps its rest background while a menu action runs and the mark blinks instead of a spinner.
+- The Studio menu re-reads the design server state when it opens.
+- Fit, camera and the canvas projection share one tested offset helper that walks the offsetParent chain.
+- The debug-only open-root variable keeps only the given checkout, so the app serves it.
+- Mark a state grid cell against the rest cell of its own row, so the rest column shows each state unmarked
+- Add a success colour to the Studio colours and show declared inventory rows in it.
+- The loading badge in a sketch cell no longer grows the label row, so the frames stay put when it clears.
+
+## 0.2.0-next.28
+
+### Patch Changes
+
+- Internal: the canvas columns lose the unread `section` field, and the matrix layout its unused head rows.
+
+## 0.2.0-next.27
+
+### Patch Changes
+
+- The design canvas drops the eleven inputs no caller set (`rowHeads`, `sections`, `zoomChip`, `align`, `fitPadding`, `frameOutline`, `opening`, `coveredByShell`, `smoothCamera`, `clip`, `outlines`) and the row heads, outlines and `rowToggle` output behind them.
+- The sketch matrix no longer builds the row heads and sections the design canvas stopped binding, and `layoutMatrixSections`, `CanvasRowHead` and their labels go with them.
+
+## 0.2.0-next.26
+
+### Minor Changes
+
+- `design shot --states --variants` draws the same frames as the Studio sketch view, folding states no variant changes; `--all-states` draws them all.
+- The starting screen names the design server's start phase and how long it has run.
+
+### Patch Changes
+
+- On macOS the window buttons sit vertically centred in the title bar.
+- A failed screenshot in the crop thumb and in the inventory view shows the render-failed state instead of a broken image.
+- The Studio command palette is linked to its design part and takes its `query` model; `et design check` no longer exempts it from `IMPLEMENTS-UNLINKED`.
+- A live sketch frame whose page is scrolled sideways now gives way to its picture, like one scrolled down: the frame page reports its horizontal scroll too.
+- Fill the sketch view's live-frame cap with the cells nearest the view instead of in row order, so a variant near the view no longer starves behind Aktuell.
+- A sketch state now shows live frames or pictures for all its cells, and a live frame replaces its picture only while it fills its cell unscrolled.
+- Ctrl-wheel zoom on the Sketches canvas scales the drawn cells while the wheel turns and redraws them sharp once it rests, which keeps zooming smooth in Safari.
+- A ctrl-wheel zoom on the Sketches canvas no longer re-measures the fit at a user zoom, so the frame after a zoom settles stays short on WebKit.
+- Scroll the explorer when the mouse wheel is over a tree row label: the overscroll stop now sits on the root only, so a truncated label no longer ends the wheel's scroll chain.
+- The host ends on SIGINT, SIGTERM and SIGHUP through its own exit path and stops its design servers, and Ctrl+C in `yarn studio` reaches it.
+- The studio menu stays busy until the latest project read answers on a quick project switch.
+- The studio menu and the start page show a spinner while their action runs.
+- Level the Studio panel head: the design-system picker label, chevron, pill and panel-toggle icon now share one vertical centre.
+- Studio sets its type in Source Sans 3 and Source Code Pro; the sdk colors sheet loads the same faces from studio's one faces.css.
+- Studio reports which step of the design server's start it is in and for how long, and a failed start shows its error.
+- Keep the last shown product in the product switcher while the design server is stopped or starting.
+
+## 0.2.0-next.25
+
+### Minor Changes
+
+- Studio's part canvas outlines the region each fitted state cell changes against the part's base state and dims the rest, at a zoom-independent stroke; the design server answers the region at `/__design/state-diff`.
+
+### Patch Changes
+
+- `ready.json` records say who builds a part, and Studio marks a developer part as Entwickler-Part.
+- A merged pick of the `built` variant keeps its state as a placeholder: the part gets a `redraw` open point until a sketch draws that state.
+- A part that loads data is build-ready only once it draws a loading, an error and an empty state
+- The System page draws a note on the canvas (Design-Server not running, read error, sketch not found) as a centred card with a warning icon, a title and the hint, matching the design.
+- Nest a part with one user under that user in the part tree across layers, tagged with its own layer
+- The system listing names each part's states with a problem and those whose picture changed since the last sketch merge. Studio's folded part view keeps them open.
+- The headless Studio harness answers `design_project` with the app's own project reader, a `design-host` binary, so a product view gets the same themes and calls there as in the app.
+- Hide the studio menu's Erscheinungsbild and Hilfe & Einstellungen rows until their targets exist.
+- Check the self-hosted update host for updates when the GitHub release cannot be reached
+- Read the zoom chip, panel collapse, rail logo, start logo and system frame captions from the Studio labels, and give comment-row, shell-collapse, inventory-page and start a spec with their own data
+- Stop the canvas frame label and its sentence from clipping their glyphs at any zoom, and show each finding in a part-tree warning tooltip on its own line
+- The second update endpoint now points at the live elrond mirror, https://updates.local.elros.cc:12345.
+- Show a hover, press and focus ring on the paused badge of a sketch
+- The sketch view draws the Aktuell row with its "new in this sketch" placeholder when every shown state is one only the variants declare.
+- Reload only the frames of the redrawn sketch variant, not every variant of the sketch
+- `design check` no longer reads the state names in a part's `dataStates` map as Tailwind classes (CLASS-UNDEFINED). The Studio open-points line of a missing data state names the state the map gives, e.g. `empty (no-sketches)`.
+- Move the inline `linkedSignal` sources in the canvas frame, sketches and sketch view into `computed` sources.
+- The part canvas draws the state difference outline one stroke outside the changed region, kept inside the cell, so it no longer covers glyphs at 100 %; the design harness feeds the `diff-mark` state.
+- A live cell of a part's state grid now draws the same as its picture: an open menu no longer shrinks to a scrolling list there.
+- A grid frame on the part canvas no longer shows "Lädt" forever, and its "States by interaction" head takes the subtle text colour of the design.
+- A click on a comment pin in the Inbox opens its thread as a card beside the pin, with every message, a reply field, Erledigen and Zurückziehen for an own comment; Esc closes it.
+- Close the other studio menu submenu when one opens, also when the open one came from its model.
+- Enable the Erscheinungsbild and Hilfe & Einstellungen rows of the studio menu: they now emit `appearanceChange`, `openSettings`, `openShortcuts`, `openHelp` and `openAbout`, the submenus sit where the design places them, and closing the menu closes them too
+- The zoom chip reads its tooltip texts from the label map.
+- Keep the frame heads of the System page canvas at screen size at any zoom, and fit its frame with the same formula the design draws
+- The system page sample keeps its open-points popover inside the desktop height: shorter exception reasons and no compare blocker beside a direct edit.
+- The title bar drops its `force` input; design compare opens the uncommitted-entries hint by hovering it.
+
+## 0.2.0-next.24
+
+### Patch Changes
+
+- Keep the Verwerfen and Übernehmen confirm open when a new sketch listing names the same sketch
+- A frame title and its state sentence on the part canvas now stop with an ellipsis before the chips at the top right instead of running under them.
+- The System page part draws the folded-states pill of a part with many states, in the design and through the system-page component, instead of the old prefix state groups.
+- Design parts can describe each state in one sentence with `definePart({ describe })`, and Studio shows it under the state's title on the part canvas.
+
+## 0.2.0-next.23
+
+### Patch Changes
+
+- The sketch view names each `data-et-skip` marker a variant adds in that variant's head, above Übernehmen.
+- A sketch whose model id names no known agent shows the neutral agent logo in its status hint instead of the Claude mark.
+- Canvas frames draw their chrome like the design: the head in surface text, a German failure banner with Neu laden, a Lädt spinner badge while a frame loads, and a 1 px edge.
+- Draw the canvas frame edge under the live page, so it stays crisp at fractional zoom levels instead of blurring with the page layer.
+- The variant grid lays its round heads out like the design: the group head, the column heads and the folded round sit above the frames with the design's gaps, and matrix columns are 80 px apart.
+- A sketch offers Übernehmen only once every frame drew; a failed frame shows "Render fehlgeschlagen" with its error text.
+- The Sketches view closes an open Übernehmen or Verwerfen confirm when it goes away, and the comment row renders in the design harness.
+- The Inbox is the overview of open comments only; a comment is drafted on the canvas of its view, no longer in an Inbox editor.
+- The Sketches view shows a failed Übernehmen under the picked variant, like the design, and in the header only when no variant is picked.
+- The Sketches view places comment pins without the pin part's own padding, so they sit on the drawn spots like the design.
+- Sketches view: comment pins sit on their spots and stay undimmed, and a frame grows to a shot wider than its part.
+- Comment on sketch variants in the Sketches view and see the sketch's open comments under the tree.
+- The Sketches view opens a bound merge confirm once its Übernehmen renders, below-start like the design, and the comment sample sits on the drawn spots.
+- While a sketch draws, each variant head keeps a disabled Übernehmen, so the frames no longer jump down when drawing ends.
+- The system view hands its pinned comments, the picked comment and the writer to the system page, so pins come from one place.
+- A part with many states opens on the states with an open comment; the others fold behind a count with Alle Zustände zeigen. Its frames no longer group under the first word of the state name.
+- Canvas frames: a page that fails to load before the frame listens now shows its failure banner instead of loading forever.
+- Canvas frames: Neu laden on a failed frame no longer selects the frame, and the design canvas reports the reload through a `reload` output with the frame id.
+- Canvas frames: every frame but an empty one draws its hairline edge, the selected and live frame are bindable, and an unanswered design server reads "Der Design-Server antwortet nicht."
+- Lay out the canvas round and folded column heads at screen size with CSS zoom like the design, keep a column note on one line where it fits, and let a round head's note run past its columns.
+- Übernehmen on a sketch variant opens a confirm dialog instead of the merge view; confirming merges the variant. The merge view is gone.
+- Restarting the design server builds the new design tool copy first and stops the running server only after that build succeeded.
+- Give the design canvas section heading a line height its text fits in, so the heading and count no longer leave their box at 100 % zoom.
+- A cropped sketch frame keeps the part width instead of growing to its magnified, clipped content.
+- The Sketches view keeps the folded states label at the visible left edge while the canvas is panned, like the design.
+- At a held zoom on the Sketches page the frames no longer shift sideways when a sketch starts or stops drawing: a font load event that only re-reports already loaded fonts no longer re-fits the head and gutter text.
+- The Sketches zoom chip shows the fit percent in the matrix layout even before a variant has shots.
+- The System page groups the frames of a part with many states into sections by the first segment of the state name, each with a heading and its count; unshared prefixes go under Weitere.
+- The System page takes placed comments, the selected one and the writer: it pins each comment on the frame, lists them under the tree and pins the draft beside them.
+
+## 0.2.0-next.22
+
+### Patch Changes
+
+- Esc leaves comment mode in one press while the pointer rests on a comment target and its tooltip shows.
+- A sent comment shows its pin on the canvas at once, with the Inbox open or not. Esc in comment mode first discards an open draft, then leaves comment mode.
+
+## 0.2.0-next.21
+
+### Patch Changes
+
+- The Sketches view shows the agent line: who draws, the report message, the variant and since when while a
+  variant draws, and a failed line naming the round and the variants that did not render.
+- Sketch ready records the picked-and-changed refusal, and Studio shows that sketch as not ready.
+- Read the canvas viewport's aria-label from the Studio labels.
+- The comment pin's count badge lets clicks pass through to the pin, as the design draws it.
+- The sketches page row head keeps its right padding and opaque background, so the variant note wraps like the design.
+- Draw the wide sample state of the sketch view at the height of the chip state it shows.
+- A design `data-et-action` can name `opens:<part>`, which `design actions --live` passes when the press opens that part; Studio's title search declares `opens:command-palette`.
+- The comment pin reads its aria-label from the Studio labels.
+- The sketches page row head stays pinned at the left edge while the canvas is panned, like the design.
+- The design server starting screen shows a spinner and is marked busy while the server starts after a restart.
+- A sketch that is not ready shows the last change after its reason; the unused idle status is gone.
+- Studio shows a sketch that is not ready as "Noch nicht bereit" with the reason `sketch ready` last refused it for.
+- A sketch variant pin shows a resolved thread as resolved after a jump to it from the inbox.
+- The sketches page shows a round's question on its own line above the pickers, and takes a running agent and a port after a merge as inputs.
+- Sketches: a start camera clamped before a font load no longer stays panned a few pixels once the content narrows.
+- The sketches page shows the open round's note on its question line through the new `question` input.
+- The change crop of a wide sketch names each variant's reason on its own line when the variants differ.
+- Show the zoom chip and shell collapse tooltips as SDK tooltips, so they also open on keyboard focus.
+- Fail a spec on a logged Angular NG0 warning, and stop the sketch outputs from emitting after their component is destroyed.
+- Show a crash screen with time, PID, port, stack and log path when the design server crashed. The host reads the
+  crashed server's own entry from the design server crash log and hands it to the shell.
+- The Sketches agent and port lines name a span past an hour in hours, past a day in days.
+- The Sketches view shows the port line ("Agent portiert nach Merge von ...") while the sketch carries a
+  `portAfterMerge` mark from the CLI, with the merged parts and since when; no mark, no line.
+- The sketches page folds every state no variant is known to change while a compare is pending, and marks added and wide states.
+- The release smoke's waiting line names the alert Studio shows, such as a stopped design server with its log.
+- The title bar draws its bottom border as an inset shadow, so its controls and their tooltips sit on whole pixels.
+- The title bar takes a `force` input that opens the uncommitted-entries hint, so design compare can check that state.
+- The title bar shows the uncommitted design entries as "N offen" next to the push badge; hovering names each entry.
+
+## 0.2.0-next.20
+
+### Patch Changes
+
+- The sidebar marks a sketch held on another sketch that was merged or discarded, instead of showing it paused forever.
+- The part tree warns on a sketch whose rebase the post-commit hook could not commit.
+- A sketch listing with `&sketch=<target>` compares that sketch alone, without the rule check, and Studio asks for the opened sketch that way before the full listing, so its changed states draw sooner.
+- The Studio sketch list no longer shows a ready check on a sketch whose base needs a rebase or whose variants changed since `sketch ready`.
+- A sketch picked after Studio start is compared alone before the full listing answers, so its changed states draw sooner.
+- The sketch view asks no frame and no picture of a state until the full listing shows it is not folded away, so the changed states draw first.
+- The disclosure host renders as `contents`, so its toggle is the row item like in the design: the build-ready footer's Gründe toggle sits beside the badge instead of at the row end.
+- The System page sample lists the layers in the app order (Foundations, Elements, Components, Pages) and draws the `blocked-checking` build state as one definite blocker, like the design.
+
+## 0.2.0-next.19
+
+### Patch Changes
+
+- The disclosure takes a `hug` option that sizes its toggle to the label instead of the full row; the sketches fold toggle uses it in place of the `min-w-0` wrapper.
+- The sketches matrix of a wide part is as wide as its columns instead of the whole list, and the stacked crop edges sit in one scaled box under the frame, like the design.
+- The sketches screen crop matrix draws no first-change mark and no empty fold column, its stacked frame keeps its own height with scaled edges, and a hidden row head sizes to its tag at a far zoom.
+- The build-ready footer shows "Sketch öffnen" beside the status whenever a direct edit blocks the part, instead of only inside the opened Gründe list.
+- When the design server listens but does not answer for 30 seconds, the Studio start screen says "Design-Server antwortet nicht" with its URL and a restart button, keeps asking, and opens the system view once it answers.
+- At a user zoom the sketch view keeps its row or column layout when the panel hides or the window resizes, so the frames no longer swap under the camera.
+
+## 0.2.0-next.18
+
+### Patch Changes
+
+- A keyboard user inside a live design frame keeps focus on that frame when its page remounts after an address change or an off-view drop.
+- The Flows list draws its rows with the shared tree-row stack, and a selected row in that stack is marked as selected for assistive technology.
+- The System page draws every state through one page component, so the app and the design harness show the same page.
+- The Sketches page folds no state when every state draws like Aktuell, and the design harness draws the edit-sketch state with an @edit chip sample.
+- A direct-edit sketch shows both choices, Änderung behalten and Zuletzt gemergter Stand, each with its own button, instead of folding new into Unverändert.
+- The Sketches page draws like its design: the @edit hint, crop stack edges inside the frame, uncut focus rings and the wrapped fold label.
+- Sketches fit the rows only once the list is measured and again after each font load, so a zoomed view sizes its notes by the real fit.
+- The sketches design draws the fold row's "Alle Zustände zeigen" button at its label width, like the app, so the label no longer wraps.
+- Sketches keep a state unfolded when a hidden withdrawn variant changes it, like the design.
+- The sketches fold disclosure shrinks to wrap its label instead of stretching across the row, so a click beside it no longer opens all states.
+- The sketches page folds unchanged states of an @edit sketch and keeps a state a hidden withdrawn variant changes, and names a folded variant by its row label.
+- The sketches page folds states by its listed rows again, so a hidden withdrawn variant no longer changes the comparing layout.
+- The Studio Sketches page names its sample rows Stand, Entwurf 1 and Entwurf 2 apart from the live Aktuell and Variante columns, and keeps the state names at 12 px down to fit.
+- Name every sample sketch row apart from the live chrome and keep the direct-edit hint on one line.
+- `yarn studio` and the `tauri` targets run Studio through `@tauri-apps/cli-cef` on macOS and Linux, so the dev host finds the CEF framework instead of panicking at start.
+
+## 0.2.0-next.17
+
+### Minor Changes
+
+- Drag the right edge of the side panel, or press the arrow keys on it, to set its width between 200 and 400 px; the width survives a reload.
+- Open a command palette from the title search or with Ctrl+K / ⌘K: it finds parts, pages, sketches and the design server commands, opens the chosen one and lists what was opened last.
+- The logo menu holds the project switch, Projekt öffnen…, the design server actions and the Erscheinungsbild and Hilfe & Einstellungen submenus; the sidebar head picks the design system, and the project switch at the bottom of the sidebar is gone.
+- A sketch round of a wide part shows each changed state as an enlarged crop of the change, same changes once.
+
+### Patch Changes
+
+- The sketch view canvas runs under the open side panel, and a new design check flags a canvas clipped at a floating panel.
+- Studio no longer reads every running design server as stale: it compares only the stamp's version and build, and judges a server that answered no stamp yet again on the next check.
+- Studio's CEF runtime allows the page to reach loopback addresses without a Local Network Access prompt, so the request to the design server no longer hangs where CEF shows no prompt and the sketch view opens.
+- The release smoke marker probes the sketch view's frame cells (`data-painted`) and logs a failure line when nothing paints.
+- Buttons and the title search key hint use the type scale line heights, and the sketches matrix refits once web fonts have loaded.
+- App sample data and specs no longer name a real person, and the person-name check no longer baselines any file under the app source.
+- The part tree restores its scroll position only after all listings are loaded, so a late listing no longer shifts the rows shown after a reload.
+- The part tree keeps its scroll position when the window reloads.
+- Verwerfen on a sketch asks first: an anchored confirm names the sketch and that all its variants are lost, focuses Abbrechen, and Escape cancels.
+- Studio shows the `@ethlete/components` tooltip instead of native `title` tooltips on its tree marks, canvas labels, comment targets, model names and agent status.
+- A part with a definite blocker shows "Nicht baubereit" while slow checks run, the popover lists a direct edit, and an edit sketch offers no Verwerfen.
+- A merged edit sketch now opens its part, its merge view lists the changed states because a redraw no longer cancels the running compare, and each compare row outlines the edited part.
+- Show a part's state grid when its frames are read again while its pictures load; before, the grid stayed hidden and never went live.
+- A static rule problem in a variant of a ready sketch is now a `sketch-problem` open point, shown in Studio as "Sketch-Regel verletzt: <rule>".
+- The production build ships the design's `@assets` files, so Studio loads Noto Sans and Noto Sans Mono again.
+- The open-points popover no longer knows the `contrast` point kind.
+- The start view shows the terminal command in the shipped Noto Sans Mono instead of the OS monospace font.
+- Arrows, math signs and the keyboard symbols (⌘ ⇧ ⌥ → ≥) draw in the shipped Noto Sans Math and Noto Sans Symbols 2 instead of an OS font.
+- The merge page shows one disclosure per part for the unchanged states, not just the first part.
+- Update rustix to 1.1.6 to drop the unsound xattr advisory RUSTSEC-2026-0486.
+- The sketches page folds every variant into the "Unverändert" bar when no variant changes any state, so the comment pin of
+  a folded variant no longer shows.
+- Draw the open points popover on the sketches page without dividers between groups.
+- The Studio app renders its text in the design fonts (Noto Sans, Noto Sans Mono) instead of Jost and IBM Plex Mono.
+- Show the restart notice in the title bar again: the host no longer expects a push gate in the code state.
+- Disabled buttons on accent, warning, danger and surface fills get a lighter muted fill with a dark label at 3:1 or more.
+- The sketch gutter no longer shows the crop reason, locator and toggle when the zoom hides the state labels, so no text leaves its box at min zoom.
+- A failed listing read on the System page shows an error card with the reason and Erneut laden. The sketch view keeps which change crops show the whole screen.
+- The Studio logo menu uses the SDK menu's default maximum height again.
+- The macOS app writes console errors to its console log again. The macOS window config now leaves the main window to the app start, which attaches the log.
+- A sketch row in the System tree no longer switches to a merging status while its merge runs; the merge view shows the activity.
+- A merged sketch opens its part also when the sketch listing drops it before the merge answers.
+- A sketch with several parts shows its round title as head and lists its target parts under it in the part tree.
+- The part tree nests a part under the one part of its own layer that uses it, and moves it back to its layer once a second part uses it.
+- A row in the Offene Punkte popover for a missing motion opens its start state, and a blocker row that names a part opens that part.
+- Clicking a row in the Offene Punkte popover opens the state, comment, sketch or edit sketch the point is about.
+- The command palette shows a hint and the Ctrl K shortcut while the field is empty and nothing was opened yet
+- The Studio explorer shows only parts, no states: the open sketches sit on top as `part@name`, and Legacy sits collapsed at the bottom with one row per project.
+- The rail drops the Sketches (pencil) item: open sketches sit at the top of the explorer, and an open sketch marks System in the rail.
+- Remove the unused Studio project switch part and its component, since the project switch lives in the logo menu.
+- Studio asks the design server again when a check request hangs, so a hung request no longer keeps the start screen forever.
+- The sketch view shows "Variante gewählt" once a variant is picked, and the picked variant's head lists the sketch's open points, also for a part without a merged view.
+- The sketches page sample comment pin names the design's sample author, so `et design compare` matches its accessible name.
+- The open points popover on the sketches page now opens under the take button with its arrow on the chip, and lists its lines without a gap between the groups.
+
+## 0.2.0-next.16
+
+### Minor Changes
+
+- Studio on macOS runs on Chromium (CEF), like on Linux, so the live view and the frame pictures come from one engine.
+- Zoom chip: force a hover, active or focus-visible state on one button for design shots.
+
+### Patch Changes
+
+- The System page drops the Go and accept buttons. The open-points popover ends in the computed build-ready status (Baubereit, Nicht baubereit (n), Wird geprüft); a direct edit shows as its own blocker, and Sketch öffnen opens the part's edit sketch.
+- `design compare` draws forced states in embedded frames statically, masks the slot stand-ins of embedded parts on a page, and fails when a frame look's selector matches nothing in the app.
+- `et design sketch covers` on a multi-target sketch takes the part, `<layer>/<name>:<state>[@x,y,w,h]`, and refuses a bare state; compare matches a covered DIFF against that part.
+- The focus ring takes public `--et-focus-ring-*` tokens; `design check` stops flagging base parts and spinner clipping.
+- The release build reaches its design server: the CSP now allows the local server, its fonts, and Angular's inline styles.
+- Studio writes every console error of its window to `console.log` in the app log folder, so a bug report can carry it.
+- The title bar shows "CI rot" in the red push badge while the latest CI (Next) run is red, also when nothing is unpushed.
+- The footer popover shows "Sketch öffnen" and the other real blockers after a refused check record instead of staying on "Wird geprüft".
+- Lint now rejects a try/catch that ignores its error and returns a fallback in Studio and the design rules. A malformed token stylesheet is reported as a TOKEN-SELECTOR problem, and an invalid harness props JSON names its parse error.
+- An edit in a sketch variant no longer reloads the Aktuell row: its frames and pictures follow only the revision of the product part, so they stay drawn.
+- A sketch cell keeps its last picture while the picture of a new revision loads, instead of showing an empty cell after a sketch edit.
+- A sketch cell keeps its painted frame shown after an edit until the frame of the new revision has painted, so a cell whose picture had not loaded yet no longer goes empty.
+- The sketch view collapses the variant head into a small readable tag when the canvas is zoomed out, instead of leaving an empty frame.
+- A sketch whose automatic merge uncommitted files refused merges by itself on the next sketch command or Studio listing once they are committed; Studio shows one notice instead of a manual Übernehmen.
+- A sketch scroll keeps the live frame of a cell whose picture has not loaded yet, and drops the frames of pictured cells first, so a cell no longer turns empty while the design server is still rendering.
+- The sketches camera now snaps to whole pixels, and the design and the app share one pan helper, so text edges no longer smooth differently.
+- The design canvas opens at a remembered camera before its frames have a size, so the zoom chip shows the remembered zoom at once. The `elements/canvas-frames` design part now links to this canvas.
+- The title-bar push badge no longer shows a push gate state, only the unpushed count and the age.
+- Studio picture URLs stay the same across page switches, so a page shown before paints its stored pictures at once. Draw ranking moves to `POST /__design/view`; shots carry an ETag and answer 304.
+- The design harness shows a part only after it mounted, so a compare no longer photographs an empty page. The comment draft is a raised dialog, and the narrow zoom-chip sample changes only `fit`.
+- Show "N Bilder fehlen" instead of "Nichts offen" on the part chip while shots failed to load.
+- A sketch merged or discarded outside the app leaves its view as soon as the name listing drops it, instead of after the slow listing with targets.
+- `/__design/open-points` reuses its product-wide open points and rule results while no design, stylesheet or harness app file changed. Studio asks for a part's open points once per page switch.
+- The Studio checks that its design server answers with the cheap stamp request instead of a full system listing, so the System page reads the listing once and draws its first frame about 2 s sooner.
+- The Studio title bar shows unpushed commits and the push gate result as a badge before Update.
+- The "Neu starten" button in the title bar turns busy while the restart runs, and a failed restart shows the "Neustart fehlgeschlagen" error toast until dismissed.
+- Sketch cells keep their stored picture while scrolling. A live frame shows over it only once its page painted, so a cell that drew once never turns blank.
+- The sketch view hides a state picture the design server refused instead of showing its alt text over the frames.
+- Fit in the sketch view shows every variant column of a wide part, not only the first two.
+- A sketch cell that showed its live frame keeps that frame through a scroll until its picture has loaded, so it never goes empty.
+- The folded column of unchanged sketch variants stays on screen at Fit.
+- The sketches page keeps its frames on screen when the side panel hides at a panned or zoomed camera.
+- The Sketches page shows the folded-state count and "Alle Zustände zeigen" as a row at the end of the list instead of in the header.
+- The design harness renders the title bar and zoom chip inside each sketches frame, so the sketches page compares against its design again.
+- The Sketches canvas keeps its frames in place on screen when the side panel hides at a zoom other than Fit; the state labels no longer resize with the wider canvas.
+- The sketches page keeps its camera inside the content: a start or restored camera panned past an edge, and a wheel or drag pan, now stop at the first and last row and column.
+- Exceptions are approved in the open-points popover instead of a separate Ausnahmen toggle, and a legacy call opens in the System page.
+- The Studio build compiles again: a theme switch without a current theme is left out of the System view, and `ethlete-studio:typecheck` checks the templates.
+- The Windows title bar draws caption tiles with a red close, and a pending code change shows as a "Neu starten" button before Update.
+- The title bar no longer shows "CI rot", and the push badge text sits centred beside its icon.
+- Show the restart cause in a tooltip on the title bar's restart button; the inline notice text is left for the state without a restart.
+- Load every picture of a part you switch to at once, off-screen ones too, so a cold switch no longer fills two frames at a time.
+
+## 0.2.0-next.15
+
+### Minor Changes
+
+- The design system listing flags a base part no part of the product imports with `unusedInProduct`, and Studio lists those parts in a folded "Not used in <product>" group.
+- Draw the Kommentar toggle, the comment targets and the comment draft with its send busy and error states on the System page part.
+- The System part view writes comments again: turn on Kommentar, click a frame and send the draft.
+- A part in the system view gets a "Go geben" button and, after a direct edit of a merged part, an "Änderung abnehmen" button; a refusal shows in German in place.
+- Studio draws the new shell (rail, product switch, project picker) around every view, and its Inbox section lists the live comments of the product in place of the old comment panel.
+- The sketch view renders one round at a time; a select above the canvas switches between the rounds, and the newest opens first.
+- The Sketches page shows one row per variant, or one column per variant for a wide part, fitted to the view, with unchanged states dimmed and the first change marked.
+- Studio draws its own title bar: Linux follows the GNOME button layout (only close with prefer-no-csd), Windows shows square tiles and macOS keeps its traffic lights.
+
+### Patch Changes
+
+- The inbox comment editor shows the shared comment draft card directly under the pin, without a dialog pane around it.
+- The System page popover ends in a build-ready footer with a Gründe disclosure, and `design compare` now clicks open a trigger that sits inside an overlay.
+- The design server's comments list carries the checkout's `git config user.name`, and the Studio inbox shows it as the author of the user's comments instead of "Du".
+- The design control inventory marks a control another element fully covers as covered. Studio lists it but draws no outline or number badge for it.
+- The quick sketch listing carries each variant's states, widths and interactions, so the Studio sketch grid shows them before the pictures are compared.
+- `et design task` starts only on a build-ready part and lists its blockers; done, STALE and ACTION-LOST read the check record instead of go.json.
+- `et design compare` shoots a fitted part without the frame padding, and draws a `pages` part at a product preset (`--preset`, default the first) against a harness host that fills that viewport (`layout=page`).
+- `design check` draws an open edit sketch's `old` variant from HEAD and fails an `old` that does not draw as `EDIT-OLD-NOT-DRAWN`. Studio's full sketch listing no longer fails in WebKit after 60 s.
+- The live spec gets a fit state for the System page and a 100 % state for the Sketches page.
+- The design harness records each output the mounted part emits, for `et design actions`.
+- The inbox shows the canvas with the system page's frame and zoom chip.
+- The open-points popover on the System page uses the UI font.
+- Remove the chat panel, which no page design shows.
+- Remove the chrome no page design shows from the System part view: the changed badge, the authors, the theme switch, notes, comment mode with its pins and drafts, the motion strip and the new-product screen.
+- The System part view drops the "used in" frames, labels a part frame with its bare name, and orders the part tree Foundations, Elements, Components, Pages as the page design does.
+- Keep the product name whole in the title bar search and end a long part name with an ellipsis, starting the label at the left once it is cut.
+- The title bar search field is its own component: its icon, product name and shortcut are muted at rest and take the full text colour when hovered, pressed or focused.
+- A page's control inventory lists the controls an embedded part draws as `owned by <part>`. They no longer vanish, and they do not block the approval.
+- A page's inventory numbers two controls at the same place apart by their label, and the list shows each label.
+- The Aktuell cell of a state that is new in a sketch names the states the merged part has, in larger text.
+- The Studio sketch view offers no Übernehmen for a variant whose frame failed to draw, its round badge says the round has a render error, and a failed frame reloads on the next design change.
+- The Studio sketch view also marks a variant whose part module the design server cannot load: its round badge says the round has a render error and the variant offers no Übernehmen.
+- A click on the active item of the navigation rail now hides the sidebar, and another click shows it again. Enter and Space on the item work the same way.
+- Write the Tailwind classes in the Studio app in their canonical form.
+- The Sketches page pans and zooms like the other canvases.
+- Keep the zoom chip at the canvas's bottom right on System and Inbox, and keep the canvas focus ring off after a pointer click until focus leaves.
+- The canvas draws comment pins with the comment pin component: the latest sender's initials or agent logo and the reply count.
+- Add the canvas frames component (`design-parts/canvas-frames`) for the `elements/canvas-frames` design part: the projected frames in a zoomed column of the canvas viewport, with the zoom chip in the corner.
+- The design harness can size the canvas-frames part through a width class.
+- The canvas keeps its camera when the panel hides or the window resizes. An opening fit fits again only when the frames change; a fit or focus you ask for still follows the canvas size.
+- Draw no row label left of the frames on the System canvas, as the page design does.
+- A canvas opens at 100 % with its frames at the panel edge, the same view as the 100 % button, and keeps the frames in place when the side panel hides.
+- The design canvas draws no focus ring after a pointer click, only on keyboard focus.
+- Space now activates a button inside the system page canvas instead of being swallowed by the pan shortcut.
+- The live design canvas is transparent again, so the dot pattern of the page background shows through it.
+- The design canvas draws its zoom controls with the zoom chip component.
+- The canvas viewport design part draws no focus ring after a pointer click, only on keyboard focus.
+- The design canvas no longer shows its focus ring after the window loses and regains focus following a pointer click.
+- The System open-points chip counts the open exceptions of the part.
+- Studio now judges a stale cli build by the same source hash the cli guards itself with, instead of file modification times.
+- Show the code notice in the title bar and offer "Neu starten" while the design server runs; the notice watches the same sources the app copy is built from
+- Add the presentational comment pin component (`design-parts/comment-pin`) for the `components/comment-pin` design part.
+- A comment that fails to send for a network or server error says "Kommentar nicht gesendet. Erneut versuchen." and offers Erneut senden; one the design server refuses with a 4xx shows the server's reason and no retry.
+- The development Studio serves its frontend from a build of the last committed frontend, and "Neu starten" switches that build together with the CLI copy.
+- Studio starts its design server from a CLI copy built from the last `libs/cli` commit and no longer restarts it on a rebuild; `yarn et:design` runs design commands from that copy.
+- Remove dead code: the canvas pointing, notes and draft features, the unused row labels, and the agent run commands of the host.
+- Studio appends every refused design action (command, part, status, message) to ethlete-studio-design-actions.log in the temp directory, so a failed merge leaves a readable trace.
+- Name the shell component in the design live spec, so `et design actions --live` can check the shell controls.
+- The Studio logo menu now holds the design server actions (start, restart, stop), the design server stopped screen is part of the shell, and the footer status bar with its server line, render queue, failures and Reload is gone.
+- Leave the sketch view for the target part at once when the open sketch is discarded, instead of keeping its frames until the sketch listing reloads. The canvas e2e covers a merge and a discard.
+- Add the presentational disclosure component (`design-parts/disclosure`) for the `components/disclosure` design part.
+- Studio draws its surfaces and accents from the SDK surface and colour themes; the Tailwind colour aliases for surface and accent are gone.
+- Removed the unused flow arrangement of the design canvas, its line drawing, and the flow-note write paths of the note store and host.
+- The Studio stylesheet drops the unused `surface-hover`, `surface-pressed` and `accent-hover` colour utilities; the design parts use the SDK colour and surface theming instead.
+- Studio notifications draw the message at full opacity and the dismiss icon at 0.6 at rest, so both pass contrast.
+- The Studio error toast names its input `heading` and its output `dismiss`, so it needs no lint disables.
+- Studio shows an error toast when "Projekt öffnen…" picks a folder without design work. The toast is also a design part.
+- The flows page camera treats the area under the floating side panel as covered, so Fit, zoom and 100 % start right of it.
+- The flows canvas pans by wheel and drag and zooms with the zoom chip, like the sketches canvas. A flow starts at 100 % with its first frame at the left edge, so wide flows are no longer clipped.
+- Fill each Flows graph frame through a projected template instead of a fixed iframe.
+- Draw the canvas content of the Studio flows page part: header with the preset picker, the flow graph and the empty block.
+- The flows page part takes its sample flow names, line labels and size preset from the studio labels.
+- Add the Studio flows page component: the shell with the studio menu and the flat flow list around a projected canvas.
+- The Flows section now draws the flows page part: the product's flows in the side list, the picked flow as live frames along its lines, a size select from the product presets, and an empty state with a copyable prompt.
+- The flows page preset select now has an accessible name, so it no longer raises ET2201.
+- Picking another flow on the flows page resets the camera to the opening view instead of keeping the previous flow's pan and zoom.
+- Studio: a frame page that fails to load without a body no longer breaks the canvas frame's size watch.
+- Canvas frame heads keep their text inside the box at Fit zoom.
+- A canvas frame that hits the design server mid-restart now shows a failed state and reloads once the server is back.
+- A two-finger trackpad pan keeps moving the canvas when the pointer is over a frame on the Sketches, merge and flow
+  pages, and over the live frame on the design canvas during a pan.
+- The build-ready blockers for a stale check record, pending slow checks and an embedded part that is not build-ready
+  show in German.
+- Draw every text of the Studio system view in German from `studio-labels.ts`.
+- The Studio go click now shows when the stale harness map could not be regenerated.
+- The sketch canvas can leave out the variants their agent withdrew; a reopened variant shows again.
+- The inbox design part draws the comment editor arrow like the SDK overlay arrow, so its compare is green in every state.
+- Add the presentational inbox page component (`design-parts/inbox`) for the `pages/inbox` design part, mounted by the design harness for `et design compare`.
+- The inbox comment draft starts empty instead of showing sample text when no draft text is bound.
+- The Inbox says while its comments load, shows a failed load with "Erneut laden" to retry, and scrolls a list longer than the panel.
+- Show a resolved comment's pin, muted and with a check mark, after a click on its Inbox row
+- A click on an Inbox comment row, or Enter or Space on the focused row, selects the comment and opens its pin on the canvas, on its own part.
+- The Inbox editor sends a comment draft through the comment store, and the drawn Inbox and Inventory buttons declare their actions.
+- The inbox draws its rail and panel through the shell-main component.
+- The Studio inventory page part draws its own canvas: the Inventory toggle, the approval header with Reload and Approve, the frame with numbered boxes and the control list.
+- Pass the part tree `expandedChange` output through the inventory page part.
+- The inventory page part takes its German text from the studio labels.
+- The inventory page numbers its markers from 0, as the design does.
+- Add the Studio inventory page component: the shell with the studio menu and the part tree around a projected canvas.
+- The page Inventory draws with the inventory page part, in German.
+- Forward the inventory page `expandedChange` output from the inventory view.
+- The Studio stylesheet resets the default colours before the generated SDK themes, so `bg-et-surface-*` and the other generated theme utilities produce CSS again.
+- The Sketches tree shows right after a reload from the light sketch list; rule problems and targets follow with the full list, and a variant can be picked once its problems are known.
+- The sketch rounds helper takes its options as one object, and the comment draft container is marked presentational, so the Studio lints clean.
+- The live design canvas is a focusable region named Design Canvas with the focus ring of the canvas viewport part, the comment pin counts every message of its thread, and the accent dot for a waiting question is gone.
+- The live compare of the Sketches page starts without a stored sketch entry.
+- The studio menu part host no longer paints a surface fill behind the menu.
+- The Studio menu panel now sits one surface above the shell instead of two, and its group label uses the UI line height.
+- Add the presentational Studio menu component (`design-parts/studio-menu`) for the `elements/studio-menu` design part.
+- The Studio logo menu holds the design server actions the server state allows: start, or restart and stop.
+- The merge page crops the changed instance from each side instead of a sample button, shows "Neu in <variant>" in the empty "Jetzt" panel of a state the variant adds, and shows the Merge button loading while the merge runs.
+- The merge page crop row zooms out until the whole changed instance of both sides fits, and its label shows that zoom instead of a fixed 200 %.
+- Default the merge page part crop label to the system page copy prompt label.
+- The merge page shows why a merge failed under the Merge button: a stale sketch names the changed parts and asks for a rebase.
+- Add the Studio merge page component: the merge panel with the changed list and the unchanged states, and the before and after shots of the selected row.
+- Merge on a sketch now picks the variant and opens the merge page part, which lists changed states with live Now/After frames; Back returns to the sketches. The unused pixel-free, variant-diff and changed-area helpers are gone.
+- The merge page part shows German text and an optional error line under the Merge button.
+- The merge page marks its 200 % preview crops inert, so the copied buttons in them are not controls.
+- A refused merge shows the design server's reason and the check findings in the merge alert instead of "Merge fehlgeschlagen.".
+- A changed row on the merge page is picked with Space as well as Enter.
+- The merge page draws its Now and After shots as a projected slot that the live app fills with frames.
+- The merge view compares a sketch that changes only its own pages, and shows a state the variant adds with only its after picture.
+- A merged sketch leaves the Sketches tree at once instead of after the slow full listing.
+- The Studio shell no longer rubber-bands on overscroll, and canvas frames no longer paint over the explorer in WebKit.
+- System and Sketches use the same canvas: left drag pans, a click on a frame selects it, arrow keys pan, a double-click focuses a frame, Space or middle drag pans, and Shift+1/2/0 work window-wide on both pages.
+- Every Studio menu draws its items at the control-md height and text-md size, and the logo menu button keeps one corner radius in every state.
+- The rail logo opens the studio menu on every page; one shell wrapper wires the rail and panel controls of all pages.
+- A sketch opens its first unchanged row by default when no visible row shows a frame of the current part, so the "Aktuell" column is never empty.
+- The open-points chip on the System page counts the part's exceptions with its open points.
+- The System page shows the "N offen" chip and its popover for the shown part, read from the design server's open points.
+- The open points chip on the System page un-presses when its popup closes, so a second click closes both.
+- "Projekt öffnen…" opens the OS folder dialog, and an update installs on the next Studio start without a button.
+- Let the canvas of the System and Inbox page parts fill their slot, as the page designs.
+- The explorer panel stays above the canvas frames in WebKit while a frame's page hangs.
+- The part tree takes own row keys, a closed part with states, a warning title per part, and reports the open rows.
+- Add the part tree component (`design-parts/part-tree`) for the `elements/part-tree` design part, drawn with the tree-row items on the headless tree.
+- Press Space on a part tree row to open or close it and activate it, like Enter.
+- The project picker closes when the current project is chosen again, and the System rail button leaves an open sketch and shows as current on every page.
+- A modifier key press after a pointer click on the design canvas no longer brings the focus ring back.
+- The pointer-focus ring rule of the design canvas lives in one shared function.
+- The project picker moves focus to its first project when it opens.
+- Close the project picker when a project is chosen, including the current one.
+- Name the missing check record "Prüfergebnis" in the build-ready blocker text.
+- A design server reconnect keeps the mounted frames, and a failed sketch listing shows as an error instead of an empty list.
+- A refused pick or discard in the sketch view now shows the CLI's reason next to the decide controls.
+- The system view remembers whether it shows a page's control inventory, so a reload keeps the Inventory toggle.
+- Studio no longer shows the stale-mocks button and drops its host-side stale-mocks poll.
+- Restarting the design server from the Studio menu now reloads the canvas frames once instead of twice.
+- SDK components, including body-portaled menus, draw in the Studio UI font.
+- The design server actions in the Studio menu also work on the System, Sketches, Flows and Inbox pages.
+- Draw the claude, codex and gemini logos of the inbox and the comment pin from one shared icon file that the Studio design system also uses.
+- Add the shell-main component (rail, panel and project picker) and use it in the inbox.
+- The shell rail no longer shows the All products button.
+- The Studio shell draws its project switch with the shared project switch component instead of its own copy.
+- A failed call or open point read keeps the last shown list instead of replacing it with an empty one.
+- The Sketches canvas loads each frame once on first load and no longer grows while you pan.
+- Load each Sketches frame once on opening: the frame rows wait for the list width, so the layout no longer switches to the matrix after the first render and destroys every iframe while it loads.
+- A failed or timed-out sketch listing now shows its error in the sketch rows and offers "Erneut laden"; a failed flow listing keeps the last flows and exposes its error.
+- A sketch with many variants and states no longer freezes Studio: at most six frames stay live, and states every variant leaves unchanged fold away.
+- A variant that matches the current part stays folded while a sketch listing refreshes, so its frames no longer reload.
+- Say "Sketch nicht gefunden" for a picked sketch that is gone instead of showing the first part, and name a sketch variant that fails to render in the tree warning
+- A sketch named apart from its part, like the direct-edit sketch `pages/flows@edit`, draws its frames again.
+- The Sketches group of the part tree renders from a sketch listing that loads no part module, before the quick and the full listing answer.
+- The Sketches page opens at 100 % on the variant a fit shows nearest the top centre when its design state asks for the 100 % camera.
+- The Sketches canvas keeps its frames in place on screen when the side panel hides or shows.
+- Write the sketches page child flex rule as a canonical class.
+- Pass the part tree `expandedChange` output through the sketches page part.
+- An idle sketch without a drawing report names the author of its newest variant in "Letzte Änderung" and drops the empty parts instead of showing "von ·".
+- The sketches page part shows German text only; its page design needed no text change.
+- Add the presentational Sketches page part: the variant frames on one canvas, their heads, the round picker and the zoom chip.
+- The sketch view draws the sketches page part; reject/reopen, notes, diff lists and the state matrix are gone.
+- The Sketches canvas pans freely again, past every edge of its content, like the System, Inbox and Flow canvases; a restored camera keeps its pan.
+- The sketch view shows the round-2 sketches page: a status badge from the real sketch state (drawing, waiting, paused with its hold, idle), unchanged variants folded into one disclosure, and a sticky state column in the matrix.
+- A Sketches rail click opens the sketch view with the first sketch instead of the System canvas.
+- A selected frame in Sketches now shows the same selection outline as System.
+- The Sketches view labels the button above each variant "Wählen"; the merge view keeps its "Merge" button.
+- The Sketches rows come from the live sketch, and Übernehmen opens the merge view directly.
+- Studio specs fail when a test logs an SDK error (`ET` code), and name each code and message.
+- The system view no longer shows the stale design mocks banner until its look is picked from a sketch.
+- The system view shows a warning banner naming the stale design mocks and the command that rebuilds them, and drops it
+  once they are built.
+- The start page without an open repo no longer draws an empty bordered box above the title.
+- With no checkout open, Studio shows the start page without a repo instead of asking to start the design server.
+- Add the start page component for the no-repo and no-products states.
+- The start page matches its design: Studio font, default colour on the other-repo button, design monospace font for the CLI command.
+- On an `et-surface-interactive` element, the `et-surface-interaction` colour utilities follow the hover, focus and active state of the SDK interaction tint.
+- Going back to System after picking a flow now picks the first part, so the canvas is no longer empty.
+- The system page canvas now fills the whole page and runs under the floating side panel. Fit, focus, reset and zoom treat the area under the panel as covered, so frames still start right of it.
+- The System page draws a product without parts with the empty system card, and a checkout without products shows the start page with the repo and a copyable agent prompt.
+- The fitted System canvas frame stays centred right of the side panel after the fit is applied.
+- Write the system page tree frame width as a canonical class.
+- Pass the part tree `expandedChange` output through the system page part.
+- The System page design part draws its frame fitted to the canvas for the fit state.
+- Add the Studio system page part: the part tree, the frames on the canvas, the open-points chip with its popover, and the empty page.
+- Let the Studio system page take the content of its canvas frames through a `shot` template, so the live app can fill them with frame iframes.
+- The System view draws its side tree with the part tree component.
+- Place the zoom chip of the System part view where the page design draws it.
+- The Studio theme CSS names the type of the error and warning colour themes.
+- The Studio title bar follows its design part: a 32 px three-column bar with a centred search field and an Update button that shows when an update is ready.
+- Render the title bar inside the shell, over the full window width above the rail, and name the current product in its search field.
+- The title bar ends in a 1 px bottom border, and its search field stretches its contents through the button's `stretchContents` option.
+- Use `--et-kbd-color` instead of a descendant class override for the title search keys.
+- The part tree shows every listed problem, and the system listing names the component each part implements.
+- Give the Studio tree rows German labels from one label map.
+- The System view draws its part tree with the tree-row design and no longer shows the badges that design has no mark for.
+- Add the presentational tree row component (`design-parts/tree-row`) for the `components/tree-row` design part.
+- Give the Studio tree-row stack the tree and treeitem roles of the live tree.
+- The part tree rows use the menu item text size and grow with it.
+- The title bar's Update button opens a dialog that installs the downloaded update and restarts Studio.
+- The title bar no longer drops out for a moment when you switch pages.
+- The title bar, the update dialog and the tree row now fire real outputs (`update`, `minimize`, `maximize`, `close`, `later`, `restart`, `rowPress`) and the shell page handles them.
+- The canvas zoom chip buttons have German labels for screen readers.
+- Add the presentational zoom chip component (`design-parts/zoom-chip`) for the `components/zoom-chip` design part.
+- The zoom chip's percent button is a plain SDK button without tabular figures.
+- "Auf 100 % zoomen" on the System canvas returns to the opening view: 100 %, the frames at the panel edge.
+- `design shot` and the Studio sketch view label a variant its agent withdrew as "withdrawn by agent" with its reason, and keep "rejected" for a designer's rejection.
+
+## 0.2.0-next.14
+
+### Minor Changes
+
+- The Studio motion timeline makes the motion's start frame live and drives it: the slider pauses its animations at that time, play and speed run them, closing resumes them at 1x.
+- Motion timeline tracks name the foundations duration and easing tokens they use.
+- The chat agent gets a Studio brief: check each change with `et design check` and a shot, add no changeset for design files, and use the product type tokens from `foundations/type`.
+- A click on a part grid cell selects that state, and the chat context line names it. A sketch selection label reads like `pages/system · desktop (context)`, with no repeated names.
+- Chat messages render a markdown subset: inline code, fenced code blocks, bold and lists. Everything else stays plain text.
+- Every chat message carries the current view (product, part, sketch, variant, clicked frame), shown as a chip above the input that one click removes.
+- A product that declares only one colour scheme draws one copy of each frame, in that scheme and without a scheme label.
+- Studio draws every page, declared-width part and flow frame in the light and the dark scheme, side by side under a Light and a Dark label, stacked when the frame is wider than 1024px. Legacy call shots stay single.
+- The agent chat is now a collapsible panel on the right of every Studio view that keeps its conversation when you navigate, and follow-up messages continue the same agent session; the separate agent page is gone.
+- Studio marks a failed shot as "Render failed", a slow shot as rendering, and says the design server is starting until it first answers.
+- Studio draws every merge-preview frame in the light and the dark scheme, like pages and flow frames. The sketch matrix stays one copy.
+
+### Patch Changes
+
+- `et design complete` names a `hover:`, `active:` or `focus:` class no stylesheet defines instead of reporting an unchanged box, and the Studio Tailwind theme gains the `surface-pressed` colour.
+- The motion timeline now drives a part drawn as a state grid: it makes the `from` state's cell live and posts to it. Keyframe images load from the design server.
+- Changing the motion strip's preset or reduced motion while the timeline is open makes the new frame live. Opening or retargeting the timeline moves the camera to the driven frame and keeps it in view as the canvas resizes.
+- A static shot draws in the colour scheme Studio prefers, like the live frames next to it, so a dark Studio no longer mixes light shots into a grid.
+- Stop ends every process a chat run started, and the chat can run the design check and shot its brief names.
+- Run the studio chat's design check, shot and sketch commands through the checkout's et entry, send merged-part changes through a sketch, and load only project settings in chat runs.
+- A chat run on a call reaches the design tools through `et design mcp` instead of Studio's own tool server.
+- The chat no longer prints an agent's last message a second time on the finished line.
+- Chat messages name the part's file and the sketch variant you look at: the selected frame's, else the one most in view.
+- The chat prompt now clears after sending, also when the message was pasted and sent at once.
+- The agent bridge takes a call and a variant: a chat run with both starts `et design mcp` and its prompt names them, so the agent passes them to the design tools.
+- The checkouts toggle is an icon-only button.
+- The chat context chip and prompt preamble no longer repeat the part as a `frame` when the selected frame is that part's own matrix.
+- A debug start of Studio builds only the CLI before the design server starts, not the bundled runtime with its `npm install`, which the dev server never used.
+- The red error badge on a part in the Components tree now shows the problems behind it on hover.
+- A frame caption in a narrow frame ends the frame label in an ellipsis. The scheme label, the width, the note and the Live badge keep their full width.
+- A frame grid goes live in one step: the cells keep their shots until every live cell painted.
+- A part grid shows its cells in one reveal once all of its shots have loaded, with a loading dot until then, instead of cell by cell.
+- A part's state grid now reveals once each shot is loaded, failed or slow (over 2 s), so a shot that never answers shows its "Rendering" mark instead of keeping the whole grid hidden.
+- A part grid stays visible while the shots of an edited part load, instead of hiding behind its loading dot; only a new cell or scheme hides it again.
+- A live canvas frame that follows its content now draws its page in the 800 px viewport of a shot, so an open select panel shows in full and no longer shrinks to the frame.
+- After a sketch is merged or removed, the system view shows the part it targeted instead of the first part.
+- The motion timeline shows token names for duration and easing in the mono font, so `--` stays two hyphens.
+- Studio draws every part grid twice, under a Light and a Dark head, and `frame.html?scheme=` pins a live frame to one scheme.
+- The footer shows the design server's render queue, the age of its oldest draw, and the shots and frames that failed, so a slow or blank frame reads as slow or failed.
+- Select the grid cell under a click on an inactive grid frame, so the chat context names its state
+- Ask the design server for shots with a view counter and a rank, so the shown view and the active frame are drawn first.
+- The Studio theme has a `surface-hover` colour, so `hover:bg-surface-hover` draws a light text tint on a plain surface.
+- Swap a canvas frame between its shot and its live page without a blank frame: the frame page reports when it painted, and Studio keeps the old view until the new one is ready.
+
+## 0.2.0-next.13
+
+### Minor Changes
+
+- A page part shows an Inventory view: its rest frames with numbered, status-coloured control boxes, the control list, the approval state, and an approve button that stays off while a control is undeclared or unclassified.
+
+### Patch Changes
+
+- Use canonical Tailwind theme colour classes (`text-(--et-theme-color-primary-solid)`) across Studio and drop a redundant optional chain.
+- A part with pending or reopened `design complete` exceptions shows an Exceptions button: it lists each key and reason, and approves one as the designer.
+- A state grid marks each empty column of a row that draws a state as "not drawn", the same cells the CLI shot sheet and `sketch check` show.
+- A part with motions shows a strip of each motion's keyframes; a click on one opens a read-only timeline with play, speed and one track per animation.
+- Regenerate the Studio theme files from the merged colours part.
+
+## 0.2.0-next.12
+
+### Minor Changes
+
+- A sketch's changed area gives one box per cluster of changed pixels; `et design shot --crop changed` writes one sheet per cluster, and Studio shows one enlarged crop per cluster.
+- The design server lists per sketch variant the states it adds and drops and its changed part note. Studio says on the canvas when a variant changes no pixel, and a click shows the old and new note.
+- A sketch with several targets shows the diff marks and the pages that use any target part. Studio names the parts a `shared/` edit reaches. The sketch-diff endpoint takes `part=`.
+- `et design sketch new` takes several parts: one sketch, one variant folder holding them all, one `ready`, one merge; `ready` and `preview` name every part a `shared/` edit reaches; Studio shows every target part.
+- A sketch where only some variants change no pixel now also hides the folded state rows until Show all states.
+- A sketch variant that changes no pixel now shows only the pixel-free line instead of the folded state rows; Show all states brings the rows back.
+
+### Patch Changes
+
+- The heads of folded sketch rows no longer overlap at a low canvas zoom: their labels stop growing at twice their size.
+- The design canvas makes at most six frames live, nearest the centre, once the camera rests for 250 ms, and keeps a loaded frame for five seconds after it leaves; the others show their drawn shot.
+- Enlarge each crop of the changed-area view at most twice instead of to the frame width, so small changed areas no longer turn into blurry, page-high tiles.
+- Studio defers the new-product form, note and comment forms, comment thread and comment panel, so the first view loads about 120 KB less script.
+- The host reads projects, git state and folder scans off the main thread, a scan skips `node_modules`, and a call check gives up after two minutes.
+- Studio loads the motion tokens from `foundations/motion`.
+- Studio opens one `comment-events` stream to the design server instead of four, which leaves more of the browser's per-host connections free.
+- A pick or verdict on a sketch variant shows at once from the answer of the request, instead of after the next sketch list read.
+- A file change reloads only the list it names (calls, sketches or the system lists) from the design server's events, instead of every list through the host's file watcher, which is gone.
+- The host keeps only the start of an agent's stderr and probes the design server port without blocking a runtime worker.
+- Polling a design server Studio did not start judges it stale once per server start instead of on every poll, and sends its log only when it changed.
+- A cold sketch shows its first frame sooner: Studio lists the sketches without the slow unchanged-state comparison first (`?unchanged=no`), asks for shots and diffs at once, then lists them in full.
+- Generate the SDK colour and surface themes from the colours part, add a warning theme, and make the page background surface elevation 0.
+
+## 0.2.0-next.11
+
+### Minor Changes
+
+- Reject and reopen single sketch variants with `et design sketch reject|reopen` or in Studio; a rejected variant keeps its reason, origin and history and can no longer be picked or merged.
+- Studio's sketch view gets a "Changed area" switch per round that shows every column cropped to the one area the round's variants change, enlarged, under a small whole-page thumbnail, and the design server answers that area on `/__design/sketch-crop`.
+
+### Patch Changes
+
+- The comment sidebar shows a failed or interrupted comment load with a Retry button and keeps the last list, instead of an empty inbox.
+- The comment sidebar now notices a dropped live update stream, shows it, reconnects after 5 seconds and loads the list again.
+- A sketch state whose markup differs or only renders in a browser now counts as unchanged when its pictures match the product. Studio folds such states and shows a count with a "Show all states" button.
+- Studio's "Changed area" view keeps variant notes at every zoom, remembers its switch over a reload, and takes comments on the small whole page.
+- Comment pins, the marked-box outline and new comments now follow the crop of Studio's "Changed area" view instead of using full-page positions.
+- Studio also writes each panic with its backtrace to `ethlete-studio-panics.log` in the temp directory.
+- A product switch in the System view no longer shows the sketches and flows of the old product while the new ones load.
+
+## 0.2.0-next.10
+
+### Minor Changes
+
+- Comments show an "Addressed in round …" badge once the agent, a new round, a merge or a discard answered them, and each thread has a Resolve button: only you resolve a comment.
+- A merged part that changed outside a sketch shows a "changed" badge in the part list and above its frame.
+- `sketch new --variant-note` keeps each variant's note in `sketch.json` instead of overwriting the part's merged note; Studio shows it in the variant's head, and a merge gives it to a new part.
+- A part with a `grid` draws the states it places in one dense frame, a labelled cell per state, instead of a frame per state.
+- The Flows view draws a page that exists only as an open sketch from that sketch's first variant.
+- The sketch matrix folds a state that no shown variant changes into one thin row below the changed rows. A click opens or folds it again, and the sketch view remembers the choice.
+- The comment sidebar hides resolved threads and shows them read-only, with who resolved them and why, behind a "Show resolved" toggle.
+- The sketch view says under each variant how many states differ in pixels from the merged part; the list names each changed box, and a click outlines it on the frame.
+- Studio names the agent model that made something: each sketch variant head shows its first author and "+N", an agent reply shows its model, a part shows "made by", and the report tooltip names its author.
+- Tell a real agent question from an answered thread: the tree badge reads "question" or "answered", and only questions count in "N ?". The sketch view pins only sketch comments and links to the product part's comments.
+- You can read and reply to a comment thread in its pin. A question from the agent shows in the sidebar, on its pin, in the tree and on the Comment button.
+- The sketch of an element shows each page that uses it with every variant swapped in, and the part view shows the pages that use a part.
+- The design canvas lays frames out left to right along lines and draws each line with its label.
+- Comment on flow frames: a comment there belongs to the state at the shown preset, so it also pins on the part canvas. A flow remembers its picked preset.
+- The system tree lists a product's flows; a flow shows its states at one preset, picked at the top, with the lines between them.
+- A file change reloads only the frames of the parts it touches, at most four at a time with visible frames first; a waiting frame shows an accent dot and the status bar counts "Rendering N frames".
+- The sketch matrix has an interaction switch for all cells, and a comment on a hover, focus, active or disabled cell keeps its interaction: its pin shows only there, other cells count it.
+- The sketch merge preview "Where <part> is used" shows only states the merge visibly changes, outlines the part in the accent colour, groups unchanged states per part into one line, and shows a failed row as an error.
+- A merge refused for a stale baseline shows the reason, the changed parts and the rebase command with a copy button. The sidebar marks a running merge "merging", and a successful merge selects the target part.
+- The New product screen has a form: a name and an optional base product. Studio creates the product through the design server and picks it; a refusal shows in red.
+- Studio shows notes on states on the part canvas and in every flow, and free flow notes as headings. A Note mode writes, changes and deletes them.
+- The part view shows a small part as a grid of state tiles fitted to their content, and a part with `widths` at each width.
+- The part view is a table: a row per state, a column for rest and each interaction the part declares, drawn with the interaction forced.
+- The product picker names a base by its last folder ("inherits from web"). The New product form offers `@ethlete/components` as a base.
+- The product picker is always a select, also with one product. Its last option, "New product", shows the command that creates a product, with a copy button.
+- Remove the old Calls view: Studio opens on the design system view, where legacy calls live under Legacy.
+- SDK components in Studio take their surfaces, teal accent, control heights, radii and font sizes from the Studio tokens. The font and radius tokens no longer resolve to an invalid value.
+- Every state grid, the button grid too, draws as one sheet whose cells sit on the surface colour.
+- The sketch view shows each state of the part as now and as every variant side by side, at one picked size, with a merge preview.
+- While an agent still draws a sketch round, the sketch view dims each frame of its variants under an "Agent still drawing" label.
+- The sketch view shows each round as its own band with its title, newest on top.
+- The sketch matrix groups variant columns by round. The newest round is open; an older round folds into one column with its title, note and variants. A click opens or folds a round, remembered per sketch.
+- Show open sketches in the system view: a Sketches group, a "sketch open" badge on the target part, a sketch canvas with the current part beside each variant, and pick, merge (with its preview) and discard.
+- Draw a small part in one canvas frame: a grid with a column per interaction and a row per state. A comment on a cell still targets that state and interaction.
+- A part's state grid draws its cells as one sheet on a sunken frame, grouped into states by interaction and rest-only states packed a line per column count.
+- The System view lists the old design calls under Legacy, draws each one's variants on the canvas, and can mark a call transferred.
+- Studio gets a System view that lists a product's parts by layer and draws the picked part's states on the canvas at every preset.
+- The part tree lists a part's frames instead of its states, and a click opens that frame. A part drawn in one frame is a leaf.
+- The tree lists a page that uses wireframe kit parts under Wireframes, with the number of kit parts next to it.
+
+### Patch Changes
+
+- The design server sends a `flows` event when a flow file changes, and Studio reads the flows again, so a flow edit shows without a server restart.
+- The design frame page posts `Esc` to its parent. The Studio canvas now leaves an active cross-origin frame on `Esc` and takes its height from the frame page.
+- The design server draws merge compares and plain `/__design/shot` asks before Studio's canvas shots, which now ask with `priority=low`.
+- The app icon is the Studio mark: a stroke S, dark on a teal tile.
+- The sidebar header shows the Studio mark beside a "Studio" label.
+- Note cards no longer cover frames: the notes of a grid cell hang below the whole grid, every layout keeps room below a noted frame, and a note column stops growing at twice its size when zoomed out.
+- Merging a sketch variant no longer needs a note.
+- Open comments on a sketch no longer disable Merge and Discard.
+- A click on a changed state under a sketch variant now also moves the camera to that state's rest frame and zooms in, so the outlined box is visible.
+- `sketch variant --round` stores why the running round lost in its own `lost` field instead of overwriting the round's note, and `--round-note` sets the new round's note so `sketch ready` accepts it.
+- A Legacy call frame shows a picture that matches its live page, and no longer flashes white when it turns live.
+- The canvas fits its frames at the top of the view, and fits again once fitted frames report their size.
+- The canvas stacks frames, flow lines, notes, comment pins and open popovers in that order, so a note card no longer covers an open comment thread or the note editor.
+- Canvas frames no longer flash white on a design change, and fitted frames no longer open huge after a reload.
+- The part and sketch views have a comment mode (`C` or the Comment button): click a frame or a state label to write a comment, and withdraw one from its pin.
+- A comment sidebar lists the product's open comments and jumps to their pins, open comments lock a sketch's merge, and the sketch matrix marks missing states.
+- A design server no longer outlives a Studio that dies without a clean exit.
+- In a dev build, the design server line reads `stale` when the `libs/cli` source is newer than the built cli runtime, or a source file was deleted. A restart rebuilds it.
+- Remove the host commands only the old Calls view used: call statuses, verdicts, modes, closed states, new variants and check receipts.
+- Studio: a frame sized to its content no longer grows, shrinks and grows again when the part uses `100vh` or `100vw`; it drops the measure its own resize caused.
+- A long flow line label widens the gap between its two frames, up to a limit; above it the label wraps.
+- Flow frames note the comments made at another size, as the part canvas does.
+- Clicking a comment keeps the canvas zoom, an open pin shows an accent ring, and sketch rows drop their layer prefix.
+- A new sketch round folds the older rounds again, even when the user opened one of them before.
+- Studio forgets the fitted cameras older builds saved, so a part such as `components/button` opens fitted at the top instead of zoomed and pushed down.
+- A frame on the canvas shows its border on all four edges at fractional screen scales. The border is drawn above the live page and its screenshot instead of beneath them.
+- A page frame's label names its state as well as its size ("comment open · desktop"), so two states at one size can be told apart.
+- A fitted frame drops its border, a live frame shows a "Live · Esc" marker and ends when comment mode starts, and closing a frame no longer throws a cross-origin `SecurityError`.
+- A frame that throws at runtime now reloads on the next change that redraws errored frames, like a frame with a build error.
+- Show the system tree with the SDK tree. Legacy starts folded beside products and splits its calls into folded stage sections with a count. The open groups survive a reload.
+- Give every fitted tile in a matrix column the width of the widest one, so the right edges line up. The part keeps its own size at the left.
+- A matrix row of very short frames keeps room for its labels and the "Agent still drawing" badge, so they no longer reach into the next row.
+- In the part matrix the next row starts below the tallest note column of the row above, so a note card no longer covers a frame or its label.
+- The sketch merge preview shows the rendering dot while it compares the states before and after the merge.
+- The merge preview fits its first changed row at a readable zoom instead of the whole column, and shows the part count and elapsed seconds while it compares.
+- Studio: include native panic backtraces in diagnostic output.
+- Canvas frames have no resize handle any more, and a size dragged in an older Studio is forgotten: a fitted tile always takes its measured content size.
+- An in-progress sketch says "Not ready yet" instead of "The agent is still drawing"; a live agent report still shows as its own line.
+- Note cards give way to their marker once the canvas is zoomed out past where labels hold their size.
+- Turning on note mode also turns on Show notes, so a new note stays in view after save.
+- A pointed note's marker and card share a number, and their line shows only on hover. A pointed note shows only at its size; the frame label counts notes at other sizes.
+- Studio says "The design server is older than Studio - restart it" when a design request gets an HTML page instead of JSON.
+- The part table no longer labels a frame with comments in another interaction, since each interaction has its own column there.
+- A note with a point shows a small marker at that point, while its card sits below the frame with the other notes, joined to the marker by a thin line, so no card covers the design.
+- A tree row with a question now shows only the "question" badge, not also "comment open".
+- On macOS, a crashed WebKit content process now gets a new Studio window at the same URL and size, so later trackpad pinches no longer crash it again.
+- Studio opens the checkout picked last after a restart.
+- Studio restores the picked entry, its zoom, and a sketch's size, interaction and merge preview after a reload. The sketch header shows the picked variant in the accent colour, a labelled note field, and "Needs a note".
+- In a dev build, restarting the design server first rebuilds the CLI runtime and shows the build in the footer log; a failed build keeps the server stopped.
+- Studio starts its own design server and draws the frames again when a server it did not start ends.
+- Restore the host command that reports sketch report changes, so a drawing agent's progress reaches Studio live again.
+- A new sketch on a part no longer opens with its round folded: Studio keeps the open and folded rounds for the sketch they belong to.
+- Studio remembers only a camera the user moved; a fit forgets it, so an old fit no longer comes back as a zoom after a reload.
+- Select lists open on Linux again, a call clicked beside the project picker opens, and a tile says when the checkout's `@ethlete/cli` draws no pictures.
+- The canvas 100 % button and `Shift+0` show the selected frame at its top-left instead of zooming around the middle.
+- A "Show notes" toggle in the toolbar hides or shows the notes on the canvas. It starts on and is remembered per product.
+- The sketch matrix shows every interaction by default, a row per state and interaction; a single interaction stays a filter, and Studio remembers the pick.
+- A sketch shows only the comments made in it. The comments of an earlier sketch on the same target no longer appear as pins on the new variants or as a comment mark in the tree.
+- Shrink the space between state groups in a sketch matrix: a group now starts twice the row gap below the row above, not two and a half times.
+- Studio loads its tokens from the three design parts colors, type and spacing instead of one tokens sheet.
+- A sketch report older than 30 minutes no longer blocks its variant: Studio draws the variant's frames and notes "No report for 30 min" in the column head. A new report restores the drawing state.
+- The system view remembers its product, the selected entry and the canvas camera per entry over a reload. A group that holds the selection opens when the selection changes and can then fold.
+- The system view picks its themes per shown entry: a part wears its product's themes, a Legacy call its design project's. The empty state shows the `et design product new` command with a copy button.
+- The select picker shadow takes its colour from the surface and colour theming tokens instead of hardcoded values.
+- Studio turns off the Tailwind colour palette, tints its shadows with the shadow colour token, and finds its error colour by theme type. The unused canvas demo view is gone.
+- Keep tree row badges on one line and give the comment draft popover a bordered form field.
+- Prevent macOS WebKit freezes when design frames reload, and keep previous content visible while asynchronous drawings finish loading.
+- Update all dependencies to their latest versions (Nx 24, Vitest 5, jsdom 30, ts-morph 28, @types/node 26 and others). The optional `@nx/devkit` peer dependency now requires `^24.0.0`, and the optional `ts-morph` peer of `@ethlete/core` requires `^28.0.0`.
+- The `used in` row of a part view shows one "used in all N pages" label instead of a frame per page when every page of the product uses the part.
+- The text of an empty frame, like "every page of the product uses it", keeps its wrapped lines apart and inside the box when zoomed out.
+
+## 0.2.0-next.9
+
+### Minor Changes
+
+- Render Studio through Chromium (Tauri's CEF runtime) on Linux, where WebKitGTK 2.54 drops animation frames; macOS and Windows keep their system webview. The Linux release ships as deb and rpm only; the AppImage is gone until Tauri fixes CEF AppImages.
+
+### Patch Changes
+
+- Ship the design runtime in Studio's bundles again; the frontend build emptied it before the bundler copied it.
+- Variant tiles show a picture the design server draws instead of a live frame, which froze the app on drawings with `backdrop-filter`.
+- The sidebar puts the stage group and the feature band with the most recently written call first, and lists settled calls newest first.
+- Start Studio on macOS and Windows again: the CEF-ready Tauri build has no default runtime, so Studio now names the system webview there.
+
+## 0.2.0-next.8
+
+### Minor Changes
+
+- Studio closes a call as shipped or superseded and reopens it, and a ruling can write an optional note into its round.
+- Studio reads a call's `closed` and `waitsFor`: closed calls count as settled, waiting calls sit under "On hold", legacy calls with a stage clear the stage gate, and open calls now lead the sidebar.
+
+### Patch Changes
+
+- Show "The design server stopped" with its last output and a Restart button in the call view instead of blank frames when the design server dies, with a hint when it ran out of inotify watchers.
+- Scroll the shown variant of a call again on Linux, where the wheel went to a hidden variant's frame.
+
+## 0.2.0-next.7
+
+### Minor Changes
+
+- Studio groups the open calls by their stage, in the design order, with loose calls last.
+- Each call row shows the state the design tooling last recorded for it (scaffolded, drawing, checking, ready or failed) and updates when the state changes. A failed state shows its error on hover.
+- A design call whose project names `themes` in its config shows a surface and a colour switch in its header. The pick draws every frame of the call and is remembered per project.
+- The stage overview counts the calls without a stage and marks a stage as ahead when an earlier stage has no settled or ready call.
+- Show a project's design system entries and a wireframe's inventory of component calls in the call list.
+
+### Patch Changes
+
+- A call now shows every round its variants name, also a round that has no entry in `rounds` yet. Before, a new round stayed hidden until somebody wrote its note.
+- Hide the chat sidebar; Studio remembers the choice.
+- Mark a call without a stage and without legacy as invalid in the overview, and list sketches and legacy calls apart from the stage counts.
+- The design system section and the Restart button work in a release build.
+- Studio now says when a design server was not started by it or runs an older cli, and offers Restart, which ends whatever listens on the port and starts its own server.
+- Studio names design stages (Foundations, Wireframes, ...), shows a stage overview with open, ready and settled counts above the call list, and groups unknown stages under their id.
+- Studio waits at most five seconds for the stamp of the installed cli, so an older cli without `design stamp` does not hold up the server state.
+- Fix a type error in the call list: a failed status read now falls back to an empty, typed status map.
+- Studio watches the whole design folder, so an edit to a design-system entry or to `config.json` refreshes the window.
+- Update tokio to 1.54.1 to fix RUSTSEC-2026-0386.
+
+## 0.2.0-next.6
+
+### Patch Changes
+
+- Update rustls-webpki and webpki-root-certs to fix RUSTSEC-2026-0382 and RUSTSEC-2026-0383.
+
+## 0.2.0-next.5
+
+### Patch Changes
+
+- Update rustls to 0.23.46 and quinn-proto to 0.11.18 to fix the RUSTSEC-2026-0338 to 0349 advisories.
+
+## 0.2.0-next.4
+
+### Minor Changes
+
+- Check for a newer release every 30 minutes while the app runs, not only at start, and add a "Check for updates" button under the project name.
+
+## 0.2.0-next.3
+
+### Patch Changes
+
+- The checkout picker shows the checkout Studio actually opened, not the first kept one.
+- Switching checkouts no longer leaves the calls of the checkout before on screen when the new one fails to read or a slower read lands late.
+- A composed verb now hands the agent's tools the variant the compose card names, not whichever variant is on screen when Send is pressed.
+- A draft composed while an agent run is going no longer disappears when the run ends.
+- The top bar of a call no longer stays hidden because a variant with the same key was scrolled down in the call before.
+- The call explorer no longer rounds a call's age up into the next unit, and stored conversations drop turns with missing text.
+- The checkout picker names a Windows checkout by its folder instead of its whole path.
+- Studio reads a call file as an object literal, so prose that holds `key:` no longer adds a phantom variant and a double-quoted claim reads whole.
+- A call opens on the variant picked in it, else on its open or winning variant, and the sidebar count says how many variants are ruled.
+- Fix the Rust host: added variant stubs are removed when the call cannot be written, a root folder can be named for a search, a failed re-watch stops the watch before, and PATH entries are split by platform.
+- The call title bar no longer covers the top of a drawing: the drawing starts below it, and it fades out while the drawing scrolls down and back in on scroll up.
+
+## 0.2.0-next.2
+
+### Minor Changes
+
+- Timetrack and Studio now update themselves. At startup, a release build downloads a newer release, and a "Restart to update" button installs it. AppImage, deb, macOS and Windows installs can update. A deb install asks for the administrator password.
+
+### Patch Changes
+
+- Timetrack and Studio now ship a Windows installer, and the Timetrack build includes transcription.
+
+## 0.2.0-next.1
+
+### Patch Changes
+
+- A design call now lists its drawings as `variants` in `variant-<key>.ts` files, and `et design check` takes `--variant`; the old `options` key and `--option` flag are gone.
+
+## 0.2.0-next.0
+
+### Minor Changes
+
+- The app version now advances through a changeset, like the Timetrack app, so each release names its version.
+
+### Patch Changes
+
+- A failed agent run now names its error even when the CLI prints that error after its output ends. The summary was sometimes empty.

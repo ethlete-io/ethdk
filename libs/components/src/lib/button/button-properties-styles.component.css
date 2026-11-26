@@ -1,0 +1,195 @@
+@layer components.sdk {
+  @property --et-button-border-radius {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 4px;
+  }
+
+  @property --et-button-padding {
+    syntax: '*';
+    inherits: false;
+    initial-value: 8px 16px;
+  }
+
+  @property --et-button-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-button-font-weight {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 500;
+  }
+
+  @property --et-button-cursor {
+    syntax: '*';
+    inherits: false;
+    initial-value: pointer;
+  }
+
+  @property --et-button-opacity-disabled {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0.4;
+  }
+
+  @property --et-button-variant-opacity-hover-delta {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0.08;
+  }
+
+  @property --et-button-variant-opacity-focus-delta {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0.12;
+  }
+
+  @property --et-button-variant-opacity-active-delta {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0.16;
+  }
+
+  @property --_et-button-state-background {
+    syntax: '*';
+    inherits: false;
+  }
+
+  @property --et-button-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 8px;
+  }
+
+  @property --_et-button-cap-middle {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --et-button-line-height {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 1.5;
+  }
+
+  @property --et-button-border-width {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 1px;
+  }
+
+  :is(.et-button, .et-fab, .et-icon-button):where([data-variant='outline'], [data-variant='transparent']) {
+    --_et-tone-fill-opacity: 0;
+
+    @media (hover: hover) {
+      &:not([disabled], [aria-disabled='true']):hover {
+        --_et-tone-fill-opacity: var(--et-button-variant-opacity-hover-delta);
+      }
+    }
+
+    &:focus-visible {
+      --_et-tone-fill-opacity: var(--et-button-variant-opacity-focus-delta);
+    }
+
+    &:not([disabled], [aria-disabled='true']):active {
+      --_et-tone-fill-opacity: var(--et-button-variant-opacity-active-delta);
+    }
+  }
+
+  :is(.et-button, .et-fab, .et-icon-button):where(
+      [data-variant='outline']:not([data-pressed='true']),
+      [data-pressed='true'][data-pressed-variant='outline']
+    ):not([disabled], [aria-disabled='true']) {
+    @media (hover: hover) {
+      &:hover {
+        --_et-button-state-background: var(--et-button-outline-hover-background);
+        --_et-button-state-border-color: var(--et-button-outline-hover-border-color);
+      }
+    }
+
+    &:focus-visible {
+      --_et-button-state-background: var(--et-button-outline-hover-background);
+      --_et-button-state-border-color: var(--et-button-outline-hover-border-color);
+    }
+
+    &:active {
+      --_et-button-state-background: var(--et-button-outline-active-background);
+      --_et-button-state-border-color: var(--et-button-outline-active-border-color);
+    }
+  }
+
+  :is(.et-button, .et-fab, .et-icon-button):where([data-variant='transparent']:not([data-pressed='true'])):not(
+      [disabled],
+      [aria-disabled='true']
+    ) {
+    @media (hover: hover) {
+      &:hover {
+        --_et-button-state-background: var(--et-button-transparent-hover-background);
+      }
+    }
+
+    &:focus-visible {
+      --_et-button-state-background: var(--et-button-transparent-hover-background);
+    }
+
+    &:active {
+      --_et-button-state-background: var(--et-button-transparent-active-background);
+    }
+  }
+
+  :is(.et-button, .et-fab, .et-icon-button):where([data-variant='tonal']) {
+    --_et-tone-fill-opacity: 0.16;
+
+    @media (hover: hover) {
+      &:not([disabled], [aria-disabled='true']):hover {
+        --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
+      }
+    }
+
+    &:focus-visible {
+      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
+    }
+
+    &:not([disabled], [aria-disabled='true']):active {
+      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
+    }
+  }
+
+  :is(.et-button, .et-icon-button)[data-pressed='true']:where([data-pressed-variant='tonal']),
+  .et-icon-button[data-pressed='true']:where([data-pressed-variant='transparent']) {
+    --_et-tone-fill-opacity: 0.16;
+
+    @media (hover: hover) {
+      &:not([disabled], [aria-disabled='true']):hover {
+        --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
+      }
+    }
+
+    &:focus-visible {
+      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
+    }
+
+    &:not([disabled], [aria-disabled='true']):active {
+      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
+    }
+  }
+
+  .et-button-loader {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+
+    .et-button-loader-spinner {
+      --et-spinner-color: currentColor;
+      --et-spinner-duration: 700ms;
+    }
+  }
+}

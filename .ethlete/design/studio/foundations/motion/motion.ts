@@ -1,0 +1,58 @@
+import { definePart, html, tokenSheet } from '@design-system';
+import tokens from './motion.css?inline';
+
+const steps = [0, 25, 50, 75, 100];
+
+const fade = (label: string, cell: (step: number) => string) =>
+  html`<div class="mo-strip">
+    <span class="mo-label">${label}</span>
+    ${steps.map((step) => html`<span class="mo-step">${cell(step)}<span class="mo-time">${step}%</span></span>`).join('')}
+  </div>`;
+
+const sample = html`<div class="mo-sample">
+  ${fade(
+    'state · hover fill',
+    (step) =>
+      html`<span
+        class="mo-cell"
+        style="background: color-mix(in oklch, var(--color-et-surface-dark-background), var(--color-et-surface-dark-elevated-background) ${step}%)"
+      ></span>`,
+  )}
+  ${fade('appear · opacity', (step) => html`<span class="mo-cell mo-cell--appear" style="opacity: ${step / 100}"></span>`)}
+</div>`;
+
+const sampleOf = (name: string) => {
+  if (name.startsWith('duration-'))
+    return html`<span class="mo-bar" style="width: calc(var(--${name}) / 1ms * 1px)"></span>`;
+  if (name === 'transition-state') return html`<span class="mo-hint">background, color, border, shadow</span>`;
+
+  return html`<span class="mo-hint">${name === 'ease-standard' ? 'every state and appear fade' : ''}</span>`;
+};
+
+export default definePart({
+  note: 'The Studio duration and easing tokens. An interaction state fades its colours; an appearing element fades its opacity. No scale or slide.',
+  madeBy: ['claude-opus-5-5'],
+  states: { scale: {} },
+  describe: {
+    scale:
+      'The duration and easing tokens with a hover-fill and an opacity strip; check that the bars grow with each duration and nothing scales or slides.',
+  },
+  render: () =>
+    tokenSheet({
+      title: 'Motion',
+      css: tokens,
+      sample,
+      sampleOf,
+      styles: `
+        .mo-sample { display: flex; flex-direction: column; gap: var(--space-3); }
+        .mo-strip { display: flex; align-items: flex-end; gap: var(--space-3); }
+        .mo-label { width: 160px; font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
+        .mo-step { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); }
+        .mo-cell { display: block; width: 64px; height: var(--row); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); box-sizing: border-box; }
+        .mo-cell--appear { background: var(--color-et-surface-dark-elevated-background); }
+        .mo-time { font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
+        .mo-bar { display: block; height: var(--space-2); background: var(--accent); border-radius: 2px; }
+        .mo-hint { font-size: var(--text-sm); line-height: var(--text-sm-line); color: var(--text-muted); }
+      `,
+    }),
+});

@@ -1,0 +1,57 @@
+<div class="et-notification-content">
+  <div class="et-notification-header">
+    @if (statusIcon(); as icon) {
+      <i [etIcon]="icon" class="et-notification-icon"></i>
+    } @else if (notification.isLoading()) {
+      <et-spinner class="et-notification-spinner" diameter="16" strokeWidth="2" />
+    }
+
+    <span class="et-notification-title">{{ notification.title() }}</span>
+
+    <button
+      [color]="controlsColor()"
+      [attr.aria-label]="dismissLabel()"
+      class="et-notification-dismiss-btn"
+      et-icon-button
+      etNotificationDismiss
+      size="xs"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  </div>
+
+  @if (notification.message()) {
+    <p class="et-notification-message">{{ notification.message() }}</p>
+  }
+
+  @if (notification.content(); as content) {
+    <div class="et-notification-custom-content">
+      <ng-container *ngComponentOutlet="content.component; inputs: content.inputs" />
+    </div>
+  }
+
+  @if (notification.progress() !== undefined) {
+    <et-progress-bar [value]="notification.progress()" class="et-notification-progress-bar" />
+  }
+
+  @if (notification.action() || notification.secondaryAction()) {
+    <div class="et-notification-footer">
+      @if (notification.action(); as action) {
+        <button et-text-button etNotificationAction size="xs" type="button">{{ action.label }}</button>
+      }
+
+      @if (notification.secondaryAction(); as secondaryAction) {
+        <button
+          class="et-notification-secondary-action"
+          et-text-button
+          etNotificationAction="secondary"
+          size="xs"
+          type="button"
+        >
+          {{ secondaryAction.label }}
+        </button>
+      }
+    </div>
+  }
+</div>

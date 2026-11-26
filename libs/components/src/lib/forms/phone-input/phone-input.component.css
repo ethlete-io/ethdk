@@ -1,0 +1,126 @@
+@layer components.sdk {
+  et-phone-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-phone-input-country-trigger {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      appearance: none;
+      white-space: nowrap;
+
+      &:disabled {
+        cursor: not-allowed;
+      }
+
+      &:focus-visible {
+        outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+    }
+
+    /* the country panel cannot open while readonly */
+    &[data-readonly] .et-phone-input-country-trigger {
+      cursor: default;
+    }
+
+    .et-phone-input-country-flag {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .et-phone-input-dial-code {
+      color: var(--et-surface-text-muted, currentColor);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .et-phone-input-field {
+      flex: 1;
+      min-inline-size: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      caret-color: var(--et-tone-fill, currentColor);
+      font-variant-numeric: tabular-nums;
+
+      &::placeholder {
+        color: color-mix(in srgb, currentColor 60%, transparent);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+      }
+    }
+
+    /* an unresolved bulk-edit value reads as provisional — the mixedLabel placeholder sits
+       between committed text (full strength) and the regular placeholder (60%). Consumers
+       restyle via [data-mixed]. */
+    &[data-mixed] .et-phone-input-field::placeholder {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+  }
+
+  /* panel content of the country picker (rendered in the overlay pane) */
+  .et-phone-input-country-panel {
+    /* a fixed width — with content-derived sizing, filtering would resize the panel
+       horizontally on every keystroke (the widest visible item keeps changing) */
+    inline-size: min(320px, calc(100vw - 24px));
+  }
+
+  /* the projected option content (flag, name, dial code) shares the option's label slot —
+     lay it out as a flex row so the pieces get breathing room */
+  .et-phone-input-country-panel .et-select-option-label {
+    display: flex;
+    align-items: center;
+    gap: var(--et-select-option-gap, 8px);
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .et-phone-input-option-flag {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .et-phone-input-option-name {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-phone-input-option-dial {
+    flex: none;
+    color: var(--et-surface-text-muted, currentColor);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* light default sizing for custom flag art (etPhoneInputFlag) */
+  .et-phone-input-country-flag :is(img, svg),
+  .et-phone-input-option-flag :is(img, svg) {
+    display: block;
+    inline-size: 20px;
+    block-size: auto;
+  }
+}

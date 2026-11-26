@@ -1,0 +1,11 @@
+<span class="et-menu-item-content">
+  <ng-content />
+</span>
+
+<span class="et-menu-item-check" aria-hidden="true">
+  @if (item.loading()) {
+    <et-spinner diameter="16" strokeWidth="2" />
+  } @else if (icon(); as itemIcon) {
+    <i [etIcon]="itemIcon"></i>
+  }
+</span>

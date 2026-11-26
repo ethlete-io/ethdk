@@ -1,0 +1,383 @@
+import { DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { defineRootProvider, toInjectFn } from '@ethlete/core';
+import {
+  TempoSyncOutcome,
+  TempoSyncPlan,
+  TempoSyncPreview,
+  WorklogProposal,
+  dayBoundaryOf,
+  executeTempoSync$,
+  fetchTempoWorkAttributes$,
+  isNamedRow,
+  previewTempoSync$,
+  readJiraCredentials$,
+  readTempoCredentials$,
+} from '@ethlete/timetrack';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  catchError,
+  combineLatest,
+  concat,
+  concatMap,
+  defer,
+  exhaustMap,
+  filter,
+  map,
+  merge,
+  of,
+  share,
+  startWith,
+  switchMap,
+  take,
+  tap,
+  throwError,
+  toArray,
+} from 'rxjs';
+import { SyncRunRecord, injectHostPorts } from '../../host';
+import { injectAgentDay } from '../agent/agent-day';
+import { injectDayReview } from '../day-review/day-review';
+import { injectTimetrackSettings } from '../settings/settings';
+
+const IDLE = { kind: 'idle' } as const;
+
+/** A preview is always about one day, so it carries the day it was built for and nothing else. */
+type SyncPreviewStatus =
+  | typeof IDLE
+  | { kind: 'loading' }
+  | { kind: 'ready'; day: string; preview: TempoSyncPreview }
+  | { kind: 'failed'; day: string; message: string };
+
+/** `unrecorded` is set when Tempo took the writes but the ledger did not take the ownership record. */
+type SyncRunStatus =
+  | typeof IDLE
+  | { kind: 'writing'; day: string }
+  | { kind: 'written'; day: string; plan: TempoSyncPlan; outcome: TempoSyncOutcome; unrecorded: string | null }
+  | { kind: 'failed'; day: string; message: string };
+
+export type SyncRequest = { day: string; plan: TempoSyncPlan; authorAccountId: string };
+
+type FinishedRun = Extract<SyncRunStatus, { kind: 'written' | 'failed' }>;
+
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+const recordOf = (run: FinishedRun): SyncRunRecord =>
+  run.kind === 'written'
+    ? { kind: 'written', rows: run.outcome.rows, unrecorded: run.unrecorded }
+    : { kind: 'failed', message: run.message };
+
+const writeCount = (plan: TempoSyncPlan) => plan.creates.length + plan.updates.length + plan.deletes.length;
+
+/**
+ * The two phases of a sync: what one would do to the day under review, and — once the reviewer
+ * confirms it — the writes themselves.
+ *
+ * The plan is deliberately not reactive to the day's rows: a plan is a statement about a moment, and
+ * one that re-planned itself under the reviewer while they edited would read as if Tempo were
+ * changing. Stepping to another day drops both the plan and the run instead of showing yesterday's
+ * under today's date.
+ *
+ * A plan is spent once it has been submitted, and `canSync` stays false until a new one is read. Tempo
+ * is eventually consistent, so a plan read straight after a write can report a worklog it just took as
+ * missing — re-planning on the app's own initiative is how the same hour gets logged twice.
+ */
+const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
+  const ports = injectHostPorts();
+  const dayReview = injectDayReview();
+  const settings = injectTimetrackSettings();
+  const agentDay = injectAgentDay();
+  const destroyRef = inject(DestroyRef);
+
+  const requests$ = new Subject<void>();
+
+  const preview$ = (options: { day: string; proposals: WorklogProposal[] }): Observable<TempoSyncPreview> => {
+    const { day, proposals } = options;
+
+    return combineLatest({
+      jira: readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }),
+      tempo: readTempoCredentials$({ secrets: ports.secrets }),
+    }).pipe(
+      switchMap(({ jira, tempo }) => {
+        if (!jira) return throwError(() => new Error('Jira needs a host, an account email and a token in Settings.'));
+        if (!tempo) return throwError(() => new Error('Tempo needs its own API token in Settings.'));
+
+        return previewTempoSync$({
+          transport: ports.transport,
+          jira,
+          tempo,
+          ledger: ports.ledger,
+          proposals,
+          day,
+          boundary: dayBoundaryOf(settings.settings()),
+          backgroundProjects: settings.settings().backgroundProjects,
+        });
+      }),
+      // Recording what Tempo holds is the whole reason the week view and the reminder can answer
+      // offline, but it is not what the reviewer asked for. A failed write must never fail the preview.
+      switchMap((preview) =>
+        ports.coverage.save$(preview.coverage).pipe(
+          catchError(() => of(undefined)),
+          map(() => preview),
+        ),
+      ),
+    );
+  };
+
+  const load$ = (): Observable<SyncPreviewStatus> => {
+    const day = dayReview.dayKey();
+
+    return preview$({ day, proposals: dayReview.rows().filter(isNamedRow) }).pipe(
+      map((preview): SyncPreviewStatus => ({ kind: 'ready', day, preview })),
+      catchError((error: unknown) => of<SyncPreviewStatus>({ kind: 'failed', day, message: messageOf(error) })),
+    );
+  };
+
+  const status = toSignal(
+    requests$.pipe(switchMap(() => load$().pipe(startWith<SyncPreviewStatus>({ kind: 'loading' })))),
+    { initialValue: IDLE as SyncPreviewStatus },
+  );
+
+  const current = computed((): SyncPreviewStatus => {
+    const value = status();
+
+    if (value.kind === 'idle' || value.kind === 'loading') return value;
+
+    return value.day === dayReview.dayKey() ? value : IDLE;
+  });
+
+  const ready = computed(() => {
+    const value = current();
+
+    return value.kind === 'ready' ? value.preview : null;
+  });
+
+  const runs$ = new Subject<SyncRequest>();
+  const submitted = signal<TempoSyncPreview | null>(null);
+
+  /**
+   * Stores what the run now owns. A worklog Tempo took but the ledger forgot is foreign for good, so
+   * this failure is reported rather than folded into the row statuses.
+   */
+  const record$ = (outcome: TempoSyncOutcome): Observable<string | null> => {
+    const writes = [
+      ...(outcome.ledger.length ? [ports.ledger.upsert$(outcome.ledger)] : []),
+      ...(outcome.prunedProposalIds.length ? [ports.ledger.remove$(outcome.prunedProposalIds)] : []),
+    ];
+
+    if (!writes.length) return of(null);
+
+    return concat(...writes).pipe(
+      toArray(),
+      map(() => null),
+      catchError((error: unknown) => of(messageOf(error))),
+    );
+  };
+
+  // The plan and the writes must read the same marker scheme, or every synced worklog compares as
+  // edited in Tempo forever. Both run `none` here; change them together.
+  const write$ = (request: SyncRequest): Observable<SyncRunStatus> =>
+    readTempoCredentials$({ secrets: ports.secrets }).pipe(
+      switchMap((tempo) => {
+        if (!tempo) return throwError(() => new Error('Tempo needs its own API token in Settings.'));
+
+        return fetchTempoWorkAttributes$({ transport: ports.transport, credentials: tempo }).pipe(
+          switchMap((workAttributes) =>
+            executeTempoSync$({
+              transport: ports.transport,
+              credentials: tempo,
+              plan: request.plan,
+              authorAccountId: request.authorAccountId,
+              boundary: dayBoundaryOf(settings.settings()),
+              workAttributes,
+            }),
+          ),
+        );
+      }),
+      switchMap((outcome) =>
+        record$(outcome).pipe(
+          map((unrecorded): FinishedRun => ({
+            kind: 'written',
+            day: request.day,
+            plan: request.plan,
+            outcome,
+            unrecorded,
+          })),
+        ),
+      ),
+      catchError((error: unknown) => of<FinishedRun>({ kind: 'failed', day: request.day, message: messageOf(error) })),
+      switchMap((finished) =>
+        ports.syncRuns.save$(request.day, recordOf(finished)).pipe(
+          catchError(() => of(undefined)),
+          map((): SyncRunStatus => finished),
+        ),
+      ),
+    );
+
+  // `exhaustMap`, never `switchMap`: cancelling a run in flight would abandon writes Tempo has already
+  // taken, leaving them unowned.
+  const runStates$ = runs$.pipe(
+    exhaustMap((request) => write$(request).pipe(startWith<SyncRunStatus>({ kind: 'writing', day: request.day }))),
+    share(),
+  );
+  const runStatus = toSignal(runStates$, { initialValue: IDLE as SyncRunStatus });
+
+  runStates$
+    .pipe(
+      filter((state): state is Extract<SyncRunStatus, { kind: 'written' }> => state.kind === 'written'),
+      tap(() => dayReview.reloadLedger()),
+      concatMap((state) =>
+        agentDay.book$(state.day, { plan: state.plan, outcome: state.outcome }).pipe(catchError(() => EMPTY)),
+      ),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  const run = computed((): SyncRunStatus => {
+    const value = runStatus();
+
+    return value.kind === 'idle' || value.day === dayReview.dayKey() ? value : IDLE;
+  });
+
+  const written = computed(() => {
+    const value = run();
+
+    return value.kind === 'written' ? value : null;
+  });
+
+  const isWriting = computed(() => run().kind === 'writing');
+
+  const storedRun = toSignal(
+    toObservable(dayReview.dayKey).pipe(
+      switchMap((day) =>
+        ports.syncRuns.forDay$(day).pipe(
+          map((record) => ({ day, record })),
+          catchError(() => of({ day, record: null })),
+        ),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  const shownRun = computed((): SyncRunRecord | null => {
+    const value = run();
+
+    if (value.kind === 'written' || value.kind === 'failed') return recordOf(value);
+    if (value.kind === 'writing') return null;
+
+    const stored = storedRun();
+
+    return stored?.day === dayReview.dayKey() ? stored.record : null;
+  });
+
+  const shownWrite = computed(() => {
+    const value = shownRun();
+
+    return value?.kind === 'written' ? value : null;
+  });
+
+  /**
+   * Runs a plan an agent confirmed through the same queue the page's own button uses, so the page
+   * shows its rows and its retry. A preview the page holds for that day is spent by it.
+   */
+  const writeDay$ = (request: SyncRequest): Observable<FinishedRun> =>
+    defer(() => {
+      if (runStatus().kind === 'writing') {
+        return throwError(() => new Error('A sync is already writing. Wait for it to finish, then plan again.'));
+      }
+
+      const preview = ready();
+
+      if (preview && dayReview.dayKey() === request.day) submitted.set(preview);
+
+      // The result is listened for before the request is sent: a run that fails synchronously emits
+      // its result inside `next`, before a later subscription could see it.
+      return merge(
+        runStates$.pipe(
+          filter((state): state is FinishedRun => state.kind === 'written' || state.kind === 'failed'),
+          take(1),
+        ),
+        defer(() => {
+          runs$.next(request);
+
+          return EMPTY;
+        }),
+      );
+    });
+
+  const submit = (plan: TempoSyncPlan) => {
+    const preview = ready();
+
+    if (!preview || isWriting() || writeCount(plan) === 0) return;
+
+    submitted.set(preview);
+    runs$.next({ day: dayReview.dayKey(), plan, authorAccountId: preview.account.accountId });
+  };
+
+  return {
+    dayKey: dayReview.dayKey,
+    /** Every run that reached Tempo, once its ledger is stored. */
+    written$: runStates$.pipe(
+      filter((state): state is Extract<SyncRunStatus, { kind: 'written' }> => state.kind === 'written'),
+    ),
+    shiftDay: dayReview.shiftDay,
+    /** The rows the next preview would be built from, so the view can say what it is about to plan. */
+    rows: dayReview.rows,
+    status: current,
+    plan: computed(() => ready()?.plan ?? null),
+    account: computed(() => ready()?.account ?? null),
+    remote: computed(() => ready()?.remote ?? []),
+    keysByIssueId: computed(() => ready()?.keysByIssueId ?? new Map<string, string>()),
+    isLoading: computed(() => current().kind === 'loading'),
+    failure: computed(() => {
+      const value = current();
+
+      return value.kind === 'failed' ? value.message : null;
+    }),
+    credentials: settings.credentials,
+
+    isWriting,
+    /** Every row the day's last run attempted, and what became of it. It is read back after a restart. */
+    runRows: computed(() => shownWrite()?.rows ?? []),
+    /** How many rows did not land. They are retried from the run's own plan, never from a new read. */
+    retryCount: computed(() => {
+      const outcome = written()?.outcome;
+
+      return outcome ? writeCount(outcome.retry) : 0;
+    }),
+    unrecorded: computed(() => shownWrite()?.unrecorded ?? null),
+    runFailure: computed(() => {
+      const value = shownRun();
+
+      return value?.kind === 'failed' ? value.message : null;
+    }),
+    writeCount: computed(() => {
+      const plan = ready()?.plan;
+
+      return plan ? writeCount(plan) : 0;
+    }),
+    canSync: computed(() => {
+      const preview = ready();
+
+      return !!preview && submitted() !== preview && !isWriting() && writeCount(preview.plan) > 0;
+    }),
+
+    refresh: () => requests$.next(),
+    /** What a sync of any day would write, without touching the page's own preview. */
+    preview$,
+    writeDay$,
+    sync: () => {
+      const preview = ready();
+
+      if (preview && submitted() !== preview) submit(preview.plan);
+    },
+    retry: () => {
+      const outcome = written()?.outcome;
+
+      if (outcome) submit(outcome.retry);
+    },
+  };
+});
+
+export const injectTempoSync = /* @__PURE__ */ toInjectFn(SYNC_DEF);

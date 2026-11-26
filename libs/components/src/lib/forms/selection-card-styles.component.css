@@ -1,0 +1,144 @@
+@layer components.sdk {
+  @property --et-selection-card-padding {
+    syntax: '*';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-selection-card-border-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
+  }
+
+  @property --et-selection-card-border-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 1px;
+  }
+
+  @property --et-selection-card-icon-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 20px;
+  }
+
+  @property --et-selection-card-transition-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 150ms;
+  }
+
+  @property --et-selection-card-disabled-opacity {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.5;
+  }
+
+  /* Two shapes wear this class: on `et-radio` / `et-checkbox-option` the panel is the host and owns
+     `aria-checked` / `aria-disabled`; on `et-choice-field` it wraps the control and reads them off a descendant.
+     Every state guard tests both. */
+  .et-selection-card {
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--et-selection-card-padding);
+    border-radius: var(--et-selection-card-border-radius);
+    background-color: var(--et-surface-background, transparent);
+    border: var(--et-selection-card-border-width) solid
+      color-mix(in oklab, var(--et-surface-text, currentColor) 43%, var(--et-surface-background, transparent));
+
+    /* Every state guard sits in `:where()` so source order decides; the checked rule below relies on it. */
+    @media (hover: hover) {
+      &:where(:hover:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly]))) {
+        border-color: var(--et-surface-text, currentColor);
+      }
+    }
+
+    &:where(:active:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly]))) {
+      border-color: var(--et-surface-text, currentColor);
+    }
+
+    /* After hover/active so a chosen card keeps its accent under the cursor. */
+    &:where([aria-checked='true'], :has(:is([aria-checked='true'], [aria-checked='mixed']))) {
+      border-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
+    }
+
+    /* Each host resets its own control's focus ring, so the card shows one ring. */
+    &:where(:focus-visible, :has(:focus-visible)) {
+      border-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
+      outline: 2px solid var(--et-tone-text, currentColor);
+      outline-offset: 2px;
+    }
+
+    .et-selection-card-content {
+      flex: 1;
+      min-inline-size: 0;
+    }
+
+    .et-selection-card-control {
+      order: 1;
+    }
+
+    [etSelectionCardLeading],
+    [etSelectionCardTrailing] {
+      flex-shrink: 0;
+    }
+
+    /* An `.et-icon` carries no size of its own, so an unsized one in a slot grows to whatever the row has left
+       and starves the label. */
+    > .et-icon {
+      inline-size: var(--et-selection-card-icon-size);
+      block-size: var(--et-selection-card-icon-size);
+    }
+
+    .et-selection-card-label {
+      font-weight: 500;
+      color: var(--et-surface-text-muted, currentColor);
+    }
+
+    &:where([aria-checked='true'], :has(:is([aria-checked='true'], [aria-checked='mixed']))) .et-selection-card-label {
+      color: var(--et-surface-text, currentColor);
+    }
+
+    @media (hover: hover) {
+      &:where(:hover:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly])))
+        .et-selection-card-label {
+        color: var(--et-surface-text, currentColor);
+      }
+    }
+
+    /* Outside `:where()` on purpose: these must outweigh the plain variant's host-level control rules. */
+
+    &:active:not([aria-disabled='true']):not([data-readonly]) .et-selection-card-control {
+      transform: none;
+    }
+
+    &:focus-visible .et-selection-card-control {
+      outline: none;
+    }
+  }
+
+  /* `data-control-position` and `data-can-animate` sit on the host, which is the card itself for the two options
+     and an ancestor of it for the choice field. */
+  .et-selection-card:where([data-control-position='start']) .et-selection-card-control,
+  :where([data-control-position='start']) .et-selection-card .et-selection-card-control {
+    order: 0;
+  }
+
+  .et-selection-card:where([data-can-animate]),
+  :where([data-can-animate]) .et-selection-card {
+    transition:
+      border-color var(--et-selection-card-transition-duration) ease,
+      background-color var(--et-selection-card-transition-duration) ease;
+
+    .et-selection-card-label {
+      transition: color var(--et-selection-card-transition-duration) ease;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-selection-card {
+      --et-selection-card-transition-duration: 1ms;
+    }
+  }
+}

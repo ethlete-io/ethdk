@@ -1,0 +1,49 @@
+[canvas-e2e] dist/libs/cli is stale, rebuilding it: npx nx build cli
+@nx/playwright: could not infer an Nx task from the webServer command "npx nx serve timetrack-app --configuration=e2e" in apps/timetrack-e2e/playwright.config.ts, so no serve dependency or readiness wait is inferred for it.
+
+ NX   Running target build for project cli and 2 tasks it depends on:
+
+
+✔  nx run eslint-plugin:build
+
+> nx run cli:compile  [local cache]
+
+Compiling TypeScript files for project "cli"...
+Done compiling TypeScript files for project "cli".
+
+> nx run cli:build
+
+> node libs/cli/scripts/move-into-place.mts tmp/cli-build dist/libs/cli && node libs/cli/scripts/write-build-info.mts dist/libs/cli
+
+
+
+
+ NX   Successfully ran target build for project cli and 2 tasks it depends on
+
+Nx read the output from the cache instead of running the command for 1 out of 3 tasks.
+
+Output of 1 successful task was not shown. Run with --verbose or --output-style=static to see it.
+
+  Run duration:      151ms
+  Cache:             1/3 hit (33%)
+  Critical path:     135ms (3 tasks)
+  Recoverable time:  <1ms
+[canvas-e2e] 1 cases on 1 worker(s), 2 perf case(s) skipped (--perf runs them)
+Running 1 test using 1 worker
+[canvas-e2e] studio build done at 1.2s
+[canvas-e2e] worker 0 ready: open 0.7s, fixtures 3.3s, build 0.0s, warmUp 1.8s, 30 picture(s) drawn, 0 waited for
+[canvas-e2e] first case starting at 7.0s
+  ✓  1 [Large] › B498 R3: scroll, edit and wait never leave a sketch cell or column empty 32 of 32 cells kept their picture through 13 scroll steps, an edit and a wait (43.8s)
+[canvas-e2e] worker 0 drew 84 picture(s) in the case, waited for 0
+
+Time per page group, slowest first:
+  43.8s  Large (1 cases)
+
+Time per case, slowest first:
+  43.8s  Large     B498 R3: scroll, edit and wait never leave a sketch cell or column empty
+
+  1 passed (50.9s)
+
+1/1 passed in 50.9s on 1 worker(s)
+suite 0m51s of 5m budget
+load 0.8 at start, 1.3 at end on tank, 32 cores, 1 worker(s)

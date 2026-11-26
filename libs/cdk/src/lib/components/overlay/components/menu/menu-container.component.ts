@@ -1,0 +1,128 @@
+import { NgTemplateOutlet } from '@angular/common';
+import {
+  Component,
+  ElementRef,
+  InjectionToken,
+  Injector,
+  TemplateRef,
+  ViewEncapsulation,
+  inject,
+  viewChild,
+} from '@angular/core';
+import {
+  ANIMATED_LIFECYCLE_TOKEN,
+  AnimatedLifecycleDirective,
+  COLOR_PROVIDER,
+  ProvideColorDirective,
+} from '@ethlete/core';
+import { MENU_TRIGGER_TOKEN } from './menu-trigger.directive';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export const MENU_CONTAINER = new InjectionToken<MenuContainerComponent>('ET_MENU_CONTAINER');
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMPLATE');
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+@Component({
+  selector: 'et-menu-container',
+  template: `
+    <div class="et-menu-body" etAnimatedLifecycle>
+      <ng-container *ngTemplateOutlet="_menuTemplate; injector: injector" />
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-menu-container et-legacy',
+  },
+  imports: [AnimatedLifecycleDirective, NgTemplateOutlet],
+  hostDirectives: [ProvideColorDirective],
+  providers: [
+    {
+      provide: MENU_CONTAINER,
+      useExisting: MenuContainerComponent,
+    },
+  ],
+  styles: `
+    .et-menu-container {
+      display: block;
+      transform: var(--et-floating-translate);
+      will-change: transform;
+
+      .et-menu-body {
+        &.et-animation-enter-from,
+        &.et-animation-leave-to {
+          opacity: 0;
+          transform: scale(0);
+        }
+
+        &.et-animation-enter-active {
+          transition:
+            transform 250ms var(--ease-out-5),
+            opacity 250ms var(--ease-out-5);
+
+          @supports (transition-timing-function: linear(0, 1)) {
+            transition:
+              transform 250ms var(--ease-spring-1),
+              opacity 250ms var(--ease-spring-1);
+          }
+        }
+
+        &.et-animation-leave-active {
+          transition:
+            transform 100ms var(--ease-in-5),
+            opacity 100ms var(--ease-in-5);
+        }
+      }
+
+      &[et-floating-placement='bottom'] .et-menu-body.et-animation-enter-to,
+      &[et-floating-placement='bottom'] .et-menu-body.et-animation-leave-to {
+        transform-origin: top center;
+      }
+
+      &[et-floating-placement='bottom-start'] .et-menu-body.et-animation-enter-to,
+      &[et-floating-placement='bottom-start'] .et-menu-body.et-animation-leave-to {
+        transform-origin: top left;
+      }
+
+      &[et-floating-placement='bottom-end'] .et-menu-body.et-animation-enter-to,
+      &[et-floating-placement='bottom-end'] .et-menu-body.et-animation-leave-to {
+        transform-origin: top right;
+      }
+
+      &[et-floating-placement='top'] .et-menu-body.et-animation-enter-to,
+      &[et-floating-placement='top'] .et-menu-body.et-animation-leave-to {
+        transform-origin: bottom center;
+      }
+
+      &[et-floating-placement='top-start'] .et-menu-body.et-animation-enter-to,
+      &[et-floating-placement='top-start'] .et-menu-body.et-animation-leave-to {
+        transform-origin: bottom left;
+      }
+
+      &[et-floating-placement='top-end'] .et-menu-body.et-animation-enter-to,
+      &[et-floating-placement='top-end'] .et-menu-body.et-animation-leave-to {
+        transform-origin: bottom right;
+      }
+    }
+  `,
+})
+export class MenuContainerComponent {
+  readonly animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
+
+  private readonly colorProvider = inject(COLOR_PROVIDER);
+  protected readonly injector = inject(Injector);
+  readonly _trigger = inject(MENU_TRIGGER_TOKEN);
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  readonly _menuTemplate = inject(MENU_TEMPLATE);
+
+  setColorFromProvider(provider: ProvideColorDirective) {
+    this.colorProvider.syncWithProvider(provider);
+  }
+}

@@ -1,0 +1,32 @@
+.bb-badge {
+  color: var(--et-tone-fill-rest);
+  border-color: var(--et-tone-fill-rest);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.8rem;
+  min-inline-size: 2rem;
+  block-size: 2rem;
+  font-size: 1rem;
+  line-height: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  border-width: 0.1rem;
+  border-radius: 1.2rem;
+
+  &[bb-badge-filled] {
+    background: var(--et-tone-fill-rest);
+    color: var(--et-tone-on-fill-rest);
+  }
+
+  &[disabled='true'] {
+    color: var(--et-tone-fill-disabled);
+    border-color: var(--et-tone-fill-disabled);
+
+    &[bb-badge-filled] {
+      background: var(--et-tone-fill-disabled);
+      color: var(--et-tone-on-fill-disabled);
+    }
+  }
+}

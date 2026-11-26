@@ -1,0 +1,35 @@
+2026-11-24T02:15:24.3491712Z    6.8s  Flow (1 cases)
+2026-11-24T02:15:24.3492129Z 
+2026-11-24T02:15:24.3492570Z Time per case, slowest first:
+2026-11-24T02:15:24.3493603Z   63.5s  System    focus inside a live frame stays on the frame across its remount
+2026-11-24T02:15:24.3494723Z   43.1s  Large     a variant equal to Aktuell keeps its iframes across a quick and a full listing
+2026-11-24T02:15:24.3495889Z   41.1s  Large     every nested target row of a sketch keeps the sketch view, also for a listed or undrawn part
+2026-11-24T02:15:24.3497176Z   36.4s  Large     a sketch scroll never empties a cell that had a picture
+2026-11-24T02:15:24.3498106Z   24.0s  Large     a sketch cell edited on disk while scrolled away shows its new picture on return
+2026-11-24T02:15:24.3499194Z   24.0s  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+2026-11-24T02:15:24.3500177Z   18.0s  Chip      wheel and ctrl-wheel over a frame centre move the camera
+2026-11-24T02:15:24.3501245Z   16.5s  Large     the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+2026-11-24T02:15:24.3502344Z   15.5s  Large     a sketch opens with one /__design/system request until its first cell
+2026-11-24T02:15:24.3503580Z   12.3s  Large     Space+drag pans
+2026-11-24T02:15:24.3504242Z   11.0s  System    ctrl-wheel keeps the world point under the pointer
+2026-11-24T02:15:24.3504891Z   10.7s  Large     arrow key pans
+2026-11-24T02:15:24.3505545Z   10.6s  System    a part switch asks for its open points once
+2026-11-24T02:15:24.3506429Z   10.6s  Large     the sketch canvas clips its frames at the bottom of the shell main area
+2026-11-24T02:15:24.3507340Z   10.1s  Large     window blur keeps the pointer mark
+2026-11-24T02:15:24.3508102Z    9.7s  System    pointer click on a frame keeps the ring off
+2026-11-24T02:15:24.3508865Z    7.9s  System    pan beyond every edge of the content
+2026-11-24T02:15:24.3509496Z    7.8s  Large     left click on a frame selects it
+2026-11-24T02:15:24.3510218Z    7.8s  Large     a frame renders real content, not an error page
+2026-11-24T02:15:24.3511038Z    7.8s  Large     wheel and ctrl-wheel over a frame centre move the camera
+2026-11-24T02:15:24.3511828Z    7.6s  System    selected frame draws the selection outline
+2026-11-24T02:15:24.3512524Z    7.2s  Inbox     zoom chip sits at the canvas bottom right
+2026-11-24T02:15:24.3513674Z    7.2s  System    comment mode: the crosshair with the Esc oder C hint, and C or Esc each leave it
+2026-11-24T02:15:24.3514809Z    6.8s  Flow      wheel over an iframe pans when iframes take pointer events, as in WKWebView
+2026-11-24T02:15:24.3515732Z    6.7s  Inbox     pointer click on a frame keeps the ring off
+2026-11-24T02:15:24.3516786Z    6.4s  System    a quick switch product button shows its full name as a tooltip and a click switches the product
+2026-11-24T02:15:24.3517729Z    6.4s  System    double-click focuses a frame
+2026-11-24T02:15:24.3518291Z    5.2s  Inbox     Tab focus shows the ring
+2026-11-24T02:15:24.3518638Z 
+2026-11-24T02:15:24.3520462Z   28 passed (300.2s)
+2026-11-24T02:15:24.3520773Z 
+2026-11-24T02:15:24.3521103Z 28/28 passed (shard 6/8) in 300.2s on 2 worker(s)

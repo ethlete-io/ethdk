@@ -1,0 +1,1710 @@
+{
+  "probes": {
+    "b-logo": {
+      "probe": {
+        "viewport": {
+          "width": 200,
+          "height": 800
+        },
+        "page": {
+          "width": 200,
+          "height": 800
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 292
+        },
+        "boxes": [
+          {
+            "element": "div.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 200,
+              "height": 292
+            }
+          },
+          {
+            "element": "a.tf-title-card.relative",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 184,
+              "height": 276
+            }
+          },
+          {
+            "element": "img.tf-title-card-poster.absolute",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 184,
+              "height": 276
+            }
+          },
+          {
+            "element": "span.tf-title-card-scrim.absolute",
+            "box": {
+              "x": 8,
+              "y": 133,
+              "width": 184,
+              "height": 151
+            }
+          },
+          {
+            "element": "span.flex.h-12",
+            "box": {
+              "x": 20,
+              "y": 197,
+              "width": 160,
+              "height": 48
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "box": {
+              "x": 56,
+              "y": 229,
+              "width": 88,
+              "height": 16
+            }
+          },
+          {
+            "element": "span.tf-title-card-meta",
+            "box": {
+              "x": 67,
+              "y": 253,
+              "width": 66,
+              "height": 20
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.tf-title-card-poster.absolute",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/b/assets/dune-part-two-2024-hintergrund.webp",
+            "complete": true,
+            "naturalWidth": 1000,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 184,
+              "height": 276
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "src": "/bilder-von-tom/dune-part-two-2024-logo.png",
+            "complete": true,
+            "naturalWidth": 0,
+            "box": {
+              "x": 56,
+              "y": 229,
+              "width": 88,
+              "height": 16
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.tf-title-card-meta",
+            "text": "2024 · Film",
+            "box": {
+              "x": 67,
+              "y": 253,
+              "width": 66,
+              "height": 20
+            },
+            "textBox": {
+              "x": 67,
+              "y": 253,
+              "width": 66,
+              "height": 18
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 66,
+              "height": 20
+            },
+            "client": {
+              "width": 66,
+              "height": 20
+            },
+            "clippers": [
+              {
+                "element": "a.tf-title-card.relative",
+                "box": {
+                  "x": 8,
+                  "y": 8,
+                  "width": 184,
+                  "height": 276
+                }
+              }
+            ]
+          }
+        ],
+        "scrollers": []
+      },
+      "failedImages": ["/bilder-von-tom/dune-part-two-2024-logo.png"]
+    },
+    "c-fallback-narrow": {
+      "probe": {
+        "viewport": {
+          "width": 120,
+          "height": 800
+        },
+        "page": {
+          "width": 120,
+          "height": 800
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 75
+        },
+        "boxes": [
+          {
+            "element": "div.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 120,
+              "height": 75
+            }
+          },
+          {
+            "element": "a.tf-title-card.relative",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 104,
+              "height": 59
+            }
+          },
+          {
+            "element": "img.tf-title-card-poster.absolute",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 104,
+              "height": 59
+            }
+          },
+          {
+            "element": "span.tf-title-card-scrim.absolute",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 104,
+              "height": 59
+            }
+          },
+          {
+            "element": "span.flex.h-14",
+            "box": {
+              "x": 24,
+              "y": 8,
+              "width": 26,
+              "height": 47
+            }
+          },
+          {
+            "element": "span.tf-title-card-text.line-clamp-2",
+            "box": {
+              "x": 24,
+              "y": 16,
+              "width": 26,
+              "height": 38
+            }
+          },
+          {
+            "element": "span.tf-title-card-meta.shrink-0",
+            "box": {
+              "x": 66,
+              "y": 35,
+              "width": 30,
+              "height": 20
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.tf-title-card-poster.absolute",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/c/assets/john-williams-live-in-vienna-2020-hintergrund.webp",
+            "complete": true,
+            "naturalWidth": 1000,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 104,
+              "height": 59
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.tf-title-card-text.line-clamp-2",
+            "text": "John Williams: Live in Vienna",
+            "box": {
+              "x": 24,
+              "y": 16,
+              "width": 26,
+              "height": 38
+            },
+            "textBox": {
+              "x": 24,
+              "y": 14,
+              "width": 72,
+              "height": 99
+            },
+            "clips": true,
+            "ellipsis": false,
+            "scroll": {
+              "width": 72,
+              "height": 97
+            },
+            "client": {
+              "width": 26,
+              "height": 38
+            },
+            "clippers": [
+              {
+                "element": "a.tf-title-card.relative",
+                "box": {
+                  "x": 8,
+                  "y": 8,
+                  "width": 104,
+                  "height": 59
+                }
+              }
+            ]
+          },
+          {
+            "element": "span.tf-title-card-meta.shrink-0",
+            "text": "2020",
+            "box": {
+              "x": 66,
+              "y": 35,
+              "width": 30,
+              "height": 20
+            },
+            "textBox": {
+              "x": 66,
+              "y": 35,
+              "width": 30,
+              "height": 18
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 30,
+              "height": 20
+            },
+            "client": {
+              "width": 30,
+              "height": 20
+            },
+            "clippers": [
+              {
+                "element": "a.tf-title-card.relative",
+                "box": {
+                  "x": 8,
+                  "y": 8,
+                  "width": 104,
+                  "height": 59
+                }
+              }
+            ]
+          }
+        ],
+        "scrollers": []
+      },
+      "failedImages": []
+    },
+    "a-logo": {
+      "probe": {
+        "viewport": {
+          "width": 200,
+          "height": 800
+        },
+        "page": {
+          "width": 200,
+          "height": 800
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 380
+        },
+        "boxes": [
+          {
+            "element": "div.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 200,
+              "height": 380
+            }
+          },
+          {
+            "element": "a.tf-title-card.flex",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 184,
+              "height": 364
+            }
+          },
+          {
+            "element": "img.tf-title-card-poster.aspect-2/3",
+            "box": {
+              "x": 16,
+              "y": 16,
+              "width": 168,
+              "height": 252
+            }
+          },
+          {
+            "element": "span.flex.h-12",
+            "box": {
+              "x": 16,
+              "y": 280,
+              "width": 168,
+              "height": 48
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "box": {
+              "x": 20,
+              "y": 280,
+              "width": 160,
+              "height": 48
+            }
+          },
+          {
+            "element": "span.tf-title-card-meta.px-1",
+            "box": {
+              "x": 16,
+              "y": 340,
+              "width": 168,
+              "height": 24
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.tf-title-card-poster.aspect-2/3",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/a/assets/dune-part-two-2024-plakat.webp",
+            "complete": true,
+            "naturalWidth": 400,
+            "box": {
+              "x": 16,
+              "y": 16,
+              "width": 168,
+              "height": 252
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/a/assets/dune-part-two-2024-logo.png",
+            "complete": true,
+            "naturalWidth": 500,
+            "box": {
+              "x": 20,
+              "y": 280,
+              "width": 160,
+              "height": 48
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.tf-title-card-meta.px-1",
+            "text": "2024 · Film",
+            "box": {
+              "x": 16,
+              "y": 340,
+              "width": 168,
+              "height": 24
+            },
+            "textBox": {
+              "x": 20,
+              "y": 340,
+              "width": 66,
+              "height": 18
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 168,
+              "height": 24
+            },
+            "client": {
+              "width": 168,
+              "height": 24
+            },
+            "clippers": []
+          }
+        ],
+        "scrollers": []
+      },
+      "failedImages": []
+    },
+    "a-logo-40": {
+      "probe": {
+        "viewport": {
+          "width": 40,
+          "height": 800
+        },
+        "page": {
+          "width": 50,
+          "height": 800
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 40,
+          "height": 179
+        },
+        "boxes": [
+          {
+            "element": "div.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 40,
+              "height": 179
+            }
+          },
+          {
+            "element": "a.tf-title-card.flex",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 24,
+              "height": 163
+            }
+          },
+          {
+            "element": "img.tf-title-card-poster.aspect-2/3",
+            "box": {
+              "x": 16,
+              "y": 16,
+              "width": 8,
+              "height": 12
+            }
+          },
+          {
+            "element": "span.flex.h-12",
+            "box": {
+              "x": 16,
+              "y": 40,
+              "width": 8,
+              "height": 48
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "box": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 0
+            }
+          },
+          {
+            "element": "span.tf-title-card-meta.px-1",
+            "box": {
+              "x": 16,
+              "y": 100,
+              "width": 8,
+              "height": 63
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.tf-title-card-poster.aspect-2/3",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/a/assets/dune-part-two-2024-plakat.webp",
+            "complete": true,
+            "naturalWidth": 400,
+            "box": {
+              "x": 16,
+              "y": 16,
+              "width": 8,
+              "height": 12
+            }
+          },
+          {
+            "element": "img.tf-title-card-logo",
+            "src": "/@fs/run/tomflix/.ethlete/design/tomflix/sketches/components-title-card/a/assets/dune-part-two-2024-logo.png",
+            "complete": true,
+            "naturalWidth": 500,
+            "box": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 0
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.tf-title-card-meta.px-1",
+            "text": "2024 · Film",
+            "box": {
+              "x": 16,
+              "y": 100,
+              "width": 8,
+              "height": 63
+            },
+            "textBox": {
+              "x": 20,
+              "y": 100,
+              "width": 30,
+              "height": 57
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 34,
+              "height": 63
+            },
+            "client": {
+              "width": 8,
+              "height": 63
+            },
+            "clippers": []
+          }
+        ],
+        "scrollers": []
+      },
+      "failedImages": []
+    },
+    "title-card-film-112": {
+      "probe": {
+        "viewport": {
+          "width": 112,
+          "height": 181
+        },
+        "page": {
+          "width": 97,
+          "height": 181
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 97,
+          "height": 181
+        },
+        "boxes": [
+          {
+            "element": "div.bg-et-surface-bg.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 97,
+              "height": 181
+            }
+          },
+          {
+            "element": "a.tf-title-card.block",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 81,
+              "height": 165
+            }
+          },
+          {
+            "element": "span.relative.block",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 81,
+              "height": 122
+            }
+          },
+          {
+            "element": "img.block.size-full",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 81,
+              "height": 122
+            }
+          },
+          {
+            "element": "span.block.pt-2",
+            "box": {
+              "x": 8,
+              "y": 130,
+              "width": 81,
+              "height": 43
+            }
+          },
+          {
+            "element": "span.block.truncate",
+            "box": {
+              "x": 8,
+              "y": 138,
+              "width": 81,
+              "height": 15
+            }
+          },
+          {
+            "element": "span.mt-1.block",
+            "box": {
+              "x": 8,
+              "y": 157,
+              "width": 81,
+              "height": 16
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.block.size-full",
+            "src": "/@fs/tmp/b676/tomflix/.ethlete/design/tomflix/assets/ab-durch-die-hecke-2006-plakat-klein.webp",
+            "complete": true,
+            "naturalWidth": 200,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 81,
+              "height": 122
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.block.truncate",
+            "text": "Ab durch die Hecke",
+            "box": {
+              "x": 8,
+              "y": 138,
+              "width": 81,
+              "height": 15
+            },
+            "textBox": {
+              "x": 8,
+              "y": 137,
+              "width": 113,
+              "height": 17
+            },
+            "clips": true,
+            "ellipsis": true,
+            "scroll": {
+              "width": 113,
+              "height": 16
+            },
+            "client": {
+              "width": 81,
+              "height": 15
+            },
+            "clippers": []
+          },
+          {
+            "element": "span.mt-1.block",
+            "text": "2006",
+            "box": {
+              "x": 8,
+              "y": 157,
+              "width": 81,
+              "height": 16
+            },
+            "textBox": {
+              "x": 8,
+              "y": 157,
+              "width": 25,
+              "height": 15
+            },
+            "clips": true,
+            "ellipsis": true,
+            "scroll": {
+              "width": 81,
+              "height": 16
+            },
+            "client": {
+              "width": 81,
+              "height": 16
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": [
+          {
+            "element": "html",
+            "bars": {
+              "vertical": 15,
+              "horizontal": 0
+            },
+            "scroll": {
+              "width": 97,
+              "height": 181
+            },
+            "client": {
+              "width": 97,
+              "height": 181
+            }
+          }
+        ]
+      },
+      "failedImages": []
+    },
+    "title-card-film-168": {
+      "probe": {
+        "viewport": {
+          "width": 168,
+          "height": 265
+        },
+        "page": {
+          "width": 153,
+          "height": 265
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 153,
+          "height": 265
+        },
+        "boxes": [
+          {
+            "element": "div.bg-et-surface-bg.p-2",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 153,
+              "height": 265
+            }
+          },
+          {
+            "element": "a.tf-title-card.block",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 137,
+              "height": 249
+            }
+          },
+          {
+            "element": "span.relative.block",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 137,
+              "height": 206
+            }
+          },
+          {
+            "element": "img.block.size-full",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 137,
+              "height": 206
+            }
+          },
+          {
+            "element": "span.block.pt-2",
+            "box": {
+              "x": 8,
+              "y": 214,
+              "width": 137,
+              "height": 43
+            }
+          },
+          {
+            "element": "span.block.truncate",
+            "box": {
+              "x": 8,
+              "y": 222,
+              "width": 137,
+              "height": 15
+            }
+          },
+          {
+            "element": "span.mt-1.block",
+            "box": {
+              "x": 8,
+              "y": 241,
+              "width": 137,
+              "height": 16
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.block.size-full",
+            "src": "/@fs/tmp/b676/tomflix/.ethlete/design/tomflix/assets/ab-durch-die-hecke-2006-plakat-klein.webp",
+            "complete": true,
+            "naturalWidth": 200,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 137,
+              "height": 206
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.block.truncate",
+            "text": "Ab durch die Hecke",
+            "box": {
+              "x": 8,
+              "y": 222,
+              "width": 137,
+              "height": 15
+            },
+            "textBox": {
+              "x": 8,
+              "y": 221,
+              "width": 113,
+              "height": 17
+            },
+            "clips": true,
+            "ellipsis": true,
+            "scroll": {
+              "width": 137,
+              "height": 16
+            },
+            "client": {
+              "width": 137,
+              "height": 15
+            },
+            "clippers": []
+          },
+          {
+            "element": "span.mt-1.block",
+            "text": "2006",
+            "box": {
+              "x": 8,
+              "y": 241,
+              "width": 137,
+              "height": 16
+            },
+            "textBox": {
+              "x": 8,
+              "y": 241,
+              "width": 25,
+              "height": 15
+            },
+            "clips": true,
+            "ellipsis": true,
+            "scroll": {
+              "width": 137,
+              "height": 16
+            },
+            "client": {
+              "width": 137,
+              "height": 16
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": [
+          {
+            "element": "html",
+            "bars": {
+              "vertical": 15,
+              "horizontal": 0
+            },
+            "scroll": {
+              "width": 153,
+              "height": 265
+            },
+            "client": {
+              "width": 153,
+              "height": 265
+            }
+          }
+        ]
+      },
+      "failedImages": []
+    },
+    "card-fixed-height-168": {
+      "probe": {
+        "viewport": {
+          "width": 168,
+          "height": 120
+        },
+        "page": {
+          "width": 168,
+          "height": 292
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 168,
+          "height": 292
+        },
+        "boxes": [
+          {
+            "element": "div.card",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 168,
+              "height": 292
+            }
+          },
+          {
+            "element": "img.card-poster",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 168,
+              "height": 252
+            }
+          },
+          {
+            "element": "p.card-line",
+            "box": {
+              "x": 0,
+              "y": 252,
+              "width": 168,
+              "height": 20
+            }
+          },
+          {
+            "element": "p.card-line",
+            "box": {
+              "x": 0,
+              "y": 272,
+              "width": 168,
+              "height": 20
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.card-poster",
+            "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22300%22%3E%3Crect%20width%3D%22200%22%20height%3D%22300%22%20fill%3D%22%23456%22%2F%3E%3C%2Fsvg%3E",
+            "complete": true,
+            "naturalWidth": 200,
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 168,
+              "height": 252
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "p.card-line",
+            "text": "Card title",
+            "box": {
+              "x": 0,
+              "y": 252,
+              "width": 168,
+              "height": 20
+            },
+            "textBox": {
+              "x": 0,
+              "y": 254,
+              "width": 56,
+              "height": 16
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 168,
+              "height": 20
+            },
+            "client": {
+              "width": 168,
+              "height": 20
+            },
+            "clippers": []
+          },
+          {
+            "element": "p.card-line",
+            "text": "2024 · Item",
+            "box": {
+              "x": 0,
+              "y": 272,
+              "width": 168,
+              "height": 20
+            },
+            "textBox": {
+              "x": 0,
+              "y": 274,
+              "width": 71,
+              "height": 16
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 168,
+              "height": 20
+            },
+            "client": {
+              "width": 168,
+              "height": 20
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": []
+      },
+      "failedImages": []
+    },
+    "run-1029-b-fallback": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 364
+        },
+        "page": {
+          "width": 248,
+          "height": 364
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 248,
+          "height": 364
+        },
+        "boxes": [
+          {
+            "element": "div.flex.items-start",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 364
+            }
+          },
+          {
+            "element": "a.title-card.flex",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 200,
+              "height": 348
+            }
+          },
+          {
+            "element": "span.relative.block",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 200,
+              "height": 300
+            }
+          },
+          {
+            "element": "img.absolute.inset-0",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 200,
+              "height": 300
+            }
+          },
+          {
+            "element": "span.title-card-strip.flex",
+            "box": {
+              "x": 8,
+              "y": 308,
+              "width": 200,
+              "height": 48
+            }
+          },
+          {
+            "element": "span.line-clamp-2.min-w-0",
+            "box": {
+              "x": 18,
+              "y": 318,
+              "width": 142,
+              "height": 28
+            }
+          },
+          {
+            "element": "span.shrink-0.text-[1.3rem]",
+            "box": {
+              "x": 168,
+              "y": 324,
+              "width": 30,
+              "height": 16
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.absolute.inset-0",
+            "src": "/@fs/home/tom/dev/client-runs/2026-11-24-1029/tomflix/.ethlete/design/tomflix/assets/titles/john-williams-live-in-vienna-2020-plakat-klein.webp",
+            "complete": true,
+            "naturalWidth": 200,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 200,
+              "height": 300
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.line-clamp-2.min-w-0",
+            "text": "John Williams: Live in Vienna",
+            "box": {
+              "x": 18,
+              "y": 318,
+              "width": 142,
+              "height": 28
+            },
+            "textBox": {
+              "x": 18,
+              "y": 316,
+              "width": 137,
+              "height": 32
+            },
+            "ink": {
+              "top": 4,
+              "bottom": 1
+            },
+            "clips": true,
+            "ellipsis": false,
+            "scroll": {
+              "width": 142,
+              "height": 30
+            },
+            "client": {
+              "width": 142,
+              "height": 28
+            },
+            "clippers": []
+          },
+          {
+            "element": "span.shrink-0.text-[1.3rem]",
+            "text": "2020",
+            "box": {
+              "x": 168,
+              "y": 324,
+              "width": 30,
+              "height": 16
+            },
+            "textBox": {
+              "x": 168,
+              "y": 323,
+              "width": 30,
+              "height": 18
+            },
+            "ink": {
+              "top": 5,
+              "bottom": 4
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 30,
+              "height": 17
+            },
+            "client": {
+              "width": 30,
+              "height": 16
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": []
+      },
+      "failedImages": []
+    },
+    "run-1029-c-fallback": {
+      "probe": {
+        "viewport": {
+          "width": 248,
+          "height": 129
+        },
+        "page": {
+          "width": 248,
+          "height": 129
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 248,
+          "height": 129
+        },
+        "boxes": [
+          {
+            "element": "div.flex.items-start",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 248,
+              "height": 129
+            }
+          },
+          {
+            "element": "a.title-card.relative",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 200,
+              "height": 113
+            }
+          },
+          {
+            "element": "img.absolute.inset-0",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 200,
+              "height": 113
+            }
+          },
+          {
+            "element": "span.absolute.inset-0",
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 200,
+              "height": 113
+            }
+          },
+          {
+            "element": "span.absolute.inset-x-2.5",
+            "box": {
+              "x": 18,
+              "y": 81,
+              "width": 180,
+              "height": 30
+            }
+          },
+          {
+            "element": "span.title-card-logo.text-[rgb(var(--et-surface-color-rgb,255_255_255))]",
+            "box": {
+              "x": 18,
+              "y": 81,
+              "width": 120,
+              "height": 30
+            }
+          },
+          {
+            "element": "span.shrink-0.text-[1.2rem]",
+            "box": {
+              "x": 146,
+              "y": 96,
+              "width": 27,
+              "height": 15
+            }
+          }
+        ],
+        "images": [
+          {
+            "element": "img.absolute.inset-0",
+            "src": "/@fs/home/tom/dev/client-runs/2026-11-24-1029/tomflix/.ethlete/design/tomflix/assets/titles/john-williams-live-in-vienna-2020-hintergrund.webp",
+            "complete": true,
+            "naturalWidth": 1000,
+            "box": {
+              "x": 8,
+              "y": 8,
+              "width": 200,
+              "height": 113
+            }
+          }
+        ],
+        "texts": [
+          {
+            "element": "span.title-card-logo.text-[rgb(var(--et-surface-color-rgb,255_255_255))]",
+            "text": "John Williams: Live in Vienna",
+            "box": {
+              "x": 18,
+              "y": 81,
+              "width": 120,
+              "height": 30
+            },
+            "textBox": {
+              "x": 18,
+              "y": 79,
+              "width": 111,
+              "height": 34
+            },
+            "ink": {
+              "top": 4,
+              "bottom": 1
+            },
+            "clips": true,
+            "ellipsis": false,
+            "scroll": {
+              "width": 120,
+              "height": 32
+            },
+            "client": {
+              "width": 120,
+              "height": 30
+            },
+            "clippers": []
+          },
+          {
+            "element": "span.shrink-0.text-[1.2rem]",
+            "text": "2020",
+            "box": {
+              "x": 146,
+              "y": 96,
+              "width": 27,
+              "height": 15
+            },
+            "textBox": {
+              "x": 146,
+              "y": 95,
+              "width": 27,
+              "height": 17
+            },
+            "ink": {
+              "top": 4,
+              "bottom": 4
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 27,
+              "height": 16
+            },
+            "client": {
+              "width": 27,
+              "height": 15
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": []
+      },
+      "failedImages": []
+    },
+    "run-1029-colors-kinosaal": {
+      "probe": {
+        "viewport": {
+          "width": 672,
+          "height": 349
+        },
+        "page": {
+          "width": 672,
+          "height": 349
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 672,
+          "height": 349
+        },
+        "boxes": [
+          {
+            "element": "div.et-surface--dark.flex",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 640,
+              "height": 349
+            }
+          },
+          {
+            "element": "p.m-0.text-[1.2rem]",
+            "box": {
+              "x": 40,
+              "y": 40,
+              "width": 560,
+              "height": 18
+            }
+          },
+          {
+            "element": "h1.m-0.text-[3.2rem]",
+            "box": {
+              "x": 40,
+              "y": 82,
+              "width": 560,
+              "height": 40
+            }
+          },
+          {
+            "element": "p.m-0.text-[1.6rem]",
+            "box": {
+              "x": 40,
+              "y": 146,
+              "width": 560,
+              "height": 24
+            }
+          },
+          {
+            "element": "p.m-0.text-[1.4rem]",
+            "box": {
+              "x": 40,
+              "y": 194,
+              "width": 560,
+              "height": 21
+            }
+          },
+          {
+            "element": "div.flex.items-center",
+            "box": {
+              "x": 40,
+              "y": 239,
+              "width": 560,
+              "height": 70
+            }
+          },
+          {
+            "element": "span.rounded-[0.6rem].bg-(--et-theme-color-primary)",
+            "box": {
+              "x": 40,
+              "y": 264,
+              "width": 141,
+              "height": 45
+            }
+          },
+          {
+            "element": "span.rounded-[0.6rem].bg-(--et-surface-interaction-hover-solid)",
+            "box": {
+              "x": 197,
+              "y": 264,
+              "width": 98,
+              "height": 45
+            }
+          },
+          {
+            "element": "span.text-[1.4rem].text-(--et-theme-color-ink-solid)",
+            "box": {
+              "x": 311,
+              "y": 276,
+              "width": 41,
+              "height": 21
+            }
+          }
+        ],
+        "images": [],
+        "texts": [
+          {
+            "element": "p.m-0.text-[1.2rem]",
+            "text": "Heute im Saal 3",
+            "box": {
+              "x": 40,
+              "y": 40,
+              "width": 560,
+              "height": 18
+            },
+            "textBox": {
+              "x": 40,
+              "y": 40,
+              "width": 135,
+              "height": 17
+            },
+            "ink": {
+              "top": 3,
+              "bottom": 4
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 560,
+              "height": 18
+            },
+            "client": {
+              "width": 560,
+              "height": 18
+            },
+            "clippers": []
+          },
+          {
+            "element": "h1.m-0.text-[3.2rem]",
+            "text": "Die Nacht der langen Schatten",
+            "box": {
+              "x": 40,
+              "y": 82,
+              "width": 560,
+              "height": 40
+            },
+            "textBox": {
+              "x": 40,
+              "y": 80,
+              "width": 487,
+              "height": 43
+            },
+            "ink": {
+              "top": 9,
+              "bottom": 1
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 560,
+              "height": 41
+            },
+            "client": {
+              "width": 560,
+              "height": 40
+            },
+            "clippers": []
+          },
+          {
+            "element": "p.m-0.text-[1.6rem]",
+            "text": "Drama · 2 Std. 14 Min. · ab 12 Jahren",
+            "box": {
+              "x": 40,
+              "y": 146,
+              "width": 560,
+              "height": 24
+            },
+            "textBox": {
+              "x": 40,
+              "y": 147,
+              "width": 271,
+              "height": 22
+            },
+            "ink": {
+              "top": 5,
+              "bottom": 1
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 560,
+              "height": 24
+            },
+            "client": {
+              "width": 560,
+              "height": 24
+            },
+            "clippers": []
+          },
+          {
+            "element": "p.m-0.text-[1.4rem]",
+            "text": "Originalfassung mit Untertiteln",
+            "box": {
+              "x": 40,
+              "y": 194,
+              "width": 560,
+              "height": 21
+            },
+            "textBox": {
+              "x": 40,
+              "y": 195,
+              "width": 205,
+              "height": 19
+            },
+            "ink": {
+              "top": 4,
+              "bottom": 0
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 560,
+              "height": 21
+            },
+            "client": {
+              "width": 560,
+              "height": 21
+            },
+            "clippers": []
+          },
+          {
+            "element": "span.rounded-[0.6rem].bg-(--et-theme-color-primary)",
+            "text": "Jetzt ansehen",
+            "box": {
+              "x": 40,
+              "y": 264,
+              "width": 141,
+              "height": 45
+            },
+            "textBox": {
+              "x": 64,
+              "y": 277,
+              "width": 93,
+              "height": 19
+            },
+            "ink": {
+              "top": 4,
+              "bottom": 1
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 141,
+              "height": 45
+            },
+            "client": {
+              "width": 141,
+              "height": 45
+            },
+            "clippers": []
+          },
+          {
+            "element": "span.rounded-[0.6rem].bg-(--et-surface-interaction-hover-solid)",
+            "text": "Merken",
+            "box": {
+              "x": 197,
+              "y": 264,
+              "width": 98,
+              "height": 45
+            },
+            "textBox": {
+              "x": 221,
+              "y": 277,
+              "width": 50,
+              "height": 19
+            },
+            "ink": {
+              "top": 4,
+              "bottom": 4
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 98,
+              "height": 45
+            },
+            "client": {
+              "width": 98,
+              "height": 45
+            },
+            "clippers": []
+          },
+          {
+            "element": "span.text-[1.4rem].text-(--et-theme-color-ink-solid)",
+            "text": "Trailer",
+            "box": {
+              "x": 311,
+              "y": 276,
+              "width": 41,
+              "height": 21
+            },
+            "textBox": {
+              "x": 311,
+              "y": 277,
+              "width": 41,
+              "height": 19
+            },
+            "ink": {
+              "top": 4,
+              "bottom": 4
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 41,
+              "height": 21
+            },
+            "client": {
+              "width": 41,
+              "height": 21
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": []
+      },
+      "failedImages": []
+    }
+  }
+}

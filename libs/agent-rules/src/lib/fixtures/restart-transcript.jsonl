@@ -1,0 +1,6 @@
+{"type": "user", "origin": {"kind": "human"}, "message": {"role": "user", "content": "<command-message>handoff</command-message>\n<command-name>/handoff</command-name>\n<command-args>resume doc-agent-a</command-args>"}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "Status: two items done.\n\n❓ **Q1** - **Order**: findings or status rows first?\n➡️ Recommendation: status rows first."}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolfixture", "content": "ok"}]}}
+{"type": "user", "isMeta": true, "origin": {"kind": "peer"}, "message": {"role": "user", "content": "Another Claude session sent a message: report received."}}
+{"type": "user", "origin": {"kind": "task-notification"}, "message": {"role": "user", "content": "<task-notification>\n<status>completed</status>\n</task-notification>"}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "Recorded: a restart now refuses while a ❓-question waits without an answer."}]}}

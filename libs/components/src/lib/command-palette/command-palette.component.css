@@ -1,0 +1,148 @@
+@layer components.sdk {
+  @property --et-command-palette-max-height {
+    syntax: '<length-percentage>';
+    inherits: true;
+    initial-value: 60vh;
+  }
+
+  @property --et-command-palette-padding {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-command-palette-search-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 48px;
+  }
+
+  @property --et-command-palette-search-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 15px;
+  }
+
+  @property --et-command-palette-item-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  .et-command-palette {
+    --_et-command-palette-color: var(--et-surface-text, rgb(244 244 245));
+    --_et-command-palette-muted-color: var(--et-surface-text-muted, rgb(255 255 255 / 0.55));
+    --_et-command-palette-border: var(--et-surface-border, rgb(255 255 255 / 0.1));
+    position: relative;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    max-block-size: var(--et-command-palette-max-height);
+    color: var(--_et-command-palette-color);
+    font-size: var(--et-command-palette-item-font-size);
+  }
+
+  .et-command-palette-search-field {
+    display: flex;
+    align-items: center;
+    border-block-end: 1px solid var(--_et-command-palette-border);
+
+    input {
+      flex: 1;
+      min-inline-size: 0;
+      block-size: var(--et-command-palette-search-height);
+      padding-inline: 16px;
+      border: none;
+      background: none;
+      color: inherit;
+      font: inherit;
+      font-size: var(--et-command-palette-search-font-size);
+
+      /* The dialog is the focus indicator here; a ring around a full-width field inside it reads as noise. */
+      &:focus-visible {
+        outline: none;
+      }
+
+      &::placeholder {
+        color: var(--_et-command-palette-muted-color);
+      }
+    }
+  }
+
+  .et-command-palette-list-wrapper {
+    position: relative;
+    display: grid;
+    min-block-size: 0;
+  }
+
+  .et-command-palette-list {
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--et-command-palette-padding);
+  }
+
+  .et-command-palette-list-content {
+    position: relative;
+  }
+
+  /* Outweighs the overlay's own `.et-overlay > :not(…):not(…)` scroll rule on its content root. */
+  .et-overlay.et-command-palette-panel > .et-command-palette.et-command-palette--resizing {
+    overflow: clip;
+
+    .et-command-palette-list {
+      overflow: clip;
+    }
+  }
+
+  .et-command-palette-group-label {
+    margin: 0;
+    padding-block: 8px 4px;
+    padding-inline: var(--et-command-palette-item-padding-inline);
+    color: var(--_et-command-palette-muted-color);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .et-command-palette-empty {
+    align-self: start;
+    margin: 0;
+    padding-block: 24px;
+    color: var(--_et-command-palette-muted-color);
+    text-align: center;
+  }
+
+  .et-command-palette-swap--enter {
+    animation: et-command-palette-fade-in 150ms ease-out;
+  }
+
+  /* Out of flow in the same grid area, so the outgoing content never adds to the height that animates. */
+  .et-command-palette-swap--leave {
+    position: absolute;
+    grid-row: 2;
+    grid-column: 1;
+    inset: 0;
+    pointer-events: none;
+    animation: et-command-palette-fade-out 100ms ease-out forwards;
+  }
+
+  @keyframes et-command-palette-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-command-palette-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  /* Held near the top of the viewport rather than centered: the list grows downwards as the reader
+     types, and a centered panel would shift the row under the pointer on every keystroke. */
+  .et-overlay.et-command-palette-panel {
+    align-self: start;
+    margin-block-start: 12vh;
+    padding: 0;
+  }
+}

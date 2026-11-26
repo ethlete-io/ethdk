@@ -1,0 +1,624 @@
+import { randomBytes } from 'crypto';
+import { writeJsonFile } from '../../../json-file';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
+import { resolve } from 'path';
+import { INTERACTIONS } from '../../force-interactions';
+import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { overlaySketch } from '../sketch/overlay';
+import { interactionNamesOf, stateNamesOf, widthsOf } from '../sketch/part-definition';
+import { findSketch, parseTarget, Sketch } from '../sketch/sketch';
+
+/** A point on a frame, in CSS pixels from its top left corner, at the comment's size. */
+export type CommentPoint = { x: number; y: number };
+
+/** The size of the frame a comment was made on: a preset name, a width in CSS pixels, or `fitted` to its content. */
+export type CommentSize = string | number;
+
+export const FITTED = 'fitted';
+
+export const REST = 'rest';
+
+/**
+ * One answer in a comment thread, by the user (from Studio) or by the agent (`et design comment reply`).
+ * `author` is the model id of the agent; a reply written before it was recorded has none.
+ * `question` marks an agent reply that waits for the user's answer (`--question`).
+ */
+export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string; question?: true };
+
+/**
+ * Who a thread waits on: `agent` when the user spoke last, `question` when the agent's last reply asks the user,
+ * `answered` when the agent's last reply asks nothing. An answered thread stays open until the user withdraws it or replies.
+ */
+export type ThreadState = 'agent' | 'question' | 'answered';
+
+/** What answered a thread: `inbox done`, a new sketch round from its variant, or the merge or discard of its sketch. */
+export type CommentAddressReason = 'done' | 'round' | 'merge' | 'discard';
+
+/**
+ * How a thread was answered. It stays open until the user resolves it in Studio, and a reply by the user opens it again.
+ * `author` is the model id of the agent; `round` is the key of the round a `round` answer started.
+ */
+export type CommentAddressed = {
+  by: 'user' | 'agent';
+  author?: string;
+  reason: CommentAddressReason;
+  addressedAt: string;
+  note?: string;
+  round?: string;
+};
+
+/** How the user closed a thread in Studio. A comment file without it is open or addressed. */
+export type CommentResolution = { by: 'user'; resolvedAt: string; note?: string };
+
+type StoredResolution = {
+  by: 'user' | 'agent';
+  author?: string;
+  reason?: CommentAddressReason;
+  resolvedAt: string;
+  note?: string;
+  round?: string;
+};
+
+export type CommentFile = {
+  part: string;
+  state: string;
+  size: CommentSize;
+  /** `rest` or one of the part's interactions; a file without it is on `rest`. */
+  interaction?: string;
+  point?: CommentPoint;
+  /** `createdAt` is the sketch's own, so a later sketch on the same target shows none of its comments. */
+  sketch?: { target: string; variant: string; createdAt?: string };
+  text: string;
+  createdAt: string;
+  replies?: CommentReply[];
+  addressed?: CommentAddressed;
+  resolved?: CommentResolution;
+};
+
+export type DesignComment = CommentFile & {
+  id: string;
+  product: string;
+  file: string;
+  interaction: string;
+  replies: CommentReply[];
+};
+
+const ID = /^[A-Za-z0-9-]+$/u;
+
+export const commentsDirOf = (productDir: string) => resolve(productDir, 'comments');
+
+export const isPoint = (value: unknown): value is CommentPoint => {
+  const point = value as CommentPoint | undefined;
+
+  return typeof point?.x === 'number' && typeof point.y === 'number' && point.x >= 0 && point.y >= 0;
+};
+
+const isReply = (value: unknown) => {
+  const reply = value as Partial<CommentReply> | undefined;
+
+  return (
+    (reply?.by === 'user' || reply?.by === 'agent') &&
+    typeof reply.text === 'string' &&
+    reply.text !== '' &&
+    typeof reply.createdAt === 'string' &&
+    (reply.author === undefined || (typeof reply.author === 'string' && reply.author !== '')) &&
+    (reply.question === undefined || (reply.question === true && reply.by === 'agent'))
+  );
+};
+
+export const isSize = (value: unknown): value is CommentSize =>
+  (typeof value === 'string' && value !== '') || (typeof value === 'number' && value > 0);
+
+const ADDRESS_REASONS: readonly CommentAddressReason[] = ['done', 'round', 'merge', 'discard'];
+
+const isOptionalText = (value: unknown) => value === undefined || (typeof value === 'string' && value !== '');
+
+const isAddressed = (value: unknown) => {
+  const addressed = value as Partial<CommentAddressed> | undefined;
+
+  return (
+    (addressed?.by === 'user' || addressed?.by === 'agent') &&
+    ADDRESS_REASONS.some((reason) => reason === addressed.reason) &&
+    typeof addressed.addressedAt === 'string' &&
+    addressed.addressedAt !== '' &&
+    isOptionalText(addressed.author) &&
+    isOptionalText(addressed.note) &&
+    isOptionalText(addressed.round)
+  );
+};
+
+const isResolution = (value: unknown) => {
+  const resolved = value as Partial<StoredResolution> | undefined;
+
+  return (
+    (resolved?.by === 'user' || resolved?.by === 'agent') &&
+    (resolved.reason === undefined || ADDRESS_REASONS.some((reason) => reason === resolved.reason)) &&
+    typeof resolved.resolvedAt === 'string' &&
+    resolved.resolvedAt !== '' &&
+    isOptionalText(resolved.author) &&
+    isOptionalText(resolved.note) &&
+    isOptionalText(resolved.round)
+  );
+};
+
+const isKnownInteraction = (value: unknown) => value === REST || INTERACTIONS.some((known) => known === value);
+
+const shapeProblemOf = (value: Partial<CommentFile>) => {
+  for (const key of ['part', 'state', 'text', 'createdAt'] as const)
+    if (typeof value[key] !== 'string' || value[key] === '') return `${key} must be a non-empty string`;
+
+  if (!isSize(value.size)) return `size must be a preset name, a width in CSS pixels or "${FITTED}"`;
+
+  if (value.interaction !== undefined && !isKnownInteraction(value.interaction))
+    return `interaction must be ${REST} or one of ${INTERACTIONS.join(', ')}`;
+  if (value.point !== undefined && !isPoint(value.point)) return 'point must be { x, y } in CSS pixels, both >= 0';
+  if (
+    value.sketch !== undefined &&
+    (typeof value.sketch?.target !== 'string' ||
+      typeof value.sketch.variant !== 'string' ||
+      (value.sketch.createdAt !== undefined && typeof value.sketch.createdAt !== 'string'))
+  )
+    return 'sketch must be { target, variant, createdAt? }';
+  if (value.replies !== undefined && !(Array.isArray(value.replies) && value.replies.every(isReply)))
+    return 'replies must be [{ by: "user" | "agent", author?, text, createdAt, question?: true }], question only on an agent reply';
+  if (value.addressed !== undefined && !isAddressed(value.addressed))
+    return `addressed must be { by: "user" | "agent", author?, reason: ${ADDRESS_REASONS.join(' | ')}, addressedAt, note?, round? }`;
+  if (value.resolved !== undefined && !isResolution(value.resolved))
+    return 'resolved must be { by: "user", resolvedAt, note? }';
+
+  return null;
+};
+
+const migratedOf = (stored: CommentFile): CommentFile => {
+  const legacy = stored.resolved as StoredResolution | undefined;
+
+  if (legacy?.reason === undefined) return stored;
+
+  const { by, author, reason, resolvedAt, note, round } = legacy;
+
+  if (reason === 'done' && by === 'user') return { ...stored, resolved: { by, resolvedAt, ...(note ? { note } : {}) } };
+
+  return {
+    ...stored,
+    resolved: undefined,
+    addressed: {
+      by,
+      ...(author ? { author } : {}),
+      reason,
+      addressedAt: resolvedAt,
+      ...(note ? { note } : {}),
+      ...(round ? { round } : {}),
+    },
+  };
+};
+
+const rewrite = (file: string, change: (stored: CommentFile) => CommentFile) => {
+  const changed = change(migratedOf(JSON.parse(readFileSync(file, 'utf8')) as CommentFile));
+
+  writeJsonFile({ file: file, value: changed });
+
+  return changed;
+};
+
+export const isOpenComment = (comment: Pick<CommentFile, 'addressed' | 'resolved'>) =>
+  !comment.addressed && !comment.resolved;
+
+/**
+ * The open comment files of a product, oldest first, or every one with `all` (addressed and resolved too); a file
+ * that cannot be read answers with its problem.
+ */
+export const listComments = (options: { productDir: string; product: string; all?: boolean }) => {
+  const dir = commentsDirOf(options.productDir);
+  const files = existsSync(dir) ? readdirSync(dir).filter((name) => name.endsWith('.json')) : [];
+  const read = files.map((name): DesignComment | { file: string; problem: string } => {
+    const file = resolve(dir, name);
+
+    try {
+      const parsed = JSON.parse(readFileSync(file, 'utf8')) as Partial<CommentFile>;
+      const problem = shapeProblemOf(parsed);
+
+      return problem
+        ? { file, problem }
+        : {
+            ...migratedOf(parsed as CommentFile),
+            interaction: parsed.interaction ?? REST,
+            replies: parsed.replies ?? [],
+            id: name.slice(0, -'.json'.length),
+            product: options.product,
+            file,
+          };
+    } catch (error) {
+      return { file, problem: `is no JSON: ${error instanceof Error ? error.message : String(error)}` };
+    }
+  });
+
+  return {
+    comments: read
+      .filter((entry): entry is DesignComment => !('problem' in entry))
+      .filter((comment) => options.all || isOpenComment(comment))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)),
+    unreadable: read.filter((entry): entry is { file: string; problem: string } => 'problem' in entry),
+  };
+};
+
+/** Why a part key and state name point at nothing in a product, or `null`. A part whose states are not an object literal keeps any state. */
+export const goneStateOf = (options: { product: ResolvedProduct; part: string; state: string }) => {
+  const { product, part: key, state } = options;
+  const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+  if (!part) return `part ${key} no longer exists`;
+
+  const states = stateNamesOf(part.source);
+
+  return states && !states.includes(state) ? `${key} has no state "${state}"` : null;
+};
+
+/** Why a size points at nothing: a preset the product lacks, or a width a part with readable `widths` lacks. */
+export const goneSizeOf = (options: { product: ResolvedProduct; part: string; size: CommentSize }) => {
+  const { product, part: key, size } = options;
+
+  if (typeof size === 'string')
+    return size === FITTED || product.presets[size] ? null : `preset "${size}" no longer exists`;
+
+  const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+  const widths = part ? widthsOf(part.source) : null;
+
+  return widths === null || widths.includes(size) ? null : `${key} has no width ${size}`;
+};
+
+/** Why an interaction points at nothing: one the part no longer declares. */
+const goneInteractionOf = (options: { product: ResolvedProduct; part: string; interaction?: string }) => {
+  const { product, part: key, interaction = REST } = options;
+
+  if (interaction === REST) return null;
+
+  const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+  return part && !interactionNamesOf(part.source).includes(interaction)
+    ? `${key} has no interaction "${interaction}"`
+    : null;
+};
+
+const openSketchOf = ({ product, target }: { product: ResolvedProduct; target: string }) => {
+  const parsed = parseTarget(target);
+  const sketch =
+    typeof parsed === 'string' ? null : findSketch({ productDir: product.dir, product: product.name, sketch: parsed });
+
+  return sketch && typeof sketch !== 'string' ? sketch : null;
+};
+
+/** Whether the sketch a comment was made on was merged, discarded or replaced by a later one on the same target. */
+export const sketchGoneOf = (options: { product: ResolvedProduct; comment: Pick<CommentFile, 'sketch'> }) => {
+  const { product, comment } = options;
+
+  if (!comment.sketch) return false;
+
+  const sketch = openSketchOf({ product, target: comment.sketch.target });
+
+  return !sketch || (comment.sketch.createdAt !== undefined && comment.sketch.createdAt !== sketch.createdAt);
+};
+
+/**
+ * Why a comment no longer points at anything: its sketch variant, part, state, size or interaction is gone.
+ * `null` when it still does. A part whose states are not an object literal keeps any state.
+ */
+export const staleReasonOf = (options: {
+  product: ResolvedProduct;
+  comment: Omit<CommentFile, 'text' | 'createdAt'>;
+}): string | null => {
+  const { product, comment } = options;
+  let drawn = product;
+
+  if (comment.sketch) {
+    const sketch = openSketchOf({ product, target: comment.sketch.target });
+
+    if (!sketch || sketchGoneOf({ product, comment })) return `the sketch on ${comment.sketch.target} no longer exists`;
+    if (!sketch.variants.includes(comment.sketch.variant))
+      return `the sketch on ${comment.sketch.target} has no variant "${comment.sketch.variant}"`;
+
+    drawn = overlaySketch({ product, sketch, variant: comment.sketch.variant });
+  }
+
+  const gone = goneStateOf({ product: drawn, part: comment.part, state: comment.state });
+
+  if (gone) return gone;
+  return (
+    goneSizeOf({ product: drawn, part: comment.part, size: comment.size }) ??
+    goneInteractionOf({ product: drawn, part: comment.part, interaction: comment.interaction })
+  );
+};
+
+let lastCreatedAt = 0;
+
+const strictlyLaterNow = () => {
+  lastCreatedAt = Math.max(Date.now(), lastCreatedAt + 1);
+
+  return new Date(lastCreatedAt).toISOString();
+};
+
+const newId = () =>
+  `${new Date()
+    .toISOString()
+    .replace(/[-:]/gu, '')
+    .replace(/\.\d+Z$/u, 'Z')}-${randomBytes(2).toString('hex')}`;
+
+/** Writes a comment on a state of a part, or answers with why it points at nothing. */
+export const createComment = (options: {
+  product: ResolvedProduct;
+  comment: Omit<CommentFile, 'createdAt'>;
+}): DesignComment | string => {
+  const { product } = options;
+  const { interaction, sketch, ...rest } = options.comment;
+  const createdAt = sketch && openSketchOf({ product, target: sketch.target })?.createdAt;
+  const comment: CommentFile = {
+    ...rest,
+    ...(sketch && { sketch: { target: sketch.target, variant: sketch.variant, ...(createdAt && { createdAt }) } }),
+    ...(interaction === undefined || interaction === REST ? {} : { interaction }),
+    createdAt: strictlyLaterNow(),
+  };
+  const problem = shapeProblemOf({ ...comment, interaction }) ?? staleReasonOf({ product, comment });
+
+  if (problem) return problem;
+
+  const dir = commentsDirOf(product.dir);
+  const id = newId();
+  const file = resolve(dir, `${id}.json`);
+
+  mkdirSync(dir, { recursive: true });
+  writeJsonFile({ file: file, value: comment });
+
+  return { ...comment, interaction: comment.interaction ?? REST, replies: [], id, product: product.name, file };
+};
+
+/** Who spoke last in a comment thread: the user wrote the comment, so a thread without replies is the user's. */
+export const lastWordOf = (comment: Pick<DesignComment, 'replies'>) =>
+  comment.replies[comment.replies.length - 1]?.by ?? 'user';
+
+export const threadStateOf = (comment: Pick<DesignComment, 'replies'>): ThreadState => {
+  const last = comment.replies[comment.replies.length - 1];
+
+  if (last?.by !== 'agent') return 'agent';
+
+  return last.question ? 'question' : 'answered';
+};
+
+/** Whether a thread still waits on an answer: it has no reply yet, or its last entry asks a question. */
+export const awaitsAnswer = (comment: Pick<DesignComment, 'replies'>) => {
+  const last = comment.replies[comment.replies.length - 1];
+
+  return last === undefined || !!last.question || last.text.trim().endsWith('?');
+};
+
+export const findComment = (options: { products: { name: string; dir: string }[]; id: string }) => {
+  const { products, id } = options;
+
+  if (!ID.test(id)) return `"${id}" is no comment id`;
+
+  for (const product of products) {
+    const found = listComments({ productDir: product.dir, product: product.name, all: true }).comments.find(
+      (comment) => comment.id === id,
+    );
+
+    if (found?.resolved) return `comment "${id}" is resolved - it takes no reply and no done`;
+    if (found) return found;
+  }
+
+  return `no open comment "${id}"`;
+};
+
+/**
+ * Adds a reply to the thread of an open or addressed comment, searching the named products. A reply by the user
+ * opens an addressed thread again. Answers with the updated comment.
+ */
+export const replyToComment = (options: {
+  products: { name: string; dir: string }[];
+  id: string;
+  by: CommentReply['by'];
+  author?: string;
+  text: string;
+  question?: boolean;
+}): DesignComment | string => {
+  const { by, author, text, question } = options;
+
+  if (text.trim() === '') return 'a reply needs a text';
+  if (by === 'agent' && !author?.trim()) return 'an agent reply needs --by <model id>';
+  if (question && by !== 'agent') return 'only an agent reply can be a question';
+
+  const found = findComment(options);
+
+  if (typeof found === 'string') return found;
+
+  const reply: CommentReply = {
+    by,
+    ...(author ? { author } : {}),
+    text,
+    createdAt: new Date().toISOString(),
+    ...(question ? { question: true as const } : {}),
+  };
+  const replies = [...found.replies, reply];
+  const addressed = by === 'agent' ? found.addressed : undefined;
+
+  rewrite(found.file, (stored) => ({ ...stored, addressed, replies }));
+
+  return { ...found, addressed, replies };
+};
+
+/** Deletes a withdrawn comment thread by its id, searching the named products. Answers with the deleted comment. */
+export const deleteComment = (options: {
+  products: { name: string; dir: string }[];
+  id: string;
+}): DesignComment | string => {
+  const found = findComment(options);
+
+  if (typeof found !== 'string') rmSync(found.file);
+
+  return found;
+};
+
+/** Deletes the user's reply at `reply` (0-based) from the thread `id`, searching the named products. Answers with the updated comment. */
+export const withdrawReply = (options: {
+  products: { name: string; dir: string }[];
+  id: string;
+  reply: number;
+}): DesignComment | string => {
+  const { reply } = options;
+  const found = findComment(options);
+
+  if (typeof found === 'string') return found;
+
+  const withdrawn = found.replies[reply];
+
+  if (!withdrawn) return `comment "${found.id}" has no reply ${reply}`;
+  if (withdrawn.by !== 'user') return 'only a reply by the user can be withdrawn';
+
+  const replies = found.replies.filter((_, index) => index !== reply);
+
+  rewrite(found.file, (stored) => ({ ...stored, replies }));
+
+  return { ...found, replies };
+};
+
+const addressedOf = (options: {
+  reason: CommentAddressReason;
+  author?: string;
+  note?: string;
+  round?: string;
+}): CommentAddressed => {
+  const { reason, author, note, round } = options;
+
+  return {
+    by: author ? 'agent' : 'user',
+    ...(author ? { author } : {}),
+    reason,
+    addressedAt: new Date().toISOString(),
+    ...(note?.trim() ? { note: note.trim() } : {}),
+    ...(round ? { round } : {}),
+  };
+};
+
+const withAddressed = (comment: DesignComment, addressed: CommentAddressed): DesignComment => {
+  rewrite(comment.file, (stored) => ({ ...stored, addressed }));
+
+  return { ...comment, addressed };
+};
+
+/**
+ * Marks an open or addressed comment thread as addressed by `inbox done`, searching the named products. Without
+ * `author` the user addressed it. Answers with the addressed comment.
+ */
+export const addressComment = (options: {
+  products: { name: string; dir: string }[];
+  id: string;
+  author?: string;
+  note?: string;
+}): DesignComment | string => {
+  const found = findComment(options);
+
+  return typeof found === 'string' ? found : withAddressed(found, addressedOf({ ...options, reason: 'done' }));
+};
+
+/** Resolves an open or addressed comment thread for the user, searching the named products: the file stays, marked `resolved`. */
+export const resolveComment = (options: {
+  products: { name: string; dir: string }[];
+  id: string;
+  note?: string;
+}): DesignComment | string => {
+  const found = findComment(options);
+
+  if (typeof found === 'string') return found;
+
+  const note = options.note?.trim();
+  const resolved: CommentResolution = { by: 'user', resolvedAt: new Date().toISOString(), ...(note ? { note } : {}) };
+
+  rewrite(found.file, (stored) => ({ ...stored, resolved }));
+
+  return { ...found, resolved };
+};
+
+const resolvedByTool = (note: string): CommentResolution => ({
+  by: 'user',
+  resolvedAt: new Date().toISOString(),
+  note,
+});
+
+/** Resolves the addressed comments of a product that `matches` picks, with `note`, in the shape Studio writes. Answers with them. */
+export const resolveAddressedComments = (options: {
+  productDir: string;
+  product: string;
+  note: string;
+  matches: (comment: DesignComment) => boolean;
+}): DesignComment[] => {
+  const resolved = resolvedByTool(options.note);
+
+  return listComments({ productDir: options.productDir, product: options.product, all: true })
+    .comments.filter((comment) => comment.addressed && !comment.resolved && options.matches(comment))
+    .map((comment) => {
+      rewrite(comment.file, (stored) => ({ ...stored, resolved }));
+
+      return { ...comment, resolved };
+    });
+};
+
+const onSketch = (comment: Pick<CommentFile, 'sketch'>, sketch: Pick<Sketch, 'target' | 'createdAt'>) =>
+  comment.sketch?.target === sketch.target && comment.sketch.createdAt === sketch.createdAt;
+
+/** Resolves the addressed comments made on any variant of a sketch, and with `parts` those without a sketch on one of these parts. */
+export const resolveSketchEndComments = (options: {
+  sketch: Sketch;
+  note: string;
+  parts?: string[];
+}): DesignComment[] =>
+  resolveAddressedComments({
+    productDir: resolve(options.sketch.dir, '..', '..'),
+    product: options.sketch.product,
+    note: options.note,
+    matches: (comment) =>
+      onSketch(comment, options.sketch) ||
+      (!comment.sketch && options.parts !== undefined && options.parts.includes(comment.part)),
+  });
+
+/** Resolves every addressed comment whose sketch is merged, discarded or replaced. Answers with them. */
+export const resolveEndedSketchComments = (options: { product: ResolvedProduct }): DesignComment[] =>
+  resolveAddressedComments({
+    productDir: options.product.dir,
+    product: options.product.name,
+    note: 'sketch ended',
+    matches: (comment) => sketchGoneOf({ product: options.product, comment }),
+  });
+
+/** The open comments made on any variant of a sketch, matched by its target and its `createdAt`. */
+export const commentsOnSketch = (options: {
+  productDir: string;
+  product: string;
+  sketch: Pick<Sketch, 'target' | 'createdAt'>;
+}) =>
+  listComments(options).comments.filter(
+    (comment) =>
+      comment.sketch?.target === options.sketch.target && comment.sketch.createdAt === options.sketch.createdAt,
+  );
+
+/**
+ * Marks the open comments on the variants of a sketch, or only those on `variant`, as addressed for `reason`; a merge
+ * skips a thread that still awaits an answer. `round`
+ * is the key of the round a `round` answer started; without `author` the user addressed them. Answers with the addressed comments.
+ */
+export const addressSketchComments = (options: {
+  sketch: Sketch;
+  variant?: string;
+  reason: Exclude<CommentAddressReason, 'done'>;
+  author?: string;
+  note?: string;
+  round?: string;
+}): DesignComment[] => {
+  const { sketch, variant } = options;
+  const addressed = addressedOf(options);
+
+  return commentsOnSketch({
+    productDir: resolve(sketch.dir, '..', '..'),
+    product: sketch.product,
+    sketch,
+  })
+    .filter((comment) => variant === undefined || comment.sketch?.variant === variant)
+    .filter((comment) => options.reason !== 'merge' || !awaitsAnswer(comment))
+    .map((comment) => withAddressed(comment, addressed));
+};

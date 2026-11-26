@@ -1,0 +1,84 @@
+import { JsonPipe } from '@angular/common';
+import { Component, ViewEncapsulation, computed, input, linkedSignal } from '@angular/core';
+import { FormField, disabled, form, readonly, required } from '@angular/forms/signals';
+import { ProvideColorDirective } from '@ethlete/core';
+import { de } from 'date-fns/locale';
+import { FORM_FIELD_IMPORTS } from '../../../form-field';
+import {
+  TimeFilterPreset,
+  parseTimeOfDay,
+  resolveTimeFilterPreset,
+} from '../../../../time-picker/stories/time-filter-presets';
+import { TIME_INPUT_IMPORTS } from '../time-input.imports';
+
+@Component({
+  selector: 'et-sb-time-input',
+  template: `
+    <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
+      <et-form-field>
+        <et-label>{{ label() }}</et-label>
+        <et-time-input
+          [(mixed)]="mixedState"
+          [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
+          [placeholder]="placeholder()"
+          [valueFormat]="valueFormat()"
+          [displayFormat]="displayFormat()"
+          [mask]="mask()"
+          [locale]="localeObject()"
+          [minuteStep]="minuteStep()"
+          [minTime]="minTimeDate()"
+          [maxTime]="maxTimeDate()"
+          [timeFilter]="filterFn()"
+        />
+        @if (hint()) {
+          <et-hint>{{ hint() }}</et-hint>
+        }
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      @if (showMixedState()) {
+        <p class="text-sm opacity-60">Mixed: {{ mixedState() }}</p>
+      }
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...TIME_INPUT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class TimeInputStorybookComponent {
+  public label = input('Time');
+  public placeholder = input('hh:mm');
+  public hint = input('');
+  public value = input<string | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
+  public valueFormat = input<string | undefined>(undefined);
+  public displayFormat = input('p');
+  public mask = input(false);
+  public minuteStep = input(5);
+  public locale = input<'default' | 'de'>('default');
+  public minTime = input<string | null>(null);
+  public maxTime = input<string | null>(null);
+  public filter = input<TimeFilterPreset>('none');
+  public disabled = input(false);
+  public readonly = input(false);
+  public required = input(false);
+  public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
+
+  protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
+
+  protected minTimeDate = computed(() => parseTimeOfDay(this.minTime()));
+  protected maxTimeDate = computed(() => parseTimeOfDay(this.maxTime()));
+  protected filterFn = computed(() => resolveTimeFilterPreset(this.filter()));
+
+  private formModel = linkedSignal(() => ({ value: this.value() }));
+
+  public demoForm = form(this.formModel, (s) => {
+    disabled(s, () => this.disabled());
+    readonly(s.value, () => this.readonly());
+    required(s.value, { when: () => this.required(), message: 'Please pick a time' });
+  });
+}

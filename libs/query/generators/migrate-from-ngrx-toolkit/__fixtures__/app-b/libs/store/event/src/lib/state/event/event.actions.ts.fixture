@@ -1,0 +1,47 @@
+import * as Models from './event.models';
+import { createHttpActionGroup, defineArgTypes } from '@tomtomb/ngrx-toolkit';
+import { EntryDetailView, EventDetailView, EventListView, EventFeedListView, Paginated } from '@app-b/types';
+
+export const EVENT_ACTION_PREFIX = 'Event';
+
+export const getEventEntry = createHttpActionGroup({
+  method: 'GET',
+  name: 'Event Entry',
+  scope: EVENT_ACTION_PREFIX,
+  argsTypes: defineArgTypes<{
+    args: Models.GetEventEntryArgs;
+    response: EntryDetailView;
+  }>(),
+});
+
+export const getEventFeeds = createHttpActionGroup({
+  method: 'GET',
+  name: 'Event Feeds',
+  scope: EVENT_ACTION_PREFIX,
+  argsTypes: defineArgTypes<{
+    args: Models.GetEventFeedsArgs;
+    response: EventFeedListView;
+  }>(),
+});
+
+export const getEventBySlug = createHttpActionGroup({
+  method: 'GET',
+  name: 'Event By Slug',
+  scope: EVENT_ACTION_PREFIX,
+  argsTypes: defineArgTypes<{
+    args: Models.GetEventBySlugArgs;
+    response: EventDetailView;
+  }>(),
+});
+
+export const getEventResults = createHttpActionGroup({
+  method: 'GET',
+  name: 'Event Results',
+  scope: EVENT_ACTION_PREFIX,
+  argsTypes: defineArgTypes<{
+    args: Models.GetEventResultsArgs;
+    response: Paginated<EventListView>;
+  }>(),
+});
+
+export const EVENT_ACTIONS = { getEventEntry, getEventBySlug, getEventResults, getEventFeeds };

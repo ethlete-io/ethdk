@@ -1,0 +1,1047 @@
+import { Tree } from '@nx/devkit';
+import * as ts from 'typescript';
+import { CLIENT_FEATURE, reportClientErrorPipelineAdded } from '../migrate-query-opt-in-features/migration.js';
+import { MigrationScope } from './migration-scope.js';
+import { ModuleGraph, createModuleGraph } from './module-graph.js';
+import { isNamePosition, isShadowedInNestedScope, renamedReference } from './rename-symbols.js';
+import { QueryV3MigrationReport } from './report.js';
+import {
+  capitalizeFirstLetter,
+  createSourceFile,
+  ensureConfigSuffix,
+  ensureImportFromEthleteCore,
+  ensureImportFromQuery,
+  getVariableStatementEnd,
+  printImportDeclaration,
+} from './shared.js';
+
+/** Per declaring file, its content before the migration and the client variables it renamed. */
+export type ClientVariableRenames = Map<string, { originalContent: string; renames: Map<string, string> }>;
+
+export type QueryClientMigrationResult = {
+  queryClientFiles: Map<string, string[]>;
+  variableRenames: ClientVariableRenames;
+  gqlGetClients: Set<string>;
+};
+
+type MigrateSingleClientOptions = {
+  content: string;
+  filePath: string;
+  renamesOut?: Map<string, string>;
+  gqlGetClientsOut?: Set<string>;
+  report: QueryV3MigrationReport;
+};
+
+export const migrateQueryClients = (
+  tree: Tree,
+  report: QueryV3MigrationReport,
+  scope: MigrationScope,
+): QueryClientMigrationResult => {
+  const queryClientFiles = new Map<string, string[]>();
+  const variableRenames: ClientVariableRenames = new Map();
+  const gqlGetClients = new Set<string>();
+
+  scope.visit(tree, (filePath) => {
+    if (!filePath.endsWith('.ts')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content || !hasQueryClientInstantiation(content)) {
+      return;
+    }
+
+    const renames = new Map<string, string>();
+    const nextContent = migrateQueryClientToConfig({
+      content,
+      filePath,
+      renamesOut: renames,
+      gqlGetClientsOut: gqlGetClients,
+      report,
+    });
+
+    if (renames.size > 0) {
+      variableRenames.set(filePath, { originalContent: content, renames });
+    }
+
+    const configNames = extractClientConfigNames(nextContent);
+
+    if (configNames.length > 0) {
+      queryClientFiles.set(filePath, configNames);
+    }
+
+    if (nextContent !== content) {
+      tree.write(filePath, nextContent);
+    }
+  });
+
+  if (queryClientFiles.size > 0) {
+    console.log('\n✅ Migrated QueryClient instantiations in:');
+    queryClientFiles.forEach((configNames, filePath) => {
+      console.log(`   - ${filePath} (${configNames.join(', ')})`);
+    });
+  }
+
+  return { queryClientFiles, variableRenames, gqlGetClients };
+};
+
+export const generateProviderAliases = (tree: Tree, queryClientFiles: Map<string, string[]>) => {
+  const updatedFiles: string[] = [];
+
+  for (const [filePath, configNames] of queryClientFiles.entries()) {
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content) {
+      continue;
+    }
+
+    const nextContent = addProviderAliasesToFile(content, configNames);
+
+    if (nextContent !== content) {
+      tree.write(filePath, nextContent);
+      updatedFiles.push(filePath);
+    }
+  }
+
+  if (updatedFiles.length > 0) {
+    console.log('\n✅ Generated query client provider aliases in:');
+    updatedFiles.forEach((filePath) => console.log(`   - ${filePath}`));
+  }
+};
+
+export const generateQueryCreators = (tree: Tree, queryClientFiles: Map<string, string[]>) => {
+  const generatedFiles: string[] = [];
+
+  for (const [filePath, configNames] of queryClientFiles.entries()) {
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content) {
+      continue;
+    }
+
+    const nextContent = addQueryCreatorsToFile(content, configNames);
+
+    if (nextContent !== content) {
+      tree.write(filePath, nextContent);
+      generatedFiles.push(filePath);
+    }
+  }
+
+  if (generatedFiles.length > 0) {
+    console.log('\n✅ Generated query creators in:');
+    generatedFiles.forEach((filePath) => console.log(`   - ${filePath}`));
+  }
+};
+
+export const updateImportsAcrossWorkspace = (
+  tree: Tree,
+  renames: ClientVariableRenames,
+  scope: MigrationScope,
+  report: QueryV3MigrationReport,
+) => {
+  if (renames.size === 0) {
+    return;
+  }
+
+  const originalContents = new Map(
+    Array.from(renames.entries()).map(([filePath, { originalContent }]) => [filePath, originalContent]),
+  );
+  const graph = createModuleGraph(withOriginalContents(tree, originalContents));
+
+  scope.visit(tree, (filePath) => {
+    if (!filePath.endsWith('.ts')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content) {
+      return;
+    }
+
+    const { content: nextContent, renamedByName } = updateImportsInFile(content, filePath, renames, graph);
+
+    if (renamedByName.size > 0) {
+      report.addManualReview({
+        title: `Check the client rename in ${filePath}`,
+        summary: `The migration could not resolve ${[...renamedByName].map((specifier) => `\`${specifier}\``).join(', ')} to a file, so it renamed the imported client by its name alone.`,
+        action: 'Confirm the renamed import really is the migrated query client, and revert it if it is not.',
+        locations: [{ filePath }],
+        source: 'query-client-migration',
+        dedupeKey: `client-rename-by-name:${filePath}`,
+      });
+    }
+
+    if (nextContent !== content) {
+      originalContents.set(filePath, content);
+      tree.write(filePath, nextContent);
+    }
+  });
+};
+
+/**
+ * A view of `tree` that still reads the pre-migration content of `originalContents`, so the module
+ * graph resolves a client import by the name it had when the import was written.
+ */
+const withOriginalContents = (tree: Tree, originalContents: ReadonlyMap<string, string>): Tree =>
+  new Proxy(tree, {
+    get: (target, property) => {
+      if (property === 'read') {
+        return (filePath: string, encoding?: BufferEncoding) => {
+          const original = originalContents.get(filePath);
+
+          if (original === undefined) {
+            return encoding ? target.read(filePath, encoding) : target.read(filePath);
+          }
+
+          return encoding ? original : Buffer.from(original);
+        };
+      }
+
+      const value = Reflect.get(target, property, target);
+
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+
+const hasQueryClientInstantiation = (content: string) => {
+  const sourceFile = createSourceFile(content);
+  let hasQueryClientImport = false;
+  let hasNewQueryClient = false;
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === '@ethlete/query' &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    ) {
+      const hasLegacyClientImport = node.importClause.namedBindings.elements.some((element) => {
+        return element.name.text === 'V2QueryClient';
+      });
+
+      if (hasLegacyClientImport) {
+        hasQueryClientImport = true;
+      }
+    }
+
+    if (ts.isNewExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'V2QueryClient') {
+      hasNewQueryClient = true;
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return hasQueryClientImport && hasNewQueryClient;
+};
+
+const migrateQueryClientToConfig = ({
+  content,
+  filePath,
+  renamesOut,
+  gqlGetClientsOut,
+  report,
+}: MigrateSingleClientOptions) => {
+  const sourceFile = createSourceFile(content, filePath);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+  const variableRenames = new Map<string, string>();
+  let hasUnmigratedClient = false;
+  let needsErrorFeature = false;
+
+  const visit = (node: ts.Node) => {
+    if (ts.isNewExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'V2QueryClient') {
+      const configArgument = node.arguments?.[0];
+
+      if (!configArgument || !ts.isObjectLiteralExpression(configArgument)) {
+        hasUnmigratedClient = true;
+
+        report.addManualReview({
+          title: 'Migrate a V2QueryClient whose config is not an object literal',
+          summary: `\`${node.getText(sourceFile)}\` passes its config indirectly, so the migration cannot read it and left the client on v2.`,
+          action:
+            'Inline the config object and re-run the migration, or rewrite the client by hand as `createQueryClient({ baseUrl, name })` with provider aliases and creators.',
+          locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 }],
+          source: 'query-client-migration',
+          dedupeKey: `unmigrated-client:${filePath}:${node.getStart(sourceFile)}`,
+        });
+      } else {
+        const oldVariableName = getVariableNameForQueryClient(node);
+
+        if (oldVariableName && gqlGetClientsOut && usesGqlTransferViaGet(configArgument)) {
+          gqlGetClientsOut.add(oldVariableName);
+        }
+        const newVariableName = oldVariableName && ensureConfigSuffix(oldVariableName);
+
+        if (oldVariableName && newVariableName && oldVariableName !== newVariableName) {
+          const collisionRegex = new RegExp(`\\b(?:const|let|var)\\s+${newVariableName}\\b`);
+
+          if (collisionRegex.test(content)) {
+            report.addWarning({
+              title: `Resolve query client rename collision for ${oldVariableName}`,
+              summary: `The migration renamed ${oldVariableName} to ${newVariableName}, but a declaration with the target name already exists.`,
+              action: `Verify the declarations in ${filePath} and rename one side manually before shipping the migrated client.`,
+              locations: [{ filePath }],
+              source: 'query-client-migration',
+              dedupeKey: `rename-collision:${filePath}:${oldVariableName}:${newVariableName}`,
+            });
+          }
+
+          variableRenames.set(oldVariableName, newVariableName);
+
+          if (renamesOut) {
+            renamesOut.set(oldVariableName, newVariableName);
+          }
+        }
+
+        reportDroppedClientOptions({ configArgument, sourceFile, filePath, report });
+        const isThirdParty = isThirdPartyClient(configArgument, node, sourceFile);
+
+        reportChangedClientDefaults({ configArgument, sourceFile, filePath, report, isThirdParty });
+
+        if (!isThirdParty) {
+          needsErrorFeature = true;
+        }
+
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: migrateConfigObject(configArgument, node, sourceFile, isThirdParty),
+        });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  let result = content;
+
+  replacements.sort((left, right) => right.start - left.start);
+
+  replacements.forEach(({ start, end, replacement }) => {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  });
+
+  result = removeQueryClientImport(result, hasUnmigratedClient, needsErrorFeature);
+
+  return renameVariables(result, variableRenames);
+};
+
+const removeQueryClientImport = (content: string, keepLegacyClient: boolean, needsErrorFeature: boolean) => {
+  const sourceFile = createSourceFile(content);
+  let queryImportNode: ts.ImportDeclaration | undefined;
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (
+      !queryImportNode &&
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === '@ethlete/query' &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings) &&
+      node.importClause.namedBindings.elements.some((element) => element.name.text === 'V2QueryClient')
+    ) {
+      queryImportNode = node;
+    }
+  });
+
+  const requiredImports = [
+    'createDeleteQuery',
+    'createGetQuery',
+    'createPatchQuery',
+    'createPostQuery',
+    'createPutQuery',
+    'createQueryClient',
+    ...(needsErrorFeature ? [CLIENT_FEATURE] : []),
+  ];
+
+  if (!queryImportNode?.importClause?.namedBindings || !ts.isNamedImports(queryImportNode.importClause.namedBindings)) {
+    return ensureImportFromQuery(content, requiredImports);
+  }
+
+  const existingElements = queryImportNode.importClause.namedBindings.elements.filter((element) => {
+    return keepLegacyClient || element.name.text !== 'V2QueryClient';
+  });
+
+  const nextImports = new Set<string>(requiredImports);
+  existingElements.forEach((element) => nextImports.add(element.getText(sourceFile)));
+
+  const nextImportStatement = printImportDeclaration(queryImportNode, sourceFile, Array.from(nextImports).sort());
+
+  return (
+    content.slice(0, queryImportNode.getStart(sourceFile)) +
+    nextImportStatement +
+    content.slice(queryImportNode.getEnd())
+  );
+};
+
+const isTopLevelVariableName = (node: ts.Identifier) => {
+  const declaration = node.parent;
+
+  return (
+    ts.isVariableDeclaration(declaration) &&
+    declaration.name === node &&
+    ts.isVariableStatement(declaration.parent.parent) &&
+    ts.isSourceFile(declaration.parent.parent.parent)
+  );
+};
+
+const renameInDeclaringFile = (node: ts.Identifier, nextName: string) => {
+  const parent = node.parent;
+
+  if (isTopLevelVariableName(node)) {
+    return nextName;
+  }
+
+  if (ts.isExportSpecifier(parent) && !parent.parent.parent.moduleSpecifier) {
+    return (parent.propertyName ?? parent.name) === node ? nextName : undefined;
+  }
+
+  if (isNamePosition(node) || isShadowedInNestedScope(node)) {
+    return undefined;
+  }
+
+  return renamedReference(node, nextName);
+};
+
+const renameVariables = (content: string, renames: Map<string, string>) => {
+  if (renames.size === 0) {
+    return content;
+  }
+
+  const sourceFile = createSourceFile(content);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  const visit = (node: ts.Node) => {
+    const nextName = ts.isIdentifier(node) ? renames.get(node.text) : undefined;
+    const replacement = nextName && renameInDeclaringFile(node as ts.Identifier, nextName);
+
+    if (replacement) {
+      replacements.push({ start: node.getStart(sourceFile), end: node.getEnd(), replacement });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return applyReplacements(content, replacements);
+};
+
+const applyReplacements = (
+  content: string,
+  replacements: Array<{ start: number; end: number; replacement: string }>,
+) => {
+  let result = content;
+
+  [...replacements]
+    .sort((left, right) => right.start - left.start)
+    .forEach(({ start, end, replacement }) => {
+      result = result.slice(0, start) + replacement + result.slice(end);
+    });
+
+  return result;
+};
+
+const WINDOW_FOCUS_REPLACEMENT =
+  'Opt in per query: `withPolling({ interval, refetchOnFocus: true })` on a polled query, `withAutoRefresh({ onSignalChanges: [windowFocusSignal] })` on any other, or `injectMyClient().refreshQueriesInUse()` from a focus listener.';
+
+const SMART_POLLING_REPLACEMENT =
+  'Opt in per query: `withPolling({ interval, pauseWhileHidden: true })`. Without it v3 keeps polling in a hidden tab.';
+
+const V2_ON_BY_DEFAULT_REQUEST_OPTIONS: Record<string, string> = {
+  autoRefreshQueriesOnWindowFocus: WINDOW_FOCUS_REPLACEMENT,
+  enableSmartPolling: SMART_POLLING_REPLACEMENT,
+};
+
+/**
+ * What each v2 client option turns into, or why it has nowhere to go.
+ *
+ * Silently dropping these is how two apps here lost their default headers without a single warning.
+ * A dropped option that shows up in the report is a five-minute fix; one that doesn't is a bug
+ * report from production.
+ */
+const DROPPED_CLIENT_OPTIONS: Record<string, string> = {
+  'request.autoRefreshQueriesOnWindowFocus': WINDOW_FOCUS_REPLACEMENT,
+  'request.enableSmartPolling': SMART_POLLING_REPLACEMENT,
+  'logging.preparedQuerySubscriptions':
+    'Removed. Use the v3 devtools (`provideQueryDevtools()`) or `withLogging({ logFn })` on the queries you want to trace.',
+  'logging.queryStateChanges':
+    'Removed. Use the v3 devtools (`provideQueryDevtools()`) or `withLogging({ logFn })` on the queries you want to trace.',
+  'request.autoRefreshOn':
+    'No direct equivalent. Re-run the affected queries yourself with `withAutoRefresh` or `refreshQueriesInUse()`.',
+};
+
+type ReportDroppedClientOptionsInput = {
+  configArgument: ts.ObjectLiteralExpression;
+  sourceFile: ts.SourceFile;
+  filePath: string;
+  report: QueryV3MigrationReport;
+};
+
+type ReportChangedClientDefaultsInput = ReportDroppedClientOptionsInput & { isThirdParty: boolean };
+
+const THIRD_PARTY_API_PATTERN = /contentful|shopify|bynder/i;
+
+const isThirdPartyClient = (configArgument: ts.ObjectLiteralExpression, node: ts.Node, sourceFile: ts.SourceFile) => {
+  const baseRoute = findProperty(configArgument, 'baseRoute');
+  const baseRouteText = (baseRoute && getPropertyValueText(baseRoute, sourceFile)) ?? '';
+
+  return THIRD_PARTY_API_PATTERN.test(`${baseRouteText} ${getVariableNameForQueryClient(node) ?? ''}`);
+};
+
+const reportDroppedClientOptions = ({
+  configArgument,
+  sourceFile,
+  filePath,
+  report,
+}: ReportDroppedClientOptionsInput) => {
+  const migrated = new Set(['baseRoute', 'queryParams', 'cacheAdapter', 'retryFn', 'request', 'logging']);
+
+  const raise = (optionPath: string, node: ts.Node) => {
+    report.addWarning({
+      title: `Reconfigure dropped query client option "${optionPath}"`,
+      summary: `The v2 client option \`${optionPath}\` has no place in \`createQueryClient\` and was dropped by the migration.`,
+      action: DROPPED_CLIENT_OPTIONS[optionPath] ?? 'Check whether the behaviour is still needed and reimplement it.',
+      locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 }],
+      source: 'query-client-migration',
+      dedupeKey: `dropped-client-option:${filePath}:${optionPath}`,
+    });
+  };
+
+  const raiseSpread = (spread: ts.SpreadAssignment) => {
+    const text = spread.getText(sourceFile);
+
+    report.addWarning({
+      title: `Reconfigure spread query client options "${text}"`,
+      summary: `The v2 client config spreads \`${text}\`. The migration cannot see which options it holds, so none of them were carried over to \`createQueryClient\`.`,
+      action:
+        'Inline the spread options that are still needed (`baseRoute` becomes `baseUrl`) and re-check the result.',
+      locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(spread.getStart(sourceFile)).line + 1 }],
+      source: 'query-client-migration',
+      dedupeKey: `dropped-client-spread:${filePath}:${spread.getStart(sourceFile)}`,
+    });
+  };
+
+  configArgument.properties.forEach((property) => {
+    if (ts.isSpreadAssignment(property)) {
+      raiseSpread(property);
+
+      return;
+    }
+
+    if (
+      (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) ||
+      !ts.isIdentifier(property.name)
+    ) {
+      return;
+    }
+
+    const name = property.name.text;
+
+    if (
+      (name === 'request' || name === 'logging') &&
+      ts.isPropertyAssignment(property) &&
+      ts.isObjectLiteralExpression(property.initializer)
+    ) {
+      property.initializer.properties.forEach((nested) => {
+        if (ts.isSpreadAssignment(nested)) {
+          raiseSpread(nested);
+
+          return;
+        }
+
+        if (
+          (!ts.isPropertyAssignment(nested) && !ts.isShorthandPropertyAssignment(nested)) ||
+          !ts.isIdentifier(nested.name)
+        ) {
+          return;
+        }
+
+        if (name === 'request' && ['queryParams', 'cacheAdapter', 'retryFn'].includes(nested.name.text)) {
+          return;
+        }
+
+        if (name === 'request' && nested.name.text === 'gql' && isGqlTransferViaGetOnly(nested)) {
+          return;
+        }
+
+        if (
+          name === 'request' &&
+          nested.name.text in V2_ON_BY_DEFAULT_REQUEST_OPTIONS &&
+          ts.isPropertyAssignment(nested) &&
+          nested.initializer.kind === ts.SyntaxKind.FalseKeyword
+        ) {
+          return;
+        }
+
+        raise(`${name}.${nested.name.text}`, nested);
+      });
+
+      return;
+    }
+
+    if (!migrated.has(name)) {
+      raise(name, property);
+    }
+  });
+};
+
+const reportChangedClientDefaults = ({
+  configArgument,
+  sourceFile,
+  filePath,
+  report,
+  isThirdParty,
+}: ReportChangedClientDefaultsInput) => {
+  const location = {
+    filePath,
+    line: sourceFile.getLineAndCharacterOfPosition(configArgument.getStart(sourceFile)).line + 1,
+  };
+  const requestProperty = findProperty(configArgument, 'request');
+  const requestConfig =
+    requestProperty &&
+    ts.isPropertyAssignment(requestProperty) &&
+    ts.isObjectLiteralExpression(requestProperty.initializer)
+      ? requestProperty.initializer
+      : undefined;
+  const hasUnreadableRequestConfig =
+    (!!requestProperty && !requestConfig) || !!requestConfig?.properties.some(ts.isSpreadAssignment);
+
+  const retryFn = requestConfig && findProperty(requestConfig, 'retryFn');
+
+  if (retryFn) {
+    report.addWarning({
+      title: 'Port the v2 retryFn of the migrated client',
+      summary:
+        'The v2 `retryFn` has the v2 `RequestRetryFn` type and was not carried over: the v3 `retryFn` takes different arguments, so a copy does not compile.',
+      action:
+        'Rewrite it as a v3 `retryFn` on `createQueryClient`, or express it with `withEthleteApiErrors({ retry: { maxAttempts, retryableStatusCodes } })` where the client uses that feature.',
+      locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(retryFn.getStart(sourceFile)).line + 1 }],
+      source: 'query-client-migration',
+      dedupeKey: `ported-retry-fn:${filePath}:${retryFn.getStart(sourceFile)}`,
+    });
+  }
+
+  if (isThirdParty) {
+    report.addWarning({
+      title: 'Choose the error handling of a third-party client',
+      summary: `The client talks to a third-party API (Contentful, Shopify or Bynder). \`${CLIENT_FEATURE}()\` parses Symfony error bodies, which that API does not send, so the migration did not add it. v2 retried and parsed errors on every client.`,
+      action:
+        'Add `withHtmlErrorParsing()` if a proxy in front of the API answers HTML, and `withDefaultRetry()` if failed requests should retry themselves.',
+      locations: [location],
+      source: 'query-client-migration',
+      dedupeKey: `third-party-client-errors:${filePath}:${location.line}`,
+    });
+  } else {
+    reportClientErrorPipelineAdded(
+      report,
+      location,
+      'query-client-migration',
+      `\`${CLIENT_FEATURE}()\` was added so failed requests still retry and Symfony / HTML error bodies are still parsed, as they were by default in v2.`,
+    );
+  }
+
+  if (!isThirdParty && !retryFn) {
+    report.addWarning({
+      title: 'Check the retry behaviour of the migrated client',
+      summary:
+        'v2 retried every request method on a 5xx (500 included), 408, 425 and 429, up to four times with a linear delay. The v3 default policy that `withEthleteApiErrors()` installs retries three times with an exponential, jittered delay, never retries a `POST`, a `PATCH` or a plain `500`, and also retries a connection failure.',
+      action:
+        'Accept the v3 policy, or pass `withEthleteApiErrors({ retry: { maxAttempts, retryableStatusCodes, retryNonIdempotent } })` - only set `retryNonIdempotent` for endpoints that deduplicate on their own.',
+      locations: [location],
+      source: 'query-client-migration',
+      dedupeKey: `changed-retry-default:${filePath}`,
+    });
+  }
+
+  const cacheAdapter = requestConfig && findProperty(requestConfig, 'cacheAdapter');
+
+  if (cacheAdapter) {
+    report.addWarning({
+      title: 'Check the carried-over cacheAdapter',
+      summary:
+        'The v2 `cacheAdapter` was carried over as is and still sets the freshness TTL: a TTL of `0` means an `execute({ options: { allowCache: true } })` always hits the server, as a v2 `execute()` did. Two things differ: v3 passes Angular `HttpHeaders` (read them with `headers.get(name)`) where v2 passed a plain record, and v3 keeps an entry for `keepUnusedFor` (5 minutes) after its last consumer, rendering the old response on a remount while it refetches.',
+      action:
+        'Rewrite an adapter that reads headers for `HttpHeaders`. If the adapter was meant to switch caching off, also set `keepUnusedFor: 0` on the client.',
+      locations: [
+        { filePath, line: sourceFile.getLineAndCharacterOfPosition(cacheAdapter.getStart(sourceFile)).line + 1 },
+      ],
+      source: 'query-client-migration',
+      dedupeKey: `carried-cache-adapter:${filePath}`,
+    });
+  }
+
+  if (hasUnreadableRequestConfig) {
+    return;
+  }
+
+  Object.entries(V2_ON_BY_DEFAULT_REQUEST_OPTIONS).forEach(([option, action]) => {
+    if (requestConfig && findProperty(requestConfig, option)) {
+      return;
+    }
+
+    report.addWarning({
+      title: `Restore the v2 default "request.${option}"`,
+      summary: `The v2 client did not set \`request.${option}\`, so it ran with the v2 default \`true\`. v3 has no client-wide equivalent and the behaviour is off for every migrated query.`,
+      action,
+      locations: [location],
+      source: 'query-client-migration',
+      dedupeKey: `dropped-client-default:${filePath}:${option}`,
+    });
+  });
+};
+
+const getPropertyValueText = (property: ts.ObjectLiteralElementLike, sourceFile: ts.SourceFile) => {
+  if (ts.isShorthandPropertyAssignment(property)) {
+    return property.name.text;
+  }
+
+  return ts.isPropertyAssignment(property) ? property.initializer.getText(sourceFile) : undefined;
+};
+
+const isGqlTransferViaGetOnly = (property: ts.ObjectLiteralElementLike) =>
+  ts.isPropertyAssignment(property) &&
+  ts.isObjectLiteralExpression(property.initializer) &&
+  property.initializer.properties.length === 1 &&
+  isTransferViaGet(property.initializer.properties[0]!);
+
+const isTransferViaGet = (property: ts.ObjectLiteralElementLike) =>
+  ts.isPropertyAssignment(property) &&
+  ts.isIdentifier(property.name) &&
+  property.name.text === 'transferVia' &&
+  ts.isStringLiteralLike(property.initializer) &&
+  property.initializer.text === 'GET';
+
+const usesGqlTransferViaGet = (configArgument: ts.ObjectLiteralExpression) => {
+  const request = findProperty(configArgument, 'request');
+  const gql =
+    request &&
+    ts.isPropertyAssignment(request) &&
+    ts.isObjectLiteralExpression(request.initializer) &&
+    findProperty(request.initializer, 'gql');
+
+  return (
+    !!gql &&
+    ts.isPropertyAssignment(gql) &&
+    ts.isObjectLiteralExpression(gql.initializer) &&
+    gql.initializer.properties.some(isTransferViaGet)
+  );
+};
+
+const findProperty = (objectLiteral: ts.ObjectLiteralExpression, name: string) =>
+  objectLiteral.properties.find((property) => {
+    return (
+      (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)) &&
+      ts.isIdentifier(property.name) &&
+      property.name.text === name
+    );
+  });
+
+const migrateConfigObject = (
+  configArgument: ts.ObjectLiteralExpression,
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  isThirdParty: boolean,
+) => {
+  const variableName = getVariableNameForQueryClient(node) ?? 'client';
+  const nextConfig: string[] = [];
+
+  const baseRouteProperty = findProperty(configArgument, 'baseRoute');
+  const baseRouteText = baseRouteProperty && getPropertyValueText(baseRouteProperty, sourceFile);
+
+  if (baseRouteText) {
+    nextConfig.push(`baseUrl: ${baseRouteText.replace('as `https://${string}`', '').trim()}`);
+  }
+
+  nextConfig.push(`name: '${variableName}'`);
+
+  const requestProperty = findProperty(configArgument, 'request');
+
+  if (
+    requestProperty &&
+    ts.isPropertyAssignment(requestProperty) &&
+    ts.isObjectLiteralExpression(requestProperty.initializer)
+  ) {
+    const requestConfig = requestProperty.initializer;
+
+    for (const [from, to] of [
+      ['queryParams', 'queryString'],
+      ['cacheAdapter', 'cacheAdapter'],
+    ] as const) {
+      const property = findProperty(requestConfig, from);
+      const valueText = property && getPropertyValueText(property, sourceFile);
+
+      if (valueText) {
+        nextConfig.push(`${to}: ${valueText}`);
+      }
+    }
+  }
+
+  if (!isThirdParty) {
+    nextConfig.push(`features: [${CLIENT_FEATURE}()]`);
+  }
+
+  return `createQueryClient({\n  ${nextConfig.join(',\n  ')}\n})`;
+};
+
+const getVariableNameForQueryClient = (node: ts.Node): string | undefined => {
+  let parent = node.parent;
+
+  while (parent) {
+    if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
+      return parent.name.text;
+    }
+
+    parent = parent.parent;
+  }
+
+  return undefined;
+};
+
+const extractClientConfigNames = (content: string) => {
+  const sourceFile = createSourceFile(content);
+  const configNames: string[] = [];
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer) &&
+      ts.isIdentifier(node.initializer.expression) &&
+      node.initializer.expression.text === 'createQueryClient'
+    ) {
+      const configArgument = node.initializer.arguments[0];
+
+      if (!configArgument || !ts.isObjectLiteralExpression(configArgument)) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      const nameProperty = configArgument.properties.find((property) => {
+        return ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === 'name';
+      });
+
+      if (nameProperty && ts.isPropertyAssignment(nameProperty) && ts.isStringLiteral(nameProperty.initializer)) {
+        configNames.push(nameProperty.initializer.text);
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return configNames;
+};
+
+const addProviderAliasesToFile = (content: string, configNames: string[]) => {
+  const sourceFile = createSourceFile(content);
+  const insertions: Array<{ position: number; text: string }> = [];
+  let result = content;
+
+  configNames.forEach((configName) => {
+    const variableName = ensureConfigSuffix(configName);
+    const position = getVariableStatementEnd(sourceFile, variableName, 'createQueryClient');
+
+    if (!position) {
+      return;
+    }
+
+    const { injectName, provideName } = getProviderAliasNames(variableName);
+
+    if (result.includes(`export const ${injectName} = toInjectFn(${variableName});`)) {
+      return;
+    }
+
+    insertions.push({
+      position,
+      text:
+        `\n\nexport const ${provideName} = toProvideFn(${variableName});` +
+        `\nexport const ${injectName} = toInjectFn(${variableName});`,
+    });
+  });
+
+  insertions.sort((left, right) => right.position - left.position);
+
+  insertions.forEach(({ position, text }) => {
+    result = result.slice(0, position) + text + result.slice(position);
+  });
+
+  return insertions.length > 0 ? ensureImportFromEthleteCore(result, ['toInjectFn', 'toProvideFn']) : result;
+};
+
+const getProviderAliasNames = (configVariableName: string) => {
+  const baseName = configVariableName.replace(/Config$/, '');
+  const capitalizedBaseName = capitalizeFirstLetter(baseName);
+
+  return {
+    provideName: `provide${capitalizedBaseName}`,
+    injectName: `inject${capitalizedBaseName}`,
+  };
+};
+
+const addQueryCreatorsToFile = (content: string, configNames: string[]) => {
+  const sourceFile = createSourceFile(content);
+  const insertions: Array<{ position: number; text: string }> = [];
+  let result = content;
+
+  configNames.forEach((configName) => {
+    const variableName = ensureConfigSuffix(configName);
+    const position = getVariableStatementEnd(sourceFile, variableName, 'createQueryClient');
+
+    if (!position) {
+      return;
+    }
+
+    const creatorBlock = generateCreatorsForConfig(configName);
+
+    if (result.includes(creatorBlock.split('\n')[0]!)) {
+      return;
+    }
+
+    insertions.push({
+      position,
+      text: `\n\n${creatorBlock}`,
+    });
+  });
+
+  insertions.sort((left, right) => right.position - left.position);
+
+  insertions.forEach(({ position, text }) => {
+    result = result.slice(0, position) + text + result.slice(position);
+  });
+
+  return result;
+};
+
+const generateCreatorsForConfig = (configName: string) => {
+  const creatorBaseName = configName.replace('Client', '');
+  const configVariableName = ensureConfigSuffix(configName);
+
+  return [
+    `export const ${creatorBaseName}Get = createGetQuery(${configVariableName});`,
+    `export const ${creatorBaseName}Post = createPostQuery(${configVariableName});`,
+    `export const ${creatorBaseName}Put = createPutQuery(${configVariableName});`,
+    `export const ${creatorBaseName}Patch = createPatchQuery(${configVariableName});`,
+    `export const ${creatorBaseName}Delete = createDeleteQuery(${configVariableName});`,
+  ].join('\n');
+};
+
+/**
+ * Points imports and re-exports of a renamed client at its new name, and renames the references to
+ * each unaliased import. Only a binding the module graph resolves to the client's declaring file is
+ * touched; a same-named symbol from any other module stays as it is. A workspace specifier the graph
+ * cannot resolve falls back to the rename by name and is returned in `renamedByName` for the report.
+ */
+const updateImportsInFile = (content: string, filePath: string, renames: ClientVariableRenames, graph: ModuleGraph) => {
+  const sourceFile = createSourceFile(content, filePath);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+  const localRenames = new Map<string, string>();
+  const renamedByName = new Set<string>();
+
+  const resolveRename = (specifier: string, importedName: string) => {
+    const declaringFile = graph.findDeclaringFile(filePath, specifier, importedName);
+
+    if (declaringFile) {
+      return declaringFile !== filePath ? renames.get(declaringFile)?.renames.get(importedName) : undefined;
+    }
+
+    if (!graph.isWorkspaceSpecifier(specifier)) return undefined;
+
+    const nextName = [...renames.values()].find((entry) => entry.renames.has(importedName))?.renames.get(importedName);
+
+    if (nextName) renamedByName.add(specifier);
+
+    return nextName;
+  };
+
+  for (const statement of sourceFile.statements) {
+    if (
+      ts.isImportDeclaration(statement) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.importClause?.namedBindings &&
+      ts.isNamedImports(statement.importClause.namedBindings)
+    ) {
+      const specifier = statement.moduleSpecifier.text;
+      let hasChanges = false;
+
+      const nextElements = statement.importClause.namedBindings.elements.map((element) => {
+        const nextName = resolveRename(specifier, (element.propertyName ?? element.name).text);
+
+        if (!nextName) {
+          return element.getText(sourceFile);
+        }
+
+        hasChanges = true;
+
+        const typePrefix = element.isTypeOnly ? 'type ' : '';
+
+        if (element.propertyName) {
+          return `${typePrefix}${nextName} as ${element.name.text}`;
+        }
+
+        localRenames.set(element.name.text, nextName);
+
+        return `${typePrefix}${nextName}`;
+      });
+
+      if (hasChanges) {
+        replacements.push({
+          start: statement.getStart(sourceFile),
+          end: statement.getEnd(),
+          replacement: printImportDeclaration(statement, sourceFile, nextElements),
+        });
+      }
+    }
+
+    if (
+      ts.isExportDeclaration(statement) &&
+      statement.moduleSpecifier &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.exportClause &&
+      ts.isNamedExports(statement.exportClause)
+    ) {
+      const specifier = statement.moduleSpecifier.text;
+
+      statement.exportClause.elements.forEach((element) => {
+        const exportedFrom = element.propertyName ?? element.name;
+        const nextName = ts.isIdentifier(exportedFrom) ? resolveRename(specifier, exportedFrom.text) : undefined;
+
+        if (nextName) {
+          replacements.push({
+            start: exportedFrom.getStart(sourceFile),
+            end: exportedFrom.getEnd(),
+            replacement: nextName,
+          });
+        }
+      });
+    }
+  }
+
+  const visit = (node: ts.Node) => {
+    const nextName = ts.isIdentifier(node) ? localRenames.get(node.text) : undefined;
+
+    if (nextName && !isNamePosition(node as ts.Identifier) && !isShadowedInNestedScope(node as ts.Identifier)) {
+      replacements.push({
+        start: node.getStart(sourceFile),
+        end: node.getEnd(),
+        replacement: renamedReference(node as ts.Identifier, nextName),
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  if (localRenames.size > 0) {
+    visit(sourceFile);
+  }
+
+  return { content: applyReplacements(content, replacements), renamedByName };
+};

@@ -1,0 +1,50 @@
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
+
+/**
+ * Every string the grid announces. It renders no text of its own - the items are yours - so these are
+ * all accessible labels.
+ */
+export type GridLabels = {
+  /** Accessible label for a grid whose items can be moved and resized. */
+  interactiveGrid: string;
+  /** Accessible label for a read-only grid. */
+  readonlyGrid: string;
+  /** Accessible label for an item that sets no `ariaLabel` of its own. */
+  item: string;
+  /** Accessible label for an item's remove action. */
+  removeItem: string;
+};
+
+/** The built-in English labels. */
+export const DEFAULT_GRID_LABELS: GridLabels = {
+  interactiveGrid: 'Interactive grid layout',
+  readonlyGrid: 'Grid layout',
+  item: 'Grid item',
+  removeItem: 'Remove item',
+};
+
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_GRID_LABELS: GridLabels = {
+  interactiveGrid: 'Interaktives Rasterlayout',
+  readonlyGrid: 'Rasterlayout',
+  item: 'Rasterelement',
+  removeItem: 'Element entfernen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideGridLabels}. */
+export const gridLabelsForLocale = (locale: string): GridLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_GRID_LABELS : DEFAULT_GRID_LABELS;
+
+const GRID_LABELS_DEF = /* @__PURE__ */ defineLabels<GridLabels>('GRID_LABELS', gridLabelsForLocale);
+
+/**
+ * Localize the grid's accessible labels for everything below this injector, and read the set in effect
+ * here as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_GRID_LABELS} value. See
+ * {@link defineLabels} for the shape, which every domain in this library shares.
+ *
+ * @example
+ * provideGridLabels({ readonlyGrid: 'Raster', removeItem: 'Element entfernen' });
+ */
+export const provideGridLabels = /* @__PURE__ */ toProvideFn(GRID_LABELS_DEF);
+export const injectGridLabels = /* @__PURE__ */ toInjectFn(GRID_LABELS_DEF);
+export const GRID_LABELS = /* @__PURE__ */ toToken(GRID_LABELS_DEF);

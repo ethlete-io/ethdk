@@ -1,0 +1,187 @@
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import { definePart, type Part } from '../../../../../design/define-part';
+import {
+  PARSED_PART_FIELDS,
+  dataStatesOf,
+  declaresControlsOf,
+  declaresNoControlsOf,
+  instantOf,
+  stateNamesOf,
+  unreachableOf,
+  widthsOf,
+  withMadeBy,
+  withNote,
+} from './part-definition';
+
+const part = `import { definePart } from '@design-system';
+export default definePart({
+  note: 'Old reason.',
+  states: { default: { a: 1 }, 'very-long': { a: 2 } },
+  render: () => null,
+});
+`;
+
+describe('stateNamesOf', () => {
+  it('reads the state names of a definePart literal', () => {
+    expect(stateNamesOf(part)).toEqual(['default', 'very-long']);
+  });
+
+  it('answers null when the states are not a literal', () => {
+    expect(stateNamesOf(part.replace(/states: \{.*\},\n/u, 'states,\n'))).toBeNull();
+    expect(stateNamesOf('export default 1;')).toBeNull();
+  });
+});
+
+describe('withNote', () => {
+  it('replaces the note literal and escapes the new one', () => {
+    const noted = withNote(part, "Variant b, because it's\nbolder.");
+
+    expect(noted).toContain("note: 'Variant b, because it\\'s\\nbolder.',");
+    expect(noted).not.toContain('Old reason.');
+    expect(stateNamesOf(noted ?? '')).toEqual(['default', 'very-long']);
+  });
+
+  it('answers null without a note literal', () => {
+    expect(withNote(part.replace("'Old reason.'", 'reason'), 'x')).toBeNull();
+  });
+});
+
+describe('withMadeBy', () => {
+  it('writes madeBy next to the note, and a later call replaces it', () => {
+    const made = withMadeBy(part, ['gemini-3-argon', 'gpt-5.6-sol']) ?? '';
+
+    expect(made).toContain("  note: 'Old reason.',\n  madeBy: ['gemini-3-argon', 'gpt-5.6-sol'],\n  states:");
+    expect(withMadeBy(made, ['claude-opus-5-5'])).toBe(
+      made.replace("'gemini-3-argon', 'gpt-5.6-sol'", "'claude-opus-5-5'"),
+    );
+  });
+
+  it('removes madeBy for no authors, and answers null without a note', () => {
+    expect(withMadeBy(withMadeBy(part, ['gpt-5.6-sol']) ?? '', [])).toBe(part);
+    expect(withMadeBy(part, [])).toBe(part);
+    expect(withMadeBy('export default definePart({ states: {} });', ['x'])).toBeNull();
+  });
+});
+
+describe('widthsOf', () => {
+  it('reads a literal list, an absent one as empty, and anything else as unknown', () => {
+    expect(widthsOf(`export default definePart({ widths: [240, 520], states: {} });`)).toEqual([240, 520]);
+    expect(widthsOf(`export default definePart({ states: {} });`)).toEqual([]);
+    expect(widthsOf(`export default definePart({ widths: WIDTHS, states: {} });`)).toBeNull();
+  });
+});
+
+describe('declaresControlsOf', () => {
+  it('answers whether definePart declares a control', () => {
+    expect(declaresControlsOf(part)).toBe(false);
+    expect(declaresControlsOf(part.replace('render:', 'controls: {},\n  render:'))).toBe(false);
+    expect(declaresControlsOf(part.replace('render:', "controls: { a: { kind: 'button' } },\n  render:"))).toBe(true);
+    expect(declaresControlsOf(part.replace('render:', 'controls,\n  render:'))).toBe(true);
+  });
+});
+
+describe('unreachableOf', () => {
+  const withUnreachable = (value: string) => part.replace('render:', `unreachable: ${value},\n  render:`);
+
+  it('reads literal pairs, none without the field, and null for a value that is no array literal', () => {
+    expect(unreachableOf(part)).toEqual([]);
+    expect(unreachableOf(withUnreachable("[{ from: 'default', to: 'very-long', reason: 'Set by the app.' }]"))).toEqual(
+      [{ from: 'default', to: 'very-long', reason: 'Set by the app.', literal: true }],
+    );
+    expect(unreachableOf(withUnreachable('pairs'))).toBeNull();
+  });
+
+  it('marks an entry or a field that is no literal, and leaves a missing reason null', () => {
+    expect(
+      unreachableOf(withUnreachable("[pair, { from: state, to: 'default', reason: 'x' }, { from: 'a', to: 'b' }]")),
+    ).toEqual([
+      { from: null, to: null, reason: null, literal: false },
+      { from: null, to: 'default', reason: 'x', literal: false },
+      { from: 'a', to: 'b', reason: null, literal: true },
+    ]);
+  });
+});
+
+describe('instantOf', () => {
+  const withInstant = (value: string) => part.replace('render:', `instant: ${value},\n  render:`);
+
+  it('reads a reason literal, none without the field, and unreadable for anything else', () => {
+    expect(instantOf(part)).toEqual({ kind: 'none' });
+    expect(instantOf(withInstant("'The app swaps the state.'"))).toEqual({
+      kind: 'declared',
+      reason: 'The app swaps the state.',
+    });
+    expect(instantOf(withInstant('true'))).toEqual({ kind: 'unreadable' });
+    expect(instantOf(withInstant("' '"))).toEqual({ kind: 'unreadable' });
+  });
+});
+
+describe('PARSED_PART_FIELDS', () => {
+  it('names only fields the Part type has', () => {
+    expectTypeOf<(typeof PARSED_PART_FIELDS)[number]>().toExtend<keyof Part<unknown>>();
+  });
+
+  it('types a part that writes every parsed field', () => {
+    const written = definePart({
+      note: 'Every field.',
+      madeBy: ['model'],
+      states: { rest: { open: false }, open: { open: true } },
+      describe: { rest: 'The closed toggle; check its label.', open: 'The open toggle; check its panel.' },
+      widths: [320],
+      interactions: ['hover'],
+      controls: { toggle: { kind: 'button', input: ['pointer'] } },
+      motions: { opening: { from: 'rest', to: 'open' } },
+      rules: [],
+      unreachable: [{ from: 'open', to: 'rest', reason: 'Closes by reload.' }],
+      instant: 'The app swaps the state.',
+      implements: 'apps/x/every.component.ts',
+      data: 'list',
+      dataStates: { loading: 'rest', error: 'rest', empty: 'rest' },
+      groups: [{ label: 'All', states: ['rest', 'open'] }],
+      render: () => ({ body: '<div></div>', styles: '' }),
+    });
+
+    expect(PARSED_PART_FIELDS.filter((field) => !(field in written))).toEqual([]);
+  });
+});
+
+describe('dataStatesOf (B251)', () => {
+  const listPart = (fields: string) =>
+    `import { definePart } from '@design-system';\nexport default definePart({ note: '', data: 'list',${fields} states: { rest: {} }, render: () => null });\n`;
+
+  it('reads the state each of loading, error and empty names', () => {
+    expect(
+      dataStatesOf(listPart(" dataStates: { loading: 'comparing', error: 'listing-failed', 'empty': `no-sketches` },")),
+    ).toEqual({ loading: 'comparing', error: 'listing-failed', empty: 'no-sketches' });
+  });
+
+  it('reads no map when it is missing, partial or not literal', () => {
+    expect(dataStatesOf(listPart(''))).toBeNull();
+    expect(dataStatesOf(listPart(" dataStates: { loading: 'a', error: 'b' },"))).toBeNull();
+    expect(dataStatesOf(listPart(' dataStates: STATES,'))).toBeNull();
+    expect(dataStatesOf(listPart(" dataStates: { loading: 'a', error: 'b', empty: NAME },"))).toBeNull();
+  });
+
+  it('does not type a list part without the map', () => {
+    // @ts-expect-error data: 'list' requires dataStates
+    definePart({ note: '', data: 'list', states: { rest: {} }, describe: { rest: '' }, render: () => ({ body: '' }) });
+    definePart({
+      note: '',
+      dataStates: { loading: 'rest', error: 'rest', empty: 'rest' },
+      states: { rest: {} },
+      describe: { rest: '' },
+      render: () => ({ body: '' }),
+    });
+  });
+});
+
+describe('declaresNoControlsOf', () => {
+  it('is true only for an explicit empty controls object', () => {
+    expect(declaresNoControlsOf(part)).toBe(false);
+    expect(declaresNoControlsOf(part.replace('render:', 'controls: {},\n  render:'))).toBe(true);
+    expect(declaresNoControlsOf(part.replace('render:', "controls: { a: { kind: 'button' } },\n  render:"))).toBe(
+      false,
+    );
+    expect(declaresNoControlsOf(part.replace('render:', 'controls,\n  render:'))).toBe(false);
+  });
+});

@@ -1,0 +1,179 @@
+@layer components.sdk {
+  /* Registered so keyframes interpolate it; inherits so slide content can read it. */
+  @property --et-carousel-slide-progress {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0;
+  }
+
+  @property --et-carousel-wipe-shift {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --et-carousel-wipe-dim {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.5;
+  }
+
+  @property --et-carousel-wipe-dim-color {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #000;
+  }
+
+  /* Each effect exists twice: composited keyframes on the scroll-driven view timeline, and a `calc()` fallback
+     over the inherited progress property for the JS driver (no scroll timeline, e.g. Firefox). Animating the
+     inherited property restyles each slide's subtree every frame, so the composited path must not read it. */
+
+  @keyframes et-carousel-slide-progress {
+    from {
+      --et-carousel-slide-progress: -1;
+    }
+
+    to {
+      --et-carousel-slide-progress: 1;
+    }
+  }
+
+  /* `dim` — the slides either side of the current one recede, so the carousel reads as a focused row rather
+     than a strip that happens to scroll. The endpoints are the `calc()` rules' values at progress ±1
+     (`1 - 0.65` and `1 - 0.08`) and the midpoint is centred, so the two drivers are the same effect. */
+  @keyframes et-carousel-dim {
+    from,
+    to {
+      opacity: 0.35;
+      scale: 0.92;
+    }
+
+    50% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  @keyframes et-carousel-wipe-content {
+    from {
+      translate: calc((var(--et-carousel-wipe-shift) - 50cqw - 50%));
+    }
+
+    to {
+      translate: calc(50cqw + 50% - var(--et-carousel-wipe-shift));
+    }
+  }
+
+  /* A veil's opacity instead of `filter: brightness()`, which repaints the whole slide every frame. */
+  @keyframes et-carousel-wipe-veil {
+    from,
+    to {
+      opacity: calc(1 - var(--et-carousel-wipe-dim));
+    }
+
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /* ─── What `wipe` needs whichever driver is running ───────────────────────────────────────────────────
+
+     Ahead of the drivers on purpose: everything here is `:where()`-flattened, so the two blocks below can only
+     override the veil's resting `opacity` by coming after it.
+
+     Gated on one slide per view, because that is the only layout the effect means anything in: with the
+     content pinned to the track, a slide whose box is only partly on screen at rest would have its content
+     sitting outside that box and would show as blank. A peeking layout wants `dim`. */
+  :where([data-transition-driver='scroll-timeline'], [data-transition-driver='js']):where([data-transition='wipe'])
+    :where([item-size='full']) {
+    /* `50cqw` in the content's displacement is half of *this*. */
+    container-type: inline-size;
+
+    & .et-carousel-item {
+      position: relative;
+      overflow: clip;
+      contain: paint;
+    }
+
+    & .et-carousel-item::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--et-carousel-wipe-dim-color);
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  /* ─── Driver 1 of 2: scroll-driven, composited ────────────────────────────────────────────────────────
+
+     No JavaScript at all. Each slide names a view progress timeline, and the effects animate along it — so
+     they follow a finger through a drag rather than stepping when some "active" flag flips. `cover 0%` is the
+     moment the slide's leading edge reaches the far side of the scrollport and `cover 100%` the moment its
+     trailing edge leaves the near side, which puts the midpoint exactly at centred.
+
+     The timeline is *named* rather than each element using its own `view()` because `wipe` animates two
+     descendants of the slide, and one of them is the element being translated — its own view timeline would
+     then depend on the transform the timeline is driving.
+
+     `etCarousel` has already feature-detected this and only asks for the driver where it exists; the
+     `@supports` is here so that forcing `transitionDriver="scroll-timeline"` on a browser without it degrades
+     to a plain scroll rather than running the keyframes on the document timeline and flashing every slide
+     once. */
+  @supports (animation-timeline: view(inline)) {
+    :where([data-transition-driver='scroll-timeline']) {
+      & .et-carousel-item {
+        view-timeline-name: --et-carousel-slide;
+        view-timeline-axis: inline;
+      }
+
+      & .et-carousel-item,
+      & .et-carousel-item::after,
+      & .et-carousel-slide-content {
+        animation-timeline: --et-carousel-slide;
+        animation-range: cover 0% cover 100%;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+      }
+
+      &:where([data-transition='custom']) .et-carousel-item {
+        animation-name: et-carousel-slide-progress;
+      }
+
+      &:where([data-transition='dim']) .et-carousel-item {
+        animation-name: et-carousel-dim;
+      }
+
+      &:where([data-transition='wipe']) :where([item-size='full']) {
+        & .et-carousel-item::after {
+          animation-name: et-carousel-wipe-veil;
+        }
+
+        & .et-carousel-slide-content {
+          animation-name: et-carousel-wipe-content;
+        }
+      }
+    }
+  }
+
+  :where([data-transition-driver='js']) {
+    & .et-carousel-item {
+      --_et-carousel-slide-distance: abs(var(--et-carousel-slide-progress));
+    }
+
+    &:where([data-transition='dim']) .et-carousel-item {
+      opacity: calc(1 - 0.65 * var(--_et-carousel-slide-distance));
+      scale: calc(1 - 0.08 * var(--_et-carousel-slide-distance));
+    }
+
+    &:where([data-transition='wipe']) :where([item-size='full']) {
+      & .et-carousel-item::after {
+        opacity: calc((1 - var(--et-carousel-wipe-dim)) * var(--_et-carousel-slide-distance));
+      }
+
+      & .et-carousel-slide-content {
+        translate: calc(var(--et-carousel-slide-progress) * (50cqw + 50% - var(--et-carousel-wipe-shift)));
+      }
+    }
+  }
+}

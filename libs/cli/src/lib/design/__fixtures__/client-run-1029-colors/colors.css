@@ -1,0 +1,48 @@
+@layer base {
+  :root,
+  .et-surface--dark {
+    --et-surface-background: rgb(20 17 15);
+    --et-surface-text: rgb(245 240 233);
+    --et-surface-text-muted: rgb(178 169 158);
+    --et-surface-text-subtle: rgb(140 131 121);
+    --et-surface-border: rgb(62 55 49);
+    --et-surface-interaction: rgb(38 33 30);
+    --et-surface-interaction-hover: rgb(46 40 36);
+    --et-surface-interaction-focus: rgb(54 47 42);
+    --et-surface-interaction-active: rgb(64 56 50);
+    --et-surface-interaction-disabled: rgb(30 26 24);
+    --et-surface-type: dark;
+    --et-surface-elevation: 0;
+    --et-shadow-color: rgb(8 6 5);
+    color-scheme: dark;
+  }
+
+  :root {
+    --et-tone-fill-rest: rgb(224 164 82);
+    --et-tone-fill-hover: rgb(236 182 106);
+    --et-tone-fill-focus: rgb(236 182 106);
+    --et-tone-fill-active: rgb(204 145 64);
+    --et-tone-fill-disabled: rgb(98 84 66);
+    --et-tone-on-fill-rest: rgb(28 19 10);
+    --et-tone-on-fill-hover: rgb(28 19 10);
+    --et-tone-on-fill-focus: rgb(28 19 10);
+    --et-tone-on-fill-active: rgb(28 19 10);
+    --et-tone-on-fill-disabled: rgb(58 50 42);
+    --et-tone-text-rest: rgb(240 190 120);
+    --et-tone-text-hover: rgb(248 206 146);
+    --et-tone-text-focus: rgb(248 206 146);
+    --et-tone-text-active: rgb(226 172 100);
+    --et-tone-text-disabled: rgb(124 112 98);
+  }
+
+  :root,
+  :where([class*='et-surface--']) {
+  }
+
+  :root,
+  :where([class*='et-color--']) {
+    --et-tone-fill: var(--et-tone-fill-rest);
+    --et-tone-on-fill: var(--et-tone-on-fill-rest);
+    --et-tone-text: var(--et-tone-text-rest, var(--et-tone-fill-rest));
+  }
+}

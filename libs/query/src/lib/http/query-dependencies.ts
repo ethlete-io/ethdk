@@ -1,0 +1,100 @@
+import { HttpClient } from '@angular/common/http';
+import {
+  createEnvironmentInjector,
+  DestroyRef,
+  ElementRef,
+  EnvironmentInjector,
+  ErrorHandler,
+  Injector,
+} from '@angular/core';
+import { injectInQueryContext } from './internal/inject-in-query-context';
+import { AnyCreateQueryClientResult, QueryClient } from './query-client';
+import { createQueryContext, QueryContext } from './query-context';
+import { QueryConfig } from './query-creator';
+
+export type SetupQueryDependenciesOptions = {
+  /** The query client tuple from createQueryClient */
+  client: AnyCreateQueryClientResult;
+
+  /** Optional query configuration */
+  queryConfig: QueryConfig | undefined;
+};
+
+export type QueryDependencies = {
+  /** The destroy ref of the query. */
+  destroyRef: DestroyRef;
+
+  /** The destroy ref of the scope the query is in (e.g. a component) */
+  scopeDestroyRef: DestroyRef;
+
+  /** The query client */
+  client: QueryClient;
+
+  /** The injector of the query */
+  injector: EnvironmentInjector;
+
+  /** The error handler */
+  ngErrorHandler: ErrorHandler;
+
+  /** The http client */
+  httpClient: HttpClient;
+
+  /**
+   * The DOM element of the component/directive that created the query, when it was created in an
+   * element (node) injection context. `null` for queries created in a root/environment context.
+   * Used only by the devtools "inspect" tool, and resolved from the host injector on each read.
+   */
+  hostElement: HTMLElement | null;
+};
+
+/** @internal */
+export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) => {
+  const hostInjector = options.queryConfig?.injector ?? injectInQueryContext(Injector, 'query');
+  const environmentInjector =
+    options.queryConfig?.injector?.get(EnvironmentInjector) ?? hostInjector.get(EnvironmentInjector);
+
+  const clientToken = options.client.token;
+
+  const dependencies: QueryDependencies = {
+    destroyRef: undefined as unknown as DestroyRef, // Will be set after injector creation
+    scopeDestroyRef: options.queryConfig?.scopeDestroyRef ?? hostInjector.get(DestroyRef),
+    client: hostInjector.get<QueryClient>(clientToken),
+    injector: undefined as unknown as EnvironmentInjector, // Will be set after injector creation
+    ngErrorHandler: hostInjector.get(ErrorHandler),
+    httpClient: hostInjector.get(HttpClient),
+    get hostElement() {
+      return hostInjector.get(ElementRef, null, { optional: true })?.nativeElement ?? null;
+    },
+  };
+
+  const queryContext: QueryContext = {
+    deps: dependencies,
+  };
+
+  const { provide: provideQueryContext } = createQueryContext(queryContext);
+
+  const queryEnvironmentInjector = createEnvironmentInjector([provideQueryContext()], environmentInjector);
+
+  dependencies.destroyRef = queryEnvironmentInjector.get(DestroyRef);
+  dependencies.injector = queryEnvironmentInjector;
+
+  // cleanup the environment injector when the scope (e.g. the component the query is in) is destroyed
+  const scopeDestroyListener = dependencies.scopeDestroyRef.onDestroy(() => {
+    try {
+      queryEnvironmentInjector.destroy();
+    } catch {
+      // ignore
+    }
+  });
+
+  dependencies.destroyRef.onDestroy(() => {
+    // cleanup the scope destroy listener
+    try {
+      scopeDestroyListener();
+    } catch {
+      // ignore
+    }
+  });
+
+  return dependencies;
+};

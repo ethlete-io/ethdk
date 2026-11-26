@@ -1,0 +1,400 @@
+import { Signal, effect, runInInjectionContext, signal, untracked } from '@angular/core';
+import { deleteCookie as coreDeleteCookie, getCookie, injectRoute, setCookie } from '@ethlete/core';
+import { RequestArgs } from '../../http';
+import {
+  AnyQueryBuilder,
+  BearerAuthFeatureType,
+  BearerAuthProviderFeatureContext,
+  ExtractQueryArgs,
+  ExtractQueryKey,
+} from '../bearer-auth-provider';
+import { deobfuscateToken, obfuscateToken } from '../utils';
+
+export type PersistentAuthConfig<
+  TBuilders extends readonly AnyQueryBuilder[],
+  TKey extends ExtractQueryKey<TBuilders[number]> = ExtractQueryKey<TBuilders[number]>,
+> = {
+  /**
+   * Default remember me state when no user preference is stored.
+   * @default false
+   */
+  defaultRememberMe?: boolean;
+
+  /**
+   * Cookie configuration
+   */
+  cookie?: {
+    /**
+     * The cookie name where the refresh token is stored
+     * @default 'etAuth'
+     */
+    name?: string;
+    /**
+     * The domain of the cookie. If not set, the cookie is host-only: it belongs to the exact host that
+     * wrote it and no subdomain of it. A sibling subdomain cannot read a cookie another origin wrote, so
+     * setting this does not share a session between them.
+     */
+    domain?: string;
+    /**
+     * The days until the cookie expires (only used when rememberMe is true)
+     * @default 30
+     */
+    expiresInDays?: number;
+    /**
+     * The path of the cookie
+     * @default '/'
+     */
+    path?: string;
+    /**
+     * The same site property of the cookie
+     * @default 'lax'
+     */
+    sameSite?: 'strict' | 'none' | 'lax';
+  };
+
+  /**
+   * Auto-login configuration
+   */
+  autoLogin: {
+    /**
+     * The query key to use for auto-login (must reference a registered query)
+     */
+    queryKey: TKey;
+    /**
+     * Turns the refresh token read from the cookie into the args of the auto-login request.
+     * @default the `buildArgs` of the refresh query when `queryKey` names it, otherwise `(token) => ({ body: { token } })`
+     */
+    buildArgs?: (token: string) => RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
+    /**
+     * An array of routes where the auto login via cookie should not be triggered. Prefix-matched, so
+     * `'/reset-password'` also excludes `/reset-password-templates`; reach for `shouldAutoLogin` when
+     * that matters.
+     *
+     * @default []
+     */
+    excludeRoutes?: string[];
+    /**
+     * Decides per URL whether auto-login may run, for the policy prefix matching cannot express - an
+     * exact path, a parsed `UrlTree`, a query parameter. Receives the current route as the router
+     * reports it.
+     *
+     * Runs *in addition to* `excludeRoutes`: either one refusing is enough to skip auto-login, so
+     * adding a predicate can never re-enable a route the list excluded.
+     *
+     * @default undefined
+     */
+    shouldAutoLogin?: (url: string) => boolean;
+  };
+};
+
+export type PersistentAuthFeature = {
+  /**
+   * Current remember me state (session cookie vs persistent cookie)
+   */
+  rememberMe: Signal<boolean>;
+  /**
+   * Set remember me preference.
+   * - true: Creates persistent cookie with expiresInDays
+   * - false: Creates session cookie (deleted on browser close)
+   */
+  setRememberMe: (enabled: boolean) => void;
+  /**
+   * Try to login using stored cookie
+   */
+  tryLogin: () => void;
+};
+
+export const withPersistentAuth = <
+  TBuilders extends readonly AnyQueryBuilder[],
+  TKey extends ExtractQueryKey<TBuilders[number]> = ExtractQueryKey<TBuilders[number]>,
+>(
+  config: PersistentAuthConfig<TBuilders, TKey>,
+) => {
+  return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
+    const instance = createPersistentAuthFeature(config, context);
+    return {
+      type: BearerAuthFeatureType.PERSISTENT_AUTH,
+      instance,
+      devtools: () => [
+        { label: 'cookie', value: config.cookie?.name ?? 'etAuth' },
+        { label: 'remembered for', value: `${config.cookie?.expiresInDays ?? 30}d` },
+        { label: 'same site', value: config.cookie?.sameSite ?? 'lax' },
+        { label: 'remember me default', value: config.defaultRememberMe ? 'yes' : 'no' },
+        { label: 'auto login', value: config.autoLogin.queryKey },
+        ...(config.autoLogin.excludeRoutes?.length
+          ? [{ label: 'excluded routes', value: config.autoLogin.excludeRoutes.join(', ') }]
+          : []),
+        ...(config.autoLogin.shouldAutoLogin ? [{ label: 'auto login predicate', value: 'custom' }] : []),
+      ],
+    };
+  };
+};
+
+const readRememberMe = (key: string) => {
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeRememberMe = (key: string, enabled: boolean) => {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(key, String(enabled));
+  } catch {
+    return;
+  }
+};
+
+const buildPersistentAuthFeature = <
+  TBuilders extends readonly AnyQueryBuilder[],
+  TKey extends ExtractQueryKey<TBuilders[number]> = ExtractQueryKey<TBuilders[number]>,
+>(
+  config: PersistentAuthConfig<TBuilders, TKey>,
+  context: BearerAuthProviderFeatureContext<unknown, TBuilders>,
+): PersistentAuthFeature => {
+  const { refreshToken, executionState } = context;
+  const cookieName = config.cookie?.name ?? 'etAuth';
+  const rememberMeStorageKey = `${cookieName}-rememberMe`;
+  const route = injectRoute();
+
+  const initializeRememberMe = () => {
+    const storedPreference = readRememberMe(rememberMeStorageKey);
+    if (storedPreference !== null) {
+      return storedPreference === 'true';
+    }
+
+    const existingCookie = getCookie(cookieName);
+    if (existingCookie) {
+      return true;
+    }
+
+    return config.defaultRememberMe ?? false;
+  };
+
+  const rememberMeSignal = signal(initializeRememberMe());
+
+  const cookieDomain = () => config.cookie?.domain ?? null;
+  const cookiePath = () => config.cookie?.path ?? '/';
+  const cookieExpiry = (rememberMe: boolean) => (rememberMe ? (config.cookie?.expiresInDays ?? 30) : null);
+
+  const writeCookie = (obfuscatedToken: string, expiresInDays: number | null) =>
+    setCookie(
+      cookieName,
+      obfuscatedToken,
+      expiresInDays,
+      cookieDomain(),
+      cookiePath(),
+      config.cookie?.sameSite ?? 'lax',
+    );
+
+  // Every domain a cookie of this name can be visible from: the host itself, then each of its parent
+  // domains down to two labels. A browser refuses the ones a cookie may not use, so a public suffix
+  // among them costs a write that does nothing.
+  const visibleDomains = () => {
+    const hostname = typeof location === 'undefined' ? '' : location.hostname;
+
+    if (!hostname.includes('.') || /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)) return [];
+
+    const labels = hostname.split('.');
+
+    return labels.map((_, index) => labels.slice(index).join('.')).filter((domain) => domain.includes('.'));
+  };
+
+  // A browser keeps one cookie per name and domain, and `document.cookie` names no domain: a
+  // host-only cookie and one on any parent domain all show up, in an order of the browser's choosing.
+  // Only this config's scope may survive, or a cookie written under another domain shadows ours on
+  // every read and outlives logout.
+  const removeOtherScopeCookies = () => {
+    const configuredDomain = cookieDomain()?.replace(/^\./, '') ?? null;
+
+    if (configuredDomain) {
+      coreDeleteCookie(cookieName, cookiePath(), null);
+    }
+
+    for (const domain of visibleDomains()) {
+      if (domain === configuredDomain) continue;
+
+      coreDeleteCookie(cookieName, cookiePath(), domain);
+    }
+  };
+
+  const removeCookie = () => {
+    coreDeleteCookie(cookieName, cookiePath(), cookieDomain());
+    removeOtherScopeCookies();
+  };
+
+  // Runs before `tryLogin` reads the cookie, so the token an older version left in another scope
+  // still starts a session instead of being dropped.
+  const adoptOtherScopeCookie = () => {
+    if (context.isTabLocalSession()) return;
+
+    const carriedToken = getCookie(cookieName);
+
+    if (!carriedToken) return;
+
+    removeOtherScopeCookies();
+
+    if (getCookie(cookieName)) return;
+
+    writeCookie(carriedToken, cookieExpiry(rememberMeSignal()));
+  };
+
+  adoptOtherScopeCookie();
+
+  let lastHeldToken: string | null = null;
+  let retriedState: ReturnType<typeof executionState> = null;
+
+  const readFresherCookieToken = () => {
+    const storedToken = getCookie(cookieName);
+    const revealedToken = storedToken ? deobfuscateToken(storedToken) : null;
+
+    return revealedToken && revealedToken !== lastHeldToken ? revealedToken : null;
+  };
+
+  effect(() => {
+    const token = refreshToken();
+    const rememberMe = rememberMeSignal();
+
+    // The cookie is the whole browser's, so a tab holding a session of its own would hand its user to
+    // every other tab on the next load. Such a tab is restored from `sessionStorage` by the devtools
+    // instead - see `setQueryDevtoolsAuthTabLocal`.
+    if (context.isTabLocalSession()) return;
+
+    // A missing token is not a reason to drop the cookie. It is missing on every startup - `tryLogin`
+    // reads the cookie synchronously and the auto-login only resolves a tick later - so deleting here
+    // would throw away a 30-day refresh token before it was ever used. Deletion is driven by the events
+    // that actually end a session instead, below.
+    if (!token) return;
+
+    lastHeldToken = token;
+    removeOtherScopeCookies();
+    writeCookie(obfuscateToken(token), cookieExpiry(rememberMe));
+  });
+
+  effect(() => {
+    const endCause = context.sessionEndCause();
+
+    if (!endCause || context.isTabLocalSession()) return;
+
+    if (endCause === 'expired' && readFresherCookieToken()) {
+      retriedState = untracked(executionState);
+      exchangeCookie();
+
+      return;
+    }
+
+    removeCookie();
+  });
+
+  effect(() => {
+    const state = executionState();
+
+    if (!state) return;
+
+    // A token the server itself rejected is worth nothing on the next visit; anything else (offline, a
+    // 500, an aborted startup) leaves it in place so a reload can try again.
+    const wasRejected =
+      state.state === 'error' &&
+      (state.type === 'tokenRefresh' || state.type === 'autoLogin') &&
+      (state.error.code === 401 || state.error.code === 403);
+
+    if (!wasRejected || context.isTabLocalSession() || state === retriedState) return;
+
+    if (readFresherCookieToken()) {
+      exchangeCookie();
+
+      return;
+    }
+
+    removeCookie();
+  });
+
+  const autoLoginBuilder = context.queryBuilders.find((builder) => builder.key === config.autoLogin.queryKey);
+
+  type AutoLoginArgs = RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
+
+  const buildAutoLoginArgs = (token: string): AutoLoginArgs => {
+    if (config.autoLogin.buildArgs) return config.autoLogin.buildArgs(token);
+    if (autoLoginBuilder?._type === 'tokenRefreshQuery') return autoLoginBuilder.buildArgs(token) as AutoLoginArgs;
+
+    return { body: { token } } as unknown as AutoLoginArgs;
+  };
+
+  const exchangeCookie = () => {
+    const storedToken = getCookie(cookieName);
+
+    if (!storedToken) return;
+
+    const revealedToken = deobfuscateToken(storedToken);
+
+    if (!revealedToken) return;
+
+    lastHeldToken = revealedToken;
+
+    const args = buildAutoLoginArgs(revealedToken);
+
+    context.queries[config.autoLogin.queryKey].execute(args, { triggeredBy: 'persistent-auth' });
+  };
+
+  const tryLogin = () => {
+    const currentRoute = route();
+    const excludeRoutes = config.autoLogin.excludeRoutes ?? [];
+    const shouldExclude = excludeRoutes.some((r) => currentRoute.startsWith(r));
+
+    if (shouldExclude) {
+      return;
+    }
+
+    if (config.autoLogin.shouldAutoLogin && !config.autoLogin.shouldAutoLogin(currentRoute)) {
+      return;
+    }
+
+    // A session is already here - synced in from another tab, or restored by a previous call. Spending
+    // the cookie now would rotate a refresh token every other tab is holding, for nothing.
+    if (refreshToken()) return;
+
+    const adoption = context.sessionAdoption;
+
+    // With multi-tab sync on, another tab may be about to hand this one its live session. Wait for
+    // that answer before exchanging the cookie - bounded, so a lone tab is not held up by a reply
+    // that is never coming - and only when there is a cookie to spend, so a tab with nothing to
+    // restore still starts up synchronously.
+    if (adoption?.isPending() && getCookie(cookieName)) {
+      void adoption.settled.then(() => {
+        if (refreshToken()) return;
+
+        exchangeCookie();
+      });
+
+      return;
+    }
+
+    exchangeCookie();
+  };
+
+  const setRememberMe = (enabled: boolean) => {
+    writeRememberMe(rememberMeStorageKey, enabled);
+    rememberMeSignal.set(enabled);
+  };
+
+  tryLogin();
+
+  return {
+    rememberMe: rememberMeSignal.asReadonly(),
+    setRememberMe,
+    tryLogin,
+  };
+};
+
+/**
+ * Builds the `withPersistentAuth` feature against a provider's feature context. It runs in
+ * `context.injector`, so it can be called outside an injection context.
+ */
+export const createPersistentAuthFeature = <
+  TBuilders extends readonly AnyQueryBuilder[],
+  TKey extends ExtractQueryKey<TBuilders[number]> = ExtractQueryKey<TBuilders[number]>,
+>(
+  config: PersistentAuthConfig<TBuilders, TKey>,
+  context: BearerAuthProviderFeatureContext<unknown, TBuilders>,
+): PersistentAuthFeature => runInInjectionContext(context.injector, () => buildPersistentAuthFeature(config, context));

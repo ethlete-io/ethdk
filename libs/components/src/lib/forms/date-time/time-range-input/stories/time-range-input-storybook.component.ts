@@ -1,0 +1,112 @@
+import { JsonPipe } from '@angular/common';
+import { Component, ViewEncapsulation, computed, input, linkedSignal } from '@angular/core';
+import { FormField, disabled, form, readonly } from '@angular/forms/signals';
+import { ProvideColorDirective } from '@ethlete/core';
+import { de } from 'date-fns/locale';
+import { parseTimeOfDay, resolveTimeFilterPreset } from '../../../../time-picker/stories/time-filter-presets';
+import { FORM_FIELD_IMPORTS } from '../../../form-field';
+import { timeRangeOrder } from '../../date-time-range-validators';
+import { TimeRangeTimeFilterFn, TimeRangeValue } from '../headless';
+import { TIME_RANGE_INPUT_IMPORTS } from '../time-range-input.imports';
+
+export type TimeRangeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours' | 'endAfterStart';
+
+@Component({
+  selector: 'et-sb-time-range-input',
+  template: `
+    <div
+      [etProvideColor]="color()"
+      [style.max-inline-size.px]="maxInlineSize()"
+      class="flex flex-col gap-4 p-8 font-sans"
+    >
+      <et-form-field>
+        <et-label>{{ label() }}</et-label>
+        <et-time-range-input
+          [(mixed)]="mixedState"
+          [formField]="demoForm.range"
+          [mixedLabel]="mixedLabel()"
+          [startPlaceholder]="startPlaceholder()"
+          [endPlaceholder]="endPlaceholder()"
+          [valueFormat]="valueFormat()"
+          [displayFormat]="displayFormat()"
+          [locale]="localeObject()"
+          [mask]="mask()"
+          [minuteStep]="minuteStep()"
+          [minTime]="minTimeDate()"
+          [maxTime]="maxTimeDate()"
+          [timeFilter]="filterFn()"
+        />
+        @if (hint()) {
+          <et-hint>{{ hint() }}</et-hint>
+        }
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.range().value() | json }}</p>
+      @if (showMixedState()) {
+        <p class="text-sm opacity-60">Mixed: {{ mixedState() }}</p>
+      }
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...TIME_RANGE_INPUT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class TimeRangeInputStorybookComponent {
+  public label = input('Time range');
+  public startPlaceholder = input('Start');
+  public endPlaceholder = input('End');
+  public hint = input('');
+  public start = input<string | null>(null);
+  public end = input<string | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
+  public valueFormat = input<string | undefined>(undefined);
+  public displayFormat = input('p');
+  public mask = input(false);
+  public minuteStep = input(5);
+  public minTime = input<string | null>(null);
+  public maxTime = input<string | null>(null);
+  public filter = input<TimeRangeFilterPreset>('none');
+  public locale = input<'default' | 'de'>('default');
+  public disabled = input(false);
+  public readonly = input(false);
+  public color = input('brand');
+  public maxInlineSize = input(480);
+
+  public mixedState = linkedSignal(() => this.mixed());
+
+  protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
+
+  protected minTimeDate = computed(() => parseTimeOfDay(this.minTime()));
+  protected maxTimeDate = computed(() => parseTimeOfDay(this.maxTime()));
+
+  private formModel = linkedSignal(() => ({
+    range: { start: this.start(), end: this.end() } as TimeRangeValue,
+  }));
+
+  public demoForm = form(this.formModel, (s) => {
+    disabled(s, () => this.disabled());
+    readonly(s.range, () => this.readonly());
+    timeRangeOrder(s.range, { valueFormat: this.valueFormat() });
+  });
+
+  protected filterFn = computed<TimeRangeTimeFilterFn | null>(() => {
+    const preset = this.filter();
+
+    if (preset === 'endAfterStart') {
+      return (candidate, side) => {
+        if (side === 'start') {
+          return true;
+        }
+
+        const start = parseTimeOfDay(this.demoForm.range().value().start);
+
+        return start === null || candidate > start;
+      };
+    }
+
+    const shared = resolveTimeFilterPreset(preset);
+
+    return shared === null ? null : (candidate) => shared(candidate);
+  });
+}

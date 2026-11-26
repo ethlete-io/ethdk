@@ -1,0 +1,12 @@
+import * as fromReducer from './session.reducer';
+import { createEntitySelectors } from '@tomtomb/ngrx-toolkit';
+import { createFeatureSelector, createSelector } from '@ngrx/store';
+import { getFeatureBaseState } from '..';
+
+const getFeature = createFeatureSelector<fromReducer.State>(fromReducer.CATALOG_SESSION_FEATURE_KEY);
+const getState = createSelector(getFeatureBaseState, getFeature);
+
+export const entitySelectors = createEntitySelectors({
+  getState,
+  reducerAdapters: fromReducer.reducerAdapters,
+});

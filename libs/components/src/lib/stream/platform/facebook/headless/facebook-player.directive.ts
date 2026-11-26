@@ -1,0 +1,226 @@
+import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { RuntimeError, injectHostElement, injectLocale, injectRenderer } from '@ethlete/core';
+import { EMPTY, Observable, catchError, tap, timer } from 'rxjs';
+import { STREAM_ERROR_CODES } from '../../../stream-errors';
+import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
+import { injectStreamConfig } from '../../../stream-config';
+import { injectStreamScriptLoader } from '../../../stream-script-loader';
+import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
+import { FacebookPlayerParamsDirective } from './facebook-player-params.directive';
+import { FacebookVideoPlayer, FacebookWindow } from './facebook-player.types';
+
+const FB_FALLBACK_LOCALE = 'en_US';
+
+const toFacebookLocale = (tag: string) => {
+  try {
+    const { language, region } = new Intl.Locale(tag.replace('_', '-')).maximize();
+
+    return region ? `${language}_${region}` : FB_FALLBACK_LOCALE;
+  } catch {
+    return FB_FALLBACK_LOCALE;
+  }
+};
+
+const facebookSdkUrl = (locale: string, version: string) =>
+  `https://connect.facebook.net/${toFacebookLocale(locale)}/sdk.js#xfbml=1&version=${encodeURIComponent(version)}`;
+const FB_READY_TIMEOUT = 15_000;
+
+export const FACEBOOK_PLAYER_TOKEN = new InjectionToken<FacebookPlayerDirective>('FACEBOOK_PLAYER_TOKEN');
+
+@Directive({
+  providers: [
+    { provide: FACEBOOK_PLAYER_TOKEN, useExisting: FacebookPlayerDirective },
+    { provide: STREAM_PLAYER_TOKEN, useExisting: FacebookPlayerDirective },
+  ],
+})
+export class FacebookPlayerDirective implements StreamPlayer {
+  private platformId = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
+  private params = inject(FacebookPlayerParamsDirective);
+  private el = injectHostElement();
+  private scriptLoader = injectStreamScriptLoader();
+  private renderer = injectRenderer();
+  private locale = injectLocale();
+  private streamConfig = injectStreamConfig();
+
+  public readonly CAPABILITIES: StreamPlayerCapabilities = {
+    canPlay: true,
+    canPause: true,
+    canMute: true,
+    canSeek: true,
+    canGetDuration: true,
+    isLiveCapable: false,
+    hasThumbnail: false,
+  };
+
+  public state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
+  public thumbnail = signal<string | null>(null);
+
+  private playerResource = rxResource({
+    params: () => (isPlatformBrowser(this.platformId) ? this.params.videoId() : null),
+    stream: ({ params: videoId }) => {
+      if (!videoId) return EMPTY;
+
+      const videoUrl = `https://www.facebook.com/video/${encodeURIComponent(videoId)}`;
+
+      return new Observable<FacebookVideoPlayer>((subscriber) => {
+        const win = this.document.defaultView as unknown as FacebookWindow;
+        const playerSubscriptions: Array<{ release(): void }> = [];
+        let active = true;
+        let loaderSub: { unsubscribe(): void } | null = null;
+        let xfbmlReadyHandler: ((msg: unknown) => void) | null = null;
+        let readyTimeoutSub: { unsubscribe(): void } | null = null;
+
+        const createEmbed = () => {
+          if (!active) return;
+
+          if (!win.FB) {
+            subscriber.error(
+              new RuntimeError(
+                STREAM_ERROR_CODES.FACEBOOK_SDK_NOT_AVAILABLE,
+                '[EtFacebookPlayer] Facebook SDK not available after script load. Ensure the Facebook SDK URL is accessible.',
+              ),
+            );
+
+            return;
+          }
+
+          const containerId = `et-fb-${Math.random().toString(36).slice(2)}`;
+
+          xfbmlReadyHandler = (rawMsg: unknown) => {
+            const msg = rawMsg as { type: string; id: string; instance: unknown };
+            if (msg.type !== 'video' || msg.id !== containerId) return;
+
+            readyTimeoutSub?.unsubscribe();
+            readyTimeoutSub = null;
+
+            const player = msg.instance as FacebookVideoPlayer;
+
+            this.state.update((s) => ({ ...s, isReady: true, isLoading: false }));
+            subscriber.next(player);
+
+            playerSubscriptions.push(
+              player.subscribe('startedPlaying', () => {
+                this.state.update((s) => ({ ...s, isPlaying: true, isEnded: false }));
+              }),
+            );
+            playerSubscriptions.push(
+              player.subscribe('paused', () => {
+                this.state.update((s) => ({ ...s, isPlaying: false }));
+              }),
+            );
+            playerSubscriptions.push(
+              player.subscribe('finishedPlaying', () => {
+                this.state.update((s) => ({ ...s, isPlaying: false, isEnded: true }));
+              }),
+            );
+          };
+
+          win.FB.Event.subscribe('xfbml.ready', xfbmlReadyHandler);
+
+          const w = this.params.width();
+          const h = this.params.height();
+          const container = this.renderer.createElement('div');
+          container.id = containerId;
+          container.className = 'fb-video';
+          container.dataset['href'] = videoUrl;
+          container.dataset['width'] = typeof w === 'number' ? String(w) : 'auto';
+          container.dataset['showText'] = 'false';
+
+          this.renderer.setStyle(this.el, {
+            display: 'block',
+            width: typeof w === 'number' ? `${w}px` : w,
+            height: typeof h === 'number' ? `${h}px` : null,
+          });
+
+          this.renderer.appendChild(this.el, container);
+          win.FB.XFBML.parse(this.el);
+
+          readyTimeoutSub = timer(FB_READY_TIMEOUT)
+            .pipe(
+              tap(() => {
+                if (!active) return;
+
+                subscriber.error(
+                  new RuntimeError(
+                    STREAM_ERROR_CODES.FACEBOOK_VIDEO_UNAVAILABLE,
+                    '[EtFacebookPlayer] The Facebook video did not become ready within the expected time. The video may be unavailable or restricted.',
+                  ),
+                );
+              }),
+            )
+            .subscribe();
+        };
+
+        if (win.FB) {
+          createEmbed();
+        } else {
+          const prev = win.fbAsyncInit;
+          win.fbAsyncInit = () => {
+            prev?.();
+            createEmbed();
+          };
+          loaderSub = this.scriptLoader
+            .load(facebookSdkUrl(this.locale.currentLocale(), this.streamConfig.facebookSdkVersion))
+            .pipe(
+              catchError((e: unknown) => {
+                subscriber.error(e);
+                return EMPTY;
+              }),
+            )
+            .subscribe();
+        }
+
+        return () => {
+          active = false;
+          loaderSub?.unsubscribe();
+          readyTimeoutSub?.unsubscribe();
+          if (xfbmlReadyHandler) win.FB?.Event.unsubscribe('xfbml.ready', xfbmlReadyHandler);
+          for (const sub of playerSubscriptions) sub.release();
+          this.el.innerHTML = '';
+          this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
+        };
+      });
+    },
+  });
+
+  constructor() {
+    effect(() => {
+      const isLoading = this.playerResource.isLoading();
+      const error = isLoading ? undefined : this.playerResource.error();
+      this.state.update((s) => ({
+        ...s,
+        isLoading: error !== undefined ? false : isLoading,
+        error: error ?? null,
+      }));
+    });
+  }
+
+  public play() {
+    this.playerResource.value()?.play();
+  }
+
+  public pause() {
+    this.playerResource.value()?.pause();
+  }
+
+  public mute() {
+    this.playerResource.value()?.mute();
+    this.state.update((s) => ({ ...s, isMuted: true }));
+  }
+
+  public unmute() {
+    this.playerResource.value()?.unmute();
+    this.state.update((s) => ({ ...s, isMuted: false }));
+  }
+
+  public seek(seconds: number) {
+    this.playerResource.value()?.seek(seconds);
+  }
+
+  public retry() {
+    this.playerResource.reload();
+  }
+}

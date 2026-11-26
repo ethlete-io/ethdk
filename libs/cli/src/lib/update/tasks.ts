@@ -1,0 +1,377 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeJsonFile } from '../json-file';
+import { join } from 'path';
+import { instructionsPath } from './migration-manifest';
+import { PackageManager } from './package-manager';
+import { UpdatedPackage } from './plan';
+import { MigrationOutcome, manualGeneratorCommand } from './run-migrations';
+import { prereleaseTag } from './semver';
+
+export const UPDATE_DIR = join('.ethlete', 'update');
+export const TASKS_FILE = 'tasks.md';
+export const TASKS_DATA_FILE = 'tasks.json';
+export const DOCS_BASE_URL = 'https://ethlete-sdk-docs.web.app';
+export const NEXT_DOCS_BASE_URL = 'https://ethlete-sdk-docs-next.web.app';
+
+/** The docs site of a version's release line: `main` deploys the stable site, `next` the prerelease one. */
+export const docsBaseUrl = (version: string) => (prereleaseTag(version) ? NEXT_DOCS_BASE_URL : DOCS_BASE_URL);
+
+/** The agent rules sync of an update that failed, with the command to run again by hand. */
+export type SyncFailure = {
+  command: string;
+  reason: string;
+};
+
+export type UpdateTask = {
+  packageName: string;
+  name: string;
+  version: string;
+  kind: 'manual' | 'assisted' | 'unsupported';
+  description: string;
+  /** Repo-relative path of the copied instructions, when the migration ships any. */
+  instructionsFile?: string;
+  docsUrl?: string;
+  /** For an `unsupported` auto migration: the generator command to run by hand. */
+  command?: string;
+};
+
+const withoutScope = (packageName: string) => packageName.replace('@ethlete/', '');
+
+export const taskFileName = (options: { packageName: string; name: string }) =>
+  `${withoutScope(options.packageName)}-${options.name}.md`;
+
+/** The tasks an update leaves behind: what needs a decision, a prompt, or a command Nx could not run. */
+export const collectTasks = (options: {
+  outcomes: readonly MigrationOutcome[];
+  manager: PackageManager;
+  updates?: readonly UpdatedPackage[];
+}): UpdateTask[] => {
+  const { outcomes, manager, updates = [] } = options;
+  const tasks: UpdateTask[] = [];
+
+  for (const outcome of outcomes) {
+    const { migration, packageName, manifestPath } = outcome.pending;
+    const source = instructionsPath({ manifestPath, migration });
+    const target = updates.find((update) => update.name === packageName)?.to ?? migration.version;
+    const shared = {
+      packageName,
+      name: migration.name,
+      version: migration.version,
+      description: migration.description,
+      instructionsFile: source ? join(UPDATE_DIR, taskFileName({ packageName, name: migration.name })) : undefined,
+      docsUrl: migration.docs ? `${docsBaseUrl(target)}${migration.docs}` : undefined,
+    };
+
+    if (outcome.state === 'unsupported') {
+      tasks.push({ ...shared, kind: 'unsupported', command: manualGeneratorCommand({ manager, migration }) });
+      continue;
+    }
+
+    if (outcome.state !== 'task') continue;
+
+    if (migration.kind === 'manual' || migration.kind === 'assisted') tasks.push({ ...shared, kind: migration.kind });
+  }
+
+  return tasks;
+};
+
+const KIND_HEADINGS: Record<UpdateTask['kind'], string> = {
+  unsupported: 'Codemods to run by hand',
+  manual: 'Changes that need a decision',
+  assisted: 'Changes an agent can make',
+};
+
+const renderTask = (task: UpdateTask) =>
+  [
+    `### ${task.packageName} — ${task.name}`,
+    '',
+    `Landed in ${task.version}. ${task.description}`,
+    ...(task.command ? ['', `Run: \`${task.command}\``] : []),
+    ...(task.instructionsFile ? ['', `Instructions: \`${task.instructionsFile}\``] : []),
+    ...(task.docsUrl ? ['', `Docs: ${task.docsUrl}`] : []),
+    '',
+  ].join('\n');
+
+const renderGroup = (kind: UpdateTask['kind'], tasks: readonly UpdateTask[]) => {
+  const group = tasks.filter((task) => task.kind === kind);
+
+  if (group.length === 0) return [];
+
+  return [`## ${KIND_HEADINGS[kind]}`, '', ...group.map(renderTask)];
+};
+
+type AppliedCodemod = { package: string; name: string; generator: string | null };
+
+type FailedCodemod = { package: string; name: string; reason: string | null };
+
+const appliedOf = (outcomes: readonly MigrationOutcome[]): AppliedCodemod[] =>
+  outcomes
+    .filter((outcome) => outcome.state === 'applied')
+    .map((outcome) => ({
+      package: outcome.pending.packageName,
+      name: outcome.pending.migration.name,
+      generator: outcome.pending.migration.generator ?? null,
+    }));
+
+const failedOf = (outcomes: readonly MigrationOutcome[]): FailedCodemod[] =>
+  outcomes
+    .filter((outcome) => outcome.state === 'failed')
+    .map((outcome) => ({
+      package: outcome.pending.packageName,
+      name: outcome.pending.migration.name,
+      reason: outcome.reason ?? null,
+    }));
+
+const renderReport = (options: {
+  updates: readonly UpdatedPackage[];
+  applied: readonly AppliedCodemod[];
+  failed: readonly FailedCodemod[];
+  tasks: readonly UpdateTask[];
+  syncFailure?: SyncFailure;
+}) => {
+  const { updates, applied, failed, tasks, syncFailure } = options;
+
+  return [
+    '# Ethlete update: what is left to do',
+    '',
+    ...(updates.length > 0
+      ? [
+          '`et update` moved these packages:',
+          '',
+          ...updates.map((update) => `- \`${update.name}\`: ${update.from ?? 'not installed'} → ${update.to}`),
+          '',
+        ]
+      : []),
+    ...(applied.length > 0
+      ? [
+          'It applied these codemods:',
+          '',
+          ...applied.map((codemod) => `- \`${codemod.package}\` ${codemod.name} (${codemod.generator})`),
+          '',
+        ]
+      : []),
+    ...(failed.length > 0
+      ? [
+          'These codemods failed. Run each one again by hand and read its output:',
+          '',
+          ...failed.map((codemod) => `- \`${codemod.package}\` ${codemod.name} — ${codemod.reason}`),
+          '',
+        ]
+      : []),
+    ...(syncFailure
+      ? [
+          `The agent rules sync failed — ${syncFailure.reason}. Run \`${syncFailure.command}\` again by hand and read its output.`,
+          '',
+        ]
+      : []),
+    ...(tasks.length === 0
+      ? ['Nothing else needs a decision.', '']
+      : [
+          'Everything below needs a decision the codemods cannot make.',
+          '',
+          ...renderGroup('unsupported', tasks),
+          ...renderGroup('manual', tasks),
+          ...renderGroup('assisted', tasks),
+        ]),
+  ].join('\n');
+};
+
+export const renderTasks = (options: {
+  updates: readonly UpdatedPackage[];
+  outcomes: readonly MigrationOutcome[];
+  tasks: readonly UpdateTask[];
+  syncFailure?: SyncFailure;
+}) =>
+  renderReport({
+    updates: options.updates,
+    applied: appliedOf(options.outcomes),
+    failed: failedOf(options.outcomes),
+    tasks: options.tasks,
+    syncFailure: options.syncFailure,
+  });
+
+/**
+ * One task as its own file: what moved and where to read more, then the instructions the package ships.
+ * The header is what makes the file readable on its own once the update is over.
+ */
+export const renderTaskFile = (options: { task: UpdateTask; instructions: string }) => {
+  const { task, instructions } = options;
+
+  return [
+    `<!-- Written by et update. ${task.packageName} ${task.version}, migration "${task.name}". -->`,
+    '',
+    ...(task.kind === 'assisted'
+      ? ['> Hand this file to an agent. It describes one change to apply across this repository.', '']
+      : []),
+    `- Package: \`${task.packageName}\``,
+    `- Landed in: ${task.version}`,
+    `- Summary: ${task.description}`,
+    ...(task.docsUrl ? [`- Docs: ${task.docsUrl}`] : []),
+    '',
+    '---',
+    '',
+    instructions.trim(),
+  ].join('\n');
+};
+
+const TASK_KINDS: readonly string[] = ['manual', 'assisted', 'unsupported'] satisfies UpdateTask['kind'][];
+
+const isTask = (value: unknown): value is UpdateTask => {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    ['packageName', 'name', 'version', 'description'].every((key) => typeof record[key] === 'string') &&
+    typeof record['kind'] === 'string' &&
+    TASK_KINDS.includes(record['kind'])
+  );
+};
+
+type TaskData = {
+  generatedAt?: string;
+  updates: { package: string; from: string | null; to: string }[];
+  applied: AppliedCodemod[];
+  failed: FailedCodemod[];
+  syncFailed?: SyncFailure;
+  tasks: UpdateTask[];
+};
+
+const arrayOf = (value: unknown) => (Array.isArray(value) ? (value as unknown[]) : []);
+
+const readTaskData = (root: string): TaskData | undefined => {
+  const path = join(root, UPDATE_DIR, TASKS_DATA_FILE);
+
+  if (!existsSync(path)) return undefined;
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return undefined;
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) return undefined;
+
+  const record = parsed as Record<string, unknown>;
+
+  return {
+    ...(record as Partial<TaskData>),
+    updates: arrayOf(record['updates']) as TaskData['updates'],
+    applied: arrayOf(record['applied']) as AppliedCodemod[],
+    failed: arrayOf(record['failed']) as FailedCodemod[],
+    tasks: arrayOf(record['tasks']).filter(isTask),
+  };
+};
+
+/** Deleting a task file is how a task is done, so a task is open while its file is still there. */
+const openTasksOf = (root: string, tasks: readonly UpdateTask[]) =>
+  tasks.filter((task) => task.instructionsFile && existsSync(join(root, task.instructionsFile)));
+
+const unfinishedEarlierTasks = (root: string): UpdateTask[] => openTasksOf(root, readTaskData(root)?.tasks ?? []);
+
+const sameTask = (left: UpdateTask, right: UpdateTask) =>
+  left.packageName === right.packageName && left.name === right.name;
+
+export type WrittenTasks = {
+  /** Repo-relative path of the report. */
+  reportPath: string;
+  dataPath: string;
+  tasks: UpdateTask[];
+};
+
+/**
+ * Writes the report, the machine-readable task list an agent reads, and a copy of every instructions
+ * file, so the whole task list stands on its own once `node_modules` changes again. A task an earlier
+ * run left is kept while its file is still there.
+ */
+export const writeUpdateTasks = (options: {
+  root: string;
+  updates: readonly UpdatedPackage[];
+  outcomes: readonly MigrationOutcome[];
+  manager: PackageManager;
+  generatedAt: string;
+  syncFailure?: SyncFailure;
+}): WrittenTasks => {
+  const { root, updates, outcomes, manager, generatedAt, syncFailure } = options;
+  const collected = collectTasks({ outcomes, manager, updates });
+  const earlier = unfinishedEarlierTasks(root).filter((task) => !collected.some((next) => sameTask(task, next)));
+  const tasks = [...earlier, ...collected];
+  const directory = join(root, UPDATE_DIR);
+
+  mkdirSync(directory, { recursive: true });
+
+  for (const outcome of outcomes) {
+    const source = instructionsPath({
+      manifestPath: outcome.pending.manifestPath,
+      migration: outcome.pending.migration,
+    });
+    const task = collected.find(
+      (candidate) =>
+        candidate.packageName === outcome.pending.packageName && candidate.name === outcome.pending.migration.name,
+    );
+
+    if (!source || !task) continue;
+
+    writeFileSync(
+      join(directory, taskFileName({ packageName: task.packageName, name: task.name })),
+      `${renderTaskFile({ task, instructions: readFileSync(source, 'utf8') })}\n`,
+      'utf8',
+    );
+  }
+
+  const reportPath = join(UPDATE_DIR, TASKS_FILE);
+  const dataPath = join(UPDATE_DIR, TASKS_DATA_FILE);
+
+  writeFileSync(
+    join(root, reportPath),
+    `${renderTasks({ updates, outcomes, tasks, syncFailure }).trimEnd()}\n`,
+    'utf8',
+  );
+  writeFileSync(
+    join(root, dataPath),
+    `${JSON.stringify(
+      {
+        generatedAt,
+        updates: updates.map((update) => ({ package: update.name, from: update.from ?? null, to: update.to })),
+        applied: appliedOf(outcomes),
+        failed: failedOf(outcomes),
+        ...(syncFailure ? { syncFailed: syncFailure } : {}),
+        tasks,
+      },
+      null,
+      2,
+    )}\n`,
+    'utf8',
+  );
+
+  return { reportPath, dataPath, tasks };
+};
+
+/**
+ * Rewrites the task list of an earlier run without the tasks whose file was deleted, and returns the
+ * tasks still open. `undefined` when no run has written a task list.
+ */
+export const refreshUpdateTasks = (root: string): UpdateTask[] | undefined => {
+  const data = readTaskData(root);
+
+  if (!data) return undefined;
+
+  const tasks = openTasksOf(root, data.tasks);
+
+  writeFileSync(
+    join(root, UPDATE_DIR, TASKS_FILE),
+    `${renderReport({
+      updates: data.updates.map((update) => ({ name: update.package, from: update.from ?? undefined, to: update.to })),
+      applied: data.applied,
+      failed: data.failed,
+      tasks,
+      syncFailure: data.syncFailed,
+    }).trimEnd()}\n`,
+    'utf8',
+  );
+  writeJsonFile({ file: join(root, UPDATE_DIR, TASKS_DATA_FILE), value: { ...data, tasks } });
+
+  return tasks;
+};

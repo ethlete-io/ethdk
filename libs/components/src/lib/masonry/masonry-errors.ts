@@ -1,0 +1,4 @@
+export const MASONRY_ERROR_CODES = {
+  PART_OUTSIDE_MASONRY: 3900,
+  MISSING_ITEMS: 3901,
+} as const;

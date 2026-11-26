@@ -1,0 +1,89 @@
+.et-combobox-body.et-with-default-animation {
+  .et-combobox-body-container {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+      transform: scaleY(0);
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 125ms var(--ease-out-5),
+        opacity 125ms var(--ease-out-5);
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 50ms var(--ease-in-5),
+        opacity 50ms var(--ease-in-5);
+    }
+  }
+
+  &[et-floating-placement^='top'] .et-combobox-body-container {
+    transform-origin: bottom;
+  }
+
+  &[et-floating-placement^='bottom'] .et-combobox-body-container {
+    transform-origin: top;
+  }
+}
+
+.et-combobox-body-container {
+  display: block;
+  background-color: #3d3d3d;
+  color: #fff;
+  max-height: min(200px, var(--et-floating-max-height, 200px));
+  overflow: auto;
+}
+
+.et-combobox-body {
+  width: 100%;
+  display: grid;
+  transform: var(--et-floating-translate);
+  will-change: transform;
+}
+
+.et-combobox-option {
+  display: block;
+}
+
+:where(.et-combobox-option--active) {
+  background-color: #1e1e1e;
+}
+
+.et-combobox {
+  display: block;
+  border: 1px solid #ccc;
+  padding: 15px 15px;
+  position: relative;
+}
+
+.et-combobox-chevron {
+  transform: rotate(180deg);
+  display: block;
+  inline-size: 15px;
+  block-size: 15px;
+  position: absolute;
+  inset-inline-end: 15px;
+  inset-block-start: 7px;
+}
+
+:where(.et-combobox-clear) {
+  display: block;
+  inline-size: 15px;
+  block-size: 15px;
+  position: absolute;
+  inset-inline-end: 40px;
+  inset-block-start: 7px;
+
+  background-color: transparent;
+  border: none;
+  color: #fff;
+  padding: 0;
+
+  .et-times-icon {
+    display: block;
+    inline-size: 15px;
+    block-size: 15px;
+  }
+}

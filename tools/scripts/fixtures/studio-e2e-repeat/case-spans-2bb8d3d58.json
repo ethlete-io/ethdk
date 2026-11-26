@@ -1,0 +1,207 @@
+[
+  {
+    "start": 560,
+    "name": "a sketch merged while its view is open opens the part view of the target",
+    "end": 575
+  },
+  {
+    "start": 576,
+    "name": "a sketch discarded while its view is open opens the part view of the target",
+    "end": 585
+  },
+  {
+    "start": 586,
+    "name": "wheel and ctrl-wheel over a frame centre move the camera",
+    "end": 626
+  },
+  {
+    "start": 627,
+    "name": "wheel over an iframe pans when iframes take pointer events, as in WKWebView",
+    "end": 669
+  },
+  {
+    "start": 670,
+    "name": "ctrl-wheel keeps the world point under the pointer",
+    "end": 714
+  },
+  {
+    "start": 715,
+    "name": "no text leaves its box at min zoom, Fit, 100 % and max zoom",
+    "end": 791
+  },
+  {
+    "start": 792,
+    "name": "Fit is stable, + steps from it, 25 % report",
+    "end": 839
+  },
+  {
+    "start": 840,
+    "name": "no state is marked before the compare answers",
+    "end": 930
+  },
+  {
+    "start": 931,
+    "name": "frames of one grid row share their top edge",
+    "end": 956
+  },
+  {
+    "start": 957,
+    "name": "a frame renders real content, not an error page",
+    "end": 980
+  },
+  {
+    "start": 981,
+    "name": "zoom chip sits at the canvas bottom right",
+    "end": 1004
+  },
+  {
+    "start": 1005,
+    "name": "open points chip pressed matches its popup",
+    "end": 1028
+  },
+  {
+    "start": 1029,
+    "name": "a part switch asks for its open points once",
+    "end": 1059
+  },
+  {
+    "start": 1060,
+    "name": "a part shown before paints every stored picture in the first frame",
+    "end": 1140
+  },
+  {
+    "start": 1141,
+    "name": "a part edited on disk while away shows its new picture on return",
+    "end": 1215
+  },
+  {
+    "start": 1216,
+    "name": "a sketch scroll never empties a cell that had a picture",
+    "end": 1295
+  },
+  {
+    "start": 1296,
+    "name": "a sketch keeps its frame count and pictures from the first paint through a sketch edit",
+    "end": 1356
+  },
+  {
+    "start": 1357,
+    "name": "a sketch cell edited on disk while scrolled away shows its new picture on return",
+    "end": 1431
+  },
+  {
+    "start": 1432,
+    "name": "page switch time is logged to the design timings",
+    "end": 1580
+  },
+  {
+    "start": 1581,
+    "name": "pointer click on an empty area keeps the ring off",
+    "end": 1587
+  },
+  {
+    "start": 1588,
+    "name": "pointer click on a frame keeps the ring off",
+    "end": 1594
+  },
+  {
+    "start": 1595,
+    "name": "window blur keeps the pointer mark",
+    "end": 1631
+  },
+  {
+    "start": 1632,
+    "name": "Tab focus shows the ring",
+    "end": 1647
+  },
+  {
+    "start": 1648,
+    "name": "left drag on an empty area pans",
+    "end": 1658
+  },
+  {
+    "start": 1659,
+    "name": "left click on a frame selects it",
+    "end": 1670
+  },
+  {
+    "start": 1671,
+    "name": "selected frame draws the selection outline",
+    "end": 1705
+  },
+  {
+    "start": 1706,
+    "name": "hover alone draws no frame border",
+    "end": 1758
+  },
+  {
+    "start": 1759,
+    "name": "arrow key pans",
+    "end": 1772
+  },
+  {
+    "start": 1773,
+    "name": "double-click focuses a frame",
+    "end": 1793
+  },
+  {
+    "start": 1794,
+    "name": "Space+drag pans",
+    "end": 1808
+  },
+  {
+    "start": 1809,
+    "name": "middle drag pans",
+    "end": 1820
+  },
+  {
+    "start": 1821,
+    "name": "pan beyond every edge of the content",
+    "end": 1854
+  },
+  {
+    "start": 1855,
+    "name": "Shift+1 fits all, window-wide",
+    "end": 1882
+  },
+  {
+    "start": 1883,
+    "name": "Fit shows every column of a wide sketch, heads at the top",
+    "end": 1948
+  },
+  {
+    "start": 1949,
+    "name": "the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms",
+    "end": 2066
+  },
+  {
+    "start": 2067,
+    "name": "hiding the panel keeps the frames",
+    "end": 2116
+  },
+  {
+    "start": 2117,
+    "name": "hiding the panel at a panned and zoomed camera keeps the frames on screen",
+    "end": 2169
+  },
+  {
+    "start": 2170,
+    "name": "a listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame",
+    "end": 2209
+  },
+  {
+    "start": 2210,
+    "name": "a variant equal to Aktuell keeps its iframes across a quick and a full listing",
+    "end": 2312
+  },
+  {
+    "start": 2313,
+    "name": "first load creates one iframe per frame and aborts no frame request",
+    "end": 2428
+  },
+  {
+    "start": 2429,
+    "name": "Neu starten in the code notice answers within 100 ms",
+    "end": 2445
+  }
+]

@@ -1,0 +1,83 @@
+@layer components.sdk {
+  .et-dropzone-preview {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: var(--et-dropzone-border-width) solid var(--et-surface-border, currentColor);
+    border-radius: var(--et-dropzone-border-radius);
+    background-color: var(--et-surface-background, transparent);
+
+    > .et-dropzone-preview-image {
+      position: absolute;
+      inset: 0;
+      inline-size: 100%;
+      block-size: 100%;
+      object-fit: contain;
+      transition: opacity var(--et-dropzone-transition-duration) ease;
+    }
+
+    &[data-status='error'] > .et-dropzone-preview-image {
+      opacity: 0.15;
+    }
+
+    .et-dropzone-preview-info {
+      position: absolute;
+      inset: auto 0 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      background-color: color-mix(in srgb, var(--et-scrim-color, rgb(0 0 0)) 60%, transparent);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      color: var(--et-on-scrim-color, rgb(255 255 255));
+      transition: translate var(--et-dropzone-transition-duration) ease;
+
+      .et-dropzone-entry-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 8px;
+        font-size: 12px;
+        color: color-mix(in srgb, var(--et-on-scrim-color, rgb(255 255 255)) 70%, transparent);
+      }
+
+      .et-dropzone-entry-size {
+        color: inherit;
+      }
+
+      .et-dropzone-entry-error {
+        overflow: hidden;
+        font-size: 12px;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    @media (hover: hover) {
+      &:hover .et-dropzone-preview-info {
+        translate: 0 100%;
+      }
+    }
+
+    &:focus-within .et-dropzone-preview-info {
+      translate: 0 100%;
+    }
+
+    /* must stay after the reveal rules above to win */
+    &[data-status='error'] .et-dropzone-preview-info,
+    &:has(.et-dropzone-entry-progress[data-active]) .et-dropzone-preview-info {
+      translate: 0;
+    }
+
+    .et-dropzone-preview-actions {
+      position: absolute;
+      inset-block-start: 8px;
+      inset-inline-end: 8px;
+      display: flex;
+      gap: 6px;
+    }
+  }
+}

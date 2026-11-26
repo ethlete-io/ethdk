@@ -1,0 +1,70 @@
+import { definePart, drawing, interactionRows } from '@design-system';
+import { notification, notificationStack, notificationStyles } from '@ethlete/components/design/notification';
+import { OPEN_FOLDER_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/shell-labels';
+
+type DismissInteraction = 'hover' | 'active' | 'focus-visible';
+
+type Props = { heading: string; message: string; interaction?: DismissInteraction };
+
+const READABLE = `@layer utilities {
+  .et-notification {
+    --et-notification-message-opacity: 1;
+  }
+
+  .et-notification-dismiss-btn {
+    opacity: 0.6;
+
+    @media (hover: hover) {
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+}`;
+
+export const { states, grid } = interactionRows<Props, 'dismiss', DismissInteraction>(
+  {
+    dismiss: {
+      heading: OPEN_FOLDER_LABELS.refusedTitle,
+      message: OPEN_FOLDER_LABELS.refusedMessage,
+    },
+  },
+  { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
+);
+
+export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/error-toast/error-toast.component.ts',
+  note: 'The error toast Studio shows when "Projekt öffnen…" picks a folder without design work. The SDK notification in its error status on the danger theme: title, message and the dismiss button; it stays until dismissed. The host places it in the bottom-right corner. The message reads at full opacity and the dismiss icon at 0.6 at rest, so both pass contrast; the dismiss row draws the button at rest, hovered, pressed and focused.',
+  madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5'],
+  states,
+  grid,
+  widths: [480],
+  controls: { dismiss: { kind: 'button', input: ['pointer', 'keyboard'] } },
+  describe: {
+    dismiss:
+      'The error toast Ordner nicht geöffnet with its message on the danger theme; check the readable message and the faded dismiss button.',
+    'dismiss-hover': 'The dismiss button hovered; check that it brightens a step and the toast itself does not change.',
+    'dismiss-active': 'The dismiss button pressed; check its press look and that the toast stays put.',
+    'dismiss-focus-visible':
+      'The dismiss button focused by keyboard; check that the focus ring shows clearly on the danger fill.',
+  },
+  render: ({ heading, message, interaction }: Props) =>
+    drawing({
+      body: notificationStack([
+        notification({
+          status: 'error',
+          color: 'danger',
+          title: heading,
+          message,
+          attributes: 'data-et-surface-fill',
+          dismissAttributes: [
+            'data-et-control="dismiss" data-et-action="emit:dismiss" data-can-animate',
+            interaction && `data-et-force="${interaction}"`,
+          ]
+            .filter(Boolean)
+            .join(' '),
+        }),
+      ]),
+      styles: [notificationStyles, READABLE].join('\n'),
+    }),
+});

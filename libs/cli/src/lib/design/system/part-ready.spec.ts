@@ -1,0 +1,778 @@
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from 'fs';
+import { originOf } from './write-origin';
+import { IncomingMessage } from 'http';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { Readable } from 'stream';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DESIGN_DIR } from '../design-config';
+import { openPointsAnswer } from './open-points.fixtures';
+import { checkActions, PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
+import { git, gitResult, initGitRepo } from './git-repo.fixtures';
+import { harnessMapOf, writeHarnessMap } from './harness-map';
+import { checkLiveActions } from './live-actions';
+import { drawnFindingsOf } from './drawn-open-points';
+import { markPartReady } from './mark-part-ready';
+import {
+  drawnPartPointsOf,
+  readReady,
+  builderChangedOf,
+  readyMarkOf,
+  readyPartOf,
+  readyPartsOf,
+  writePartBuilder,
+  writePartRecord,
+} from './part-ready';
+import { designReady } from './ready-command';
+import { noVerdictOf } from './no-verdict';
+import { resolveProduct } from './resolve-product';
+import { readMerged, recordMerged } from './sketch/merged-parts';
+
+vi.mock('./drawn-open-points', () => ({
+  drawnFindingsOf: vi.fn(async () => ({ missingStates: [], issues: [] })),
+}));
+
+vi.mock('./actions-command', async (importOriginal) => {
+  const original = await importOriginal<typeof import('./actions-command')>();
+
+  return { ...original, partActionFailuresOf: vi.fn(async () => []) };
+});
+
+vi.mock('./slow-checks', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./slow-checks')>()),
+  slowProblemsOf: vi.fn(() => []),
+}));
+
+const checkout = () => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-design-part-ready-'));
+  const design = join(target, DESIGN_DIR);
+  const part = (path: string, source: string) => {
+    mkdirSync(join(design, 'app-a', path), { recursive: true });
+    writeFileSync(join(design, 'app-a', path, `${path.split('/')[1]}.ts`), source);
+  };
+
+  part(
+    'components/chip',
+    "export default definePart({ implements: 'libs/chip.component.ts', controls: { remove: {} }, describe: { default: 'at rest' }, states: { default: {} } });\n",
+  );
+  part('components/tag', "export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n");
+  writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
+  mkdirSync(join(target, 'libs'), { recursive: true });
+  writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip {}\n');
+
+  return { target, dir: join(design, 'app-a') };
+};
+
+const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
+
+const harnessed = (target: string) =>
+  resolveProduct({ target, name: 'app-a', config: { harness: { app: 'apps/a', map: 'apps/a/harness.ts' } } });
+
+const green = { pointsOf: () => [], problemsOf: () => [], slowOf: () => [] };
+
+const hashOf = (target: string, part = 'components/chip') => {
+  const found = readyPartOf({ product: productOf(target), part });
+
+  return typeof found === 'string' ? found : found.hash;
+};
+
+const post = async (target: string, body: { part?: string; hash?: string }) => {
+  const product = harnessed(target);
+  const part = body.part ?? '';
+  const marked = await markPartReady({
+    product,
+    origin: originOf('spec'),
+    part,
+    hash: body.hash,
+    inputsOf: async () => {
+      const points = await drawnPartPointsOf({ target, config: {}, product, part });
+
+      return 'unavailable' in points
+        ? noVerdictOf(points.unavailable)
+        : { ...green, pointsOf: (at: string) => (at === part ? points : []) };
+    },
+    actionsOf: () => partActionFailuresOf({ target, config: {}, product, part }),
+    actionsNote: PART_HARNESS_ONLY,
+  });
+
+  if ('status' in marked)
+    return {
+      status: marked.status,
+      body: {
+        error: marked.error,
+        ...(marked.points ? { points: marked.points } : {}),
+        ...(marked.actions ? { actions: marked.actions } : {}),
+      },
+    };
+
+  return { status: 200, body: { part, hash: marked.hash, ready: marked, points: [] } };
+};
+
+const output = () => {
+  const lines: string[] = [];
+  const push = (line: unknown) => void lines.push(String(line));
+
+  vi.spyOn(console, 'log').mockImplementation(push);
+  vi.spyOn(console, 'error').mockImplementation(push);
+
+  return lines;
+};
+
+describe('part ready', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('marks a part without open points ready, and drops the mark when the part changes', async () => {
+    const { target, dir } = checkout();
+
+    const hash = hashOf(target);
+    const answer = await post(target, { part: 'components/chip', hash });
+
+    expect(answer.status).toBe(200);
+    expect(readReady(dir)).toEqual({
+      'components/chip': {
+        hash,
+        files: expect.any(Object),
+        app: expect.any(String),
+        builder: 'designer',
+        at: expect.any(String),
+        by: 'spec',
+        cmd: expect.any(String),
+        pid: process.pid,
+      },
+    });
+    expect(readyPartsOf(productOf(target))).toEqual(['components/chip']);
+
+    appendFileSync(join(dir, 'components/chip/chip.ts'), '// changed\n');
+
+    expect(readyMarkOf({ product: productOf(target), part: 'components/chip' })).toBeNull();
+    expect(readyPartsOf(productOf(target))).toEqual([]);
+  });
+
+  // A ready mark keys on the whole file of an import, so an unused export added to it drops the mark.
+  it('drops the mark when an unused export is added to a file the part imports', async () => {
+    const { target, dir } = checkout();
+
+    mkdirSync(join(dir, 'lib'), { recursive: true });
+    writeFileSync(join(dir, 'lib/shared.ts'), 'export const used = 1;\n');
+    appendFileSync(join(dir, 'components/chip/chip.ts'), "import { used } from '../../lib/shared';\nvoid used;\n");
+
+    const answer = await post(target, { part: 'components/chip', hash: hashOf(target) });
+
+    expect(answer.status).toBe(200);
+    expect(readyMarkOf({ product: productOf(target), part: 'components/chip' })).not.toBeNull();
+
+    appendFileSync(join(dir, 'lib/shared.ts'), 'export const unused = 2;\n');
+
+    expect(readyMarkOf({ product: productOf(target), part: 'components/chip' })).toBeNull();
+  });
+
+  it('leaves an equal ready.json untouched when the same record is written again', () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const write = () =>
+      writePartRecord({
+        product: productOf(target),
+        part: 'components/chip',
+        origin: originOf('spec', 'design ready'),
+      });
+
+    write();
+    const before = readFileSync(file, 'utf8');
+    const past = new Date('2020-01-01T00:00:00Z');
+
+    utimesSync(file, past, past);
+    write();
+
+    expect(readFileSync(file, 'utf8')).toBe(before);
+    expect(statSync(file).mtimeMs).toBe(past.getTime());
+  });
+
+  it('records who builds the part, and still reads a record written without it (B250c)', () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const write = (part: string) =>
+      writePartRecord({ product: productOf(target), part, origin: originOf('spec', 'design ready') });
+
+    writeFileSync(
+      join(target, 'libs/chip.component.ts'),
+      "import { inject } from '@angular/core';\nimport { Store } from './store';\nexport class Chip { store = inject(Store); }\n",
+    );
+
+    expect(write('components/chip')).toMatchObject({
+      builder: 'developer',
+      builderReasons: ['injects the service Store (libs/chip.component.ts)'],
+    });
+    expect(write('components/tag')).toMatchObject({ builder: 'designer' });
+    expect(write('components/tag')).not.toHaveProperty('builderReasons');
+
+    const records = JSON.parse(readFileSync(file, 'utf8'));
+    const legacy = { ...records['components/tag'] };
+
+    delete legacy.builder;
+
+    writeFileSync(file, JSON.stringify({ ...records, 'components/tag': legacy }));
+
+    expect(readyMarkOf({ product: productOf(target), part: 'components/tag' })).toEqual(legacy);
+    expect(builderChangedOf({ product: productOf(target), part: 'components/tag' })).toBe(true);
+    expect(builderChangedOf({ product: productOf(target), part: 'components/chip' })).toBe(false);
+
+    writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip {}\n');
+
+    expect(builderChangedOf({ product: productOf(target), part: 'components/chip' })).toBe(true);
+  });
+
+  it('adds the builder to a mark and keeps who wrote it', () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+
+    writePartRecord({
+      product: productOf(target),
+      part: 'components/tag',
+      origin: originOf('claude-opus-5-5', 'design ready'),
+      at: '2026-11-17T00:00:00.000Z',
+    });
+
+    const records = JSON.parse(readFileSync(file, 'utf8'));
+    const legacy = { ...records['components/tag'] };
+
+    delete legacy.builder;
+    writeFileSync(file, JSON.stringify({ ...records, 'components/tag': legacy }));
+
+    expect(writePartBuilder({ product: productOf(target), part: 'components/tag' })).toMatchObject({
+      builder: 'designer',
+      by: 'claude-opus-5-5',
+      cmd: 'design ready',
+      at: '2026-11-17T00:00:00.000Z',
+    });
+    expect(builderChangedOf({ product: productOf(target), part: 'components/tag' })).toBe(false);
+  });
+
+  it('keeps the record byte-equal when the same writer rewrites it at the same hash from another process', () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const write = (pid: number) =>
+      writePartRecord({
+        product: productOf(target),
+        part: 'components/chip',
+        origin: { by: 'et design serve', cmd: 'serve', pid },
+      });
+
+    write(1);
+    const before = readFileSync(file, 'utf8');
+
+    write(2);
+
+    expect(readFileSync(file, 'utf8')).toBe(before);
+  });
+
+  it('refuses with the list while the part has open points, the drawn ones too', async () => {
+    const { target, dir } = checkout();
+
+    vi.mocked(drawnFindingsOf).mockResolvedValueOnce({
+      missingStates: [{ part: 'components/chip', control: 'remove' }],
+      busyStates: [],
+      issues: [],
+    });
+
+    expect(await post(target, { part: 'components/chip', hash: hashOf(target) })).toEqual({
+      status: 422,
+      body: {
+        error: 'components/chip has 1 open point - close them before ready',
+        points: [{ kind: 'missing-state', control: 'remove' }],
+      },
+    });
+    expect((await post(target, { part: 'components/tag', hash: hashOf(target, 'components/tag') })).status).toBe(422);
+    expect(readReady(dir)).toEqual({});
+  });
+
+  it('answers 400 without a hash, 404 for an unknown part, 409 on a stale hash and 503 without a draw', async () => {
+    const { target, dir } = checkout();
+    const hash = hashOf(target);
+
+    expect((await post(target, { part: 'components/chip' })).status).toBe(400);
+    expect((await post(target, { part: 'components/gone', hash })).status).toBe(404);
+    expect((await post(target, { part: 'components/chip', hash: 'stale' })).status).toBe(409);
+
+    vi.mocked(drawnFindingsOf).mockResolvedValueOnce({ unavailable: 'no playwright' });
+
+    expect((await post(target, { part: 'components/chip', hash })).status).toBe(503);
+    expect(readReady(dir)).toEqual({});
+  });
+
+  it('answers the hash and the ready mark of a part with its open points', async () => {
+    const { target } = checkout();
+
+    const hash = hashOf(target);
+
+    await post(target, { part: 'components/chip', hash });
+
+    const answer = await openPointsAnswer({
+      target,
+      url: new URL('http://localhost/?product=app-a&part=components/chip'),
+      request: Object.assign(Readable.from([]), { method: 'GET' }) as unknown as IncomingMessage,
+    });
+
+    expect(answer.body).toEqual({
+      part: 'components/chip',
+      hash,
+      ready: {
+        hash,
+        files: expect.any(Object),
+        app: expect.any(String),
+        builder: 'designer',
+        at: expect.any(String),
+        by: 'spec',
+        cmd: expect.any(String),
+        pid: process.pid,
+      },
+      directEdit: false,
+      buildReady: expect.any(Object),
+      drawn: false,
+      points: [],
+    });
+  }, 30_000);
+
+  it('et design ready exits 1 with the open points, and on a part of a product without a harness', async () => {
+    const { target, dir } = checkout();
+    const lines = output();
+
+    const ready = (...argv: string[]) => designReady({ target, argv, invocation: 'et design' });
+
+    expect(await ready('components/tag', '--product', 'app-a')).toBe(2);
+    expect(lines.join('\n')).toContain('a ready mark needs --by <model id | designer>');
+    expect(await ready('components/tag', '--product', 'app-a', '--by', 'human')).toBe(1);
+    expect(lines).toContain('  components/tag: no controls declared');
+    expect(lines).toContain('components/tag has 1 open point - close them before ready');
+
+    expect(await ready('components/chip', '--product', 'app-a', '--by', 'human')).toBe(1);
+    expect(lines.slice(-2)).toEqual([
+      '  no-harness: the product has no harness in config.json, so its slow checks and actions never run',
+      'components/chip has 1 blocker - fix them before ready',
+    ]);
+    expect(readReady(dir)).toEqual({});
+  });
+
+  it('refuses ready with the failed action checks, and answers 503 while they cannot run', async () => {
+    const { target, dir } = checkout();
+    const lines = output();
+    const failed = ['default button "remove" click FAILED the output remove did not fire'];
+
+    vi.mocked(partActionFailuresOf).mockResolvedValueOnce(failed);
+
+    expect(await post(target, { part: 'components/chip', hash: hashOf(target) })).toEqual({
+      status: 422,
+      body: {
+        error: `components/chip fails 1 action check - fix them before ready (${PART_HARNESS_ONLY})`,
+        actions: failed,
+      },
+    });
+
+    const callsBefore = vi.mocked(partActionFailuresOf).mock.calls.length;
+
+    expect(
+      await designReady({
+        target,
+        argv: ['components/chip', '--product', 'app-a', '--by', 'human', '--url', 'http://localhost:1'],
+        invocation: 'et design',
+      }),
+    ).toBe(1);
+    expect(lines.slice(-2)).toEqual([
+      '  no-harness: the product has no harness in config.json, so its slow checks and actions never run',
+      'components/chip has 1 blocker - fix them before ready',
+    ]);
+    expect(vi.mocked(partActionFailuresOf).mock.calls.length).toBe(callsBefore);
+
+    vi.mocked(partActionFailuresOf).mockResolvedValueOnce({ noVerdict: 'no harness' });
+
+    expect(await post(target, { part: 'components/chip', hash: hashOf(target) })).toEqual({
+      status: 503,
+      body: { error: 'cannot check the actions of components/chip: no harness' },
+    });
+    expect(readReady(dir)).toEqual({});
+  });
+
+  it('skips the actions of a part without an implements link, in one line', async () => {
+    const { target } = checkout();
+    const { partActionFailuresOf: failuresOf } =
+      await vi.importActual<typeof import('./actions-command')>('./actions-command');
+    const check = vi.fn<typeof checkActions>();
+    const notes: string[] = [];
+
+    expect(
+      await failuresOf({
+        target,
+        config: {},
+        product: productOf(target),
+        part: 'components/tag',
+        url: 'http://localhost:1',
+        check,
+        onNote: (line) => notes.push(line),
+      }),
+    ).toEqual([]);
+    expect(check).not.toHaveBeenCalled();
+    expect(notes).toEqual(['actions components/tag: skipped - no implements link, nothing to click']);
+  });
+
+  it('answers only the failed lines of design actions', async () => {
+    const { target } = checkout();
+    const { partActionFailuresOf: failuresOf } =
+      await vi.importActual<typeof import('./actions-command')>('./actions-command');
+    const check = vi.fn<typeof checkActions>(async () => ({
+      lines: [
+        { state: 'default', element: 'button "remove"', input: 'click', failure: null },
+        { state: 'default', element: 'button "remove"', input: 'Enter', failure: 'the output remove did not fire' },
+      ],
+      pictures: null,
+    }));
+
+    expect(
+      await failuresOf({
+        target,
+        config: {},
+        product: productOf(target),
+        part: 'components/chip',
+        url: 'http://localhost:1',
+        check,
+      }),
+    ).toEqual(['default button "remove" Enter FAILED the output remove did not fire']);
+    expect(check).toHaveBeenCalledWith(
+      expect.objectContaining({ part: 'components/chip', url: 'http://localhost:1', only: null }),
+    );
+  });
+
+  it('reports a skipped host once, never as a miss', async () => {
+    const { target } = checkout();
+    const { partActionFailuresOf: failuresOf } =
+      await vi.importActual<typeof import('./actions-command')>('./actions-command');
+    mkdirSync(join(target, 'apps/a'), { recursive: true });
+    mkdirSync(join(target, 'libs'), { recursive: true });
+    writeFileSync(
+      join(target, 'libs/chip.component.ts'),
+      "@Component({ selector: 'app-chip', template: '' })\nexport class ChipComponent {}\n",
+    );
+
+    const product = resolveProduct({
+      target,
+      name: 'app-a',
+      config: { harness: { app: 'apps/a', map: 'apps/a/harness.ts', hosts: ['DesignCanvas'] } },
+    });
+    const map = harnessMapOf({ target, product });
+
+    if (map === null || typeof map === 'string') throw new Error(`no harness map: ${map}`);
+
+    writeHarnessMap(map);
+    const check = vi.fn<typeof checkActions>(async () => ({
+      lines: [
+        { state: 'default', element: 'button "remove"', input: 'click', failure: null },
+        { state: 'hover', element: 'button "remove"', input: 'click', failure: null },
+      ],
+      pictures: null,
+      hosts: ['DesignCanvas'],
+    }));
+    const notes: string[] = [];
+
+    expect(
+      await failuresOf({
+        target,
+        config: {},
+        product,
+        part: 'components/chip',
+        url: 'http://localhost:1',
+        check,
+        onNote: (line) => notes.push(line),
+      }),
+    ).toEqual([]);
+    expect(notes).toEqual([
+      "host DesignCanvas: skipped - the app's own chrome around the part, which the design does not draw",
+    ]);
+  });
+
+  it('adds the failed live lines when ready runs with a url, and skips the live check without one', async () => {
+    const { target } = checkout();
+    const { partActionFailuresOf: failuresOf } =
+      await vi.importActual<typeof import('./actions-command')>('./actions-command');
+
+    const config = {
+      products: { 'app-a': { harness: { app: 'apps/a', map: 'apps/a/harness.ts', live: 'apps/a/live.json' } } },
+    };
+
+    mkdirSync(join(target, 'apps/a'), { recursive: true });
+    mkdirSync(join(target, 'libs'), { recursive: true });
+    writeFileSync(
+      join(target, 'libs/chip.component.ts'),
+      "@Component({ selector: 'app-chip', template: '' })\nexport class ChipComponent {}\n",
+    );
+    writeFileSync(
+      join(target, 'apps/a/live.json'),
+      JSON.stringify({ host: 'app-shell', shell: 'app-shell-page', pages: {} }),
+    );
+
+    const product = resolveProduct({ target, name: 'app-a', config: config.products['app-a'] });
+    const map = harnessMapOf({ target, product });
+
+    if (map === null || typeof map === 'string') throw new Error(`no harness map: ${map}`);
+
+    writeHarnessMap(map);
+
+    const check = vi.fn<typeof checkActions>(async () => ({ lines: [], pictures: null }));
+    const checkLive = vi.fn<typeof checkLiveActions>(async () => ({
+      lines: [
+        { page: 'pages/home', element: 'button "remove"', input: 'click', failure: null, parts: [] },
+        {
+          page: 'drift',
+          element: 'button "remove"',
+          input: 'Enter',
+          failure: 'behaves differently per page',
+          parts: [],
+        },
+      ],
+    }));
+    const options = { target, config, product, part: 'components/chip', check, checkLive };
+
+    expect(await failuresOf({ ...options, url: 'http://localhost:1' })).toEqual([
+      'live drift button "remove" Enter FAILED behaves differently per page',
+    ]);
+    expect(checkLive).toHaveBeenCalledWith(
+      expect.objectContaining({ part: 'components/chip', url: 'http://localhost:1' }),
+    );
+
+    checkLive.mockClear();
+
+    expect(
+      await failuresOf({ ...options, start: async () => ({ url: 'http://localhost:2', stop: async () => undefined }) }),
+    ).toEqual([]);
+    expect(checkLive).not.toHaveBeenCalled();
+  });
+});
+
+describe('ready on a merged part edited outside a sketch', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const edited = () => {
+    const { target, dir } = checkout();
+
+    recordMerged({ product: productOf(target), parts: ['components/tag'] });
+    initGitRepo(target, 'base');
+    writeFileSync(
+      join(dir, 'components/tag/tag.ts'),
+      "export default definePart({ describe: { default: 'off', on: 'on' }, states: { default: {}, on: {} } });\n",
+    );
+
+    return { target, dir, merged: readMerged(dir)['components/tag'] };
+  };
+  const ready = (target: string) =>
+    designReady({ target, argv: ['components/tag', '--product', 'app-a', '--by', 'model'], invocation: 'et design' });
+
+  it('settles a committed edit into merged.json before it checks the part', async () => {
+    const { target, dir, merged } = edited();
+    const lines = output();
+
+    git(target, 'commit', '-qam', 'edit tag');
+    await ready(target);
+
+    expect(lines.join('\n')).not.toContain('changed outside a sketch');
+    expect(readMerged(dir)['components/tag']).not.toBe(merged);
+  });
+
+  it('still refuses an uncommitted edit', async () => {
+    const { target, dir, merged } = edited();
+    const lines = output();
+
+    expect(await ready(target)).toBe(1);
+    expect(lines.join('\n')).toContain('changed outside a sketch');
+    expect(readMerged(dir)['components/tag']).toBe(merged);
+  });
+});
+
+describe('ready on an unchanged part', () => {
+  const embeddingCheckout = () => {
+    const { target, dir } = checkout();
+
+    mkdirSync(join(dir, 'pages/inbox'), { recursive: true });
+    writeFileSync(
+      join(dir, 'pages/inbox/inbox.ts'),
+      "import chip from '@system/components/chip';\nexport default definePart({ implements: 'libs/inbox.component.ts', describe: { default: 'at rest' }, states: { default: {} } });\nexport const shown = chip;\n",
+    );
+    mkdirSync(join(target, 'libs'), { recursive: true });
+    writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip {}\n');
+    writeFileSync(
+      join(target, 'libs/inbox.component.ts'),
+      "import { Chip } from './chip.component';\nexport class Inbox { chip = Chip; }\n",
+    );
+
+    return target;
+  };
+
+  const readyAs = (target: string, at: string) =>
+    markPartReady({
+      product: harnessed(target),
+      origin: originOf('spec'),
+      part: 'pages/inbox',
+      hash: hashOf(target, 'pages/inbox'),
+      at,
+      inputsOf: async () => green,
+      actionsOf: async () => [],
+    });
+
+  it('refuses a ready mark without an actor and stamps by, cmd and pid on one with', async () => {
+    const { target, dir } = checkout();
+    const product = harnessed(target);
+    const base = {
+      product,
+      part: 'components/tag',
+      hash: hashOf(target, 'components/tag'),
+      inputsOf: async () => green,
+      actionsOf: async () => [],
+    };
+
+    expect(await markPartReady({ ...base, origin: { by: '', cmd: 'x', pid: 1 } })).toMatchObject({ status: 400 });
+    expect(existsSync(join(dir, 'ready.json'))).toBe(false);
+
+    const marked = await markPartReady({ ...base, origin: originOf('claude-opus-5-5', 'design ready components/tag') });
+
+    expect(marked).toMatchObject({ by: 'claude-opus-5-5', cmd: 'design ready components/tag', pid: process.pid });
+    expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))['components/tag']).toMatchObject({
+      by: 'claude-opus-5-5',
+      pid: process.pid,
+    });
+  });
+
+  it('keeps at and refreshes the embedded record, and writes a new mark when the part changed', async () => {
+    const target = embeddingCheckout();
+    const dir = join(target, DESIGN_DIR, 'app-a');
+
+    writePartRecord({ product: harnessed(target), part: 'components/chip', origin: originOf('spec') });
+
+    const first = await readyAs(target, '2026-01-01T00:00:00.000Z');
+
+    expect(first).toHaveProperty('by', 'spec');
+
+    const marks = readReady(dir);
+
+    writeFileSync(
+      join(dir, 'ready.json'),
+      JSON.stringify({ ...marks, 'pages/inbox': { ...marks['pages/inbox'], embedded: undefined } }),
+    );
+
+    const again = await readyAs(target, '2026-02-02T00:00:00.000Z');
+
+    expect(again).toMatchObject({ at: '2026-01-01T00:00:00.000Z' });
+    expect(again).toHaveProperty('embedded');
+    expect(readReady(dir)['pages/inbox']).toMatchObject({ at: '2026-01-01T00:00:00.000Z' });
+    expect(readReady(dir)['pages/inbox']).toHaveProperty('embedded');
+
+    appendFileSync(join(dir, 'pages/inbox/inbox.ts'), 'export const more = 1;\n');
+
+    expect(await readyAs(target, '2026-03-03T00:00:00.000Z')).toMatchObject({ at: '2026-03-03T00:00:00.000Z' });
+  });
+});
+
+describe('a ready mark commits its own ready.json', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const readyIn = (target: string) =>
+    markPartReady({
+      product: harnessed(target),
+      origin: originOf('spec'),
+      part: 'components/tag',
+      hash: hashOf(target, 'components/tag'),
+      inputsOf: async () => green,
+      actionsOf: async () => [],
+      commitIn: target,
+    });
+
+  it('commits the ready.json alone and leaves other staged and dirty files as they are', async () => {
+    const { target } = checkout();
+
+    initGitRepo(target, 'base');
+    writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip { dirty = 1; }\n');
+    writeFileSync(join(target, 'libs/staged.ts'), 'export const staged = 1;\n');
+    git(target, 'add', 'libs/staged.ts');
+
+    expect(await readyIn(target)).toMatchObject({ by: 'spec' });
+    expect(gitResult(target, 'log', '-1', '--format=%s').stdout.trim()).toBe(
+      'feat(repo): Mark components/tag build-ready in app-a',
+    );
+    expect(gitResult(target, 'show', '--name-only', '--format=', 'HEAD').stdout.trim()).toBe(
+      `${DESIGN_DIR}/app-a/ready.json`,
+    );
+    expect(gitResult(target, 'status', '--porcelain').stdout.split('\n').filter(Boolean).sort()).toEqual([
+      ' M libs/chip.component.ts',
+      'A  libs/staged.ts',
+    ]);
+  });
+
+  it('commits only its own mark and leaves the foreign marks of the working ready.json uncommitted', async () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const foreign = { hash: 'h', at: '2026-10-01T09:00:00.000Z', by: 'serve' };
+
+    writeFileSync(file, JSON.stringify({ 'components/old': foreign }));
+    initGitRepo(target, 'base');
+    writeFileSync(file, JSON.stringify({ 'components/old': { ...foreign, hash: 'h2' }, 'components/new': foreign }));
+
+    await readyIn(target);
+
+    const committed = JSON.parse(gitResult(target, 'show', `HEAD:${DESIGN_DIR}/app-a/ready.json`).stdout);
+
+    expect(Object.keys(committed)).toEqual(['components/old', 'components/tag']);
+    expect(committed['components/old']).toEqual(foreign);
+    expect(Object.keys(readReady(dir)).sort()).toEqual(['components/new', 'components/old', 'components/tag']);
+    expect(readReady(dir)['components/old']).toMatchObject({ hash: 'h2' });
+  });
+
+  it('leaves git and ready.json untouched when ready is refused', async () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const at = '2026-10-01T09:00:00.000Z';
+    const refuse = (part: string) =>
+      markPartReady({
+        product: harnessed(target),
+        origin: originOf('spec'),
+        part,
+        hash: 'stale',
+        inputsOf: async () => green,
+        actionsOf: async () => [],
+        commitIn: target,
+      });
+
+    writeFileSync(
+      file,
+      JSON.stringify({ 'components/tag': { hash: 'h', at }, 'components/gone': { actions: ['emit:x'], at } }),
+    );
+    initGitRepo(target, 'base');
+    writeFileSync(file, JSON.stringify({ 'components/gone': { actions: ['emit:x'], at } }));
+
+    const before = {
+      head: gitResult(target, 'rev-parse', 'HEAD').stdout.trim(),
+      status: gitResult(target, 'status', '--porcelain').stdout,
+      file: readFileSync(file, 'utf8'),
+    };
+
+    expect(await refuse('components/tag')).toMatchObject({ status: 409 });
+    expect(await refuse('components/gone')).toMatchObject({ status: 404 });
+    expect(gitResult(target, 'rev-parse', 'HEAD').stdout.trim()).toBe(before.head);
+    expect(gitResult(target, 'status', '--porcelain').stdout).toBe(before.status);
+    expect(readFileSync(file, 'utf8')).toBe(before.file);
+  });
+
+  it('keeps the mark and warns when the checkout is no git repository', async () => {
+    const { target, dir } = checkout();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    expect(await readyIn(target)).toMatchObject({ by: 'spec' });
+    expect(Object.keys(readReady(dir))).toEqual(['components/tag']);
+    expect(warn.mock.calls.flat().join('\n')).toContain(
+      'READY UNCOMMITTED components/tag: the mark is written, but the commit failed',
+    );
+  });
+});

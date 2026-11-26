@@ -1,0 +1,47 @@
+import { DestroyRef, Directive, Signal, computed, inject, signal } from '@angular/core';
+import { NavigationEnd } from '@angular/router';
+import { injectRouterEvent } from '@ethlete/core';
+import { ScrollableDirective } from '../../../scrollable/headless/scrollable.directive';
+import { TabBarDirective } from '../../headless/tab-bar.directive';
+import { injectNavTabsRegistry } from './nav-tabs-registry';
+import { NAV_TABS_TOKEN } from './nav-tabs.tokens';
+
+@Directive({
+  selector: '[etNavTabs]',
+  providers: [{ provide: NAV_TABS_TOKEN, useExisting: NavTabsDirective }],
+})
+export class NavTabsDirective {
+  private routerEvent = injectRouterEvent();
+  private registry = injectNavTabsRegistry();
+  private tabBar = inject(TabBarDirective, { self: true });
+  private destroyRef = inject(DestroyRef);
+
+  private scrollableSource = signal<Signal<ScrollableDirective | undefined> | null>(null);
+
+  /** @internal */
+  public scrollable = computed(() => this.scrollableSource()?.() ?? null);
+
+  /** @internal */
+  public navigationVersion = computed(() => {
+    const event = this.routerEvent();
+
+    if (event instanceof NavigationEnd) {
+      return event.id;
+    }
+
+    return -1;
+  });
+
+  constructor() {
+    this.registry.register(this.tabBar);
+
+    this.destroyRef.onDestroy(() => {
+      this.registry.unregister(this.tabBar);
+    });
+  }
+
+  /** @internal */
+  public connectScrollable(source: Signal<ScrollableDirective | undefined>) {
+    this.scrollableSource.set(source);
+  }
+}

@@ -1,0 +1,487 @@
+import { isPlatformBrowser } from '@angular/common';
+import {
+  DOCUMENT,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  PLATFORM_ID,
+  TemplateRef,
+  booleanAttribute,
+  computed,
+  effect,
+  inject,
+  input,
+  inputBinding,
+  numberAttribute,
+  signal,
+  untracked,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  COLOR_PROVIDER,
+  RuntimeError,
+  injectFocusVisibleTracker,
+  injectRenderer,
+  isOnHigherOverlayLayer,
+  resolveOverlayLayer,
+  enableAnchoredOverlayPositionExtras,
+  injectHasTouchInput,
+} from '@ethlete/core';
+import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
+import {
+  EMPTY,
+  Subject,
+  defer,
+  filter,
+  fromEvent,
+  ignoreElements,
+  map,
+  merge,
+  mergeMap,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+  timer,
+} from 'rxjs';
+import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
+import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.component';
+import { mountFloatingTipStyles } from '../../overlay/floating-tip-styles.component';
+import { injectOverlayManager } from '../../overlay/overlay-manager';
+import { TOOLTIP_ERROR_CODES } from '../tooltip-errors';
+import { TooltipComponent } from '../tooltip.component';
+import { createIdFactory } from '../../internals/id-factory';
+import { injectTooltipDescriptionRegistry } from './tooltip-description-registry';
+
+export type TooltipContent = string | TemplateRef<unknown>;
+
+const DEFAULT_TOOLTIP_DELAY = 300;
+const LONG_PRESS_DELAY = 500;
+const TOUCH_HIDE_DELAY = 1500;
+
+const createTooltipId = /* @__PURE__ */ createIdFactory('et-tooltip');
+
+@Directive({
+  selector: '[etTooltip]',
+  exportAs: 'etTooltip',
+  host: {
+    '[style.-webkit-touch-callout]': 'suppressNativeLongPress() ? "none" : null',
+    '[style.-webkit-user-select]': 'suppressNativeLongPress() ? "none" : null',
+    '[style.user-select]': 'suppressNativeLongPress() ? "none" : null',
+  },
+})
+export class TooltipDirective {
+  private document = inject(DOCUMENT);
+  private destroyRef = inject(DestroyRef);
+  private elementRef = inject<ElementRef<HTMLElement | SVGElement>>(ElementRef);
+  private colorProvider = inject(COLOR_PROVIDER, { optional: true });
+  private overlayManager = injectOverlayManager();
+  private focusVisibleTracker = injectFocusVisibleTracker();
+  private renderer = injectRenderer();
+  private hasTouchInput = injectHasTouchInput();
+
+  private descriptionRegistry = injectTooltipDescriptionRegistry();
+  public content = input<TooltipContent | null>(null, { alias: 'etTooltip' });
+  public ariaDescription = input<string | null>(null, { alias: 'etTooltipAriaDescription' });
+  /**
+   * The element the tooltip points at, when it should differ from the trigger - e.g. one end of a
+   * larger hit target. Hover, focus and the accessible description stay on the trigger.
+   * @default the trigger
+   */
+  public anchor = input<Element | null>(null);
+  public placement = input<Placement>('top');
+  public fallbackPlacements = input<Placement[] | undefined>(undefined);
+  public offset = input<OffsetOptions | null>(8);
+  /**
+   * How close the arrow may get to the panel's corners. Must clear the panel's border radius
+   * (`--_et-floating-tip-radius`, 16px) or the arrow's base rides into the rounded corner - which is what
+   * happens on aligned placements (`bottom-end`, `left-start`, …) and whenever `shift` pushes a panel
+   * off center near a viewport edge.
+   */
+  public arrowPadding = input<Padding | null>(20);
+  public viewportPadding = input<Padding | null>(8);
+  public showDelay = input(DEFAULT_TOOLTIP_DELAY, { transform: numberAttribute });
+
+  public disabled = input(false, { alias: 'etTooltipDisabled', transform: booleanAttribute });
+
+  /** @internal */
+  public overlayRef = signal<OverlayRef<TooltipComponent, unknown> | null>(null);
+  private hasHover = signal(false);
+  private hideRequest$ = new Subject<void>();
+  private hasFocus = signal(false);
+  private descriptionText: string | null = null;
+  private descriptionId: string | null = null;
+  private appliedDescriptionId: string | null = null;
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  private hasContent = computed(() => {
+    const content = this.content();
+
+    return content !== null && (typeof content !== 'string' || content.trim() !== '');
+  });
+
+  private canShow = computed(() => this.hasContent() && !this.disabled());
+
+  protected suppressNativeLongPress = computed(() => this.hasTouchInput() && this.canShow());
+
+  private accessibleDescription = computed(() => {
+    const ariaDescription = this.ariaDescription();
+
+    if (ariaDescription) {
+      return ariaDescription;
+    }
+
+    const content = this.content();
+    return typeof content === 'string' && this.hasContent() ? content : null;
+  });
+
+  constructor() {
+    mountFloatingPanelStyles();
+    mountFloatingTipStyles();
+
+    this.setupHoverBehavior();
+    this.setupLongPressBehavior();
+    this.setupFocusBehavior();
+    this.setupClickBehavior();
+
+    effect(() => {
+      if (!this.isBrowser) return;
+
+      const description = this.accessibleDescription();
+
+      untracked(() => {
+        this.syncDescriptionElement(description);
+
+        if (!this.overlayRef()) {
+          this.syncHostDescription(this.descriptionId);
+        }
+      });
+    });
+
+    effect(() => {
+      const hasContent = this.hasContent();
+      const disabled = this.disabled();
+
+      if ((!hasContent || disabled) && this.overlayRef()) {
+        untracked(() => {
+          this.hide();
+        });
+      }
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.overlayRef()?.close();
+      this.removeDescriptionElement();
+      this.syncHostDescription(null);
+    });
+  }
+
+  public show() {
+    if (this.disabled()) {
+      return;
+    }
+
+    const content = this.content();
+    if (!this.hasContent()) {
+      return;
+    }
+
+    const accessibleDescription = this.accessibleDescription();
+    if (content instanceof TemplateRef && !accessibleDescription) {
+      if (ngDevMode) {
+        throw new RuntimeError(
+          TOOLTIP_ERROR_CODES.TEMPLATE_TOOLTIP_REQUIRES_DESCRIPTION,
+          '[TooltipDirective] Template tooltips require etTooltipAriaDescription so non-visual users get an equivalent description.',
+        );
+      }
+
+      return;
+    }
+
+    if (this.overlayRef() || this.isHostExpanded()) {
+      return;
+    }
+
+    enableAnchoredOverlayPositionExtras();
+
+    if (this.isBrowser) {
+      this.syncDescriptionElement(accessibleDescription);
+    }
+
+    const tooltipId = createTooltipId();
+    const hostElement = this.elementRef.nativeElement;
+    const config: OverlayConfig = {
+      id: tooltipId,
+      bindings: [
+        inputBinding('tooltipId', () => tooltipId),
+        inputBinding('content', () => this.content() ?? content),
+        inputBinding('colorProvider', () => this.colorProvider ?? null),
+      ],
+      disableClose: true,
+      closeOnNavigation: true,
+      hasBackdrop: false,
+      mode: 'non-modal',
+      origin: this.anchor() ?? hostElement,
+      closeOnEscape: false,
+      closeOnOutsidePointer: false,
+      passive: true,
+      panelClass: 'et-tooltip-panel',
+      strategies: anchoredOverlayStrategy({
+        containerClass: ['et-overlay--tooltip', 'et-floating-panel'],
+        arrow: true,
+        placement: this.placement(),
+        fallbackPlacements: this.fallbackPlacements(),
+        offset: this.offset(),
+        arrowPadding: this.arrowPadding(),
+        viewportPadding: this.viewportPadding(),
+        shift: true,
+        autoHide: true,
+        autoCloseIfReferenceHidden: true,
+      }),
+      restoreFocus: false,
+      autoFocus: false,
+    };
+    const overlayRef = this.overlayManager.open<TooltipComponent>(TooltipComponent, config);
+
+    this.overlayRef.set(overlayRef);
+    this.syncHostDescription(tooltipId);
+    this.dismissOnOutsidePointer(overlayRef);
+    this.dismissOnEscape(overlayRef);
+
+    overlayRef
+      .afterClosed()
+      .pipe(
+        tap(() => {
+          if (this.overlayRef() === overlayRef) {
+            this.overlayRef.set(null);
+          }
+
+          this.syncHostDescription(this.descriptionId);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  public hide() {
+    this.hideRequest$.next();
+    this.overlayRef()?.close();
+  }
+
+  private setupHoverBehavior() {
+    const hostElement = this.elementRef.nativeElement;
+
+    // Pointer events rather than mouse events so the `pointerType` is readable: mobile browsers
+    // synthesize a mouse enter around a tap, which pops a hover affordance the user never asked for
+    // and then leaves it hanging until they tap elsewhere. A pen genuinely hovers, so only touch is
+    // excluded - a touch user opens the tooltip with a long press instead.
+    const leave$ = fromEvent<PointerEvent>(hostElement, 'pointerleave');
+
+    fromEvent<PointerEvent>(hostElement, 'pointerenter')
+      .pipe(
+        filter((event) => event.pointerType !== 'touch'),
+        tap(() => this.hasHover.set(true)),
+        switchMap(() =>
+          timer(this.showDelay()).pipe(
+            takeUntil(merge(leave$.pipe(tap(() => this.hasHover.set(false))), this.hideRequest$)),
+          ),
+        ),
+        tap(() => {
+          if (!this.hasHover()) {
+            return;
+          }
+
+          this.show();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    leave$
+      .pipe(
+        filter((event) => event.pointerType !== 'touch'),
+        tap(() => {
+          this.hasHover.set(false);
+
+          if (!this.hasFocus()) {
+            this.hide();
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private isHostExpanded() {
+    return this.elementRef.nativeElement.getAttribute('aria-expanded') === 'true';
+  }
+
+  private setupClickBehavior() {
+    fromEvent(this.elementRef.nativeElement, 'click')
+      .pipe(
+        tap(() => this.hide()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private setupLongPressBehavior() {
+    const hostElement = this.elementRef.nativeElement;
+    const isTouch = (event: PointerEvent) => event.pointerType === 'touch';
+    const pressEnd$ = merge(
+      fromEvent<PointerEvent>(hostElement, 'pointerup'),
+      fromEvent<PointerEvent>(hostElement, 'pointercancel'),
+    ).pipe(filter(isTouch), take(1));
+
+    // A scroll that starts on the trigger fires `pointercancel`, which ends the press before the
+    // long press delay runs out. Android fires `contextmenu` for a long press, so it shows the tooltip
+    // in place of the native menu.
+    fromEvent<PointerEvent>(hostElement, 'pointerdown')
+      .pipe(
+        filter((event) => isTouch(event) && this.canShow()),
+        switchMap(() =>
+          merge(
+            merge(
+              timer(LONG_PRESS_DELAY),
+              fromEvent<MouseEvent>(hostElement, 'contextmenu').pipe(tap((event) => event.preventDefault())),
+            ).pipe(
+              takeUntil(pressEnd$),
+              tap(() => this.show()),
+              ignoreElements(),
+            ),
+            pressEnd$.pipe(switchMap(() => timer(TOUCH_HIDE_DELAY))),
+          ),
+        ),
+        tap(() => {
+          if (!this.hasFocus() && !this.hasHover()) {
+            this.overlayRef()?.close();
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  /**
+   * A tooltip can outlive the hover that opened it - a `pointercancel`, a scroll that moves the
+   * trigger out from under the pointer, or a browser that synthesizes an enter with no matching
+   * leave. A press anywhere else is unambiguous, so treat it as a dismissal.
+   */
+  private dismissOnOutsidePointer(overlayRef: OverlayRef<TooltipComponent, unknown>) {
+    const hostElement = this.elementRef.nativeElement;
+
+    fromEvent<PointerEvent>(this.document, 'pointerdown', { capture: true })
+      .pipe(
+        takeUntil(overlayRef.afterClosed()),
+        filter((event) => !(event.target instanceof Node) || !hostElement.contains(event.target)),
+        filter((event) => !isOnHigherOverlayLayer(event.target, resolveOverlayLayer(hostElement))),
+        tap(() => {
+          this.hasHover.set(false);
+          this.hasFocus.set(false);
+          this.hide();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private dismissOnEscape(overlayRef: OverlayRef<TooltipComponent, unknown>) {
+    const root = this.document.documentElement;
+
+    fromEvent<KeyboardEvent>(this.document, 'keydown', { capture: true })
+      .pipe(
+        takeUntil(overlayRef.afterClosed()),
+        filter((event) => event.key === 'Escape' && !event.defaultPrevented),
+        mergeMap((event) => {
+          if (event.target === this.document) {
+            event.preventDefault();
+            this.hide();
+
+            return EMPTY;
+          }
+
+          // Prevented on the root element, after the hosts on the path have seen an unprevented
+          // Escape but before the overlay runtime's document listener, so a dialog beneath stays open.
+          // The root listener must be subscribed before hide() can complete this stream.
+          return merge(
+            fromEvent<KeyboardEvent>(root, 'keydown').pipe(
+              take(1),
+              filter((rootEvent) => rootEvent === event),
+              tap((rootEvent) => rootEvent.preventDefault()),
+            ),
+            defer(() => {
+              this.hide();
+
+              return EMPTY;
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private setupFocusBehavior() {
+    const hostElement = this.elementRef.nativeElement;
+
+    fromEvent(hostElement, 'focus')
+      .pipe(
+        map(() => this.focusVisibleTracker.isFocusVisible()),
+        filter(Boolean),
+        tap(() => {
+          this.hasFocus.set(true);
+          this.show();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    fromEvent(hostElement, 'blur')
+      .pipe(
+        tap(() => {
+          this.hasFocus.set(false);
+
+          if (!this.hasHover()) {
+            this.hide();
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private syncHostDescription(descriptionId: string | null) {
+    const hostElement = this.elementRef.nativeElement;
+    const rest = (hostElement.getAttribute('aria-describedby') ?? '')
+      .split(/\s+/)
+      .filter((id) => id && id !== this.appliedDescriptionId && id !== descriptionId);
+    const next = descriptionId ? [...rest, descriptionId] : rest;
+
+    this.appliedDescriptionId = descriptionId;
+
+    if (next.length) {
+      this.renderer.setAttribute(hostElement, 'aria-describedby', next.join(' '));
+    } else {
+      this.renderer.removeAttribute(hostElement, 'aria-describedby');
+    }
+  }
+
+  private syncDescriptionElement(description: string | null) {
+    if (description === this.descriptionText) return;
+
+    this.removeDescriptionElement();
+
+    if (!description) return;
+
+    this.descriptionId = this.descriptionRegistry.acquire(description);
+    this.descriptionText = description;
+  }
+
+  private removeDescriptionElement() {
+    if (this.descriptionText === null) return;
+
+    this.descriptionRegistry.release(this.descriptionText);
+    this.descriptionText = null;
+    this.descriptionId = null;
+  }
+}

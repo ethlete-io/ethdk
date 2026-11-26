@@ -1,0 +1,434 @@
+@layer components.sdk {
+  /* shares the --et-slider-* token set with et-slider — identical @property redeclarations are legal */
+  @property --et-slider-track-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-slider-thumb-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 18px;
+  }
+
+  @property --et-slider-vertical-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 160px;
+  }
+
+  @property --et-slider-mark-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-slider-mark-label-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 11px;
+  }
+
+  @property --et-slider-label-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  @property --et-slider-thumb-value-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-slider-support-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 180ms;
+  }
+
+  @property --et-slider-error-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-slider-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-slider-hint-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  et-range-slider {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--et-surface-text, currentColor);
+
+    --et-form-support-duration: var(--et-slider-support-duration);
+    --et-form-support-error-font-size: var(--et-slider-error-font-size);
+    --et-form-support-warning-font-size: var(--et-slider-warning-font-size);
+    --et-form-support-hint-font-size: var(--et-slider-hint-font-size);
+
+    > et-label {
+      font-size: var(--et-slider-label-font-size);
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--et-surface-text-muted, currentColor);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .et-range-slider-interaction {
+      position: relative;
+      display: flex;
+      align-items: center;
+      block-size: max(44px, var(--et-slider-thumb-size));
+      /* thumbs overhang the rail by half their size at the extremes — keep them inside the box */
+      margin-inline: calc(var(--et-slider-thumb-size) / 2);
+      container-type: inline-size;
+      cursor: pointer;
+    }
+
+    .et-range-slider-rail {
+      inline-size: 100%;
+      block-size: var(--et-slider-track-size);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--et-surface-tint, currentColor) 32%, transparent);
+    }
+
+    .et-range-slider-fill {
+      position: absolute;
+      inset-block-start: 50%;
+      translate: 0 -50%;
+      inset-inline-start: calc(var(--_et-slider-fill-start, 0) * 1%);
+      inline-size: calc((var(--_et-slider-fill-end, 0) - var(--_et-slider-fill-start, 0)) * 1%);
+      block-size: var(--et-slider-track-size);
+      border-radius: 999px;
+      background: var(--et-tone-fill, currentColor);
+      pointer-events: none;
+    }
+
+    .et-range-slider-thumb {
+      position: absolute;
+      inset-block-start: 50%;
+      translate: 0 -50%;
+      inset-inline-start: calc(var(--_et-slider-thumb-position, 0) * 1% - var(--et-slider-thumb-size) / 2);
+      inline-size: var(--et-slider-thumb-size);
+      block-size: var(--et-slider-thumb-size);
+      border-radius: 50%;
+      background: var(--et-tone-fill, currentColor);
+      box-shadow: var(
+        --et-slider-thumb-shadow,
+        0 1px 4px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 25%, transparent)
+      );
+      outline: none;
+
+      /* not `:focus-visible` alone: the track focuses the thumb programmatically on a press, and
+         Chrome matches `:focus-visible` for that - the ring then stayed on after every click */
+      &:focus-visible:not([data-pointer-focused]) {
+        outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
+        outline-offset: 2px;
+      }
+
+      /* the actively dragged thumb paints over its sibling when they meet */
+      &[data-dragging] {
+        z-index: 1;
+      }
+    }
+
+    .et-range-slider-marks {
+      position: absolute;
+      inset: 0;
+    }
+
+    .et-range-slider-mark {
+      position: absolute;
+      inset-block-start: 50%;
+      inset-inline-start: calc(var(--_et-slider-mark-position, 0) * 1% - var(--et-slider-mark-size) / 2);
+      translate: 0 -50%;
+      inline-size: var(--et-slider-mark-size);
+      block-size: var(--et-slider-mark-size);
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--et-surface-text-muted, currentColor) 55%, transparent);
+
+      /* a tick inside the fill sits on the primary color and needs its contrast pair */
+      &:where([data-active]) {
+        background: color-mix(in srgb, var(--et-tone-on-fill, currentColor) 70%, transparent);
+      }
+    }
+
+    .et-range-slider-mark-label {
+      position: absolute;
+      /* physical centering is direction-safe — 50% of the tick is 50% in both directions */
+      left: 50%;
+      /* clear the thumb (which overhangs the tick by half the size difference), then add the gap */
+      inset-block-start: calc(100% + (var(--et-slider-thumb-size) - var(--et-slider-mark-size)) / 2 + 6px);
+      --_et-slider-edge-x: calc(var(--_et-slider-mark-position, 0) * 1cqi);
+      translate: clamp(
+          -1 * (var(--_et-slider-edge-x) + var(--et-slider-thumb-size) / 2),
+          -50%,
+          100cqi - var(--_et-slider-edge-x) + var(--et-slider-thumb-size) / 2 - 100%
+        )
+        0;
+      inline-size: max-content;
+      font-size: var(--et-slider-mark-label-font-size);
+      line-height: 1.2;
+      color: var(--et-surface-text-muted, currentColor);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* tick labels hang below the track — keep them clear of the hint/error row */
+    &:where([data-mark-labels]) {
+      .et-range-slider-interaction {
+        margin-block-end: calc(var(--et-slider-mark-label-font-size) * 1.2 + var(--et-slider-thumb-size) / 2);
+      }
+    }
+
+    .et-range-slider-thumb-value {
+      position: absolute;
+      /* physical centering is direction-safe — 50% of the thumb is 50% in both directions */
+      left: 50%;
+      bottom: calc(100% + 8px);
+      --_et-slider-edge-x: calc(var(--_et-slider-thumb-position, 0) * 1cqi);
+      translate: clamp(
+          -1 * (var(--_et-slider-edge-x) + var(--et-slider-thumb-size) / 2),
+          -50%,
+          100cqi - var(--_et-slider-edge-x) + var(--et-slider-thumb-size) / 2 - 100%
+        )
+        0;
+      inline-size: max-content;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--et-surface-background, currentColor);
+      border: 1px solid var(--et-surface-border, transparent);
+      font-size: var(--et-slider-thumb-value-font-size);
+      line-height: 1.4;
+      color: var(--et-surface-text, currentColor);
+      pointer-events: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .et-range-slider-mark-label:dir(rtl) {
+      --_et-slider-edge-x: calc((100 - var(--_et-slider-mark-position, 0)) * 1cqi);
+    }
+
+    .et-range-slider-thumb-value:dir(rtl) {
+      --_et-slider-edge-x: calc((100 - var(--_et-slider-thumb-position, 0)) * 1cqi);
+    }
+
+    &:where([data-thumb-value]) .et-range-slider-interaction {
+      margin-block-start: calc(
+        var(--et-slider-thumb-value-font-size) * 1.4 + 14px -
+          (max(44px, var(--et-slider-thumb-size)) - var(--et-slider-thumb-size)) / 2
+      );
+    }
+
+    /* an unresolved bulk-edit range parks both thumbs at the track start — the dashed accent rail
+       (not a muted/grey one, which would read as disabled) makes that read as "provisional /
+       values differ", not "minimum". The fill is already zero-width while mixed. Consumers
+       restyle via [data-mixed]. */
+    &[data-mixed] {
+      .et-range-slider-rail {
+        background: repeating-linear-gradient(to right, var(--et-tone-fill, currentColor) 0 6px, transparent 6px 11px);
+      }
+
+      .et-range-slider-thumb {
+        box-shadow: none;
+      }
+
+      /* the parked positions are meaningless — never label them with numbers */
+      .et-range-slider-thumb-value {
+        display: none;
+      }
+    }
+
+    &[data-readonly] .et-range-slider-interaction {
+      cursor: default;
+    }
+
+    &[data-disabled] {
+      opacity: 0.4;
+
+      .et-range-slider-interaction {
+        cursor: not-allowed;
+      }
+    }
+
+    &[data-can-animate] {
+      /* track clicks glide the thumb; live drags follow the pointer directly */
+      &:not([data-dragging]) {
+        .et-range-slider-thumb {
+          transition: inset-inline-start 120ms ease;
+        }
+
+        .et-range-slider-fill {
+          transition:
+            inset-inline-start 120ms ease,
+            inline-size 120ms ease;
+        }
+      }
+    }
+
+    /* A vertical slider runs bottom→up and is never mirrored, so the value axis uses physical
+       `bottom` offsets while the cross-axis centering stays direction-safe (`left: 50%`).
+       `inset-inline: auto` clears the horizontal inline offsets first — leaving both a logical
+       and a physical inline offset in place would over-constrain the box in RTL. */
+    &:where([data-orientation='vertical']) {
+      .et-range-slider-interaction {
+        flex-direction: column;
+        align-items: center;
+        inline-size: max(44px, var(--et-slider-thumb-size));
+        block-size: var(--et-slider-vertical-size);
+        margin-inline: 0;
+        /* thumbs overhang the rail by half their size at the extremes — keep them inside the box */
+        margin-block: calc(var(--et-slider-thumb-size) / 2);
+        container-type: normal;
+      }
+
+      .et-range-slider-rail {
+        inline-size: var(--et-slider-track-size);
+        block-size: 100%;
+      }
+
+      .et-range-slider-fill {
+        inset-block-start: auto;
+        inset-inline: auto;
+        left: 50%;
+        bottom: calc(var(--_et-slider-fill-start, 0) * 1%);
+        translate: -50% 0;
+        inline-size: var(--et-slider-track-size);
+        block-size: calc((var(--_et-slider-fill-end, 0) - var(--_et-slider-fill-start, 0)) * 1%);
+      }
+
+      .et-range-slider-thumb {
+        inset-block-start: auto;
+        inset-inline: auto;
+        left: 50%;
+        bottom: calc(var(--_et-slider-thumb-position, 0) * 1% - var(--et-slider-thumb-size) / 2);
+        translate: -50% 0;
+      }
+
+      .et-range-slider-thumb-value {
+        left: auto;
+        bottom: auto;
+        inset-block-start: 50%;
+        inset-inline-start: calc(100% + 8px);
+        translate: 0
+          clamp(
+            -1 *
+              (
+                (100 - var(--_et-slider-thumb-position, 0)) * var(--et-slider-vertical-size) / 100 +
+                  var(--et-slider-thumb-size) / 2
+              ),
+            -50%,
+            var(--_et-slider-thumb-position, 0) * var(--et-slider-vertical-size) / 100 + var(--et-slider-thumb-size) /
+              2 - 100%
+          );
+      }
+
+      .et-range-slider-mark {
+        inset-block-start: auto;
+        inset-inline: auto;
+        left: 50%;
+        bottom: calc(var(--_et-slider-mark-position, 0) * 1% - var(--et-slider-mark-size) / 2);
+        translate: -50% 0;
+      }
+
+      /* the value bubbles own the inline-end side, so tick labels take the other one */
+      .et-range-slider-mark-label {
+        left: auto;
+        inset-block-start: 50%;
+        inset-inline-end: calc(100% + (var(--et-slider-thumb-size) - var(--et-slider-mark-size)) / 2 + 6px);
+        translate: 0 -50%;
+      }
+
+      &:where([data-mark-labels]) {
+        .et-range-slider-interaction {
+          display: grid;
+          grid-template-columns: auto max(44px, var(--et-slider-thumb-size));
+          align-self: flex-start;
+          inline-size: auto;
+        }
+
+        .et-range-slider-rail {
+          grid-area: 1 / 2;
+          justify-self: center;
+        }
+
+        .et-range-slider-fill,
+        .et-range-slider-thumb {
+          grid-area: 1 / 2;
+        }
+
+        .et-range-slider-marks,
+        .et-range-slider-mark {
+          display: contents;
+        }
+
+        .et-range-slider-mark::before {
+          content: '';
+          position: absolute;
+          grid-area: 1 / 2;
+          left: 50%;
+          bottom: calc(var(--_et-slider-mark-position, 0) * 1% - var(--et-slider-mark-size) / 2);
+          translate: -50% 0;
+          inline-size: var(--et-slider-mark-size);
+          block-size: var(--et-slider-mark-size);
+          border-radius: 50%;
+          background: inherit;
+        }
+
+        .et-range-slider-mark-label {
+          position: relative;
+          grid-area: 1 / 1;
+          justify-self: end;
+          align-self: end;
+          inset: auto;
+          bottom: clamp(
+            var(--et-slider-thumb-size) / -2,
+            var(--_et-slider-mark-position, 0) * 1% - var(--et-slider-mark-label-font-size) * 0.6,
+            100% + var(--et-slider-thumb-size) / 2 - var(--et-slider-mark-label-font-size) * 1.2
+          );
+          translate: none;
+          margin-inline-end: calc(var(--et-slider-thumb-size) / 2 + 6px - max(44px, var(--et-slider-thumb-size)) / 2);
+        }
+      }
+
+      &[data-mixed] {
+        .et-range-slider-rail {
+          background: repeating-linear-gradient(to top, var(--et-tone-fill, currentColor) 0 6px, transparent 6px 11px);
+        }
+      }
+
+      &[data-can-animate]:not([data-dragging]) {
+        .et-range-slider-thumb {
+          transition: bottom 120ms ease;
+        }
+
+        .et-range-slider-fill {
+          transition:
+            bottom 120ms ease,
+            block-size 120ms ease;
+        }
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .et-range-slider-thumb,
+      .et-range-slider-fill {
+        transition: none;
+      }
+    }
+  }
+}

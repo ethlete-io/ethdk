@@ -1,0 +1,44 @@
+<div class="et-dropzone-crop-viewport">
+  <div #crop="etDropzoneCrop" [file]="file()" [config]="config()" class="et-dropzone-crop-stage" etDropzoneCrop>
+    @if (crop.imageSrc(); as src) {
+      <img [src]="src" class="et-dropzone-crop-image" alt="" draggable="false" />
+    }
+    @if (crop.ready()) {
+      <div class="et-dropzone-crop-shade"></div>
+    }
+    <div
+      [attr.aria-label]="areaLabel() || null"
+      class="et-dropzone-crop-rect"
+      role="group"
+      etDropzoneCropRect
+      etFocusRing
+    >
+      <span class="et-dropzone-crop-handle" etDropzoneCropHandle="nw"></span>
+      <span class="et-dropzone-crop-handle" etDropzoneCropHandle="ne"></span>
+      <span class="et-dropzone-crop-handle" etDropzoneCropHandle="sw"></span>
+      <span class="et-dropzone-crop-handle" etDropzoneCropHandle="se"></span>
+    </div>
+  </div>
+</div>
+
+<div class="et-dropzone-crop-actions">
+  <button
+    [disabled]="disabled()"
+    (click)="cropCancel.emit()"
+    class="et-dropzone-crop-cancel"
+    type="button"
+    et-button
+    variant="outline"
+  >
+    {{ cancelLabel() }}
+  </button>
+  <button
+    [disabled]="disabled() || !crop.ready() || exporting()"
+    (click)="confirmCrop(crop)"
+    class="et-dropzone-crop-confirm"
+    type="button"
+    et-button
+  >
+    {{ confirmLabel() }}
+  </button>
+</div>

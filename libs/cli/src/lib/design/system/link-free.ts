@@ -1,0 +1,142 @@
+import { createHash } from 'crypto';
+import { existsSync, readFileSync } from 'fs';
+import { dirname, join, relative, sep } from 'path';
+import { catFilesOf, logNamesOf } from '../git-reader';
+import { linkFieldTextOf, withLinkFieldOf, withMadeBy, withoutLinkFieldOf } from './sketch/part-definition';
+
+const mayLink = (file: string, text: string) =>
+  file.endsWith('.ts') && text.includes('definePart') && text.includes('implements');
+
+const mayBeMadeBy = (file: string, text: string) =>
+  file.endsWith('.ts') && text.includes('definePart') && text.includes('madeBy');
+
+const withoutMadeByOf = (text: string) => withMadeBy(text, []) ?? text;
+
+/** The bytes a design hash reads for `file`: its content without the `implements` and `madeBy` fields of its `definePart`. */
+export const linkFreeContentOf = (file: string, bytes: Buffer): Buffer | string => {
+  const text = bytes.toString('utf8');
+  const withoutLink = mayLink(file, text) ? withoutLinkFieldOf(text) : text;
+  const stripped = mayBeMadeBy(file, withoutLink) ? withoutMadeByOf(withoutLink) : withoutLink;
+
+  return stripped === text ? bytes : stripped;
+};
+
+/** The content a design hash read for `file` while it still covered `madeBy`; `null` for a file without one. */
+export const madeByContentOf = (file: string, bytes: Buffer): string | null => {
+  const text = bytes.toString('utf8');
+  const withoutLink = mayLink(file, text) ? withoutLinkFieldOf(text) : text;
+
+  return mayBeMadeBy(file, withoutLink) && withoutMadeByOf(withoutLink) !== withoutLink ? withoutLink : null;
+};
+
+const earlierFields = new Map<string, { digest: string; fields: string[] }>();
+
+const repoRootOf = (file: string): string | null => {
+  for (let dir = dirname(file); ; dir = dirname(dir)) {
+    if (existsSync(join(dir, '.git'))) return dir;
+    if (dirname(dir) === dir) return null;
+  }
+};
+
+const literalEnv = () => ({ ...process.env, GIT_LITERAL_PATHSPECS: '1' });
+
+const committedLinkFieldsIn = (root: string, files: string[]): Map<string, string[]> => {
+  const fields = new Map(files.map((file) => [file, [] as string[]]));
+  const byPath = new Map(files.map((file) => [relative(root, file).split(sep).join('/'), file]));
+
+  try {
+    const revisions = logNamesOf(['-G', 'implements', '--', ...byPath.keys()], {
+      env: literalEnv(),
+      cwd: root,
+      stdio: ['pipe', 'pipe', 'ignore'],
+    }).flatMap(({ commit, paths }) =>
+      paths.flatMap((path) => {
+        const file = byPath.get(path);
+
+        return file ? [{ commit, path, file }] : [];
+      }),
+    );
+
+    if (revisions.length === 0) return fields;
+
+    const blobs = catFilesOf(
+      revisions.map(({ commit, path }) => `${commit}:${path}`),
+      { env: literalEnv(), cwd: root },
+    );
+
+    revisions.forEach(({ file }, index) => {
+      const blob = blobs[index];
+      const field = blob ? linkFieldTextOf(blob.toString('utf8')) : null;
+
+      if (field !== null) fields.get(file)?.push(field);
+    });
+  } catch {
+    return new Map(files.map((file) => [file, []]));
+  }
+
+  return fields;
+};
+
+const digestOf = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
+
+type Pending = { file: string; digest: string };
+
+const recordHistoryOf = (pending: Pending[]) => {
+  const byRoot = new Map<string | null, Pending[]>();
+
+  for (const entry of pending) {
+    const root = repoRootOf(entry.file);
+
+    byRoot.set(root, [...(byRoot.get(root) ?? []), entry]);
+  }
+
+  for (const [root, entries] of byRoot) {
+    const files = entries.map(({ file }) => file);
+    const history = root ? committedLinkFieldsIn(root, files) : new Map<string, string[]>();
+
+    for (const { file, digest } of entries) earlierFields.set(file, { digest, fields: history.get(file) ?? [] });
+  }
+};
+
+/** Reads the link history `linkedContentsOf` needs for each of `files` up front, with two git calls per repository. */
+export const primeLinkedContents = (files: string[]) =>
+  recordHistoryOf(
+    [...new Set(files)].flatMap((file) => {
+      const bytes = readFileSync(file);
+      const digest = digestOf(bytes);
+
+      return mayLink(file, bytes.toString('utf8')) && earlierFields.get(file)?.digest !== digest
+        ? [{ file, digest }]
+        : [];
+    }),
+  );
+
+/**
+ * The contents a design hash that still covered the `implements` link read for `file`: the current content, and the
+ * current content with each other link the file held in git history, and the link-free content with its `madeBy`.
+ * `null` for a file with neither.
+ */
+export const linkedContentsOf = (
+  file: string,
+  bytes: Buffer,
+): { current: string; older: string[]; withMadeBy: string | null } | null => {
+  const text = bytes.toString('utf8');
+  const current = mayLink(file, text) ? linkFieldTextOf(text) : null;
+  const withMadeBy = madeByContentOf(file, bytes);
+
+  if (current === null && withMadeBy === null) return null;
+
+  if (current === null) return { current: text, older: [], withMadeBy };
+
+  const digest = digestOf(bytes);
+
+  if (earlierFields.get(file)?.digest !== digest) recordHistoryOf([{ file, digest }]);
+
+  const fields = earlierFields.get(file)?.fields ?? [];
+
+  return {
+    current: text,
+    older: [...new Set(fields.filter((field) => field !== current).map((field) => withLinkFieldOf(text, field)))],
+    withMadeBy,
+  };
+};

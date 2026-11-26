@@ -1,0 +1,99 @@
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
+import { FilterOverlaySubmitButton, FilterOverlaySubmitState } from './filter-overlay.types';
+
+/**
+ * Every string the filter overlay's submit button can show. The counted ones are functions, since the number is
+ * the point.
+ */
+export type FilterOverlayLabels = {
+  /** While a count is in flight. */
+  loading: string;
+  /** When the count could not be established. */
+  error: string;
+  /** When the draft filters would return nothing. */
+  empty: string;
+  /** Exactly one result - worth its own string, because "Show 1 results" reads badly. */
+  one: string;
+  /** A known count. */
+  many: (totalHits: number) => string;
+  /** More results than are worth counting exactly. */
+  more: (maxCountedHits: number) => string;
+  /** When the overlay has no preview, so there is no count to report. */
+  apply: string;
+  /** The reset control. */
+  reset: string;
+};
+
+/** The built-in English labels. */
+export const DEFAULT_FILTER_OVERLAY_LABELS: FilterOverlayLabels = {
+  loading: 'Loading results…',
+  error: 'An error occurred',
+  empty: 'No results found',
+  one: 'Show one result',
+  many: (totalHits) => `Show ${totalHits} results`,
+  more: (maxCountedHits) => `Show more than ${maxCountedHits} results`,
+  apply: 'Show results',
+  reset: 'Reset',
+};
+
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_FILTER_OVERLAY_LABELS: FilterOverlayLabels = {
+  loading: 'Lade Ergebnisse…',
+  error: 'Ein Fehler ist aufgetreten',
+  empty: 'Keine Ergebnisse gefunden',
+  one: 'Zeige ein Ergebnis',
+  many: (totalHits) => `Zeige ${totalHits} Ergebnisse`,
+  more: (maxCountedHits) => `Zeige mehr als ${maxCountedHits} Ergebnisse`,
+  apply: 'Ergebnisse anzeigen',
+  reset: 'Zurücksetzen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideFilterOverlayLabels}. */
+export const filterOverlayLabelsForLocale = (locale: string): FilterOverlayLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_FILTER_OVERLAY_LABELS : DEFAULT_FILTER_OVERLAY_LABELS;
+
+const FILTER_OVERLAY_LABELS_DEF = /* @__PURE__ */ defineLabels<FilterOverlayLabels>(
+  'FILTER_OVERLAY_LABELS',
+  filterOverlayLabelsForLocale,
+);
+
+/**
+ * Localize the filter overlay's strings below this injector, and read the set in effect here as a signal.
+ * Partial - what you leave out keeps the value the current locale gives it. See {@link defineLabels} for the
+ * shape, which every domain in this library shares.
+ *
+ * @example
+ * provideFilterOverlayLabels({ apply: 'Voir les résultats', reset: 'Réinitialiser' });
+ */
+export const provideFilterOverlayLabels = /* @__PURE__ */ toProvideFn(FILTER_OVERLAY_LABELS_DEF);
+export const injectFilterOverlayLabels = /* @__PURE__ */ toInjectFn(FILTER_OVERLAY_LABELS_DEF);
+export const FILTER_OVERLAY_LABELS = /* @__PURE__ */ toToken(FILTER_OVERLAY_LABELS_DEF);
+
+/**
+ * The submit button, worked out from the preview.
+ *
+ * The button is deliberately the place the count appears: it is what the reader is about to press, so putting
+ * the consequence on it ("Show 42 results") lets them decide without applying first. It disables itself while a
+ * count is pending, when the count failed, and when the answer is zero - applying a filter that returns nothing
+ * is never what someone meant to do. Without a preview it simply reads "Show results".
+ */
+export const resolveFilterOverlaySubmitButton = (
+  state: FilterOverlaySubmitState,
+  labels: FilterOverlayLabels,
+): FilterOverlaySubmitButton => {
+  if (!state.hasPreview) return { label: labels.apply, disabled: false };
+  if (state.loading) return { label: labels.loading, disabled: true };
+  if (state.hasError) return { label: labels.error, disabled: true };
+
+  const totalHits = state.totalHits;
+
+  // No count, nothing in flight, no error: the preview skipped this draft (`args` returned null).
+  // Waiting here would disable the button forever - the draft is submittable, just uncounted.
+  if (totalHits === null) return { label: labels.apply, disabled: false };
+
+  if (totalHits === 0) return { label: labels.empty, disabled: true };
+  if (totalHits === 1) return { label: labels.one, disabled: false };
+  if (totalHits > state.maxCountedHits) return { label: labels.more(state.maxCountedHits), disabled: false };
+
+  return { label: labels.many(totalHits), disabled: false };
+};

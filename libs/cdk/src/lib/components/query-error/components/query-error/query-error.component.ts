@@ -1,0 +1,32 @@
+import { NgClass } from '@angular/common';
+import { Component, TrackByFunction, ViewEncapsulation, computed, inject } from '@angular/core';
+import { extractQuery } from '@ethlete/query';
+import { QUERY_ERROR_TOKEN, QueryErrorDirective } from '../../directives/query-error';
+import { QueryErrorItem } from '../../types';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+@Component({
+  selector: 'et-query-error',
+  templateUrl: './query-error.component.html',
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-query-error-host et-legacy',
+  },
+  imports: [NgClass],
+  hostDirectives: [{ directive: QueryErrorDirective, inputs: ['error', 'query', 'language'] }],
+})
+export class QueryErrorComponent {
+  protected readonly host = inject(QUERY_ERROR_TOKEN);
+  protected readonly errorList = inject(QUERY_ERROR_TOKEN).errorList;
+
+  protected readonly canBeRetried = computed(() => this.errorList()?.canBeRetried ?? false);
+  protected readonly isList = computed(() => this.errorList()?.isList ?? false);
+
+  protected trackByFn: TrackByFunction<QueryErrorItem> = (_index, item) => item.message;
+
+  protected retry() {
+    extractQuery(this.host.query())?.execute({ skipCache: true });
+  }
+}

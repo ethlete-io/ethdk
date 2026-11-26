@@ -1,0 +1,59 @@
+@layer components {
+  .tf-button-frame {
+    background-color: var(--et-surface-background-solid);
+  }
+
+  .tf-button {
+    --et-button-font-size: 1.5rem;
+    --et-button-font-weight: 600;
+    --et-button-line-height: 1.3333;
+    --et-button-padding: 1.1rem 2.2rem 1.1rem 1.8rem;
+    --et-button-gap: 0.8rem;
+    --et-button-icon-size: 1.8rem;
+    --et-button-border-radius: 999px;
+    --et-button-opacity-disabled: 0.4;
+    --et-icon-button-size: 4.4rem;
+    --et-icon-button-icon-size: 2rem;
+    --et-icon-button-border-radius: 999px;
+    --et-focus-ring-color: var(--et-theme-color-primary-solid);
+    --et-focus-ring-offset: 0.3rem;
+  }
+
+  .tf-button--primary {
+    color: var(--et-surface-background-solid);
+    background: var(--et-surface-color-solid);
+
+    &:hover:not([disabled], [aria-disabled='true']),
+    &:focus-visible {
+      background: color-mix(in srgb, var(--et-surface-color-solid) 82%, var(--et-surface-background-solid));
+    }
+
+    &:active:not([disabled], [aria-disabled='true']) {
+      background: color-mix(in srgb, var(--et-surface-color-solid) 66%, var(--et-surface-background-solid));
+    }
+
+    &:is([disabled], [aria-disabled='true']) {
+      color: var(--et-surface-color-subtle-solid);
+      background: color-mix(in srgb, var(--et-surface-color-solid) 14%, transparent);
+    }
+  }
+
+  .tf-button:is(.tf-button--secondary, .tf-button--icon) {
+    --et-button-outline-border-color: transparent;
+    color: var(--et-surface-color-solid);
+    background: color-mix(in srgb, var(--et-surface-background-solid) 40%, transparent);
+    backdrop-filter: blur(1.6rem) saturate(1.6);
+    box-shadow: inset 0 0 0 0.15rem color-mix(in srgb, var(--et-surface-color-solid) 40%, transparent);
+
+    &:hover:not([disabled], [aria-disabled='true']),
+    &:focus-visible {
+      background: color-mix(in srgb, var(--et-surface-color-solid) 8%, transparent);
+      box-shadow: inset 0 0 0 0.15rem color-mix(in srgb, var(--et-surface-color-solid) 72%, transparent);
+    }
+
+    &:active:not([disabled], [aria-disabled='true']) {
+      background: color-mix(in srgb, var(--et-surface-color-solid) 18%, transparent);
+      box-shadow: inset 0 0 0 0.15rem var(--et-surface-color-solid);
+    }
+  }
+}

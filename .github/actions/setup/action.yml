@@ -1,0 +1,80 @@
+name: Setup
+description: Install Node and the workspace dependencies, and restore the Nx cache. The caller must check out first.
+
+inputs:
+  nx-cache-key:
+    description: >-
+      Job-scoped name for the Nx cache entry. Every job keeps its own entry, so two jobs cannot
+      overwrite each other. Leave it empty in a job that runs no cacheable Nx target.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    # Node 25 dropped corepack, and the Playwright image ships Node 26.
+    # On Windows the runner's global Yarn 1 in C:\npm\prefix comes first in PATH, before the default
+    # shim directory, so setup-node would call Yarn 1 and fail on the packageManager field.
+    - run: |
+        if [ "$RUNNER_OS" = Windows ]; then
+          corepack enable --install-directory "$(dirname "$(command -v yarn)")"
+        else
+          command -v corepack >/dev/null || npm install -g corepack@0.36.0
+          corepack enable
+        fi
+      shell: bash
+
+    - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+      with:
+        node-version: '24.11.0'
+        cache: 'yarn'
+
+    - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4.4.0
+
+    - run: yarn install --immutable
+      shell: bash
+
+    # Nx keeps every entry it ever wrote, so an entry that rolls forward for ever grows until saving
+    # it costs more than the tasks it skips. The week number caps that: each job starts one cold run
+    # a week and reuses the rest.
+    - if: inputs.nx-cache-key != ''
+      id: nx-cache-epoch
+      shell: bash
+      run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+    # Nx Cloud is off, so this is the only cache that survives a run. The key never hits exactly,
+    # which is what makes it roll forward: the restore key loads the newest entry, and the run saves
+    # a fresh one. The lockfile hash scopes it, because the cache holds an Nx-version-specific
+    # database. Both paths are needed: .nx/cache holds the artifacts, .nx/workspace-data holds the
+    # database that says which artifact belongs to which task hash.
+    - if: inputs.nx-cache-key != ''
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          .nx/cache
+          .nx/workspace-data
+          !.nx/workspace-data/d
+        key: nx2-${{ inputs.nx-cache-key }}-${{ hashFiles('yarn.lock') }}-${{ steps.nx-cache-epoch.outputs.week }}-${{ github.sha }}
+        restore-keys: nx2-${{ inputs.nx-cache-key }}-${{ hashFiles('yarn.lock') }}-${{ steps.nx-cache-epoch.outputs.week }}-
+
+    # Nx names the database file after the machine ID, and every runner gets a new one, so the
+    # restored database is invisible to Nx until it is renamed. Without it Nx has no metadata for
+    # the restored artifacts, throws all of them away and prints "Unrecognized Cache Artifacts".
+    # Rename the -wal and -shm files with it, or SQLite loses the last transactions.
+    - if: inputs.nx-cache-key != ''
+      shell: bash
+      run: |
+        set -euo pipefail
+        case "$RUNNER_OS" in
+          Linux) machine_id=$(cat /var/lib/dbus/machine-id 2>/dev/null || cat /etc/machine-id) ;;
+          macOS) machine_id=$(ioreg -rd1 -c IOPlatformExpertDevice | awk -F'"' '/IOPlatformUUID/ { print $4 }') ;;
+          Windows) machine_id=$(reg query 'HKLM\SOFTWARE\Microsoft\Cryptography' //v MachineGuid | awk '/MachineGuid/ { print $3 }' | tr -d '\r') ;;
+        esac
+        [ -n "${machine_id:-}" ] || { echo "::warning::no machine id on $RUNNER_OS, the restored Nx database stays unused"; exit 0; }
+        for file in .nx/workspace-data/*.db .nx/workspace-data/*.db-wal .nx/workspace-data/*.db-shm; do
+          [ -e "$file" ] || continue
+          [[ "${file##*/}" =~ (-v[0-9]+\.db(-wal|-shm)?)$ ]] || continue
+          target=".nx/workspace-data/${machine_id}${BASH_REMATCH[1]}"
+          [ "$file" = "$target" ] || mv -- "$file" "$target"
+        done

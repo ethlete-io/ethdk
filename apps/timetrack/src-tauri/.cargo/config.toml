@@ -1,0 +1,14 @@
+# The runner signs every dev build before it runs. An unsigned binary cannot stay in a keychain item's
+# ACL across a rebuild, so without this macOS asks for the login password at each start. See
+# `tools/sign-and-run.sh`.
+[target.x86_64-apple-darwin]
+runner = "tools/sign-and-run.sh"
+
+[target.aarch64-apple-darwin]
+runner = "tools/sign-and-run.sh"
+
+# whisper-rs-sys runs bindgen, which needs libclang, unless told to use the bindings it ships.
+[env]
+WHISPER_DONT_GENERATE_BINDINGS = "1"
+# cef-dll-sys downloads the CEF distribution here once, instead of into every build script's OUT_DIR.
+CEF_PATH = { value = "target/cef", relative = true }

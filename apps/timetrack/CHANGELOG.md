@@ -1,0 +1,611 @@
+# timetrack-app
+
+## 0.2.0-next.25
+
+### Minor Changes
+
+- The day screen draws one lane per project: checkouts a project link covers share the project's lane, labelled with
+  its key; a checkout without a project link keeps its own lane.
+
+### Patch Changes
+
+- Update the Rust `cookie` crate to 0.18.3 to fix RUSTSEC-2026-0594 (private cookie nonces can repeat in processes that fork).
+- Read the stored events for a settings send only when a rule or tombstone names a path no checkout covers, and keep only the paths such an entry names.
+- Send the rule of a removed worktree to a paired machine as long as this machine's stored events still name its path.
+- File a deleted git worktree's lane under its main checkout again: the host now lets the app ask git whether a repository holds a commit.
+- A meeting named on one paired machine is now named on the other too.
+- A paired machine's checkout maps onto the local checkout of the same repository whose folder names match it most, then the shortest path, so a scratch clone no longer takes the lane of the main checkout.
+
+## 0.2.0-next.24
+
+### Patch Changes
+
+- Update the Rust `url` crate to 2.5.9 to fix RUSTSEC-2026-0592 (stack overflow in `Url::origin()` on nested `blob:` URLs).
+
+## 0.2.0-next.23
+
+### Patch Changes
+
+- Building a Timetrack day is faster: merging rows checks the cheap sliver test before the fold test (a heavy day dropped from 740 to 410 ms).
+- Timetrack spawns far fewer git processes while idle: a run of commits rescans a repository group once per 20 seconds, and the 10-minute sweep paces itself.
+- Count a commit once per day however many checkouts or cherry-picks carry it, keeping the original copy.
+- Build a day's rows from every copy of a cherry-picked or rebased commit, then keep each commit in the rows of one copy only, so no commit loses its row to the copy that was dropped.
+- Stop Timetrack's main thread from spinning a full CPU core while idle on Linux.
+- A linked git worktree, also a deleted one, is read as its main repository: one lane, no naming offer of its own. `repoRootOf` now takes `CheckoutRoots`.
+- Return the heap a large batch of events left behind to the OS on Linux, so the app no longer keeps its largest IPC body resident for good.
+
+## 0.2.0-next.22
+
+### Patch Changes
+
+- The Linux host bounds the glibc heap it keeps resident: freed IPC bodies return to the system instead of staying in per-thread arenas.
+
+## 0.2.0-next.21
+
+### Minor Changes
+
+- Auto mode writes worklog descriptions in a configurable worklog language, German by default, and describes each row of a past day on its own from that row's evidence.
+- Auto mode's new-issue proposal carries the best-fitting existing issue in the same chip; one press books the band there. Where the branch already books an existing issue that day, it leads. A declined create keeps the existing issue.
+- A row written by hand now shows on every paired machine; the later edit or deletion wins by the skew-corrected clock.
+- Renames, cuts, merges, hides and other edits of engine rows now show on every paired machine, the later edit winning by the skew-corrected clock, and a day's rows reach the paired machines whenever its edits are saved.
+- Attribution rules and stand-ins now show on every paired machine, the later change winning; no credential or unmapped machine path travels.
+- The day timeline hangs each subagent on its session: a run of 15 min or more is a thin stripe beside the session band, a shorter one a tick on it. Subagents book nothing.
+- A linked worktree now always takes its main checkout's project link, and the settings project paths list it under its main checkout as a count instead of as its own row.
+
+### Patch Changes
+
+- Auto mode now asks only about a stand-in or context with an attended row today, so a stand-in with no row is no longer asked about.
+- Auto mode queues the new issue it drafts for an unnamed call as a create approval with the existing issue beside it, and names the call with the created key.
+- Draw a band's subagent count line only on an uncascaded band with a free line under its labels, so it never covers another row's label.
+- Draw the unattended rows of one issue in one lane that touch or overlap as one "Nobody was here" band.
+- Session logs are read from every Claude Code config dir (`~/.claude*` and `$CLAUDE_CONFIG_DIR`), not only `~/.claude`.
+- A day only a paired machine booked is no longer frozen on this machine (Timetrack ADR 0038), and a freeze stored from such a day's peer rows alone is dropped, so its rows come back.
+- A checkout window only a paired machine's events fill is named after the branch that machine's timeline says, not after this machine's HEAD.
+- An agent's night on one paired machine now reads unattended on both, and `timetrack day --received` adds the events paired machines sent.
+- The `day.rows` answer carries this machine's checkout keys, so `timetrack rows <day> --json` exports what `--compare` needs to map a paired machine's paths.
+- Naming a suggested meeting row no call was heard over remembers the answer for its calendar series, so the next occurrence is named from it.
+- Count only the worklogs Tempo holds as logged for a day; a row accepted but not booked stays proposed.
+- Where the branch already books an existing issue, the chip's check keeps that issue and the second button files the new one. Before, the check filed the new issue.
+- Timetrack reads the day's ledger again after a sync, so the rows it sends to paired machines carry the booked state instead of the state from before the sync.
+- Paired machines now send each checkout's branch timeline, so a checkout only another machine worked in is named after that machine's branch instead of this machine's.
+- The day timeline draws touching accepted rows of one lane, issue and description as one block with the summed duration. Each row still books its own time.
+- Parallel accepted rows of one ticket stay side by side as cascade cards again; only rows where one ends as the next starts fold into one block.
+- Touching rows of one stand-in in a lane fold into one block, which lists each row's own description once, instead of repeating the stand-in's name card after card.
+- A past day on the day screen no longer rebuilds every few seconds while nothing about it changes.
+- A paired machine's band no longer sits on top of the blocks of its checkout's lane: the lane widens by a sub-column for it.
+- Auto mode asks about a new stand-in of today as soon as it exists, not at the next five-minute pass, while another day is on screen.
+- An approval remembers which machine decided it, so a paired machine's approval holds on its waiting twin.
+- A row shows the subagents of every session of its piece, not only of the piece's first session.
+- Keep the latest stand-in verdict per context and day and print it under `timetrack naming`, so a row that stays "Not yet named" can be explained.
+- A subagent's task now comes from the description Claude Code records beside its log, so a resumed chunk keeps it.
+- Stripes of parallel subagents that start within one title line of each other share the first one's title and a "+N", so their titles no longer draw over each other.
+- An incremental read of an agent session log now stores the same samples as a read from the top. Logs are read again once.
+- Keep a Timetrack day timeline label out of another label's height, hiding it (the hover title still has it) where it would collide, and leave a gap between boxes stacked in one column.
+- The day timeline keeps the last scroll position of a day when the day changes before the scroll settled.
+- The approval dialog lists an item a paired machine approved and has not run yet as "approved on <machine>, runs there", without approve or reject buttons.
+- Draw the app in Jost, bundled as a variable-weight font with the app instead of the system font.
+- Build the day on the page when the day build worker fails to load, so the day screen never waits forever for it.
+- Build the day in a Web Worker, so rebuilding today no longer freezes the Timetrack window for over half a second once a minute.
+- Open the Chrome DevTools protocol on `127.0.0.1:9222` in a debug build on Linux, so the webview can be profiled. A release build is unchanged.
+- Wait for the day built with the epic answer before opening a placeholder for an unnamed checkout, so the epic rung names it again.
+- An approval folded into a paired machine's equivalent item still answers its status by its old id.
+- A Jira create approved while a paired machine is reachable waits for one queue exchange with that machine, so two machines approving the same create file one issue. Until then the agent reads it as still queued.
+- Stop Timetrack from rescanning unmoved repositories and rebuilding today on every collector drain, which froze the window every few seconds.
+- Auto mode waits for the day built from the inputs on hand before it asks, answers or names rows, so it no longer acts on the previous build's rows.
+- An approved Jira create matches an open issue by near summary only while a paired machine shares the approval queue; otherwise the exact summary check holds.
+- Two unsynced paired machines approving the same create now end with one Jira issue.
+- A paired machine no longer echoes this machine's work back as its own, and its bands no longer open a lane of their own.
+- An expired auto mode create asked again for the same subject waits again under its own id, so its draft stays linked and the queue holds one item for it.
+- The approval queue travels between paired machines beside the day rows, each item naming the machine that owns it.
+- Paired machines show one approval queue: a decision on one holds on the other, and only the machine that queued an item runs it.
+- A short day-timeline block with subagents shows a compact "+N" after its title instead of a count line that would sit on its text.
+- The tray readout and the end-of-day reminder share one read of today and build it once per minute or new evidence,
+  instead of each rebuilding it from equal evidence.
+- The tray readout no longer rebuilds today on every collector drain that stored nothing.
+- A stand-in rule scoped to a day now names its band on that day: the stream, the day screen, the agent day, auto mode and the stand-in pass all pass the day they read.
+- `timetrack rules` lists the day a day-scoped attribution rule holds on, in the JSON and in the printed line.
+- A Claude Code session keeps the folder its last tool call worked in after the app restarts, so its next samples land in the same project.
+- An unattended band now reads "Worked on <machine>" only for the part a paired machine was attended; the rest stays unattended with no machine named.
+
+## 0.2.0-next.20
+
+### Minor Changes
+
+- Add `timetrack rules --repoint --from <KEY> --to <KEY>`, which queues pointing every attribution rule that names one issue at another.
+
+### Patch Changes
+
+- Check the self-hosted update host for updates when the GitHub release cannot be reached
+- A Jira create in the approval queue says it is only approved one by one, as a tempo sync does.
+- "Approve all" no longer files Jira tickets, and auto mode drafts one ticket for the same work across a day instead of one per context.
+- An accepted or edited row between midnight and 6 am now carries a `night-row` day warning, and `timetrack rows` shows each row's desk events and human prompts.
+- A day only a paired machine booked is owned by that machine here too: its booked rows are drawn, and this machine proposes, syncs and auto-names nothing for it.
+- A call nothing closed ends at the last sign it was held again, and is not drawn when nothing shows it was held.
+- The second update endpoint now points at the live elrond mirror, https://updates.local.elros.cc:12345.
+- The stand-in select in the band editor drops its unused `aria-label`; its visible label names it.
+- A rejected row now leaves the day page, and accepting it brings it back. The agent API no longer lists rows of zero duration, and `ask --context` with a stand-in id names the contexts and stand-ins the day holds.
+
+## 0.2.0-next.19
+
+### Patch Changes
+
+- Update the bundled SQLCipher to 4.20 (RUSTSEC-2026-0502).
+- Update rustix to 1.1.6 to drop the unsound xattr advisory RUSTSEC-2026-0486.
+- Update quinn-proto to 0.11.19 and quinn-udp to 0.5.16 for RUSTSEC-2026-0523, RUSTSEC-2026-0524 and RUSTSEC-2026-0538.
+
+## 0.2.0-next.18
+
+### Patch Changes
+
+- Update rusqlite to 0.41 so libsqlite3-sys 0.39 replaces the version flagged by RUSTSEC-2026-0459.
+
+## 0.2.0-next.17
+
+### Minor Changes
+
+- Replace the clock logo with the ethlete Timetrack lockup: new app icons, a neon E as the tray icon, and the lockup in the sidebar and the lock view.
+- Add the `store-key` tool, which exports the store key as a passphrase-protected file and imports it into another machine's keyring.
+
+### Patch Changes
+
+- Ignore the zip RUSTSEC-2026-0429 advisory the updater pins and update the yanked async-executor.
+
+## 0.2.0-next.16
+
+### Patch Changes
+
+- Timetrack: prevent delayed Linux crashes when Chromium collects memory statistics above 2 GiB of heap space.
+- Update all dependencies to their latest versions (Nx 24, Vitest 5, jsdom 30, ts-morph 28, @types/node 26 and others). The optional `@nx/devkit` peer dependency now requires `^24.0.0`, and the optional `ts-morph` peer of `@ethlete/core` requires `^28.0.0`.
+
+## 0.2.0-next.15
+
+### Minor Changes
+
+- Render Timetrack through Chromium (Tauri's CEF runtime) on Linux, where WebKitGTK 2.54 drops animation frames. The Linux release ships as deb and rpm only, no AppImage.
+
+## 0.2.0-next.14
+
+### Patch Changes
+
+- Update tokio to 1.54.1 to fix RUSTSEC-2026-0386.
+
+## 0.2.0-next.13
+
+### Patch Changes
+
+- Update rustls-webpki and webpki-root-certs to fix RUSTSEC-2026-0382 and RUSTSEC-2026-0383.
+
+## 0.2.0-next.12
+
+### Patch Changes
+
+- Update rustls to 0.23.46 and quinn-proto to 0.11.18 to fix the RUSTSEC-2026-0338 to 0349 advisories.
+
+## 0.2.0-next.11
+
+### Minor Changes
+
+- A locked Timetrack asks to be unlocked when an agent calls it and holds the request up to a minute, and a write queued for approval surfaces the app; the `timetrack` CLI waits long enough for both.
+- A booked Timetrack day is drawn from the review stored when it was booked, with each written row as Tempo holds it.
+- Timetrack reads each checkout's package manifests to learn which checkouts use which, and names the evidence of a row named after a consuming checkout.
+- The row editor marks a description auto mode wrote, and each description in the auto mode readout opens its row.
+- Auto mode describes rows of a rule or background-project ticket once per ticket, after the day is over and before it is booked.
+- Auto mode asks which issue an unnamed call was, optionally with an excerpt of its transcript, and the call band's editor shows that transcript.
+- Mark a booked day's accepted or edited row that Tempo holds none of as "not in Tempo". It still counts in the day's totals, and a sync may still write it.
+- Auto mode offers the open issues under the checkout's epics first, and a match no evidence names waits for your approval with its summary and reason.
+- Timetrack opens and changes GitLab merge requests through the `glab` login, and deletes the stored GitLab token on start. Removes `GitLabCredentials`, `readGitLabCredentials$`, `gitlabRequest$`, `gitlabPaged$` and `normalizeGitLabHost`.
+- Auto mode ranks the issues of a local Jira mirror against the work and sends the best 25, and reads a matched issue again before it applies, refusing one that is done, deleted or moved.
+- Timetrack offers to resolve an open stand-in to the issue a Tempo worklog carrying its name was booked to.
+- Call transcription sends only detected speech to whisper, cut at pauses instead of every 30 seconds, and dates each chunk by its first word.
+- Check for a newer release every 30 minutes while the app runs, not only at start, and add a "Check for updates" button under the version in the sidebar.
+
+### Patch Changes
+
+- Timetrack reads stored agent session logs again by itself when its parse rules change, and leaves a finished day it booked as it was.
+- Auto mode asks about a stand-in before its work settles when its branch subject names exactly one open issue in the Jira mirror.
+- A row whose only change is a description auto mode wrote no longer reads as edited, still folds into its neighbour, and offers "Reset to the proposal".
+- The approval for an unnamed call that auto mode names reads as the call and the issue key, such as `Meeting #3 → FIP-3072`, instead of an English sentence that ran the issue summary and the reason together.
+- Auto mode asks an unnamed call of today once more with its transcript excerpt when "Let auto mode read call transcripts" is turned on after the call was first asked without one.
+- Timetrack names a band on `main` after the same day's merge request that changed its directories, and otherwise by those directories instead of "unattributed activity".
+- A booked Timetrack day draws each worklog the app wrote that no row carries any more as a read-only row, from the worklog as Tempo holds it, and a sync no longer plans to delete it.
+- Timetrack's auto mode tells the model whether each agent session wrote a file, and names a stretch that changed nothing with the issue of a merge request you worked on that day instead of drafting a ticket.
+- Auto mode re-asks a call for its transcript excerpt at most once, even when the excerpt never reaches the ask.
+- The GitLab and GitHub collectors resume a day before their newest stored event instead of re-reading a month after every restart, and report a cap only when it cuts off what the store does not hold.
+- A booked Timetrack day draws a paired machine's work that arrived afterwards as read-only "Booked on" or "Worked on" bands, and says "Changed after booking", without re-cutting its rows.
+- The Timetrack host lets a forge `api` call read a request body only from stdin and refuses a `-F`/`--field` value that names a local file.
+- While Google Calendar waits for the browser sign-in, the settings card now offers Cancel and Copy link. Before, a closed or wrong browser left the Connect button disabled until the 5-minute timeout.
+- A call with at least two transcript chunks inside it counts as attended, so a call taken from another window is no longer dropped as never in front.
+- The host stores a mirror of each Jira project's issues in the encrypted store.
+- A checkout cloned from another checkout on the same machine now counts as that checkout's work instead of appearing as its own project.
+- A booked Timetrack day shows "Booked on <machine> · ISSUE" for the rows a paired machine booked, never an application as a lane, and no longer says "Changed after booking" for that machine's work.
+- Timetrack sends the rows of each booked day of the last 30 to its paired machines by itself, and a machine that missed them asks for them once.
+- Timetrack sends each day's reviewed rows to its paired machines with every pull and keeps the last rows a paired machine sent per day.
+- Timetrack takes a repository alias per checkout in the Projects settings, so a paired machine's clone with another origin, or with none, lands on the same checkout.
+- Settings tabs are now routes (`/settings/day`, `/jira`, `/projects`, `/sources`, `/suggestions`), and each info button sits next to its field instead of wrapping below it.
+- Remove needless nullish fallbacks in the settings view that caused NG8102 build warnings.
+- Timetrack's approval list names a band or stand-in match as its name and the issue key, and leaves the issue summary and the model's reason to the Ticket and Why lines.
+- Timetrack's day streams say how many of a checkout's agent turns ran on each paired machine, and agent time no longer reads as unattended while you were at another machine.
+- Short work on a branch gets its auto stand-in once its drawn row reaches 15 minutes or the day holds a commit, merge request or agent write on it, and a merge request's title or description can name the issue.
+- A worklog row on a booked Timetrack day takes no edit: a click opens no edit surface, a press does not drag or resize it, it merges with no neighbour, and its menu offers only the anonymous report.
+- The unnamed focus panel calls a gap "names one at other times" instead of "names one elsewhere".
+- Timetrack judges a browser's or a file manager's unnamed focus per window title, so only a page that named a checkout counts as a gap.
+- Timetrack renames a stand-in it named after a note that does not read as words, asks auto mode nothing about such a stand-in, and withdraws a proposal auto mode built from one.
+- A band whose auto mode answer waits for approval reads the key and that it waits, not "Not yet named".
+
+## 0.2.0-next.10
+
+### Minor Changes
+
+- Copy a day or a band as an anonymous report of the stand-in and auto mode decisions, from the Debug dialog or the band menu.
+- Price agent spend from a built-in USD list, so a known model shows a cost with no setup; your own table now holds overrides and unknown models.
+- Timetrack shows dates as day-month, month-day or ISO and clock times as 24-hour or 12-hour, set in Settings. The default is day-month and 24-hour.
+- The debug report can be saved as a JSON file from the day debug panel, anonymous by default or with names and the raw day inputs.
+- The Debug dialog lists the model calls auto mode made since the app started, with what each sent and what came back.
+- Timetrack release builds carry a shared Google OAuth client, so connecting Calendar needs only Connect. Your own client stays available as an override, and a revoked token shows "Reconnect Google Calendar".
+- Settings now shows what call transcription is doing, its last error and latest text, and the language select offers every language whisper knows.
+- A band that reads Not yet named now offers Create a ticket in its menu, and the filed key names the band.
+
+### Patch Changes
+
+- Auto mode and the automatic stand-ins now act on today while the day screen shows another day. Before, a reviewer left on a past day, which the app restores at start, stopped both for today.
+- Price the days before the built-in price list was checked with each model's first built-in price.
+- "Add an entry" drafts on the day on screen, and a hand-written row stored under a day it does not lie in is drawn on that day at the same clock time.
+- A finished day freezes its rows only once this app booked it; a day only another machine booked keeps being re-cut. `withFrozenRows` takes the day's `ledger` instead of `held`.
+- A checkout the day saw only through its window, with no commit, branch switch, editor heartbeat or agent session, now takes the branch its reflog names. Its work gets an automatic stand-in instead of staying `Not yet named`.
+- The store gets a machine id and records every change to a collected event, so a paired machine can later pull only what it has not seen.
+- macOS now collects desk input from the seconds since the last keyboard or pointer event, without any extra permission.
+- On macOS, Timetrack now explains why it asks for local network access, and declares the `_timetrack._tcp` Bonjour service it uses to find your paired machines.
+- On macOS the git repository search no longer walks Desktop, Documents, Downloads, Library, Movies, Music or Pictures in the home directory, so the app stops asking for access to them; a root configured inside one is still searched.
+- Timetrack shows the work done on a paired machine as rows of the day, read through this machine's private project links and exclusion rules.
+- Clicking "N connected" in the sidebar opens the paired machines, each renamable, with its last seen, clock offset and last sync.
+- Settings has a "Paired machines" section to pair, forget and check other machines, and the sidebar shows how many are connected.
+- The window can pair and forget machines, the host greets paired machines every minute, and a failed pairing says why.
+- Timetrack advertises itself on the LAN over mDNS, lists the machines it finds with `peers.discovered`, lets `pair.accept` take a discovered `machineId`, and keeps a paired machine's address current.
+- Pair two machines on the LAN with a 6-digit code over mutual TLS, and measure each paired machine's clock offset with a hello.
+- Timetrack sends each checkout's repository key with a pull, and `translatePeerPath` maps a paired machine's path onto the local checkout of the same repository.
+- A paired machine now pulls the other machine's own events after each heartbeat and keeps them apart from its own, and deletions on the other machine reach the copy. The agent op `peers.pull` runs one pull on demand.
+- Group the model price presets by agent and show only the model name in each option.
+- Show the model price preset prompt as the select's placeholder instead of an empty first option.
+- A commit this machine only received by a pull, merge or reset is dated by when it arrived, so another machine's work no longer draws a band here.
+- Timetrack reads the events a paired machine collected for a time range, under the name that machine was paired by. The agent op `peers.received` returns them.
+- "Review the day" on the reminder banner opens the earliest band still waiting for a yes or a no. With the day already on screen, the button did nothing before.
+- Settings pick the suggestion language and currency from lists, and fill a model's prices from known Claude and Codex presets. The "does not read" pill is now filled like "reads".
+- The time picker in a row's edit surface steps in 15-minute increments instead of 5.
+- A band nobody was at here reads "Worked on <machine>" when a person was at a paired machine meanwhile, and raises no unattended check. It still books nothing.
+
+## 0.2.0-next.9
+
+### Minor Changes
+
+- A band's context menu offers "Ask auto mode again", which asks the model about that band once more, even with auto mode off.
+- `timetrack approvals` lists the writes that wait for approval, and `timetrack approval <id> --reject` rejects one the way the Reject button does; approving stays the user's click in the app.
+- `timetrack ask` asks auto mode again about a stand-in or an unnamed band of any day, as the app's "Ask auto mode again" does.
+- `timetrack standins --resolve <id> --issue <KEY>` resolves a stand-in to a Jira issue, or moves a resolved one to another, once the user approves it in the app.
+- "Show on the day" in Waiting requests now switches to the request's day, and an auto mode ticket draft shows its stand-in or band.
+- A waiting stand-in resolve now shows on the stand-in's bands, and each Waiting requests item offers "Show on the day" or "Show in stand-ins".
+- On macOS, the window now uses the native traffic-light buttons at the top left, rounded corners and shadow instead of the drawn minimise, maximise and close buttons. Windows and Linux keep the drawn buttons.
+- The Sync view now remembers each day's last write to Tempo across reloads and restarts.
+- Transcribe calls in German by default, with a Settings select for German, English or a guess per chunk.
+- Read a day's call transcript through the read-only `transcript.day` agent op and `ethlete-agents timetrack transcript [day]`.
+
+### Patch Changes
+
+- The day screen names a Tempo history read that failed, instead of matching tickets without it in silence.
+- The agent log reader no longer fails on a dangling symlink or a line that is not valid UTF-8. It skips the broken link and reads the bad line with replacement characters, so the other logs still arrive.
+- The release now ships a macOS bundle for Intel Macs next to the Apple Silicon one.
+- The approval card now names a new issue's parent, and the ticket of a worklog or naming offer, with its summary after the key.
+- Auto mode asks a band or stand-in again when new evidence changes what its answer was built from, while the answer is still its own, and expires the create the old answer left waiting.
+- Auto mode asks about an unnamed band only once its work has been quiet for 30 minutes, and asks again once it settles when it answered while the band still ran.
+- Auto mode waits until a stand-in's work has been quiet for 30 minutes before it asks about it, and asks again once it settles when it answered while the work still ran.
+- A band drawn over a stretch a parallel session lost now reads that stretch as its own line under the description, or drops it when the band is too short, instead of overlapping it.
+- On Linux a `call-start` carries the title of the call app's window, even when that window never had the focus.
+- Every Jira create, including the epic or parent create and the agent's `jira.create`, now skips an issue the project already holds and shares a create still in flight, so a retry files no duplicate.
+- Stop Timetrack freezing on a band auto mode named with the issue its dispute offered: such a band is no longer disputed, and applying a dispute answer the band already holds changes nothing
+- On macOS, a click on the dock icon now shows the hidden window again.
+- When auto mode matches a stand-in to a done issue, it queues the match for your approval, marked done, instead of leaving it with no action. Approving resolves the stand-in to that issue; rejecting writes nothing.
+- A finished day Tempo holds keeps the rows it was booked with, so a model change re-cuts only the days Tempo does not hold yet.
+- In light mode, overlays such as the row edit surface and select dropdowns render light, disabled buttons use light disabled colors, and a long row title truncates in the edit surface's header instead of widening it.
+- Ticket matching also offers the issues you logged time on in Tempo, done ones included, so auto mode finds a done ticket you still book on instead of drafting a new one.
+- Ticket matching also offers the issues you named your own Timetrack rows with, so auto mode finds a done ticket even when Tempo holds no worklog on it.
+- An agent session in a worktree that lives inside another checkout's directory keeps the branch it reports, rather than taking the branch the enclosing checkout last switched to, so its time no longer goes to that branch's issue.
+- A commit records the worktree it was made in, so a commit from a worktree inside another checkout keeps its own branch and no longer moves that checkout's branch.
+- The reminder banner opens the reminded day. A day that is not logged yet offers "Sync the day" and opens the sync view, and any other gap offers "Review the day" and opens the day view.
+- The end-of-day reminder re-reads the day as soon as a Tempo sync lands or an edit on the day screen is saved, instead of up to a minute later.
+- When auto mode matches a stand-in or band to an issue that is a parent of other issues, it queues the match for your approval, marked parent, instead of writing it at once.
+- Phone time now books in full while the remote prompts are at most a quarter hour apart; a longer gap ends the stretch and stays a break. The one-hour daily cap and the `maxRemoteAttentionMs` option are gone.
+- A band that draws phone time past the hour the day books now reads "15m phone time not counted" instead of "15m not booked", so it no longer reads as if the rest were already in Tempo.
+- Edit model prices under Settings, and show what a day's agent turns cost once a price exists.
+- A band the reviewer chose not to log no longer counts as unattributed time or raises the "Some work is not named yet" warning.
+- The row edit surface is an app component built from the scheduler's edit surface blocks, replacing the field and action registrations.
+- Day: the band menu offers "Don't log this time" and "Log this time". A band not logged paints muted, and reads "Not logged" where it had no name, or adds "· not logged" after its issue.
+- Remember a timeline scroll under the day it was made on, with the offset it had then, when the day changes before the scroll settles.
+- Bind the renamed `loadError` input on the Jira and settings selects.
+- A call is no longer named after a window its app left long before the microphone opened, and a `call-start` can carry the title the host read.
+- A stand-in no longer counts a day Tempo already holds. Its day count, age, waiting line and ticket request cover only the days Tempo does not hold yet, and a resolve leaves the rows of the booked days alone.
+- A ticket drafted for a stand-in now names the work all of its bands on the day did, not the first commit that opened it.
+- The day banner counts only the time a synced row grew by as not in Tempo yet, and names a synced row that changed without growing as a row changed since the sync.
+- Fix a keyboard activation on the day timeline being ignored after a pointer drag.
+- State what the turns no checkout carries cost, apart from the day's total.
+- Line an underline field's label up with its value again.
+- The lock screen can be unlocked again after an unlock attempt fails instead of staying on "Checking…", and a remembered day that is not a real calendar day (such as `2026-02-30`) is dropped instead of opened.
+
+## 0.2.0-next.8
+
+### Minor Changes
+
+- Timetrack and Studio now update themselves. At startup, a release build downloads a newer release, and a "Restart to update" button installs it. AppImage, deb, macOS and Windows installs can update. A deb install asks for the administrator password.
+
+### Patch Changes
+
+- Timetrack and Studio now ship a Windows installer, and the Timetrack build includes transcription.
+- Build the macOS app for macOS 11 and later, so the transcription engine compiles
+
+## 0.2.0-next.7
+
+### Patch Changes
+
+- Back-to-back agent sessions on one base branch of a checkout now form one row instead of one 15-minute row each, unless they worked in different projects.
+
+## 0.2.0-next.6
+
+### Patch Changes
+
+- Give the in-the-background band in the day view a faint fill.
+
+## 0.2.0-next.5
+
+### Minor Changes
+
+- Auto mode now settles a band two answers disagree about, under the same approval rules as a match, and says what it chose and why; an unsure answer or your own edit leaves the band alone.
+- Add an opt-in, local-only transcript of your own microphone during calls, stored in the encrypted database and deleted after seven days; built only with the host's `transcribe` feature.
+
+### Patch Changes
+
+- A day-review row you edited and named now paints as certain, and its card says "confirmed by you" instead of "weak match".
+- An email address or a git remote in the GitLab instance field is named as not a hostname, instead of offered as the host of a `glab auth login` command. Adds `isForgeHostname`.
+- The Issue select in the row editor shows the issue's summary from the start, and the dispute card names both issues with their summaries.
+- No agent request moves the day on screen any more. `day.inputs`, `day.edits`, `naming.offers`, `tempo.sync` and `worklog.add` read and write the day they name directly, and leave the screen and its saved view where the user left them.
+- Auto mode no longer books a done Jira issue: it leaves that band to you and says why in its readout.
+- Each piece of a background band reads the minutes it lost, not the total of the whole stretch.
+- `timetrack rows` and `timetrack snapshot` read a day without moving the day on screen, so several requests at once no longer race and time out.
+- Build the development app with call transcription, so its switch shows in Settings
+- Agent sessions that run one after another on the same feature branch of one checkout are one piece of work, so short back-to-back sessions become one row instead of one 15-minute row each.
+- Draw short rows that all ran inside one quarter hour side by side in that quarter, instead of pushing each one a quarter hour later, which drew a running day's rows in the future.
+- The card of a parallel session on one ticket reads its share of what all sessions book together, for example `15m of 45m`.
+
+## 0.2.0-next.4
+
+### Patch Changes
+
+- Each piece of a background band names its stretch, so a piece after a row no longer looks like an empty place.
+- A card too short for a second line shows its description after its title.
+- A card's title and description sit on the card's own colour above the hatching of a break, so the hatching no longer runs through the text.
+- Count prompts sent from another device as remote work while the user is still away, not only once they are back at the desk.
+- A session's row is now described by the commits and files that session produced, never by a prompt that only agrees or a branch name like `next`.
+- A parallel agent session on one ticket is drawn as one card over its whole row, cascaded where it overlaps another, instead of one card per stretch it ran.
+- The minutes a background band lost to another band are drawn as a dashed outline without hatching, so hatching only marks a break or a band nobody was at.
+- Parallel agent sessions on one ticket are drawn side by side again, each over its own stretches widened to 15-minute steps and cascaded where they overlap.
+
+## 0.2.0-next.3
+
+### Minor Changes
+
+- Settings can make each agent and auto mode action stricter, never looser, and the day's Debug dialog reads out what auto mode did.
+- Auto mode checks every minute for a code row that has settled, so a row gets its description without
+  another change to the day. The auto mode readout lists each description it wrote.
+- Auto mode writes the description of a settled code row of today that has a ticket, with the same
+  "Ask AI" call, once per row. A description you wrote is never replaced.
+- The sidebar shows when auto mode is working, and which job runs. The auto mode panel of the debug overlay also lists the jobs auto mode ran since the app started.
+- A growing call row offers "End here", which ends it at the current quarter and hands the rest of the call back as an unnamed call band.
+- The stand-in list offers "Join into <name>" for every other open stand-in of the same checkout, so work the automatic join cut too finely can be joined by hand. `standInJoinTargets` lists them.
+- Hide a stand-in from the name pickers without deleting it, and hide every stale stand-in with one press.
+- Show a waiting approval on the band it is for, with approve and reject inline, and put the rest behind a "N more waiting" pill in the day header.
+- The row edit popover shows the Jira status of the band's issue and moves it to any status the workflow offers. `fetchJiraIssueStatus$` reads one issue's current status.
+- A band two answers disagree about offers "Keep" beside "Use": it pins the key the band already books as your answer, settles the dispute and its day warning, and leaves both remembered answers as they were.
+- With auto mode on, suggest hiding the rest band of an ended call that went off topic; approving hides the band, and a rejected suggestion is not made again.
+- Show the AI agent tokens a row's work used in its edit panel, totalled from the agent turns inside the row's checkout and time range.
+- Timetrack: add `timetrack standins --merge <id> --into <id>` and the `standIn.merge` agent op, which waits for the user's approval. `standIn.list` now reports `hiddenOn` and `mergedIds`.
+- Merge an open stand-in into another open one with the same name from the stand-in list. The kept one takes the days, branches and rules of both, and past days named with the merged id read as the kept one.
+- A named call row that still grows shows a dashed ✂ cut line to press or drag its end, leaves the rest of the call as one unnamed band, and offers ↺ to follow the call again after a snip.
+- Preview a waiting `worklog.add` that lands on no row of the day as a dashed band at its span, with approve and reject inline, instead of behind the "N more waiting" pill.
+
+### Patch Changes
+
+- A paused collector still lists the repositories once, so the day view draws after a start with collection paused instead of staying empty.
+- A "Nobody was here" row with no ticket now paints in the muted theme instead of the orange weak-guess theme.
+- A stand-in whose row you keyed by hand, on any day it holds, resolves to that issue, so auto mode stops asking about it and its waiting ticket draft expires.
+- The day view now waits for the settings, repository discovery and saved edits before it draws, instead of showing a wrong first frame built from empty defaults.
+- Draw a waiting approval on a band too short for its chip as a dot, so the band's label stays readable. Approve it from the band's edit surface.
+- Auto mode no longer drafts a ticket for a stand-in whose row you already gave a ticket by hand today.
+- A background band now draws only the minutes its ticket lost, not the whole span it was joined across.
+- File an open stand-in whose every day is already in Tempo with the hidden ones, labelled "Booked in Tempo"; a band on a later, unbooked day brings it back.
+- Fix one unreadable agent session log blocking the others, and worklogs vanishing from their day after the day boundary changes.
+- Show only the evidence that names a row in its edit popover, or its first entry when none names it, until "Show all" is pressed. The popover of a stand-in band no longer fills a 1400x1300 window.
+- Count Slack huddles as work with no rule, say on any other uncounted call band why, and offer "Count <app> as work" in its menu.
+- The host lets reasoning runs through `codex exec`, so a codex reasoning command no longer fails at the process check.
+- Integrations fixes: agent shell commands parse closer to bash, long backfill logs resume, git, forge, calendar, Jira and Tempo reads report refusals and caps, GitLab remotes match by hostname, and ingested fields are bounded.
+- Rows and review fixes: named slivers fold, breaks stay unfilled, folded stretches clip, overlapping background rows rank, call edges pair by time, and the day nudge ends at the day boundary.
+- A call row ended by an older build draws the rest of its call as one band and offers ↺ again, even where the stored rest pin names another cut of the row.
+- A call row ended by an older build draws the rest of its call as one growing band and offers ↺ again.
+- The row edit surface shows one When row with the time range and duration side by side, offers a stand-in name only for work with no ticket, and folds long evidence behind "Show all".
+- Parallel agent session rows on one ticket are drawn in one column each over their whole span, instead of an L shape behind each other.
+- Parallel agent sessions on one ticket are drawn over the stretches each one ran. Where they overlap, the cards cascade like calendar events: a later card is indented and drawn on top.
+- Each piece of a parallel agent session is drawn with a gap below it and its own label, so parallel sessions no longer read as one block.
+- Parallel agent sessions on one ticket now take turns in their lane: each row is drawn at full width, only over the minutes it books.
+- The row editor's duration now shows what a row sharing its ticket and lane books, matching the band's label, instead of the span the band is drawn over.
+- Show in the sidebar when auto mode is on, with the count of requests waiting for approval. A click
+  opens the approval queue.
+- A resized split part keeps its own start and leaves its freed stretch empty, and a timeline drag no longer selects the band's text.
+- The Tempo sync plan never books two worklogs over the same minutes: meetings and hand-written rows keep their time, work trims or splits around them.
+- An idle stretch the app never saw end, after a restart, now ends at the next desk input, so the rest of the day is not read as unattended.
+- A still-open call band with no name now fades past the ✂ cut line too, and its "End here" ends the band there.
+- Auto mode writes a row's description as one line saying what the work did, and no longer repeats the ticket's title.
+- The spend readout lists the worklog description calls of auto mode as `a worklog`, apart from the ticket calls.
+
+## 0.2.0-next.2
+
+### Minor Changes
+
+- `timetrack resync --replace` re-reads a checkout's agent logs and replaces the samples the store already holds for those sessions, so a parser fix reaches stored days.
+
+### Patch Changes
+
+- An agent that only reads another repository no longer files its time there; a shell command moves the work only when it clearly writes.
+- A ticket's background band no longer bridges time nobody worked, such as a night: pieces join only across gaps other rows cover.
+- A call over a meeting you accepted now counts as work and is named after that meeting, unless a "never counted" rule denies it.
+- A narrow band in a split lane no longer spills into the column beside it.
+- A linked worktree no longer books minutes its main checkout already holds: the two count as one attention, and the losing band is drawn behind instead of as an overlapping row.
+
+## 0.2.0-next.1
+
+### Patch Changes
+
+- A checkout linked to a project no longer takes a coincidental issue from another project, and an open stand-in a sibling checkout holds for the same branch slug now names the band.
+
+## 0.2.0-next.0
+
+### Minor Changes
+
+- Scheduler: mark the current time with a line across today's column, and open the edit surface beside an appointment instead of under it. The Timetrack day draws the same line.
+- Two new agent endpoint ops: `day.rows` answers the rows a day drew with the id each edit names, and
+  `day.edits` corrects one. `timetrack rows` and `timetrack edit` reach both.
+- Suggestions settings hold a Language. Every ticket, parent, match reason and day proposal is written
+  in it, whatever language the evidence is in. Empty keeps the old behaviour of following the evidence.
+- One day screen. Today merged into Day: its totals, streams and notes now sit with the timeline, every
+  band is a row, and the work waiting for a name is drawn once instead of twice.
+- The new-parent form has its own Ask AI, which writes the wider goal the ticket rolls up to. What
+  that call would send is shown next to it, with the same mask warning the ticket payload carries.
+- Naming a call the calendar never held is remembered, and Settings list every remembered call.
+- The timeline is the day screen. A band is named on the scheduler's own edit surface, the row list is
+  gone, and what is not a band sits in a closed strip under it.
+- A stand-in's ticket form offers a second press, "Ask AI to find a match". It fills the Parent field
+  and names the issue that may already be this work, and leaves the words the user wrote alone.
+- Ask AI on the create form now writes inside the specification the work sits under, found from the
+  commits the day observed. Where the spec names an epic, the Parent field answers with it and says so.
+- The app version now advances through a changeset, like a published package, so the build stamp names the release it came from.
+- Day timeline: a band answers hover and focus, the cursor says what each zone does, and a marked run
+  says how many it holds with a merge beside it - shift-click extends it, escape drops it.
+- The create form now puts Project, Summary and Description above the AI block, asks a second press
+  before it files, and offers a way back to the day once the ticket exists.
+- Work Jira holds no ticket for can now be named in your own words, in one press. A name already given
+  is offered beside the issue field and on the band's edit surface, so the next context takes it.
+- Filing a ticket from a band now opens a dialog for that placeholder alone, titled with its name,
+  instead of a list of every placeholder waiting on a ticket.
+- A branch with no issue key now inherits one from a sibling checkout that shares its branch slug,
+  picked by elimination from the children of the epic that sibling books under.
+- Filing a ticket now reads what Jira permits the account and says so before the press, refuses to file
+  a second issue with a summary the project already holds, and drafts the parent a description.
+- `unmaskedWords` now returns each word with a `likelyName` flag and puts the name-shaped ones first,
+  so a German payload no longer buries the one client name the list is missing.
+
+### Patch Changes
+
+- The issue picker offers what the row's own lane was named with before, in a group above the rest
+  of the list.
+- A break that crosses a band is now hatched onto the band as well as drawn in its own lane, so the
+  part of the work nobody was at the seat for is visible on the row that books it.
+- Work an agent did inside a break is booked again. The day clipped those blocks away, so a window
+  steered from a phone lost its row and the break grew. The band now runs through it.
+- A call ladder rung that names no issue no longer ends the ladder. A picked calendar occurrence says
+  which meeting the call was, not which work it books, so the remembered answer below it is read too.
+- A call the microphone is still in stays on the day instead of being closed the next time the window reloads.
+- A band the reviewer named or hid no longer counts as unattributed time, and both day warnings now say where to look: which lanes hold the unnamed work, and which call the observed work runs under.
+- A band two rungs named different work for now shows both. The row still books the higher answer, the
+  day warns and names the band, and the band offers the other answer in one press.
+- A GitLab instance `glab` holds no login for is now named as such, and Settings offers the instances
+  `glab` is logged in to.
+- The day now warns when a remembered answer books to a ticket Jira has recorded no change on for a
+  quarter, naming the band and how long the ticket has been quiet.
+- The ticket form files the type the picked parent implies, rather than one fixed type. Picking a Story
+  files a sub-task, which is what Jira accepts there; a line under the field says so before the press.
+- A background band no longer claims the quarter-hour a running day is still in, so a checkout with seconds of presence cannot book it before the work beside it claims it
+- Edit a break on the day screen. A press on a break says you were at the machine, a range drawn
+  in the break lane says you were away, and the day's notes take either statement back.
+- The day's present total and its engagement ratio follow what you said about the day. The measured
+  total stays in the day's notes, so the correction is visible.
+- The issue picker offers a lane its own tickets again, and a new `lane.issues` operation reports what
+  it reads.
+- The issue picker names the rest of its list, so the lane's own tickets end where the group ends.
+- Every issue the ticket form files is assigned to the account the Jira token belongs to. This covers
+  the ticket and a parent filed from the same form, which both landed as `Unassigned` before.
+- A ticket filed from the day review is moved to the status Settings name, under "Then move it to".
+- The agent may now choose from the issues the user's recent Tempo history names, not only the ones
+  the day itself reached. New `fetchTempoHistory$` answers both out of one read.
+- A new `settings.rules` agent op, and an `ethlete-agents timetrack rules` command, read the rules that
+  name a day's work out of the encrypted store.
+- Names in free text can now be turned into pseudonyms before a prompt is sent, and read back from the answer. A word the app cannot account for is reported so the name list can close it.
+- A right click on a band opens its own menu, carrying Hide this row and Split in half, so neither needs the edit surface to be opened first.
+- Clears the duplicate focus, presence and call rows earlier reloads appended, and the collector counters now report the rows a drain actually stored.
+- Two rows that meet at one instant each take the whole lane again, rather than half of it each.
+- A modifier click marks a band, the band menu folds the marked rows into one, and the drag-to-resize handles now answer to the pointer with a cursor and a colour.
+- Offer every row action in a band's own context menu, so the reset, the merge and the removal are no
+  longer reachable only from the edit surface.
+- A band on the day timeline is one solid rectangle again. It no longer cuts holes where the day
+  observed nothing, which read as a rendering fault rather than as information.
+- The ticket form's model press is now labelled Ask AI, and what it sends goes out in pseudonyms. The wording, the parent and the existing issue come back in real names.
+- A linked checkout no rule could name now opens its own stand-in, named from the day's own evidence. Every later day of that checkout lands on the same one.
+- New `backgroundProjects` setting: a band of one of those projects keeps only the time no other band
+  claims, so the library you sit in all day stops overlapping the work you book.
+- The day counts only time a worklog can hold as unattributed, and reports a day as short of its target
+  only once the day is over.
+- Stop a prompt's allowance taking a break below the shortest break the day reports. A break the idle
+  notifier observed is an absence, so the allowance shortens it and never deletes it.
+- Draw a break an agent ran through, snapped to the row increment. Such a break leaves no gap between
+  rows, so the day screen used to show the work and never the absence under it.
+- The packaged app is styled again. The production build inlined the critical CSS and deferred the
+  stylesheet with an inline `onload` handler, which the app CSP blocks, so the sheet stayed on
+  `media="print"`. The build now links the stylesheet directly.
+- A store whose agent session cursor table is missing a column repairs itself instead of failing every
+  collection run.
+- A meeting inside a background row now cuts that row in two rather than leaving it whole, so the hour
+  is booked once. A new warning names two rows that still claim the same minutes.
+- An end a drag pinned now stays pinned. Growing a row at one end and then at the other keeps both, instead of handing the first end back to the day's own row.
+- A row whose ends a reviewer both fixed now claims the band it was cut from even after the band's id changed, so the day draws that stretch once instead of twice.
+- `settings.rules` now reports the call rules and both remembered naming stores. Every field stays
+  listed by hand, so the Jira host, the account email and every token stay out of the answer.
+- The create-ticket form can now file the parent itself, at one of the instance's own parent levels, for
+  work whose epic does not exist yet.
+- The ticket form now opens on a stand-in as well as on an unnamed context. The key it files resolves the stand-in, and the result names the parent it filed on the way.
+- A store the app cannot open now offers to start fresh instead of the app not starting at all. The old
+  file is kept, not deleted.
+- The Tempo history read waits for the settings document, so the recurrence rung and the checkout-wide naming offer are no longer empty for a whole session.
+- Ask the compositor for input idleness rather than session idleness. An idle inhibitor, such as a call
+  or a video, silenced the old request, so this machine collected no idle transition at all.
+- A row drawn on the timeline now stays in the lane it was drawn in, rather than falling into No
+  checkout. A meeting taken from the day notes lands in Calls & meetings beside the day's other calls.
+- The day's question to the model now goes out in pseudonyms: every name on the new list, and the project prefix of every issue key. The answer is read back into real names.
+- The app now meters its own model calls. What a run spent lands under the reserved provider
+  `timetrack`, and the day gives it a line of its own: no checkout books it, and it rebuilds no
+  presence.
+- Settings now holds the name list the anonymiser reads, seeded by a press from the projects you picked. The prompt preview marks every capitalised word the list does not hold, and each one carries a press that adds it.
+- Calls and meetings now share one lane on the day timeline, instead of splitting one kind of row over
+  two columns.
+- Pressing another band while a row's issue picker is open now replaces the edit surface instead of opening a second one, and each save lands on the row its own surface edited.
+- Deleting a stand-in the app opened now refuses its checkout, so no replacement appears seconds later, and a record no rule names any more is dropped on load. The settings screen allows a refused checkout again.
+- The parent picker no longer offers a sub-task, which Jira accepts as a parent in no hierarchy.
+  `JiraIssue` now carries `isSubtask`, read from Jira's own flag on the issue type.
+- A band the reviewer merged or split now takes the stand-in covering its checkout, so a day reviewed before the placeholder was opened carries it too and one resolve books every day.
+- An issue picker now searches Jira: it reads its own project, typed text reaches the query, and a
+  whole issue key is answered by that issue whatever its project or status.
+- A masked name that is also one of the pseudonym words no longer takes itself. A client called Mesa used to go out as written, and no warning reported it.
+- A band waiting on a ticket now says so in its own edit modal, and one press opens the ticket form on that stand-in. The filed result stays on screen after the resolve.
+- A stand-in can now be answered. The day header counts what waits on a ticket and opens a list that resolves one to an issue, undoes that while no day it held reached Tempo, or deletes it.
+- A row now books the time its band covers, so a band drawn from 13:15 to 13:45 logs 30 minutes rather
+  than a shorter time.
+- A row named to a stand-in now reads that record at review time. Resolving the stand-in gives the row the issue key, and deleting it puts the row back to unnamed.
+- The two limits that mark a stand-in as overdue are now on the Day tab of the settings, instead of only in the settings file. Both are held in range wherever they are read.
+- A stand-in that waited past its age in workdays, or past the time its bands hold, is now marked in the list and counted in the day header. Two settings set both limits.
+- The ticket form a stand-in opens now holds the Ask AI press. It sends the name and the description the user gave the work, in pseudonyms, with the number of days it waited and no minutes.
+- A band waiting on a ticket now paints in its own colour and reads as provisional on the timeline, rather than as one more guess the reviewer has to settle.
+- The day header no longer counts one stand-in twice. Its press opens the panel, which
+  marks each overdue record itself, and the panel gained a Close button.
+- A stand-in no longer opens for a checkout an issue already answers. It waits for the Tempo history, it leaves a checkout the day still offers an issue for, and it never replaces a rule that names one.
+- A stand-in now opens only for a checkout the host discovered. A directory an agent ran in no longer opens a second one for work the checkout already holds, and none opens before the discovery answers.
+- The work waiting on a ticket now lives in a Debug accordion instead of the day header. The list
+  carries no chrome of its own, so the edit surface can still open it as its own dialog.
+- A written ticket now states the work to do in the present tense, in the language of the evidence,
+  with a shorter summary. It used to read as a report of what was already done.
+- A band an agent worked alone now reads `Nobody was here · ABC-1` and offers that key on its edit
+  surface. One press books it, so the reviewer no longer retypes a key the day already worked out.
+- The mask warning read only ASCII, so a name with an umlaut was never reported and always sent.
+  Word boundaries and the capital test now use Unicode properties.

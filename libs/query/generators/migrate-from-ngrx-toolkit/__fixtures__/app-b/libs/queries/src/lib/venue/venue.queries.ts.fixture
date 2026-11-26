@@ -1,0 +1,23 @@
+import { createLegacyQueryCreator } from '@ethlete/query';
+import { VenueDetailView, VenueListView, VenueRankingView } from '@app-b/api-models/dist/Venue';
+import { Paginated } from '@app-b/types';
+import { publicApiGet } from '../public-api.client';
+import { GetVenueArgs, GetVenueRankingArgs, GetVenueSearchArgs } from './venue.types';
+
+export const getVenue = publicApiGet<GetVenueArgs & { response: VenueDetailView }>((p) => `/public/venues/${p.venueUuid}`);
+/**
+ * @deprecated Legacy (v2) query wrapper. Migrate the call sites to `getVenue` and delete this wrapper - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2.
+ */
+export const legacyGetVenue = createLegacyQueryCreator({ name: 'legacyGetVenue', creator: getVenue });
+
+export const getVenueSearch = publicApiGet<GetVenueSearchArgs & { response: Paginated<VenueListView> }>(`/public/venues`);
+/**
+ * @deprecated Legacy (v2) query wrapper. Migrate the call sites to `getVenueSearch` and delete this wrapper - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2.
+ */
+export const legacyGetVenueSearch = createLegacyQueryCreator({ name: 'legacyGetVenueSearch', creator: getVenueSearch });
+
+export const getVenueRanking = publicApiGet<GetVenueRankingArgs & { response: VenueRankingView }>((p) => `/public/venues/${p.venueId}/ranking`);
+/**
+ * @deprecated Legacy (v2) query wrapper. Migrate the call sites to `getVenueRanking` and delete this wrapper - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2.
+ */
+export const legacyGetVenueRanking = createLegacyQueryCreator({ name: 'legacyGetVenueRanking', creator: getVenueRanking });

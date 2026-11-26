@@ -1,0 +1,100 @@
+import { Component, computed, input, linkedSignal, signal, ViewEncapsulation } from '@angular/core';
+import { form, FormField, readonly, required } from '@angular/forms/signals';
+import { CHOICE_FIELD_IMPORTS, ChoiceFieldVariant } from '../../choice-field';
+import { FormFieldSize } from '../../form-field';
+import { SWITCH_IMPORTS } from '../switch.imports';
+
+@Component({
+  selector: 'et-sb-form-field-switch',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans">
+      <et-choice-field [size]="size()" [variant]="variant()">
+        <et-switch [formField]="demoForm.notifications" />
+        <et-label>Enable notifications</et-label>
+      </et-choice-field>
+
+      <et-choice-field [size]="size()" [variant]="variant()">
+        <et-switch [formField]="demoForm.darkMode" />
+        <et-label>Dark mode</et-label>
+      </et-choice-field>
+
+      <et-choice-field [size]="size()" [variant]="variant()">
+        <et-switch [formField]="demoForm.acceptTerms" />
+        <et-label>Accept terms</et-label>
+      </et-choice-field>
+
+      <p class="text-xs text-et-surface-text-muted">
+        "Accept terms" is required. Click away from it to trigger validation.
+      </p>
+
+      <pre class="rounded bg-et-surface-background p-2 text-xs">{{ debugInfo() }}</pre>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...CHOICE_FIELD_IMPORTS, ...SWITCH_IMPORTS, FormField],
+})
+export class FormFieldSwitchStorybookComponent {
+  public size = input<FormFieldSize>('md');
+  public readonly = input(false);
+  public variant = input<ChoiceFieldVariant>('plain');
+
+  private formModel = signal({
+    notifications: true,
+    darkMode: false,
+    acceptTerms: false,
+  });
+
+  public demoForm = form(this.formModel, (s) => {
+    readonly(s, () => this.readonly());
+    required(s.acceptTerms, { message: 'You must accept the terms' });
+  });
+
+  public debugInfo = computed(() => JSON.stringify(this.formModel(), null, 2));
+}
+
+@Component({
+  selector: 'et-sb-switch-indeterminate',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans">
+      <et-choice-field>
+        <et-switch [(indeterminate)]="indeterminateState" [(checked)]="checkedState" />
+        <et-label>Push notifications</et-label>
+      </et-choice-field>
+
+      <p class="text-xs text-et-surface-text-muted">
+        Bulk edit over records that disagree - the switch parks mid-track. The first toggle resolves it to on.
+      </p>
+
+      <pre class="rounded bg-et-surface-background p-2 text-xs">
+Checked: {{ checkedState() }}
+Indeterminate: {{ indeterminateState() }}</pre>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...CHOICE_FIELD_IMPORTS, ...SWITCH_IMPORTS],
+})
+export class SwitchIndeterminateStorybookComponent {
+  public indeterminate = input(true);
+  public indeterminateState = linkedSignal(() => this.indeterminate());
+  public checkedState = signal(false);
+}
+
+@Component({
+  selector: 'et-sb-switch-disabled',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans">
+      <et-choice-field>
+        <et-switch [checked]="true" disabled />
+        <et-label>Enabled (disabled control)</et-label>
+      </et-choice-field>
+
+      <et-choice-field>
+        <et-switch disabled />
+        <et-label>Disabled (disabled control)</et-label>
+      </et-choice-field>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...CHOICE_FIELD_IMPORTS, ...SWITCH_IMPORTS],
+})
+export class SwitchDisabledStorybookComponent {}

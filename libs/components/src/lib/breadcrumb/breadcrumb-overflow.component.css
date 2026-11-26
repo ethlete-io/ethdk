@@ -1,0 +1,38 @@
+@layer components.sdk {
+  .et-breadcrumb-overflow {
+    display: contents;
+  }
+
+  .et-breadcrumb-overflow .et-breadcrumb-overflow-trigger {
+    --_et-icon-button-border-radius: var(--et-breadcrumb-radius);
+
+    margin-inline: -4px;
+  }
+
+  .et-breadcrumb-overflow-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: -4px -8px;
+    padding: 0;
+    list-style: none;
+
+    .et-breadcrumb-item {
+      display: block;
+      padding: 4px 8px;
+      color: var(--et-surface-text, CanvasText);
+      transition:
+        background 120ms ease,
+        color 120ms ease;
+
+      &:where(a, button):hover {
+        background: color-mix(in srgb, var(--et-surface-tint) 12%, transparent);
+        text-decoration-color: transparent;
+      }
+
+      &:where(a, button):active {
+        background: color-mix(in srgb, var(--et-surface-tint) 20%, transparent);
+      }
+    }
+  }
+}

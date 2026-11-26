@@ -1,0 +1,44 @@
+{
+  "generators": {
+    "migrate-to-query-v3": {
+      "factory": "./migrate-to-query-v3/migration",
+      "schema": "./migrate-to-query-v3/schema.json",
+      "description": "Migrate from legacy query system to new query system using interop"
+    },
+    "migrate-query-client-features": {
+      "factory": "./migrate-query-client-features/migration",
+      "schema": "./migrate-query-client-features/schema.json",
+      "description": "Migrate createQueryClient multiTabSync/persistence options to opt-in features"
+    },
+    "prep-for-query-v3": {
+      "factory": "./prep-for-query-v3/migration",
+      "schema": "./prep-for-query-v3/schema.json",
+      "description": "Update code to prepare for migration to query v3"
+    },
+    "deprecate-legacy-queries": {
+      "factory": "./deprecate-legacy-queries/migration",
+      "schema": "./deprecate-legacy-queries/schema.json",
+      "description": "Mark existing createLegacyQueryCreator wrappers as @deprecated so their call sites surface as still on v2"
+    },
+    "migrate-query-opt-in-features": {
+      "factory": "./migrate-query-opt-in-features/migration",
+      "schema": "./migrate-query-opt-in-features/schema.json",
+      "description": "Migrate query clients to the opt-in error pipeline and bearer auth providers to the opt-in multi-tab sync feature"
+    },
+    "migrate-from-ngrx-toolkit": {
+      "factory": "./migrate-from-ngrx-toolkit/migration",
+      "schema": "./migrate-from-ngrx-toolkit/schema.json",
+      "description": "Move @tomtomb/ngrx-toolkit features onto v3 query creators and the @ethlete/query/ngrx-toolkit interop"
+    },
+    "report-legacy-query-apis": {
+      "factory": "./report-legacy-query-apis/migration",
+      "schema": "./report-legacy-query-apis/schema.json",
+      "description": "Write a task to query-v3-migration-tasks.md for every legacy query collection, infinity query, *etQuery template and entity store"
+    },
+    "move-devtools-contract-imports": {
+      "factory": "./move-devtools-contract-imports/migration",
+      "schema": "./move-devtools-contract-imports/schema.json",
+      "description": "Import the devtools contract from @ethlete/query/devtools-contract instead of @ethlete/query"
+    }
+  }
+}

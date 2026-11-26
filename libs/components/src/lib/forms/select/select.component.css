@@ -1,0 +1,247 @@
+@layer components.sdk {
+  et-select {
+    --_et-select-trigger-busy-fade: 24px;
+    --_et-select-trigger-busy-cover: 16px;
+    --_et-select-trigger-busy-mask-direction: to right;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-select-trigger {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      outline: none;
+      color: inherit;
+      min-inline-size: 0;
+      text-align: start;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+
+      &[data-disabled] {
+        cursor: not-allowed;
+      }
+
+      &[data-readonly] {
+        cursor: default;
+      }
+
+      &:has(input[etselectsearch]:not(:read-only)) {
+        cursor: text;
+      }
+
+      .et-select-trigger-content {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        min-inline-size: 0;
+
+        &.et-select-trigger-content--stacked {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+
+          > * {
+            grid-area: 1 / 1;
+          }
+
+          &:has(.et-select-value-custom) input[etselectsearch] {
+            caret-color: transparent;
+          }
+        }
+      }
+
+      input[etselectsearch] {
+        flex: 1 1 60px;
+        min-inline-size: min(100%, max(60px, var(--_et-select-search-placeholder-width, 0px)));
+        max-inline-size: 100%;
+        border: none;
+        outline: none;
+        background: transparent;
+        font: inherit;
+        color: inherit;
+        padding: 0;
+        caret-color: var(--et-tone-fill, currentColor);
+        cursor: inherit;
+
+        &::placeholder {
+          color: var(--et-surface-text-muted, color-mix(in srgb, currentColor 46%, transparent));
+        }
+
+        &:read-only {
+          caret-color: transparent;
+        }
+      }
+
+      @supports (field-sizing: content) {
+        .et-select-trigger-content:not(.et-select-trigger-content--stacked) > input[etselectsearch] {
+          flex: 1 0 auto;
+          field-sizing: content;
+        }
+      }
+
+      &:has(input[etselectsearch]) .et-select-value {
+        flex: 0 1 auto;
+      }
+    }
+
+    .et-select-value {
+      flex: 1;
+      min-block-size: 1lh;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-inline-size: 0;
+
+      &[data-placeholder] {
+        color: var(--et-surface-text-muted, color-mix(in srgb, currentColor 46%, transparent));
+      }
+    }
+
+    &[data-mixed] .et-select-value,
+    &[data-mixed] input[etselectsearch]:not(:focus) {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+
+    .et-select-value-custom {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-inline-size: 0;
+    }
+
+    .et-select-trigger-content:has(input[etselectsearch]) .et-select-value-custom {
+      flex: 0 1 auto;
+    }
+
+    .et-select-trigger-content:has(.et-select-value-custom) input[etselectsearch]::placeholder {
+      color: transparent;
+    }
+
+    .et-select-chips {
+      display: contents;
+    }
+
+    .et-select-trigger-busy {
+      position: relative;
+      display: flex;
+      align-items: center;
+      align-self: stretch;
+      flex: none;
+      padding-inline-start: var(--_et-select-trigger-busy-fade);
+      margin-inline-start: calc(
+        -1 * (var(--_et-select-trigger-busy-fade) + var(--_et-select-trigger-busy-cover) + 6px)
+      );
+      color: var(--et-surface-text-muted, currentColor);
+    }
+
+    &:dir(rtl) {
+      --_et-select-trigger-busy-mask-direction: to left;
+    }
+
+    .et-select-trigger:has(> .et-select-trigger-busy) .et-select-trigger-content {
+      mask-image: linear-gradient(
+        var(--_et-select-trigger-busy-mask-direction),
+        black calc(100% - var(--_et-select-trigger-busy-cover) - var(--_et-select-trigger-busy-fade)),
+        transparent calc(100% - var(--_et-select-trigger-busy-cover))
+      );
+    }
+
+    .et-select-trigger-busy--enter {
+      animation: et-select-fade-in 120ms ease;
+    }
+
+    .et-select-trigger-busy--leave {
+      animation: et-select-fade-out 120ms ease forwards;
+    }
+
+    .et-select-chip--enter {
+      animation: et-select-fade-in 150ms ease-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .et-select-trigger-busy--enter,
+      .et-select-trigger-busy--leave,
+      .et-select-chip--enter {
+        animation: none;
+      }
+    }
+  }
+
+  et-form-field
+    .et-form-field-control-frame:has(> .et-form-field-suffix > :is(.et-input-clear, .et-form-field-busy-spinner)):has(
+      et-select .et-select-chips
+    ) {
+    .et-form-field-control-slot {
+      mask-image: none;
+    }
+
+    .et-select-trigger-content {
+      padding-inline-end: var(--_et-form-field-suffix-overlap);
+    }
+  }
+
+  /* The search input always ends the last chip row and stretches to its end, so the clear button sits
+     over the input there instead of padding the content - a pad would rewrap the chips on focus. */
+  et-form-field
+    .et-form-field-control-frame:has(> .et-form-field-suffix > .et-input-clear):not(
+      :has(> .et-form-field-suffix > .et-form-field-busy-spinner)
+    ):has(et-select .et-select-chips + input[etselectsearch]) {
+    > .et-form-field-suffix > .et-input-clear {
+      align-self: end;
+      margin-block-end: calc((1lh - var(--et-form-field-affix-icon-size)) / 2);
+    }
+
+    .et-select-trigger-content {
+      padding-inline-end: 0;
+
+      > input[etselectsearch] {
+        padding-inline-end: 0;
+        mask-image: linear-gradient(
+          var(--_et-form-field-suffix-mask-direction),
+          black calc(100% - var(--_et-form-field-suffix-overlap) - 4px),
+          transparent calc(100% - var(--_et-form-field-suffix-cover))
+        );
+
+        &:not(:placeholder-shown) {
+          padding-inline-end: var(--_et-form-field-suffix-overlap);
+        }
+      }
+    }
+  }
+
+  .et-form-field-control-frame:has(et-select) {
+    cursor: pointer;
+  }
+
+  .et-form-field-control-frame:has(et-select input[etselectsearch]:not(:read-only)) {
+    cursor: text;
+  }
+
+  /* outside the `et-select` block on purpose: the chevron renders in the form field's suffix slot,
+     which is not a descendant of the host. */
+  .et-select-arrow .et-icon {
+    rotate: 180deg;
+  }
+
+  @keyframes et-select-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-select-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+}

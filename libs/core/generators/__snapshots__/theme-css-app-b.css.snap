@@ -1,0 +1,252 @@
+@theme {
+  /* dark surface */
+  --color-bb-surface-dark-background: rgb(2 2 2);
+  --color-bb-surface-dark-text: rgb(252 252 247);
+  --color-bb-surface-dark-text-muted: rgb(151 151 148);
+  --color-bb-surface-dark-text-subtle: rgb(101 101 99);
+  --color-bb-surface-dark-border: rgb(48 48 46);
+  --color-bb-surface-dark-tint: rgb(151 151 148);
+  --color-bb-surface-dark-control-text: rgb(151 151 148);
+  --color-bb-surface-dark-control-text-hover: rgb(202 202 198);
+  --color-bb-surface-dark-control-text-focus: rgb(202 202 198);
+  --color-bb-surface-dark-control-text-active: rgb(252 252 247);
+  --color-bb-surface-dark-control-text-disabled: rgb(101 101 99);
+
+  /* dark-elevated surface */
+  --color-bb-surface-dark-elevated-background: rgb(17 18 18);
+  --color-bb-surface-dark-elevated-text: rgb(252 252 247);
+  --color-bb-surface-dark-elevated-text-muted: rgb(151 151 148);
+  --color-bb-surface-dark-elevated-text-subtle: rgb(101 101 99);
+  --color-bb-surface-dark-elevated-border: rgb(72 72 68);
+
+  /* Dynamic surface colors (references runtime CSS variables) */
+  --color-bb-surface-background: var(--et-surface-background);
+  --color-bb-surface-text: var(--et-surface-text);
+  --color-bb-surface-text-muted: var(--et-surface-text-muted);
+  --color-bb-surface-text-subtle: var(--et-surface-text-subtle);
+  --color-bb-surface-border: var(--et-surface-border);
+  --color-bb-surface-tint: var(--et-surface-tint, var(--et-surface-text));
+  --color-bb-surface-control-text: var(--et-surface-control-text);
+  --color-bb-surface-control-text-hover: var(--et-surface-control-text-hover);
+  --color-bb-surface-control-text-focus: var(--et-surface-control-text-focus);
+  --color-bb-surface-control-text-active: var(--et-surface-control-text-active);
+  --color-bb-surface-control-text-disabled: var(--et-surface-control-text-disabled);
+}
+
+@layer base {
+.et-surface--default-dark, .et-surface--dark {
+  --et-surface-background: rgb(2 2 2);
+  --et-surface-text: rgb(252 252 247);
+  --et-surface-text-muted: rgb(151 151 148);
+  --et-surface-text-subtle: rgb(101 101 99);
+  --et-surface-border: rgb(48 48 46);
+  --et-surface-type: dark;
+  --et-surface-elevation: 0;
+  --et-surface-tint: rgb(151 151 148);
+  --et-surface-control-text: rgb(151 151 148);
+  --et-surface-control-text-hover: rgb(202 202 198);
+  --et-surface-control-text-focus: rgb(202 202 198);
+  --et-surface-control-text-active: rgb(252 252 247);
+  --et-surface-control-text-disabled: rgb(101 101 99);
+}
+
+.et-surface--dark-elevated {
+  --et-surface-background: rgb(17 18 18);
+  --et-surface-text: rgb(252 252 247);
+  --et-surface-text-muted: rgb(151 151 148);
+  --et-surface-text-subtle: rgb(101 101 99);
+  --et-surface-border: rgb(72 72 68);
+  --et-surface-type: dark;
+  --et-surface-elevation: 1;
+}
+
+:root {
+  --et-surface-background: rgb(2 2 2);
+  --et-surface-text: rgb(252 252 247);
+  --et-surface-text-muted: rgb(151 151 148);
+  --et-surface-text-subtle: rgb(101 101 99);
+  --et-surface-border: rgb(48 48 46);
+  --et-surface-type: dark;
+  --et-surface-elevation: 0;
+  --et-surface-tint: rgb(151 151 148);
+  --et-surface-control-text: rgb(151 151 148);
+  --et-surface-control-text-hover: rgb(202 202 198);
+  --et-surface-control-text-focus: rgb(202 202 198);
+  --et-surface-control-text-active: rgb(252 252 247);
+  --et-surface-control-text-disabled: rgb(101 101 99);
+  color-scheme: dark;
+}
+
+}
+
+/* Dynamic Tailwind surface colors - re-declared per surface scope so that
+   bg-bb-surface-* utilities resolve against the nearest surface
+   (e.g. a nested elevated surface) instead of the value computed once at :root. */
+@layer base {
+  :root, :where([class*="et-surface--"]) {
+    --color-bb-surface-background: var(--et-surface-background);
+    --color-bb-surface-text: var(--et-surface-text);
+    --color-bb-surface-text-muted: var(--et-surface-text-muted);
+    --color-bb-surface-text-subtle: var(--et-surface-text-subtle);
+    --color-bb-surface-border: var(--et-surface-border);
+    --color-bb-surface-tint: var(--et-surface-tint, var(--et-surface-text));
+    --color-bb-surface-control-text: var(--et-surface-control-text);
+    --color-bb-surface-control-text-hover: var(--et-surface-control-text-hover);
+    --color-bb-surface-control-text-focus: var(--et-surface-control-text-focus);
+    --color-bb-surface-control-text-active: var(--et-surface-control-text-active);
+    --color-bb-surface-control-text-disabled: var(--et-surface-control-text-disabled);
+  }
+}
+
+/* The reserved `surface` color: resolves the tone from the ambient surface's neutral swatch. */
+@layer base {
+  .et-color--surface {
+    --et-tone-fill-rest: var(--et-surface-control-text, var(--et-surface-text));
+    --et-tone-fill-hover: var(--et-surface-control-text-hover, var(--et-surface-control-text, var(--et-surface-text)));
+    --et-tone-fill-focus: var(--et-surface-control-text-focus, var(--et-surface-control-text, var(--et-surface-text)));
+    --et-tone-fill-active: var(--et-surface-control-text-active, var(--et-surface-control-text, var(--et-surface-text)));
+    --et-tone-fill-disabled: var(--et-surface-control-text-disabled, var(--et-surface-control-text, var(--et-surface-text)));
+
+    --et-tone-on-fill-rest: var(--et-surface-background);
+    --et-tone-on-fill-hover: var(--et-surface-background);
+    --et-tone-on-fill-focus: var(--et-surface-background);
+    --et-tone-on-fill-active: var(--et-surface-background);
+    --et-tone-on-fill-disabled: var(--et-surface-background);
+
+    --et-tone-text-rest: var(--et-surface-text);
+    --et-tone-text-hover: var(--et-surface-text);
+    --et-tone-text-focus: var(--et-surface-text);
+    --et-tone-text-active: var(--et-surface-text);
+    --et-tone-text-disabled: var(--et-surface-text);
+  }
+}
+
+@theme {
+  /* green theme */
+  --color-bb-tone-green-fill: rgb(7 244 104);
+  --color-bb-tone-green-fill-hover: rgb(58 245 133);
+  --color-bb-tone-green-fill-focus: rgb(58 245 133);
+  --color-bb-tone-green-fill-active: rgb(105 248 163);
+  --color-bb-tone-green-fill-disabled: rgb(3 98 41);
+
+  --color-bb-tone-green-on-fill: rgb(21 22 22);
+  --color-bb-tone-green-on-fill-hover: rgb(21 22 22);
+  --color-bb-tone-green-on-fill-focus: rgb(21 22 22);
+  --color-bb-tone-green-on-fill-active: rgb(21 22 22);
+  --color-bb-tone-green-on-fill-disabled: rgb(21 22 22);
+
+  --color-bb-tone-green-text: rgb(7 244 104);
+  --color-bb-tone-green-text-hover: rgb(58 245 133);
+  --color-bb-tone-green-text-focus: rgb(58 245 133);
+  --color-bb-tone-green-text-active: rgb(105 248 163);
+  --color-bb-tone-green-text-disabled: rgb(3 98 41);
+
+  /* red theme */
+  --color-bb-tone-red-fill: rgb(239 68 68);
+  --color-bb-tone-red-fill-hover: rgb(247 113 113);
+  --color-bb-tone-red-fill-focus: rgb(247 113 113);
+  --color-bb-tone-red-fill-active: rgb(247 90 90);
+  --color-bb-tone-red-fill-disabled: rgb(127 29 29);
+
+  --color-bb-tone-red-on-fill: rgb(252 252 247);
+  --color-bb-tone-red-on-fill-hover: rgb(252 252 247);
+  --color-bb-tone-red-on-fill-focus: rgb(252 252 247);
+  --color-bb-tone-red-on-fill-active: rgb(252 252 247);
+  --color-bb-tone-red-on-fill-disabled: rgb(185 28 28);
+
+  --color-bb-tone-red-text: rgb(239 68 68);
+  --color-bb-tone-red-text-hover: rgb(247 113 113);
+  --color-bb-tone-red-text-focus: rgb(247 113 113);
+  --color-bb-tone-red-text-active: rgb(247 90 90);
+  --color-bb-tone-red-text-disabled: rgb(127 29 29);
+
+
+  /* Dynamic tone colors (references runtime CSS variables) */
+  --color-bb-tone-fill: var(--et-tone-fill-rest);
+  --color-bb-tone-fill-hover: var(--et-tone-fill-hover);
+  --color-bb-tone-fill-focus: var(--et-tone-fill-focus);
+  --color-bb-tone-fill-active: var(--et-tone-fill-active);
+  --color-bb-tone-fill-disabled: var(--et-tone-fill-disabled);
+  --color-bb-tone-on-fill: var(--et-tone-on-fill-rest);
+  --color-bb-tone-on-fill-hover: var(--et-tone-on-fill-hover);
+  --color-bb-tone-on-fill-focus: var(--et-tone-on-fill-focus);
+  --color-bb-tone-on-fill-active: var(--et-tone-on-fill-active);
+  --color-bb-tone-on-fill-disabled: var(--et-tone-on-fill-disabled);
+  --color-bb-tone-text: var(--et-tone-text-rest);
+  --color-bb-tone-text-hover: var(--et-tone-text-hover);
+  --color-bb-tone-text-focus: var(--et-tone-text-focus);
+  --color-bb-tone-text-active: var(--et-tone-text-active);
+  --color-bb-tone-text-disabled: var(--et-tone-text-disabled);
+}
+
+@layer base {
+:root, .et-color--default, .et-color--green {
+  --et-color-theme-type: success;
+  --et-tone-fill-rest: rgb(7 244 104);
+  --et-tone-fill-hover: rgb(58 245 133);
+  --et-tone-fill-focus: rgb(58 245 133);
+  --et-tone-fill-active: rgb(105 248 163);
+  --et-tone-fill-disabled: rgb(3 98 41);
+
+  --et-tone-on-fill-rest: rgb(21 22 22);
+  --et-tone-on-fill-hover: rgb(21 22 22);
+  --et-tone-on-fill-focus: rgb(21 22 22);
+  --et-tone-on-fill-active: rgb(21 22 22);
+  --et-tone-on-fill-disabled: rgb(21 22 22);
+
+  --et-tone-text-rest: rgb(7 244 104);
+  --et-tone-text-hover: rgb(7 244 104);
+  --et-tone-text-focus: rgb(7 244 104);
+  --et-tone-text-active: rgb(7 244 104);
+  --et-tone-text-disabled: rgb(7 244 104);
+}
+
+.et-color--red {
+  --et-color-theme-type: error;
+  --et-tone-fill-rest: rgb(239 68 68);
+  --et-tone-fill-hover: rgb(247 113 113);
+  --et-tone-fill-focus: rgb(247 113 113);
+  --et-tone-fill-active: rgb(247 90 90);
+  --et-tone-fill-disabled: rgb(127 29 29);
+
+  --et-tone-on-fill-rest: rgb(252 252 247);
+  --et-tone-on-fill-hover: rgb(252 252 247);
+  --et-tone-on-fill-focus: rgb(252 252 247);
+  --et-tone-on-fill-active: rgb(252 252 247);
+  --et-tone-on-fill-disabled: rgb(185 28 28);
+
+  --et-tone-text-rest: rgb(239 68 68);
+  --et-tone-text-hover: rgb(239 68 68);
+  --et-tone-text-focus: rgb(239 68 68);
+  --et-tone-text-active: rgb(239 68 68);
+  --et-tone-text-disabled: rgb(239 68 68);
+}
+
+}
+
+/* The current tone at rest, plus the dynamic Tailwind tone colors - re-declared per color scope so
+   that bg-bb-tone-* utilities resolve against the nearest .et-color--*
+   scope instead of the value computed once at :root. */
+@layer base {
+  :root, :where([class*="et-color--"]) {
+    --et-tone-fill: var(--et-tone-fill-rest);
+    --et-tone-on-fill: var(--et-tone-on-fill-rest);
+    --et-tone-text: var(--et-tone-text-rest, var(--et-tone-fill-rest));
+
+    --color-bb-tone-fill: var(--et-tone-fill-rest);
+    --color-bb-tone-fill-hover: var(--et-tone-fill-hover);
+    --color-bb-tone-fill-focus: var(--et-tone-fill-focus);
+    --color-bb-tone-fill-active: var(--et-tone-fill-active);
+    --color-bb-tone-fill-disabled: var(--et-tone-fill-disabled);
+    --color-bb-tone-on-fill: var(--et-tone-on-fill-rest);
+    --color-bb-tone-on-fill-hover: var(--et-tone-on-fill-hover);
+    --color-bb-tone-on-fill-focus: var(--et-tone-on-fill-focus);
+    --color-bb-tone-on-fill-active: var(--et-tone-on-fill-active);
+    --color-bb-tone-on-fill-disabled: var(--et-tone-on-fill-disabled);
+    --color-bb-tone-text: var(--et-tone-text-rest);
+    --color-bb-tone-text-hover: var(--et-tone-text-hover);
+    --color-bb-tone-text-focus: var(--et-tone-text-focus);
+    --color-bb-tone-text-active: var(--et-tone-text-active);
+    --color-bb-tone-text-disabled: var(--et-tone-text-disabled);
+  }
+}

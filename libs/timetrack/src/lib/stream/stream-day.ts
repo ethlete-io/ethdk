@@ -1,0 +1,2262 @@
+import { ActivityBlock, ActivityContext, contextKey, streamKey } from '../model/block';
+import { CallWindow } from '../model/call';
+import { CheckoutRoots, branchOf, repoRootOf } from '../model/context';
+import {
+  ActivityEvent,
+  AgentPromptEvent,
+  AgentUsageEvent,
+  CollectedEvent,
+  CollectedEventSource,
+  GitCommitEvent,
+  OriginEvent,
+  TIMETRACK_PROVIDER,
+  TokenUsage,
+  isActivityEvent,
+  windowFocusDetail,
+} from '../model/event';
+import { Evidence } from '../model/evidence';
+import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
+import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
+import { TimetrackProjectRoots, workPathsOf, workPathsSplit } from '../model/work-path';
+import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
+import { unwatchedAwayStretches } from '../rows/attended';
+import { BookedRemoteWindow } from '../rows/remote-booking';
+import { TimetrackCallRules } from '../settings/model';
+import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
+import {
+  BreakWindow,
+  bookedRemoteWindows,
+  breakGaps,
+  breakMs,
+  breakWindows,
+  longAbsences,
+  remoteWorkWindows,
+} from './breaks';
+import { HeardChunk, classifyCalls, lastHostSampleAt, oneCallAcrossMachines } from './calls';
+import { promptOriginReader } from './prompt-origin';
+import { cherryPickCopies } from './cherry-picks';
+import { PresenceSample, presenceWindows } from './presence';
+import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
+import { sessionWork } from './session-work';
+import { fileAgentEventsByWork } from './worked-in';
+import { receivedEventsOf } from './merge-day-events';
+import { redactTitleUrls } from '../store/title';
+import { namedWorkFileOf, SessionPiece, sessionPieces } from '../model/session-piece';
+
+/** The key of the one line every application with no checkout folds into. */
+export const OTHER_APPLICATIONS_KEY = 'other-applications';
+
+/**
+ * The sources the streams are built from. `calendar`, `gitlab` and `ingest` stay in the store, unread.
+ *
+ * `call` is read too, in a pass of its own, and it is deliberately not here: a call is presence and it
+ * is never attribution, so it may not enter the loop that sets the sticky context or claims a stretch
+ * for a checkout. Adding it here would book the microphone's hours to whatever repository was last in
+ * front. See `classifyCalls`.
+ */
+const READ_SOURCES: readonly CollectedEventSource[] = ['window', 'idle', 'git', 'agent-session', 'editor'];
+
+/**
+ * The sources that say somebody was at the machine.
+ *
+ * An editor heartbeat is deliberately not one, and this list is what keeps it out. It only fires while
+ * its own window has focus, so every minute it covers is a minute the window source already reported —
+ * it can name the checkout that window holds and it can add no time. Counting it would only let the two
+ * disagree, and the difference reads on screen as time nothing watched.
+ */
+const PRESENCE_SOURCES: readonly CollectedEventSource[] = ['window', 'idle', 'git', 'agent-session'];
+
+export type StreamDayOptions = {
+  /**
+   * The safety valve for a stretch nothing observed at all. It is deliberately generous, because the
+   * collectors are edge-triggered — a focus event fires on a switch and a commit when you commit, so
+   * ten quiet minutes inside one context are normal work, not absence.
+   */
+  maxUnobservedMs: number;
+  /** How long a checkout keeps holding the focused window after its last event names it. */
+  repoStickinessMs: number;
+  /**
+   * The silence that ends a stretch either side of an agent event, when a day is rebuilt from the
+   * prompts the user typed. Shorter than `maxUnobservedMs`, because it is an idle rule rather than a
+   * safety valve: waiting on an agent is being at the machine, and an hour of neither is not.
+   */
+  maxAgentGapMs: number;
+  /**
+   * How much of a break one prompt the user sent buys back. Defaults to `DEFAULT_PROMPT_ATTENTION_MS`.
+   */
+  promptAttentionMs?: number;
+  /**
+   * The repository roots the host discovered. An agent session reports the directory it was started in,
+   * which is often a subdirectory of a checkout, and without these each subdirectory becomes a stream.
+   */
+  repoRoots?: readonly string[];
+  /**
+   * The user's path-to-project links. A private one takes its checkout out of the day: no line, no
+   * evidence, no spend and no branch name. Its window time folds into the other-applications line, so
+   * presence still reconciles without the path being named.
+   */
+  links?: readonly TimetrackProjectLink[];
+  /**
+   * The application ids of the app reading the day. Its own window still holds the minutes it was in
+   * front, so presence and the concurrency ratio still reconcile, but it names neither an application
+   * nor an observation — a tool that lists itself as evidence reports on itself.
+   */
+  ownAppIds?: readonly string[];
+  /**
+   * The instant the window source has reported through, which is its last drain rather than its last
+   * sample. Without it a day still being collected reports its own live tail as rebuilt.
+   */
+  windowsSeenThroughMs?: number;
+  /** The local day key being streamed, which a day-scoped attribution rule is matched against. */
+  day?: string;
+  /** The instant a day still being collected is read at. Left out for a day that is over. */
+  now?: Date;
+  /** Which calls counted as work. Nothing configured leaves every call unclassified — see `classifyCalls`. */
+  callRules?: TimetrackCallRules;
+  /** When the call transcriber heard something, which attends a call — see `classifyCalls`. */
+  heard?: readonly HeardChunk[];
+  /**
+   * The applications the user has said hold no work context. Their unnamed time is reported with its
+   * own cause, and nothing else about the day changes: a title of theirs that names a checkout still
+   * names it.
+   */
+  noWorkContextApps?: readonly string[];
+  /**
+   * The applications that open over the work rather than beside it — a file picker, a portal dialog.
+   * Reported with their own cause, for the same reason and to the same effect.
+   */
+  transientApps?: readonly string[];
+  /**
+   * The applications whose windows hold unrelated things, a browser or a file manager. The titles of
+   * theirs that held a checkout are kept in `namedTitles`, and nothing else about the day changes.
+   */
+  multiPurposeApps?: readonly string[];
+  /**
+   * The shortest gap in presence that is a break. Kept at `maxFillGapMs`, so a gap `fillGaps` gives to
+   * the work around it is not also drawn as time away from it.
+   */
+  minBreakMs?: number;
+  /**
+   * The branches that are integration rather than one piece of work, from the git-flow config. Work on
+   * one is what a work path answers for: the branch names no piece of work, so the directory the
+   * commits touched does.
+   */
+  baseBranches?: readonly string[];
+  /**
+   * The branch each checkout was on, read from its reflog, for a checkout the day holds no git event,
+   * editor heartbeat or agent session for. Without it such a checkout's minutes sit on no branch, and
+   * no rule can name them and no placeholder can open for them.
+   */
+  headBranches?: Readonly<Record<string, string>>;
+  /** What `headBranches` is for the minutes a paired machine filled, by machine id: its timeline's branch, never this machine's. */
+  peerHeadBranches?: Readonly<Record<string, Readonly<Record<string, string>>>>;
+  /**
+   * The projects each checkout declares, which is the grain a work path is cut to. Without them a
+   * checkout's own commits decide the grain between them - see `workPathsOf`.
+   */
+  projectRoots?: TimetrackProjectRoots;
+  /**
+   * What the day's blocks are turned into rows with — see `buildRows`.
+   *
+   * `links` and `calls` are deliberately not repeatable here: this pass already holds the user's
+   * project links and already classified the day's calls, and a second copy of either would let the
+   * streams and the rows disagree about a minute neither is wrong about.
+   */
+  rows?: Omit<BuildRowsOptions, 'links' | 'calls' | 'peerLanes'>;
+};
+
+export const DEFAULT_STREAM_DAY_OPTIONS: StreamDayOptions = {
+  maxUnobservedMs: 30 * 60_000,
+  repoStickinessMs: 5 * 60_000,
+  maxAgentGapMs: 15 * 60_000,
+};
+
+/** The part of a spend one paired machine ran. */
+export type MachineSpend = {
+  machineId: string;
+  machineName: string;
+  usage: TokenUsage;
+  turns: number;
+};
+
+/** What a set of turns spent. The five classes are kept apart because they are priced apart. */
+export type StreamSpend = {
+  usage: TokenUsage;
+  turns: number;
+  /** The models the turns ran on, first seen first. */
+  models: string[];
+  /** The part of it each paired machine ran, inside the totals above. Absent when this machine ran every turn. */
+  peers?: MachineSpend[];
+};
+
+/** The checkouts a day's streams name no branch for, which the reflog is asked about. */
+export const unbranchedCheckouts = (streams: readonly Pick<Stream, 'repoPath' | 'branches'>[]) =>
+  streams.flatMap((stream) => (stream.repoPath && !stream.branches.length ? [stream.repoPath] : []));
+
+/** One context's work across one local day. Several streams run at once, and each books its full time. */
+export type Stream = {
+  /** `streamKey` of the checkout, or `OTHER_APPLICATIONS_KEY`. */
+  key: string;
+  /** The checkout this stream is. The folded line has none. */
+  repoPath?: string;
+  /** The applications whose windows held focus in this stream, first seen first. */
+  apps: string[];
+  /** The branches the checkout was seen on, first seen first. A branch never splits a stream. */
+  branches: string[];
+  /** How many agent runs the checkout held. Five consoles in one checkout are still one stream. */
+  agentSessions: number;
+  /**
+   * Contiguous time, gaps kept: what the focused window and the agents observed, unioned inside each
+   * piece of the checkout and left to overlap between them. Two sessions that ran at once are two
+   * pieces, so the same minute appears twice — see {@link engagedMs}.
+   */
+  blocks: TimeWindow[];
+  /** The earliest instant the stream covers, attended or not. */
+  from: Date;
+  /** The latest instant the stream covers. It disagrees with `engagedMs` when there is a gap. */
+  to: Date;
+  /** Every block summed. On a checkout that ran two sessions at once it exceeds `to` minus `from`. */
+  engagedMs: number;
+  /**
+   * Agent time outside presence: the machine worked and nobody was at it. It counts in neither
+   * `presenceMs` nor `engagedMs`, so a day never claims an hour a person was not there for. The turns
+   * spent in it are still this stream's, because a token is spent at an instant and paid for either way.
+   */
+  unattendedMs: number;
+  /** True when no focused window ever resolved here: an agent ran it and nobody looked. */
+  neverFocused: boolean;
+  /**
+   * The part of `engagedMs` that no window and no idle transition observed, rebuilt from the prompts
+   * the user typed and the commits they made. It is inside `engagedMs`, never beside it.
+   */
+  rebuiltMs: number;
+  spend: StreamSpend;
+  evidence: Evidence[];
+  /** Observations past the cap, which the list does not hold. Zero on all but a very long day. */
+  evidenceOmitted: number;
+};
+
+/** What a local day was worked on, for how long, and what the agents spent on it. */
+export type StreamDay = {
+  /** Wall-clock time at the machine, overlaps counted once. */
+  presenceMs: number;
+  /**
+   * The stretches that time is made of, in order and never overlapping. It is what a statement of the
+   * user's is applied to — see `statedPresence`.
+   */
+  presence: TimeWindow[];
+  /** Every stream's blocks summed, the folded line included. It may exceed `presenceMs`, and that is the point. */
+  engagedMs: number;
+  /**
+   * `engagedMs / presenceMs`. 1 is a serial day, 2.4 is a day that ran several agents, 0 is a day
+   * nothing observed. Two agent sessions inside one checkout raise it as much as two checkouts do.
+   */
+  concurrency: number;
+  /**
+   * The focused window's time, every stream summed, clipped to what the machine watched. It is the
+   * denominator `unnamedFocus` is read against, and it is smaller than `engagedMs`: an agent's time and
+   * a rebuilt stretch are in that number and no window observed either.
+   */
+  focusMs: number;
+  /**
+   * The part of `focusMs` no checkout took, per application and cause. It sums to the focused-window
+   * part of the other-applications line, because the same pass produces both.
+   *
+   * Ordered longest first. It is the only place the day says which applications the folded line is
+   * made of.
+   */
+  unnamedFocus: UnnamedFocus[];
+  /**
+   * The applications whose focused window held a checkout at some point in the day, `app_id` as the
+   * compositor reported it.
+   *
+   * It is what separates an application that lost a name from one that never had one: an editor in
+   * this list held the focus for a stretch that named nothing, and a music player is not in it at all.
+   * Nothing here is a verdict on its own — `unnamedFocusOver` is where the two meet.
+   */
+  namedApps: string[];
+  /**
+   * The titles of a `multiPurposeApps` window that held a checkout at some point in the day, per
+   * application and after `redactTitleUrls`. Only multi-purpose applications are recorded.
+   */
+  namedTitles: Record<string, string[]>;
+  /** Ordered by when each stream started. */
+  streams: Stream[];
+  /**
+   * The day cut into contiguous same-context stretches, which is what a row is built from. Two blocks
+   * of the same context never overlap; blocks of different contexts do, because a concurrent day is
+   * two contexts running at once and each books its full time.
+   */
+  blocks: ActivityBlock[];
+  /**
+   * The bookable rows those blocks produced, plus the rows nothing observed as a block: the meetings,
+   * the calls a rule counted and the runs the user timed.
+   *
+   * `private` is always empty here. A private checkout leaves this pass before a block is built, so
+   * there is nothing left for the ladder's private rung to find — see `privateNames`.
+   */
+  rows: DayRows;
+  /** Every stream's unattended time summed. Outside both `presenceMs` and `engagedMs`. */
+  unattendedMs: number;
+  /**
+   * The stretches nobody was at the machine, in order. Outside `presenceMs`. A gap an agent ran
+   * through is in `unattendedMs` as well: one number says who was there, the other says what ran.
+   */
+  breaks: BreakWindow[];
+  /** The agent sessions of each piece, by the piece's id, the piece's own first session included. */
+  pieceSessions: Record<string, string[]>;
+  /** How long those breaks held. */
+  breakMs: number;
+  /**
+   * The part of `presenceMs` that no window and no idle transition observed. It is presence the
+   * prompts and commits of the day rebuilt, and it is inside `presenceMs` rather than beside it — a
+   * day the collector never ran would otherwise report an empty one.
+   */
+  rebuiltMs: number;
+  /** Every turn the day read, whichever stream took it. */
+  spend: StreamSpend;
+  /** The turns `spend` sums, one by one, so each can be priced by its own model and instant. */
+  spendTurns: AgentUsageEvent[];
+  /**
+   * The part of `spend` that names no working directory at all, so nothing can carry it. A turn spent
+   * while the user was away is not this: its checkout books it, and the stream reports the time as
+   * unattended.
+   */
+  unattributedSpend: StreamSpend;
+  /** The turns `unattributedSpend` sums, one by one, so their cost can be stated apart from the day's. */
+  unattributedTurns: AgentUsageEvent[];
+  /**
+   * What the app itself spent on the user's behalf, under the reserved `TIMETRACK_PROVIDER`.
+   *
+   * It is outside `spend` and outside `unattributedSpend`, and no stream holds it: the app is no
+   * checkout, so nothing may book its tokens as work. It rebuilds no presence either — a run the user
+   * pressed for says the machine answered, not that a person was at the keyboard for its minutes.
+   */
+  ownSpend: StreamSpend;
+  /**
+   * The checkout names a window claimed that two checkouts share. Neither could take the window, so
+   * its time is in the other-applications line, and this is the only thing that says why.
+   */
+  ambiguousNames: string[];
+  /**
+   * Every call of the day, in order — the ones a rule made work and the ones it did not alike.
+   *
+   * The ones no rule counts are here so the review can show them and the user can write the rule. They
+   * propose nothing, and one the user sat in still adds presence. A call is no `Stream`, because a
+   * stream is a checkout and a call is not one, so a working call adds to `presenceMs` and to no
+   * `engagedMs`. On a day of long calls `concurrency` therefore reads below 1, which is what an hour
+   * of presence that no checkout booked should read as.
+   */
+  calls: CallWindow[];
+  /**
+   * Each paired machine's blocks by `streamKey`, keyed by machine id. Empty on a day only this machine
+   * collected.
+   */
+  peerLanes: Readonly<Record<string, Readonly<Record<string, readonly TimeWindow[]>>>>;
+  /** This machine's own blocks by `streamKey`: the only evidence a row it sends to a paired machine may rest on. */
+  ownLanes: Readonly<Record<string, readonly TimeWindow[]>>;
+};
+
+/**
+ * One piece of a checkout's day: the stretches of a single `contextKey`, which on a checkout that ran
+ * agents is a single session.
+ *
+ * The windows are unioned inside a piece and summed across pieces, so two sessions of one checkout
+ * that ran at the same time each book their full time. That is the same reading two checkouts running
+ * at once already get, and it is what lets `concurrency` see a second agent inside one lane.
+ */
+type PieceDraft = {
+  focus: TimeWindow[];
+  agent: TimeWindow[];
+  /** The part of `agent` a session spent waiting for a prompt the user then typed. */
+  waiting: TimeWindow[];
+  /** The stretches this piece claimed where nothing observed the day. Clipped to the rebuilt part. */
+  rebuilt: TimeWindow[];
+};
+
+type StreamDraft = {
+  key: string;
+  repoPath?: string;
+  apps: string[];
+  branches: string[];
+  sessions: Set<string>;
+  pieces: Map<string, PieceDraft>;
+  evidence: Evidence[];
+  evidenceKeys: Set<string>;
+  evidenceOmitted: number;
+};
+
+/**
+ * One thing that happened at an instant, and where. A rebuilt stretch is tiled by these: each claims
+ * the minutes up to the next one, so a stretch nothing watched still has one owner per minute. A
+ * `state` of `null` names no checkout, and the folded line takes it.
+ */
+type Mark = { at: Date; state: RepoState | null };
+
+/** One application's unnamed stretches, kept unclipped until `seen` is known. */
+type UnnamedDraft = {
+  appId?: string;
+  reason: UnnamedFocusReason;
+  windows: TimeWindow[];
+  titles: Map<string, TimeWindow[]>;
+};
+
+type RepoState = { repoPath: string; branch?: string; workPath?: string };
+
+/** What a window manager puts between the parts of a title. */
+const TITLE_SEGMENTS = /\s[-–—|]\s/;
+
+const emptySpend = (): StreamSpend => ({
+  usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 },
+  turns: 0,
+  models: [],
+});
+
+const addSpend = (into: StreamSpend, turn: AgentUsageEvent) => {
+  into.usage.input += turn.usage.input;
+  into.usage.output += turn.usage.output;
+  into.usage.cacheWrite += turn.usage.cacheWrite;
+  into.usage.cacheRead += turn.usage.cacheRead;
+  into.usage.thinking += turn.usage.thinking;
+  into.turns++;
+
+  if (!into.models.includes(turn.model)) into.models.push(turn.model);
+};
+
+/** A stream's rebuilt time, said once. A prompt carries no text, so the instant is the whole of it. */
+const promptEvidence = (prompt: AgentPromptEvent): Evidence => ({
+  kind: 'prompt',
+  at: prompt.at,
+  detail: prompt.askedBy === 'machine' ? 'prompts an agent gave itself here' : 'prompts you typed here',
+});
+
+const commitDetailOf = (commit: GitCommitEvent) => `${commit.sha.slice(0, 7)} ${commit.subject}`;
+
+const commitCopiesOf = (events: readonly (CollectedEvent | OriginEvent)[], repoRoots?: readonly string[]) =>
+  cherryPickCopies(events, { repoRoots }).map((copies) =>
+    copies.map((copy) => ({
+      detail: commitDetailOf(copy),
+      laneKeys: [copy.repoPath, ...(copy.worktree ? [copy.worktree] : [])].map((path) => `repo:${path}`),
+    })),
+  );
+
+const evidenceFor = (sample: ActivityEvent): Evidence | null => {
+  switch (sample.kind) {
+    case 'window-focus':
+      return { kind: 'window-title', at: sample.at, detail: windowFocusDetail(sample) };
+    case 'editor-heartbeat':
+      return {
+        kind: 'editor',
+        at: sample.at,
+        detail: `${sample.editing ? 'edited' : 'read'} ${sample.directory ?? sample.repoPath ?? sample.reporter}`,
+        ...(sample.directory && sample.repoPath ? { directory: sample.directory } : {}),
+      };
+    case 'git-checkout':
+      return {
+        kind: 'branch',
+        at: sample.at,
+        detail: `branch \`${sample.branch}\` checked out in ${sample.repoPath}`,
+      };
+    case 'git-commit':
+      return {
+        kind: 'commit',
+        at: sample.at,
+        detail: `${commitDetailOf(sample)}${sample.authoredAt ? ' (pulled)' : ''}`,
+        ...(sample.authoredAt ? {} : { summary: sample.subject }),
+      };
+    case 'agent-session':
+      return {
+        kind: 'agent-session',
+        at: sample.at,
+        detail: sample.title ?? `agent session ${sample.sessionId} in ${sample.cwd}`,
+        summary: sample.title,
+      };
+    default:
+      return null;
+  }
+};
+
+const MAX_EVIDENCE_PER_STREAM = 500;
+
+/**
+ * The focused window, still where the last sample left it.
+ *
+ * The window source reports a change, so a stretch in which the focus does not move carries no sample
+ * at all, and the last sample of the day ends the part of it the machine watched. The agents mark the
+ * minutes after it, and without this those minutes read as time no window watched — a `rebuilt` number
+ * that appears while one window holds the focus and vanishes at the next switch.
+ *
+ * It is only added while the source is fresh: a gap wider than `maxUnobservedMs` is the safety valve's
+ * to judge, and a day whose last sample is hours old gets nothing.
+ */
+const stillFocused = (options: {
+  observed: readonly ActivityEvent[];
+  throughMs?: number;
+  maxUnobservedMs: number;
+}): ActivityEvent | null => {
+  const last = options.observed.filter((sample) => sample.source === 'window' || sample.source === 'idle').at(-1);
+  const throughMs = options.throughMs;
+
+  if (!last || last.kind !== 'window-focus' || throughMs === undefined) return null;
+  if (throughMs <= last.at.getTime() || throughMs - last.at.getTime() > options.maxUnobservedMs) return null;
+
+  return { ...last, at: new Date(throughMs) };
+};
+
+const addEvidence = (draft: StreamDraft, evidence: Evidence | null) => {
+  if (!evidence) return;
+
+  const key = `${evidence.kind}\u0000${evidence.detail}`;
+
+  if (draft.evidenceKeys.has(key)) return;
+
+  draft.evidenceKeys.add(key);
+
+  if (draft.evidence.length >= MAX_EVIDENCE_PER_STREAM) {
+    draft.evidenceOmitted++;
+
+    return;
+  }
+
+  draft.evidence.push(evidence);
+};
+
+const repoStateFor = (sample: ActivityEvent, roots: CheckoutRoots): RepoState | null => {
+  switch (sample.kind) {
+    case 'git-checkout':
+      // A linked worktree's checkout moves the worktree's own HEAD, never its main checkout's branch.
+      return repoRootOf({ path: sample.repoPath, roots }) === sample.repoPath
+        ? { repoPath: sample.repoPath, branch: branchOf(sample.branch) }
+        : null;
+    case 'git-commit':
+      return { repoPath: repoRootOf({ path: sample.repoPath, roots }), branch: branchOf(sample.branch) };
+    case 'agent-session':
+      return { repoPath: repoRootOf({ path: sample.cwd, roots }), branch: branchOf(sample.gitBranch) };
+    case 'editor-heartbeat':
+      return sample.repoPath
+        ? { repoPath: repoRootOf({ path: sample.repoPath, roots }), branch: branchOf(sample.branch) }
+        : null;
+    default:
+      return null;
+  }
+};
+
+/**
+ * The branch each checkout is first seen on, so the part of the day before that fact reads as it too.
+ *
+ * A checkout has a branch at every instant, but nothing observes one until git, an editor or an agent
+ * says so. Without this the window in front before then holds a block on no branch at all, which no
+ * rule can name and no placeholder can open for, although the checkout was plainly on the branch the
+ * next fact reports.
+ *
+ * A `git-checkout` is the exception, and it is why this stops at the first fact rather than taking the
+ * first branch it can find: that event says the branch changed here, so it is the one fact that says
+ * the minutes before it were on a different branch. Those stay unnamed, which is what they are.
+ */
+const firstBranches = (options: {
+  samples: readonly ActivityEvent[];
+  roots: CheckoutRoots;
+  nested: readonly string[];
+}) => {
+  const found = new Map<string, string | undefined>();
+
+  for (const sample of options.samples) {
+    const state = repoStateFor(sample, options.roots);
+
+    if (!state?.branch || found.has(state.repoPath) || within(samplePathOf(sample), options.nested)) continue;
+
+    found.set(state.repoPath, sample.kind === 'git-checkout' ? undefined : state.branch);
+  }
+
+  return found;
+};
+
+/** One commit's or edit's answer to which directory the checkout was working in, at that instant. */
+type WorkPathMark = { at: Date; workPath: string };
+
+type PathsAt = { at: Date; paths: readonly string[] };
+
+const heldBy = (into: Map<string, PathsAt[]>, entry: PathsAt & { repoPath: string }) => {
+  const held = into.get(entry.repoPath) ?? [];
+
+  held.push({ at: entry.at, paths: entry.paths });
+  into.set(entry.repoPath, held);
+};
+
+/** The last mark of each run in one directory, which `workPathAt` reads exactly as it reads the whole run. */
+const lastOfEachRun = (marks: readonly WorkPathMark[]) =>
+  marks.filter((mark, index) => marks[index + 1]?.workPath !== mark.workPath);
+
+/**
+ * When each checkout's commits said which directory was worked in, oldest first.
+ *
+ * A commit is the better answer: a window focus says which checkout is in front of you, but the files
+ * a commit carries say which piece of work a stretch belongs to. A checkout with no commit that day
+ * falls back to the directories its editor heartbeats were in, which is all that says it there.
+ */
+const workPathMarks = (samples: readonly ActivityEvent[], projectRoots: TimetrackProjectRoots) => {
+  const commits = new Map<string, PathsAt[]>();
+  const edits = new Map<string, PathsAt[]>();
+
+  for (const sample of samples) {
+    if (sample.kind === 'git-commit') {
+      heldBy(commits, { repoPath: sample.repoPath, at: sample.at, paths: sample.paths ?? [] });
+    }
+
+    if (sample.kind === 'editor-heartbeat' && sample.repoPath && sample.directory) {
+      heldBy(edits, { repoPath: sample.repoPath, at: sample.at, paths: [`${sample.directory}/`] });
+    }
+  }
+
+  const edited = new Set<string>();
+
+  for (const [repoPath, held] of edits) {
+    if (commits.has(repoPath)) continue;
+
+    commits.set(repoPath, held);
+    edited.add(repoPath);
+  }
+
+  const found = new Map<string, { marks: WorkPathMark[]; edited: boolean }>();
+
+  for (const [repoPath, held] of commits) {
+    const paths = workPathsOf({ commits: held, projectRoots: projectRoots[repoPath] });
+    const marks = held
+      .map((commit, index) => ({ at: commit.at, workPath: paths[index] }))
+      .filter((mark): mark is WorkPathMark => !!mark.workPath);
+
+    if (marks.length) found.set(repoPath, { marks: lastOfEachRun(marks), edited: edited.has(repoPath) });
+  }
+
+  return found;
+};
+
+/**
+ * The checkouts whose directories are their grain of work, with the commits that said so.
+ *
+ * A checkout that worked in one directory all day is one piece of work under a longer name, and one
+ * that touched nine is a checkout whose directories are structure. Both keep the grain they had, so
+ * this never splits a checkout it has no evidence to split.
+ */
+const workPathGrains = (samples: readonly ActivityEvent[], projectRoots: TimetrackProjectRoots) => {
+  const grains = new Map<string, WorkPathMark[]>();
+
+  for (const [repoPath, { marks, edited }] of workPathMarks(samples, projectRoots)) {
+    const paths = marks.map((mark) => mark.workPath);
+
+    if (workPathsSplit({ paths }) || (edited && new Set(paths).size === 1)) grains.set(repoPath, marks);
+  }
+
+  return grains;
+};
+
+/**
+ * The directory a stretch worked in, read from the next commit rather than the last one.
+ *
+ * A branch is reported when it is switched to, so it applies to the minutes after it. A commit is the
+ * opposite: its files are what the minutes *before* it were spent on. Reading the last one instead
+ * gives every stretch the name of the work that was already finished.
+ *
+ * After the day's last commit there is no next one, so the last one stands - the work carries on in
+ * the directory it was last committed in until something says otherwise.
+ */
+const workPathAt = (options: { marks: readonly WorkPathMark[] | undefined; at: Date }) => {
+  const marks = options.marks;
+
+  if (!marks?.length) return undefined;
+
+  const next = marks.find((mark) => mark.at.getTime() >= options.at.getTime());
+
+  return (next ?? marks[marks.length - 1])?.workPath;
+};
+
+/** One agent session's run in a checkout: the first and the last instant it was sampled there. */
+type SessionRun = { sessionId: string; from: Date; to: Date; paths: string[]; branch?: string };
+
+/**
+ * The agent sessions each checkout ran, oldest start first.
+ *
+ * A session reports the directory it was started in, so the checkout it ran in is read the same way
+ * every other agent fact is read - through `repoRootOf`.
+ */
+const sessionRuns = (options: {
+  samples: readonly ActivityEvent[];
+  turns: readonly AgentUsageEvent[];
+  roots: CheckoutRoots;
+}) => {
+  const { samples, turns, roots } = options;
+  const held = new Map<string, Map<string, SessionRun>>();
+
+  for (const sample of samples) {
+    if (sample.kind !== 'agent-session') continue;
+
+    const repoPath = repoRootOf({ path: sample.cwd, roots });
+    const runs = held.get(repoPath) ?? new Map<string, SessionRun>();
+    const run = runs.get(sample.sessionId);
+
+    // A record's `cwd` follows the shell's `cd`, and the parser falls back to it: it names a directory.
+    const workedIn = sample.workedIn === sample.cwd ? `${sample.cwd.replace(/\/+$/, '')}/` : sample.workedIn;
+    const path = workedIn && workedIn.startsWith(`${repoPath}/`) ? workedIn.slice(repoPath.length + 1) : '';
+
+    if (run) {
+      run.to = sample.at;
+      run.branch = sample.gitBranch ?? run.branch;
+      if (path) run.paths.push(path);
+    } else
+      runs.set(sample.sessionId, {
+        sessionId: sample.sessionId,
+        from: sample.at,
+        to: sample.at,
+        paths: path ? [path] : [],
+        branch: sample.gitBranch,
+      });
+
+    held.set(repoPath, runs);
+  }
+
+  // Samples are thinned to one a minute, so the write of a handoff or a plan often survives only in
+  // the turn that spent on it.
+  for (const turn of turns) {
+    if (!turn.workedIn) continue;
+
+    const repoPath = repoRootOf({ path: turn.cwd, roots });
+    const path = turn.workedIn.startsWith(`${repoPath}/`) ? turn.workedIn.slice(repoPath.length + 1) : '';
+
+    if (namedWorkFileOf(path)) held.get(repoPath)?.get(turn.sessionId)?.paths.push(path);
+  }
+
+  return new Map(
+    [...held].map(
+      ([repoPath, runs]) =>
+        [repoPath, [...runs.values()].sort((left, right) => left.from.getTime() - right.from.getTime())] as const,
+    ),
+  );
+};
+
+/**
+ * The agent session a watched stretch of a checkout belongs to: the oldest one still running at that
+ * instant.
+ *
+ * An agent's own stretch names its session directly, so this answers only for the stretches nothing
+ * but the checkout is known about — the focused window and the rebuilt marks. The window names a
+ * checkout and never a session, so an instant that two sessions both ran in gets one of them. The
+ * oldest holds it until it ends, because that answer only ever moves forward: reading the nearest
+ * sample instead makes the stretch flap between two sessions, and a lane holding a quarter of an hour
+ * is then drawn as twenty slivers none of which a reader can name.
+ *
+ * Before the first run and after the last one the nearest run stands, the way `workPathAt` carries the
+ * last directory on. A checkout that ran one session therefore reads as that session all day, and cuts
+ * exactly where it cut before a session was carried at all.
+ */
+const sessionAt = (options: { runs: readonly SessionRun[] | undefined; at: Date }) => {
+  const runs = options.runs;
+
+  if (!runs?.length) return undefined;
+
+  const running = runs.find((run) => run.to.getTime() >= options.at.getTime());
+
+  return (running ?? runs[runs.length - 1])?.sessionId;
+};
+
+/**
+ * `sessionAt` carries a run back over the stretches before it, so a block that ended before its session
+ * started would otherwise name work nobody had begun yet.
+ */
+const withoutLaterSession = (options: {
+  block: ActivityBlock;
+  runs: ReadonlyMap<string, readonly SessionRun[]>;
+}): ActivityBlock => {
+  const { block } = options;
+  const { session, piece: _piece, ...context } = block.context;
+  const run = block.context.repoPath
+    ? options.runs.get(block.context.repoPath)?.find((held) => held.sessionId === session)
+    : undefined;
+
+  return run && run.from > block.to ? { ...block, context } : block;
+};
+
+/**
+ * The linked worktrees inside another checkout's directory, which `repoRootOf` files under that checkout.
+ *
+ * Such a worktree has a HEAD of its own, so a branch the enclosing checkout was seen on says nothing
+ * about it, and a branch it reports says nothing about the enclosing checkout.
+ */
+const nestedWorktreesOf = (options: {
+  worktrees: Readonly<Record<string, string>> | undefined;
+  roots: CheckoutRoots;
+}) => Object.keys(options.worktrees ?? {}).filter((path) => repoRootOf({ path, roots: options.roots }) !== path);
+
+const within = (path: string | undefined, directories: readonly string[]) =>
+  !!path && directories.some((directory) => path === directory || path.startsWith(`${directory}/`));
+
+const samplePathOf = (sample: ActivityEvent) =>
+  sample.kind === 'agent-session'
+    ? sample.cwd
+    : sample.kind === 'editor-heartbeat'
+      ? sample.repoPath
+      : sample.kind === 'git-commit'
+        ? (sample.worktree ?? sample.repoPath)
+        : undefined;
+
+/** One `git-checkout`'s answer to which branch a checkout was moved onto, at the instant it moved. */
+type BranchMark = { at: Date; branch: string };
+
+/**
+ * When each checkout was moved onto another branch, oldest first.
+ *
+ * Only a `git-checkout` answers this. Every other fact reports the branch a checkout is already on,
+ * which says nothing about when it got there.
+ */
+const branchMarks = (samples: readonly ActivityEvent[], roots: CheckoutRoots) => {
+  const found = new Map<string, BranchMark[]>();
+
+  for (const sample of samples) {
+    if (sample.kind !== 'git-checkout') continue;
+
+    const state = repoStateFor(sample, roots);
+
+    if (!state?.branch) continue;
+
+    const held = found.get(state.repoPath) ?? [];
+
+    held.push({ at: sample.at, branch: state.branch });
+    found.set(state.repoPath, held);
+  }
+
+  return found;
+};
+
+/**
+ * When git or an editor said which branch each checkout had checked out, oldest first.
+ *
+ * These outrank the branch an agent session reports, which can be a stale one it started on. An
+ * agent's branch names a stretch only where neither had spoken yet.
+ */
+const witnessedBranches = (options: {
+  samples: readonly ActivityEvent[];
+  roots: CheckoutRoots;
+  nested: readonly string[];
+}) => {
+  const found = new Map<string, BranchMark[]>();
+
+  for (const sample of options.samples) {
+    if (sample.kind !== 'git-checkout' && sample.kind !== 'editor-heartbeat') continue;
+
+    const state = repoStateFor(sample, options.roots);
+
+    if (!state?.branch || within(samplePathOf(sample), options.nested)) continue;
+
+    const held = found.get(state.repoPath) ?? [];
+
+    held.push({ at: sample.at, branch: state.branch });
+    found.set(state.repoPath, held);
+  }
+
+  return found;
+};
+
+const witnessedAt = (options: { marks: readonly BranchMark[] | undefined; at: Date }) => {
+  let found: string | undefined;
+
+  for (const mark of options.marks ?? []) {
+    if (mark.at.getTime() > options.at.getTime()) break;
+
+    found = mark.branch;
+  }
+
+  return found;
+};
+
+/**
+ * The branch a stretch on a base branch was cut onto next, or nothing.
+ *
+ * A checkout is reported when it happens, so it names the branch of the minutes after it. That is the
+ * right reading of which branch a stretch sat on, and the wrong reading of which piece of work it
+ * was: a branch is very often cut once the work on it has started, which leaves those minutes on the
+ * base branch although the branch cut from it is what they became. `workPathAt` reads a commit
+ * backwards for the same reason.
+ *
+ * Only the next mark counts, so a move onto another base branch ends the stretch instead of handing
+ * it on. The stretch reaches back to the move onto the base branch, which on a checkout that never
+ * left it is the whole day.
+ *
+ * A mark at the same instant is that move itself, not the next one, so the search is strict.
+ */
+const cutOntoAt = (options: {
+  marks: readonly BranchMark[] | undefined;
+  at: Date;
+  baseBranches: ReadonlySet<string>;
+}) => {
+  const next = options.marks?.find((mark) => mark.at.getTime() > options.at.getTime());
+
+  return next && !options.baseBranches.has(next.branch) ? next.branch : undefined;
+};
+
+/**
+ * Which checkout a window title names, by the directory the checkout lives in.
+ *
+ * Matching a whole title segment rather than a substring is what keeps a page title from claiming a
+ * checkout whose name merely appears somewhere in it.
+ */
+const repoNamedIn = (options: { title: string; byName: Map<string, string> }) =>
+  options.title
+    .split(TITLE_SEGMENTS)
+    .map((segment) => options.byName.get(segment.trim()))
+    .find((repoPath) => !!repoPath);
+
+/** Which dropped name a window title claims, so the day can say why the window resolved to nothing. */
+const ambiguousNamedIn = (options: { title: string; ambiguous: ReadonlySet<string> }) =>
+  options.title
+    .split(TITLE_SEGMENTS)
+    .map((segment) => segment.trim())
+    .find((segment) => options.ambiguous.has(segment));
+
+/**
+ * Indexes the checkouts by their directory name.
+ *
+ * Every discovered root counts, not only the checkouts the day holds an event for: an editor open on
+ * a repository you neither committed in nor ran an agent in would otherwise resolve to nothing, and
+ * the sticky would hand its hours to whichever other checkout an event named last.
+ *
+ * A name two of them share is dropped rather than resolved: guessing which `api` an editor is showing
+ * would attribute one project's time to another, and no attribution is the better failure.
+ */
+const reposByName = (samples: readonly ActivityEvent[], roots: CheckoutRoots) => {
+  const byName = new Map<string, string>();
+  const ambiguous = new Set<string>();
+  const paths = [...roots.paths, ...samples.map((sample) => repoStateFor(sample, roots)?.repoPath)];
+
+  for (const repoPath of paths) {
+    const name = repoPath?.split('/').filter(Boolean).pop();
+
+    if (!repoPath || !name) continue;
+    if (byName.get(name) !== undefined && byName.get(name) !== repoPath) ambiguous.add(name);
+
+    byName.set(name, repoPath);
+  }
+
+  for (const name of ambiguous) byName.delete(name);
+
+  return { byName, ambiguous };
+};
+
+/** Whether a link takes a checkout out of the day. A path no link covers is work until the user says so. */
+const isPrivate = (options: { repoPath: string; links: readonly TimetrackProjectLink[] }) =>
+  matchProjectLink({ context: { repoPath: options.repoPath }, links: options.links })?.target.kind === 'private';
+
+/**
+ * The directory names of the private checkouts, so a window title that names one can be recognised.
+ *
+ * Both sources are needed: a link may name a root that covers checkouts it does not name itself, and a
+ * checkout the day saw no git event for is known only from the link.
+ */
+const privateNames = (options: {
+  samples: readonly ActivityEvent[];
+  roots: CheckoutRoots;
+  links: readonly TimetrackProjectLink[];
+}) => {
+  const paths = options.samples
+    .map((sample) => repoStateFor(sample, options.roots)?.repoPath)
+    .concat(options.links.filter((link) => link.target.kind === 'private').map((link) => link.path));
+
+  const byName = new Map<string, string>();
+
+  for (const path of paths) {
+    const name = path?.split('/').filter(Boolean).pop();
+
+    if (!path || !name) continue;
+    if (isPrivate({ repoPath: path, links: options.links })) byName.set(name, path);
+  }
+
+  return byName;
+};
+
+/**
+ * The checkouts the day can name: the roots the host discovered, and whatever a git event reported. A
+ * path the user linked counts too, because a link is a statement that the path is a project of theirs
+ * whether or not the git scan walked it.
+ *
+ * A prompt and a turn are kept for a checkout no link covers, so they are the marks that can name a
+ * directory which is no checkout at all — a scratch folder under `~/Downloads`, or the home directory a
+ * console was opened in. Their minutes are presence and stay in the day, but they must not invent a
+ * stream named after a directory, which is also what put the parent directory of a private checkout on
+ * the screen.
+ */
+const checkoutNamer = (options: {
+  samples: readonly ActivityEvent[];
+  roots: CheckoutRoots;
+  links: readonly TimetrackProjectLink[];
+}) => {
+  const known = new Set(options.roots.paths);
+
+  for (const sample of options.samples) {
+    if (sample.kind === 'git-commit' || sample.kind === 'git-checkout')
+      known.add(repoRootOf({ path: sample.repoPath, roots: options.roots }));
+    // A reporter names the checkout it found with git, so it names one as well as a git event does —
+    // and it is the only source for a repository the user only ever opens in an editor.
+    if (sample.kind === 'editor-heartbeat' && sample.repoPath) known.add(sample.repoPath);
+  }
+
+  return (path: string | undefined) => {
+    if (!path) return undefined;
+
+    const repoPath = repoRootOf({ path, roots: options.roots });
+
+    return known.has(repoPath) || matchProjectLink({ context: { repoPath }, links: options.links })
+      ? repoPath
+      : undefined;
+  };
+};
+
+/** A checkout is a stream of its own. Everything else folds into one line, or presence never reconciles. */
+const draftKeyOf = (context: ActivityContext) => (context.repoPath ? streamKey(context) : OTHER_APPLICATIONS_KEY);
+
+const draftFor = (drafts: Map<string, StreamDraft>, context: ActivityContext) => {
+  const key = draftKeyOf(context);
+  const found = drafts.get(key);
+
+  if (found) {
+    if (context.appId && !found.apps.includes(context.appId)) found.apps.push(context.appId);
+    if (context.branch && !found.branches.includes(context.branch)) found.branches.push(context.branch);
+
+    return found;
+  }
+
+  const draft: StreamDraft = {
+    key,
+    repoPath: context.repoPath,
+    apps: context.appId ? [context.appId] : [],
+    branches: context.branch ? [context.branch] : [],
+    sessions: new Set(),
+    pieces: new Map(),
+    evidence: [],
+    evidenceKeys: new Set(),
+    evidenceOmitted: 0,
+  };
+
+  drafts.set(key, draft);
+
+  return draft;
+};
+
+/**
+ * The piece of a stream one stretch belongs to, keyed the way `blocksFromSpans` keys a block, so a
+ * stream's own numbers and the day's blocks cut the checkout at the same places.
+ */
+const pieceFor = (draft: StreamDraft, context: ActivityContext) => {
+  const key = contextKey(context);
+  const found = draft.pieces.get(key);
+
+  if (found) return found;
+
+  const piece: PieceDraft = { focus: [], agent: [], waiting: [], rebuilt: [] };
+
+  draft.pieces.set(key, piece);
+
+  return piece;
+};
+
+/**
+ * A stream for a checkout the day has turns for and no samples of.
+ *
+ * The spend backfill reads a log the session collector never saw, so a replayed day carries an agent's
+ * turns without the samples that would have drawn its blocks. Without this the whole of such a day's
+ * spend reports as belonging to no checkout at all. The line carries no time, because a turn is an
+ * instant and inventing a duration for it is the bug the presence rule exists to prevent.
+ */
+const spendOnlyStreams = (options: {
+  turns: readonly AgentUsageEvent[];
+  streams: readonly Stream[];
+  checkoutOf: (path: string | undefined) => string | undefined;
+}): Stream[] => {
+  const drafts = new Map<string, { stream: Stream; sessions: Set<string> }>();
+
+  for (const turn of options.turns) {
+    const repoPath = options.checkoutOf(turn.cwd);
+
+    if (!repoPath) continue;
+
+    const key = streamKey({ repoPath });
+
+    if (options.streams.some((stream) => stream.key === key)) continue;
+
+    const branch = branchOf(turn.gitBranch);
+    const found = drafts.get(key);
+
+    if (!found) {
+      drafts.set(key, {
+        stream: {
+          key,
+          repoPath,
+          apps: [],
+          branches: branch ? [branch] : [],
+          agentSessions: 1,
+          blocks: [],
+          from: turn.at,
+          to: turn.at,
+          engagedMs: 0,
+          unattendedMs: 0,
+          neverFocused: true,
+          rebuiltMs: 0,
+          spend: emptySpend(),
+          evidence: [],
+          evidenceOmitted: 0,
+        },
+        sessions: new Set([turn.sessionId]),
+      });
+
+      continue;
+    }
+
+    found.sessions.add(turn.sessionId);
+    found.stream.agentSessions = found.sessions.size;
+
+    if (branch && !found.stream.branches.includes(branch)) found.stream.branches.push(branch);
+    if (turn.at < found.stream.from) found.stream.from = turn.at;
+    if (turn.at > found.stream.to) found.stream.to = turn.at;
+  }
+
+  return [...drafts.values()].map((draft) => draft.stream);
+};
+
+/** One machine's day before its rows are built, with what the rows are built from. */
+type OriginDay = Omit<StreamDay, 'rows' | 'peerLanes' | 'ownLanes'> & {
+  events: readonly CollectedEvent[];
+  seen: TimeWindow[];
+  rebuiltWindows: TimeWindow[];
+  gaps: TimeWindow[];
+  remoteWork: TimeWindow[];
+  bookedRemote: BookedRemoteWindow[];
+  focusMsByStream: Record<string, number>;
+  focusByStream: Record<string, TimeWindow[]>;
+  unattendedByStream: Record<string, TimeWindow[]>;
+};
+
+const streamOrigin = (options: {
+  events: readonly CollectedEvent[];
+  config: StreamDayOptions;
+  elsewhere?: readonly (readonly CollectedEvent[])[];
+}): OriginDay => {
+  const { config } = options;
+  const roots: CheckoutRoots = { paths: config.repoRoots ?? [], worktrees: config.rows?.worktrees ?? {} };
+  const links = config.links ?? [];
+  const events = fileAgentEventsByWork({ events: options.events, roots });
+  const ownAppIds = new Set((config.ownAppIds ?? []).map((id) => id.toLowerCase()));
+  const noWorkContextApps = new Set((config.noWorkContextApps ?? []).map((id) => id.toLowerCase()));
+  const transientApps = new Set((config.transientApps ?? []).map((id) => id.toLowerCase()));
+  const multiPurposeApps = new Set((config.multiPurposeApps ?? []).map((id) => id.toLowerCase()));
+  const observed = events
+    .filter(isActivityEvent)
+    .filter((sample) => READ_SOURCES.includes(sample.source))
+    // A heartbeat naming no checkout has no job here: it is not presence, and the directory it carries
+    // is an absolute path outside every project rather than something a line can be named after.
+    .filter((sample) => sample.kind !== 'editor-heartbeat' || !!sample.repoPath)
+    .slice()
+    .sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  const tail = stillFocused({
+    observed,
+    throughMs: config.windowsSeenThroughMs,
+    maxUnobservedMs: config.maxUnobservedMs,
+  });
+
+  if (tail) {
+    const after = observed.findIndex((sample) => sample.at > tail.at);
+
+    observed.splice(after === -1 ? observed.length : after, 0, tail);
+  }
+
+  const secluded = privateNames({ samples: observed, roots, links });
+  const samples = observed.filter((sample) => {
+    const repoPath = repoStateFor(sample, roots)?.repoPath;
+
+    return !repoPath || !isPrivate({ repoPath, links });
+  });
+
+  const prompts = events
+    .filter((event): event is AgentPromptEvent => event.source === 'agent-prompt')
+    .filter((prompt) => !isPrivate({ repoPath: repoRootOf({ path: prompt.cwd, roots }), links }))
+    .slice()
+    .sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  const usage = events
+    .filter((event): event is AgentUsageEvent => event.source === 'agent-usage')
+    .filter((turn) => !turn.cwd || !isPrivate({ repoPath: repoRootOf({ path: turn.cwd, roots }), links }));
+
+  const ownSpend = emptySpend();
+
+  for (const turn of usage) {
+    if (turn.provider === TIMETRACK_PROVIDER) addSpend(ownSpend, turn);
+  }
+
+  // The app's own calls leave here rather than being filtered out further down. Everything below reads
+  // `turns`: the rebuild samples, the spend-only streams and both spend totals. One of them would
+  // otherwise let a run the app made open a band or rebuild a minute of presence.
+  const turns = usage.filter((turn) => turn.provider !== TIMETRACK_PROVIDER);
+
+  const inputs = events.filter((event) => event.source === 'input');
+  const liveOriginAt = promptOriginReader({ events: inputs, now: config.now, elsewhere: options.elsewhere });
+  const settledOriginAt = promptOriginReader({ events: inputs, elsewhere: options.elsewhere });
+  // `now` stands for an app watching the seat. Behind a restart it did not, and the live day must read
+  // the prompts there as the settled one will.
+  const unwatched = unwatchedAwayStretches(events);
+  const originAt = (at: Date) =>
+    unwatched.some((stretch) => at > stretch.from && at < stretch.to) ? settledOriginAt(at) : liveOriginAt(at);
+  // A remote prompt the user has not come back from yet would reopen presence, which the idle-end
+  // that later closes the stretch takes back. Left out, the live day reads as the settled one will.
+  const awaitingReturn = new Set(
+    prompts.filter((prompt) => originAt(prompt.at) === 'remote' && settledOriginAt(prompt.at) !== 'remote'),
+  );
+
+  const rebuildSamples: PresenceSample[] = [
+    ...observed.filter((sample) => PRESENCE_SOURCES.includes(sample.source)),
+    ...prompts.filter((prompt) => !awaitingReturn.has(prompt)),
+    ...turns,
+  ].sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  const calls = classifyCalls({
+    events,
+    rules: config.callRules ?? { countsAsWork: [], neverCountsAsWork: [] },
+    heard: config.heard,
+    // Where a call nothing has ended yet is cut: the later of what the sources have reported through
+    // and the last sample a source took. A call with neither has no known duration and reads as none.
+    // Only a sample the host took, never a calendar occurrence: an invitation is read from an API
+    // hours before it happens, and taking it would run the open microphone forward into it.
+    until: new Date(Math.max(config.windowsSeenThroughMs ?? 0, +(lastHostSampleAt(events) ?? 0))),
+  });
+
+  // A call is a stretch rather than a point, so it is unioned in rather than sampled: two edges an hour
+  // apart would otherwise be split by `maxUnobservedMs` into two instants with an absence between them.
+  const heldMicrophone = calls.filter((call) => call.isPresence).map(({ from, to }) => ({ from, to }));
+
+  // What the machine itself watched. Everything presence holds beyond it was rebuilt, and the two are
+  // disjoint, so each minute of presence has exactly one owner and the ratio keeps its meaning.
+  //
+  // A working call belongs here and not only in `presence`: the microphone observed those minutes, so
+  // they were watched rather than reconstructed. An hour spent listening produces no input at all, and
+  // this is what stops it reading as a rebuilt hour.
+  const seen = mergeWindows([
+    ...presenceWindows({
+      samples: observed.filter((sample) => sample.source === 'window' || sample.source === 'idle'),
+      maxUnobservedMs: config.maxUnobservedMs,
+    }),
+    ...heldMicrophone,
+  ]);
+
+  // Must hold `seen`: a commit inside a stretch the window held can trip `maxUnobservedMs` here, and a
+  // watched minute read as a break is cut out of the row it lies under.
+  const presence = mergeWindows([
+    ...presenceWindows({
+      samples: rebuildSamples,
+      maxUnobservedMs: config.maxUnobservedMs,
+      maxAgentGapMs: config.maxAgentGapMs,
+    }),
+    ...seen,
+  ]);
+
+  const rebuilt = subtractWindows({ windows: presence, without: seen });
+  const checkoutOf = checkoutNamer({ samples, roots, links });
+  const { byName, ambiguous } = reposByName(samples, roots);
+  const claimedAmbiguously = new Set<string>();
+  const drafts = new Map<string, StreamDraft>();
+  /**
+   * The branch each checkout was last seen on. Learned from git, from an editor and from an agent
+   * session alike, and seeded with the first branch of the day so the minutes before it are not
+   * stranded on no branch.
+   */
+  const nested = nestedWorktreesOf({ worktrees: config.rows?.worktrees, roots });
+  const branches = firstBranches({ samples, roots, nested });
+
+  for (const [repoPath, branch] of Object.entries(config.headBranches ?? {})) {
+    if (!branches.has(repoPath)) branches.set(repoPath, branchOf(branch));
+  }
+  /**
+   * The checkouts a directory says the piece of work for, and the branches that cannot say it
+   * themselves. A feature branch is one piece of work already, so its directories never split it.
+   */
+  const grains = workPathGrains(samples, config.projectRoots ?? {});
+  const baseBranches = new Set(config.baseBranches ?? []);
+  /**
+   * The directory a stretch of one checkout worked in, where the branch cannot name the piece of work.
+   *
+   * A feature branch is one piece of work, so it answers on its own and a directory must not split it
+   * further. A base branch and no branch at all are the cases that have nothing else to go on.
+   */
+  const workPathFor = (options: { repoPath: string; branch?: string; at: Date }) =>
+    options.branch && !baseBranches.has(options.branch)
+      ? undefined
+      : workPathAt({ marks: grains.get(options.repoPath), at: options.at });
+  /** When each checkout was cut onto another branch, so a base branch can be read the same way. */
+  const cuts = branchMarks(samples, roots);
+  /**
+   * The agent sessions each checkout ran. Every stretch of a checkout is read against them, rather
+   * than only the stretches an `agent-session` sample covers: a session and the window watching it
+   * are the same piece of work, and a key that told them apart would book those minutes twice.
+   */
+  const runs = sessionRuns({ samples, turns, roots });
+  const pieceKey = (repoPath: string, session: string) => `${repoPath}\n${session}`;
+  const pieces = new Map(
+    [...runs].flatMap(([repoPath, held]) =>
+      [
+        ...sessionPieces({
+          sessions: held,
+          projectRoots: config.projectRoots?.[repoPath],
+          baseBranches: config.baseBranches,
+        }),
+      ].map(([session, piece]) => [pieceKey(repoPath, session), piece] as const),
+    ),
+  );
+  const pieceGrains = new Set(
+    [...runs].flatMap(([repoPath, held]) => {
+      const paths = held.map((run) => pieces.get(pieceKey(repoPath, run.sessionId))?.workPath);
+
+      return workPathsSplit({ paths }) ? [repoPath] : [];
+    }),
+  );
+  const inSession = (repoPath: string, session: string | undefined) =>
+    session ? { session, piece: pieces.get(pieceKey(repoPath, session))?.piece ?? session } : { session };
+  const overlapsAt = (options: { repoPath: string; session: string; at: Date }) =>
+    runs
+      .get(options.repoPath)
+      ?.some(
+        (run) =>
+          run.sessionId !== options.session &&
+          run.from.getTime() <= options.at.getTime() &&
+          run.to.getTime() >= options.at.getTime(),
+      ) ?? false;
+  /**
+   * The directory a stretch's session worked in, where the checkout's sessions worked in more than one
+   * and another session of the checkout ran at that instant. It outranks the commits' reading there,
+   * because a commit cannot say which of two parallel sessions made it.
+   */
+  const pieceWorkPath = (options: { repoPath: string; session: string | undefined; at: Date }) =>
+    options.session && pieceGrains.has(options.repoPath) && overlapsAt({ ...options, session: options.session })
+      ? pieces.get(pieceKey(options.repoPath, options.session))?.workPath
+      : undefined;
+  /**
+   * The branch and the directory one stretch of a checkout belongs to.
+   *
+   * A base branch names no piece of work. Where the checkout's directories cannot say which piece it
+   * was either, the branch it was next cut onto is the only fact left that can, and it names the
+   * stretch whether or not the cut had happened yet.
+   */
+  const workedOn = (options: { repoPath: string; branch?: string; at: Date; session?: string }) => {
+    const cutOnto =
+      options.branch && baseBranches.has(options.branch) && !workPathFor(options)
+        ? cutOntoAt({ marks: cuts.get(options.repoPath), at: options.at, baseBranches })
+        : undefined;
+    const branch = cutOnto ?? options.branch;
+
+    const session = options.session ?? sessionAt({ runs: runs.get(options.repoPath), at: options.at });
+    const isBase = !branch || baseBranches.has(branch);
+
+    return {
+      branch,
+      workPath:
+        (isBase ? pieceWorkPath({ repoPath: options.repoPath, session, at: options.at }) : undefined) ??
+        workPathFor({ ...options, branch }),
+      ...inSession(options.repoPath, session),
+    };
+  };
+  const ownSession = (options: { repoPath: string; sample: CollectedEvent }) => {
+    const sessionId = 'sessionId' in options.sample ? options.sample.sessionId : undefined;
+
+    return runs.get(options.repoPath)?.some((run) => run.sessionId === sessionId) ? sessionId : undefined;
+  };
+  const witnessed = witnessedBranches({ samples, roots, nested });
+  const branchAt = (options: { repoPath: string; at: Date; reported: string | undefined; cwd?: string }) =>
+    (within(options.cwd, nested)
+      ? undefined
+      : witnessedAt({ marks: witnessed.get(options.repoPath), at: options.at })) ?? options.reported;
+  const lastAgentSample = new Map<string, Date>();
+  const marks: Mark[] = [];
+  const focusSpans: ContextSpan[] = [];
+  const agentSpans: ContextSpan[] = [];
+  const waitingSpans = new Set<ContextSpan>();
+  const humanPromptsBy = new Map<string, Date[]>();
+
+  for (const prompt of prompts) {
+    if (prompt.askedBy === 'machine' || originAt(prompt.at) === 'remote') continue;
+
+    humanPromptsBy.set(prompt.sessionId, [...(humanPromptsBy.get(prompt.sessionId) ?? []), prompt.at]);
+  }
+
+  const rebuiltSpans: ContextSpan[] = [];
+  const observations: ContextObservation[] = [];
+  const unnamed: UnnamedDraft[] = [];
+  let sticky: { repoPath: string; at: Date; appId?: string } | undefined;
+  let focused: string | undefined;
+  let appId: string | undefined;
+  /**
+   * The focused application as the compositor reported it, and why its window named no checkout.
+   *
+   * Both are read for the measurement only, so both keep the value of the last focus sample the way
+   * `focused` does. This app's own window is named here although `appId` drops it: the panel has to
+   * account for every minute of the folded line, and a minute this app was in front is one of them.
+   */
+  let windowAppId: string | undefined;
+  let windowTitle: string | undefined;
+  let unnamedReason: UnnamedFocusReason = 'no-name';
+  const namedApps = new Set<string>();
+  const namedTitles = new Map<string, Set<string>>();
+
+  const unnamedDraftFor = (reason: UnnamedFocusReason) => {
+    const found = unnamed.find((draft) => draft.appId === windowAppId && draft.reason === reason);
+
+    if (found) return found;
+
+    const draft: UnnamedDraft = { appId: windowAppId, reason, windows: [], titles: new Map() };
+
+    unnamed.push(draft);
+
+    return draft;
+  };
+
+  samples.forEach((sample, index) => {
+    // A window on a private checkout must not fall through to the sticky, or the last client repository
+    // would be billed for the time. It folds into the other-applications line and names nothing.
+    const secludedWindow = sample.kind === 'window-focus' && !!repoNamedIn({ title: sample.title, byName: secluded });
+    const ownWindow = sample.kind === 'window-focus' && ownAppIds.has(sample.appId.toLowerCase());
+
+    if (sample.kind === 'window-focus') {
+      appId = ownWindow ? undefined : sample.appId;
+      windowAppId = sample.appId;
+      windowTitle = sample.title;
+      focused = secludedWindow || ownWindow ? undefined : repoNamedIn({ title: sample.title, byName });
+
+      if (secludedWindow) sticky = undefined;
+
+      const claimed =
+        !focused && !secludedWindow && !ownWindow ? ambiguousNamedIn({ title: sample.title, ambiguous }) : undefined;
+
+      if (claimed) claimedAmbiguously.add(claimed);
+
+      unnamedReason = ownWindow
+        ? 'own-window'
+        : secludedWindow
+          ? 'private'
+          : noWorkContextApps.has(sample.appId.toLowerCase())
+            ? 'no-work-context'
+            : transientApps.has(sample.appId.toLowerCase())
+              ? 'transient'
+              : claimed
+                ? 'ambiguous-name'
+                : 'no-name';
+    }
+
+    const observed = repoStateFor(sample, roots);
+
+    // A branch is only ever learned from git, an agent session or an editor. Focusing a window says
+    // which checkout is in front of you, not what is checked out in it.
+    if (observed && !within(samplePathOf(sample), nested))
+      branches.set(observed.repoPath, observed.branch ?? branches.get(observed.repoPath));
+
+    // A window title and an editor heartbeat may set the sticky; a commit and an agent session may not,
+    // or the minutes after a commit go to its checkout whatever window is in front. A heartbeat only
+    // fires while its own window has focus, so it names the checkout even when two editor windows are
+    // open on different repositories.
+    if (focused && sample.kind === 'window-focus') sticky = { repoPath: focused, at: sample.at, appId };
+    if (sample.kind === 'editor-heartbeat' && observed) sticky = { repoPath: observed.repoPath, at: sample.at, appId };
+    if (sticky && sample.at.getTime() - sticky.at.getTime() > config.repoStickinessMs) sticky = undefined;
+
+    // The sticky passes only inside the application that set it: an editor whose title stops naming the
+    // checkout is plainly still that checkout, and a browser or a chat window is plainly not. Without
+    // this, every page opened within the stickiness of an editor was booked to the editor's checkout.
+    const holder = focused ?? (sticky?.appId === appId ? sticky?.repoPath : undefined);
+    const context: ActivityContext = holder
+      ? {
+          repoPath: holder,
+          appId,
+          ...workedOn({
+            repoPath: holder,
+            branch: branchAt({ repoPath: holder, at: sample.at, reported: branches.get(holder) }),
+            at: sample.at,
+          }),
+        }
+      : { appId };
+    const next = samples[index + 1];
+
+    // Every stretch between two samples belongs to whichever context held the focused window, so the
+    // focus time of every stream sums to presence exactly and the concurrency ratio has one meaning.
+    if (next) {
+      pieceFor(draftFor(drafts, context), context).focus.push({ from: sample.at, to: next.at });
+      // A stretch naming neither a checkout nor an application is the app's own window. It holds
+      // presence, and it is reported in the other-applications line, but it is not work to book: as a
+      // block it is drawn on the timeline as a band asking which ticket the review belongs to.
+      if (holder || appId) focusSpans.push({ from: sample.at, to: next.at, context });
+    }
+    if (next && !holder) {
+      const draft = unnamedDraftFor(unnamedReason);
+      const window = { from: sample.at, to: next.at };
+
+      draft.windows.push(window);
+      // A title on a private checkout carries the checkout's name, which the private project link
+      // exists to keep out of every report. The row still counts the minutes.
+      if (windowTitle !== undefined && unnamedReason !== 'private') {
+        const held = draft.titles.get(windowTitle) ?? [];
+
+        held.push(window);
+        draft.titles.set(windowTitle, held);
+      }
+    }
+    if (holder && windowAppId && sample.kind === 'window-focus') namedApps.add(windowAppId);
+    if (
+      holder &&
+      windowAppId &&
+      windowTitle !== undefined &&
+      sample.kind === 'window-focus' &&
+      multiPurposeApps.has(windowAppId.toLowerCase())
+    ) {
+      const titles = namedTitles.get(windowAppId) ?? new Set<string>();
+
+      titles.add(redactTitleUrls(windowTitle));
+      namedTitles.set(windowAppId, titles);
+    }
+
+    if (sample.kind === 'agent-session') {
+      const cwd = repoRootOf({ path: sample.cwd, roots });
+      const ranOn = branchAt({
+        repoPath: cwd,
+        at: sample.at,
+        reported: branchOf(sample.gitBranch) ?? branches.get(cwd),
+        cwd: sample.cwd,
+      });
+      const ran: ActivityContext = {
+        repoPath: cwd,
+        ...workedOn({ repoPath: cwd, branch: ranOn, at: sample.at, session: sample.sessionId }),
+      };
+      const draft = draftFor(drafts, ran);
+      // The gap between two samples is agent time only while it is one session's own gap. Read per
+      // checkout, the quarter of an hour between one session ending and the next one starting counted
+      // as an agent running, and the stretch straddled the cut the two sessions make.
+      const ranBy = `${cwd}\u0000${sample.sessionId}`;
+      const last = lastAgentSample.get(ranBy);
+
+      draft.sessions.add(sample.sessionId);
+
+      if (last && sample.at.getTime() - last.getTime() < config.maxUnobservedMs) {
+        // The stretch belongs to the session that ran it, not to whichever session `sessionAt` hands
+        // the checkout at that instant. That is the whole cut: two sessions of one checkout running at
+        // once are two pieces here, where reading the checkout's answer collapsed them into one.
+        const ranIn = ran;
+        const span = { from: last, to: sample.at, context: ranIn };
+        const piece = pieceFor(draft, ranIn);
+
+        piece.agent.push({ from: last, to: sample.at });
+        agentSpans.push(span);
+
+        if (
+          sample.at.getTime() - last.getTime() > config.maxAgentGapMs &&
+          humanPromptsBy.get(sample.sessionId)?.some((at) => at > last && at <= sample.at)
+        ) {
+          piece.waiting.push({ from: last, to: sample.at });
+          waitingSpans.add(span);
+        }
+      }
+
+      lastAgentSample.set(ranBy, sample.at);
+    }
+
+    // A sample that names a checkout but no branch is not a checkout on no branch. Reading the day's
+    // branch for it is what stops an agent session that reports no branch stranding its own minutes in
+    // a context no rule can name and no placeholder can open for.
+    const state =
+      observed &&
+      ((): RepoState => {
+        const reported = observed.branch ?? branches.get(observed.repoPath);
+        const on =
+          sample.kind === 'agent-session'
+            ? branchAt({ repoPath: observed.repoPath, at: sample.at, reported, cwd: sample.cwd })
+            : reported;
+
+        return {
+          repoPath: observed.repoPath,
+          ...workedOn({
+            repoPath: observed.repoPath,
+            branch: on,
+            at: sample.at,
+            session: ownSession({ repoPath: observed.repoPath, sample }),
+          }),
+        };
+      })();
+    const of = state ?? context;
+    const seenHere = secludedWindow || ownWindow ? null : evidenceFor(sample);
+
+    addEvidence(draftFor(drafts, of), seenHere);
+    if (seenHere) observations.push({ at: sample.at, context: of, evidence: seenHere });
+    marks.push({
+      at: sample.at,
+      state:
+        state ??
+        (holder
+          ? {
+              repoPath: holder,
+              ...workedOn({
+                repoPath: holder,
+                branch: branchAt({ repoPath: holder, at: sample.at, reported: branches.get(holder) }),
+                at: sample.at,
+              }),
+            }
+          : null),
+    });
+  });
+
+  for (const prompt of prompts) {
+    const repoPath = checkoutOf(prompt.cwd);
+    const on = repoPath
+      ? branchAt({ repoPath, at: prompt.at, reported: branchOf(prompt.gitBranch), cwd: prompt.cwd })
+      : undefined;
+    const state: RepoState | null = repoPath
+      ? {
+          repoPath,
+          ...workedOn({ repoPath, branch: on, at: prompt.at, session: ownSession({ repoPath, sample: prompt }) }),
+        }
+      : null;
+
+    const typed = promptEvidence(prompt);
+
+    addEvidence(draftFor(drafts, state ?? {}), typed);
+    observations.push({ at: prompt.at, context: state ?? {}, evidence: typed });
+    marks.push({ at: prompt.at, state });
+  }
+
+  const commits = samples.filter((sample): sample is GitCommitEvent => sample.kind === 'git-commit');
+
+  for (const work of sessionWork({ turns, commits, checkoutOf })) {
+    const { repoPath, evidence } = work;
+    const session = runs.get(repoPath)?.some((run) => run.sessionId === work.sessionId) ? work.sessionId : undefined;
+    const on = branchAt({ repoPath, at: evidence.at, reported: branchOf(work.gitBranch), cwd: work.cwd });
+    const state: RepoState = { repoPath, ...workedOn({ repoPath, branch: on, at: evidence.at, session }) };
+
+    addEvidence(draftFor(drafts, state), evidence);
+    observations.push({ at: evidence.at, context: state, evidence });
+  }
+
+  for (const turn of turns) {
+    const repoPath = checkoutOf(turn.cwd);
+
+    const on = repoPath
+      ? branchAt({ repoPath, at: turn.at, reported: branchOf(turn.gitBranch), cwd: turn.cwd })
+      : undefined;
+
+    marks.push({
+      at: turn.at,
+      state: repoPath ? { repoPath, ...workedOn({ repoPath, branch: on, at: turn.at }) } : null,
+    });
+  }
+
+  marks.sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  // Each mark claims the stretch up to the next one, the way the focused window claims one on an
+  // observed day. A mark that names no checkout claims it for the folded line, so every minute of
+  // presence has an owner and the ratio still reconciles.
+  marks.forEach((mark, index) => {
+    const next = marks[index + 1];
+
+    if (!next) return;
+
+    pieceFor(draftFor(drafts, mark.state ?? {}), mark.state ?? {}).rebuilt.push({ from: mark.at, to: next.at });
+    rebuiltSpans.push({ from: mark.at, to: next.at, context: mark.state ?? {} });
+  });
+
+  const streams: Stream[] = [];
+  const unattendedByStream: Record<string, TimeWindow[]> = {};
+  let focusMs = 0;
+
+  for (const draft of drafts.values()) {
+    const blocks: TimeWindow[] = [];
+    const unattended: TimeWindow[] = [];
+    let watchedMs = 0;
+
+    for (const piece of draft.pieces.values()) {
+      const focus = clipWindows({ windows: piece.focus, within: seen });
+
+      focusMs += windowsMs(focus);
+      watchedMs += windowsMs(focus);
+
+      const agent = mergeWindows(piece.agent);
+      const claimed = clipWindows({ windows: piece.rebuilt, within: rebuilt });
+
+      blocks.push(...mergeWindows([...focus, ...claimed, ...clipWindows({ windows: agent, within: presence })]));
+      unattended.push(...subtractWindows({ windows: agent, without: mergeWindows([...presence, ...piece.waiting]) }));
+    }
+
+    blocks.sort((a, b) => a.from.getTime() - b.from.getTime() || a.to.getTime() - b.to.getTime());
+    unattended.sort((a, b) => a.from.getTime() - b.from.getTime() || a.to.getTime() - b.to.getTime());
+
+    const span = mergeWindows([...blocks, ...unattended]);
+
+    const first = span[0];
+    const last = span[span.length - 1];
+
+    if (!first || !last) continue;
+
+    unattendedByStream[draft.key] = unattended;
+    streams.push({
+      key: draft.key,
+      repoPath: draft.repoPath,
+      apps: draft.apps,
+      branches: draft.branches,
+      agentSessions: draft.sessions.size,
+      blocks,
+      from: first.from,
+      to: last.to,
+      engagedMs: windowsMs(blocks),
+      unattendedMs: windowsMs(unattended),
+      neverFocused: watchedMs === 0,
+      rebuiltMs: windowsMs(clipWindows({ windows: blocks, within: rebuilt })),
+      spend: emptySpend(),
+      evidence: draft.evidence.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
+      evidenceOmitted: draft.evidenceOmitted,
+    });
+  }
+
+  streams.push(...spendOnlyStreams({ turns, streams, checkoutOf }));
+  streams.sort((a, b) => a.from.getTime() - b.from.getTime() || a.key.localeCompare(b.key));
+
+  const spend = emptySpend();
+  const unattributedSpend = emptySpend();
+  const unattributedTurns: AgentUsageEvent[] = [];
+
+  for (const turn of turns) {
+    const repoPath = checkoutOf(turn.cwd);
+    const key = repoPath ? streamKey({ repoPath }) : OTHER_APPLICATIONS_KEY;
+    // `turn.cwd` is tested apart from `repoPath`: a turn that names a directory is carried by the line
+    // holding that directory's minutes, the folded one included. One that names none is carried by
+    // nothing, which is what `unattributedSpend` reports.
+    const stream = turn.cwd ? streams.find((candidate) => candidate.key === key) : undefined;
+
+    addSpend(stream ? stream.spend : unattributedSpend, turn);
+    if (!stream) unattributedTurns.push(turn);
+    addSpend(spend, turn);
+  }
+
+  const unnamedFocus = unnamed
+    .map((draft) => ({
+      appId: draft.appId,
+      reason: draft.reason,
+      ms: windowsMs(clipWindows({ windows: draft.windows, within: seen })),
+      titles: mergeUnnamedTitles([
+        [...draft.titles].map(([title, windows]) => ({
+          title,
+          ms: windowsMs(clipWindows({ windows, within: seen })),
+        })),
+      ]).filter((held) => held.ms > 0),
+    }))
+    .filter((row) => row.ms > 0)
+    .sort((a, b) => b.ms - a.ms || (a.appId ?? '').localeCompare(b.appId ?? ''));
+
+  const attendedSpans = [
+    ...clipSpans({ spans: focusSpans, within: seen }),
+    ...clipSpans({ spans: agentSpans, within: presence }),
+    ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
+  ];
+
+  // A prompt the agent gave itself buys nothing back: nobody read anything and nobody typed.
+  const typed = prompts.filter((prompt) => prompt.askedBy !== 'machine');
+  const remote = typed.filter((prompt) => originAt(prompt.at) === 'remote');
+  const remoteSet = new Set(remote);
+  const away = {
+    presence,
+    events,
+    pauses: config.rows?.pauses,
+    work: attendedSpans,
+    minBreakMs: config.minBreakMs,
+    prompts: typed.filter((prompt) => !remoteSet.has(prompt)).map((prompt) => prompt.at),
+    remotePrompts: remote.map((prompt) => prompt.at),
+    promptAttentionMs: config.promptAttentionMs,
+    now: config.now,
+  };
+  const gaps = breakGaps(away);
+  const breaks = breakWindows({ ...away, gaps });
+  const remoteOptions = {
+    breaks: gaps,
+    remotePrompts: away.remotePrompts,
+    promptAttentionMs: config.promptAttentionMs,
+  };
+  const remotePrompts = remote.map((prompt) => {
+    const repoPath = checkoutOf(prompt.cwd);
+
+    return { at: prompt.at, laneKey: repoPath ? streamKey({ repoPath }) : undefined };
+  });
+  // `work` above must stay the spans presence alone allows, because the agent's spans are then clipped
+  // to the gaps read off it. Clipping first would let a break widen the work span and so itself.
+  const blocks = blocksFromSpans({
+    spans: [
+      ...clipSpans({ spans: focusSpans, within: seen }),
+      ...clipSpans({
+        spans: agentSpans.filter((span) => !waitingSpans.has(span)),
+        within: mergeWindows([
+          ...presence,
+          ...gaps,
+          ...longAbsences({ presence, events, minBreakMs: config.minBreakMs, now: config.now }),
+        ]),
+      }),
+      // A session silent until the prompt that ended a break waited through it rather than worked.
+      ...clipSpans({
+        spans: [...waitingSpans],
+        within: subtractWindows({ windows: mergeWindows([...presence, ...gaps]), without: breaks }),
+      }),
+      ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
+    ],
+    observations,
+  }).map((block) => withoutLaterSession({ block, runs }));
+  // The focus ranks two background bands against each other, and decides which of a checkout and its
+  // worktrees keeps an instant both held. It is derived here because only this pass holds it, and
+  // `buildRows` takes blocks that no longer say which stream they came from.
+  const focusMsByStream: Record<string, number> = {};
+  const focusByStream: Record<string, TimeWindow[]> = {};
+
+  for (const span of clipSpans({ spans: focusSpans, within: seen })) {
+    const key = streamKey(span.context);
+
+    focusMsByStream[key] = (focusMsByStream[key] ?? 0) + (span.to.getTime() - span.from.getTime());
+    (focusByStream[key] ??= []).push({ from: span.from, to: span.to });
+  }
+
+  for (const key of Object.keys(focusByStream)) focusByStream[key] = mergeWindows(focusByStream[key] ?? []);
+
+  const presenceMs = windowsMs(presence);
+  const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
+
+  return {
+    presenceMs,
+    presence,
+    engagedMs,
+    concurrency: presenceMs ? engagedMs / presenceMs : 0,
+    focusMs,
+    unnamedFocus,
+    namedApps: [...namedApps].sort(),
+    namedTitles: Object.fromEntries([...namedTitles].map(([app, titles]) => [app, [...titles].sort()])),
+    blocks,
+    unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
+    breaks,
+    pieceSessions: pieceSessionsOf(pieces),
+    breakMs: breakMs(breaks),
+    rebuiltMs: windowsMs(rebuilt),
+    streams,
+    spend,
+    spendTurns: turns,
+    unattributedSpend,
+    unattributedTurns,
+    ownSpend,
+    ambiguousNames: [...claimedAmbiguously],
+    calls,
+    events,
+    seen,
+    rebuiltWindows: rebuilt,
+    gaps,
+    remoteWork: remoteWorkWindows(remoteOptions),
+    bookedRemote: bookedRemoteWindows({ ...remoteOptions, remotePrompts }),
+    focusMsByStream,
+    focusByStream,
+    unattendedByStream,
+  };
+};
+
+const originIdOf = (event: CollectedEvent | OriginEvent) =>
+  'origin' in event && event.origin !== 'local' ? event.origin.machineId : 'local';
+
+const machineNameOf = (events: readonly (CollectedEvent | OriginEvent)[]) => {
+  for (const event of events) if ('origin' in event && event.origin !== 'local') return event.origin.machineName;
+
+  return undefined;
+};
+
+const addSpendOf = (into: StreamSpend, from: StreamSpend) => {
+  into.usage.input += from.usage.input;
+  into.usage.output += from.usage.output;
+  into.usage.cacheWrite += from.usage.cacheWrite;
+  into.usage.cacheRead += from.usage.cacheRead;
+  into.usage.thinking += from.usage.thinking;
+  into.turns += from.turns;
+
+  for (const model of from.models) if (!into.models.includes(model)) into.models.push(model);
+
+  for (const peer of from.peers ?? []) {
+    const held = (into.peers ??= []).find((candidate) => candidate.machineId === peer.machineId);
+
+    if (held) {
+      held.usage = {
+        input: held.usage.input + peer.usage.input,
+        output: held.usage.output + peer.usage.output,
+        cacheWrite: held.usage.cacheWrite + peer.usage.cacheWrite,
+        cacheRead: held.usage.cacheRead + peer.usage.cacheRead,
+        thinking: held.usage.thinking + peer.usage.thinking,
+      };
+      held.turns += peer.turns;
+    } else into.peers.push({ ...peer, usage: { ...peer.usage } });
+  }
+};
+
+/** The same spend, marked as run on `machine`. A spend with no turns stays unmarked. */
+const ranOn = (spend: StreamSpend, machine: Omit<MachineSpend, 'usage' | 'turns'>): StreamSpend =>
+  spend.turns ? { ...spend, peers: [{ ...machine, usage: { ...spend.usage }, turns: spend.turns }] } : spend;
+
+const peerDayOf = (day: OriginDay, machine: Omit<MachineSpend, 'usage' | 'turns'>): OriginDay => ({
+  ...day,
+  streams: day.streams.map((stream) => ({ ...stream, spend: ranOn(stream.spend, machine) })),
+  spend: ranOn(day.spend, machine),
+  unattributedSpend: ranOn(day.unattributedSpend, machine),
+  ownSpend: ranOn(day.ownSpend, machine),
+});
+
+/** Each machine's streams keeping as unattended only the agent time no other machine's presence covers. */
+const aloneEverywhere = (days: readonly OriginDay[]) => {
+  const unattendedByStream: Record<string, TimeWindow[]> = {};
+  const streams = days.flatMap((day) => {
+    const elsewhere = mergeWindows(days.filter((other) => other !== day).flatMap((other) => other.presence));
+
+    return day.streams.map((stream) => {
+      const alone = subtractWindows({ windows: day.unattendedByStream[stream.key] ?? [], without: elsewhere });
+
+      (unattendedByStream[stream.key] ??= []).push(...alone);
+
+      return { ...stream, unattendedMs: windowsMs(alone) };
+    });
+  });
+
+  return { streams, unattendedByStream };
+};
+
+const totalSpend = (spends: readonly StreamSpend[]) => {
+  const total = emptySpend();
+
+  for (const spend of spends) addSpendOf(total, spend);
+
+  return total;
+};
+
+const union = <T>(lists: readonly (readonly T[])[]) => [...new Set(lists.flat())];
+
+const mergeStreams = (streams: readonly Stream[]): Stream[] => {
+  const byKey = new Map<string, Stream[]>();
+
+  for (const stream of streams) byKey.set(stream.key, [...(byKey.get(stream.key) ?? []), stream]);
+
+  return [...byKey.values()]
+    .map((held): Stream => {
+      const [first, ...rest] = held as [Stream, ...Stream[]];
+
+      if (!rest.length) return first;
+
+      const evidence = held.flatMap((stream) => stream.evidence).sort((a, b) => a.at.getTime() - b.at.getTime());
+
+      return {
+        key: first.key,
+        repoPath: first.repoPath,
+        apps: union(held.map((stream) => stream.apps)),
+        branches: union(held.map((stream) => stream.branches)),
+        agentSessions: held.reduce((sum, stream) => sum + stream.agentSessions, 0),
+        blocks: held
+          .flatMap((stream) => stream.blocks)
+          .sort((a, b) => a.from.getTime() - b.from.getTime() || a.to.getTime() - b.to.getTime()),
+        from: new Date(Math.min(...held.map((stream) => stream.from.getTime()))),
+        to: new Date(Math.max(...held.map((stream) => stream.to.getTime()))),
+        engagedMs: held.reduce((sum, stream) => sum + stream.engagedMs, 0),
+        unattendedMs: held.reduce((sum, stream) => sum + stream.unattendedMs, 0),
+        neverFocused: held.every((stream) => stream.neverFocused),
+        rebuiltMs: held.reduce((sum, stream) => sum + stream.rebuiltMs, 0),
+        spend: totalSpend(held.map((stream) => stream.spend)),
+        evidence: evidence.slice(0, MAX_EVIDENCE_PER_STREAM),
+        evidenceOmitted:
+          held.reduce((sum, stream) => sum + stream.evidenceOmitted, 0) +
+          Math.max(0, evidence.length - MAX_EVIDENCE_PER_STREAM),
+      };
+    })
+    .sort((a, b) => a.from.getTime() - b.from.getTime() || a.key.localeCompare(b.key));
+};
+
+const mergeNamedTitles = (days: readonly Readonly<Record<string, readonly string[]>>[]) => {
+  const byApp: Record<string, string[]> = {};
+
+  for (const day of days) {
+    for (const [app, titles] of Object.entries(day)) byApp[app] = union([byApp[app] ?? [], titles]).sort();
+  }
+
+  return byApp;
+};
+
+const mergeUnnamedFocus = (rows: readonly UnnamedFocus[]): UnnamedFocus[] => {
+  const byApp = new Map<string, UnnamedFocus[]>();
+
+  for (const row of rows) {
+    const key = `${row.appId ?? ''}\u0000${row.reason}`;
+
+    byApp.set(key, [...(byApp.get(key) ?? []), row]);
+  }
+
+  return [...byApp.values()]
+    .map(([first, ...rest]) =>
+      rest.length && first
+        ? {
+            ...first,
+            ms: [first, ...rest].reduce((sum, row) => sum + row.ms, 0),
+            titles: mergeUnnamedTitles([first, ...rest].map((row) => row.titles)),
+          }
+        : (first as UnnamedFocus),
+    )
+    .sort((a, b) => b.ms - a.ms || (a.appId ?? '').localeCompare(b.appId ?? ''));
+};
+
+/** The part of each machine's windows no other machine's presence covers, so every machine was away. */
+const awayEverywhere = <T extends TimeWindow>(options: {
+  days: readonly OriginDay[];
+  windowsOf: (day: OriginDay) => readonly T[];
+}) =>
+  options.days.flatMap((day) => {
+    const elsewhere = mergeWindows(options.days.filter((other) => other !== day).flatMap((other) => other.presence));
+
+    return options
+      .windowsOf(day)
+      .flatMap((window) =>
+        subtractWindows({ windows: [window], without: elsewhere }).map((part) => ({ ...window, ...part })),
+      );
+  });
+
+const pieceSessionsOf = (pieces: ReadonlyMap<string, SessionPiece>) => {
+  const held: Record<string, string[]> = {};
+
+  for (const [key, { piece }] of pieces) (held[piece] ??= []).push(key.slice(key.indexOf('\n') + 1));
+
+  return held;
+};
+
+const mergePieceSessions = (days: readonly Record<string, string[]>[]) => {
+  const held: Record<string, string[]> = {};
+
+  for (const day of days)
+    for (const [piece, sessions] of Object.entries(day))
+      held[piece] = [...new Set([...(held[piece] ?? []), ...sessions])];
+
+  return held;
+};
+
+const mergeBreaks = (breaks: readonly BreakWindow[]): BreakWindow[] =>
+  breaks
+    .slice()
+    .sort((a, b) => a.from.getTime() - b.from.getTime())
+    .reduce<BreakWindow[]>((merged, window) => {
+      const last = merged[merged.length - 1];
+
+      if (last && window.from.getTime() <= last.to.getTime()) {
+        merged[merged.length - 1] = {
+          from: last.from,
+          to: new Date(Math.max(last.to.getTime(), window.to.getTime())),
+          locked: last.locked || window.locked,
+        };
+      } else merged.push(window);
+
+      return merged;
+    }, []);
+
+const lanesOf = (blocks: readonly ActivityBlock[]) => {
+  const lanes: Record<string, TimeWindow[]> = {};
+
+  for (const block of blocks) (lanes[streamKey(block.context)] ??= []).push({ from: block.from, to: block.to });
+  for (const key of Object.keys(lanes)) lanes[key] = mergeWindows(lanes[key] ?? []);
+
+  return lanes;
+};
+
+const rowsOf = (options: {
+  day: OriginDay;
+  config: StreamDayOptions;
+  events: readonly CollectedEvent[];
+  /** What this machine watched, which a merged day's `seen` widens with every peer's. */
+  seen: readonly TimeWindow[];
+  peerLanes?: StreamDay['peerLanes'];
+}) => {
+  const { day, config } = options;
+
+  return buildRows({
+    ...config.rows,
+    ...(config.day ? { day: config.day } : {}),
+    blocks: day.blocks,
+    events: options.events,
+    links: config.links ?? [],
+    calls: day.calls,
+    breaks: day.breaks,
+    gaps: day.gaps,
+    absences: longAbsences({
+      presence: day.presence,
+      events: options.events,
+      minBreakMs: config.minBreakMs,
+      now: config.now,
+    }),
+    remoteWork: day.remoteWork,
+    bookedRemote: day.bookedRemote,
+    seen: options.seen,
+    cut: { ...config.rows?.cut, focusMsByStream: day.focusMsByStream, focusByStream: day.focusByStream },
+    ...(options.peerLanes ? { peerLanes: options.peerLanes } : {}),
+  });
+};
+
+const publicDayOf = (day: OriginDay): Omit<StreamDay, 'rows' | 'peerLanes' | 'ownLanes'> => {
+  const {
+    events: _events,
+    seen: _seen,
+    rebuiltWindows: _rebuilt,
+    gaps: _gaps,
+    remoteWork: _remoteWork,
+    bookedRemote: _bookedRemote,
+    focusMsByStream: _focusMs,
+    focusByStream: _focus,
+    unattendedByStream: _unattended,
+    ...shown
+  } = day;
+
+  return shown;
+};
+
+const mergeOrigins = (days: readonly [OriginDay, ...OriginDay[]]): OriginDay => {
+  const presence = mergeWindows(days.flatMap((day) => day.presence));
+  const presenceMs = windowsMs(presence);
+  const seen = mergeWindows(days.flatMap((day) => day.seen));
+  const rebuilt = subtractWindows({ windows: mergeWindows(days.flatMap((day) => day.rebuiltWindows)), without: seen });
+  const alone = aloneEverywhere(days);
+  const streams = mergeStreams(alone.streams);
+  const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
+  const breaks = mergeBreaks(awayEverywhere({ days, windowsOf: (day) => day.breaks }));
+  const blocks = blocksFromSpans({
+    spans: days.flatMap((day) => day.blocks),
+    observations: days.flatMap((day) =>
+      day.blocks.flatMap((block) =>
+        block.evidence.map((evidence) => ({ at: evidence.at, context: block.context, evidence })),
+      ),
+    ),
+  });
+  const focusMsByStream: Record<string, number> = {};
+  const focusByStream: Record<string, TimeWindow[]> = {};
+
+  for (const day of days) {
+    for (const [key, ms] of Object.entries(day.focusMsByStream))
+      focusMsByStream[key] = (focusMsByStream[key] ?? 0) + ms;
+    for (const [key, windows] of Object.entries(day.focusByStream)) (focusByStream[key] ??= []).push(...windows);
+  }
+
+  for (const key of Object.keys(focusByStream)) focusByStream[key] = mergeWindows(focusByStream[key] ?? []);
+
+  return {
+    presenceMs,
+    presence,
+    engagedMs,
+    concurrency: presenceMs ? engagedMs / presenceMs : 0,
+    focusMs: days.reduce((sum, day) => sum + day.focusMs, 0),
+    unnamedFocus: mergeUnnamedFocus(days.flatMap((day) => day.unnamedFocus)),
+    namedApps: union(days.map((day) => day.namedApps)).sort(),
+    namedTitles: mergeNamedTitles(days.map((day) => day.namedTitles)),
+    blocks,
+    unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
+    breaks,
+    pieceSessions: mergePieceSessions(days.map((day) => day.pieceSessions)),
+    breakMs: breakMs(breaks),
+    rebuiltMs: windowsMs(rebuilt),
+    streams,
+    spend: totalSpend(days.map((day) => day.spend)),
+    spendTurns: days.flatMap((day) => day.spendTurns),
+    unattributedSpend: totalSpend(days.map((day) => day.unattributedSpend)),
+    unattributedTurns: days.flatMap((day) => day.unattributedTurns),
+    ownSpend: totalSpend(days.map((day) => day.ownSpend)),
+    ambiguousNames: union(days.map((day) => day.ambiguousNames)),
+    calls: oneCallAcrossMachines(days.map((day) => day.calls)),
+    events: days.flatMap((day) => day.events).sort((a, b) => a.at.getTime() - b.at.getTime()),
+    seen,
+    rebuiltWindows: rebuilt,
+    gaps: mergeWindows(awayEverywhere({ days, windowsOf: (day) => day.gaps })),
+    remoteWork: mergeWindows(days.flatMap((day) => day.remoteWork)),
+    bookedRemote: days.flatMap((day) => day.bookedRemote),
+    focusMsByStream,
+    focusByStream,
+    unattendedByStream: alone.unattendedByStream,
+  };
+};
+
+/**
+ * What a local day was worked on, for how long, and what the agents spent on it.
+ *
+ * Pure: it reads no clock and no network, so replaying a stored day gives the same answer it did on the
+ * day itself. It attributes nothing to an issue, rounds nothing and merges nothing — one line is one
+ * context, so where a line is wrong, exactly one thing can be wrong with it.
+ *
+ * A paired machine's events (an `OriginEvent` with a peer `origin`, from `mergeDayEvents`) are read as
+ * that machine's own day: its focus never ends a block here. The blocks of every machine go into one
+ * set of rows, presence is their union, and a break needs every machine away. A prompt counts as typed at
+ * the desk when the seat of any machine was touched for it.
+ *
+ * The focused window is exclusive: its time goes to the checkout its title names, else to the one
+ * checkout an event named inside `repoStickinessMs`, else to the folded line. An agent session is not,
+ * so a checkout an agent ran in books its time whether or not a window ever showed it.
+ */
+export const streamDay = (options: {
+  events: readonly (CollectedEvent | OriginEvent)[];
+  options?: Partial<StreamDayOptions>;
+}): StreamDay => {
+  const given = { ...DEFAULT_STREAM_DAY_OPTIONS, ...options.options };
+  const config = {
+    ...given,
+    rows: { ...given.rows, commitCopies: commitCopiesOf(options.events, given.repoRoots) },
+  };
+  const byOrigin = new Map<string, CollectedEvent[]>([['local', []]]);
+
+  for (const event of options.events) {
+    const ofOrigin = byOrigin.get(originIdOf(event));
+
+    if (ofOrigin) ofOrigin.push(event);
+    else byOrigin.set(originIdOf(event), [event]);
+  }
+
+  const inputsOf = new Map(
+    [...byOrigin].map(([origin, events]) => [origin, events.filter((event) => event.source === 'input')]),
+  );
+  const elsewhereOf = (origin: string) =>
+    [...inputsOf].filter(([other]) => other !== origin).map(([, inputs]) => inputs);
+  const local = streamOrigin({ events: byOrigin.get('local') ?? [], config, elsewhere: elsewhereOf('local') });
+  const peerConfig: StreamDayOptions = {
+    ...config,
+    windowsSeenThroughMs: undefined,
+    heard: undefined,
+    rows: { ...config.rows, pauses: undefined },
+  };
+  const peers = [...byOrigin]
+    .filter(([origin]) => origin !== 'local')
+    .map(([origin, events]) => ({
+      origin,
+      day: peerDayOf(
+        streamOrigin({
+          events,
+          config: { ...peerConfig, headBranches: config.peerHeadBranches?.[origin] },
+          elsewhere: elsewhereOf(origin),
+        }),
+        {
+          machineId: origin,
+          machineName: machineNameOf(events) ?? origin,
+        },
+      ),
+    }));
+
+  if (!peers.length)
+    return {
+      ...publicDayOf(local),
+      rows: rowsOf({ day: local, config, events: local.events, seen: local.seen }),
+      peerLanes: {},
+      ownLanes: lanesOf(local.blocks),
+    };
+
+  const merged = mergeOrigins([local, ...peers.map((peer) => peer.day)]);
+  const peerLanes = Object.fromEntries(peers.map((peer) => [peer.origin, lanesOf(peer.day.blocks)]));
+  const received = config.rows?.received ?? receivedEventsOf(options.events);
+
+  return {
+    ...publicDayOf(merged),
+    rows: rowsOf({
+      day: merged,
+      config: { ...config, rows: { ...config.rows, received } },
+      events: merged.events,
+      seen: local.seen,
+      peerLanes,
+    }),
+    peerLanes,
+    ownLanes: lanesOf(local.blocks),
+  };
+};

@@ -1,0 +1,418 @@
+// @ts-check
+'use strict';
+
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
+/**
+ * Disallows legacy Angular decorators in favour of their modern signal-based
+ * equivalents and the `host: {}` shorthand.
+ *
+ * Signal-based replacements:
+ *   ❌ @Input()           → ✅ input()
+ *   ❌ @Output()          → ✅ output()
+ *   ❌ @ViewChild()       → ✅ viewChild()
+ *   ❌ @ViewChildren()    → ✅ viewChildren()
+ *   ❌ @ContentChild()    → ✅ contentChild()
+ *   ❌ @ContentChildren() → ✅ contentChildren()
+ *
+ * Pair detection — when @Input() x and @Output() xChange are declared in the
+ * same class they form a two-way binding pattern that must be replaced by
+ * model():
+ *   ❌ @Input() value; @Output() valueChange = new EventEmitter();
+ *   → ✅ value = model();
+ *
+ * Host bindings — use the host: {} property instead:
+ *   ❌ @HostBinding('class.active') isActive = false;
+ *   ❌ @HostListener('click') onClick() {}
+ *   → ✅ host: { '[class.active]': 'isActive', '(click)': 'onClick()' }
+ */
+
+const CLASS_MEMBER_TYPES = new Set([
+  'PropertyDefinition',
+  'MethodDefinition',
+  'AccessorProperty',
+  'TSAbstractPropertyDefinition',
+  'TSAbstractMethodDefinition',
+  'TSAbstractAccessorProperty',
+]);
+
+/**
+ * Returns the static string key of a class member, or null for computed keys.
+ *
+ * @param {any} node - PropertyDefinition or MethodDefinition
+ * @returns {string | null}
+ */
+const getMemberName = (node) => {
+  if (!node.computed && node.key.type === 'Identifier') return node.key.name;
+  if (!node.computed && node.key.type === 'Literal') return String(node.key.value);
+  return null;
+};
+
+/**
+ * @param {import('estree').Property['key']} key
+ * @returns {string | null}
+ */
+const getPropertyName = (key) => {
+  if (key.type === 'Identifier') return key.name;
+  if (key.type === 'Literal' && typeof key.value === 'string') return key.value;
+  return null;
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {import('eslint').AST.Token | import('eslint').Rule.Node} node
+ */
+const getIndent = (sourceCode, node) => {
+  if (!node.loc) return '';
+  const line = sourceCode.lines[node.loc.start.line - 1] ?? '';
+  return line.slice(0, node.loc.start.column);
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} classNode
+ */
+const getAngularMetadata = (sourceCode, classNode) => {
+  for (const decorator of classNode.decorators ?? []) {
+    const decoratorName = getAngularDecoratorName(sourceCode, decorator);
+    if (decoratorName !== 'Component' && decoratorName !== 'Directive') continue;
+
+    const expression = decorator.expression;
+    if (expression.type !== 'CallExpression') continue;
+
+    const metadata = expression.arguments[0];
+    if (metadata?.type !== 'ObjectExpression') continue;
+
+    return metadata;
+  }
+
+  return null;
+};
+
+/**
+ * @param {any} objectExpression
+ * @param {string} propertyName
+ */
+const findObjectProperty = (objectExpression, propertyName) =>
+  objectExpression.properties.find(
+    (property) => property.type === 'Property' && getPropertyName(property.key) === propertyName,
+  ) ?? null;
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} token
+ */
+const getEndOfSameLineComments = (sourceCode, token) => {
+  let end = token.range[1];
+
+  for (const comment of sourceCode.getCommentsAfter(token)) {
+    if (comment.loc?.start.line !== token.loc.end.line) break;
+    end = comment.range?.[1] ?? end;
+  }
+
+  return end;
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} objectExpression
+ * @param {string} entryText
+ * @returns {(fixer: import('eslint').Rule.RuleFixer) => import('eslint').Rule.Fix[]}
+ */
+const buildAppendPropertyFix = (sourceCode, objectExpression, entryText) => {
+  const properties = objectExpression.properties;
+  const isMultiline = Boolean(
+    objectExpression.loc && objectExpression.loc.start.line !== objectExpression.loc.end.line,
+  );
+  const closingBrace = sourceCode.getLastToken(objectExpression);
+  const closingIndent = closingBrace ? getIndent(sourceCode, closingBrace) : '';
+  const lastProperty = properties.at(-1);
+
+  if (!lastProperty) {
+    const insertion = isMultiline ? `\n${closingIndent}  ${entryText}\n${closingIndent}` : ` ${entryText} `;
+    return (fixer) => [
+      fixer.replaceTextRange([objectExpression.range[0] + 1, objectExpression.range[1] - 1], insertion),
+    ];
+  }
+
+  const propertyIndent = getIndent(sourceCode, properties[0]);
+  const tokenAfter = sourceCode.getTokenAfter(lastProperty);
+  const hasComma = tokenAfter?.type === 'Punctuator' && tokenAfter.value === ',';
+  const anchorToken = hasComma ? tokenAfter : sourceCode.getLastToken(lastProperty);
+  const insertAt = isMultiline ? getEndOfSameLineComments(sourceCode, anchorToken) : anchorToken.range[1];
+  const entry = isMultiline
+    ? `\n${propertyIndent}${entryText}${hasComma ? ',' : ''}`
+    : ` ${entryText}${hasComma ? ',' : ''}`;
+
+  if (hasComma || insertAt === lastProperty.range[1]) {
+    return (fixer) => [fixer.insertTextAfterRange([insertAt, insertAt], `${hasComma ? '' : ','}${entry}`)];
+  }
+
+  return (fixer) => [fixer.insertTextAfter(lastProperty, ','), fixer.insertTextAfterRange([insertAt, insertAt], entry)];
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} objectExpression
+ */
+const hasTrailingComma = (sourceCode, objectExpression) => {
+  const lastProperty = objectExpression.properties.at(-1);
+  if (!lastProperty) return false;
+
+  const tokenAfter = sourceCode.getTokenAfter(lastProperty);
+  return Boolean(tokenAfter && tokenAfter.type === 'Punctuator' && tokenAfter.value === ',');
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} decoratorNode
+ * @param {any} memberNode
+ * @param {string} bindingKey
+ * @param {string} memberName
+ */
+const buildHostBindingFix = (sourceCode, decoratorNode, memberNode, bindingKey, memberName) => {
+  const classBody = memberNode.parent;
+  const classNode = classBody?.parent;
+  if (!classNode) return null;
+
+  const metadata = getAngularMetadata(sourceCode, classNode);
+  if (!metadata) return null;
+
+  const hostProperty = findObjectProperty(metadata, 'host');
+  const hostEntryText = `'${bindingKey}': '${memberName}'`;
+  const fixes = [];
+
+  if (hostProperty) {
+    if (hostProperty.value.type !== 'ObjectExpression') return null;
+    if (
+      hostProperty.value.properties.some(
+        (property) => property.type === 'Property' && getPropertyName(property.key) === bindingKey,
+      )
+    ) {
+      return null;
+    }
+
+    fixes.push(buildAppendPropertyFix(sourceCode, hostProperty.value, hostEntryText));
+  } else {
+    const closingBrace = sourceCode.getLastToken(metadata);
+    if (!closingBrace) return null;
+
+    const isMultiline = Boolean(metadata.loc && metadata.loc.start.line !== metadata.loc.end.line);
+    const closingIndent = getIndent(sourceCode, closingBrace);
+    const propertyIndent = metadata.properties[0]
+      ? getIndent(sourceCode, metadata.properties[0])
+      : `${getIndent(sourceCode, closingBrace)}  `;
+    const hostPropertyText = `host: { ${hostEntryText} }`;
+    const lastProperty = metadata.properties.at(-1);
+
+    if (lastProperty) {
+      const separator = hasTrailingComma(sourceCode, metadata) ? '' : ',';
+      const tokenAfterLastProperty = sourceCode.getTokenAfter(lastProperty);
+      const rangeStart =
+        separator === '' && tokenAfterLastProperty ? tokenAfterLastProperty.range[1] : lastProperty.range[1];
+      const replacement = isMultiline
+        ? `${separator}\n${propertyIndent}${hostPropertyText}${separator === '' ? ',' : ''}\n${closingIndent}`
+        : `${separator} ${hostPropertyText} `;
+
+      fixes.push((fixer) => fixer.replaceTextRange([rangeStart, closingBrace.range[0]], replacement));
+    } else {
+      const insertion = isMultiline
+        ? `\n${propertyIndent}${hostPropertyText}\n${closingIndent}`
+        : ` ${hostPropertyText} `;
+
+      fixes.push((fixer) => fixer.insertTextBefore(closingBrace, insertion));
+    }
+  }
+
+  const nextToken = sourceCode.getTokenAfter(decoratorNode);
+  fixes.push(
+    nextToken
+      ? (fixer) => fixer.removeRange([decoratorNode.range[0], nextToken.range[0]])
+      : (fixer) => fixer.remove(decoratorNode),
+  );
+
+  return (fixer) => fixes.flatMap((applyFix) => applyFix(fixer));
+};
+
+/** @type {import('eslint').Rule.RuleModule} */
+const rule = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description:
+        'Disallow legacy Angular decorators (@Input, @Output, @ViewChild, etc.) in favour of signal-based APIs and host: {} bindings.',
+      recommended: true,
+    },
+    fixable: 'code',
+    schema: [],
+    messages: {
+      useInput: 'Use the input() signal function instead of @Input().',
+      useOutput: 'Use the output() signal function instead of @Output().',
+      useViewChild: 'Use the viewChild() signal function instead of @ViewChild().',
+      useViewChildren: 'Use the viewChildren() signal function instead of @ViewChildren().',
+      useContentChild: 'Use the contentChild() signal function instead of @ContentChild().',
+      useContentChildren: 'Use the contentChildren() signal function instead of @ContentChildren().',
+      useHostBinding: 'Use the host: {} property in @Component/@Directive instead of @HostBinding().',
+      useHostListener: 'Use the host: {} property in @Component/@Directive instead of @HostListener().',
+      useModel:
+        "Use model() instead of the @Input()/@Output() two-way binding pattern ('{{inputName}}' / '{{outputName}}').",
+    },
+  },
+  create(context) {
+    /**
+     * Stack of per-class contexts used to detect two-way binding pairs.
+     * We defer @Input / @Output reporting to class exit so we can check whether
+     * a `xChange` output has a matching `x` input (→ model()).
+     *
+     * @type {Array<{ inputs: Map<string, any>; outputs: Map<string, any> }>}
+     */
+    const classStack = [];
+
+    const currentClass = () => classStack[classStack.length - 1] ?? null;
+
+    const pushClass = () => classStack.push({ inputs: new Map(), outputs: new Map() });
+
+    const popClass = () => {
+      const ctx = classStack.pop();
+      if (!ctx) return;
+
+      const reportedInputNames = new Set();
+      const reportedOutputNames = new Set();
+
+      for (const [outputName, outputDecoratorNode] of ctx.outputs) {
+        if (!outputName.endsWith('Change')) continue;
+        const inputName = outputName.slice(0, -'Change'.length);
+        if (!ctx.inputs.has(inputName)) continue;
+
+        reportedInputNames.add(inputName);
+        reportedOutputNames.add(outputName);
+
+        context.report({
+          node: ctx.inputs.get(inputName),
+          messageId: 'useModel',
+          data: { inputName, outputName },
+        });
+        context.report({
+          node: outputDecoratorNode,
+          messageId: 'useModel',
+          data: { inputName, outputName },
+        });
+      }
+
+      for (const [name, decoratorNode] of ctx.inputs) {
+        if (!reportedInputNames.has(name)) {
+          context.report({ node: decoratorNode, messageId: 'useInput' });
+        }
+      }
+
+      for (const [name, decoratorNode] of ctx.outputs) {
+        if (!reportedOutputNames.has(name)) {
+          context.report({ node: decoratorNode, messageId: 'useOutput' });
+        }
+      }
+    };
+
+    return {
+      ClassDeclaration: pushClass,
+      ClassExpression: pushClass,
+      'ClassDeclaration:exit': popClass,
+      'ClassExpression:exit': popClass,
+
+      Decorator(node) {
+        const anyNode = /** @type {any} */ (node);
+        const decoratorName = getAngularDecoratorName(context.sourceCode, anyNode);
+        if (!decoratorName) return;
+
+        const parent = anyNode.parent;
+        if (!parent) return;
+        if (!CLASS_MEMBER_TYPES.has(parent.type)) return;
+
+        const ctx = currentClass();
+
+        switch (decoratorName) {
+          case 'Input': {
+            if (!ctx) {
+              context.report({ node, messageId: 'useInput' });
+              break;
+            }
+            const memberName = getMemberName(parent);
+            if (memberName !== null) {
+              ctx.inputs.set(memberName, node);
+            } else {
+              context.report({ node, messageId: 'useInput' });
+            }
+            break;
+          }
+
+          case 'Output': {
+            if (!ctx) {
+              context.report({ node, messageId: 'useOutput' });
+              break;
+            }
+            const memberName = getMemberName(parent);
+            if (memberName !== null) {
+              ctx.outputs.set(memberName, node);
+            } else {
+              context.report({ node, messageId: 'useOutput' });
+            }
+            break;
+          }
+
+          case 'ViewChild':
+            context.report({ node, messageId: 'useViewChild' });
+            break;
+
+          case 'ViewChildren':
+            context.report({ node, messageId: 'useViewChildren' });
+            break;
+
+          case 'ContentChild':
+            context.report({ node, messageId: 'useContentChild' });
+            break;
+
+          case 'ContentChildren':
+            context.report({ node, messageId: 'useContentChildren' });
+            break;
+
+          case 'HostBinding':
+            context.report({
+              node,
+              messageId: 'useHostBinding',
+              fix: (() => {
+                const memberName = getMemberName(parent);
+                if (!memberName) return null;
+
+                const expression = anyNode.expression;
+                if (expression.type !== 'CallExpression' && expression.type !== 'Identifier') return null;
+
+                if (
+                  expression.type === 'CallExpression' &&
+                  expression.arguments.length > 0 &&
+                  (expression.arguments[0]?.type !== 'Literal' || typeof expression.arguments[0].value !== 'string')
+                ) {
+                  return null;
+                }
+
+                const bindingName =
+                  expression.type === 'CallExpression'
+                    ? expression.arguments[0]?.type === 'Literal' && typeof expression.arguments[0].value === 'string'
+                      ? expression.arguments[0].value
+                      : memberName
+                    : memberName;
+
+                const bindingKey = bindingName.startsWith('[') ? bindingName : `[${bindingName}]`;
+                return buildHostBindingFix(context.sourceCode, anyNode, parent, bindingKey, memberName);
+              })(),
+            });
+            break;
+
+          case 'HostListener':
+            context.report({ node, messageId: 'useHostListener' });
+            break;
+        }
+      },
+    };
+  },
+};
+
+module.exports = rule;

@@ -1,0 +1,110 @@
+[package]
+name = "timetrack"
+version = "0.2.0-next.25"
+description = "Reconstructs a day of Jira/Tempo worklogs from passive evidence"
+edition = "2021"
+publish = false
+
+[lib]
+name = "timetrack_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = ["codegen"] }
+
+[dependencies]
+base64 = "0.22.1"
+chrono = "0.4.45"
+gethostname = "1.1.0"
+hmac = "0.12.1"
+# Not on crates.io - the Tauri team publishes it as a git repo, with no version tags to pin.
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "c4c45d503ea115a839aae718d02f79e7c7f0f673" }
+keyring = { version = "4.1.6", default-features = false, features = ["v1"] }
+notify = "8.2.0"
+rand = "0.10.2"
+rcgen = { version = "0.14.10", default-features = false, features = ["aws_lc_rs"] }
+reqwest = { version = "0.13.4", features = ["json", "form", "gzip"] }
+rusqlite = { version = "0.42", features = ["bundled-sqlcipher-vendored-openssl", "chrono"] }
+rustls = { version = "0.23.45", default-features = false, features = ["aws-lc-rs", "std"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.10.9"
+spake2 = "0.4.0"
+tauri = { version = "2.11.5", features = ["tray-icon"] }
+# GTK 3 cannot start in the GTK 4 process of the CEF runtime, so Linux dialogs go through the portal.
+tauri-plugin-dialog = { version = "2", default-features = false, features = ["xdg-portal"] }
+tauri-plugin-notification = "2.3.3"
+tauri-plugin-single-instance = "2.4.1"
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["process", "sync", "time", "net", "rt-multi-thread", "macros"] }
+tokio-rustls = { version = "0.26.4", default-features = false }
+whisper-rs = { version = "0.16.0", optional = true }
+earshot = { version = "1.2.2", optional = true }
+tauri-plugin-updater = "2.12.0"
+mdns-sd = { version = "0.21.5", features = ["async"] }
+aws-lc-rs = "1.18.0"
+
+[features]
+transcribe = ["dep:whisper-rs", "dep:earshot"]
+transcribe-vulkan = ["transcribe", "whisper-rs/vulkan"]
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "4.1.6", default-features = false, features = ["zbus-secret-service-keyring-store"] }
+libc = "0.2.189"
+wayland-client = "0.31.15"
+wayland-protocols = { version = "0.32.13", features = ["client", "staging"] }
+wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }
+zbus = "5.19.0"
+# WebKitGTK 2.54 drops animation frames, so Linux renders through Chromium instead. The CEF runtime
+# lives on Tauri's feat/cef branch only.
+tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1", features = ["devtools"] }
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+tauri-runtime-wry = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "4.1.6", default-features = false, features = ["apple-native-keyring-store"] }
+block2 = "0.6.2"
+libc = "0.2.189"
+objc2 = "0.6.4"
+objc2-app-kit = { version = "0.3.2", features = ["NSRunningApplication", "NSWorkspace"] }
+objc2-application-services = { version = "0.3.2", features = ["AXError", "AXUIElement", "libc"] }
+objc2-core-audio = "0.3.2"
+objc2-core-foundation = { version = "0.3.2", features = ["CFDictionary", "CFNumber", "CFString"] }
+objc2-core-graphics = { version = "0.3.2", features = ["CGEventSource", "CGEventTypes"] }
+objc2-foundation = { version = "0.3.2", features = [
+  "NSDistributedNotificationCenter",
+  "NSError",
+  "NSNotification",
+  "NSOperation",
+  "NSString",
+  "block2",
+] }
+objc2-local-authentication = { version = "0.3.2", features = ["LAContext", "block2"] }
+# Held at what `keyring`'s apple-native store already pulls, so the lockfile keeps one copy.
+security-framework = "3.7.0"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "4.1.6", default-features = false, features = ["windows-native-keyring-store"] }
+# Held at what Tauri pulls, so the lockfile keeps one copy. On 0.62 the blocking method on
+# IAsyncOperation is join(), not get(), so auth.rs stops compiling as well.
+windows = { version = "0.61.3", features = [
+  "Security_Credentials_UI",
+  "Win32_System_WinRT",
+  "Win32_UI_WindowsAndMessaging",
+] }
+windows-future = "0.2.1"
+
+[patch.crates-io]
+tauri = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-build = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-codegen = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-macros = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-plugin = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-runtime = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-utils = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+# The crates.io releases ask for tauri's `wry` feature, which the feat/cef branch removed.
+tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "835adce473e8f059f6ba84660dd07bcb19fb9030" }
+tauri-plugin-notification = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "835adce473e8f059f6ba84660dd07bcb19fb9030" }
+# Must name the same git source winit-gtk4 uses for dpi, or two dpi crates meet; Cargo.lock pins the commit.
+dpi = { git = "https://github.com/tauri-apps/winit-gtk4", branch = "master" }

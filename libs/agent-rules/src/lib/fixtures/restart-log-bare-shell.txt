@@ -1,0 +1,2 @@
+2026-11-23T10:13:18.626Z claude@fifagg-frontend shows background work (⏵⏵ auto mode on (shift+tab to cycle) · 1 feedback draft · ↓ to manage), restart goes through --process
+2026-11-23T10:13:20.058Z claude@fifagg-frontend started a new process: CLAUDE_CODE_TMPDIR='/home/dev/.cache/claude-tmp' zsh -lic

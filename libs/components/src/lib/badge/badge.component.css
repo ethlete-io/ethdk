@@ -1,0 +1,118 @@
+@layer components.sdk {
+  @property --et-badge-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-badge-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-badge-min-block-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 20px;
+  }
+
+  @property --et-badge-border-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 999px;
+  }
+
+  @property --et-badge-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 11px;
+  }
+
+  @property --et-badge-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 600;
+  }
+
+  .et-badge {
+    --_et-badge-background: color-mix(
+      in srgb,
+      var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+      transparent
+    );
+    --_et-badge-color: var(--et-tone-text);
+    --_et-badge-border-color: transparent;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--et-badge-gap);
+    padding-inline: var(--et-badge-padding-inline);
+    min-block-size: var(--et-badge-min-block-size);
+    border-radius: var(--et-badge-border-radius);
+    font-size: var(--et-badge-font-size);
+    font-weight: var(--et-badge-font-weight);
+    letter-spacing: var(--et-badge-letter-spacing, inherit);
+    line-height: 1.4;
+    box-sizing: border-box;
+    max-inline-size: var(--et-badge-max-width, 100%);
+    background: var(--_et-badge-background);
+    color: var(--_et-badge-color);
+    border: 1px solid var(--_et-badge-border-color);
+    white-space: nowrap;
+    -webkit-user-select: none;
+    user-select: none;
+
+    &:where([data-variant='filled']) {
+      --_et-tone-fill-opacity: 1;
+      --_et-badge-color: var(--et-tone-on-fill);
+      --_et-badge-border-color: transparent;
+    }
+
+    &:where([data-variant='tonal']) {
+      --_et-tone-fill-opacity: 0.16;
+      --_et-badge-border-color: var(--et-tone-text);
+    }
+
+    &:where([data-variant='outline']) {
+      --_et-tone-fill-opacity: 0;
+      --_et-badge-border-color: var(--et-tone-text);
+    }
+
+    /* `md` is the token initial values above, left unset so an ancestor token override still reaches it. */
+    &:where([data-size='sm']) {
+      --et-badge-gap: 3px;
+      --et-badge-padding-inline: 6px;
+      --et-badge-min-block-size: 16px;
+      --et-badge-font-size: 10px;
+    }
+
+    &:where([data-size='lg']) {
+      --et-badge-gap: 5px;
+      --et-badge-padding-inline: 10px;
+      --et-badge-min-block-size: 24px;
+      --et-badge-font-size: 12px;
+    }
+
+    .et-badge-label {
+      text-box: trim-both cap alphabetic;
+    }
+
+    .et-badge-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      &:empty {
+        display: none;
+      }
+
+      .et-icon {
+        inline-size: 1em;
+        block-size: 1em;
+      }
+    }
+  }
+}

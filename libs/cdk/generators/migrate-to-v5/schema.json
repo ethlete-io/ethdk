@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "migrate-to-v5",
+  "title": "Migrate to CDK v5",
+  "type": "object",
+  "properties": {
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after migration",
+      "default": false
+    },
+    "migrateCombobox": {
+      "type": "boolean",
+      "description": "Migrate combobox to v5",
+      "default": true
+    },
+    "migrateEtLet": {
+      "type": "boolean",
+      "description": "Migrate et-let to v5",
+      "default": true
+    },
+    "migrateColorThemes": {
+      "type": "boolean",
+      "description": "Migrate color themes to v5",
+      "default": true
+    },
+    "migrateCdkMenu": {
+      "type": "boolean",
+      "description": "Migrate cdk-menu to v5",
+      "default": true
+    },
+    "migrateIsActiveElement": {
+      "type": "boolean",
+      "description": "Migrate is-active-element to v5",
+      "default": true
+    },
+    "migrateOverlayPositions": {
+      "type": "boolean",
+      "description": "Migrate overlay positions to v5",
+      "default": true
+    },
+    "migrateDialogBottomSheet": {
+      "type": "boolean",
+      "description": "Migrate dialog and bottom sheet to v5",
+      "default": true
+    }
+  },
+  "required": []
+}

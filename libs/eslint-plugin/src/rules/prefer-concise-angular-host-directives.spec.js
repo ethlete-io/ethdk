@@ -1,0 +1,188 @@
+// @ts-check
+'use strict';
+
+const { RuleTester } = require('eslint');
+const rule = require('./prefer-concise-angular-host-directives');
+
+const tester = new RuleTester({
+  languageOptions: {
+    parser: require('@typescript-eslint/parser'),
+  },
+});
+
+tester.run('prefer-concise-angular-host-directives', rule, {
+  valid: [
+    {
+      code: `import { Component } from 'some-other-lib';
+@Component({ hostDirectives: [{ directive: X }] }) class A {}`,
+    },
+    {
+      code: `
+@Component({
+  hostDirectives: [ColoredDirective],
+})
+class TestComponent {}
+`,
+    },
+    {
+      code: `
+@Component({
+  hostDirectives: [
+    {
+      directive: ProvideColorDirective,
+      inputs: ['theme'],
+      outputs: ['themeChange'],
+    },
+  ],
+})
+class TestComponent {}
+`,
+    },
+    {
+      code: `
+@Directive({
+  hostDirectives: [{ directive: ProvideColorDirective, inputs: ['theme'] }],
+})
+class TestDirective {}
+`,
+    },
+  ],
+  invalid: [
+    {
+      code: `@Component({ hostDirectives: [{ directive: Foo } as const] }) class A {}`,
+      output: `@Component({ hostDirectives: [Foo] }) class A {}`,
+      errors: [{ messageId: 'preferShorthand' }],
+    },
+    {
+      code: `@Component({ hostDirectives: [{ outputs: ['a'], directive: Foo } satisfies HostDirectiveConfig] }) class A {}`,
+      output: `@Component({ hostDirectives: [{ directive: Foo, outputs: ['a'] } satisfies HostDirectiveConfig] }) class A {}`,
+      errors: [{ messageId: 'hostDirectiveOrder' }],
+    },
+    {
+      code: `import { Component as Cmp } from '@angular/core';
+@Cmp({ hostDirectives: [{ directive: X }] }) class A {}`,
+      output: `import { Component as Cmp } from '@angular/core';
+@Cmp({ hostDirectives: [X] }) class A {}`,
+      errors: [{ messageId: 'preferShorthand' }],
+    },
+    {
+      code: `
+@Component({
+  hostDirectives: [
+    {
+      directive: ColoredDirective,
+    },
+  ],
+})
+class TestComponent {}
+`,
+      output: `
+@Component({
+  hostDirectives: [
+    ColoredDirective,
+  ],
+})
+class TestComponent {}
+`,
+      errors: [{ messageId: 'preferShorthand' }],
+    },
+    {
+      code: `
+@Component({
+  hostDirectives: [{ outputs: ['themeChange'], directive: ProvideColorDirective, inputs: ['theme'] }],
+})
+class TestComponent {}
+`,
+      output: `
+@Component({
+  hostDirectives: [{ directive: ProvideColorDirective, inputs: ['theme'], outputs: ['themeChange'] }],
+})
+class TestComponent {}
+`,
+      errors: [{ messageId: 'hostDirectiveOrder' }],
+    },
+    {
+      code: `
+@Directive({
+  hostDirectives: [
+    {
+      outputs: ['themeChange'],
+      directive: ProvideColorDirective,
+    },
+  ],
+})
+class TestDirective {}
+`,
+      output: `
+@Directive({
+  hostDirectives: [
+    {
+      directive: ProvideColorDirective,
+      outputs: ['themeChange'],
+    },
+  ],
+})
+class TestDirective {}
+`,
+      errors: [{ messageId: 'hostDirectiveOrder' }],
+    },
+    {
+      code: `
+@Component({
+  hostDirectives: [
+    {
+      // keeps the theme in sync
+      directive: ColoredDirective,
+    },
+  ],
+})
+class TestComponent {}
+`,
+      output: null,
+      errors: [{ messageId: 'preferShorthand' }],
+    },
+    {
+      code: `
+@Component({
+  hostDirectives: [
+    {
+      outputs: ['themeChange'], // the change stream
+      directive: ProvideColorDirective,
+    },
+  ],
+})
+class TestComponent {}
+`,
+      output: `
+@Component({
+  hostDirectives: [
+    {
+      directive: ProvideColorDirective,
+      outputs: ['themeChange'], // the change stream
+    },
+  ],
+})
+class TestComponent {}
+`,
+      errors: [{ messageId: 'hostDirectiveOrder' }],
+    },
+    {
+      code: `
+@Component({
+  hostDirectives: [{ outputs: ['themeChange'], // the change stream
+    directive: ProvideColorDirective, }],
+})
+class TestComponent {}
+`,
+      output: `
+@Component({
+  hostDirectives: [{
+    directive: ProvideColorDirective, outputs: ['themeChange'], // the change stream
+ }],
+})
+class TestComponent {}
+`,
+      errors: [{ messageId: 'hostDirectiveOrder' }],
+    },
+  ],
+});

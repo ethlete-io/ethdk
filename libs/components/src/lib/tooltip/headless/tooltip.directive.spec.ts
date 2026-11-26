@@ -1,0 +1,622 @@
+import { Component, PLATFORM_ID, TemplateRef, signal, viewChild } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { setInputSignal } from '@ethlete/core';
+import '../../../test-helpers';
+import { dialogOverlayStrategy } from '../../overlay/strategies';
+import { pointerEnter, pointerEvent, pressKey } from '../../testing/driver-core';
+import { fakeLayout } from '../../testing/fake-layout';
+import { createOverlayDriver } from '../../testing/overlay-driver';
+import { TooltipContent, TooltipDirective } from './tooltip.directive';
+
+@Component({
+  template: `
+    <button etTooltip type="button">Trigger</button>
+
+    <ng-template #tooltipTemplate>
+      <span class="tooltip-template-content">Template tooltip</span>
+    </ng-template>
+  `,
+  imports: [TooltipDirective],
+})
+class TooltipDirectiveTestHost {
+  tooltipTemplate = viewChild.required<TemplateRef<unknown>>('tooltipTemplate');
+}
+
+@Component({
+  template: `<button aria-describedby="consumer-hint" etTooltip type="button">Trigger</button>`,
+  imports: [TooltipDirective],
+})
+class DescribedTooltipTestHost {}
+
+describe('TooltipDirective', () => {
+  let fixture: ComponentFixture<TooltipDirectiveTestHost>;
+  let button: HTMLButtonElement;
+  let tooltipDirective: TooltipDirective;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [TooltipDirectiveTestHost],
+    });
+
+    fixture = TestBed.createComponent(TooltipDirectiveTestHost);
+    fixture.detectChanges();
+    button = fixture.nativeElement.querySelector('button');
+    tooltipDirective = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+    setInputSignal(tooltipDirective.content, 'Tooltip body' satisfies TooltipContent);
+    setInputSignal(tooltipDirective.showDelay, 0);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    tooltipDirective.hide();
+  });
+
+  it('creates the description node as soon as the tooltip has text, before any show', () => {
+    const descriptionId = button.getAttribute('aria-describedby');
+
+    expect(descriptionId).toContain('et-tooltip-description');
+    expect(document.getElementById(descriptionId ?? '')?.textContent).toBe('Tooltip body');
+  });
+
+  it('creates no description node while the tooltip has no text', () => {
+    setInputSignal(tooltipDirective.content, null);
+    fixture.detectChanges();
+
+    expect(document.querySelector('[id^="et-tooltip-description"]')).toBeNull();
+    expect(button.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('creates a hidden accessible description for string content once shown', () => {
+    tooltipDirective.show();
+    tooltipDirective.hide();
+    fixture.detectChanges();
+
+    const descriptionId = button.getAttribute('aria-describedby');
+
+    expect(descriptionId).toContain('et-tooltip-description');
+    expect(document.getElementById(descriptionId ?? '')?.textContent).toBe('Tooltip body');
+  });
+
+  it('switches aria-describedby to the live tooltip id while shown', () => {
+    tooltipDirective.show();
+    fixture.detectChanges();
+
+    expect(button.getAttribute('aria-describedby')).toBe(tooltipDirective.overlayRef()?.config.id ?? null);
+
+    tooltipDirective.hide();
+    fixture.detectChanges();
+
+    expect(button.getAttribute('aria-describedby')).toContain('et-tooltip-description');
+  });
+
+  it('points at the anchor element while the trigger keeps the description', () => {
+    const anchor = document.createElement('span');
+    document.body.appendChild(anchor);
+    setInputSignal(tooltipDirective.anchor, anchor);
+
+    tooltipDirective.show();
+    fixture.detectChanges();
+
+    expect(tooltipDirective.overlayRef()?.config.origin).toBe(anchor);
+    expect(button.getAttribute('aria-describedby')).toBe(tooltipDirective.overlayRef()?.config.id ?? null);
+
+    tooltipDirective.hide();
+    anchor.remove();
+  });
+
+  it('treats blank string content like no content', () => {
+    setInputSignal(tooltipDirective.content, '  ');
+    fixture.detectChanges();
+
+    tooltipDirective.show();
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+    expect(button.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('hides when the content turns blank while shown', () => {
+    tooltipDirective.show();
+    expect(tooltipDirective.overlayRef()).not.toBeNull();
+
+    setInputSignal(tooltipDirective.content, '');
+    fixture.detectChanges();
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+
+  it('does not open when disabled', () => {
+    setInputSignal(tooltipDirective.disabled, true);
+    fixture.detectChanges();
+
+    tooltipDirective.show();
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+
+  it('re-renders content that changes while shown', () => {
+    tooltipDirective.show();
+    fixture.detectChanges();
+
+    setInputSignal(tooltipDirective.content, 'Updated body');
+    fixture.detectChanges();
+
+    const panelId = tooltipDirective.overlayRef()?.config.id ?? '';
+    expect(document.getElementById(panelId)?.textContent).toContain('Updated body');
+  });
+
+  it('appends to a consumer aria-describedby instead of replacing it', () => {
+    const describedFixture = TestBed.createComponent(DescribedTooltipTestHost);
+    describedFixture.detectChanges();
+    const describedButton = describedFixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    const directive = describedFixture.debugElement
+      .query(By.directive(TooltipDirective))
+      .injector.get(TooltipDirective);
+    setInputSignal(directive.content, 'Tooltip body');
+    describedFixture.detectChanges();
+
+    expect(describedButton.getAttribute('aria-describedby')).toMatch(/^consumer-hint et-tooltip-description/);
+
+    directive.show();
+    describedFixture.detectChanges();
+
+    const shown = describedButton.getAttribute('aria-describedby') ?? '';
+    expect(shown).toContain('consumer-hint');
+    expect(shown).toContain(directive.overlayRef()?.config.id ?? '');
+    expect(shown).not.toContain('et-tooltip-description');
+
+    directive.hide();
+    describedFixture.detectChanges();
+    expect(describedButton.getAttribute('aria-describedby')).toMatch(/^consumer-hint et-tooltip-description/);
+  });
+
+  it('throws when template content is used without an aria description', () => {
+    setInputSignal(tooltipDirective.content, fixture.componentInstance.tooltipTemplate());
+    fixture.detectChanges();
+
+    expect(() => tooltipDirective.show()).toThrow(/Template tooltips require etTooltipAriaDescription/);
+  });
+});
+
+@Component({
+  template: `<button etTooltip="Tip" showDelay="250" type="button">Trigger</button>`,
+  imports: [TooltipDirective],
+})
+class StaticDelayTooltipTestHost {}
+
+describe('TooltipDirective showDelay', () => {
+  it('accepts a static attribute value as a number', () => {
+    const fixture = TestBed.createComponent(StaticDelayTooltipTestHost);
+    fixture.detectChanges();
+
+    const directive = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+
+    expect(directive.showDelay()).toBe(250);
+  });
+});
+
+describe('TooltipDirective on touch', () => {
+  let button: HTMLButtonElement;
+  let tooltipDirective: TooltipDirective;
+
+  const touch = (type: string) => pointerEvent(button, type, { pointerType: 'touch' });
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    TestBed.configureTestingModule({ imports: [TooltipDirectiveTestHost] });
+
+    const fixture = TestBed.createComponent(TooltipDirectiveTestHost);
+    fixture.detectChanges();
+    button = fixture.nativeElement.querySelector('button');
+    tooltipDirective = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+    setInputSignal(tooltipDirective.content, 'Tooltip body' satisfies TooltipContent);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    tooltipDirective.hide();
+    vi.useRealTimers();
+  });
+
+  it('opens on a long press and stays open for a short time after the finger lifts', () => {
+    touch('pointerdown');
+    vi.advanceTimersByTime(499);
+    expect(tooltipDirective.overlayRef()).toBeNull();
+
+    vi.advanceTimersByTime(1);
+    expect(tooltipDirective.overlayRef()).not.toBeNull();
+
+    const overlayRef = tooltipDirective.overlayRef();
+    const close = vi.spyOn(overlayRef!, 'close');
+
+    touch('pointerup');
+    touch('pointerleave');
+    vi.advanceTimersByTime(1499);
+    expect(close).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('does not open on a short tap', () => {
+    touch('pointerenter');
+    touch('pointerdown');
+    vi.advanceTimersByTime(100);
+    touch('pointerup');
+    touch('pointerleave');
+    vi.advanceTimersByTime(2000);
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+
+  it('does not open when the press turns into a scroll', () => {
+    touch('pointerdown');
+    vi.advanceTimersByTime(200);
+    touch('pointercancel');
+    vi.advanceTimersByTime(2000);
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+
+  it('shows the tooltip in place of the native context menu of a long press', () => {
+    touch('pointerdown');
+    const contextMenu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    button.dispatchEvent(contextMenu);
+
+    expect(contextMenu.defaultPrevented).toBe(true);
+    expect(tooltipDirective.overlayRef()).not.toBeNull();
+  });
+
+  it('leaves the context menu alone outside a touch press', () => {
+    const contextMenu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    button.dispatchEvent(contextMenu);
+
+    expect(contextMenu.defaultPrevented).toBe(false);
+  });
+
+  it('does not open on a long press while disabled', () => {
+    setInputSignal(tooltipDirective.disabled, true);
+    touch('pointerdown');
+    vi.advanceTimersByTime(1000);
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+});
+
+@Component({
+  template: `<button [showDelay]="0" class="dialog-trigger" etTooltip="Dialog tip" type="button">Inside</button>`,
+  imports: [TooltipDirective],
+})
+class TooltipInsideDialogComponent {}
+
+describe('TooltipDirective on the server', () => {
+  it('adds no description node to the body and no aria-describedby, so hydration leaves no duplicate', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: PLATFORM_ID, useValue: 'server' }] });
+
+    const fixture = TestBed.createComponent(TooltipDirectiveTestHost);
+    fixture.detectChanges();
+
+    const directive = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+    setInputSignal(directive.content, 'Tooltip body' satisfies TooltipContent);
+    fixture.detectChanges();
+
+    expect(document.querySelector('[id^="et-tooltip-description"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('button').hasAttribute('aria-describedby')).toBe(false);
+  });
+});
+
+describe('TooltipDirective inside a modal overlay', () => {
+  let driver: ReturnType<typeof createOverlayDriver>;
+
+  const tooltipCount = () => document.querySelectorAll('[role="tooltip"]').length;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    // floating-ui reads the trigger as clipped out of a zero-sized viewport otherwise, and
+    // `autoCloseIfReferenceHidden` then closes the tooltip on its first positioning frame
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: '.dialog-trigger', rect: { x: 100, y: 100, width: 80, height: 32 } },
+    ]);
+    driver = createOverlayDriver();
+  });
+
+  afterEach(() => {
+    driver.closeAll();
+  });
+
+  const openDialogWithHoveredTooltip = async () => {
+    const dialogRef = await driver.open(TooltipInsideDialogComponent, { strategies: dialogOverlayStrategy() });
+    let closedVia: string | null = null;
+
+    dialogRef.afterClosedEvent().subscribe((event) => (closedVia = event.source));
+
+    const trigger = driver.paneEl<HTMLButtonElement>('.dialog-trigger');
+
+    if (!trigger) throw new Error('the dialog did not render its tooltip trigger');
+
+    pointerEnter(trigger);
+    await new Promise<void>((resolve) => setTimeout(resolve));
+    driver.tick();
+    await driver.settle();
+
+    expect(tooltipCount()).toBe(1);
+
+    return { closedVia: () => closedVia, trigger };
+  };
+
+  // The first Escape hides a tooltip inside a dialog and a second one closes the dialog.
+  it('Escape dismisses a hover-shown tooltip and leaves the dialog beneath it open', async () => {
+    const { closedVia } = await openDialogWithHoveredTooltip();
+
+    pressKey(document, 'Escape');
+    await driver.settle();
+
+    expect(tooltipCount()).toBe(0);
+    expect(closedVia()).toBeNull();
+
+    pressKey(document, 'Escape');
+    await driver.settle();
+    await driver.settle();
+
+    expect(closedVia()).toBe('escape');
+  });
+
+  // A tooltip does not consume Escape, so the host it bubbles through still handles it.
+  it('leaves Escape unprevented for the host it bubbles through and still keeps the dialog open', async () => {
+    const { closedVia, trigger } = await openDialogWithHoveredTooltip();
+    let preventedAtHost: boolean | null = null;
+
+    trigger.addEventListener('keydown', (event) => (preventedAtHost = event.defaultPrevented));
+
+    const event = pressKey(trigger, 'Escape');
+    await driver.settle();
+
+    expect(preventedAtHost).toBe(false);
+    expect(event.defaultPrevented).toBe(true);
+    expect(tooltipCount()).toBe(0);
+    expect(closedVia()).toBeNull();
+  });
+
+  it('a backdrop press closes the dialog while a tooltip is shown inside it', async () => {
+    const { closedVia } = await openDialogWithHoveredTooltip();
+
+    await driver.clickBackdrop();
+    await driver.settle();
+
+    expect(closedVia()).toBe('outside-pointer');
+  });
+});
+
+@Component({
+  template: `
+    <svg>
+      <rect [showDelay]="0" class="svg-trigger" etTooltip="Bar tip" height="40" tabindex="0" width="20" />
+    </svg>
+  `,
+  imports: [TooltipDirective],
+})
+class SvgTooltipTestHost {}
+
+describe('TooltipDirective on an svg element', () => {
+  let fixture: ComponentFixture<SvgTooltipTestHost>;
+  let rect: SVGRectElement;
+  let tooltipDirective: TooltipDirective;
+  let driver: ReturnType<typeof createOverlayDriver>;
+
+  const tooltipPane = () =>
+    document.querySelector<HTMLElement>('.et-tooltip-panel')?.closest<HTMLElement>('.et-overlay-runtime-pane') ?? null;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [SvgTooltipTestHost] });
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: '.svg-trigger', rect: { x: 300, y: 200, width: 20, height: 40 } },
+    ]);
+    fixture = TestBed.createComponent(SvgTooltipTestHost);
+    fixture.detectChanges();
+    driver = createOverlayDriver();
+    rect = fixture.nativeElement.querySelector('rect');
+    tooltipDirective = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+  });
+
+  afterEach(() => {
+    tooltipDirective.hide();
+    driver.closeAll();
+  });
+
+  it('anchors the tooltip to the svg element and describes it', async () => {
+    tooltipDirective.show();
+    await driver.settle();
+    await driver.settle();
+
+    expect(rect.getAttribute('aria-describedby')).toBe(tooltipDirective.overlayRef()?.config.id ?? null);
+    expect(tooltipPane()?.getAttribute('data-overlay-placement')).toBe('top');
+    expect(tooltipPane()?.style.transform).toBe('translate3d(310px, 192px, 0)');
+  });
+
+  it('closes the tooltip when the svg element leaves the document', async () => {
+    tooltipDirective.show();
+    await driver.settle();
+    await driver.settle();
+
+    expect(tooltipPane()).not.toBeNull();
+
+    rect.remove();
+    window.dispatchEvent(new Event('resize'));
+    await driver.settle();
+    await driver.settle();
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+
+  it('closes the tooltip when its host is destroyed while shown', async () => {
+    tooltipDirective.show();
+    await driver.settle();
+    await driver.settle();
+
+    expect(driver.manager().openOverlays().length).toBe(1);
+
+    fixture.destroy();
+    await driver.settle();
+    await driver.settle();
+
+    expect(driver.manager().openOverlays().length).toBe(0);
+    expect(document.querySelectorAll('[role="tooltip"]').length).toBe(0);
+  });
+
+  it('hides a shown tooltip when the host turns disabled', async () => {
+    tooltipDirective.show();
+    await driver.settle();
+
+    setInputSignal(tooltipDirective.disabled, true);
+    fixture.detectChanges();
+    await driver.settle();
+    await driver.settle();
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+    expect(driver.manager().openOverlays().length).toBe(0);
+  });
+});
+
+@Component({
+  template: `
+    @if (showFirst()) {
+      <button [etTooltip]="firstText()" class="first" type="button">First</button>
+    }
+    @if (showSecond()) {
+      <button class="second" etTooltip="Shared" type="button">Second</button>
+    }
+  `,
+  imports: [TooltipDirective],
+})
+class SharedDescriptionTestHost {
+  firstText = signal('Shared');
+  showFirst = signal(true);
+  showSecond = signal(true);
+}
+
+@Component({
+  template: `<button
+    [attr.aria-expanded]="expanded()"
+    (click)="expanded.set(!expanded())"
+    etTooltip="Tooltip body"
+    type="button"
+  >
+    Trigger
+  </button>`,
+  imports: [TooltipDirective],
+})
+class ExpandableTriggerTestHost {
+  expanded = signal(false);
+}
+
+describe('TooltipDirective on a trigger that opens a popup', () => {
+  // Human decision Q5, 26.11.: a click hides the tooltip and it stays hidden while the trigger is aria-expanded.
+  it('hides on click, stays hidden while expanded and shows on hover again once collapsed', async () => {
+    TestBed.configureTestingModule({ imports: [ExpandableTriggerTestHost] });
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: 'button', rect: { x: 300, y: 200, width: 80, height: 30 } },
+    ]);
+    const fixture = TestBed.createComponent(ExpandableTriggerTestHost);
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    const directive = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+    setInputSignal(directive.showDelay, 0);
+    fixture.detectChanges();
+    const driver = createOverlayDriver();
+
+    directive.show();
+    await driver.settle();
+    expect(directive.overlayRef()).not.toBeNull();
+
+    button.click();
+    fixture.detectChanges();
+    await driver.settle();
+    expect(fixture.componentInstance.expanded()).toBe(true);
+    expect(directive.overlayRef()).toBeNull();
+
+    pointerEnter(button);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await driver.settle();
+    expect(directive.overlayRef()).toBeNull();
+
+    button.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.expanded()).toBe(false);
+
+    button.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+    pointerEnter(button);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await driver.settle();
+    expect(directive.overlayRef()).not.toBeNull();
+
+    directive.hide();
+    driver.closeAll();
+  });
+});
+
+describe('TooltipDirective description container', () => {
+  let fixture: ComponentFixture<SharedDescriptionTestHost>;
+
+  const describedBy = (selector: string) =>
+    (fixture.nativeElement as HTMLElement).querySelector(selector)?.getAttribute('aria-describedby') ?? null;
+  const container = () => document.querySelector<HTMLElement>('.et-tooltip-descriptions');
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [SharedDescriptionTestHost] });
+
+    fixture = TestBed.createComponent(SharedDescriptionTestHost);
+    fixture.detectChanges();
+  });
+
+  it('gives two triggers with the same text one shared element', () => {
+    const id = describedBy('.first');
+
+    expect(id).toContain('et-tooltip-description');
+    expect(describedBy('.second')).toBe(id);
+    expect(container()?.children.length).toBe(1);
+    expect(document.getElementById(id ?? '')?.textContent).toBe('Shared');
+  });
+
+  it('puts the elements in one container under body that is only visually hidden', () => {
+    const element = container();
+
+    expect(element?.parentElement).toBe(document.body);
+    expect(element?.hasAttribute('aria-hidden')).toBe(false);
+    expect(element?.hidden).toBe(false);
+    expect(element?.style.clipPath).toBe('inset(50%)');
+    expect(document.querySelectorAll('.et-tooltip-descriptions').length).toBe(1);
+  });
+
+  it('keeps the shared element while one trigger remains and removes element and container after the last', () => {
+    const id = describedBy('.first') ?? '';
+
+    fixture.componentInstance.showFirst.set(false);
+    fixture.detectChanges();
+
+    expect(document.getElementById(id)?.textContent).toBe('Shared');
+
+    fixture.componentInstance.showSecond.set(false);
+    fixture.detectChanges();
+
+    expect(document.getElementById(id)).toBeNull();
+    expect(container()).toBeNull();
+  });
+
+  it('moves only the trigger whose text changes to the element of its new text', () => {
+    const sharedId = describedBy('.second');
+
+    fixture.componentInstance.firstText.set('Other');
+    fixture.detectChanges();
+
+    const otherId = describedBy('.first');
+
+    expect(otherId).not.toBe(sharedId);
+    expect(document.getElementById(otherId ?? '')?.textContent).toBe('Other');
+    expect(describedBy('.second')).toBe(sharedId);
+    expect(document.getElementById(sharedId ?? '')?.textContent).toBe('Shared');
+    expect(container()?.children.length).toBe(2);
+  });
+});

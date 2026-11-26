@@ -1,0 +1,791 @@
+import { crc32, deflateSync, inflateSync } from 'zlib';
+import { OVERLAY_ROOTS } from './action-press';
+import { isolatedAntiAlias, pixelsDiffer } from './anti-alias';
+import { CompareBoxes, PictureBox } from './compare-boxes';
+
+export const HARNESS_PATH = '/__design-harness';
+
+export const HARNESS_HOST_SELECTOR = '[data-design-harness-host]';
+
+/**
+ * The app's harness page that mounts the component of `part` with the `props` of `state`, under the dev server `url`.
+ * With `layout: 'page'` the harness host fills the viewport, otherwise it fits its content.
+ */
+export const harnessUrlOf = (options: {
+  url: string;
+  part: string;
+  state: string;
+  props: unknown;
+  layout?: 'page' | null;
+}) =>
+  `${options.url.replace(/\/+$/, '')}${HARNESS_PATH}?part=${encodeURIComponent(options.part)}&state=${encodeURIComponent(options.state)}&props=${encodeURIComponent(JSON.stringify(options.props) ?? 'null')}${options.layout ? `&layout=${options.layout}` : ''}`;
+
+/** The panes of the overlays an app opens outside the harness host. */
+export const OVERLAY_PANES = '.et-overlay-runtime-pane, .cdk-overlay-pane';
+
+const OVERLAY_CONTENT = OVERLAY_ROOTS.split(', ')
+  .map((root) => `${root} *`)
+  .join(', ');
+
+/**
+ * A script that measures the harness host in page pixels as a design frame fits its root: grown down and right, and
+ * `up` too, to cover each overlay pane, each other visible element in an overlay root short of one that covers the
+ * viewport, and each absolutely or fixed positioned descendant as far as the overflow boxes that clip it.
+ */
+export const hostBoxScriptOf = (options: { up: boolean }) => `(() => {
+  const host = document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)});
+  const box = host.getBoundingClientRect();
+  const fillsViewport = (style) =>
+    style.position === 'fixed' && [style.top, style.right, style.bottom, style.left].every((edge) => parseFloat(edge) === 0);
+  const clips = (style) => [style.overflow, style.overflowX, style.overflowY].some((overflow) => overflow && overflow !== 'visible');
+  const holdsAbsolute = (style) => !['static', ''].includes(style.position) || !['none', ''].includes(style.transform);
+  const clipped = (element) => {
+    let { top, right, bottom, left } = element.getBoundingClientRect();
+    let escaping = true;
+
+    for (let ancestor = element.parentElement; ancestor && ancestor !== host; ancestor = ancestor.parentElement) {
+      const style = getComputedStyle(ancestor);
+
+      if (escaping && holdsAbsolute(style)) escaping = false;
+      if (!escaping && clips(style)) {
+        const outer = ancestor.getBoundingClientRect();
+
+        top = Math.max(top, outer.top);
+        right = Math.min(right, outer.right);
+        bottom = Math.min(bottom, outer.bottom);
+        left = Math.max(left, outer.left);
+      }
+      if (style.position === 'fixed') break;
+      if (style.position === 'absolute') escaping = true;
+    }
+
+    return { top, right, bottom, left, width: right - left, height: bottom - top };
+  };
+  const outOfFlow = [...host.querySelectorAll('*')]
+    .map((element) => ({ element, style: getComputedStyle(element) }))
+    .filter(({ style }) => ['absolute', 'fixed'].includes(style.position) && !fillsViewport(style))
+    .map(({ element, style }) => (style.position === 'fixed' ? element.getBoundingClientRect() : clipped(element)))
+    .filter((rect) => rect.width > 0 && rect.height > 0);
+  const extentOf = (side, start) => Math.max(0, ...outOfFlow.map((rect) => Math.ceil(rect[side] - start)));
+  const covers = (rect) => rect.width >= innerWidth && rect.height >= innerHeight;
+  const overlaid = [...document.querySelectorAll(${JSON.stringify(OVERLAY_CONTENT)})]
+    .filter((element) => !element.closest(${JSON.stringify(OVERLAY_PANES)}) && getComputedStyle(element).visibility !== 'hidden')
+    .map((element) => element.getBoundingClientRect())
+    .filter((rect) => rect.width > 0 && rect.height > 0 && !covers(rect));
+  const panes = [
+    ...[...document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)})]
+      .map((pane) => pane.getBoundingClientRect())
+      .filter((rect) => rect.width > 0 && rect.height > 0),
+    ...overlaid,
+  ];
+  const left = Math.min(box.left, ...panes.map((rect) => rect.left));
+  const top = Math.min(box.top, ...panes.map((rect) => rect.top), ...(${options.up} ? outOfFlow.map((rect) => rect.top) : []));
+  const right = Math.max(box.left + Math.max(box.width, extentOf('right', box.left)), ...panes.map((rect) => rect.right));
+  const bottom = Math.max(box.top + Math.max(box.height, extentOf('bottom', box.top)), ...panes.map((rect) => rect.bottom));
+
+  return {
+    x: left + scrollX,
+    y: top + scrollY,
+    width: right - left,
+    height: bottom - top,
+  };
+})()`;
+
+/**
+ * An element the design picture forces into `interaction`, found in the app by its accessible name: its `aria-label`,
+ * or else its `role` (or tag) and text.
+ */
+export type ForcedElement = { interaction: string; label: string | null; role: string; text: string };
+
+export const OPENED_BY_ATTRIBUTE = 'data-et-opened-by';
+
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' };
+
+const unescaped = (value: string) =>
+  value.replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_, name: string) => ENTITIES[name] ?? '');
+
+const VOID_TAGS = new Set(['area', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'wbr']);
+
+const contentOf = ({ markup, tag, from }: { markup: string; tag: string; from: number }) => {
+  if (VOID_TAGS.has(tag) || markup[from - 2] === '/') return '';
+
+  const tags = /<(\/?)([a-zA-Z][\w-]*)[^>]*?(\/?)>/g;
+  let depth = 1;
+
+  tags.lastIndex = from;
+
+  for (let found = tags.exec(markup); found; found = tags.exec(markup)) {
+    const [, closing, name = '', selfClosing] = found;
+
+    if (name.toLowerCase() !== tag || selfClosing) continue;
+
+    depth += closing ? -1 : 1;
+
+    if (depth === 0) return markup.slice(from, found.index);
+  }
+
+  return markup.slice(from);
+};
+
+const textOf = (content: string) =>
+  unescaped(content.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]*>/g, ''))
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const attributeOf = (attributes: string, name: string) => new RegExp(`\\s${name}="([^"]*)"`).exec(attributes)?.[1];
+
+type OpeningTag = {
+  whole: string;
+  name: string;
+  attributes: string;
+  index: number;
+  framed: boolean;
+  region: { attributes: string } | null;
+};
+
+/**
+ * Each opening tag of `markup`, `framed` when it lies in a framed drawing: a part root inside a `slot()` region, at any
+ * depth, and everything inside it. `region` is the opening tag of a region the tag is a child of.
+ */
+const openingTagsOf = (markup: string) => {
+  const open: { name: string; attributes: string; projected: boolean; inRegion: boolean; framed: boolean }[] = [];
+  const tags: OpeningTag[] = [];
+
+  for (const found of markup.matchAll(
+    /<(\/?)([a-zA-Z][\w-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*(\/?)>/g,
+  )) {
+    const [whole, closing, tag = '', attributes = '', selfClosing] = found;
+    const name = tag.toLowerCase();
+
+    if (closing) {
+      const at = open.map((element) => element.name).lastIndexOf(name);
+
+      if (at >= 0) open.length = at;
+
+      continue;
+    }
+
+    const parent = open[open.length - 1];
+    const region = parent?.projected ? parent : null;
+    const inRegion = !!region || !!parent?.inRegion;
+    const framed = !!parent?.framed || (inRegion && attributeOf(attributes, 'data-et-part') !== undefined);
+
+    tags.push({ whole, name, attributes, index: found.index, framed, region });
+
+    if (!VOID_TAGS.has(name) && !selfClosing)
+      open.push({
+        name,
+        attributes,
+        projected: attributeOf(attributes, 'data-et-projected') !== undefined,
+        inRegion,
+        framed,
+      });
+  }
+
+  return tags;
+};
+
+const markedTagsOf = (markup: string, attribute: string) =>
+  openingTagsOf(markup).filter(({ attributes }) => attributeOf(attributes, attribute) !== undefined);
+
+const forcedTagsOf = (markup: string) => markedTagsOf(markup, 'data-et-force');
+
+const namedElementsOf = (markup: string, attribute: string): ForcedElement[] =>
+  markedTagsOf(markup, attribute)
+    .filter(({ framed }) => !framed)
+    .flatMap(({ whole, name, attributes, index }) => {
+      const label = attributeOf(attributes, 'aria-label');
+      const role = attributeOf(attributes, 'role') ?? name;
+      const text = textOf(contentOf({ markup, tag: name, from: index + whole.length }));
+
+      return (attributeOf(attributes, attribute) ?? '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((interaction) => ({ interaction, label: label === undefined ? null : unescaped(label), role, text }));
+    });
+
+/**
+ * The elements a design picture's markup forces with `data-et-force`, one entry per interaction. A forced element of a
+ * framed drawing is left out: it is a still of another part's state, which the app draws forced as well.
+ */
+export const forcedElementsOf = (markup: string): ForcedElement[] => namedElementsOf(markup, 'data-et-force');
+
+/**
+ * The triggers whose overlay a design picture draws open while the trigger itself stays at rest, each marked
+ * `data-et-opened-by="hover"`: compare opens that overlay in the app without drawing the trigger hovered.
+ */
+export const openedByElementsOf = (markup: string): ForcedElement[] => namedElementsOf(markup, OPENED_BY_ATTRIBUTE);
+
+/** Whether a design picture forces an element of a framed drawing, which the app then draws with `data-et-force` too. */
+export const forcesInFramesOf = (markup: string) => forcedTagsOf(markup).some(({ framed }) => framed);
+
+/** A class of a `slot()` region that styles the part drawing it frames, the `selector` it targets, and that `part`. */
+export type FrameLook = { look: string; selector: string; part: string };
+
+const variantsOf = (token: string) => {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+
+  for (let at = 0; at < token.length; at++) {
+    if (token[at] === '[') depth++;
+    else if (token[at] === ']') depth--;
+    else if (token[at] === ':' && depth === 0) {
+      parts.push(token.slice(start, at));
+      start = at + 1;
+    }
+  }
+
+  return parts;
+};
+
+const lookSelectorOf = (token: string) => {
+  const [first = '', second = ''] = variantsOf(token);
+  const arbitrary = /^\[&([_>])(.+)\]$/.exec(first);
+
+  if (arbitrary)
+    return {
+      child: arbitrary[1] === '>',
+      selector: (arbitrary[2] ?? '')
+        .replace(/(?<!\\)_/g, ' ')
+        .replace(/\\_/g, '_')
+        .trim(),
+    };
+
+  if (first !== '*' && first !== '**') return null;
+
+  const data = /^data-(?:([\w-]+)|\[([^\]]+)\])$/.exec(second);
+
+  return data ? { child: first === '*', selector: `[data-${data[1] ?? data[2]}]` } : null;
+};
+
+/**
+ * The looks of a design picture: each class of a `slot()` region that reaches into the part drawing it frames, by a
+ * `[&_…]:`, `[&>…]:`, `*:data-…:` or `**:data-…:` variant. The app must draw an element each selector matches.
+ */
+export const frameLooksOf = (markup: string): FrameLook[] => {
+  const looks = new Map<string, FrameLook>();
+
+  for (const { attributes, region } of openingTagsOf(markup)) {
+    const part = attributeOf(attributes, 'data-et-part')?.split(/\s+/)[0];
+
+    if (!region || !part) continue;
+
+    for (const look of unescaped(attributeOf(region.attributes, 'class') ?? '').split(/\s+/)) {
+      const target = lookSelectorOf(look);
+
+      if (target)
+        looks.set(`${look} ${part}`, {
+          look,
+          selector: target.child ? `> ${target.selector}` : target.selector,
+          part,
+        });
+    }
+  }
+
+  return [...looks.values()];
+};
+
+/** A state compare reaches in the app by a pointer click on `control`'s trigger, from the props of state `from`. */
+/** A click on `control` from state `from`, its harness page loaded with `props`, or with `from`'s own props when left out. */
+export type PointerOpen = { control: string; from: string; props?: Record<string, unknown> };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const differingKeysOf = (a: Record<string, unknown>, b: Record<string, unknown>) =>
+  new Set([...Object.keys(a), ...Object.keys(b)]).size -
+  Object.keys(a).filter((key) => key in b && JSON.stringify(a[key]) === JSON.stringify(b[key])).length;
+
+/** Whether a design picture's markup draws an option, row or button as selected, checked, pressed or current. */
+export const drawsSelectedOf = (markup: string) =>
+  /\saria-(?:selected|checked|pressed)="true"|\saria-current="(?!false")[^"]*"/.test(markup);
+
+/** Whether a design picture's markup draws an overlay pane above or before its anchor, which the app places so only with room there. */
+export const drawsPaneBeforeOf = (markup: string) => /\sdata-overlay-placement="(?:top|left)/.test(markup);
+
+/** The `data-et-surface` ids a design picture's markup draws; a surface element marked `hidden` draws none. */
+export const drawnSurfacesOf = (markup: string) =>
+  [...markup.matchAll(/<[^>]*\sdata-et-surface="([^"]*)"[^>]*>/g)]
+    .filter(([tag]) => !/\shidden(?=[\s=/>])/.test(tag))
+    .map(([, id = '']) => id);
+
+/**
+ * Each state a part's `controls` names as a surface it opens, with the control and the other state of the same
+ * `interaction` prop whose props differ from it in the fewest keys, the first declared of equally close states with
+ * the same props; a string where equally close states differ in their props or no such state exists.
+ * A state whose `drawn` surface ids already include the opened surface is never a state to click it open from;
+ * any other state that draws it is clicked open from the same state, with its own props but the opening ones of that state.
+ */
+export const pointerOpensOf = (options: {
+  states: Record<string, unknown>;
+  controls: unknown;
+  drawn?: Record<string, readonly string[]>;
+}) => {
+  const { states, drawn = {} } = options;
+  const opens: Record<string, PointerOpen | string> = {};
+
+  for (const [control, declared] of Object.entries(isRecord(options.controls) ? options.controls : {})) {
+    const surfaces = isRecord(declared) && isRecord(declared['surfaces']) ? declared['surfaces'] : {};
+
+    for (const [surface, state] of Object.entries(surfaces)) {
+      if (typeof state !== 'string' || !(state in states)) continue;
+
+      const props = isRecord(states[state]) ? states[state] : {};
+      const ranked = Object.entries(states)
+        .filter(
+          ([name, other]) =>
+            name !== state &&
+            !drawn[name]?.includes(`${control}.${surface}`) &&
+            JSON.stringify((isRecord(other) ? other : {})['interaction']) === JSON.stringify(props['interaction']),
+        )
+        .map(([name, other]) => ({
+          name,
+          props: JSON.stringify(other),
+          distance: differingKeysOf(props, isRecord(other) ? other : {}),
+        }))
+        .sort((a, b) => a.distance - b.distance);
+      const [nearest] = ranked;
+      const tied = ranked.filter(({ distance }) => distance === nearest?.distance);
+
+      opens[state] = !nearest
+        ? `${state} opens a surface of control ${control}, but the part has no other state to click it open from`
+        : tied.some(({ props: other }) => other !== nearest.props)
+          ? `${state} opens a surface of control ${control}, but states ${tied
+              .map(({ name }) => name)
+              .join(', ')} are equally close to click it open from`
+          : { control, from: nearest.name };
+
+      const open = opens[state];
+
+      if (typeof open === 'string') continue;
+
+      const fromState = states[open.from];
+      const from = isRecord(fromState) ? fromState : {};
+
+      for (const [name, other] of Object.entries(states)) {
+        if (name === state || name in opens || !drawn[name]?.includes(`${control}.${surface}`)) continue;
+
+        const opened = { ...(isRecord(other) ? other : {}) };
+
+        for (const key of new Set([...Object.keys(props), ...Object.keys(from)])) {
+          if (JSON.stringify(props[key]) === JSON.stringify(from[key])) continue;
+          if (key in from) opened[key] = from[key];
+          else delete opened[key];
+        }
+
+        opens[name] = { ...open, props: opened };
+      }
+    }
+  }
+
+  return opens;
+};
+
+export type Pixels = { width: number; height: number; data: Buffer };
+
+const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+const paeth = ({ left, up, upLeft }: { left: number; up: number; upLeft: number }) => {
+  const estimate = left + up - upLeft;
+  const toLeft = Math.abs(estimate - left);
+  const toUp = Math.abs(estimate - up);
+  const toUpLeft = Math.abs(estimate - upLeft);
+
+  return toLeft <= toUp && toLeft <= toUpLeft ? left : toUp <= toUpLeft ? up : upLeft;
+};
+
+/** The RGBA pixels of an 8-bit, non-interlaced RGB or RGBA PNG, as Chromium screenshots write them. */
+export const decodePng = (png: Buffer): Pixels => {
+  if (!png.subarray(0, 8).equals(SIGNATURE)) throw new Error('not a PNG');
+
+  let width = 0;
+  let height = 0;
+  let channels = 0;
+  const data: Buffer[] = [];
+
+  for (let at = 8; at < png.length;) {
+    const length = png.readUInt32BE(at);
+    const type = png.toString('latin1', at + 4, at + 8);
+    const body = png.subarray(at + 8, at + 8 + length);
+
+    if (type === 'IHDR') {
+      width = body.readUInt32BE(0);
+      height = body.readUInt32BE(4);
+      channels = body[9] === 6 ? 4 : body[9] === 2 ? 3 : 0;
+
+      if (body[8] !== 8 || channels === 0 || body[12] !== 0)
+        throw new Error('only 8-bit, non-interlaced RGB or RGBA PNGs are supported');
+    }
+    if (type === 'IDAT') data.push(body);
+    if (type === 'IEND') break;
+
+    at += length + 12;
+  }
+
+  const raw = inflateSync(Buffer.concat(data));
+  const stride = width * channels;
+  const rows = Buffer.alloc(stride * height);
+
+  for (let y = 0; y < height; y++) {
+    const filter = raw[y * (stride + 1)];
+    const source = y * (stride + 1) + 1;
+    const row = y * stride;
+    const above = row - stride;
+
+    if (filter === 0 || (filter === 2 && y === 0)) {
+      raw.copy(rows, row, source, source + stride);
+      continue;
+    }
+
+    for (let x = 0; x < stride; x++) {
+      const value = raw[source + x] as number;
+      const left = x >= channels ? (rows[row + x - channels] as number) : 0;
+      const up = y > 0 ? (rows[above + x] as number) : 0;
+      let predicted = 0;
+
+      if (filter === 1) predicted = left;
+      else if (filter === 2) predicted = up;
+      else if (filter === 3) predicted = (left + up) >> 1;
+      else if (filter === 4) {
+        const upLeft = y > 0 && x >= channels ? (rows[above + x - channels] as number) : 0;
+
+        predicted = paeth({ left, up, upLeft });
+      }
+
+      rows[row + x] = (value + predicted) & 0xff;
+    }
+  }
+
+  if (channels === 4) return { width, height, data: rows };
+
+  const out = Buffer.alloc(width * height * 4);
+
+  for (let pixel = 0, from = 0, to = 0; pixel < width * height; pixel++, from += 3, to += 4) {
+    out[to] = rows[from] as number;
+    out[to + 1] = rows[from + 1] as number;
+    out[to + 2] = rows[from + 2] as number;
+    out[to + 3] = 255;
+  }
+
+  return { width, height, data: out };
+};
+
+const chunkOf = (type: string, body: Buffer) => {
+  const length = Buffer.alloc(4);
+  const sum = Buffer.alloc(4);
+  const named = Buffer.concat([Buffer.from(type, 'latin1'), body]);
+
+  length.writeUInt32BE(body.length);
+  sum.writeUInt32BE(crc32(named));
+
+  return Buffer.concat([length, named, sum]);
+};
+
+/** An 8-bit RGBA PNG of `pixels`. */
+export const encodePng = (pixels: Pixels) => {
+  const header = Buffer.alloc(13);
+  const stride = pixels.width * 4;
+  const raw = Buffer.alloc((stride + 1) * pixels.height);
+
+  header.writeUInt32BE(pixels.width, 0);
+  header.writeUInt32BE(pixels.height, 4);
+  header[8] = 8;
+  header[9] = 6;
+
+  for (let y = 0; y < pixels.height; y++) pixels.data.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride);
+
+  return Buffer.concat([
+    SIGNATURE,
+    chunkOf('IHDR', header),
+    chunkOf('IDAT', deflateSync(raw)),
+    chunkOf('IEND', Buffer.alloc(0)),
+  ]);
+};
+
+/** How the app's picture of a state matches the design's within the anti-alias tolerance: `ok`, a size mismatch, or a count of differing pixels, with a diff picture unless `ok`. */
+export type PixelCompare =
+  | { kind: 'ok' }
+  | { kind: 'size'; design: Size; app: Size; diff: Buffer }
+  | { kind: 'diff'; pixels: number; diff: Buffer };
+
+type Size = { width: number; height: number };
+
+const RED = 0xff0000ff;
+
+const wordsOf = (bytes: Buffer) =>
+  bytes.byteOffset % 4 === 0
+    ? new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4)
+    : new Uint32Array(Uint8Array.from(bytes).buffer);
+
+/** Compares two PNGs pixel by pixel; the diff picture paints differing pixels red over a faded design. */
+export const comparePngs = (options: { design: Buffer; app: Buffer }): PixelCompare => {
+  const design = decodePng(options.design);
+  const app = decodePng(options.app);
+  const width = Math.max(design.width, app.width);
+  const height = Math.max(design.height, app.height);
+  const shared = { width: Math.min(design.width, app.width), height: Math.min(design.height, app.height) };
+  const from = wordsOf(design.data);
+  const other = wordsOf(app.data);
+  const sized = design.width === app.width && design.height === app.height;
+  const over = new Uint8Array(width * height);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const inside = x < shared.width && y < shared.height;
+
+      if (!inside || pixelsDiffer(from[y * design.width + x] as number, other[y * app.width + x] as number))
+        over[y * width + x] = 1;
+    }
+  }
+
+  const passed = sized ? isolatedAntiAlias({ design: from, app: other, width, height, over }) : over.map(() => 0);
+  const out = new Uint32Array(width * height);
+  const data = Buffer.from(out.buffer);
+  let pixels = 0;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const to = y * width + x;
+
+      if (!over[to] || passed[to]) {
+        const word = from[y * design.width + x] as number;
+
+        out[to] = ((word & 0x00ffffff) | ((word >>> 26) << 24)) >>> 0;
+
+        continue;
+      }
+
+      pixels++;
+      out[to] = RED;
+    }
+  }
+
+  if (sized && pixels === 0) return { kind: 'ok' };
+
+  const diff = encodePng({ width, height, data });
+
+  return sized
+    ? { kind: 'diff', pixels, diff }
+    : {
+        kind: 'size',
+        design: { width: design.width, height: design.height },
+        app: { width: app.width, height: app.height },
+        diff,
+      };
+};
+
+/** The line `design compare` prints for a state. */
+export const compareLineOf = (state: string, result: PixelCompare) =>
+  result.kind === 'ok'
+    ? `${state} ok`
+    : result.kind === 'diff'
+      ? `${state} DIFF ${result.pixels} px`
+      : `${state} SIZE ${result.design.width}x${result.design.height} vs ${result.app.width}x${result.app.height}`;
+
+const cropOf = (pixels: Pixels, box: PictureBox) => {
+  const width = Math.max(0, Math.min(box.width, pixels.width - box.x));
+  const height = Math.max(0, Math.min(box.height, pixels.height - box.y));
+  const data = Buffer.alloc(width * height * 4);
+
+  for (let y = 0; y < height; y++)
+    pixels.data.copy(
+      data,
+      y * width * 4,
+      ((box.y + y) * pixels.width + box.x) * 4,
+      ((box.y + y) * pixels.width + box.x + width) * 4,
+    );
+
+  return encodePng({ width, height, data });
+};
+
+/** One box of a state compared: the cut of it from each picture and how they match. */
+export type BoxCompare = { design: Buffer; app: Buffer; result: PixelCompare };
+
+/** A state compared box by box: its root, each overlay pane both sides open, and the pane count and offsets. */
+export type StateCompare = {
+  root: BoxCompare;
+  panes: (BoxCompare & { offset: { design: Offset; app: Offset } })[];
+  paneCount: { design: number; app: number };
+};
+
+type Offset = { x: number; y: number };
+
+/**
+ * Compares the root box of the design and app pictures of a state, and each overlay pane by its place in top to
+ * bottom, then left to right order: its pixels, and its offset from the root box.
+ */
+export const stateCompareOf = (options: {
+  design: Buffer;
+  app: Buffer;
+  boxes: { design: CompareBoxes; app: CompareBoxes };
+  compare?: (pictures: { design: Buffer; app: Buffer }) => PixelCompare;
+}): StateCompare => {
+  const { boxes, compare = comparePngs } = options;
+  const design = decodePng(options.design);
+  const app = decodePng(options.app);
+  const boxCompareOf = (cut: { design: PictureBox; app: PictureBox }): BoxCompare => {
+    const pictures = { design: cropOf(design, cut.design), app: cropOf(app, cut.app) };
+
+    return { ...pictures, result: compare(pictures) };
+  };
+  const offsetOf = (pane: PictureBox, root: PictureBox) => ({ x: pane.x - root.x, y: pane.y - root.y });
+
+  return {
+    root: boxCompareOf({ design: boxes.design.root, app: boxes.app.root }),
+    panes: boxes.design.panes.slice(0, boxes.app.panes.length).map((pane, at) => {
+      const appPane = boxes.app.panes[at] as PictureBox;
+
+      return {
+        ...boxCompareOf({ design: pane, app: appPane }),
+        offset: { design: offsetOf(pane, boxes.design.root), app: offsetOf(appPane, boxes.app.root) },
+      };
+    }),
+    paneCount: { design: boxes.design.panes.length, app: boxes.app.panes.length },
+  };
+};
+
+/** The lines `design compare` prints for the overlay panes of a state compared box by box, none when they all match. */
+export const paneLinesOf = (state: string, compared: StateCompare) => {
+  const { panes, paneCount } = compared;
+
+  return [
+    ...(paneCount.design === paneCount.app ? [] : [`${state} PANES ${paneCount.design} vs ${paneCount.app}`]),
+    ...panes.flatMap(({ result, offset }, at) => {
+      const name = `${state} pane ${at + 1}`;
+      const { design, app } = offset;
+
+      return [
+        ...(result.kind === 'ok' ? [] : [compareLineOf(name, result)]),
+        ...(design.x === app.x && design.y === app.y
+          ? []
+          : [`${name} OFFSET ${design.x},${design.y} vs ${app.x},${app.y}`]),
+      ];
+    }),
+  ];
+};
+
+/** The lines `design compare` prints for a state compared box by box: `<state> ok` only when every box matches. */
+export const stateCompareLinesOf = (state: string, compared: StateCompare) => {
+  const paneLines = paneLinesOf(state, compared);
+
+  return compared.root.result.kind === 'ok' && paneLines.length > 0
+    ? paneLines
+    : [compareLineOf(state, compared.root.result), ...paneLines];
+};
+
+/** A state's pictures compared box by box where both sides measured their boxes, else as whole pictures. */
+export type ShotCompare = { result: PixelCompare; boxed: StateCompare | null; ok: boolean };
+
+/**
+ * Compares the design and app pictures of a state by their root and overlay pane boxes when both carry `boxes`, else
+ * whole; `result` is the root's or the whole picture's, `ok` holds only when every box matches.
+ */
+export const shotCompareOf = (options: {
+  design: Buffer;
+  app: Buffer;
+  boxes?: { design: CompareBoxes; app: CompareBoxes } | null;
+  compare?: (pictures: { design: Buffer; app: Buffer }) => PixelCompare;
+}): ShotCompare => {
+  const { boxes, compare = comparePngs } = options;
+  const boxed = boxes ? stateCompareOf({ ...options, boxes, compare }) : null;
+  const result = boxed ? boxed.root.result : compare(options);
+
+  return { result, boxed, ok: result.kind === 'ok' && (!boxed || paneLinesOf('', boxed).length === 0) };
+};
+
+/** The lines `design compare` prints for a state compared by `shotCompareOf`. */
+export const shotCompareLinesOf = (state: string, compared: ShotCompare) =>
+  compared.boxed ? stateCompareLinesOf(state, compared.boxed) : [compareLineOf(state, compared.result)];
+
+/**
+ * The props of `state` that compare reproduces without a component input, so the harness may drop them: `class`,
+ * a prop every state sets to the same value (no state differs by it), each prop a pointer open toggles (it clicks
+ * them), each prop whose value, or its `interaction`, names an interaction the state's design forces on an
+ * element (compare forces it in the app), in a state that forces one, each prop only the `forcing` states set, and,
+ * where the state's design draws a `selected` option, each prop set to `selected` (the app draws it from its value).
+ */
+export const designOnlyPropsOf = (options: {
+  states: Record<string, unknown>;
+  opens: Record<string, PointerOpen | string>;
+  state: string;
+  forced: readonly string[];
+  forcing: ReadonlySet<string>;
+  selected?: boolean;
+}): Set<string> => {
+  const { states, opens, state, forced, forcing, selected = false } = options;
+  const designOnly = new Set(['class']);
+
+  for (const [opened, open] of Object.entries(opens)) {
+    if (typeof open === 'string') continue;
+
+    const ownProps = states[opened];
+    const own = isRecord(ownProps) ? ownProps : {};
+    const fromProps = states[open.from];
+    const sent = open.props ?? (isRecord(fromProps) ? fromProps : {});
+
+    for (const key of new Set([...Object.keys(own), ...Object.keys(sent)]))
+      if (JSON.stringify(own[key]) !== JSON.stringify(sent[key])) designOnly.add(key);
+  }
+
+  const stateProps = states[state];
+
+  const all = Object.values(states).map((props) => (isRecord(props) ? props : {}));
+
+  for (const [key, value] of Object.entries(isRecord(stateProps) ? stateProps : {})) {
+    if (all.every((props) => key in props && JSON.stringify(props[key]) === JSON.stringify(value))) designOnly.add(key);
+    if (
+      forced.length > 0 &&
+      Object.entries(states).every(([name, props]) => forcing.has(name) || !isRecord(props) || props[key] === undefined)
+    )
+      designOnly.add(key);
+
+    const interaction = isRecord(value) ? value['interaction'] : value;
+
+    if (typeof interaction === 'string' && forced.includes(interaction)) designOnly.add(key);
+    if (selected && value === 'selected') designOnly.add(key);
+  }
+
+  return designOnly;
+};
+
+/** The keys of `props` the harness drops because the mounted component has no input of that name, minus `designOnly`. */
+export const droppedPropsOf = (options: {
+  props: unknown;
+  inputs: readonly string[];
+  designOnly: ReadonlySet<string>;
+}): string[] =>
+  Object.keys(isRecord(options.props) ? options.props : {}).filter(
+    (key) => !options.inputs.includes(key) && !options.designOnly.has(key),
+  );
+
+/**
+ * Each state whose design picture with emptied slots equals that of an earlier state while its full picture does not:
+ * it differs from that base state only inside the emptied `slot()` regions, so compare cannot check it. Draws a full
+ * picture only for states that have such a twin. Answers state -> base state.
+ */
+export const slotOnlyStatesOf = async (options: {
+  states: readonly string[];
+  emptied: ReadonlyMap<string, Buffer>;
+  full: (state: string) => Promise<Buffer | null>;
+}): Promise<Map<string, string>> => {
+  const { states, emptied, full } = options;
+  const baseOf = new Map<string, string>();
+
+  for (const [index, state] of states.entries()) {
+    const picture = emptied.get(state);
+    const base = picture ? states.slice(0, index).find((earlier) => emptied.get(earlier)?.equals(picture)) : undefined;
+
+    if (base !== undefined) baseOf.set(state, baseOf.get(base) ?? base);
+  }
+
+  const slotOnly = new Map<string, string>();
+
+  for (const [state, base] of baseOf) {
+    const [own, based] = [await full(state), await full(base)];
+
+    if (own && based && !own.equals(based)) slotOnly.set(state, base);
+  }
+
+  return slotOnly;
+};

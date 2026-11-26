@@ -1,0 +1,263 @@
+import { Component, ViewEncapsulation, computed, effect, input, output, signal } from '@angular/core';
+import {
+  BADGE_IMPORTS,
+  BANNER_IMPORTS,
+  BUTTON_IMPORTS,
+  CHECKBOX_IMPORTS,
+  CHOICE_FIELD_IMPORTS,
+  FORM_FIELD_IMPORTS,
+  INPUT_IMPORTS,
+  SpinnerComponent,
+} from '@ethlete/components';
+import { TimetrackGoogleSettings } from '@ethlete/timetrack';
+import { googleConnectionState, injectGoogleAccount } from '../google';
+import { TokenFieldComponent } from './token-field.component';
+
+/**
+ * The Google account, from the OAuth client to the calendars the user counts as work.
+ *
+ * A build with a shared client needs only Connect. The user's own client is an override behind a
+ * toggle, and wins over the shared one once set.
+ */
+@Component({
+  selector: 'ethlete-google-connection',
+  template: `
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center gap-3">
+        <h3 class="text-h4">Google Calendar</h3>
+
+        <et-badge [color]="badge().color" size="sm">{{ badge().label }}</et-badge>
+
+        @if (account.busy()) {
+          <et-spinner size="sm" />
+        }
+      </div>
+
+      <p class="text-small text-et-surface-text-muted">
+        A calendar names a meeting and gives its time. It does not decide that one was held — Google writes a Meet link
+        for a call held somewhere else.
+        @if (!account.hasBuiltInClient()) {
+          Register an OAuth client of type <em>Desktop app</em> in your own Google Cloud project, then add yourself as a
+          test user — Google shows an unverified-app warning until you do.
+        }
+      </p>
+
+      @if (state() === 'reconnect') {
+        <et-banner
+          description="Google no longer accepts the saved access. It was revoked or has expired."
+          heading="Reconnect Google Calendar"
+          type="warning"
+        />
+
+        <div>
+          <button [disabled]="account.busy()" (click)="account.connect()" et-button variant="filled" size="sm">
+            Reconnect Google Calendar
+          </button>
+        </div>
+      }
+
+      @if (account.failure(); as failure) {
+        <et-banner [description]="failure" [heading]="failureHeading()" type="error" />
+      }
+
+      @if (ownClientOffered()) {
+        <div>
+          <button (click)="ownClientOpen.set(!ownClientOpen())" et-button variant="transparent" size="sm">
+            {{ ownClientVisible() ? 'Hide your own OAuth client' : 'Use your own OAuth client' }}
+          </button>
+        </div>
+      }
+
+      @if (ownClientVisible()) {
+        <et-form-field class="min-w-60" appearance="underline" size="sm">
+          <et-label>Client id</et-label>
+          <et-input
+            [value]="settings().clientId"
+            (valueChange)="setClientId($event)"
+            placeholder="000000000000-abc.apps.googleusercontent.com"
+          />
+        </et-form-field>
+
+        <ethlete-token-field
+          [connected]="hasClientSecret()"
+          (save)="saveClientSecret.emit($event)"
+          (forget)="forgetClientSecret.emit()"
+          provider="Google client secret"
+          forgetLabel="Remove"
+        />
+      }
+
+      @if (account.waitingForBrowser()) {
+        <div class="flex flex-col items-start gap-2" data-google-waiting>
+          <p class="text-small text-et-surface-text-muted">
+            Finish the sign-in in the browser that opened. If it opened the wrong browser, copy the link and paste it
+            into the right one. If you closed it, cancel and connect again.
+          </p>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button (click)="account.copyLink()" et-button variant="outline" size="sm">
+              {{ copyLabel() }}
+            </button>
+
+            <button (click)="account.cancel()" et-button variant="transparent" size="sm">Cancel</button>
+          </div>
+        </div>
+      }
+
+      <div class="flex flex-wrap items-center gap-3">
+        @if (state() !== 'reconnect') {
+          <button [disabled]="account.busy()" (click)="account.connect()" et-button variant="filled" size="sm">
+            {{ connected() ? 'Connect again' : 'Connect' }}
+          </button>
+        }
+
+        @if (connected()) {
+          <button [disabled]="account.busy()" (click)="account.disconnect()" et-button variant="transparent" size="sm">
+            Disconnect
+          </button>
+        }
+      </div>
+
+      @if (account.revokeFailed()) {
+        <div class="flex flex-col items-start gap-2">
+          <p class="text-small text-et-surface-text-muted">
+            The token is still on this machine and the account still works. Disconnect again to ask Google once more. To
+            stop here, remove the token and then withdraw the access yourself under your Google account.
+          </p>
+
+          <button
+            [disabled]="account.busy()"
+            (click)="account.forgetLocally()"
+            et-button
+            variant="transparent"
+            size="sm"
+          >
+            Remove from this machine
+          </button>
+        </div>
+      }
+
+      @if (connected()) {
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center gap-3">
+            <h4 class="text-base">Calendars counted as work</h4>
+
+            <button
+              [disabled]="account.busy()"
+              (click)="account.loadCalendars()"
+              et-button
+              variant="transparent"
+              size="sm"
+            >
+              Refresh
+            </button>
+          </div>
+
+          @for (calendar of account.calendars() ?? []; track calendar.id) {
+            <et-choice-field>
+              <et-checkbox [checked]="picked().has(calendar.id)" (checkedChange)="toggle(calendar.id, $event)" />
+              <et-label>{{ calendar.name }}</et-label>
+            </et-choice-field>
+          } @empty {
+            <p class="text-small text-et-surface-text-subtle">{{ calendarsNote() }}</p>
+          }
+
+          <p class="text-small text-et-surface-text-subtle">
+            Nothing is read until a calendar is picked. A personal calendar lives on the same account.
+          </p>
+        </div>
+      }
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    BADGE_IMPORTS,
+    BANNER_IMPORTS,
+    BUTTON_IMPORTS,
+    CHECKBOX_IMPORTS,
+    CHOICE_FIELD_IMPORTS,
+    FORM_FIELD_IMPORTS,
+    INPUT_IMPORTS,
+    SpinnerComponent,
+    TokenFieldComponent,
+  ],
+})
+export class GoogleConnectionComponent {
+  protected account = injectGoogleAccount();
+
+  public settings = input.required<TimetrackGoogleSettings>();
+  public connected = input(false);
+  public hasClientSecret = input(false);
+
+  public settingsChange = output<TimetrackGoogleSettings>();
+  public saveClientSecret = output<string>();
+  public forgetClientSecret = output<void>();
+
+  protected ownClientOpen = signal(false);
+
+  private hasOwnClient = computed(() => !!this.settings().clientId.trim() || this.hasClientSecret());
+
+  protected ownClientOffered = computed(() => this.account.hasBuiltInClient() && !this.hasOwnClient());
+
+  protected ownClientVisible = computed(
+    () => !this.account.hasBuiltInClient() || this.ownClientOpen() || this.hasOwnClient(),
+  );
+
+  protected state = computed(() =>
+    googleConnectionState({
+      hasClient: this.account.hasBuiltInClient() || (!!this.settings().clientId.trim() && this.hasClientSecret()),
+      connected: this.connected(),
+      needsReconnect: this.account.needsReconnect(),
+    }),
+  );
+
+  protected picked = computed(() => new Set(this.settings().calendarIds));
+
+  protected failureHeading = computed(() => {
+    if (this.account.revokeFailed()) return 'Google did not confirm the disconnect';
+    if (this.account.needsReconnect()) return 'The account stopped working';
+
+    return 'The account could not be connected';
+  });
+
+  protected badge = computed(() => {
+    if (this.account.needsReconnect()) return { color: 'danger', label: 'reconnect needed' };
+
+    return this.connected() ? { color: 'success', label: 'connected' } : { color: 'warning', label: 'not connected' };
+  });
+
+  protected copyLabel = computed(() => {
+    const copied = this.account.linkCopied();
+
+    if (copied === null) return 'Copy link';
+
+    return copied ? 'Link copied' : 'Copy failed · retry';
+  });
+
+  protected calendarsNote = computed(() => {
+    if (this.account.calendars()) return 'This account has no calendars.';
+    if (this.account.loadFailed()) return 'The calendars could not be read. Refresh to try again.';
+
+    return 'Reading the calendars…';
+  });
+
+  constructor() {
+    // A read is asked for once. Retrying it here on sight is what pinned `busy` true against a
+    // rejected refresh token, which disabled both the Connect and the Disconnect button.
+    effect(() => {
+      if (this.connected() && !this.account.calendars() && !this.account.busy() && !this.account.loadFailed()) {
+        this.account.loadCalendars();
+      }
+    });
+  }
+
+  protected setClientId(clientId: string) {
+    this.settingsChange.emit({ ...this.settings(), clientId });
+  }
+
+  protected toggle(id: string, picked: boolean) {
+    const ids = this.settings().calendarIds.filter((existing) => existing !== id);
+
+    this.settingsChange.emit({ ...this.settings(), calendarIds: picked ? [...ids, id] : ids });
+  }
+}

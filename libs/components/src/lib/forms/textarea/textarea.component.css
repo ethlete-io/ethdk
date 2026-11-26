@@ -1,0 +1,45 @@
+@layer components.sdk {
+  et-textarea {
+    display: block;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-textarea-native {
+      display: block;
+      inline-size: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      caret-color: var(--et-tone-fill, currentColor);
+      padding: 0;
+      min-width: 0;
+
+      &::placeholder {
+        color: color-mix(in srgb, currentColor 60%, transparent);
+      }
+
+      &[rows='1']::placeholder {
+        white-space: pre;
+      }
+
+      &[data-resize='none'] {
+        resize: none;
+      }
+
+      &[data-resize='vertical'] {
+        resize: vertical;
+        min-block-size: 1lh;
+      }
+    }
+
+    /* an unresolved bulk-edit value reads as provisional — the mixed label shows as the
+       placeholder, between a committed value (full strength) and a real placeholder (60%) */
+    &[data-mixed] .et-textarea-native::placeholder {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+  }
+}

@@ -1,0 +1,194 @@
+# SEO
+
+Signal-based head management: a family of `apply*Binding` functions that write the document title, meta tags, links and JSON-LD structured data. They use Angular's `Title`/`Meta` services, the renderer, and the injected `DOCUMENT` so the same API works with server rendering.
+
+Every binding accepts a raw value **or a signal** (`MaybeSignal<T>`) and must be called in an injection context - typically a component constructor or field initializer. Bindings clean up after themselves when the component is destroyed:
+
+```ts
+import { applyDescriptionBinding, applyHeadTitleBinding } from '@ethlete/core';
+
+@Component({/* … */})
+export class HomeComponent {
+  constructor() {
+    applyHeadTitleBinding('Home');
+    applyDescriptionBinding('This is the home page.');
+  }
+}
+```
+
+## Title
+
+`applyHeadTitleBinding(text, options?)` adds a title part; the store composes all active parts into the document title. `applyMetaBinding` and `applyLinkBinding` take the same `layer` option: `{ layer: 'overlay' }` outranks every `'page'` binding (default) regardless of creation order, while bindings in one layer keep creation order. Configure composition app-wide:
+
+```ts
+// app.config.ts
+provideTitleConfig({ suffixPart: { text: 'Ethlete SDK' } }),
+```
+
+| `TitleConfig` option        | Default          | Description                                                                                                |
+| --------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| `divider`                   | `'\|'`           | Joins the title parts.                                                                                     |
+| `defaultTitle`              | `''`             | Fallback when no parts are active (falls back to the initial document title).                              |
+| `transformer`               | identity         | Runs over the final title, e.g. for translation.                                                           |
+| `prefixPart` / `suffixPart` | -                | Static parts around the composed title.                                                                    |
+| `order`                     | `'parent-first'` | `'child-first'` reverses the bound parts: `Child \| Parent \| Suffix`. Prefix and suffix keep their place. |
+
+Parts are ordered by when they were bound, so a parent binding comes before its child's. A part keeps that place when its value changes or empties and comes back.
+
+Pass `{ useAsStart: true }` to make a part the leftmost segment, discarding parts registered before it. Until the router has completed its first navigation, only the default title is shown, and with no parts registered `prefixPart`/`suffixPart` are not applied either.
+
+### Title markers {#title-markers}
+
+`applyHeadTitleMarker(binding)` prefixes a short marker onto the composed title while the binding has a value - the unsaved-changes dot, a pending count, and the like. Markers sit **outside** the divider logic (`● Editor | Ethlete SDK`, not `● | Editor | …`), identical markers are deduplicated, and a marker is removed when the binding goes empty or the injector is destroyed.
+
+```ts
+applyHeadTitleMarker(computed(() => (this.hasUnsavedWork() ? '●' : null)));
+```
+
+The [unsaved-changes tab guard](/core/utilities#unsaved-changes-tab) uses the same mechanism via its `titleMarker` option, so the marker only works in apps whose title is owned by this store.
+
+## Favicon overlays {#favicon}
+
+`applyFaviconOverlay(binding)` draws on top of the site's favicon while the binding has a value, and restores the original icon when it goes empty (or the injector is destroyed):
+
+```ts
+// a dot in the corner - "something is unsaved / unread here"
+applyFaviconOverlay(computed(() => (this.hasUnsavedWork() ? { kind: 'dot' } : null)));
+
+// a ring around the icon, 0–100
+applyFaviconOverlay(computed(() => (this.saving() ? { kind: 'progress', value: this.percent() } : null)));
+```
+
+| Overlay      | Fields                                   | Notes                                                             |
+| ------------ | ---------------------------------------- | ----------------------------------------------------------------- |
+| `'dot'`      | `color?`                                 | Badge punched into the bottom-right corner.                       |
+| `'progress'` | `value` (0–100), `color?`, `trackColor?` | Ring around the icon. Wins over a `dot` when both are registered. |
+
+`color` defaults to `--et-tone-fill`, read off the root element at draw time, so the overlay follows the app's [color theme](/core/theming).
+
+This is the only real answer to "show progress on the tab": no browser exposes taskbar or tab progress. Notes:
+
+- The base icon is read from `<link rel="icon">` and drawn onto a 64×64 canvas. A **cross-origin** icon without CORS headers taints the canvas - the favicon is then left untouched rather than broken. An icon the browser can't decode is skipped and the overlay draws on an empty canvas.
+- If the page has no icon link at all, one is created and removed again on restore.
+- SSR-safe: nothing is drawn on the server.
+
+## Meta tags
+
+`applyMetaBinding(config)` is the generic form; shortcuts exist for the common cases:
+
+| Function                   | Writes                                                                                                                                                                                                      |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `applyDescriptionBinding`  | `name="description"`                                                                                                                                                                                        |
+| `applyKeywordsBinding`     | `name="keywords"` from a `string[]`                                                                                                                                                                         |
+| `applyAuthorBinding`       | `name="author"`                                                                                                                                                                                             |
+| `applyRobotsBinding`       | `name="robots"` from a `RobotsConfig` (`index`, `follow`, `maxSnippet`, …)                                                                                                                                  |
+| `applyOpenGraphBindings`   | The full `og:*` family (title, description, images, videos, …)                                                                                                                                              |
+| `applyTwitterCardBindings` | `twitter:*` (card, site, creator, images, player, …)                                                                                                                                                        |
+| `applyArticleBindings`     | `article:*` (published_time, authors, tags, …)                                                                                                                                                              |
+| `applySocialMediaBindings` | The convenience wrapper: from `title`/`description`/`image`/`url` it fans out to title, description, Open Graph **and** Twitter (plus `openGraph`/`twitter`/`article` overrides) - the usual one-stop call. |
+
+Duplicate tags are deduplicated by selector, and the binding that was bound **last** wins - usually the child route's over its parent's. A binding keeps its place when its value updates, so a parent whose signal changes does not jump ahead of its child. Multi-instance tags (`og:image`, `twitter:image`, `article:tag`, …) are the exception: every binding renders its own tag. Extend the set via `provideMetaConfig({ multiInstanceTags })`.
+
+For one fallback `og:image` that a page image replaces, either bind the fallback only where a page has no image, or drop `og:image` from the multi-instance set so the last bound image wins:
+
+```ts
+provideMetaConfig({
+  multiInstanceTags: new Set([...DEFAULT_MULTI_INSTANCE_TAGS].filter((tag) => tag !== 'property="og:image"')),
+}),
+```
+
+A meta binding hides the tags already in the document while it is bound: the first binding for a selector removes every existing `<meta>` matching it (for example one from `index.html` or server-rendered HTML). Once the last binding for that selector is released, those tags come back.
+
+## Links
+
+| Function                                                    | Writes                                                                                              |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `applyLinkBinding`                                          | Any `<link>` from a `LinkConfig`.                                                                   |
+| `applyCanonicalBinding`                                     | `rel="canonical"`                                                                                   |
+| `applyAlternateBinding` / `applyAlternateLanguagesBindings` | `rel="alternate"` with `hreflang` - the plural form takes `{ en: url, de: url, 'x-default': url }`. |
+| `applyPrevBinding` / `applyNextBinding`                     | `rel="prev"` / `rel="next"` pagination links.                                                       |
+| `applyResourceHintsBindings`                                | `preconnect` / `dns-prefetch` / `prefetch` / `prerender` from arrays of URLs.                       |
+
+Two bindings for a single-instance link such as `canonical` resolve like meta tags: the one bound last wins, and keeps its place when the other updates. Link bindings only ever touch the `<link>` elements they created (marked with `data-link-key`); a `<link>` already in the document is left in place and can end up alongside the bound one.
+
+## Structured data (JSON-LD)
+
+`applyStructuredDataBinding(data)` injects a `<script type="application/ld+json">` element and removes it on destroy. The schema.org shapes ship as types under the `JsonLD` namespace:
+
+```ts
+import { JsonLD, applyStructuredDataBinding } from '@ethlete/core';
+
+applyStructuredDataBinding({
+  '@context': 'https://schema.org',
+  '@type': 'SportsEvent',
+  name: 'Grand Final',
+} satisfies JsonLD.WithContext<JsonLD.SportsEvent>);
+```
+
+By default the script lands in `<body>` (Google's recommendation); switch with `provideStructuredDataConfig({ placement: 'head' })`. Alternatively, render it directly in a template with `<et-structured-data [data]="…" />`.
+
+## Locale awareness
+
+All title and meta content runs through the configured transformers and re-applies when the [locale](/core/providers#locale) signal changes - so translated titles update in place.
+
+`transformer(text, locale)` is deliberately a different mechanism from the UI library's [label tokens](/components/localization): the strings here are **yours** (route titles, meta content), so there is no default wording to override - each one is handed to your translator instead. Label tokens exist for the opposite case, where the SDK wrote the string.
+
+## Migrating from `SeoDirective`
+
+The Observable-based `SeoDirective` and its `SeoConfig` types were **removed in v5**. It wrote to
+`document` directly (so it never worked under SSR) and it kept one config object per component,
+which is why a child route could only override a parent by re-declaring the whole thing. The
+bindings above replace it one key at a time - each one composes and cleans up on its own.
+
+Drop `SeoDirective` from `hostDirectives` / `imports` and replace the `updateConfig({ … })` call
+with the binding per key. Values that were Observables become signals (`toSignal()` at the edge, or
+a `computed`):
+
+```ts
+// before
+@Component({ hostDirectives: [SeoDirective] })
+export class ArticleComponent {
+  private seo = inject(SeoDirective);
+
+  constructor() {
+    this.seo.updateConfig({
+      title: this.article$.pipe(map((a) => a.title)),
+      description: 'A brief description',
+      canonical: 'https://example.com/article',
+      og: { image: 'https://example.com/image.jpg' },
+    });
+  }
+}
+
+// after
+@Component({})
+export class ArticleComponent {
+  private article = toSignal(this.article$);
+
+  constructor() {
+    applyHeadTitleBinding(computed(() => this.article()?.title ?? ''));
+    applyDescriptionBinding('A brief description');
+    applyCanonicalBinding('https://example.com/article');
+    applyOpenGraphBindings({ images: ['https://example.com/image.jpg'] });
+  }
+}
+```
+
+| `SeoConfig` key              | Replacement                                                   |
+| ---------------------------- | ------------------------------------------------------------- |
+| `title`                      | [`applyHeadTitleBinding`](#title)                             |
+| `description`                | `applyDescriptionBinding`                                     |
+| `keywords`                   | `applyKeywordsBinding`                                        |
+| `robots`                     | `applyRobotsBinding` (takes a directive object, not a string) |
+| `icon`                       | `applyLinkBinding({ rel: 'icon', href })`                     |
+| `themeColor` / `colorScheme` | `applyMetaBinding({ name: 'theme-color' \| 'color-scheme' })` |
+| `canonical`                  | `applyCanonicalBinding`                                       |
+| `alternate`                  | `applyAlternateBinding` / `applyAlternateLanguagesBindings`   |
+| `og`                         | `applyOpenGraphBindings`                                      |
+| `twitter`                    | `applyTwitterCardBindings`                                    |
+| `facebook`                   | `applyOpenGraphBindings` (Facebook reads Open Graph)          |
+| any other key                | `applyMetaBinding({ name, content })`                         |
+
+A child component no longer re-declares its parent's config to override one key: title parts compose
+through the [title store](#title), and duplicate meta and link tags are deduplicated by selector as
+described above.

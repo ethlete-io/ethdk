@@ -1,0 +1,29 @@
+name: CEF
+description: >-
+  Restore the CEF binary distribution Timetrack links on Linux and Ethlete Studio on every OS, and point CEF_PATH at it.
+  cef-dll-sys downloads it on a cache miss, and this action saves it after the job.
+
+runs:
+  using: composite
+  steps:
+    - id: version
+      shell: bash
+      run: |
+        version=$(awk '$0 == "name = \"cef\"" { getline; gsub(/version = |"/, ""); print; exit }' apps/ethlete-studio/src-tauri/Cargo.lock)
+        if [ -z "$version" ]; then
+          echo "No cef crate in apps/ethlete-studio/src-tauri/Cargo.lock" >&2
+          exit 1
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        cef_path="$HOME/.cache/tauri-cef"
+        # cef-dll-sys is a native Windows program and does not read a Git Bash path.
+        [ "$RUNNER_OS" = Windows ] && cef_path=$(cygpath -w "$cef_path")
+        echo "CEF_PATH=$cef_path" >> "$GITHUB_ENV"
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cache/tauri-cef/*/cef_linux_*
+          ~/.cache/tauri-cef/*/cef_macos_*
+          ~/.cache/tauri-cef/*/cef_windows_*
+        key: cef-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}

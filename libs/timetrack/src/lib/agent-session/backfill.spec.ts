@@ -1,0 +1,251 @@
+import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
+import { AgentLogBackfill, backfillAgentLogs$ } from './backfill';
+import { parseClaudeCodeSessionLog } from './claude-code';
+import { parseCodexSessionLog } from './codex';
+import { AgentSessionCursor } from './collect';
+import { AgentSessionLogReader, AgentSessionLogRef } from './ports';
+import { AgentSessionLogParser } from './source';
+
+type Log = { ref: AgentSessionLogRef; lines: string[] };
+
+const MODIFIED_AT = new Date(Date.UTC(2026, 7, 11, 9, 30));
+
+const ref = (id: string, modifiedAt = MODIFIED_AT): AgentSessionLogRef => ({
+  id,
+  path: `/Users/human/.claude/projects/-Users-human-dev-ethlete-sdk/${id}.jsonl`,
+  modifiedAt,
+});
+
+const turn = (options: { timestamp: string; id: string; sessionId?: string; cwd?: string }) =>
+  JSON.stringify({
+    type: 'assistant',
+    timestamp: options.timestamp,
+    sessionId: options.sessionId ?? 's1',
+    cwd: options.cwd ?? '/Users/human/dev/ethlete-sdk',
+    gitBranch: 'next',
+    message: {
+      id: options.id,
+      model: 'claude-opus-5',
+      usage: { input_tokens: 1, output_tokens: 10, cache_read_input_tokens: 500 },
+    },
+  });
+
+/** Mirrors the host: a read is capped, so a long log needs several of them to reach its end. */
+const readerFor = (logs: Log[], maxLines = 100) => {
+  const reads: { id: string; fromLine: number }[] = [];
+  const reader: AgentSessionLogReader = {
+    logs$: vi.fn(() => of(logs.map((log) => log.ref))),
+    readLines$: vi.fn((options: { ref: AgentSessionLogRef; fromLine: number }) => {
+      reads.push({ id: options.ref.id, fromLine: options.fromLine });
+      const all = logs.find((log) => log.ref.id === options.ref.id)?.lines ?? [];
+      const lines = all.slice(options.fromLine, options.fromLine + maxLines);
+
+      return of({ lines, nextLine: options.fromLine + lines.length });
+    }),
+  };
+
+  return { reader, reads };
+};
+
+const backfill = (options: {
+  logs: Log[];
+  cursors?: AgentSessionCursor[];
+  logsPerRun?: number;
+  maxLines?: number;
+  parser?: AgentSessionLogParser;
+}) => {
+  const { reader, reads } = readerFor(options.logs, options.maxLines);
+  const seen = vi.fn();
+
+  backfillAgentLogs$({
+    parser: options.parser ?? parseClaudeCodeSessionLog,
+    reader,
+    cursors: options.cursors ?? [],
+    logsPerRun: options.logsPerRun,
+    parsing: { sampleIntervalMs: 0 },
+  }).subscribe(seen);
+
+  return { result: seen.mock.calls[0]?.[0] as AgentLogBackfill, reads, reader };
+};
+
+describe('backfillAgentLogs$', () => {
+  it('reads a log from the top and keeps only its spend', () => {
+    const { result, reads } = backfill({
+      logs: [{ ref: ref('a'), lines: [turn({ timestamp: '2026-08-11T09:00:00Z', id: 't1' })] }],
+    });
+
+    expect(reads).toEqual([
+      { id: 'a', fromLine: 0 },
+      { id: 'a', fromLine: 1 },
+    ]);
+    expect(result.usage.map((event) => event.turnId)).toEqual(['t1']);
+    expect(result.usage.every((event) => event.kind === 'agent-usage')).toBe(true);
+  });
+
+  it('lists every log, so one the agent has not touched today is still reached', () => {
+    const { reader } = backfill({ logs: [{ ref: ref('a'), lines: [] }] });
+
+    expect(reader.logs$).toHaveBeenCalledWith({});
+  });
+
+  it('skips a log it has already read through', () => {
+    const { result, reads } = backfill({
+      logs: [{ ref: ref('a'), lines: [turn({ timestamp: '2026-08-11T09:00:00Z', id: 't1' })] }],
+      cursors: [{ id: 'a', nextLine: 1, readThrough: MODIFIED_AT }],
+    });
+
+    expect(reads).toEqual([]);
+    expect(result).toEqual({ usage: [], prompts: [], cursors: [], remaining: 0, unparsedLines: 0 });
+  });
+
+  it('reads a log again once a re-sync has dropped its read-through', () => {
+    const { reads } = backfill({
+      logs: [{ ref: ref('a'), lines: [turn({ timestamp: '2026-08-11T09:00:00Z', id: 't1' })] }],
+      cursors: [{ id: 'a', nextLine: 0, cwd: '/Users/human/dev/ethlete-sdk' }],
+    });
+
+    expect(reads[0]).toEqual({ id: 'a', fromLine: 0 });
+  });
+
+  it('reads one log to its end across several host reads', () => {
+    const lines = Array.from({ length: 5 }, (_, index) =>
+      turn({ timestamp: `2026-08-11T09:0${index}:00Z`, id: `t${index}` }),
+    );
+
+    const { result, reads } = backfill({ logs: [{ ref: ref('a'), lines }], maxLines: 2 });
+
+    expect(reads.map((read) => read.fromLine)).toEqual([0, 2, 4, 5]);
+    expect(result.usage.map((event) => event.turnId)).toEqual(['t0', 't1', 't2', 't3', 't4']);
+    expect(result.cursors).toEqual([
+      { id: 'a', nextLine: 5, readThrough: MODIFIED_AT, cwd: '/Users/human/dev/ethlete-sdk' },
+    ]);
+  });
+
+  it('resumes a log too long for one run where the last run stopped', () => {
+    const lines = Array.from({ length: 250 }, (_, index) =>
+      turn({ timestamp: new Date(Date.UTC(2026, 7, 11, 9, 0, index)).toISOString(), id: `t${index}` }),
+    );
+    const logs = [{ ref: ref('a'), lines }];
+
+    const first = backfill({ logs, maxLines: 1 });
+
+    expect(first.result.remaining).toBe(1);
+    expect(first.result.cursors).toEqual([expect.objectContaining({ id: 'a', nextLine: 200 })]);
+    expect(first.result.cursors[0]?.readThrough).toBeUndefined();
+
+    const second = backfill({ logs, maxLines: 1, cursors: first.result.cursors });
+
+    expect(second.reads[0]).toEqual({ id: 'a', fromLine: 200 });
+    expect(second.result.usage.map((event) => event.turnId)).toEqual(
+      lines.slice(200).map((_, index) => `t${200 + index}`),
+    );
+    expect(second.result.cursors).toEqual([
+      expect.objectContaining({ id: 'a', nextLine: 250, readThrough: MODIFIED_AT }),
+    ]);
+    expect(second.result.remaining).toBe(0);
+  });
+
+  it('marks an empty log read through, so the pass converges', () => {
+    const { result } = backfill({ logs: [{ ref: ref('a'), lines: [] }] });
+
+    expect(result.cursors).toEqual([{ id: 'a', nextLine: 0, readThrough: MODIFIED_AT }]);
+    expect(result.remaining).toBe(0);
+  });
+
+  it('reads only as many logs as a run allows and reports the rest as remaining', () => {
+    const logs = ['a', 'b', 'c'].map((id) => ({
+      ref: ref(id),
+      lines: [turn({ timestamp: '2026-08-11T09:00:00Z', id: `${id}-t1` })],
+    }));
+
+    const { result, reads } = backfill({ logs, logsPerRun: 2 });
+
+    expect([...new Set(reads.map((read) => read.id))]).toEqual(['a', 'b']);
+    expect(result.cursors.map((cursor) => cursor.id)).toEqual(['a', 'b']);
+    expect(result.remaining).toBe(1);
+  });
+
+  it('reports the spend of every log it read, oldest turn first', () => {
+    const logs = [
+      { ref: ref('a'), lines: [turn({ timestamp: '2026-08-11T10:00:00Z', id: 't-late' })] },
+      { ref: ref('b'), lines: [turn({ timestamp: '2026-08-11T08:00:00Z', id: 't-early' })] },
+    ];
+
+    const { result } = backfill({ logs });
+
+    expect(result.usage.map((event) => event.turnId)).toEqual(['t-early', 't-late']);
+  });
+
+  it('counts the lines it could not parse', () => {
+    const { result } = backfill({ logs: [{ ref: ref('a'), lines: ['not json', ''] }] });
+
+    expect(result.unparsedLines).toBe(1);
+  });
+
+  it('takes its checkout from the last turn, so a re-sync can find the log by path', () => {
+    const { result } = backfill({
+      logs: [
+        {
+          ref: ref('a'),
+          lines: [
+            turn({ timestamp: '2026-08-11T09:00:00Z', id: 't1', cwd: '/Users/human/dev/ethlete-sdk' }),
+            turn({ timestamp: '2026-08-11T09:05:00Z', id: 't2', cwd: '/Users/human/dev/fut-frontend' }),
+          ],
+        },
+      ],
+    });
+
+    expect(result.cursors[0]?.cwd).toBe('/Users/human/dev/fut-frontend');
+  });
+
+  it('carries a Codex session, checkout and model into every later read of the log', () => {
+    let ordinal = 0;
+    const codexLine = (timestamp: string, type: string, payload: Record<string, unknown>) =>
+      JSON.stringify({ timestamp, type, payload, ordinal: ordinal++ });
+    const tokenCount = (timestamp: string) =>
+      codexLine(timestamp, 'event_msg', {
+        type: 'token_count',
+        info: {
+          last_token_usage: { input_tokens: 10, cached_input_tokens: 0, output_tokens: 5, reasoning_output_tokens: 0 },
+        },
+      });
+    const userMessage = (timestamp: string, id: string) =>
+      codexLine(timestamp, 'response_item', {
+        type: 'message',
+        role: 'user',
+        id,
+        content: [{ type: 'input_text', text: 'mache das' }],
+      });
+
+    const { result } = backfill({
+      parser: parseCodexSessionLog,
+      maxLines: 2,
+      logs: [
+        {
+          ref: ref('a'),
+          lines: [
+            codexLine('2026-08-11T09:00:00Z', 'session_meta', {
+              session_id: 's1',
+              cwd: '/Users/human/dev/ethlete-sdk',
+            }),
+            codexLine('2026-08-11T09:00:01Z', 'turn_context', {
+              turn_id: 't1',
+              cwd: '/Users/human/dev/ethlete-sdk',
+              model: 'gpt-5.6-sol',
+            }),
+            tokenCount('2026-08-11T09:01:00Z'),
+            userMessage('2026-08-11T09:02:00Z', 'msg_2'),
+            tokenCount('2026-08-11T09:03:00Z'),
+          ],
+        },
+      ],
+    });
+
+    expect(result.usage.map((event) => [event.sessionId, event.cwd, event.model])).toEqual([
+      ['s1', '/Users/human/dev/ethlete-sdk', 'gpt-5.6-sol'],
+      ['s1', '/Users/human/dev/ethlete-sdk', 'gpt-5.6-sol'],
+    ]);
+    expect(result.prompts.map((event) => event.promptId)).toEqual(['msg_2']);
+  });
+});

@@ -1,0 +1,254 @@
+# Overlay openers
+
+Opening an overlay (dialog, sheet, …) imperatively involves three pieces with clearly separated jobs:
+
+| Piece          | Created by                                  | Lives                           | Job                                                     |
+| -------------- | ------------------------------------------- | ------------------------------- | ------------------------------------------------------- |
+| **Definition** | `defineOverlay` / `defineQueryParamOverlay` | Module scope (no DI)            | Binds the component to its base config, once            |
+| **Opener**     | `createOverlayOpener(definition)`           | Injection context (a component) | Opens/closes overlays, wires lifecycle callbacks        |
+| **Ref**        | `definition.injectRef()`                    | Inside the overlay component    | Typed access to the open overlay (close with a result…) |
+
+```ts
+// product-overlay.ts - module scope, no injection context needed
+import { defineOverlay, dialogOverlayStrategy, overlayResult } from '@ethlete/components';
+
+export const productOverlay = defineOverlay({
+  component: ProductOverlayComponent,
+  result: overlayResult<ProductResult>(),
+  strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
+});
+```
+
+```ts
+// any component that opens it
+import { createOverlayOpener } from '@ethlete/components';
+
+export class ProductListComponent {
+  private product = createOverlayOpener(productOverlay, {
+    afterClosed: (result) => console.log('closed with', result),
+  });
+
+  protected showProduct(id: number) {
+    this.product.open({ inputs: { productId: () => id } });
+  }
+}
+```
+
+```ts
+// inside ProductOverlayComponent
+export class ProductOverlayComponent {
+  protected overlayRef = productOverlay.injectRef(); // OverlayRef<ProductOverlayComponent, ProductResult>
+
+  protected save() {
+    this.overlayRef.close({ saved: true });
+  }
+}
+```
+
+`result: overlayResult<ProductResult>()` types the close result without naming the component a second time; it does nothing at runtime. The result type flows into `afterClosed` / `beforeClosed` callbacks and into `injectRef().close(...)`. Without it the result is `unknown`. Writing both generics, `defineOverlay<ProductOverlayComponent, ProductResult>({ … })`, still works and means the same.
+
+## Live demo
+
+@example overlay/overlay-openers 420px
+
+## Passing data into the overlay
+
+Set the component's signal inputs with `inputs`, one getter per input, keyed by the property name:
+
+```ts
+this.product.open({
+  inputs: { productId: () => this.selectedId() },
+});
+```
+
+The keys and value types come from the component's `input()`, `input.required()` and `model()` members, so a misspelled input or a value of the wrong type fails to compile. An input with a `transform` takes the transform's input type. Each getter is re-read like an `inputBinding`, so a signal read inside it keeps the input up to date. An aliased input is still keyed by its property name.
+
+Every key is optional, including a `input.required()` one: Angular types a required input the same as an optional one, so leaving one out compiles and fails at runtime (`NG0950`).
+
+`inputs` is accepted on the opener config and on each `open()` call; per-open values win for the same key. The overlay manager's `open()` takes it too.
+
+For everything else use `bindings` and `providers`, Angular's native binding API (`inputBinding`, `outputBinding`, `twoWayBinding`) and DI. Both are regular `OverlayConfig` options, so they can be set at **any** layer - on the definition, on the opener, or per `open()` call. They combine with `inputs`, and a binding for the same input wins:
+
+```ts
+this.product.open({
+  inputs: { productId: () => this.selectedId() },
+  bindings: [outputBinding('reserved', (amount: number) => this.updateStock(amount))],
+  providers: [{ provide: PRODUCT_CONTEXT, useValue: this.context }],
+});
+```
+
+### Extending an overlay you did not define {#extending-an-overlay}
+
+`directives` applies directives to the overlay component itself, the way `bindings` applies inputs to it. It matters for an overlay the SDK defines and opens for you: that component has no template of yours to place a directive in, so a directive reaches it here:
+
+```ts
+this.opener.open({
+  origin: bandElement,
+  bindings: [inputBinding('item', () => item)],
+  directives: [MyTrackingDirective],
+});
+```
+
+Each entry is a directive type, or Angular's `{ type, bindings }` pair when the directive needs inputs of its own. Nothing about the directive's own selector is checked - passing it here is what applies it.
+
+## How configs merge
+
+Configs merge **additively** from least to most specific: definition → opener → per-open. The merge is exposed as `mergeOverlayConfigs(...configs)` if you need it yourself.
+
+| Config keys                                | Merge behavior                                                                                           |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `bindings`, `directives`, `providers`      | Concatenated in layer order - a later binding/provider for the same input/token wins (Angular semantics) |
+| `inputs` (opener and per-open)             | Merged by key, per-open wins; applied before every layer's `bindings`                                    |
+| `hostClass`, `backdropClass`, `panelClass` | Normalized to arrays, concatenated, deduped                                                              |
+| Everything else (`origin`, `role`, …)      | Most specific layer wins; `undefined` never overrides, an explicit `null` (aria fields) does             |
+| `strategies`, `component`                  | Fixed by the definition - not overridable                                                                |
+
+So a `panelClass` on the definition and another on the opener both end up on the pane, and per-open `bindings` extend (rather than replace) the definition's bindings.
+
+## Lifecycle callbacks
+
+The opener config takes three callbacks alongside the overlay config overrides. They are subscribed per open and cleaned up automatically with the opener's injection context. A close that started before the opener was destroyed still reports to `afterClosed`. A route change closes the overlay as it starts, so leaving the page does not drop the result - see [Closing on navigation](/components/overlays#closing-on-navigation):
+
+```ts
+private product = createOverlayOpener(productOverlay, {
+  afterOpened: () => {},
+  beforeClosed: (result) => {}, // result: ProductResult | undefined
+  afterClosed: (result) => {},
+});
+```
+
+A dismissed overlay reports `undefined`, not `null`. The `overlay-and-column-api` migration of `et update` moves callbacks typed `T | null` and their `=== null` checks to `undefined`, and names each `file:line` it cannot rewrite.
+
+A standard opener's `open()` takes the same three callbacks for that one open, on top of the opener's own - the place to capture what the overlay was opened for:
+
+```ts
+this.product.open({
+  inputs: { productId: () => id },
+  afterClosed: (result) => this.save(id, result),
+});
+```
+
+## One overlay at a time {#single}
+
+With `single: 'replace'` a standard opener keeps at most one overlay open. `open()` closes the open one with close source `'replace'` and opens the new one in its place:
+
+```ts
+private edit = createOverlayOpener(editOverlay, { single: 'replace' });
+
+const ref = this.edit.open({ origin }); // OverlayRef | null
+```
+
+The replace is a normal, guardable close. When a close guard - typically [`createOverlayUnsavedChangesGuard`](/components/overlays#guarding-against-accidental-dismissal) - vetoes it, `open()` returns `null` and the open waits: it runs once the previous overlay closes with source `'replace'` (the user discarded), and is dropped if the user keeps editing or the overlay later closes any other way. Only the latest waiting open is kept.
+
+To share the one open overlay across several openers, pass the same slot to each:
+
+```ts
+private slot = createOverlaySingleSlot();
+private edit = createOverlayOpener(editOverlay, { single: this.slot });
+private add = createOverlayOpener(addOverlay, { single: this.slot });
+```
+
+## The overlay ref
+
+Inside the overlay component, `definition.injectRef()` returns the fully typed `OverlayRef`. It must be called in the component's injection context (field initializer or constructor) and throws an actionable [`RuntimeError`](/core/utilities#runtime-errors) when no overlay is open - e.g. when the component is accidentally rendered outside an overlay.
+
+To unit-test an overlay component without opening it, provide a fake ref with `provideTestOverlayRef()` from `@ethlete/components/testing` ([Testing an overlay component](/components/testing#testing-an-overlay-component)).
+
+## Query-param overlays
+
+`defineQueryParamOverlay` creates an overlay whose lifecycle is driven by a URL query param: it opens while the param is present, closes (clearing the param) when dismissed, and survives deep links and browser back/forward. A browser Back that a close guard vetoes puts the param back, so the URL keeps naming the open overlay.
+
+The component **must** expose an `overlayQueryParam` [model](https://angular.dev/api/core/model) - this is enforced at compile time. It receives the param value and is kept in two-way sync with the URL: writing to the model updates the URL, external URL changes are pushed into the model. A model write replaces the current history entry instead of adding one, so switching tabs inside the overlay costs no Back presses and one Back closes it. `open()` while the param is already set does the same.
+
+A close never adds a history entry. If `open()` added the entry, the close steps back over it, as the overlay router does with `syncUrl`; otherwise (a deep link, or another navigation came after the open) the close replaces the entry. Either way, the next Back does not reopen the overlay.
+
+```ts
+import { defineQueryParamOverlay, dialogOverlayStrategy } from '@ethlete/components';
+
+export class ProductOverlayComponent {
+  public overlayQueryParam = model<string>();
+}
+
+export const productOverlay = defineQueryParamOverlay({
+  component: ProductOverlayComponent,
+  queryParamKey: 'product',
+  strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
+});
+```
+
+The same `createOverlayOpener` consumes it, but the opener shape changes - it drives the URL instead of returning a ref:
+
+```ts
+private product = createOverlayOpener(productOverlay);
+
+this.product.open('42'); // navigates to ?product=42 → overlay opens
+this.product.close();    // clears the param → overlay closes
+```
+
+`open(value)` is typed from the component's model - `model<'grid' | 'list'>()` gives you `open('grid' | 'list')`.
+
+::: tip Openers react for as long as they live
+A query-param opener watches the URL from creation until its injection context is destroyed. Create it once in a long-lived component (the page that owns the overlay, or the app shell for globally deep-linkable overlays). Destroying the context closes an overlay it still has open and clears the param - the overlay is mounted outside the component tree, so nothing else would take it down.
+:::
+
+### Opening from templates
+
+`QueryParamOverlayLinkDirective` opens the overlay declaratively. It takes the definition itself, so the query param key is never duplicated as a string; the value can be a string or a number:
+
+```html
+<a [etQueryParamOverlayLink]="productOverlay" etQueryParamOverlayLinkValue="42">Show product 42</a>
+```
+
+### No per-open config
+
+Opens are triggered by URL state (deep links, back/forward), not by a call site - so there is no per-open config. `bindings` and `providers` from the definition and the opener are applied on **every** open, which is where required inputs of the component belong. For the same reason, avoid setting `origin` on a query-param opener: a deep-linked open has no originating element (the overlay falls back to the currently focused element).
+
+## API overview
+
+| Export                                     | Kind      | Purpose                                                        |
+| ------------------------------------------ | --------- | -------------------------------------------------------------- |
+| `defineOverlay(config)`                    | function  | Overlay definition at module scope                             |
+| `defineQueryParamOverlay(config)`          | function  | URL-driven overlay definition (`queryParamKey`)                |
+| `createOverlayOpener(definition, config?)` | function  | Injection-context opener for either definition kind            |
+| `createOverlaySingleSlot()`                | function  | One open overlay shared by several [`single`](#single) openers |
+| `definition.injectRef()`                   | method    | Typed `OverlayRef` inside the overlay component                |
+| `mergeOverlayConfigs(...configs)`          | function  | The additive config merge used by openers                      |
+| `QueryParamOverlayLinkDirective`           | directive | `[etQueryParamOverlayLink]` - declarative query-param opens    |
+| `OVERLAY_QUERY_PARAM_INPUT_NAME`           | const     | Name of the model contract (`'overlayQueryParam'`)             |
+
+## Migrating from overlay handlers
+
+`createOverlayHandler` and `createOverlayHandlerWithQueryParamLifecycle` were removed in favor of this API.
+
+```ts
+// before - curried: a factory returning a factory
+const openProductOverlay = createOverlayHandlerWithQueryParamLifecycle<ProductOverlayComponent>({
+  component: ProductOverlayComponent,
+  strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
+  queryParamKey: 'product',
+});
+
+export class ShopComponent {
+  handler = openProductOverlay();
+}
+
+// after - explicit define / create pair
+export const productOverlay = defineQueryParamOverlay({
+  component: ProductOverlayComponent,
+  strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
+  queryParamKey: 'product',
+});
+
+export class ShopComponent {
+  opener = createOverlayOpener(productOverlay);
+}
+```
+
+- `handler.injectOverlayRef()` / the handler factory's static `injectOverlayRef` → `definition.injectRef()`.
+- Lifecycle callbacks move from the handler's inner config into the `createOverlayOpener` config (same names).
+- `OverlayHandlerLinkDirective` (`etOverlayHandlerLink` + `etOverlayHandlerQueryParamName`) → `QueryParamOverlayLinkDirective` (`[etQueryParamOverlayLink]="definition"` + `etQueryParamOverlayLinkValue`).
+- Behavior change: configs now merge additively (see above) - previously the most specific layer silently replaced `bindings`, `providers` and class fields.
+
+## Error codes
+
+Calling `definition.injectRef()` outside a component opened by that definition throws [`ET1207`](/components/error-codes#overlay-et12xx).

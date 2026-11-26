@@ -1,0 +1,410 @@
+use crate::error::{TimetrackError, TimetrackResult};
+use base64::Engine;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use tauri::State;
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::net::{TcpListener, TcpStream};
+
+/// How long the flow waits for the redirect before it gives the thread back.
+///
+/// It has to cover a consent the user is doing by hand — signing in, picking an account, and reading
+/// the unverified-app warning their own client makes Google show.
+const DEFAULT_TIMEOUT_SECS: u64 = 300;
+
+/// What the browser is shown once the code has arrived, so the tab does not sit on a blank page.
+/// How long one connection may take to send its request line before it is dropped.
+const CONNECTION_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// The longest request line read. A redirect is a URL, and no browser sends one longer than this.
+const MAX_REQUEST_LINE_BYTES: u64 = 8 * 1024;
+
+const DONE_PAGE: &str = "<!doctype html><meta charset=\"utf-8\"><title>Connected</title>\
+<body style=\"font:16px system-ui;padding:3rem\">timetrack has the authorization. You can close this tab.</body>";
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthorizeRequest {
+    pub authorization_endpoint: String,
+    /// Everything the provider needs that does not depend on the loopback port or the verifier.
+    pub query: HashMap<String, String>,
+    pub timeout_secs: Option<u64>,
+}
+
+struct Pending {
+    url: String,
+    cancel: tokio::sync::oneshot::Sender<()>,
+}
+
+/// The authorization the browser is out on, so the window can cancel it or hand its URL to another browser.
+#[derive(Default)]
+pub struct PendingAuthorization(Mutex<Option<Pending>>);
+
+impl PendingAuthorization {
+    fn settle(&self, url: &str) {
+        if let Ok(mut held) = self.0.lock() {
+            if held.as_ref().is_some_and(|pending| pending.url == url) {
+                *held = None;
+            }
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthorizeOutcome {
+    pub code: String,
+    /// The exact redirect the authorization used. The token exchange is rejected without the same one.
+    pub redirect_uri: String,
+    pub code_verifier: String,
+}
+
+fn random_hex() -> String {
+    let bytes: [u8; 32] = rand::random();
+
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+/// The S256 challenge: base64url of the verifier's SHA-256, with the padding dropped.
+fn challenge_of(verifier: &str) -> String {
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()))
+}
+
+fn encode(value: &str) -> String {
+    value
+        .bytes()
+        .map(|byte| match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => (byte as char).to_string(),
+            _ => format!("%{byte:02X}"),
+        })
+        .collect()
+}
+
+fn decode(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+
+    while index < bytes.len() {
+        match bytes[index] {
+            b'+' => {
+                out.push(b' ');
+                index += 1;
+            }
+            b'%' if index + 2 < bytes.len() => {
+                let hex = std::str::from_utf8(&bytes[index + 1..index + 3]).unwrap_or_default();
+
+                match u8::from_str_radix(hex, 16) {
+                    Ok(byte) => {
+                        out.push(byte);
+                        index += 3;
+                    }
+                    Err(_) => {
+                        out.push(bytes[index]);
+                        index += 1;
+                    }
+                }
+            }
+            byte => {
+                out.push(byte);
+                index += 1;
+            }
+        }
+    }
+
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+/// The query of an HTTP request line — `GET /?code=… HTTP/1.1` — as pairs.
+fn params_of(request_line: &str) -> HashMap<String, String> {
+    request_line
+        .split_whitespace()
+        .nth(1)
+        .and_then(|target| target.split_once('?'))
+        .map(|(_, query)| {
+            query
+                .split('&')
+                .filter_map(|pair| pair.split_once('='))
+                .map(|(key, value)| (decode(key), decode(value)))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+async fn respond(stream: &mut TcpStream, status: &str, body: &str) -> TimetrackResult<()> {
+    let response = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+
+    stream.write_all(response.as_bytes()).await?;
+    stream.shutdown().await?;
+
+    Ok(())
+}
+
+/// Reads one connection and says whether it carried the provider's answer.
+///
+/// `None` means it did not, and the flow keeps waiting. A browser asks for `/favicon.ico` on its own,
+/// and answering that as the redirect would end the flow before the user has consented to anything.
+async fn read_callback(mut stream: TcpStream, state: &str) -> Option<TimetrackResult<String>> {
+    // A connection that sends nothing is not the browser's. The deadline drops it and the default is
+    // `None`, so the flow goes on waiting for the one that is.
+    tokio::time::timeout(CONNECTION_TIMEOUT, callback_of(&mut stream, state))
+        .await
+        .unwrap_or_default()
+}
+
+async fn callback_of(stream: &mut TcpStream, state: &str) -> Option<TimetrackResult<String>> {
+    let mut line = String::new();
+
+    // Bounded, because a request line is a URL and nothing here reads one longer than a browser sends.
+    if BufReader::new(&mut *stream)
+        .take(MAX_REQUEST_LINE_BYTES)
+        .read_line(&mut line)
+        .await
+        .is_err()
+    {
+        return None;
+    }
+
+    {
+        let params = params_of(&line);
+        let code = params.get("code");
+        let error = params.get("error");
+
+        if code.is_none() && error.is_none() {
+            let _ = respond(stream, "404 Not Found", "").await;
+
+            return None;
+        }
+
+        // The state is what tells the user's own redirect from one another page talked this port into
+        // sending, which is the whole reason the code is not accepted from the first caller.
+        if params.get("state").map(String::as_str) != Some(state) {
+            let _ = respond(stream, "400 Bad Request", "This did not come from the authorization.").await;
+
+            return None;
+        }
+
+        if let Some(error) = error {
+            let _ = respond(
+                stream,
+                "200 OK",
+                "The authorization was refused. You can close this tab.",
+            )
+            .await;
+
+            return Some(Err(TimetrackError::Rejected(format!(
+                "the authorization was refused ({error})"
+            ))));
+        }
+
+        let _ = respond(stream, "200 OK", DONE_PAGE).await;
+
+        Some(Ok(code.cloned().unwrap_or_default()))
+    }
+}
+
+/// Waits for the request that carries the provider's answer, whatever else connects meanwhile.
+///
+/// Every connection is read on its own task. Read one after another, a local process that finds the
+/// port and then sends nothing would hold the browser's own callback behind it until the whole flow
+/// times out, without knowing the state or the verifier.
+async fn wait_for_code(listener: Arc<TcpListener>, state: Arc<String>) -> TimetrackResult<String> {
+    let (sender, mut receiver) = tokio::sync::mpsc::channel::<TimetrackResult<String>>(1);
+
+    let accept = async {
+        loop {
+            let Ok((stream, _)) = listener.accept().await else {
+                continue;
+            };
+            let state = state.clone();
+            let sender = sender.clone();
+
+            tokio::spawn(async move {
+                if let Some(outcome) = read_callback(stream, &state).await {
+                    let _ = sender.send(outcome).await;
+                }
+            });
+        }
+    };
+
+    tokio::select! {
+        carried = receiver.recv() => carried.unwrap_or_else(|| Err(TimetrackError::Rejected("the redirect was never answered".into()))),
+        () = accept => Err(TimetrackError::Rejected("the redirect listener stopped".into())),
+    }
+}
+
+fn open_browser(url: &str) -> TimetrackResult<()> {
+    #[cfg(target_os = "macos")]
+    let (program, args): (&str, Vec<&str>) = ("open", vec![url]);
+    #[cfg(target_os = "linux")]
+    let (program, args): (&str, Vec<&str>) = ("xdg-open", vec![url]);
+    #[cfg(target_os = "windows")]
+    let (program, args): (&str, Vec<&str>) = ("cmd", vec!["/C", "start", "", url]);
+
+    crate::child_env::command(program).as_std_mut().args(args).spawn()?;
+
+    Ok(())
+}
+
+/// Runs the browser half of an OAuth 2.0 authorization code flow with PKCE.
+///
+/// The port is only known once the socket is bound, so the redirect and the challenge are built here
+/// rather than by the caller, and both are reported back — the token exchange is rejected unless it
+/// repeats the same pair.
+///
+/// The listener is on 127.0.0.1 with a port the OS picks, which is what Google's own rules for an
+/// installed application allow without the port being registered anywhere.
+#[tauri::command]
+pub async fn oauth_authorize(
+    request: AuthorizeRequest,
+    pending: State<'_, PendingAuthorization>,
+) -> TimetrackResult<AuthorizeOutcome> {
+    let listener = Arc::new(TcpListener::bind("127.0.0.1:0").await?);
+    let redirect_uri = format!("http://127.0.0.1:{}", listener.local_addr()?.port());
+    let code_verifier = random_hex();
+    let state = Arc::new(random_hex());
+
+    let mut query: Vec<(String, String)> = request.query.into_iter().collect();
+    query.push(("redirect_uri".into(), redirect_uri.clone()));
+    query.push(("code_challenge".into(), challenge_of(&code_verifier)));
+    query.push(("code_challenge_method".into(), "S256".into()));
+    query.push(("state".into(), state.as_ref().clone()));
+
+    let url = format!(
+        "{}?{}",
+        request.authorization_endpoint,
+        query
+            .iter()
+            .map(|(key, value)| format!("{}={}", encode(key), encode(value)))
+            .collect::<Vec<_>>()
+            .join("&")
+    );
+
+    open_browser(&url)?;
+
+    let (cancel, cancelled) = tokio::sync::oneshot::channel();
+    let previous = pending
+        .0
+        .lock()
+        .map_err(|_| TimetrackError::Poisoned)?
+        .replace(Pending {
+            url: url.clone(),
+            cancel,
+        });
+    if let Some(previous) = previous {
+        let _ = previous.cancel.send(());
+    }
+
+    let timeout = Duration::from_secs(request.timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS));
+    let waited = tokio::select! {
+        waited = tokio::time::timeout(timeout, wait_for_code(listener.clone(), state.clone())) => match waited {
+            Ok(code) => code,
+            Err(_) => Err(TimetrackError::Rejected(
+                "the browser did not come back with an authorization".into(),
+            )),
+        },
+        _ = cancelled => Err(TimetrackError::Rejected("the authorization was cancelled".into())),
+    };
+    pending.settle(&url);
+    let code = waited?;
+
+    Ok(AuthorizeOutcome {
+        code,
+        redirect_uri,
+        code_verifier,
+    })
+}
+
+/// Stops the authorization the browser is out on, if there is one, and frees its loopback port.
+#[tauri::command]
+pub fn oauth_cancel(pending: State<'_, PendingAuthorization>) -> TimetrackResult<()> {
+    if let Some(held) = pending.0.lock().map_err(|_| TimetrackError::Poisoned)?.take() {
+        let _ = held.cancel.send(());
+    }
+
+    Ok(())
+}
+
+/// The URL of the authorization the browser is out on, for opening it in a browser other than the default.
+#[tauri::command]
+pub fn oauth_pending_url(pending: State<'_, PendingAuthorization>) -> TimetrackResult<Option<String>> {
+    Ok(pending
+        .0
+        .lock()
+        .map_err(|_| TimetrackError::Poisoned)?
+        .as_ref()
+        .map(|held| held.url.clone()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::net::TcpStream as ClientStream;
+
+    /// A local process that finds the port and sends nothing must not cost the user the flow.
+    #[tokio::test]
+    async fn answers_the_browser_while_an_idle_connection_is_held_open() {
+        let listener = Arc::new(TcpListener::bind("127.0.0.1:0").await.unwrap());
+        let port = listener.local_addr().unwrap().port();
+        let state = Arc::new("the-state".to_string());
+        let waiting = tokio::spawn(wait_for_code(listener, state));
+
+        let idle = ClientStream::connect(("127.0.0.1", port)).await.unwrap();
+        let mut browser = ClientStream::connect(("127.0.0.1", port)).await.unwrap();
+
+        browser
+            .write_all(b"GET /?code=4%2F0AX&state=the-state HTTP/1.1\r\n\r\n")
+            .await
+            .unwrap();
+
+        let code = tokio::time::timeout(Duration::from_secs(2), waiting)
+            .await
+            .expect("the idle connection blocked the callback")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(code, "4/0AX");
+        drop(idle);
+    }
+
+    #[test]
+    fn reads_the_query_out_of_a_request_line() {
+        let params = params_of("GET /?code=4%2F0AX&state=abc HTTP/1.1");
+
+        assert_eq!(params.get("code"), Some(&"4/0AX".to_string()));
+        assert_eq!(params.get("state"), Some(&"abc".to_string()));
+    }
+
+    #[test]
+    fn treats_a_request_with_no_query_as_carrying_nothing() {
+        assert!(params_of("GET /favicon.ico HTTP/1.1").is_empty());
+    }
+
+    #[test]
+    fn keeps_a_percent_that_is_not_an_escape() {
+        assert_eq!(decode("100%"), "100%");
+    }
+
+    #[test]
+    fn encodes_everything_a_scope_contains() {
+        assert_eq!(
+            encode("https://www.googleapis.com/auth/calendar.readonly a b"),
+            "https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.readonly%20a%20b"
+        );
+    }
+
+    /// The one value in the flow that has to be exactly right, from RFC 7636's own example.
+    #[test]
+    fn derives_the_s256_challenge_the_way_the_rfc_does() {
+        assert_eq!(
+            challenge_of("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
+            "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+        );
+    }
+}

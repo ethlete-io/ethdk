@@ -1,0 +1,46 @@
+@layer components {
+  .tf-title-card {
+    color: var(--et-surface-text, CanvasText);
+    outline: none;
+  }
+
+  .tf-title-card:focus-visible {
+    outline: 0.3rem solid var(--et-tone-fill, currentColor);
+    outline-offset: 0.3rem;
+  }
+
+  .tf-title-card-text {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .tf-title-card-meta {
+    font-size: 1.3rem;
+    color: var(--et-surface-text-muted, GrayText);
+  }
+
+  .tf-title-card:hover .tf-title-card-poster {
+    transform: scale(1.05);
+  }
+
+  .tf-title-card:active {
+    transform: scale(0.98);
+  }
+
+  .tf-title-card-scrim {
+    background: linear-gradient(
+      to top,
+      var(--et-surface-background, Canvas) 15%,
+      color-mix(in srgb, var(--et-surface-background, Canvas) 70%, transparent) 60%,
+      transparent
+    );
+  }
+
+  .tf-title-card-logo {
+    max-block-size: 100%;
+    max-inline-size: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+  }
+}

@@ -1,0 +1,221 @@
+@layer components.sdk {
+  @property --et-tree-indent {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 18px;
+  }
+
+  @property --et-tree-node-padding-block {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 5px;
+  }
+
+  @property --et-tree-node-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-tree-node-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-tree-node-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-tree-marker-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-tree-check-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-tree-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 150ms;
+  }
+
+  @property --_et-tree-node-depth {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0;
+  }
+
+  .et-tree {
+    display: block;
+    color: var(--et-surface-text, CanvasText);
+  }
+
+  .et-tree-node,
+  .et-tree-status {
+    display: flex;
+    align-items: center;
+    gap: var(--et-tree-node-gap);
+    padding-block: var(--et-tree-node-padding-block);
+    padding-inline: calc(var(--et-tree-node-padding-inline) + var(--_et-tree-node-depth) * var(--et-tree-indent))
+      var(--et-tree-node-padding-inline);
+    border-radius: var(--et-tree-node-radius);
+    box-sizing: border-box;
+  }
+
+  .et-tree-node-marker {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--et-tree-marker-size);
+    block-size: var(--et-tree-marker-size);
+    color: var(--et-surface-text-muted, GrayText);
+
+    .et-tree-node-chevron {
+      inline-size: 100%;
+      block-size: 100%;
+      rotate: 90deg;
+      transition: rotate var(--et-tree-duration) cubic-bezier(0.25, 0, 0.1, 1);
+    }
+  }
+
+  .et-tree-node {
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: background-color var(--et-tree-duration) ease;
+
+    .et-tree-node-label {
+      flex: 1;
+      min-inline-size: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .et-tree-node-error {
+      flex: none;
+      color: var(--et-tree-error-color, var(--et-surface-text-muted, GrayText));
+      font-size: 0.875em;
+    }
+
+    &:where([data-expanded]) .et-tree-node-chevron {
+      rotate: 180deg;
+    }
+
+    &:dir(rtl) {
+      .et-tree-node-chevron {
+        rotate: -90deg;
+      }
+
+      &:where([data-expanded]) .et-tree-node-chevron {
+        rotate: 180deg;
+      }
+    }
+
+    &:where([data-error]) .et-tree-node-marker {
+      color: var(--et-tree-error-color, var(--et-surface-text-muted, GrayText));
+    }
+
+    &:not(:where([aria-disabled])):hover {
+      background: color-mix(in srgb, var(--et-surface-tint, gray) 7%, transparent);
+    }
+
+    &:not(:where([aria-disabled])):active {
+      background: color-mix(in srgb, var(--et-surface-tint, gray) 14%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--et-tone-text, currentColor);
+      outline-offset: -2px;
+    }
+
+    &:where([aria-disabled]) {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  /* Must stay after `.et-tree-node`: it weighs the same as the bare interaction states, so source
+     order is what keeps a selected row's accent while hovered. */
+  .et-tree:not(:where([aria-multiselectable])) .et-tree-node:where([data-selected]) {
+    background: color-mix(in srgb, var(--et-tone-fill, gray) 16%, transparent);
+    color: var(--et-tone-text, inherit);
+
+    &:not(:where([aria-disabled])):hover {
+      background: color-mix(in srgb, var(--et-tone-fill, gray) 24%, transparent);
+    }
+
+    &:not(:where([aria-disabled])):active {
+      background: color-mix(in srgb, var(--et-tone-fill, gray) 32%, transparent);
+    }
+  }
+
+  .et-tree-node-check {
+    position: relative;
+    flex: none;
+    inline-size: var(--et-tree-check-size);
+    block-size: var(--et-tree-check-size);
+    box-sizing: border-box;
+    border: 2px solid var(--et-surface-border, rgb(255 255 255 / 0.3));
+    border-radius: 4px;
+    transition:
+      background var(--et-tree-duration) ease,
+      border-color var(--et-tree-duration) ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      inline-size: 4px;
+      block-size: 8px;
+      border: solid var(--et-tone-on-fill, rgb(0 0 0));
+      border-width: 0 2px 2px 0;
+      translate: 0 -1px;
+      rotate: 45deg;
+      opacity: 0;
+      transition: opacity var(--et-tree-duration) ease;
+    }
+  }
+
+  .et-tree-node:where([data-selected]) > .et-tree-node-check {
+    border-color: var(--et-tone-fill, currentColor);
+    background: var(--et-tone-fill, currentColor);
+
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  .et-tree-status {
+    color: var(--et-surface-text-muted, GrayText);
+
+    &:where(.et-tree-status--error) {
+      color: var(--et-tree-error-color, var(--et-surface-text-muted, GrayText));
+      cursor: pointer;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--et-tone-text, currentColor);
+      outline-offset: -2px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-tree-node,
+    .et-tree-node-check,
+    .et-tree-node-check::after,
+    .et-tree-node .et-tree-node-chevron {
+      transition: none;
+    }
+  }
+}

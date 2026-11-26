@@ -1,0 +1,141 @@
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
+import { ColorInteractiveDirective, createComponentId, injectLocale, mountVisuallyHidden } from '@ethlete/core';
+import { IconDirective, TIMES_ICON, provideIcons } from '../../icon';
+import {
+  SelectDirective,
+  SelectOptionComponent,
+  SelectPanelComponent,
+  SelectSearchDirective,
+  SelectSurfaceDirective,
+  SelectTriggerDirective,
+} from '../select';
+import {
+  PHONE_COUNTRIES,
+  PhoneInputDirective,
+  PhoneInputFieldDirective,
+  PhoneInputFlagContext,
+  phoneCountryFlag,
+  phoneCountryName,
+} from './headless';
+import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
+import { injectPhoneInputLabels } from '../../forms/phone-input/phone-input-labels';
+import { ControlSuffixDirective, FormFieldBarrierDirective } from '../form-field/partials';
+import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless';
+
+@Component({
+  selector: 'et-phone-input',
+  templateUrl: './phone-input.component.html',
+  styleUrl: './phone-input.component.css',
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    ControlSuffixDirective,
+    FormFieldBarrierDirective,
+    SelectDirective,
+    SelectTriggerDirective,
+    SelectSurfaceDirective,
+    SelectPanelComponent,
+    SelectOptionComponent,
+    SelectSearchDirective,
+    PhoneInputFieldDirective,
+    NgTemplateOutlet,
+    IconDirective,
+  ],
+  providers: [provideIcons(TIMES_ICON)],
+  hostDirectives: [
+    {
+      directive: PhoneInputDirective,
+      inputs: [
+        'value',
+        'placeholder',
+        'autocomplete',
+        'defaultCountry',
+        'preferredCountries',
+        ...TEXT_FIELD_CONTROL_INPUTS,
+      ],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
+    },
+    ColorInteractiveDirective,
+  ],
+  host: {
+    class: 'et-phone-input',
+  },
+})
+export class PhoneInputComponent {
+  protected phoneInputLabels = injectPhoneInputLabels();
+
+  private formFieldLabels = injectFormFieldLabels();
+
+  protected phone = inject(PhoneInputDirective);
+  private locale = injectLocale();
+
+  /** Leads the country trigger's accessible name, ahead of the active country and its dial code. */
+  public countryLabel = input<string | null>(null);
+  /** Shows a clear (×) control while a number is set. */
+  public clearable = input(true, { transform: booleanAttribute });
+  public clearLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `countryLabel`, else the domain's label set. */
+  protected resolvedCountryLabel = computed(() => this.countryLabel() ?? this.phoneInputLabels().selectCountry);
+
+  protected countryLabelId = createComponentId('et-phone-input-country-label');
+
+  protected activeCountryName = computed(() => phoneCountryName(this.phone.country(), this.locale.currentLocale()));
+
+  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
+  protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
+
+  protected showClear = computed(() => this.clearable() && this.phone.hasValue() && this.phone.interactive());
+
+  protected countries = computed(() => {
+    const locale = this.locale.currentLocale();
+    const preferred = this.phone.preferredCountries();
+    const entries = PHONE_COUNTRIES.map((country) => ({
+      ...country,
+      name: phoneCountryName(country.iso2, locale),
+      flag: phoneCountryFlag(country.iso2),
+    }));
+    const preferredEntries = preferred
+      .map((iso2) => entries.find((entry) => entry.iso2 === iso2))
+      .filter((entry) => entry !== undefined);
+    const collator = new Intl.Collator(locale);
+    const rest = entries
+      .filter((entry) => !preferred.includes(entry.iso2))
+      .sort((a, b) => collator.compare(a.name, b.name));
+
+    return [...preferredEntries, ...rest];
+  });
+
+  protected activeFlag = computed(() => phoneCountryFlag(this.phone.country()));
+
+  protected activeFlagContext = computed<PhoneInputFlagContext>(() => {
+    const iso2 = this.phone.country();
+
+    return {
+      $implicit: { iso2, dialCode: this.phone.dialCode(), flag: phoneCountryFlag(iso2) },
+    };
+  });
+
+  constructor() {
+    mountVisuallyHidden();
+  }
+
+  protected handleClearClick(event: Event) {
+    // clearing must not bubble into the form field's frame-click handling
+    event.stopPropagation();
+    this.phone.clearValue();
+  }
+
+  protected handleCountryChange(value: unknown) {
+    if (typeof value === 'string') {
+      this.phone.selectCountry(value);
+      // a picked prefix hands focus to the number field (the natural next step is typing the
+      // number) - done before the picker closes, so its close refocus leaves it there
+      this.phone.activate();
+    }
+  }
+
+  public focus(options?: FocusOptions) {
+    this.phone.focus(options);
+  }
+}

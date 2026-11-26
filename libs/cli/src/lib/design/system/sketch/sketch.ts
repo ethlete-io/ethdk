@@ -1,0 +1,1935 @@
+import { writeDesignFile } from '../design-file';
+import { foundationSkeletonOf } from './foundation-skeletons';
+import { gitStatusOf } from '../../git-reader';
+import { createHash } from 'crypto';
+import { cpSync, Dirent, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from 'fs';
+import { dirname, isAbsolute, relative, resolve, sep } from 'path';
+import { setImmediate } from 'timers/promises';
+import { productDirOfSketch, recoverInterrupted, withProductLock, writeDecisionFile } from '../product-lock';
+import { noteWrite } from '../write-journal';
+import { jsonLayoutOf } from '../../json-layout';
+import { statusPath } from '../../call-status-path';
+import { ASSETS_FOLDER, filesBelow } from '../assets';
+import { SHARED_FOLDER, SHARED_PREFIX } from '../imports';
+import { isBuiltInBase } from '../base';
+import { isLayer, Layer, LAYER_USES, mayUse } from '../layers';
+import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { baselineOf } from './baseline';
+import { portableCmdOf } from '../write-origin';
+import { sharedBaseNowOf, sharedBaseOf } from './shared-base';
+import { baselineTreeOf, dropBaselineTree, keepBaselineTree } from './baseline-tree';
+import { hasActor, WriteOrigin } from '../write-origin';
+import { withMadeBy } from './part-definition';
+
+export const SKETCH_STATUSES = ['in progress', 'ready'] as const;
+
+export type SketchStatus = (typeof SKETCH_STATUSES)[number];
+
+/** A part, and `sketch` when it names one of several sketches on that part; a sketch without a name is the part's only one. */
+export type SketchTarget = { layer: Layer; name: string; sketch?: string };
+
+/** What the user decided in Studio: a variant to merge, or the whole sketch to drop. */
+export type SketchDecision =
+  | ({ kind: 'pick'; variant: string; comment?: string; agentPick?: true; decidedAt: string } & Partial<WriteOrigin>)
+  | ({ kind: 'discard'; comment?: string; decidedAt: string } & Partial<WriteOrigin>);
+
+/** The designer's approval of a sub-sketch's variant; the parent merges that variant together with its own pick. */
+export type SketchApproval = {
+  variant: string;
+  comment?: string;
+  agentPick?: true;
+  decidedAt: string;
+} & Partial<WriteOrigin>;
+
+/**
+ * What `sketch.json` knows about one variant: the model ids that reported on it, in the order of their first report,
+ * the key of its round, its note - what it is and what it costs - kept apart from the part's merged note, and the
+ * `<layer>/<name>` keys of the new parts it builds that the agent marked as sub-parts.
+ */
+/** What a marked sub-part `part` is that `of` (`<holder>:<name>`, e.g. `sdk:slider`), the existing part its name matches, is not. */
+export type SubPartDifference = { part: string; of: string; difference: string };
+
+export type SketchVariantInfo = {
+  authors?: string[];
+  round?: string;
+  note?: string;
+  subParts?: string[];
+  notRebuilds?: SubPartDifference[];
+};
+
+/** Who recorded a verdict on a variant: the designer, in Studio or with `--by designer`, or an agent. */
+export type SketchVerdictBy = 'designer' | 'agent';
+
+/** Ends a rejection: the variant can be picked and merged again. */
+export type SketchReopening = { by: SketchVerdictBy; decidedAt: string; reason?: string };
+
+/**
+ * One rejection of a variant. `by` recorded the rejection and `reasonBy` its reason, which can be set later;
+ * the rejection holds while it has no `reopened`.
+ */
+export type SketchRejection = {
+  by: SketchVerdictBy;
+  decidedAt: string;
+  reason?: string;
+  reasonBy?: SketchVerdictBy;
+  reopened?: SketchReopening;
+  /** `withdrawn`: the agent that drew the variant took it out of the open set, `withdrawnBy` is its model id. Absent on a rejection. */
+  status?: 'withdrawn';
+  withdrawnBy?: string;
+};
+
+/**
+ * One round of variants: its title, the note on what it shows, why its variants lost once a newer round runs, the
+ * states it drops on purpose and the states it asks its question in, which `sketch ready` compares its variants in.
+ */
+export type SketchRound = {
+  key: string;
+  title: string;
+  note: string;
+  lost?: string;
+  drops?: string[];
+  asks?: string[];
+};
+
+/** A change to the sketch that waits on something; while it holds, the sketch stays in progress and cannot be ready. */
+export type SketchHold = {
+  until: string;
+  by: string;
+  heldAt: string;
+  /** The sketch the hold waits on, `<layer>/<name>[@<sketch>]`, and its part's `merged.json` hash when the hold began. */
+  untilSketch?: { target: string; mergedHash: string | null };
+};
+
+/** A rebase after the merge of `merged` that could not port `parts` by itself; the sketch's agent ports `reasons` by hand. */
+export type SketchPortMark = { merged: string[]; parts: string[]; reasons: string[]; at: string };
+
+/**
+ * Why the last `sketch ready` run left a ready sketch unmerged; only a ready sketch keeps it. `dirty` lists the
+ * uncommitted files that refused the automatic merge; the next sketch command retries it once they are committed.
+ */
+export type SketchMergeHold = { reason: string; at: string; dirty?: string[] };
+
+/**
+ * What `sketch ready` forecast for a sketch: `merges` when it would merge itself because no variant changes a state,
+ * else `reason`. `contents` is the hash of each variant when it judged, so a later edit makes it stale.
+ */
+export type SketchAutoMergeForecast = {
+  merges: boolean;
+  reason?: string;
+  contents: Record<string, string>;
+  at: string;
+};
+
+export type SketchFile = {
+  target: string;
+  /** Every part the sketch targets, `target` first; absent on a sketch with one target. */
+  targets?: string[];
+  status: SketchStatus;
+  createdAt: string;
+  /** The command that created the sketch, and the agent session that ran it; sketches from before it was recorded lack it. */
+  createdBy?: SketchCreatedBy;
+  /** The content hash of each part and of the fixtures in the product when the sketch was created or rebased. */
+  baseline?: Record<string, string>;
+  /** The git tree of the product folders the baseline was recorded from, for a rebase when no commit holds that state. */
+  baselineTree?: string;
+  /** The commit the `old` variant of an edit sketch was taken from; `old` draws the parts it holds no copy of as that commit holds them. */
+  editOldCommit?: string;
+  /** The content hash of each part `shared/` file the sketch lifted into its own, keyed `<layer>/<name>/shared/<path>`, when it was created or rebased. */
+  sharedBase?: Record<string, string>;
+  decision?: SketchDecision;
+  variantInfo?: Record<string, SketchVariantInfo>;
+  /** Per variant, every rejection it had, oldest first. */
+  rejections?: Record<string, SketchRejection[]>;
+  rounds?: SketchRound[];
+  /**
+   * Where a target the product takes from its base merges: absent, into the base; `override`, into a product copy;
+   * `into-base`, into the base, removing the product copy the sketch started from.
+   */
+  merge?: SketchMerge;
+  /** The compare DIFFs this sketch covers while it is open: `<state>`, or `<state>@<x>,<y>,<w>,<h>` for one region of its picture. */
+  covers?: string[];
+  /** The `STATE-UNDESIGNED` branches of the app whose built look this sketch holds; each waits for the pick while it is open (B251b). */
+  undesigned?: string[];
+  hold?: SketchHold;
+  /** The content hash of each variant when `sketch ready` judged it; a change drops a ready sketch back to in progress. */
+  readyContent?: Record<string, string>;
+  portAfterMerge?: SketchPortMark;
+  mergeHold?: SketchMergeHold;
+  autoMergeForecast?: SketchAutoMergeForecast;
+  /** The variant the agent recommends; a sketch of another part that imports a new target of this one draws it from this variant until the user picks. */
+  recommended?: string;
+  /** The sketch whose pick opened this one for a sub-part the picked variant marked, `<layer>/<name>[@<sketch>]`. */
+  parent?: string;
+  /** The sketches the pick opened, one per marked sub-part of the picked variant; the sketch does not merge while it has them. */
+  subSketches?: string[];
+  /** On a sub-sketch: the variant the designer approved for the merge of its parent. */
+  approved?: SketchApproval;
+};
+
+export type SketchCreatedBy = { cmd: string; session?: string };
+
+export const SKETCH_MERGES = ['override', 'into-base'] as const;
+
+export type SketchMerge = (typeof SKETCH_MERGES)[number];
+
+/** A sketch as read: `rounds` holds at least one round, and `variantInfo` names the round of every variant. */
+export type Sketch = SketchFile & {
+  targets: string[];
+  rounds: SketchRound[];
+  variantInfo: Record<string, SketchVariantInfo>;
+  product: string;
+  layer: Layer;
+  name: string;
+  dir: string;
+  variants: string[];
+};
+
+const NAME = /^[a-z0-9][a-z0-9-]*$/u;
+
+export const SKETCH_FILE = 'sketch.json';
+
+export const sketchesDirOf = (productDir: string) => resolve(productDir, 'sketches');
+
+export const sketchFolderOf = (target: SketchTarget) =>
+  `${target.layer}-${target.name}${target.sketch ? `.${target.sketch}` : ''}`;
+
+export const sketchIdOf = (target: SketchTarget) => `${partKeyOf(target)}${target.sketch ? `@${target.sketch}` : ''}`;
+
+export const sketchDirOf = (options: { productDir: string; sketch: SketchTarget }) =>
+  resolve(sketchesDirOf(options.productDir), sketchFolderOf(options.sketch));
+
+export const variantDirOf = (sketch: Sketch, variant: string) => resolve(sketch.dir, variant);
+
+export { SHARED_FOLDER };
+
+export const sharedDirOf = (sketch: Pick<Sketch, 'dir'>) => resolve(sketch.dir, SHARED_FOLDER);
+
+/** A variant's own `shared/` folder: a file there wins over the sketch's `shared/` file of the same path. */
+export const variantSharedDirOf = (sketch: Sketch, variant: string) =>
+  resolve(variantDirOf(sketch, variant), SHARED_FOLDER);
+
+export const SOURCE_FILE = /\.(?:ts|js|mjs)$/u;
+
+export const sourceFilesIn = (dir: string) =>
+  existsSync(dir)
+    ? (readdirSync(dir, { recursive: true }) as string[])
+        .filter((path) => SOURCE_FILE.test(path))
+        .map((path) => resolve(dir, path))
+    : [];
+
+/** `source`, the file `file` of the part in `partDir`, with its relative imports of the part's own `shared/` folder as `@shared/`. */
+export const withSharedImports = (options: { source: string; file: string; partDir: string }) => {
+  const { source, file, partDir } = options;
+  const shared = resolve(partDir, SHARED_FOLDER);
+
+  return source.replace(/(['"])(\.{1,2}\/[^'"]+)\1/gu, (...[match = '', quote = '', specifier = '']: string[]) => {
+    const path = relative(shared, resolve(dirname(file), specifier));
+
+    return path.startsWith('..') || isAbsolute(path)
+      ? match
+      : `${quote}${SHARED_PREFIX}${path.split(sep).join('/')}${quote}`;
+  });
+};
+
+const insideOf = (dir: string, path: string) => {
+  const rest = relative(dir, path);
+
+  return !rest.startsWith('..') && !isAbsolute(rest);
+};
+
+export const relativeSpecifierOf = (options: { from: string; to: string }) => {
+  const path = relative(dirname(options.from), options.to).split(sep).join('/');
+
+  return path.startsWith('.') ? path : `./${path}`;
+};
+
+/**
+ * Rewrites the relative imports of the files in `dir`, a copy of the folder `from`, that leave `from` - and `within`,
+ * when given - so they reach the same files from `dir`.
+ */
+export const rebaseOutsideImports = (options: {
+  dir: string;
+  from: string;
+  within?: string;
+  settledIn?: string;
+  skip?: string;
+}) => {
+  const { dir, from, within, settledIn, skip } = options;
+
+  for (const file of sourceFilesIn(dir)) {
+    if (skip !== undefined && insideOf(resolve(dir, skip), file)) continue;
+
+    const original = resolve(from, relative(dir, file));
+    const source = readFileSync(file, 'utf8');
+    const rewritten = source.replace(
+      /(['"])(\.{1,2}\/[^'"]+)\1/gu,
+      (...[match = '', quote = '', specifier = '']: string[]) => {
+        const path = resolve(dirname(original), specifier);
+
+        return insideOf(from, path) || (within !== undefined && insideOf(within, path))
+          ? match
+          : `${quote}${relativeSpecifierOf({ from: settledIn ? resolve(settledIn, relative(dir, file)) : file, to: path })}${quote}`;
+      },
+    );
+
+    if (rewritten !== source) writeDesignFile(file, rewritten);
+  }
+};
+
+/** Rewrites the relative imports of the part's own `shared/` folder in its files to `@shared/`. */
+export const rewriteSharedImports = (partDir: string) => {
+  for (const file of sourceFilesIn(partDir)) {
+    const source = readFileSync(file, 'utf8');
+    const rewritten = withSharedImports({ source, file, partDir });
+
+    if (rewritten !== source) writeDesignFile(file, rewritten);
+  }
+};
+
+const liftShared = (options: { partDir: string; sketchSharedDir: string }) => {
+  const { partDir, sketchSharedDir } = options;
+  const shared = resolve(partDir, SHARED_FOLDER);
+
+  if (!existsSync(shared)) return;
+
+  rewriteSharedImports(partDir);
+  cpSync(shared, sketchSharedDir, { recursive: true });
+  rmSync(shared, { recursive: true });
+};
+
+const sharedClashOf = (parts: ({ layer: string; name: string; file: string } | undefined)[]) => {
+  const seen = new Map<string, { key: string; source: string }>();
+
+  for (const part of parts) {
+    if (!part) continue;
+
+    const shared = resolve(dirname(part.file), SHARED_FOLDER);
+
+    for (const file of filesBelow(shared)) {
+      const path = relative(shared, file).split(sep).join('/');
+      const source = readFileSync(file, 'utf8');
+      const held = seen.get(path);
+
+      if (held && held.source !== source)
+        return `${held.key} and ${partKeyOf(part)} each hold a different ${SHARED_FOLDER}/${path} - rename one, then open the sketch`;
+
+      seen.set(path, { key: partKeyOf(part), source });
+    }
+  }
+
+  return undefined;
+};
+
+/** Reads `<layer>/<name>` as a sketch target, or answers with why it is not one. */
+export const parseTarget = (value: string | undefined): SketchTarget | string => {
+  const [asked = '', sketch, ...more] = (value ?? '').split('@');
+  const [layer = '', name = '', ...rest] = asked.split('/');
+
+  if (
+    !isLayer(layer) ||
+    !NAME.test(name) ||
+    rest.length > 0 ||
+    more.length > 0 ||
+    (sketch !== undefined && !NAME.test(sketch))
+  )
+    return `"${value ?? ''}" is no target - pass <layer>/<name>[@<sketch name>], the layer one of foundations, components, elements, pages`;
+
+  return sketch === undefined ? { layer, name } : { layer, name, sketch };
+};
+
+/** Reads a sketch id (`<layer>/<name>[@<sketch>]`), `<layer>/<name>.<sketch>` or a sketch folder name (`<layer>-<name>[.<sketch>]`) as a sketch id, or `null` when it is none of them. */
+export const sketchIdOfName = (value: string) => {
+  const dotted = value.includes('/')
+    ? value.replace(/\.([^./@]+)$/u, '@$1')
+    : value.replace(/^([^-/]+)-/u, '$1/').replace(/\.([^./@]+)$/u, '@$1');
+
+  return typeof parseTarget(dotted) === 'string' ? null : dotted;
+};
+
+/** Why `--name` cannot name a sketch, with the name it could take instead; `null` when it can. */
+export const sketchNameProblemOf = (name: string) => {
+  if (NAME.test(name)) return null;
+
+  const slug =
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gu, '-')
+      .replace(/^-+|-+$/gu, '') || 'alt';
+
+  return `--name "${name}" is no sketch name - pass lowercase letters, digits and dashes, e.g. --name ${slug}`;
+};
+
+export const isVariantName = (name: string) => NAME.test(name) && name !== SHARED_FOLDER;
+
+const foldersOf = (dir: string) =>
+  existsSync(dir)
+    ? readdirSync(dir)
+        .filter((name) => statSync(resolve(dir, name), { throwIfNoEntry: false })?.isDirectory())
+        .sort()
+    : [];
+
+const GENERATED_FILE = 'tsconfig.json';
+
+const holdsFiles = (dir: string) => {
+  let entries: Dirent[];
+
+  // A merge worker removes a sketch folder while this process may be listing it.
+  try {
+    entries = readdirSync(dir, { recursive: true, withFileTypes: true }) as Dirent[];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw error;
+  }
+
+  return entries.some((entry) => entry.isFile() && !isGeneratedFile({ dir, entry }));
+};
+
+const isGeneratedFile = ({ dir, entry }: { dir: string; entry: Dirent }) =>
+  entry.name === GENERATED_FILE &&
+  (resolve(entry.parentPath) === resolve(dir) || dirname(resolve(entry.parentPath)) === resolve(dir));
+
+const sketchFoldersOf = (productDir: string) =>
+  foldersOf(sketchesDirOf(productDir)).filter((folder) => holdsFiles(resolve(sketchesDirOf(productDir), folder)));
+
+/** The folders under a product's `sketches/` that hold no file besides generated tsconfigs, so no sketch reads them. */
+export const leftoverSketchFoldersOf = (productDir: string) =>
+  foldersOf(sketchesDirOf(productDir))
+    .filter((folder) => !holdsFiles(resolve(sketchesDirOf(productDir), folder)))
+    .map((folder) => resolve(sketchesDirOf(productDir), folder));
+
+const isOpenSketchDir = (dir: string) => existsSync(dir) && holdsFiles(dir);
+
+/** Deletes a sketch folder and its baseline tree ref, then its `sketches/` folder when nothing else is left in it. */
+export const removeSketchDir = (dir: string) => {
+  noteWrite(dir);
+  if (existsSync(dir)) dropBaselineTree(dir);
+  rmSync(dir, { recursive: true, force: true });
+
+  if (existsSync(dir)) throw new Error(`${dir} is still there after its removal - delete it by hand`);
+
+  const parent = resolve(dir, '..');
+
+  if (existsSync(parent) && readdirSync(parent).length === 0) {
+    noteWrite(parent);
+    rmSync(parent, { recursive: true, force: true });
+  }
+};
+
+const isStatus = (value: unknown): value is SketchStatus => SKETCH_STATUSES.includes(value as SketchStatus);
+
+const isAuthors = (value: unknown) =>
+  value === undefined || (Array.isArray(value) && value.every((author) => typeof author === 'string' && author !== ''));
+
+const isNotRebuilds = (value: unknown) =>
+  value === undefined ||
+  (Array.isArray(value) &&
+    value.every(
+      (entry: Partial<SubPartDifference> | null) =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        [entry.part, entry.of, entry.difference].every((text) => typeof text === 'string' && text.trim() !== ''),
+    ));
+
+const isVariantInfo = (value: unknown): value is Record<string, SketchVariantInfo> =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.values(value).every(
+    (info: unknown) =>
+      typeof info === 'object' &&
+      info !== null &&
+      isAuthors((info as Partial<SketchVariantInfo>).authors) &&
+      ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).round) &&
+      ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).note) &&
+      isAuthors((info as Partial<SketchVariantInfo>).subParts) &&
+      isNotRebuilds((info as Partial<SketchVariantInfo>).notRebuilds),
+  );
+
+const VERDICT_BY: readonly SketchVerdictBy[] = ['designer', 'agent'];
+
+const isVerdictBy = (value: unknown): value is SketchVerdictBy => VERDICT_BY.includes(value as SketchVerdictBy);
+
+const isOptionalText = (value: unknown) => value === undefined || typeof value === 'string';
+
+const isReopening = (value: unknown): value is SketchReopening => {
+  const reopening = value as Partial<Record<keyof SketchReopening, unknown>> | null;
+
+  return (
+    typeof reopening === 'object' &&
+    reopening !== null &&
+    isVerdictBy(reopening.by) &&
+    typeof reopening.decidedAt === 'string' &&
+    isOptionalText(reopening.reason)
+  );
+};
+
+const isRejection = (value: unknown): value is SketchRejection => {
+  const rejection = value as Partial<Record<keyof SketchRejection, unknown>> | null;
+
+  return (
+    typeof rejection === 'object' &&
+    rejection !== null &&
+    isVerdictBy(rejection.by) &&
+    typeof rejection.decidedAt === 'string' &&
+    isOptionalText(rejection.reason) &&
+    (rejection.reasonBy === undefined || isVerdictBy(rejection.reasonBy)) &&
+    (rejection.status === undefined || rejection.status === 'withdrawn') &&
+    (rejection.withdrawnBy === undefined || typeof rejection.withdrawnBy === 'string') &&
+    (rejection.reopened === undefined || isReopening(rejection.reopened))
+  );
+};
+
+const isRejections = (value: unknown): value is Record<string, SketchRejection[]> =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.values(value).every(
+    (list: unknown) =>
+      Array.isArray(list) &&
+      list.every(isRejection) &&
+      list.slice(0, -1).every((rejection: SketchRejection) => rejection.reopened !== undefined),
+  );
+
+const isRounds = (value: unknown): value is SketchRound[] =>
+  Array.isArray(value) &&
+  value.length > 0 &&
+  value.every(
+    (round: Partial<Record<keyof SketchRound, unknown>> | null) =>
+      typeof round?.key === 'string' &&
+      round.key !== '' &&
+      typeof round.title === 'string' &&
+      typeof round.note === 'string' &&
+      (round.lost === undefined || typeof round.lost === 'string') &&
+      (round.drops === undefined || (Array.isArray(round.drops) && round.drops.every((d) => typeof d === 'string'))) &&
+      (round.asks === undefined || (Array.isArray(round.asks) && round.asks.every((a) => typeof a === 'string'))),
+  ) &&
+  new Set(value.map((round: SketchRound) => round.key)).size === value.length;
+
+const isUntilSketch = (value: unknown) => {
+  const until = value as { target?: unknown; mergedHash?: unknown } | null;
+
+  return (
+    typeof until === 'object' &&
+    until !== null &&
+    typeof until.target === 'string' &&
+    typeof parseTarget(until.target) !== 'string' &&
+    (until.mergedHash === null || typeof until.mergedHash === 'string')
+  );
+};
+
+const isAutoMergeForecast = (value: unknown): value is SketchAutoMergeForecast => {
+  const forecast = value as Partial<Record<keyof SketchAutoMergeForecast, unknown>> | null;
+
+  return (
+    typeof forecast === 'object' &&
+    forecast !== null &&
+    typeof forecast.merges === 'boolean' &&
+    (forecast.reason === undefined || typeof forecast.reason === 'string') &&
+    typeof forecast.contents === 'object' &&
+    forecast.contents !== null &&
+    Object.values(forecast.contents).every((hash) => typeof hash === 'string') &&
+    typeof forecast.at === 'string'
+  );
+};
+
+const isHold = (value: unknown): value is SketchHold => {
+  const hold = value as Partial<Record<keyof SketchHold, unknown>> | null;
+
+  return (
+    typeof hold === 'object' &&
+    hold !== null &&
+    typeof hold.until === 'string' &&
+    hold.until.trim() !== '' &&
+    typeof hold.by === 'string' &&
+    typeof hold.heldAt === 'string' &&
+    (hold.untilSketch === undefined || isUntilSketch(hold.untilSketch))
+  );
+};
+
+const isStringList = (value: unknown) => Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+
+const isMergeHold = (value: unknown): value is SketchMergeHold => {
+  const hold = value as Partial<Record<keyof SketchMergeHold, unknown>> | null;
+
+  return (
+    typeof hold === 'object' &&
+    hold !== null &&
+    typeof hold.reason === 'string' &&
+    typeof hold.at === 'string' &&
+    (hold.dirty === undefined || isStringList(hold.dirty))
+  );
+};
+
+const isPortMark = (value: unknown): value is SketchPortMark => {
+  const mark = value as Partial<Record<keyof SketchPortMark, unknown>> | null;
+
+  return (
+    typeof mark === 'object' &&
+    mark !== null &&
+    isStringList(mark.merged) &&
+    isStringList(mark.parts) &&
+    isStringList(mark.reasons) &&
+    typeof mark.at === 'string'
+  );
+};
+
+const FIRST_ROUND = 'r1';
+
+const withStates = (round: SketchRound, states: { drops?: string[]; asks?: string[] }): SketchRound => {
+  const { drops: _drops, asks: _asks, ...rest } = round;
+  const drops = 'drops' in states ? states.drops : round.drops;
+  const asks = 'asks' in states ? states.asks : round.asks;
+
+  return {
+    ...rest,
+    ...(drops && drops.length > 0 ? { drops } : {}),
+    ...(asks && asks.length > 0 ? { asks } : {}),
+  };
+};
+
+const firstRoundOf = (options: { title?: string; note?: string; asks?: string[] }): SketchRound =>
+  withStates(
+    { key: FIRST_ROUND, title: options.title ?? '', note: (options.note ?? '').trim() },
+    { asks: options.asks },
+  );
+
+const nextRoundKeyOf = (rounds: SketchRound[]) =>
+  `r${Math.max(0, ...rounds.map((round) => Number(/^r(\d+)$/u.exec(round.key)?.[1] ?? 0))) + 1}`;
+
+/** The round new variants join: the last one. */
+export const runningRoundOf = (sketch: Pick<Sketch, 'rounds'>) =>
+  sketch.rounds[sketch.rounds.length - 1] as SketchRound;
+
+/** The rejection that holds on a variant now, or `null` when it is live. */
+export const rejectionOf = (sketch: Pick<SketchFile, 'rejections'>, variant: string): SketchRejection | null => {
+  const history = sketch.rejections?.[variant] ?? [];
+  const last = history[history.length - 1];
+
+  return last && !last.reopened ? last : null;
+};
+
+/** Why a rejected variant cannot be picked or merged, or `null` when it can. */
+export const rejectedProblemOf = (sketch: Pick<Sketch, 'target' | 'rejections'>, variant: string) => {
+  const rejection = rejectionOf(sketch, variant);
+
+  return rejection
+    ? `${sketch.target} variant ${variant} is rejected by the ${rejection.by}${rejection.reason ? `: ${rejection.reason}` : ''} - reopen it first`
+    : null;
+};
+
+/** The model ids that reported on a variant, in the order of their first report; none for old data. */
+export const authorsOf = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) =>
+  sketch.variantInfo?.[variant]?.authors ?? [];
+
+/** The sketch in a sketch folder, or why it cannot be read. */
+export const readSketch = (options: { product: string; dir: string }): Sketch | string => sketchIn(options);
+
+const sketchIn = (options: { product: string; dir: string; variants?: string[] }): Sketch | string => {
+  const { product, dir } = options;
+  const file = resolve(dir, SKETCH_FILE);
+
+  if (!existsSync(file)) return `${dir} holds no ${SKETCH_FILE}`;
+
+  let parsed: Partial<SketchFile>;
+
+  try {
+    parsed = JSON.parse(readFileSync(file, 'utf8')) as Partial<SketchFile>;
+  } catch (error) {
+    return `${file} is no JSON: ${error instanceof Error ? error.message : String(error)}`;
+  }
+
+  const target = parseTarget(parsed.target);
+
+  if (typeof target === 'string') return `${file}: ${target}`;
+
+  const targets = parsed.targets ?? [partKeyOf(target)];
+
+  if (
+    !Array.isArray(targets) ||
+    targets[0] !== partKeyOf(target) ||
+    new Set(targets).size !== targets.length ||
+    targets.some((entry) => typeof parseTarget(entry) === 'string')
+  )
+    return `${file}: targets must list unique <layer>/<name> keys, the target first`;
+  if (!isStatus(parsed.status)) return `${file}: status must be one of ${SKETCH_STATUSES.join(', ')}`;
+  if (parsed.variantInfo !== undefined && !isVariantInfo(parsed.variantInfo))
+    return `${file}: variantInfo must be { <variant>: { authors?: string[], round?: string, note?: string } }`;
+  if (parsed.rejections !== undefined && !isRejections(parsed.rejections))
+    return `${file}: rejections must be { <variant>: [{ by: designer | agent, decidedAt, reason?, reasonBy?, status?: withdrawn, withdrawnBy?, reopened?: { by, decidedAt, reason? } }] }, each but the last reopened`;
+  if (parsed.rounds !== undefined && !isRounds(parsed.rounds))
+    return `${file}: rounds must be a non-empty list of { key, title, note } with unique keys`;
+  if (parsed.merge !== undefined && !SKETCH_MERGES.includes(parsed.merge))
+    return `${file}: merge must be one of ${SKETCH_MERGES.join(', ')}`;
+  if (parsed.hold !== undefined && !isHold(parsed.hold)) return `${file}: hold must be { until, by, heldAt }`;
+  if (parsed.hold !== undefined && parsed.status !== 'in progress') return `${file}: a held sketch must be in progress`;
+  if (
+    parsed.readyContent !== undefined &&
+    (!parsed.readyContent ||
+      typeof parsed.readyContent !== 'object' ||
+      Object.values(parsed.readyContent).some((hash) => typeof hash !== 'string'))
+  )
+    return `${file}: readyContent must be { <variant>: <content hash> }`;
+  if (parsed.portAfterMerge !== undefined && !isPortMark(parsed.portAfterMerge))
+    return `${file}: portAfterMerge must be { merged: string[], parts: string[], reasons: string[], at }`;
+  if (parsed.mergeHold !== undefined && !isMergeHold(parsed.mergeHold))
+    return `${file}: mergeHold must be { reason, at }`;
+  if (parsed.autoMergeForecast !== undefined && !isAutoMergeForecast(parsed.autoMergeForecast))
+    return `${file}: autoMergeForecast must be { merges, reason?, contents, at }`;
+  if (parsed.recommended !== undefined && (typeof parsed.recommended !== 'string' || !parsed.recommended))
+    return `${file}: recommended must be a variant key`;
+  if (parsed.createdBy !== undefined && !isCreatedBy(parsed.createdBy))
+    return `${file}: createdBy must be { cmd: string, session?: string }`;
+  if (parsed.baselineTree !== undefined && (typeof parsed.baselineTree !== 'string' || !parsed.baselineTree))
+    return `${file}: baselineTree must be a git tree id`;
+  if (parsed.editOldCommit !== undefined && (typeof parsed.editOldCommit !== 'string' || !parsed.editOldCommit))
+    return `${file}: editOldCommit must be a git commit id`;
+  if (
+    parsed.sharedBase !== undefined &&
+    (!parsed.sharedBase ||
+      typeof parsed.sharedBase !== 'object' ||
+      Object.values(parsed.sharedBase).some((hash) => typeof hash !== 'string'))
+  )
+    return `${file}: sharedBase must be { <layer>/<name>/shared/<path>: <content hash> }`;
+  if (parsed.covers !== undefined && !isStringList(parsed.covers))
+    return `${file}: covers must be a list of <state> or <state>@<x>,<y>,<w>,<h>`;
+  if (parsed.undesigned !== undefined && !isStringList(parsed.undesigned))
+    return `${file}: undesigned must be a list of app template branches`;
+  if (parsed.parent !== undefined && (typeof parsed.parent !== 'string' || !parsed.parent))
+    return `${file}: parent must be the <layer>/<name> of a sketch`;
+  if (parsed.subSketches !== undefined && !isStringList(parsed.subSketches))
+    return `${file}: subSketches must be a list of <layer>/<name> sketch keys`;
+  if (
+    parsed.approved !== undefined &&
+    (typeof parsed.approved !== 'object' || parsed.approved === null || typeof parsed.approved.variant !== 'string')
+  )
+    return `${file}: approved must name the approved variant`;
+
+  const rounds = parsed.rounds ?? [firstRoundOf({})];
+  const running = runningRoundOf({ rounds }).key;
+  const variants = options.variants ?? foldersOf(dir).filter((folder) => folder !== SHARED_FOLDER);
+  const variantInfo = { ...parsed.variantInfo };
+
+  for (const variant of variants)
+    variantInfo[variant] = { ...variantInfo[variant], round: variantInfo[variant]?.round ?? running };
+
+  const lost = variants.find((variant) => !rounds.some((round) => round.key === variantInfo[variant]?.round));
+
+  if (lost !== undefined)
+    return `${file}: variant ${lost} names round "${variantInfo[lost]?.round}", which rounds does not hold`;
+
+  return {
+    ...(parsed as SketchFile),
+    targets,
+    rounds,
+    variantInfo,
+    product,
+    layer: target.layer,
+    name: target.name,
+    dir,
+    variants,
+  };
+};
+
+/** Every sketch folder of a product, read; a folder that cannot be read answers with its problem. */
+export const listSketches = (options: { productDir: string; product: string }) => {
+  recoverInterrupted(options.productDir);
+
+  return sketchFoldersOf(options.productDir).map((folder) =>
+    readSketch({ product: options.product, dir: resolve(sketchesDirOf(options.productDir), folder) }),
+  );
+};
+
+/** `listSketches`, letting the server answer other requests before each sketch it reads. */
+export const listSketchesInTurns = async (options: { productDir: string; product: string }) => {
+  const listed: ReturnType<typeof readSketch>[] = [];
+
+  for (const folder of sketchFoldersOf(options.productDir)) {
+    await setImmediate();
+    listed.push(readSketch({ product: options.product, dir: resolve(sketchesDirOf(options.productDir), folder) }));
+  }
+
+  return listed;
+};
+
+/** The open sketch that targets `sketch`, found by its first target or by any other it names; `null` when none does. */
+export const findSketch = (options: { productDir: string; product: string; sketch: SketchTarget }) => {
+  recoverInterrupted(options.productDir);
+
+  const dir = sketchDirOf(options);
+
+  if (isOpenSketchDir(dir)) return readSketch({ product: options.product, dir });
+
+  const key = partKeyOf(options.sketch);
+
+  return (
+    listSketches(options).find(
+      (sketch): sketch is Sketch =>
+        typeof sketch !== 'string' &&
+        sketch.targets.includes(key) &&
+        parseSketchName(sketch.target) === options.sketch.sketch,
+    ) ?? null
+  );
+};
+
+const parseSketchName = (target: string) => target.split('@')[1];
+
+const baselineTreeFieldOf = (options: { product: ResolvedProduct; sketchDir: string }) => {
+  const tree = baselineTreeOf({ product: options.product, sketchesDirOf });
+
+  if (!tree) return {};
+
+  keepBaselineTree({ sketchDir: options.sketchDir, tree });
+
+  return { baselineTree: tree };
+};
+
+const isCreatedBy = (value: unknown) => {
+  const { cmd, session } = (value ?? {}) as Partial<SketchCreatedBy>;
+
+  return typeof cmd === 'string' && (session === undefined || typeof session === 'string');
+};
+
+const createdByOf = (): SketchCreatedBy => {
+  const session = process.env['ETHLETE_AGENT_ROLE'] || process.env['CLAUDE_CODE_SESSION_ID'];
+
+  return { cmd: portableCmdOf(process.argv.slice(2)), ...(session ? { session } : {}) };
+};
+
+const sketchFileOf = (sketch: Sketch): SketchFile => ({
+  target: sketch.target,
+  ...(sketch.targets.length > 1 ? { targets: sketch.targets } : {}),
+  status: sketch.status,
+  createdAt: sketch.createdAt,
+  ...(sketch.createdBy ? { createdBy: sketch.createdBy } : {}),
+  ...(sketch.baseline ? { baseline: sketch.baseline } : {}),
+  ...(sketch.baselineTree ? { baselineTree: sketch.baselineTree } : {}),
+  ...(sketch.editOldCommit ? { editOldCommit: sketch.editOldCommit } : {}),
+  ...(sketch.sharedBase && Object.keys(sketch.sharedBase).length > 0 ? { sharedBase: sketch.sharedBase } : {}),
+  ...(sketch.decision ? { decision: sketch.decision } : {}),
+  rounds: sketch.rounds,
+  ...(Object.keys(sketch.variantInfo).length > 0 ? { variantInfo: sketch.variantInfo } : {}),
+  ...(sketch.rejections && Object.keys(sketch.rejections).length > 0 ? { rejections: sketch.rejections } : {}),
+  ...(sketch.merge ? { merge: sketch.merge } : {}),
+  ...(sketch.hold ? { hold: sketch.hold } : {}),
+  ...(sketch.readyContent && sketch.status === 'ready' ? { readyContent: sketch.readyContent } : {}),
+  ...(sketch.covers && sketch.covers.length > 0 ? { covers: sketch.covers } : {}),
+  ...(sketch.undesigned && sketch.undesigned.length > 0 ? { undesigned: sketch.undesigned } : {}),
+  ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
+  ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
+  ...(sketch.autoMergeForecast ? { autoMergeForecast: sketch.autoMergeForecast } : {}),
+  ...(sketch.recommended ? { recommended: sketch.recommended } : {}),
+  ...(sketch.parent ? { parent: sketch.parent } : {}),
+  ...(sketch.subSketches && sketch.subSketches.length > 0 ? { subSketches: sketch.subSketches } : {}),
+  ...(sketch.approved ? { approved: sketch.approved } : {}),
+});
+
+type Fields = Record<string, unknown>;
+
+const PER_VARIANT_FIELDS = new Set(['variantInfo', 'rejections', 'readyContent']);
+
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+const mergedFieldsOf = (options: { was: Fields; mine: Fields; disk: Fields; both: (key: string) => unknown }) => {
+  const { was, mine, disk } = options;
+  const merged: Fields = {};
+
+  for (const key of new Set([...Object.keys(was), ...Object.keys(mine), ...Object.keys(disk)])) {
+    const changed = !sameJson(mine[key], was[key]);
+    const value =
+      changed && !sameJson(disk[key], was[key]) && !sameJson(disk[key], mine[key])
+        ? options.both(key)
+        : changed
+          ? mine[key]
+          : disk[key];
+
+    if (value !== undefined) merged[key] = value;
+  }
+
+  return merged;
+};
+
+const mergedSketchFileOf = (options: { sketch: Sketch; base: Sketch; sets: string[] }): SketchFile => {
+  const { sketch, base, sets } = options;
+  const onDisk = sketchIn({ product: base.product, dir: base.dir, variants: base.variants });
+
+  if (typeof onDisk === 'string') throw new Error(onDisk);
+
+  const fieldsOf = (entry: Sketch) => sketchFileOf(entry) as Fields;
+  const [was, mine, disk] = [fieldsOf(base), fieldsOf(sketch), fieldsOf(onDisk)];
+  const conflict = (key: string) => {
+    throw new Error(
+      `${resolve(base.dir, SKETCH_FILE)}: "${key}" changed since this command read it - nothing was written, run the command again`,
+    );
+  };
+  const recordOf = (fields: Fields, key: string) => (fields[key] ?? {}) as Fields;
+
+  return mergedFieldsOf({
+    was: { ...was, ...Object.fromEntries(sets.map((key) => [key, disk[key]])) },
+    mine,
+    disk,
+    both: (key) =>
+      PER_VARIANT_FIELDS.has(key)
+        ? mergedFieldsOf({
+            was: recordOf(was, key),
+            mine: recordOf(mine, key),
+            disk: recordOf(disk, key),
+            both: (variant) => conflict(`${key}.${variant}`),
+          })
+        : conflict(key),
+  }) as SketchFile;
+};
+
+/**
+ * Writes a sketch's file. With `base`, the sketch the change was made on, it writes only the fields (per variant in
+ * `variantInfo`, `rejections`, `readyContent`) that differ from `base` and keeps what another writer changed since;
+ * both changing one field throws, except a field named in `sets`. `replace` writes the sketch as given.
+ */
+export const writeSketchFile = (sketch: Sketch, options: { base: Sketch; sets?: string[] } | { replace: true }) => {
+  const path = resolve(sketch.dir, SKETCH_FILE);
+
+  withProductLock(productDirOfSketch(sketch.dir), () => {
+    const file =
+      'base' in options && existsSync(path)
+        ? mergedSketchFileOf({ sketch, base: options.base, sets: options.sets ?? [] })
+        : sketchFileOf(sketch);
+
+    writeDecisionFile(path, jsonLayoutOf(file));
+  });
+};
+
+const stubOf = (name: string) =>
+  [
+    "import { definePart, drawing, html } from '@design-system';",
+    `import styles from './${name}.css?inline';`,
+    '',
+    'type Props = Record<string, never>;',
+    '',
+    'export default definePart({',
+    "  note: '',",
+    '  states: { default: {} },',
+    "  describe: { default: '' },",
+    `  render: (props: Props) => drawing({ body: html\`<div class="${name}">${name}</div>\`, styles }),`,
+    '});',
+    '',
+  ].join('\n');
+
+const pageStubOf = (options: { name: string; madeBy?: string; widths: number[] }) => {
+  const { name, madeBy, widths } = options;
+
+  return [
+    "import { definePart, drawing, html } from '@design-system';",
+    '',
+    'type Props = Record<string, never>;',
+    '',
+    'export default definePart<Props>({',
+    "  note: '',",
+    ...(madeBy ? [`  madeBy: ['${madeBy}'],`] : []),
+    ...(widths.length > 0 ? [`  widths: [${widths.join(', ')}],`] : []),
+    '  states: { default: {} },',
+    "  describe: { default: '' },",
+    `  render: (props: Props) => drawing({ body: html\`<main>${name}</main>\` }),`,
+    '});',
+    '',
+  ].join('\n');
+};
+
+/** Where `sketch new --like` copies from: a part folder, its part name, and the `shared/` folder of the sketch it comes from. */
+export type SketchSource = { folder: string; name: string; shared: string | null };
+
+/**
+ * Reads `--like`: `<layer>/<name>` is the part the product resolves under that key, `<layer>/<name>:<variant>` that
+ * part in a variant of the open sketch on it, together with the sketch's `shared/` folder.
+ */
+export const sketchSourceOf = (options: { product: ResolvedProduct; like: string }): SketchSource | string => {
+  const { product, like } = options;
+  const [key = '', variant, ...rest] = like.split(':');
+  const parsed = parseTarget(key);
+
+  if (typeof parsed === 'string' || rest.length > 0)
+    return `--like "${like}" names no part - pass <layer>/<name> or <layer>/<name>:<variant>`;
+
+  const resolved = product.parts.find((part) => partKeyOf(part) === key);
+
+  if (variant === undefined)
+    return resolved
+      ? { folder: dirname(resolved.file), name: parsed.name, shared: null }
+      : `--like: ${product.name} has no part ${key}`;
+
+  const sketch = findSketch({ productDir: product.dir, product: product.name, sketch: parsed });
+
+  if (sketch === null) return `--like: ${key} has no open sketch`;
+  if (typeof sketch === 'string') return sketch;
+  if (!sketch.variants.includes(variant))
+    return `--like: the sketch on ${key} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
+
+  const own = resolve(variantDirOf(sketch, variant), parsed.layer, parsed.name);
+  const folder = existsSync(own) ? own : resolved ? dirname(resolved.file) : null;
+
+  if (folder === null) return `--like: variant "${variant}" of ${key} holds no ${key}`;
+
+  return { folder, name: parsed.name, shared: existsSync(sharedDirOf(sketch)) ? sharedDirOf(sketch) : null };
+};
+
+const copyPartAs = (options: { from: SketchSource; to: string; name: string }) => {
+  const { from, to, name } = options;
+
+  cpSync(from.folder, to, { recursive: true });
+
+  for (const extension of ['ts', 'css']) {
+    const old = resolve(to, `${from.name}.${extension}`);
+
+    if (from.name !== name && existsSync(old)) renameSync(old, resolve(to, `${name}.${extension}`));
+  }
+
+  const file = resolve(to, `${name}.ts`);
+
+  if (!existsSync(file)) return;
+
+  const source = readFileSync(file, 'utf8').split(`./${from.name}.css`).join(`./${name}.css`);
+
+  writeDesignFile(file, withMadeBy(source, []) ?? source);
+};
+
+/** Why the sketch cannot open with `merge` on its targets, or `null`: a base part merges into the base unless `override`. */
+const mergeProblemOf = (options: { product: ResolvedProduct; targets: string[]; merge?: SketchMerge }) => {
+  const { product, targets, merge } = options;
+  const originOf = (key: string) => product.parts.find((part) => partKeyOf(part) === key)?.origin;
+  const overridden = targets.filter((key) => originOf(key) === 'overridden');
+  const fromBase = targets.filter((key) => originOf(key) === 'base' || originOf(key) === 'overridden');
+  const baseName = product.base?.name ?? 'base';
+
+  if (merge === 'into-base' && overridden.length === 0)
+    return `--into-base: ${product.name} has no override of ${targets.join(', ')}`;
+  if (merge === undefined && overridden.length > 0)
+    return `${product.name} overrides the ${baseName} base part ${overridden.join(', ')} - pass --override to sketch the product copy, or --into-base to start from it and merge into the base, which removes the copy`;
+  if (merge !== 'override' && fromBase.length > 0 && product.base && isBuiltInBase(product.config.base ?? ''))
+    return `${fromBase.join(', ')} comes from the built-in base ${product.config.base}, which a sketch cannot merge into - pass --override`;
+
+  return null;
+};
+
+const variantInfoOf = (options: { round: string; author?: string; note?: string }): SketchVariantInfo => ({
+  ...(options.author ? { authors: [options.author] } : {}),
+  round: options.round,
+  ...(options.note?.trim() ? { note: options.note.trim() } : {}),
+});
+
+const seedTarget = (options: {
+  product: ResolvedProduct;
+  dir: string;
+  variant: string;
+  target: SketchTarget;
+  author?: string;
+  like?: SketchSource;
+}) => {
+  const { product, dir, variant, target, author, like } = options;
+  const folder = resolve(dir, variant, target.layer, target.name);
+  const existing = product.parts.find((part) => partKeyOf(part) === partKeyOf(target));
+  const skeleton = foundationSkeletonOf(partKeyOf(target));
+
+  mkdirSync(folder, { recursive: true });
+
+  const seeded = (from: string) => {
+    const sketchSharedDir = resolve(dir, SHARED_FOLDER);
+
+    rebaseOutsideImports({ dir: folder, from, skip: SHARED_FOLDER });
+
+    if (existsSync(resolve(folder, SHARED_FOLDER)))
+      rebaseOutsideImports({
+        dir: resolve(folder, SHARED_FOLDER),
+        from: resolve(from, SHARED_FOLDER),
+        settledIn: sketchSharedDir,
+      });
+
+    liftShared({ partDir: folder, sketchSharedDir });
+  };
+
+  if (like) {
+    copyPartAs({ from: like, to: folder, name: target.name });
+    seeded(like.folder);
+  } else if (existing) {
+    cpSync(resolve(existing.file, '..'), folder, { recursive: true });
+    seeded(resolve(existing.file, '..'));
+  } else if (target.layer === 'pages') {
+    const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);
+    writeDesignFile(resolve(folder, `${target.name}.ts`), pageStubOf({ name: target.name, madeBy: author, widths }));
+  } else if (skeleton) {
+    Object.entries(skeleton.files).forEach(([file, source]) => writeDesignFile(resolve(folder, file), source));
+    Object.entries(skeleton.assets).forEach(([file, source]) =>
+      writeDesignFile(resolve(dir, variant, ASSETS_FOLDER, file), source),
+    );
+  } else {
+    writeDesignFile(resolve(folder, `${target.name}.ts`), stubOf(target.name));
+    writeDesignFile(resolve(folder, `${target.name}.css`), '');
+  }
+};
+
+const alreadySketched = (target: string) =>
+  `${target} already has an open sketch - merge or discard it first, or extract the region into a part and sketch that`;
+
+/**
+ * Opens a sketch on a target, in progress, with one folder per variant, all in round 1 and with `author` as their
+ * author. Each variant starts from `like` when given - renamed to the target, without its `madeBy`, and with its
+ * sketch's `shared/` folder - else from the part the product resolves for the target, or from a foundation skeleton or an empty part when the
+ * target is new. A part's own `shared/` folder becomes the sketch's, imported as `@shared/`. A target holds one open
+ * sketch at a time, or one per sketch name when `sketch.sketch` names it. Each of `others` joins every variant the same way, as a further target; `like` takes one target only.
+ * A target the product overrides in its base needs `merge`: `override` or `into-base`.
+ */
+export const createSketch = (options: {
+  product: ResolvedProduct;
+  sketch: SketchTarget;
+  others?: SketchTarget[];
+  variants: string[];
+  roundTitle?: string;
+  roundNote?: string;
+  roundAsks?: string[];
+  author?: string;
+  like?: SketchSource;
+  variantNotes?: Map<string, string>;
+  merge?: SketchMerge;
+}): Sketch | string => {
+  const { product, sketch, variants, roundTitle, roundNote, author, like, variantNotes, merge } = options;
+  const dir = sketchDirOf({ productDir: product.dir, sketch });
+  const all = [sketch, ...(options.others ?? []).map((other) => ({ ...other, sketch: sketch.sketch }))];
+  const targets = all.map(partKeyOf);
+
+  if (new Set(targets).size !== targets.length) return 'name each target once';
+
+  const scopeProblem = scopeProblemOf(targets);
+
+  if (scopeProblem) return scopeProblem;
+  if (like && all.length > 1) return '--like starts one target - open a sketch with several targets without it';
+
+  const taken = all.find(
+    (target) => findSketch({ productDir: product.dir, product: product.name, sketch: target }) !== null,
+  );
+
+  if (isOpenSketchDir(dir) || taken) return alreadySketched(sketchIdOf(taken ?? sketch));
+  if (variants.length === 0) return 'name at least one variant';
+
+  const mergeProblem = mergeProblemOf({ product, targets, merge });
+
+  if (mergeProblem) return mergeProblem;
+
+  const invalid = variants.find((variant) => !isVariantName(variant));
+
+  if (invalid !== undefined)
+    return `"${invalid}" is no variant name - use lower case letters, digits and dashes, and not "shared"`;
+  if (new Set(variants).size !== variants.length) return 'each variant name must be unique';
+
+  const clash = like
+    ? undefined
+    : sharedClashOf(all.map((target) => product.parts.find((part) => partKeyOf(part) === partKeyOf(target))));
+
+  if (clash) return clash;
+
+  noteWrite(dir);
+
+  for (const variant of variants) {
+    mkdirSync(resolve(dir, variant, ASSETS_FOLDER), { recursive: true });
+
+    for (const target of all) seedTarget({ product, dir, variant, target, author, like });
+  }
+
+  if (like?.shared) cpSync(like.shared, resolve(dir, SHARED_FOLDER), { recursive: true });
+
+  const sharedBase = like ? {} : sharedBaseOf(product, targets);
+  const created: Sketch = {
+    target: sketchIdOf(sketch),
+    targets,
+    status: 'in progress',
+    createdAt: new Date().toISOString(),
+    createdBy: createdByOf(),
+    baseline: baselineOf(product),
+    ...baselineTreeFieldOf({ product, sketchDir: dir }),
+    ...(Object.keys(sharedBase).length > 0 ? { sharedBase } : {}),
+    rounds: [firstRoundOf({ title: roundTitle, note: roundNote, asks: options.roundAsks })],
+    variantInfo: Object.fromEntries(
+      variants.map((variant) => [
+        variant,
+        variantInfoOf({ round: FIRST_ROUND, author, note: variantNotes?.get(variant) }),
+      ]),
+    ),
+    product: product.name,
+    layer: sketch.layer,
+    name: sketch.name,
+    dir,
+    variants: [...variants].sort(),
+    ...(merge ? { merge } : {}),
+  };
+
+  writeSketchFile(created, { replace: true });
+
+  return created;
+};
+
+/**
+ * Adds `part` as a further target of an open sketch, seeding it into every variant like `createSketch` does. The part
+ * must not be a target of an open sketch already, and follows the sketch's merge mode.
+ */
+export const addTarget = (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  part: SketchTarget;
+  author?: string;
+}): Sketch | string => {
+  const { product, sketch, part, author } = options;
+  const key = partKeyOf(part);
+
+  if (sketch.targets.includes(key)) return `${sketch.target} targets ${key} already`;
+
+  const scopeProblem = scopeProblemOf([...sketch.targets, key]);
+
+  if (scopeProblem) return scopeProblem;
+
+  const layerProblem = layerProblemOf({ sketch, part });
+
+  if (layerProblem) return layerProblem;
+
+  const taken = findSketch({
+    productDir: product.dir,
+    product: product.name,
+    sketch: { ...part, sketch: parseSketchName(sketch.target) },
+  });
+
+  if (taken !== null) return alreadySketched(key);
+
+  const mergeProblem = mergeProblemOf({ product, targets: [key], merge: sketch.merge });
+
+  if (mergeProblem) return mergeProblem;
+
+  const clash = sharedClashOf([product.parts.find((existing) => partKeyOf(existing) === key)]);
+
+  if (clash) return clash;
+
+  for (const variant of sketch.variants) seedTarget({ product, dir: sketch.dir, variant, target: part, author });
+
+  const added: Sketch = { ...sketch, targets: [...sketch.targets, key] };
+
+  writeSketchFile(added, { base: sketch });
+
+  return added;
+};
+
+const MAX_SKETCH_TARGETS = 4;
+
+/**
+ * Why `targets` do not fit one sketch question, or `undefined`: a foundation never shares a sketch with a
+ * part of another layer, and a sketch holds at most `MAX_SKETCH_TARGETS` parts.
+ */
+export const scopeProblemOf = (targets: string[]) => {
+  const [first = ''] = targets;
+  const onePerPart = 'open one sketch per part (`sketch new <layer>/<name>` for each)';
+  const foundation = targets.find((key) => key.startsWith('foundations/'));
+  const other = targets.find((key) => !key.startsWith('foundations/'));
+
+  if (foundation && other) {
+    return `${first} cannot target ${foundation} and ${other} together (SKETCH-SCOPE): a foundation is a question of its own - ${onePerPart}`;
+  }
+
+  if (targets.length > MAX_SKETCH_TARGETS) {
+    return `${first} cannot target ${targets.length} parts (SKETCH-SCOPE): a sketch answers one question with at most ${MAX_SKETCH_TARGETS} parts - ${onePerPart}`;
+  }
+
+  return undefined;
+};
+
+const layerProblemOf = (options: { sketch: Sketch; part: SketchTarget }) => {
+  const { sketch, part } = options;
+  const layers = sketch.targets.map((key) => key.split('/')[0] ?? '').filter(isLayer);
+
+  if (
+    !isLayer(part.layer) ||
+    layers.some((layer) => mayUse({ from: layer, to: part.layer }) || mayUse({ from: part.layer, to: layer }))
+  ) {
+    return undefined;
+  }
+
+  const [first = part.layer] = layers;
+
+  return `${sketch.target} cannot target ${partKeyOf(part)} (UPWARD-DEPENDENCY): ${first} may use ${LAYER_USES[first as Layer].join(', ')}, not ${part.layer}`;
+};
+
+/**
+ * Removes `part` from the targets of an open sketch and deletes its folder in every variant. The first target
+ * cannot be removed.
+ */
+export const removeTarget = (options: { sketch: Sketch; part: SketchTarget }): Sketch | string => {
+  const { sketch, part } = options;
+  const key = partKeyOf(part);
+
+  if (!sketch.targets.includes(key)) return `${sketch.target} does not target ${key}`;
+  if (sketch.targets[0] === key) return `${key} is the main target of ${sketch.target} - discard the sketch instead`;
+
+  for (const variant of sketch.variants)
+    rmSync(resolve(sketch.dir, variant, part.layer, part.name), { recursive: true, force: true });
+
+  const removed: Sketch = { ...sketch, targets: sketch.targets.filter((target) => target !== key) };
+
+  writeSketchFile(removed, { base: sketch });
+
+  return removed;
+};
+
+const reportSlugOf = (sketch: Sketch) => `sketches/${sketch.product}/${sketchFolderOf(sketch)}`;
+
+/** The sketch with `author` among the authors of `variant`; the same sketch when it is there already. */
+export const withAuthor = (options: { sketch: Sketch; variant: string; author: string }): Sketch => {
+  const { sketch, variant, author } = options;
+  const authors = authorsOf(sketch, variant);
+
+  return authors.includes(author)
+    ? sketch
+    : {
+        ...sketch,
+        variantInfo: {
+          ...sketch.variantInfo,
+          [variant]: { ...sketch.variantInfo?.[variant], authors: [...authors, author] },
+        },
+      };
+};
+
+/** Where the live report of the agent on a sketch is kept, next to the call statuses. */
+export const sketchReportPath = (options: { checkout: string; sketch: Sketch }) =>
+  statusPath({ checkout: options.checkout, slug: reportSlugOf(options.sketch) });
+
+const REPORT_LIMIT = 400;
+
+type SketchReportFile = { state: 'drawing'; updatedAt: string; message: string; variant: string; author: string };
+
+/**
+ * Records what an agent builds on a variant of a sketch right now ("phone, outline state"), for Studio to show,
+ * and adds the agent's model id to the variant's authors in `sketch.json` unless it is there already. A ready sketch
+ * refuses a report unless `reopen` moves it back to in progress; a decided one only takes a report on its picked
+ * variant, and keeps the pick.
+ */
+export const reportSketch = (options: {
+  checkout: string;
+  sketch: Sketch;
+  variant: string;
+  author: string;
+  message: string;
+  reopen?: boolean;
+}): Sketch | string => {
+  const { checkout, sketch, variant, author, message, reopen } = options;
+
+  if (!sketch.variants.includes(variant))
+    return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ') || 'none'}`;
+  if (author.trim() === '') return 'a report needs --by <model id>';
+  const portOfPick = sketch.decision?.kind === 'pick' && sketch.decision.variant === variant;
+
+  if (sketch.status === 'ready' && sketch.decision && !portOfPick)
+    return `${sketch.target} is decided (${sketch.decision.kind}) - a report would reopen it, so nothing was recorded`;
+  if (sketch.status === 'ready' && !reopen)
+    return `${sketch.target} is ready - a report moves it back to in progress, so nothing was recorded; add --reopen if the user asked for a change`;
+
+  const open: Sketch = sketch.status === 'ready' ? { ...sketch, status: 'in progress' } : sketch;
+  const reported = withAuthor({ sketch: open, variant, author });
+
+  if (reported !== sketch) writeSketchFile(reported, { base: sketch });
+
+  const path = sketchReportPath({ checkout, sketch });
+  const report: SketchReportFile = {
+    state: 'drawing',
+    updatedAt: new Date().toISOString(),
+    message: message.slice(0, REPORT_LIMIT),
+    variant,
+    author,
+  };
+
+  mkdirSync(dirname(path), { recursive: true });
+  writeDesignFile(path, JSON.stringify(report));
+
+  return reported;
+};
+
+/** The live report of an agent on a sketch: its message, the variant and the model id it named. `variant` and `author` are `null` in a report written before they were recorded. */
+export type SketchReport = { message: string; updatedAt: string; variant: string | null; author: string | null };
+
+/** The live report of the agent on a sketch, or `null` when none is running. */
+export const readSketchReport = (options: { checkout: string; sketch: Sketch }): SketchReport | null => {
+  const path = sketchReportPath(options);
+
+  if (!existsSync(path)) return null;
+
+  try {
+    const { message, updatedAt, variant, author } = JSON.parse(readFileSync(path, 'utf8')) as Partial<
+      Record<keyof SketchReportFile, unknown>
+    >;
+
+    return {
+      message: typeof message === 'string' ? message : '',
+      updatedAt: typeof updatedAt === 'string' ? updatedAt : '',
+      variant: typeof variant === 'string' && options.sketch.variants.includes(variant) ? variant : null,
+      author: typeof author === 'string' && author !== '' ? author : null,
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const clearSketchReport = (options: { checkout: string; sketch: Sketch }) => {
+  noteWrite(sketchReportPath(options));
+  rmSync(sketchReportPath(options), { force: true });
+};
+
+/** Ends the live report on a sketch when it belongs to `variant`, and says whether there was one to end. */
+export const finishSketchReport = (options: { checkout: string; sketch: Sketch; variant: string }) => {
+  const report = readSketchReport(options);
+
+  if (!report || (report.variant !== null && report.variant !== options.variant)) return false;
+
+  clearSketchReport(options);
+
+  return true;
+};
+
+/**
+ * Marks an in-progress sketch ready for the user to pick, ends its live report and its `portAfterMerge` mark, and
+ * records `author` on each variant that has no author yet.
+ */
+export const markSketchReady = (options: { checkout: string; sketch: Sketch; author?: string }): Sketch | string => {
+  const { checkout, sketch, author } = options;
+
+  if (sketch.status !== 'in progress') return `${sketch.target} is ${sketch.status}, not in progress`;
+
+  const held = heldProblemOf(sketch);
+
+  if (held !== null) return held;
+  if (sketch.variants.length === 0) return `${sketch.target} holds no variant`;
+
+  const { portAfterMerge: _ported, ...unmarked } = sketch;
+  const authored = author
+    ? sketch.variants
+        .filter((variant) => authorsOf(sketch, variant).length === 0)
+        .reduce((current, variant) => withAuthor({ sketch: current, variant, author }), unmarked)
+    : unmarked;
+  const ready: Sketch = { ...authored, status: 'ready', readyContent: readyContentOf(sketch) };
+
+  writeSketchFile(ready, { base: sketch });
+  clearSketchReport({ checkout, sketch });
+
+  return ready;
+};
+
+const filesIn = (dir: string) =>
+  existsSync(dir)
+    ? (readdirSync(dir, { recursive: true }) as string[])
+        .map((path) => resolve(dir, path))
+        .filter((file) => statSync(file).isFile())
+    : [];
+
+/** The content hash of every file a variant draws from: its folder and the `shared/` folder of the sketch. */
+export const variantContentHashOf = (sketch: Sketch, variant: string) => {
+  const hash = createHash('sha256');
+  const generated = resolve(variantDirOf(sketch, variant), GENERATED_FILE);
+  const files = [...filesIn(variantDirOf(sketch, variant)), ...filesIn(sharedDirOf(sketch))]
+    .filter((file) => file !== generated)
+    .sort();
+
+  for (const file of files)
+    hash
+      .update(`${relative(sketch.dir, file)}\0`)
+      .update(readFileSync(file))
+      .update('\0');
+
+  return hash.digest('hex').slice(0, 16);
+};
+
+const marksOf = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) => {
+  const { subParts = [], notRebuilds = [] } = sketch.variantInfo[variant] ?? {};
+
+  return subParts.length + notRebuilds.length === 0 ? null : JSON.stringify({ subParts, notRebuilds });
+};
+
+/** The hash `sketch ready` records for a variant: its content hash, and its sub-part marks when it has any. */
+const readyHashOf = (sketch: Sketch, variant: string) => {
+  const content = variantContentHashOf(sketch, variant);
+  const marks = marksOf(sketch, variant);
+
+  return marks === null ? content : createHash('sha256').update(`${content}\0${marks}`).digest('hex').slice(0, 16);
+};
+
+const readyContentOf = (sketch: Sketch) =>
+  Object.fromEntries(sketch.variants.map((variant) => [variant, readyHashOf(sketch, variant)]));
+
+/** The variants of a ready sketch, not discarded, that changed since `sketch ready` judged them; reads only. */
+export const changedSinceReadyOf = (sketch: Sketch) => {
+  if (sketch.status !== 'ready' || sketch.decision?.kind === 'discard' || !sketch.readyContent) return [];
+
+  const judged = sketch.readyContent;
+
+  return sketch.variants.filter((variant) => judged[variant] !== readyHashOf(sketch, variant));
+};
+
+/**
+ * Runs `rewrite`, which may only reformat the files of `sketch`, and keeps the ready mark of each variant that was
+ * unchanged since `sketch ready` before it ran; a variant that had changed stays changed.
+ */
+export const keepReadyThrough = (sketch: Sketch, rewrite: () => void) => {
+  const changed = changedSinceReadyOf(sketch);
+  const kept =
+    sketch.status === 'ready' && sketch.readyContent ? sketch.variants.filter((v) => !changed.includes(v)) : [];
+
+  rewrite();
+
+  if (kept.length === 0) return;
+
+  const rehashed = Object.fromEntries(kept.map((variant) => [variant, readyHashOf(sketch, variant)]));
+
+  if (kept.every((variant) => rehashed[variant] === sketch.readyContent?.[variant])) return;
+
+  writeSketchFile({ ...sketch, readyContent: { ...sketch.readyContent, ...rehashed } }, { base: sketch });
+};
+
+/** Why the picked variant of `sketch` cannot merge as judged, its files changed since `sketch ready`; `null` when unchanged or unrecorded. */
+export const staleReadyRefusalOf = (sketch: Sketch) => {
+  const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : null;
+  const judged = variant ? sketch.readyContent?.[variant] : undefined;
+
+  if (!variant || !judged) return null;
+
+  const now = readyHashOf(sketch, variant);
+
+  return now === judged
+    ? null
+    : `${sketch.target} variant ${variant} changed since sketch ready judged it (readyContent ${judged}, now ${now}) - run \`et design sketch ready ${sketch.target}\` to judge it again`;
+};
+
+const readyCommitOf = (sketch: Sketch) => {
+  const recorded = Object.values(sketch.readyContent ?? {})[0];
+
+  if (!recorded) return null;
+
+  const log = gitStatusOf(['log', '-1', '--format=%H', '-S', recorded, '--', SKETCH_FILE], { cwd: sketch.dir });
+
+  return log.status === 0 && log.stdout.trim() !== '' ? log.stdout.trim() : null;
+};
+
+const marksEqualCommit = (sketch: Sketch, commit: string) => {
+  const shown = gitStatusOf(['show', `${commit}:./${SKETCH_FILE}`], { cwd: sketch.dir });
+
+  if (shown.status !== 0) return false;
+
+  try {
+    const then = JSON.parse(shown.stdout) as Pick<Sketch, 'variantInfo'>;
+
+    return sketch.variants.every(
+      (variant) => marksOf({ variantInfo: then.variantInfo ?? {} }, variant) === marksOf(sketch, variant),
+    );
+  } catch {
+    return false;
+  }
+};
+
+const equalsReadyCommit = (sketch: Sketch) => {
+  const commit = readyCommitOf(sketch);
+
+  if (!commit) return false;
+
+  const paths = [...sketch.variants, SHARED_FOLDER];
+  const diff = gitStatusOf(['diff', '--quiet', commit, '--', ...paths], { cwd: sketch.dir });
+  const untracked = gitStatusOf(['ls-files', '--others', '--exclude-standard', '--', ...paths], { cwd: sketch.dir });
+
+  return diff.status === 0 && untracked.status === 0 && untracked.stdout === '' && marksEqualCommit(sketch, commit);
+};
+
+/**
+ * Moves a ready sketch back to in progress when a variant changed since `sketch ready` judged it, and answers the
+ * changed variants, or `null` when nothing changed or the sketch recorded no content. A picked sketch moves only with
+ * `reopen`, and keeps its pick; without it the answer is the refusal. A sketch whose hashes differ while its variant
+ * and `shared/` files equal the commit that recorded them keeps ready with fresh hashes and answers no changed variant.
+ */
+export const reopenChangedReady = (
+  sketch: Sketch,
+  options: { reopen?: boolean } = {},
+): { sketch: Sketch; changed: string[] } | string | null => {
+  const changed = changedSinceReadyOf(sketch);
+
+  if (changed.length === 0) return null;
+
+  if (equalsReadyCommit(sketch)) {
+    const rehashed: Sketch = { ...sketch, readyContent: readyContentOf(sketch) };
+
+    writeSketchFile(rehashed, { base: sketch });
+
+    return { sketch: rehashed, changed: [] };
+  }
+
+  if (sketch.decision?.kind === 'pick' && !options.reopen)
+    return `${sketch.target} is picked (variant ${sketch.decision.variant}) and ${changed.join(', ')} changed since sketch ready judged it - nothing was recorded; add --reopen if the user asked for the change, else restore the files`;
+
+  const { readyContent: _readyContent, mergeHold: _mergeHold, ...rest } = sketch;
+  const reopened: Sketch = { ...rest, status: 'in progress' };
+
+  writeSketchFile(reopened, { base: sketch });
+
+  return { sketch: reopened, changed };
+};
+
+const contentsOf = (sketch: Sketch) =>
+  Object.fromEntries(sketch.variants.map((variant) => [variant, variantContentHashOf(sketch, variant)]));
+
+/** The sketch with the forecast of `sketch ready` for its current variants, `merges` or the `reason` it would not. */
+export const forecastedSketchOf = (sketch: Sketch, forecast: true | string): Sketch => ({
+  ...sketch,
+  autoMergeForecast: {
+    merges: forecast === true,
+    ...(forecast === true ? {} : { reason: forecast }),
+    contents: contentsOf(sketch),
+    at: new Date().toISOString(),
+  },
+});
+
+/** The recorded forecast while no variant changed since it was made, else `null`. */
+export const currentAutoMergeForecastOf = (sketch: Sketch): SketchAutoMergeForecast | null => {
+  const { autoMergeForecast: forecast } = sketch;
+
+  return forecast && sameJson(forecast.contents, contentsOf(sketch)) ? forecast : null;
+};
+
+/** Why a held sketch cannot be ready, or `null` when it holds nothing. */
+export const heldProblemOf = (sketch: Pick<Sketch, 'target' | 'hold'>) =>
+  sketch.hold
+    ? `${sketch.target} is held until: ${sketch.hold.until} - make the change, then run \`et design sketch release ${sketch.target} --by <name>\``
+    : null;
+
+/**
+ * Holds a sketch until a change that waits on something is made: it goes back to in progress, which drops a pick
+ * and takes it out of the merge queue, and `sketch ready` refuses until the hold is released.
+ */
+export const holdSketch = (options: {
+  sketch: Sketch;
+  until: string;
+  by: string;
+  untilSketch?: SketchHold['untilSketch'];
+  now?: Date;
+}): Sketch | string => {
+  const { sketch, by, untilSketch, now = new Date() } = options;
+  const until = options.until.trim();
+
+  if (until === '') return 'a hold needs --until <what the change waits on>';
+
+  const { decision: _decision, ...undecided } = sketch;
+  const held: Sketch = {
+    ...undecided,
+    status: 'in progress',
+    hold: { until, by, heldAt: now.toISOString(), ...(untilSketch ? { untilSketch } : {}) },
+  };
+
+  writeSketchFile(held, { base: sketch });
+
+  return held;
+};
+
+/** Removes the hold on a sketch, so it can be marked ready again. */
+export const releaseSketch = (options: { sketch: Sketch }): Sketch | string => {
+  const { sketch } = options;
+
+  if (!sketch.hold) return `${sketch.target} is not held`;
+
+  const { hold: _hold, ...released } = sketch;
+
+  writeSketchFile(released, { base: sketch });
+
+  return released;
+};
+
+/** A verdict on one variant: reject it, set the reason of its rejection, or reopen it. */
+export type SketchVariantVerdict =
+  | { kind: 'reject'; variant: string; reason?: string; by: SketchVerdictBy }
+  | { kind: 'reason'; variant: string; reason: string; by: SketchVerdictBy }
+  | { kind: 'reopen'; variant: string; reason?: string; by: SketchVerdictBy };
+
+export type SketchDecisionInput =
+  | ({ kind: 'pick'; variant: string; comment?: string; agentPick?: true } & WriteOrigin)
+  | ({ kind: 'discard'; comment?: string } & WriteOrigin)
+  | SketchVariantVerdict;
+
+const withVerdict = (sketch: Sketch, verdict: SketchVariantVerdict): Sketch | string => {
+  const { variant, by } = verdict;
+  const reason = verdict.reason?.trim() || undefined;
+  const decidedAt = new Date().toISOString();
+  const history = sketch.rejections?.[variant] ?? [];
+  const current = rejectionOf(sketch, variant);
+
+  if (!sketch.variants.includes(variant))
+    return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
+
+  let next: SketchRejection[];
+
+  if (verdict.kind === 'reject') {
+    if (current) return `${sketch.target} variant ${variant} is already rejected - set its reason instead`;
+
+    next = [...history, { by, decidedAt, ...(reason ? { reason, reasonBy: by } : {}) }];
+  } else if (!current) {
+    return `${sketch.target} variant ${variant} is not rejected`;
+  } else if (verdict.kind === 'reason') {
+    if (!reason) return 'a reason needs text';
+
+    next = [...history.slice(0, -1), { ...current, reason, reasonBy: by }];
+  } else {
+    next = [...history.slice(0, -1), { ...current, reopened: { by, decidedAt, ...(reason ? { reason } : {}) } }];
+  }
+
+  const unpicked = verdict.kind === 'reject' && sketch.decision?.kind === 'pick' && sketch.decision.variant === variant;
+  const { decision, ...rest } = sketch;
+
+  return {
+    ...rest,
+    ...(decision && !unpicked ? { decision } : {}),
+    rejections: { ...sketch.rejections, [variant]: next },
+  };
+};
+
+/**
+ * Takes a variant out of the open set as `withdrawn` by the agent `by`, with `reason`; refused when `by` did not draw
+ * the variant, it is rejected already or it is the picked variant. Writes sketch.json.
+ */
+export const withdrawVariant = (options: {
+  sketch: Sketch;
+  variant: string;
+  by: string;
+  reason: string;
+}): Sketch | string => {
+  const { sketch, variant, by, reason } = options;
+
+  if (!sketch.variants.includes(variant))
+    return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
+  if (rejectionOf(sketch, variant)) return `${sketch.target} variant ${variant} is rejected or withdrawn already`;
+  if (sketch.decision?.kind === 'pick' && sketch.decision.variant === variant)
+    return `${sketch.target} variant ${variant} is the picked variant - it cannot be withdrawn`;
+  if (!authorsOf(sketch, variant).includes(by))
+    return `${sketch.target} variant ${variant} was not drawn by ${by}${drawerNote(sketch, variant)} - only its author withdraws it`;
+
+  const withdrawn = withVerdict(sketch, { kind: 'reject', variant, reason, by: 'agent' });
+
+  if (typeof withdrawn === 'string') return withdrawn;
+
+  const history = withdrawn.rejections?.[variant] ?? [];
+  const last = history[history.length - 1] as SketchRejection;
+  const marked: Sketch = {
+    ...withdrawn,
+    rejections: {
+      ...withdrawn.rejections,
+      [variant]: [...history.slice(0, -1), { ...last, status: 'withdrawn', withdrawnBy: by }],
+    },
+  };
+
+  writeSketchFile(marked, { base: sketch });
+
+  return marked;
+};
+
+const drawerNote = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) => {
+  const authors = authorsOf(sketch, variant);
+
+  return authors.length > 0 ? ` (drawn by ${authors.join(', ')})` : '';
+};
+
+/**
+ * Records the user's pick or discard on a sketch, the decision Studio writes and the agent acts on, or a verdict on
+ * one variant. A rejected variant cannot be picked; rejecting the picked variant clears the pick.
+ */
+export const decideSketch = (options: { sketch: Sketch; decision: SketchDecisionInput }): Sketch | string => {
+  const { sketch, decision } = options;
+
+  if (decision.kind === 'reject' || decision.kind === 'reason' || decision.kind === 'reopen') {
+    const judged = withVerdict(sketch, decision);
+
+    if (typeof judged !== 'string') writeSketchFile(judged, { base: sketch });
+
+    return judged;
+  }
+
+  if (!hasActor(decision)) return `${sketch.target}: a ${decision.kind} needs the actor that writes it (by)`;
+
+  if (decision.kind === 'pick') {
+    if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - a variant is picked once it is ready`;
+    if (!sketch.variants.includes(decision.variant))
+      return `${sketch.target} has no variant "${decision.variant}" - it has ${sketch.variants.join(', ')}`;
+
+    const rejected = rejectedProblemOf(sketch, decision.variant);
+
+    if (rejected) return rejected;
+  }
+
+  const decided: Sketch = { ...sketch, decision: { ...decision, decidedAt: new Date().toISOString() } };
+
+  writeSketchFile(decided, { base: sketch, sets: ['decision'] });
+
+  return decided;
+};
+
+/**
+ * The pick an agent recorded for a merge of `sketch` that never reached git: no commit since the pick merges its variant
+ * into `product`; `null` for a designer's pick, a pick without an actor, or no pick.
+ */
+export const orphanedPickOf = (sketch: Sketch, product: string) => {
+  const decision = sketch.decision;
+
+  if (decision?.kind !== 'pick' || !decision.by || decision.by === 'designer') return null;
+
+  const subject = `Merge ${sketch.target} variant ${decision.variant} into ${product}`;
+  const log = gitStatusOf(
+    [
+      'log',
+      '-1',
+      '--format=%H',
+      '--fixed-strings',
+      `--grep=${subject}`,
+      `--since=${decision.decidedAt.replace(/\.\d+Z$/, 'Z')}`,
+    ],
+    { cwd: sketch.dir },
+  );
+
+  return log.status === 0 && log.stdout.trim() !== '' ? null : decision;
+};
+
+const rehashedReadyOf = (sketch: Sketch, variants: true | readonly string[]) =>
+  variants === true
+    ? readyContentOf(sketch)
+    : {
+        ...sketch.readyContent,
+        ...Object.fromEntries(variants.map((variant) => [variant, readyHashOf(sketch, variant)])),
+      };
+
+/**
+ * Records the product as it is now as the sketch's baseline, once the agent has brought each variant
+ * up to date with the parts that changed in the product since the sketch was created. Drops a pick whose merge never
+ * reached git (`orphanedPickOf`). With `rehashReady`, a ready sketch keeps its ready mark with fresh hashes, of every
+ * variant or of the variants it names.
+ */
+export const rebaseSketch = (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  rehashReady?: boolean | readonly string[];
+}): Sketch => {
+  const { portAfterMerge: _ported, ...ported } = options.sketch;
+  const { decision: _decision, ...undecided } = ported;
+  const sketch = orphanedPickOf(options.sketch, options.product.name) ? undecided : ported;
+  const { baselineTree: _tree, ...untreed } = sketch;
+  const rebased: Sketch = {
+    ...untreed,
+    baseline: baselineOf(options.product),
+    ...baselineTreeFieldOf({ product: options.product, sketchDir: options.sketch.dir }),
+    ...(sketch.sharedBase ? { sharedBase: sharedBaseNowOf(options.product, sketch.sharedBase) } : {}),
+    ...(options.rehashReady && sketch.readyContent
+      ? { readyContent: rehashedReadyOf(sketch, options.rehashReady) }
+      : {}),
+  };
+
+  writeSketchFile(rebased, { base: options.sketch });
+
+  return rebased;
+};
+
+/**
+ * Copies variant `from` into a new variant by `author`, sets the sketch back to in progress and clears a pick. A discard decision is refused.
+ * The new variant joins the running round, or starts the round `round` names, with `note` as its note, after writing
+ * `lostNote` into the running round's `lost`.
+ */
+export const addVariant = (options: {
+  sketch: Sketch;
+  variant: string;
+  from: string;
+  round?: { title: string; lostNote: string; note?: string; asks?: string[] };
+  author?: string;
+}): Sketch | string => {
+  const { sketch, variant, from, round, author } = options;
+
+  if (sketch.decision?.kind === 'discard')
+    return `The user decided to discard ${sketch.target}. The user must pick a variant first to go on.`;
+  if (!sketch.variants.includes(from))
+    return `${sketch.target} has no variant "${from}" - it has ${sketch.variants.join(', ') || 'none'}`;
+  if (!isVariantName(variant))
+    return `"${variant}" is no variant name - use lower case letters, digits and dashes, and not "shared"`;
+  if (sketch.variants.includes(variant)) return `${sketch.target} already has a variant "${variant}"`;
+  if (round && round.lostNote.trim() === '')
+    return 'a new round needs a note on the running round: what it showed and why its variants lost';
+
+  const running = runningRoundOf(sketch);
+  const rounds = round
+    ? [
+        ...sketch.rounds.map((entry) => (entry === running ? { ...entry, lost: round.lostNote.trim() } : entry)),
+        withStates(
+          { key: nextRoundKeyOf(sketch.rounds), title: round.title.trim(), note: round.note?.trim() ?? '' },
+          { asks: round.asks },
+        ),
+      ]
+    : sketch.rounds;
+
+  cpSync(variantDirOf(sketch, from), variantDirOf(sketch, variant), { recursive: true, verbatimSymlinks: true });
+  mkdirSync(resolve(variantDirOf(sketch, variant), ASSETS_FOLDER), { recursive: true });
+
+  const { decision: _decision, ...undecided } = sketch;
+  const source = sketch.variantInfo[from];
+  const added: Sketch = {
+    ...undecided,
+    status: 'in progress',
+    rounds,
+    variantInfo: {
+      ...sketch.variantInfo,
+      [variant]: {
+        ...variantInfoOf({ round: runningRoundOf({ rounds }).key, author }),
+        ...(source?.subParts?.length ? { subParts: source.subParts } : {}),
+        ...(source?.notRebuilds?.length ? { notRebuilds: source.notRebuilds } : {}),
+      },
+    },
+    variants: [...sketch.variants, variant].sort(),
+  };
+
+  writeSketchFile(added, { base: sketch });
+
+  return added;
+};
+
+export const editVariantNote = (options: { sketch: Sketch; variant: string; note: string }): Sketch | string => {
+  const { sketch, variant, note } = options;
+
+  if (!sketch.variants.includes(variant))
+    return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
+
+  const edited: Sketch = {
+    ...sketch,
+    variantInfo: { ...sketch.variantInfo, [variant]: { ...sketch.variantInfo[variant], note: note.trim() } },
+  };
+
+  writeSketchFile(edited, { base: sketch });
+
+  return edited;
+};
+
+/** Changes the title, the note, the dropped and the asked states of the round with key `round`; a field left out stays as it is. */
+export const editRound = (options: {
+  sketch: Sketch;
+  round: string;
+  title?: string;
+  note?: string;
+  drops?: string[];
+  asks?: string[];
+}): Sketch | string => {
+  const { sketch, round, title, note, drops, asks } = options;
+
+  if (!sketch.rounds.some((entry) => entry.key === round))
+    return `${sketch.target} has no round "${round}" - it has ${sketch.rounds.map((entry) => entry.key).join(', ')}`;
+  if (title === undefined && note === undefined && drops === undefined && asks === undefined)
+    return 'pass --title <text>, --note <text>, --drops <state,state> or --asks <state,state>';
+  if (title !== undefined && title.trim() === '') return 'a round needs a title';
+
+  const edited: Sketch = {
+    ...sketch,
+    rounds: sketch.rounds.map((entry) =>
+      entry.key === round
+        ? withStates(
+            { ...entry, title: title?.trim() ?? entry.title, note: note?.trim() ?? entry.note },
+            { drops: drops ?? entry.drops, asks: asks ?? entry.asks },
+          )
+        : entry,
+    ),
+  };
+
+  writeSketchFile(edited, { base: sketch });
+
+  return edited;
+};

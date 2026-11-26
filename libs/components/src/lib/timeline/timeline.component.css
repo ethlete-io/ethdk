@@ -1,0 +1,7 @@
+@layer components.sdk {
+  .et-timeline {
+    display: flex;
+    flex-direction: column;
+    color: var(--et-surface-text, currentColor);
+  }
+}

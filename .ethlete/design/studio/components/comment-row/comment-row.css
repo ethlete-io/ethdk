@@ -1,0 +1,32 @@
+@layer components {
+  .st-crow-avatar,
+  .st-crow-unread {
+    border-radius: 50%;
+  }
+
+  .st-crow {
+    transition: var(--transition-state);
+  }
+
+  .st-crow[aria-pressed='true']:hover {
+    background:
+      linear-gradient(
+        color-mix(in srgb, var(--et-tone-fill) 20%, transparent),
+        color-mix(in srgb, var(--et-tone-fill) 20%, transparent)
+      ),
+      color-mix(in srgb, var(--et-surface-tint) 9%, transparent);
+  }
+
+  .st-crow[aria-pressed='true']:active {
+    background:
+      linear-gradient(
+        color-mix(in srgb, var(--et-tone-fill) 20%, transparent),
+        color-mix(in srgb, var(--et-tone-fill) 20%, transparent)
+      ),
+      color-mix(in srgb, var(--et-surface-tint) 15%, transparent);
+  }
+
+  .st-crow:focus-visible {
+    box-shadow: inset 0 0 0 1.5px var(--focus-ring);
+  }
+}

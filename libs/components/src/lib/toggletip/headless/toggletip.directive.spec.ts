@@ -1,0 +1,292 @@
+import { Component, ErrorHandler, TemplateRef, viewChild } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { setInputSignal } from '@ethlete/core';
+import '../../../test-helpers';
+import { flushFrames, pointerEvent } from '../../testing/driver-core';
+import { fakeLayout } from '../../testing/fake-layout';
+import { createOverlayDriver } from '../../testing/overlay-driver';
+import { ToggletipDirective } from './toggletip.directive';
+import { ToggletipContent } from './toggletip.types';
+
+@Component({
+  template: `
+    <button etToggletip type="button">Trigger</button>
+
+    <ng-template #toggletipTemplate>
+      <span class="toggletip-template-content">Template toggletip</span>
+    </ng-template>
+  `,
+  imports: [ToggletipDirective],
+})
+class ToggletipDirectiveTestHost {
+  toggletipTemplate = viewChild.required<TemplateRef<unknown>>('toggletipTemplate');
+}
+
+@Component({
+  template: `
+    <button class="toggletip-trigger" etToggletip="More information" type="button">Trigger</button>
+    <input class="outside-input" type="text" />
+  `,
+  imports: [ToggletipDirective],
+})
+class ToggletipNeighbourTestHost {}
+
+describe('ToggletipDirective', () => {
+  let fixture: ComponentFixture<ToggletipDirectiveTestHost>;
+  let button: HTMLButtonElement;
+  let toggletipDirective: ToggletipDirective;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [ToggletipDirectiveTestHost],
+    });
+
+    fixture = TestBed.createComponent(ToggletipDirectiveTestHost);
+    fixture.detectChanges();
+    button = fixture.nativeElement.querySelector('button');
+    toggletipDirective = fixture.debugElement.query(By.directive(ToggletipDirective)).injector.get(ToggletipDirective);
+    setInputSignal(toggletipDirective.content, 'More information' satisfies ToggletipContent);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    toggletipDirective.hide();
+    fixture.detectChanges();
+  });
+
+  it('exposes dialog trigger semantics while closed', () => {
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(button.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(button.getAttribute('data-toggletip-open')).toBeNull();
+    expect(button.getAttribute('aria-controls')).toBeNull();
+  });
+
+  it('opens with the string content as the accessible label', () => {
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(button.getAttribute('data-toggletip-open')).toBe('true');
+    expect(button.getAttribute('aria-controls')).toBe(toggletipDirective.overlayRef()?.config.id ?? null);
+    expect(toggletipDirective.overlayRef()?.config.ariaLabel).toBe('More information');
+  });
+
+  it('treats blank string content like no content', () => {
+    setInputSignal(toggletipDirective.content, ' ');
+    fixture.detectChanges();
+
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    expect(toggletipDirective.overlayRef()).toBeNull();
+    expect(button.getAttribute('aria-haspopup')).toBeNull();
+  });
+
+  it('follows aria config changes while open', () => {
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    const host = toggletipDirective.overlayRef()?.elements?.hostElement;
+    expect(host?.getAttribute('aria-label')).toBe('More information');
+
+    setInputSignal(toggletipDirective.ariaLabel, 'Help');
+    fixture.detectChanges();
+
+    expect(host?.getAttribute('aria-label')).toBe('Help');
+    expect(host?.getAttribute('aria-describedby')).toBe(`${toggletipDirective.overlayRef()?.config.id}-content`);
+
+    setInputSignal(toggletipDirective.ariaLabelledBy, 'external-label');
+    fixture.detectChanges();
+
+    expect(host?.getAttribute('aria-label')).toBeNull();
+    expect(host?.getAttribute('aria-labelledby')).toBe('external-label');
+  });
+
+  it('re-renders content that changes while open', () => {
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    setInputSignal(toggletipDirective.content, 'Second content');
+    fixture.detectChanges();
+
+    const panelId = toggletipDirective.overlayRef()?.config.id ?? '';
+    expect(document.getElementById(panelId)?.textContent).toContain('Second content');
+  });
+
+  it('clears its open state when disabled after opening', () => {
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    setInputSignal(toggletipDirective.disabled, true);
+    fixture.detectChanges();
+
+    expect(toggletipDirective.open()).toBe(false);
+    expect(button.getAttribute('aria-expanded')).toBeNull();
+    expect(button.getAttribute('aria-haspopup')).toBeNull();
+  });
+
+  it('reopens when shown again while its leave transition is still running', async () => {
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: 'button', rect: { x: 100, y: 100, width: 80, height: 32 } },
+    ]);
+
+    toggletipDirective.show();
+    fixture.detectChanges();
+    await flushFrames();
+
+    toggletipDirective.hide();
+    fixture.detectChanges();
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    await flushFrames();
+    fixture.detectChanges();
+    await flushFrames();
+
+    expect(toggletipDirective.open()).toBe(true);
+    expect(toggletipDirective.overlayRef()).not.toBeNull();
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('leaves focus on the element an outside press moved it to', async () => {
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: '.toggletip-trigger', rect: { x: 100, y: 100, width: 80, height: 32 } },
+    ]);
+
+    const neighbourFixture = TestBed.createComponent(ToggletipNeighbourTestHost);
+    neighbourFixture.detectChanges();
+
+    const driver = createOverlayDriver(neighbourFixture);
+    const directive = neighbourFixture.debugElement
+      .query(By.directive(ToggletipDirective))
+      .injector.get(ToggletipDirective);
+    const trigger = neighbourFixture.nativeElement.querySelector('.toggletip-trigger') as HTMLButtonElement;
+    const input = neighbourFixture.nativeElement.querySelector('.outside-input') as HTMLInputElement;
+
+    trigger.focus();
+    await driver.openVia(() => {
+      directive.show();
+      neighbourFixture.detectChanges();
+    });
+
+    expect(directive.open()).toBe(true);
+
+    pointerEvent(input, 'pointerdown');
+    input.focus();
+    await driver.settle();
+    await driver.settle();
+
+    expect(directive.open()).toBe(false);
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('toggles on trigger click and closes on Escape from the trigger', () => {
+    button.click();
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(true);
+
+    button.click();
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(false);
+
+    button.click();
+    fixture.detectChanges();
+    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(false);
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('refuses to open while disabled, from click, show() or the open model', () => {
+    setInputSignal(toggletipDirective.disabled, true);
+    fixture.detectChanges();
+
+    button.click();
+    toggletipDirective.show();
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(false);
+
+    toggletipDirective.open.set(true);
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(false);
+    expect(toggletipDirective.overlayRef()).toBeNull();
+  });
+
+  it('points aria-controls at an element inside the rendered dialog', () => {
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    const controlled = document.getElementById(button.getAttribute('aria-controls') ?? '');
+    expect(controlled?.closest('[role="dialog"]')).not.toBeNull();
+  });
+
+  it('reports template content without an accessible label and stays closed', () => {
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+
+    setInputSignal(toggletipDirective.content, fixture.componentInstance.toggletipTemplate());
+    fixture.detectChanges();
+    toggletipDirective.show();
+
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toMatch(
+      /ET1500: .*Template toggletips require etToggletipAriaLabel or etToggletipAriaLabelledBy/,
+    );
+    expect(document.querySelector('et-toggletip')).toBeNull();
+  });
+});
+
+describe('ToggletipDirective host destroyed while open', () => {
+  it('closes the toggletip with its host', async () => {
+    TestBed.configureTestingModule({ imports: [ToggletipNeighbourTestHost] });
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: '.toggletip-trigger', rect: { x: 100, y: 100, width: 80, height: 32 } },
+    ]);
+
+    const fixture = TestBed.createComponent(ToggletipNeighbourTestHost);
+    fixture.detectChanges();
+    const driver = createOverlayDriver();
+    const directive = fixture.debugElement.query(By.directive(ToggletipDirective)).injector.get(ToggletipDirective);
+
+    directive.show();
+    fixture.detectChanges();
+    await driver.settle();
+
+    expect(driver.manager().openOverlays().length).toBe(1);
+
+    fixture.destroy();
+    await driver.settle();
+    await driver.settle();
+
+    expect(driver.manager().openOverlays().length).toBe(0);
+  });
+});
+
+describe('ToggletipDirective destroyed while open', () => {
+  it('closes its overlay without logging an error', () => {
+    TestBed.configureTestingModule({ imports: [ToggletipNeighbourTestHost] });
+
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+    const fixture = TestBed.createComponent(ToggletipNeighbourTestHost);
+    fixture.detectChanges();
+
+    const directive = fixture.debugElement.query(By.directive(ToggletipDirective)).injector.get(ToggletipDirective);
+    directive.show();
+    fixture.detectChanges();
+
+    expect(directive.overlayRef()).not.toBeNull();
+
+    fixture.destroy();
+
+    expect(handleError).not.toHaveBeenCalled();
+    expect(consoleWarn).not.toHaveBeenCalled();
+    expect(consoleError).not.toHaveBeenCalled();
+    consoleWarn.mockRestore();
+    consoleError.mockRestore();
+  });
+});

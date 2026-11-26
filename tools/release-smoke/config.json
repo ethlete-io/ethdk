@@ -1,0 +1,22 @@
+{
+  "fut-platform": {
+    "root": "../fut-frontend",
+    "project": "platform",
+    "configuration": "production",
+    "libs": ["types", "bracket", "core", "query", "components", "cdk", "query-devtools"],
+    "placeholders": {
+      "API_URL_PLACEHOLDER": "/items-api/staging",
+      "HUB_API_URL_PLACEHOLDER": "/hub-api/staging",
+      "FUT_URL_PLACEHOLDER": "{origin}",
+      "FUT_COOKIE_NAME": "fut_release_smoke",
+      "SSO_LOGIN_AVAILABLE": "false"
+    },
+    "proxyConfig": "apps/platform/proxy.conf.json",
+    "paths": ["/", "/public/fc26/collections/00000000-0000-0000-0000-000000000000?access_token=release-smoke"],
+    "readySelector": "fut-root *",
+    "ignoreConsole": [
+      "^Failed to load resource: the server responded with a status of 40[134]",
+      "^ERROR Http failure response for \\S+: 40[134] "
+    ]
+  }
+}

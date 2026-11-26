@@ -1,0 +1,36 @@
+{
+  "part": "components/tree",
+  "state": "selected-active",
+  "size": 320,
+  "text": "kontrast issue",
+  "point": {
+    "x": 58,
+    "y": 45
+  },
+  "sketch": {
+    "target": "components/tree",
+    "variant": "a",
+    "createdAt": "2026-10-30T23:16:05.909Z"
+  },
+  "createdAt": "2026-10-30T23:37:47.888Z",
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Measured now: the selected label is ink rgb(4,120,87) on the mint tint, 5.07:1 (hover 4.90:1, active 4.74:1), so the text passes 4.5:1. What is weak is the selection fill itself: the 16% mint tint is 1.08:1 against the white panel, so the selected row barely stands out. Do you mean that? Recommendation: keep the tint and add a 2px ink bar at the row start (5.48:1). The question also goes to the grill session.",
+      "createdAt": "2026-10-31T00:22:42.680Z",
+      "question": true
+    },
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "My first answer was wrong: it measured the light scheme, and you looked at the dark one. Cause: the tree sat on the fixed class et-color--brand-on-light, so the dark scheme kept the dark green light-scheme ink, at 2.23:1. Fixed: the ink now follows the scheme. Dark scheme now: mint ink rgb(0,255,161) on the selection fill, 5.63:1. Light scheme: 4.74:1. The same fault hit the select panel and the form-field error text; both are fixed too. Please reload and check.",
+      "createdAt": "2026-10-31T00:28:10.701Z"
+    }
+  ],
+  "addressed": {
+    "by": "user",
+    "reason": "merge",
+    "addressedAt": "2026-10-31T00:32:57.724Z"
+  }
+}

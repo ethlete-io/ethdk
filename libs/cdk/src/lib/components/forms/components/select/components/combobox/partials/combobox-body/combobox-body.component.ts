@@ -1,0 +1,112 @@
+import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
+import {
+  Component,
+  ElementRef,
+  InjectionToken,
+  TemplateRef,
+  ViewChildren,
+  ViewEncapsulation,
+  inject,
+  viewChild,
+} from '@angular/core';
+import { outputToObservable, takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import {
+  ANIMATED_LIFECYCLE_TOKEN,
+  AnimatedLifecycleDirective,
+  COLOR_PROVIDER,
+  ClickOutsideDirective,
+  ProvideColorDirective,
+  TypedQueryList,
+  createComponentId,
+  signalHostAttributes,
+  signalHostClasses,
+} from '@ethlete/core';
+import { BehaviorSubject, combineLatest, map, tap } from 'rxjs';
+import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives/combobox';
+import { ComboboxOptionComponent } from '../combobox-option';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET_COMBOBOX_BODY_TOKEN');
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+@Component({
+  selector: 'et-combobox-body',
+  templateUrl: './combobox-body.component.html',
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-combobox-body et-with-default-animation et-legacy',
+    tabindex: '-1',
+    '[attr.id]': 'id',
+    role: 'listbox',
+  },
+  imports: [NgTemplateOutlet, NgComponentOutlet, ComboboxOptionComponent, AsyncPipe, AnimatedLifecycleDirective],
+  hostDirectives: [ClickOutsideDirective, ProvideColorDirective],
+  providers: [
+    {
+      provide: COMBOBOX_BODY_TOKEN,
+      useExisting: ComboboxBodyComponent,
+    },
+  ],
+})
+export class ComboboxBodyComponent implements AbstractComboboxBody {
+  clickOutside = inject(ClickOutsideDirective);
+  colorProvider = inject(COLOR_PROVIDER);
+  combobox = inject(COMBOBOX_TOKEN);
+
+  readonly id = createComponentId('et-combobox-body');
+
+  readonly _containerElementRef = viewChild('containerElement', { read: ElementRef });
+
+  readonly animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
+
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  @ViewChildren(ComboboxOptionComponent)
+  set _options(options: TypedQueryList<ComboboxOptionComponent>) {
+    this._options$.next(options);
+  }
+  _options$ = new BehaviorSubject<TypedQueryList<AbstractComboboxOption> | null>(null);
+
+  _hostClassBindings = signalHostClasses({
+    'et-combobox-body--loading': toSignal(this.combobox.loading$),
+    'et-combobox-body--multiple': toSignal(this.combobox.multiple$),
+  });
+
+  _hostAttributeBindings = signalHostAttributes({
+    'aria-multiselectable': toSignal(this.combobox.multiple$),
+    'aria-labelledby': toSignal(this.combobox._input.labelId$),
+  });
+
+  _customErrorComponentInputs = toSignal(
+    combineLatest([this.combobox.error$, toObservable(this.combobox.bodyErrorComponentInputs)]).pipe(
+      map(([error, inputs]) => ({ error, ...inputs })),
+    ),
+  );
+
+  _bodyTemplate: TemplateRef<unknown> | null = null;
+
+  constructor() {
+    outputToObservable(this.clickOutside.didClickOutside)
+      .pipe(
+        tap(() => this.combobox._closeFromOutsideClick()),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+
+  setColorFromProvider(provider: ProvideColorDirective) {
+    this.colorProvider.syncWithProvider(provider);
+  }
+}

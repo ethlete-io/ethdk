@@ -1,0 +1,237 @@
+import { relative } from 'path';
+import { createComment, replyToComment, resolveEndedSketchComments } from './system/comments/comment';
+import { completeComment } from './system/comments/complete';
+import { inboxOf, inboxText } from './system/comments/inbox';
+import { productDirOf } from './system/product';
+import { ResolvedProduct } from './system/resolve-product';
+import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
+
+export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id> --note <text> --by <model id>'];
+
+export const COMMENT_USAGE = [
+  'comment <layer>/<name> <state> --size <preset|px|fitted> <text> [--interaction <name>] [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
+  'comment reply <id> --by <model id> <text> [--question] [--product <name>]',
+  'comment resolve-ended [--product <name>]',
+];
+
+const fail = (message: string, code = 1) => {
+  console.error(message);
+
+  return code;
+};
+
+const usageOf = (invocation: string, lines: string[]) => lines.map((line) => `usage: ${invocation} ${line}`).join('\n');
+
+const usage = (invocation: string, lines: string[]) => fail(usageOf(invocation, lines), 2);
+
+const unauthored = (options: { invocation: string; command: string; lines: string[] }) =>
+  fail(
+    [`${options.command} ${NEEDS_AUTHOR}`, ...options.lines.map((line) => `usage: ${options.invocation} ${line}`)].join(
+      '\n',
+    ),
+    2,
+  );
+
+/**
+ * `et design inbox` lists what waits for the agent - open comment threads whose last word is the user's and the sketches
+ * that need a rebase, oldest first - then the threads and the pick and discard decisions waiting for the user.
+ * `et design inbox done <id> --note <text>` replaces the note of the part the thread is about (in the variant, for a thread on a sketch variant) and marks the thread addressed.
+ */
+export const designInbox = (options: { target: string; argv: string[]; invocation: string }) => {
+  const { target, argv, invocation } = options;
+  const args = argsOf(argv, { values: ['--product', '--note', '--by'], switches: ['--json', '--question'] });
+
+  if (typeof args === 'string') return fail(`${args}\n${usageOf(invocation, INBOX_USAGE)}`, 2);
+
+  const config = configOf(target);
+
+  if (typeof config === 'string') return fail(config);
+
+  const names = productNamesOf({ config, asked: args.values['--product'] });
+
+  if (typeof names === 'string') return fail(names);
+
+  if (args.positional[0] === 'done') {
+    const id = args.positional[1];
+
+    if (!id || args.positional.length > 2) return usage(invocation, INBOX_USAGE);
+    if (authorOf(args) === null) return unauthored({ invocation, command: 'inbox done', lines: INBOX_USAGE });
+
+    const note = args.values['--note'];
+
+    if (!note || note.trim() === '')
+      return fail(
+        'inbox done needs --note "<reason>": the note replaces the note of the part the comment was made on (in the sketch variant, for a comment on one), so write it to explain the whole shape of the part - pass the old note unchanged if it still holds.',
+      );
+
+    const products: ResolvedProduct[] = [];
+
+    for (const name of names) {
+      const product = oneProductOf({ target, config, asked: name });
+
+      if (typeof product === 'string') return fail(product);
+
+      products.push(product);
+    }
+
+    const addressed = completeComment({ products, id, note, author: authorOf(args) ?? undefined });
+
+    if (typeof addressed === 'string') return fail(addressed);
+
+    console.log(`addressed: ${relative(target, addressed.file)}`);
+
+    return 0;
+  }
+
+  if (args.positional.length > 0) return usage(invocation, INBOX_USAGE);
+
+  const { items, waiting, unreadable } = inboxOf({ target, config, products: names });
+
+  unreadable.forEach((problem) => console.error(problem));
+  console.log(
+    args.flags.has('--json')
+      ? JSON.stringify({ items, waitingForUser: waiting }, null, 2)
+      : inboxText({ items, waiting }, invocation),
+  );
+
+  return unreadable.length > 0 ? 1 : 0;
+};
+
+const pointOf = (value: string | undefined) => {
+  if (value === undefined) return undefined;
+
+  const [x, y, ...rest] = value.split(',').map(Number);
+
+  return x === undefined || y === undefined || rest.length > 0 || Number.isNaN(x) || Number.isNaN(y) ? null : { x, y };
+};
+
+const sizeOf = (value: string | undefined) => {
+  if (!value) return null;
+
+  return /^\d+$/u.test(value) ? (Number(value) > 0 ? Number(value) : null) : value;
+};
+
+const designCommentReply = (options: {
+  target: string;
+  positional: string[];
+  asked: string | undefined;
+  author: string | null;
+  question: boolean;
+  invocation: string;
+}) => {
+  const { target, positional, asked, author, question, invocation } = options;
+  const [id, ...words] = positional;
+
+  if (!id || words.length === 0) return usage(invocation, COMMENT_USAGE);
+  if (author === null) return unauthored({ invocation, command: 'comment reply', lines: COMMENT_USAGE });
+
+  const config = configOf(target);
+
+  if (typeof config === 'string') return fail(config);
+
+  const names = productNamesOf({ config, asked });
+
+  if (typeof names === 'string') return fail(names);
+
+  const replied = replyToComment({
+    products: names.map((name) => ({ name, dir: productDirOf({ target, product: name }) })),
+    id,
+    by: 'agent',
+    author,
+    text: words.join(' '),
+    question,
+  });
+
+  if (typeof replied === 'string') return fail(replied);
+
+  console.log(`${question ? 'asked' : 'replied'}: ${relative(target, replied.file)}`);
+
+  return 0;
+};
+
+/**
+ * `et design comment …` writes a comment on a state of a part, as Studio does from the canvas.
+ * `et design comment resolve-ended` resolves the addressed comments of sketches that no longer exist.
+ * `et design comment reply <id> <text>` answers a comment thread as the agent; `--question` marks a reply that waits for the user's answer.
+ */
+export const designComment = (options: { target: string; argv: string[]; invocation: string }) => {
+  const { target, argv, invocation } = options;
+  const args = argsOf(argv, {
+    values: ['--product', '--size', '--interaction', '--at', '--sketch', '--variant', '--by'],
+    switches: ['--json', '--question'],
+  });
+
+  if (typeof args === 'string') return fail(`${args}\n${usageOf(invocation, COMMENT_USAGE)}`, 2);
+
+  if (args.positional[0] === 'reply')
+    return designCommentReply({
+      target,
+      positional: args.positional.slice(1),
+      asked: args.values['--product'],
+      author: authorOf(args),
+      question: args.flags.has('--question'),
+      invocation,
+    });
+
+  if (args.positional[0] === 'resolve-ended') {
+    if (args.positional.length > 1) return usage(invocation, COMMENT_USAGE);
+
+    const config = configOf(target);
+
+    if (typeof config === 'string') return fail(config);
+
+    const product = oneProductOf({ target, config, asked: args.values['--product'] });
+
+    if (typeof product === 'string') return fail(product);
+
+    const resolved = resolveEndedSketchComments({ product });
+
+    console.log(`resolved ${resolved.length} addressed comment(s) of ended sketches in ${product.name}`);
+
+    return 0;
+  }
+
+  const [part, state, ...words] = args.positional;
+  const size = sizeOf(args.values['--size']);
+  const point = pointOf(args.values['--at']);
+  const sketch = args.values['--sketch'];
+  const variant = args.values['--variant'];
+  const interaction = args.values['--interaction'];
+
+  if (
+    !part ||
+    !state ||
+    size === null ||
+    words.length === 0 ||
+    point === null ||
+    (sketch === undefined) !== (variant === undefined)
+  )
+    return usage(invocation, COMMENT_USAGE);
+
+  const config = configOf(target);
+
+  if (typeof config === 'string') return fail(config);
+
+  const product = oneProductOf({ target, config, asked: args.values['--product'] });
+
+  if (typeof product === 'string') return fail(product);
+
+  const comment = createComment({
+    product,
+    comment: {
+      part,
+      state,
+      size,
+      text: words.join(' '),
+      ...(interaction ? { interaction } : {}),
+      ...(point ? { point } : {}),
+      ...(sketch && variant ? { sketch: { target: sketch, variant } } : {}),
+    },
+  });
+
+  if (typeof comment === 'string') return fail(comment);
+
+  console.log(`comment ${comment.id}: ${relative(target, comment.file)}`);
+
+  return 0;
+};

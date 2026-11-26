@@ -1,0 +1,17 @@
+import { ActionReducerMap, createFeatureSelector } from '@ngrx/store';
+
+import * as fromItem from './item/item.reducer';
+
+import { ItemEffects } from './item/item.effects';
+
+export interface ItemState extends fromItem.ItemPartialState {}
+
+export const ITEM_FEATURE_KEY = 'item';
+
+export const itemReducer: ActionReducerMap<ItemState> = {
+  [fromItem.ITEM_FEATURE_KEY]: fromItem.reducer,
+};
+
+export const itemEffects = [ItemEffects];
+
+export const getFeatureBaseState = createFeatureSelector<ItemState>(ITEM_FEATURE_KEY);

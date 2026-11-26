@@ -1,0 +1,223 @@
+@layer components.sdk {
+  @property --et-scrollable-buttons-offset {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --et-scrollable-buttons-end-space {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --et-scrollable-buttons-extent {
+    syntax: '*';
+    inherits: true;
+  }
+
+  .et-scrollable-buttons {
+    grid-row: 1 / 1;
+    grid-column: 1 / 1;
+    pointer-events: none;
+
+    .et-scrollable-button {
+      position: absolute;
+      --_et-scrollable-button-extent: var(--et-scrollable-buttons-extent, calc(var(--_et-icon-button-size) + 0.4rem));
+      opacity: 0;
+    }
+  }
+
+  .et-scrollable {
+    &[direction='horizontal'],
+    &:not([direction]) {
+      & .et-scrollable-button--start {
+        inset-block-start: calc(50% - var(--_et-scrollable-button-extent) / 2);
+        inset-inline: var(--et-scrollable-buttons-offset) 0;
+        transform: translateX(-10px);
+
+        & .et-icon--et-chevron {
+          transform: rotate(-90deg);
+        }
+      }
+
+      & .et-scrollable-button--end {
+        inset-block-start: calc(50% - var(--_et-scrollable-button-extent) / 2);
+        inset-inline: calc(100% - var(--_et-scrollable-button-extent) - var(--et-scrollable-buttons-offset)) 0;
+        transform: translateX(10px);
+
+        & .et-icon--et-chevron {
+          transform: rotate(90deg);
+        }
+      }
+    }
+
+    &[direction='vertical'] {
+      & .et-scrollable-button--start {
+        inset-block-start: var(--et-scrollable-buttons-offset);
+        inset-inline-start: calc(50% - var(--_et-scrollable-button-extent) / 2);
+        transform: translateY(-10px);
+
+        & .et-icon--et-chevron {
+          transform: rotate(0deg);
+        }
+      }
+
+      & .et-scrollable-button--end {
+        inset-block-end: var(--et-scrollable-buttons-offset);
+        inset-inline-start: calc(50% - var(--_et-scrollable-button-extent) / 2);
+        transform: translateY(10px);
+
+        & .et-icon--et-chevron {
+          transform: rotate(180deg);
+        }
+      }
+    }
+
+    & .et-scrollable-button:where(:not([data-variant='filled'])) {
+      color: var(--et-surface-control-text, currentColor);
+    }
+
+    &.et-scrollable--can-scroll:not(.et-scrollable--is-at-start) {
+      & .et-scrollable-buttons .et-scrollable-button--start {
+        opacity: 1;
+        transform: translate(0);
+        pointer-events: all;
+      }
+    }
+
+    &.et-scrollable--can-scroll:not(.et-scrollable--is-at-end) {
+      & .et-scrollable-buttons .et-scrollable-button--end {
+        opacity: 1;
+        transform: translate(0);
+        pointer-events: all;
+      }
+    }
+
+    &.et-scrollable--can-animate.et-scrollable--can-scroll {
+      & .et-scrollable-button {
+        transition:
+          opacity 300ms var(--ease-5),
+          transform 300ms var(--ease-5);
+      }
+    }
+
+    &.et-scrollable--can-scroll:has(.et-scrollable-buttons--inside) {
+      &[direction='horizontal'] > .et-scrollable-wrapper > .et-scrollable-container,
+      &:not([direction]) > .et-scrollable-wrapper > .et-scrollable-container {
+        padding-inline-end: var(--et-scrollable-buttons-end-space);
+      }
+
+      &[direction='vertical'] > .et-scrollable-wrapper > .et-scrollable-container {
+        padding-block-end: var(--et-scrollable-buttons-end-space);
+      }
+    }
+
+    &.et-scrollable--sticky-buttons {
+      --_sticky-margin: 10%;
+
+      & .et-scrollable-button {
+        position: sticky;
+      }
+
+      &[direction='horizontal'] .et-scrollable-buttons {
+        position: sticky;
+        inset-block-start: 0;
+        align-self: start;
+        block-size: min(100%, 100dvh);
+
+        & .et-scrollable-button {
+          position: absolute;
+        }
+      }
+
+      &[direction='vertical'] .et-scrollable-buttons {
+        margin-inline: var(--_sticky-margin);
+
+        & .et-scrollable-button--end {
+          inset-block-start: 100%;
+        }
+      }
+    }
+
+    &.et-scrollable--inline-buttons.et-scrollable--can-scroll {
+      & > .et-scrollable-wrapper {
+        align-items: center;
+        gap: 4px;
+      }
+
+      & .et-scrollable-buttons {
+        display: contents;
+      }
+
+      & .et-scrollable-button {
+        position: static;
+        opacity: 1;
+        pointer-events: all;
+        transform: none;
+      }
+
+      &[direction='horizontal'],
+      &:not([direction]) {
+        & > .et-scrollable-wrapper {
+          grid-template-columns: auto minmax(0, 1fr) auto;
+
+          & > .et-scrollable-container,
+          & > .et-scrollable-masks {
+            grid-column: 2;
+            grid-row: 1;
+          }
+
+          & .et-scrollable-button--start {
+            grid-column: 1;
+            grid-row: 1;
+          }
+
+          & .et-scrollable-button--end {
+            grid-column: 3;
+            grid-row: 1;
+          }
+        }
+      }
+
+      &[direction='vertical'] {
+        & > .et-scrollable-wrapper {
+          grid-template-rows: auto minmax(0, 1fr) auto;
+          justify-items: center;
+
+          & > .et-scrollable-container,
+          & > .et-scrollable-masks {
+            grid-row: 2;
+            grid-column: 1;
+            justify-self: stretch;
+          }
+
+          & .et-scrollable-button--start {
+            grid-row: 1;
+            grid-column: 1;
+          }
+
+          & .et-scrollable-button--end {
+            grid-row: 3;
+            grid-column: 1;
+          }
+        }
+      }
+    }
+
+    /* Wins the equal-weight tie with the direction rules above only by coming after them - keep the
+       footer overrides in this file, below them. */
+    & .et-scrollable-footer {
+      & .et-scrollable-buttons {
+        display: contents;
+      }
+
+      & .et-scrollable-button {
+        position: static;
+        opacity: 1;
+        pointer-events: all;
+        transform: none;
+      }
+    }
+  }
+}

@@ -1,0 +1,692 @@
+import { Component, ErrorHandler, Provider, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideColorPalette } from '@ethlete/core';
+import '../../test-helpers';
+import { pressKey, resetOverlays, tick } from '../testing/driver-core';
+import { ChartPlotDirective } from './headless/chart-plot.directive';
+import {
+  LineChartDatum,
+  LineChartDirective,
+  LineChartSeries,
+  LineChartSeriesDatum,
+} from './headless/line-chart.directive';
+import { LineChartComponent, LineChartMarkActivateEvent } from './line-chart.component';
+
+@Component({
+  selector: 'et-test-line-chart-host',
+  template: `
+    <et-line-chart
+      [data]="data()"
+      [series]="series()"
+      [area]="area()"
+      [stacked]="stacked()"
+      [includeZero]="includeZero()"
+      [height]="200"
+      [timeZone]="timeZone()"
+      [categoryHeader]="categoryHeader()"
+      [dateHeader]="dateHeader()"
+      label="Visitors"
+    />
+  `,
+  imports: [LineChartComponent],
+})
+class LineChartHostComponent {
+  data = signal<LineChartDatum[] | LineChartSeriesDatum[]>([
+    { x: 'Jan', value: 40 },
+    { x: 'Feb', value: 100 },
+    { x: 'Mar', value: null },
+    { x: 'Apr', value: 60 },
+    { x: 'May', value: 80 },
+  ]);
+  series = signal<LineChartSeries[]>([]);
+  area = signal(false);
+  stacked = signal(false);
+  includeZero = signal(true);
+  timeZone = signal<string | null>('Europe/Berlin');
+  categoryHeader = signal('Category');
+  dateHeader = signal('Date');
+}
+
+const PLOT_WIDTH = 500;
+
+const PALETTE = provideColorPalette([
+  { token: 'ocean', label: 'Ocean' },
+  { token: 'sunset', label: 'Sunset' },
+]);
+
+const setup = (providers: Provider[] = []) => {
+  TestBed.configureTestingModule({ providers: [PALETTE, ...providers] });
+
+  const fixture = TestBed.createComponent(LineChartHostComponent);
+  fixture.detectChanges();
+
+  const chart = fixture.debugElement.query(By.directive(LineChartDirective)).injector.get(LineChartDirective);
+  chart.plot.set({ width: signal(PLOT_WIDTH) } as unknown as ChartPlotDirective);
+  fixture.detectChanges();
+
+  return { fixture, host: fixture.componentInstance, chart, element: fixture.nativeElement as HTMLElement };
+};
+
+const SERIES: LineChartSeries[] = [
+  { key: 'home', label: 'Home' },
+  { key: 'away', label: 'Away' },
+];
+
+const SERIES_DATA: LineChartSeriesDatum[] = [
+  { x: 'W1', values: { home: 10, away: 5 } },
+  { x: 'W2', values: { home: 20, away: null } },
+  { x: 'W3', values: { home: 30, away: 15 } },
+];
+
+describe('LineChartComponent', () => {
+  it('spaces categories evenly, each centered in its share of the plot', () => {
+    const { chart } = setup();
+
+    expect(chart.positions()).toEqual([50, 150, 250, 350, 450]);
+    expect(chart.slices().map((slice) => slice.target.x)).toEqual([0, 100, 200, 300, 400]);
+    expect(chart.slices().map((slice) => slice.target.width)).toEqual([100, 100, 100, 100, 100]);
+  });
+
+  it('breaks the line at a missing value', () => {
+    const { chart } = setup();
+    const [line] = chart.lines();
+
+    expect(chart.valueTicks().domain).toEqual([0, 100]);
+    expect(line?.linePath).toBe('M50,120L150,0M350,80L450,40');
+    expect(line?.points.map((point) => point.isIsolated)).toEqual([false, false, false, false]);
+  });
+
+  it('keeps a point with no defined neighbour as an isolated dot', () => {
+    const { host, fixture, chart, element } = setup();
+
+    host.data.set([
+      { x: 'Jan', value: 40 },
+      { x: 'Feb', value: null },
+      { x: 'Mar', value: 60 },
+      { x: 'Apr', value: null },
+    ]);
+    fixture.detectChanges();
+
+    expect(chart.lines()[0]?.linePath).toBe('');
+    expect(chart.lines()[0]?.points.every((point) => point.isIsolated)).toBe(true);
+    expect(element.querySelectorAll('.et-line-chart-point')).toHaveLength(2);
+  });
+
+  it('fits the value axis to the data with includeZero false', () => {
+    const { host, fixture, chart } = setup();
+
+    host.includeZero.set(false);
+    fixture.detectChanges();
+
+    expect(chart.valueTicks().domain).toEqual([40, 100]);
+    expect(chart.lines()[0]?.points.map((point) => Math.round(point.y))).toEqual([200, 0, 133, 67]);
+  });
+
+  it('clamps the baseline to the domain edge nearest zero with includeZero false', () => {
+    const { host, fixture, chart } = setup();
+
+    host.includeZero.set(false);
+    fixture.detectChanges();
+
+    expect(chart.baseline()).toBeCloseTo(200);
+
+    host.data.set([
+      { x: 'Jan', value: -40 },
+      { x: 'Feb', value: -100 },
+    ]);
+    fixture.detectChanges();
+
+    expect(chart.valueTicks().domain[1]).toBeLessThan(0);
+    expect(chart.baseline()).toBeCloseTo(0);
+  });
+
+  it('keeps zero on an area chart with includeZero false and warns in dev mode', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { host, fixture, chart } = setup();
+
+    host.includeZero.set(false);
+    host.area.set(true);
+    fixture.detectChanges();
+
+    expect(chart.valueTicks().domain).toEqual([0, 100]);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('includeZero is false on an area chart'));
+    warn.mockRestore();
+  });
+
+  it('fills an area down to the zero baseline', () => {
+    const { host, fixture, chart, element } = setup();
+
+    host.area.set(true);
+    fixture.detectChanges();
+
+    expect(chart.lines()[0]?.areaPath).toBe('M50,120L150,0L150,200L50,200ZM350,80L450,40L450,200L350,200Z');
+    expect(element.querySelectorAll('.et-line-chart-area')).toHaveLength(1);
+  });
+
+  it('stacks each series on the one below and fills between them', () => {
+    const { host, fixture, chart } = setup();
+
+    host.data.set(SERIES_DATA);
+    host.series.set(SERIES);
+    host.area.set(true);
+    host.stacked.set(true);
+    fixture.detectChanges();
+
+    expect(chart.valueTicks().domain).toEqual([0, 50]);
+
+    const [home, away] = chart.lines();
+    const y = (value: number) => 200 - (value / 50) * 200;
+
+    expect(home?.points.map((point) => point.y)).toEqual([y(10), y(20), y(30)]);
+    expect(away?.points.map((point) => point.y)).toEqual([y(15), y(45)]);
+    expect(away?.linePath).toBe('');
+    expect(away?.areaPath).toBe('');
+    expect(chart.slices()[2]?.entries.map((entry) => entry.value)).toEqual([30, 15]);
+  });
+
+  it('draws every stacked area before every line', () => {
+    const { host, fixture, element } = setup([provideColorPalette([])]);
+
+    host.data.set(SERIES_DATA);
+    host.series.set(SERIES);
+    host.area.set(true);
+    host.stacked.set(true);
+    fixture.detectChanges();
+
+    const layer = element.querySelector('.et-line-chart-series-layer');
+    const marks = [...(layer?.querySelectorAll('.et-line-chart-area, .et-line-chart-line') ?? [])];
+
+    expect(element.querySelector('.et-line-chart-svg')?.hasAttribute('data-stacked')).toBe(true);
+    expect(marks.map((mark) => (mark.classList.contains('et-line-chart-area') ? 'area' : 'line'))).toEqual([
+      'area',
+      'area',
+      'line',
+      'line',
+    ]);
+    expect(
+      marks.slice(0, 2).map((mark) => (mark as SVGElement).style.getPropertyValue('--_et-chart-accent-mix')),
+    ).toEqual(['100%', '40%']);
+  });
+
+  it('reads out every series with a value at an x, and names it by the x', () => {
+    const { host, fixture, chart, element } = setup();
+
+    host.data.set(SERIES_DATA);
+    host.series.set(SERIES);
+    fixture.detectChanges();
+
+    expect(chart.slices().map((slice) => slice.description)).toEqual([
+      'Home 10, Away 5',
+      'Home 20',
+      'Home 30, Away 15',
+    ]);
+
+    const slices = [...element.querySelectorAll('.et-line-chart-slice')];
+
+    expect(slices.map((slice) => slice.getAttribute('aria-label'))).toEqual(['W1', 'W2', 'W3']);
+    expect(slices.map((slice) => slice.getAttribute('role'))).toEqual(['img', 'img', 'img']);
+  });
+
+  it('points the tooltip at the topmost point of an x', () => {
+    const { host, fixture, chart } = setup();
+
+    host.data.set(SERIES_DATA);
+    host.series.set(SERIES);
+    fixture.detectChanges();
+
+    const [first] = chart.slices();
+
+    expect(first?.anchor).toEqual({
+      x: first?.position,
+      y: Math.min(...(first?.entries ?? []).map((e) => e.y)),
+      width: 0,
+      height: 0,
+    });
+  });
+
+  it('gives the plot one tab stop, and moves it with the focused x', () => {
+    const { chart, fixture, element } = setup();
+    const tabIndexes = () =>
+      [...element.querySelectorAll('.et-line-chart-slice')].map((slice) => slice.getAttribute('tabindex'));
+
+    expect(tabIndexes()).toEqual(['0', '-1', '-1', '-1', '-1']);
+
+    chart.focusSlice(3);
+    fixture.detectChanges();
+
+    expect(tabIndexes()).toEqual(['-1', '-1', '-1', '0', '-1']);
+    expect(document.activeElement).toBe(element.querySelectorAll('.et-line-chart-slice')[3]);
+
+    chart.focusSlice(99);
+    fixture.detectChanges();
+
+    expect(tabIndexes()).toEqual(['-1', '-1', '-1', '-1', '0']);
+  });
+
+  it('draws the focus ring apart from the hit areas, from the slice target and the x', () => {
+    const { host, fixture, chart, element } = setup();
+
+    host.data.set(Array.from({ length: 90 }, (_, day) => ({ x: new Date(2025, 6, 1 + day), value: day })));
+    fixture.detectChanges();
+
+    const targets = [...element.querySelectorAll<SVGRectElement>('.et-line-chart-slice-target')];
+    const rings = [...element.querySelectorAll<SVGRectElement>('.et-line-chart-focus-ring')];
+    const slice = chart.slices()[53];
+    const ring = rings[53];
+    const number = (value: string | null | undefined) => parseFloat(value ?? '');
+
+    expect(targets).toHaveLength(90);
+    expect(rings).toHaveLength(90);
+    targets.slice(1).forEach((target, index) => {
+      const previous = targets[index];
+
+      expect(number(target.getAttribute('x'))).toBeCloseTo(
+        number(previous?.getAttribute('x')) + number(previous?.getAttribute('width')),
+      );
+    });
+    expect(slice?.target.width).toBeLessThan(12);
+    expect(number(ring?.style.getPropertyValue('--_et-line-chart-slice-x'))).toBeCloseTo(slice?.target.x ?? NaN);
+    expect(number(ring?.style.getPropertyValue('--_et-line-chart-slice-width'))).toBeCloseTo(
+      slice?.target.width ?? NaN,
+    );
+    expect(number(ring?.style.getPropertyValue('--_et-line-chart-slice-position'))).toBeCloseTo(slice?.position ?? NaN);
+    expect(ring?.parentElement).toBe(targets[53]?.parentElement);
+  });
+
+  it('lays instants out by time, sorted, and labels them in the chart time zone', () => {
+    const { host, fixture, chart } = setup();
+
+    host.data.set([
+      { x: new Date('2025-03-31T22:00:00Z'), value: 3 },
+      { x: new Date('2025-03-28T23:00:00Z'), value: 1 },
+      { x: new Date('2025-03-29T23:00:00Z'), value: 2 },
+    ]);
+    fixture.detectChanges();
+
+    expect(chart.isTime()).toBe(true);
+    expect(chart.slices().map((slice) => slice.label)).toEqual(['Mar 29, 2025', 'Mar 30, 2025', 'Apr 1, 2025']);
+
+    const [first, second, third] = chart.positions();
+
+    expect(first).toBe(0);
+    expect(third).toBe(PLOT_WIDTH);
+    expect(second).toBeCloseTo(PLOT_WIDTH * (24 / (24 + 23 + 24)));
+    expect(chart.xLabels().map((label) => label.text.replace(/\s/g, ' '))).toEqual([
+      'Mar 29',
+      '12:00 PM',
+      'Mar 30',
+      '12:00 PM',
+      'Mar 31',
+      '12:00 PM',
+      'Apr 1',
+    ]);
+  });
+
+  it('drops an invalid date instead of failing the render', () => {
+    const { host, fixture, chart } = setup();
+
+    host.data.set([
+      { x: new Date('2025-03-28T23:00:00Z'), value: 1 },
+      { x: new Date('bad'), value: 5 },
+      { x: new Date('2025-03-29T23:00:00Z'), value: 2 },
+    ]);
+    fixture.detectChanges();
+
+    expect(chart.isTime()).toBe(true);
+    expect(chart.slices().map((slice) => slice.label)).toEqual(['Mar 29, 2025', 'Mar 30, 2025']);
+    expect(chart.positions()).toEqual([0, PLOT_WIDTH]);
+  });
+
+  it('keys two instants at the same time apart', () => {
+    const { host, fixture, chart } = setup();
+
+    host.data.set([
+      { x: new Date('2025-03-28T23:00:00Z'), value: 1 },
+      { x: new Date('2025-03-28T23:00:00Z'), value: 2 },
+    ]);
+    fixture.detectChanges();
+
+    const keys = chart.slices().map((slice) => slice.key);
+
+    expect(new Set(keys).size).toBe(2);
+  });
+
+  it('reports an invalid time zone and lays the axis out in the viewer one', () => {
+    const handleError = vi.fn();
+    const { host, fixture, chart } = setup([{ provide: ErrorHandler, useValue: { handleError } }]);
+
+    host.data.set([{ x: new Date('2025-06-01T00:00:00Z'), value: 1 }]);
+    host.timeZone.set('Not/AZone');
+
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toMatch(/ET5121/);
+    expect(chart.slices()).toHaveLength(1);
+  });
+
+  it('reads the plot position once per touch move', () => {
+    const { fixture, chart, element } = setup();
+    const plotElement = document.createElement('div');
+    const rectReads = vi.spyOn(Element.prototype, 'getBoundingClientRect');
+
+    chart.plot.set({ width: signal(PLOT_WIDTH), element: plotElement } as unknown as ChartPlotDirective);
+    fixture.detectChanges();
+    rectReads.mockClear();
+
+    element
+      .querySelector('et-line-chart')
+      ?.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'touch', clientX: 10, bubbles: true }));
+
+    const layoutReads = rectReads.mock.contexts.filter(
+      (context) => !(context as Element).classList.contains('et-line-chart-slice-anchor'),
+    );
+
+    expect(layoutReads).toEqual([plotElement]);
+
+    rectReads.mockRestore();
+  });
+
+  it('puts the time-axis labels on midnights of the chart time zone, not the viewer one', () => {
+    const { host, fixture, chart } = setup();
+
+    host.data.set([
+      { x: new Date('2025-06-01T00:00:00Z'), value: 1 },
+      { x: new Date('2025-06-03T00:00:00Z'), value: 2 },
+    ]);
+    host.timeZone.set('America/New_York');
+    fixture.detectChanges();
+
+    expect(chart.xLabels().map((label) => label.text.replace(/\s/g, ' '))).toEqual([
+      'Jun 1',
+      '12:00 PM',
+      'Jun 2',
+      '12:00 PM',
+    ]);
+    expect(chart.slices().map((slice) => slice.label.replace(/\s/g, ' '))).toEqual([
+      'May 31, 2025, 8:00 PM',
+      'Jun 2, 2025, 8:00 PM',
+    ]);
+  });
+
+  it('builds a table with a row per x and a column per series', () => {
+    const { host, fixture, chart } = setup();
+
+    host.data.set(SERIES_DATA);
+    host.series.set(SERIES);
+    fixture.detectChanges();
+
+    expect(chart.table()).toEqual({
+      columns: ['Category', 'Home', 'Away'],
+      rows: [
+        { header: 'W1', cells: ['10', '5'] },
+        { header: 'W2', cells: ['20', ''] },
+        { header: 'W3', cells: ['30', '15'] },
+      ],
+    });
+  });
+
+  it('names each series in the legend with its palette color', () => {
+    const { host, fixture, chart, element } = setup();
+
+    host.data.set(SERIES_DATA);
+    host.series.set(SERIES);
+    fixture.detectChanges();
+
+    expect(chart.legendItems().map((item) => item.colorToken)).toEqual(['ocean', 'sunset']);
+    expect(element.querySelector('.et-chart-legend')?.getAttribute('data-mark')).toBe('line');
+  });
+
+  it('names the x column with the translated category and date headers', () => {
+    const { host, fixture, chart } = setup();
+
+    host.categoryHeader.set('Kategorie');
+    host.dateHeader.set('Datum');
+    fixture.detectChanges();
+    expect(chart.table().columns[0]).toBe('Kategorie');
+
+    host.data.set([{ x: new Date('2025-01-01T00:00:00Z'), value: 1 }]);
+    fixture.detectChanges();
+    expect(chart.table().columns[0]).toBe('Datum');
+  });
+
+  it('reports data that mixes dates and categories and draws nothing', () => {
+    const handleError = vi.fn();
+    const { host, fixture, chart, element } = setup([{ provide: ErrorHandler, useValue: { handleError } }]);
+
+    host.data.set([
+      { x: new Date('2025-01-01T00:00:00Z'), value: 1 },
+      { x: 'Feb', value: 2 },
+    ]);
+
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toMatch(/ET5120/);
+    expect(chart.slices()).toEqual([]);
+    expect(chart.table().rows).toEqual([]);
+    expect(element.querySelector('.et-line-chart-slice, .et-line-chart-point')).toBeNull();
+  });
+});
+
+describe('LineChartComponent hover delay', () => {
+  beforeEach(() => vi.useFakeTimers());
+
+  afterEach(() => {
+    vi.useRealTimers();
+    resetOverlays();
+  });
+
+  const hover = (target: Element, type: 'pointerenter' | 'pointerleave') => {
+    target.dispatchEvent(new PointerEvent(type, { pointerType: 'mouse' }));
+    tick();
+  };
+
+  const move = (from: Element, to: Element | null) => {
+    from.dispatchEvent(new PointerEvent('pointerout', { pointerType: 'mouse', bubbles: true, relatedTarget: to }));
+    hover(from, 'pointerleave');
+
+    if (to) hover(to, 'pointerenter');
+  };
+
+  const openTooltipLabels = () =>
+    [...document.querySelectorAll('.et-line-chart-slice[data-active]')].map((slice) =>
+      slice.getAttribute('aria-label'),
+    );
+
+  it('waits for the delay on first entry, then moves an open tooltip to the next x at once', () => {
+    const { element } = setup();
+    const chartElement = element.querySelector('et-line-chart') as Element;
+    const [jan, feb, , apr] = [...element.querySelectorAll('.et-line-chart-slice')];
+
+    if (!jan || !feb || !apr) throw new Error('the chart rendered no slices');
+
+    hover(jan, 'pointerenter');
+    expect(openTooltipLabels()).toEqual([]);
+
+    vi.advanceTimersByTime(300);
+    tick();
+    expect(openTooltipLabels()).toEqual(['Jan']);
+
+    move(jan, feb);
+    expect(openTooltipLabels()).toEqual(['Feb']);
+
+    move(feb, null);
+    hover(chartElement, 'pointerleave');
+    hover(chartElement, 'pointerenter');
+    hover(apr, 'pointerenter');
+    expect(openTooltipLabels()).toEqual([]);
+
+    vi.advanceTimersByTime(300);
+    tick();
+    expect(openTooltipLabels()).toEqual(['Apr']);
+  });
+
+  it('waits for the delay again after a tooltip is dismissed under the pointer', () => {
+    const { element } = setup();
+    const [jan, feb] = [...element.querySelectorAll('.et-line-chart-slice')];
+
+    if (!jan || !feb) throw new Error('the chart rendered no slices');
+
+    hover(jan, 'pointerenter');
+    vi.advanceTimersByTime(300);
+    tick();
+    expect(openTooltipLabels()).toEqual(['Jan']);
+
+    pressKey(document, 'Escape');
+    expect(openTooltipLabels()).toEqual([]);
+
+    move(jan, feb);
+    expect(openTooltipLabels()).toEqual([]);
+
+    vi.advanceTimersByTime(300);
+    tick();
+    expect(openTooltipLabels()).toEqual(['Feb']);
+  });
+});
+
+describe('LineChartComponent series colors', () => {
+  const THREE_SERIES: LineChartSeries[] = [
+    { key: 'home', label: 'Home' },
+    { key: 'away', label: 'Away' },
+    { key: 'cup', label: 'Cup' },
+  ];
+
+  const THREE_SERIES_DATA: LineChartSeriesDatum[] = [
+    { x: 'W1', values: { home: 10, away: 5, cup: 2 } },
+    { x: 'W2', values: { home: 20, away: 8, cup: 4 } },
+  ];
+
+  const setupThree = (series: LineChartSeries[] = THREE_SERIES) => {
+    const result = setup([provideColorPalette([])]);
+
+    result.host.data.set(THREE_SERIES_DATA);
+    result.host.series.set(series);
+    result.fixture.detectChanges();
+
+    return result;
+  };
+
+  const accentMixOf = (element: Element | null) =>
+    (element as HTMLElement | SVGElement | null)?.style.getPropertyValue('--_et-chart-accent-mix');
+
+  it('steps the accent from 100% down to a 40% mix for series without a color', () => {
+    const { chart, element } = setupThree();
+
+    expect(chart.lines().map((line) => line.accentMix)).toEqual([100, 70, 40]);
+    expect(chart.legendItems().map((item) => item.accentMix)).toEqual([100, 70, 40]);
+    expect(chart.slices()[0]?.entries.map((entry) => entry.accentMix)).toEqual([100, 70, 40]);
+    expect([...element.querySelectorAll('.et-line-chart-series')].map(accentMixOf)).toEqual(['100%', '70%', '40%']);
+    expect([...element.querySelectorAll('.et-chart-legend-swatch')].map(accentMixOf)).toEqual(['100%', '70%', '40%']);
+  });
+
+  it('keeps a series with a color at full strength and steps only the rest', () => {
+    const { chart } = setupThree([
+      { key: 'home', label: 'Home' },
+      { key: 'away', label: 'Away', colorToken: 'lava' },
+      { key: 'cup', label: 'Cup' },
+    ]);
+
+    expect(chart.lines().map((line) => line.accentMix)).toEqual([100, null, 40]);
+    expect(chart.legendItems().map((item) => item.accentMix)).toEqual([100, null, 40]);
+  });
+
+  it('draws a single series at full strength', () => {
+    const { chart, element } = setup([provideColorPalette([])]);
+
+    expect(chart.lines().map((line) => line.accentMix)).toEqual([null]);
+    expect(accentMixOf(element.querySelector('.et-line-chart-series'))).toBe('');
+  });
+
+  it('warns in dev mode when the data does not match the series', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { host, fixture } = setupThree();
+
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('[LineChartDirective]'));
+
+    host.series.set([...THREE_SERIES, { key: 'league', label: 'League' }]);
+    fixture.detectChanges();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"league"'));
+
+    host.data.set([{ x: 'W1', value: 1 }]);
+    fixture.detectChanges();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('carries no `values`'));
+    warn.mockRestore();
+  });
+
+  it('warns in dev mode only when two series share a colorToken', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { host, fixture } = setupThree();
+
+    expect(warn).not.toHaveBeenCalled();
+
+    host.series.set([
+      { key: 'home', label: 'Home', colorToken: 'lava' },
+      { key: 'away', label: 'Away', colorToken: 'lava' },
+      { key: 'cup', label: 'Cup' },
+    ]);
+    fixture.detectChanges();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('share the colorToken "lava"'));
+    warn.mockRestore();
+  });
+});
+
+describe('LineChartComponent markActivate', () => {
+  const listen = (result: ReturnType<typeof setup>) => {
+    const emitted: LineChartMarkActivateEvent[] = [];
+
+    result.fixture.debugElement
+      .query(By.directive(LineChartComponent))
+      .injector.get(LineChartComponent)
+      .markActivate.subscribe((event) => emitted.push(event));
+
+    return emitted;
+  };
+
+  const slices = (element: HTMLElement) => [...element.querySelectorAll<SVGElement>('.et-line-chart-slice')];
+
+  it('emits the datum from `data` when an x is clicked', () => {
+    const result = setup();
+    const emitted = listen(result);
+
+    slices(result.element)[1]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]?.datum).toBe(result.host.data()[1]);
+    expect(emitted[0]?.series).toEqual([]);
+  });
+
+  it('emits on Enter and Space with the series that have a value at the x', () => {
+    const result = setup();
+    result.host.data.set(SERIES_DATA);
+    result.host.series.set(SERIES);
+    result.fixture.detectChanges();
+    const emitted = listen(result);
+    const slice = slices(result.element)[1] as SVGElement;
+    const space = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+
+    slice.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    slice.dispatchEvent(space);
+
+    expect(space.defaultPrevented).toBe(true);
+    expect(emitted).toEqual([
+      { datum: SERIES_DATA[1], series: [SERIES[0]] },
+      { datum: SERIES_DATA[1], series: [SERIES[0]] },
+    ]);
+  });
+
+  it('finds the datum of a time axis given out of order', () => {
+    const result = setup();
+    const data: LineChartDatum[] = [
+      { x: new Date('2025-03-03T12:00:00Z'), value: 3 },
+      { x: new Date('2025-03-01T12:00:00Z'), value: 1 },
+    ];
+    result.host.data.set(data);
+    result.fixture.detectChanges();
+    const emitted = listen(result);
+
+    slices(result.element)[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(emitted[0]?.datum).toBe(data[1]);
+  });
+});

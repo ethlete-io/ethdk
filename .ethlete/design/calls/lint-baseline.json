@@ -1,0 +1,54 @@
+{
+  "components/calendar-contrast/00-outside-dates/contrast.ts": {
+    "@typescript-eslint/no-non-null-assertion": 1
+  },
+  "components/calendar-contrast/00-outside-dates/fixture.ts": {
+    "@typescript-eslint/no-non-null-assertion": 4
+  },
+  "components/forms-contrast/00-placeholder/contrast.ts": {
+    "@typescript-eslint/no-non-null-assertion": 1
+  },
+  "components/forms-contrast/00-placeholder/fixture.ts": {
+    "@typescript-eslint/no-non-null-assertion": 4
+  },
+  "components/forms-contrast/01-message-ink/contrast.ts": {
+    "@typescript-eslint/no-non-null-assertion": 1
+  },
+  "components/forms-contrast/01-message-ink/fixture.ts": {
+    "@typescript-eslint/no-non-null-assertion": 4
+  },
+  "components/on-light-ink/00-brand-warning/fixture.ts": {
+    "@typescript-eslint/no-non-null-assertion": 1
+  },
+  "components/on-light-ink/02-warning-dark-ink/fixture.ts": {
+    "@typescript-eslint/no-non-null-assertion": 1
+  },
+  "components/scheduler-contrast/00-secondary-text/fixture.ts": {
+    "@typescript-eslint/no-non-null-assertion": 3
+  },
+  "components/scheduler-contrast/01-outside-dates/fixture.ts": {
+    "@typescript-eslint/no-non-null-assertion": 1
+  },
+  "components/surface-palette/00-muted-on-elevated/contrast.ts": {
+    "@typescript-eslint/no-non-null-assertion": 1
+  },
+  "components/surface-palette/00-muted-on-elevated/fixture.ts": {
+    "@typescript-eslint/no-non-null-assertion": 4
+  },
+  "components/surface-palette/01-muted-on-light/contrast.ts": {
+    "@typescript-eslint/no-non-null-assertion": 1
+  },
+  "components/surface-palette/01-muted-on-light/fixture.ts": {
+    "@typescript-eslint/no-non-null-assertion": 2
+  },
+  "design-tool/04-queue-item/queue-item.ts": {
+    "@typescript-eslint/no-unused-vars": 1,
+    "no-constant-binary-expression": 1
+  },
+  "timetrack/kerbe/10-chrome/chrome-day.ts": {
+    "@typescript-eslint/no-unused-vars": 1
+  },
+  "timetrack/kerbe/11-buttons/button-day.ts": {
+    "@typescript-eslint/no-unused-vars": 1
+  }
+}

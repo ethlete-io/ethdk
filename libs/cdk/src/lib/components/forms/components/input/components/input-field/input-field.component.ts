@@ -1,0 +1,38 @@
+import { AsyncPipe } from '@angular/common';
+import { Component, Type, ViewEncapsulation, forwardRef, inject } from '@angular/core';
+import { DynamicFormFieldDirective } from '../../../../directives/dynamic-form-field';
+import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
+import { WriteableInputDirective } from '../../../../directives/writeable-input';
+import { InputStateService } from '../../../../services';
+import { DecoratedFormFieldBase } from '../../../../utils';
+import { ErrorComponent } from '../../../error/components/error';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+@Component({
+  selector: 'et-input-field',
+  template: `
+    <ng-content select="et-label" />
+    <div class="et-input-field-input">
+      <ng-content />
+    </div>
+    <et-error [errors]="inputState.errors$ | async" />
+  `,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-form-field et-input-field et-legacy',
+  },
+  hostDirectives: [
+    StaticFormFieldDirective,
+    WriteableInputDirective,
+    {
+      directive: forwardRef(() => DynamicFormFieldDirective) as Type<DynamicFormFieldDirective>,
+      inputs: ['hideErrorMessage'],
+    },
+  ],
+  imports: [ErrorComponent, AsyncPipe],
+})
+export class InputFieldComponent extends DecoratedFormFieldBase {
+  protected readonly inputState = inject(InputStateService);
+}

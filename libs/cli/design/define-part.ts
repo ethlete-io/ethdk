@@ -1,0 +1,326 @@
+import { Drawing, withNgStyles } from './define-call';
+import { forceBody } from './mark-part';
+
+export { contrastRatioOf, measureContrastPairs } from './contrast';
+export { css, drawing, html, ng } from './define-call';
+export type { Drawing } from './define-call';
+export { embedPage } from './embed-page';
+export type { EmbedPageOptions } from './embed-page';
+export { iconSheet } from './icon-sheet';
+export type { IconSheetIcon, IconSheetOptions } from './icon-sheet';
+export { interactionRows } from './interaction-rows';
+export type { InteractionRowsOptions } from './interaction-rows';
+export { logoSheet } from './logo-sheet';
+export type { LogoSheetMark, LogoSheetOptions } from './logo-sheet';
+export { spring } from './spring';
+export type { Spring } from './spring';
+export { svgAsset } from './svg-asset';
+export type { SvgAssetOptions } from './svg-asset';
+export { tokenSheet } from './token-sheet';
+export type { TokenSheetOptions } from './token-sheet';
+export { withAction } from './with-action';
+export type { ActionTarget } from './with-action';
+
+/** An interaction Studio can force on a part's root element. Rest is always drawn and never listed. */
+export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
+
+/**
+ * One part of a product's design system. `note` records why the part has its current shape, and
+ * `madeBy` the model ids that drew it, written by a sketch merge.
+ * `family` is the id of the part it belongs to, such as `components/comment-flow`; Studio's part tree shows the part
+ * under it whatever number of parts use it.
+ * `states` names each state it is drawn in with the props for that state, and `render` draws it.
+ * `describe` holds one sentence per state: what the state shows and what to check in it. Studio shows it under the
+ * state's title; a missing or unknown state name in it does not compile.
+ * `frame` wraps the body of each of the part's own states in a demo frame (padding, a page background); a part that
+ * calls `render` of this one gets the part without it.
+ * `styles` is the part's stylesheet: every drawing of the part gets it before the styles `render` returns, and a
+ * host that embeds a piece of the part's markup takes it from the default export.
+ * A part that responds to its width lists the container `widths` it is drawn at; without them a
+ * component or element is drawn at the size of its content, and a page at every viewport preset.
+ * `interactions` lists the interactions each state is also drawn in; without it only rest is drawn.
+ * `grid` draws the states it names as one table in rest, see `StateGrid`.
+ * `groups` names the groups of its states in flow order, see `StateGroup`.
+ * `controls` names each control the part draws, keyed by the id its markup carries in `data-et-control`; `design
+ * complete` requires the states and surfaces its `kind` and `input` need, see `Control`.
+ * `motions` names each motion between two of its states, see `Motion`; a rule in `rules` can name one.
+ * `unreachable` lists the state pairs no user can move between, each with its `reason`; they need no motion.
+ * `instant` is the reason every switch between two states happens at once; no pair then needs a motion.
+ * `consumerAction` is the reason the part is a control whose action its consumer declares; `design complete` then
+ * asks no `data-et-action` of its elements.
+ * `omits` records mock option values deliberately left off the grid, each with a reason.
+ * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
+ * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
+ * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
+ * `scrolls` names the states that draw a box with more content than it shows, so it scrolls; `design check` flags a
+ * scrolling box in any other state, and a listed state without one.
+ * `implements` links the part to the code that builds it, see `PartLink`.
+ * `data: 'list'` says the part shows a loaded list it gets through its inputs; it then must draw loading, error and
+ * empty like a part that loads data, and `dataStates` names the state that draws each, see `PartDataStates`.
+ * `sample` makes an embedded instance of the part comparable across the states of its host, see `PartSample`.
+ * `coverage` names the real input range and the view states the design must draw, see `PartCoverage`.
+ */
+export type Part<TProps, TState extends string = string> = {
+  note: string;
+  madeBy?: string[];
+  family?: string;
+  states: Record<TState, TProps>;
+  describe: Record<TState, string>;
+  styles?: string;
+  frame?: (body: string, props: TProps) => string;
+  widths?: number[];
+  interactions?: Interaction[];
+  grid?: StateGrid<TState>;
+  groups?: StateGroup<TState>[];
+  controls?: Record<string, Control<TState>>;
+  checks?: { skip?: RenderCheck[] };
+  scrolls?: TState[];
+  motions?: Record<string, Motion<TState>>;
+  unreachable?: { from: TState; to: TState; reason: string }[];
+  instant?: string;
+  platformMeasures?: PlatformMeasure<TState>[];
+  consumerAction?: string;
+  omits?: { option: keyof TProps & string; value: string; reason: string }[];
+  rules?: PartRule<TState>[];
+  implements?: PartLink;
+  sample?: PartSample<TProps>;
+  coverage?: PartCoverage<TState>;
+  render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
+} & PartData;
+
+/**
+ * The state of a part that draws its loading, its error and its empty data, required with `data: 'list'`. A name the
+ * part does not draw yet stays an open point until a state of that name is drawn.
+ */
+export type PartDataStates = { loading: string; error: string; empty: string };
+
+type PartData = { data?: undefined; dataStates?: PartDataStates } | { data: 'list'; dataStates: PartDataStates };
+
+/** A width and height in CSS px. */
+export type CoverageSize = { width: number; height: number };
+
+/**
+ * What a part's design must draw to cover the product's real inputs; `design check` warns on each gap.
+ * - `branches`: per layout branch the part switches between, the widest and tallest `real` input from the product's
+ *   listing, and the size of the sample each state draws in that branch (`COVERAGE-RANGE`).
+ * - `zoom`: the zoom extremes the view reaches, and per status (drawing, paused, failed, …) the state that draws it
+ *   at each extreme (`COVERAGE-ZOOM`).
+ * - `async`: per mark the view reads asynchronously, the state that draws it while unknown, or `null`
+ *   (`COVERAGE-ASYNC`).
+ * - `chrome`: the labels of the live chrome around a part that draws the tool itself; no text inside a
+ *   `data-et-sample` region may repeat one (`SAMPLE-CHROME`).
+ *
+ * Mark each drawn status with `data-et-status="<status>"`: the same status twice inside one `data-et-view` region,
+ * or one state without such regions, is a `STATUS-TWICE` warning, for every part.
+ */
+export type PartCoverage<TState extends string = string> = {
+  branches?: Record<string, { real: CoverageSize; samples: Partial<Record<TState, CoverageSize>> }>;
+  zoom?: { extremes: readonly string[]; statuses: Record<string, Partial<Record<string, TState>>> };
+  async?: Record<string, TState | null>;
+  chrome?: readonly string[];
+};
+
+/**
+ * The code a part is built in: a component or element names the repo-relative path of its `.component.ts`, a page
+ * names its route and, for `design compare`, the presentational `component` it renders. `design check` fails on a
+ * path that does not exist, and lists a part without a link as open.
+ */
+/**
+ * The prop `id` a host passes to name an embedded instance, and the props `marks` that carry its sample marks. Every
+ * state of one host that draws the same `id` must pass the same `marks`: `design sketch check` warns and
+ * `design sketch ready` refuses with `SAMPLE-MARK-DRIFT` otherwise. A host state that shows another sample passes
+ * another `id`.
+ */
+export type PartSample<TProps> = { id: keyof TProps & string; marks: readonly (keyof TProps & string)[] };
+
+export type PartLink = `${string}.component.ts` | { route: `/${string}`; component?: `${string}.component.ts` };
+
+/** What `play` of a motion may use, so Studio controls time: `at` schedules `fn` at `ms` into the motion on the tool's clock, `random` is seeded, `rect` measures a selector in the `from` state. */
+export type MotionContext = {
+  at: (ms: number, fn: () => void) => void;
+  random: () => number;
+  rect: (selector: string) => DOMRect;
+};
+
+/**
+ * A motion from the state `from` to the state `to`; with `from` equal to `to` it is the looping motion inside that state. `at` adds shot times in ms, `interrupt` starts the reverse motion
+ * at that time, `viewTransition` uses a View Transition, and `play` runs after the morph for what CSS cannot express.
+ */
+export type Motion<TState extends string = string> = {
+  from: TState;
+  to: TState;
+  at?: number[];
+  interrupt?: number;
+  viewTransition?: boolean;
+  play?: (ctx: MotionContext) => void;
+};
+
+/** A rule of a part: `on` an event on a selector, the part switches `to` a state, with the `motion` it names. */
+export type PartRule<TState extends string = string> = { on: string; to: TState; motion?: string };
+
+/** A drawing of a part: its `styles` hold the part's stylesheet and the ones `render` returned, so a host can add them up. */
+export type DrawnPart = Drawing & { styles: string };
+
+/**
+ * Small states laid out as one table instead of a frame each: `rows` maps a row label to the state drawn under
+ * each of the `columns`, and a missing column leaves its cell empty. States it leaves out are drawn as before.
+ */
+export type StateGrid<TState extends string = string, TColumn extends string = string> = {
+  columns: readonly TColumn[];
+  rows: Record<string, Partial<Record<TColumn, TState>>>;
+};
+
+/**
+ * A group of a part's states, drawn in Studio as one row under its `label` and its count. A part lists its groups in
+ * flow order (the normal case first, then special cases, errors last); `design check` flags a state in no group or
+ * in two.
+ */
+export type StateGroup<TState extends string = string> = { label: string; states: readonly TState[] };
+
+/** How a control is operated: `pointer` requires a drawn hover and active (a `field` needs no active), `keyboard` a drawn focus-visible. */
+export type ControlInput = 'pointer' | 'keyboard';
+
+/** A component or element part that draws a control and its interactions. */
+export type ControlPart = `components/${string}` | `elements/${string}`;
+
+/**
+ * What a control of each `kind` needs besides the interactions of its `input`. A surface is the element marked
+ * `data-et-surface="<id>.<surface>"`, drawn visible and filled in the state its `surfaces` entry names.
+ * - `disclosure`: a state that draws it collapsed, and `surfaces.body`.
+ * - `button`: `active`.
+ * - `field`: a text field (`<input>` or `<textarea>`); nothing beyond its inputs.
+ * - `select`, `menu`: `surfaces.open`, and options in it (`role="option"`, `role="menuitem"` or `data-et-option`)
+ *   drawn hovered, focus-visible, and selected with a look of their own.
+ * - `row`: drawn selected (`aria-selected`, `aria-checked`, `aria-pressed` or `aria-current`) with a look of its own,
+ *   and hovered while selected.
+ * - `tooltip`: `surfaces.tooltip`, the visible tooltip next to the control in this part.
+ *
+ * `disabled: true` also requires a state that draws it disabled with a look of its own. With `part`, the
+ * interactions, selected and disabled looks and option states come from that part, which must be design complete
+ * itself; the surfaces stay with this part. A page control needs `part`. With `input`, a state of this part draws
+ * each requirement, e.g. with `forceInteraction`. `bespoke` on a control with `part` says why no SDK component reaches
+ * its drawn look through its props; `design check` prints it as a hint.
+ */
+export type Control<TState extends string = string> = (
+  | { kind: 'disclosure'; surfaces: { body: TState } }
+  | { kind: 'button' | 'row' | 'field'; surfaces?: never }
+  | { kind: 'select' | 'menu'; surfaces: { open: TState } }
+  | { kind: 'tooltip'; surfaces: { tooltip: TState } }
+) & { disabled?: boolean } & (
+    { part: ControlPart; bespoke?: string; input?: never } | { input: ControlInput[]; part?: never; bespoke?: never }
+  );
+
+/**
+ * A measure of a native platform control that a part imitates, which `et design check` measures in each of `states`
+ * on every element `target` matches: its box in CSS px, its gap to the box of `inset.edge`, and the ink of its
+ * content (the pixels that differ from its background), each within `tolerance` px (0.5 by default).
+ */
+export type PlatformMeasure<TState extends string = string> = {
+  platform: string;
+  states: readonly TState[];
+  target: string;
+  width?: number;
+  height?: number;
+  inset?: { edge: string; top?: number; right?: number; bottom?: number; left?: number };
+  ink?: { width?: number; height?: number };
+  tolerance?: number;
+};
+
+/** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
+export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE' | 'SCROLLS';
+
+/** How a composing part draws another one: `interaction` forces it on the root, as a frame does. */
+export type RenderOptions = { interaction?: Interaction };
+
+type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
+  Part<TProps, TState>,
+  | 'states'
+  | 'describe'
+  | 'grid'
+  | 'groups'
+  | 'controls'
+  | 'motions'
+  | 'unreachable'
+  | 'rules'
+  | 'render'
+  | 'frame'
+  | 'sample'
+  | 'coverage'
+  | 'data'
+  | 'dataStates'
+  | 'platformMeasures'
+  | 'scrolls'
+> &
+  PartData & {
+    coverage?: PartCoverage<NoInfer<TState>>;
+    sample?: PartSample<NoInfer<TProps>>;
+    frame?: (body: string, props: NoInfer<TProps>) => string;
+    motions?: Record<string, Motion<NoInfer<TState>>>;
+    unreachable?: { from: NoInfer<TState>; to: NoInfer<TState>; reason: string }[];
+    rules?: PartRule<NoInfer<TState>>[];
+    scrolls?: NoInfer<TState>[];
+    platformMeasures?: PlatformMeasure<NoInfer<TState>>[];
+    states: Record<TState, NoInfer<TProps>>;
+    describe: Record<NoInfer<TState>, string>;
+    controls?: Record<string, Control<NoInfer<TState>>>;
+    groups?: StateGroup<NoInfer<TState>>[];
+    grid?: { columns: readonly TColumn[]; rows: Record<string, Partial<Record<NoInfer<TColumn>, NoInfer<TState>>>> };
+    render: (props: TProps) => Drawing | Promise<Drawing>;
+  };
+
+/**
+ * Forces `interaction` on the first element of `markup`, as a frame forces it on a part's root: for a state that
+ * shows one element of the part, such as a row of a list, hovered or disabled.
+ */
+export const forceInteraction = (markup: string, interaction: Interaction) => forceBody(markup, interaction);
+
+/**
+ * The attribute that marks an element as the region `name` whose content the implementing component projects with
+ * `<ng-content>`, e.g. `<main ${slot('canvas')}>`. `design compare` empties it in the design picture, as the harness
+ * projects nothing.
+ */
+export const slot = (name: string) => `data-et-projected="${name}"`;
+
+const finished = (
+  drawn: Drawing,
+  { styles, interaction }: { styles?: string; interaction?: Interaction },
+): DrawnPart => ({
+  ...drawn,
+  body: interaction ? forceBody(drawn.body, interaction) : drawn.body,
+  styles: [styles, drawn.styles].filter(Boolean).join('\n'),
+});
+
+/** Draws `props` as one of the part's own states: the drawing of `render` inside the part's `frame`. */
+export const drawState = <TProps>(part: Part<TProps>, props: TProps): Promise<DrawnPart> =>
+  Promise.resolve(part.render(props)).then((drawn) =>
+    withNgStyles(part.frame ? { ...drawn, body: part.frame(drawn.body, props) } : drawn),
+  );
+
+/**
+ * Draws a part imported from `@system/<layer>/<name>` inside a base part. A product may replace that part with props
+ * of its own, so `props` is not checked against them: pass what the base part's own version takes.
+ */
+export const renderSystemPart = (
+  part: { render: (props: never, options?: RenderOptions) => DrawnPart | Promise<DrawnPart> },
+  props: object,
+): Promise<DrawnPart> => Promise.resolve(part.render(props as never));
+
+/**
+ * Types a part where it is written. A part file default-exports the result, and may export named
+ * helpers next to it that other parts import from `@system/<layer>/<name>`. Without type
+ * arguments, `TProps` comes from the props `render` takes and the state names stay in the type, so
+ * `part.states['open']` is `TProps` and an unknown name does not compile.
+ */
+export const definePart = <TProps, const TState extends string = string, const TColumn extends string = string>(
+  part: PartSource<TProps, TState, TColumn>,
+): Part<TProps, TState> => ({
+  ...part,
+  render: (props, options) => {
+    const drawn = part.render(props);
+    const interaction = options?.interaction;
+
+    return drawn instanceof Promise
+      ? drawn.then((done) => finished(done, { styles: part.styles, interaction }))
+      : finished(drawn, { styles: part.styles, interaction });
+  },
+});

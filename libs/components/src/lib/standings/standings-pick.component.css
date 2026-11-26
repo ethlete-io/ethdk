@@ -1,0 +1,208 @@
+@layer components.sdk {
+  @property --et-standings-pick-row-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 40px;
+  }
+
+  @property --et-standings-pick-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-standings-pick-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-standings-pick-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  @property --et-standings-pick-preview-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 180ms;
+  }
+
+  @property --et-standings-pick-drop-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 300ms;
+  }
+
+  .et-standings-pick {
+    --et-standings-pick-drop-easing: var(--ease-spring-1, ease-out);
+    display: block;
+    box-sizing: border-box;
+    font-size: var(--et-standings-pick-font-size);
+    color: var(--et-surface-text, currentColor);
+  }
+
+  .et-standings-pick-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-standings-pick-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-standings-pick-row {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--et-standings-pick-gap);
+    block-size: var(--et-standings-pick-row-height);
+  }
+
+  .et-standings-pick-position {
+    color: var(--et-surface-text-muted, currentColor);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .et-standings-pick-card,
+  .et-standings-pick-ghost {
+    grid-row: 1;
+    grid-column: 2;
+    block-size: 100%;
+    border-radius: var(--et-standings-pick-radius);
+  }
+
+  .et-standings-pick-ghost {
+    box-sizing: border-box;
+    border: 1.5px dashed color-mix(in srgb, var(--et-surface-tint, gray) 45%, transparent);
+    transition: translate var(--et-standings-pick-preview-duration) ease;
+  }
+
+  .et-standings-pick-ghost:where([data-settling]) {
+    opacity: 0;
+    transition: opacity 100ms ease-out;
+  }
+
+  .et-standings-pick-card {
+    display: flex;
+    align-items: center;
+    gap: var(--et-standings-pick-gap);
+    min-inline-size: 0;
+    padding-inline: 8px;
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 8%, transparent);
+    transition:
+      background-color 120ms ease,
+      box-shadow 120ms ease-out;
+  }
+
+  /* Only while a drag runs: on release the reordered list renders with the transforms already gone, and a
+     transition would animate every card back from where the preview had it. */
+  .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card {
+    transition: translate var(--et-standings-pick-preview-duration) ease;
+  }
+
+  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):hover {
+    background-color: color-mix(in srgb, var(--et-surface-tint, gray) 12%, transparent);
+  }
+
+  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):active,
+  .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-dragging]) {
+    position: relative;
+    z-index: 1;
+    background-color: color-mix(in srgb, var(--et-surface-tint, gray) 20%, var(--et-surface-background, Canvas));
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--et-surface-tint, black) 15%, transparent);
+    transition:
+      box-shadow var(--et-standings-pick-preview-duration) ease-out,
+      background-color var(--et-standings-pick-preview-duration) ease-out;
+  }
+
+  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card {
+    cursor: grab;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):active {
+    cursor: grabbing;
+  }
+
+  .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-dragging]) {
+    cursor: grabbing;
+  }
+
+  .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-settling]) {
+    background-color: color-mix(in srgb, var(--et-surface-tint, gray) 8%, var(--et-surface-background, Canvas));
+    box-shadow: 0 0 0 transparent;
+    transition:
+      translate var(--et-standings-pick-drop-duration) var(--et-standings-pick-drop-easing),
+      box-shadow var(--et-standings-pick-drop-duration) ease-out,
+      background-color var(--et-standings-pick-drop-duration) ease-out;
+  }
+
+  .et-standings-pick:where([data-locked]) .et-standings-pick-card {
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 5%, transparent);
+  }
+
+  .et-standings-pick:where([data-locked]) .et-standings-pick-participant {
+    color: var(--et-surface-text-muted, currentColor);
+  }
+
+  .et-standings-pick-participant {
+    --et-match-participant-emblem-size: 22px;
+    --et-match-participant-gap: 8px;
+    --et-match-participant-font-size: var(--et-standings-pick-font-size);
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .et-standings-pick-mark {
+    display: grid;
+    flex: none;
+    place-items: center;
+    min-inline-size: 28px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .et-standings-pick-grip {
+    flex: none;
+    margin-inline-end: 6px;
+    color: var(--et-surface-text-muted, currentColor);
+    inline-size: 12px;
+    block-size: 8px;
+    background: repeating-linear-gradient(to bottom, currentColor 0 1.5px, transparent 1.5px 3.5px);
+  }
+
+  .et-standings-pick-cut {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding-block: calc(var(--et-standings-pick-gap) + 2px);
+    padding-inline: 0;
+    color: var(--et-surface-text-muted, currentColor);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .et-standings-pick-cut-line {
+    flex: 1;
+    block-size: 1px;
+    background: light-dark(var(--et-tone-text), var(--et-tone-fill));
+    opacity: 0.5;
+  }
+
+  .et-standings-pick-cut-label {
+    flex: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-standings-pick-card,
+    .et-standings-pick-ghost,
+    .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card {
+      transition: none;
+    }
+  }
+}

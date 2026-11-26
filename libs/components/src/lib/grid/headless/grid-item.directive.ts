@@ -1,0 +1,210 @@
+import {
+  afterNextRender,
+  computed,
+  DestroyRef,
+  Directive,
+  effect,
+  ElementRef,
+  inject,
+  Injector,
+  input,
+  numberAttribute,
+  signal,
+  untracked,
+} from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
+import { filter, fromEvent, merge, Subscription, take, tap, timer } from 'rxjs';
+import { GRID_ERROR_CODES } from '../grid-errors';
+import { GRID_TOKEN } from './grid.tokens';
+import { GridItemConstraintsConfig } from './grid.types';
+import { PixelRect, pixelRectsEqual, positionsEqual, positionToPixelRect } from './internals';
+
+const SETTLE_FALLBACK_MS = 350;
+
+const optionalNumberAttribute = (value: unknown) => {
+  if (value === undefined || value === null || value === '') return undefined;
+
+  const number = numberAttribute(value);
+
+  return Number.isFinite(number) ? number : undefined;
+};
+
+@Directive({
+  selector: '[etGridItem]',
+  exportAs: 'etGridItem',
+  host: {
+    class: 'et-grid-item',
+    '[style.translate]': 'translateStyle()',
+    '[style.width.px]': 'renderedRect()?.width',
+    '[style.height.px]': 'renderedRect()?.height',
+    '[style.transition]': 'transitionStyle()',
+    '[class.et-grid-item--direct]': 'renderMode() === "direct"',
+    '[class.et-grid-item--settling]': 'isSettling()',
+    '[class.et-grid-item--entering]': 'entering()',
+    '[class.et-grid-item--leaving]': 'leaving()',
+  },
+})
+export class GridItemDirective {
+  private grid = inject(GRID_TOKEN, { optional: true });
+  private injector = inject(Injector);
+  private destroyRef = inject(DestroyRef);
+  public hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  public itemId = input.required<string>();
+  // Unset rather than defaulted, so an item that only narrows one bound of a registered type keeps
+  // the registration's other three - see `resolveItemConstraints`.
+  public minColSpan = input(undefined, { transform: optionalNumberAttribute });
+  public maxColSpan = input(undefined, { transform: optionalNumberAttribute });
+  public minRowSpan = input(undefined, { transform: optionalNumberAttribute });
+  public maxRowSpan = input(undefined, { transform: optionalNumberAttribute });
+  /**
+   * Span bounds that replace the four inputs above at one breakpoint:
+   * `[perBreakpointConstraints]="{ sm: { maxColSpan: 1 } }"`. Merged per key, so a bound the
+   * breakpoint does not name keeps whatever the item or its registration set.
+   */
+  public perBreakpointConstraints = input<GridItemConstraintsConfig['perBreakpoint']>();
+
+  public isBeingDragged = computed(() => this.grid?.dragState()?.itemId === this.itemId());
+
+  public currentPosition = computed(
+    () => {
+      const layout = this.grid?.layout() ?? [];
+      const entry = layout.find((e) => e.id === this.itemId());
+      return entry?.position ?? null;
+    },
+    { equal: positionsEqual },
+  );
+
+  /** The layout-derived target rect in container-relative pixels. */
+  public slotRect = computed(
+    () => {
+      const pos = this.currentPosition();
+      return pos && this.grid ? positionToPixelRect(pos, this.grid.geometry()) : null;
+    },
+    { equal: pixelRectsEqual },
+  );
+
+  private renderModeSignal = signal<'layout' | 'direct'>('layout');
+  private liveRect = signal<PixelRect | null>(null);
+  private isSettlingSignal = signal(false);
+  private enteringSignal = signal(false);
+
+  public renderMode = this.renderModeSignal.asReadonly();
+  public isSettling = this.isSettlingSignal.asReadonly();
+
+  protected entering = this.enteringSignal.asReadonly();
+  protected leaving = computed(() => this.grid?.leavingIds().has(this.itemId()) ?? false);
+
+  /** The rect currently bound to the host: pointer-driven while direct-controlled, the slot otherwise. */
+  public renderedRect = computed(() => (this.renderModeSignal() === 'direct' ? this.liveRect() : this.slotRect()), {
+    equal: pixelRectsEqual,
+  });
+
+  protected translateStyle = computed(() => {
+    const rect = this.renderedRect();
+    return rect ? `${rect.x}px ${rect.y}px` : null;
+  });
+
+  protected transitionStyle = computed(() => {
+    if (!this.grid?.animationsEnabled() || this.renderModeSignal() === 'direct') return 'none';
+
+    const move = 'var(--et-grid-anim-duration, 250ms) cubic-bezier(0.2, 0, 0, 1)';
+    const fade = '200ms cubic-bezier(0.2, 0, 0, 1)';
+
+    return `translate ${move}, width ${move}, height ${move}, scale ${fade}, opacity ${fade}`;
+  });
+
+  private settleListener: Subscription | null = null;
+
+  constructor() {
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.grid) {
+          throw new RuntimeError(
+            GRID_ERROR_CODES.MISSING_GRID,
+            '[GridItemDirective] etGridItem must be placed inside an [etGrid] element (e.g. et-grid).',
+            { element: this.hostElement.nativeElement },
+          );
+        }
+      });
+    }
+
+    let registeredId: string | null = null;
+
+    effect(() => {
+      const id = this.itemId();
+
+      if (registeredId !== null && registeredId !== id) this.grid?.unregisterConstraints(registeredId);
+
+      registeredId = id;
+      this.grid?.registerConstraints(id, {
+        ...(this.minColSpan() === undefined ? {} : { minColSpan: this.minColSpan() }),
+        ...(this.maxColSpan() === undefined ? {} : { maxColSpan: this.maxColSpan() }),
+        ...(this.minRowSpan() === undefined ? {} : { minRowSpan: this.minRowSpan() }),
+        ...(this.maxRowSpan() === undefined ? {} : { maxRowSpan: this.maxRowSpan() }),
+        perBreakpoint: this.perBreakpointConstraints(),
+      });
+    });
+
+    this.destroyRef.onDestroy(() => {
+      if (registeredId !== null) this.grid?.unregisterConstraints(registeredId);
+    });
+
+    // Items mounted mid-session (addItem) mount with the entering styles already applied - CSS
+    // transitions never run on insertion - and the class is cleared one frame later.
+    if (untracked(() => this.grid?.animationsEnabled())) {
+      this.enteringSignal.set(true);
+      afterNextRender(() => this.enteringSignal.set(false), { injector: this.injector });
+    }
+
+    this.destroyRef.onDestroy(() => this.settleListener?.unsubscribe());
+  }
+
+  public startDirectControl() {
+    this.settleListener?.unsubscribe();
+    this.isSettlingSignal.set(false);
+    this.liveRect.set(this.slotRect());
+    this.renderModeSignal.set('direct');
+  }
+
+  public updateDirectRect(rect: PixelRect) {
+    if (this.renderModeSignal() !== 'direct') return;
+
+    this.liveRect.set(rect);
+  }
+
+  public stopDirectControl() {
+    if (this.renderModeSignal() !== 'direct') return;
+
+    this.renderModeSignal.set('layout');
+    this.liveRect.set(null);
+
+    if (!untracked(() => this.grid?.animationsEnabled())) return;
+
+    this.isSettlingSignal.set(true);
+
+    const el = this.hostElement.nativeElement;
+
+    const settled$ = merge(
+      fromEvent<TransitionEvent>(el, 'transitionend'),
+      fromEvent<TransitionEvent>(el, 'transitioncancel'),
+    ).pipe(
+      filter(
+        (event) =>
+          event.target === el &&
+          (event.propertyName === 'translate' || event.propertyName === 'width' || event.propertyName === 'height'),
+      ),
+    );
+
+    this.settleListener?.unsubscribe();
+
+    // The timer is the fallback for drops that land exactly in the current slot - no
+    // transition fires then.
+    this.settleListener = merge(settled$, timer(SETTLE_FALLBACK_MS))
+      .pipe(
+        take(1),
+        tap(() => this.isSettlingSignal.set(false)),
+      )
+      .subscribe();
+  }
+}

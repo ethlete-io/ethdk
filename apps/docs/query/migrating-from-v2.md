@@ -1,0 +1,439 @@
+# Migrating from the legacy client
+
+A practical walkthrough of moving a workspace from the [legacy `V2QueryClient`](/query/legacy) to the current system. The [legacy page](/query/legacy#migrating-to-the-current-system) has the API-to-API map; this one covers the parts that actually take the time - the things that compile fine and then behave differently, or don't compile at all for reasons the type error doesn't explain.
+
+The realistic order is: **prepare → run the codemod → make it boot → migrate screens**. Only the last step is open-ended, and the interop layer is what lets you stop in the middle of it.
+
+## 1. Prepare and run the generators
+
+The current `@ethlete/query` peers on Angular 22 (`^22.1.0` for `@angular/core`, `@angular/common`, `@angular/forms` and `@angular/router`), and so do `@ethlete/core` and `@ethlete/components`. The legacy client ships in the same package, so there is no v3 for an older Angular: an app on Angular 19 upgrades Angular first. The full order for a v4-line app is in [Migrating from the v4 line](/migrating-from-v4).
+
+```bash
+yarn nx g @ethlete/query:prep-for-query-v3   # rename colliding legacy symbols, then upgrade the package
+yarn nx g @ethlete/query:migrate-to-query-v3
+```
+
+`prep-for-query-v3` also warns about installed dependencies whose `.d.ts` files import a renamed v2 name (`QueryClient`, `QueryCreator`, ...) from `@ethlete/query`. No codemod can fix a prebuilt package: run the prep in its own repository and release a rebuild before upgrading.
+
+`migrate-to-query-v3` converts clients, generates current-system creators, wraps them in `legacy*` interop creators, rewrites `.prepare()` call sites, and writes **`query-v3-migration-tasks.md`** - a task list with stable ids for everything it could not finish. Read that file before reading the diff.
+
+In a monorepo, scope the run instead of rewriting every app at once:
+
+```bash
+yarn nx g @ethlete/query:migrate-to-query-v3 --projects=queries-hub,domain-hub
+yarn nx g @ethlete/query:migrate-to-query-v3 --include=libs/queries
+```
+
+One coupling cannot be split: a query client and the creators built on it must be migrated in the same run, because the creators are rewritten in terms of the client's generated `xGet` / `xPostSecure` helpers.
+
+### The remaining work is visible in the editor
+
+Every legacy export is `@deprecated`, and each `legacy*` wrapper the codemod writes carries a tag naming the current-system creator to move to. Nothing fails to compile - the tag exists so that "what is still on v2" is strikethrough in the editor rather than a grep, and so the count shrinks visibly as you work through step 4.
+
+Workspaces that ran the codemod before the tags existed can add them to wrappers already in source:
+
+```bash
+yarn nx g @ethlete/query:deprecate-legacy-queries
+```
+
+It takes the same `--projects` / `--include` scoping, skips anything already tagged, and is safe to re-run.
+
+Query collections, infinity queries, `*etQuery` templates and entity stores have no mechanical rewrite: each needs a choice at the call site. The move is optional: `et update` never runs it, and `et migrations` lists it as the optional `report-legacy-query-apis`, with the number of files that still use one of these APIs. When you decide to move, run the report-only migration. It adds a task to `query-v3-migration-tasks.md` for every [query collection](#query-collections), `switchQueryCollectionState()`, [`createInfinityQueryConfig`, `*etInfinityQuery` and `etInfinityQueryTrigger`](#infinity-queries), every [`*etQuery` / `[etQuery]` template site](#templates-read-signals-not-directives) of a component that imports `QueryDirective`, and every [`EntityStore` and creator `entity` config](#entitystore-becomes-invalidates-and-tags), with the docs link for its replacement. It finds a symbol only through its `@ethlete/query` import, changes no source file, and keeps the tasks of earlier runs.
+
+```bash
+yarn et migrations run query:report-legacy-query-apis
+```
+
+`et migrations run` scans the whole workspace and records the run. To scan only part of it, run the generator by hand with the same scoping:
+
+```bash
+yarn nx g @ethlete/query:report-legacy-query-apis --projects=my-app
+```
+
+## 2. Make it boot
+
+These are the difference between "it compiles" and "it works".
+
+### Subpath imports need `moduleResolution: bundler`
+
+`@ethlete/query/testing`, `@ethlete/query-devtools/lazy` and the other `@ethlete/*` subpaths are `exports` map entries, which `moduleResolution: node` (`node10`) ignores. Set `bundler` (or `node16` / `nodenext`) in every project that imports one - the migration itself adds `@ethlete/query-devtools/lazy`. A project that still resolves with `node` gets a task naming its tsconfig and the subpath it imports, or the `paths` alias through which it reaches one in another project.
+
+### `provideHttpClient()` is now your job
+
+The legacy client shipped its own transport. The current one does `inject(HttpClient)`, and `@ethlete/query` never provides it. Angular does: `HttpClient`, `HttpHandler` and `HttpBackend` are all `providedIn: 'root'`, so an app that never called `provideHttpClient()` builds and its requests go out anyway - over the default `fetch` backend, and unconfigured. Nothing that call configures is in place: no interceptors, and no XSRF header - the XSRF interceptor comes from `provideHttpClient()` itself, not from the root providers. Add it:
+
+```ts
+export const appConfig: ApplicationConfig = {
+  providers: [provideHttpClient()],
+};
+```
+
+If anything in the app relies on **upload progress** (`reportProgress` on a creator), use `provideHttpClient(withXhr())`: from Angular 22 on the default backend is `fetch`, which emits download progress but no upload progress events.
+
+### Your interceptors now see query requests
+
+The legacy client sent its requests past `HttpClient`, so no `HttpInterceptor` ever saw them. The current one sends everything through `HttpClient`, and every interceptor the app registers now runs on every query request too. Audit them before shipping. An interceptor that adds a bearer token to every call is the usual problem: it now sends the token to third-party hosts the app queries, and it sends the header a second time on secure queries, which already get theirs from the auth provider. Limit such an interceptor to your own API's origin, and let the [auth provider](/query/auth) handle the token for secure queries.
+
+Every request `@ethlete/query` sends carries the `IS_QUERY_REQUEST` `HttpContextToken`, so such an interceptor can let query requests pass untouched:
+
+```ts
+export const appTokenInterceptor: HttpInterceptorFn = (req, next) => {
+  if (req.context.get(IS_QUERY_REQUEST)) return next(req);
+
+  return next(req.clone({ setHeaders: { Authorization: `Bearer ${readAppToken()}` } }));
+};
+```
+
+See [HTTP queries](/query/http#interceptors).
+
+### Retries and error parsing are opt-in
+
+In v2, a failed request was retried and a Symfony or HTML error body was parsed by default. In v3 both are client [`features`](/query/errors). The generator adds `withEthleteApiErrors()` to every client it migrates, so both stay on. A client whose `baseRoute` or name mentions Contentful, Shopify or Bynder is not an Ethlete API: it gets no feature, and the task file asks you to choose one. The retry policy is still not the one v2 used, and the task file says so:
+
+| v2                                                    | v3 `withEthleteApiErrors()`                                           |
+| ----------------------------------------------------- | --------------------------------------------------------------------- |
+| every method, `POST` and `PATCH` included             | idempotent methods only, unless `retry: { retryNonIdempotent: true }` |
+| any 5xx, `500` included, plus 408, 425 and 429        | 408, 425, 429 and 5xx above `500`, plus a connection failure          |
+| up to four retries, linear delay (1 s, 2 s, 3 s, 4 s) | three retries, exponential jittered delay                             |
+
+Configure the difference with `withEthleteApiErrors({ retry: { … } })` (see [retries](/query/errors)), or narrow the feature to the parts your API needs. A client that sets its own v2 `retryFn` loses it: the v2 `RequestRetryFn` type does not fit the v3 `retryFn`, so the generator emits a task to port it. For `createQueryClient` calls the generator did not write, for example clients migrated before the error pipeline became opt-in, run:
+
+```bash
+yarn nx g @ethlete/query:migrate-query-opt-in-features
+```
+
+Two more v2 defaults are gone: `autoRefreshQueriesOnWindowFocus` and `enableSmartPolling` were both `true` unless a client turned them off. v3 has no client-wide switch for either, so they are off unless you turn them on per query. Use `withPolling({ interval, pauseWhileHidden: true })` to stop polling in a hidden tab, and `withPolling({ interval, refetchOnFocus: true })` to refetch when the window gets focus. `withAutoRefresh({ onSignalChanges })` refetches on signal changes, not on focus. The generator reports every client that relied on these defaults.
+
+A v2 poll stopped by piping the query into `takeUntil` becomes `withPolling({ interval, enabled })`: pass a signal or a `computed` - over the query's own `response()` if the stop condition is in the data - and polling runs only while it is `true`. See [withPolling](/query/features#withpolling).
+
+### Configure the auth provider
+
+The generator scaffolds a [`createBearerAuthProvider`](/query/auth) from your `V2BearerAuthProvider` config where it can find one, but the adapters change shape between versions, so it emits them behind `TODO(query-v3)` comments. The mapping is:
+
+| v2 `refreshConfig`              | v3                                                                |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `queryCreator`                  | `withRefreshQuery('tokenRefresh', { queryCreator })`              |
+| `responseAdapter`               | `extractTokens` - must return `{ accessToken, refreshToken }`     |
+| `requestArgsAdapter`            | `buildArgs` - receives the refresh token alone                    |
+| `cookieName` / `cookie*`        | `withPersistentAuth({ cookie: { name, domain, expiresInDays } })` |
+| `expiresInPropertyName`         | `expiresInPropertyName` on the refresh query                      |
+| `cookiePath` / `cookieSameSite` | `withPersistentAuth({ cookie: { path, sameSite } })`              |
+| `cookieEnabled`                 | no switch - `setRememberMe(false)` only makes it a session cookie |
+| `strategy` / `refreshBuffer`    | `refreshStrategy: refreshBuffer` - see below                      |
+
+The generator also carries the imports the copied adapters and cookie options need into the client file, and rebases relative paths. A name that the v2 file declares at its top level, not imports, goes into the report: move it into the client file or export it.
+
+`refreshBuffer` and `refreshStrategy` use different units. `refreshBuffer` is always milliseconds before expiry (default 5 minutes). A `refreshStrategy` number above `1` is also milliseconds before expiry, but a number from `0` to `1` is the fraction of the token lifetime to use before refreshing. Without either setting, v3 refreshes at 75% of the lifetime, and the buffer is kept between 1 and 10 minutes. The generator copies a literal `refreshBuffer` above `1` as is. For any other value it writes `{ minBufferMs: x, maxBufferMs: x }`, which pins the buffer to exactly `x` milliseconds.
+
+Two layout rules follow from this:
+
+- **Auth queries belong in the client file.** The provider needs the login and refresh creators, and the secure creators need the provider. If the creators stay in a separate `auth.queries.ts` that imports the client, the two files form an import cycle. Define them above the provider, and let `auth.queries.ts` import them back for its `legacy*` wrappers.
+- **Nothing goes into `app.config.ts`.** Both the client and the auth provider are root-provided the moment something injects them; the `provide` member of the definition exists for tests and overrides.
+
+### Auth call sites and interceptors
+
+The generator does not rewrite the code around the provider. It reports every use of `setAuthProvider`, `clearAuthProvider`, `authProvider$` and `isBearerAuthProvider`, because a v3 auth provider has no member of these names. It also reports each `HttpInterceptor` that sets an `Authorization` header: a v3 query sends its own bearer token, so a request that passes through the interceptor carries the header twice.
+
+### Default headers move onto the client
+
+`setDefaultHeaders({ headers, refreshQueriesInUse })` has no method equivalent. Client-wide headers are configuration now, and a function form re-reads on every request - so a signal can drive them:
+
+```ts
+const previewToken = signal<string | null>(null);
+
+const API = createQueryClient({
+  name: 'api',
+  baseUrl: 'https://api.example.com',
+  headers: () => {
+    const token = previewToken();
+
+    return token ? { 'X-Preview-Token': token } : {};
+  },
+});
+
+export const injectApi = toInjectFn(API);
+```
+
+Per-query `args.headers` are merged on top and win per header name. Client headers are deliberately **not** part of the cache key, so changing them does not invalidate anything by itself - that is what `refreshQueriesInUse: true` used to do, and it is now an explicit call:
+
+```ts
+previewToken.set(token);
+injectApi().refreshQueriesInUse(); // re-runs every bound GET/HEAD/OPTIONS, in flight ones included
+```
+
+Headers can be a plain record, so this needs no `HttpInterceptor` and no `@angular/*` import. An interceptor also works, but it only affects _subsequent_ requests - anything already resolved keeps data fetched under the old header.
+
+The header function runs on every request, outside any injection context, so it cannot call `inject()`. Read app state through a signal it closes over, as above, and let a service write that signal. Where the value only exists in DI, keep an `HttpInterceptor` - it now sees query requests too, and can check `IS_QUERY_REQUEST` to pick them out.
+
+### Clients can still be scoped to a route
+
+A client, an auth provider and a WebSocket client are root-provided on first `inject()`, but each definition also has a `provide` half that gives a subtree its own instance. A v2 client scoped to a route's `providers` stays scoped:
+
+```ts
+export const provideGgApi = toProvideFn(GG_API);
+export const provideGgAuth = toProvideFn(GG_AUTH);
+
+export const routes: Routes = [
+  { path: 'lobby/:id', providers: [provideGgApi(), provideGgAuth()], component: MatchLobby },
+];
+```
+
+Provide them together. An auth provider injects its client from its own injector, so a root auth provider next to a route client talks to a second, root instance of the client.
+
+## 3. Migrate screens
+
+### Templates read signals, not directives
+
+[`<et-query-error>`](/components/query-error) takes the `error()` of a v3 query or a [query group](/query/groups) and retries through `[query]`. `*etQuery` is legacy-only **by design**: a current-system query already exposes everything it computed, so a template reads it directly:
+
+```html
+@if (postQuery.loading()) {
+<et-spinner />
+} @else if (postQuery.error(); as error) {
+<p class="error">{{ queryErrorMessage(error) }}</p>
+} @else if (postQuery.response(); as post) {
+<h1>{{ post.title }}</h1>
+}
+```
+
+`executionState()` is the `@switch`-friendly form of the same thing, and it distinguishes "loading with a cached response" from "loading with nothing to show":
+
+```html
+@switch (postQuery.executionState()?.type) { @case ('loading') {
+<et-spinner />
+} @case ('failure') {
+<p>{{ queryErrorMessage(postQuery.error()) }}</p>
+} @case ('success') {
+<h1>{{ postQuery.response()!.title }}</h1>
+} }
+```
+
+v2 kept `loading` false during a polling or auto-refresh load and set `refreshing` instead. v3 has no `refreshing`: every execution sets `loading()`, so a spinner bound to it flashes on each tick. Show it only while there is nothing to render yet, with `@if (postQuery.loading() && !postQuery.response())`, and read a background refresh from `executionState()` (`type: 'loading'`, `hasCachedResponse: true`) and `triggeredBy()` (`'polling'`, `'auto-refresh'`). See [withPolling](/query/features#withpolling).
+
+[`queryErrorMessages(error)`](/query/errors#rendering-error-messages) flattens the single/list split of a `QueryErrorResponse` into a plain string array; `queryErrorMessage(error)` takes the first one. Use them instead of hand-rolling the branch.
+
+The cdk query button (`[et-query-button]`, `QueryButtonDirective`) becomes [`etQueryButton`](/components/button#query-button) on an `@ethlete/components` button. It shows loading and progress only, without the success and failure flash:
+
+```html
+<button [etQueryButton]="savePost" (click)="save()" et-button>Save</button>
+```
+
+Until a query is migrated, wrap it with [`queryButtonSourceFromV2Query`](/components/button#legacy-queries), which also accepts a query collection.
+
+### Infinity queries
+
+`createInfinityQueryConfig` with `*etInfinityQuery` becomes a [paged query stack](/query/stacks#paged-queries), and `etInfinityQueryTrigger` becomes [`etPagedQueryTrigger`](/components/paged-query-trigger) bound to it:
+
+```ts
+protected matches = createPagedQueryStack({
+  queryCreator: getMatches,
+  responseNormalizer: ethletePaginationAdapter,
+  args: (page) => ({ queryParams: { page } }),
+  features: [withPolling({ interval: 30_000 })],
+});
+```
+
+```html
+@for (match of matches.items(); track match.id) { … }
+<div [etPagedQueryTrigger]="matches"></div>
+```
+
+Drop the `@if (canLoadMore && !loading)` around the trigger: it waits for a loading page and fetches again while it stays in view. Inside an `et-scrollable` it measures against the track, so `rootMargin` pre-fetches in a horizontal rail. A trigger on a `<button>` becomes `(click)="matches.fetchNextPage()"` with [`[etQueryButton]`](/components/button#query-button), and `infinityQueryOverride` becomes a stack switch in the binding: `[etPagedQueryTrigger]="upcoming.isLastPageLoaded() ? completed : upcoming"`.
+
+### Devtools move to the lazy shell
+
+The generator moves the devtools component to the lazy shell, which loads the panel on first open instead of with the app. It does three things:
+
+- the per-client `provideQueryClientForDevtools({ client, displayName })` calls collapse into a single `provideQueryDevtools()` - v3 registers every client and auth provider at once;
+- the provider call becomes `provideQueryDevtools({ ui: () => import('@ethlete/query-devtools/lazy') })`, which mounts the devtools itself, so `@ethlete/query-devtools` has to be a dependency of the app;
+- `QueryDevtoolsComponent` is removed from every `imports` array, and `<et-query-devtools>` from every template, inline or in an `.html` file;
+- where no legacy provider call exists in the project, `QueryDevtoolsComponent` becomes `QueryDevtoolsLazyComponent` and `<et-query-devtools>` becomes `<et-query-devtools-lazy>` instead.
+
+The generator moves every client, so no `V2QueryClient` is left after a run. A client it reports as `Migrator error: a V2QueryClient is left` is a bug in the migration: move it by hand and report the case. The panel lists current-system queries and the `legacy*` interop queries, which are real queries underneath. See the [lazy shell](/query-devtools/).
+
+### Query collections
+
+A v2 query collection tracked "which of these queries ran last". What replaces one depends on what it held:
+
+- **An action set, the latest wins** (accept/decline, create/edit/delete): a [query group](/query/groups). Execute each member through `group.members.<key>.execute()`, and bind the group where the collection went - `[etQueryButton]="group"`, `<et-query-error [error]="group.error()" [query]="group">`. `*etQuery="collection(); …"` has no v3 counterpart; read `group.loading()` and `group.error()` in the template. A `switchQueryCollectionState()` subscription for "the current member succeeded" becomes `group.succeeded$`, and a `type === '…'` check reads `group.latest()?.key`.
+- **One endpoint chosen by context** (player or team, organisation or team): select the query in a `computed`, `current = computed(() => (this.isTeam() ? this.inviteTeam : this.inviteOrganisation))`. The context signal already says which query applies.
+- **Auth** (refresh, login, two-factor): [`createBearerAuthProvider`](/query/auth) replaces it; read [`provider.executionState()`](/query/auth#execution-state).
+
+### EntityStore becomes `invalidates` and tags
+
+v3 has no entity store. A normalized store breaks on write-through: a `PATCH` that returns nothing, or part of the object, leaves the entity wrong, and a side effect on another object is not in the response at all. v3 refetches instead, and the [cache](/query/caching) already de-duplicates by request.
+
+Move each `entity` config's `set` to the mutation that changes the entity: declare [`invalidates`](/query/caching#invalidating-from-the-mutation) on its creator, and [`tags`](/query/caching#tags) on the reads that show it when the URL does not cover them. Don't write the response into other queries with `subtle.setResponse` - that is the store's write-through problem again, by hand.
+
+```ts
+export const getOpportunity = createGetQuery(client)<GetOpportunityArgs>((p) => `/opportunities/${p.uuid}`, {
+  tags: ({ args }) => [`opportunity:${args.pathParams.uuid}`],
+});
+
+export const patchOpportunityPerson = createPatchQuery(client)<PatchPersonArgs>(
+  (p) => `/opportunities/${p.uuid}/people/${p.peopleUuid}`,
+  { invalidates: ({ args }) => [{ tag: `opportunity:${args.pathParams.uuid}` }, { url: '/people' }] },
+);
+```
+
+A hand-written `refresh()` after a mutation becomes the same one line on the creator. Where the store's write-through made the UI update before the server answered, add [`withOptimisticUpdate`](/query/caching#optimistic-updates) at the call site: it writes the guess into the matched reads, rolls it back on failure, and the `invalidates` refetch corrects it.
+
+```ts
+patchOpportunityPerson(
+  withArgs(() => ({ pathParams: { uuid, peopleUuid }, body })),
+  withOptimisticUpdate({
+    read: getOpportunity,
+    target: ({ args }) => ({ tag: `opportunity:${args.pathParams.uuid}` }),
+    update: ({ current, args }) => ({ ...current, people: toggle(current.people, args.pathParams.peopleUuid) }),
+  }),
+);
+```
+
+### GraphQL creators are rewritten by hand
+
+The generator does not rewrite `client.gqlQuery()` and `client.gqlMutate()` creators. Each one gets a task that names the replacement: `createGqlQueryViaPost`, `createGqlMutationViaPost`, or `createGqlQueryViaGet` for a query on a client that set `request.gql.transferVia: 'GET'`. v3 has no client-level transfer option, so the choice moves to the creator. The task covers every call on a migrated client or an alias of it, inline, in a class property or inside a function, and warns that the callback parameters in its config turn into implicit-any errors (TS7006) until the creator is rebuilt. See [GraphQL](/query/gql).
+
+### Reactive-forms async validators
+
+[`validateWithQuery`](/query/errors#validating-against-the-server-as-the-user-types) is for signal forms only. A reactive-forms `AsyncValidatorFn` that ran a v2 query keeps working on the interop query. To move it to the current system, create the query once in an injection context and run it with `executeUntilSettled$` (a function route also needs `silenceMissingWithArgsFeatureError: true`):
+
+```ts
+private emailValidate = postEmailValidate();
+
+emailTaken: AsyncValidatorFn = (control) =>
+  executeUntilSettled$(this.emailValidate, { args: { body: { email: control.value } } }).pipe(
+    map((snapshot) => (snapshot.error() ? { server: queryErrorMessage(snapshot.error()) } : null)),
+  );
+```
+
+Moving the form to signal forms and `validateWithQuery` gets the debounce, the abort of a superseded round and the violation mapping for free.
+
+### `prepare()` needs an injector
+
+The interop layer builds a real query underneath, so `prepare()` needs an injection context - v2 did not. Every call site that prepared a query lazily (a DOM handler, an RxJS callback, a plain factory) has to pass one:
+
+```ts
+private injector = inject(Injector);
+
+search = (term: string) => legacyFindPeople.prepare({ queryParams: { term }, injector: this.injector });
+```
+
+Two failure modes, both now reported clearly instead of as a bare `NG0203` / `NG0205`:
+
+- **No injector at all** throws an `ET950` error naming the creator - by its `name`, or by the endpoint it was built from (`GET /person`) when it has none. Only Angular's NG0203 is translated this way; any other DI failure (an injector mid-teardown, a missing provider) surfaces unchanged, because "called outside of an injection context" would send you after the wrong thing.
+- **A destroyed injector** - a captured component injector used by a callback that outlived the component, e.g. a debounced search resolving after navigation - logs a dev-mode warning and returns an **inert query**: it never executes, its signals stay empty, and tearing it down is a no-op. That is deliberate; a search firing during teardown is not a programming error worth crashing over. If you see the warning regularly, guard the call site with `DestroyRef.onDestroy` or capture an injector that outlives it.
+
+`nx g @ethlete/query:migrate-to-query-v3` threads the injector for you into `prepare()`, `createSubject()`, `createSignal()` and `behaviorSubject()` calls on a `legacy*` creator, and
+[`ethlete/no-legacy-prepare-without-injector`](/eslint/rules#no-legacy-prepare-without-injector) keeps the
+next callback you write from regressing - both classify by the **innermost** function boundary, so a
+`prepare()` inside a `computed()` at a class field counts as needing one even though the field initializer
+itself has a context.
+
+A call whose receiver is not a plain `legacy*` identifier (`this.creators.legacyX.prepare()`) cannot be resolved without type information. The generator reports each such call outside a constructor, field initializer or `inject()` function in the migration tasks, with `file:line`. Pass `{ injector }` there by hand.
+
+The container factories take the same escape hatch, in their config rather than their args - `createSubject`,
+`createSignal` and `behaviorSubject` all accept `{ injector }`, and throw the same named `ET950` without one:
+
+```ts
+private injector = inject(Injector);
+
+peopleQuery = legacyFindPeople.createSubject(null, { injector: this.injector });
+```
+
+#### Opting out of the requirement entirely
+
+`provideLegacyPrepareFallback()` lets `prepare()` fall back to the application's root injector instead of
+throwing, for a migration with too many call sites to thread by hand:
+
+```ts
+bootstrapApplication(AppComponent, {
+  providers: [provideLegacyPrepareFallback()],
+});
+```
+
+Two things degrade when the fallback is used, both matching v2: the query's lifetime becomes the
+application's - nothing tears it down when a component dies, so cleanup rests on a query container or
+`config: { destroyOnResponse: true }` - and the devtools lose the host element for "inspect".
+
+It is **browser only** by design. A module-global injector shared across concurrent server-side renders
+would leak one request's data into another, so it refuses to stash anything on the server and `ET950` still
+throws there. Passing `injector` at the call site stays the better answer where you can.
+
+With several applications on one page, the first one that provided the fallback answers every `prepare()`
+made outside an injection context - whichever application made the call - until it is destroyed, and dev
+mode warns when a second application registers.
+
+### Early v3 call sites: `withArgs` and `null`
+
+Code written against the current system while it shipped in `@ethlete/query` 5.x needs one change of its own. In 5.x, a `withArgs` source that returned `null` kept the previous args, and `CLEAR_QUERY_ARGS` parked the query. Now `CLEAR_QUERY_ARGS` is gone and `null` parks: `args()`, `response()` and `executionState()` become `null`, and polling pauses (see [`withArgs`](/query/features#withargs)).
+
+- `prep-for-query-v3` rewrites `CLEAR_QUERY_ARGS` (and the `ClearQueryArgs` type) to `null`. A local name that shadows the import is left alone. A file that re-exports either name exports a local `null` under that name instead, and the prep lists it: replace the importers' uses with `null`, then delete the export.
+- It also warns about every `withArgs` callback that returns a literal `null`, inline or passed by a reference the file declares (a function, a method, an arrow in a variable or field, a `computed`). A reference it cannot follow, such as an imported function, is listed as unchecked. One that returns a variable holding `null` is not listed, so search for those yourself. Where one relied on keeping the old args, return those args yourself, for example with a `linkedSignal` that holds on to the last non-null value:
+
+```ts
+type MatchArgs = { pathParams: { matchId: string } } | null;
+
+private lastMatchArgs = linkedSignal<MatchArgs, MatchArgs>({
+  source: () => {
+    const id = this.matchId();
+
+    return id ? { pathParams: { matchId: id } } : null;
+  },
+  computation: (next, previous) => next ?? previous?.value ?? null,
+});
+
+matchQuery = getMatch(withArgs(() => this.lastMatchArgs()));
+```
+
+A callback on that list compiles in both versions and only behaves differently, so check each one.
+
+## Behavior worth knowing before you debug it
+
+- **A wrong creator in a signal is a `tsc` error.** v2 typing let a signal made from one creator hold the query of another (for example a PATCH query in a POST signal). The legacy `args` typing does not, so the mistake shows up as a type error after the migration. The generator does not find these; fix each one by hand.
+- **Migrated creators do not report errors to `ErrorHandler`.** A v2 query never passed a failed request to Angular's `ErrorHandler`; a v3 creator does by default. The generator writes `reportErrors: false` into every creator it migrates, so the v2 behavior stays and the line is visible. Remove it where a failed request should reach `ErrorHandler`. `error()` and `executionState()` report the failure either way. The interop wrapper's default does not change.
+- **Secure queries wait for a token.** A secure query executed before login does not fail - it parks until `accessToken()` is set, then runs. Don't gate them on `isAuthenticated()` by hand.
+- **A failed refresh retries up to 8 times, and a v2 refresh did not.** v2 dropped the tokens on any failed refresh. v3 retries a transient failure (a network error, `408`, `425`, `429`, `500`, `502`, `503`, `504`) with exponential backoff up to 8 attempts, because a refresh that fails for good ends the session, and waiting out a backend outage is cheaper than logging the user out. The generator writes `retryConfig: { maxAttempts: 8 }` into the scaffold so the number is visible; set `maxAttempts: 0` for unlimited retries, or a lower number to log out sooner.
+- **The login cookie stays for `expiresInDays` unless the user opts out.** A v2 provider with a cookie always kept it for `cookieExpiresInDays` (30 by default). In v3 `defaultRememberMe` is `false`, which writes a session cookie that ends with the browser. The generator writes `defaultRememberMe: true` into the scaffold to keep the v2 behavior; drive `setRememberMe()` from a checkbox, and drop the line, where the session cookie is wanted.
+- **The login cookie is per host.** v2's `cookieDomain` let sibling hosts share one login. `withPersistentAuth` keys the cookie per origin, so a login on one host does not reach another. The generator copies `cookieDomain` into `cookie.domain` of the scaffold, so sibling hosts keep sharing the cookie. A host that rotates the refresh token writes the new one to that shared cookie, and a host whose own refresh is then rejected retries once with the cookie's token before it ends the session. Where the v2 provider set no `cookieDomain`, the generator warns instead. Remember-me stays per host.
+- **`withPersistentAuth` calls `tryLogin()` during setup.** The cookie-backed session restore happens on its own; you do not need to trigger the restore from an app initializer. A **failed** restore does not settle on `type: 'autoLogin'`, `state: 'error'`: the cookie is spent through the refresh query, so the default policy ends the session in the same effect pass and a consumer sees `autoLogin` `loading` followed straight by `{ type: 'logout', state: 'success' }`. Gate a startup screen on [`sessionStatus()`](/query/auth#is-there-a-session) rather than on that error state.
+- **`logout()` clears the queries bound to it.** It drops the tokens, tears down every secure cache entry, and resets the secure queries still holding a response - a component mounted across the logout stops showing the previous user's data without a manual `reset()`.
+- **Responses survive new args.** In v2 a query with new args was a new query, so a view lost its data unless it read the state through `cacheResponse: true` (`queryStateSignal`, `*etQuery` with `cache`). A v3 query does that by default: `response()` keeps the previous args' response while the new ones load, reported as `executionState().cachedResponse`. Set `keepPreviousResponse: false` in the query's config (`getPost({ keepPreviousResponse: false }, withArgs(...))`) where the old behavior is wanted. Mutations keep clearing. Interop queries are unaffected - `prepare()` still builds one query per args, and `cacheResponse` / `etQueryCache` work on them as before.
+- **Responses survive a re-execution and a failed re-run.** `response()` is kept while a query re-runs and remains available if that run fails - v2 swapped the whole state, so its `Failure` carried no response at all. The exception is a **secure** query re-executed while the refresh it waits on has failed: that one reports the refresh error and clears `response()`, because the session the response belonged to is over.
+- **`destroyOnResponse` is added only where a query is provably one-shot.** The `prepare()` migration writes it for a discarded query, and for a local variable that is executed at most once and is not returned, stored, passed on or polled. A `prepare()` inside an async validator also gets it. A query in a class property, a signal or a container, or one that is returned or executed again, keeps no `destroyOnResponse`: the first response would destroy it and a later `execute()` would do nothing.
+- **A plain `computed` that returns a prepared query becomes `queryComputed`.** `computed(() => creator.prepare(...).execute())` built one unmanaged query per input change. The migration renames it, adds `{ injector }` when the `computed` has no options, and imports `queryComputed` from `@ethlete/query`. A `computed` that only reads the result, for example `.rawState`, stays as it is.
+- **ET800 can show loops that v2 hid.** v3 reports a query that sends many identical requests in a short time. A v2 app with such a loop only sent the requests. The cause is an app defect, for example a query executed inside a `computed` that tracks its own result, so find and fix the loop. Repeated `execute({ skipCache: true })` calls count too: a test that fakes responses in a tight loop (a `reload()` after each faked error) hits ET800 after the fifth call. Let fake time pass 100 ms between the calls. The error names the query's route.
+- **Interop containers follow the request method again.** `createSignal` / `createSubject` - and `behaviorSubject`, which is `createSubject` now rather than the bare `BehaviorSubject` v2 handed back - default their cleanup (`abortPrevious`, `stopPreviousPolling`, `abortOnDestroy`) to "on for cacheable requests", and an interop query now answers that question from its creator. A superseded `GET` is aborted and stops polling; a superseded `POST` that is still in flight is left alone, reaches the server, and is torn down once it has settled. A container's teardown destroys the query it holds, with the same rule: a `POST` still in flight reaches the server and is torn down once it has settled - so a one-shot query stored in a container does not also need `destroyOnResponse`, and a `behaviorSubject` ends its query's life where v2 left it running. The same holds for the injector a `prepare()` ran in: when it dies, an interop `POST` still in flight finishes before it is destroyed, while a `GET` is cancelled with it.
+- **`abort()` has no Cancelled state.** v2 `query.abort()` maps to v3 `query.abort()`, which returns whether something was in flight. v3 has no `Cancelled` state: the aborted execution sets no response and no error, and `executionState()` goes back to what it was before that execution started (`null` if the query never settled). A legacy interop query still reports v2's `Cancelled` state.
+- **A `cacheAdapter` still only sets freshness.** The generator carries it over unchanged, so `cacheAdapter: () => 0` still sends every `execute({ options: { allowCache: true } })` to the server, as it did every v2 `execute()`. What is new is `keepUnusedFor`: an entry stays around for 5 minutes after its last consumer, and a remount shows its old response while it refetches. Set `keepUnusedFor: 0` on the client if that is not wanted. v3 also passes the adapter Angular `HttpHeaders`, so read a header with `headers.get(name)`.
+- **An `entity` config only sees real responses.** `set` runs on success - including a 204, whose body is legitimately `null` - and never on `prepare()` or on a failure that left a previous response in place.
+- **Interop queries keep three v2 gaps.** The interop layer does not refetch on window focus (`triggeredVia` stays `'program'`) and does not pause polling while the window is blurred. `abort()` shows `Cancelled` only after the next tick, and `execute({ cancelPrevious: true })` in the same tick drops the `Cancelled` and second `Loading` states. A scenario spec pins each behavior.
+- **The request URL is `query.url`.** v2's private `_routeWithParams` is gone. An interop query reads the resolved URL (base, path params and query params) from `query.url`, a v3 query from the `url()` signal. Both are `null` before the first execution.
+
+## The `Any*` types
+
+After `prep-for-query-v3` (which renames the v2 `AnyQuery` to `AnyV2Query`) a workspace has several escape-hatch types in scope. They are not interchangeable:
+
+| Type                    | What it accepts                                                                                                             |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `AnyNewQuery`           | Any **current-system** query (`Query<TArgs>`).                                                                              |
+| `AnyV2Query`            | Any **legacy** query built by `V2QueryClient` (`.prepare()` / `.state$`).                                                   |
+| `AnyLegacyQuery`        | Any **interop** query - a current-system query behind the legacy surface, produced by a `createLegacyQueryCreator` wrapper. |
+| `AnyQueryCollection`    | `{ type, query }` where `query` is an `AnyV2Query` or an `AnyLegacyQuery`.                                                  |
+| `AnyBearerAuthProvider` | Any auth provider, with its query keys erased.                                                                              |
+
+The one to avoid where you can is `AnyBearerAuthProvider`: with the keys erased, `provider.queries` degrades to an index signature and every access needs bracket syntax under `noPropertyAccessFromIndexSignature`. Derive the real type instead:
+
+```ts
+export const authProviderRef = createBearerAuthProvider({/* … */});
+export type ApiAuthProvider = BearerAuthProviderOf<typeof authProviderRef>;
+
+const doLogin = (provider: ApiAuthProvider) => provider.queries.login.execute({ body });
+```
+
+## Generic helper code
+
+In code generic over `TArgs`, TypeScript cannot see that an argless query's `RequestArgs<TArgs>` is `{}`. Omit the argument where you can - `query.execute()` and `provider.queries.login.execute()` both take none - and use `emptyQueryArgs<TArgs>()` where a value is required:
+
+```ts
+const runAnything = <TArgs extends QueryArgs>(query: Query<TArgs>) => query.execute({ args: emptyQueryArgs<TArgs>() });
+```

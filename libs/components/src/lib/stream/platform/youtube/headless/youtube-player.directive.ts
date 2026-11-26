@@ -1,0 +1,203 @@
+import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
+import { EMPTY, Observable, Subscription, interval, of, switchMap, tap } from 'rxjs';
+import { STREAM_ERROR_CODES } from '../../../stream-errors';
+import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
+import { injectStreamScriptLoader } from '../../../stream-script-loader';
+import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
+import { YoutubePlayerParamsDirective } from './youtube-player-params.directive';
+import { YtPlayer, YtWindow } from './youtube-player.types';
+
+const YT_API_URL = 'https://www.youtube.com/iframe_api';
+
+export const YOUTUBE_PLAYER_TOKEN = new InjectionToken<YoutubePlayerDirective>('YOUTUBE_PLAYER_TOKEN');
+
+const waitForYtReady = (win: YtWindow): Observable<void> => {
+  if (win.YT?.Player) return of(undefined);
+
+  return new Observable<void>((subscriber) => {
+    const prev = win.onYouTubeIframeAPIReady;
+    win.onYouTubeIframeAPIReady = () => {
+      prev?.();
+      subscriber.next();
+      subscriber.complete();
+    };
+  });
+};
+
+@Directive({
+  providers: [
+    { provide: YOUTUBE_PLAYER_TOKEN, useExisting: YoutubePlayerDirective },
+    { provide: STREAM_PLAYER_TOKEN, useExisting: YoutubePlayerDirective },
+  ],
+})
+export class YoutubePlayerDirective implements StreamPlayer {
+  private platformId = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
+  private params = inject(YoutubePlayerParamsDirective);
+  private el = injectHostElement();
+  private scriptLoader = injectStreamScriptLoader();
+  private renderer = injectRenderer();
+
+  public readonly CAPABILITIES: StreamPlayerCapabilities = {
+    canPlay: true,
+    canPause: true,
+    canMute: true,
+    canSeek: true,
+    canGetDuration: true,
+    isLiveCapable: true,
+    hasThumbnail: true,
+  };
+
+  public state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
+  public thumbnail = computed(() => `https://img.youtube.com/vi/${this.params.videoId()}/mqdefault.jpg`);
+
+  private playerResource = rxResource({
+    params: () => (isPlatformBrowser(this.platformId) ? this.params.videoId() : null),
+    stream: ({ params: videoId }) => {
+      if (!videoId) return EMPTY;
+
+      return this.scriptLoader.load(YT_API_URL).pipe(
+        switchMap(() => waitForYtReady(this.document.defaultView as unknown as YtWindow)),
+        switchMap(
+          () =>
+            new Observable<YtPlayer>((subscriber) => {
+              const win = this.document.defaultView as unknown as YtWindow;
+
+              if (!win.YT?.Player) {
+                subscriber.error(
+                  new RuntimeError(
+                    STREAM_ERROR_CODES.YOUTUBE_SDK_NOT_AVAILABLE,
+                    '[EtYoutubePlayer] YT.Player not available after SDK load. Ensure the YouTube IFrame API URL is accessible.',
+                  ),
+                );
+
+                return;
+              }
+
+              let currentTimeSub: Subscription | null = null;
+
+              const clearCurrentTimeInterval = () => {
+                currentTimeSub?.unsubscribe();
+                currentTimeSub = null;
+              };
+
+              const placeholder = this.renderer.createElement('div');
+              this.renderer.appendChild(this.el, placeholder);
+
+              const autoplay = this.params.autoplay();
+
+              const player = new win.YT.Player(placeholder, {
+                videoId,
+                host: this.params.hostUrl(),
+                width: this.params.width(),
+                height: this.params.height(),
+                playerVars: {
+                  enablejsapi: 1,
+                  origin: this.document.defaultView?.location.origin ?? '',
+                  start: this.params.startTime() || undefined,
+                  rel: 0,
+                  ...(autoplay ? { autoplay: 1, mute: 1 } : {}),
+                  ...this.params.playerVars(),
+                },
+                events: {
+                  onReady: () => {
+                    this.state.set({
+                      ...DEFAULT_STREAM_PLAYER_STATE,
+                      isReady: true,
+                      isLoading: false,
+                      isMuted: autoplay,
+                    });
+                    subscriber.next(player);
+                  },
+                  onStateChange: (event) => {
+                    const yt = win.YT;
+                    const s = event.data;
+                    const isPlaying = s === yt.PlayerState.PLAYING;
+
+                    clearCurrentTimeInterval();
+
+                    if (isPlaying) {
+                      currentTimeSub = interval(250)
+                        .pipe(
+                          tap(() => {
+                            this.state.update((prev) => ({
+                              ...prev,
+                              currentTime: player.getCurrentTime() ?? null,
+                            }));
+                          }),
+                        )
+                        .subscribe();
+                    }
+
+                    this.state.update((prev) => ({
+                      ...prev,
+                      isPlaying,
+                      isEnded: s === yt.PlayerState.ENDED,
+                      duration: player.getDuration() ?? null,
+                      currentTime: player.getCurrentTime() ?? null,
+                      isMuted: player.isMuted(),
+                    }));
+                  },
+                  onError: (event) => {
+                    const youtubeError = new RuntimeError(
+                      STREAM_ERROR_CODES.YOUTUBE_PLAYER_ERROR,
+                      `[EtYoutubePlayer] YouTube player error: ${event.data}`,
+                    );
+                    this.state.update((s) => ({ ...s, error: youtubeError, isLoading: false }));
+                    subscriber.error(youtubeError);
+                  },
+                },
+              });
+
+              return () => {
+                clearCurrentTimeInterval();
+                player.destroy();
+                this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
+              };
+            }),
+        ),
+      );
+    },
+  });
+
+  constructor() {
+    effect(() => {
+      const isLoading = this.playerResource.isLoading();
+      const error = isLoading ? undefined : this.playerResource.error();
+      this.state.update((s) => ({
+        ...s,
+        isLoading: error !== undefined ? false : isLoading,
+        error: error ?? null,
+      }));
+    });
+  }
+
+  public play() {
+    this.playerResource.value()?.playVideo();
+  }
+
+  public pause() {
+    this.playerResource.value()?.pauseVideo();
+  }
+
+  public mute() {
+    this.playerResource.value()?.mute();
+    this.state.update((s) => ({ ...s, isMuted: true }));
+  }
+
+  public unmute() {
+    this.playerResource.value()?.unMute();
+    this.state.update((s) => ({ ...s, isMuted: false }));
+  }
+
+  public seek(seconds: number) {
+    this.playerResource.value()?.seekTo(seconds, true);
+  }
+
+  public retry() {
+    this.playerResource.reload();
+  }
+}

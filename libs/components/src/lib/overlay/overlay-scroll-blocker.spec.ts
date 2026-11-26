@@ -1,0 +1,280 @@
+import { Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { injectOverlayRuntime } from '@ethlete/core';
+import '../../test-helpers';
+import { OverlayConfig } from './overlay-config';
+import { injectOverlayManager } from './overlay-manager';
+import { OverlayRef } from './overlay-ref';
+import { injectOverlayScrollBlocker } from './overlay-scroll-blocker';
+import { bottomSheetOverlayStrategy } from './strategies';
+
+@Component({ template: 'overlay content' })
+class OverlayContentComponent {}
+
+@Component({ template: '' })
+class HostComponent {}
+
+describe('overlay scroll blocker', () => {
+  let openedRef: OverlayRef<OverlayContentComponent, unknown> | null = null;
+  let scrollHeightSpy: ReturnType<typeof vi.spyOn> | null = null;
+
+  beforeEach(() => {
+    openedRef = null;
+
+    // jsdom reports every box as zero-sized, so the document never looks scrollable and the
+    // blocker skips the lock it is here to test.
+    scrollHeightSpy = vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(2000);
+
+    TestBed.configureTestingModule({ providers: [] });
+  });
+
+  afterEach(() => {
+    openedRef?.close();
+    TestBed.tick();
+    scrollHeightSpy?.mockRestore();
+    document.documentElement.removeAttribute('style');
+  });
+
+  const setup = () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    TestBed.runInInjectionContext(() => injectOverlayScrollBlocker());
+    TestBed.tick();
+
+    return fixture;
+  };
+
+  const open = (config: Partial<OverlayConfig>) => {
+    const overlayRef = TestBed.runInInjectionContext(() =>
+      injectOverlayManager().open<OverlayContentComponent, unknown>(OverlayContentComponent, config),
+    );
+
+    openedRef = overlayRef;
+    TestBed.tick();
+
+    return overlayRef;
+  };
+
+  /** What a strategy switch does when its config turns the backdrop on or off. */
+  const updateBackdrop = (hasBackdrop: boolean) => {
+    const runtime = TestBed.runInInjectionContext(() => injectOverlayRuntime());
+
+    runtime.openEntries().at(-1)?.updateBackdrop(hasBackdrop);
+    TestBed.tick();
+  };
+
+  const isLocked = () => document.documentElement.style.position === 'fixed';
+
+  it('does not lock the page for a non-modal overlay without a backdrop', () => {
+    setup();
+    open({ mode: 'non-modal', hasBackdrop: false });
+
+    expect(isLocked()).toBe(false);
+  });
+
+  it('locks the page for a modal overlay', () => {
+    setup();
+    open({ mode: 'modal' });
+
+    expect(isLocked()).toBe(true);
+  });
+
+  it('locks the page for a non-modal overlay that mounts with a backdrop', () => {
+    setup();
+    open({ mode: 'non-modal', strategies: bottomSheetOverlayStrategy({ hasBackdrop: true }) });
+
+    expect(isLocked()).toBe(true);
+  });
+
+  it('locks the page once a strategy switch gives an open non-modal overlay a backdrop', () => {
+    setup();
+    open({ mode: 'non-modal', hasBackdrop: false });
+
+    expect(isLocked()).toBe(false);
+
+    updateBackdrop(true);
+
+    expect(isLocked()).toBe(true);
+  });
+
+  it('unlocks the page once a strategy switch takes the backdrop away again', () => {
+    setup();
+    open({ mode: 'non-modal', hasBackdrop: false });
+
+    updateBackdrop(true);
+
+    expect(isLocked()).toBe(true);
+
+    updateBackdrop(false);
+
+    expect(isLocked()).toBe(false);
+  });
+
+  it('keeps the horizontal scroll position while locked and restores it on close', async () => {
+    vi.spyOn(window, 'scrollX', 'get').mockReturnValue(300);
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(500);
+    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+
+    setup();
+    const overlayRef = open({ mode: 'modal' });
+
+    expect(document.documentElement.style.left).toBe('-300px');
+    expect(document.documentElement.style.right).toBe('300px');
+    expect(document.documentElement.style.top).toBe('-500px');
+
+    overlayRef.close();
+    openedRef = null;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    TestBed.tick();
+
+    expect(scrollToSpy).toHaveBeenCalledWith(300, 500);
+
+    vi.restoreAllMocks();
+  });
+
+  describe('in a pop-up window', () => {
+    let frame: HTMLIFrameElement;
+    let popupDocument: Document;
+    let trigger: HTMLButtonElement;
+
+    beforeEach(() => {
+      frame = document.createElement('iframe');
+      document.body.appendChild(frame);
+
+      const contentDocument = frame.contentDocument;
+
+      if (!contentDocument) throw new Error('iframe without a document');
+
+      popupDocument = contentDocument;
+      vi.spyOn(popupDocument.documentElement, 'scrollHeight', 'get').mockReturnValue(2000);
+      trigger = popupDocument.createElement('button');
+      popupDocument.body.appendChild(trigger);
+    });
+
+    afterEach(() => {
+      openedRef?.close();
+      openedRef = null;
+      TestBed.tick();
+      frame.remove();
+    });
+
+    const isPopupLocked = () => popupDocument.documentElement.style.position === 'fixed';
+
+    it('locks the window the modal overlay is mounted in, not the main page', () => {
+      setup();
+      open({ mode: 'modal', origin: trigger });
+
+      expect(isPopupLocked()).toBe(true);
+      expect(isLocked()).toBe(false);
+    });
+
+    it('unlocks that window again on close', async () => {
+      setup();
+      const overlayRef = open({ mode: 'modal', origin: trigger });
+
+      expect(isPopupLocked()).toBe(true);
+
+      overlayRef.close();
+      openedRef = null;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      TestBed.tick();
+
+      expect(isPopupLocked()).toBe(false);
+    });
+  });
+
+  describe('manual lock', () => {
+    const lockPage = () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const blocker = TestBed.runInInjectionContext(() => injectOverlayScrollBlocker());
+      TestBed.tick();
+
+      return { fixture, lock: blocker.lock };
+    };
+
+    it('locks the page outside any overlay and unlocks on release', () => {
+      const { lock } = lockPage();
+
+      const release = lock();
+
+      expect(isLocked()).toBe(true);
+
+      release();
+
+      expect(isLocked()).toBe(false);
+    });
+
+    it('restores the scroll position on release', () => {
+      vi.spyOn(window, 'scrollY', 'get').mockReturnValue(500);
+      const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+      const { lock } = lockPage();
+
+      const release = lock();
+
+      expect(document.documentElement.style.top).toBe('-500px');
+
+      release();
+
+      expect(scrollToSpy).toHaveBeenCalledWith(0, 500);
+      expect(document.documentElement.style.top).toBe('');
+    });
+
+    it('keeps the page locked when the overlay closes while a manual lock is held', () => {
+      const { lock } = lockPage();
+      const release = lock();
+      const overlayRef = open({ mode: 'modal' });
+
+      overlayRef.close();
+      TestBed.tick();
+
+      expect(isLocked()).toBe(true);
+
+      release();
+
+      expect(isLocked()).toBe(false);
+    });
+
+    it('keeps the page locked when the manual lock is released while an overlay is open', () => {
+      const { lock } = lockPage();
+      const release = lock();
+
+      open({ mode: 'modal' });
+      release();
+      TestBed.tick();
+
+      expect(isLocked()).toBe(true);
+    });
+
+    it('stays locked until every manual lock is released', () => {
+      const { lock } = lockPage();
+      const first = lock();
+      const second = lock();
+
+      first();
+
+      expect(isLocked()).toBe(true);
+
+      second();
+
+      expect(isLocked()).toBe(false);
+    });
+
+    it('ignores a second release of the same lock', () => {
+      const { lock } = lockPage();
+      const first = lock();
+      const second = lock();
+
+      first();
+      first();
+
+      expect(isLocked()).toBe(true);
+
+      second();
+
+      expect(isLocked()).toBe(false);
+    });
+  });
+});

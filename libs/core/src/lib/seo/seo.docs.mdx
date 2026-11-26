@@ -1,0 +1,330 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/SEO/Overview" />
+
+# SEO Utilities
+
+Comprehensive SEO management for Angular applications with signal-based reactive updates, automatic cleanup, and best practices built-in.
+
+## Overview
+
+The SEO utilities provide a complete solution for managing meta tags, structured data, page titles, and link tags in Angular applications. All utilities are signal-based and automatically clean up when components are destroyed.
+
+### Key Features
+
+- **Reactive Updates**: All utilities support Angular signals for automatic updates
+- **Priority System**: Child routes can override parent component SEO settings
+- **Multi-Instance Support**: Handles multiple tags where appropriate (Open Graph images, alternate languages)
+
+### Basic Usage
+
+```typescript
+import { Component, signal, computed } from '@angular/core';
+import {
+  applyHeadTitleBinding,
+  applyDescriptionBinding,
+  applyCanonicalBinding,
+  applySocialMediaBindings,
+} from '@ethlete/core';
+
+@Component({
+  selector: 'app-article',
+  template: '<article>{{ article().content }}</article>',
+})
+export class ArticleComponent {
+  article = signal({
+    title: 'Getting Started with Angular',
+    description: 'Learn the basics of Angular development',
+    imageUrl: 'https://example.com/images/article.jpg',
+  });
+
+  constructor() {
+    // Title
+    applyHeadTitleBinding(computed(() => this.article().title));
+
+    // Meta description
+    applyDescriptionBinding(computed(() => this.article().description));
+
+    // Canonical URL
+    applyCanonicalBinding('https://example.com/articles/getting-started');
+
+    // Social media tags (Open Graph + Twitter Card)
+    applySocialMediaBindings({
+      title: computed(() => this.article().title),
+      description: computed(() => this.article().description),
+      image: computed(() => this.article().imageUrl),
+      url: 'https://example.com/articles/getting-started',
+    });
+  }
+}
+```
+
+## Core Utilities
+
+### Title Management
+
+Set and manage the document title with automatic cleanup and priority resolution.
+
+```typescript
+import { applyHeadTitleBinding } from '@ethlete/core';
+
+// Static title
+applyHeadTitleBinding('My Page Title');
+
+// Dynamic title
+const pageTitle = signal('Welcome');
+applyHeadTitleBinding(pageTitle);
+
+// Computed title
+applyHeadTitleBinding(computed(() => `${product().name} - My Store`));
+```
+
+[Learn more about Title Binding →](/story/core-seo-title-binding--docs)
+
+### Meta Tags
+
+Manage meta tags including description, keywords, robots, and custom tags.
+
+```typescript
+import { applyDescriptionBinding, applyKeywordsBinding, applyRobotsBinding } from '@ethlete/core';
+
+// Description
+applyDescriptionBinding('A comprehensive guide to Angular development');
+
+// Keywords
+applyKeywordsBinding(['angular', 'typescript', 'web development']);
+
+// Robots directives
+applyRobotsBinding({
+  index: true,
+  follow: true,
+  maxSnippet: 160,
+  maxImagePreview: 'large',
+});
+```
+
+[Learn more about Meta Binding →](/story/core-seo-meta-binding--docs)
+
+### Social Media Tags
+
+Configure Open Graph, Twitter Cards, and Article metadata for social sharing.
+
+```typescript
+import { applySocialMediaBindings, applyOpenGraphBindings, applyTwitterCardBindings } from '@ethlete/core';
+
+// All-in-one social media configuration
+applySocialMediaBindings({
+  title: 'My Article Title',
+  description: 'A brief description of the article',
+  image: 'https://example.com/image.jpg',
+  url: 'https://example.com/article',
+  openGraph: {
+    type: 'article',
+    siteName: 'My Website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@mywebsite',
+  },
+  article: {
+    publishedTime: '2024-01-01T00:00:00Z',
+    authors: ['https://example.com/authors/john-doe'],
+    tags: ['angular', 'web development'],
+  },
+});
+
+// Or configure separately
+applyOpenGraphBindings({
+  title: 'My Article',
+  description: 'Article description',
+  type: 'article',
+  images: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
+});
+
+applyTwitterCardBindings({
+  card: 'summary_large_image',
+  site: '@mywebsite',
+  creator: '@author',
+});
+```
+
+[Learn more about Meta Binding →](/story/core-seo-meta-binding--docs)
+
+### Link Tags
+
+Manage canonical URLs, alternate languages, pagination, and resource hints.
+
+```typescript
+import {
+  applyCanonicalBinding,
+  applyAlternateLanguagesBindings,
+  applyPrevBinding,
+  applyNextBinding,
+  applyResourceHintsBindings,
+} from '@ethlete/core';
+
+// Canonical URL
+applyCanonicalBinding('https://example.com/page');
+
+// Alternate languages
+applyAlternateLanguagesBindings({
+  en: 'https://example.com/en/page',
+  de: 'https://example.com/de/page',
+  fr: 'https://example.com/fr/page',
+  'x-default': 'https://example.com/page',
+});
+
+// Pagination
+applyPrevBinding('https://example.com/page/1');
+applyNextBinding('https://example.com/page/3');
+
+// Resource hints for performance
+applyResourceHintsBindings({
+  preconnect: ['https://fonts.googleapis.com', 'https://cdn.example.com'],
+  dnsPrefetch: ['https://analytics.google.com'],
+});
+```
+
+[Learn more about Link Binding →](/story/core-seo-link-binding--docs)
+
+### Structured Data
+
+Add JSON-LD structured data for rich search results.
+
+```typescript
+import { applyStructuredDataBinding } from '@ethlete/core';
+
+applyStructuredDataBinding({
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Getting Started with Angular',
+  author: {
+    '@type': 'Person',
+    name: 'John Doe',
+  },
+  datePublished: '2024-01-01',
+  image: 'https://example.com/image.jpg',
+});
+```
+
+[Learn more about Structured Data Binding →](/story/core-seo-structured-data-binding--docs)
+
+## Common Patterns
+
+### Paginated Content
+
+```typescript
+@Component({
+  selector: 'app-blog-list',
+  template: '<div>Blog Posts</div>',
+})
+export class BlogListComponent {
+  currentPage = signal(2);
+  totalPages = signal(10);
+  postsPerPage = 20;
+
+  constructor() {
+    const page = this.currentPage();
+
+    // Title
+    applyHeadTitleBinding(computed(() => `Blog - Page ${page}`));
+
+    // Canonical
+    const canonicalUrl = computed(() => {
+      const p = this.currentPage();
+      return p === 1 ? 'https://example.com/blog' : `https://example.com/blog/page/${p}`;
+    });
+    applyCanonicalBinding(canonicalUrl);
+
+    // Pagination
+    applyPrevBinding(
+      computed(() => {
+        const p = this.currentPage();
+        if (p <= 1) return null;
+        if (p === 2) return 'https://example.com/blog';
+        return `https://example.com/blog/page/${p - 1}`;
+      }),
+    );
+
+    applyNextBinding(
+      computed(() => {
+        const p = this.currentPage();
+        const total = this.totalPages();
+        return p < total ? `https://example.com/blog/page/${p + 1}` : null;
+      }),
+    );
+
+    // Robots - don't index paginated pages beyond page 1
+    applyRobotsBinding(
+      computed(() => ({
+        index: this.currentPage() === 1,
+        follow: true,
+      })),
+    );
+  }
+}
+```
+
+### Multilingual Site
+
+```typescript
+@Component({
+  selector: 'app-page',
+  template: '<div>{{ content() }}</div>',
+})
+export class PageComponent {
+  currentLang = signal('en');
+  pageSlug = signal('about');
+
+  constructor() {
+    const baseUrl = 'https://example.com';
+
+    // Canonical for current language
+    applyCanonicalBinding(computed(() => `${baseUrl}/${this.currentLang()}/${this.pageSlug()}`));
+
+    // Alternate languages
+    applyAlternateLanguagesBindings({
+      en: computed(() => `${baseUrl}/en/${this.pageSlug()}`),
+      de: computed(() => `${baseUrl}/de/${this.pageSlug()}`),
+      fr: computed(() => `${baseUrl}/fr/${this.pageSlug()}`),
+      es: computed(() => `${baseUrl}/es/${this.pageSlug()}`),
+      'x-default': computed(() => `${baseUrl}/${this.pageSlug()}`),
+    });
+
+    // Open Graph locale
+    applyOpenGraphBindings({
+      locale: computed(() => {
+        const lang = this.currentLang();
+        const localeMap: Record<string, string> = {
+          en: 'en_US',
+          de: 'de_DE',
+          fr: 'fr_FR',
+          es: 'es_ES',
+        };
+        return localeMap[lang] || 'en_US';
+      }),
+    });
+  }
+}
+```
+
+## Resources
+
+### Documentation
+
+- [Title Binding](/story/core-seo-title-binding--docs)
+- [Meta Binding](/story/core-seo-meta-binding--docs)
+- [Link Binding](/story/core-seo-link-binding--docs)
+- [Structured Data](/story/core-seo-structured-data-binding--docs)
+
+### External Resources
+
+- [Google Search Console](https://search.google.com/search-console)
+- [Google Rich Results Test](https://search.google.com/test/rich-results)
+- [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
+- [Twitter Card Validator](https://cards-dev.twitter.com/validator)
+- [Schema.org Validator](https://validator.schema.org/)
+- [Google Search Central](https://developers.google.com/search)
+- [Open Graph Protocol](https://ogp.me/)
+- [Twitter Cards](https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards)
+- [Schema.org](https://schema.org/)

@@ -1,0 +1,558 @@
+# Theming
+
+`@ethlete/core` ships two independent runtime theming systems, and every Ethlete component consumes both:
+
+- **Surface theming** - the elevation-aware neutral "box" a component sits on: background, text, muted/subtle text, border, and a neutral interaction tint. A surface has a `type` (`light` | `dark`) and an integer `elevation`, which powers auto-elevation (a nested panel picks the next elevation up in the same family).
+- **Color theming** - semantic accent palettes (brand, success, warning, error). Each theme carries swatches of `color` (the fill), `onColor` (contrast content on that fill), and optionally `inkColor` (tinted text/border on transparent fills).
+
+::: warning Theme names are yours, not the SDK's
+The SDK defines **no** themes. Names like `brand`, `danger` or `dark-elevated` used below are just what this repo's Storybook registers - your app picks its own. Semantic behavior is addressed via the theme `type` (e.g. `type: 'error'`), never by name.
+:::
+
+## Levels in action
+
+The demo nests the root surface, a surface on it, and a card on that, and opens an overlay from the card at the
+top level. Every level shows its theme name and its five values as the browser resolves them, and holds the same
+components, so hover and pressed show on each level without any setting. The switches change the scheme, the tone
+(`etProvideColor`), and "hover = next level".
+
+@example theming/theming-levels 1730px
+
+"Hover = next level" sets the accordion hover token to the background of elevation 1 on the root, the way an app does
+it today. On the surface level that is the background itself, so the hover disappears there.
+
+The dark levels the demo renders, as this docs app registers them:
+
+<<< @/../docs-examples/src/app/surface-themes.ts#dark-levels
+
+## Registering themes
+
+Define your themes in plain TypeScript files, register them at bootstrap, and generate the CSS from the same files:
+
+```ts
+// app.config.ts
+import { provideColorThemesWithTailwind4, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
+import { SURFACE_THEMES } from '../surface-themes';
+import { THEMES } from '../themes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [...provideColorThemesWithTailwind4(THEMES), ...provideSurfaceThemesWithTailwind4(SURFACE_THEMES)],
+};
+```
+
+The providers only make the themes known to Angular (for the directives and inject helpers below). The actual CSS variables are produced **at build time** by two Nx generators that read the same theme files:
+
+```bash
+yarn nx g @ethlete/core:tailwind-4-color-theme --themesPath=src/themes.ts
+yarn nx g @ethlete/core:tailwind-4-surface-theme --themesPath=src/surface-themes.ts
+```
+
+Each generator emits a `.css` file (import it in your global styles; default `generated-tailwind-themes.css` / `generated-tailwind-surface-themes.css` under `src/styles/`) and a `.d.ts` next to it that registers your theme names with TypeScript - so `etProvideColor` / `etProvideSurface` autocomplete them. The color generator adds one `true` member per theme name to the merge-only `EthleteColorThemeNames` interface, so several sheets can each register their own names; the older single `name: 'a' | 'b'` member of `EthleteColorThemeNameRegistry` still works but is deprecated, and two sheets using it conflict. Re-run the generator whenever the theme files change - no need to remember the options you used: the header comment of each generated file contains the exact command to regenerate it. The generators validate the definitions: exactly one `isDefault` color theme, one default surface per `type`, and no duplicate semantic `type`s.
+
+Color maps may spread consts (`{ ...ON_COLOR_DARK, disabled: '...' }`). The color generator resolves a spread of a const declared in the themes file or imported from a relative file it can read from the workspace. A spread it cannot resolve - a package import, a missing file, or a value that is not an object literal - is skipped with a warning naming the file and the spread, so the generated CSS lacks those colors until you inline them.
+
+When several apps share one theme definition set (a monorepo) but need different defaults, pick the default at the generation invocation instead of in the definitions: `--defaultTheme=<name>` (color generator) and `--defaultLightTheme=<name>` / `--defaultDarkTheme=<name>` (surface generator, per surface `type`) make the named theme the default, overriding any `isDefault` flags - the definitions then don't need `isDefault` at all.
+
+In dev mode `etProvideColor` warns once when no color themes are registered (add `provideColorThemesWithTailwind4()`), and `provideSurfaceThemesWithTailwind4()` also warns once the page has loaded if the root font size is still the browser default - the SDK's `rem` sizes need `html { font-size: 62.5%; }`, see [Setup](/components/setup#styles).
+
+Both provider factories and generators accept a custom prefix (default `'et'`); the provider `prefix` argument must match the generator's `runtimePrefix`.
+
+For code that needs to know the currently active surface (e.g. pickers rendering into overlays), `provideSurfaceContextTracker()` / `injectSurfaceContextTracker()` maintain a registration stack of surface `type` + `elevation` - each open overlay registers its own surface together with its pane element. `surfaceForElement(host)` returns the surface of the innermost overlay whose pane actually **contains** `host` in the DOM, or `null` when `host` sits outside every open overlay. `AutoSurfaceDirective` uses it so opening an overlay only affects auto-surfaces rendered inside it - see below. A layer that renders outside every pane (the notification stack) resolves its own surface instead of following what is open, so it never re-shades while it is on screen.
+
+## Surface themes
+
+A `SurfaceTheme` - all colors are `"R G B"` channel strings:
+
+| Field                 | Type                             | Required | Description                                                                                                          |
+| --------------------- | -------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `name`                | `string`                         | yes      | Becomes the scope class `et-surface--<name>`.                                                                        |
+| `type`                | `'light' \| 'dark'`              | yes      | The elevation family.                                                                                                |
+| `elevation`           | `number`                         | yes      | Integer; auto-surface resolves `elevation + 1`.                                                                      |
+| `isDefault`           | `boolean`                        | no       | Exactly one per `type`; paints `:root`.                                                                              |
+| `background`          | `"R G B"`                        | yes      | Surface background.                                                                                                  |
+| `color`               | `"R G B"`                        | yes      | Primary text.                                                                                                        |
+| `colorMuted`          | `"R G B"`                        | yes      | Secondary text.                                                                                                      |
+| `colorSubtle`         | `"R G B"`                        | yes      | Tertiary text.                                                                                                       |
+| `border`              | `"R G B"`                        | yes      | Border color.                                                                                                        |
+| `tint`                | `"R G B"`                        | no       | The source hover and pressed feedback mixes into a neutral control - see below.                                      |
+| `controlText`         | `"R G B"` per state              | no       | The text of a neutral control per state - see below.                                                                 |
+| `colorThemeVariants`  | `{ <chosen theme>: <theme> }`    | no       | Swaps a chosen accent for a version that reads well on this surface - see [colors per surface](#colors-per-surface). |
+| `semanticColorThemes` | `{ success?, warning?, error? }` | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
+| `colorTheme`          | color theme name                 | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
+
+`elevation` may be negative: write `elevation: -1` as a literal (a unary minus on a number). The `tailwind-4-surface-theme` generator fails, naming the theme, when it cannot read one; it no longer skips it with a warning. A theme at `-1` matters to whatever resolves relative to its parent - filled form fields, table card rows and grid items resolve `parent.elevation + 1`, so under a `-1` surface they resolve elevation `0`. A toast and an `@ethlete/cdk` overlay with a backdrop always resolve elevation `1` and do not follow the parent; a `@ethlete/cdk` overlay without a backdrop resolves `parent.elevation + 1`. When a theme matches, the overlay's scope class changes from `et-surface--inherited` to `et-surface--<theme>`. `@ethlete/cdk` CSS reads no `--et-surface-*` token, so `etProvideSurface` on a cdk host does nothing.
+
+A resolved elevation looks for an exact match and stays on the inherited scope when no theme sits at that level. So **adding a level to an existing app changes UI without any template edit**. Once an elevation-`1` theme of a type is registered, these switch to it: every overlay with a backdrop in both `@ethlete/components` and `@ethlete/cdk`, and every toast. Under an elevation-`0` surface, filled form fields, table card rows, grid items, `[etAutoSurface]` panels (menu, select, tooltip and the other pickers) and overlays without a backdrop switch as well. Each of them then reads that theme's tokens, for example a scrollable's mask color. To add a level without a visible change, copy every token except the background from the level below, then change the rest on purpose.
+
+As an example, this repo's Storybook registers `light` (elevation 0), `light-elevated` (1), `dark` (0), `dark-elevated` (1) and `dark-elevated-2` (2).
+
+`tint` and `controlText` style the neutral controls on a surface:
+
+```ts
+tint: '115 115 115',
+controlText: { default: '115 115 115', hover: '64 64 64', focus: '64 64 64', active: '23 23 23', disabled: '180 180 180' },
+```
+
+`tint` is the color hover and pressed feedback mixes in. `controlText` is the text of a neutral control
+per state; only `default` is required, a missing `focus` falls back to `hover` and the rest to `default`.
+It is also the fill that [`etProvideColor="surface"`](#the-surface-color) resolves, with the surface
+background as the text on that fill. Its ladder should escalate towards the surface's text color.
+
+A theme without `tint` inherits the tint of the surface around it. Where no surface sets one, the
+`et-surface-tint` utilities read the surface text color.
+
+::: tip Upgrading
+`interactionColor` is split: its `color.default` becomes `tint` and its `color` map becomes
+`controlText`. `onColor` and `inkColor` are gone. `et update` runs `@ethlete/core:migrate-surface-roles`,
+which rewrites your definitions and the readers of the old `--et-surface-interaction*` tokens; then
+regenerate the CSS. A run scoped with `--projects` or an `--include` directory rewrites the Studio design files in
+`.ethlete/design` too; a run with only `--include <file>` paths changes just those files.
+
+`SurfaceInteractiveDirective` (`[etSurfaceInteractive]`) is removed; it no longer styled anything.
+`et update` runs `@ethlete/core:migrate-remove-surface-interactive`, which drops the attribute, the
+`et-surface-interactive` class and the directive imports, and lists a stylesheet selector on the class
+for a hand fix.
+:::
+
+Inside any surface scope (and on `:root` - see [The root surface](#the-root-surface)), these tokens are available, each a ready-to-use color:
+
+- `--et-surface-background`
+- `--et-surface-text`, `--et-surface-text-muted`, `--et-surface-text-subtle`
+- `--et-surface-border`
+- `--et-surface-tint`, when a theme sets `tint`
+- `--et-surface-control-text`, `--et-surface-control-text-{hover,focus,active,disabled}`, when a theme sets `controlText`
+
+Each also has a Tailwind utility, such as `text-et-surface-control-text-hover`.
+
+### The root surface
+
+The `isDefault` themes paint `:root`, so an app renders on its default surface without scoping one. In dev mode, two defaults of the same surface `type`, or two default color themes, throw `ET9201` / `ET9200` naming both themes; one default per `type` is valid.
+How that lands depends on what the app registers:
+
+- **Both types** - the light default sits behind `@media (prefers-color-scheme: light)`, the dark one
+  behind `dark`, and the root follows the user's OS preference.
+- **One type** (a dark-only app) - the sole default lands on plain `:root`. There is no other scheme
+  to switch to, and behind a media query the surface variables would be undefined for everyone whose
+  OS asks for the scheme the app doesn't have.
+
+Either way the block also sets `color-scheme`, so scrollbars and native controls match the surface.
+
+The runtime knows the same default: `injectDefaultSurfaceTheme(type?)` returns the registered
+`isDefault` theme - of the only type the app registers, or of the `type` you name (an app with both
+has to say which). `injectRootSurfaceTheme()` returns a signal with the default `:root` paints right
+now, and follows [`provideColorScheme()`](#switching-light-and-dark) where the app registers both. `injectSurfaceType()`
+returns a signal with the `'light' | 'dark'` a subtree renders on, or `null` when no surface can be resolved: the surrounding provider's type,
+or the default's where nothing provides one. A `ProvideSurfaceDirective` with nothing above it and
+no surface set resolves that default too, so a single-scheme app's `elevation()` and `surfaceType()`
+describe its real root surface.
+
+A nested provider left unset still paints nothing - it keeps the inherited surface on screen - but it
+reports what it inherits: `activeTheme()` walks up to the closest provider that resolves a surface,
+and `elevation()` and `surfaceType()` read from it. Content below an unset provider therefore
+elevates above the surface it really sits on.
+
+`injectParentSurface()` returns a signal with the whole `SurfaceTheme` a subtree renders on - the
+surrounding provider's `activeTheme()`, or the app default where nothing provides one. Use it to
+derive an elevation relative to the surrounding surface:
+
+```ts
+private parentSurface = injectParentSurface();
+private themes = injectSurfaceThemes({ optional: true });
+
+private mySurface = computed(() => {
+  const parent = this.parentSurface();
+
+  if (!this.themes || !parent) return null;
+
+  return resolveSurfaceByElevation(this.themes, parent.type, parent.elevation + 1);
+});
+```
+
+In an app that registers a default per surface type, it returns `null` unless the app adds
+`provideColorScheme()`. Without it, only the CSS media query knows which of the two `:root` paints.
+
+### Switching light and dark
+
+Add `provideColorScheme()` to the application config to let the user pick light or dark instead of
+the OS preference:
+
+```ts
+export const appConfig: ApplicationConfig = {
+  providers: [provideSurfaceThemesWithTailwind4(SURFACE_THEMES), provideColorScheme({ mode: 'system' })],
+};
+```
+
+```ts
+private colorScheme = injectColorScheme();
+
+toggle() {
+  this.colorScheme.setMode(this.colorScheme.type() === 'dark' ? 'light' : 'dark');
+}
+```
+
+- `setMode('light' | 'dark')` puts `et-scheme--light` or `et-scheme--dark` on `<html>`. The generated
+  `:root.et-scheme--<type>` rule paints that default and sets `color-scheme`, regardless of the OS.
+- `setMode('system')` removes the class, and the media query decides again.
+- If the root surface has a `colorThemeVariants` entry for the `isDefault` color theme, `<html>` also gets the
+  `et-color--<variant>` class, and it follows the scheme.
+- `mode()` is the mode the app asked for, and `type()` the `'light' | 'dark'` the root paints. In
+  `system` mode, `type()` follows the OS live.
+- A server render in `system` mode cannot know the OS scheme, so an `[etAutoSurface]` that elevates above
+  the root surface renders `et-surface--inherited` there. The first paint follows the media query at root
+  elevation, and the elevated surface appears on hydration. Inside an explicit surface it still elevates.
+
+The mode does not persist. Store it yourself, and pass the stored value as `mode`. The rule exists
+only when the app registers a default for both types, so regenerate the surface CSS after an upgrade.
+Hand-written CSS behind `@media (prefers-color-scheme: …)` does not follow the class; select
+`:root.et-scheme--dark` there too.
+
+### A dark-only app
+
+The smallest complete setup: dark surfaces only, one per elevation the app stacks, one accent, and an error theme (form fields resolve their error state through [`injectSemanticColorTheme('error')`](#semantic-themes-per-surface) and throw without one). Every name below is the app's own:
+
+```ts
+// surface-themes.ts
+export const SURFACE_THEMES = [
+  {
+    name: 'page',
+    type: 'dark',
+    elevation: 0,
+    isDefault: true,
+    background: '18 18 18',
+    color: '255 255 255',
+    colorMuted: '163 163 163',
+    colorSubtle: '115 115 115',
+    border: '64 64 64',
+    tint: '255 255 255',
+    controlText: { default: '255 255 255' },
+  },
+  {
+    name: 'card',
+    type: 'dark',
+    elevation: 1,
+    background: '30 30 30',
+    color: '255 255 255',
+    colorMuted: '163 163 163',
+    colorSubtle: '115 115 115',
+    border: '64 64 64',
+    tint: '255 255 255',
+    controlText: { default: '255 255 255' },
+  },
+] satisfies SurfaceTheme[];
+
+// themes.ts
+export const THEMES = [
+  {
+    name: 'accent',
+    isDefault: true,
+    primary: {
+      color: { default: '0 200 150', hover: '0 180 135', active: '0 160 120', disabled: '0 80 60' },
+      onColor: { default: '0 20 20' },
+    },
+  },
+  {
+    name: 'error',
+    type: 'error',
+    primary: {
+      color: { default: '255 88 88', hover: '235 80 80', active: '215 70 70', disabled: '120 40 40' },
+      onColor: { default: '0 20 20' },
+    },
+  },
+] satisfies ColorTheme[];
+```
+
+Keep the definitions literal objects: the generators read the files statically, without running them. Register both and run both generators as in [Registering themes](#registering-themes). With a single `type`, the `page` surface lands on plain `:root` and `color-scheme: dark` comes with it - there is no light counterpart to write. `[etAutoSurface]` inside the page resolves `card`; register an `elevation: 2` surface as well if panels nest a level deeper.
+
+### Surface directives
+
+| Directive                 | Selector             | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ProvideSurfaceDirective` | `[etProvideSurface]` | Sets the surface for the subtree: `<div etProvideSurface="dark">`. Without a value, inherits the parent surface.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `AutoSurfaceDirective`    | `[etAutoSurface]`    | Picks the registered surface with the parent's `elevation + 1` in the same `type` - nested panels elevate themselves. With no provider above it, the parent is the app's [root surface](#the-root-surface), so it elevates above that. Content rendered inside an overlay also consults the surface-context tracker (matched by DOM containment), so it elevates above the overlay's surface even though its injector points back at the trigger location - while auto-surfaces on the base page are unaffected when an overlay opens. Overlay panels that _are_ the overlay's own surface call `matchOverlaySurface()` to paint the overlay's registered elevation from the tracker exactly, instead of stacking above it. |
+
+::: warning Hover rows: mix the tint, not `hover:bg-et-surface-control-text-hover`
+`--et-surface-control-text-hover` (and the Tailwind utility `bg-et-surface-control-text-hover`) is a full-strength text color, not a subtle overlay. As a hover background it paints a near-white row in dark mode with near-white text on top. For hover and pressed feedback on a row, mix the tint at a low strength: `hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15`.
+:::
+
+## Color themes
+
+A `ColorTheme` - colors accept `"R G B"` or `"H S% L%"` strings:
+
+| Field       | Type                                | Required | Description                                                |
+| ----------- | ----------------------------------- | -------- | ---------------------------------------------------------- |
+| `name`      | `string`                            | yes      | Becomes the scope class `et-color--<name>`.                |
+| `type`      | `'success' \| 'warning' \| 'error'` | no       | Semantic handle - see [semantic themes](#semantic-themes). |
+| `isDefault` | `boolean`                           | no       | Exactly one theme should be default.                       |
+| `primary`   | `ThemeSwatch`                       | yes      | The main swatch.                                           |
+| `secondary` | `ThemeSwatch`                       | no       | Optional additional swatch.                                |
+| `tertiary`  | `ThemeSwatch`                       | no       | Optional additional swatch.                                |
+
+A `ThemeSwatch` is `{ color, onColor, inkColor? }`:
+
+- `color` - the fill: `default`, `hover`, `active`, `disabled` required, `focus` optional.
+- `onColor` - content rendered on the fill: only `default` required; a missing `hover` falls back to `default`, `focus` to `hover`, and `active` and `disabled` to `default`.
+- `inkColor` - optional tinted text/border for transparent or tonal fills; same fallbacks as `onColor`, and `default` falls back to the fill's `default`.
+
+Inside a color scope these tokens resolve, each a ready color:
+
+- `--et-tone-fill`, `--et-tone-fill-{rest,hover,focus,active,disabled}`
+- `--et-tone-on-fill`, `--et-tone-on-fill-{rest,hover,focus,active,disabled}`
+- `--et-tone-text`, `--et-tone-text-{rest,hover,focus,active,disabled}`
+
+### Color directives
+
+| Directive                            | Selector                        | What it does                                                                                                                                                                                  |
+| ------------------------------------ | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ProvideColorDirective`              | `[etProvideColor]`              | Sets the color theme for the subtree. Accepts a registered name **or** a full `ColorTheme` object.                                                                                            |
+| `ColorInteractiveDirective`          | `[etColorInteractive]`          | Re-resolves the color tokens per the host's own interaction state. Put it on the interactive element itself, never a wrapper.                                                                 |
+| `ColorInteractiveContainerDirective` | `[etColorInteractiveContainer]` | Cascades hover/active state down to descendant `etColorInteractive` elements.                                                                                                                 |
+| `ColorInteractiveExcludeDirective`   | `[etColorInteractiveExclude]`   | Marks a descendant as not triggering an ancestor's interactive reaction.                                                                                                                      |
+| `ColorInteractiveHasFocusDirective`  | `[etColorInteractiveHasFocus]`  | Tints tokens to the **base** accent while the host contains a `:focus-visible` element - never on hover/active, and not the `-focus` variant (that is for an element that is itself focused). |
+
+### The `surface` color
+
+`surface` is a reserved color name, not a registered theme:
+
+```html
+<button et-button color="surface">Cancel</button>
+<div etProvideColor="surface">…</div>
+```
+
+Inside that scope the color tokens resolve from the ambient surface's
+[`controlText`](#surface-themes) instead of an accent, so a secondary action reads as
+chrome - and follows the surface it sits on, which a registered neutral theme cannot do. Every
+component keeps its own structural signature; only the palette changes. Apps must not register a
+color theme named `surface`.
+
+The scope is emitted by the **surface** generator (it is the surface exposing itself as a color), so
+an app needs to have run `nx g @ethlete/core:tailwind-4-surface-theme` since upgrading for
+`color="surface"` to resolve.
+
+The generated CSS also records a color theme's `type` as `--et-color-theme-type` and a surface's
+`colorThemeVariants` as `--et-surface-color-theme-variants` (`<chosen> <variant>` pairs) on their
+scope rules. The runtime ignores both; the `et design` frames read them to resolve
+`data-et-semantic-color` and auto surfaces the way the SDK does.
+
+### Offering colors to a user
+
+A component that lets someone _pick_ a color needs more than the registry: `injectColorThemes()` returns every theme the app registered - including the ones nobody should choose by hand (`error`, `warning`) - and a `ColorTheme.name` is a slug, not a label to render. `provideColorPalette` is the curated, ordered, labelled slice:
+
+```ts
+import { provideColorPalette } from '@ethlete/core';
+
+providers: [
+  provideColorPalette([
+    { token: 'brand', label: 'Team' },
+    { token: 'ocean', label: 'Training' },
+  ]),
+];
+```
+
+`token` must name a registered theme; `label` is what a user reads next to the swatch, already translated. Provide it wherever the picker can see it - app-wide in `appConfig`, or on a single feature's component.
+
+A palette tuned for a light surface can lose contrast on a dark one. Pass one list per registered surface theme name instead, plus a `default` list for every other surface:
+
+```ts
+provideColorPalette({
+  default: [
+    { token: 'ocean', label: 'Training' },
+    { token: 'forest', label: 'Match' },
+  ],
+  // `dark-card` and the `-bright` themes are this example app's own registrations
+  'dark-card': [
+    { token: 'ocean-bright', label: 'Training' },
+    { token: 'forest-bright', label: 'Match' },
+  ],
+});
+```
+
+Keep the same order in every list: the position is what ties a series to its color. The charts read `injectSurfaceColorPalette()`, a signal of the list for the surface they sit on. `injectColorPalette()` always returns the `default` list, so a color picker stores the same token on every surface.
+
+Nothing in the SDK requires a palette. A component reads it with `injectColorPalette({ optional: true })` and falls back to accepting a raw theme name when there is none - see the [scheduler's color field](/components/scheduler#fields).
+
+### Categorical colors
+
+There is no separate categorical-color system: a categorical color is a registered color theme with no `type`, and the palette above is the app's categorical order. Register one theme per category (a product, a team, a data series), list them in `provideColorPalette` where the order is what matters, and address a single category by its theme name where the category owns its color:
+
+```html
+<!-- `product-pro` is one of this app's registered themes -->
+<et-badge color="product-pro">Pro</et-badge>
+```
+
+The charts read the palette for series order and take a per-series `colorToken` - see [chart series colors](/components/chart#series-colors). Inside CSS, the category's color is `--et-tone-fill` under that scope; never repeat its hex value in a stylesheet.
+
+## Shadow and scrim colors
+
+Shadows and scrims are not part of a surface or color theme - they sit behind or over one. Three
+channel tokens set their base color, and each component keeps its own opacity on top:
+
+| Token                 | Default            | Read by                                                                                                                                                                                                                                                                |
+| --------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-shadow-color`   | `rgb(0 0 0)`       | Every component shadow: the anchored panels (menu, select, cascader, color picker, date picker, rich-text popups) while `--et-anchored-panel-shadow` is unset, tooltip, toggletip, `elevated` card, `enclosed` table, fab, slider thumbs, notification, scheduler drag |
+| `--et-scrim-color`    | `rgb(0 0 0)`       | The overlay backdrop (`/ 0.32`), the dropzone preview's info bar (`/ 0.6`)                                                                                                                                                                                             |
+| `--et-on-scrim-color` | `rgb(255 255 255)` | Text on a scrim - the dropzone preview's file name and size                                                                                                                                                                                                            |
+
+They are ready colors, like the surface tokens, so an alpha can be applied with `color-mix()`.
+Neither is generated with the themes; set them on `:root` or on any scope:
+
+```css
+:root {
+  --et-shadow-color: rgb(15 23 42);
+}
+```
+
+## Semantic themes
+
+Because names are app-defined, code that needs "the error color" resolves it by `type`:
+
+```ts
+import { injectSemanticColorTheme } from '@ethlete/core';
+
+@Component({
+  template: `<span [etProvideColor]="errorTheme()">…</span>`,
+})
+export class ViolationHintComponent {
+  errorTheme = injectSemanticColorTheme('error');
+}
+```
+
+`injectSemanticColorTheme('error' | 'warning' | 'success')` returns a signal of the registered `ColorTheme` with the matching `type`, and reading it throws if the app hasn't registered one, so components can rely on it. `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` are deprecated: they return the theme once and ignore the surface.
+
+### Colors per surface
+
+Theming follows two rules:
+
+1. **A surface is where an element sits.** It has a background, text, borders and its own grey. `color="surface"`
+   and the hover tints use that grey, from the surface's `tint`.
+2. **A color is an accent that you choose.** A surface can swap an accent for a version that reads well on it.
+
+The default color is an accent that nobody chose explicitly, and `success`, `warning` and `error` are accents with a
+`type`. A surface swaps any of them with `colorThemeVariants`. The keys and the values are color theme names:
+
+```ts
+// The app's own names
+export const LIGHT_SURFACE: SurfaceTheme = {
+  name: 'light',
+  type: 'light',
+  elevation: 0,
+  colorThemeVariants: {
+    brand: 'brand-on-light',
+    danger: 'danger-on-light',
+    success: 'success-on-light',
+    grey: 'grey-light',
+  },
+  // …
+};
+
+export const DARK_SURFACE: SurfaceTheme = { name: 'dark', type: 'dark', elevation: 0 /* … */ };
+```
+
+A color resolves in two steps:
+
+1. Find the chosen accent: the nearest `[etProvideColor]`, else the `isDefault` theme. For
+   `injectSemanticColorTheme(type)`, the theme with that `type`.
+2. If the nearest surface has an entry for the chosen accent, use that entry. Else use the chosen accent.
+
+The swap always starts from the chosen accent, never from a swapped one, so a dark surface inside a light one draws
+`brand` again without an entry of its own. An `[etProvideColor]` above a surface is swapped inside it too:
+
+```html
+<et-segmented-button-group color="grey">…</et-segmented-button-group>
+<!-- on the light surface: grey-light. On the dark surface: grey. -->
+```
+
+Register a variant as an ordinary color theme without a `type`, so the type lookup stays unambiguous.
+
+| You want                                         | Use                                                 |
+| ------------------------------------------------ | --------------------------------------------------- |
+| A neutral color that follows the surface         | `color="surface"`, values from `controlText`        |
+| An accent with a better version on some surfaces | `color="<name>"`, plus `colorThemeVariants` entries |
+| An accent that stays the same on every surface   | `color="<name>"`, with no entry                     |
+
+Every SDK component resolves its semantic colors through `injectSemanticColorTheme()`: the form field's error and
+warning states, select, cascader, menu, alert dialog, table, match card, bracket pick card, rich text editor popup,
+banner, progress step, stat tile and the query devtools. Content in an overlay panel follows the surface the panel
+paints, not the one its trigger sits on. Where no surface sits above, the default root surface swaps. `:root` has no
+surface element, so `provideColorScheme()` paints the swap of the default accent on `<html>`. Without it, put an
+`[etProvideSurface]` at the app root.
+
+`colorTheme` and `semanticColorThemes` are deprecated and still work: `colorTheme: X` acts as an entry for the
+`isDefault` theme, `semanticColorThemes: { success: X }` as one for the theme with `type: 'success'`. An entry in
+`colorThemeVariants` wins over both.
+
+Run `nx g @ethlete/core:migrate-color-theme-variants` to convert your surface themes. It reads the color themes of
+the workspace to find the `isDefault` theme and the theme of each `type`, and it removes a `colorTheme` that names
+the default theme. It reports a value it cannot convert, for example a variable, and leaves it as it is. Pass
+`--projects` or `--include <path prefix>` to migrate one app at a time. The migration is optional, so `et update`
+does not run it.
+
+`injectDefaultColorTheme()` returns the registered `ColorTheme` with `isDefault: true` the same way - useful for a shared component with no themed ancestor to inherit from (a page-level `et-spinner`, say), where "the app's default accent" is the right fallback. It throws if no theme is marked `isDefault: true`.
+
+## Migrating from the old token names
+
+`yarn nx g @ethlete/core:migrate-theme-token-names` renames the old theme tokens (the `-rgb` / `-solid` surface names, `--et-theme-color-*`, `--et-color-primary*`, and the matching Tailwind utilities) to the current names, and `et update` runs it for you. A run scoped with `--projects` or an `--include` directory renames the Studio design files in `.ethlete/design` too; a run with only `--include <file>` paths changes just those files. A case it cannot rewrite safely stays as it is and comes back as a `file:line` finding with a reason. Fix each by hand, regenerate the theme files, and run the migration again until it reports nothing.
+
+**A name inside a larger string.** A string whose whole content is one old name is renamed. A name that is only part of a string or a template string is reported as `old theme token left: <name>`:
+
+```ts
+// before
+const name = `--et-theme-color-primary-${state}`;
+const base = '--et-color-primary' + suffix;
+```
+
+Write the new name yourself: `--et-tone-fill` replaces `--et-theme-color-primary`, and `--et-tone-fill-rest` / `--et-tone-fill-<state>` replace `--et-color-primary` and `--et-color-primary-<state>` (`hover`, `focus`, `active`, `disabled`). A string that builds a name from a bare `--et-color-` prefix, such as `` `--et-color-${tone}` ``, is not reported at all: search for it.
+
+**Two old names that merge into one.** `--et-surface-border` and `--et-surface-border-solid` both become `--et-surface-border`. When one block sets both with different values, the finding is `--et-surface-border and --et-surface-border-solid are both set here and merge into --et-surface-border: keep one by hand`. Keep one declaration with the colour value:
+
+```css
+/* before */
+a {
+  --et-surface-border: var(--et-surface-color-subtle);
+  --et-surface-border-solid: var(--app-line);
+}
+
+/* after */
+a {
+  --et-surface-border: var(--app-line);
+}
+```
+
+**An old RGB triplet read outside `rgb()`.** The old `--et-surface-color` held a triplet like `255 255 255`; its replacement `--et-surface-text` holds a full colour. A read inside `rgb()` is rewritten, but a read in `color-mix()`, a Sass function or a concatenation is reported as `--et-surface-color is a triplet read outside rgb() (in --_x): check every reader by hand`. Read the new token directly:
+
+```css
+/* before */
+a {
+  --_x: color-mix(in srgb, var(--et-surface-color) 50%, transparent);
+}
+
+/* after */
+a {
+  --_x: color-mix(in srgb, var(--et-surface-text) 50%, transparent);
+}
+```
+
+## Legacy runtime theming
+
+`provideColorThemes(themes)` (without the `WithTailwind4` suffix) is the previous, Tailwind-v3-era system: it injects `<style>` tags at runtime instead of generating CSS at build time. It - along with its helpers (`createThemeStyle`, `createTailwindColorThemes`, …) - is **deprecated** with intent to remove in v6. New apps should use the generator-based setup above.
+
+### Migrating from runtime theming
+
+The theme data carries over: a legacy `ColorTheme` (RGB triplets, `isDefault`) is the type the generators read. The setup around it changes:
+
+`yarn nx g @ethlete/core:migrate-legacy-color-themes` does step 2 and writes the rest as a checklist: it rewrites every `provideColorThemes(X)` into `provideColorThemesWithTailwind4(X)`, fixes the import, and lists in `legacy-color-themes-migration-tasks.md` the generator run per call site, the Tailwind 3 helpers left in a config, and the surface themes to add. Pass `--projects` or `--include <path prefix>` to migrate one app at a time. [`et migrations`](/cli/update#migration-levels) lists it as the recommended assisted migration `core:legacy-color-themes`; `yarn et migrations run core:legacy-color-themes` runs it and leaves the checklist as a task for an agent.
+
+1. **Tailwind 3 → 4.** Delete the `tailwind.config.ts` color block built from `createTailwindColorThemes(THEMES, 'gg')`. Run the color generator on the same theme file with the same prefix; it emits the same `bg-gg-<name>`, `bg-gg-<name>-hover`, `text-gg-on-<name>` utilities through `@theme`:
+
+   ```bash
+   yarn nx g @ethlete/core:tailwind-4-color-theme --themesPath=libs/theme/src/themes.ts --prefix=gg
+   ```
+
+   `--prefix` names the utilities, and the runtime variables and scope classes follow it (`--gg-*`) unless you also pass `--runtimePrefix`. The legacy runtime always used `--et-*`, so pass `--runtimePrefix=et` to keep it - the provider's `prefix` argument must match.
+
+2. **Providers.** `provideColorThemes(THEMES)` becomes `provideColorThemesWithTailwind4(THEMES)`. The runtime `<style>` injection goes away; import the generated `.css` in the global stylesheet instead.
+
+3. **Surface themes.** A legacy app has none, and every component reads its backgrounds, text and borders from one. Start with one `light` surface (`isDefault: true`, elevation 0) built from the app's existing page background, text, muted text and border colors, plus a `light-elevated` one for cards and overlays. Add `dark` surfaces only if the app has a dark mode. Generate them with `tailwind-4-surface-theme` and register them with `provideSurfaceThemesWithTailwind4()` - see [Surface themes](#surface-themes).
+
+4. **The app's own CSS.** The primary swatch is emitted on every `.et-color--<name>` scope as ready colors: `--et-tone-fill-rest`, `--et-tone-on-fill-rest`, `--et-tone-text-rest` and their `-hover`/`-focus`/`-active`/`-disabled` states, plus the live aliases `--et-tone-fill`, `--et-tone-on-fill` and `--et-tone-text`. Read those instead of `rgb(var(--et-color-primary))`. The `secondary` and `tertiary` swatches keep their `--et-color-*` names, and the `--et-color-alt-*` variables of the alternate theme are not emitted: put the region in its own `etProvideColor` scope and read `--et-tone-fill` there.
+
+The runtime directives (`etProvideColor`, `injectColorThemes()`) work the same under both setups. `migrate-to-v5` renames the old `theme` names to `color` but leaves `provideColorThemes` in place: that call is the step above.

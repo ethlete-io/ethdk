@@ -1,0 +1,53 @@
+import { Location } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { RouterFacade, ItemFacade, getItem, getItemManagements } from '@app-a/store';
+import { ItemId, ItemProfileView } from '@app-a/types';
+import { MappedEntityState, createActionId } from '@tomtomb/ngrx-toolkit';
+import { Observable, Subject } from 'rxjs';
+import { MemberBadgeComponent } from '../../components/profile/member-badge/member-badge.component';
+import { MemberSettingsComponent } from '../../components/profile/member-settings/member-settings.component';
+import { MemberSpecialBadgeComponent } from '../../components/profile/member-special-badge';
+
+@Component({
+  selector: 'app-a-member-profile',
+  templateUrl: './profile.component.html',
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [MemberBadgeComponent, MemberSettingsComponent, MemberSpecialBadgeComponent],
+})
+export class ProfileComponent implements OnInit {
+  updateProfile$: Subject<boolean> = new Subject<boolean>();
+  itemStore!: MappedEntityState<typeof getItem>;
+
+  item!: ItemProfileView;
+  store?: MappedEntityState<typeof getItem>;
+  itemManagementsStore!: MappedEntityState<typeof getItemManagements>;
+
+  isLoading$?: Observable<boolean | null>;
+  removeIsLoading$?: Observable<boolean | null>;
+
+  itemId!: ItemId;
+
+  constructor(
+    private _itemFacade: ItemFacade,
+    private _routerFacade: RouterFacade,
+    private _location: Location,
+  ) {}
+
+  ngOnInit(): void {
+    this.itemId = this._routerFacade.params['itemId'];
+
+    const actionId = createActionId(getItem.call({ args: { queryParams: { itemId: this.itemId }, skipCache: true } }));
+
+    this.itemStore = this._itemFacade.select(getItem, actionId);
+  }
+
+  private _setupItemSelectors(itemId: ItemId) {
+    this.store = this._itemFacade.getItem({ queryParams: { itemId } });
+  }
+
+  back() {
+    this._location.back();
+  }
+}

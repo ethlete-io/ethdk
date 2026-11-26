@@ -1,0 +1,210 @@
+import {
+  camerasWith,
+  frameSizesOf,
+  frameSizesWith,
+  rememberSketchView,
+  rememberTheme,
+  rememberedView,
+  rememberView,
+  themeName,
+} from './remembered';
+
+const KEY = 'ethlete-studio.call-view';
+
+describe('remembered view', () => {
+  afterEach(() => localStorage.clear());
+
+  it('reads nothing from missing or corrupt storage', () => {
+    expect(rememberedView()).toEqual({});
+
+    localStorage.setItem(KEY, 'not json');
+    expect(rememberedView()).toEqual({});
+
+    localStorage.setItem(KEY, '"text"');
+    expect(rememberedView()).toEqual({});
+  });
+
+  it('drops fields of the wrong type', () => {
+    localStorage.setItem(KEY, JSON.stringify({ checkout: 1, systemProduct: 'web', systemEntry: null }));
+
+    expect(rememberedView()).toEqual({ systemProduct: 'web' });
+  });
+
+  it('forgets what the removed calls view kept and leaves the rest', () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ checkout: '/a', project: 'p', slug: 's', variant: 'v', chatHidden: true, view: 'calls' }),
+    );
+    rememberView({ systemProduct: 'web' });
+
+    expect(JSON.parse(localStorage.getItem(KEY) ?? '{}')).toEqual({ checkout: '/a', systemProduct: 'web' });
+  });
+
+  it('remembers which tree groups are open and drops non-boolean flags', () => {
+    localStorage.setItem(KEY, JSON.stringify({ openGroups: { legacy: true, 'legacy/pages': 'yes', x: false } }));
+    expect(rememberedView().openGroups).toEqual({ legacy: true, x: false });
+
+    localStorage.setItem(KEY, JSON.stringify({ openGroups: 3 }));
+    expect(rememberedView().openGroups).toBeUndefined();
+  });
+
+  it('keeps whether the inventory is shown and drops a value that is no boolean', () => {
+    rememberView({ inventoryShown: true });
+    expect(rememberedView().inventoryShown).toBe(true);
+
+    localStorage.setItem(KEY, JSON.stringify({ inventoryShown: 'yes' }));
+    expect(rememberedView().inventoryShown).toBeUndefined();
+  });
+
+  it('merges a patch into what was stored', () => {
+    rememberView({ checkout: '/a', systemProduct: 'web' });
+    rememberView({ systemProduct: 'app' });
+
+    expect(rememberedView()).toMatchObject({ checkout: '/a', systemProduct: 'app' });
+  });
+
+  it('keeps a theme pick per project and drops malformed picks', () => {
+    rememberTheme('/a components', { surface: 'dark' });
+    rememberTheme('/a components', { color: 'danger' });
+    rememberTheme('/b components', { color: 'brand' });
+
+    expect(rememberedView().themes).toEqual({
+      '/a components': { surface: 'dark', color: 'danger' },
+      '/b components': { color: 'brand' },
+    });
+
+    localStorage.setItem(KEY, JSON.stringify({ themes: { x: 3, y: { surface: 1, color: 'c' } } }));
+    expect(rememberedView().themes).toEqual({ y: { surface: undefined, color: 'c' } });
+  });
+
+  it('falls back to the first theme name when the remembered one is gone', () => {
+    expect(themeName(['light', 'dark'], 'dark')).toBe('dark');
+    expect(themeName(['light', 'dark'], 'dim')).toBe('light');
+    expect(themeName(['light', 'dark'], undefined)).toBe('light');
+    expect(themeName([], undefined)).toBeUndefined();
+  });
+
+  it('keeps the system entry and only valid cameras', () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        systemProduct: 'web',
+        systemEntry: 'components/button',
+        movedCameras: {
+          'web components/button': { x: 10, y: -4, zoom: 0.5 },
+          broken: { x: 1, y: 2, zoom: 0 },
+          text: 'camera',
+        },
+      }),
+    );
+
+    expect(rememberedView()).toEqual({
+      systemProduct: 'web',
+      systemEntry: 'components/button',
+      movedCameras: { 'web components/button': { x: 10, y: -4, zoom: 0.5 } },
+    });
+  });
+
+  it('stores a camera and drops those of entries that no longer exist', () => {
+    const camera = { x: 1, y: 2, zoom: 1 };
+    const stored = { kept: { x: 0, y: 0, zoom: 2 }, gone: { x: 3, y: 3, zoom: 1 } };
+
+    expect(camerasWith({ cameras: stored, key: 'new', camera, existing: new Set(['kept', 'new']) })).toEqual({
+      kept: stored.kept,
+      new: camera,
+    });
+  });
+
+  it('drops the camera of an entry that was fitted again', () => {
+    const stored = { fitted: { x: 0, y: -900, zoom: 0.2 }, kept: { x: 0, y: 0, zoom: 2 } };
+
+    expect(camerasWith({ cameras: stored, key: 'fitted', camera: null, existing: null })).toEqual({
+      kept: stored.kept,
+    });
+  });
+
+  it('keeps every camera while the entries are not all listed yet', () => {
+    const stored = { sketch: { x: 0, y: 0, zoom: 2 } };
+
+    expect(camerasWith({ cameras: stored, key: 'part', camera: { x: 1, y: 2, zoom: 1 }, existing: null })).toEqual({
+      sketch: stored.sketch,
+      part: { x: 1, y: 2, zoom: 1 },
+    });
+  });
+
+  it('keeps the size and interaction per sketch view', () => {
+    rememberSketchView('web sketch:elements/rating', { size: '520' });
+    rememberSketchView('web sketch:elements/rating', { interaction: 'hover' });
+    rememberSketchView('web sketch:components/card', { size: '320' });
+
+    expect(rememberedView().sketchViews).toEqual({
+      'web sketch:elements/rating': { size: '520', interaction: 'hover' },
+      'web sketch:components/card': { size: '320' },
+    });
+  });
+
+  it('drops sketch view fields of the wrong type', () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        sketchViews: { a: { size: 520, interaction: 'hover', merge: 'yes' }, b: { size: null }, c: 'no' },
+      }),
+    );
+
+    expect(rememberedView().sketchViews).toEqual({ a: { interaction: 'hover' } });
+  });
+
+  it('keeps the open and folded rounds with the sketch they belong to and drops flags that are not booleans or have no sketch', () => {
+    rememberSketchView('web sketch:elements/rating', { rounds: { r1: true, r2: false }, roundsFor: 'x' });
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        ...JSON.parse(localStorage.getItem(KEY) ?? '{}'),
+        sketchViews: {
+          ...rememberedView().sketchViews,
+          b: { rounds: { r1: 'yes' } },
+          c: { size: '520', rounds: { r1: 1, r2: true }, roundsFor: 'y' },
+          d: { size: '520', rounds: { r1: true } },
+        },
+      }),
+    );
+
+    expect(rememberedView().sketchViews).toEqual({
+      'web sketch:elements/rating': { rounds: { r1: true, r2: false }, roundsFor: 'x' },
+      c: { size: '520', rounds: { r2: true }, roundsFor: 'y' },
+      d: { size: '520' },
+    });
+  });
+
+  it('keeps valid measured sizes, drops the rest, and forgets the sizes an older Studio stored by hand', () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        measuredSizes: {
+          'a f': { width: 300, height: 'x' },
+          'a g': { width: -1 },
+          'a h': 'no',
+          'a i': { height: 200 },
+        },
+        frameSizes: { 'a f': { width: 160, height: 80 } },
+      }),
+    );
+
+    expect(rememberedView().measuredSizes).toEqual({ 'a f': { width: 300 }, 'a i': { height: 200 } });
+
+    rememberView({ commentsOpen: true });
+
+    expect(JSON.parse(localStorage.getItem(KEY) ?? '{}')).not.toHaveProperty('frameSizes');
+  });
+
+  it('reads and merges the sizes of one canvas', () => {
+    const stored = { 'a f': { width: 300 }, 'ab f': { width: 10 } };
+
+    expect(frameSizesOf(stored, 'a')).toEqual({ f: { width: 300 } });
+
+    expect(frameSizesWith({ stored, cameraKey: 'a', frameId: 'f', size: { height: 90 } })['a f']).toEqual({
+      width: 300,
+      height: 90,
+    });
+  });
+});

@@ -1,0 +1,45 @@
+import { Observable, defer, finalize, map, share } from 'rxjs';
+import { OpenPoint } from '@ethlete/cli/open-point';
+import { ProductAddress, designAnswer$ } from './design';
+
+export type { OpenPoint, OpenPointKind } from '@ethlete/cli/open-point';
+
+/** One thing that keeps a part from being build-ready; `part` names the embedded part it is about. */
+export type BuildReadyBlocker = { kind: string; text: string; part?: string };
+
+export type BuildReady = { ready: true } | { ready: false; blockers: BuildReadyBlocker[] };
+
+/** `developer` holds why a developer builds the part, from its check record; absent for a designer part. */
+export type PartOpenPoints = { points: OpenPoint[]; buildReady: BuildReady; developer?: string[] };
+
+type ReadyRecord = { builder?: 'designer' | 'developer'; builderReasons?: string[] } | null;
+
+const asked = new Map<string, Observable<unknown>>();
+
+/** The open-points answer of one part; calls that overlap share one request. */
+export const openPointsAnswer$ = <TAnswer>({ port, product }: ProductAddress, part: string): Observable<TAnswer> =>
+  defer(() => {
+    const url = `http://localhost:${port}/__design/open-points?product=${encodeURIComponent(product)}&part=${encodeURIComponent(part)}`;
+    const held = asked.get(url);
+
+    if (held) return held as Observable<TAnswer>;
+
+    const shared$ = designAnswer$<TAnswer>(url).pipe(
+      finalize(() => asked.delete(url)),
+      share(),
+    );
+
+    asked.set(url, shared$);
+
+    return shared$;
+  });
+
+/** The open points of one part of a product and whether it is build-ready. */
+export const partOpenPoints$ = (address: ProductAddress, part: string): Observable<PartOpenPoints> =>
+  openPointsAnswer$<PartOpenPoints & { ready?: ReadyRecord }>(address, part).pipe(
+    map(({ points, buildReady, ready }) =>
+      ready?.builder === 'developer'
+        ? { points, buildReady, developer: ready.builderReasons ?? [] }
+        : { points, buildReady },
+    ),
+  );

@@ -1,0 +1,638 @@
+import {
+  CallVariant,
+  Drawing,
+  fitOutOfFlow,
+  markNgStyles,
+  mountDrawing,
+  placeOverlays,
+  withNgStyles,
+} from '../define-call';
+import { drawState, Motion, Part } from '../define-part';
+import { applyEmbed, fitEmbed } from '../embed-page';
+import { keptFacesOf } from './frame-faces';
+import { paintFailure } from './frame-failure';
+import { paintFill } from './frame-fill';
+import { fitRoot } from './frame-fit';
+import { sheetLayoutOf, sheetMarkupOf, SHEET_STYLES } from './frame-sheet';
+import { pinScheme } from './frame-scheme';
+import { watchSurfaces } from './frame-surfaces';
+import { createMotionDriver, emulateReducedMotion, motionDriveMessageOf } from '../motion-drive';
+import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
+import { rootTokensOf, withTokenNames } from '../motion-tokens';
+import { calls } from 'virtual:design-explore';
+import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
+import { fitPadding } from 'virtual:design-explore/frame';
+import { parts, sketchParts, sketchTokens, tokens } from 'virtual:design-explore/system';
+
+const params = new URLSearchParams(location.search);
+const slug = params.get('call') ?? '';
+const product = params.get('product');
+const partKey = params.get('part') ?? '';
+const sheet = product !== null && params.has('sheet');
+let key = sheet ? 'sheet' : ((product ? params.get('state') : params.get('variant')) ?? '');
+const sketch = product ? params.get('sketch') : null;
+const sketchVariant = params.get('variant') ?? '';
+const fit = product !== null && params.has('fit');
+const interaction = product ? params.get('interaction') : null;
+const propsSketch = product ? params.get('props') : null;
+const propsVariant = params.get('props-variant') ?? '';
+const motionName = product ? params.get('motion') : null;
+const flowTo = product ? params.get('flow-to') : null;
+
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+// Listens before the drawing loads, so an error it throws while loading counts; `report` exists only once `reporting` is set.
+let errored = false;
+let errorText: string | null = null;
+let reporting = false;
+
+const reportError = (event: Event) => {
+  errored = true;
+  errorText ??= messageOf(
+    event instanceof ErrorEvent ? (event.error ?? event.message) : (event as PromiseRejectionEvent).reason,
+  );
+  if (reporting) report();
+};
+
+addEventListener('error', reportError);
+addEventListener('unhandledrejection', reportError);
+
+const stayOnLink = (event: MouseEvent) => {
+  const href = event.target instanceof Element ? event.target.closest('a[href]')?.getAttribute('href') : undefined;
+
+  if (typeof href === 'string' && !href.startsWith('#')) event.preventDefault();
+};
+
+addEventListener('click', stayOnLink, { capture: true });
+addEventListener('auxclick', stayOnLink, { capture: true });
+
+const root = document.querySelector('#root') as HTMLElement;
+const surface = params.get('surface');
+const color = params.get('color');
+const fill = params.get('fill');
+
+// On <html> a theme class ties with the `:root` defaults of the theme CSS, which come later and win.
+if (surface) root.classList.add(`et-surface--${surface}`);
+if (color) root.classList.add(`et-color--${color}`);
+if (fill) paintFill(document.body, fill);
+
+const scheme = params.get('scheme');
+
+if (scheme === 'light' || scheme === 'dark') pinScheme(document, scheme);
+if (fit) fitRoot(root, { padding: params.has('bare') ? 0 : fitPadding });
+
+const markFailed = (message: string) => {
+  errored = true;
+  errorText ??= message;
+  document.documentElement.setAttribute('data-et-error', message);
+};
+
+const BUILDING = /design-explore: wird gebaut …[^\n]*/;
+
+const showBuilding = (line: string) => {
+  document.documentElement.setAttribute('data-et-building', '');
+
+  const text = document.createElement('pre');
+  const startedAt = Date.now();
+  const paint = () => {
+    text.textContent = `${line} ${Math.floor((Date.now() - startedAt) / 1000)} s`;
+  };
+
+  paint();
+  setInterval(paint, 1000);
+  text.style.margin = '0';
+  text.style.whiteSpace = 'pre-wrap';
+  root.replaceChildren(text);
+  root.setAttribute(
+    'style',
+    'padding:16px;font:14px monospace;color:var(--et-surface-text-muted);background:var(--et-surface-background)',
+  );
+
+  return null;
+};
+
+const fail = (message: string) => {
+  const building = BUILDING.exec(message)?.[0];
+
+  if (building) return showBuilding(building);
+
+  markFailed(message);
+  paintFailure(root, message);
+
+  return null;
+};
+
+const failMissing = (message: string) => {
+  document.documentElement.setAttribute('data-et-missing', '');
+
+  return fail(message);
+};
+
+const banners: HTMLElement[] = [];
+
+const showSetupError = (message: string) => {
+  markFailed(message);
+
+  const banner = document.createElement('pre');
+
+  banner.textContent = message;
+  banner.setAttribute(
+    'style',
+    'position:fixed;top:0;left:0;right:0;z-index:2147483647;margin:0;padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;font:14px monospace;color:#f0a0a0;background:#1a1414',
+  );
+  document.body.append(banner);
+  banners.push(banner);
+};
+
+const RETRY_DELAYS = [300, 1500];
+
+// A part file that changes while frames load can fail its import once; Chromium fetches a failed module again.
+const retried = <T>(load: () => Promise<T>, attempt = 0): Promise<T> =>
+  load().catch((error: unknown) => {
+    const delay = RETRY_DELAYS[attempt];
+    if (delay === undefined) throw error;
+
+    return new Promise<void>((resolve) => setTimeout(resolve, delay)).then(() => retried(load, attempt + 1));
+  });
+
+let drawnPart: { part: Part<unknown>; states: Record<string, unknown> } | null = null;
+
+const drawCall = async (): Promise<Drawing | null> => {
+  const call = calls[slug];
+  if (!call) return failMissing(`design-explore: no call "${slug}"`);
+
+  const variant: CallVariant | undefined = (await call()).default.variants.find((o) => o.key === key);
+  if (!variant) return failMissing(`design-explore: call "${slug}" has no variant "${key}"`);
+
+  return variant
+    .load()
+    .then((module) => module.default)
+    .then(
+      (drawn) => withNgStyles(drawn),
+      (error: unknown) => fail(`design-explore: variant "${key}" failed\n${messageOf(error)}`),
+    );
+};
+
+const composeParam = product ? params.get('compose') : null;
+
+/** Makes each part named in the `compose` param draw with its props merged over the props its user passes. */
+const composed = async (name: string) => {
+  const overrides = composeParam ? (JSON.parse(composeParam) as Record<string, Record<string, unknown>>) : {};
+
+  await Promise.all(
+    Object.entries(overrides).map(async ([used, props]) => {
+      const load = parts[name]?.[used];
+
+      if (!load) throw new Error(`design-explore: product "${name}" has no part "${used}" to compose`);
+
+      const { default: part } = await retried(load);
+      const render = part.render.bind(part);
+
+      part.render = (given: unknown) => render({ ...(given as Record<string, unknown>), ...props });
+    }),
+  );
+};
+
+let composing: Promise<void> | null = null;
+let ngStylesStart: (() => void) | null = null;
+
+const partLoadOf = (name: string) =>
+  sketch ? sketchParts[name]?.[sketch]?.[sketchVariant]?.[partKey] : parts[name]?.[partKey];
+
+const failMissingPart = (name: string) =>
+  failMissing(
+    sketch
+      ? `design-explore: variant "${sketchVariant}" of the sketch on ${sketch} in product "${name}" has no part "${partKey}"`
+      : `design-explore: product "${name}" has no part "${partKey}"`,
+  );
+
+const drawPart = async (name: string): Promise<Drawing | null> => {
+  const load = partLoadOf(name);
+  if (!load) return failMissingPart(name);
+
+  const loadProps = propsSketch ? sketchParts[name]?.[propsSketch]?.[propsVariant]?.[partKey] : load;
+  if (!loadProps)
+    return failMissing(
+      `design-explore: variant "${propsVariant}" of the sketch on ${propsSketch} in product "${name}" has no part "${partKey}"`,
+    );
+
+  try {
+    composing ??= composed(name);
+    await composing;
+
+    const [{ default: part }, { default: holder }] = await Promise.all([retried(load), retried(loadProps)]);
+
+    if (!(key in holder.states)) return failMissing(`design-explore: part "${partKey}" has no state "${key}"`);
+
+    drawnPart = { part: part as Part<unknown>, states: holder.states };
+    ngStylesStart ??= markNgStyles();
+
+    return await drawState(part as Part<unknown>, holder.states[key]);
+  } catch (error) {
+    return fail(`design-explore: state "${key}" of "${partKey}" failed\n${messageOf(error)}`);
+  }
+};
+
+/** Draws every state of the part into one table laid out by its `grid`, for the `sheet` param. */
+const drawSheet = async (name: string): Promise<Drawing | null> => {
+  const load = partLoadOf(name);
+  if (!load) return failMissingPart(name);
+
+  try {
+    composing ??= composed(name);
+    await composing;
+
+    const part = (await retried(load)).default as Part<unknown>;
+    const states = Object.keys(part.states);
+    const [first] = states;
+
+    if (first === undefined) return failMissing(`design-explore: part "${partKey}" has no state`);
+
+    const { styles } = await drawState(part, part.states[first]);
+    const markupOf = stateMarkupOf({ part, states: part.states }, styles);
+    const bodies = Object.fromEntries(
+      await Promise.all(states.map((state) => markupOf(state).then((body) => [state, body] as const))),
+    );
+
+    return { body: sheetMarkupOf(sheetLayoutOf(states, part.grid), bodies), styles: `${SHEET_STYLES}${styles}` };
+  } catch (error) {
+    return fail(`design-explore: sheet of "${partKey}" failed\n${messageOf(error)}`);
+  }
+};
+
+const tokensOf = async (name: string) => {
+  const load = sketch ? sketchTokens[name]?.[sketch]?.[sketchVariant] : tokens[name];
+
+  return load ? (await load()).default : null;
+};
+
+const partRootOf = (container: HTMLElement) =>
+  [...container.children].find((child) => !['STYLE', 'SCRIPT', 'LINK'].includes(child.tagName)) ?? null;
+
+const force = (element: Element, name: string) => {
+  if (name === 'disabled') {
+    element.setAttribute('disabled', '');
+    element.setAttribute('aria-disabled', 'true');
+  } else if (!element.hasAttribute('disabled') && element.getAttribute('aria-disabled') !== 'true') {
+    element.setAttribute('data-et-force', name);
+  }
+};
+
+const forced = async (css: string) => {
+  if (!/:(?:hover|focus-visible|active|focus-within)/iu.test(css)) return css;
+
+  const response = await fetch('/__design/force', { method: 'POST', body: css }).catch(() => null);
+
+  return response?.ok ? response.text() : css;
+};
+
+const report = () => {
+  const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
+  const width = fit ? { width: Math.ceil(root.getBoundingClientRect().width) } : {};
+
+  fitEmbed(frameElement, height);
+
+  parent.postMessage(
+    {
+      type: 'design-explore:height',
+      variant: key,
+      height,
+      ...width,
+      viewport: { width: innerWidth, height: innerHeight },
+      href: location.href,
+      ...(errored ? { errored: true, ...(errorText ? { error: errorText } : {}) } : {}),
+    },
+    '*',
+  );
+};
+
+const reportPainted = () =>
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => parent.postMessage({ type: 'design-explore:painted', variant: key }, '*')),
+  );
+
+const stateMarkupOf = ({ part, states }: NonNullable<typeof drawnPart>, styles: string) => {
+  const sheets = new Set([styles]);
+
+  return (state: string) =>
+    drawState(part, states[state]).then((drawn) =>
+      sheets.has(drawn.styles)
+        ? drawn.body
+        : forced(drawn.styles).then((css) => {
+            const style = document.createElement('style');
+
+            sheets.add(drawn.styles);
+            style.textContent = css;
+            document.head.append(style);
+
+            return drawn.body;
+          }),
+    );
+};
+
+const exposeStepped = (options: { start: () => Promise<SteppedMotion>; interrupt: number | null }) => {
+  let stepped: SteppedMotion | null = null;
+  const steppedOf = () => {
+    if (!stepped) throw new Error('design-explore: start the motion first');
+
+    return stepped;
+  };
+
+  Object.assign(window, {
+    etMotion: {
+      start: () =>
+        options.start().then((started) => {
+          stepped = started;
+
+          return true;
+        }),
+      seek: (ms: number) => steppedOf().seek(ms),
+      bounds: () => steppedOf().bounds(),
+      timeline: () => {
+        const tokens = rootTokensOf(document);
+
+        return {
+          end: steppedOf().end(),
+          tracks: steppedOf()
+            .tracks()
+            .map((track) => withTokenNames(track, tokens)),
+          interrupt: options.interrupt,
+        };
+      },
+    },
+  });
+};
+
+const motionStartOf = (options: {
+  drawn: NonNullable<typeof drawnPart>;
+  motion: Motion;
+  markupOf: (state: string) => Promise<string>;
+  switching?: () => void;
+}) => {
+  const { drawn, motion, markupOf } = options;
+
+  return () =>
+    Promise.all([markupOf(motion.to), motion.interrupt === undefined ? null : markupOf(motion.from)]).then(
+      ([markup, back]) => {
+        options.switching?.();
+
+        return stepMotion({
+          root,
+          markup,
+          motion,
+          ...(back === null
+            ? {}
+            : {
+                reverse: {
+                  markup: back,
+                  motion: Object.values(drawn.part.motions ?? {}).find(
+                    (other) => other.from === motion.to && other.to === motion.from,
+                  ),
+                },
+              }),
+        });
+      },
+    );
+};
+
+const exposeMotion = (options: { drawn: NonNullable<typeof drawnPart>; name: string; styles: string }) => {
+  const { drawn, name, styles } = options;
+  const motion = drawn.part.motions?.[name];
+
+  if (!motion) {
+    const known = Object.keys(drawn.part.motions ?? {});
+
+    showSetupError(`design-explore: part "${partKey}" has no motion "${name}" - it has: ${known.join(', ') || 'none'}`);
+
+    return;
+  }
+
+  exposeStepped({
+    interrupt: motion.interrupt ?? null,
+    start: motionStartOf({ drawn, motion, markupOf: stateMarkupOf(drawn, styles) }),
+  });
+};
+
+const settleAnimations = () => {
+  for (const animation of document.getAnimations()) {
+    if (Number.isFinite(animation.effect?.getComputedTiming().endTime)) animation.finish();
+    else animation.cancel();
+  }
+};
+
+const listenForDrive = (drawn: NonNullable<typeof drawnPart>, styles: string) => {
+  const markupOf = stateMarkupOf(drawn, styles);
+  const drawnMarkup = root.innerHTML;
+  let restore: () => void = () => undefined;
+
+  const driver = createMotionDriver({
+    document,
+    reply: (answer) => parent.postMessage({ ...answer, variant: key }, '*'),
+    released: () => {
+      restore();
+      restore = () => undefined;
+    },
+    start: (name, reduced) => {
+      const motion = drawn.part.motions?.[name];
+
+      if (!motion) return Promise.reject(new Error(`design-explore: part "${partKey}" has no motion "${name}"`));
+      if (motion.from !== key)
+        return Promise.reject(new Error(`design-explore: motion "${name}" starts at "${motion.from}", not "${key}"`));
+
+      settleAnimations();
+      restore();
+      root.innerHTML = drawnMarkup;
+
+      return motionStartOf({
+        drawn,
+        motion,
+        markupOf,
+        switching: () => {
+          restore = emulateReducedMotion(document, reduced);
+        },
+      })();
+    },
+  });
+
+  const listener = (event: MessageEvent) => {
+    const message = event.source === parent ? motionDriveMessageOf(event.data) : null;
+
+    if (message) void driver.handle(message);
+  };
+
+  addEventListener('message', listener);
+
+  return () => removeEventListener('message', listener);
+};
+
+const exposeFlowLine = (options: { product: string; to: string; styles: string }) => {
+  const [toPart = '', toState = ''] = options.to.split('#');
+  const load = parts[options.product]?.[toPart];
+
+  if (!load) {
+    showSetupError(`design-explore: product "${options.product}" has no part "${toPart}"`);
+
+    return;
+  }
+
+  exposeStepped({
+    interrupt: null,
+    start: () =>
+      retried(load).then(({ default: part }) => {
+        const states = (part as Part<unknown>).states;
+
+        if (!(toState in states)) throw new Error(`design-explore: part "${toPart}" has no state "${toState}"`);
+
+        // The styles of the to page ride in the markup: in <head> they would restyle the from page before the View Transition captures it.
+
+        return drawState(part as Part<unknown>, states[toState])
+          .then((drawn) =>
+            drawn.styles === options.styles
+              ? drawn.body
+              : forced(drawn.styles).then((css) => `<style>${css}</style>${drawn.body}`),
+          )
+          .then((markup) => stepMotion({ root, markup, motion: { from: key, to: toState, viewTransition: true } }));
+      }),
+  });
+};
+
+const runPartRules = (drawn: NonNullable<typeof drawnPart>, styles: string) =>
+  runRules(root, {
+    state: key,
+    rules: drawn.part.rules ?? [],
+    motions: drawn.part.motions,
+    render: stateMarkupOf(drawn, styles),
+    switched: () => {
+      const partRoot = partRootOf(root);
+
+      if (interaction && partRoot) force(partRoot, interaction);
+    },
+    failed: (error) => showSetupError(`design-explore: switch of part "${partKey}" failed\n${messageOf(error)}`),
+  });
+
+const keptFaces = keptFacesOf(document);
+
+// macOS WebKit can loop in module evaluation when a frame with top-level await is removed.
+const drawKey = async () => {
+  const tokenStyles = product ? await tokensOf(product) : null;
+  const loaded = await (product ? (sheet ? drawSheet(product) : drawPart(product)) : drawCall());
+  const undo: (() => void)[] = [];
+
+  if (loaded) {
+    const sheets = keptFaces([...(tokenStyles === null ? [] : [tokenStyles]), await forced(loaded.styles ?? '')]);
+
+    for (const sheet of sheets) {
+      const style = document.createElement('style');
+
+      style.textContent = sheet;
+      document.head.append(style);
+      undo.push(() => style.remove());
+    }
+
+    const error = mountDrawing(root, loaded);
+
+    undo.push(watchSurfaces(root));
+    const partRoot = partRootOf(root);
+
+    if (interaction && partRoot) force(partRoot, interaction);
+
+    if (error)
+      showSetupError(`design-explore: setup of ${product ? 'state' : 'variant'} "${key}" failed\n${messageOf(error)}`);
+
+    if (flowTo && product) exposeFlowLine({ product, to: flowTo, styles: loaded.styles ?? '' });
+    else if (motionName && drawnPart) exposeMotion({ drawn: drawnPart, name: motionName, styles: loaded.styles ?? '' });
+    else if (drawnPart?.part.rules?.length) undo.push(runPartRules(drawnPart, loaded.styles ?? ''));
+
+    if (!flowTo && !motionName && drawnPart) undo.push(listenForDrive(drawnPart, loaded.styles ?? ''));
+  }
+
+  return () => undo.forEach((step) => step());
+};
+
+/**
+ * Draws another state of the same part on this page, as a fresh load of the frame with that `state` would. Exposed as
+ * `window.etSwitchState` on a part frame without a motion or flow line.
+ */
+const switchStateOf = (rootAttributes: [string, string][], undone: () => void) => {
+  let undo = undone;
+
+  return async (state: string) => {
+    undo();
+    banners.splice(0).forEach((banner) => banner.remove());
+    ['data-et-error', 'data-et-missing', 'data-et-building'].forEach((name) =>
+      document.documentElement.removeAttribute(name),
+    );
+    root.replaceChildren();
+    root.getAttributeNames().forEach((name) => root.removeAttribute(name));
+    rootAttributes.forEach(([name, value]) => root.setAttribute(name, value));
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    scrollTo(0, 0);
+    errored = false;
+    errorText = null;
+    drawnPart = null;
+    key = state;
+    ngStylesStart?.();
+
+    const url = new URL(location.href);
+
+    url.searchParams.set('state', state);
+    history.replaceState(history.state, '', url);
+    undo = await drawKey();
+    report();
+    reportPainted();
+  };
+};
+
+const drawFrame = async () => {
+  parent.postMessage({ type: 'design-explore:loading' }, '*');
+  await (product ? loadProductEnv({ product, sketch, variant: sketchVariant }) : loadEnv(slug.split('/')[0] ?? ''));
+  const rootAttributes = root
+    .getAttributeNames()
+    .map((name): [string, string] => [name, root.getAttribute(name) ?? '']);
+  const undo = await drawKey();
+
+  if (product && !sheet && !flowTo && !motionName)
+    Object.assign(window, { etSwitchState: switchStateOf(rootAttributes, undo) });
+
+  const place = () => {
+    applyEmbed(frameElement, root);
+    placeOverlays(root);
+    fitOutOfFlow(root, { sideways: fit });
+  };
+
+  new MutationObserver(place).observe(root, { childList: true, subtree: true });
+  new ResizeObserver(() => requestAnimationFrame(place)).observe(root);
+  place();
+  // A size measured in the fallback font is reported first and replaced once the web font loads, so the cell that
+  // shows this frame would resize with no input.
+  await document.fonts.ready;
+
+  const reported = new ResizeObserver(report);
+
+  reported.observe(document.documentElement);
+  if (fit) reported.observe(root);
+  reporting = true;
+  report();
+  reportPainted();
+
+  addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') parent.postMessage({ type: 'design-explore:escape', variant: key }, '*');
+  });
+
+  addEventListener(
+    'scroll',
+    () =>
+      parent.postMessage(
+        { type: 'design-explore:scroll', variant: key, y: Math.round(scrollY), x: Math.round(scrollX) },
+        '*',
+      ),
+    { passive: true },
+  );
+};
+
+void drawFrame().catch((error: unknown) => {
+  fail(`design-explore: frame failed\n${messageOf(error)}`);
+  reporting = true;
+  report();
+  reportPainted();
+});

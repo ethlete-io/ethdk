@@ -1,0 +1,42 @@
+---
+name: subagent-models
+description: A subagent runs on sonnet unless its call names a model - haiku for lookups and small specified jobs, opus for hard work, fable for judgment.
+kind: rule
+scope: both
+---
+
+## Delegating: sonnet by default
+
+A subagent spawned without a `model` would run on the model leading the session, so an expensive
+model would do every small job it delegates. The `subagent-model-policy` hook fills in **`sonnet`**
+for such a call. Name another model only when the task matches its row below - `opus` only for the
+work its row lists:
+
+| Model    | The work it fits                                                                                                                                                                  |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `haiku`  | Lookups and small, fully specified jobs: grep, find, read and summarize files or a CI log, run a command and report, a mechanical edit in named files. Haiku 5.5 does these well. |
+| `sonnet` | Scoped work with a clear target: a fix in a named file, a spec, a docs page, a lint cleanup, research that needs reasoning. Sonnet 5.5 is close to opus here and costs less.      |
+| `opus`   | Hard work: a bug with no known cause, a change across many files, a review of a diff, and any task sonnet did not finish.                                                         |
+| `fable`  | Judgment-heavy work: planning, design, cross-cutting review, leading other subagents. The most expensive of the four, so ask the user before picking it.                          |
+
+Effort follows the prompt, not a parameter: scope the prompt to one question, name what "done"
+means, and say "keep it brief" for a lookup. Two calls need no `model` of their own - a named
+agent type carries the model and reasoning effort its own definition sets, and a fork always
+inherits the parent's model.
+
+A subagent starts cold: it loads the full start context (about 50k tokens) before its first step,
+and measured subagents cost as much as the sessions that spawn them. A lookup or job of under about 10 tool
+calls stays in the session. Give each subagent one large slice, not several small ones, and name the files and line ranges
+in its prompt so it does not search for them. Stop each
+background subagent with `TaskStop` once its result is in, so finished ones do not pile up.
+
+A subagent has the same context budget as the session, measured on its own transcript, and the
+context-warning hook tells it to hand back at the critical tier. Size each prompt to fit: one
+slice of work, the files it needs named, and "keep your context small - no whole big files".
+Work that will not fit goes to several subagents in sequence, a fresh one per slice; a subagent
+that hands back early names its remaining steps, which become the next one's prompt.
+
+A subagent does not have to be a Claude one. Delegate to a Codex agent where another model
+family would answer better - a second opinion, a review of your own diff, a bug hunt your own
+reading failed - and whenever the Claude usage limit is close, because a Codex run does not draw
+on it. Read {%skill:codex-subagent%} first.

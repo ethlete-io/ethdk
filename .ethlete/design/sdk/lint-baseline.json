@@ -1,0 +1,6 @@
+{
+  "components/breadcrumb/breadcrumb.ts": { "@typescript-eslint/no-non-null-assertion": 1 },
+  "components/tabs/tabs.ts": { "@typescript-eslint/no-non-null-assertion": 1 },
+  "components/timeline/timeline.ts": { "@typescript-eslint/no-non-null-assertion": 1 },
+  "components/toolbar/toolbar.ts": { "@typescript-eslint/no-non-null-assertion": 1 }
+}

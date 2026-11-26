@@ -1,0 +1,37 @@
+name: CI (Main)
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: release_environment
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+      checks: write
+    with:
+      deploy: true
+      storybook_target: storybook-prod
+      docs_target: docs-prod
+      channel_id: live
+    secrets: inherit
+
+  publish:
+    needs: ci
+    uses: ./.github/workflows/publish.yml
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    with:
+      version_command: 'yarn changeset:release'
+      commit_message: 'chore(repo): Update versions'
+      title: 'Release packages'
+      slack_title: '*New Release*'
+    secrets: inherit

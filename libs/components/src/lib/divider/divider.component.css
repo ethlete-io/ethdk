@@ -1,0 +1,40 @@
+@layer components.sdk {
+  @property --et-divider-thickness {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 1px;
+  }
+
+  @property --et-divider-spacing {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-divider-inset {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  .et-divider {
+    display: block;
+    flex: none;
+    block-size: 0;
+    border-block-start: var(--et-divider-thickness) solid
+      var(--et-divider-color, var(--et-surface-border, rgb(255 255 255 / 0.1)));
+    margin-block: var(--et-divider-spacing);
+    margin-inline: var(--et-divider-inset);
+
+    &:where([data-orientation='vertical']) {
+      align-self: stretch;
+      block-size: auto;
+      inline-size: 0;
+      border-block-start: 0;
+      border-inline-start: var(--et-divider-thickness) solid
+        var(--et-divider-color, var(--et-surface-border, rgb(255 255 255 / 0.1)));
+      margin-block: var(--et-divider-inset);
+      margin-inline: var(--et-divider-spacing);
+    }
+  }
+}

@@ -1,0 +1,42 @@
+<et-pip-window>
+  <ng-template etPipTitleBar>
+    @if (state.showBackButton()) {
+      <button [color]="controlsColor()" [size]="WINDOW_CONTROL_BUTTON_SIZE" et-window-control-button etPipBack>
+        <i etIcon="et-arrow-out-up-right"></i>
+      </button>
+    }
+    <span class="et-pip-window__title-bar-spacer"></span>
+    @if (state.hasMultiplePips()) {
+      <button
+        [color]="controlsColor()"
+        [pressed]="state.multiView()"
+        [size]="WINDOW_CONTROL_BUTTON_SIZE"
+        et-window-control-button
+        etPipGridToggle
+      >
+        @if (state.multiView()) {
+          <i etIcon="et-focus-frame"></i>
+        } @else {
+          <i etIcon="et-grid-2x2"></i>
+        }
+      </button>
+    }
+    <button
+      [color]="controlsColor()"
+      [kind]="CLOSE_KIND"
+      [size]="WINDOW_CONTROL_BUTTON_SIZE"
+      et-window-control-button
+      etPipClose
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  </ng-template>
+
+  <div etPipStage>
+    @for (c of state.cells(); track c.playerId) {
+      <div [etPipCell]="c">
+        <et-pip-player />
+      </div>
+    }
+  </div>
+</et-pip-window>

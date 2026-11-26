@@ -1,0 +1,35 @@
+import { MemberItemAssignmentInvitationWithMemberView, ItemProfileView, ItemView } from '@app-a/types';
+import { createHttpActionGroup, defineArgTypes } from '@tomtomb/ngrx-toolkit';
+import * as Models from './item.models';
+
+const actionScope = 'Item';
+
+export const getItem = createHttpActionGroup({
+  method: 'GET',
+  name: 'Item',
+  scope: actionScope,
+  argsTypes: defineArgTypes<{ args: Models.GetItemArgs; response: ItemView }>(),
+});
+
+export const getItemPublicProfileBySlug = createHttpActionGroup({
+  method: 'GET',
+  name: 'Item Public Profile By Slug',
+  scope: actionScope,
+  argsTypes: defineArgTypes<{ args: Models.GetItemPublicProfileBySlugArgs; response: ItemProfileView }>(),
+});
+
+export const postCreateAndInviteMember = createHttpActionGroup({
+  method: 'POST',
+  name: 'Create And Invite Member',
+  scope: actionScope,
+  argsTypes: defineArgTypes<{
+    args: Models.PostCreateAndInviteMemberArgs;
+    response: MemberItemAssignmentInvitationWithMemberView;
+  }>(),
+});
+
+export const ITEM_ACTIONS = {
+  getItem,
+  getItemPublicProfileBySlug,
+  postCreateAndInviteMember,
+};

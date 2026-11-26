@@ -1,0 +1,33 @@
+@layer components {
+  .st-disclosure {
+    background: none;
+    font: inherit;
+    transition: var(--transition-state);
+  }
+
+  .st-disclosure:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 1.5px var(--focus-ring);
+  }
+
+  .st-disclosure svg {
+    transition: rotate var(--duration-appear) var(--ease-standard);
+  }
+
+  .st-disclosure[aria-expanded='true'] svg {
+    rotate: 90deg;
+  }
+
+  .st-disclosure-panel {
+    transition: opacity var(--duration-appear) var(--ease-standard);
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
+  .st-disclosure-body {
+    padding: var(--space-1) 0 0 calc(var(--space-2) + 14px + var(--space-2));
+    list-style: none;
+  }
+}

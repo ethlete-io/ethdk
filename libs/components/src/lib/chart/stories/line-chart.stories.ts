@@ -1,0 +1,130 @@
+import { provideColorPalette } from '@ethlete/core';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { LineChartStorybookComponent } from './line-chart-storybook.component';
+import { LineChartMarkActivateStorybookComponent } from './chart-mark-activate-storybook.component';
+
+const PALETTE = provideColorPalette([
+  { token: 'chart-blue', label: 'Blue' },
+  { token: 'chart-orange', label: 'Orange' },
+  { token: 'chart-aqua', label: 'Aqua' },
+  { token: 'chart-yellow', label: 'Yellow' },
+]);
+
+const withPalette = (palette: typeof PALETTE) =>
+  moduleMetadata({ imports: [LineChartStorybookComponent], providers: [palette] });
+
+export default {
+  title: 'Components/Data display/Line chart',
+  component: LineChartStorybookComponent,
+  decorators: [moduleMetadata({ imports: [LineChartStorybookComponent] })],
+  args: {
+    dataset: 'visitors',
+    area: false,
+    stacked: false,
+    points: false,
+    width: 640,
+    height: 240,
+    colorToken: '',
+  },
+  argTypes: {
+    dataset: {
+      control: 'inline-radio',
+      options: ['visitors', 'tickets', 'daily', 'quarter', 'gaps', 'channels', 'intraday'],
+    },
+    area: { control: 'boolean' },
+    stacked: { control: 'boolean' },
+    points: { control: 'boolean' },
+    width: { control: { type: 'range', min: 200, max: 1000, step: 20 } },
+    height: { control: { type: 'range', min: 120, max: 480, step: 20 } },
+    colorToken: { control: 'text' },
+  },
+} as Meta<LineChartStorybookComponent>;
+
+type Story = StoryObj<LineChartStorybookComponent>;
+
+export const Default: Story = {};
+
+export const Points: Story = {
+  args: { points: true },
+};
+
+export const MultiSeries: Story = {
+  args: { dataset: 'tickets' },
+  decorators: [withPalette(PALETTE)],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Several series, each in the next entry of the `provideColorPalette` palette this story provides. ' +
+          'Hovering, tapping or arrowing onto an x lists every series at that x.',
+      },
+    },
+  },
+};
+
+export const TimeAxis: Story = {
+  args: { dataset: 'daily' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`Date` x values get a time axis. The ticks pick a calendar interval that fits the width - days here, ' +
+          'across the end of March and its daylight-saving change.',
+      },
+    },
+  },
+};
+
+export const DenseDaily: Story = {
+  args: { dataset: 'quarter' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Ninety daily values, so each x gets only a few pixels of plot. The focus ring stays at least ' +
+          '`--et-line-chart-focus-ring-min-width` wide, centred on the focused x.',
+      },
+    },
+  },
+};
+
+export const Intraday: Story = {
+  args: { dataset: 'intraday', area: true },
+};
+
+export const Gaps: Story = {
+  args: { dataset: 'gaps', points: true },
+  decorators: [withPalette(PALETTE)],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A `null` value breaks the line. A point with no defined neighbour is drawn as a dot, so it never disappears.',
+      },
+    },
+  },
+};
+
+export const Area: Story = {
+  args: { area: true },
+};
+
+export const StackedArea: Story = {
+  args: { dataset: 'channels', area: true, stacked: true },
+  decorators: [withPalette(PALETTE)],
+};
+
+export const MarkActivate: Story = {
+  render: () => ({ template: '<et-sb-line-chart-mark-activate />' }),
+  decorators: [moduleMetadata({ imports: [LineChartMarkActivateStorybookComponent] })],
+  parameters: {
+    controls: { disable: true },
+    docs: {
+      description: {
+        story:
+          '`(markActivate)` emits its datum from `data` and the series with a value there when an x is clicked, or on ' +
+          'Enter or Space on the focused mark. Use it to drill down.',
+      },
+    },
+  },
+};

@@ -1,0 +1,241 @@
+{
+  "host": "ethlete-shell-main",
+  "shell": "ethlete-shell-page",
+  "frame": "design-live/frame.png",
+  "now": "2026-11-04T12:00:00Z",
+  "invoke": {
+    "design_roots": {
+      "search": "",
+      "roots": ["$checkout"]
+    },
+    "design_project": {
+      "callsRoot": "$checkout",
+      "port": "$port",
+      "defaultCall": null,
+      "themes": {},
+      "calls": []
+    },
+    "design_server_state": {
+      "port": "$port",
+      "listening": true,
+      "managed": false,
+      "foreign": false,
+      "stale": false,
+      "exited": false,
+      "log": []
+    },
+    "design_server_start": {
+      "port": "$port",
+      "listening": true,
+      "managed": false,
+      "foreign": false,
+      "stale": false,
+      "exited": false,
+      "log": []
+    },
+    "agent_list": [],
+    "window_chrome_watch": {
+      "$messages": [{ "os": "linux", "left": [], "right": ["minimize", "maximize", "close"], "preferNoCsd": false }]
+    }
+  },
+  "storage": {
+    "ethlete-studio.call-view": {
+      "systemProduct": "studio",
+      "systemEntry": "components/button",
+      "openGroups": {
+        "foundations": false,
+        "components": true,
+        "elements": false,
+        "pages": false
+      }
+    }
+  },
+  "answers": {
+    "/__design/system": "design-live/system.json",
+    "/__design/queue": "design-live/queue.json",
+    "/__design/calls": "design-live/calls.json",
+    "/__design/comments": "design-live/comments.json",
+    "/__design/notes": "design-live/notes.json",
+    "/__design/sketches": "design-live/sketches.json",
+    "/__design/flows": "design-live/flows.json",
+    "/__design/exceptions": "design-live/exceptions.json"
+  },
+  "pages": {
+    "pages/system": {
+      "states": {
+        "part": {
+          "design": "part",
+          "storage": {
+            "ethlete-studio.call-view": {
+              "movedCameras": {
+                "studio components/button": {
+                  "x": 300,
+                  "y": 48,
+                  "zoom": 1
+                }
+              }
+            }
+          }
+        },
+        "edge": {
+          "design": "part",
+          "storage": {
+            "ethlete-studio.call-view": {
+              "movedCameras": {
+                "studio components/button": {
+                  "x": -23,
+                  "y": 48,
+                  "zoom": 1
+                }
+              }
+            }
+          },
+          "pan": {
+            "selector": ".st-canvas > div:first-child",
+            "x": -323,
+            "y": 0
+          }
+        },
+        "zoom-100": {
+          "design": "part",
+          "storage": {
+            "ethlete-studio.call-view": {
+              "movedCameras": {
+                "studio components/button": {
+                  "x": -500,
+                  "y": -300,
+                  "zoom": 0.5
+                }
+              }
+            }
+          },
+          "click": ["Auf 100 % zoomen"]
+        },
+        "panel-hidden": {
+          "design": "part",
+          "storage": {
+            "ethlete-studio.call-view": {
+              "movedCameras": {
+                "studio components/button": {
+                  "x": 40,
+                  "y": 48,
+                  "zoom": 1
+                }
+              }
+            }
+          },
+          "compose": {
+            "elements/shell-main": {
+              "panel": "hidden"
+            }
+          },
+          "click": ["Panel ausblenden"]
+        },
+        "fit": {
+          "design": "fit",
+          "click": ["Einpassen"]
+        }
+      }
+    },
+    "pages/sketches": {
+      "storage": {
+        "ethlete-studio.call-view": {
+          "systemEntry": "sketch:pages/system"
+        }
+      },
+      "answers": {
+        "/__design/sketches": "design-live/sketches-page.json"
+      },
+      "states": {
+        "fit": {
+          "design": "page-sketch",
+          "click": ["Einpassen"]
+        },
+        "100": {
+          "design": "page-100",
+          "click": ["Auf 100 % zoomen"]
+        }
+      }
+    },
+    "pages/flows": {
+      "click": ["Flows"],
+      "states": {
+        "empty": {
+          "design": "empty"
+        },
+        "flow": {
+          "design": "flow",
+          "answers": {
+            "/__design/flows": "design-live/flows-flow.json"
+          }
+        }
+      }
+    },
+    "pages/inbox": {
+      "click": ["Inbox"],
+      "states": {
+        "all-clear": {
+          "design": "all-clear"
+        },
+        "open": {
+          "design": "open",
+          "answers": {
+            "/__design/comments": "design-live/comments-open.json"
+          }
+        },
+        "with-resolved": {
+          "design": "with-resolved",
+          "answers": {
+            "/__design/comments": "design-live/comments-open.json"
+          },
+          "click": ["Erledigte zeigen"]
+        },
+        "active-only": {
+          "design": "active-only",
+          "answers": {
+            "/__design/comments": "design-live/comments-active.json"
+          }
+        },
+        "active-clear": {
+          "design": "active-clear",
+          "answers": {
+            "/__design/comments": "design-live/comments-others.json"
+          }
+        }
+      }
+    },
+    "pages/start": {
+      "host": "ethlete-start",
+      "states": {
+        "no-repo": {
+          "design": "no-repo",
+          "invoke": {
+            "design_roots": {
+              "search": "",
+              "roots": []
+            }
+          }
+        },
+        "no-products": {
+          "design": "no-products",
+          "answers": {
+            "/__design/system": "design-live/system-empty.json"
+          }
+        }
+      }
+    },
+    "pages/inventory": {
+      "storage": {
+        "ethlete-studio.call-view": {
+          "inventoryShown": true,
+          "systemEntry": "pages/system"
+        }
+      },
+      "states": {
+        "open": {
+          "design": "open"
+        }
+      }
+    }
+  }
+}

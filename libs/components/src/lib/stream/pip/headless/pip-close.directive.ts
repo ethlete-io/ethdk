@@ -1,0 +1,40 @@
+import { Directive, inject, input } from '@angular/core';
+import { injectPipManager } from '../../pip-manager';
+import { injectStreamLabels } from '../../stream-labels';
+import { StreamPipEntry } from '../../stream-manager.types';
+import { PIP_CHROME_REF_TOKEN } from './pip-chrome-ref.token';
+import { PIP_ENTRY_TOKEN } from './pip-entry.token';
+import { PipWindowComponent } from '../pip-window.component';
+
+@Directive({
+  selector: '[etPipClose]',
+  host: {
+    class: 'et-stream-pip-chrome__close',
+    type: 'button',
+    '[attr.aria-label]': 'labels().pipClose',
+    '(click)': 'close($event)',
+  },
+})
+export class PipCloseDirective {
+  private chrome = inject(PIP_CHROME_REF_TOKEN, { optional: true });
+  private pipWindow = inject(PipWindowComponent, { optional: true });
+  private tokenEntry = inject(PIP_ENTRY_TOKEN, { optional: true });
+  private pipManager = injectPipManager();
+  protected labels = injectStreamLabels();
+
+  public entry = input<StreamPipEntry>();
+
+  public close(event: Event) {
+    event.stopPropagation();
+    const e = this.resolveEntry();
+    if (e) {
+      this.pipManager.pipDeactivate(e.playerId);
+    } else if (this.chrome) {
+      this.chrome.state.close(event, this.pipWindow ?? undefined);
+    }
+  }
+
+  private resolveEntry(): StreamPipEntry | null {
+    return this.entry() ?? this.tokenEntry?.() ?? null;
+  }
+}

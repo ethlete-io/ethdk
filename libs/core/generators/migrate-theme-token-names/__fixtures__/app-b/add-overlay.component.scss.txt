@@ -1,0 +1,34 @@
+.bb-hub-partner-add-overlay {
+  --et-overlay-padding-inline: 3.2rem;
+  --et-overlay-padding-block: 3.2rem;
+
+  border: none;
+  border-radius: 1.6rem;
+  overflow: hidden;
+
+  et-overlay-header,
+  et-overlay-body,
+  et-overlay-footer {
+    background-color: rgb(var(--et-surface-background));
+    color: rgb(var(--et-surface-color));
+  }
+
+  et-overlay-header {
+    --et-overlay-header-padding-block-end: 3.2rem;
+  }
+
+  et-overlay-footer {
+    --et-overlay-footer-padding-block-start: 3.2rem;
+  }
+}
+
+.bb-hub-partner-add-overlay.et-overlay--bottom-sheet {
+  border-radius: 1.6rem 1.6rem 0 0;
+}
+
+@media (width < 768px) {
+  .bb-hub-partner-add-overlay {
+    --et-overlay-padding-inline: 2.4rem;
+    --et-overlay-padding-block: 2.4rem;
+  }
+}

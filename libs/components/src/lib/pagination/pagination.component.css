@@ -1,0 +1,186 @@
+@layer components.sdk {
+  @property --et-pagination-item-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 36px;
+  }
+
+  @property --et-pagination-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-pagination-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  :where(.et-pagination-host) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--et-pagination-gap);
+  }
+
+  /* The fit measures the host. Sized to its trimmed content, a flex item would never see room return. A full inline
+     size instead of flex-grow, so a column flex parent does not stretch the height. */
+  :where(.et-pagination-host[data-fit-width]) {
+    inline-size: 100%;
+  }
+
+  /* Touch gets the comfortable 44px target. `:where()` holds this at zero specificity so the `sm` and
+     compact rules below - which floor the size on purpose - still win over it. */
+  @media (pointer: coarse) {
+    :where(.et-pagination-host) {
+      --et-pagination-item-size: 44px;
+    }
+
+    /* Without this stacking context the hit areas below (z-index -1) would drop under the host's
+       own box and catch nothing; inside it they sit under every visible item, so they never take a
+       tap from a neighbour. */
+    .et-pagination-host {
+      isolation: isolate;
+    }
+
+    .et-pagination-host .et-pagination-button::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      top: 50%;
+      left: 50%;
+      inline-size: max(100%, 44px);
+      block-size: max(100%, 44px);
+      translate: -50% -50%;
+    }
+  }
+
+  .et-pagination-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--et-pagination-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-pagination-item {
+    display: flex;
+  }
+
+  /* Square, compact cells. Scoped through the host so these beat the button's own
+     `.et-button:where([data-size='sm'])` size rule (two classes vs one) — setting
+     `--et-button-padding` from a single-class selector loses to it, which is what used to leave the
+     chevrons 40×34 instead of square. */
+  .et-pagination-host .et-pagination-button {
+    --_et-button-padding: 0;
+    --_et-button-border-radius: var(--et-pagination-radius);
+
+    /* Page numbers grow past the square only when the digits demand it (100+). */
+    padding-inline: 4px;
+    min-inline-size: var(--et-pagination-item-size);
+    min-block-size: var(--et-pagination-item-size);
+    font-variant-numeric: tabular-nums;
+    --_et-button-border-color: var(--et-pagination-item-border-color, transparent);
+
+    @media (hover: hover) {
+      &:not([disabled], [aria-disabled='true']):hover {
+        --_et-button-border-color: var(
+          --et-pagination-item-border-color-hover,
+          var(--et-pagination-item-border-color, transparent)
+        );
+      }
+    }
+  }
+
+  /* Icon-only controls (first/previous/next/last) hold an exact square: there is no text to grow them,
+     so a fixed inline size keeps every chevron cell identical to the item size. */
+  .et-pagination-host .et-pagination-button--control {
+    padding-inline: 0;
+    inline-size: var(--et-pagination-item-size);
+  }
+
+  .et-pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: var(--et-pagination-item-size);
+    block-size: var(--et-pagination-item-size);
+    color: var(--et-surface-text-muted, CanvasText);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .et-pagination-range {
+    margin: 0;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    color: var(--et-surface-text-muted, CanvasText);
+  }
+
+  /* Both readouts stack their live text over an invisible copy of the widest string they can ever show
+     (see `widestRangeStatus`), in a single grid cell — so the cell is sized by the wider of the two and
+     the readout's box stays put as the page changes, instead of nudging whatever sits beside it. */
+  .et-pagination-range,
+  .et-pagination-status {
+    display: inline-grid;
+    grid-template-columns: auto;
+    justify-items: center;
+  }
+
+  .et-pagination-readout-sizer,
+  .et-pagination-readout-text {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+  }
+
+  .et-pagination-readout-sizer {
+    visibility: hidden;
+  }
+
+  .et-pagination-jump {
+    inline-size: 128px;
+  }
+
+  /* Compact density: smaller cells with tighter padding, so the paginator sits closer to table-row
+     height. Deliberately below the comfortable touch size — opt in only where space is tight. */
+  .et-pagination-host:where([data-size='sm']) {
+    --et-pagination-item-size: 28px;
+    --et-pagination-gap: 4px;
+  }
+
+  /* Only the block padding and text size change — inline padding and the square geometry stay with the
+     base rule above, so `sm` cells are smaller squares rather than a different shape. */
+  .et-pagination-host:where([data-size='sm']) .et-pagination-button {
+    --_et-button-padding: 2px 0;
+
+    font-size: 13px;
+  }
+
+  /* Compact pager: when the paginator's own width can't hold a comfortable numbered window, it renders
+     just previous/next around a "page X of Y" readout (see `compact` in the component). Driven by the
+     measured container width — not a viewport media query — so it collapses per instance, wherever it
+     sits. The remaining controls grow into roomy touch targets since there are only two of them. */
+  .et-pagination-host:where([data-compact]) {
+    /* Modest chevrons that sit level with a small page-size select — floored so touch stays usable
+       without the bulky whitespace of a full 44px target. */
+    --et-pagination-item-size: 34px;
+    --et-pagination-gap: 2px;
+  }
+
+  .et-pagination-status {
+    align-items: center;
+    min-block-size: var(--et-pagination-item-size);
+    padding-inline: 6px;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--et-surface-text-muted, CanvasText);
+  }
+
+  .et-pagination-host .et-pagination-button:where([aria-current='page']) {
+    --_et-button-shadow: inset 0 0 0 1px light-dark(var(--et-tone-text), transparent);
+  }
+}

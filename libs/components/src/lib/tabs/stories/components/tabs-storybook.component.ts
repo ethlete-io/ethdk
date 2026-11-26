@@ -1,0 +1,82 @@
+import { Component, ViewEncapsulation, input } from '@angular/core';
+import { Breakpoint } from '@ethlete/core';
+import { GRID_2X2_ICON, PENCIL_ICON, PLUS_ICON, provideIcons } from '../../../icon';
+import { TAB_SIZES } from '../../tab-sizes';
+import { TabGroupComponent } from '../../tabs/tab-group.component';
+import { TabLabelDirective } from '../../tabs/tab-label.directive';
+import { TabComponent } from '../../tabs/tab.component';
+
+const SIZES = Object.values(TAB_SIZES);
+
+@Component({
+  selector: 'et-sb-tabs',
+  template: `
+    <div class="flex flex-col gap-8 p-8 font-sans">
+      @for (size of SIZES; track size) {
+        <div class="flex flex-col gap-3">
+          <p class="m-0 text-xs font-semibold uppercase tracking-widest">{{ size }}</p>
+          <et-tab-group
+            [orientation]="orientation()"
+            [fit]="fit()"
+            [align]="align()"
+            [style]="tokens()"
+            [divider]="divider()"
+            [variant]="variant()"
+            [preserveContent]="preserveContent()"
+            [sessionMemoryKey]="sessionMemoryKey()"
+            [size]="size"
+            [color]="color()"
+            [scrollableButtons]="scrollableButtons()"
+          >
+            <et-tab [disabled]="disabled()" icon="et-grid-2x2" label="First">
+              <div class="p-4">Content of the first tab</div>
+            </et-tab>
+            <et-tab [disabled]="disabled()" icon="et-pencil" label="Second">
+              <div class="p-4">Content of the second tab</div>
+            </et-tab>
+            <et-tab [disabled]="disabled()" icon="et-plus" label="Third">
+              <div class="p-4">Content of the third tab</div>
+            </et-tab>
+          </et-tab-group>
+        </div>
+      }
+
+      <div class="flex flex-col gap-3">
+        <p class="m-0 text-xs font-semibold uppercase tracking-widest">custom labels</p>
+        <et-tab-group [color]="color()">
+          <et-tab>
+            <ng-template etTabLabel>
+              <span>🏠 Home</span>
+            </ng-template>
+            <div class="p-4">Home content</div>
+          </et-tab>
+          <et-tab>
+            <ng-template etTabLabel>
+              <span>⚙️ Settings</span>
+            </ng-template>
+            <div class="p-4">Settings content</div>
+          </et-tab>
+        </et-tab-group>
+      </div>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [TabGroupComponent, TabComponent, TabLabelDirective],
+  providers: [provideIcons(GRID_2X2_ICON, PENCIL_ICON, PLUS_ICON)],
+})
+export class TabsStorybookComponent {
+  public orientation = input<'horizontal' | 'vertical'>('horizontal');
+  public variant = input<'primary' | 'secondary'>('secondary');
+  public fit = input<'content' | 'fill'>('content');
+  public align = input<'start' | 'center' | 'end'>('start');
+  public tokens = input<Record<string, string> | null>(null);
+  public divider = input(true);
+  public disabled = input(false);
+  public preserveContent = input(true);
+  public sessionMemoryKey = input<string | null>(null);
+  public color = input<string | null>('brand');
+  public scrollableButtons = input<boolean | { enabled?: boolean | Partial<Record<Breakpoint, boolean>> } | undefined>(
+    undefined,
+  );
+  public readonly SIZES = SIZES;
+}

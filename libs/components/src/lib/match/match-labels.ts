@@ -1,0 +1,204 @@
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
+import { NormalizedMatchResultKind, NormalizedMatchStatus } from './match.types';
+
+/** The two headline values of a match, for the label that turns them into a phrase. */
+export type MatchResultNameContext = {
+  /** The home side's value, as drawn (`'2'`, `'3'`), or `null` when the match reports no values. */
+  home: string | null;
+  /** The away side's value, as drawn, or `null`. */
+  away: string | null;
+  /** What the two values are - see {@link NormalizedMatchResultKind}. */
+  kind: NormalizedMatchResultKind;
+  /** The winning side's display name, or `null` while undecided or drawn. */
+  winner: string | null;
+  /** The `scoreSeparator` in effect, passed in so this label honours an override of it. */
+  separator: string;
+  /** Every match label in effect, so this one can reuse the localized strings. */
+  labels: MatchLabels;
+};
+
+/** What a match card announces about itself, once composed. */
+export type MatchCardNameContext = {
+  /** The home side's display name, or the home TBD label (`tbdHome`, else `tbd`) when the slot is empty. */
+  home: string;
+  /** The away side's display name, or the away TBD label (`tbdAway`, else `tbd`). */
+  away: string;
+  /**
+   * How it stands, as the `resultName` label phrased it (`'2 : 1'`, `'FC Berlin won'`), or `null`
+   * before there is a result.
+   */
+  result: string | null;
+  /** What the underlying two values are, in case the phrasing should turn on it. */
+  resultKind: NormalizedMatchResultKind;
+  /** The winning side's display name, or `null` while undecided or drawn. */
+  winner: string | null;
+  /** The kick-off, already formatted for the active locale, or `null` when unscheduled. */
+  startTime: string | null;
+  status: NormalizedMatchStatus;
+  /** The match's `label` (`'Grand Final'`), or its `number` named by `matchNumber`, or `null`. */
+  label: string | null;
+  /** The labels of the card's `etMatchCardBadge` badges, in template order. */
+  badges: readonly string[];
+  /** Every match label in effect, so this one can reuse the localized `live`, `finished` and `versus`. */
+  labels: MatchLabels;
+};
+
+/**
+ * Every string the match components render or announce. Defaults are English
+ * ({@link DEFAULT_MATCH_LABELS}); override them app-wide with {@link provideMatchLabels} or per
+ * instance via the `labels` input.
+ */
+export type MatchLabels = {
+  /** Stands in for a participant that isn't decided yet. */
+  tbd: string;
+  /** Stands in for an empty home slot, where the side is known. Falls back to `tbd`. */
+  tbdHome?: string;
+  /** Stands in for an empty away slot, where the side is known. Falls back to `tbd`. */
+  tbdAway?: string;
+  /** The live badge's text. */
+  live: string;
+  /** Announced for a finished match, and shown where a status word is drawn. */
+  finished: string;
+  /** Announced for a match that hasn't started. */
+  scheduled: string;
+  /** The tag a cancelled match draws, also announced in its accessible name. */
+  cancelled: string;
+  /** The card's accessible name while it waits for its match (`loading`). */
+  loading: string;
+  /** Separates the two scores, e.g. `' : '`. Also used to build the accessible name. */
+  scoreSeparator: string;
+  /**
+   * How the result is announced - which is not how it is drawn. `'W'` beside `'L'` reads fine and
+   * listens terribly, so a match with no values to read names its winner instead, and `points` says
+   * what the numbers are.
+   */
+  resultName: (context: MatchResultNameContext) => string;
+  /** Sits between the two sides in the wide row, where a match has no result yet. */
+  versus: string;
+  /** The winning side's letter, for a match whose `resultKind` is `'outcome'`. */
+  outcomeWin: string;
+  /** The losing side's letter. */
+  outcomeLoss: string;
+  /** Both sides' letter for a drawn match. */
+  outcomeDraw: string;
+  /** Accessible name for a participant's emblem - the image is decorative beside the name. */
+  emblemAlt: (participant: string) => string;
+  /** A participant's seed, e.g. `'Seed 3'`. */
+  seed: (seed: number) => string;
+  /** Names a match by its `number` when it has no `label`, e.g. `'Match 3'`. */
+  matchNumber: (number: number) => string;
+  /**
+   * The card's whole accessible name. One string per card, so a screen reader reads the match rather
+   * than walking six unrelated fragments.
+   */
+  matchName: (context: MatchCardNameContext) => string;
+  /** Names the per-game breakdown of a series for assistive tech. */
+  gameScores: string;
+  /** One game of a series, e.g. `'Game 2: 13 : 11'`. */
+  gameScore: (game: number, score: string) => string;
+};
+
+/** The built-in English labels. */
+export const DEFAULT_MATCH_LABELS: MatchLabels = {
+  tbd: 'TBD',
+  live: 'Live',
+  finished: 'Finished',
+  scheduled: 'Scheduled',
+  cancelled: 'Cancelled',
+  loading: 'Loading match',
+  scoreSeparator: ' : ',
+  resultName: ({ home, away, kind, winner, separator }) => {
+    // Nothing numeric to read: a competition that reports only wins and losses still has an outcome,
+    // and "W" is not it.
+    if (home === null || away === null) return winner ? `${winner} won` : 'Draw';
+
+    const pair = `${home}${separator}${away}`;
+
+    return kind === 'points' ? `${pair} points` : pair;
+  },
+  versus: 'vs',
+  outcomeWin: 'W',
+  outcomeLoss: 'L',
+  outcomeDraw: 'D',
+  emblemAlt: (participant) => `${participant} emblem`,
+  seed: (seed) => `Seed ${seed}`,
+  matchNumber: (number) => `Match ${number}`,
+  matchName: ({ home, away, result, startTime, status, label, badges, labels }) => {
+    const kickOff = status === 'live' ? null : startTime;
+    const state =
+      status === 'live'
+        ? labels.live
+        : status === 'finished'
+          ? labels.finished
+          : status === 'cancelled'
+            ? labels.cancelled
+            : null;
+    const pairing = `${home} ${labels.versus} ${away}`;
+    const matchUp = label ? `${label}: ${pairing}` : pairing;
+
+    return [matchUp, result, kickOff, state, ...badges].filter(Boolean).join(', ');
+  },
+  gameScores: 'Games',
+  gameScore: (game, score) => `Game ${game}: ${score}`,
+};
+
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_MATCH_LABELS: MatchLabels = {
+  tbd: 'Offen',
+  live: 'Live',
+  finished: 'Beendet',
+  scheduled: 'Angesetzt',
+  cancelled: 'Abgesagt',
+  loading: 'Spiel wird geladen',
+  scoreSeparator: ' : ',
+  resultName: ({ home, away, kind, winner, separator }) => {
+    if (home === null || away === null) return winner ? `${winner} hat gewonnen` : 'Unentschieden';
+    const pair = `${home}${separator}${away}`;
+    return kind === 'points' ? `${pair} Punkte` : pair;
+  },
+  versus: 'gegen',
+  outcomeWin: 'S',
+  outcomeLoss: 'N',
+  outcomeDraw: 'U',
+  emblemAlt: (participant) => `Wappen von ${participant}`,
+  seed: (seed) => `Setzplatz ${seed}`,
+  matchNumber: (number) => `Spiel ${number}`,
+  matchName: ({ home, away, result, startTime, status, label, badges, labels }) => {
+    const kickOff = status === 'live' ? null : startTime;
+    const state =
+      status === 'live'
+        ? labels.live
+        : status === 'finished'
+          ? labels.finished
+          : status === 'cancelled'
+            ? labels.cancelled
+            : null;
+    const pairing = `${home} ${labels.versus} ${away}`;
+    const matchUp = label ? `${label}: ${pairing}` : pairing;
+    return [matchUp, result, kickOff, state, ...badges].filter(Boolean).join(', ');
+  },
+  gameScores: 'Spiele',
+  gameScore: (game, score) => `Spiel ${game}: ${score}`,
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideMatchLabels}. */
+export const matchLabelsForLocale = (locale: string): MatchLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_MATCH_LABELS : DEFAULT_MATCH_LABELS;
+
+const MATCH_LABELS_DEF = /* @__PURE__ */ defineLabels<MatchLabels>('MATCH_LABELS', matchLabelsForLocale);
+
+/**
+ * Localize the match components' strings for everything below this injector, and read the set in
+ * effect here as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_MATCH_LABELS}
+ * value. See {@link defineLabels} for the shape, which every domain in this library shares.
+ *
+ * @example
+ * provideMatchLabels({
+ *   tbd: 'Offen',
+ *   live: 'Live',
+ *   matchName: ({ home, away, result }) => `${home} gegen ${away}${result ? `, ${result}` : ''}`,
+ * });
+ */
+export const provideMatchLabels = /* @__PURE__ */ toProvideFn(MATCH_LABELS_DEF);
+export const injectMatchLabels = /* @__PURE__ */ toInjectFn(MATCH_LABELS_DEF);
+export const MATCH_LABELS = /* @__PURE__ */ toToken(MATCH_LABELS_DEF);

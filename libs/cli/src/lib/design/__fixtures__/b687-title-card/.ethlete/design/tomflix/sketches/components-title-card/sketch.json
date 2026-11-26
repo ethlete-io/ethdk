@@ -1,0 +1,55 @@
+{
+  "target": "components/title-card",
+  "status": "ready",
+  "createdAt": "2026-11-23T23:57:20.048Z",
+  "createdBy": {
+    "cmd": "design sketch new components/title-card --product tomflix --variants a,b,c --by claude-opus-5-5 --round Titelkarte --note Drei Arten, Plakat, Logo und Jahr auf der Kachel zu zeigen --variant-note a=Logo unter dem Plakat. Ruhig, Plakat bleibt frei. --variant-note b=Logo auf dem Plakat mit dunklem Verlauf. Kompakt, Logo braucht Kontrast. --variant-note c=Querformat mit Hintergrundbild und Logo. Breiter, weniger Titel pro Reihe.",
+    "session": "299623dd-af62-435f-a5d9-9ed4f142bed7"
+  },
+  "baseline": {
+    "components/button": "47ad2fdbb0d91120"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Titelkarte",
+      "note": "Drei Arten, Plakat, Logo und Jahr auf der Kachel zu zeigen"
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Logo unter dem Plakat, Jahr darunter. Ruhig, aber der Titel steht doppelt: im Plakat und als Logo."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Hochformat aus dem Hintergrundbild, Logo auf dem Bild. Plakat-Text fällt weg, Bild läuft in den Seitenhintergrund aus."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Querformat aus dem Hintergrundbild, Logo links unten. Breiter, weniger Titel pro Reihe."
+    }
+  },
+  "readyContent": {
+    "a": "596886bbaaa415b2",
+    "b": "cea7d30598e590f0",
+    "c": "5a2d7a2343f7a00f"
+  },
+  "mergeHold": {
+    "reason": "new part, the user merges",
+    "at": "2026-11-24T00:01:26.050Z"
+  },
+  "autoMergeForecast": {
+    "merges": false,
+    "reason": "new part, the user merges",
+    "contents": {
+      "a": "596886bbaaa415b2",
+      "b": "cea7d30598e590f0",
+      "c": "5a2d7a2343f7a00f"
+    },
+    "at": "2026-11-24T00:01:25.861Z"
+  }
+}

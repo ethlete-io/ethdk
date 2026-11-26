@@ -1,0 +1,17 @@
+@layer components {
+  .logo-stage {
+    display: grid;
+    place-items: center;
+    padding: 64px;
+    background: var(--et-surface-background);
+    color: var(--et-tone-fill);
+  }
+
+  .logo-title {
+    margin: 0 0 24px;
+    color: var(--et-surface-text);
+    font:
+      600 18px/1.3 system-ui,
+      sans-serif;
+  }
+}

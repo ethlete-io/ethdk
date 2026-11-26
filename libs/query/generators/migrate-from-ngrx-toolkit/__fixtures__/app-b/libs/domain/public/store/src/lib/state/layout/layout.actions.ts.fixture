@@ -1,0 +1,5 @@
+export const LAYOUT_ACTION_PREFIX = 'Layout';
+
+// Casted as unknown as long as there are no action groups
+
+export const LAYOUT_ACTIONS = {} as any;

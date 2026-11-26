@@ -1,0 +1,87 @@
+import { AfterViewInit, Component, ElementRef, inject, InjectionToken, Input, viewChild } from '@angular/core';
+import { nextFrame } from '@ethlete/core';
+import { BehaviorSubject } from 'rxjs';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_MASONRY_ITEM');
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+@Component({
+  selector: '[et-masonry-item], et-masonry-item',
+  template: `<div #innerElement class="et-masonry-item-inner"><ng-content /></div>`,
+  exportAs: 'etMasonryItem',
+  host: {
+    class: 'et-masonry-item et-legacy',
+    role: 'listitem',
+    '[style.opacity]': '"0"',
+  },
+  providers: [{ provide: MASONRY_ITEM_TOKEN, useExisting: MasonryItemComponent }],
+})
+export class MasonryItemComponent implements AfterViewInit {
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  private readonly _innerElementRef = viewChild<ElementRef<HTMLElement>>('innerElement');
+
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
+  @Input()
+  get key(): string | number {
+    return this._key;
+  }
+  set key(v: string | number) {
+    this._key = v;
+
+    if (this.isPositioned) {
+      this._isPositioned$.next(false);
+    }
+  }
+  private _key!: string | number;
+
+  get dimensions() {
+    const _innerElementRef = this._innerElementRef();
+    if (!_innerElementRef?.nativeElement) {
+      return null;
+    }
+
+    return _innerElementRef.nativeElement.getBoundingClientRect();
+  }
+
+  private _initialDimensions: DOMRect | null = null;
+
+  get initialDimensions() {
+    return this._initialDimensions;
+  }
+
+  private readonly _isPositioned$ = new BehaviorSubject(false);
+
+  get isPositioned$() {
+    return this._isPositioned$.asObservable();
+  }
+
+  get isPositioned() {
+    return this._isPositioned$.getValue();
+  }
+
+  ngAfterViewInit(): void {
+    if (this.key === undefined || this.key === null || this.key === '') {
+      throw new Error('MasonryItemComponent: @Input() key is required');
+    }
+
+    this._initialDimensions = this.dimensions;
+    this._elementRef.nativeElement.style.setProperty('width', `var(--et-masonry-column-width)`);
+  }
+
+  setPosition(x: number, y: number, height: number) {
+    this._elementRef.nativeElement.style.setProperty('transform', `translate3d(${x}px, ${y}px, 0)`);
+    this._elementRef.nativeElement.style.setProperty('height', `${height}px`);
+
+    if (!this._isPositioned$.value) {
+      this._elementRef.nativeElement.style.setProperty('opacity', '1');
+      nextFrame(() => this._isPositioned$.next(true));
+    }
+  }
+}

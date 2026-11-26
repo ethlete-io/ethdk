@@ -1,0 +1,87 @@
+{
+  "comments": [
+    {
+      "id": "c8",
+      "part": "components/button",
+      "state": "filled",
+      "size": { "width": 1440 },
+      "text": "Alle Labels sollen „Save“ lesen.",
+      "createdAt": "2026-10-29T09:00:00Z",
+      "replies": [
+        {
+          "by": "agent",
+          "text": "Alle Labels lesen jetzt „Save“. Ich habe auch die Shots der Varianten neu erzeugt.",
+          "createdAt": "2026-10-29T10:00:00Z",
+          "author": "gpt-6.1-terra"
+        }
+      ],
+      "threadState": "agent",
+      "stale": null,
+      "resolved": { "by": "user", "resolvedAt": "2026-10-29T11:00:00Z" }
+    },
+    {
+      "id": "c7",
+      "part": "components/button",
+      "state": "filled",
+      "size": { "width": 1440 },
+      "text": "Der Fokusring fehlt.",
+      "createdAt": "2026-10-30T09:00:00Z",
+      "replies": [
+        { "by": "agent", "text": "Erledigt.", "createdAt": "2026-10-30T09:30:00Z", "author": "claude-opus-5-5" },
+        {
+          "by": "user",
+          "text": "Der Fokusring verschwindet auf der dunklen Fläche. Mach ihn sichtbar.",
+          "createdAt": "2026-10-30T10:00:00Z"
+        }
+      ],
+      "threadState": "agent",
+      "stale": null,
+      "interaction": "focus-visible",
+      "resolved": { "by": "user", "resolvedAt": "2026-10-30T11:00:00Z" }
+    },
+    {
+      "id": "c6",
+      "part": "pages/system",
+      "state": "part",
+      "size": { "width": 1440 },
+      "text": "Die Baumzeilen sind zu eng.",
+      "createdAt": "2026-11-01T09:00:00Z",
+      "replies": [
+        { "by": "agent", "text": "Erste Runde liegt.", "createdAt": "2026-11-02T08:00:00Z", "author": "gemini-3" },
+        { "by": "user", "text": "Noch zu eng.", "createdAt": "2026-11-02T08:30:00Z" },
+        { "by": "agent", "text": "Zweite Runde liegt.", "createdAt": "2026-11-02T09:00:00Z", "author": "gemini-3" },
+        {
+          "by": "agent",
+          "text": "Die Baumzeilen sind jetzt 24 px hoch. Die Schrift bleibt dicht, nur die Trefferfläche wächst. Runde 3 zeigt beide Höhen nebeneinander.",
+          "createdAt": "2026-11-02T10:00:00Z",
+          "author": "gemini-3"
+        }
+      ],
+      "threadState": "agent",
+      "stale": null
+    },
+    {
+      "id": "c5",
+      "part": "components/select",
+      "state": "open",
+      "size": { "width": 1440 },
+      "text": "QC: Die offene Liste deckt den Hilfetext ab. Bitte nachziehen, bevor wir das Formular bauen.",
+      "createdAt": "2026-11-03T09:00:00Z",
+      "replies": [],
+      "threadState": "agent",
+      "stale": null
+    },
+    {
+      "id": "c4",
+      "part": "components/form-field",
+      "state": "default",
+      "size": { "width": 1440 },
+      "text": "QC: Label und Feld sitzen hier enger als bei select. Gewollt oder Drift?",
+      "createdAt": "2026-11-03T10:00:00Z",
+      "replies": [],
+      "threadState": "agent",
+      "stale": null
+    }
+  ],
+  "unreadable": []
+}

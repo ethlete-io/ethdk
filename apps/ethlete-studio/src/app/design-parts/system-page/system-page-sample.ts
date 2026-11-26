@@ -1,0 +1,253 @@
+import { CommentThread, ThreadMessage } from '../comment-flow/thread-card.component';
+import { InboxComment } from '../inbox/inbox-sample';
+import { PartTree, PartTreeLayer, PartTreeSketch } from '../part-tree/part-tree.component';
+import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
+
+export type OpenPointIcon = 'grid' | 'warning' | 'comment' | 'error' | 'flow';
+
+export type OpenPointTarget =
+  | { kind: 'state'; state: string }
+  | { kind: 'comment'; comment: string }
+  | { kind: 'sketch'; sketch: string; variant?: string }
+  | { kind: 'edit-sketch'; target: string }
+  | { kind: 'part'; part: string };
+
+export type OpenPointLine = { text: string; detail: string; target?: OpenPointTarget };
+
+export type OpenPointGroup = { icon: OpenPointIcon; lines: OpenPointLine[] };
+
+export type PartException = { rule: string; reason: string; reopened: boolean };
+
+export const PART_EXCEPTIONS_SAMPLE: PartException[] = [
+  { rule: 'filled/UNBOUND-INPUT', reason: 'Das Label kommt aus einem Beispieltext.', reopened: false },
+  {
+    rule: 'outline/CONTRAST',
+    reason: 'Die Kontur liegt bewusst unter 3:1.',
+    reopened: true,
+  },
+];
+
+const OPEN_SKETCHES: PartTreeSketch[] = [
+  { part: 'command-palette', status: 'ready' },
+  { part: 'sketches', name: 'change-crop', status: 'ready' },
+  { part: 'shell-main', name: 'logo-menu', status: 'ready' },
+  { part: 'shell-main', name: 'sidebar-resize', status: 'ready' },
+  { part: 'part-tree', name: 'parts-only', status: 'in-progress' },
+];
+
+export const SYSTEM_TREE: PartTree = {
+  sketches: { open: true, items: OPEN_SKETCHES },
+  layers: [
+    { title: 'Foundations', open: false, parts: [{ name: 'colors' }, { name: 'tokens' }] },
+    {
+      title: 'Elements',
+      open: false,
+      parts: [{ name: 'part-tree' }, { name: 'shell-main' }, { name: 'studio-menu' }],
+    },
+    {
+      title: 'Components',
+      open: true,
+      parts: [
+        { name: 'button' },
+        { name: 'select', warns: true },
+        { name: 'title-bar', open: true, nested: [{ name: 'title-search' }] },
+        { name: 'tree-row', selected: true },
+      ],
+    },
+    { title: 'Pages', open: false, parts: [{ name: 'inventory' }, { name: 'system' }] },
+  ],
+  legacy: {
+    open: false,
+    projects: [
+      { name: 'components', calls: ['bar-chart', 'form-mock', 'calendar-contrast'] },
+      { name: 'studio', calls: ['chat-surface', 'workbench', 'tile-controls', 'verdict-mark'] },
+      { name: 'timetrack', calls: [] },
+    ],
+  },
+};
+
+export const MANY_STATES_LAYERS: PartTreeLayer[] = [
+  { title: 'Foundations', open: false, parts: [] },
+  {
+    title: 'Components',
+    open: true,
+    parts: [
+      { name: 'button' },
+      { name: 'form-field' },
+      { name: 'select', warns: true },
+      { name: 'quantity-stepper', selected: true },
+    ],
+  },
+  { title: 'Elements', open: false, parts: [] },
+  { title: 'Pages', open: false, parts: [] },
+];
+
+const MOTION_STATES = ['filled', 'outline', 'tonal', 'hover', 'active', 'focus-visible', 'disabled'];
+
+export const OPEN_POINTS_SAMPLE: OpenPointGroup[] = [
+  { icon: 'grid', lines: [{ text: 'Keine Controls deklariert', detail: 'controls' }] },
+  { icon: 'warning', lines: [{ text: 'label liegt unter der Kontrastregel', detail: 'tonal' }] },
+  {
+    icon: 'comment',
+    lines: [
+      { text: 'Beantwortet, wartet auf dich', detail: 'outline' },
+      { text: 'Beantwortet, wartet auf dich', detail: 'filled' },
+    ],
+  },
+  { icon: 'error', lines: [{ text: 'Kein App-Code verknüpft', detail: 'implements' }] },
+  {
+    icon: 'flow',
+    lines: MOTION_STATES.flatMap((from) =>
+      MOTION_STATES.filter((to) => to !== from).map((to) => ({ text: `${from} → ${to}`, detail: 'motion' })),
+    ),
+  },
+];
+
+const EMBEDDED_BLOCKER: BuildBlocker = {
+  kind: 'embedded',
+  text: 'components/badge ist nicht baubereit',
+  part: 'components/badge',
+};
+
+const manyBlockers = (openCount: number): BuildBlocker[] => [
+  { kind: 'open-point', text: `${openCount} offene Punkte und Ausnahmen` },
+  EMBEDDED_BLOCKER,
+  { kind: 'problem', text: 'APP-SPEC: button.component.spec.ts schlägt fehl' },
+  { kind: 'compare', text: 'hover weicht vom Design ab' },
+];
+
+export type BuildReadySample = 'one-blocker' | 'checking' | 'blocked-checking' | 'direct-edit' | 'ready' | 'blocked';
+
+export const buildReadySampleOf = (sample: BuildReadySample, openCount: number): BuildReadyStatus => {
+  switch (sample) {
+    case 'checking':
+      return { state: 'checking' };
+    case 'ready':
+      return { state: 'ready' };
+    case 'one-blocker':
+      return { state: 'blocked', blockers: [EMBEDDED_BLOCKER] };
+    case 'blocked-checking':
+      return { state: 'blocked', blockers: [{ kind: 'problem', text: 'HARDCODED-COLOR: button.component.css' }] };
+    case 'direct-edit':
+      return {
+        state: 'blocked',
+        blockers: [
+          { kind: 'direct-edit', text: 'Bild ohne Sketch geändert' },
+          ...manyBlockers(openCount).filter(({ kind }) => kind !== 'compare'),
+        ],
+      };
+    case 'blocked':
+      return { state: 'blocked', blockers: manyBlockers(openCount) };
+  }
+};
+
+export const DEVELOPER_REASONS_SAMPLE = [
+  'injiziert den Service CommandPaletteStore (title-search.component.ts)',
+  'routet: nutzt routerLink (title-search.component.html)',
+];
+
+export type LegacyCall = { slug: string; headline: string; transferred: boolean };
+
+export type ThemeSwitch = { kind: 'surface' | 'color'; names: string[]; current: string };
+
+export type ThemePick = { kind: ThemeSwitch['kind']; name: string };
+
+/** A comment with its pin on the frame, `at` in percent of the frame's width and height. */
+export type PlacedComment = InboxComment & { at: { x: number; y: number } };
+
+export type CommentWriter = { author: string; initials: string };
+
+export const SYSTEM_COMMENTS_SAMPLE: PlacedComment[] = [
+  {
+    id: 'sys-c1',
+    at: { x: 22, y: 30 },
+    author: 'human',
+    initials: 'H',
+    when: 'vor 1 Std',
+    part: 'button',
+    state: 'tonal · rest',
+    text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    replies: 2,
+  },
+  {
+    id: 'sys-c2',
+    at: { x: 58, y: 52 },
+    author: 'Claude',
+    initials: 'C',
+    agent: 'claude',
+    when: 'vor 3 Min',
+    part: 'button',
+    state: 'filled · hover',
+    text: 'Hover ist jetzt eine Stufe heller. Reicht dir der Abstand zu active noch?',
+    replies: 3,
+    unread: true,
+  },
+];
+
+const SYSTEM_THREAD_MESSAGES_SAMPLE: ThreadMessage[][] = [
+  [
+    { author: 'human', initials: 'H', own: true, when: 'vor 3 Std', text: 'Die Tonal-Fläche ist zu blass.' },
+    { author: 'Claude', initials: 'C', agent: 'claude', when: 'vor 2 Std', text: 'Ich hebe sie um eine Stufe an.' },
+    {
+      author: 'human',
+      initials: 'H',
+      own: true,
+      when: 'vor 1 Std',
+      text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    },
+  ],
+  [
+    {
+      author: 'human',
+      initials: 'H',
+      own: true,
+      when: 'vor 2 Std',
+      text: 'Hover und active liegen zu nah beieinander. Mach hover heller.',
+    },
+    {
+      author: 'Claude',
+      initials: 'C',
+      agent: 'claude',
+      when: 'vor 1 Std',
+      text: 'Ich mische accent mit 12 % Weiß. Passt das so?',
+    },
+    { author: 'human', initials: 'H', own: true, when: 'vor 40 Min', text: 'Noch zu dunkel. Nimm lieber den Token.' },
+    {
+      author: 'Claude',
+      initials: 'C',
+      agent: 'claude',
+      when: 'vor 3 Min',
+      text: 'Hover ist jetzt eine Stufe heller. Reicht dir der Abstand zu active noch?',
+    },
+  ],
+];
+
+/** The opened thread of the sample comment at `index`. */
+export const systemThreadSampleOf = (index: number): CommentThread | null => {
+  const comment = SYSTEM_COMMENTS_SAMPLE[index];
+
+  return comment
+    ? {
+        id: comment.id,
+        place: `${comment.part} › ${comment.state}`,
+        messages: SYSTEM_THREAD_MESSAGES_SAMPLE[index] ?? [],
+      }
+    : null;
+};
+
+export const SYSTEM_COMMENT_WRITER_SAMPLE: CommentWriter = { author: 'human', initials: 'H' };
+
+export const LISTING_ERROR_SAMPLE = 'missing build: pages/system';
+
+export const LEGACY_CALL_SAMPLE: LegacyCall = {
+  slug: 'timetrack/kerbe/03-narrow-lane',
+  headline: 'Schmale Spur für die Wochenansicht',
+  transferred: false,
+};
+
+export const THEME_SWITCHES_SAMPLE: ThemeSwitch[] = [
+  { kind: 'surface', names: ['light', 'dark'], current: 'light' },
+  { kind: 'color', names: ['brand', 'danger', 'warning'], current: 'brand' },
+];
+
+export const FOLDED_STATES_SAMPLE = 13;

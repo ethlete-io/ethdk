@@ -1,0 +1,67 @@
+<div #tableMenu="etMenu" [autoFocus]="!hasTouchInput()" etMenu>
+  <button
+    [disabled]="disabled()"
+    [pressed]="tableMenu.open()"
+    [attr.aria-label]="labels().table"
+    (mousedown)="$event.preventDefault(); refreshContext()"
+    emitAriaPressed="false"
+    etMenuTrigger
+    et-icon-button
+    size="sm"
+    type="button"
+    color="surface"
+    pressedColor="inherit"
+  >
+    <i etIcon="et-table"></i>
+  </button>
+
+  <ng-template etMenuSurface>
+    <et-menu (keydown)="handlePickerKeydown($event)">
+      @if (context()) {
+        @if (canAddHeaderRow()) {
+          <button (click)="addHeaderRow()" et-menu-item type="button">{{ labels().tableInsertHeaderRow }}</button>
+        }
+        @if (!inHeaderRow()) {
+          <button (click)="addRow('above')" et-menu-item type="button">{{ labels().tableInsertRowAbove }}</button>
+        }
+        <button (click)="addRow('below')" et-menu-item type="button">{{ labels().tableInsertRowBelow }}</button>
+        <button (click)="addColumn('left')" et-menu-item type="button">{{ labels().tableInsertColumnLeft }}</button>
+        <button (click)="addColumn('right')" et-menu-item type="button">{{ labels().tableInsertColumnRight }}</button>
+        <button (click)="removeRow()" et-menu-item type="button" variant="destructive">
+          {{ labels().tableDeleteRow }}
+        </button>
+        <button (click)="removeColumn()" et-menu-item type="button" variant="destructive">
+          {{ labels().tableDeleteColumn }}
+        </button>
+        <button (click)="removeTable()" et-menu-item type="button" variant="destructive">
+          {{ labels().tableDeleteTable }}
+        </button>
+      } @else {
+        <div class="et-rte-table-picker">
+          <div
+            #pickerGrid
+            (pointerleave)="hover(-1, -1)"
+            (pointerdown)="beginSwipeSelection($event)"
+            (pointerup)="commitSwipeSelection($event)"
+            class="et-rte-table-picker-grid"
+          >
+            @for (row of pickerRows; track row) {
+              @for (col of pickerCols; track col) {
+                <button
+                  [class.et-rte-table-picker-cell--active]="row < hoverRows() && col < hoverCols()"
+                  [attr.aria-label]="labels().tableSize(row + 1, col + 1)"
+                  (pointerenter)="hover(row, col)"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="insertFromCell(row, col)"
+                  class="et-rte-table-picker-cell"
+                  type="button"
+                ></button>
+              }
+            }
+          </div>
+          <span class="et-rte-table-picker-label">{{ sizeLabel() }}</span>
+        </div>
+      }
+    </et-menu>
+  </ng-template>
+</div>

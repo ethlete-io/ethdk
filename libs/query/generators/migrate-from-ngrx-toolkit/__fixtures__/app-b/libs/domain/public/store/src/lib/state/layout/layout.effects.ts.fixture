@@ -1,0 +1,20 @@
+import { Actions } from '@ngrx/effects';
+import { EffectBase } from '@tomtomb/ngrx-toolkit';
+import { Injectable, inject } from '@angular/core';
+import { LayoutService } from './layout.service';
+
+@Injectable()
+export class LayoutEffects extends EffectBase {
+  private actions$: Actions;
+  private featureService: LayoutService;
+
+  constructor() {
+    const actions$ = inject(Actions);
+    const featureService = inject(LayoutService);
+
+    super(actions$, featureService);
+
+    this.actions$ = actions$;
+    this.featureService = featureService;
+  }
+}

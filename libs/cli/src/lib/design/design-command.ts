@@ -1,0 +1,734 @@
+import { withFailureExit } from './failure-line';
+import { existsSync, realpathSync } from 'fs';
+import { repairEditorTsconfigs } from './system/system-tsconfig';
+import { resolve } from 'path';
+import { checkDesign } from './check';
+import { COMPLETE_USAGE, designComplete } from './system/complete-command';
+import { DEFAULT_PORT, findCheckoutRoot, portOf, readConfig } from './design-config';
+import { designServeState } from './serve-state';
+import { deadlineMsOf, withRunDeadline } from './run-deadline';
+import { designComment, designInbox } from './inbox-command';
+import { markLegacy } from './legacy';
+import { newCall } from './new-call';
+import { designProduct } from './product-command';
+import { designStudio } from './studio-open';
+import { serveDesign } from './serve';
+import { enterDesignServerScope } from './system/own-scope';
+import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './asset-shot';
+import { designShot, SHOT_USAGE } from './shot-command';
+import { COMMIT_HUNKS_USAGE, designCommitHunks } from './commit-hunks';
+import { designMcp, MCP_USAGE } from './mcp-command';
+import { designLint, LINT_USAGE } from './lint-command';
+import { designMotion, MOTION_USAGE } from './motion-command';
+import { designSketch, SKETCH_USAGE, sketchFlagHelpOf, sketchUsageErrorOf } from './sketch-command';
+import { buildStampOf } from './stamp';
+import { startedByStudio } from './started-by-studio';
+import { runningCliStaleWarning } from './stale-cli-dist';
+import { CALL_STATES, designStatus } from './status';
+import { designPart, PART_USAGE } from './system/part-command';
+import { ACTIONS_USAGE, designActions } from './system/actions-command';
+import { COMPARE_USAGE, designCompare } from './system/compare-command';
+import { designDom, DOM_USAGE } from './system/dom-command';
+import { designTask, TASK_USAGE } from './system/task-command';
+import { designHarness, HARNESS_USAGE } from './system/harness-command';
+import { designReady, READY_USAGE } from './system/ready-command';
+import { designSystem } from './system/system-command';
+import { readFreshDist } from './system/stale-dist';
+import { designMocksFresh, guardsDesignMocks } from './system/stale-design-mocks';
+import {
+  realResidentClient,
+  RESIDENT_SERVE,
+  runsInResident,
+  runThroughResident,
+  sharedServeWanted,
+  stopResident,
+} from './resident/client';
+import { hostResidentInServe, serveResident } from './resident/resident-process';
+import { recordRun, skipRunTimings, timingsFileOf } from './timings';
+import { designTimings, TIMINGS_USAGE } from './timings-command';
+
+const realOf = (path: string) => (existsSync(path) ? realpathSync(path) : path);
+
+/** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
+const splitCheckout = (argv: string[], root: string) => {
+  const index = argv.indexOf('--checkout');
+
+  if (index === -1) return { target: realOf(findCheckoutRoot(root)), rest: argv };
+
+  return {
+    target: realOf(resolve(root, argv[index + 1] ?? '.')),
+    rest: [...argv.slice(0, index), ...argv.slice(index + 2)],
+  };
+};
+
+const helpOf = (invocation: string) =>
+  [
+    `${invocation} [checkout] [--host <address>]`,
+    '  Serve the variant frames of a checkout. The checkout defaults to the working directory. The server listens on',
+    '  localhost; --host (or DE_HOST) names another address, e.g. 0.0.0.0 to reach it over the LAN.',
+    '',
+    `${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]] [--receipt <path>]`,
+    '  Find out why a call does not render: eslint, then tsc, then the live frames. --tsconfig also types each variant',
+    '  of an open sketch. --receipt writes the call, the variant, ok, the time and the output to a JSON file.',
+    '',
+    `${invocation} ${LINT_USAGE}`,
+    '  The findings on design files as you write them: the static design rules of the part or sketch variant each file',
+    '  belongs to, and eslint on the file. No draw and no type check, so it takes about a second. Prints one line per',
+    '  finding with what to change, nothing when clean; exits 1 on a finding.',
+    '',
+    `${invocation} check [<layer>/<name> | --part <layer>/<name>] [--product <name>]`,
+    "  Check a product's design system: layer dependencies, hard-coded colours, var() tokens nothing defines,",
+    '  copied components, scripted motion, then tsc. Without any flag, check checks every product in config.json.',
+    '  Then it prints the open points of each part: open comments, unmerged sketches, no controls',
+    '  declared, and each control of a component part that lacks',
+    '  a drawn state or surface as complete draws it - what ready refuses on. Open points never fail.',
+    '  It also lists each view of the harness app (*-view.component.ts) that no part implements and the parts',
+    '  without an implements link (UNLINKED, not an open point), and ends with one',
+    '  line per part with findings and a count of the clean ones. --part (or a leading <layer>/<name>) keeps only that',
+    '  part. A flag no form of check reads, or one the chosen form ignores, fails with exit code 2.',
+    '',
+    `${invocation} check --product <name>… --base <rev|range>`,
+    '  Check only the parts whose design or implementing app files changed since <base> (git diff <base>), and every',
+    '  part that embeds one, each as check --part does. Prints BASE <product> since <base>: and the parts it chose.',
+    '',
+    `${invocation} check --product <name>… --app-classes [--fix]`,
+    "  Only report the Tailwind classes in the product's harness app source (templates and class strings) that have a",
+    '  canonical form under the stylesheet the app builds with. Exits 1 on a finding. --fix rewrites them in the app source',
+    "  and in the product's parts instead.",
+    '',
+    `${invocation} check --product <name>… --rules [--base <rev|range>]`,
+    "  Only run the static rules on the product's design files and harness app source - no draw, no tsc, no open",
+    '  points. Seconds instead of minutes; CI runs it. Exits 1 on a problem. --base also fails with',
+    '  IMPLEMENTATION-UNCOMPARED on each file git diff <base> names that an implemented part reaches and that moved since',
+    '  its implemented.json record (or that a part without a record reaches) and names the parts; compare --affected',
+    '  (check --part, then task <layer>/<name> --verify for a part without a record; an open point blocks it) compares',
+    '  and records them.',
+    '',
+    `${invocation} check --product <name>… --live`,
+    "  Open every live state of the product's harness.live spec on the real app and report each visible region",
+    '  (UNCOVERED) that no part component covers and no "partless" { selector, reason } of the spec exempts.',
+    '  Exits 1 on a finding.',
+    '',
+    `${invocation} check --product <name>… --slow [--part <layer>/<name>…]`,
+    '  Run the slow rules - APP-SPEC, UNCOVERED-REGION, NO-VISIBLE-CHANGE, compare and the SDK-error',
+    "  watch - and store each part's problems in node_modules/.cache/ethlete-design, where the build-ready state reads",
+    '  them. Then run check without --slow on the same scope: it writes a ready mark it drops into ready.json',
+    '  (and a dropped direct-edit record into merged.json) uncommitted, keeps every new or refreshed record in',
+    '  the gitignored cache, and prints READY UNCOMMITTED for each mark ready.json holds that differs from HEAD.',
+    '  Exits 1 on a problem.',
+    '',
+    `${invocation} system --json [--product <name>]`,
+    "  Print each product's parts as JSON: origin, note, states, widths, presets and the problems of each part.",
+    '',
+    `${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>]`,
+    '  Create a product: its config.json entry and the empty layer folders. Without a base it gets the presets',
+    '  phone (390x844) and desktop (1440x900). --from-project copies styles, head, providers and themes.',
+    '',
+    `${invocation} product set <name> --base <path|@ethlete/components|none>`,
+    '  Set the base an existing product inherits from, or remove it with none. Ask the human first.',
+    '',
+    `${invocation} product prune <name>`,
+    "  Drop each app file that no longer exists from the app hashes of the product's implemented.json and",
+    '  implementation-baseline.json. A deleted file stays drift until this runs.',
+    '',
+    `${invocation} studio open [<dir>]`,
+    '  Add a checkout (the current one by default) to the running Studio and switch Studio to it. Ask the human first.',
+    '  It never starts Studio: when Studio is not running the request is kept 7 days and Studio adds the checkout at its next start.',
+    '',
+    `${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b] [--feature <name>]`,
+    '  Write a call that renders at once: call.ts, fixture.ts and one variant file per key.',
+    '  A quick exploration of an idea takes --stage sketch.',
+    '  --feature <name> groups the call under a feature in Ethlete Studio; without one it shows under "No feature".',
+    '',
+    `${invocation} legacy <project>`,
+    '  Mark every call of a project without a stage as legacy, so check accepts it.',
+    '  The stage comes from the group folder: foundations, components, pages. Rerun it to add one to an old legacy call.',
+    '',
+    `${invocation} status <slug> <${CALL_STATES.join('|')}>`,
+    '  Record the state of a call for Ethlete Studio. new and check --call record theirs on their own.',
+    `${invocation} status [--stale] [--json]`,
+    '  Without a call: the unpushed commits, the age of the oldest, the CI state of this head and each open or ready sketch whose base is stale.',
+    '  --stale prints only the stale sketches, without git or gh (the post-merge hook runs it).',
+    '',
+    `${invocation} sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--product <name>]`,
+    '  Open a sketch on a part, new or existing, in progress. Each variant starts as a copy of the part, or of the part',
+    "  --like names (a variant of its open sketch after the colon, with that sketch's shared/ folder).",
+    '  Name several parts for one change across them: each variant holds every target, and ready, merge and the',
+    '  commit take them together. Any other command finds the sketch by any of its targets.',
+    "  Variants import code from the sketch's shared/ folder as @shared/<path>; a merge moves it into the target.",
+    "  Any part imports the product's own shared/ folder as @shared/<path>; a sketch's file of the same path replaces it at merge.",
+    '',
+    `${invocation} sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>]`,
+    '  Add a variant to the open sketch, as a copy of another, in the running round or a new one.',
+    '',
+    `${invocation} sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>] | sketch ready <layer>/<name> --by <model id>`,
+    '  Tell Studio what you build on a variant now ("phone, outline state"), which also records you as one of its',
+    '  authors, then mark the sketch ready for the user to pick. Ready refuses (SHOT-NOT-VIEWED) while a variant draws',
+    `  a pixel diff and no shot of it was handed out since its last edit: run \`${invocation} shot <layer>/<name> --states --variants\``,
+    '  or GET /__design/shot with sketch= and variant=, and look at it.',
+    '',
+    `${invocation} sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] [--asks <state,state>] --by <model id> | sketch list [--json] | sketch check [<layer>/<name>] | sketch preview <layer>/<name> <variant> [--json]`,
+    '  List open sketches, check each variant laid over the product, and list the elements and pages a merge changes.',
+    '',
+    `${invocation} sketch note <layer>/<name> [<variant>] <text> [--round <round>] --by <model id>`,
+    '  Set the note of one variant in sketch.json, the one sketch new sets with --variant-note.',
+    '',
+    `${invocation} sketch covers <layer>/<name> [[<layer>/<name>:]<state>[@<x>,<y>,<w>,<h>]…] --by <model id>`,
+    '  Set the compare DIFFs an open sketch covers: compare lists them with the sketch name and passes.',
+    "  A bare state covers its whole DIFF; @x,y,w,h covers only DIFF pixels inside that box of the state's picture.",
+    '  A sketch with several targets needs <layer>/<name>:<state> (a bare state exits 2); one target takes both.',
+    '  No state clears them; a pick ends the cover.',
+    '',
+    `${invocation} sketch merge <layer>/<name> [--note <reason> [--replace-note]] --by <model id> | sketch discard <layer>/<name> --by <model id>`,
+    '  Merge the variant the user picked, note --note in merged.json (the part note stays; --replace-note writes it',
+    '  over), set madeBy (its authors) on the target, then check and',
+    '  restore the old files on failure. Or drop the sketch. Both resolve the addressed comments on its variants and mark the open ones addressed;',
+    '  a merge keeps a thread open that has no reply yet or whose last entry asks a question. Studio runs',
+    "  both on the user's click, so an agent runs neither after a pick. Merge refuses without a pick,",
+    '  and when a part the variant replaces changed in the product since the sketch was created.',
+    '',
+    `${invocation} sketch pick <layer>/<name> --variant <key> [--mandate <quoted chat text>] --by <model id>`,
+    "  Merge the variant at once, as one step with the pick. The pick is the agent's own (by: the model id), with the quoted",
+    '  chat text that told it to pick as its mandate; it never reads as a pick of a person. A refused merge leaves no pick.',
+    '  Refuses an unknown or rejected variant and a sketch that is not ready.',
+    '',
+    `${invocation} sketch rebase <layer>/<name> --by <model id>`,
+    '  Port what changed in the product since the sketch was cut into each variant (a 3-way merge per file), then record',
+    '  the product as it is now for the merge. Any conflict lists the files and writes nothing.',
+    '',
+    `${invocation} ${READY_USAGE}`,
+    '  Mark a part ready in .ethlete/design/<product>/ready.json and commit the file. It draws the part and refuses',
+    '  with its open points while it has any. The mark drops when the part changes.',
+    '',
+    `${invocation} ${TASK_USAGE}`,
+    '  Print what implementing a build-ready part takes: its implements link, each state with its props, the',
+    '  states new or changed since implemented.json, and the files it may change. --verify checks the files of a',
+    '  commit or range (default HEAD) against them, then runs compare and records implemented.json when both pass.',
+    '',
+    `${invocation} ${COMPARE_USAGE}`,
+    '  Draw each state of a linked build-ready part, or the ones --state names (--state a,b or --state a --state b),',
+    '  and shoot the [data-design-harness-host] element of <url>/__design-harness?part=&state=&props= in the same',
+    '  Chromium. Prints ok,',
+    '  DIFF <n> px or SIZE per state at tolerance 0 and keeps the pictures of a failing state in a temp folder.',
+    '  A component or element is fitted to its content; a page draws at --preset (default: the first preset of the',
+    '  product) and its harness url adds layout=page, so the host fills that viewport.',
+    '  Without --url it makes a development build of the harness app in a temp folder, serves it on a free port and',
+    '  stops it afterwards, also next to a running dev server of the same app; exits 1 unless every state is ok.',
+    '  --affected compares, on one harness, every implemented part whose app files changed since its implemented.json',
+    '  record, runs its actions check there and records each part that passes both.',
+    '  --base <rev> also compares each part with the harness app built at <rev> and lists the failing states new at',
+    '  HEAD (NEW) and fixed since <rev> (FIXED); the exit code stays that of HEAD.',
+    '',
+    `${invocation} ${DOM_USAGE}`,
+    '  Print the pretty-printed HTML of one state of a part (default: its first): the rendered design, or with --app the',
+    '  [data-design-harness-host] element of the app harness page that compare shoots. --app needs a current harness map.',
+    '',
+    `${invocation} ${ACTIONS_USAGE}`,
+    "  Click and press Enter and Space on each interactive element of the part in the app's harness page, from each",
+    '  state that forces no interaction. Each must reach the state or fire the output its design element declares in',
+    '  data-et-action ("<state>" or "emit:<output>"); a key reaches the "<state>-focus-visible" row where the part draws',
+    '  one. "opens:<part>" names another part the press opens; only --live presses it. Fails on an element without a',
+    '  declared action and on a design element the app does not draw.',
+    '',
+    `${invocation} ${HARNESS_USAGE}`,
+    '  Write the harness map named in config.json products.<name>.harness.map: a lazy import of the component each',
+    "  part implements, keyed by <layer>/<name>, for the app's /__design-harness route. --check exits 1 when it is",
+    '  stale; compare and task --verify refuse a stale map.',
+    '',
+    `${invocation} ${COMPLETE_USAGE}`,
+    '  Exit 1 while a control the part declares in definePart({ controls }) lacks a drawn state or surface: hover and',
+    '  active for pointer input, focus-visible for keyboard, and per kind: active for a button; a collapsed state and',
+    '  its visible body for a disclosure; the open surface with hovered, focused and selected options for a select or',
+    '  menu; a selected look and selected hover for a row; the visible tooltip for a tooltip; a disabled look when the',
+    '  control declares disabled. A part that changed since its last merge fails too, and so does a drawn',
+    '  control without a data-et-control marker, or an element with a pointer cursor or :hover rule but no control',
+    '  role. A control',
+    '  inside an embedded part (its data-et-part root) belongs to that part, which must be complete itself; a rule',
+    "  of the part's own CSS that restyles it fails as CONTROL-OVERRIDDEN. Separate from check and sketch ready:",
+    '  a round can be ready for comparison and still not complete for implementation.',
+    "  --variant checks a variant of the part's open sketch instead, without PART-UNREVIEWED for the parts it changes.",
+    '  --request writes a pending exception to one requirement with a reason; it still fails until the user approves',
+    '  it in Studio, and a later change of the part reopens it.',
+    '  --handoff with a part gives it the handoff status (handoff.json) when it passes; app work builds only those.',
+    '  --handoff without a part re-checks every handoff part and exits 1 when one regresses - CI runs it.',
+    '',
+    `${invocation} ${PART_USAGE}`,
+    "  Delete a part's folder and its merged.json entry, rewrite the product tsconfig paths, and resolve its comments.",
+    '  Refuses a base part, a part another part imports, and a part with an open sketch.',
+    '',
+    `${invocation} ${SHOT_USAGE}`,
+    '  Draw every state of a part, and with --variants every variant of its open sketch, into one contact sheet',
+    '  PNG with a label per cell, and print its path. Without --state, --variants alone draws the first state.',
+    '  With --states --variants, the states no variant changes fold away as in the Studio sketch view; --all-states draws them.',
+    '  With --variants --at <commit>, the sketch is read from that commit instead, so a merged sketch (its folder',
+    '  is deleted at merge) draws again against the part as it is now; pick the last commit that still held it.',
+    '  Without --preset or --width, a page draws at its first product preset and any other part fitted.',
+    '  With --variants --crop changed, every cell is cut to one box around the pixels any shown variant changes',
+    '  from the merged part, plus a margin, and the box is printed for a later --crop x,y,width,height.',
+    '  With --variants --in <layer>/<name>, the sketch variants draw inside that part instead, e.g. a foundations or',
+    '  components sketch in a page; it refuses a part that neither imports a sketch target nor takes it as tokens.',
+    '  --scheme pins the colour scheme the frame draws in, as a Studio scheme copy does; --surface only sets the',
+    '  surface class of the root, so light-dark() and scheme-bound theme rules still draw light without it.',
+    '',
+    `${invocation} ${MOTION_USAGE}`,
+    '  Draw a motion of a part from its from state at 0, 25, 50, 75 and 100 % of its run and at its at times, in full',
+    '  and reduced motion (--mode picks one), into a contact sheet PNG with a row per mode. Writes the tracks of each',
+    '  mode (element, properties, start, delay, duration, easing) as JSON next to it and prints both paths.',
+    '',
+    `${invocation} ${ASSET_SHOT_USAGE}`,
+    '  Draw an image file (svg, png, webp, ...) of a path, or of a product assets/ folder with --product, into a PNG',
+    '  and print its path. --width sets the drawn width in px.',
+    '',
+    `${invocation} ${TOKEN_USAGE}`,
+    '  Print the colour a custom property of the product tokens resolves to, as hex; oklch and color-mix resolve in',
+    '  Chromium. The product defaults to the only one of config.json.',
+    '',
+    `${invocation} inbox [--json] | inbox done <id> --note <text> --by <model id>`,
+    '  List open comment threads where the user has the last word and the sketches that need a rebase, oldest first,',
+    '  then the threads and the pick and discard decisions waiting for the user. done sets the note of the part the',
+    '  thread is about, then marks it addressed. Only the user resolves a thread, in Studio.',
+    '',
+    `${invocation} comment <layer>/<name> <state> --preset <preset> <text> [--at x,y] [--sketch <layer>/<name> --variant <key>]`,
+    '  Write a comment on a state of a part, as Studio does from the canvas.',
+    '',
+    `${invocation} comment reply <id> --by <model id> <text> [--question]`,
+    '  Answer a comment thread as the agent. It then waits for the user until the user replies. --question marks a',
+    "  reply that needs the user's answer; any other reply leaves the thread answered.",
+    '',
+    `${invocation} comment resolve-ended`,
+    '  Resolve every addressed comment whose sketch is merged, discarded or replaced. Open comments stay open.',
+    '',
+    '  sketch and comment take --product <name>; it may be left out when config.json declares one product.',
+    '  inbox without --product covers every product.',
+    '  --by is the exact model id of the agent that writes, e.g. claude-opus-5-5; every agent write needs it.',
+    '',
+    `${invocation} ${MCP_USAGE} [--receipt <path>]`,
+    '  Serve the design tools to an MCP client over stdio: parts, call, check, shot, motion_shots, sketch_new, sketch_report,',
+    '  sketch_ready, sketch_merge, sketch_discard, inbox and inbox_done. Each runs the command of the same name in the',
+    '  working directory and returns its output, its images and its JSON. check on a call writes its receipt to',
+    '  --receipt.',
+    '',
+    `${invocation} ${COMMIT_HUNKS_USAGE}`,
+    '  Commit only the entries of the part from a shared JSON file (merged.json, ready.json, ...): HEAD plus',
+    '  those entries is committed for that path, and entries of other parts stay uncommitted in the working tree.',
+    '',
+    `${invocation} serve-state`,
+    '  Print who serves the design port (the Studio app or a terminal, with its pid), which cli build it runs against this',
+    '  checkout and how to restart it.',
+    '',
+    `${invocation} stamp`,
+    '  Print the version and build of this cli as JSON, which a running server answers with too.',
+    '',
+    `${invocation} ${TIMINGS_USAGE}`,
+    '  Every design run appends its timings to .ethlete/design/.timings.jsonl. timings reports the median of each command',
+    '  against its target (compare 5 s, sketch check and ready 10 s, full check 60 s), each miss with its most expensive',
+    '  phase, and the slowest phases and runs. --since defaults to 1d.',
+    '',
+    `${invocation} stop`,
+    '  End the resident design process of the checkout. compare, shot, check --product/--part, sketch check and',
+    '  sketch ready run in it, one at a time (a waiting compare runs between two parts of a check): the first one starts',
+    '  it detached (printed as a cold start), later ones reuse its design server, Chromium and harness app, and it exits',
+    '  after 30 min without a request. CI and ETHLETE_DESIGN_RESIDENT=0 run them in their own process.',
+    '',
+    'Every command takes --checkout <path>. DE_PORT overrules the port in .ethlete/design/config.json.',
+    '',
+  ].join('\n');
+
+const HELP_FLAGS = new Set(['--help', '-h']);
+
+const TIMED_COMMANDS = new Set([
+  'actions',
+  'check',
+  'comment',
+  'commit-hunks',
+  'compare',
+  'complete',
+  'dom',
+  'harness',
+  'inbox',
+  'legacy',
+  'motion',
+  'new',
+  'part',
+  'product',
+  'ready',
+  'shot',
+  'sketch',
+  'status',
+  'stop',
+  'studio',
+  'system',
+  'task',
+  'token',
+]);
+
+const DRAWING_COMMANDS = new Set([
+  'check',
+  'shot',
+  'compare',
+  'ready',
+  'harness',
+  'motion',
+  'dom',
+  'actions',
+  'complete',
+]);
+const DRAWING_SKETCH_COMMANDS = new Set(['check', 'ready', 'preview']);
+
+/** Whether `et design <argv>` draws with the SDK libs, so it must not run on a stale build of them. */
+export const drawsWithSdkLibs = (argv: string[]) => {
+  const [command = '', subcommand = ''] = argv;
+
+  if (command === 'sketch') return DRAWING_SKETCH_COMMANDS.has(subcommand);
+
+  if (command === 'task') return argv.includes('--verify');
+
+  return DRAWING_COMMANDS.has(command);
+};
+
+const alternativesOf = (block: string[], invocation: string) =>
+  (block[0] ?? '').split(' | ').map((usage) => usage.replace(`${invocation} `, ''));
+
+const matchingBlocksOf = (invocation: string, words: string[]) => {
+  const blocks = helpOf(invocation)
+    .split('\n\n')
+    .map((block) => block.split('\n'));
+  const command = words.join(' ');
+
+  return blocks.filter((block) =>
+    alternativesOf(block, invocation).some((usage) => usage === command || usage.startsWith(`${command} `)),
+  );
+};
+
+/** The usage of the one subcommand `argv` names, for `et design <command> [<subcommand>] … --help`. */
+const subcommandHelpOf = (invocation: string, argv: string[]) => {
+  const [command = '', subcommand = ''] = argv;
+
+  if (command === 'sketch') {
+    const lines = SKETCH_USAGE.filter((line) => line.startsWith(`sketch ${subcommand} `));
+
+    return lines.length > 0
+      ? lines.flatMap((line) => [`usage: ${invocation} ${line}`, ...sketchFlagHelpOf(line)]).join('\n')
+      : SKETCH_USAGE.map((line) => `usage: ${invocation} ${line}`).join('\n');
+  }
+
+  const precise = subcommand.startsWith('-') ? [] : matchingBlocksOf(invocation, [command, subcommand]);
+  const blocks = precise.length > 0 ? precise : matchingBlocksOf(invocation, [command]);
+
+  return blocks.length > 0 ? blocks.map((block) => block.join('\n')).join('\n\n') : helpOf(invocation);
+};
+
+/**
+ * `et design [checkout]` serves the variant frames of a checkout, and `et design check …` says why
+ * a call does not render. Both work on any checkout that keeps a `.ethlete/design` folder, so a
+ * repository needs no design tooling of its own.
+ */
+export const designCommand = (options: { root: string; argv: string[]; invocation: string }): Promise<number> =>
+  withFailureExit(() => runDesignCommand(options));
+
+const runDesignCommand = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
+  const { root, argv, invocation } = options;
+
+  if (argv[0] === '--help' || argv[0] === '-h' || argv[0] === 'help') {
+    console.log(helpOf(invocation));
+
+    return 0;
+  }
+
+  if (argv.slice(1).some((arg) => HELP_FLAGS.has(arg))) {
+    console.log(subcommandHelpOf(invocation, argv));
+
+    return 0;
+  }
+
+  const deadline = { argv, ms: deadlineMsOf(argv[0] ?? '') };
+
+  if (!TIMED_COMMANDS.has(argv[0] ?? '')) return withRunDeadline(deadline, () => runDesign(options));
+
+  const { target, rest } = splitCheckout(argv.slice(1), root);
+
+  return withRunDeadline(deadline, () =>
+    recordRun({ file: timingsFileOf(target), argv: [argv[0] ?? '', ...rest] }, () => runDesign(options)),
+  );
+};
+
+const usageErrorOf = (options: { argv: string[]; invocation: string; root: string }) => {
+  const { argv, invocation, root } = options;
+
+  if (!drawsWithSdkLibs(argv) && !runsInResident(argv)) return null;
+
+  const { rest } = splitCheckout(argv.slice(1), root);
+
+  return argv[0] === 'sketch' ? sketchUsageErrorOf(rest, invocation) : null;
+};
+
+const runDesign = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
+  const { root, argv, invocation } = options;
+  const staleWarning = argv[0] === 'stamp' ? null : runningCliStaleWarning();
+
+  if (staleWarning) console.error(staleWarning);
+
+  if (argv[0] === 'stamp') {
+    console.log(JSON.stringify(buildStampOf()));
+
+    return 0;
+  }
+
+  const usageError = usageErrorOf({ argv, invocation, root });
+
+  if (usageError) {
+    for (const line of usageError) console.error(line);
+
+    return 2;
+  }
+
+  repairEditorTsconfigs(splitCheckout(argv.slice(1), root).target);
+
+  if (argv[0] === RESIDENT_SERVE || argv[0] === 'stop' || runsInResident(argv)) {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    if (argv[0] === RESIDENT_SERVE) {
+      enterDesignServerScope();
+
+      return serveResident({ target });
+    }
+
+    const client = realResidentClient(buildStampOf().build);
+
+    if (argv[0] === 'stop') return stopResident(target, client);
+    if (guardsDesignMocks(argv) && !designMocksFresh({ target })) return 1;
+
+    const answered = await runThroughResident({ target, argv: [argv[0] ?? '', ...rest], invocation, client });
+
+    if (answered !== null) {
+      skipRunTimings();
+
+      return answered;
+    }
+  }
+
+  let release: () => void = () => undefined;
+
+  if (drawsWithSdkLibs(argv)) {
+    const { target } = splitCheckout(argv.slice(1), root);
+    const read = await readFreshDist({ target, config: readConfig(target) });
+
+    if (!read.ok) return 1;
+
+    release = read.release;
+  }
+
+  try {
+    return await dispatchDesign({ root, argv, invocation });
+  } finally {
+    release();
+  }
+};
+
+const dispatchDesign = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
+  const { root, argv, invocation } = options;
+
+  if (guardsDesignMocks(argv)) {
+    const { target } = splitCheckout(argv.slice(1), root);
+
+    if (!designMocksFresh({ target })) return 1;
+  }
+
+  if (argv[0] === 'check') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return checkDesign({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'system') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designSystem({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'new') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return newCall({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'product') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designProduct({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'studio') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designStudio({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'legacy') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return markLegacy({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'sketch') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designSketch({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'complete') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designComplete({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'task') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designTask({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'harness') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designHarness({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'compare') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designCompare({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'dom') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designDom({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'actions') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designActions({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'ready') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designReady({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'part') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designPart({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'shot') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return rest.includes('--asset')
+      ? designAssetShot({ target, argv: rest, invocation })
+      : designShot({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'motion') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designMotion({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'lint') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designLint({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'mcp') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+    const receipt = rest.includes('--receipt') ? rest[rest.indexOf('--receipt') + 1] : undefined;
+
+    return designMcp({ target, receipt: receipt ? resolve(root, receipt) : undefined });
+  }
+
+  if (argv[0] === 'token') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designToken({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'commit-hunks') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designCommitHunks({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'inbox') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designInbox({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'comment') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designComment({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'timings') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designTimings({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'serve-state') {
+    const { target } = splitCheckout(argv.slice(1), root);
+    const config = readConfig(target);
+
+    return designServeState({
+      base: `http://localhost:${config ? portOf(config) : DEFAULT_PORT}`,
+      own: buildStampOf(),
+    });
+  }
+
+  if (argv[0] === 'status') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designStatus({ target, argv: rest, invocation });
+  }
+
+  const { target, rest: afterCheckout } = splitCheckout(argv, root);
+  const hostIndex = afterCheckout.indexOf('--host');
+  const host = hostIndex === -1 ? undefined : afterCheckout[hostIndex + 1];
+  const rest =
+    hostIndex === -1 ? afterCheckout : [...afterCheckout.slice(0, hostIndex), ...afterCheckout.slice(hostIndex + 2)];
+  const positional = rest[0];
+
+  if (positional && !existsSync(resolve(root, positional))) {
+    console.error(`unknown command or checkout "${positional}"`);
+    console.error(helpOf(invocation));
+
+    return 2;
+  }
+
+  const served = positional ? realOf(resolve(root, positional)) : target;
+
+  enterDesignServerScope();
+
+  return serveDesign({
+    target: served,
+    host,
+    reloadOnRebuild: !startedByStudio(),
+    ...(sharedServeWanted(process.env)
+      ? {
+          hostResident: (shared) =>
+            hostResidentInServe({
+              target: served,
+              shared,
+              client: realResidentClient(buildStampOf().build),
+              log: (line) => console.log(`design-explore: ${line}`),
+            }),
+        }
+      : {}),
+  });
+};

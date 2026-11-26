@@ -1,0 +1,1543 @@
+import {
+  CommentPlace,
+  ListedCall,
+  ListedComment,
+  ListedPart,
+  ListedProduct,
+  ListedSketch,
+  PartAddress,
+  SketchChange,
+  SketchRound,
+  SystemProblem,
+  callShotUrl,
+  frameUrl,
+  partFrameUrl,
+  partShotUrl,
+  partStateDiffUrl,
+  rejectionOf,
+  sketchPartOf,
+} from '../../host/design';
+import { keptStatesOf } from '@ethlete/cli/sketch-frames';
+import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design-canvas/canvas-frame';
+import { isAnswered, isQuestion } from './comment-pins';
+import { SYSTEM_TREE_LABELS, TREE_ROW_LABELS } from '../i18n/system-labels';
+
+export type SystemGroupKey =
+  'foundations' | 'components' | 'elements' | 'pages' | 'wireframes' | 'unused' | 'sketches' | 'legacy';
+
+export const isWireframe = (part: Pick<ListedPart, 'layer' | 'kitUses'>) =>
+  part.layer === 'pages' && (part.kitUses ?? 0) > 0;
+
+const onLayer = (layer: string) => (part: ListedPart) => part.layer === layer && !part.unusedInProduct;
+
+export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; holds: (part: ListedPart) => boolean }[] = [
+  { key: 'foundations', label: SYSTEM_TREE_LABELS.foundations, holds: onLayer('foundations') },
+  { key: 'elements', label: SYSTEM_TREE_LABELS.elements, holds: onLayer('elements') },
+  { key: 'components', label: SYSTEM_TREE_LABELS.components, holds: onLayer('components') },
+  {
+    key: 'pages',
+    label: SYSTEM_TREE_LABELS.pages,
+    holds: (part) => part.layer === 'pages' && !isWireframe(part) && !part.unusedInProduct,
+  },
+  {
+    key: 'wireframes',
+    label: SYSTEM_TREE_LABELS.wireframes,
+    holds: (part) => isWireframe(part) && !part.unusedInProduct,
+  },
+  { key: 'unused', label: SYSTEM_TREE_LABELS.notUsed, holds: (part) => part.unusedInProduct === true },
+  { key: 'sketches', label: SYSTEM_TREE_LABELS.sketches, holds: () => false },
+  { key: 'legacy', label: SYSTEM_TREE_LABELS.legacy, holds: () => false },
+];
+
+export type PartBadge =
+  | 'from base'
+  | 'overridden'
+  | 'changed'
+  | 'composition'
+  | 'error'
+  | 'transferred'
+  | 'sketch open'
+  | 'comment open'
+  | 'question'
+  | 'answered'
+  | 'in progress'
+  | 'ready'
+  | 'approved'
+  | 'needs rebase'
+  | 'changed since ready'
+  | 'hold target ended'
+  | 'rebase not committed';
+
+/** Which parts and sketches hold an open comment, and which of those wait for the user. */
+type CommentMarks = {
+  commented: ReadonlyMap<string, number>;
+  questioned: ReadonlySet<string>;
+  answered: ReadonlySet<string>;
+};
+
+const commentBadgesOf = (key: string, { commented, questioned, answered }: CommentMarks): PartBadge[] => {
+  if (questioned.has(key)) return ['question'];
+  if (answered.has(key)) return ['answered'];
+  return commented.has(key) ? ['comment open'] : [];
+};
+
+const commentsOf = (key: string, { commented }: CommentMarks) =>
+  commented.has(key) ? { comments: commented.get(key) } : {};
+
+/** `count` is the number of wireframe kit parts a wireframe page uses. */
+export type TreeFrame = { key: string; name: string; part: string; frame: string };
+
+/** A part drawn in more than one frame lists them as `frames`; a part drawn in one is a leaf. */
+export type TreeEntry = {
+  key: string;
+  name: string;
+  title?: string[];
+  badges: PartBadge[];
+  comments?: number;
+  count?: number;
+  frames?: TreeFrame[];
+  nested?: TreeEntry[];
+  subSketch?: boolean;
+  /** The label of the part's own layer, on a part nested under a host of another layer. */
+  layer?: string;
+  layerKey?: string;
+};
+
+export type TreeSection = { key: string; label: string; entries: TreeEntry[] };
+
+export type TreeGroup = { key: string; label: string; entries: TreeEntry[]; sections?: TreeSection[] };
+
+export const partKeyOf = (part: Pick<ListedPart, 'layer' | 'name'>) => `${part.layer}/${part.name}`;
+
+const badgesOf = (
+  part: ListedPart,
+  { sketched, marks, problems }: { sketched: ReadonlySet<string>; marks: CommentMarks; problems: SystemProblem[] },
+): PartBadge[] => [
+  ...(part.origin === 'base' ? (['from base'] as const) : []),
+  ...(part.origin === 'overridden' ? (['overridden'] as const) : []),
+  ...(part.changedOutsideSketch ? (['changed'] as const) : []),
+  ...(part.composition ? (['composition'] as const) : []),
+  ...(sketched.has(partKeyOf(part)) ? (['sketch open'] as const) : []),
+  ...commentBadgesOf(partKeyOf(part), marks),
+  ...(problems.length > 0 ? (['error'] as const) : []),
+];
+
+const problemTitleOf = (problems: SystemProblem[]) => problems.map((found) => `${found.rule}: ${found.message}`);
+
+const orFallback = (lines: string[], fallback: string) => (lines.length > 0 ? lines : [fallback]);
+
+const ownerOf = (parts: ListedPart[], file: string) =>
+  parts.find((part) => part.implements === file) ??
+  parts.find((part) => part.implements !== undefined && file.startsWith(part.implements.replace(/[^/]*$/, '')));
+
+/** The product-level problems each part owns through the component file it implements, and those no part owns. */
+const productProblemsOf = (parts: ListedPart[], problems: SystemProblem[]) => {
+  const owned = new Map<ListedPart, SystemProblem[]>();
+  const unowned: SystemProblem[] = [];
+
+  for (const problem of problems) {
+    const owner = ownerOf(parts, problem.file);
+
+    if (owner) owned.set(owner, [...(owned.get(owner) ?? []), problem]);
+    else unowned.push(problem);
+  }
+
+  return { owned, unowned };
+};
+
+const SKETCH_KEY = 'sketch:';
+
+const PRODUCT_KEY = 'product';
+
+const APP_CODE_KEY = 'app-code';
+
+const DESIGN_DIR = '.ethlete/design/';
+
+/** The problems no part owns: those in the design files as one product row, those in app code as one row per file. */
+const productProblemGroupsOf = (product: string, unowned: SystemProblem[]): TreeGroup[] => {
+  const design = unowned.filter((problem) => problem.file.startsWith(DESIGN_DIR));
+  const app = unowned.filter((problem) => !problem.file.startsWith(DESIGN_DIR));
+
+  return [
+    ...(design.length > 0
+      ? [
+          {
+            key: PRODUCT_KEY,
+            label: SYSTEM_TREE_LABELS.product,
+            entries: [
+              {
+                key: `${PRODUCT_KEY}:${product}`,
+                name: product,
+                title: problemTitleOf(design),
+                badges: ['error' as const],
+              },
+            ],
+          },
+        ]
+      : []),
+    ...(app.length > 0
+      ? [
+          {
+            key: APP_CODE_KEY,
+            label: SYSTEM_TREE_LABELS.appCode,
+            entries: [...new Set(app.map((problem) => problem.file))].map((file) => ({
+              key: `${APP_CODE_KEY}:${file}`,
+              name: file,
+              title: problemTitleOf(app.filter((problem) => problem.file === file)),
+              badges: ['error' as const],
+            })),
+          },
+        ]
+      : []),
+  ];
+};
+
+export const sketchKeyOf = (target: string) => `${SKETCH_KEY}${target}`;
+
+export const isSketchKey = (key: string | null) => !!key?.startsWith(SKETCH_KEY);
+
+/** The part a picked entry shows when no listed sketch has it: the part itself, or the target part of a sketch key. */
+export const pickedPartKeyOf = (picked: string | null) =>
+  picked && isSketchKey(picked) ? picked.slice(SKETCH_KEY.length).split('@')[0] : picked;
+
+export const sketchLabelOf = (key: string): { part: string; name?: string } => {
+  const target = key.startsWith(SKETCH_KEY) ? key.slice(SKETCH_KEY.length) : key;
+  const [part = target, name] = target.slice(target.lastIndexOf('/') + 1).split('@');
+
+  return name ? { part, name } : { part };
+};
+
+const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => ({
+  key: sketchKeyOf(sketch.target),
+  name: sketch.parent ? sketchLabelOf(sketch.target).part : sketch.name,
+  ...(sketch.parent ? { subSketch: true } : {}),
+  title: orFallback(
+    [
+      ...(sketch.targets ?? []).flatMap(({ variant, error }) => (error ? [`${variant}: ${error}`] : [])),
+      ...(sketch.staleBase ? [TREE_ROW_LABELS.sketchNeedsRebase(sketch.staleBase)] : []),
+      ...(sketch.changedSinceReady?.length ? [TREE_ROW_LABELS.sketchChangedSinceReady(sketch.changedSinceReady)] : []),
+      ...(sketch.rebaseUncommitted ? [TREE_ROW_LABELS.sketchRebaseUncommitted(sketch.rebaseUncommitted.commit)] : []),
+      ...(sketch.hold?.untilSketch && sketch.holdTargetEnd
+        ? [TREE_ROW_LABELS.sketchHoldTargetEnded(sketch.hold.untilSketch.target, sketch.holdTargetEnd)]
+        : []),
+    ],
+    sketch.target,
+  ),
+  ...commentsOf(sketch.target, marks),
+  badges: [
+    ...(sketch.approved ? (['approved'] as const) : []),
+    ...(sketch.status === 'ready' && !sketch.staleBase && !sketch.changedSinceReady?.length
+      ? (['ready'] as const)
+      : (['in progress'] as const)),
+    ...(sketch.staleBase ? (['needs rebase'] as const) : []),
+    ...(sketch.changedSinceReady?.length ? (['changed since ready'] as const) : []),
+    ...(sketch.hold?.untilSketch && sketch.holdTargetEnd ? (['hold target ended'] as const) : []),
+    ...(sketch.rebaseUncommitted ? (['rebase not committed'] as const) : []),
+    ...commentBadgesOf(sketch.target, marks),
+    ...(sketch.problems?.some((entry) => entry.problems.length > 0) || sketch.targets?.some((entry) => entry.error)
+      ? (['error'] as const)
+      : []),
+  ],
+});
+
+const sketchLayerOf = (sketch: ListedSketch) => sketchPartOf(sketch).split('/')[0] ?? '';
+
+/** The entries of the sketches no listed sketch is the parent of, each with the entries of its sub-sketches as `nested`. */
+const sketchEntriesOf = (sketches: ListedSketch[], marks: CommentMarks) => {
+  const listed = new Set(sketches.map((sketch) => sketch.target));
+  const entryWith = (sketch: ListedSketch, host?: ListedSketch): TreeEntry => {
+    const own = sketchEntryOf(sketch, marks);
+    const entry =
+      host && sketchLayerOf(host) !== sketchLayerOf(sketch)
+        ? { ...own, layer: layerLabelOf(sketchLayerOf(sketch)), layerKey: sketchLayerOf(sketch) }
+        : own;
+    const nested = sketches
+      .filter((candidate) => candidate.parent === sketch.target && candidate !== sketch)
+      .map((candidate) => entryWith(candidate, sketch));
+
+    return nested.length > 0 ? { ...entry, nested } : entry;
+  };
+
+  return sketches.filter((sketch) => !sketch.parent || !listed.has(sketch.parent)).map((sketch) => entryWith(sketch));
+};
+
+export const callKeyOf = (slug: string) => `legacy:${slug}`;
+
+const callBadgesOf = (call: ListedCall): PartBadge[] =>
+  'error' in call ? ['error'] : call.transferred ? ['transferred'] : [];
+
+const callEntryOf = (call: ListedCall, name: string): TreeEntry => ({
+  key: callKeyOf(call.slug),
+  name,
+  title: ['error' in call ? call.error : call.headline],
+  badges: callBadgesOf(call),
+});
+
+export const legacyGroupsOf = (calls: ListedCall[]): TreeGroup[] => {
+  const projects = [...new Set(calls.map((call) => call.project))];
+
+  return projects.length === 0
+    ? []
+    : [
+        {
+          key: 'legacy',
+          label: SYSTEM_TREE_LABELS.legacy,
+          entries: [],
+          sections: projects.map((project) => ({
+            key: `legacy/${project}`,
+            label: project,
+            entries: calls
+              .filter((call) => call.project === project)
+              .map((call) => callEntryOf(call, call.slug.slice(project.length + 1) || call.slug)),
+          })),
+        },
+      ];
+};
+
+const UNUSED_KEY: SystemGroupKey = 'unused';
+
+/** The key of the part a part of the product's own names as its family, else of its one user, `null` for any other part. */
+export const nestingHostOf = (
+  part: Pick<ListedPart, 'origin' | 'usedBy' | 'family'>,
+  isKnown: (key: string) => boolean = () => true,
+): string | null => {
+  if (part.origin === 'base') return null;
+
+  if (part.family && isKnown(part.family)) return part.family;
+
+  const [user, ...others] = part.usedBy ?? [];
+
+  return user !== undefined && others.length === 0 ? user : null;
+};
+
+const layerLabelOf = (layer: string) => SYSTEM_GROUPS.find((group) => group.key === layer)?.label ?? layer;
+
+/** The entries of the given parts no part of `pool` hosts, each with the entries of the parts it hosts as `nested`. */
+const nestedEntriesOf = (pool: ListedPart[], entryOf: (part: ListedPart) => TreeEntry) => {
+  const byKey = new Map(pool.map((part) => [partKeyOf(part), part]));
+  const hostOf = (part: ListedPart) => {
+    const host = nestingHostOf(part, (key) => byKey.has(key));
+
+    if (host === null || !byKey.has(host)) return null;
+
+    const seen = new Set<ListedPart>();
+
+    for (
+      let next = byKey.get(host);
+      next && !seen.has(next);
+      next = byKey.get(nestingHostOf(next, (key) => byKey.has(key)) ?? '')
+    ) {
+      if (next === part) return null;
+
+      seen.add(next);
+    }
+
+    return host;
+  };
+  const hosts = new Map(pool.map((part) => [part, hostOf(part)]));
+  const entryWith = (part: ListedPart, host?: ListedPart): TreeEntry => {
+    const own = entryOf(part);
+    const entry =
+      host && host.layer !== part.layer ? { ...own, layer: layerLabelOf(part.layer), layerKey: part.layer } : own;
+    const nested = pool
+      .filter((candidate) => hosts.get(candidate) === partKeyOf(part))
+      .map((candidate) => entryWith(candidate, part));
+
+    return nested.length > 0 ? { ...entry, nested } : entry;
+  };
+
+  return (parts: ListedPart[]) => parts.filter((part) => !hosts.get(part)).map((part) => entryWith(part));
+};
+
+/** The base parts no part of the product imports, in one group with a section per layer. */
+const unusedGroupOf = (
+  parts: ListedPart[],
+  { product, entryOf }: { product: ListedProduct | null; entryOf: (part: ListedPart) => TreeEntry },
+): TreeGroup => {
+  const name = product ? `${product.name.charAt(0).toUpperCase()}${product.name.slice(1)}` : null;
+
+  return {
+    key: UNUSED_KEY,
+    label: name ? SYSTEM_TREE_LABELS.notUsedIn(name) : SYSTEM_TREE_LABELS.notUsed,
+    entries: [],
+    sections: [...new Set(parts.map((part) => part.layer))].map((layer) => {
+      const onLayer = parts.filter((part) => part.layer === layer);
+
+      return {
+        key: `${UNUSED_KEY}/${layer}`,
+        label: layerLabelOf(layer),
+        entries: nestedEntriesOf(onLayer, entryOf)(onLayer),
+      };
+    }),
+  };
+};
+
+export type OpenContext = { remembered: Record<string, boolean>; hasProducts: boolean };
+
+const hostsOf = (entries: TreeEntry[], key: string): string[] | null => {
+  for (const entry of entries) {
+    if (entry.key === key) return [];
+
+    const inner = hostsOf(entry.nested ?? [], key);
+
+    if (inner) return [entry.key, ...inner];
+  }
+
+  return null;
+};
+
+const isHostIn = (entries: TreeEntry[], key: string): boolean =>
+  entries.some((entry) => (entry.key === key ? !!entry.nested : isHostIn(entry.nested ?? [], key)));
+
+/** Whether the key is a part entry that holds nested parts. */
+export const isPartHost = (tree: TreeGroup[], key: string | null): boolean =>
+  key !== null &&
+  tree.some(
+    (group) => isHostIn(group.entries, key) || (group.sections ?? []).some((section) => isHostIn(section.entries, key)),
+  );
+
+/** The keys of the group, the section and the host entries that hold the entry, outermost first. */
+export const holdersOf = (tree: TreeGroup[], key: string | null): string[] => {
+  if (key === null) return [];
+
+  for (const group of tree) {
+    const inGroup = hostsOf(group.entries, key);
+
+    if (inGroup) return [group.key, ...inGroup];
+
+    for (const section of group.sections ?? []) {
+      const inSection = hostsOf(section.entries, key);
+
+      if (inSection) return [group.key, section.key, ...inSection];
+    }
+  }
+
+  return [];
+};
+
+/** Whether a group shows its entries: the remembered choice, else open - except Legacy beside products and the unused base parts. */
+export const isGroupOpen = (group: TreeGroup, { remembered, hasProducts }: OpenContext) =>
+  remembered[group.key] ?? (group.key.startsWith('legacy') ? !hasProducts : group.key !== UNUSED_KEY);
+
+/** Whether a section shows its entries: the remembered choice, else folded - except the layers of the unused base parts. */
+export const isSectionOpen = (section: TreeSection, { remembered }: OpenContext) =>
+  remembered[section.key] ?? section.key.startsWith(`${UNUSED_KEY}/`);
+
+/**
+ * The groups of the tree that hold a part, an open sketch or a call, each with its entries in listed order: the
+ * open sketches first, Legacy last.
+ * A comment on a sketch variant marks the sketch, any other comment its part.
+ */
+export const treeOf = (
+  parts: ListedPart[],
+  {
+    calls = [],
+    sketches = [],
+    comments = [],
+    product = null,
+  }: {
+    /** The product the parts belong to, to list each part's frames. */
+    product?: ListedProduct | null;
+    calls?: ListedCall[];
+    sketches?: ListedSketch[];
+    comments?: (CommentPlace & Pick<ListedComment, 'threadState'>)[];
+  } = {},
+): TreeGroup[] => {
+  const sketched = new Set(sketches.flatMap((sketch) => sketch.targetParts ?? [sketch.target]));
+  const marksOf = (onSketch: boolean): CommentMarks => {
+    const own = comments.filter((comment) =>
+      comment.sketch
+        ? onSketch &&
+          sketches.some(
+            ({ target, createdAt }) => target === comment.sketch?.target && createdAt === comment.sketch.createdAt,
+          )
+        : !onSketch,
+    );
+    const keyOf = (comment: CommentPlace) => comment.sketch?.target ?? comment.part;
+
+    return {
+      commented: own.reduce(
+        (counts, comment) => counts.set(keyOf(comment), (counts.get(keyOf(comment)) ?? 0) + 1),
+        new Map<string, number>(),
+      ),
+      questioned: new Set(own.filter(isQuestion).map(keyOf)),
+      answered: new Set(own.filter(isAnswered).map(keyOf)),
+    };
+  };
+  const partMarks = marksOf(false);
+  const sketchMarks = marksOf(true);
+  const { owned, unowned } = productProblemsOf(parts, product?.problems ?? []);
+  const productGroups: TreeGroup[] = product && unowned.length > 0 ? productProblemGroupsOf(product.name, unowned) : [];
+
+  const entryOf = (part: ListedPart): TreeEntry => {
+    const frames = product ? treeFramesOf(product, part) : [];
+    const problems = [...part.problems, ...(owned.get(part) ?? [])];
+
+    return {
+      key: partKeyOf(part),
+      name: part.name,
+      ...(problems.length > 0 || part.composition
+        ? { title: [...problemTitleOf(problems), ...(part.composition ? [SYSTEM_TREE_LABELS.composition] : [])] }
+        : {}),
+      badges: badgesOf(part, { sketched, marks: partMarks, problems }),
+      ...commentsOf(partKeyOf(part), partMarks),
+      ...(isWireframe(part) ? { count: part.kitUses } : {}),
+      ...(frames.length > 1 ? { frames } : {}),
+    };
+  };
+  const placed = parts.filter((part) => SYSTEM_GROUPS.some((group) => group.key !== UNUSED_KEY && group.holds(part)));
+  const unhostedEntriesOf = nestedEntriesOf(placed, entryOf);
+
+  const groups = SYSTEM_GROUPS.flatMap(({ key, label, holds }) => {
+    if (key === 'legacy') return legacyGroupsOf(calls);
+    if (key === 'sketches')
+      return [
+        {
+          key,
+          label,
+          entries: sketchEntriesOf(sketches, sketchMarks),
+        },
+      ];
+
+    if (key === 'unused') return [unusedGroupOf(parts.filter(holds), { product, entryOf })];
+
+    return [{ key, label, entries: unhostedEntriesOf(parts.filter(holds)) }];
+  }).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);
+
+  const sketchGroups = groups.filter((group) => group.key === 'sketches');
+
+  return [...sketchGroups, ...productGroups, ...groups.filter((group) => group.key !== 'sketches')];
+};
+
+export type FramesSource = {
+  port: number;
+  product: ListedProduct;
+  part: ListedPart;
+  epoch?: number;
+  revision?: number;
+  surface?: string;
+  color?: string;
+  /** The states left out of the frames, folded behind a count. */
+  folded?: ReadonlySet<string>;
+};
+
+const loadErrorOf = (problems: { rule: string; message: string }[]) =>
+  problems
+    .filter((problem) => problem.rule === 'LOAD')
+    .map((problem) => problem.message)
+    .join('\n') || undefined;
+
+const statesOf = (part: ListedPart, error: string | undefined): (string | undefined)[] =>
+  part.states.length > 0 ? part.states : error ? [undefined] : [];
+
+/** Rest, then each interaction the part declares, in its order. */
+export const interactionsOf = (part: ListedPart): string[] => [
+  REST,
+  ...(part.composition ? [] : (part.interactions ?? [])),
+];
+
+/** The pages of its own product that use a part, in the order the server lists them. */
+const usingPagesOf = (product: ListedProduct, part: ListedPart | null): ListedPart[] =>
+  (part?.usedIn ?? []).flatMap((use) =>
+    use.product === product.name ? product.parts.filter((page) => partKeyOf(page) === use.part) : [],
+  );
+
+/**
+ * The pages of its own product that use any target part of a sketch, each once and none that is a target itself;
+ * `part` is the first target as the product has it now.
+ */
+export const sketchUsingPagesOf = ({
+  product,
+  sketch,
+  part,
+}: {
+  product: ListedProduct;
+  sketch: Pick<ListedSketch, 'target' | 'targetParts'>;
+  part: ListedPart | null;
+}): ListedPart[] => {
+  const targets = sketch.targetParts ?? [sketch.target];
+  const pages = targets.flatMap((key) =>
+    usingPagesOf(
+      product,
+      key === sketchPartOf(sketch) ? part : (product.parts.find((candidate) => partKeyOf(candidate) === key) ?? null),
+    ),
+  );
+
+  return [...new Set(pages)].filter((page) => !targets.includes(partKeyOf(page)));
+};
+
+/** The first state of a page at the product's first preset, or fitted when the product has none, to show a part inside it. */
+const pageFrameOf = (options: {
+  port: number;
+  product: ListedProduct;
+  page: ListedPart;
+  sketch?: { target: string; variant: string };
+  epoch?: number;
+  revision?: number;
+  surface?: string;
+  color?: string;
+}) => {
+  const { port, product, page, sketch, epoch, revision, surface, color } = options;
+  const state = page.states[0];
+
+  if (state === undefined) return null;
+
+  const [preset] = Object.keys(product.presets);
+  const size = preset === undefined ? undefined : product.presets[preset];
+  const key = partKeyOf(page);
+  const address: PartAddress = {
+    port,
+    product: product.name,
+    part: key,
+    state,
+    epoch,
+    revision,
+    surface,
+    color,
+    ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
+    ...(preset === undefined ? { fit: true } : {}),
+  };
+
+  return {
+    src: partFrameUrl(address),
+    ...(size ? { width: size.width, ...(size.height === undefined ? {} : { height: size.height }) } : {}),
+    label: [key, state, preset].filter(Boolean).join(' · '),
+    screenshot: partShotUrl({ ...address, preset, revision }),
+    schemes: schemesOf(product),
+    error: loadErrorOf(page.problems),
+    place: { part: key, state, size: preset ?? FITTED, ...(sketch ? { sketch } : {}) },
+  };
+};
+
+const sizeLabelOf = (size: string, interaction: string) => (interaction === REST ? size : `${size} · ${interaction}`);
+
+const stateSizeLabelOf = ({ state, interaction }: Cell, size: string) =>
+  state === undefined ? sizeLabelOf(size, interaction) : `${state} · ${sizeLabelOf(size, interaction)}`;
+
+export const FITTED = 'fitted';
+
+type Cell = { state: string | undefined; interaction: string };
+
+/** A part that is no page and declares no `widths` fits its content and draws every state in one frame. */
+export const isSmallPart = (part: Pick<ListedPart, 'layer' | 'widths'>) =>
+  part.layer !== 'pages' && (part.widths?.length ?? 0) === 0;
+
+const GRID = 'grid';
+
+const SHEET_FILL = 'surface';
+
+const BOTH_SCHEMES: ColorScheme[] = ['light', 'dark'];
+
+/** The colour schemes every frame of `product` draws a copy in: both unless the product declares its own. */
+export const schemesOf = (product: Pick<ListedProduct, 'schemes'>): ColorScheme[] =>
+  product.schemes?.length ? product.schemes : BOTH_SCHEMES;
+
+/** The states a part's `grid` places, in one frame of cells in rest, each at `width` or fitted without one. */
+const gridFrameOf = (options: {
+  grid: NonNullable<ListedPart['grid']>;
+  width: number | undefined;
+  addressOf: (cell: Cell) => PartAddress;
+  placeOf: (cell: Cell, size: string | number) => { place?: FramePlace };
+  idOf: (cell: Cell, size?: string | number) => string;
+  schemes: ColorScheme[];
+  revision?: number;
+}): CanvasFrame => {
+  const { grid, width, addressOf, placeOf, idOf, schemes, revision } = options;
+  const [restColumn] = grid.columns;
+  const restOf = new Map(grid.cells.filter((cell) => cell.column === restColumn).map((cell) => [cell.row, cell.state]));
+
+  return {
+    id: GRID,
+    src: '',
+    label: GRID,
+    grid: {
+      sheet: 'groups',
+      schemes,
+      columns: grid.columns,
+      rows: grid.rows,
+      cells: grid.cells.map(({ row, column, state }) => {
+        const cell = { state, interaction: REST };
+        const base = restOf.get(row);
+
+        return {
+          id: idOf(cell, width),
+          row,
+          column,
+          label: state,
+          src: partFrameUrl({ ...addressOf(cell), fill: SHEET_FILL, ...(width === undefined ? { fit: true } : {}) }),
+          ...(width === undefined ? {} : { width }),
+          screenshot: partShotUrl({ ...addressOf(cell), fill: SHEET_FILL, width, revision }),
+          ...(base === undefined || state === base
+            ? {}
+            : { diff: partStateDiffUrl({ ...addressOf(cell), base, fill: SHEET_FILL, width }) }),
+          ...placeOf(cell, width ?? FITTED),
+        };
+      }),
+    },
+  };
+};
+
+/**
+ * Every state of a part in rest and in each interaction it declares: a page at every preset of the
+ * product, a part with `widths` at each width, any other part in one frame of fitted cells, a row per state
+ * and a column per interaction. A part's `grid` draws the states it places in one more frame, in rest, each cell
+ * at the part's first width or fitted. Only a `LOAD` problem fails the frames: a part that breaks a rule still
+ * renders, and one that does not load lists no states.
+ */
+export const framesOf = (source: FramesSource): CanvasFrame[] => {
+  const { port, product, part, epoch, revision, surface, color } = source;
+  const key = partKeyOf(part);
+  const error = loadErrorOf(part.problems);
+  const grid = part.layer === 'pages' || error ? undefined : part.grid;
+  const gridded = new Set(grid?.cells.map((cell) => cell.state));
+  const shown = statesOf(part, error).filter(
+    (state) => state === undefined || (!gridded.has(state) && !source.folded?.has(state)),
+  );
+  const groupOf = new Map(
+    (part.groups ?? []).flatMap(({ label, states: members }) => {
+      const drawn = members.filter((state) => shown.includes(state));
+
+      return drawn.map((state) => [state, { label, count: drawn.length }] as const);
+    }),
+  );
+  const states = [
+    ...(part.groups ?? []).flatMap((group) =>
+      group.states.filter((state) => groupOf.get(state)?.label === group.label),
+    ),
+    ...shown.filter((state) => state === undefined || !groupOf.has(state)),
+  ];
+  const rowOf = ({ state }: Cell) => {
+    const group = state === undefined ? undefined : groupOf.get(state);
+
+    return group ? { row: `group:${group.label}`, rowHead: `${group.label} · ${group.count}` } : { row: state };
+  };
+  const interactions = interactionsOf(part);
+  const cells = states.flatMap((state) => interactions.map((interaction) => ({ state, interaction })));
+  const addressOf = ({ state, interaction }: Cell) => ({
+    port,
+    product: product.name,
+    part: key,
+    state: state ?? '',
+    epoch,
+    revision,
+    surface,
+    color,
+    ...(interaction === REST ? {} : { interaction }),
+  });
+  const placeOf = ({ state, interaction }: Cell, size: string | number) =>
+    state === undefined ? {} : { place: { part: key, state, size, ...(interaction === REST ? {} : { interaction }) } };
+  const idOf = ({ state, interaction }: Cell, size?: string | number) =>
+    [state ?? '', ...(size === undefined ? [] : [size]), ...(interaction === REST ? [] : [interaction])].join(' ');
+  const descriptionOf = ({ state }: Cell) => {
+    const description = state === undefined ? undefined : part.descriptions?.[state];
+
+    return description ? { description } : {};
+  };
+
+  if (part.layer === 'pages') {
+    return cells.flatMap((cell) =>
+      Object.entries(product.presets).map(([preset, { width, height }]) => ({
+        id: idOf(cell, preset),
+        src: partFrameUrl(addressOf(cell)),
+        width,
+        height,
+        label: stateSizeLabelOf(cell, preset),
+        ...descriptionOf(cell),
+        ...rowOf(cell),
+        screenshot: partShotUrl({ ...addressOf(cell), preset, revision }),
+        schemes: schemesOf(product),
+        error,
+        ...placeOf(cell, preset),
+      })),
+    );
+  }
+
+  const widths = part.widths ?? [];
+  const schemes = schemesOf(product);
+  const gridFrames = grid ? [gridFrameOf({ grid, width: widths[0], addressOf, placeOf, idOf, schemes, revision })] : [];
+
+  if (widths.length > 0) {
+    return [
+      ...cells.flatMap((cell) =>
+        widths.map((width) => ({
+          id: idOf(cell, width),
+          src: partFrameUrl(addressOf(cell)),
+          width,
+          label: stateSizeLabelOf(cell, 'width'),
+          ...descriptionOf(cell),
+          ...rowOf(cell),
+          screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
+          schemes,
+          error,
+          ...placeOf(cell, width),
+        })),
+      ),
+      ...gridFrames,
+    ];
+  }
+
+  const [first] = cells;
+
+  if (!first) return gridFrames;
+
+  const diffOf = (cell: Cell) =>
+    cell.interaction === REST || cell.state === undefined
+      ? {}
+      : { diff: partStateDiffUrl({ ...addressOf(cell), base: cell.state, fill: SHEET_FILL }) };
+  if (error) return [{ id: key, src: partFrameUrl({ ...addressOf(first), fit: true }), label: part.name, error }];
+
+  return [
+    {
+      id: key,
+      src: '',
+      label: part.name,
+      grid: {
+        sheet: 'table',
+        schemes,
+        columns: interactions,
+        rows: states.filter((state) => state !== undefined),
+        ...(part.descriptions ? { descriptions: part.descriptions } : {}),
+        cells: cells.map((cell) => ({
+          id: idOf(cell),
+          row: cell.state ?? '',
+          column: cell.interaction,
+          label: `${cell.state} · ${cell.interaction}`,
+          src: partFrameUrl({ ...addressOf(cell), fill: SHEET_FILL, fit: true }),
+          screenshot: partShotUrl({ ...addressOf(cell), fill: SHEET_FILL, revision }),
+          ...diffOf(cell),
+          ...placeOf(cell, FITTED),
+        })),
+      },
+    },
+    ...gridFrames,
+  ];
+};
+
+export const frameKeyOf = (part: string, frame: string) => `frame:${part} ${frame}`;
+
+/** The frames a part draws on its own, as tree rows that open the part on that frame. */
+const treeFramesOf = (product: ListedProduct, part: ListedPart): TreeFrame[] =>
+  framesOf({ port: 0, product, part }).map((frame) => ({
+    key: frameKeyOf(partKeyOf(part), frame.id),
+    name: frame.label,
+    part: partKeyOf(part),
+    frame: frame.id,
+  }));
+
+export type SketchFramesSource = Omit<FramesSource, 'part'> & {
+  sketch: ListedSketch;
+  /** The target as the product has it now; `null` for a sketch of a new part. */
+  part: ListedPart | null;
+  /** The preset name or the width the user picked for every cell; the first one when it is not offered. */
+  size?: string | null;
+  /** The interaction the user picked for every cell, or `ALL`; `ALL` when it is not offered. */
+  interaction?: string | null;
+  /** Whether the user opened (`true`) or folded (`false`) a round, by round key. */
+  openRounds?: Record<string, boolean>;
+  /** Whether the user opened (`true`) or folded (`false`) a state no shown variant changes, by state. */
+  openStates?: Record<string, boolean>;
+  /** Leaves out the variants their agent withdrew. */
+  hideWithdrawn?: boolean;
+  /** The time in ms the agent's report is judged against; without it, a report never expires. */
+  now?: number;
+};
+
+const REPORT_EXPIRY_MS = 30 * 60_000;
+
+/** When a drawing report stops blocking its variant's column, in ms; `null` for none or an unreadable `updatedAt`. */
+const reportExpiryOf = (report: ListedSketch['report']) => {
+  const updatedAt = report ? Date.parse(report.updatedAt) : NaN;
+
+  return Number.isNaN(updatedAt) ? null : updatedAt + REPORT_EXPIRY_MS;
+};
+
+/** The interaction switch value that shows every interaction in its own row. */
+export const ALL = 'all';
+
+export type MatrixColumn = {
+  key: string;
+  label: string;
+  drawing: boolean;
+  title?: string;
+  note?: string;
+  group?: { key: string; label: string; note?: string; title?: string };
+};
+
+export type ShownRound = SketchRound & { variants: string[]; open: boolean };
+
+/**
+ * The rounds of a sketch, oldest first, with their variants. A round is open as the user chose in
+ * `openRounds`, else while it is the newest. A newest round missing from `openRounds` came after that
+ * choice, so it opens alone and every older round folds again. Data older than rounds reads as one
+ * untitled round `r1`.
+ */
+export const sketchRoundsOf = (
+  sketch: ListedSketch,
+  { openRounds = {}, hideWithdrawn = false }: { openRounds?: Record<string, boolean>; hideWithdrawn?: boolean } = {},
+): ShownRound[] => {
+  const rounds: SketchRound[] = sketch.rounds?.length ? sketch.rounds : [{ key: 'r1', title: '', note: '' }];
+  const fallback = rounds[0]?.key;
+  const newest = rounds[rounds.length - 1]?.key ?? '';
+  const chosen = newest in openRounds ? openRounds : {};
+  const hidden = new Set(hideWithdrawn ? withdrawnVariantsOf(sketch) : []);
+
+  return rounds.map((round) => ({
+    ...round,
+    variants: sketch.variants.filter(
+      (variant) => !hidden.has(variant) && (sketch.variantInfo?.[variant]?.round ?? fallback) === round.key,
+    ),
+    open: chosen[round.key] ?? round.key === newest,
+  }));
+};
+
+/** Every target part of a sketch with several, the first one first; none for a sketch with one part. */
+export const multiPartTargetsOf = (sketch: Pick<ListedSketch, 'targetParts'>): string[] =>
+  (sketch.targetParts?.length ?? 0) > 1 ? (sketch.targetParts ?? []) : [];
+
+/** The sketch as its view shows `part`: that target first; unchanged when `part` is none of its targets. */
+export const sketchScopedTo = (sketch: ListedSketch, part: string | null): ListedSketch =>
+  part !== null && part !== sketchPartOf(sketch) && sketch.targetParts?.includes(part)
+    ? { ...sketch, targetParts: [part, ...sketch.targetParts.filter((target) => target !== part)] }
+    : sketch;
+
+/** The head of a sketch with several parts: the title of its shown round, `null` for the target as head. */
+export const sketchHeadTitleOf = (sketch: Pick<ListedSketch, 'targetParts' | 'rounds'>, round: string) =>
+  multiPartTargetsOf(sketch).length > 0 ? sketch.rounds?.find((entry) => entry.key === round)?.title || null : null;
+
+/** The variants whose agent withdrew them and nobody reopened. */
+export const withdrawnVariantsOf = (sketch: Pick<ListedSketch, 'variants' | 'rejections'>) =>
+  sketch.variants.filter((variant) => rejectionOf(sketch, variant)?.status === 'withdrawn');
+
+/** The canvas column or column group key of a round. */
+export const roundColumnKeyOf = (round: string) => `round ${round}`;
+
+/** The key a state of one target part of a sketch is opened and folded by: the bare state for the first target. */
+export const sketchStateKeyOf = ({
+  sketch,
+  part,
+  state,
+}: {
+  sketch: Pick<ListedSketch, 'target' | 'targetParts'>;
+  part: string;
+  state: string;
+}) => (part === sketchPartOf(sketch) ? state : `${part} ${state}`);
+
+const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
+
+/** The first author and "+N" for the rest, or `null` without authors. */
+export const authorsLabelOf = (authors: string[]) =>
+  authors.length === 0 ? null : authors.length === 1 ? authors[0] : `${authors[0]} +${authors.length - 1}`;
+
+export type SketchMatrix = {
+  columns: MatrixColumn[];
+  frames: CanvasFrame[];
+  /** The preset names of a page or the container widths of a part, for the switch; empty when every cell fits its content. */
+  sizes: string[];
+  size: string | null;
+  /** Rest, then every interaction the part or a variant declares in Studio order, for the switch. */
+  interactions: string[];
+  /** A single interaction, or `ALL`. */
+  interaction: string;
+};
+
+export const CURRENT = 'current';
+const IN_CONTEXT = 'in context';
+type RoundColumn = MatrixColumn & { section?: string };
+const contextColumnKeyOf = (column: string) => `${IN_CONTEXT} ${column}`;
+
+type CellSize = { preset?: string; width?: number; height?: number; label: string };
+
+const cellSizeOf = (product: ListedProduct, size: string | null): CellSize => {
+  if (size === null) return { label: '' };
+
+  const preset = product.presets[size];
+
+  return preset
+    ? { preset: size, width: preset.width, height: preset.height, label: size }
+    : { width: Number(size), label: `${size} px` };
+};
+
+/** The sizes a sketch offers: the presets of a page, else every width the target part or a variant of it declares, else none. */
+const sketchSizesOf = ({
+  product,
+  sketch,
+  part,
+}: {
+  product: ListedProduct;
+  sketch: ListedSketch;
+  part: ListedPart | null;
+}) => {
+  if (sketch.layer === 'pages') return Object.keys(product.presets);
+
+  const key = sketchPartOf(sketch);
+  const own = (sketch.targets ?? []).filter((target) => (target.part ?? key) === key);
+  const widths = new Set([...(part?.widths ?? []), ...own.flatMap((target) => target.widths ?? [])]);
+
+  return [...widths].sort((a, b) => a - b).map(String);
+};
+
+/** The order Studio shows interactions in; one it does not know goes last. */
+const STUDIO_INTERACTIONS = [REST, 'hover', 'focus-visible', 'active', 'disabled'];
+
+const studioRankOf = (interaction: string) => {
+  const rank = STUDIO_INTERACTIONS.indexOf(interaction);
+
+  return rank === -1 ? STUDIO_INTERACTIONS.length : rank;
+};
+
+const sketchInteractionsOf = ({ sketch, part }: { sketch: ListedSketch; part: ListedPart | null }) =>
+  [
+    ...new Set([
+      REST,
+      ...(part?.composition ? [] : (part?.interactions ?? [])),
+      ...(sketch.targets ?? []).flatMap((target) => target.interactions ?? []),
+    ]),
+  ].sort((a, b) => studioRankOf(a) - studioRankOf(b));
+
+type MatrixRow = {
+  state: string | undefined;
+  stateKey?: string;
+  interaction: string;
+  key: string | undefined;
+  group?: string;
+};
+
+const rowKeyIn = (section: string | undefined, key: string) => (section === undefined ? key : `${section} ${key}`);
+
+/**
+ * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant. With
+ * several rounds or a titled one, each round is its own band, newest on top: an open round has its variant
+ * columns under a round group, with the current column in the topmost open band, and a folded round is one
+ * row head without frames. When no visible row has a frame of the current part, the first unchanged row is open by default. With
+ * `ALL` interactions, one row per state and interaction - state by state, each in Studio order - else one
+ * row per state in the picked interaction; the current states come first, then any state only a variant
+ * has. Every cell has the one picked size. A column that lacks a row's state or interaction gets an empty
+ * cell there. A variant the agent reports drawing while the sketch is in progress gets a column without
+ * frames, until the report is 30 minutes old: then it draws. Below
+ * it all, an `in context` band has a row per page that uses the target: that page with each column swapped in.
+ */
+export const sketchMatrixOf = ({
+  port,
+  product,
+  part,
+  sketch,
+  size: picked = null,
+  interaction: pickedInteraction = null,
+  openRounds = {},
+  openStates = {},
+  hideWithdrawn = false,
+  now,
+  epoch,
+  revision,
+  surface,
+  color,
+}: SketchFramesSource): SketchMatrix => {
+  const sizes = sketchSizesOf({ product, sketch, part });
+  const size = picked !== null && sizes.includes(picked) ? picked : (sizes[0] ?? null);
+  const cell = cellSizeOf(product, size);
+  const rounds = sketchRoundsOf(sketch, { openRounds, hideWithdrawn });
+  const shown = new Set(rounds.flatMap((round) => (round.open ? round.variants : [])));
+  const interactions = sketchInteractionsOf({
+    sketch: { ...sketch, targets: sketch.targets?.filter((target) => shown.has(target.variant)) },
+    part,
+  });
+  const interaction = pickedInteraction !== null && interactions.includes(pickedInteraction) ? pickedInteraction : ALL;
+  const shownInteractions = interaction === ALL ? interactions : [interaction];
+  const grouped = shownInteractions.length > 1;
+  const reported = sketch.status === 'in progress' ? (sketch.report?.variant ?? null) : null;
+  const expiry = reportExpiryOf(sketch.report);
+  const silent = reported !== null && now !== undefined && expiry !== null && now >= expiry;
+  const drawing = silent ? null : reported;
+  const idOf = (column: string, { stateKey, state, interaction: shown }: MatrixRow) =>
+    [column, stateKey ?? state ?? '', ...(shown === REST ? [] : [shown])].join(' ');
+  const targetOf = (variant: string, key = sketchPartOf(sketch)) =>
+    sketch.targets?.find((target) => target.variant === variant && (target.part ?? sketchPartOf(sketch)) === key);
+  const several = (sketch.targetParts?.length ?? 1) > 1;
+  const roundsGrouped = rounds.length > 1 || rounds.some((round) => round.title !== '');
+  const newestFirst = [...rounds].reverse().filter((round) => round.variants.length > 0);
+  const firstOpen = newestFirst.find((round) => round.open);
+  const currentSection = !roundsGrouped ? undefined : firstOpen ? roundColumnKeyOf(firstOpen.key) : CURRENT;
+  const variantColumnOf = (variant: string) => {
+    const target = targetOf(variant);
+    const problems = sketch.problems?.find((entry) => entry.variant === variant)?.problems ?? [];
+
+    const authors = sketch.variantInfo?.[variant]?.authors ?? [];
+    const rejected = rejectedLabelOf(sketch, variant);
+    const named = [variant, authorsLabelOf(authors), rejected?.tag].filter(Boolean).join(' · ');
+    const note = [rejected && `${rejected.text} (${rejected.by})`, sketch.variantInfo?.[variant]?.note]
+      .filter(Boolean)
+      .join('\n\n');
+
+    return {
+      key: variant,
+      label: variant === drawing ? `${named} · ${SYSTEM_TREE_LABELS.drawing}` : named,
+      ...(note === '' ? {} : { note }),
+      ...(authors.length > 0 ? { title: SYSTEM_TREE_LABELS.variantBy(variant, authors.join(', ')) } : {}),
+      drawing: variant === drawing,
+      states: target?.states ?? part?.states ?? [],
+      interactions: [REST, ...(target?.interactions ?? (part?.composition ? [] : (part?.interactions ?? [])))],
+      error: [target?.error, loadErrorOf(problems)].filter(Boolean).join('\n') || undefined,
+    };
+  };
+  const roundColumns = (roundsGrouped ? newestFirst : rounds).flatMap((round): RoundColumn[] => {
+    const name = roundNameOf(round);
+    const shownNote = [round.note, round.lost && `Lost: ${round.lost}`].filter(Boolean).join('\n\n');
+    const note = shownNote === '' ? {} : { note: shownNote };
+    const section = roundColumnKeyOf(round.key);
+
+    if (round.variants.length === 0) return [];
+    if (!roundsGrouped) return round.variants.map(variantColumnOf);
+    if (!round.open) return [];
+
+    const group = {
+      key: section,
+      label: name,
+      ...(shownNote === '' ? {} : { title: shownNote }),
+      ...note,
+    };
+
+    return round.variants.map((variant) => ({ ...variantColumnOf(variant), group, section }));
+  });
+  const sectionOf = (column: string) =>
+    column === CURRENT ? currentSection : roundColumns.find((candidate) => candidate.key === column)?.section;
+  const columns: (MatrixColumn & { states: string[]; interactions: string[]; error?: string })[] = [
+    ...(part
+      ? [
+          {
+            key: CURRENT,
+            label: CURRENT,
+            drawing: false,
+            states: part.states,
+            interactions: interactionsOf(part),
+            error: loadErrorOf(part.problems),
+          },
+        ]
+      : []),
+    ...roundColumns.map((column) => variantColumnOf(column.key)),
+  ];
+  const rowOf = (row: MatrixRow, column: string) => {
+    const section = sectionOf(column);
+    return {
+      row: row.key === undefined ? undefined : rowKeyIn(section, row.key),
+      ...(row.group === undefined ? {} : { rowGroup: row.group }),
+    };
+  };
+  const variantColumns = columns.filter((column) => column.key !== CURRENT);
+  const blockOf = (key: string) => {
+    const primary = key === sketchPartOf(sketch);
+    const listed = primary ? part : (product.parts.find((candidate) => partKeyOf(candidate) === key) ?? null);
+    const stateKeyOf = (state: string) => sketchStateKeyOf({ sketch, part: key, state });
+    const factsOf = (column: (typeof columns)[number]) => {
+      if (primary) return column;
+      if (column.key === CURRENT)
+        return {
+          ...column,
+          states: listed?.states ?? [],
+          interactions: listed ? interactionsOf(listed) : [REST],
+          error: listed ? loadErrorOf(listed.problems) : undefined,
+        };
+
+      const target = targetOf(column.key, key);
+      const problems = sketch.problems?.find((entry) => entry.variant === column.key)?.problems ?? [];
+
+      return {
+        ...column,
+        states: target?.states ?? listed?.states ?? [],
+        interactions: [REST, ...(target?.interactions ?? listed?.interactions ?? [])],
+        error: [target?.error, loadErrorOf(problems)].filter(Boolean).join('\n') || undefined,
+      };
+    };
+    const partColumns = columns.map(factsOf);
+    const states = [...new Set(partColumns.flatMap((column) => column.states))];
+    const kept = keptStatesOf(
+      listed?.states ?? [],
+      variantColumns.map((column) => targetOf(column.key, key)?.unchanged ?? []),
+    );
+    const ordered = [...states.filter((state) => !kept.includes(state)), ...kept];
+    const drawsCurrent = (state: string) =>
+      !kept.includes(state) || openStates[stateKeyOf(state)] === true ? (listed?.states ?? []).includes(state) : false;
+    const firstKept = kept[0];
+    const defaultOpen =
+      listed !== null &&
+      firstKept !== undefined &&
+      openStates[stateKeyOf(firstKept)] === undefined &&
+      !ordered.some(drawsCurrent)
+        ? firstKept
+        : undefined;
+    const isOpen = (state: string) => openStates[stateKeyOf(state)] === true || state === defaultOpen;
+    const rowStates = ordered.filter((state) => !kept.includes(state) || isOpen(state));
+    const rows: MatrixRow[] =
+      states.length === 0
+        ? [
+            {
+              state: undefined,
+              interaction: shownInteractions[0] ?? REST,
+              key: primary ? undefined : key,
+              ...(primary ? {} : { stateKey: key, group: key }),
+            },
+          ]
+        : rowStates.flatMap((state) =>
+            shownInteractions.map((shown): MatrixRow => {
+              const stateKey = stateKeyOf(state);
+
+              return grouped
+                ? {
+                    state,
+                    stateKey,
+                    interaction: shown,
+                    key: `${stateKey} · ${shown}`,
+                    group: stateKey,
+                  }
+                : {
+                    state,
+                    stateKey,
+                    interaction: shown,
+                    key: stateKey,
+                    ...(several ? { group: key } : {}),
+                  };
+            }),
+          );
+
+    const frameOf = (column: (typeof partColumns)[number], row: MatrixRow): CanvasFrame => {
+      const { state, interaction: shown } = row;
+      const address: PartAddress = {
+        port,
+        product: product.name,
+        part: key,
+        state: state ?? '',
+        epoch,
+        revision,
+        surface,
+        color,
+        ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
+        ...(size === null ? { fit: true } : {}),
+        ...(shown === REST ? {} : { interaction: shown }),
+      };
+
+      return {
+        id: idOf(column.key, row),
+        src: partFrameUrl(address),
+        ...(cell.width ? { width: cell.width } : {}),
+        ...(cell.height ? { height: cell.height } : {}),
+        label: cell.label,
+        ...rowOf(row, column.key),
+        column: column.key,
+        ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),
+        screenshot: partShotUrl({
+          ...address,
+          preset: cell.preset,
+          width: cell.preset ? undefined : cell.width,
+          revision,
+        }),
+        error: column.states.length > 0 ? undefined : column.error,
+        ...(state === undefined
+          ? {}
+          : {
+              place: {
+                part: key,
+                state,
+                size: cell.preset ?? cell.width ?? FITTED,
+                ...(shown === REST ? {} : { interaction: shown }),
+                ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
+              },
+            }),
+      };
+    };
+
+    const frames = partColumns.flatMap((column) => {
+      if (column.drawing) return [];
+
+      const absent = column.key === CURRENT && listed === null;
+
+      if (column.states.length === 0 && !absent) return rows[0] ? [frameOf(column, rows[0])] : [];
+
+      return rows.flatMap((row): CanvasFrame[] => {
+        if (row.state === undefined && !absent) return [];
+
+        const missing =
+          row.state === undefined || !column.states.includes(row.state)
+            ? SYSTEM_TREE_LABELS.noState(column.key, row.state)
+            : !column.interactions.includes(row.interaction)
+              ? SYSTEM_TREE_LABELS.noInteraction(column.key, row.interaction)
+              : null;
+
+        if (missing === null) return [frameOf(column, row)];
+
+        return [
+          {
+            id: idOf(column.key, row),
+            src: '',
+            ...(cell.width ? { width: cell.width } : {}),
+            ...(cell.height ? { height: cell.height } : {}),
+            label: cell.label,
+            ...rowOf(row, column.key),
+            column: column.key,
+            empty: column.key === CURRENT ? SYSTEM_TREE_LABELS.newInSketch(row.state, column.states) : missing,
+          },
+        ];
+      });
+    });
+
+    return { frames };
+  };
+  const blocks = (sketch.targetParts ?? [sketch.target]).map(blockOf);
+  const frames = blocks.flatMap((block) => block.frames);
+
+  const headOf = ({ key, label, title, note, drawing: isDrawing, group }: MatrixColumn): MatrixColumn => ({
+    key,
+    label,
+    drawing: isDrawing,
+    ...(title === undefined ? {} : { title }),
+    ...(note === undefined ? {} : { note }),
+    ...(group === undefined ? {} : { group }),
+  });
+
+  const heads = [...columns.slice(0, part ? 1 : 0), ...roundColumns].map(headOf);
+  const pages = sketchUsingPagesOf({ product, sketch, part });
+  const contextFrames = pages.flatMap((page) =>
+    columns.flatMap((column): CanvasFrame[] => {
+      const frame = column.drawing
+        ? null
+        : pageFrameOf({
+            port,
+            product,
+            page,
+            epoch,
+            revision,
+            surface,
+            color,
+            ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
+          });
+      const key = partKeyOf(page);
+
+      return frame
+        ? [
+            {
+              ...frame,
+              id: `${IN_CONTEXT} ${column.key} ${key}`,
+              row: `${IN_CONTEXT} ${key}`,
+              column: contextColumnKeyOf(column.key),
+              ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),
+            },
+          ]
+        : [];
+    }),
+  );
+
+  if (contextFrames.length === 0)
+    return {
+      columns: heads,
+      frames,
+      sizes,
+      size,
+      interactions,
+      interaction,
+    };
+
+  return {
+    columns: [
+      ...heads,
+      ...heads.map(({ key, label, drawing: isDrawing }) => ({
+        key: contextColumnKeyOf(key),
+        label,
+        drawing: isDrawing,
+      })),
+    ],
+    frames: [...frames, ...contextFrames],
+    sizes,
+    size,
+    interactions,
+    interaction,
+  };
+};
+
+/** Whether the user may pick a variant: the sketch is ready, and the variant is not rejected and is checked to break no rule. */
+export const canPick = (sketch: ListedSketch, variant: string) =>
+  sketch.status === 'ready' &&
+  !rejectionOf(sketch, variant) &&
+  !!sketch.problems &&
+  (sketch.problems.find((entry) => entry.variant === variant)?.problems.length ?? 0) === 0;
+
+/**
+ * The tag, "Rejected: <reason>" or "Rejected", and who rejected the variant and who wrote the reason; a variant its
+ * agent withdrew reads "withdrawn by the agent" instead. `null` while it is live.
+ */
+const rejectedLabelOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: string) => {
+  const rejection = rejectionOf(sketch, variant);
+
+  if (!rejection) return null;
+
+  if (rejection.status === 'withdrawn')
+    return {
+      tag: SYSTEM_TREE_LABELS.withdrawn,
+      text: rejection.reason ? SYSTEM_TREE_LABELS.withdrawnWith(rejection.reason) : SYSTEM_TREE_LABELS.withdrawnLabel,
+      by: SYSTEM_TREE_LABELS.rejectedBy(rejection.withdrawnBy ?? rejection.by, ''),
+    };
+
+  const reasonBy =
+    rejection.reason && rejection.reasonBy && rejection.reasonBy !== rejection.by
+      ? SYSTEM_TREE_LABELS.reasonBy(rejection.reasonBy)
+      : '';
+
+  return {
+    tag: SYSTEM_TREE_LABELS.rejected,
+    text: rejection.reason ? SYSTEM_TREE_LABELS.rejectedWith(rejection.reason) : SYSTEM_TREE_LABELS.rejectedLabel,
+    by: SYSTEM_TREE_LABELS.rejectedBy(rejection.by, reasonBy),
+  };
+};
+
+/** The width a call frame takes when its call declares none. */
+export const DEFAULT_CALL_WIDTH = 1280;
+
+export type CallFramesSource = {
+  port: number;
+  call: ListedCall;
+  epoch?: number;
+  revision?: number;
+  surface?: string;
+  color?: string;
+};
+
+/** One frame per variant of a legacy call, at the call's own frame width. A call that does not load gets one failed frame. */
+export const callFramesOf = ({ port, call, epoch, revision, surface, color }: CallFramesSource): CanvasFrame[] => {
+  if ('error' in call) {
+    return [{ id: call.slug, src: 'about:blank', width: DEFAULT_CALL_WIDTH, label: call.slug, error: call.error }];
+  }
+
+  const width = call.frameWidth > 0 ? call.frameWidth : DEFAULT_CALL_WIDTH;
+
+  return call.variants.map((variant) => {
+    const address = { port, slug: call.slug, variant: variant.key, epoch, revision, surface, color };
+
+    return {
+      id: variant.key,
+      src: frameUrl(address),
+      width,
+      label: variant.name || variant.key,
+      screenshot: callShotUrl({ ...address, width }),
+    };
+  });
+};
+
+/** `picture` is the stored PNG of the state, shown in place of the live `src` frame when the frame is not live. */
+export type SketchRowShot = {
+  state: string;
+  changed: boolean | null;
+  src: string;
+  picture: string;
+  change?: SketchChange;
+  sameAsRest?: boolean;
+  /** The states this row folds as drawn like this rest state. */
+  restOf?: string[];
+  inherited?: true;
+  place: { state: string; size?: string };
+  width?: number;
+  height?: number;
+};
+
+export type SketchRowOf = { key: string; width: number | null; perLine?: number; shots: SketchRowShot[] };
+
+/**
+ * One row for the part as it is now (when it exists) and one per shown variant, each with every state in the
+ * part's order, a page's state once per preset of the product and a part's once per declared width, at that size. A variant's state is changed unless its target lists it as `unchanged`, and `null` while no compare
+ * answered yet; the current row changes nothing. A base state the variant of an inherited part does not draw shows
+ * the part now, marked `inherited`.
+ */
+/** The sub-parts `variant` marks, then the targets it states a difference for, each with the existing part it is not. */
+export const variantSubPartsOf = (sketch: Pick<ListedSketch, 'variantInfo'>, variant: string) => {
+  const { subParts = [], notRebuilds = [] } = sketch.variantInfo?.[variant] ?? {};
+  const statement = ({ of, difference }: { of: string; difference: string }) => ({ notRebuild: { of, difference } });
+
+  return [
+    ...subParts.map((key) => {
+      const stated = notRebuilds.find((entry) => entry.part === key);
+
+      return stated ? { key, ...statement(stated) } : { key };
+    }),
+    ...notRebuilds
+      .filter((entry) => !subParts.includes(entry.part))
+      .map((entry) => ({ key: entry.part, ...statement(entry) })),
+  ];
+};
+
+export const sketchRowsOf = ({
+  port,
+  product,
+  part,
+  sketch,
+  variants,
+  epoch,
+  revision,
+  currentRevision = revision,
+  variantRevisions = {},
+  surface,
+  color,
+}: Omit<SketchFramesSource, 'size' | 'interaction' | 'openRounds' | 'openStates' | 'hideWithdrawn' | 'now'> & {
+  variants: string[];
+  currentRevision?: number;
+  variantRevisions?: Record<string, number>;
+}): SketchRowOf[] => {
+  const offered = sketchSizesOf({ product, sketch, part });
+  const sizes = offered.length > 1 ? offered : [offered[0] ?? null];
+  const cell = cellSizeOf(product, sizes[0] ?? null);
+  const partKey = sketchPartOf(sketch);
+  const rowOf = (key: string): SketchRowOf => {
+    const target =
+      key === CURRENT
+        ? undefined
+        : sketch.targets?.find((entry) => entry.variant === key && (entry.part ?? partKey) === partKey);
+    const states = (key === CURRENT ? part?.states : (target?.states ?? part?.states)) ?? [];
+    const inherited = new Set(key === CURRENT ? [] : (target?.inherited ?? []));
+
+    return {
+      key,
+      width: cell.width ?? null,
+      ...(sizes.length > 1 ? { perLine: sizes.length } : {}),
+      shots: [...states, ...inherited].flatMap((state) =>
+        sizes.map((size) => {
+          const sized = cellSizeOf(product, size);
+          const drawnHere = key !== CURRENT && !inherited.has(state);
+          const address = {
+            port,
+            product: product.name,
+            part: partKey,
+            state,
+            epoch,
+            revision: drawnHere ? (variantRevisions[key] ?? revision) : currentRevision,
+            surface,
+            color,
+            ...(drawnHere ? { sketch: sketch.target, variant: key } : {}),
+          };
+
+          const change = key === CURRENT ? undefined : target?.crops?.[state];
+          const sameAsRest = Object.entries(target?.sameAsRest ?? {});
+          const atSizes = Object.entries(target?.sameAsRestAtSizes ?? {}).filter(
+            ([, { sizes: equal }]) => size !== null && equal.includes(size),
+          );
+          const restOf = [
+            ...sameAsRest.filter(([, rest]) => rest === state).map(([folded]) => folded),
+            ...atSizes.filter(([, { rest }]) => rest === state).map(([folded]) => folded),
+          ];
+
+          return {
+            state: sizes.length > 1 ? `${state} · ${size}` : state,
+            changed: !drawnHere ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
+            ...(change ? { change } : {}),
+            ...(inherited.has(state) ? { inherited: true as const } : {}),
+            ...(sameAsRest.some(([folded]) => folded === state) || atSizes.some(([folded]) => folded === state)
+              ? { sameAsRest: true }
+              : {}),
+            ...(restOf.length > 0 ? { restOf } : {}),
+            src: partFrameUrl({ ...address, ...(size === null ? { fit: true } : {}) }),
+            picture: partShotUrl({ ...address, preset: sized.preset, width: sized.width }),
+            place: { state, ...(size === null ? {} : { size }) },
+            ...(sized.width !== undefined && sized.width !== cell.width ? { width: sized.width } : {}),
+            ...(sketch.layer === 'pages' && sized.height !== undefined ? { height: sized.height } : {}),
+          };
+        }),
+      ),
+    };
+  };
+
+  return [...(part ? [CURRENT] : []), ...variants].map(rowOf);
+};

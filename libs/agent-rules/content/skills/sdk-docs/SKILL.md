@@ -1,0 +1,107 @@
+---
+name: sdk-docs
+description: Where the @ethlete SDK is documented and how to find the right page. Read BEFORE using any @ethlete component, directive or API you have not already used in this repo - the docs site and Storybook are the source of truth, and inputs/outputs must never be guessed from a component's name.
+kind: skill
+scope: consumer
+vars: [docsBaseUrl, sdkStorybookUrl]
+---
+
+# Finding the @ethlete SDK docs
+
+The SDK lives in another repository. Its source is **not** in this project, so the only
+reliable way to learn a component's inputs, outputs, defaults or required directives is
+to read its documentation - never infer an API from the name, and never copy a shape
+from an unrelated component.
+
+Two sources, both authoritative for different things:
+
+| Source        | URL                 | Use it for                                                                                       |
+| ------------- | ------------------- | ------------------------------------------------------------------------------------------------ |
+| **Docs site** | {%docsBaseUrl%}     | Prose guides: what a thing is for, options, defaults, behaviour, migration notes                 |
+| **Storybook** | {%sdkStorybookUrl%} | The live component: every variant rendered, the real controls, and the exact markup a story uses |
+
+## First: app setup
+
+Before the first component, work through `{%docsBaseUrl%}/components/setup` - the 62.5% root
+font size, Tailwind 4 theme generation, a `type: 'error'` color theme, and the providers
+(`provideOverlay`, `provideDateLocale`, label tokens, …). Missing any of them fails at runtime,
+not at compile time.
+
+## Finding the right page
+
+Page URLs follow `{%docsBaseUrl%}/<lib>/<topic>`. The library sections:
+
+| Section                                        | Covers                                                                                                                                                                               |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/components/`                                 | The active UI library - one guide per domain (see the list below)                                                                                                                    |
+| `/core/`                                       | Framework primitives: `theming`, `overlay-runtime`, `signal-utils`, `element-signals`, `animations`, `scrolling`, `drag-resize`, `directives-pipes`, `providers`, `seo`, `utilities` |
+| `/query/`                                      | Data fetching; load the dedicated query guide first when this package emitted one                                                                                                    |
+| `/cdk/`                                        | The predecessor UI toolkit, maintenance mode. Only for code that still uses it                                                                                                       |
+| `/contentful/`, `/cli/`, `/eslint/`, `/types/` | The remaining packages                                                                                                                                                               |
+
+Component domains under `/components/`:
+
+`accordion` `avatar` `badge` `banner` `bracket` `bracket-prediction` `bracket-rounds-list`
+`breadcrumb` `button` `calendar` `card` `carousel` `cascader` `chart` `chip`
+`choice-inputs` `collapse` `command-palette` `copy-button` `date-time-inputs` `description-list`
+`divider` `dropzone` `empty-state` `error-codes` `filter-overlay` `floating-action`
+`focus-ring` `forms` `grid` `icon` `kbd` `line-chart` `loader` `localization` `masonry`
+`match` `menu` `mixed-state` `notification` `overlay-openers` `overlays` `paged-query-trigger`
+`pagination` `picture` `pie-chart` `progress-steps` `query-error` `rich-text-editor` `sankey-chart`
+`scheduler` `scrollable` `scrollbar` `select` `setup` `skeleton` `slider` `sport-recipes` `stat-tile`
+`standings` `standings-pick` `stream` `table` `tabs` `testing` `text-inputs` `time-picker`
+`timeline` `toggletip` `toolbar` `tooltip` `tree`
+
+**Check this list before you build any UI by hand.** Some needs hide behind a name you
+would not guess:
+
+| You need                                   | Read                                      |
+| ------------------------------------------ | ----------------------------------------- |
+| Bar or stacked bar chart, series legend    | `chart`                                   |
+| Line, pie, flow chart                      | `line-chart`, `pie-chart`, `sankey-chart` |
+| Progress bar, spinner                      | `loader`                                  |
+| Initials or user picture in a circle       | `avatar`                                  |
+| "No results" or empty table state          | `empty-state`                             |
+| Failed request with a retry button         | `query-error`                             |
+| Status pill, count                         | `badge`                                   |
+| Tab strip that switches a view or a filter | `tabs` (nav tabs)                         |
+| Dialog, bottom sheet, side panel           | `overlays`, `overlay-openers`             |
+| Label and value pairs                      | `description-list`                        |
+| Stepper, wizard progress                   | `progress-steps`                          |
+| Providers and styles a new app needs       | `setup`                                   |
+
+So the table guide is `{%docsBaseUrl%}/components/table`, the menu guide
+`{%docsBaseUrl%}/components/menu`, and so on.
+
+That list is a snapshot. The site itself is machine-readable, so fetch rather than guess:
+
+- `{%docsBaseUrl%}/llms.txt` - every page's title and path as of the last deploy. Use it
+  when a name isn't in the list above, or to check the list hasn't drifted.
+- Append `.md` to any page URL - `{%docsBaseUrl%}/components/button.md` - to get raw
+  markdown instead of the rendered page. Prefer this over `/llms-full.txt`, which is the
+  entire site in one ~1 MB file.
+
+## How to use them
+
+- **Read before writing.** Fetch the guide for the domain you are about to touch. A
+  component's required host directives, its two-way models, and which imports array to
+  pull in (`MENU_IMPORTS`, `TABLE_IMPORTS`, …) are all things the docs state and the
+  name does not imply.
+- **Storybook shows the real thing.** When the prose is ambiguous about markup or a
+  variant's look, open the story - the source panel is the exact template that renders it.
+- **Match the docs to your installed version.** Check the `@ethlete/*` versions in
+  `package.json`. The main docs and Storybook track the released line; a repo on
+  `-next` prereleases should read `{%docsBaseUrl%}` and `{%sdkStorybookUrl%}` only if
+  they are the matching prerelease deployments, otherwise expect drift and verify
+  against the installed `.d.ts` in `node_modules/@ethlete/<lib>`.
+- **Use the SDK skills instead of searching `node_modules` ad hoc.** The installed `.d.ts`
+  files are authoritative for the public type surface this consumer can compile against.
+  Source matching that installed build is authoritative for runtime implementation details.
+  A dirty or ahead `next` checkout is not automatically source for the installed package.
+  If docs and installed types disagree, report the drift.
+- **Never treat a `subtle` namespace as public API.** Anything exposed under `subtle` is
+  an unsupported escape hatch that can change without a major version.
+
+## Related
+
+- When the docs cannot answer it, read the SDK source: {%skill:sdk-source%}

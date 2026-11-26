@@ -1,0 +1,278 @@
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  contentChild,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  untracked,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import {
+  AnimatableDirective,
+  ColorInteractiveExcludeDirective,
+  ColorInteractiveHasFocusDirective,
+  createCanAnimateSignal,
+  injectParentSurface,
+  injectStyleManager,
+  injectSurfaceThemes,
+  ProvideColorDirective,
+  ProvideSurfaceDirective,
+  resolveSurfaceByElevation,
+  signalDeferredLoading,
+  signalElementDimensions,
+} from '@ethlete/core';
+import { SpinnerComponent } from '../../loader';
+import { DescriptionComponent } from '../description/description.component';
+import { FormErrorComponent } from './form-error.component';
+import { FormWarningComponent } from './form-warning.component';
+import { FormFieldSuffixOverlapStylesComponent } from './form-field-suffix-overlap-styles.component';
+import { FormFieldTextareaStylesComponent } from './form-field-textarea-styles.component';
+import { injectFormFieldDefaults } from './form-field-defaults';
+import {
+  FORM_FIELD_FILLS,
+  FORM_FIELD_LABEL_MODES,
+  FORM_FIELD_LABEL_POSITIONS,
+  FORM_FIELD_VARIANTS,
+  FormFieldAppearance,
+  FormFieldFill,
+  FormFieldLabelMode,
+  FormFieldLabelPosition,
+  FormFieldSize,
+  FormFieldVariant,
+} from './form-field.variants';
+import {
+  FORM_FIELD_CONTROL_TYPES,
+  FormFieldDirective,
+  injectFormSupport,
+  hitsInteractiveElement,
+  provideFormSupport,
+  wireFormSupport,
+} from './headless';
+
+@Component({
+  selector: 'et-form-field',
+  templateUrl: './form-field.component.html',
+  styleUrl: './form-field.component.css',
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    AnimatableDirective,
+    ColorInteractiveExcludeDirective,
+    FormErrorComponent,
+    FormWarningComponent,
+    NgTemplateOutlet,
+    ProvideColorDirective,
+    SpinnerComponent,
+  ],
+  providers: [provideFormSupport()],
+  hostDirectives: [
+    FormFieldDirective,
+    { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
+    { directive: ProvideSurfaceDirective, inputs: ['etProvideSurface:surface'] },
+    ColorInteractiveHasFocusDirective,
+  ],
+  host: {
+    class: 'et-form-field',
+    '[style.display]': 'formFieldDir.isHidden() ? "none" : null',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
+    '[attr.data-control-type]': 'formFieldDir.controlType()',
+    '[attr.data-error]': 'support.displaysError() || null',
+    '[attr.data-warning]': 'support.displaysWarning() || null',
+    '[attr.aria-busy]': 'isBusy() ? "true" : null',
+    '[attr.data-busy]': 'isBusy() || null',
+    '[attr.data-expanded]': 'formFieldDir.usesTextFieldShell() && formFieldDir.expanded() ? "" : null',
+    // stands in for `:focus-visible` when the focused element is a non-editable trigger - a
+    // tabindex div opened by pointer never matches `:focus-visible`
+    '[attr.data-focused]': 'formFieldDir.usesTextFieldShell() && formFieldDir.focused() ? "" : null',
+    '[attr.data-readonly]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isReadonly() ? "" : null',
+    '[attr.data-disabled]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isDisabled() ? "" : null',
+    '[attr.data-appearance]': 'formFieldDir.usesTextFieldShell() ? appearance() : null',
+    '[attr.data-fill]': 'formFieldDir.usesTextFieldShell() ? fill() : null',
+    '[attr.data-et-surface-fill]': 'paintsElevatedFill() ? "" : null',
+    '[attr.data-label-floated]': 'hasFloatingTextLabel() && formFieldDir.shouldFloatLabel() ? "" : null',
+    '[attr.data-has-label]': 'formFieldDir.registeredLabel() ? "" : null',
+    '[attr.data-label-mode]': 'formFieldDir.usesTextFieldShell() ? (hasStartLabel() ? "start" : labelMode()) : null',
+    '[attr.data-label-position]': 'hasStartLabel() ? "start" : null',
+    '[attr.data-variant]': 'formFieldDir.usesTextFieldShell() && variant() === "ghost" ? "ghost" : null',
+    '[attr.data-size]': 'formFieldDir.usesTextFieldShell() ? size() : null',
+    '[attr.data-text-shell]': 'formFieldDir.usesTextFieldShell() || null',
+    '[style.--_et-form-field-prefix-offset]': 'prefixOffset()',
+  },
+})
+export class FormFieldComponent {
+  private provideSurface = inject(ProvideSurfaceDirective);
+  private parentSurface = injectParentSurface();
+
+  protected formFieldDir = inject(FormFieldDirective);
+
+  public support = injectFormSupport();
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private styleManager = injectStyleManager();
+
+  private defaults = injectFormFieldDefaults();
+
+  public appearance = input<FormFieldAppearance>(this.defaults.appearance);
+  public fill = input<FormFieldFill>(this.defaults.fill);
+  public labelMode = input<FormFieldLabelMode>(this.defaults.labelMode);
+  public size = input<FormFieldSize>(this.defaults.size);
+
+  /**
+   * `'ghost'` draws no resting border and mutes the value, for toolbars and table cells. Hover and focus
+   * still show the frame. Only applies to text-field controls such as the select.
+   * @default 'default'
+   */
+  public variant = input<FormFieldVariant>(FORM_FIELD_VARIANTS.DEFAULT);
+
+  /**
+   * `'start'` puts the label outside the control frame, before it and vertically centred, and the control takes
+   * the remaining width. It replaces `labelMode` with a static label, and only applies to text-field controls.
+   * @default 'top'
+   */
+  public labelPosition = input<FormFieldLabelPosition>(FORM_FIELD_LABEL_POSITIONS.TOP);
+
+  /**
+   * Shows the busy spinner for work the form doesn't know about (saving, a lookup of your own). A
+   * pending async validator only sets `aria-busy`; it never shows the spinner.
+   */
+  public busy = input(false, { transform: booleanAttribute });
+
+  public errorContent = viewChild<ElementRef<HTMLElement>>('errorContent');
+  public warningContent = viewChild<ElementRef<HTMLElement>>('warningContent');
+  public hintContent = viewChild<ElementRef<HTMLElement>>('hintContent');
+  public counterContent = viewChild<ElementRef<HTMLElement>>('counterContent');
+  private controlFrame = viewChild<ElementRef<HTMLElement>>('controlFrame');
+  public prefixEl = viewChild<ElementRef<HTMLElement>>('prefixEl');
+  public errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
+  public warningAnimatable = viewChild<AnimatableDirective>('warningAnimatable');
+  public hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
+  private description = contentChild(DescriptionComponent, { descendants: false });
+
+  /** Whether the field is busy - a pending async validator, or `[busy]`. */
+  public isBusy = computed(() => this.busy() || this.formFieldDir.isPending());
+
+  protected showBusySpinner = signalDeferredLoading(this.busy);
+
+  private prefixDimensions = signalElementDimensions(this.prefixEl);
+
+  protected paintsElevatedFill = computed(
+    () => this.formFieldDir.usesTextFieldShell() && this.fill() === FORM_FIELD_FILLS.FILLED,
+  );
+
+  private fillElevationOffset = computed(() => {
+    if (this.paintsElevatedFill()) {
+      return 1;
+    }
+
+    return this.formFieldDir.usesTextFieldShell() && this.fill() === FORM_FIELD_FILLS.SUNKEN ? -1 : 0;
+  });
+
+  private resolvedSurface = computed(() => {
+    const themes = this.surfaceThemes;
+    const parentSurface = this.parentSurface();
+
+    if (!themes || !parentSurface) {
+      return null;
+    }
+
+    return resolveSurfaceByElevation(themes, parentSurface.type, parentSurface.elevation + this.fillElevationOffset());
+  });
+
+  public canAnimate = createCanAnimateSignal();
+
+  protected hasStartLabel = computed(
+    () => this.formFieldDir.usesTextFieldShell() && this.labelPosition() === FORM_FIELD_LABEL_POSITIONS.START,
+  );
+
+  protected hasFloatingTextLabel = computed(
+    () =>
+      this.formFieldDir.usesTextFieldShell() &&
+      !this.hasStartLabel() &&
+      this.labelMode() !== FORM_FIELD_LABEL_MODES.STATIC &&
+      this.labelMode() !== FORM_FIELD_LABEL_MODES.INLINE,
+  );
+
+  protected hasInlineLabel = computed(
+    () =>
+      this.formFieldDir.usesTextFieldShell() &&
+      !this.hasStartLabel() &&
+      this.labelMode() === FORM_FIELD_LABEL_MODES.INLINE,
+  );
+
+  protected prefixOffset = computed(() => {
+    const width = this.prefixDimensions()?.offset?.width;
+
+    if (!width) {
+      return null;
+    }
+
+    return `calc(${width}px + var(--_et-form-field-prefix-gap, var(--et-form-field-control-affix-gap)))`;
+  });
+
+  constructor() {
+    wireFormSupport(this.support, {
+      errorContent: this.errorContent,
+      warningContent: this.warningContent,
+      hintContent: this.hintContent,
+      counterContent: this.counterContent,
+      errorAnimatable: this.errorAnimatable,
+      warningAnimatable: this.warningAnimatable,
+      hintAnimatable: this.hintAnimatable,
+    });
+
+    // eslint-disable-next-line ethlete/prefer-linked-signal
+    effect(() => this.formFieldDir.descriptionId.set(this.description()?.id ?? null));
+
+    effect(() => {
+      if (this.formFieldDir.controlType() !== FORM_FIELD_CONTROL_TYPES.TEXTAREA) {
+        return;
+      }
+
+      untracked(() => this.styleManager.mount(FormFieldTextareaStylesComponent));
+    });
+
+    effect(() => {
+      if (!this.formFieldDir.registeredControlSuffix() && !this.showBusySpinner()) {
+        return;
+      }
+
+      untracked(() => this.styleManager.mount(FormFieldSuffixOverlapStylesComponent));
+    });
+
+    effect(() => {
+      const element = this.controlFrame()?.nativeElement ?? null;
+
+      untracked(() => this.formFieldDir.controlFrameElement.set(element));
+    });
+
+    effect(() => {
+      const surface = this.resolvedSurface();
+
+      untracked(() => {
+        if (surface) {
+          this.provideSurface.forceSurface(surface.name);
+
+          return;
+        }
+
+        this.provideSurface.clearForcedSurface();
+      });
+    });
+  }
+
+  protected handleFramePointerDown(event: MouseEvent) {
+    if (!this.formFieldDir.usesTextFieldShell()) {
+      return;
+    }
+
+    if (hitsInteractiveElement(event.target as HTMLElement, event.currentTarget as HTMLElement)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.formFieldDir.activate();
+  }
+}

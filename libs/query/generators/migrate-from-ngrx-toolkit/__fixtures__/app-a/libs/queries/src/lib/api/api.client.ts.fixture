@@ -1,0 +1,16 @@
+import { createDeleteQuery, createGetQuery, createPatchQuery, createPostQuery, createPutQuery, createQueryClient, createSecureDeleteQuery, createSecureGetQuery, createSecurePatchQuery, createSecurePostQuery, createSecurePutQuery } from '@ethlete/query';
+import { environment } from '@app-a/env';
+
+export const apiClientConfig = createQueryClient({ baseUrl: environment.apiBaseURL, name: 'api' });
+
+export const apiGet = createGetQuery(apiClientConfig);
+export const apiPost = createPostQuery(apiClientConfig);
+export const apiPut = createPutQuery(apiClientConfig);
+export const apiPatch = createPatchQuery(apiClientConfig);
+export const apiDelete = createDeleteQuery(apiClientConfig);
+
+export const apiGetSecure = createSecureGetQuery(apiClientConfig, apiClientAuthProvider);
+export const apiPostSecure = createSecurePostQuery(apiClientConfig, apiClientAuthProvider);
+export const apiPutSecure = createSecurePutQuery(apiClientConfig, apiClientAuthProvider);
+export const apiPatchSecure = createSecurePatchQuery(apiClientConfig, apiClientAuthProvider);
+export const apiDeleteSecure = createSecureDeleteQuery(apiClientConfig, apiClientAuthProvider);

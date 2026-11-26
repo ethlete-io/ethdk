@@ -1,0 +1,170 @@
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { GridItemComponent } from '../grid-item.component';
+import { createGridHarness, GridHarness } from '../testing/grid-driver';
+import { GridItemDirective } from './grid-item.directive';
+import { GridDirective } from './grid.directive';
+import { GridItemConfig } from './grid.types';
+
+@Component({
+  imports: [GridDirective, GridItemComponent],
+  template: `
+    <div [items]="items" etGrid>
+      <et-grid-item
+        [minColSpan]="minColSpan"
+        [maxColSpan]="maxColSpan"
+        [minRowSpan]="minRowSpan"
+        [maxRowSpan]="maxRowSpan"
+        itemId="item-1"
+      />
+    </div>
+  `,
+})
+class TestHostComponent {
+  items: GridItemConfig[] = [{ id: 'item-1', type: 'test', data: undefined, layout: {} }];
+  minColSpan = 2;
+  maxColSpan = 6;
+  minRowSpan = 1;
+  maxRowSpan = 3;
+}
+
+describe('GridItemDirective', () => {
+  let fixture: ComponentFixture<TestHostComponent>;
+  let grid: GridHarness;
+
+  const getItemDirective = () =>
+    fixture.debugElement.query(By.directive(GridItemDirective)).injector.get(GridItemDirective);
+
+  const getGridDirective = () => fixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
+
+  const measureGrid = (width?: number) => grid.measure(fixture, width);
+
+  beforeEach(() => {
+    grid = createGridHarness();
+
+    TestBed.configureTestingModule({ imports: [TestHostComponent] });
+    fixture = TestBed.createComponent(TestHostComponent);
+  });
+
+  it('has the itemId set to "item-1"', () => {
+    fixture.detectChanges();
+    expect(getItemDirective().itemId()).toBe('item-1');
+  });
+
+  it('falls back to the default span for a non-numeric span attribute', () => {
+    fixture.componentInstance.minColSpan = 'wide' as unknown as number;
+    fixture.componentInstance.minRowSpan = 'tall' as unknown as number;
+    fixture.detectChanges();
+    measureGrid();
+
+    const constraints = getGridDirective().getConstraints('item-1');
+
+    expect(constraints.minColSpan).toBe(1);
+    expect(constraints.minRowSpan).toBe(1);
+    expect(getGridDirective().layout()[0]?.position).toEqual({ col: 0, row: 0, colSpan: 1, rowSpan: 1 });
+  });
+
+  it('registers constraints with the parent grid on init', () => {
+    fixture.detectChanges();
+    measureGrid();
+    const constraints = getGridDirective().getConstraints('item-1');
+    expect(constraints.minColSpan).toBe(2);
+    expect(constraints.maxColSpan).toBe(6);
+    expect(constraints.minRowSpan).toBe(1);
+    expect(constraints.maxRowSpan).toBe(3);
+  });
+
+  it('updates registered constraints when inputs change', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    getGridDirective().registerConstraints('item-1', { minColSpan: 4, maxColSpan: 6, minRowSpan: 1, maxRowSpan: 3 });
+
+    expect(getGridDirective().getConstraints('item-1').minColSpan).toBe(4);
+  });
+
+  it('keeps its registration across a constraint input change and drops it on destroy', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    const unregister = vi.spyOn(getGridDirective(), 'unregisterConstraints');
+
+    fixture.componentInstance.minColSpan = 3;
+    fixture.debugElement.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+
+    expect(getGridDirective().getConstraints('item-1').minColSpan).toBe(3);
+    expect(unregister).not.toHaveBeenCalled();
+
+    fixture.destroy();
+
+    expect(unregister).toHaveBeenCalledExactlyOnceWith('item-1');
+  });
+
+  it('returns a valid currentPosition after the grid places the item', () => {
+    fixture.detectChanges();
+    const pos = getItemDirective().currentPosition();
+    expect(pos).not.toBeNull();
+    expect(pos?.colSpan).toBeGreaterThanOrEqual(2);
+  });
+
+  it('is not being dragged by default', () => {
+    fixture.detectChanges();
+    expect(getItemDirective().isBeingDragged()).toBe(false);
+  });
+
+  it('marks isBeingDragged true while drag is active', () => {
+    fixture.detectChanges();
+    getGridDirective().beginDrag('item-1');
+    expect(getItemDirective().isBeingDragged()).toBe(true);
+    getGridDirective().commitDrag();
+    expect(getItemDirective().isBeingDragged()).toBe(false);
+  });
+
+  it('derives its slot rect from the layout position and grid geometry', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    const item = getItemDirective();
+    const pos = item.currentPosition();
+    const geometry = getGridDirective().geometry();
+    const slot = item.slotRect();
+
+    expect(slot).not.toBeNull();
+    expect(slot?.x).toBeCloseTo(geometry.originX + pos!.col * geometry.strideX);
+    expect(slot?.y).toBeCloseTo(geometry.originY + pos!.row * geometry.strideY);
+    expect(item.renderedRect()).toEqual(slot);
+  });
+
+  it('follows direct control during a gesture and returns to its slot afterwards', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    const item = getItemDirective();
+    const slot = item.slotRect();
+
+    item.startDirectControl();
+    expect(item.renderMode()).toBe('direct');
+    expect(item.renderedRect()).toEqual(slot);
+
+    item.updateDirectRect({ x: 123, y: 45, width: 200, height: 100 });
+    expect(item.renderedRect()).toEqual({ x: 123, y: 45, width: 200, height: 100 });
+    expect(item.slotRect()).toEqual(slot);
+
+    item.stopDirectControl();
+    expect(item.renderMode()).toBe('layout');
+    expect(item.renderedRect()).toEqual(item.slotRect());
+  });
+
+  it('ignores updateDirectRect while not direct-controlled', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    const item = getItemDirective();
+    const slot = item.slotRect();
+
+    item.updateDirectRect({ x: 999, y: 999, width: 10, height: 10 });
+    expect(item.renderedRect()).toEqual(slot);
+  });
+});

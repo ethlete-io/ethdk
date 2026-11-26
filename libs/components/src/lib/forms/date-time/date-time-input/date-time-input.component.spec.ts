@@ -1,0 +1,153 @@
+import { Component, signal } from '@angular/core';
+import { format } from 'date-fns';
+import '../../../../test-helpers';
+import { DatePickerDriver, mountDatePicker } from '../../testing/date-picker-driver';
+import { DateTimeInputComponent } from './date-time-input.component';
+import { DateTimeInputDirective } from './headless';
+
+const DATE_TIME_WIRE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssxxx";
+
+@Component({
+  template: `
+    <et-date-time-input
+      [(value)]="value"
+      [startAt]="startAt"
+      aria-label="Appointment"
+      displayFormat="MM/dd/yyyy, HH:mm"
+    />
+  `,
+  imports: [DateTimeInputComponent],
+})
+class DateTimeInputHost {
+  value = signal<string | null>(null);
+  startAt = new Date(2026, 6, 1);
+}
+
+describe('DateTimeInputComponent - picker panes', () => {
+  let driver: DatePickerDriver<DateTimeInputHost, DateTimeInputDirective>;
+
+  const activePane = () => driver.paneEl('.et-date-time-input-panel-panes')?.dataset['activePane'] ?? null;
+  const clickTab = (label: string) =>
+    driver.click(driver.paneEls('et-segmented-button').find((button) => button.textContent?.trim() === label)!);
+
+  beforeEach(() => {
+    driver = mountDatePicker(DateTimeInputHost, DateTimeInputDirective);
+  });
+
+  afterEach(async () => {
+    driver.closeAndRemovePanes();
+    await driver.settle();
+  });
+
+  it('names the date/time tab switch, so its form field raises no ET2201', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await driver.open();
+
+    const loggedErrors = consoleError.mock.calls.map((call) => String(call[0]));
+
+    consoleError.mockRestore();
+
+    expect(driver.paneEl('.et-date-time-input-panel-tabs [role="radiogroup"]')?.getAttribute('aria-label')).toBe(
+      'Picker view',
+    );
+    expect(loggedErrors.filter((message) => message.includes('ET2201'))).toEqual([]);
+  });
+
+  it('opens on the date pane and carries the first day pick on to the time pane', async () => {
+    await driver.open();
+
+    expect(activePane()).toBe('date');
+
+    driver.clickDayCell('16');
+
+    expect(activePane()).toBe('time');
+  });
+
+  it('advances once only, so going back to correct the day is not interrupted', async () => {
+    await driver.open();
+
+    driver.clickDayCell('16');
+
+    expect(activePane()).toBe('time');
+
+    clickTab('Date');
+
+    expect(activePane()).toBe('date');
+
+    driver.clickDayCell('17');
+
+    expect(activePane()).toBe('date');
+  });
+
+  it('starts a fresh open back on the date pane, ready to advance again', async () => {
+    await driver.open();
+    driver.clickDayCell('16');
+
+    expect(activePane()).toBe('time');
+
+    driver.closeAndRemovePanes();
+    await driver.settle();
+    await driver.open();
+
+    expect(activePane()).toBe('date');
+
+    driver.clickDayCell('17');
+
+    expect(activePane()).toBe('time');
+  });
+});
+
+@Component({
+  template: `
+    <et-date-time-input
+      [(value)]="value"
+      [startAt]="startAt"
+      [minDate]="minDate"
+      aria-label="Appointment"
+      displayFormat="MM/dd/yyyy, HH:mm"
+      timeZone="Asia/Tokyo"
+    />
+  `,
+  imports: [DateTimeInputComponent],
+})
+class ZonedBoundsDateTimeInputHost {
+  value = signal<string | null>(null);
+  startAt = new Date(2026, 7, 1);
+  /** 22:00 on 18 Aug in Berlin, already 19 Aug in Tokyo. */
+  minDate = new Date('2026-08-18T20:00:00Z');
+}
+
+describe('DateTimeInputComponent - zoned bounds', () => {
+  let driver: DatePickerDriver<ZonedBoundsDateTimeInputHost, DateTimeInputDirective>;
+
+  beforeEach(() => {
+    driver = mountDatePicker(ZonedBoundsDateTimeInputHost, DateTimeInputDirective);
+  });
+
+  afterEach(async () => {
+    driver.closeAndRemovePanes();
+    await driver.settle();
+  });
+
+  it('reads minDate on the calendar of the zone', async () => {
+    await driver.open();
+
+    expect(driver.dayCell('18')?.getAttribute('aria-disabled')).toBe('true');
+    expect(driver.dayCell('19')?.getAttribute('aria-disabled')).toBeNull();
+  });
+});
+
+describe('DateTimeInputComponent - clear button', () => {
+  it('shows on an unfocused field that holds a value', async () => {
+    const driver = mountDatePicker(DateTimeInputHost, DateTimeInputDirective);
+
+    driver.host.value.set(format(new Date(2026, 6, 16, 9, 30), DATE_TIME_WIRE_FORMAT));
+    driver.detectChanges();
+
+    expect(driver.query('.et-input-clear')).not.toBeNull();
+
+    driver.closeAndRemovePanes();
+    await driver.settle();
+  });
+});

@@ -1,0 +1,15 @@
+{
+  "part": "components/button",
+  "state": "solid",
+  "size": "fitted",
+  "text": "Testing comments this is too egdy",
+  "point": {
+    "x": 28,
+    "y": 29
+  },
+  "sketch": {
+    "target": "components/button",
+    "variant": "b"
+  },
+  "createdAt": "2026-10-27T10:16:41.867Z"
+}

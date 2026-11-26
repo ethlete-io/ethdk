@@ -1,0 +1,247 @@
+# WebSockets
+
+A room-based realtime client built on **socket.io**. It is independent of the query system - no client or repository involved - but pairs naturally with the [`withResponseUpdate`](/query/features#withresponseupdate) feature to push socket messages into already-loaded queries.
+
+socket.io itself is not a dependency of `@ethlete/query` - install it in the apps that open a socket:
+
+```sh
+yarn add socket.io-client
+```
+
+Like the [query client](/query/queries#the-query-client), `createWebSocketClient` returns a root-provider definition (`{ provide, inject, token }`). You pass in socket.io's own `io` factory:
+
+```ts
+import { toInjectFn } from '@ethlete/core';
+import { createWebSocketClient } from '@ethlete/query';
+import { io } from 'socket.io-client';
+
+const MATCH_SOCKET = createWebSocketClient({
+  name: 'match-events',
+  url: 'https://ws.example.com',
+  io,
+});
+
+export const injectMatchSocket = toInjectFn(MATCH_SOCKET);
+```
+
+::: tip Why `io` is passed in
+`socket.io-client` ships no `sideEffects: false`, so a single static import of it inside `@ethlete/query` could never be tree-shaken - every consumer would pay ~13 kB gz, in an app that never opens a socket too. Handing `io` to the one call site that needs it keeps the dependency where it belongs.
+:::
+
+```ts
+@Component({/* … */})
+export class MatchComponent {
+  matchId = input.required<string>();
+
+  private socket = injectMatchSocket();
+
+  // reactive room: when matchId changes, the old room is left and the new one joined
+  matchRoom = this.socket.joinRoom(() => `match:${this.matchId()}`);
+
+  latestEvent = computed(() => this.matchRoom()?.latestMessage() ?? null);
+}
+```
+
+## Configuration
+
+| Option            | Default            | Description                                                                      |
+| ----------------- | ------------------ | -------------------------------------------------------------------------------- |
+| `name`            | - (required)       | Unique client name, used in the injection token.                                 |
+| `url`             | - (required)       | The socket.io server URL.                                                        |
+| `io`              | - (required)       | The `io` factory from `socket.io-client`.                                        |
+| `transports`      | socket.io defaults | Ordered transport list: `'polling' \| 'websocket' \| 'webtransport'`.            |
+| `withCredentials` | `true`             | Whether the polling transport sends cookies to a cross-origin server.            |
+| `auth`            | -                  | Handshake payload, or a function returning it - read again on every (re)connect. |
+
+The socket disconnects automatically when the providing scope is destroyed.
+
+### Authenticating the handshake
+
+`auth` becomes socket.io's handshake `auth` payload, which the server reads as
+`socket.handshake.auth`. Pass a function when the value changes over time - it is called on every
+connect and reconnect. It runs outside an injection context, so it cannot call `injectAuthProvider()`.
+
+For a [bearer auth provider](/query/auth), pass `authProvider` instead of reading the token yourself:
+
+```ts
+const MATCH_SOCKET = createWebSocketClient({
+  name: 'match-events',
+  url: 'https://ws.example.com',
+  io,
+  authProvider: myAuthProviderRef, // the result of createBearerAuthProvider()
+});
+```
+
+The handshake carries `{ token: accessToken() }`, and the socket follows the session:
+
+- It does not connect while `sessionStatus()` is `'unknown'` or `'restoring'`, so a page load never opens an anonymous socket just before the restore finishes.
+- When a session starts it reconnects, so the handshake carries the new token. A session starts on a login, a [`setTokens()`](/query/auth#external-tokens) seed, and a token pair for a different user arriving from another tab - whenever the provider's [`sessionId()`](/query/auth#switching-users) changes.
+- On logout it completes the joined rooms (`messages$` completes) and every `joinRoom()` signal reads `null`. The component keeps its hold: the room is joined again after the next login, and the signal then holds a fresh room object.
+- After a logout it reconnects as anonymous, like a fresh anonymous page load. Rooms joined while logged out are joined on that anonymous connection.
+- Emits still buffered from the ended session - a `send()` or a room join made while the connection was down - are dropped, never delivered on the next user's connection.
+- A token rotation inside a session does **not** reconnect. The next natural reconnect reads the fresh token, so the server must accept a socket whose handshake token has since expired.
+
+### Public sockets
+
+A client created without `authProvider` ignores the auth session entirely. A login, a logout, a token
+rotation or a user switch never disconnects it, never re-handshakes and never touches its rooms or the
+messages socket.io buffers. That is the right setup for a public socket.io server (live scores, a
+lobby) that needs no token. An app can run both: one client for the public server, one with
+`authProvider` for the private one.
+
+Setting both `auth` and `authProvider` is a dev-mode error (`1002`); `authProvider` wins.
+
+### Typing the messages
+
+`createWebSocketClient` is generic over the whole message envelope, constrained to `SocketMessageView`
+(`{ room: string; event: string; data: TMessageData }`). Parameterizing it types `latestMessage()`
+everywhere downstream:
+
+```ts
+type MatchMessage = SocketMessageView<{ homeScore: number; awayScore: number }>;
+
+const MATCH_SOCKET = createWebSocketClient<MatchMessage>({ name: 'match-events', url, io });
+```
+
+Pass a union of `SocketMessageView`s when the server sends several shapes and discriminate on
+`event` at the call site. Without a type argument every message is a `SocketMessageView` with
+`data: unknown`.
+
+## Rooms
+
+`joinRoom(room)` accepts a static room name or a reactive function and returns a `Signal<WebSocketRoom | null>`:
+
+- Call it in an **injection context** - a field initializer, a constructor, or inside `runInInjectionContext()`. The room is released with that context, so a call from a click handler or a plain method throws `NG0203`.
+- A **function** is evaluated in a reactive context - returning a new string leaves the previous room and joins the new one; returning `null` joins nothing.
+- Rooms are **shared**: joining the same room twice returns the same underlying room, and the room is left automatically when the consuming context is destroyed. Joins are counted, so the room is only left once the last of its joiners is gone - one component unmounting never stops the messages for another.
+- A room exposes `latestMessage()` - a signal holding the most recent message for that room (or `null`). Messages that arrive in the same tick collapse into the last one.
+- A room also exposes `messages$` - an Observable of **every** message for that room from the moment you subscribe. It completes when the room is left, or when the client is destroyed. Use it when no message may be lost, e.g. an event log:
+
+```ts
+const room = this.socket.joinRoom('match:1');
+
+room()?.messages$.subscribe((message) => this.log.push(message));
+```
+
+A static room name is joined at once, so `room()` already holds the room on the next line. A reactive
+room is joined by an effect, so `room()` is still `null` right after the call. Follow the signal instead:
+
+```ts
+matchRoom = this.socket.joinRoom(() => `match:${this.matchId()}`);
+
+events$ = toObservable(this.matchRoom).pipe(switchMap((room) => room?.messages$ ?? EMPTY));
+```
+
+## Sending messages
+
+`send({ event, data })` emits a message to the server. While the connection is down socket.io buffers it and delivers it on the next connect.
+
+```ts
+this.socket.send({ event: 'cheer', data: { team: 'home' } });
+```
+
+## Connection state & reconnects
+
+`isConnected()` reflects the socket connection. After a reconnect, the client automatically **re-joins every known room**, so consumers keep receiving messages without any handling on your side.
+
+socket.io stops reconnecting on its own when the server disconnects the socket (`io server disconnect`)
+or a server middleware rejects the handshake. The client takes over there: it calls `connect()` again
+after 1 s, doubling the delay on each further attempt up to 30 s, and every attempt reads `auth` afresh -
+so a rotated token reaches the next handshake. Any other drop is left to socket.io's own reconnection.
+
+In a server render (`isPlatformServer`) the client opens no connection: `isConnected()` stays `false`,
+`joinRoom()` returns a signal holding `null`, and `send()` does nothing.
+
+## Server protocol
+
+The client speaks a small convention on top of socket.io:
+
+- joining/leaving emits `'join-room'` / `'leave-room'` events with the room name,
+- the server broadcasts JSON strings shaped like `{ room: string; event: string; data: TMessageData }` - the `room` field routes the message to the right `latestMessage` signal.
+
+A frame that is not a JSON string, or that carries no `room` string, is malformed. Malformed messages are logged and throw in dev mode only; in production they are silently dropped.
+
+## Live-updating query responses
+
+The canonical pairing - fetch once via HTTP, then patch the response from socket messages:
+
+```ts
+matchRoom = this.socket.joinRoom(() => `match:${this.matchId()}`);
+
+matchQuery = getMatch(
+  withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
+  withResponseUpdate({
+    updater: ({ currentResponse }) => {
+      const message = this.matchRoom()?.latestMessage();
+      if (!message || !currentResponse) return null;
+
+      return { ...currentResponse, ...message.data };
+    },
+  }),
+);
+```
+
+The demo below shows exactly this pattern (with the socket simulated, since Storybook has no socket server):
+
+@example query-features/live-response-update 440px
+
+## Testing it
+
+Because `io` is an option rather than a hard import, a spec can hand the client a scripted socket -
+`@ethlete/query/testing` ships one. Nothing connects on its own: the handshake happens when the test
+says so, which is what makes "joined while disconnected, re-joined on connect" assertable.
+
+```ts
+import { createWebSocketTestDouble } from '@ethlete/query/testing';
+
+const socket = createWebSocketTestDouble();
+const MATCH_SOCKET = createWebSocketClient({ name: 'match', url: 'ws://localhost', io: socket.io });
+
+TestBed.configureTestingModule({ providers: [MATCH_SOCKET.provide()] });
+const client = TestBed.runInInjectionContext(() => MATCH_SOCKET.inject());
+
+const room = TestBed.runInInjectionContext(() => client.joinRoom('lobby'));
+
+expect(socket.sent()).toEqual([{ event: 'join-room', data: 'lobby' }]);
+
+socket.serverConnect(); // → isConnected() is true; a later reconnect re-joins every known room
+socket.serverSend({ room: 'lobby', event: 'score', data: { home: 1 } });
+
+expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'score', data: { home: 1 } });
+```
+
+`serverSendRaw()` delivers an unparsable frame, for the malformed-message path.
+`serverDisconnect({ reason: 'io server disconnect' })` kicks the socket and `serverRejectHandshake()`
+fails the handshake like a middleware would; `state().connectCalls` counts the client's retries.
+`serverPingExpire()` makes the socket buffer emits while it still reports itself connected, and
+`serverConnect({ recovered: true })` reconnects with connection state recovery, so no room is
+re-joined. `delivered()` lists what reached the server, `sent()` everything the client emitted,
+`handshakes()` the `auth` payload of each connect.
+
+## Debugging it
+
+With [`provideQueryDevtools()`](/query-devtools/) installed, the panel's
+**Sockets** tab lists every client with its connection state, its joined rooms and a
+rolling log of **both directions** - the room joins and leaves this client sent as well
+as the messages that came back. That is what tells a room that was never joined apart
+from a room the server is simply quiet on.
+
+Its **Emit** box sends a message as the app would, so a server that only answers a client
+that asked can be provoked without adding a temporary button to the UI.
+
+Without the provider none of it is recorded: the client checks once whether devtools are
+installed, and every capture call is a no-op after that.
+
+## Types
+
+| Type                                 | What it is                                                                                                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SocketMessageView<TData>`           | The message envelope - `{ room, event, data }` - and the constraint on the client's type argument.                                                                                    |
+| `WebSocketClient<TMessageData>`      | The injected client (`joinRoom`, `isConnected`, `send`). `WebSocketClientResult` is the provider definition `createWebSocketClient` returns, and `AnyWebSocketClient` an alias of it. |
+| `WebSocketRoom<TMessageData>`        | What the `joinRoom` signal holds - `latestMessage()` and `messages$`.                                                                                                                 |
+| `CreateWebSocketClientConfigOptions` | The options bag above; `CreateWebSocketClientTransport` is the `'polling' \| 'websocket' \| 'webtransport'` union of `transports`.                                                    |
+| `WebSocketClientIo`                  | The `io` factory as this client calls it - `(url, options: WebSocketClientIoOptions) => WebSocketClientSocket`. socket.io's own `io` satisfies it, and so does a test double.         |
+
+## Error codes
+
+The WebSocket client throws dev-mode `RuntimeError`s with codes **1000–1999**: leaving a room that was never joined (`1000`) and malformed incoming messages (`1001`), and setting both `auth` and `authProvider` (`1002`). All degrade silently in production.

@@ -1,0 +1,328 @@
+[canvas-e2e] studio build starting
+[canvas-e2e] 133 cases on 8 worker(s)
+Running 133 tests using 8 workers
+
+> nx run ethlete-studio:build:production --outputPath=/tmp/studio-canvas-e2e-build-sCKxSW
+
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mmain-7JB6PECD.js[37m   [2m | [22m[2mmain[22m                    [2m | [22m[36m414.28 kB[37m[2m | [22m              [36m106.10 kB[37m
+[32mstyles-TEFMAEWO.css[37m[2m | [22m[2mstyles[22m                  [2m | [22m [36m71.57 kB[37m[2m | [22m               [36m10.98 kB[37m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m           [2m | [22m[1m485.85 kB[22m[2m | [22m              [1m117.08 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-XNYIZ8CG.js[37m  [2m | [22m[2mstudio-view-component[22m   [2m | [22m[36m714.91 kB[37m[2m | [22m              [36m157.68 kB[37m
+[32mchunk-D4fjlSm6.js[37m  [2m | [22m[2minventory-view-component[22m[2m | [22m [36m11.60 kB[37m[2m | [22m                [36m3.77 kB[37m
+
+Application bundle generation complete. [17.180 seconds] - 2026-11-09T14:53:33.120Z
+[39m
+[37mOutput location: /tmp/studio-canvas-e2e-build-sCKxSW
+[39m
+
+
+
+ NX   Successfully ran target build for project ethlete-studio
+
+
+  Run duration:      17.9s
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     17.8s (1 task)
+  Recoverable time:  <1ms
+[canvas-e2e] studio build done at 19.3s
+[canvas-e2e] worker 3 ready: open 1.0s, fixtures 17.7s, build 0.6s, warmUp 5.0s
+[canvas-e2e] worker 0 ready: open 1.1s, fixtures 17.6s, build 0.7s, warmUp 5.0s
+[canvas-e2e] worker 7 ready: open 1.1s, fixtures 17.3s, build 0.9s, warmUp 5.0s
+[canvas-e2e] worker 1 ready: open 1.1s, fixtures 17.9s, build 0.4s, warmUp 5.1s
+[canvas-e2e] worker 4 ready: open 1.1s, fixtures 17.7s, build 0.6s, warmUp 5.1s
+[canvas-e2e] worker 6 ready: open 1.0s, fixtures 17.8s, build 0.4s, warmUp 5.1s
+[canvas-e2e] worker 2 ready: open 1.1s, fixtures 17.4s, build 0.8s, warmUp 5.1s
+[canvas-e2e] worker 5 ready: open 1.2s, fixtures 17.7s, build 0.5s, warmUp 5.3s
+  ✓  1 [Wide] › the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden (12.9s)
+  ✓  2 [Sketches] › Fit is stable, + steps from it, 25 % report Fit 33 % (14.2s)
+  ✓  3 [Wide] › Fit shows every column of a wide sketch, heads at the top 4 columns inside, head gap 0 px (6.3s)
+  ✓  4 [Large] › a sketch keeps its frame count and pictures through a sketch edit 30 frames through the edit, 3 pictures kept (19.9s)
+  ✓  5 [Chip] › no state is marked before the compare answers 1 kept marks before the compare, 1 marks match it (20.6s)
+  ✓  6 [Merge] › a sketch merged while its view is open opens the part view of the target frames of components/title-bar: 6, frames of the gone sketch: 0, not-found note: false, blank: false, error overlays: 0 (22.8s)
+  ✓  7 [Sketches] › first load creates one iframe per frame and aborts no frame request settled, iframes 2, created for them 2 (must equal), created in all 2, aborted requests of shown frames 0 of 0 (must be 0), 2 visible got src first true, visible loaded at 2739 ms, all at 2739 ms after reload (9.3s)
+  ✓  8 [System] › page switch time is logged to the design timings system->icons first: mount 35, first 2862, all 2862 ms (1 frames; 2 shots drawn +2972/925 drawn +3039/986) | icons->logo first: mount 78, first 3099, all 3099 ms (1 frames; 2 shots drawn +3177/1076 drawn +3178/1085) | logo->icons seen: mount 101, first 101, all 101 ms (1 frames; 0 shots) | icons->logo seen: mount 77, first 77, all 77 ms (1 frames; 0 shots) | logo->icons seen: mount 36, first 36, all 36 ms (1 frames; 0 shots) | icons->shell-main first: mount 76, first 716, all 2152 ms (8 frames; 15 shots drawn +1210/854 drawn +1524/1419 drawn +1524/1427 drawn +1525/1431 drawn +1536/1446 drawn +1775/559 drawn +2121/605 drawn +2139/615 drawn +2208/684 drawn +2453/679 drawn +2770/1231 drawn +2810/692 drawn +2868/661 drawn +2915/772 drawn +2985/529) | shell-main->icons seen: mount 42, first 42, all 42 ms (1 frames; 0 shots) | icons->shell-main seen: mount 42, first 42, all 42 ms (8 frames; 0 shots) (23.6s)
+  ✘  9 [Large] › a sketch scroll never empties a cell that had a picture empty/visible cells per step at +30 +300 ms: down1 0/8 0/8, down2 0/8 0/8, down3 0/6 0/6, down4 0/6 0/6, down5 0/8 0/8, down6 0/8 1/8, down7 0/8 0/8, down8 0/8 0/8, down9 0/8 0/8, down10 0/8 0/8, down11 0/8 0/8, down12 0/4 0/4, up1 0/8 0/8, up2 0/8 0/8, up3 0/8 0/8, up4 0/8 0/8, up5 0/8 0/8, up6 0/8 0/8, up7 0/8 0/8, up8 0/6 0/6, up9 0/6 0/6, up10 0/8 0/8, up11 0/8 0/8, up12 0/6 0/6; frames gone before their probe: 1; first: down6+300 a hidden (iframe: no frame) (24.0s)
+  ✓  10 [Sketches] › pointer click on an empty area keeps the ring off focused=true click=[] shift=[] arrow=[] (5.8s)
+  ✓  11 [Sketches] › the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden (12.8s)
+  ✓  12 [Large] › a sketch cell edited on disk while scrolled away shows its new picture on return current project-picker: new picture URL, ETag changed (13.3s)
+  ✓  13 [Large] › first load creates one iframe per frame and aborts no frame request settled, iframes 2, created for them 2 (must equal), created in all 2, aborted requests of shown frames 0 of 0 (must be 0), 2 visible got src first true, visible loaded at 3529 ms, all at 3529 ms after reload (10.6s)
+  ✓  14 [Large] › a listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame frames 2, iframe re-navigations in 6 s 0 (must be 0), frames with 150px placeholder or no height 1 s after the last refresh 0 (must be 0) (10.4s)
+  ✓  15 [Large] › Fit is stable, + steps from it, 25 % report Fit 33 % (10.0s)
+  ✓  16 [Chip] › the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden (11.7s)
+  ✓  17 [Large] › a variant equal to Aktuell keeps its iframes across a quick and a full listing folded true; collapsed: listings {"quick":2,"full":1}, iframe/row adds 0 removes 0 (must be 0); open: listings {"quick":2,"full":1}, adds 0 removes 0 (must be 0), iframes 1 kept true (41.0s)
+  ✓  18 [Sketches] › no text leaves its box at min zoom, Fit, 100 % and max zoom 4 zooms (8.0s)
+  ✓  19 [System] › a part switch asks for its open points once 1 (foundations/agent-logos) / 1 (foundations/icons) (7.4s)
+  ✓  20 [Flow] › no text leaves its box at min zoom, Fit, 100 % and max zoom 4 zooms (6.9s)
+  ✓  21 [Chip] › no text leaves its box at min zoom, Fit, 100 % and max zoom 4 zooms (7.9s)
+  ✓  22 [Sketches] › pan beyond every edge of the content all four edges (7.5s)
+  ✓  23 [Chip] › first load creates one iframe per frame and aborts no frame request settled, iframes 2, created for them 2 (must equal), created in all 2, aborted requests of shown frames 0 of 0 (must be 0), 2 visible got src first true, visible loaded at 1545 ms, all at 1545 ms after reload (21.4s)
+  ✓  24 [Inbox] › pan beyond every edge of the content all four edges (6.3s)
+  ✓  25 [System] › no text leaves its box at min zoom, Fit, 100 % and max zoom 4 zooms (7.3s)
+  ✓  26 [Large] › no text leaves its box at min zoom, Fit, 100 % and max zoom 4 zooms (8.3s)
+  ✓  27 [Discard] › a sketch discarded while its view is open opens the part view of the target frames of components/tree-row: 1, frames of the gone sketch: 0, not-found note: false, blank: false, error overlays: 0 (6.5s)
+  ✓  28 [Inbox] › no text leaves its box at min zoom, Fit, 100 % and max zoom 4 zooms (7.1s)
+  ✓  29 [Edited] › a part edited on disk while away shows its new picture on return 12/12 pictures changed after the edit (6.2s)
+  ✓  30 [Chip] › Fit is stable, + steps from it, 25 % report Fit 100 % (8.5s)
+  ✓  31 [Large] › the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden (18.7s)
+  ✓  32 [Chip] › ctrl-wheel keeps the world point under the pointer drift 0.2 / 0.2 / 0.2 px, width 206 -> 160 (6.2s)
+  ✓  33 [Large] › pan beyond every edge of the content all four edges (5.8s)
+  ✓  34 [System] › pan beyond every edge of the content all four edges (5.8s)
+  ✓  35 [Sketches] › ctrl-wheel keeps the world point under the pointer drift 0.2 / 0.2 / 0.2 px, width 482 -> 375 (6.0s)
+  ✓  36 [Chip] › pan beyond every edge of the content all four edges (6.4s)
+  ✓  37 [Flow] › pan beyond every edge of the content all four edges (5.4s)
+  ✓  38 [Large] › hiding the panel at a panned and zoomed camera keeps the frames on screen camera -276.9,-198.0@1.000 -> -16.9,-198.0@1.000 frame 146.26556396484375,6.047027587890625 w 614.265625 -> 146.26556396484375,6.047027587890625 w 614.265625, canvas left 344 -> 84 (4.6s)
+  ✓  39 [Large] › a sketch first paints the frame count it settles on open, B345: the first paint draws every state until the quick listing folds them: 30 frames at the first paint, 2 once settled (4.3s)
+  ✓  40 [System] › ctrl-wheel keeps the world point under the pointer drift 0.0 / 0.0 / 0.0 px, width 1440 -> 1121 (5.1s)
+  ✓  41 [Large] › window blur keeps the pointer mark clicked=true kept=true focused=true rings=[] (4.3s)
+  ✓  42 [Chip] › hiding the panel at a panned and zoomed camera keeps the frames on screen camera -297.1,-210.4@1.000 -> -37.1,-210.4@1.000 frame 448.6626281738281,-63.87986755371094 w 264.4999694824219 -> 448.6626281738281,-63.87986755371094 w 264.4999694824219, canvas left 344 -> 84 (4.5s)
+  ✓  43 [Inbox] › ctrl-wheel keeps the world point under the pointer drift 0.0 / 0.0 / 0.0 px, width 1440 -> 1121 (5.2s)
+  ✓  44 [Flow] › ctrl-wheel keeps the world point under the pointer drift 0.3 / 0.2 / 0.2 px, width 259 -> 202 (5.4s)
+  ✓  45 [Sketches] › pointer click on a frame keeps the ring off focused=true click=[] shift=[] arrow=[] (4.9s)
+  ✓  46 [Large] › ctrl-wheel keeps the world point under the pointer drift 0.3 / 0.2 / 0.2 px, width 478 -> 373 (6.3s)
+  ✓  47 [Sketches] › hiding the panel keeps the frames camera 0.0,0.0@1.000 -> 260.0,0.0@1.000 frame 416.015625,204 -> 416.015625,204, canvas left 344 -> 84, head-frame 8 -> 8 (13.2s)
+  ✓  48 [System] › open points chip pressed matches its popup 1/1 0/0 1/1 0/0 (5.1s)
+  ✓  49 [Sketches] › wheel and ctrl-wheel over a frame centre move the camera iframe=true top 204 -> 324 width 482 -> 619 (5.1s)
+  ✓  50 [Sketches] › hiding the panel at a panned and zoomed camera keeps the frames on screen camera -279.0,-197.9@1.000 -> -19.0,-197.9@1.000 frame 137.04476928710938,6.06494140625 w 618.875 -> 137.04476928710938,6.06494140625 w 618.875, canvas left 344 -> 84 (6.4s)
+  ✓  51 [Large] › pointer click on a frame keeps the ring off focused=true click=[] shift=[] arrow=[] (5.1s)
+  ✓  52 [Sketches] › Shift+1 fits all, window-wide camera 0.0,-900.0@1.000 -> 0.0,0.0@1.000 allInView=true (5.5s)
+  ✓  53 [Chip] › Space+drag pans camera 0.0,0.0@1.000 -> 70.0,40.0@1.000 (4.6s)
+  ✓  54 [Chip] › pointer click on an empty area keeps the ring off focused=true click=[] shift=[] arrow=[] (5.0s)
+  ✓  55 [Chip] › hiding the panel keeps the frames camera 0.0,0.0@1.000 -> 260.0,0.0@1.000 frame 808,150.3125 -> 808,150.3125, canvas left 344 -> 84, head-frame -452 -> -452 (4.2s)
+  ✓  56 [Chip] › Shift+1 fits all, window-wide camera 0.0,-900.0@1.000 -> 0.0,0.0@1.000 allInView=true (4.4s)
+  ✓  57 [System] › a part shown before paints every stored picture in the first frame agent-logos <- colors: 2/2 stored pictures painted in rAF 1 (+49 ms), 2 seen (7.2s)
+  ✓  58 [Sketches] › Space+drag pans camera 0.0,0.0@1.000 -> 70.0,40.0@1.000 (5.4s)
+  ✓  59 [Chip] › pointer click on a frame keeps the ring off focused=true click=[] shift=[] arrow=[] (5.0s)
+  ✓  60 [Inbox] › pointer click on a frame keeps the ring off focused=true click=[] shift=[] arrow=[] (4.5s)
+  ✓  61 [Sketches] › hover alone draws no frame border unchanged (4.2s)
+  ✓  62 [Chip] › arrow key pans camera 0.0,0.0@1.000 -> -80.0,0.0@1.000 (4.5s)
+  ✓  63 [System] › pointer click on a frame keeps the ring off focused=true click=[] shift=[] arrow=[] (4.4s)
+  ✓  64 [Sketches] › left drag on an empty area pans camera 0.0,0.0@1.000 -> 90.0,60.0@1.000 (5.0s)
+  ✓  65 [Chip] › wheel and ctrl-wheel over a frame centre move the camera iframe=true top 142 -> 262 width 206 -> 265 (4.1s)
+  ✓  66 [Large] › pointer click on an empty area keeps the ring off focused=true click=[] shift=[] arrow=[] (5.0s)
+  ✓  67 [System] › hiding the panel at a panned and zoomed camera keeps the frames on screen camera 15.1,-181.7@1.284 -> 15.1,-181.7@1.284 frame 79.05187225341797,-181.74050903320312 w 1848.99658203125 -> 79.05187225341797,-181.74050903320312 w 1848.99658203125, canvas left 64 -> 64 (4.5s)
+  ✓  68 [Flow] › hiding the panel at a panned and zoomed camera keeps the frames on screen camera -10.6,-161.2@1.284 -> -10.6,-161.2@1.284 frame 53.371360778808594,-161.19610595703125 w 332.8033447265625 -> 53.371360778808594,-161.19610595703125 w 332.8033447265625, canvas left 64 -> 64 (4.6s)
+  ✓  69 [System] › pointer click on an empty area keeps the ring off focused=true click=[] shift=[] arrow=[] (4.3s)
+  ✓  70 [Chip] › window blur keeps the pointer mark clicked=true kept=true focused=true rings=[] (3.5s)
+  ✓  71 [Inbox] › pointer click on an empty area keeps the ring off focused=true click=[] shift=[] arrow=[] (3.9s)
+  ✓  72 [Large] › wheel and ctrl-wheel over a frame centre move the camera iframe=true top 204 -> 324 width 478 -> 614 (3.4s)
+  ✓  73 [Sketches] › wheel over an iframe pans when iframes take pointer events, as in WKWebView camera moved 120px with the pointer over an iframe (3.0s)
+  ✓  74 [Sketches] › a frame renders real content, not an error page 2 frames (3.3s)
+  ✓  75 [Chip] › hover alone draws no frame border unchanged (3.5s)
+  ✓  76 [Large] › Space+drag pans camera 0.0,0.0@1.000 -> 70.0,40.0@1.000 (3.5s)
+  ✓  77 [Sketches] › middle drag pans camera 0.0,0.0@1.000 -> -50.0,30.0@1.000 (3.3s)
+  ✓  78 [Chip] › Tab focus shows the ring focused=true rings=[ethlete-canvas-viewport 2px rgb(37, 174, 167)] (3.8s)
+  ✓  79 [Sketches] › arrow key pans camera 0.0,0.0@1.000 -> -80.0,0.0@1.000 (3.7s)
+  ✓  80 [Sketches] › window blur keeps the pointer mark clicked=true kept=true focused=true rings=[] (4.2s)
+  ✓  81 [System] › wheel and ctrl-wheel over a frame centre move the camera iframe=true top 48 -> -72 width 1440 -> 1849 (3.4s)
+  ✓  82 [System] › Shift+1 fits all, window-wide camera 300.0,48.0@1.000 -> 796.9,64.0@0.029 allInView=true (3.4s)
+  ✓  83 [Large] › Shift+1 fits all, window-wide camera 0.0,-900.0@1.000 -> 0.0,0.0@1.000 allInView=true (3.8s)
+  ✓  84 [Large] › hiding the panel keeps the frames camera 0.0,0.0@1.000 -> 260.0,0.0@1.000 frame 423.203125,204 -> 423.203125,204, canvas left 344 -> 84, head-frame 8 -> 8 (3.9s)
+  ✓  85 [System] › Tab focus shows the ring focused=true rings=[ethlete-design-canvas 2px rgb(37, 174, 167)] (3.7s)
+  ✓  86 [System] › hover alone draws no frame border unchanged (3.6s)
+  ✓  87 [Large] › hover alone draws no frame border unchanged (4.7s)
+  ✓  88 [Inbox] › Tab focus shows the ring focused=true rings=[ethlete-design-canvas 2px rgb(37, 174, 167)] (3.4s)
+  ✓  89 [System] › arrow key pans camera 300.0,48.0@1.000 -> 220.0,48.0@1.000 (3.4s)
+  ✓  90 [Large] › Tab focus shows the ring focused=true rings=[ethlete-canvas-viewport 2px rgb(37, 174, 167)] (3.7s)
+  ✓  91 [Large] › arrow key pans camera 0.0,0.0@1.000 -> -80.0,0.0@1.000 (3.5s)
+  ✓  92 [System] › Space+drag pans camera 300.0,48.0@1.000 -> 370.0,88.0@1.000 (3.4s)
+  ✓  93 [Inbox] › wheel and ctrl-wheel over a frame centre move the camera iframe=true top 48 -> -72 width 1440 -> 1849 (3.4s)
+  ✓  94 [Inbox] › window blur keeps the pointer mark clicked=true kept=true focused=true rings=[] (3.0s)
+  ✓  95 [Sketches] › Tab focus shows the ring focused=true rings=[ethlete-canvas-viewport 2px rgb(37, 174, 167)] (3.3s)
+  ✓  96 [Chip] › double-click focuses a frame camera 0.0,0.0@1.000 -> -1445.2,-79.6@1.000 within=true fills=true (2.9s)
+  ✓  97 [Flow] › wheel and ctrl-wheel over a frame centre move the camera iframe=true top 64 -> 184 width 259 -> 333 (3.4s)
+  ✓  98 [System] › window blur keeps the pointer mark clicked=true kept=true focused=true rings=[] (3.3s)
+  ✓  99 [Chip] › middle drag pans camera 0.0,0.0@1.000 -> -50.0,30.0@1.000 (3.0s)
+  ✓  100 [Chip] › left drag on an empty area pans camera 0.0,0.0@1.000 -> 90.0,60.0@1.000 (3.4s)
+  ✓  101 [Sketches] › double-click focuses a frame camera 0.0,0.0@1.000 -> -48.0,-82.0@1.000 within=true fills=true (3.0s)
+  ✓  102 [Sketches] › left click on a frame selects it selected=true (3.0s)
+  ✓  103 [Chip] › left click on a frame selects it selected=true (2.9s)
+  ✓  104 [Flow] › hiding the panel keeps the frames camera 280.0,64.0@1.000 -> 280.0,64.0@1.000 frame 344,64 -> 344,64, canvas left 64 -> 64, head-frame 0 -> 0 (2.7s)
+  ✓  105 [Large] › middle drag pans camera 0.0,0.0@1.000 -> -50.0,30.0@1.000 (2.9s)
+  ✓  106 [System] › selected frame draws the selection outline {"width":"2px","style":"solid","color":"rgb(37, 174, 167)","fills":true} (2.7s)
+  ✓  107 [Large] › left drag on an empty area pans camera 0.0,0.0@1.000 -> 90.0,60.0@1.000 (2.9s)
+  ✓  108 [Chip] › selected frame draws the selection outline {"width":"2px","style":"solid","color":"rgb(37, 174, 167)","fills":true} (2.8s)
+  ✓  109 [Chip] › wheel over an iframe pans when iframes take pointer events, as in WKWebView camera moved 120px with the pointer over an iframe (2.8s)
+  ✓  110 [Sketches] › selected frame draws the selection outline {"width":"2px","style":"solid","color":"rgb(37, 174, 167)","fills":true} (2.8s)
+  ✓  111 [Large] › wheel over an iframe pans when iframes take pointer events, as in WKWebView camera moved 120px with the pointer over an iframe (3.3s)
+  ✓  112 [Sketches] › frames of one grid row share their top edge widest top spread 0.0 px (2.5s)
+  ✓  113 [System] › double-click focuses a frame camera 300.0,48.0@1.000 -> 324.0,64.0@0.686 within=true fills=true (2.9s)
+  ✓  114 [Large] › double-click focuses a frame camera 0.0,0.0@1.000 -> -55.2,-82.0@1.000 within=true fills=true (3.2s)
+  ✓  115 [Large] › selected frame draws the selection outline {"width":"2px","style":"solid","color":"rgb(37, 174, 167)","fills":true} (3.1s)
+  ✓  116 [Large] › left click on a frame selects it selected=true (3.1s)
+  ✓  117 [System] › left drag on an empty area pans camera 300.0,48.0@1.000 -> 390.0,108.0@1.000 (2.8s)
+  ✓  118 [System] › middle drag pans camera 300.0,48.0@1.000 -> 250.0,78.0@1.000 (2.9s)
+  ✓  119 [System] › hiding the panel keeps the frames camera 300.0,48.0@1.000 -> 300.0,48.0@1.000 frame 364,48 -> 364,48, canvas left 64 -> 64, head-frame 0 -> 0 (3.0s)
+  ✓  120 [Flow] › wheel over an iframe pans when iframes take pointer events, as in WKWebView camera moved 120px with the pointer over an iframe (3.0s)
+  ✓  121 [System] › wheel over an iframe pans when iframes take pointer events, as in WKWebView camera moved 120px with the pointer over an iframe (3.1s)
+  ✓  122 [System] › left click on a frame selects it selected=true (3.0s)
+  ✓  123 [Chip] › zoom chip sits at the canvas bottom right [{"right":12,"bottom":12,"left":1814.953125}] (2.5s)
+  ✓  124 [Large] › zoom chip sits at the canvas bottom right [{"right":12,"bottom":12,"left":1822.390625}] (2.4s)
+  ✓  125 [Chip] › a frame renders real content, not an error page 2 frames (2.4s)
+  ✓  126 [Large] › frames of one grid row share their top edge widest top spread 0.0 px (2.4s)
+  ✓  127 [Inbox] › zoom chip sits at the canvas bottom right [{"right":12,"bottom":12,"left":1814.953125}] (2.1s)
+  ✓  128 [System] › zoom chip sits at the canvas bottom right [{"right":12,"bottom":12,"left":1814.953125}] (2.1s)
+  ✓  129 [Chip] › frames of one grid row share their top edge widest top spread 0.0 px (2.5s)
+  ✓  130 [Large] › a frame renders real content, not an error page 2 frames (2.5s)
+  ✓  131 [System] › a frame renders real content, not an error page 2 frames (2.4s)
+  ✓  132 [System] › Neu starten in the code notice answers within 100 ms the button turned disabled after 3 ms (2.5s)
+  ✓  133 [Sketches] › zoom chip sits at the canvas bottom right [{"right":12,"bottom":12,"left":1822.390625}] (3.0s)
+
+Time per page group, slowest first:
+ 244.1s  Large (32 cases)
+ 154.9s  Chip (27 cases)
+ 148.5s  Sketches (26 cases)
+ 126.2s  System (27 cases)
+  38.8s  Inbox (9 cases)
+  31.4s  Flow (7 cases)
+  22.8s  Merge (1 cases)
+  19.3s  Wide (2 cases)
+   6.5s  Discard (1 cases)
+   6.2s  Edited (1 cases)
+
+Time per case, slowest first:
+  41.0s  Large     a variant equal to Aktuell keeps its iframes across a quick and a full listing
+  24.0s  Large     a sketch scroll never empties a cell that had a picture
+  23.6s  System    page switch time is logged to the design timings
+  22.8s  Merge     a sketch merged while its view is open opens the part view of the target
+  21.4s  Chip      first load creates one iframe per frame and aborts no frame request
+  20.6s  Chip      no state is marked before the compare answers
+  19.9s  Large     a sketch keeps its frame count and pictures through a sketch edit
+  18.7s  Large     the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+  14.2s  Sketches  Fit is stable, + steps from it, 25 % report
+  13.3s  Large     a sketch cell edited on disk while scrolled away shows its new picture on return
+  13.2s  Sketches  hiding the panel keeps the frames
+  12.9s  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+  12.8s  Sketches  the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+  11.7s  Chip      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+  10.6s  Large     first load creates one iframe per frame and aborts no frame request
+  10.4s  Large     a listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame
+  10.0s  Large     Fit is stable, + steps from it, 25 % report
+   9.3s  Sketches  first load creates one iframe per frame and aborts no frame request
+   8.5s  Chip      Fit is stable, + steps from it, 25 % report
+   8.3s  Large     no text leaves its box at min zoom, Fit, 100 % and max zoom
+   8.0s  Sketches  no text leaves its box at min zoom, Fit, 100 % and max zoom
+   7.9s  Chip      no text leaves its box at min zoom, Fit, 100 % and max zoom
+   7.5s  Sketches  pan beyond every edge of the content
+   7.4s  System    a part switch asks for its open points once
+   7.3s  System    no text leaves its box at min zoom, Fit, 100 % and max zoom
+   7.2s  System    a part shown before paints every stored picture in the first frame
+   7.1s  Inbox     no text leaves its box at min zoom, Fit, 100 % and max zoom
+   6.9s  Flow      no text leaves its box at min zoom, Fit, 100 % and max zoom
+   6.5s  Discard   a sketch discarded while its view is open opens the part view of the target
+   6.4s  Sketches  hiding the panel at a panned and zoomed camera keeps the frames on screen
+   6.4s  Chip      pan beyond every edge of the content
+   6.3s  Wide      Fit shows every column of a wide sketch, heads at the top
+   6.3s  Inbox     pan beyond every edge of the content
+   6.3s  Large     ctrl-wheel keeps the world point under the pointer
+   6.2s  Edited    a part edited on disk while away shows its new picture on return
+   6.2s  Chip      ctrl-wheel keeps the world point under the pointer
+   6.0s  Sketches  ctrl-wheel keeps the world point under the pointer
+   5.8s  Large     pan beyond every edge of the content
+   5.8s  System    pan beyond every edge of the content
+   5.8s  Sketches  pointer click on an empty area keeps the ring off
+   5.5s  Sketches  Shift+1 fits all, window-wide
+   5.4s  Flow      ctrl-wheel keeps the world point under the pointer
+   5.4s  Flow      pan beyond every edge of the content
+   5.4s  Sketches  Space+drag pans
+   5.2s  Inbox     ctrl-wheel keeps the world point under the pointer
+   5.1s  Sketches  wheel and ctrl-wheel over a frame centre move the camera
+   5.1s  System    ctrl-wheel keeps the world point under the pointer
+   5.1s  System    open points chip pressed matches its popup
+   5.1s  Large     pointer click on a frame keeps the ring off
+   5.0s  Large     pointer click on an empty area keeps the ring off
+   5.0s  Chip      pointer click on an empty area keeps the ring off
+   5.0s  Sketches  left drag on an empty area pans
+   5.0s  Chip      pointer click on a frame keeps the ring off
+   4.9s  Sketches  pointer click on a frame keeps the ring off
+   4.7s  Large     hover alone draws no frame border
+   4.6s  Flow      hiding the panel at a panned and zoomed camera keeps the frames on screen
+   4.6s  Large     hiding the panel at a panned and zoomed camera keeps the frames on screen
+   4.6s  Chip      Space+drag pans
+   4.5s  Chip      hiding the panel at a panned and zoomed camera keeps the frames on screen
+   4.5s  System    hiding the panel at a panned and zoomed camera keeps the frames on screen
+   4.5s  Inbox     pointer click on a frame keeps the ring off
+   4.5s  Chip      arrow key pans
+   4.4s  System    pointer click on a frame keeps the ring off
+   4.4s  Chip      Shift+1 fits all, window-wide
+   4.3s  Large     a sketch first paints the frame count it settles on
+   4.3s  System    pointer click on an empty area keeps the ring off
+   4.3s  Large     window blur keeps the pointer mark
+   4.2s  Chip      hiding the panel keeps the frames
+   4.2s  Sketches  hover alone draws no frame border
+   4.2s  Sketches  window blur keeps the pointer mark
+   4.1s  Chip      wheel and ctrl-wheel over a frame centre move the camera
+   3.9s  Large     hiding the panel keeps the frames
+   3.9s  Inbox     pointer click on an empty area keeps the ring off
+   3.8s  Large     Shift+1 fits all, window-wide
+   3.8s  Chip      Tab focus shows the ring
+   3.7s  System    Tab focus shows the ring
+   3.7s  Sketches  arrow key pans
+   3.7s  Large     Tab focus shows the ring
+   3.6s  System    hover alone draws no frame border
+   3.5s  Large     arrow key pans
+   3.5s  Large     Space+drag pans
+   3.5s  Chip      hover alone draws no frame border
+   3.5s  Chip      window blur keeps the pointer mark
+   3.4s  Large     wheel and ctrl-wheel over a frame centre move the camera
+   3.4s  System    Shift+1 fits all, window-wide
+   3.4s  Inbox     Tab focus shows the ring
+   3.4s  System    Space+drag pans
+   3.4s  System    wheel and ctrl-wheel over a frame centre move the camera
+   3.4s  Chip      left drag on an empty area pans
+   3.4s  System    arrow key pans
+   3.4s  Inbox     wheel and ctrl-wheel over a frame centre move the camera
+   3.4s  Flow      wheel and ctrl-wheel over a frame centre move the camera
+   3.3s  Sketches  a frame renders real content, not an error page
+   3.3s  System    window blur keeps the pointer mark
+   3.3s  Sketches  middle drag pans
+   3.3s  Large     wheel over an iframe pans when iframes take pointer events, as in WKWebView
+   3.3s  Sketches  Tab focus shows the ring
+   3.2s  Large     double-click focuses a frame
+   3.1s  Large     selected frame draws the selection outline
+   3.1s  Large     left click on a frame selects it
+   3.1s  System    wheel over an iframe pans when iframes take pointer events, as in WKWebView
+   3.0s  Flow      wheel over an iframe pans when iframes take pointer events, as in WKWebView
+   3.0s  System    hiding the panel keeps the frames
+   3.0s  Sketches  zoom chip sits at the canvas bottom right
+   3.0s  Inbox     window blur keeps the pointer mark
+   3.0s  Chip      middle drag pans
+   3.0s  System    left click on a frame selects it
+   3.0s  Sketches  double-click focuses a frame
+   3.0s  Sketches  wheel over an iframe pans when iframes take pointer events, as in WKWebView
+   3.0s  Sketches  left click on a frame selects it
+   2.9s  System    double-click focuses a frame
+   2.9s  Chip      double-click focuses a frame
+   2.9s  Large     left drag on an empty area pans
+   2.9s  Large     middle drag pans
+   2.9s  Chip      left click on a frame selects it
+   2.9s  System    middle drag pans
+   2.8s  Chip      wheel over an iframe pans when iframes take pointer events, as in WKWebView
+   2.8s  System    left drag on an empty area pans
+   2.8s  Chip      selected frame draws the selection outline
+   2.8s  Sketches  selected frame draws the selection outline
+   2.7s  System    selected frame draws the selection outline
+   2.7s  Flow      hiding the panel keeps the frames
+   2.5s  System    Neu starten in the code notice answers within 100 ms
+   2.5s  Chip      frames of one grid row share their top edge
+   2.5s  Sketches  frames of one grid row share their top edge
+   2.5s  Large     a frame renders real content, not an error page
+   2.5s  Chip      zoom chip sits at the canvas bottom right
+   2.4s  Chip      a frame renders real content, not an error page
+   2.4s  Large     frames of one grid row share their top edge
+   2.4s  System    a frame renders real content, not an error page
+   2.4s  Large     zoom chip sits at the canvas bottom right
+   2.1s  System    zoom chip sits at the canvas bottom right
+   2.1s  Inbox     zoom chip sits at the canvas bottom right
+
+  1) [Large] › a sketch scroll never empties a cell that had a picture
+  132 passed (125.4s)
+  1 failed
+
+132/133 passed in 125.4s on 8 worker(s)
+suite 2m05s of 5m budget

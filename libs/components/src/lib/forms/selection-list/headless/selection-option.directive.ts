@@ -1,0 +1,195 @@
+import {
+  booleanAttribute,
+  computed,
+  contentChild,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+  model,
+} from '@angular/core';
+import { createComponentId } from '@ethlete/core';
+import { DescriptionComponent } from '../../description/description.component';
+import { SELECTION_LIST_TOKEN, SelectionListItem } from './selection-list.tokens';
+
+const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-selection-option-unbound');
+
+@Directive({
+  selector: '[etSelectionOption]',
+  host: {
+    '[attr.role]': 'role()',
+    '[attr.aria-checked]': 'checked()',
+    '[attr.aria-labelledby]': 'labelId',
+    '[attr.aria-describedby]': 'descriptionId()',
+    '[attr.aria-disabled]': 'effectiveDisabled() || null',
+    '[attr.aria-readonly]': '(role() === "checkbox" && effectiveReadonly()) || null',
+    '[attr.data-readonly]': 'effectiveReadonly() || null',
+    '[attr.tabindex]': 'tabindex()',
+    '(click)': 'select()',
+    '(keydown.space)': 'select(); $event.preventDefault()',
+    '(keydown.ArrowDown)': 'focusNext($event)',
+    '(keydown.ArrowRight)': 'focusNext($event)',
+    '(keydown.ArrowUp)': 'focusPrevious($event)',
+    '(keydown.ArrowLeft)': 'focusPrevious($event)',
+    '(keydown.Home)': 'focusEdge($event, "first")',
+    '(keydown.End)': 'focusEdge($event, "last")',
+    '(keydown)': 'focusTypeaheadMatch($event)',
+    '(blur)': 'markTouched()',
+  },
+})
+export class SelectionOptionDirective {
+  private list = inject(SELECTION_LIST_TOKEN, { optional: true });
+  private destroyRef = inject(DestroyRef);
+  private el = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  public value = input.required<unknown>();
+  public checked = model(false);
+  public disabled = input(false, { transform: booleanAttribute });
+
+  private description = contentChild(DescriptionComponent);
+
+  public effectiveDisabled = computed(() => this.disabled() || (this.list?.disabled() ?? false));
+  public effectiveReadonly = computed(() => this.list?.readonly() ?? false);
+  public role = computed(() => (this.list?.multiple() ? 'checkbox' : 'radio'));
+
+  public readonly labelId = createComponentId('et-selection-option-label');
+
+  /**
+   * The id of a projected `<et-description>`. The option pins its name to the label span, so the
+   * description is outside the name computation and only reaches assistive tech as a description.
+   */
+  public descriptionId = computed(() => this.description()?.id ?? null);
+
+  // reading through this computed keeps registry-wide reads (value↔checked sync) crash-free
+  // while the required `value` input has not executed its binding yet
+  private boundValue = computed(() => {
+    try {
+      return this.value();
+    } catch {
+      return UNBOUND_VALUE;
+    }
+  });
+
+  private listItem = {
+    value: this.boundValue,
+    checked: this.checked,
+    disabled: this.effectiveDisabled,
+    elementRef: this.el,
+    label: () => this.el.nativeElement.textContent ?? '',
+  };
+
+  public tabindex = computed(() => {
+    if (this.effectiveDisabled()) {
+      return -1;
+    }
+
+    if (!this.list) {
+      return 0;
+    }
+
+    const items = this.list.items();
+    const tabStop = items.find((i) => i.checked() && !i.disabled()) ?? items.find((i) => !i.disabled());
+
+    return tabStop === this.listItem ? 0 : -1;
+  });
+
+  constructor() {
+    if (this.list) {
+      const list = this.list;
+      list.selection.registerItem(this.listItem);
+      this.destroyRef.onDestroy(() => list.selection.unregisterItem(this.listItem));
+    }
+  }
+
+  public select() {
+    if (this.effectiveDisabled() || this.effectiveReadonly()) {
+      return;
+    }
+
+    if (this.list) {
+      this.list.selection.select(this.listItem);
+    } else {
+      this.checked.update((v) => !v);
+    }
+  }
+
+  public markTouched() {
+    if (this.list) {
+      this.list.markTouched();
+    }
+  }
+
+  public focusNext(event: Event) {
+    this.focusByStep(event, 1);
+  }
+
+  public focusPrevious(event: Event) {
+    this.focusByStep(event, -1);
+  }
+
+  /** Moves focus to the first or last enabled option (and, in a radio group, checks it). */
+  public focusEdge(event: Event, edge: 'first' | 'last') {
+    event.preventDefault();
+
+    if (!this.list || this.effectiveDisabled()) {
+      return;
+    }
+
+    const enabled = this.list.items().filter((item) => !item.disabled());
+
+    this.moveFocusTo(edge === 'first' ? enabled[0] : enabled.at(-1));
+  }
+
+  /** Moves focus to the next option whose label starts with the typed characters. */
+  public focusTypeaheadMatch(event: KeyboardEvent) {
+    if (
+      !this.list ||
+      this.effectiveDisabled() ||
+      event.key.length !== 1 ||
+      event.key === ' ' ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    const match = this.list.findTypeaheadMatch(event.key, this.listItem);
+
+    if (match) {
+      event.preventDefault();
+      this.moveFocusTo(match);
+    }
+  }
+
+  private focusByStep(event: Event, step: 1 | -1) {
+    event.preventDefault();
+
+    if (!this.list || this.effectiveDisabled()) {
+      return;
+    }
+
+    const items = this.list.items();
+    const currentIndex = items.indexOf(this.listItem);
+    let index = (currentIndex + step + items.length) % items.length;
+
+    while (items[index]?.disabled() && index !== currentIndex) {
+      index = (index + step + items.length) % items.length;
+    }
+
+    this.moveFocusTo(items[index]);
+  }
+
+  private moveFocusTo(item: SelectionListItem | undefined) {
+    if (!this.list || !item || item.disabled()) {
+      return;
+    }
+
+    if (!this.list.multiple() && !this.effectiveReadonly()) {
+      this.list.selection.select(item);
+    }
+
+    this.list.focusItem(item);
+  }
+}

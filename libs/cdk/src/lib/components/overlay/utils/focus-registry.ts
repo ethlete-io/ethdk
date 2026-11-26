@@ -1,0 +1,68 @@
+import { computed, signal } from '@angular/core';
+import { defineRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export type FocusElementRegistryEntry = {
+  id: string;
+  afterOpenFocus: HTMLElement;
+  afterCloseFocus: HTMLElement;
+};
+
+const FOCUS_REGISTRY_DEF = /* @__PURE__ */ defineRootProvider(() => {
+  const registry = signal<Record<string, FocusElementRegistryEntry>>({});
+  const registryOrder = signal<string[]>([]);
+
+  const register = (entry: FocusElementRegistryEntry) => {
+    registry.update((current) => {
+      current[entry.id] = entry;
+      return current;
+    });
+    registryOrder.update((current) => {
+      if (!current.includes(entry.id)) {
+        current.push(entry.id);
+      }
+      return current;
+    });
+  };
+
+  const unregister = (id: string) => {
+    registry.update((current) => {
+      delete current[id];
+      return current;
+    });
+    registryOrder.update((current) => {
+      const index = current.indexOf(id);
+      if (index !== -1) {
+        current.splice(index, 1);
+      }
+      return current;
+    });
+  };
+
+  const currentFocusTarget = (id: string) =>
+    computed(() => {
+      const order = registryOrder();
+      const last = order[order.length - 1];
+
+      if (!last || order[order.length - 1] !== id) return null;
+
+      return registry()[last] || null;
+    });
+
+  return {
+    register,
+    unregister,
+    currentFocusTarget,
+  };
+});
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export const provideFocusRegistry = /* @__PURE__ */ toProvideFn(FOCUS_REGISTRY_DEF);
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export const injectFocusRegistry = /* @__PURE__ */ toInjectFn(FOCUS_REGISTRY_DEF);

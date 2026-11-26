@@ -1,0 +1,53 @@
+@layer components.sdk {
+  et-input {
+    display: block;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-input-native {
+      display: block;
+      inline-size: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      caret-color: var(--et-tone-fill, currentColor);
+      padding: 0;
+      min-width: 0;
+
+      &:not(:focus) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      &::placeholder {
+        color: color-mix(in srgb, currentColor 60%, transparent);
+      }
+
+      &::-webkit-search-cancel-button {
+        appearance: none;
+      }
+
+      &[data-text-align='start'] {
+        text-align: start;
+      }
+
+      &[data-text-align='center'] {
+        text-align: center;
+      }
+
+      &[data-text-align='end'] {
+        text-align: end;
+      }
+    }
+
+    /* an unresolved bulk-edit value reads as provisional — the mixed label shows as the
+       placeholder, between a committed value (full strength) and a real placeholder (60%) */
+    &[data-mixed] .et-input-native::placeholder {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+  }
+}

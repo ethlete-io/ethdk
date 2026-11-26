@@ -1,0 +1,99 @@
+{
+  "name": "tomflix",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/tomflix/src",
+  "prefix": "fk",
+  "tags": ["scope:tomflix"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath.base}"],
+      "options": {
+        "outputPath": {
+          "base": "dist/apps/tomflix"
+        },
+        "index": "apps/tomflix/src/index.html",
+        "browser": "apps/tomflix/src/main.ts",
+        "server": "apps/tomflix/src/main.server.ts",
+        "ssr": {
+          "entry": "apps/tomflix/src/server.ts"
+        },
+        "outputMode": "server",
+        "tsConfig": "apps/tomflix/tsconfig.json",
+        "styles": ["apps/tomflix/src/styles.css"],
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/tomflix/public"
+          }
+        ],
+        "fileReplacements": [
+          {
+            "replace": "libs/env/src/environment.ts",
+            "with": "libs/env/src/environment.production.ts"
+          }
+        ],
+        "optimization": {
+          "scripts": true,
+          "styles": {
+            "minify": true,
+            "inlineCritical": false
+          },
+          "fonts": false
+        },
+        "outputHashing": "all",
+        "sourceMap": false,
+        "extractLicenses": true,
+        "subresourceIntegrity": true,
+        "budgets": [
+          {
+            "type": "initial",
+            "maximumWarning": "1mb",
+            "maximumError": "2mb"
+          }
+        ]
+      },
+      "configurations": {
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "fileReplacements": [],
+          "budgets": []
+        },
+        "local": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "outputHashing": "none",
+          "subresourceIntegrity": false,
+          "baseHref": "/dev/",
+          "budgets": [],
+          "fileReplacements": []
+        }
+      }
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "options": {
+        "buildTarget": "tomflix:build:development"
+      },
+      "configurations": {
+        "local": {
+          "buildTarget": "tomflix:build:local",
+          "proxyConfig": "apps/tomflix/proxy.local.json",
+          "host": "127.0.0.1",
+          "allowedHosts": ["localhost"],
+          "port": 4200
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "nx:noop"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+<textarea
+  #nativeTextarea
+  [value]="textareaDir.displayValue()"
+  [disabled]="textareaDir.disabled()"
+  [readOnly]="textareaDir.readonly()"
+  [required]="textareaDir.required()"
+  [placeholder]="textareaDir.effectivePlaceholder()"
+  [attr.autocomplete]="textareaDir.autocomplete() || null"
+  [rows]="textareaDir.rows()"
+  [attr.name]="textareaDir.name() || null"
+  [attr.aria-invalid]="textareaDir.shouldDisplayError() || null"
+  [attr.aria-describedby]="textareaDir.describedBy() || null"
+  [attr.aria-label]="textareaDir.ariaLabel() || null"
+  [attr.aria-labelledby]="textareaDir.labelId() || null"
+  [attr.data-resize]="textareaDir.effectiveResize()"
+  (focus)="textareaDir.focused.set(true)"
+  (blur)="textareaDir.focused.set(false); textareaDir.touched.set(true)"
+  class="et-textarea-native"
+></textarea>

@@ -1,0 +1,44 @@
+<div class="et-table-column-chooser" etMenu>
+  <button
+    [size]="size()"
+    [variant]="variant()"
+    class="et-table-column-chooser-trigger"
+    et-button
+    etMenuTrigger
+    type="button"
+  >
+    <i etIcon="et-grid-2x2"></i>
+    {{ labels().columns }}
+  </button>
+
+  <ng-template etMenuSurface>
+    <et-menu>
+      <!-- Every declared column, hidden ones included: this list is the only way back from hiding one. -->
+      @for (column of table().availableColumns(); track column.key) {
+        <et-menu-checkbox-item
+          [value]="column.key"
+          [checked]="table().isColumnVisible(column.key)"
+          [disabled]="isLastVisible(column.key)"
+          (activate)="toggle(column.key)"
+          closeOnActivate="false"
+        >
+          {{ column.header || column.key }}
+        </et-menu-checkbox-item>
+      }
+
+      <!-- Always rendered, disabled when nothing is hidden: appearing and disappearing would resize the
+           menu under the pointer while columns are being toggled. -->
+      <et-menu-separator />
+      <button
+        [disabled]="!hasHidden()"
+        (activate)="table().showAllColumns()"
+        closeOnActivate="false"
+        et-menu-item
+        type="button"
+      >
+        <i class="et-table-column-chooser-icon" etIcon="et-eye"></i>
+        {{ labels().showAllColumns }}
+      </button>
+    </et-menu>
+  </ng-template>
+</div>

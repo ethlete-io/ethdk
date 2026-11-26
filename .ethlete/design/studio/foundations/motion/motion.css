@@ -1,0 +1,8 @@
+:root {
+  --duration-state: 120ms;
+  --duration-appear: 120ms;
+  --ease-standard: ease;
+  --transition-state:
+    background-color var(--duration-state) var(--ease-standard), color var(--duration-state) var(--ease-standard),
+    border-color var(--duration-state) var(--ease-standard), box-shadow var(--duration-state) var(--ease-standard);
+}

@@ -1,0 +1,159 @@
+---
+name: ci-check
+description: Run the checks CI runs, locally, before pushing (format, sync, changesets, lint, test, build, goldens, Storybook, e2e). Use on "run CI", "ci check", or before pushing a change to a published lib.
+---
+
+# Local CI check
+
+CI (`.github/workflows/ci-{next,main,pr}.yml`) runs a fixed sequence. Run the same
+sequence locally in the same order and a push should not come back red. **That workflow
+file is the source of truth** - if a step here disagrees with it, the workflow wins;
+re-read it and fix this skill.
+
+## Before anything
+
+```bash
+export NX_NO_CLOUD=true
+```
+
+Nx Cloud is intentionally off in this workspace (every workflow sets the same env var).
+Without it, `nx` spends time on a run-link lookup against an unstable self-hosted instance.
+
+## The sequence
+
+Run in this order and **stop at the first failure** - a later step's output is noise once
+an earlier one is broken.
+
+```bash
+yarn install --immutable                  # 1. deps + lockfile is up to date
+yarn nx format:check                      # 2. Prettier across the workspace
+yarn agents:check                         # 3. generated agent files vs libs/agent-rules/content
+yarn versions:check                       # 4. libs/*/src/lib/version.ts vs each package.json
+yarn lint:changesets                      # 5. unreleased changeset notes: ≤40 words, 1 paragraph, ≤3 bullets
+yarn query:export-coverage                # 5b. every @ethlete/query runtime export: scenario or allowlist
+yarn core:export-coverage                 # 5c. the same for @ethlete/core
+yarn vitest:projects:check                # 5d. the root vitest.projects.ts resolves (~15 s, too slow for pre-push)
+yarn nx run-many -t typecheck             # 6. spec-file types (nothing else checks them)
+yarn nx run-many -t lint                  # 7. ESLint, incl. @nx/dependency-checks
+yarn nx run-many -t test                  # 8. all unit tests
+yarn nx run cli:test-perf                 # 8b. wall-time specs (*.perf.spec.ts), non-blocking; JSON in tmp/perf
+yarn nx run-many -t build                 # 9. all libs + apps (docs build fails on dead links)
+yarn nx run treeshake:bundle-goldens      # 10. bundle-size goldens
+yarn nx run storybook:build-storybook:ci  # 11. Storybook production build
+yarn playwright test -c apps/storybook-e2e/playwright.config.ts  # 12. component behavior tests on that build
+yarn nx run timetrack-app:format-rust     # 13. cargo fmt --check on the Tauri host
+yarn nx run timetrack-app:lint-rust       # 14. cargo clippy -D warnings
+yarn nx run timetrack-app:test-rust       # 15. cargo test
+yarn nx run timetrack-app:audit-rust      # 16. cargo audit against the RustSec database
+yarn nx run ethlete-studio:format-rust    # 17. cargo fmt --check on the studio host
+yarn nx run ethlete-studio:lint-rust      # 18. cargo clippy -D warnings
+yarn nx run ethlete-studio:test-rust      # 19. cargo test
+yarn nx e2e timetrack-e2e                 # 20. timetrack app e2e, against the host fakes
+yarn nx e2e docs-examples-e2e             # 21. theming baseline on the docs examples (B-65 expected red)
+```
+
+The workflow's `studio` job ("Studio rules") builds the CLI and runs the Studio design rules; locally:
+
+```bash
+yarn nx build cli
+node dist/libs/cli/src/index.js design check --product studio
+node dist/libs/cli/src/index.js design check --product studio --slow --base "$(git merge-base HEAD origin/next)"
+```
+
+The `.husky/pre-push` hook runs only the cheap part: a format check of the committed files in the pushed
+range, `lint:changesets` and the other sub-second checks, and the VitePress build when `apps/docs` changed.
+Lint, typecheck, specs and the Studio rules (`design check --rules`, the design gate) are CI's.
+
+Step 11 is the slowest by far. Skip steps 11 and 12 only when the change touches no component
+source and no story - and say so rather than reporting a clean run you didn't do. Step 12 serves
+`dist/storybook` itself; to run it against the dev server instead, set
+`STORYBOOK_URL=http://localhost:4400` (see the **`component-behavior-tests`** skill). CI runs only
+the suites the change can reach; `yarn e2e:affected` makes the same selection against
+`origin/next` and runs it in place of step 12.
+
+Steps 13 to 16 are the workflow's `rust` job. Skip 13 to 15 when the change touches nothing
+under `apps/timetrack/src-tauri`. Step 16 needs `cargo-audit` 0.22 or later, and it reads a
+database that changes without the lockfile, so it can fail on a branch that touched no Rust.
+Step 17 is the `timetrack-e2e` job. Skip it when the change touches neither `libs/timetrack`
+nor `apps/timetrack`.
+
+## Reading the results
+
+- **`install --immutable`** - this is the Yarn 4 name for a frozen lockfile: it fails
+  instead of writing `yarn.lock`. A failure means the lockfile does not match the
+  `package.json` files. Fix with a plain `yarn install` and commit `yarn.lock` with the
+  change. An `nx` task that prunes a lib's `dependencies` causes this too.
+- **`format:check`** - fix with `yarn nx format:write`, or `npx prettier --write <files>`
+  for just your diff. Do not hand-fix formatting.
+- **`agents:check`** - drift means a `libs/agent-rules/content/**` edit was never compiled.
+  Fix with `npx prettier --write libs/agent-rules/content/<file>` **then** `yarn agents:sync`,
+  in that order - the generated copies are Prettier-ignored, so formatting after syncing
+  leaves them stale and the check still fails.
+- **`versions:check`** - a lib's `src/lib/version.ts` no longer matches its `package.json`
+  version. Fix with `yarn versions:sync` and commit the result. This normally only drifts
+  right after a release bump; because `build` regenerates these files as a target dependency,
+  running build first silently fixes the drift instead of reporting it - which is why the
+  check runs before build.
+- **`query:export-coverage`** / **`core:export-coverage`** - an export no scenario references needs
+  a scenario, or an entry with a reason in `tools/export-coverage/<lib>.allowlist.json`. A stale entry (covered now, or
+  no longer exported) must be deleted. `--list` prints every gap with its reason.
+- **`typecheck`** - every lib's build tsconfig excludes the spec files, so this is the only
+  step that type-checks them. Read the current list with
+  `npx nx show projects --with-target typecheck`; `run-many` skips a project that does not
+  declare the target. To add a project, make its spec types clean first. Then add the target.
+- **`lint`** - re-run with `--fix` **scoped to the files you changed**:
+  `npx eslint libs/components/src/lib/<domain> --fix`. Never
+  `npx nx lint <project> --fix` - a project-wide fix races the user's editor autosave.
+- **`yarn red-check <commit>`** - proves a commit's new or changed specs fail without its source changes
+  (temp worktree at the parent, the commit's specs on top); exit 1 when every spec already passes.
+- **Pre-existing failures are not yours.** This repo takes concurrent commits from other
+  sessions. Before chasing a failure, check `git diff`/`git log` on the failing file; if
+  it is untouched by your change, report it and move on rather than fixing it silently.
+- **`bundle-goldens`** - a `✔` row with a byte delta is *within* budget and CI passes. A
+  `✖` is a real regression: something in `core`/`query`/`components` stopped tree-shaking.
+  When the growth is a deliberate, understood consequence of your change, accept it:
+
+  ```bash
+  yarn nx run treeshake:bundle-goldens:update
+  git diff tools/treeshake/goldens.json   # confirm only entries you can explain moved
+  ```
+
+  Commit `goldens.json` with the change. Never update goldens to silence a `✖` you cannot
+  explain - that is the regression the check exists to catch.
+
+- **`timetrack-e2e`** - the config sets `fullyParallel: true` and caps nothing, so a fast
+  machine gives Playwright far more workers than a CI runner has, and the one dev server
+  behind them times specs out. Ten to twelve specs fail, and a different set each run. Run
+  it the way CI does before you believe a failure:
+
+  ```bash
+  npx playwright test -c apps/timetrack-e2e/playwright.config.ts --workers=2 --retries=2
+  ```
+
+  A spec that fails alone at `--workers=1` is a real failure. One that only fails in a wide
+  parallel run is not.
+
+  CI does not start the dev server. It builds the app first and sets `TIMETRACK_E2E_DIST`, and
+  the config then serves that output statically, which holds at any worker count:
+
+  ```bash
+  yarn nx run timetrack-app:build:e2e --exclude-task-dependencies
+  TIMETRACK_E2E_DIST=dist/apps/timetrack-e2e/browser yarn nx e2e timetrack-e2e
+  ```
+
+- **A single task that fails inside `run-many` and passes on its own is flaky.** `run-many`
+  starts every project at once, and `components:test` and `timetrack-app:lint` both lose to
+  the load on a busy machine. Re-run the one task; Nx prints `Nx detected a flaky task` when
+  it agrees. Do not report it as a break.
+
+## What this does not cover
+
+CI also runs deploys and the version PR; none of that is reproducible locally, and none of
+it is your job before a push.
+
+Two things CI cannot check that are still part of finishing a change:
+
+- A UI change verified in a real browser - the **`verify-in-storybook`** skill.
+- The changeset and the `apps/docs` page a public API change owes - the **`changeset`**
+  and **`docs`** skills. `lint:changesets` only checks the *shape* of a note that exists,
+  never that one is missing.

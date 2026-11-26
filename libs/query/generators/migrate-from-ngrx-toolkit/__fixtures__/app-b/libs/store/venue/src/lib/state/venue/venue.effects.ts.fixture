@@ -1,0 +1,30 @@
+import { Injectable } from '@angular/core';
+import { Actions } from '@ngrx/effects';
+import { EffectBase } from '@tomtomb/ngrx-toolkit';
+import * as FeatureActions from './venue.actions';
+import { VenueService } from './venue.service';
+
+@Injectable()
+export class VenueEffects extends EffectBase {
+  getVenueBySlug$ = this.onActionMergeMap({
+    action: FeatureActions.getVenueBySlug,
+    serviceCall: this.featureService.getVenueBySlug,
+  });
+
+  getVenueRanking$ = this.onActionMergeMap({
+    action: FeatureActions.getVenueRanking,
+    serviceCall: this.featureService.getVenueRanking,
+  });
+
+  getVenues$ = this.onActionMergeMap({
+    action: FeatureActions.getVenues,
+    serviceCall: this.featureService.getVenues,
+  });
+
+  constructor(
+    private actions$: Actions,
+    private featureService: VenueService,
+  ) {
+    super(actions$, featureService);
+  }
+}

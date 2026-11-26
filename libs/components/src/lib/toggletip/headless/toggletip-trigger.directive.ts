@@ -1,0 +1,74 @@
+import { DestroyRef, Directive, ElementRef, afterNextRender, effect, inject, untracked } from '@angular/core';
+import { RuntimeError, setInputSignal } from '@ethlete/core';
+import { ButtonDirective } from '../../button/headless';
+import { TOGGLETIP_ERROR_CODES } from '../toggletip-errors';
+import { ToggletipDirective } from './toggletip.directive';
+
+@Directive({
+  selector: '[etToggletipTrigger]',
+  exportAs: 'etToggletipTrigger',
+})
+export class ToggletipTriggerDirective {
+  private button = inject(ButtonDirective, { optional: true });
+  private destroyRef = inject(DestroyRef);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private toggletip = inject(ToggletipDirective, { optional: true });
+
+  constructor() {
+    const button = this.button;
+    const toggletip = this.toggletip;
+
+    if (button && toggletip) {
+      effect(() => {
+        const inactive = button.isInactive();
+
+        untracked(() => {
+          toggletip.triggerInactive.set(inactive);
+        });
+      });
+
+      effect(() => {
+        const open = toggletip.open();
+
+        untracked(() => {
+          setInputSignal(button.pressed, open);
+          setInputSignal(button.emitAriaPressed, false);
+        });
+      });
+    }
+
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.button) {
+          throw new RuntimeError(
+            TOGGLETIP_ERROR_CODES.TRIGGER_REQUIRES_BUTTON,
+            '[ToggletipTriggerDirective] etToggletipTrigger must be used on an element that also has a button directive such as [et-button].',
+            { element: this.elementRef.nativeElement },
+          );
+        }
+
+        if (!this.toggletip) {
+          throw new RuntimeError(
+            TOGGLETIP_ERROR_CODES.TRIGGER_REQUIRES_TOGGLETIP,
+            '[ToggletipTriggerDirective] etToggletipTrigger must be used on the same element as [etToggletip].',
+            { element: this.elementRef.nativeElement },
+          );
+        }
+      });
+    }
+
+    this.destroyRef.onDestroy(() => {
+      if (!button || !toggletip) {
+        return;
+      }
+
+      toggletip.triggerInactive.set(false);
+      setInputSignal(button.pressed, undefined);
+      setInputSignal(button.emitAriaPressed, true);
+    });
+  }
+
+  public isOpen() {
+    return this.toggletip?.open() ?? false;
+  }
+}

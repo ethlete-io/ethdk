@@ -1,0 +1,174 @@
+@layer components.sdk {
+  .et-input-clear {
+    --_et-input-clear-target: 24px;
+    --_et-input-clear-gap: var(--et-form-field-control-affix-gap, 8px);
+
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--et-surface-text-muted, currentColor);
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    appearance: none;
+    touch-action: manipulation;
+    transition: color 150ms ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      inset: -4px;
+      border-radius: 50%;
+      background: transparent;
+      pointer-events: none;
+
+      /* Hover-only: a tap's :active transition ends on this pseudo-element in the frame the button
+         starts to leave, and Angular's animate.leave takes that transitionend (its target is the
+         button) as the end of the fade-out and removes the button at once. */
+      @media (hover: hover) {
+        transition: background-color 150ms ease;
+      }
+    }
+
+    /* Ends halfway into the gap, so a neighbouring picker trigger's own hit area keeps the other half. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset-block: calc((var(--_et-input-clear-target) - 100%) / -2);
+      inset-inline-end: calc(var(--_et-input-clear-gap) / -2);
+      inset-inline-start: calc(100% + var(--_et-input-clear-gap) / 2 - var(--_et-input-clear-target));
+    }
+
+    @media (pointer: coarse) {
+      --_et-input-clear-target: 44px;
+    }
+
+    .et-icon {
+      inline-size: var(--et-form-field-affix-icon-size, 16px);
+      block-size: var(--et-form-field-affix-icon-size, 16px);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--et-surface-text, currentColor);
+
+        &::before {
+          background: color-mix(in srgb, var(--et-surface-tint, currentColor) 20%, transparent);
+        }
+      }
+    }
+
+    &:active::before {
+      background: color-mix(in srgb, var(--et-surface-tint, currentColor) 28%, transparent);
+    }
+
+    &:focus-visible::before {
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
+      outline-offset: 1px;
+    }
+
+    &.et-input-clear--enter {
+      animation: et-input-clear-in 150ms ease;
+    }
+
+    &.et-input-clear--leave {
+      animation: et-input-clear-out 120ms ease forwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &.et-input-clear--enter,
+      &.et-input-clear--leave {
+        animation: none;
+      }
+    }
+  }
+
+  .et-input-picker-trigger {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--et-surface-text-muted, currentColor);
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    appearance: none;
+    touch-action: manipulation;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -14px;
+      inset-inline-end: calc(
+        -1 * min(14px, var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width))
+      );
+    }
+
+    .et-icon {
+      inline-size: var(--et-form-field-affix-icon-size, 16px);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--et-surface-text, currentColor);
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      color: var(--et-surface-text-subtle, currentColor);
+    }
+  }
+
+  /* Placed after both blocks above so the equal-weight `:disabled` / `:hover` rules lose on source
+     order; the second selector is the same rule at one class more, to outweigh the field shell's
+     `.et-form-field-affix button { cursor: pointer }`. */
+  :where([data-readonly]:not([data-disabled])) :is(.et-input-picker-trigger, .et-input-clear),
+  :where([data-readonly]:not([data-disabled])) .et-form-field-affix :is(.et-input-picker-trigger, .et-input-clear) {
+    cursor: default;
+    color: var(--et-surface-text-muted, currentColor);
+
+    &:disabled {
+      cursor: default;
+      color: var(--et-surface-text-muted, currentColor);
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--et-surface-text-muted, currentColor);
+      }
+    }
+
+    &::before {
+      background: transparent;
+    }
+  }
+
+  @keyframes et-input-clear-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-input-clear-out {
+    to {
+      opacity: 0;
+    }
+  }
+}

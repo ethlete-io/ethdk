@@ -1,0 +1,24 @@
+.et-inline-tabs {
+  display: block;
+
+  .et-inline-tab-label--is-text {
+    white-space: nowrap;
+  }
+
+  .et-inline-tab-label-wrapper:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+
+  .et-scrollable-container {
+    position: relative;
+  }
+
+  .et-inline-tabs-body-wrapper {
+    display: grid;
+  }
+
+  .et-inline-tab-body {
+    grid-column: 1/2;
+    grid-row: 1/2;
+  }
+}

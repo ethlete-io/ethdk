@@ -1,0 +1,207 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`bracket edge cases > lays out a double elimination with an empty lower round 1`] = `
+[
+  "header  0,0",
+  "match u1a 0,40",
+  "match u1b 0,130",
+  "header  0,230",
+  "header  250,0",
+  "match u2a 250,85",
+  "header  250,230",
+  "match l2a 250,270",
+  "header  500,0",
+  "match fa 500,85",
+]
+`;
+
+exports[`bracket edge cases > lays out a double elimination with an empty lower round 2`] = `
+[
+  "header  0,0",
+  "match u1a 0,40",
+  "header  250,0",
+  "match u2a 250,40",
+  "match fa 250,140",
+  "header  250,240",
+  "match l2a 250,300",
+  "header  500,0",
+  "match u1b 500,40",
+]
+`;
+
+exports[`bracket edge cases > lays out and draws a 1 participant single elimination (left-to-right) 1`] = `
+[
+  "header 0,0 200x30",
+  "match 0,40 200x80",
+]
+`;
+
+exports[`bracket edge cases > lays out and draws a 1 participant single elimination (mirrored) 1`] = `
+[
+  "header 0,0 200x30",
+  "match 0,40 200x80",
+]
+`;
+
+exports[`bracket edge cases > lays out and draws a 2 participant single elimination (left-to-right) 1`] = `
+[
+  "header 0,0 200x30",
+  "match 0,40 200x80",
+]
+`;
+
+exports[`bracket edge cases > lays out and draws a 2 participant single elimination (mirrored) 1`] = `
+[
+  "header 0,0 200x30",
+  "match 0,40 200x80",
+]
+`;
+
+exports[`bracket edge cases > lays out and draws a 3 participant single elimination (left-to-right) 1`] = `
+[
+  "header 0,0 200x30",
+  "match 0,40 200x80",
+  "match 0,130 200x80",
+  "header 250,0 200x30",
+  "match 250,85 200x80",
+]
+`;
+
+exports[`bracket edge cases > lays out and draws a 3 participant single elimination (mirrored) 1`] = `
+[
+  "header 0,0 200x30",
+  "match 0,40 200x80",
+  "header 250,0 200x30",
+  "match 250,40 200x80",
+  "header 500,0 200x30",
+  "match 500,40 200x80",
+]
+`;
+
+exports[`bracket edge cases > links a 1 participant single elimination consistently (sources: false) 1`] = `
+[
+  "r0m0 none <> null",
+]
+`;
+
+exports[`bracket edge cases > links a 1 participant single elimination consistently (sources: true) 1`] = `
+[
+  "r0m0 none <> null",
+]
+`;
+
+exports[`bracket edge cases > links a 2 participant single elimination consistently (sources: false) 1`] = `
+[
+  "r0m0 none <> null",
+]
+`;
+
+exports[`bracket edge cases > links a 2 participant single elimination consistently (sources: true) 1`] = `
+[
+  "r0m0 none <> null",
+]
+`;
+
+exports[`bracket edge cases > links a 3 participant single elimination consistently (sources: false) 1`] = `
+[
+  "r0m0 nothing-to-one <> r1m0",
+  "r0m1 nothing-to-one <> r1m0",
+  "r1m0 two-to-nothing <r0m0,r0m1> null",
+]
+`;
+
+exports[`bracket edge cases > links a 3 participant single elimination consistently (sources: true) 1`] = `
+[
+  "r0m0 nothing-to-one <> r1m0",
+  "r0m1 nothing-to-one <> r1m0",
+  "r1m0 two-to-nothing <r0m0,r0m1> null",
+]
+`;
+
+exports[`bracket edge cases > links a 5 participant single elimination consistently (sources: false) 1`] = `
+[
+  "r0m0 nothing-to-one <> r1m0",
+  "r0m1 nothing-to-one <> r1m0",
+  "r0m2 nothing-to-one <> r1m1",
+  "r0m3 nothing-to-one <> r1m1",
+  "r1m0 two-to-one <r0m0,r0m1> r2m0",
+  "r1m1 two-to-one <r0m2,r0m3> r2m0",
+  "r2m0 two-to-nothing <r1m0,r1m1> null",
+]
+`;
+
+exports[`bracket edge cases > links a 5 participant single elimination consistently (sources: true) 1`] = `
+[
+  "r0m0 nothing-to-one <> r1m0",
+  "r0m1 nothing-to-one <> r1m0",
+  "r0m2 nothing-to-one <> r1m1",
+  "r0m3 nothing-to-one <> r1m1",
+  "r1m0 two-to-one <r0m0,r0m1> r2m0",
+  "r1m1 two-to-one <r0m2,r0m3> r2m0",
+  "r2m0 two-to-nothing <r1m0,r1m1> null",
+]
+`;
+
+exports[`bracket edge cases > links a 6 participant single elimination consistently (sources: false) 1`] = `
+[
+  "r0m0 nothing-to-one <> r1m0",
+  "r0m1 nothing-to-one <> r1m0",
+  "r0m2 nothing-to-one <> r1m1",
+  "r0m3 nothing-to-one <> r1m1",
+  "r1m0 two-to-one <r0m0,r0m1> r2m0",
+  "r1m1 two-to-one <r0m2,r0m3> r2m0",
+  "r2m0 two-to-nothing <r1m0,r1m1> null",
+]
+`;
+
+exports[`bracket edge cases > links a 6 participant single elimination consistently (sources: true) 1`] = `
+[
+  "r0m0 nothing-to-one <> r1m0",
+  "r0m1 nothing-to-one <> r1m0",
+  "r0m2 nothing-to-one <> r1m1",
+  "r0m3 nothing-to-one <> r1m1",
+  "r1m0 two-to-one <r0m0,r0m1> r2m0",
+  "r1m1 two-to-one <r0m2,r0m3> r2m0",
+  "r2m0 two-to-nothing <r1m0,r1m1> null",
+]
+`;
+
+exports[`bracket edge cases > links a 12 participant single elimination consistently (sources: false) 1`] = `
+[
+  "r0m0 nothing-to-one <> r1m0",
+  "r0m1 nothing-to-one <> r1m0",
+  "r0m2 nothing-to-one <> r1m1",
+  "r0m3 nothing-to-one <> r1m1",
+  "r0m4 nothing-to-one <> r1m2",
+  "r0m5 nothing-to-one <> r1m2",
+  "r0m6 nothing-to-one <> r1m3",
+  "r0m7 nothing-to-one <> r1m3",
+  "r1m0 two-to-one <r0m0,r0m1> r2m0",
+  "r1m1 two-to-one <r0m2,r0m3> r2m0",
+  "r1m2 two-to-one <r0m4,r0m5> r2m1",
+  "r1m3 two-to-one <r0m6,r0m7> r2m1",
+  "r2m0 two-to-one <r1m0,r1m1> r3m0",
+  "r2m1 two-to-one <r1m2,r1m3> r3m0",
+  "r3m0 two-to-nothing <r2m0,r2m1> null",
+]
+`;
+
+exports[`bracket edge cases > links a 12 participant single elimination consistently (sources: true) 1`] = `
+[
+  "r0m0 nothing-to-one <> r1m0",
+  "r0m1 nothing-to-one <> r1m0",
+  "r0m2 nothing-to-one <> r1m1",
+  "r0m3 nothing-to-one <> r1m1",
+  "r0m4 nothing-to-one <> r1m2",
+  "r0m5 nothing-to-one <> r1m2",
+  "r0m6 nothing-to-one <> r1m3",
+  "r0m7 nothing-to-one <> r1m3",
+  "r1m0 two-to-one <r0m0,r0m1> r2m0",
+  "r1m1 two-to-one <r0m2,r0m3> r2m0",
+  "r1m2 two-to-one <r0m4,r0m5> r2m1",
+  "r1m3 two-to-one <r0m6,r0m7> r2m1",
+  "r2m0 two-to-one <r1m0,r1m1> r3m0",
+  "r2m1 two-to-one <r1m2,r1m3> r3m0",
+  "r3m0 two-to-nothing <r2m0,r2m1> null",
+]
+`;

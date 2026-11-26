@@ -1,0 +1,86 @@
+# Kunden-Vorlauf 2026-11-24 (B687, erster Lauf)
+
+Lauf: `yarn client-run --sdk <gebaute SDK-Kopie>` (Kopie in `~/dev/client-runs/2026-11-24-0056`), ein Teil
+(Titelkarte), Bildsatz mit 12 Titeln (11 mit Logo, 1 ohne). Der Agent meldete „Sketch fertig, drei Varianten,
+alle richtig dargestellt“ und ließ keine Ablehnung offen; `sketch ready` lief durch.
+
+## Befunde
+
+- Einzelbild jedes Zustands der Varianten b und c ist ein schwarzes 48x48-Quadrat (`/__design/shot?...&sketch=&variant=b&priority=low`), der Bogen des Agenten zeigt b und c richtig. Verdacht: Einzel-Shot einer Sketch-Variante ungleich a findet den Teil nicht und zeichnet einen Platzhalter (Suspect, nicht bestätigt).
+- Alle Karten stehen auf hellem Grund, obwohl Tomflix dunkel ist; der Agent schreibt selbst „Tomflix hat noch keine eigenen Farben“. Verdacht: das Start-Setup (`overlays/tomflix`) bringt nur `base` und keine Farb-Grundlage, das Werkzeug fordert keine an.
+- Variante a: Dune-Logo blass und klein unter dem Plakat, der Titel steht doppelt (Plakat trägt ihn schon). Verdacht: der Auftrag nennt das Plakat-Motiv nicht, das Werkzeug meldet doppelte Titel nicht.
+- Varianten b und c: orangefarbenes Logo auf weißem Verlauf kaum lesbar. Verdacht: kein Kontrast-Check für Bild-auf-Bild (Logo auf Hintergrund).
+- Variante a: im Einzelbild sehen `logo` und `logo-focus-visible` (ebenso `fallback`) gleich aus, im Bogen trägt focus-visible einen Ring. Ursache (gemessen am Lauf 0130): der Shot enthält den Ring, er schneidet nichts ab. Der Ring ist deckend schwarz (`0,0,0,255`) auf durchsichtigem Grund (`0,0,0,0`), und `differenceOf` in `tools/client-run/png.mjs` verglich nur RGB, nicht Alpha: Unterschied 0. Fix: `differenceOf` vergleicht auch Alpha; Spec mit dem echten Dune-Paar aus Lauf 0130 (`png.spec.mjs`).
+  Dasselbe Alpha-Loch hatte `inkOf` (Leer-Check): deckend schwarzer Inhalt auf Durchsichtigkeit zählte als leer. Gemessen: jede Karte aus Lauf 0130 hat auch helle Pixel (Ink 0,28 bis 0,64), kein echter Fehlalarm; der Spec beschneidet darum den reinen Ring-Streifen des Dune-Fokus-Shots. Fix: `inkOf` zählt auch Alpha; Prüfer auf Kopie des Laufs weiter 0 Befunde.
+- Rückfall ohne Logo (John Williams) zeigt den Titel als Text: wie bestellt, kein Befund.
+
+## Zweiter Prüflauf (Prüfer mit Bild-, Text-, Rahmen- und Baum-Check, SDK mit e9e2a06a4)
+
+`yarn client-run --judge ~/dev/client-runs/2026-11-24-0056 --sdk <Scratch mit e9e2a06a4>`: 6 Befunde statt 21.
+
+- Befund 1 (schwarze 48x48-Einzelbilder von b und c) ist weg: b und c zeichnen jetzt 200 bzw. 360 breit, kein leerer Zustand mehr.
+- Varianten a, b und c: `logo` und `logo-focus-visible` (ebenso `fallback`) sehen im Einzelbild gleich aus, auch in b und c. Verdacht: der Einzel-Shot schneidet auf die Inhaltsbox und verliert den äußeren Fokus-Ring (Befund 5, jetzt in allen drei Varianten).
+- Kein fehlendes Bild, kein abgeschnittener Text, kein Inhalt über den Rahmen, Baum zeigt den bestellten Sketch mit 3 Varianten: kein Befund.
+
+## Offen (nächste Schritte)
+
+- Zeitplan: Zeile für `crontab -e` in `tools/client-run/README.md`; der Mensch trägt sie ein.
+- Prüfer: Scrollleiste in einem Element der Zelle (nur die Seiten-Scrollleiste wird erkannt; kein echter Fall als Vorlage).
+
+## Lauf 2026-11-24-0130 (voller Lauf, SDK von HEAD fffdff6d5, 296 s, 9 Befunde)
+
+- Alle drei Varianten, je Film, Serie und ohne Logo: der Prüfer meldet `*-focus-visible` als gleich wie der Ruhezustand, die Einzelbilder zeigen aber einen deutlichen weißen Ring um die Karte (Dune a, Knight c geprüft). Ursache: dieselbe wie Befund 5 (Alpha nicht verglichen, kein Schnitt). Nach dem Fix meldet der Prüfer auf einer Kopie des Laufs 0 statt 9 Befunde (36 Bilder, kein Fehler); andere echte Befunde hatte der Lauf nicht.
+- Sonst nichts: kein fehlendes Bild, kein abgeschnittener Text, Baum zeigt die bestellten 3 Varianten; schwarze 48x48-Bilder sind weg.
+
+## Lauf 2026-11-24-1029 (Brennpunkt-Auftrag, Start dunkel mit Akzent #e50914, 12 min, 14 Befunde)
+
+- Farb-Grundlage dunkel kam an: „Kinosaal“ ist fast schwarz mit heller Schrift (B690 bewiesen).
+- Suspect: der Agent ignoriert den Start-Akzent. Er nimmt Messing und schreibt „Rot habe ich bewusst nicht genommen“. Rot ist die gespielte Startantwort des Laufs (00f552e0f), nicht die Wahl des Menschen. Entscheidung Mensch 24.11.: der Start-Akzent ist bindend; eine andere Farbe darf der Agent nur als zusätzliche Variante neben dem gewählten Akzent zeigen. Nichts im Werkzeug sagt ihm das.
+- Fehlalarm, behoben: 10 Befunde „Text abgeschnitten“ (Titelkarte b und c, ohne Logo, 2 px zu niedrig) und 1 „Text läuft aus dem Kasten“ (Farben, h1 3 px). Cause: der Prüfer maß die Glyphen-Box; die Tinte liegt 1 px (unten) und 4-9 px (oben) innen. Er misst jetzt die Tinte; Neuprüfung von 1029 meldet keinen der 11.
+- Button a: hover gleich wie default (B697, schwacher Zustand; die Live-Prüfung meldete es dem Agenten nicht).
+- Hero und App Shell blieben „in progress“: der Agent wartet auf den übernommenen Button und das Logo. Suspect: der Auftrag bestellt Teile, die von nicht gewählten Teilen abhängen.
+- Keine eigene Schrift: der Agent konnte keine herunterladen.
+- Stand Builder (Batch 53): Fehlalarme behoben a743686f3 (Prüfer misst Tinte, Biss, Neuprüfung 0 Textbefunde). Hero und Shell: Cause im Design-Skill (Agent wartete auf die Wahl anderer Teile), geändert ac7d61188, nicht verifiziert; der Lauf ab f688a59ee hat die Änderung noch nicht. Schrift: Cause Sandbox ohne Netz (gewollt); 46 B nutzt die Systemschrift, also bleibt es so.
+
+## Lauf 2026-11-24-1109 (Start von 46 B, Fallen, Akzent-Regel; SDK f688a59ee; 27 Befunde)
+
+- Alle sechs Teile fertig zur Wahl, je 3 Varianten. Akzent Rot hält überall (ACCENT-PRIMARY wirkt).
+- Suspect: ACCENT-PRIMARY ist zu streng. Der Agent konnte das Türkis aus 46 B nicht als zusätzliche Variante zeigen; die Entscheidung 24.11. erlaubt eine andere Farbe als zusätzliche Variante.
+- 13 Fallen ohne Zustand: Titelkarte ohne Plakat, 4K, 3D, Neue Folge, langer Titel, mobil; Hero Serie; Button gedrückt; App Shell gescrollt, versteckt, Tab-Leiste. Der Agent liest 46 B, zeichnet aber die Fallen nicht; nichts im Werkzeug fordert sie.
+- Titelkarte a, b, c: focus-visible gleich wie rest (8 Befunde). Button a, b, c: default, hover und disabled gleich; der Agent sagt, das liegt an den vorläufigen Farben (B697).
+- Hero a, b, c ohne Logo: Titel „John Williams: Live in Vienna“ läuft 20 px aus dem Kasten (Tinte gemessen). Suspect: echter Befund.
+- Hero und Shell warten wieder auf die Wahl von Button und Logo (Lauf ohne ac7d61188).
+- Feedback des Menschen 24.11. (Bild: foundations/logo Variante a, sieben Frames). Der Judge meldete nichts davon:
+  - Bilder größer als ihr Frame: mark, colour-variants und minimum-size laufen unten aus dem Frame; anatomy, clear-space und motion füllen ihn nicht.
+  - Viele Frames sind exakte Kopien: anatomy, clear-space, colour-variants, misuse und motion zeigen dasselbe T mit einem Titel. Kein Aufbau, kein Schutzraum, keine Farbvariante, keine falsche Verwendung. Ziel verfehlt.
+  - motion bewegt sich nicht.
+  - Der Agent schrieb selbst „Aufbau, Schutzraum und Mindestgröße sind vorerst nur Platzhalter“ (findings.md:53); das Werkzeug ließ die Variante trotzdem fertig zur Wahl werden.
+- Feedback des Menschen 24.11. (Bild: elements/app-shell Variante a, desktop und phone):
+  - Entscheidung Mensch 24.11.: die Shell ist nur Zusammensetzung. Suchkapsel, Reiter-Leiste und Avatar werden eigene Teile unter `components/`; der Agent legt sie an, wenn die Shell sie braucht (wie nötige Foundations). Die Shell zeigt nur Anordnung und Seiten-Zustände (gescrollt, Leiste versteckt, aktiver Reiter); Hover und Fokus zeigen die Teile. Der Auftrag bleibt bei sechs Teilen.
+  - Befund: der Inhaltsbereich ist in beiden Breiten leer und schwarz; die Shell zeigt nicht, wie sie mit Inhalt wirkt.
+  - Befund: die Chips „A–Z“ und „Filter“ sind dunkelrot auf Schwarz, kaum lesbar.
+- Feedback des Menschen 24.11. (Bild: elements/title-card, Varianten a, b, c): die Varianten stehen untereinander, nicht nebeneinander; die Zellen einer Variante brechen nach drei Spalten um. Der Mensch will die Varianten nebeneinander vergleichen. Suspect: Layout der Sketch-Ansicht (B676). Weiter im Bild: hover sieht aus wie rest (B697); Variante a zeigt den Titel doppelt (Plakat-Schrift plus Logo, B705).
+- Feedback des Menschen 24.11. (Bild: components/button, Block „Aktuell“): „dieses random initiale button design ist auch noch immer da“. Der Block zeigt den geerbten SDK-Button (tomflix erbt vom SDK, B700) mit Text „Save“ im Ersatz-Akzent; default und disabled sehen gleich aus; 10 von 12 Zuständen zeigen „neu in der Skizze“. Nichts sagt, dass das der SDK-Standard ist. Mensch 24.11.: „das ist definitiv nicht geerbt. das sdk design ist vollständig“. Der SDK-Button (`.ethlete/design/sdk/components/button/button.ts`) hat filled, outline, tonal, transparent, pressed, danger, small je mit hover, active, focus-visible, dazu Icon-, Größen- und disabled-Zeilen. „Aktuell“ zeigt davon nur zwei Zellen und meldet tonal und outline als „neu in der Skizze“, obwohl das SDK sie hat. Suspect: „Aktuell“ sucht die Zustände unter den Namen der Skizze, nicht unter denen des SDK-Teils. Zeile B719.
+- Feedback des Menschen 24.11. (gleiches Bild: components/button): auch hier stehen die Varianten a, b, c untereinander; sie passen nebeneinander. Zweiter echter Fall zum Title-Card-Befund oben (B676).
+- Entscheidung Mensch 24.11. (Frage zur App Shell): Varianten einer Zusammensetzung unterscheiden sich nur in der Anordnung und nutzen dieselben Unterteile. Ein Unterteil aus einem offenen Sketch (z. B. neue Tab-Leiste) zeichnet die Shell in der Variante, die der Agent empfiehlt, ohne Hinweis in Studio; nach dem Merge des Unterteils passt das Werkzeug die Shell an. Zeile B720. Elementbaum mit Inspektor: nach dem MVP (designer-workflow.md).
+- Entscheidung Mensch 24.11. (Bild: Studio-Menü, Untermenü „Kunden-Läufe“): das Untermenü erscheint nur für Pfade unter `client-runs/JJJJ-MM-TT-HHMM/` (`project-entries.ts:8`), andere sehen es nicht. Das Lauf-Skript trägt jeden neuen Lauf selbst ein (B687).
+- Batch 62 (Logo-Punkte): Kopien meldet der Prüfer e23a4e81d; Bewegung ohne Bewegung und Platzhalter lehnt `sketch check` und `sketch ready` ab, f81e860c0 (auf einer Kopie von 1109: alter cli ließ a, b, c durch, neuer lehnt alle drei ab). Offen: Bild größer als Frame (B721), Kopien im Gerüst selbst (B722). Nicht verifiziert: neuer Kunden-Lauf mit den neuen Prüfungen.
+- Feedback des Menschen 24.11. (Bilder: foundations/colors): (1) colors ist schon gemergt, flache Tabelle, alle Flächen 128 128 128, alle primary-Zustände gleich; (2) die Varianten nutzen denselben Tabellen-Aufbau, nicht den der SDK-Farbseite (Flächen-Karten, Akzent-Zustände, Kontrast) - B725; (3) Spalte „px in 1 Stelle … Ganzer Screen“ ist Käse - B676; (4) Projektwechsel zeigt „tomflix“ beim Bau des SDK - B723.
+
+## Lauf 2026-11-24-1642 (erster Lauf gegen 46 B, SDK 5f093b0b8 ohne B705-Teilstand; 20 Befunde, 27 Bilder nicht geprüft)
+
+Checkout `/home/tom/dev/client-runs/2026-11-24-1642/tomflix`, Projekt `tomflix`, Bericht im Lauf-Ordner. Der Lauf trägt sich noch nicht in Studio ein (B687, run.mjs-Schritt offen). Der Agent hielt nach Farben, Logo und halbem Button an.
+
+- Neu: `sketch_check` lehnt den Logo-Sketch ab (LOGO-SECTION: eine Logo-Variante braucht schon vor der Wahl alle sechs Abschnitte); die Regeln sagen, diese kommen erst nach der Wahl. Folge von f81e860c0 (Platzhalter abgelehnt), Widerspruch zur Regel. Logo bleibt „in progress“.
+- Neu: Start mit `--accent #e50914` lehnt Türkis als Hauptakzent ab; 46 B nutzt Türkis. Lauf-Start und Referenz widersprechen sich, Farben bleiben „in progress“.
+- Neu: ein `design check` des Agenten wurde in der Sandbox abgelehnt („The user doesn't want to proceed…“); Verdacht: Rechte der Sandbox, nicht das Werkzeug.
+- Bekannt (B734): jeder Button-Sketch scheitert an TYPE-ERROR im SDK-Baustein (ButtonProps `disabled`).
+- Bekannt (B699/B697): Button a/b/c, Zustände filled/pressed/danger (je rest, hover, focus-visible) zeigen dasselbe Bild, nur der Text ist anders.
+- Folge des Abbruchs: App Shell, Hero, Titelkarte fehlen im Baum; button, colors, logo stehen auf „in progress“.
+
+### Mensch in Studio (1642, 17 Uhr)
+
+- Gesamt: nichts passt zu 46 B. Hauptursache: Start mit festem Rot `--accent #e50914` statt Akzent aus 46 B (in B687).
+- Logo: nur ein Abschnitt `mark`, Agent gibt auf (LOGO-SECTION-Blocker). Variante a zeigt eine Lücke zwischen „T“ und „OMFLIX“.
+- Button: beim Laden nur Beschreibungen und „vergleicht 50 Zustände …“, dann ein Raster mit vielen „Lädt“-Zellen. Zu viele Frames: 16 Zeilen × 4 Zustände × Aktuell, a, b, c, rund 200 für einen Button. Das Bild bei 2 % Zoom zeigt nur die Menge (Korrektur des Menschen).
+- Colors: Spalte „Aktuell“ hat nur den Kopf und keine Frames; Frames der Varianten sind bei Fit nicht lesbar (B676).

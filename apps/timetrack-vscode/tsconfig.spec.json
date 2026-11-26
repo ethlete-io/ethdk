@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "types": ["node", "vscode", "vitest/globals", "vitest/importMeta", "vite/client", "vitest"],
+    "isolatedModules": true
+  },
+  "include": ["vitest.config.mts", "src/**/*.spec.ts", "src/**/*.test.ts", "src/**/*.d.ts"]
+}

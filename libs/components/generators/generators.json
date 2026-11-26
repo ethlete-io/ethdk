@@ -1,0 +1,126 @@
+{
+  "generators": {
+    "component": {
+      "scaffold": true,
+      "factory": "./component/generator",
+      "schema": "./component/schema.json",
+      "description": "Scaffold a component domain following the three-tier architecture (folder layout, headless + default split, styles, spec, stories, docs page, barrel wiring)"
+    },
+    "migrate-bracket-default-cards": {
+      "factory": "./migrate-bracket-default-cards/migration",
+      "schema": "./migrate-bracket-default-cards/schema.json",
+      "description": "Spread BRACKET_DEFAULT_CARDS into provideBracketConfig and report brackets without one"
+    },
+    "migrate-bracket-ethlete-renames": {
+      "factory": "./migrate-bracket-ethlete-renames/migration",
+      "schema": "./migrate-bracket-ethlete-renames/schema.json",
+      "description": "Rename generateTournamentModeFormEthleteRounds to generateTournamentModeFromEthleteRounds"
+    },
+    "migrate-query-error-labels": {
+      "factory": "./migrate-query-error-labels/migration",
+      "schema": "./migrate-query-error-labels/schema.json",
+      "description": "Find query-error usage affected by the English-only label default and report where German must be re-opted-in"
+    },
+    "migrate-overlay-nav-tab-imports": {
+      "factory": "./migrate-overlay-nav-tab-imports/migration",
+      "schema": "./migrate-overlay-nav-tab-imports/schema.json",
+      "description": "Add OVERLAY_NAV_TAB_IMPORTS where a NAV_TAB_IMPORTS component renders et-overlay-nav-tab-link"
+    },
+    "migrate-rich-text-editor-floating-toolbar": {
+      "factory": "./migrate-rich-text-editor-floating-toolbar/migration",
+      "schema": "./migrate-rich-text-editor-floating-toolbar/schema.json",
+      "description": "Find rich text editor usage that loses the selection toolbar and report where to re-opt-in"
+    },
+    "migrate-rich-text-editor-link-editor": {
+      "factory": "./migrate-rich-text-editor-link-editor/migration",
+      "schema": "./migrate-rich-text-editor-link-editor/schema.json",
+      "description": "Find rich text editor usage that loses the link editor popover and report where to re-opt-in"
+    },
+    "migrate-rich-text-editor-tools": {
+      "factory": "./migrate-rich-text-editor-tools/migration",
+      "schema": "./migrate-rich-text-editor-tools/schema.json",
+      "description": "Find rich text editor usage that loses the heading, quote, code-block and link tools and report where to re-opt-in"
+    },
+    "migrate-stream-default-components": {
+      "factory": "./migrate-stream-default-components/migration",
+      "schema": "./migrate-stream-default-components/schema.json",
+      "description": "Spread STREAM_DEFAULT_COMPONENTS into provideStreamConfig and report stream slots without one"
+    },
+    "migrate-pip-window-z-index": {
+      "factory": "./migrate-pip-window-z-index/migration",
+      "schema": "./migrate-pip-window-z-index/schema.json",
+      "description": "Move --et-pip-window-z-index into providePipWindowConfig and report the sites it cannot move"
+    },
+    "migrate-tabs-active-underline": {
+      "factory": "./migrate-tabs-active-underline/migration",
+      "schema": "./migrate-tabs-active-underline/schema.json",
+      "description": "Remove the activeUnderline option from provideTabsConfig calls"
+    },
+    "migrate-youtube-player-slot-directive": {
+      "factory": "./migrate-youtube-player-slot-directive/migration",
+      "schema": "./migrate-youtube-player-slot-directive/schema.json",
+      "description": "Remove YoutubePlayerSlotDirective and YOUTUBE_PLAYER_SLOT_TOKEN, and mark the uses it cannot remove"
+    },
+    "migrate-chart-baseline-y": {
+      "factory": "./migrate-chart-baseline-y/migration",
+      "schema": "./migrate-chart-baseline-y/schema.json",
+      "description": "Rename the removed chart-grid baselineY alias to baseline"
+    },
+    "migrate-line-chart-stacked-area-mix": {
+      "factory": "./migrate-line-chart-stacked-area-mix/migration",
+      "schema": "./migrate-line-chart-stacked-area-mix/schema.json",
+      "description": "Rename the removed --et-line-chart-stacked-area-opacity token to --et-line-chart-stacked-area-mix"
+    },
+    "migrate-grid-engine-internals": {
+      "factory": "./migrate-grid-engine-internals/migration",
+      "schema": "./migrate-grid-engine-internals/schema.json",
+      "description": "Remove the grid engine internals from @ethlete/components imports and mark their uses"
+    },
+    "migrate-overlay-and-column-api": {
+      "factory": "./migrate-overlay-and-column-api/migration",
+      "schema": "./migrate-overlay-and-column-api/schema.json",
+      "description": "Move overlay callback results from null to undefined, rename injectCommandPalette and the TableColumnVisibilityHost allColumns key, and report the rest"
+    },
+    "migrate-overlay-fullscreen-animation": {
+      "factory": "./migrate-overlay-fullscreen-animation/migration",
+      "schema": "./migrate-overlay-fullscreen-animation/schema.json",
+      "description": "Remove the overlay fullscreen animation internals from @ethlete/components imports and mark their uses"
+    },
+    "migrate-cascader-tree-internals": {
+      "factory": "./migrate-cascader-tree-internals/migration",
+      "schema": "./migrate-cascader-tree-internals/schema.json",
+      "description": "Remove the cascader tree helpers from @ethlete/components imports and mark their uses"
+    },
+    "migrate-duration-format-internals": {
+      "factory": "./migrate-duration-format-internals/migration",
+      "schema": "./migrate-duration-format-internals/schema.json",
+      "description": "Remove the duration format helpers from @ethlete/components imports and mark their uses"
+    },
+    "migrate-time-picker-ring": {
+      "factory": "./migrate-time-picker-ring/migration",
+      "schema": "./migrate-time-picker-ring/schema.json",
+      "description": "Replace the removed time picker setActiveSide with activeSide.set and mark the removed column and option directives"
+    },
+    "migrate-error-color-theme-signal": {
+      "factory": "./migrate-error-color-theme-signal/migration",
+      "schema": "./migrate-error-color-theme-signal/schema.json",
+      "description": "Call the errorColorTheme signal of injectFormSupport() and TableComponent where it is read"
+    },
+    "migrate-select-input-renames": {
+      "factory": "./migrate-select-input-renames/migration",
+      "schema": "./migrate-select-input-renames/schema.json",
+      "description": "Rename the select and tag input inputs that changed name in templates"
+    },
+    "migrate-loader-determinate": {
+      "factory": "./migrate-loader-determinate/migration",
+      "schema": "./migrate-loader-determinate/schema.json",
+      "description": "Remove the spinner determinate and progress bar indeterminate inputs in templates"
+    },
+    "icons": {
+      "scaffold": true,
+      "factory": "./icons/generator",
+      "schema": "./icons/schema.json",
+      "description": "Generate etIcon IconDefinitions and typed names from an installed SVG icon source (auto-detects Font Awesome)"
+    }
+  }
+}

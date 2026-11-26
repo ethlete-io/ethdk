@@ -1,0 +1,11 @@
+{
+  "name": "@ethlete/timetrack",
+  "version": "0.1.0-next.19",
+  "private": true,
+  "license": "MIT",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@ethlete/agent-rules": "^0.1.0-next.5",
+    "rxjs": "^7.8.0"
+  }
+}

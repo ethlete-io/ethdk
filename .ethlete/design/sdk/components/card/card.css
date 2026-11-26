@@ -1,0 +1,19 @@
+.card-frame {
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background);
+  color: var(--et-surface-text);
+}
+
+.card-frame .et-card {
+  max-inline-size: 32rem;
+}
+
+@layer components {
+  .et-card .et-focus-ring {
+    --_et-focus-ring-color: var(--et-tone-text);
+  }
+
+  .et-card .et-button[data-variant='filled'] {
+    --et-button-shadow: inset 0 0 0 1px var(--et-tone-text);
+  }
+}

@@ -1,0 +1,23 @@
+import * as Actions from './session.actions';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { ActionCallArgs, defineResponseType, ServiceBase } from '@tomtomb/ngrx-toolkit';
+import { environment } from '@app-a/env';
+import { EventHallView } from '@app-a/types';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class CatalogSessionService extends ServiceBase {
+  constructor(private _http: HttpClient) {
+    super(_http, environment.apiBaseURL);
+  }
+
+  getCatalogSessionEvent(args: ActionCallArgs<typeof Actions.getCatalogSessionEvent>) {
+    return this.get({
+      apiRoute: (p) => `/catalog/session/event/${p.eventId}`,
+      httpOpts: args,
+      responseType: defineResponseType<EventHallView>(),
+    });
+  }
+}

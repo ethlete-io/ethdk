@@ -1,0 +1,14 @@
+import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+import { EffectsModule } from '@ngrx/effects';
+import { StoreModule } from '@ngrx/store';
+import * as fromReducer from './stores/catalog';
+
+@NgModule({
+  imports: [
+    CommonModule,
+    StoreModule.forFeature(fromReducer.CATALOG_FEATURE_KEY, fromReducer.catalogReducer),
+    EffectsModule.forFeature(fromReducer.catalogEffects),
+  ],
+})
+export class StoreCatalogModule {}

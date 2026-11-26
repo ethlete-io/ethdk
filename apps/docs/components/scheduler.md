@@ -1,0 +1,632 @@
+# Scheduler
+
+`et-scheduler` is a composable appointment calendar, Google-Calendar-shaped: a month grid, a week/day hour-axis time grid, and an agenda list, all sharing one headless engine. Appointments can nest into arbitrarily deep "sub-appointment" chains (a project's Jira-esque sub-tasks), each with its own start/end. Import `SCHEDULER_IMPORTS`; register the edit surface only when users can edit appointments.
+
+```ts
+import { Component } from '@angular/core';
+import { provideSchedulerEditSurface, SCHEDULER_IMPORTS } from '@ethlete/components';
+
+@Component({
+  imports: [SCHEDULER_IMPORTS],
+  providers: [provideSchedulerEditSurface()],
+})
+export class CalendarComponent {}
+```
+
+```html
+<et-scheduler [(selectedAppointmentId)]="selectedId" [appointments]="appointments" />
+```
+
+## Live demo
+
+@example scheduler/scheduler-default 640px
+
+## The appointment model
+
+The scheduler doesn't fetch - a consumer passes a flat list, and nesting is a single `parentId` field rather than a fixed hierarchy:
+
+```ts
+type AppointmentId = string;
+
+type Appointment<TExtra = unknown> = {
+  id: AppointmentId;
+  parentId: AppointmentId | null;
+  title: string;
+  start: Date;
+  end: Date;
+  allDay?: boolean;
+  colorToken?: string;
+  location?: string;
+  description?: string;
+  extra?: TExtra;
+};
+```
+
+- `parentId` links an appointment under another, to any depth - a dangling reference (the parent was filtered out) falls back to top-level rather than being dropped.
+- `colorToken` resolves through the [color theming](/core/theming) system - it's read as `[etProvideColor]` on the appointment's badge, so pass whatever theme name your app registered (`'brand'`, `'danger'`, …), never a literal color.
+- `location` shows in the badge via the built-in `etSchedulerBadgeLocation` adornment when set - see [badge composability](#badge-composability).
+- `description` is edited by the built-in `<et-scheduler-edit-description>` field - see [fields](#fields).
+- `extra` is the open extension point for a custom edit field to read and write, so adding one never widens `Appointment` itself.
+- An appointment renders on **every day it spans**, not just the day it starts - a 3-day `allDay` appointment shows a badge on all three month-view day cells, and one bar spanning all three columns in the time grid's all-day strip.
+- `end` is exclusive: an appointment that ends at 00:00 does not reach into the next day. A zero-length appointment shows on the day it starts.
+
+## Options
+
+On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
+
+| Input                   | Type                                        | Default             | Description                                                                                                             |
+| ----------------------- | ------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `appointments`          | `readonly Appointment<TExtra>[]`            | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.                                    |
+| `view`                  | `SchedulerView`                             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                                                     |
+| `focusedDate`           | `Date`                                      | today               | The date the visible period is derived from.                                                                            |
+| `selectedAppointmentId` | `AppointmentId \| null`                     | `null`              | The currently selected appointment.                                                                                     |
+| `locale`                | `Locale \| null` (date-fns)                 | `DATE_LOCALE` token | Weekday names, the header label and every time (`p`: 12-hour in en-US, 24-hour in `de`). Falls back to date-fns' en-US. |
+| `firstDayOfWeek`        | `0–6`                                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                                                  |
+| `agendaDays`            | `number \| null`                            | `null`              | How many days the agenda lists, from `focusedDate` on - see [infinite agenda](#infinite-agenda).                        |
+| `businessHours`         | `readonly SchedulerBusinessHours[] \| null` | `null`              | Open hours per weekday; the time grid shades everything outside them - see [business hours](#business-hours).           |
+| `nowIndicator`          | `boolean`                                   | `true`              | Marks the current time on today's time-grid column - see [the now line](#now-line).                                     |
+
+| Model                   | Type                    | Description                                  |
+| ----------------------- | ----------------------- | -------------------------------------------- |
+| `view`                  | `SchedulerView`         | Which view is on screen.                     |
+| `selectedAppointmentId` | `AppointmentId \| null` | The selected appointment's id.               |
+| `focusedDate`           | `Date`                  | The date the visible period is derived from. |
+
+| Output                  | Payload                                  | Fires when                                                                                                      |
+| ----------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `appointmentSave`       | `Appointment<TExtra>`                    | The default [edit surface](#edit-surface) saves an edit, a new sub-appointment, or a new top-level appointment. |
+| `appointmentsDelete`    | `readonly AppointmentId[]`               | The edit surface's "Delete (with descendants)" action removes an appointment and its chain.                     |
+| `appointmentReschedule` | `SchedulerAppointmentReschedule<TExtra>` | An appointment was [dragged](#move-and-resize) to another time, or resized by one of its edges.                 |
+
+The toolbar's Month/Week/Day/Agenda control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself. `<et-scheduler>` takes `TExtra` from `appointments`, so with `[appointments]` typed `Appointment<IssueExtra>[]` the outputs emit `Appointment<IssueExtra>` and a strict template accepts `(appointmentSave)="save($event)"` for `save(a: Appointment<IssueExtra>)`. `appointments` is one-way: the scheduler never mutates it, so applying `appointmentSave`/`appointmentsDelete`/`appointmentReschedule` back onto your own signal is on you - see the [edit surface](#edit-surface) section.
+
+## Toolbar
+
+Today, prev/next, the period label, and the view switch, all in `<et-scheduler>`'s own header. Below a ~480px container width (a CSS container query on the scheduler itself, not a page-level media query, so it responds to how much room `<et-scheduler>` actually has) the view switch drops onto its own row below the nav controls; the period label always truncates with an ellipsis rather than pushing other controls off-screen.
+
+Toolbar actions are the same self-registering-feature mechanism as everything else - `registerToolbarAction({ label, icon?, run, order, enabled })` on [`SCHEDULER_FEATURE_HOST`](#feature-host). One is built in:
+
+| Directive                         | Does                                                                                                                                                                      | Default order |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `etSchedulerActionAddAppointment` | Opens the [edit surface](#edit-surface) for a brand-new, blank, top-level appointment - anchored to `focusedDate`, defaulting to the next hour if that's today, else 9am. | `0`           |
+
+```html
+<et-scheduler [etSchedulerActionAddAppointment]="{ enabled: false }" [appointments]="appointments" />
+```
+
+It opens the registered [edit surface](#edit-surface), so without `provideSchedulerEditSurface()` the action hides itself. A bare `[etScheduler]` composition opens the surface with [`openAdd`](#edit-surface-opener) from an affordance of its own.
+
+### At narrow widths {#toolbar-narrow}
+
+At the same ~480px the view switch reflows at, two more things change - both driven by the scheduler's own width, so a scheduler in a narrow sidebar gets them on a desktop viewport too:
+
+- **Today drops its text** and becomes a round icon button matching the prev/next buttons beside it. It carries the same `aria-label` in both shapes, so its accessible name never changes.
+- **Toolbar actions become FABs**, wrapped in a [floating action](/components/floating-action): they sit in the header where they were written, and pin themselves to the bottom-inline-end corner of the viewport once the header has scrolled away. An action with an `icon` renders icon-only (named by its `label`); one without renders as an extended FAB with its label.
+
+@example scheduler/scheduler-narrow 640px
+
+## Swipe navigation {#swipe-navigation}
+
+`etSchedulerSwipeNavigation` steps the visible period with a horizontal swipe: toward the inline start for the next period, toward the inline end for the previous one - the same steps prev/next take, so what a swipe moves by depends on the active view. It's bundled by `<et-scheduler>`; add it to a bare `[etScheduler]` composition to get the same gesture, and turn it off with `{ enabled: false }`.
+
+```html
+<et-scheduler [etSchedulerSwipeNavigation]="{ enabled: false }" [appointments]="appointments" />
+```
+
+**Touch only.** A horizontal drag with a mouse is [drawing a range](#drag-to-create), not navigating. A swipe has to travel ~56px, or ~32px thrown fast enough to read as a flick; anything shorter, and anything the tracker sees as vertical, is left to the view to scroll. Once a swipe passes ~16px the scheduler takes the gesture over, which also swallows the tap the browser would otherwise synthesize on release - so swiping across an appointment navigates instead of opening it, while tapping one still opens it. A [drag-to-create](#drag-to-create) long press that has already armed keeps the gesture; the swipe drops out rather than doing both.
+
+## Month view
+
+A day cell per day of the padded month, leading/trailing days from adjacent months included. Each cell shows up to `maxVisiblePerCell` appointments (chain order, depth-first) as one-line badges; the rest collapse into a "+N more" affordance that opens an [`et-menu`](/components/menu) popover listing them.
+
+```html
+<et-scheduler-month-view [maxVisiblePerCell]="3" />
+```
+
+| Input               | Type     | Default | Description                                                      |
+| ------------------- | -------- | ------- | ---------------------------------------------------------------- |
+| `maxVisiblePerCell` | `number` | `3`     | How many appointments a day cell shows before the rest overflow. |
+
+Clicking a badge (in the grid or the overflow popover) sets `selectedAppointmentId`, which `<et-scheduler>` reacts to by opening the [edit surface](#edit-surface); dragging one moves it to another day, see [move and resize](#move-and-resize) - see that section for what a bare `[etScheduler]` composition needs to do instead. `<et-scheduler-month-view>` reads its host `[etScheduler]` via DI. Its badges are built from the registered [badge adornments](#badge-composability), which `<et-scheduler>` (or a shell of your own that provides [`SCHEDULER_FEATURE_HOST`](#own-feature-host)) supplies. Inside a bare `[etScheduler]` with no feature host, the month, time-grid and agenda views fall back to the built-in title and time range, so every badge still has a title, a time and an accessible name. Storybook's **Scheduler → Headless** story is that setup.
+
+## Time grid: week & day view
+
+An hour axis with one column per day - a single column for the day view, seven for the week view. Both are the **same** `<et-scheduler-time-grid-view>`; only the visible range differs, driven by `view`. All-day appointments render as one bar spanning the visible days they cover in a strip above the hour grid - a 3-day appointment draws once, not once per day - stacked into rows when two spans overlap; timed appointments are laid out at their actual position and duration.
+
+The 24-hour body is bounded and internally scrollable (`--et-scheduler-time-grid-body-max-height`, default `600px`) rather than growing the page - the day header and all-day strip above it always stay in view. On mount it scrolls itself to a relevant hour: the current time (with an hour of lead-in) when today is one of the visible days, else the earliest appointment's hour, else 9am - so opening day/week view never starts on an empty screen scrolled to midnight. It scrolls once, on mount, not on every `focusedDate` change - stepping to the next day/week never yanks your own scroll position back.
+
+@example scheduler/scheduler-week 640px
+
+```html
+<et-scheduler-time-grid-view />
+```
+
+It takes no inputs of its own - like the month view, it reads its host `[etScheduler]` via DI. Appointments that overlap in time are packed into side-by-side columns wide enough to fit the busiest overlap group in view, so nothing ever visually overlaps; appointments that don't overlap anything each get the column's full width. A block then widens into the columns to its right that nothing overlapping it occupies, so one short overlap in the morning no longer thins every block it is transitively grouped with for the rest of the day. A sub-appointment renders in its own column exactly like any other appointment (its own overlap group can differ from its parent's) but gets a depth-scaled inline inset and a shifted color dot, capped past four levels, as a "belongs to" cue - the day view below shows a two-level chain next to its sibling.
+
+@example scheduler/scheduler-day 640px
+
+Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view. Both can also be dragged - a block to another time or day, an all-day entry across whole days - and resized by their edges: the block's top and bottom, the entry's leading and trailing. See [move and resize](#move-and-resize).
+
+### The now line {#now-line}
+
+A line marks the current time across today's column, with a dot on its leading edge, and moves on every minute boundary. It is drawn only when today is one of the visible days, so stepping to another week leaves the grid clean. Turn it off with `[nowIndicator]="false"`; the clock behind it then stops, and it never runs on the server.
+
+### Business hours {#business-hours}
+
+`businessHours` lists the open stretches per weekday, and the time grid shades every other stretch of each day column. A weekday no entry lists is shaded all day. Several entries for the same weekday make a split day, such as a lunch break:
+
+```ts
+protected businessHours: SchedulerBusinessHours[] = [
+  { daysOfWeek: [1, 2, 3, 4], start: '08:00', end: '12:00' },
+  { daysOfWeek: [1, 2, 3, 4], start: '13:00', end: '18:00' },
+  { daysOfWeek: [5], start: '08:00', end: '14:00' },
+];
+```
+
+```html
+<et-scheduler [businessHours]="businessHours" [appointments]="appointments" />
+```
+
+`daysOfWeek` counts from `0` = Sunday. `start` and `end` are `HH:mm`, and `end` may be `24:00` to stay open until midnight. An entry that does not parse, or ends before it starts, reports `ET4506` to the `ErrorHandler` in development, and the grid shades nothing until it is fixed. The shading is only a cue: appointments still render and can still be dragged, and a drag-to-create still starts, on a shaded stretch. The fill comes from the surface's interaction color at 6%; set `--et-scheduler-time-grid-non-business-background` to change it.
+
+@example scheduler/scheduler-business-hours 640px
+
+## Agenda view
+
+A flat list, grouped by day: each day of the visible range that has at least one appointment gets a section, with its appointments as full-width badges in chain order (depth-first, indented per level). A day with nothing on it is skipped entirely rather than rendering an empty section.
+
+@example scheduler/scheduler-agenda 640px
+
+```html
+<et-scheduler-agenda-view />
+```
+
+It takes no inputs of its own - like the other views, it reads its host `[etScheduler]` via DI. By default the agenda shares its visible range with the week view (the same 7-day window), so switching between them keeps the same days on screen. Clicking a badge sets `selectedAppointmentId`, same as the other views.
+
+A day header names its weekday and day of month; a month heading is inserted wherever the list crosses into another month - never above the first day, which the toolbar's own period label already names.
+
+### Infinite agenda {#infinite-agenda}
+
+`agendaDays` takes the agenda out of that 7-day window: it lists that many days counted from `focusedDate`'s own day, and prev/next then step by the same span instead of by a week. Growing it as the user reaches the end of the list is what makes the agenda endless:
+
+```html
+<et-scheduler [appointments]="appointments()" [agendaDays]="agendaDays()" [focusedDate]="from" view="agenda" />
+
+<div #listEnd></div>
+```
+
+The paging itself belongs to the query, not to the scheduler - it never fetches. A [paged query stack](/query/stacks#paged-queries) over an open-ended "appointments from this date on" endpoint is the whole mechanism, and the agenda spans exactly as far as the pages loaded so far reach:
+
+```ts
+protected from = startOfToday();
+
+private appointmentPages = createPagedQueryStack({
+  queryCreator: getAppointments,
+  responseNormalizer: ethletePaginationAdapter,
+  args: (page) => ({ queryParams: { page, limit: 50, from: formatISO(this.from) } }),
+});
+
+protected appointments = computed(() => this.appointmentPages.items().map(toAppointment));
+
+protected agendaDays = computed(() => {
+  const lastEnd = this.appointments().reduce((last, a) => Math.max(last, a.end.getTime()), this.from.getTime());
+
+  return differenceInCalendarDays(lastEnd, this.from) + 1;
+});
+
+private listEnd = viewChild.required<ElementRef<HTMLElement>>('listEnd');
+private listEndIntersection = signalElementIntersection(this.listEnd);
+
+constructor() {
+  effect(() => {
+    const reachedEnd = this.listEndIntersection().some((entry) => entry.isVisible);
+
+    if (!reachedEnd || !untracked(this.appointmentPages.canFetchNextPage)) return;
+
+    untracked(() => this.appointmentPages.fetchNextPage());
+  });
+}
+```
+
+Two things to get right:
+
+- **Never read the growing signal inside the stack's `args`.** `args` is reactive - a signal it reads resets the stack to its first page, so an `agendaDays` (or "loaded until") signal in there re-fetches everything instead of paging. Keep the query's own window fixed and let the day span follow the data, as above.
+- **Let the page scroll, not the list.** `canFetchNextPage` already covers "still loading" and "last page reached", so the sentinel needs no debouncing of its own - but it has to be able to intersect. The agenda list scrolls itself only when something bounds the scheduler's height; in that case put the sentinel inside the list's scroll container, or pass that container as `signalElementIntersection`'s `root`.
+
+Storybook's **Scheduler → Infinite Agenda** story runs the whole pattern against a local generator instead of a server. (It is not embedded here: this page already carries as many live stories as one page can host.)
+
+## Drag to create {#drag-to-create}
+
+Dragging across empty space on the **week**, **day** or **month** view draws a new appointment and opens the [edit surface](#edit-surface) over it on release, prefilled with what you drew. The agenda is a list with no geometry to drag across, so it has none.
+
+- **Week and day** draw a time range down a day column. It snaps to 15-minute slots and is never shorter than one.
+- **Month** draws an all-day span across day cells, in either direction.
+
+**A press that never drags still creates**, at a default size: an hour from where it landed on the week and day views - snapped to the same 15-minute slots - and an all-day appointment on the month view's clicked cell. A press that starts **on** an appointment (or a "+N more" trigger) does not draw over it - it [moves or resizes](#move-and-resize) that appointment instead - and a click made while a surface is open only dismisses it.
+
+**On touch it starts with a long press.** Both views scroll, so a finger that simply drags is panning - the browser claims the gesture and cancels it. Holding still for ~400ms arms the range instead, and from that point scrolling is blocked until you let go, so the drag draws. A quick swipe scrolls exactly as before; a tap, and a long press released without moving, both create the same default a click does.
+
+The range stays visible while the surface is open and disappears when it closes - dismiss without saving and nothing is created. Clicking the drawn range itself counts as clicking outside the surface, so it closes and clears, rather than drawing a fresh range underneath. A gesture the browser takes away (a `pointercancel`) clears it without opening anything.
+
+The keyboard creates the same way: Space on any cell, or Enter on an empty one, draws that default - an hour from the focused slot, or the focused day as an all-day appointment - and opens the surface over it. See [keyboard](#keyboard).
+
+The state behind it lives on the headless directive, so a custom view can drive the same flow: `draftRange` (the live range, whether it is `dragging` or `committed`, and `allDay` for day-granular views), written with `beginDraftRange()` / `extendDraftRange()` for a time axis or `setDraftRange()` for whole days, settled with `commitDraftRange()` and dropped with `clearDraftRange()`.
+
+## Move and resize {#move-and-resize}
+
+Appointments already on the calendar can be dragged to another time. Unlike drawing a new one, this does **not** open the edit surface - the drag itself is the edit, and it emits `appointmentReschedule` on release.
+
+- **Week and day**: drag a block's body to move it - down or up for another time, sideways for another day - or drag its **top or bottom edge** to resize it. Both snap to the same 15-minute slots a drawn range does, and a resize never shrinks a block below one slot: an edge dragged past the other stops there. A block moved past the top or bottom of its column stops on that day, starting no earlier than 00:00 and no later than 23:45 - its end may still run past midnight. A block split across days has an edge handle only where it shows the appointment's real start or end, and an all-day entry cut off by the visible week has none on the cut side.
+- **The all-day strip** above them works the same way, in whole days: drag an entry sideways to move it, or drag its **leading or trailing edge** to change which days it spans. An edge dragged past the other stops on that day, leaving a one-day entry. A move shifts both ends by the same number of days, so whatever times of day the appointment carries survive it. Dragging up or down does nothing - an all-day entry cannot be dragged into the hour grid to become a timed one, or the other way round.
+- **Month**: drag a badge onto another day cell. It keeps its time of day and its duration, so a 3-day appointment moved one cell across is still 3 days long. There is no resize here - a month badge renders per cell rather than as one span, so it has no edge to grab.
+- **Agenda** has no geometry to drag across, same as drag-to-create.
+
+A move keeps the duration and a resize keeps the other end, so the two gestures are never ambiguous about what they change. The whole appointment previews itself as you drag - on the month view the target cells are marked as well, because a cell already at `maxVisiblePerCell` collapses the badge into its "+N more" menu.
+
+```html
+<et-scheduler [appointments]="appointments()" (appointmentReschedule)="reschedule($event)" />
+```
+
+```ts
+protected reschedule({ appointment }: SchedulerAppointmentReschedule) {
+  this.appointments.update((all) => all.map((a) => (a.id === appointment.id ? appointment : a)));
+}
+```
+
+**Nothing has moved until you apply it.** `appointments` is yours, and the preview drops the moment the pointer is released - so the appointment snaps back to whatever `appointments` still says. Applying it synchronously (above) is seamless; if you persist to a server first, write the new range optimistically and roll back on failure, or the block will visibly snap back and then jump. The payload carries `previous` alongside `appointment` for exactly that rollback - and for an undo affordance.
+
+**On touch it starts with a long press**, for the same reason [drawing a range](#drag-to-create) does: the week and day views scroll, so a finger that simply drags is panning. Hold still for ~400ms and the appointment arms; a quick swipe scrolls, and a tap still opens the edit surface. Edge handles get a larger hit area on coarse pointers.
+
+A gesture the browser takes away (a `pointercancel`) reverts the appointment - the user never chose a time - and emits nothing. Neither does a drag that ends where it started.
+
+### Turning it off
+
+Dragging is on by default. `[etSchedulerAppointmentDrag]` is one of the feature directives `<et-scheduler>` bundles, so disable it the same way as the rest:
+
+```html
+<et-scheduler [etSchedulerAppointmentDrag]="{ enabled: false }" [appointments]="appointments()" />
+```
+
+With it off, blocks and all-day entries render no edge handles and no grab cursor, and a press on one is only ever a click. Add the directive to a bare `[etScheduler]` composition to give its views the gesture; without it, the default views never start a drag.
+
+Keyboard users are not left out by any of this: the edit surface's time-range field edits the same two dates, so a drag is a pointer shortcut rather than the only way in.
+
+The state behind it lives on the headless directive, so a custom view can drive it: `appointmentDrag` (the appointment, the `mode` - `'move' \| 'resize-start' \| 'resize-end'` - and its pending range), written with `beginAppointmentDrag()` / `updateAppointmentDrag()`, released with `commitAppointmentDrag()` (which emits) and dropped with `clearAppointmentDrag()` (which does not). `effectiveAppointments` is the appointment list with the in-flight drag applied - every built-in layout derives from it, which is what makes the preview automatic.
+
+## Edit surface {#edit-surface}
+
+Clicking any appointment badge or block opens the edit surface - `<et-scheduler-edit-surface>`, or a component of [your own](#own-edit-surface) - built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. Register `provideSchedulerEditSurface()` in a parent injector to enable that behavior. Without it, the scheduler is read-only: a click on a badge only selects it (bind `(selectedAppointmentIdChange)` to drive a detail panel of your own), the toolbar has no "Add appointment" button, and clicking, dragging or pressing Enter on an empty slot drafts nothing. The headless `createEnabled` signal on `[etScheduler]` is what turns drag-to-create off; set it yourself in a headless composition. Calling `addAppointment()` without the surface reports `ET4505` to the `ErrorHandler` in development (and does nothing). The Scheduler `ReadOnly` story in Storybook shows this setup.
+
+`SCHEDULER_IMPORTS` does not include the edit surface. Import `SCHEDULER_EDIT_SURFACE_IMPORTS` in a surface of [your own](#own-edit-surface).
+
+The auto-open is keyed on the **selected id**, not on the selected `Appointment` object, so replacing `appointments` with a fresh array while the surface is open - a poll, a websocket push, or merging an `appointmentSave` back in - never stacks a second surface on top of the first. Only one surface is ever open: selecting another appointment while one is open replaces it.
+
+Three methods on `<et-scheduler>` drive the same surface directly (`<et-scheduler #s>` then `s.openEditSurface(id)`):
+
+| Method                          | Does                                                                                                                                                                               |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openEditSurface(id)`           | Selects the appointment and opens the surface for it - what the auto-open runs. No-op for an id not in `appointments`.                                                             |
+| `closeEditSurface()`            | Closes the surface without saving, clearing `selectedAppointmentId` back to `null`.                                                                                                |
+| `selectAppointment(id \| null)` | Selects (or clears) **without** opening the surface - for highlighting an appointment from a sidebar or a list of your own. A click on the highlighted appointment still opens it. |
+
+Where it opens depends on whether there is something on the calendar to open it over:
+
+| Opened by                                      | Below `md`  | `md` and up                            |
+| ---------------------------------------------- | ----------- | -------------------------------------- |
+| Clicking an appointment                        | Full screen | Anchored to that appointment           |
+| [Dragging or clicking](#drag-to-create) a view | Full screen | Anchored to the range you drew         |
+| The toolbar's add-appointment action           | Full screen | Centered dialog - nothing to anchor to |
+
+A phone gets the whole viewport in every case, where the form needs the space. Selecting an appointment that is not on screen - writing `selectedAppointmentId` yourself, or picking one from a month cell's overflow menu - has no element to anchor to either, so it falls back to a centered dialog.
+
+Anchored, it opens **beside** what it belongs to - to the right of it, aligned to its top edge, with the arrow pointing back at it. A timed block is as tall as the hours it covers, so a surface under it would start near the bottom of the calendar and hide the very hours you are editing against. When the right side cannot hold the form's 440px it tries the left, and only when neither side can does it drop under the block and flip above from there. A dragged range anchors to the span you drew; a month range that wraps to the next week row anchors to its first row only - covering every row would span all seven columns and place the surface against the grid instead of against the range. It shifts along the viewport edge when the side it picked would push it off screen.
+
+```html
+<et-scheduler
+  [appointments]="appointments"
+  (appointmentSave)="onSave($event)"
+  (appointmentsDelete)="onDelete($event)"
+/>
+```
+
+The scheduler never mutates `appointments` itself - `appointmentSave` emits the edited (or newly-added) `Appointment` for you to merge back into your own array, and `appointmentsDelete` emits every id to remove (the appointment plus, for "Delete (with descendants)", its whole sub-appointment chain) for you to filter out. See the [live demo](#live-demo)'s story source for the merge/filter logic.
+
+### Your own edit surface {#own-edit-surface}
+
+The surface is a component, and the app can write its own. `provideSchedulerEditSurface()` registers the default `<et-scheduler-edit-surface>`; pass `component` to register yours instead, and `<et-scheduler>` opens it everywhere it would open the default:
+
+```ts
+providers: [provideSchedulerEditSurface({ component: TicketSurfaceComponent })];
+```
+
+| Option      | Type           | Default                         | Description                                                                                                          |
+| ----------- | -------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `component` | `Type<object>` | `SchedulerEditSurfaceComponent` | The surface to open. It must apply `SchedulerEditSurfaceDirective` with the `appointment` and `appointments` inputs. |
+
+A surface component applies two host directives - `OverlayMainDirective`, which lays the header, body and footer out in the overlay, and the headless `SchedulerEditSurfaceDirective` - and reads the headless state with `injectSchedulerEditSurface<TExtra>()`. `TExtra` types `extra` on the draft, so a custom field reads and writes it without a cast. Its template is built from the blocks in `SCHEDULER_EDIT_SURFACE_IMPORTS`. The default surface's own template is the start for a copy:
+
+```ts
+import { Component } from '@angular/core';
+import {
+  injectSchedulerEditSurface,
+  OverlayMainDirective,
+  SCHEDULER_EDIT_SURFACE_IMPORTS,
+  SchedulerEditSurfaceDirective,
+} from '@ethlete/components';
+
+@Component({
+  selector: 'app-ticket-surface',
+  imports: [SCHEDULER_EDIT_SURFACE_IMPORTS, EstimateFieldComponent],
+  hostDirectives: [
+    OverlayMainDirective,
+    { directive: SchedulerEditSurfaceDirective, inputs: ['appointment', 'appointments'] },
+  ],
+  template: `
+    <et-scheduler-edit-surface-header>
+      <et-scheduler-edit-surface-actions>
+        <et-scheduler-edit-add-sub-appointment-item />
+        <et-scheduler-edit-delete-item />
+      </et-scheduler-edit-surface-actions>
+    </et-scheduler-edit-surface-header>
+
+    <et-overlay-body>
+      <et-scheduler-edit-surface-breadcrumb />
+
+      <et-scheduler-edit-surface-fields>
+        <et-scheduler-edit-title #title [draft]="surface.draft" />
+        <et-scheduler-edit-time-range #timeRange [draft]="surface.draft" />
+        <et-scheduler-edit-location [draft]="surface.draft" />
+        <et-scheduler-edit-description [draft]="surface.draft" />
+        <et-scheduler-edit-color [draft]="surface.draft" />
+        <app-estimate-field [draft]="surface.draft" />
+      </et-scheduler-edit-surface-fields>
+
+      <et-scheduler-edit-surface-children />
+    </et-overlay-body>
+
+    <et-scheduler-edit-surface-footer [canSave]="title.valid() && timeRange.valid()" />
+  `,
+})
+export class TicketSurfaceComponent {
+  protected surface = injectSchedulerEditSurface<Ticket>();
+}
+```
+
+Drop a line to drop a field or a block, and put `@if` around one that only some appointments get - `surface.isSaved()` tells a fresh "add" apart from a saved appointment. Storybook's **Scheduler → Custom Edit Field** story is this setup with an estimate field and an action of its own. (It is not embedded here: this page already carries as many live stories as one page can host.)
+
+| Block                                          | Renders                                                                                                                                                                |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<et-scheduler-edit-surface-header>`           | The title and a projected `<et-scheduler-edit-surface-actions>`. Projected text replaces the title, which defaults to the appointment's own or "Untitled appointment". |
+| `<et-scheduler-edit-surface-actions>`          | The "⋮" action menu - see [actions](#actions).                                                                                                                         |
+| `<et-scheduler-edit-surface-breadcrumb>`       | The ancestor breadcrumb; hidden for a top-level appointment.                                                                                                           |
+| `<et-scheduler-edit-surface-fields>`           | Stacks its content with the default surface's spacing.                                                                                                                 |
+| `<et-scheduler-edit-surface-children>`         | The children list; hidden without children.                                                                                                                            |
+| `<et-scheduler-edit-surface-footer [canSave]>` | Cancel and Save. Save commits the draft and is disabled while `canSave` is `false` (default `true`).                                                                   |
+
+`SCHEDULER_EDIT_SURFACE_IMPORTS` also carries `et-overlay-body`, `et-menu-item` and the headless directive itself.
+
+### Fields
+
+Each built-in field is a component with a `draft` input - pass the surface's `draft`, the writable signal every field reads and writes:
+
+| Component                         | Edits         | Control                                                                              |
+| --------------------------------- | ------------- | ------------------------------------------------------------------------------------ |
+| `<et-scheduler-edit-title>`       | `title`       | [`et-input`](/components/text-inputs#text-field)                                     |
+| `<et-scheduler-edit-time-range>`  | `start`/`end` | One [`et-date-time-range-input`](/components/date-time-inputs#date-time-range-input) |
+| `<et-scheduler-edit-location>`    | `location`    | `et-input`                                                                           |
+| `<et-scheduler-edit-description>` | `description` | [`et-textarea`](/components/text-inputs#textarea)                                    |
+| `<et-scheduler-edit-color>`       | `colorToken`  | Swatch picker, or `et-input` - see below                                             |
+
+The title field's `valid()` is `false` while the title is blank, and the time-range field's while `end` is before `start`. The surface does not read them: bind them to the footer's `canSave` through a template reference, as the default template does. A field of your own gates Save the same way - or compute its validity from `surface.draft()` in the surface, which also works for a field inside an `@if`.
+
+A custom field is any component with a `draft` input:
+
+```ts
+@Component({
+  selector: 'app-estimate-field',
+  imports: [FORM_FIELD_IMPORTS, INPUT_IMPORTS],
+  template: `
+    <et-form-field>
+      <et-label>Estimate (hours)</et-label>
+      <et-input [value]="value()" (valueChange)="update($event)" />
+    </et-form-field>
+  `,
+})
+export class EstimateFieldComponent {
+  draft = input.required<WritableSignal<Appointment<Ticket>>>();
+
+  protected value = computed(() => String(this.draft()().extra?.estimateHours ?? ''));
+
+  protected update(value: string) {
+    this.draft().update((appointment) => ({ ...appointment, extra: { estimateHours: Number(value) } }));
+  }
+}
+```
+
+The color field follows whatever the app told the SDK about its own colors. Register a palette with [`provideColorPalette`](/core/theming#offering-colors-to-a-user) and the field is a swatch picker over it - a radio row of labelled swatches, each rendering its own theme, preceded by a "No color" choice that clears `colorToken`:
+
+```ts
+import { provideColorPalette } from '@ethlete/core';
+
+providers: [
+  provideColorPalette([
+    { token: 'brand', label: 'Team' },
+    { token: 'success', label: 'Training' },
+  ]),
+];
+```
+
+Storybook's **Scheduler → With Color Palette** story runs the scheduler with that palette - select an appointment to see the picker.
+
+Without a palette in scope the field stays a plain text box, because theme names are [app-registered](/core/theming) and the SDK has no set of its own to offer as choices. Both shapes write the same thing - a theme name into `colorToken` - so an app can add the palette later without touching its appointment data. Word the "No color" choice with `provideSchedulerLabels({ colorFieldNone: '…' })`.
+
+The fields need no surface at all: put `etSchedulerEditSurface` on an element of your own (`#surface="etSchedulerEditSurface"`, with `[appointment]`) and bind `surface.draft` into them to edit an appointment inline. `surface.commit()` then only emits `(save)`.
+
+### Actions
+
+`<et-scheduler-edit-surface-actions>` is the header's "⋮" menu, and its content is the menu: `et-menu-item` buttons, in template order. Two are ready-made:
+
+| Component                                      | Does                                                                                                                |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `<et-scheduler-edit-add-sub-appointment-item>` | Navigates the surface (in place, no new dialog) to a blank child of the current appointment, `parentId` pre-filled. |
+| `<et-scheduler-edit-delete-item>`              | Closes the surface with every id to delete - the current appointment and every descendant. Destructive variant.     |
+
+Both render nothing while the current appointment is not in `appointments` yet - a fresh "add" nobody saved has nothing to delete or nest under - and the menu trigger hides while the menu has no item.
+
+An action of your own is a plain menu item. `variant="destructive"` renders it with the [error theme](/core/theming); an action that replaces the appointment closes the surface itself through `OVERLAY_REF`:
+
+```html
+<et-scheduler-edit-surface-actions>
+  <button (click)="archive()" et-menu-item type="button">Archive</button>
+  <et-scheduler-edit-delete-item />
+</et-scheduler-edit-surface-actions>
+```
+
+### Opening a surface yourself {#edit-surface-opener}
+
+`injectSchedulerEditSurfaceOpener<TExtra>()` opens the registered surface - what `<et-scheduler>` itself uses - from a bare `[etScheduler]` composition or from UI outside any scheduler:
+
+```ts
+private editSurface = injectSchedulerEditSurfaceOpener<Ticket>();
+
+protected openFor(appointment: Appointment<Ticket>, band: HTMLElement) {
+  this.editSurface.openEdit({
+    appointment,
+    appointments: this.appointments,
+    origin: band,
+    afterClosed: (result) => this.apply(result),
+  });
+}
+```
+
+| Member             | Does                                                                                                                             |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `openEdit(config)` | Opens the surface anchored to `origin` above `md`, full screen below it. Returns the `OverlayRef`, or `null` - see below.        |
+| `openAdd(config)`  | The same as a centered dialog above `md` - for an appointment with nothing on the calendar to anchor to.                         |
+| `close()`          | Closes the open surface without a result.                                                                                        |
+| `available`        | Whether `provideSchedulerEditSurface()` is in scope. Without it the open calls report `ET4505` in development and return `null`. |
+
+`config` is the open config of any [overlay opener](/components/overlay-openers) plus `appointment` and `appointments` - a list, or a function the surface reads reactively while it is open. The surface closes with a `SchedulerEditSurfaceResult<TExtra>`: `{ kind: 'save', appointment }` or `{ kind: 'delete', ids }`, and `undefined` when it is dismissed.
+
+**One surface at a time.** An opener keeps one surface open: opening another closes the open one first, with the close source `'replace'`, so an unsaved-changes guard on it still gets its say. While such a guard decides, the open call returns `null` and opens once the old surface has closed.
+
+### Navigation: breadcrumb and children
+
+The surface shows an ancestor breadcrumb (when the current appointment has a parent) and a children list (when it has any) - clicking either **navigates the same dialog instance** to that appointment rather than opening a new one. Navigating discards any unsaved edits to the appointment navigated away from, the same "edit a copy" tradeoff the [filter overlay](/components/filter-overlay) makes: the draft resets from the newly-shown appointment's real data every time.
+
+Navigating is the **only** thing that resets the draft. Replacing `appointments` underneath an open surface leaves whatever the user has typed alone, so a background refresh cannot discard a half-finished edit - the breadcrumb, the children list and the descendant-aware delete do pick up the new data.
+
+## Sub-appointment chains
+
+An appointment's `parentId` is the whole nesting model - no `level`, no depth limit. The headless tier builds the tree once (`appointmentTree()`) and every consumer of it - month, time grid, and agenda - walks it depth-first, so a chain renders in the same order everywhere. A chain stays in depth order even when its root falls outside the visible range or day - a child never gets promoted to the top level just because its parent isn't shown. The month view carries a child's `depth` on its badge for a future indent/collapse affordance; the time grid uses it for the inline inset described above, and the agenda view for its indentation.
+
+## Badge composability {#badge-composability}
+
+Every appointment badge/block, in every view, is built from the same five pieces, each a self-registering feature directive - not a `showLocation: boolean` input on `<et-scheduler>`. `<et-scheduler>` bundles all five by default, so a zero-config scheduler already renders the full badge; disable one by binding its own config input on `<et-scheduler>` itself:
+
+```html
+<et-scheduler [etSchedulerBadgeLocation]="{ enabled: false }" [appointments]="appointments" />
+```
+
+| Directive                    | Renders                                                            | Default order |
+| ---------------------------- | ------------------------------------------------------------------ | ------------- |
+| `etSchedulerBadgeColorDot`   | The small dot in the appointment's own color.                      | `-10`         |
+| `etSchedulerBadgeTitle`      | The appointment's title.                                           | `0`           |
+| `etSchedulerBadgeTimeRange`  | The appointment's `start`–`end` time; hidden for an `allDay` one.  | `10`          |
+| `etSchedulerBadgeLocation`   | A pin icon and `location`; hidden when unset.                      | `20`          |
+| `etSchedulerBadgeChainCount` | A chevron and the total descendant count; hidden with no children. | `30`          |
+
+Each takes the same `{ enabled?: boolean }` config, bound on `<et-scheduler>` under its own selector. The month view hides the color dot and the location piece in its compact one-line badge (a per-view CSS choice, not a config flag) - both still render in the time grid and the agenda view.
+
+Adding your own piece is the same mechanism: write a directive that injects `SCHEDULER_FEATURE_HOST` (via `injectSchedulerFeatureHost()`) and calls `registerBadgeAdornment({ component, order, enabled })` from its constructor, where `component` declares a `node: InputSignal<AppointmentTreeNode>` input - the tree node the badge renders, giving it the appointment plus its depth and children. `injectSchedulerFeatureHost<TExtra>()` and `AppointmentTreeNode<TExtra>` type `extra` for the piece. Storybook's **Scheduler → Custom Badge Adornment** story adds a ticket-key piece this way.
+
+## Headless usage {#headless-usage}
+
+`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in - `inlineSize` can be several columns wide, so it is not `100 / columnCount`) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs). `currentTime()` is where the clock stands on that grid - `{ dayIndex, at, offset }`, with `offset` in the same percent unit a block uses, or `null` when today is not visible or `nowIndicator` is off - and it re-reads the clock every minute, so a custom time grid can draw its own now-line from it. `nonBusinessTime()` holds one list of `{ offset, span }` segments per entry of `days()`, the stretches outside `businessHours`:
+
+```html
+<div #scheduler="etScheduler" [appointments]="appointments" etScheduler>
+  <div #month="etSchedulerMonth" etSchedulerMonth>
+    @for (week of month.weeks(); track $index) {
+    <div>
+      @for (cell of week; track cell.date.getTime()) {
+      <span>{{ cell.date.getDate() }} - {{ cell.visible.length }} shown, {{ cell.overflow.length }} more</span>
+      }
+    </div>
+    }
+  </div>
+</div>
+```
+
+`scheduler.visibleRange()` is the active view's date span (month pads to full weeks); `scheduler.visibleAppointments()` narrows `appointments()` to ones overlapping it at all, before any per-view bucketing. `scheduler.next()` / `previous()` / `goToToday()` step `focusedDate` by the active view's unit - a day, a week, or a month.
+
+### Feature host
+
+`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `visibleAppointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, `registerBadgeAdornment()` / `badgeAdornments()` (see [badge composability](#badge-composability)), and `registerToolbarAction()` / `toolbarActions()` (see [toolbar](#toolbar)). It's modeled on the [table](/components/table)'s feature host. `addAppointment()` opens the registered [edit surface](#edit-surface) for a brand-new appointment, exposed here so the built-in toolbar action can call it without importing `SchedulerComponent` directly. The optional `canAddAppointment()` hides that action when it returns `false`; `<et-scheduler>` returns `false` without `provideSchedulerEditSurface()`.
+
+### Hosting features on your own component {#own-feature-host}
+
+A shell of your own that provides `SCHEDULER_FEATURE_HOST` so the built-in feature directives can register on it does not need to rewrite the registration lists. `createSchedulerRegistry<T>()` is the one `<et-scheduler>` uses: `register` appends an entry, `entries()` returns the enabled ones sorted by `order`. Use one per `register…`/list pair:
+
+```ts
+@Component({
+  providers: [{ provide: SCHEDULER_FEATURE_HOST, useExisting: MyShellComponent }],
+  // ...
+})
+export class MyShellComponent implements SchedulerFeatureHost {
+  private adornments = createSchedulerRegistry<SchedulerBadgeAdornment>();
+  private actions = createSchedulerRegistry<SchedulerToolbarAction>();
+
+  badgeAdornments = this.adornments.entries;
+  registerBadgeAdornment = this.adornments.register;
+  toolbarActions = this.actions.entries;
+  registerToolbarAction = this.actions.register;
+  // visibleAppointments(), appointmentTree(), selectedAppointment(), element, addAppointment()
+}
+```
+
+## Keyboard {#keyboard}
+
+The month grid and the time grid each follow the ARIA grid pattern the [calendar](/components/calendar#accessibility) uses: the whole grid is **one Tab stop**, and the arrow keys move a roving focus between its cells. Only the focused cell has `tabindex="0"`; every other cell, every appointment and the "+N more" trigger have `tabindex="-1"`, so Tab leaves the grid in one press. The grid's stop starts on `focusedDate`'s day - on the time grid, at the hour the body opens scrolled to. The time grid's body is a `rowgroup` with one `row` per hour, each owning its seven slots through `aria-owns`, so a screen reader reports 24 rows of 7 cells.
+
+The month grid's cells are days. The time grid's cells are hour slots, one per hour per day, with the all-day strip as row 0 above the first slot while the strip is shown (it is only rendered when an all-day appointment is in view).
+
+| Key                    | Month view                                                | Week and day view                                                |
+| ---------------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
+| ArrowLeft / ArrowRight | Previous / next day                                       | Previous / next day, same hour                                   |
+| ArrowUp / ArrowDown    | Same weekday a week earlier / later                       | Previous / next hour; up from 00:00 into that day's all-day cell |
+| Home / End             | First / last day of the week (`firstDayOfWeek`)           | First / last day of the week, same hour                          |
+| PageUp / PageDown      | Same day a month earlier / later                          | Same slot a week (week view) or a day (day view) earlier / later |
+| Enter                  | Into the day's first appointment; on an empty day, create | Into the slot's first appointment; on an empty slot, create      |
+| Space                  | Create an all-day appointment on the day                  | Create an hour-long appointment at the slot                      |
+
+Focus that leaves the visible range takes the range with it: `focusedDate` moves to the newly focused day (and `focusedDateChange` emits), exactly like the toolbar's previous/next. Moving onto a leading or trailing day of an adjacent month that the month grid already shows does not page.
+
+**Inside a cell** the arrow keys move between that cell's appointments (the month view's "+N more" trigger is the last of them, and opens its menu with ArrowUp/ArrowDown like any [menu trigger](/components/menu#accessibility)), Enter or Space opens the focused appointment's [edit surface](#edit-surface), and Escape returns focus to the cell. A time slot holds the appointments that **start** in that hour, so a block spanning several hours belongs to its first slot; an all-day cell holds the all-day appointments that start on that day in view.
+
+The time grid's all-day cells have nothing to create - an all-day appointment there has no pointer gesture either - so Space and Enter on an empty one do nothing. Arrow directions do not flip in a right-to-left layout, matching the calendar.
+
+## Accessibility
+
+- Both grid views carry `role="grid"` on their own host, named by `<et-scheduler>` after the period its header shows (`aria-label`, e.g. "July 2026"), so their rows, row groups and cells are owned by a real grid; the layout wrappers in between (the day track, the day columns, the all-day lane, the hour gutter) are `role="presentation"`. Weekday/day headers are `columnheader`s named by the full weekday (`aria-label` in the month view); the month view's day cells and the time grid's hour slots and all-day cells are `gridcell`s. The agenda view is a flat list, not a grid, so its day headers carry no grid role.
+- A month day cell announces its full date (e.g. "Wednesday, July 15th, 2026", formatted with the scheduler's `locale`) instead of the bare day number, which is `aria-hidden`. Today's cell carries `aria-current="date"`.
+- Both grids are a single Tab stop with a roving focus - see [keyboard](#keyboard). The focused cell draws a `:focus-visible` ring in the theme's primary color. Every appointment badge/block and the "+N more" trigger are real `<button>`s reached from their cell; the overflow popover is an `et-menu` and inherits its full [keyboard model](/components/menu#accessibility). The agenda view is a flat list whose badges are each tabbable.
+- A time-grid slot is named by its day and hour (e.g. "Wednesday, July 15th, 2026, 09:00") and an all-day cell by its day and the `allDay` label ("…, All day"), both formatted with the scheduler's `locale`; word the latter with `provideSchedulerLabels({ allDay: '…' })`.
+- The Month/Week/Day/Agenda toolbar control is a real [`et-segmented-button-group`](/components/choice-inputs#selection-lists): a `radiogroup` of `radio`s, arrow-key navigable, with a projected (visually hidden) `<et-label>` supplying its accessible name.
+
+## Theming
+
+Badge and selection colors come from the nearest [color theme](/core/theming) via each appointment's `colorToken`; chrome (header, weekday labels, cell/hour borders) uses surface tokens. Public design tokens:
+
+| Token                                       | Default                       | Purpose                                              |
+| ------------------------------------------- | ----------------------------- | ---------------------------------------------------- |
+| `--et-scheduler-month-view-cell-min-size`   | `96px`                        | Minimum block size of one month-view day cell.       |
+| `--et-scheduler-time-grid-hour-size`        | `48px`                        | Block size of one hour row in the time grid.         |
+| `--et-scheduler-time-grid-gutter-size`      | `56px`                        | Inline size of the time grid's hour-label gutter.    |
+| `--et-scheduler-time-grid-all-day-row-size` | `24px`                        | Block size of one stacking row in the all-day strip. |
+| `--et-scheduler-time-grid-body-max-height`  | `600px`                       | Max block size of the time grid's scrollable body.   |
+| `--et-scheduler-appointment-drag-shadow`    | `0 2px 8px rgb(0 0 0 / 0.25)` | Shadow of an appointment while it is dragged.        |
+
+## Error codes
+
+The scheduler domain owns the `ET4500`–`ET4599` range - see [error codes](/components/error-codes#scheduler-et45xx). `ET4500`, `ET4503` and `ET4504` (a feature directive outside its host) throw on creation in every build; `ET4501`, `ET4505` and `ET4506` are reported in development only.

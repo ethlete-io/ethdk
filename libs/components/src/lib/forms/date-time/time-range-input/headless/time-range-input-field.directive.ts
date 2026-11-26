@@ -1,0 +1,42 @@
+import { Directive, inject } from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
+import { INPUT_MASK_HOST } from '../../../masked-input/headless/input-mask-host';
+import { DateRangePickerInputFieldDirective } from '../../internals/date-range-picker-input-field.directive';
+import { TIME_RANGE_INPUT_ERROR_CODES } from '../time-range-input-errors';
+import { TimeRangeInputDirective } from './time-range-input.directive';
+
+/**
+ * One side of a time range input: shows the committed side value in the display format, commits typed
+ * text (strict-then-lenient) on blur/Enter, keeps unparseable text visible, and opens the picker on
+ * Alt+ArrowDown.
+ */
+@Directive({
+  selector: 'input[etTimeRangeInputField]',
+  exportAs: 'etTimeRangeInputField',
+  providers: [{ provide: INPUT_MASK_HOST, useExisting: TimeRangeInputFieldDirective }],
+})
+export class TimeRangeInputFieldDirective extends DateRangePickerInputFieldDirective {
+  // eslint-disable-next-line ethlete/inject-member-accessibility -- referenced from the base class's host bindings
+  protected rangeInput = inject(TimeRangeInputDirective, { optional: true });
+
+  constructor() {
+    super();
+
+    if (ngDevMode && !this.rangeInput) {
+      throw new RuntimeError(
+        TIME_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_TIME_RANGE_INPUT,
+        '[TimeRangeInputFieldDirective] etTimeRangeInputField must be placed inside an [etTimeRangeInput] element.',
+        { element: this.elementRef.nativeElement },
+      );
+    }
+  }
+
+  /** @internal */
+  public duplicateFieldError(side: 'start' | 'end') {
+    return new RuntimeError(
+      TIME_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD,
+      `[TimeRangeInputFieldDirective] An [etTimeRangeInput] accepts only one etTimeRangeInputField for its "${side}" side.`,
+      { element: this.elementRef.nativeElement },
+    );
+  }
+}

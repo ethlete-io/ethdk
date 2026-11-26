@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "devtools-about",
+  "title": "Query devtools About generator",
+  "description": "Generates the application's build info (version, commit SHA, branch, build time) and wires it into provideQueryDevtools({ about })",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "The application to wire up",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "Which application should report its build info?"
+    },
+    "outputPath": {
+      "type": "string",
+      "description": "Where to write the generated build-info file. Defaults to `<sourceRoot>/build-info.ts`."
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after generation",
+      "default": false
+    }
+  },
+  "required": ["project"]
+}

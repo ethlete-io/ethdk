@@ -1,0 +1,50 @@
+{
+  "flows": [
+    {
+      "name": "Sketch prüfen",
+      "file": ".ethlete/design/studio/flows/sketch-pruefen.json",
+      "frames": [
+        { "part": "pages/inbox", "state": "open" },
+        { "part": "pages/sketches", "state": "page-sketch" },
+        { "part": "pages/inbox", "state": "with-resolved" },
+        { "part": "pages/system", "state": "part" }
+      ],
+      "lines": [
+        {
+          "from": { "part": "pages/inbox", "state": "open" },
+          "to": { "part": "pages/sketches", "state": "page-sketch" },
+          "label": "Nutzer klickt 'Sketches' in der Leiste"
+        },
+        {
+          "from": { "part": "pages/inbox", "state": "open" },
+          "to": { "part": "pages/inbox", "state": "with-resolved" },
+          "label": "Nutzer klickt 'Erledigte zeigen'"
+        },
+        {
+          "from": { "part": "pages/sketches", "state": "page-sketch" },
+          "to": { "part": "pages/system", "state": "part" },
+          "label": "Nutzer klickt 'Merge'"
+        }
+      ],
+      "notes": [],
+      "problems": []
+    },
+    {
+      "name": "Kommentar beantworten",
+      "file": ".ethlete/design/studio/flows/kommentar-beantworten.json",
+      "frames": [{ "part": "pages/inbox", "state": "open" }],
+      "lines": [],
+      "notes": [],
+      "problems": []
+    },
+    {
+      "name": "Produkt anlegen",
+      "file": ".ethlete/design/studio/flows/produkt-anlegen.json",
+      "frames": [{ "part": "pages/start", "state": "no-products" }],
+      "lines": [],
+      "notes": [],
+      "problems": []
+    }
+  ],
+  "unreadable": []
+}

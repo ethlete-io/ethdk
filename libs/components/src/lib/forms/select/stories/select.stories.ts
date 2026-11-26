@@ -1,0 +1,231 @@
+import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { provideOverlay } from '../../../overlay/overlay.imports';
+import { SelectNestedElevationStorybookComponent } from './select-nested-elevation-storybook.component';
+import {
+  FormFieldSelectAddNewStorybookComponent,
+  FormFieldSelectAsyncStorybookComponent,
+  FormFieldSelectCountryStorybookComponent,
+  FormFieldSelectInTabsStorybookComponent,
+  FormFieldSelectManyOptionsStorybookComponent,
+  FormFieldSelectObjectValuesStorybookComponent,
+  FormFieldSelectOptionTemplateStorybookComponent,
+  FormFieldSelectPickOnlyStorybookComponent,
+  FormFieldSelectStorybookComponent,
+} from './select-storybook.component';
+
+export default {
+  title: 'Components/Forms/Select',
+  component: FormFieldSelectStorybookComponent,
+  decorators: [moduleMetadata({ imports: [FormFieldSelectStorybookComponent] })],
+  argTypes: {
+    appearance: { control: 'select', options: ['box', 'underline'] },
+    fill: { control: 'select', options: ['transparent', 'filled', 'sunken'] },
+    size: { control: 'select', options: ['sm', 'md', 'lg'] },
+    variant: { control: 'select', options: ['default', 'ghost'] },
+    labelMode: { control: 'select', options: ['static', 'inline', 'floating-inside', 'floating-outside'] },
+    labelPosition: { control: 'select', options: ['top', 'start'] },
+    label: { control: 'text' },
+    placeholder: { control: 'text' },
+    hint: { control: 'text' },
+    value: { control: 'select', options: [null, 'apple', 'banana', 'cherry'] },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
+    multiple: { control: 'boolean' },
+    withSearch: { control: 'boolean' },
+    allowCustomValues: { control: 'boolean' },
+    separators: { control: 'object' },
+    commitCustomValueOnClose: { control: 'boolean' },
+    maxSelection: { control: 'number' },
+    selectAll: { control: 'boolean' },
+    longOption: { control: 'text' },
+    nullOptionLabel: { control: 'text' },
+    disabled: { control: 'boolean' },
+    readonly: { control: 'boolean' },
+    required: { control: 'boolean' },
+    color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
+  },
+  args: {
+    appearance: 'box',
+    fill: 'transparent',
+    size: 'md',
+    variant: 'default',
+    labelMode: 'static',
+    labelPosition: 'top',
+    label: 'Fruit',
+    placeholder: 'Pick a fruit',
+    hint: '',
+    value: null,
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
+    multiple: false,
+    withSearch: false,
+    allowCustomValues: false,
+    separators: [],
+    commitCustomValueOnClose: false,
+    selectAll: false,
+    longOption: '',
+    nullOptionLabel: '',
+    disabled: false,
+    readonly: false,
+    required: false,
+    color: 'brand',
+  },
+} as Meta<FormFieldSelectStorybookComponent>;
+
+type Story = StoryObj<FormFieldSelectStorybookComponent>;
+
+export const Default: Story = {};
+
+export const Ghost: Story = {
+  args: { variant: 'ghost' },
+};
+
+export const Preselected: Story = {
+  args: { value: 'banana' },
+};
+
+export const Mixed: Story = {
+  args: {
+    value: 'banana',
+    mixed: true,
+    mixedLabel: 'Different values',
+    showMixedState: true,
+    hint: 'The raw value stays intact until a user commits a new selection; Mixed shows the live presentation state.',
+  },
+};
+
+export const NoLabelFloating: Story = {
+  args: { labelMode: 'floating-inside', label: '' },
+};
+
+export const NullOptionFloatingLabel: Story = {
+  args: { labelMode: 'floating-inside', label: 'Fruit', nullOptionLabel: 'All fruits', value: null },
+};
+
+export const Required: Story = {
+  args: { required: true, hint: 'Choosing one is mandatory' },
+};
+
+export const Disabled: Story = {
+  args: { disabled: true },
+};
+
+export const Multiple: Story = {
+  args: { multiple: true, value: ['apple', 'cherry'], label: 'Fruits', placeholder: 'Pick fruits' },
+};
+
+export const MixedMultiple: Story = {
+  args: {
+    multiple: true,
+    value: ['apple', 'cherry'],
+    mixed: true,
+    mixedLabel: 'Different fruit sets',
+    showMixedState: true,
+    withSearch: true,
+    label: 'Fruits',
+    placeholder: 'Pick fruits',
+    hint: 'The first committed option replaces the hidden raw selection, then regular multi-select toggling resumes.',
+  },
+};
+
+export const SelectAll: Story = {
+  args: {
+    multiple: true,
+    selectAll: true,
+    withSearch: true,
+    value: ['apple'],
+    label: 'Fruits',
+    placeholder: 'Pick fruits',
+    hint: 'Select all adds every visible, enabled option - Elderberry is disabled and stays out',
+  },
+};
+
+export const Searchable: Story = {
+  args: { withSearch: true },
+};
+
+export const SearchableLongLabel: Story = {
+  args: {
+    withSearch: true,
+    longOption: 'Kiwano-horned-melon-from-the-kalahari-desert-with-an-unbreakably-long-label-that-truncates',
+  },
+};
+
+export const CustomValues: Story = {
+  args: {
+    withSearch: true,
+    allowCustomValues: true,
+    separators: [','],
+    commitCustomValueOnClose: true,
+    multiple: true,
+    label: 'Tags',
+    placeholder: 'Pick or create tags',
+    hint: 'Comma commits while typing, pastes split on commas/newlines, pending text commits on close',
+  },
+};
+
+export const MaxSelection: Story = {
+  args: {
+    withSearch: true,
+    allowCustomValues: true,
+    multiple: true,
+    maxSelection: 3,
+    label: 'Tags',
+    placeholder: 'Pick or create up to 3 tags',
+    hint: 'At 3 selected values new picks are blocked - search still filters, Backspace or a chip frees a slot',
+  },
+};
+
+export const AsyncOptions: StoryObj<FormFieldSelectAsyncStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectAsyncStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-async />` }),
+};
+
+export const CountryWithFlags: StoryObj<FormFieldSelectCountryStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectCountryStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-country />` }),
+};
+
+export const AddNewOption: StoryObj<FormFieldSelectAddNewStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectAddNewStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-add-new />` }),
+};
+
+export const ManyOptions: StoryObj<FormFieldSelectManyOptionsStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectManyOptionsStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-many-options />` }),
+};
+
+export const ObjectValues: StoryObj<FormFieldSelectObjectValuesStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectObjectValuesStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-object-values />` }),
+};
+
+export const OptionTemplate: StoryObj<FormFieldSelectOptionTemplateStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectOptionTemplateStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-option-template />` }),
+};
+
+export const PickOnly: StoryObj<FormFieldSelectPickOnlyStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectPickOnlyStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-pick-only />` }),
+};
+
+export const NestedElevation: StoryObj<SelectNestedElevationStorybookComponent> = {
+  decorators: [
+    moduleMetadata({ imports: [SelectNestedElevationStorybookComponent] }),
+    applicationConfig({ providers: [provideOverlay()] }),
+  ],
+  render: () => ({ template: `<et-sb-select-nested-elevation />` }),
+};
+
+/**
+ * Multi-selects with hints in a tab group, which keeps every panel mounted and hides the inactive
+ * ones. Switching tabs shows each hint in place; it only animates when the message itself changes.
+ */
+export const InTabs: StoryObj<FormFieldSelectInTabsStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectInTabsStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-in-tabs />` }),
+};

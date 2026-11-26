@@ -1,0 +1,25 @@
+import { Component, ViewEncapsulation, inject } from '@angular/core';
+import { TikTokPlayerParamsDirective } from './headless/tiktok-player-params.directive';
+import { TIKTOK_PLAYER_TOKEN, TikTokPlayerDirective } from './headless/tiktok-player.directive';
+
+@Component({
+  selector: 'et-tiktok-player',
+  template: '',
+  encapsulation: ViewEncapsulation.None,
+  hostDirectives: [
+    {
+      directive: TikTokPlayerParamsDirective,
+      inputs: ['videoId', 'width', 'height'],
+    },
+    TikTokPlayerDirective,
+  ],
+  host: {
+    class: 'et-tiktok-player et-stream-player',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
+  },
+})
+export class TikTokPlayerComponent {
+  public player = inject(TIKTOK_PLAYER_TOKEN);
+}

@@ -1,0 +1,49 @@
+import { EventStatusEnum, WithPagination, WithSorting } from '@app-b/types';
+
+export interface GetEventEntryArgs {
+  queryParams: {
+    entryId: string;
+  };
+}
+
+export interface GetEventFeedsArgs {
+  queryParams: {
+    eventId: string;
+  };
+}
+
+export interface GetEventBySlugArgs {
+  queryParams: {
+    contestGroupSlug: string;
+    periodIdentifier: string;
+    eventSlug: string;
+  };
+}
+
+export type GetEventResultsQueryParamArgs = WithPagination &
+  WithSorting<'date' | 'starttime'> & {
+    /**
+     * When no period is provided, this defaults to the current period.
+     */
+    period?: string;
+    /**
+     * When no contest group is provided, this defaults to the current period's contest group.
+     */
+    contestGroup?: string;
+    /**
+     * When no contest(s) are provided, this defaults to the contests in the current period's contest group
+     */
+    contests?: string[];
+    startTimeBefore?: string;
+    startTimeAfter?: string;
+    status?: Array<EventStatusEnum>;
+    item?: string;
+    member?: string;
+    group?: string;
+    round?: string;
+    rounds?: string[];
+  };
+
+export interface GetEventResultsArgs {
+  params: GetEventResultsQueryParamArgs;
+}

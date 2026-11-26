@@ -1,0 +1,21 @@
+{
+  "part": "components/tabs",
+  "state": "primary",
+  "size": 480,
+  "text": "es fehlen varianten mit icons",
+  "point": {
+    "x": 87,
+    "y": 12
+  },
+  "sketch": {
+    "target": "components/tabs",
+    "variant": "a",
+    "createdAt": "2026-10-31T01:16:51.782Z"
+  },
+  "createdAt": "2026-10-31T13:42:07.364Z",
+  "addressed": {
+    "by": "user",
+    "reason": "merge",
+    "addressedAt": "2026-10-31T13:56:29.546Z"
+  }
+}

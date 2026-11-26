@@ -1,0 +1,35 @@
+{
+  "part": "pages/merge",
+  "state": "unchanged-focus",
+  "size": "desktop",
+  "text": "hier sollte der text auch die hover farbe bekommen",
+  "point": {
+    "x": 159,
+    "y": 300
+  },
+  "sketch": {
+    "target": "pages/merge",
+    "variant": "a",
+    "createdAt": "2026-10-30T13:41:09.016Z"
+  },
+  "createdAt": "2026-10-30T13:43:56.672Z",
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Der Text bekommt im Fokus jetzt die Hover-Farbe, in A und B.",
+      "createdAt": "2026-10-30T13:44:24.063Z"
+    }
+  ],
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "done",
+    "addressedAt": "2026-10-30T13:44:25.379Z",
+    "note": "focus-visible nimmt --text wie hover"
+  },
+  "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T13:44:47.188Z"
+  }
+}

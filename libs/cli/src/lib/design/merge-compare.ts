@@ -1,0 +1,216 @@
+import { PartMark, Picture, ShotSource } from './shot';
+import { readPartModule } from './system/list-system';
+import { partKeyOf, ResolvedProduct } from './system/resolve-product';
+import { mergePreviewOf } from './system/sketch/merge-preview';
+import { overlaySketch } from './system/sketch/overlay';
+import { comparePixelPair } from './system/sketch/pixel-pair';
+import { Sketch } from './system/sketch/sketch';
+import { SketchVariant } from './system/system-modules';
+import { DrawPriority } from './thumb';
+
+export type Outline = Omit<PartMark, 'parts'>;
+
+/**
+ * One state of a part that shows the sketched part, at the preset or width it is compared at (neither
+ * for a part fitted to its content), with the outline of each instance of the sketched part now and
+ * after the merge. `error` says why a side could not be drawn. `missing` names the side that has no such state, which
+ * is not drawn.
+ */
+export type CompareRow = {
+  part: string;
+  state: string;
+  preset?: string;
+  width?: number;
+  outlines: { now: Outline[]; merged: Outline[] };
+  missing?: 'now' | 'merged';
+  error?: string;
+};
+
+/** The rows of a merge preview, split by whether the merge changes a pixel of their picture. */
+export type MergeCompare = { target: string; variant: string; changed: CompareRow[]; unchanged: CompareRow[] };
+
+/** A picture with where it came from; without `source` it may have come from a cache. */
+/** `drawnAt`: the `performance.now()` at which this server began drawing the picture, `null` for one read from a store. */
+export type SourcedPicture = Picture & { source?: ShotSource; drawnAt?: number | null };
+
+export type PictureOf = (options: {
+  product: string;
+  part: string;
+  state: string;
+  preset: string | null;
+  width: number | null;
+  sketch: SketchVariant | null;
+  interaction: string | null;
+  params: URLSearchParams;
+  fresh?: boolean;
+  priority?: DrawPriority;
+  signal?: AbortSignal;
+  /**
+   * Answers only a picture drawn before, from memory or disk, drawing nothing; rejects when none is kept. `'size'` also
+   * answers a picture an older picture code drew from the same files, whose size only is current.
+   */
+  kept?: boolean | 'size';
+}) => Promise<SourcedPicture>;
+
+/**
+ * Draws a state without and with `merged`. When the pair differs, each picture that may have come from a cache and was
+ * not drawn after the pair was asked is drawn once more, bypassing any kept picture, so a stale kept picture is not
+ * taken for a change.
+ */
+export const drawnPair = async (
+  draw: (sketch: SketchVariant | null, fresh: boolean) => Promise<SourcedPicture>,
+  merged: SketchVariant,
+) => {
+  const askedAt = performance.now();
+  const kept = await Promise.all([draw(null, false), draw(merged, false)]);
+  const keptPair = await comparePixelPair(kept[0].png, kept[1].png);
+
+  if (keptPair.same) return { now: kept[0], after: kept[1], ...keptPair };
+
+  const current = (picture: SourcedPicture) =>
+    picture.source === 'drawn' || (picture.drawnAt ?? Number.NEGATIVE_INFINITY) >= askedAt;
+  const [now, after] = await Promise.all([
+    current(kept[0]) ? kept[0] : draw(null, true),
+    current(kept[1]) ? kept[1] : draw(merged, true),
+  ]);
+  const pair = now === kept[0] && after === kept[1] ? keptPair : await comparePixelPair(now.png, after.png);
+
+  return { now, after, ...pair };
+};
+
+export type PartModuleLoader = (options: {
+  file: string;
+  product: string;
+  sketch: SketchVariant | null;
+}) => Promise<unknown>;
+
+const outlinesOf = (picture: Picture, target: string): Outline[] =>
+  picture.marks
+    .filter((mark) => mark.parts.includes(target))
+    .map(({ x, y, width, height }) => ({ x, y, width, height }));
+
+const SHOWN = new Set(['elements', 'pages']);
+
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+/**
+ * Draws each state of every element and page the merge changes or that shows a changed part twice, as the product has it
+ * now and with `variant` merged, and splits them by whether the two pictures differ in any pixel. A page
+ * is drawn at the preset `size` names, or its first; a part with `widths` at the width `size` names, or
+ * its first; any other part fitted to its content.
+ */
+export const compareMerge = async (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  size: string | null;
+  params: URLSearchParams;
+  pictureOf: PictureOf;
+  load: PartModuleLoader;
+}): Promise<MergeCompare> => {
+  const { product, sketch, variant, size, params, pictureOf, load } = options;
+  const target = sketch.target;
+  const outlined = sketch.targets[0] ?? target;
+  const merged: SketchVariant = { target, variant };
+  const { changed, affected } = mergePreviewOf({ product, sketch, variant });
+  const drawn = [...changed.filter((key) => SHOWN.has(key.split('/')[0] ?? '')), ...affected].sort();
+
+  const rowsOf = async (key: string): Promise<{ row: CompareRow; changed: boolean }[]> => {
+    const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+    if (!part) return [];
+
+    const read = await readPartModule({
+      part,
+      product: product.name,
+      load: () => load({ file: part.file, product: product.name, sketch: null }),
+    });
+    const mergedFile = overlaySketch({ product, sketch, variant }).parts.find(
+      (candidate) => partKeyOf(candidate) === key,
+    )?.file;
+    const readMerged = mergedFile
+      ? await readPartModule({
+          part: { file: mergedFile },
+          product: product.name,
+          load: () => load({ file: mergedFile, product: product.name, sketch: merged }),
+        })
+      : null;
+
+    if (read.problem)
+      return [{ row: { part: key, state: '', outlines: { now: [], merged: [] }, error: read.problem }, changed: true }];
+
+    const offered =
+      part.layer === 'pages' ? Object.keys(product.presets) : (('widths' in read ? read.widths : undefined) ?? []);
+    const picked = offered.map(String).find((entry) => entry === size) ?? offered[0];
+    const at =
+      picked === undefined ? {} : part.layer === 'pages' ? { preset: String(picked) } : { width: Number(picked) };
+
+    const nowStates: string[] = read.states;
+    const mergedStates: string[] = readMerged && !readMerged.problem ? readMerged.states : nowStates;
+    const states = [...nowStates, ...mergedStates.filter((state) => !nowStates.includes(state))];
+    const missingOf = (state: string) =>
+      !nowStates.includes(state) ? ('now' as const) : !mergedStates.includes(state) ? ('merged' as const) : null;
+
+    return Promise.all(
+      states.map(async (state) => {
+        const missing = missingOf(state);
+        const draw = (drawn: SketchVariant | null, fresh: boolean) =>
+          pictureOf({
+            product: product.name,
+            part: key,
+            state,
+            preset: at.preset ?? null,
+            width: at.width ?? null,
+            sketch: drawn,
+            interaction: null,
+            params,
+            fresh,
+          });
+
+        try {
+          if (missing) {
+            const picture = await draw(missing === 'now' ? merged : null, false);
+            const outlines = outlinesOf(picture, outlined);
+
+            return {
+              row: {
+                part: key,
+                state,
+                ...at,
+                missing,
+                outlines: missing === 'now' ? { now: [], merged: outlines } : { now: outlines, merged: [] },
+              },
+              changed: true,
+            };
+          }
+
+          const { now, after, same } = await drawnPair(draw, merged);
+
+          return {
+            row: {
+              part: key,
+              state,
+              ...at,
+              outlines: { now: outlinesOf(now, outlined), merged: outlinesOf(after, outlined) },
+            },
+            changed: !same,
+          };
+        } catch (error) {
+          return {
+            row: { part: key, state, ...at, outlines: { now: [], merged: [] }, error: messageOf(error) },
+            changed: true,
+          };
+        }
+      }),
+    );
+  };
+
+  const rows = (await Promise.all(drawn.map(rowsOf))).flat();
+
+  return {
+    target,
+    variant,
+    changed: rows.filter((entry) => entry.changed).map((entry) => entry.row),
+    unchanged: rows.filter((entry) => !entry.changed).map((entry) => entry.row),
+  };
+};

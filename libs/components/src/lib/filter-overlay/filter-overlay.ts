@@ -1,0 +1,191 @@
+import { InjectionToken, Injector, Signal, StaticProvider, computed, inject } from '@angular/core';
+import { FieldTree } from '@angular/forms/signals';
+import { equal } from '@ethlete/core';
+import { QueryFormFields, QueryFormModel, QueryFormSignals } from '@ethlete/query';
+import { OVERLAY_REF, OverlayRef } from '../overlay';
+import { getOverlayRefInternals } from '../overlay/overlay-ref-internal';
+import {
+  FilterOverlayLabels,
+  injectFilterOverlayLabels,
+  resolveFilterOverlaySubmitButton,
+} from './filter-overlay-labels';
+import {
+  FilterOverlayPreview,
+  FilterOverlayResult,
+  FilterOverlaySubmitButton,
+  FilterOverlaySubmitState,
+} from './filter-overlay.types';
+
+export type FilterOverlayConfig<TFields extends QueryFormFields> = {
+  /**
+   * The page's filter state. The overlay never edits it directly - it edits a detached branch and writes the
+   * branch back on submit, which is what makes dismissing the overlay a discard.
+   */
+  queryForm: QueryFormSignals<TFields>;
+
+  /**
+   * A live count of what the draft would return, driving the submit button. Optional; without it the button just
+   * says "Show results". Use {@link filterOverlayPreviewFromQuery} for the single-query case.
+   */
+  preview?: (draftValue: Signal<QueryFormModel<TFields>>) => FilterOverlayPreview;
+
+  /**
+   * Counts above this are reported as "more than N" rather than exactly. Past a few hundred the precise number
+   * stops telling the reader anything they can act on. @default 250
+   */
+  maxCountedHits?: number;
+
+  /** Full control over the submit button's label and disabled state, replacing the built-in resolver. */
+  submitButton?: (state: FilterOverlaySubmitState, labels: FilterOverlayLabels) => FilterOverlaySubmitButton;
+};
+
+/** The draft's editing surface: a query form branch, typed by its value shape. */
+export type FilterOverlayDraft<TValue> = {
+  /** The bindable signal-forms field tree: `draft.fields.search`. */
+  readonly fields: FieldTree<TValue>;
+  /** The draft's committed value - debounced and reset-resolved like the page's query form. */
+  readonly value: Signal<TValue>;
+  /** What the draft's controls hold right now, ahead of any pending debounce. */
+  readonly liveValue: Signal<TValue>;
+  /** How many of the draft's *filters* are set - search, sort and pagination excluded. */
+  readonly activeFilterCount: Signal<number>;
+  setValue(value: TValue): void;
+  patchValue(value: Partial<TValue>): void;
+  resetFieldToDefault(key: keyof TValue): void;
+  resetAllFieldsToDefault(): void;
+};
+
+/** The value shape of a query form, for naming a {@link FilterOverlay} without naming its field map. */
+export type FilterOverlayValueOf<TForm> = TForm extends { value: Signal<infer TValue> } ? TValue : never;
+
+export type FilterOverlay<TValue = unknown> = {
+  /**
+   * The draft being edited - bind its `fields` to your controls. A detached clone of the page's query form: its
+   * own value, the same debounce and reset graph, no URL writes, so nothing the reader does here affects the page
+   * until they submit.
+   */
+  draft: FilterOverlayDraft<TValue>;
+  /** The live count, if the overlay was configured with one. */
+  preview: FilterOverlayPreview | null;
+  /** What the submit button should say, and whether it can be pressed. */
+  submitButton: Signal<FilterOverlaySubmitButton>;
+  /** The strings in effect, after locale and any overrides. */
+  labels: Signal<FilterOverlayLabels>;
+  /** How many filters the draft has set, for a badge on the overlay's own controls. */
+  activeFilterCount: Signal<number>;
+  /** Whether the draft differs from the filters actually applied - what "unsaved changes" means here. */
+  hasChanges: Signal<boolean>;
+  /**
+   * Whether every field in the draft is still at its default, i.e. there is nothing for `reset()` to do.
+   *
+   * Not the same as `activeFilterCount() === 0`: the query form deliberately leaves navigation state (search,
+   * page, sort) out of that count, so a reader who has typed a search has nothing to show in a badge but plenty
+   * to reset.
+   */
+  isPristine: Signal<boolean>;
+  /** Write the draft back to the page's filters and close. */
+  submit: () => void;
+  /** Put every filter back to its default, without closing. */
+  reset: () => void;
+  /** Close without applying anything. */
+  discard: () => void;
+};
+
+/** The filter overlay provided for the current overlay component. Inject with `{ optional: true }` in a control
+ *  that may also be used outside one. */
+export const FILTER_OVERLAY_TOKEN = new InjectionToken<FilterOverlay>('FILTER_OVERLAY');
+
+const createFilterOverlay = <TFields extends QueryFormFields>(
+  config: FilterOverlayConfig<TFields>,
+): FilterOverlay<QueryFormModel<TFields>> => {
+  const overlayRef = inject<OverlayRef<object, FilterOverlayResult<QueryFormModel<TFields>>>>(OVERLAY_REF, {
+    optional: true,
+  });
+  const labels = injectFilterOverlayLabels();
+
+  getOverlayRefInternals(overlayRef)?.setDismissResult({ didUpdate: false });
+
+  const draft = config.queryForm.branch(inject(Injector));
+  const maxCountedHits = config.maxCountedHits ?? 250;
+
+  // Called here, inside the overlay's injection context, which is why `preview` is a factory: a query created at
+  // config time would belong to the page and outlive the overlay.
+  const preview = config.preview?.(draft.value) ?? null;
+
+  const submitButton = computed(() => {
+    const state: FilterOverlaySubmitState = {
+      totalHits: preview?.totalHits() ?? null,
+      loading: preview !== null && (preview.loading() || !equal(draft.value(), draft.liveValue())),
+      hasError: preview?.hasError() ?? false,
+      hasPreview: preview !== null,
+      maxCountedHits,
+    };
+
+    return config.submitButton?.(state, labels()) ?? resolveFilterOverlaySubmitButton(state, labels());
+  });
+
+  const close = (result: FilterOverlayResult<QueryFormModel<TFields>>) => overlayRef?.close(result);
+
+  return {
+    draft,
+    preview,
+    submitButton,
+    labels,
+    activeFilterCount: draft.activeFilterCount,
+    hasChanges: computed(() => !equal(draft.liveValue(), config.queryForm.value())),
+    isPristine: computed(() => equal(draft.liveValue(), config.queryForm.defaultValue)),
+
+    submit: () => {
+      const value = draft.liveValue();
+
+      // Through `setValue` rather than by mutating fields: that is what fires the query form's reset graph (a new
+      // search resetting the page number) and its URL sync, so the page's filters and the address bar agree.
+      config.queryForm.setValue(value);
+      close({ didUpdate: true, value });
+    },
+
+    reset: () => draft.resetAllFieldsToDefault(),
+
+    discard: () => close({ didUpdate: false }),
+  };
+};
+
+/**
+ * Provides the filter overlay for an overlay component: a draft of the page's filters that the reader edits, a
+ * live count of what those filters would return, and an explicit apply.
+ *
+ * The model is **edit a copy, then commit** - dismissing the overlay discards and closes with
+ * `{ didUpdate: false }`, so a filter panel can be closed with Escape without consequence.
+ *
+ * @example
+ * export const TEAM_FILTERS_OVERLAY = defineOverlay<TeamFiltersComponent, FilterOverlayResult<TeamFilterValue>>({
+ *   component: TeamFiltersComponent,
+ *   strategies: bottomSheetToSidebarOverlayStrategy(),
+ * });
+ *
+ * // in the page component
+ * private filtersOverlay = createOverlayOpener(TEAM_FILTERS_OVERLAY);
+ * protected filters = injectTeamFilters();
+ *
+ * protected openFilters() {
+ *   this.filtersOverlay.open({ providers: provideFilterOverlay({ queryForm: this.filters }) });
+ * }
+ *
+ * // in TeamFiltersComponent
+ * protected filters = injectFilterOverlay<TeamFilterValue>();
+ */
+export const provideFilterOverlay = <TFields extends QueryFormFields>(
+  config: FilterOverlayConfig<TFields>,
+): StaticProvider[] => [{ provide: FILTER_OVERLAY_TOKEN, useFactory: () => createFilterOverlay(config) }];
+
+/**
+ * The filter overlay provided above this component, typed to your filters' **value** shape:
+ *
+ * ```ts
+ * const createTeamFilters = () => defineQueryForm({ fields: TEAM_FILTER_FIELDS });
+ * type TeamFilterValue = FilterOverlayValueOf<ReturnType<typeof createTeamFilters>>;
+ *
+ * protected filters = injectFilterOverlay<TeamFilterValue>();
+ * ```
+ */
+export const injectFilterOverlay = <TValue = unknown>() => inject<FilterOverlay<TValue>>(FILTER_OVERLAY_TOKEN);

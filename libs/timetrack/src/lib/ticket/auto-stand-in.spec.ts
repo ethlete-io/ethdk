@@ -1,0 +1,529 @@
+import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
+import { describe, expect, it } from 'vitest';
+import { WorkGroup } from '../rows/merge';
+import { AttributionRule, UnnamedContext } from '../model/attribution';
+import { ActivityBlock, ActivityContext, contextKey } from '../model/block';
+import { CollectedEvent } from '../model/event';
+import { Evidence } from '../model/evidence';
+import { TimetrackProjectLink } from '../model/project-link';
+import { StandIn, StandInRefusal } from '../model/stand-in';
+import { autoStandIns } from './auto-stand-in';
+
+const HOUR = 60 * 60_000;
+
+const FIFAGG = '/Users/human/dev/fifagg-frontend';
+const OTHER = '/Users/human/dev/side-project';
+const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
+const NOW = new Date('2026-09-15T09:00:00Z');
+
+const link = (path: string, target: TimetrackProjectLink['target']): TimetrackProjectLink => ({
+  id: `link:${path}`,
+  path,
+  target,
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+});
+
+const unnamed = (context: ActivityContext, observedMs: number): UnnamedContext => ({
+  id: contextKey(context),
+  context,
+  observedMs,
+  from: new Date('2026-09-15T09:00:00Z'),
+  to: new Date('2026-09-15T10:00:00Z'),
+  suggestion: { repoPath: context.repoPath, branch: context.branch, appId: context.appId },
+});
+
+const group = (context: ActivityContext, entries: Evidence[]): WorkGroup => {
+  const block: ActivityBlock = {
+    from: new Date('2026-09-15T09:00:00Z'),
+    to: new Date('2026-09-15T10:00:00Z'),
+    context,
+    evidence: entries,
+  };
+
+  return { from: block.from, to: block.to, observedMs: 0, confidence: 'weak', evidence: [], blocks: [block] };
+};
+
+const drawn = (unnamedContext: UnnamedContext, from: Date, to: Date): WorkGroup => ({
+  from,
+  to,
+  observedMs: unnamedContext.observedMs,
+  confidence: 'weak',
+  evidence: [],
+  blocks: [
+    {
+      from: unnamedContext.from,
+      to: new Date(unnamedContext.from.getTime() + unnamedContext.observedMs),
+      context: unnamedContext.context,
+      evidence: [],
+    },
+  ],
+});
+
+const drawnAsObserved = (unnamedContext: UnnamedContext) =>
+  drawn(unnamedContext, unnamedContext.from, new Date(unnamedContext.from.getTime() + unnamedContext.observedMs));
+
+const commit = (summary: string): Evidence => ({
+  kind: 'commit',
+  at: new Date('2026-09-15T09:30:00Z'),
+  detail: summary,
+  summary,
+});
+
+const open = (options: {
+  contexts: readonly UnnamedContext[];
+  unattributed?: readonly WorkGroup[];
+  links?: readonly TimetrackProjectLink[];
+  rules?: readonly AttributionRule[];
+  repoRoots?: readonly string[] | null;
+  offeredCheckouts?: readonly string[];
+  standIns?: readonly StandIn[];
+  refused?: readonly StandInRefusal[];
+  events?: readonly CollectedEvent[];
+  day?: string;
+}) =>
+  autoStandIns({
+    contexts: options.contexts,
+    unattributed: options.unattributed ?? options.contexts.map(drawnAsObserved),
+    events: options.events,
+    links: options.links ?? [link(FIFAGG, { kind: 'project', projectKey: 'FIF' })],
+    rules: options.rules ?? [],
+    config: CONFIG,
+    repoRoots: options.repoRoots === undefined ? [FIFAGG, OTHER] : options.repoRoots,
+    offeredCheckouts: options.offeredCheckouts ?? [],
+    standIns: options.standIns ?? [],
+    refused: options.refused ?? [],
+    day: options.day ?? '2026-09-15',
+    now: NOW,
+  });
+
+describe('autoStandIns', () => {
+  it('opens one per directory of a base branch, which is the only thing that names the work there', () => {
+    const rework = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260921_rework' };
+    const journey = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260808_journey' };
+    const opened = open({ contexts: [unnamed(rework, 45 * 60_000), unnamed(journey, 75 * 60_000)] });
+
+    expect(opened).toHaveLength(2);
+    expect(opened.map((entry) => entry.standIn.openedForWorkPath).sort()).toEqual(
+      [journey.workPath, rework.workPath].sort(),
+    );
+    expect(opened.map((entry) => entry.rule.workPath).sort()).toEqual([journey.workPath, rework.workPath].sort());
+  });
+
+  it('names the placeholder of a directory of a base branch from the directory, not from a commit subject', () => {
+    const context = { repoPath: FIFAGG, branch: 'main', workPath: 'tracks/20261030_post-angular-22-cleanup' };
+    const opened = open({
+      contexts: [unnamed(context, 45 * 60_000)],
+      unattributed: [group(context, [commit('chore: bump the lockfile')])],
+    });
+
+    expect(opened.map((entry) => entry.standIn.name)).toEqual([context.workPath]);
+  });
+
+  it('still opens none for a base branch no directory could split', () => {
+    expect(open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'main' }, 45 * 60_000)] })).toEqual([]);
+  });
+
+  it('leaves a directory of a base branch alone once a record waits on it', () => {
+    const context = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260921_rework' };
+    const waiting: StandIn = {
+      id: 'stand-in:1:rework',
+      name: 'The rework',
+      state: 'open',
+      openedFor: FIFAGG,
+      openedForBranch: 'main',
+      openedForWorkPath: context.workPath,
+      days: ['2026-09-14'],
+      author: 'app',
+      createdAt: new Date('2026-09-14T09:00:00Z'),
+    };
+
+    expect(open({ contexts: [unnamed(context, 45 * 60_000)], standIns: [waiting] })).toEqual([]);
+  });
+
+  it('opens one stand-in for a branch nothing could name', () => {
+    const opened = open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/user-management' }, 45 * 60_000)] });
+
+    expect(opened).toHaveLength(1);
+    expect(opened[0]?.standIn.state).toBe('open');
+    expect(opened[0]?.standIn.projectKey).toBe('FIF');
+    expect(opened[0]?.standIn.author).toBe('app');
+    expect(opened[0]?.standIn.days).toEqual(['2026-09-15']);
+  });
+
+  it('opens one per branch, each named from its own work, so one checkout is not one ticket', () => {
+    const early = { repoPath: FIFAGG, branch: 'dev-player-name-auto-size' };
+    const late = { repoPath: FIFAGG, branch: 'dev-toty-public-fixes' };
+    const opened = open({
+      contexts: [unnamed(early, 45 * 60_000), unnamed(late, 75 * 60_000)],
+      unattributed: [
+        group(early, [commit('feat(platform): Auto size the player item name')]),
+        group(late, [commit('fix(toty-public): Correct the showcase layout')]),
+      ],
+    });
+
+    expect(opened).toHaveLength(2);
+    expect(opened.map((entry) => entry.rule.branch)).toEqual(['dev-player-name-auto-size', 'dev-toty-public-fixes']);
+    expect(opened.map((entry) => entry.standIn.name)).toEqual(['Player name auto size', 'Toty public fixes']);
+    expect(new Set(opened.map((entry) => entry.standIn.id)).size).toBe(2);
+    expect(opened[0]?.rule.repoPath).toBe(FIFAGG);
+    expect(opened[0]?.rule.target).toEqual({ kind: 'stand-in', standInId: opened[0]?.standIn.id });
+    expect(opened[0]?.observedMs).toBe(45 * 60_000);
+  });
+
+  it('opens none for a base branch, because integration is not one piece of work', () => {
+    const contexts = [
+      unnamed({ repoPath: FIFAGG, branch: 'next' }, 45 * 60_000),
+      unnamed({ repoPath: FIFAGG, branch: 'main' }, 45 * 60_000),
+      unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+    ];
+
+    expect(open({ contexts }).map((entry) => entry.rule.branch)).toEqual(['feat/x']);
+  });
+
+  describe('a base branch with two hours of work', () => {
+    const next = { repoPath: FIFAGG, branch: 'next' };
+
+    it('opens from 2 h observed, and not from 1 h 59', () => {
+      expect(open({ contexts: [unnamed(next, 2 * HOUR)] })).toHaveLength(1);
+      expect(open({ contexts: [unnamed(next, 2 * HOUR - 60_000)] })).toEqual([]);
+    });
+
+    it('names it from the day commits and scopes its rule and key to the day', () => {
+      const contexts = [unnamed(next, 2 * HOUR)];
+      const [opened] = open({
+        contexts,
+        unattributed: [group(next, [commit('Add the standings table')])].map((entry) => ({
+          ...entry,
+          observedMs: 2 * HOUR,
+        })),
+      });
+
+      expect(opened?.rule.day).toBe('2026-09-15');
+      expect(opened?.standIn.name).toBe('Add the standings table');
+      expect(opened?.standIn.id).toContain('2026-09-15');
+    });
+
+    it('opens a second one on the next day, past the first day rule and open stand-in', () => {
+      const [first] = open({ contexts: [unnamed(next, 2 * HOUR)] });
+
+      if (!first) throw new Error('no first stand-in');
+
+      const second = open({
+        contexts: [unnamed(next, 2 * HOUR)],
+        rules: [first.rule],
+        standIns: [{ ...first.standIn, createdAt: new Date('2026-09-15T09:00:00Z') }],
+        day: '2026-09-16',
+      });
+
+      expect(second).toHaveLength(1);
+      expect(second[0]?.rule.day).toBe('2026-09-16');
+      expect(second[0]?.standIn.id).not.toBe(first.standIn.id);
+    });
+
+    it('opens none again on its own day', () => {
+      const [first] = open({ contexts: [unnamed(next, 2 * HOUR)] });
+
+      if (!first) throw new Error('no first stand-in');
+
+      expect(open({ contexts: [unnamed(next, 2 * HOUR)], rules: [first.rule], standIns: [first.standIn] })).toEqual([]);
+    });
+
+    it('leaves the rule of another auto stand-in permanent', () => {
+      const [feature] = open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)] });
+
+      expect(feature?.rule.day).toBeUndefined();
+    });
+  });
+
+  it('reads a ref and a branch name as one branch', () => {
+    const opened = open({
+      contexts: [
+        unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 10 * 60_000),
+        unnamed({ repoPath: FIFAGG, branch: 'refs/heads/feat/x' }, 10 * 60_000),
+      ],
+    });
+
+    expect(opened).toHaveLength(1);
+    expect(opened[0]?.rule.branch).toBe('feat/x');
+    expect(opened[0]?.observedMs).toBe(20 * 60_000);
+  });
+
+  it('opens nothing for a branch a stand-in rule already covers, and still opens for its sibling', () => {
+    const rules: AttributionRule[] = [
+      {
+        id: 'rule:1',
+        repoPath: FIFAGG,
+        branch: 'feat/x',
+        target: { kind: 'stand-in', standInId: 'stand-in:1' },
+        author: 'app',
+        createdAt: new Date('2026-09-14T09:00:00Z'),
+      },
+    ];
+    const contexts = [
+      unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+      unnamed({ repoPath: FIFAGG, branch: 'feat/y' }, 45 * 60_000),
+    ];
+
+    expect(open({ contexts, rules }).map((entry) => entry.rule.branch)).toEqual(['feat/y']);
+  });
+
+  it('opens nothing at all for a checkout a checkout-wide rule already covers', () => {
+    const rules: AttributionRule[] = [
+      {
+        id: 'rule:1',
+        repoPath: FIFAGG,
+        target: { kind: 'stand-in', standInId: 'stand-in:1' },
+        author: 'app',
+        createdAt: new Date('2026-09-14T09:00:00Z'),
+      },
+    ];
+    const contexts = [
+      unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+      unnamed({ repoPath: FIFAGG, branch: 'feat/y' }, 45 * 60_000),
+    ];
+
+    expect(open({ contexts, rules })).toEqual([]);
+  });
+
+  it('opens nothing for a checkout no link covers', () => {
+    expect(open({ contexts: [unnamed({ repoPath: OTHER, branch: 'feat/x' }, 45 * 60_000)] })).toEqual([]);
+  });
+
+  it('opens nothing for a checkout linked as private', () => {
+    const links = [link(OTHER, { kind: 'private' })];
+
+    expect(open({ contexts: [unnamed({ repoPath: OTHER, branch: 'feat/x' }, 45 * 60_000)], links })).toEqual([]);
+  });
+
+  it('opens nothing for a context with no checkout at all', () => {
+    expect(open({ contexts: [unnamed({ appId: 'firefox' }, 45 * 60_000)] })).toEqual([]);
+  });
+
+  it('opens nothing for a checkout that reports no branch, rather than covering the whole of it', () => {
+    expect(open({ contexts: [unnamed({ repoPath: FIFAGG }, 45 * 60_000)] })).toEqual([]);
+  });
+
+  it('leaves a branch below the floor alone, and opens once that branch adds up past it', () => {
+    const short = unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 5 * 60_000);
+    const other = unnamed({ repoPath: FIFAGG, branch: 'fix/y' }, 12 * 60_000);
+    const more = unnamed({ repoPath: FIFAGG, branch: 'refs/heads/feat/x' }, 12 * 60_000);
+
+    expect(open({ contexts: [short, other] })).toEqual([]);
+    expect(open({ contexts: [short, more] })).toHaveLength(1);
+  });
+
+  it('weighs the drawn row rather than the observed minutes behind it', () => {
+    const context = unnamed({ repoPath: FIFAGG, branch: 'feature/reward-frontend' }, 12.6 * 60_000);
+    const row = drawn(context, new Date('2026-09-15T10:15:00Z'), new Date('2026-09-15T10:30:00Z'));
+
+    expect(open({ contexts: [context], unattributed: [row] }).map((entry) => entry.rule.branch)).toEqual([
+      'feature/reward-frontend',
+    ]);
+  });
+
+  describe('a branch below the floor with strong evidence on the day', () => {
+    const branch = 'feature/reward-frontend';
+    const short = unnamed({ repoPath: FIFAGG, branch }, 5 * 60_000);
+    const at = new Date('2026-09-15T09:03:00Z');
+    const opensWith = (events: CollectedEvent[]) => open({ contexts: [short], events }).length;
+
+    it('opens for an own commit on the branch, and not for one a pull brought in', () => {
+      const own: CollectedEvent = {
+        at,
+        source: 'git',
+        kind: 'git-commit',
+        repoPath: FIFAGG,
+        branch,
+        sha: 'abcdef1234',
+        subject: 'feat: Reward list',
+      };
+
+      expect(opensWith([own])).toBe(1);
+      expect(opensWith([{ ...own, authoredAt: new Date('2026-09-14T09:00:00Z') }])).toBe(0);
+      expect(opensWith([{ ...own, branch: 'feature/other' }])).toBe(0);
+    });
+
+    it('does not open for the copy of a commit made on another branch before', () => {
+      const commit = (options: { at: Date; repoPath: string; branch: string; sha: string }): CollectedEvent => ({
+        source: 'git',
+        kind: 'git-commit',
+        subject: 'feat: Reward list',
+        patchId: 'same-patch',
+        ...options,
+      });
+      const original = commit({ at: new Date('2026-09-14T09:00:00Z'), repoPath: FIFAGG, branch: 'main', sha: 'aaa' });
+      const pick = commit({ at, repoPath: FIFAGG, branch, sha: 'bbb' });
+
+      expect(opensWith([pick])).toBe(1);
+      expect(opensWith([original, pick])).toBe(0);
+    });
+
+    it('opens for merge request activity on the branch, a push included', () => {
+      const push: CollectedEvent = {
+        at,
+        source: 'gitlab',
+        kind: 'merge-request-activity',
+        eventId: '1',
+        action: 'pushed to',
+        branch,
+      };
+
+      expect(opensWith([push])).toBe(1);
+      expect(opensWith([{ ...push, branch: 'feature/other' }])).toBe(0);
+    });
+
+    it('opens for an agent session that wrote in the checkout, and not for one that only read there', () => {
+      const wrote: CollectedEvent = {
+        at,
+        source: 'agent-usage',
+        kind: 'agent-usage',
+        provider: 'claude-code',
+        sessionId: 's1',
+        turnId: 't1',
+        cwd: FIFAGG,
+        gitBranch: branch,
+        workedIn: `${FIFAGG}/src/reward.ts`,
+        model: 'm',
+        usage: { input: 1, output: 1, cacheWrite: 0, cacheRead: 0, thinking: 0 },
+      };
+
+      expect(opensWith([wrote])).toBe(1);
+      expect(opensWith([{ ...wrote, workedIn: FIFAGG }])).toBe(0);
+      expect(opensWith([{ ...wrote, cwd: OTHER, workedIn: `${OTHER}/src/x.ts` }])).toBe(0);
+    });
+  });
+
+  it('gives two checkouts opened in the same millisecond two ids', () => {
+    const links = [
+      link(FIFAGG, { kind: 'project', projectKey: 'FIF' }),
+      link(OTHER, { kind: 'project', projectKey: 'SID' }),
+    ];
+    const opened = open({
+      links,
+      contexts: [
+        unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+        unnamed({ repoPath: OTHER, branch: 'feat/y' }, 45 * 60_000),
+      ],
+    });
+
+    expect(opened).toHaveLength(2);
+    expect(new Set(opened.map((entry) => entry.standIn.id)).size).toBe(2);
+  });
+
+  it('names it from the branch, and quotes what the branch says about itself', () => {
+    const context = { repoPath: FIFAGG, branch: 'fix/login-redirect' };
+    const opened = open({
+      contexts: [unnamed(context, 90 * 60_000)],
+      unattributed: [group(context, [commit('Send the user back to where they came from')])],
+    });
+
+    expect(opened[0]?.standIn.name).toBe('Login redirect');
+    expect(opened[0]?.standIn.description).toContain('Send the user back to where they came from');
+    expect(opened[0]?.standIn.description).toContain('1h 30m');
+  });
+
+  it('opens nothing for a directory inside a checkout, so one branch keeps one stand-in', () => {
+    const inside = `${FIFAGG}/libs/domain/shared/match-overlay`;
+    const opened = open({
+      contexts: [
+        unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+        unnamed({ repoPath: inside, branch: 'feat/x' }, 45 * 60_000),
+      ],
+    });
+
+    expect(opened).toHaveLength(1);
+    expect(opened[0]?.rule.repoPath).toBe(FIFAGG);
+  });
+
+  it('opens nothing at all while the repository discovery has not answered', () => {
+    const contexts = [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)];
+
+    expect(open({ contexts, repoRoots: null })).toEqual([]);
+    expect(open({ contexts })).toHaveLength(1);
+  });
+
+  it('still opens one for a checkout the discovery never walked', () => {
+    const opened = open({
+      contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)],
+      repoRoots: [OTHER],
+    });
+
+    expect(opened).toHaveLength(1);
+  });
+
+  it('opens none for a checkout the app can still offer a real issue for', () => {
+    const contexts = [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)];
+
+    expect(open({ contexts, offeredCheckouts: [FIFAGG] })).toEqual([]);
+    expect(open({ contexts })).toHaveLength(1);
+  });
+
+  it('never replaces a rule that names the checkout an issue', () => {
+    const named: AttributionRule = {
+      id: 'repo:fifagg',
+      repoPath: FIFAGG,
+      target: { kind: 'issue', issueKey: 'FIF-1' },
+      author: 'user',
+      createdAt: new Date('2026-09-01T00:00:00Z'),
+    };
+
+    expect(open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)], rules: [named] })).toEqual(
+      [],
+    );
+  });
+
+  it('opens none for a branch a stand-in already waits on, and still opens for its sibling', () => {
+    const contexts = [
+      unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+      unnamed({ repoPath: FIFAGG, branch: 'feat/y' }, 45 * 60_000),
+    ];
+    const waiting = open({ contexts: [contexts[0]!] })[0]!.standIn;
+
+    expect(open({ contexts, standIns: [waiting] }).map((entry) => entry.rule.branch)).toEqual(['feat/y']);
+  });
+
+  it('opens none anywhere in a checkout a record from the wider grain still waits on', () => {
+    const contexts = [
+      unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+      unnamed({ repoPath: FIFAGG, branch: 'feat/y' }, 45 * 60_000),
+    ];
+    const wide = open({ contexts: [contexts[0]!] })[0]!.standIn;
+
+    expect(open({ contexts, standIns: [{ ...wide, openedForBranch: undefined }] })).toEqual([]);
+  });
+
+  it('opens one again once the stand-in that waited on the branch is resolved', () => {
+    const contexts = [unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000)];
+    const waiting = open({ contexts })[0]!.standIn;
+
+    expect(open({ contexts, standIns: [{ ...waiting, state: 'resolved', issueKey: 'FIF-1' }] })).toHaveLength(1);
+  });
+
+  it('opens none for a branch the user refused one for, and still opens for its sibling', () => {
+    const contexts = [
+      unnamed({ repoPath: FIFAGG, branch: 'feat/x' }, 45 * 60_000),
+      unnamed({ repoPath: FIFAGG, branch: 'feat/y' }, 45 * 60_000),
+    ];
+
+    expect(open({ contexts, refused: [{ repoPath: FIFAGG, branch: 'feat/x' }] }).map((e) => e.rule.branch)).toEqual([
+      'feat/y',
+    ]);
+    expect(open({ contexts, refused: [{ repoPath: FIFAGG }] })).toEqual([]);
+    expect(open({ contexts, refused: [{ repoPath: OTHER }] })).toHaveLength(2);
+  });
+
+  it('opens none for a refused directory of a base branch, and still opens for its sibling directory', () => {
+    const rework = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260921_rework' };
+    const journey = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260808_journey' };
+    const contexts = [unnamed(rework, 45 * 60_000), unnamed(journey, 45 * 60_000)];
+
+    expect(open({ contexts, refused: [rework] }).map((entry) => entry.rule.workPath)).toEqual([journey.workPath]);
+  });
+
+  it('records the checkout and the branch it opened for, so a delete knows what to refuse', () => {
+    const opened = open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'refs/heads/feat/x' }, 45 * 60_000)] });
+
+    expect(opened[0]?.standIn.openedFor).toBe(FIFAGG);
+    expect(opened[0]?.standIn.openedForBranch).toBe('feat/x');
+  });
+});

@@ -1,0 +1,342 @@
+import { HttpEventType } from '@angular/common/http';
+import { DestroyRef, Signal, WritableSignal, computed, linkedSignal, signal } from '@angular/core';
+import { Observable, Subject, Subscription } from 'rxjs';
+import { QueryDevtoolsFormLinksRecorder } from '../devtools/query-devtools-form-links';
+import { QueryDevtoolsOverridesRecorder } from '../devtools/query-devtools-overrides';
+import { QueryDevtoolsStatsRecorder } from '../devtools/query-devtools-stats';
+import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
+import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
+import { createQueryErrorResponse, QueryErrorResponse } from './query-error-response';
+import { RunQueryExecuteOptions } from './query-execute-utils';
+import { ShouldRetryRequestFn } from './query-retry-utils';
+
+export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
+  transformResponse?: (rawResponse: RawResponseType<TArgs>) => ResponseType<TArgs>;
+
+  destroyRef?: DestroyRef;
+
+  keepPreviousResponse?: boolean;
+
+  /**
+   * The devtools stats recorder to feed from this state's executions, or nothing when the devtools are
+   * not installed.
+   */
+  devtoolsStats?: QueryDevtoolsStatsRecorder | null;
+
+  /**
+   * The recorder that notes which query forms the args source reads, or nothing when the devtools are
+   * not installed.
+   */
+  devtoolsFormLinks?: QueryDevtoolsFormLinksRecorder | null;
+
+  /**
+   * The recorder of response overrides armed on this query, or nothing when the devtools are not
+   * installed. Replayed against every response that settles into {@link QueryState.rawResponse}.
+   */
+  devtoolsOverrides?: QueryDevtoolsOverridesRecorder | null;
+};
+
+export type QueryStateSubtle<TArgs extends QueryArgs> = {
+  request: WritableSignal<HttpRequest<TArgs> | null>;
+  rawResponse: WritableSignal<RawResponseType<TArgs> | null>;
+
+  /**
+   * Forwards the given request's discrete event stream onto the query-level `events$`.
+   * Called by `queryExecute` whenever a request is (re-)executed.
+   */
+  bindRequestEvents: (request: HttpRequest<TArgs>) => void;
+
+  /** Stops forwarding the current request's events; `reset()` detaches the query from its request with it. */
+  unbindRequestEvents: () => void;
+
+  /**
+   * Run options every execution of this query starts from; the options passed to one `execute()` win
+   * per field. Set by a feature during creation so it also covers executions the feature does not
+   * trigger itself (`withLongPolling` turns retention off for the `withArgs` round too).
+   */
+  defaultRunOptions: WritableSignal<RunQueryExecuteOptions | null>;
+
+  /**
+   * Consulted before `withArgs` or creation auto-executes the query; returning `false` skips that
+   * execution. Set by a feature during creation (`withLongPolling` holds its first round back while disabled).
+   */
+  autoExecuteGuard: WritableSignal<(() => boolean) | null>;
+
+  /**
+   * Called by every execution before its request is made; a function it returns is called with that request,
+   * or with `null` when building the request threw. Set by a feature during creation (`withOptimisticUpdate` writes the cache before the request leaves).
+   */
+  beforeExecute: WritableSignal<QueryBeforeExecuteFn<TArgs> | null>;
+
+  /**
+   * Installs the reactive source that backs `state.args`. The `withArgs` feature uses this so that
+   * `state.args` always reflects the latest args (pulled from the reactive source on read) instead
+   * of being push-updated by an effect that may not have run yet. Without a `withArgs` feature the
+   * default source returns `null`.
+   */
+  setArgsSource: (source: () => RequestArgs<TArgs> | null) => void;
+
+  /** Whether {@link setArgsSource} installed a source. Without one, an execution's args are written to `state.args`. */
+  hasArgsSource: Signal<boolean>;
+
+  /**
+   * Writes the args of an `execute({ args })` over the args source. They stay until the source produces new
+   * non-null args; a source that turns `null` keeps them.
+   */
+  setExplicitArgs: (args: RequestArgs<TArgs>) => void;
+
+  /** Whether `args` are the ones {@link setExplicitArgs} wrote last and the source has not replaced yet. */
+  isExplicitArgs: (args: RequestArgs<TArgs> | null) => boolean;
+
+  /** @see SetupQueryStateOptions.devtoolsStats */
+  devtoolsStats: QueryDevtoolsStatsRecorder | null;
+
+  /** @see SetupQueryStateOptions.devtoolsFormLinks */
+  devtoolsFormLinks: QueryDevtoolsFormLinksRecorder | null;
+};
+
+export type QueryBeforeExecuteFn<TArgs extends QueryArgs> = (
+  args: RequestArgs<TArgs> | null,
+) => ((request: HttpRequest<TArgs> | null) => void) | null;
+
+export type QueryState<TArgs extends QueryArgs> = {
+  rawResponse: WritableSignal<RawResponseType<TArgs> | null>;
+  response: WritableSignal<ResponseType<TArgs> | null>;
+  args: WritableSignal<RequestArgs<TArgs> | null>;
+  latestHttpEvent: WritableSignal<RequestHttpEvent<TArgs> | null>;
+  loading: WritableSignal<HttpRequestLoadingState | null>;
+  error: WritableSignal<QueryErrorResponse | null>;
+  lastTimeExecutedAt: WritableSignal<number | null>;
+  lastTriggeredBy: WritableSignal<string | null>;
+  executionState: Signal<QueryExecutionState<TArgs> | null>;
+
+  /**
+   * A discrete, query-level stream of every request event, fed synchronously from the current
+   * request's `events$` at the moment each event occurs. Side-effect features
+   * (success/error/logging) subscribe to this instead of edge-detecting on the shared, resettable
+   * `response`/`error`/`latestHttpEvent` signals - so they cannot miss a transition when the next
+   * execution swaps the underlying request.
+   */
+  events$: Observable<RequestHttpEvent<TArgs>>;
+
+  subtle: QueryStateSubtle<TArgs>;
+};
+
+export type QueryExecutionStateSuccess<TArgs extends QueryArgs> = {
+  type: 'success';
+  response: ResponseType<TArgs>;
+};
+
+export type QueryExecutionStateFailureWithNoResponse = {
+  type: 'failure';
+  error: QueryErrorResponse;
+  hasCachedResponse?: false;
+};
+
+export type QueryExecutionStateFailureWithCachedResponse<TArgs extends QueryArgs> = {
+  type: 'failure';
+  error: QueryErrorResponse;
+  hasCachedResponse: true;
+  cachedResponse: ResponseType<TArgs>;
+};
+
+export type QueryExecutionStateFailure<TArgs extends QueryArgs> =
+  QueryExecutionStateFailureWithNoResponse | QueryExecutionStateFailureWithCachedResponse<TArgs>;
+
+export type QueryExecutionStateLoadingWithNoResponse = {
+  type: 'loading';
+  hasCachedResponse: false;
+  loading: HttpRequestLoadingState;
+};
+
+export type QueryExecutionStateLoadingWithCachedResponse<TArgs extends QueryArgs> = {
+  type: 'loading';
+  hasCachedResponse: true;
+  loading: HttpRequestLoadingState;
+  cachedResponse: ResponseType<TArgs>;
+};
+
+export type QueryExecutionStateLoading<TArgs extends QueryArgs> =
+  QueryExecutionStateLoadingWithNoResponse | QueryExecutionStateLoadingWithCachedResponse<TArgs>;
+
+export type QueryExecutionState<TArgs extends QueryArgs> =
+  QueryExecutionStateSuccess<TArgs> | QueryExecutionStateFailure<TArgs> | QueryExecutionStateLoading<TArgs>;
+
+const neverRetry: ShouldRetryRequestFn = () => ({ retry: false });
+
+export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions<TArgs>) => {
+  const request = signal<HttpRequest<TArgs> | null>(null);
+
+  const rawResponse = linkedSignal<
+    { request: HttpRequest<TArgs> | null; raw: RawResponseType<TArgs> | null; settled: boolean },
+    RawResponseType<TArgs> | null
+  >({
+    source: () => {
+      const current = request();
+      const raw = current?.response() ?? null;
+      const settled = current?.currentEvent()?.type === HttpEventType.Response;
+      const overrides = raw !== null || settled ? options.devtoolsOverrides : null;
+
+      return {
+        request: current,
+        raw: overrides ? (overrides.apply(raw) as typeof raw) : raw,
+        settled,
+      };
+    },
+    computation: (current, previous) => {
+      const carriesPrevious =
+        options.keepPreviousResponse && current.request !== null && current.raw === null && !current.settled;
+
+      return carriesPrevious ? (previous?.value ?? null) : current.raw;
+    },
+  });
+  const transformed = computed<{ response: ResponseType<TArgs> | null; error: QueryErrorResponse | null }>(() => {
+    const raw = rawResponse();
+    if (raw === null) return { response: null, error: null };
+    if (!options.transformResponse) return { response: raw as ResponseType<TArgs>, error: null };
+
+    try {
+      return { response: options.transformResponse(raw), error: null };
+    } catch (transformError) {
+      return {
+        response: null,
+        error: createQueryErrorResponse(transformError, { retryCount: 0, retryFn: neverRetry }),
+      };
+    }
+  });
+  const response = linkedSignal<
+    { response: ResponseType<TArgs> | null; error: QueryErrorResponse | null },
+    ResponseType<TArgs> | null
+  >({
+    source: transformed,
+    computation: (current, previous) => (current.error ? (previous?.value ?? null) : current.response),
+  });
+  const loading = linkedSignal(() => request()?.loading() ?? null);
+  const error = linkedSignal(() => request()?.error() ?? transformed().error);
+  const latestHttpEvent = linkedSignal(() => request()?.currentEvent() ?? null);
+
+  // `args` is reactively sourced: reads always reflect the latest value from the installed source
+  // (e.g. the `withArgs` feature), so there is no stale window between a source change and an
+  // effect writing it. It stays writable (reset / auth-error clear it via `.set(null)`); a manual
+  // set is overridden again the next time the source's dependencies change.
+  const argsSource = signal<() => RequestArgs<TArgs> | null>(() => null);
+  let explicitArgs: RequestArgs<TArgs> | null = null;
+  const args = linkedSignal<RequestArgs<TArgs> | null, RequestArgs<TArgs> | null>({
+    source: () => argsSource()(),
+    computation: (next, previous) => {
+      if (next === null && explicitArgs !== null && previous) return previous.value;
+
+      explicitArgs = null;
+
+      return next;
+    },
+  });
+  const hasArgsSource = signal(false);
+  const setArgsSource = (source: () => RequestArgs<TArgs> | null) => {
+    argsSource.set(source);
+    hasArgsSource.set(true);
+  };
+  const setExplicitArgs = (value: RequestArgs<TArgs>) => {
+    explicitArgs = value;
+    args.set(value);
+  };
+
+  const lastTimeExecutedAt = signal<number | null>(null);
+  const lastTriggeredBy = signal<string | null>(null);
+
+  const requestEvents$ = new Subject<RequestHttpEvent<TArgs>>();
+  let requestEventsSubscription = Subscription.EMPTY;
+  const bindRequestEvents = (request: HttpRequest<TArgs>) => {
+    requestEventsSubscription.unsubscribe();
+    requestEventsSubscription = request.events$.subscribe((event) => requestEvents$.next(event));
+  };
+  const unbindRequestEvents = () => {
+    requestEventsSubscription.unsubscribe();
+    requestEventsSubscription = Subscription.EMPTY;
+  };
+
+  const defaultRunOptions = signal<RunQueryExecuteOptions | null>(null);
+  const autoExecuteGuard = signal<(() => boolean) | null>(null);
+  const beforeExecute = signal<QueryBeforeExecuteFn<TArgs> | null>(null);
+
+  options.destroyRef?.onDestroy(() => {
+    requestEventsSubscription.unsubscribe();
+    requestEvents$.complete();
+  });
+
+  const executionState = computed<QueryExecutionState<TArgs> | null>(() => {
+    const currentResponse = response();
+    const currentError = error();
+    const currentLoading = loading();
+
+    if (currentLoading) {
+      if (currentResponse !== null) {
+        return {
+          type: 'loading',
+          hasCachedResponse: true,
+          loading: currentLoading,
+          cachedResponse: currentResponse,
+        };
+      }
+
+      return {
+        type: 'loading',
+        hasCachedResponse: false,
+        loading: currentLoading,
+      };
+    } else if (currentError && currentResponse !== null) {
+      return {
+        type: 'failure',
+        error: currentError,
+        hasCachedResponse: true,
+        cachedResponse: currentResponse,
+      };
+    } else if (currentError) {
+      return {
+        type: 'failure',
+        error: currentError,
+        hasCachedResponse: false,
+      };
+    } else if (currentResponse !== null || latestHttpEvent()?.type === HttpEventType.Response) {
+      // A response event having arrived is what makes the execution a success, not a truthy body: a 204 (or any
+      // other empty payload) sets `response` to `null`, which would otherwise be indistinguishable from a query
+      // that never ran - leaving `filterSuccess`, `onSuccess` and the success handlers waiting forever.
+      return {
+        type: 'success',
+        response: currentResponse as ResponseType<TArgs>,
+      };
+    } else {
+      return null;
+    }
+  });
+
+  const state: QueryState<TArgs> = {
+    rawResponse,
+    response,
+    args,
+    latestHttpEvent,
+    loading,
+    error,
+    lastTimeExecutedAt,
+    lastTriggeredBy,
+    executionState,
+    events$: requestEvents$.asObservable(),
+    subtle: {
+      request,
+      rawResponse,
+      bindRequestEvents,
+      unbindRequestEvents,
+      defaultRunOptions,
+      autoExecuteGuard,
+      beforeExecute,
+      setArgsSource,
+      hasArgsSource: hasArgsSource.asReadonly(),
+      setExplicitArgs,
+      isExplicitArgs: (value) => value !== null && value === explicitArgs,
+      devtoolsStats: options.devtoolsStats ?? null,
+      devtoolsFormLinks: options.devtoolsFormLinks ?? null,
+    },
+  };
+
+  return state;
+};

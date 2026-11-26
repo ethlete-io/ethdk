@@ -1,0 +1,21 @@
+      }
+
+      ul {
+        list-style-type: square;
+      }
+
+      a {
+        color: var(--et-tone-fill-rest);
+        transition: color 0.2s var(--et-easing);
+        &:hover {
+          color: var(--et-tone-fill-hover);
+        }
+
+        &:focus {
+          color: var(--et-tone-fill-focus);
+        }
+
+        &:active {
+          color: var(--et-tone-fill-active);
+        }
+      }

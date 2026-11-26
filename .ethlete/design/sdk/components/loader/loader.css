@@ -1,0 +1,37 @@
+.loader-frame {
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background);
+  color: var(--et-surface-text);
+}
+
+.loader-row {
+  display: flex;
+  align-items: center;
+  gap: 2.4rem;
+}
+
+.loader-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+@layer components {
+  .et-spinner.et-color--brand {
+    --et-spinner-color: var(--et-tone-text);
+  }
+
+  .et-progress-bar.et-color--brand {
+    --et-progress-bar-indicator-color: var(--et-tone-text);
+  }
+
+  .et-brand-loader .et-brand-loader__outline {
+    stroke: var(--et-tone-text);
+  }
+
+  .et-brand-loader .et-brand-loader__fill {
+    stroke: var(--et-tone-text);
+    stroke-width: 0.7;
+    stroke-linejoin: round;
+  }
+}

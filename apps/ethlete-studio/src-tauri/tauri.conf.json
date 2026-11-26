@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Ethlete Studio",
+  "version": "0.2.0-next.36",
+  "identifier": "io.ethlete.studio",
+  "build": {
+    "frontendDist": "../../../dist/apps/ethlete-studio/browser",
+    "devUrl": "http://localhost:4221",
+    "beforeDevCommand": "npx nx cli-runtime ethlete-studio && npx nx serve-committed ethlete-studio",
+    "beforeBuildCommand": "npx nx build ethlete-studio && npx nx cli-runtime ethlete-studio"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "create": false,
+        "title": "Ethlete Studio",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 900,
+        "minHeight": 600,
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://localhost:* http://127.0.0.1:*; font-src 'self' https://fonts.gstatic.com; frame-src 'self' http://localhost:* http://127.0.0.1:*; connect-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:*",
+      "dangerousDisableAssetCspModification": ["style-src"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "rpm", "appimage", "dmg", "app", "nsis"],
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "resources": { "../../../dist/apps/ethlete-studio/cli-runtime": "cli-runtime" }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU1N0RCOTNFNzhDNDE3MDkKUldRSkY4UjRQcmw5NVp4SGtDWTE0VUhRemd6R29PTHhkTllPSS9iS0ZjWTdQa2dmZXJSNW01ajcK",
+      "endpoints": [
+        "https://github.com/ethlete-io/ethdk/releases/download/ethlete-studio-updates/latest.json",
+        "https://updates.local.elros.cc:12345/ethlete-studio/latest.json"
+      ]
+    }
+  }
+}

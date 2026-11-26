@@ -1,0 +1,236 @@
+@layer components.sdk {
+  @property --et-accordion-padding-block {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-accordion-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-accordion-title-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 500;
+  }
+
+  @property --et-accordion-hint-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 400;
+  }
+
+  @property --et-accordion-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-accordion-chevron-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-accordion-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-accordion-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 240ms;
+  }
+
+  @property --et-accordion-color-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 120ms;
+  }
+
+  .et-accordion {
+    --_et-accordion-border-color: var(--et-surface-border, rgb(128 128 128 / 0.25));
+
+    display: block;
+    color: var(--et-surface-text, CanvasText);
+    border-block-end: 1px solid var(--_et-accordion-border-color);
+
+    /* The hover lives on the trigger and the border on the host, so this has to reach back up with
+       `:has()` - moving the rule onto `.et-accordion-trigger` would silently stop it applying. */
+    @media (hover: hover) {
+      &:has(.et-accordion-trigger:hover:not([aria-disabled='true'])) {
+        --_et-accordion-border-color: color-mix(
+          in srgb,
+          var(--et-surface-control-text, gray) 35%,
+          var(--et-surface-border, rgb(128 128 128 / 0.25))
+        );
+      }
+    }
+  }
+
+  .et-accordion-heading {
+    --_et-accordion-header-padding-block: var(--et-accordion-header-padding-block, var(--et-accordion-padding-block));
+    --_et-accordion-tint-inset: var(
+      --et-accordion-header-tint-inset,
+      min(4px, var(--_et-accordion-header-padding-block))
+    );
+
+    display: block;
+    padding-block: var(--_et-accordion-tint-inset);
+  }
+
+  .et-accordion-trigger {
+    --_et-accordion-secondary-color: var(--et-surface-text-muted, GrayText);
+
+    display: flex;
+    align-items: center;
+    gap: var(--et-accordion-gap);
+    inline-size: calc(100% + 2 * var(--et-accordion-header-outset-inline, 0px));
+    margin-inline: calc(-1 * var(--et-accordion-header-outset-inline, 0px));
+    padding: calc(var(--_et-accordion-header-padding-block) - var(--_et-accordion-tint-inset))
+      var(--et-accordion-header-padding-inline, var(--et-accordion-padding-inline));
+    padding-inline-end: var(
+      --et-accordion-header-padding-inline-end,
+      var(--et-accordion-header-padding-inline, var(--et-accordion-padding-inline))
+    );
+    border: 0;
+    border-radius: var(--et-accordion-radius);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--et-accordion-title-font-size, 1em);
+    font-weight: var(--et-accordion-title-font-weight);
+    text-align: start;
+    cursor: pointer;
+
+    @media (hover: hover) {
+      &:hover {
+        background: var(
+          --et-accordion-header-hover-background,
+          color-mix(in srgb, var(--et-surface-tint, gray) 7%, transparent)
+        );
+
+        &:not([aria-disabled='true']) {
+          --_et-accordion-secondary-color: var(--et-surface-text, CanvasText);
+
+          .et-accordion-label {
+            text-decoration: var(--et-accordion-header-hover-text-decoration, none);
+          }
+        }
+      }
+    }
+
+    &:active {
+      background: var(
+        --et-accordion-header-active-background,
+        color-mix(in srgb, var(--et-surface-tint, gray) 14%, transparent)
+      );
+    }
+
+    &:focus-visible {
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
+      outline-offset: -2px;
+    }
+
+    &:where([aria-disabled='true']) {
+      color: var(--et-surface-text-muted, GrayText);
+      cursor: default;
+
+      &:hover,
+      &:active {
+        background: transparent;
+      }
+    }
+
+    .et-accordion-label {
+      flex: 1;
+      min-inline-size: 0;
+    }
+
+    .et-accordion-hint {
+      flex: none;
+      color: var(--_et-accordion-secondary-color);
+      font-weight: var(--et-accordion-hint-font-weight);
+    }
+
+    .et-accordion-chevron {
+      flex: none;
+      inline-size: var(--et-accordion-chevron-size);
+      block-size: var(--et-accordion-chevron-size);
+      color: var(--et-accordion-chevron-color, var(--_et-accordion-secondary-color));
+      stroke: currentColor;
+      stroke-width: var(--et-accordion-chevron-stroke-width, 0);
+      rotate: 180deg;
+    }
+
+    &[aria-expanded='true'] .et-accordion-chevron {
+      rotate: 0deg;
+    }
+  }
+
+  .et-accordion-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+
+    &:where([data-open]) {
+      grid-template-rows: 1fr;
+      visibility: visible;
+    }
+  }
+
+  .et-accordion:where([data-can-animate]) {
+    transition: border-color var(--et-accordion-color-duration) ease;
+
+    > .et-accordion-heading > .et-accordion-trigger {
+      transition: background-color var(--et-accordion-color-duration) ease;
+
+      .et-accordion-hint,
+      .et-accordion-chevron {
+        transition: color var(--et-accordion-color-duration) ease;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .et-accordion:where([data-can-animate]) {
+      > .et-accordion-panel {
+        transition:
+          grid-template-rows var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
+          visibility 0s linear var(--et-accordion-duration);
+
+        &:where([data-open]) {
+          transition:
+            grid-template-rows var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
+            visibility 0s linear 0s;
+        }
+      }
+
+      > .et-accordion-heading > .et-accordion-trigger > .et-accordion-chevron {
+        transition:
+          rotate var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
+          color var(--et-accordion-color-duration) ease;
+      }
+    }
+  }
+
+  /* Stretched to a track that is 0 tall for part of the animation, so it has to be allowed to shrink
+     past its content and clip what doesn't fit. It must also carry no padding or border of its own:
+     under `box-sizing: border-box` those would set a floor under its height, and the panel would pop
+     open to that floor before the animation started. That is what the body below is separated out for. */
+  .et-accordion-panel-clip {
+    min-block-size: 0;
+    overflow: hidden;
+  }
+
+  .et-accordion-panel-body {
+    padding-block-start: var(--et-accordion-panel-padding-block-start, 0px);
+    padding-block-end: var(--et-accordion-padding-block);
+    padding-inline: var(--et-accordion-padding-inline);
+  }
+}

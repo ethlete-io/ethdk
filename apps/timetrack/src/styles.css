@@ -1,0 +1,117 @@
+@import 'tailwindcss' source('../');
+
+@import '@fontsource-variable/jost/wght.css';
+@import './styles/themes.css';
+@import './styles/surface-themes.css';
+
+/* The generated brand theme has one set of disabled colours, tuned for the dark surface; the color
+   theme generator cannot emit a set per `prefers-color-scheme`. */
+@layer base {
+  @media (prefers-color-scheme: light) {
+    :root,
+    .et-color--default,
+    .et-color--brand {
+      --et-tone-fill-disabled: rgb(196 236 216);
+      --et-tone-on-fill-disabled: rgb(96 140 118);
+      --et-tone-text-disabled: rgb(150 200 175);
+    }
+  }
+}
+
+@theme {
+  --spacing: 0.4rem;
+
+  --text-*: initial;
+
+  --text-h1: 3.2rem;
+  --text-h1--line-height: 112%;
+  --text-h1--font-weight: 600;
+
+  --text-h2: 2.4rem;
+  --text-h2--line-height: 116%;
+  --text-h2--font-weight: 600;
+
+  --text-h3: 1.8rem;
+  --text-h3--line-height: 124%;
+  --text-h3--font-weight: 600;
+
+  --text-h4: 1.6rem;
+  --text-h4--line-height: 130%;
+  --text-h4--font-weight: 600;
+
+  --text-large: 1.8rem;
+  --text-large--line-height: 145%;
+  --text-large--font-weight: 400;
+
+  --text-base: 1.5rem;
+  --text-base--line-height: 150%;
+  --text-base--font-weight: 400;
+
+  --text-small: 1.3rem;
+  --text-small--line-height: 150%;
+  --text-small--font-weight: 400;
+
+  --text-mono: 1.3rem;
+  --text-mono--line-height: 150%;
+}
+
+/* 1rem = 10px, so every rem in the app and in @ethlete/components lines up with the design system. */
+html {
+  font-size: 62.5%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--et-surface-background);
+  color: var(--et-surface-text);
+  font-family: 'Jost Variable', system-ui, sans-serif;
+  /* 1rem is 10px here, so text that inherits its size would read at 10px without this. */
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+}
+
+/*
+ * Field labels and hints start on the field's border, the edge every heading, summary and text
+ * button in the app starts on.
+ */
+et-form-field {
+  &:not([data-appearance='underline'][data-fill='transparent'])
+    .et-form-field-label-area:not(.et-form-field-label-area--floating) {
+    margin-inline-start: calc(
+      -1 * (var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width))
+    );
+  }
+
+  .et-form-field-hint,
+  .et-form-field-errors,
+  .et-form-field-warnings {
+    padding-inline-start: 0;
+  }
+}
+
+/*
+ * The fire beside the concurrency readout. `--_et-heat` runs 0 to 1 across the tiers, so the glow and
+ * the flicker keep growing between them. The static filter is what a reduced-motion reader sees, and
+ * the animation's first keyframe repeats it so the two agree.
+ */
+[data-heat-flame] {
+  animation: et-heat-flicker calc(1.6s - var(--_et-heat, 0) * 0.7s) ease-in-out infinite;
+  filter: drop-shadow(0 0 calc(0.2rem + var(--_et-heat, 0) * 0.4rem) var(--color-et-tone-warning-text));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-heat-flame] {
+    animation: none;
+  }
+}
+
+@keyframes et-heat-flicker {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 calc(0.2rem + var(--_et-heat, 0) * 0.4rem) var(--color-et-tone-warning-text));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 calc(0.4rem + var(--_et-heat, 0) * 1rem) var(--color-et-tone-danger-text));
+  }
+}

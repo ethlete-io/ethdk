@@ -1,0 +1,309 @@
+import { existsSync } from 'fs';
+import { dirname, resolve, sep } from 'path';
+import { DesignConfig } from '../design-config';
+import { fsUrl, sourceFileOf } from '../vite-paths';
+import { ASSET_URL, assetFileOf, ASSETS_PREFIX } from './assets';
+import { classifyImport, productSharedDirsOf, sharedFileOf as sharedFileIn } from './imports';
+import { productDirOf } from './product';
+import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
+import { overlaySketch, SketchedProduct } from './sketch/overlay';
+import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch, variantSharedDirOf } from './sketch/sketch';
+
+const PRODUCT_QUERY = 'design-product';
+const SKETCH_QUERY = 'design-sketch';
+
+export const isSketched = (product: ResolvedProduct): product is SketchedProduct => 'borrowed' in product;
+const VARIANT_QUERY = 'design-variant';
+const STYLESHEET_FILE = /\.css$/u;
+
+/** One variant of the sketch on `target` (`<layer>/<name>`). */
+export type SketchVariant = { target: string; variant: string };
+
+/**
+ * The module id of a file as one product draws it, or as one variant of a sketch draws it. A base
+ * part is one file but a different module in each product, because each product resolves its
+ * `@system/...` imports to its own parts.
+ */
+export const productModuleIdOf = (options: { file: string; product: string; sketch?: SketchVariant | null }) =>
+  `${options.file}?${PRODUCT_QUERY}=${encodeURIComponent(options.product)}` +
+  (options.sketch
+    ? `&${SKETCH_QUERY}=${encodeURIComponent(options.sketch.target)}&${VARIANT_QUERY}=${encodeURIComponent(options.sketch.variant)}`
+    : '');
+
+/** The module id of a stylesheet as one product, or one sketch variant, draws it, its own query (`inline`) kept. */
+export const stylesheetModuleIdOf = (options: {
+  file: string;
+  query: string | undefined;
+  product: string;
+  sketch: SketchVariant | null;
+}) => {
+  const { file, query, product, sketch } = options;
+  const id = productModuleIdOf({ file, product, sketch });
+
+  return query ? id.replace('?', `?${query}&`) : id;
+};
+
+export const productOfModuleId = (id: string | null | undefined) => {
+  const query = id?.split('?')[1];
+
+  return query ? new URLSearchParams(query).get(PRODUCT_QUERY) : null;
+};
+
+export const sketchOfModuleId = (id: string | null | undefined): SketchVariant | null => {
+  const params = new URLSearchParams(id?.split('?')[1] ?? '');
+  const target = params.get(SKETCH_QUERY);
+  const variant = params.get(VARIANT_QUERY);
+
+  return target && variant ? { target, variant } : null;
+};
+
+export const fileOfModuleId = (id: string) => id.split('?')[0] ?? id;
+
+/**
+ * The products of a workspace, resolved on first use and kept until `forget`, and the resolution
+ * of `@system/<layer>/<name>`, `@system/<layer>/<name>.css?inline` (the part's stylesheet),
+ * `@system/fixtures`, `@shared/<path>` (a sketch's, then the product's) and `@assets/<file>` (a URL, or the text with `?raw`)
+ * inside a module of one product. A relative import of a source file stays in the importer's product
+ * and sketch, so a helper file next to a part resolves `@system/...` as the part does.
+ */
+export const createSystemModules = (options: { target: string; config: DesignConfig; sketchesRoot?: string }) => {
+  const { target, config, sketchesRoot } = options;
+  const resolved = new Map<string, ResolvedProduct>();
+  const sketched = new Map<string, SketchedProduct | null>();
+
+  const productOf = (name: string) => {
+    const entry = config.products?.[name];
+
+    if (!entry) return null;
+
+    const cached = resolved.get(name) ?? resolveProduct({ target, name, config: entry });
+
+    resolved.set(name, cached);
+
+    return cached;
+  };
+
+  const sketchesOf = (name: string) => {
+    const product = productOf(name);
+
+    return product
+      ? listSketches({ productDir: sketchesRoot ?? product.dir, product: name }).filter(
+          (sketch): sketch is Sketch => typeof sketch !== 'string',
+        )
+      : [];
+  };
+
+  /**
+   * The product as it draws, or as one variant of one of its sketches draws it. A sketch that is gone (merged or
+   * discarded) draws as the product with `sketchGone` set; `null` when the product or the variant is missing.
+   */
+  const drawnOf = (name: string, sketch?: SketchVariant | null) => {
+    const product = productOf(name);
+
+    if (!product || !sketch) return product;
+
+    const key = JSON.stringify([name, sketch.target, sketch.variant]);
+
+    if (sketched.has(key)) return sketched.get(key) ?? null;
+
+    const target = parseTarget(sketch.target);
+    const found =
+      typeof target === 'string'
+        ? null
+        : findSketch({ productDir: sketchesRoot ?? product.dir, product: name, sketch: target });
+
+    if (!found || typeof found === 'string') return { ...product, sketchGone: sketch };
+
+    const drawn = found.variants.includes(sketch.variant)
+      ? overlaySketch({ product, sketch: found, variant: sketch.variant })
+      : null;
+
+    sketched.set(key, drawn);
+
+    return drawn;
+  };
+
+  const sketchOf = (name: string, sketchTarget: string): Sketch | null => {
+    const product = productOf(name);
+    const target = parseTarget(sketchTarget);
+
+    if (!product || typeof target === 'string') return null;
+
+    const found = findSketch({ productDir: sketchesRoot ?? product.dir, product: name, sketch: target });
+
+    return !found || typeof found === 'string' ? null : found;
+  };
+
+  const sketchVariantsOf = (name: string, sketchTarget: string) => sketchOf(name, sketchTarget)?.variants ?? null;
+
+  const partOf = (options: { product: string; part: string; sketch?: SketchVariant | null }) =>
+    drawnOf(options.product, options.sketch)?.parts.find((part) => partKeyOf(part) === options.part) ?? null;
+
+  const drawingSketchOf = (options: { product: string; part: string; sketch: SketchVariant | null }) => {
+    const drawn = options.sketch ? drawnOf(options.product, options.sketch) : null;
+    const lent = drawn && isSketched(drawn) ? drawn.borrowed.find((entry) => entry.part === options.part) : undefined;
+
+    return lent ? { target: lent.sketch, variant: lent.variant } : options.sketch;
+  };
+
+  const tokenStylesheetsOf = (options: { product: string; sketch?: SketchVariant | null }) => {
+    const { product, sketch } = options;
+
+    return (productOf(product)?.tokens ?? []).flatMap((part) => {
+      const css = partOf({ product, part, sketch })?.css;
+
+      return css && existsSync(css) ? [css] : [];
+    });
+  };
+
+  /** Each part stylesheet of the product that one sketch variant draws from another file, mapped to that file. */
+  const replacedStylesheetsOf = (options: { product: string; sketch: SketchVariant | null }) => {
+    const { product, sketch } = options;
+    const merged = productOf(product);
+    const drawn = sketch ? drawnOf(product, sketch) : null;
+
+    if (!merged || !drawn) return new Map<string, string>();
+
+    return new Map(
+      drawn.parts.flatMap((part) => {
+        const own = merged.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(part))?.css;
+
+        return own && part.css && resolve(own) !== resolve(part.css) && existsSync(part.css)
+          ? [[resolve(own), resolve(part.css)] as const]
+          : [];
+      }),
+    );
+  };
+
+  const sharedFileOf = (options: { product: string; sketch: SketchVariant | null; path: string }) => {
+    const { product, sketch, path } = options;
+    const resolvedProduct = productOf(product);
+
+    if (!resolvedProduct) return null;
+
+    const target = sketch ? parseTarget(sketch.target) : null;
+    const found =
+      sketch && target && typeof target !== 'string'
+        ? findSketch({ productDir: sketchesRoot ?? resolvedProduct.dir, product, sketch: target })
+        : null;
+    const sketchDirs =
+      found && typeof found !== 'string' && sketch
+        ? [variantSharedDirOf(found, sketch.variant), sharedDirOf(found)]
+        : [];
+
+    return sharedFileIn({ dirs: [...sketchDirs, ...productSharedDirsOf(resolvedProduct)], path });
+  };
+
+  const resolveId = (specifier: string, importer: string | undefined) => {
+    const name = productOfModuleId(importer);
+    const imported = classifyImport(specifier);
+
+    if (!name || !importer) return null;
+
+    const sketch = sketchOfModuleId(importer);
+
+    if (imported.kind === 'asset') {
+      const drawn = drawnOf(name, sketch);
+      const file = drawn ? assetFileOf({ product: drawn, path: imported.path }) : null;
+
+      return file ? `${file}?${specifier.split('?')[1] ?? 'url'}` : null;
+    }
+
+    if (imported.kind === 'relative' && STYLESHEET_FILE.test(fileOfModuleId(specifier))) {
+      const file = resolve(dirname(fileOfModuleId(importer)), fileOfModuleId(specifier));
+
+      return existsSync(file)
+        ? stylesheetModuleIdOf({ file, query: specifier.split('?')[1], product: name, sketch })
+        : null;
+    }
+
+    if (imported.kind === 'shared' && STYLESHEET_FILE.test(fileOfModuleId(specifier))) {
+      const file = sharedFileOf({ product: name, sketch, path: imported.path });
+
+      return file ? stylesheetModuleIdOf({ file, query: specifier.split('?')[1], product: name, sketch }) : null;
+    }
+
+    if (imported.kind === 'relative' || imported.kind === 'shared') {
+      const file =
+        imported.kind === 'shared'
+          ? sharedFileOf({ product: name, sketch, path: imported.path })
+          : specifier.includes('?')
+            ? null
+            : sourceFileOf(resolve(dirname(fileOfModuleId(importer)), specifier));
+
+      return file ? productModuleIdOf({ file, product: name, sketch }) : null;
+    }
+
+    if (imported.kind !== 'part' && imported.kind !== 'fixtures') return null;
+
+    if (imported.kind === 'part' && imported.stylesheet) {
+      const css = partOf({ product: name, part: partKeyOf(imported), sketch })?.css;
+      const query = specifier.split('?')[1];
+      const drawing = drawingSketchOf({ product: name, part: partKeyOf(imported), sketch });
+
+      return css ? stylesheetModuleIdOf({ file: css, query, product: name, sketch: drawing }) : null;
+    }
+
+    const file =
+      imported.kind === 'fixtures'
+        ? drawnOf(name, sketch)?.fixtures
+        : partOf({ product: name, part: partKeyOf(imported), sketch })?.file;
+    const drawing =
+      imported.kind === 'part' ? drawingSketchOf({ product: name, part: partKeyOf(imported), sketch }) : sketch;
+
+    return file ? productModuleIdOf({ file, product: name, sketch: drawing }) : null;
+  };
+
+  const ownerOf = (drawn: ResolvedProduct, file: string) => {
+    const isIn = (dir: string) => resolve(file).startsWith(`${resolve(dir)}${sep}`);
+
+    if (isIn(drawn.dir) || (drawn.base && isIn(drawn.base.dir))) return drawn;
+
+    const owner = Object.keys(config.products ?? {}).find((name) => isIn(productDirOf({ target, product: name })));
+
+    return (owner && productOf(owner)) || drawn;
+  };
+
+  /**
+   * A product's stylesheet with each `url(@assets/<file>)` turned into the URL of the file it names: as the
+   * product of `sourceFile` (default: the stylesheet itself) resolves it when that file lies in another product's
+   * folder, as the drawn product resolves it otherwise.
+   */
+  const withAssetUrls = (code: string, from: { id: string; sourceFile?: string }) => {
+    const { id, sourceFile = fileOfModuleId(id) } = from;
+    const name = productOfModuleId(id);
+
+    if (!name || !STYLESHEET_FILE.test(fileOfModuleId(id)) || !code.includes(ASSETS_PREFIX)) return null;
+
+    const drawn = drawnOf(name, sketchOfModuleId(id));
+    const product = drawn && ownerOf(drawn, sourceFile);
+
+    return product
+      ? code.replace(ASSET_URL, (...[whole = '', , path = '']: string[]) => {
+          const file = assetFileOf({ product, path });
+
+          return file ? `url("${fsUrl(file)}")` : whole;
+        })
+      : null;
+  };
+
+  return {
+    products: () => Object.keys(config.products ?? {}),
+    productOf,
+    sketchesOf,
+    drawnOf,
+    sketchOf,
+    sketchVariantsOf,
+    partOf,
+    tokenStylesheetsOf,
+    replacedStylesheetsOf,
+    resolveId,
+    withAssetUrls,
+    forget: () => {
+      resolved.clear();
+      sketched.clear();
+    },
+  };
+};
+
+export type SystemModules = ReturnType<typeof createSystemModules>;

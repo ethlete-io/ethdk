@@ -1,0 +1,106 @@
+import { Locator } from '@playwright/test';
+
+function resolveBorderColorIn(scope: Locator, value: string): Promise<string> {
+  return scope.evaluate((host, borderColor) => {
+    const probe = document.createElement('span');
+    probe.style.border = `1px solid ${borderColor}`;
+    host.appendChild(probe);
+    const color = getComputedStyle(probe).borderTopColor;
+    probe.remove();
+
+    return color;
+  }, value);
+}
+
+/** Resolves `--et-tone-fill` inside `scope` to the colour a border would compute to. */
+export function themePrimaryIn(scope: Locator): Promise<string> {
+  return resolveBorderColorIn(scope, 'var(--et-tone-fill)');
+}
+
+const INK_ACTIVE =
+  'var(--et-tone-text-active, var(--et-tone-text-focus, var(--et-tone-text-hover, var(--et-tone-text-rest, var(--et-tone-fill-active, var(--et-tone-fill-focus, var(--et-tone-fill-hover, var(--et-tone-fill-rest))))))))';
+
+const PRIMARY_HOVER = 'var(--et-tone-fill-hover, var(--et-tone-fill-rest))';
+
+export type ColorScheme = 'light' | 'dark';
+
+/** Forces the page's `color-scheme` and its `et-scheme--*` class, so `light-dark()` and the scheme's ink tones resolve to the given side. */
+export function setColorScheme(scope: Locator, scheme: ColorScheme): Promise<void> {
+  return scope.evaluate((_, value) => {
+    const root = document.documentElement;
+
+    root.style.colorScheme = value;
+    root.classList.toggle('et-scheme--light', value === 'light');
+    root.classList.toggle('et-scheme--dark', value === 'dark');
+  }, scheme);
+}
+
+/** Resolves the error hover tone inside `scope`: the theme's primary hover tone in light, its active ink tone in dark. */
+export function themeErrorHoverIn(scope: Locator, scheme: ColorScheme): Promise<string> {
+  return resolveBorderColorIn(scope, scheme === 'light' ? PRIMARY_HOVER : INK_ACTIVE);
+}
+
+/** Resolves the error hover tone of `scheme` mixed with `percent`% into transparent inside `scope`. */
+export function themeErrorHoverMixIn(scope: Locator, scheme: ColorScheme, percent: number): Promise<string> {
+  const tone = scheme === 'light' ? PRIMARY_HOVER : INK_ACTIVE;
+
+  return resolveBorderColorIn(scope, `color-mix(in srgb, ${tone} ${percent}%, transparent)`);
+}
+
+/** Resolves a colour expression (e.g. `var(--et-surface-text)`) inside `scope` to the colour a border would compute to. */
+export function colorIn(scope: Locator, value: string): Promise<string> {
+  return resolveBorderColorIn(scope, value);
+}
+
+/** Paints `color` onto a 1px canvas and returns its `[r, g, b, a]` bytes, so the same colour compares equal in any CSS syntax (`#a1a1a1`, `rgb()`, `color(srgb …)`). */
+export function rgbaOf(scope: Locator, color: string): Promise<number[]> {
+  return scope.evaluate((_, fill) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) throw new Error('no 2d canvas context');
+
+    context.fillStyle = fill;
+    context.fillRect(0, 0, 1, 1);
+
+    return [...context.getImageData(0, 0, 1, 1).data];
+  }, color);
+}
+
+/**
+ * The WCAG contrast ratio of a computed colour of `locator` (optionally of a pseudo-element)
+ * against the page background, with any alpha composited onto that background first.
+ */
+export function contrastAgainstPage(
+  locator: Locator,
+  property: 'color' | 'borderTopColor' | 'outlineColor',
+  pseudo?: string,
+): Promise<number> {
+  return locator.evaluate(
+    (el, { property, pseudo }) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      if (!context) throw new Error('no 2d canvas context');
+
+      const paint = (fill: string) => {
+        context.fillStyle = fill;
+        context.fillRect(0, 0, 1, 1);
+        return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3);
+      };
+      const luminance = (rgb: number[]) => {
+        const [r = 0, g = 0, b = 0] = rgb.map((v) => {
+          const c = v / 255;
+          return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+
+      const page = luminance(paint(getComputedStyle(document.documentElement).backgroundColor));
+      const ink = luminance(paint(getComputedStyle(el, pseudo)[property]));
+
+      return (Math.max(page, ink) + 0.05) / (Math.min(page, ink) + 0.05);
+    },
+    { property, pseudo },
+  );
+}

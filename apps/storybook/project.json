@@ -1,0 +1,72 @@
+{
+  "name": "storybook",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/storybook/src",
+  "prefix": "ethlete",
+  "tags": [],
+  "implicitDependencies": ["components"],
+  "targets": {
+    "lint": {
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
+    },
+    "storybook": {
+      "executor": "@analogjs/storybook-angular:start-storybook",
+      "options": {
+        "port": 4400,
+        "configDir": "apps/storybook/.storybook",
+        "compodoc": false,
+        "experimentalZoneless": true,
+        "styles": ["libs/cdk/src/lib/styles/index.css", "apps/storybook/src/styles/storybook.css"],
+        "open": false
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        },
+        "network": {
+          "host": "0.0.0.0"
+        }
+      }
+    },
+    "build-storybook": {
+      "executor": "@analogjs/storybook-angular:build-storybook",
+      "outputs": ["{options.outputDir}"],
+      "options": {
+        "outputDir": "dist/storybook",
+        "configDir": "apps/storybook/.storybook",
+        "compodoc": false,
+        "experimentalZoneless": true,
+        "styles": ["libs/cdk/src/lib/styles/index.css", "apps/storybook/src/styles/storybook.css"]
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
+    "test-storybook": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "^default",
+        {
+          "externalDependencies": ["vitest", "@storybook/addon-vitest", "@vitest/browser-playwright"]
+        }
+      ],
+      "options": {
+        "command": "vitest run -c apps/storybook/vitest.config.mts"
+      }
+    }
+  }
+}

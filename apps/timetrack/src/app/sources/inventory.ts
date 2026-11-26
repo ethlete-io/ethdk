@@ -1,0 +1,222 @@
+import { CollectedEventSource, ForgeCli, TimetrackCredentialStatus } from '@ethlete/timetrack';
+
+/**
+ * Whether a source is producing evidence right now.
+ *
+ * `collecting` is the only state that puts anything in the database. `ready` has its credentials and
+ * answers when something asks, `configured` means the code is there and waiting on credentials the user
+ * has not given yet, and `planned` means it is not built.
+ *
+ * `not-running` is the one state a row cannot declare for itself: the host says the source is not
+ * watching, whether because this platform has no implementation of it or because it stopped. It is
+ * never written here — `stateOf` reads it off the host status, and the row's warning says why.
+ */
+export type EvidenceSourceState = 'collecting' | 'ready' | 'configured' | 'planned' | 'not-running';
+
+export type EvidenceSource = {
+  id: string;
+  name: string;
+  /** Where the observation comes from, in one line. */
+  reads: string;
+  /**
+   * What is written to the encrypted store. This is the whole point of the inventory: a tool that
+   * watches a workday has to be able to say exactly what it kept.
+   */
+  stores: string;
+  /** What the source does once it has everything it needs. A row without its credential reads as
+   * `configured` whatever this says. */
+  state: EvidenceSourceState;
+  /**
+   * The credential this source cannot be read without, so storing a token flips the row rather than
+   * needing an edit here.
+   */
+  credential?: keyof TimetrackCredentialStatus;
+  /**
+   * The CLI whose own login this source reads through, instead of a credential this app stores.
+   *
+   * It replaces `credential` rather than joining it: there is no keychain entry to look at, so the row
+   * has to ask the CLI whether it is installed and whether it is logged in, which are two separate
+   * repairs and must not read as one.
+   */
+  login?: ForgeCli;
+  /** What the source is still waiting on. Not shown once it has everything it needs. */
+  detail?: string;
+  /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
+  collector?:
+    | 'window'
+    | 'git'
+    | 'agent-session'
+    | 'agent-usage'
+    | 'agent-prompt'
+    | 'calendar'
+    | 'gitlab'
+    | 'github'
+    | 'ingest'
+    | 'call';
+  /** The `source` its events carry in the store, for counting what it has actually put there. */
+  eventSource?: CollectedEventSource;
+  /** The host status kinds that collect it. On any other the row reads `not-running`, with `detail` saying why. */
+  collectsOn?: readonly string[];
+};
+
+/**
+ * Every source the tool reads, or intends to.
+ *
+ * A source that is not built yet belongs here as `planned`: a person deciding whether to install this
+ * needs to see the whole surface it will eventually watch, not only the part that is watching today.
+ */
+export const EVIDENCE_SOURCES: EvidenceSource[] = [
+  {
+    id: 'window',
+    name: 'Focused window',
+    reads: 'The compositor reports the focused application and its title on every switch.',
+    stores: 'The application id and the window title, unless an exclusion rule denies it.',
+    state: 'collecting',
+    collector: 'window',
+    eventSource: 'window',
+  },
+  {
+    id: 'idle',
+    name: 'Presence',
+    reads: 'The idle notifier, at a five-minute threshold.',
+    stores: 'Only that the machine went idle or came back, with the instant it happened.',
+    state: 'collecting',
+    collector: 'window',
+    eventSource: 'idle',
+  },
+  {
+    id: 'input',
+    name: 'Desk input',
+    reads:
+      'The Wayland idle notifier, or on macOS the seconds since the last keyboard or pointer event, at a one-minute threshold, to tell a prompt typed here from one sent from a phone.',
+    stores: 'Only that input stopped or returned, with the instant it happened. No keys and no content.',
+    state: 'collecting',
+    detail: 'Only a Wayland compositor or macOS reports it.',
+    collector: 'window',
+    eventSource: 'input',
+    collectsOn: ['wayland-wlr', 'macos-ax', 'macos-app-only'],
+  },
+  {
+    id: 'git',
+    name: 'Local git repositories',
+    reads:
+      'The reflog and the commit log of every repository found on this machine, re-read when its HEAD or refs move.',
+    stores: 'Branch switches, and your own commits with their subject line. No diffs and no file paths.',
+    state: 'collecting',
+    collector: 'git',
+    eventSource: 'git',
+  },
+  {
+    id: 'agent-session',
+    name: 'Coding-agent sessions',
+    reads: 'The session logs Claude Code and the Codex CLI write under the home directory.',
+    stores: 'When a session was active, its working directory and branch, and its summary line.',
+    state: 'collecting',
+    collector: 'agent-session',
+    eventSource: 'agent-session',
+  },
+  {
+    id: 'agent-usage',
+    name: 'Coding-agent spend',
+    reads:
+      'The token counts of every turn in those same session logs, and the model that ran it. A paired machine’s turns arrive with its events: this price table prices them, a turn both machines hold counts once, and the day’s streams say how many ran on each machine.',
+    stores: 'The turn id, the model, and five token counts. No prompt and no message body.',
+    state: 'collecting',
+    collector: 'agent-usage',
+    eventSource: 'agent-usage',
+  },
+  {
+    id: 'agent-prompt',
+    name: 'Coding-agent prompts',
+    reads: 'The prompts you typed, out of those same session logs.',
+    stores: 'The instant, the session and the working directory. No text of any kind.',
+    state: 'collecting',
+    collector: 'agent-prompt',
+    eventSource: 'agent-prompt',
+  },
+  {
+    id: 'google-calendar',
+    name: 'Google Calendar',
+    reads: 'The events of the calendars you pick, read-only.',
+    stores: 'The event title, its span, whether you accepted, and a conference link when there is one.',
+    state: 'collecting',
+    credential: 'google',
+    collector: 'calendar',
+    eventSource: 'calendar',
+    detail: 'Waiting on the OAuth client — nothing is fetched until you register one and grant calendar access.',
+  },
+  {
+    id: 'jira',
+    name: 'Jira',
+    reads: 'The issues behind the keys the grammar found, read-only.',
+    stores: 'Nothing. Issue summaries are fetched to label a row and are not persisted as evidence.',
+    state: 'ready',
+    credential: 'jira',
+    detail: 'Waiting on a host, an account email and an API token in Settings.',
+  },
+  {
+    id: 'tempo',
+    name: 'Tempo',
+    reads: "The worklogs already on your account, so a day's sync knows what it owns and what is somebody else's.",
+    stores: 'The worklogs this app created, so it never writes the same time twice.',
+    state: 'ready',
+    credential: 'tempo',
+    detail: 'Waiting on an API token in Settings.',
+  },
+  {
+    id: 'gitlab',
+    name: 'GitLab',
+    reads: 'Your own push, comment, approval and merge events, and the branch of each merge request they name.',
+    stores: 'That you acted on a merge request, when, and which branch it is on. No comment text.',
+    state: 'collecting',
+    login: 'glab',
+    collector: 'gitlab',
+    eventSource: 'gitlab',
+    detail: 'Waiting on an instance in Settings, and on `glab` being installed and logged in to it.',
+  },
+  {
+    id: 'github',
+    name: 'GitHub',
+    reads: 'Your own pull request events on github.com, and the branch and title of each one they name.',
+    stores: 'That you acted on a pull request, when, and which branch it is on. No comment text.',
+    state: 'collecting',
+    login: 'gh',
+    collector: 'github',
+    eventSource: 'github',
+    detail: 'Waiting on the switch in Settings, and on `gh` being installed and logged in.',
+  },
+  {
+    id: 'vscode',
+    name: 'Editor heartbeats',
+    reads: 'A VS Code extension posting to a local endpoint every half minute, while its window has focus.',
+    stores: 'The checkout, the branch and the directory being edited. No file names and no file contents.',
+    state: 'collecting',
+    collector: 'ingest',
+    eventSource: 'editor',
+  },
+  {
+    id: 'browser',
+    name: 'Browser tabs',
+    reads: 'An extension posting the host of the tab that holds the focus, while the browser has it.',
+    stores: 'The hostname and the checkout it resolves to. No address, no page title and no content.',
+    state: 'planned',
+    detail: 'Not built. Whether it is needed at all is still open.',
+  },
+  {
+    id: 'figma',
+    name: 'Figma',
+    reads: 'A Figma plugin posting while a file is open, so design work names itself the way a checkout does.',
+    stores: 'The file and the page, and whether it was edited or only looked at. No frame and no content.',
+    state: 'planned',
+    detail: 'Not built. A plugin cannot read the pairing file every other reporter reads.',
+  },
+  {
+    id: 'call',
+    name: 'Calls',
+    reads: 'Which process on this machine is holding the microphone, and when it lets go.',
+    stores: 'The process that held it and the two instants. No audio, no title and no participant.',
+    state: 'collecting',
+    collector: 'call',
+    eventSource: 'call',
+  },
+];

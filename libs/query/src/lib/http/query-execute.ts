@@ -1,0 +1,74 @@
+import { Signal, untracked } from '@angular/core';
+import { Observable } from 'rxjs';
+import { createQueryExecutionAborter } from './internal/query-execution-aborter';
+import { QueryArgs, RequestArgs } from './query';
+import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
+import { QueryDependencies } from './query-dependencies';
+import {
+  circularQueryDependencyChecker,
+  queryExecute,
+  recordExecutionArgs,
+  resetExecuteState,
+  RunQueryExecuteOptions,
+  setupQueryExecuteState,
+  skipParkedExecution,
+} from './query-execute-utils';
+import { QueryKey } from './query-repository';
+import { QueryState } from './query-state';
+
+export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
+  deps: QueryDependencies;
+  state: QueryState<TArgs>;
+  creator?: CreateQueryCreatorOptions;
+  creatorInternals: InternalCreateQueryCreatorOptions<TArgs>;
+  queryConfig: QueryConfig;
+};
+
+export type QueryExecuteArgs<TArgs extends QueryArgs> = {
+  args?: RequestArgs<TArgs> | null;
+  options?: RunQueryExecuteOptions;
+};
+
+export type InternalQueryExecute<TArgs extends QueryArgs> = {
+  /** Returns `false` when the call was dropped because the query is parked. */
+  (executeArgs?: QueryExecuteArgs<TArgs>): boolean;
+  reset: () => void;
+  abort: () => boolean;
+  aborted$: Observable<void>;
+  currentRepositoryKey: Signal<QueryKey | null>;
+};
+
+export type QueryExecute<TArgs extends QueryArgs> = (executeArgs?: QueryExecuteArgs<TArgs>) => void;
+
+export const createExecuteFn = <TArgs extends QueryArgs>(
+  executeOptions: CreateQueryExecuteOptions<TArgs>,
+): InternalQueryExecute<TArgs> => {
+  const executeState = setupQueryExecuteState();
+  const circularChecker = circularQueryDependencyChecker(executeOptions.creatorInternals.route);
+  const aborter = createQueryExecutionAborter(executeOptions.state);
+
+  const reset = () => untracked(() => resetExecuteState({ executeState, executeOptions }));
+
+  const exec = (executeArgs?: QueryExecuteArgs<TArgs>) =>
+    untracked(() => {
+      const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+
+      if (skipParkedExecution(executeOptions.state, args, executeOptions.creatorInternals.route)) return false;
+
+      circularChecker.check(args);
+
+      aborter.capture();
+      recordExecutionArgs(executeOptions.state, args, options);
+      queryExecute({ executeOptions, executeState, args, options });
+
+      return true;
+    });
+
+  exec['reset'] = reset;
+  exec['abort'] = () => aborter.abort();
+  exec['aborted$'] = aborter.aborted$;
+
+  exec['currentRepositoryKey'] = executeState.previousKey.asReadonly();
+
+  return exec;
+};

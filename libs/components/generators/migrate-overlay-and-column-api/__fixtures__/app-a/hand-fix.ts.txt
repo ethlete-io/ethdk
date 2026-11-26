@@ -1,0 +1,21 @@
+import { createOverlayOpener, OverlayDefinition } from '@ethlete/components';
+
+declare const PICK_DIALOG: OverlayDefinition<object, string>;
+declare function rememberChoice(choice: string | null): void;
+
+export const pickOpener = () =>
+  createOverlayOpener(PICK_DIALOG, {
+    afterClosed: (choice: string | null) => rememberChoice(choice),
+  });
+
+export class PickFlow {
+  private completePick: ((choice: string | null) => void) | null = null;
+
+  private pickDialog = createOverlayOpener(PICK_DIALOG, {
+    afterClosed: (choice) => {
+      const complete = this.completePick;
+      this.completePick = null;
+      complete?.(choice);
+    },
+  });
+}

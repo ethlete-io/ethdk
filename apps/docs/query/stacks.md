@@ -1,0 +1,82 @@
+# Query stacks & pagination
+
+Stacks compose **many queries of the same creator** into one reactive object - for parallel detail requests, infinite lists and classic pagination. They work with any [query creator](/query/queries#query-creators), HTTP or GraphQL.
+
+## Query stacks
+
+`createQueryStack` runs one creator with reactive args that may produce several parallel queries (return an array from `args`) and aggregates their state:
+
+```ts
+import { createQueryStack, transformArrayResponse } from '@ethlete/query';
+
+const postsStack = createQueryStack({
+  queryCreator: getPost,
+  args: () => this.postIds().map((postId) => ({ pathParams: { postId } })),
+  transform: transformArrayResponse,
+});
+```
+
+| Option            | Default       | Description                                                                                               |
+| ----------------- | ------------- | --------------------------------------------------------------------------------------------------------- |
+| `queryCreator`    | - (required)  | The creator to run.                                                                                       |
+| `args`            | - (required)  | Reactive fn returning one args object, an array (one query each), or `null` (ignored).                    |
+| `dependencies`    | -             | Reactive deps passed to `args`; a change **clears** the stack.                                            |
+| `features`        | `[]`          | [Features](/query/features) applied to every query. `withArgs`/`withResponseUpdate` are not allowed here. |
+| `append`          | `false`       | Append new queries instead of replacing (infinite lists).                                                 |
+| `appendFn`        | append to end | Controls merge order in append mode.                                                                      |
+| `transform`       | identity      | Maps the array of responses (`transformArrayResponse`, `transformPaginatedResponse`).                     |
+| `deduplicateArgs` | `true`        | Skip queries whose args (via `argsKeyFn`, default `JSON.stringify`) already exist.                        |
+| `maxQueries`      | `Infinity`    | Append mode only: evict past this count via `removeStrategy` (`'oldest'` default, or `'newest'`).         |
+
+The stack exposes aggregate signals (`queries`, `response`, `anyLoading`, `allLoading`, `loadingCount`, `loadingProgress`, `anyError`, `errors`, `firstQuery`, `lastQuery`) and methods `execute({ allowCache? })`, `retryFailed()`, `clear()`.
+
+## Paged queries
+
+`createPagedQueryStack` builds paged/infinite lists on top of a stack. A `responseNormalizer` maps your backend's pagination shape to a normalized one; adapters for common shapes ship with the package: `ethletePaginationAdapter`, `ggLikePaginationAdapter`, `dynLikePaginationAdapter`, `contentfulGqlLikePaginationAdapter` and `fakePaginationAdapter` (testing).
+
+```ts
+import { createPagedQueryStack, ethletePaginationAdapter } from '@ethlete/query';
+
+const postPages = createPagedQueryStack({
+  queryCreator: getPosts,
+  responseNormalizer: ethletePaginationAdapter,
+  args: (page) => ({ queryParams: { page, limit: 20 } }),
+});
+```
+
+| Option                        | Default      | Description                                                                                           |
+| ----------------------------- | ------------ | ----------------------------------------------------------------------------------------------------- |
+| `queryCreator`                | - (required) | The page query creator.                                                                               |
+| `responseNormalizer`          | - (required) | Maps a response to `{ items, totalPages, currentPage, itemsPerPage, totalHits }`.                     |
+| `args`                        | - (required) | `(page, allResponses) => RequestArgs \| null`; reactive - a signal change resets to the initial page. |
+| `features`                    | `[]`         | Applied to every page query.                                                                          |
+| `initialPage`                 | `1`          | First page loaded - pages can then be fetched in **both** directions.                                 |
+| `blockExecutionDuringLoading` | `false`      | Ignore fetch calls while a page is loading.                                                           |
+
+The paged stack exposes `items`, `loading`, `error`, `isFirstLoad`, `canFetchNextPage` / `canFetchPreviousPage`, `isLastPageLoaded` / `isFirstPageLoaded` and `maxPagination` / `minPagination`, `queries`, `lastQuery` and `direction` (`'next'` or `'previous'`, the direction of the latest fetch).
+
+`canFetchNextPage` / `canFetchPreviousPage` are also `false` while any page is loading - including a refresh of an already loaded page - so a "load more" button bound to them goes quiet until the stack settles. `isLastPageLoaded` is also `true` for an empty result (`totalPages: 0`) and when a refresh reports fewer pages than are loaded. `isFirstPageLoaded` means page 1 is in the stack, which a stack started at a higher `initialPage` only reaches by fetching backwards.
+
+The loading gate on those two signals is unconditional; `blockExecutionDuringLoading` governs the **methods** only. So under the default (`false`) a `fetchNextPage()` call mid-flight still runs, while the signals already read `false`: it fetches the page after the one in flight, bounded by the last page count a response reported. Bind the UI to the signals and the two never disagree in practice. Set the option to `true` when a page's args depend on the previous page's response, so an out-of-order call cannot happen at all.
+
+The methods:
+
+- `fetchNextPage()` / `fetchPreviousPage()` - return the new page's query, or `null` when no page was added: there is no page in that direction, or the page's args repeat a loaded page. In dev mode, a call with no page in that direction throws instead.
+- `reset({ initialPage? })`
+- `execute({ where?, allowCache? })` - `where: (item) => boolean` selectively re-executes the pages containing matching items (plus their neighbors), e.g. after editing one row.
+
+## Types
+
+`createQueryStack` takes a `CreateQueryStackOptions` and returns a
+`QueryStack<TQuery, TCreator, TTransform>`; `createPagedQueryStack` takes a
+`CreatePagedQueryStackOptions` and returns a `PagedQueryStack<TQuery, TNormPagination>`.
+`AnyQueryStack` and `AnyPagedQueryStack` erase those generics for a signature that takes any stack.
+The paged stack's own argument types are `PagedQueryStackResetOptions` (`{ initialPage }`),
+`PagedQueryStackExecuteOptions` (`{ where, allowCache }`) and `PagedQueryStackDirection`
+(`'next' | 'previous'`).
+
+## Live demo
+
+The demo starts at page 4 of 8, so both fetch directions are available:
+
+@example query-stacks/paged-query-stack 480px

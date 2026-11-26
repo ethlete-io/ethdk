@@ -1,0 +1,31 @@
+.et-skeleton-item {
+  display: block;
+  overflow: hidden;
+  position: relative;
+}
+
+.et-skeleton--animated .et-skeleton-item::before {
+  content: '';
+  height: 100%;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transform: translateX(-100%);
+  z-index: 1;
+  background: var(--et-skeleton-gradient);
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: skeleton-loading var(--et-skeleton-animation-duration) infinite
+      var(--et-skeleton-animation-timing-function);
+  }
+}
+
+@keyframes skeleton-loading {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}

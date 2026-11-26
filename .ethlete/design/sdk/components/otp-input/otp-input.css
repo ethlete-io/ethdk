@@ -1,0 +1,35 @@
+.t-frame {
+  box-sizing: border-box;
+  display: grid;
+  justify-items: start;
+  gap: 1.6rem;
+  padding: 1.6rem;
+  background: var(--et-surface-background);
+  color: var(--et-surface-text);
+  font-size: 1.4rem;
+}
+
+@layer components {
+  et-otp-input .et-otp-input-segment[data-caret] {
+    border-color: var(--et-tone-text);
+    outline-color: var(--et-tone-text);
+  }
+
+  et-otp-input .et-otp-input-segment .et-otp-input-caret {
+    background: var(--et-tone-text);
+  }
+
+  et-otp-input > et-label .et-label-required-marker {
+    color: light-dark(var(--et-tone-text), var(--et-tone-fill));
+  }
+
+  @media (hover: hover) {
+    et-otp-input:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {
+      border-color: var(--et-surface-text);
+    }
+
+    et-otp-input[data-error]:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {
+      border-color: var(--et-tone-text);
+    }
+  }
+}

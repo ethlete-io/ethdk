@@ -1,0 +1,27 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": [],
+    "target": "es2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["dom", "es2022"],
+    "strict": true,
+    "noEmit": true,
+    "ignoreDeprecations": "6.0"
+  },
+  "include": [
+    "web/**/*.ts",
+    "css-inline.d.ts",
+    "contrast.ts",
+    "define-call.ts",
+    "define-part.ts",
+    "embed-page.ts",
+    "interaction-rows.ts",
+    "mark-part.ts",
+    "morph.ts",
+    "motion-runtime.ts",
+    "svg-asset.ts",
+    "wireframe-kit.ts"
+  ]
+}

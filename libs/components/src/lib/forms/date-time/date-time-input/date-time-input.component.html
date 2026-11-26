@@ -1,0 +1,84 @@
+<input
+  [etInputMask]="dateTimeInput.maskPattern()"
+  class="et-date-time-input-field"
+  etDateTimeInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+/>
+
+@if (localReadingText(); as reading) {
+  <span [id]="dateTimeInput.localReadingId()" class="et-date-time-input-local-reading">{{ reading }}</span>
+}
+
+<ng-template etControlSuffix>
+  @if (showClear()) {
+    <button
+      [attr.aria-label]="resolvedClearLabel()"
+      (click)="handleClearClick($event)"
+      (mousedown)="$event.preventDefault()"
+      class="et-input-clear"
+      animate.enter="et-input-clear--enter"
+      animate.leave="et-input-clear--leave"
+      tabindex="-1"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  }
+
+  <button [attr.aria-label]="resolvedPickerTriggerLabel()" class="et-input-picker-trigger" etDatePickerTrigger>
+    <i etIcon="et-calendar"></i>
+  </button>
+</ng-template>
+
+<ng-template etDatePickerSurface>
+  <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
+    <div class="et-date-time-input-panel">
+      <div class="et-date-time-input-panel-tabs">
+        <et-segmented-button-group
+          [value]="panes.active()"
+          [aria-label]="dateTimeLabels().paneSwitch"
+          (valueChange)="panes.select($event)"
+        >
+          <et-segmented-button value="date">{{ resolvedDateTabLabel() }}</et-segmented-button>
+          <et-segmented-button value="time">{{ resolvedTimeTabLabel() }}</et-segmented-button>
+        </et-segmented-button-group>
+      </div>
+
+      <div
+        [attr.data-active-pane]="panes.active()"
+        [attr.data-nav]="panes.nav()"
+        class="et-date-time-input-panel-panes"
+        etDateTimePickerPanes
+      >
+        <et-calendar
+          [value]="dateTimeInput.pickerDate()"
+          [min]="dateTimeInput.pickerMinDate()"
+          [max]="dateTimeInput.pickerMaxDate()"
+          [dateFilter]="dateTimeInput.dateFilter()"
+          [startAt]="dateTimeInput.startAt()"
+          [startView]="dateTimeInput.startView()"
+          [dateClass]="dateTimeInput.dateClass()"
+          [weekNumbers]="dateTimeInput.weekNumbers()"
+          [firstDayOfWeek]="dateTimeInput.firstDayOfWeek()"
+          [locale]="dateTimeInput.effectiveLocale()"
+          (valueChange)="handleDateSelect($event)"
+        />
+        <div class="et-date-time-input-panel-time-pane">
+          <et-time-picker
+            [value]="dateTimeInput.pickerTime()"
+            [disabled]="dateTimeInput.disabled()"
+            [day]="dateTimeInput.pickerDate()"
+            [format]="dateTimeInput.effectiveDisplayFormat()"
+            [locale]="dateTimeInput.effectiveLocale()"
+            [minuteStep]="minuteStep()"
+            [min]="dateTimeInput.minTime()"
+            [max]="dateTimeInput.maxTime()"
+            [timeFilter]="dateTimeInput.timeFilter()"
+            (valueChange)="dateTimeInput.selectTime($event)"
+          />
+        </div>
+      </div>
+    </div>
+  </et-date-picker-panel>
+</ng-template>

@@ -1,0 +1,10 @@
+import { createLegacyQueryCreator } from '@ethlete/query';
+import { EventListView, Paginated } from '@app-b/types';
+import { publicApiGet } from '../public-api.client';
+import { GetEventsResultsArgs } from './event.types';
+
+export const getEventsResults = publicApiGet<GetEventsResultsArgs & { response: Paginated<EventListView> }>(`/public/results`);
+/**
+ * @deprecated Legacy (v2) query wrapper. Migrate the call sites to `getEventsResults` and delete this wrapper - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2.
+ */
+export const legacyGetEventsResults = createLegacyQueryCreator({ name: 'legacyGetEventsResults', creator: getEventsResults });

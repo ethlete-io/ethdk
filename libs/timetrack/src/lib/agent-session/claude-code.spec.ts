@@ -1,0 +1,1061 @@
+import { describe, expect, it } from 'vitest';
+import { AgentSessionEvent } from '../model/event';
+import { CLAUDE_CODE_PROVIDER, parseClaudeCodeSessionLog } from './claude-code';
+
+const SESSION = '154009aa-3442-401d-852b-07a0d5156e97';
+const CWD = '/home/human/dev/fut-frontend';
+const BRANCH = 'feat/FIP-2177-user-management';
+
+const at = (minute: number, second = 0) => new Date(Date.UTC(2026, 7, 11, 9, minute, second));
+
+const record = (options: { minute: number; second?: number; cwd?: string; branch?: string; type?: string }) =>
+  JSON.stringify({
+    type: options.type ?? 'assistant',
+    uuid: `uuid-${options.minute}-${options.second ?? 0}`,
+    timestamp: at(options.minute, options.second).toISOString(),
+    cwd: options.cwd ?? CWD,
+    sessionId: SESSION,
+    version: '2.1.227',
+    gitBranch: options.branch ?? BRANCH,
+  });
+
+const aiTitle = (title: string) => JSON.stringify({ type: 'ai-title', sessionId: SESSION, aiTitle: title });
+
+const customTitle = (title: string) => JSON.stringify({ type: 'custom-title', sessionId: SESSION, customTitle: title });
+
+const lastPrompt = (prompt: string) =>
+  JSON.stringify({ type: 'last-prompt', sessionId: SESSION, leafUuid: 'leaf', lastPrompt: prompt });
+
+type UsageCounts = {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+  thinking_tokens?: number;
+};
+
+const turn = (options: {
+  minute: number;
+  second?: number;
+  id?: string;
+  model?: string;
+  cwd?: string;
+  branch?: string;
+  agentId?: string;
+  counts?: UsageCounts;
+  extra?: Record<string, unknown>;
+}) => {
+  const counts = options.counts ?? {};
+
+  return JSON.stringify({
+    type: 'assistant',
+    uuid: `uuid-${options.minute}-${options.second ?? 0}`,
+    timestamp: at(options.minute, options.second).toISOString(),
+    cwd: options.cwd ?? CWD,
+    sessionId: SESSION,
+    gitBranch: options.branch ?? BRANCH,
+    ...(options.agentId ? { agentId: options.agentId, isSidechain: true } : {}),
+    message: {
+      id: options.id ?? `msg_${options.minute}`,
+      model: options.model ?? 'claude-opus-5',
+      role: 'assistant',
+      usage: {
+        input_tokens: counts.input_tokens ?? 0,
+        output_tokens: counts.output_tokens ?? 0,
+        cache_creation_input_tokens: counts.cache_creation_input_tokens ?? 0,
+        cache_read_input_tokens: counts.cache_read_input_tokens ?? 0,
+        output_tokens_details: { thinking_tokens: counts.thinking_tokens ?? 0 },
+        ...(options.extra ?? {}),
+      },
+    },
+  });
+};
+
+const prompt = (options: {
+  minute: number;
+  second?: number;
+  content?: unknown;
+  cwd?: string;
+  extra?: Record<string, unknown>;
+}) =>
+  JSON.stringify({
+    type: 'user',
+    uuid: `prompt-${options.minute}-${options.second ?? 0}`,
+    timestamp: at(options.minute, options.second).toISOString(),
+    cwd: options.cwd ?? CWD,
+    sessionId: SESSION,
+    gitBranch: BRANCH,
+    ...(options.extra ?? {}),
+    message: { role: 'user', content: options.content ?? 'fix the failing spec' },
+  });
+
+const parse = (lines: string[], options: Partial<Parameters<typeof parseClaudeCodeSessionLog>[0]> = {}) =>
+  parseClaudeCodeSessionLog({ lines, ...options });
+
+const times = (events: AgentSessionEvent[]) => events.map((event) => event.at.toISOString());
+
+describe('parseClaudeCodeSessionLog', () => {
+  it('reads a session as activity samples carrying its directory, branch and title', () => {
+    const result = parse([record({ minute: 0 }), aiTitle('Handoff resume SDK release'), record({ minute: 5 })]);
+
+    expect(result.events).toEqual([
+      {
+        at: at(0),
+        source: 'agent-session',
+        kind: 'agent-session',
+        sessionId: SESSION,
+        cwd: CWD,
+        gitBranch: BRANCH,
+        workedIn: CWD,
+        title: 'Handoff resume SDK release',
+      },
+      { ...result.events[1], at: at(5) },
+    ]);
+    expect(result.title).toBe('Handoff resume SDK release');
+    expect(result.unparsedLines).toBe(0);
+  });
+
+  it('thins a burst of records to one sample per interval', () => {
+    const lines = [0, 2, 4, 20, 40, 62].map((second) => record({ minute: 0, second }));
+
+    const result = parse(lines, { sampleIntervalMs: 60_000 });
+
+    expect(times(result.events)).toEqual([at(0, 0), at(0, 62)].map((date) => date.toISOString()));
+  });
+
+  it('does not emit a record inside the interval just because it is the last one', () => {
+    const result = parse([record({ minute: 0 }), record({ minute: 0, second: 10 })], { sampleIntervalMs: 60_000 });
+
+    expect(times(result.events)).toEqual([at(0, 0).toISOString()]);
+  });
+
+  it('stores the same samples whether a log is read from the top or in chunks', () => {
+    const lines = [0, 20, 50, 70, 100, 130, 150, 190, 250].map((second) => record({ minute: 0, second }));
+    lines.splice(5, 0, record({ minute: 2, second: 15, branch: 'other' }));
+    const whole = parse(lines, { sampleIntervalMs: 60_000 });
+
+    const chunked = [lines.slice(0, 3), lines.slice(3, 7), lines.slice(7)].reduce<{
+      events: AgentSessionEvent[];
+      resume?: Parameters<typeof parseClaudeCodeSessionLog>[0]['resume'];
+    }>(
+      (state, chunk) => {
+        const result = parse(chunk, { sampleIntervalMs: 60_000, resume: state.resume });
+        const events = [...state.events, ...result.events];
+
+        return {
+          events,
+          resume: {
+            after: events[events.length - 1]?.at,
+            title: result.title,
+            session: result.session,
+          },
+        };
+      },
+      { events: [] },
+    );
+
+    expect(times(chunked.events)).toEqual(times(whole.events));
+  });
+
+  it('emits on a branch switch even inside the sampling interval', () => {
+    const result = parse([record({ minute: 0 }), record({ minute: 0, second: 5, branch: 'feat/FIP-2200-club-pack' })], {
+      sampleIntervalMs: 60_000,
+    });
+
+    expect(result.events.map((event) => event.gitBranch)).toEqual([BRANCH, 'feat/FIP-2200-club-pack']);
+  });
+
+  it('reads a detached checkout as no branch at all', () => {
+    const result = parse([record({ minute: 0, branch: 'HEAD' })]);
+
+    expect(result.events[0]?.gitBranch).toBeUndefined();
+  });
+
+  it('emits when a detached checkout returns to a branch', () => {
+    const result = parse([record({ minute: 0, branch: 'HEAD' }), record({ minute: 0, second: 5 })], {
+      sampleIntervalMs: 60_000,
+    });
+
+    expect(result.events.map((event) => event.gitBranch)).toEqual([undefined, BRANCH]);
+  });
+
+  it('emits on a working-directory switch even inside the sampling interval', () => {
+    const result = parse(
+      [record({ minute: 0 }), record({ minute: 0, second: 5, cwd: '/home/human/dev/ethlete-sdk' })],
+      {
+        sampleIntervalMs: 60_000,
+      },
+    );
+
+    expect(result.events.map((event) => event.cwd)).toEqual([CWD, '/home/human/dev/ethlete-sdk']);
+  });
+
+  it('samples every record type that carries the metadata', () => {
+    const lines = ['user', 'assistant', 'system', 'attachment', 'queue-operation'].map((type, index) =>
+      record({ minute: index * 2, type }),
+    );
+
+    const result = parse(lines);
+
+    expect(result.events).toHaveLength(5);
+  });
+
+  it('ignores records with no timestamp, directory or session id', () => {
+    const result = parse([
+      JSON.stringify({ type: 'mode', sessionId: SESSION, mode: 'default' }),
+      JSON.stringify({ type: 'file-history-delta', timestamp: at(1).toISOString() }),
+      JSON.stringify({ type: 'assistant', timestamp: 'not a date', cwd: CWD, sessionId: SESSION }),
+      record({ minute: 3 }),
+    ]);
+
+    expect(times(result.events)).toEqual([at(3).toISOString()]);
+    expect(result.unparsedLines).toBe(0);
+  });
+
+  it('counts a partial trailing line rather than throwing on it', () => {
+    const result = parse([record({ minute: 0 }), '{"type":"assist', '']);
+
+    expect(result.events).toHaveLength(1);
+    expect(result.unparsedLines).toBe(1);
+  });
+
+  it('sorts records that arrive out of order before sampling', () => {
+    const result = parse([record({ minute: 5 }), record({ minute: 0 })], { sampleIntervalMs: 60_000 });
+
+    expect(times(result.events)).toEqual([at(0), at(5)].map((date) => date.toISOString()));
+  });
+
+  it('keeps sessions apart when a log holds more than one', () => {
+    const other = JSON.stringify({
+      type: 'assistant',
+      timestamp: at(0, 5).toISOString(),
+      cwd: CWD,
+      sessionId: 'other-session',
+      gitBranch: BRANCH,
+    });
+
+    const result = parse([record({ minute: 0 }), other], { sampleIntervalMs: 60_000 });
+
+    expect(result.events.map((event) => event.sessionId)).toEqual([SESSION, 'other-session']);
+  });
+
+  describe('titles', () => {
+    it('prefers the last generated title, since it is regenerated as the session grows', () => {
+      const result = parse([record({ minute: 0 }), aiTitle('First guess'), aiTitle('Timetrack agent collector')]);
+
+      expect(result.title).toBe('Timetrack agent collector');
+    });
+
+    it('prefers the name the user gave the session over the generated one', () => {
+      const result = parse([record({ minute: 0 }), aiTitle('Timetrack agent collector'), customTitle('claude-at/wip')]);
+
+      expect(result.title).toBe('claude-at/wip');
+      expect(result.events[0]?.title).toBe('claude-at/wip');
+    });
+
+    it('prefers the last name the user gave, since renaming rewrites the record', () => {
+      const result = parse([record({ minute: 0 }), customTitle('claude-at/wip'), customTitle('claude-at/collector')]);
+
+      expect(result.title).toBe('claude-at/collector');
+    });
+
+    it('leaves the title unset when nothing generated one and no fallback is asked for', () => {
+      const result = parse([record({ minute: 0 }), lastPrompt('add the agent session collector')]);
+
+      expect(result.title).toBeUndefined();
+      expect(result.events[0]?.title).toBeUndefined();
+    });
+
+    it('falls back to the first prompt, collapsed to one line', () => {
+      const result = parse(
+        [record({ minute: 0 }), lastPrompt('add the\n  agent  session\ncollector'), lastPrompt('go on')],
+        {
+          promptFallback: { maxLength: 60 },
+        },
+      );
+
+      expect(result.title).toBe('add the agent session collector');
+    });
+
+    it('truncates a long prompt fallback', () => {
+      const result = parse([record({ minute: 0 }), lastPrompt('a'.repeat(50))], { promptFallback: { maxLength: 10 } });
+
+      expect(result.title).toBe(`${'a'.repeat(10)}…`);
+    });
+
+    it('skips a generated title that does not read as words', () => {
+      const result = parse([record({ minute: 0 }), lastPrompt('add the collector'), aiTitle('(click)=')], {
+        promptFallback: { maxLength: 60 },
+      });
+
+      expect(result.title).toBe('add the collector');
+    });
+
+    it('reads the first prompt past a blank one', () => {
+      const result = parse([record({ minute: 0 }), lastPrompt(' \n '), lastPrompt('add the collector')], {
+        promptFallback: { maxLength: 60 },
+      });
+
+      expect(result.title).toBe('add the collector');
+    });
+
+    it('prefers a generated title over the prompt fallback', () => {
+      const result = parse([record({ minute: 0 }), lastPrompt('add the collector'), aiTitle('Agent collector')], {
+        promptFallback: { maxLength: 60 },
+      });
+
+      expect(result.title).toBe('Agent collector');
+    });
+  });
+
+  describe('resuming a tail', () => {
+    it('skips records at or before the cursor', () => {
+      const lines = [record({ minute: 0 }), record({ minute: 5 }), record({ minute: 10 })];
+
+      const result = parse(lines, { resume: { after: at(5) } });
+
+      expect(times(result.events)).toEqual([at(10).toISOString()]);
+    });
+
+    it('carries the title the earlier batch resolved', () => {
+      const result = parse([record({ minute: 10 })], { resume: { after: at(5), title: 'Agent collector' } });
+
+      expect(result.events[0]?.title).toBe('Agent collector');
+    });
+
+    it('lets a title in the new records replace the carried one', () => {
+      const result = parse([record({ minute: 10 }), aiTitle('Agent collector, second half')], {
+        resume: { after: at(5), title: 'Agent collector' },
+      });
+
+      expect(result.title).toBe('Agent collector, second half');
+    });
+
+    it('keeps a custom title from an earlier batch over a later generated one', () => {
+      const first = parse([record({ minute: 0 }), customTitle('My rename')]);
+      const next = parse([record({ minute: 10 }), aiTitle('Generated later')], {
+        resume: { after: at(5), title: first.title, session: first.session },
+      });
+
+      expect(next.title).toBe('My rename');
+    });
+
+    it('prefers the carried title over the prompt fallback', () => {
+      const result = parse([record({ minute: 10 }), lastPrompt('go on')], {
+        resume: { after: at(5), title: 'Agent collector' },
+        promptFallback: { maxLength: 60 },
+      });
+
+      expect(result.title).toBe('Agent collector');
+    });
+
+    it('drops a carried title that does not read as words', () => {
+      const result = parse([record({ minute: 10 }), lastPrompt('how did this transfer button get into main')], {
+        resume: { after: at(5), title: '(click)=' },
+        promptFallback: { maxLength: 60 },
+      });
+
+      expect(result.events[0]?.title).toBe('how did this transfer button get into main');
+    });
+  });
+});
+
+describe('parseClaudeCodeSessionLog, on token spend', () => {
+  it('reads one turn as the five counts it is priced by', () => {
+    const result = parse([
+      turn({
+        minute: 0,
+        counts: {
+          input_tokens: 2,
+          output_tokens: 289,
+          cache_creation_input_tokens: 17_421,
+          cache_read_input_tokens: 18_910,
+          thinking_tokens: 96,
+        },
+      }),
+    ]);
+
+    expect(result.usage).toEqual([
+      {
+        at: at(0),
+        source: 'agent-usage',
+        kind: 'agent-usage',
+        provider: CLAUDE_CODE_PROVIDER,
+        sessionId: SESSION,
+        turnId: 'msg_0',
+        cwd: CWD,
+        gitBranch: BRANCH,
+        workedIn: CWD,
+        model: 'claude-opus-5',
+        usage: { input: 2, output: 289, cacheWrite: 17_421, cacheRead: 18_910, thinking: 96 },
+        agentId: undefined,
+      },
+    ]);
+  });
+
+  it('counts a turn once, however many records restate its usage', () => {
+    const result = parse([
+      turn({ minute: 0, id: 'msg_a', counts: { output_tokens: 100 } }),
+      turn({ minute: 0, second: 4, id: 'msg_a', counts: { output_tokens: 100 } }),
+      turn({ minute: 1, id: 'msg_b', counts: { output_tokens: 40 } }),
+    ]);
+
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_a', 'msg_b']);
+    expect(result.usage.map((event) => event.usage.output)).toEqual([100, 40]);
+  });
+
+  it('reports every turn, however far the samples are thinned', () => {
+    const lines = [0, 2, 4].map((second) => turn({ minute: 0, second, id: `msg_${second}` }));
+
+    const result = parse(lines, { sampleIntervalMs: 60_000 });
+
+    expect(result.events).toHaveLength(1);
+    expect(result.usage).toHaveLength(3);
+  });
+
+  it('reports a turn behind the resume cursor, because a count is not a repeated sample', () => {
+    const result = parse([turn({ minute: 0, id: 'msg_early' })], { resume: { after: at(5) } });
+
+    expect(result.events).toEqual([]);
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_early']);
+  });
+
+  it('skips the synthetic model, which reports a turn nobody ran', () => {
+    const result = parse([turn({ minute: 0, model: '<synthetic>' }), turn({ minute: 1, id: 'msg_real' })]);
+
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_real']);
+  });
+
+  it('reads the top level of usage only, never the per-call iterations that restate it', () => {
+    const result = parse([
+      turn({
+        minute: 0,
+        counts: { output_tokens: 187 },
+        extra: { iterations: [{ output_tokens: 187 }, { output_tokens: 187 }] },
+      }),
+    ]);
+
+    expect(result.usage.map((event) => event.usage.output)).toEqual([187]);
+  });
+
+  it('names the subagent that ran the turn, and keeps its spend in the parent session', () => {
+    const result = parse([turn({ minute: 0, agentId: 'a37a4fb79537e0377' })]);
+
+    expect(result.usage[0]).toMatchObject({ sessionId: SESSION, agentId: 'a37a4fb79537e0377' });
+  });
+
+  it('reads a branch and a directory per turn, so a mid-session switch is attributed to each', () => {
+    const result = parse([
+      turn({ minute: 0, id: 'msg_a' }),
+      turn({ minute: 1, id: 'msg_b', cwd: '/home/human/dev/ethlete-sdk', branch: 'next' }),
+    ]);
+
+    expect(result.usage.map((event) => [event.cwd, event.gitBranch])).toEqual([
+      [CWD, BRANCH],
+      ['/home/human/dev/ethlete-sdk', 'next'],
+    ]);
+  });
+
+  it('takes no spend from a record that reports none', () => {
+    const result = parse([record({ minute: 0 }), aiTitle('A session with no usage record')]);
+
+    expect(result.usage).toEqual([]);
+  });
+
+  it('takes no spend from a usage record the agent wrote without a turn id', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      timestamp: at(0).toISOString(),
+      cwd: CWD,
+      sessionId: SESSION,
+      message: { model: 'claude-opus-5', usage: { output_tokens: 10 } },
+    });
+
+    expect(parse([line]).usage).toEqual([]);
+  });
+
+  it('reads a missing count as zero rather than dropping the turn', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      timestamp: at(0).toISOString(),
+      cwd: CWD,
+      sessionId: SESSION,
+      message: { id: 'msg_thin', model: 'claude-opus-5', usage: { output_tokens: 10, output_tokens_details: null } },
+    });
+
+    expect(parse([line]).usage[0]?.usage).toEqual({
+      input: 0,
+      output: 10,
+      cacheWrite: 0,
+      cacheRead: 0,
+      thinking: 0,
+    });
+  });
+
+  it('reports the turns oldest first, whatever order the log holds them in', () => {
+    const result = parse([turn({ minute: 5, id: 'msg_late' }), turn({ minute: 0, id: 'msg_early' })]);
+
+    expect(result.usage.map((event) => event.turnId)).toEqual(['msg_early', 'msg_late']);
+  });
+});
+
+describe('parseClaudeCodeSessionLog prompts', () => {
+  it('reads a typed prompt as its instant, session and checkout, and never its text', () => {
+    const result = parse([prompt({ minute: 5 })]);
+
+    expect(result.prompts).toEqual([
+      {
+        at: at(5),
+        source: 'agent-prompt',
+        kind: 'agent-prompt',
+        provider: CLAUDE_CODE_PROVIDER,
+        sessionId: SESSION,
+        promptId: 'prompt-5-0',
+        cwd: CWD,
+        gitBranch: BRANCH,
+        workedIn: CWD,
+      },
+    ]);
+  });
+
+  it('drops a tool result, which arrives as a user record too', () => {
+    const result = parse([
+      prompt({ minute: 5, content: [{ type: 'tool_result', content: 'ok' }], extra: { toolUseResult: { ok: true } } }),
+    ]);
+
+    expect(result.prompts).toEqual([]);
+  });
+
+  it('drops a subagent record, because the model wrote it', () => {
+    expect(parse([prompt({ minute: 6, extra: { isSidechain: true } })]).prompts).toEqual([]);
+  });
+
+  it('drops a record the CLI wrote for itself', () => {
+    expect(parse([prompt({ minute: 7, extra: { isMeta: true } })]).prompts).toEqual([]);
+  });
+
+  it('drops a content array, which nobody typed', () => {
+    expect(parse([prompt({ minute: 8, content: [{ type: 'text', text: 'hi' }] })]).prompts).toEqual([]);
+  });
+
+  it('reports every prompt, whatever the sample interval thins the activity to', () => {
+    const result = parse(
+      [prompt({ minute: 5 }), prompt({ minute: 5, second: 20 }), prompt({ minute: 5, second: 40 })],
+      {
+        sampleIntervalMs: 60_000,
+      },
+    );
+
+    expect(result.prompts.map((event) => event.at.toISOString())).toEqual([
+      at(5).toISOString(),
+      at(5, 20).toISOString(),
+      at(5, 40).toISOString(),
+    ]);
+    expect(times(result.events)).toEqual([at(5).toISOString()]);
+  });
+
+  it('reads a prompt behind the resume cursor, because the store keys it', () => {
+    expect(parse([prompt({ minute: 5 })], { resume: { after: at(9) } }).prompts).toHaveLength(1);
+  });
+
+  it('says a human asked, when the record names the origin', () => {
+    const result = parse([prompt({ minute: 5, extra: { origin: { kind: 'human' }, promptSource: 'typed' } })]);
+
+    expect(result.prompts[0]?.askedBy).toBe('human');
+  });
+
+  it('says the machine asked for a task notification', () => {
+    const result = parse([
+      prompt({ minute: 5, extra: { origin: { kind: 'task-notification' }, promptSource: 'system' } }),
+    ]);
+
+    expect(result.prompts[0]?.askedBy).toBe('machine');
+  });
+
+  it('says the machine asked, for a message from another session', () => {
+    const result = parse([prompt({ minute: 5, extra: { origin: { kind: 'peer' } } })]);
+
+    expect(result.prompts[0]?.askedBy).toBe('machine');
+  });
+
+  it('reads promptSource where the record names no origin', () => {
+    expect(parse([prompt({ minute: 5, extra: { promptSource: 'system' } })]).prompts[0]?.askedBy).toBe('machine');
+    expect(parse([prompt({ minute: 7, extra: { promptSource: 'suggestion_accepted' } })]).prompts[0]?.askedBy).toBe(
+      'human',
+    );
+  });
+
+  it('says the machine asked, for a mailbox wake a tmux pane typed as a person', () => {
+    const human = { origin: { kind: 'human' }, promptSource: 'typed' };
+
+    expect(
+      parse([prompt({ minute: 5, content: 'Mailbox message from ethlete-sdk-37: run the spec', extra: human })])
+        .prompts[0]?.askedBy,
+    ).toBe('machine');
+    expect(
+      parse([prompt({ minute: 7, content: 'New mailbox message for doc-agent. Run: node read', extra: human })])
+        .prompts[0]?.askedBy,
+    ).toBe('machine');
+  });
+
+  it('says the machine asked, for a restart prompt carrying the marker', () => {
+    const human = { origin: { kind: 'human' }, promptSource: 'typed' };
+    const content =
+      '<command-message>handoff</command-message>\n<command-name>/handoff</command-name>\n<command-args>resume doc-agent [typed by agent-sessions]</command-args>';
+
+    expect(parse([prompt({ minute: 5, content, extra: human })]).prompts[0]?.askedBy).toBe('machine');
+    expect(
+      parse([prompt({ minute: 7, content: '/handoff resume x [typed by agent-sessions]', extra: human })]).prompts[0]
+        ?.askedBy,
+    ).toBe('machine');
+  });
+
+  it('says the machine asked, for a local command that records no origin', () => {
+    const content = '<command-name>/clear</command-name>\n<command-message>clear</command-message>';
+
+    expect(parse([prompt({ minute: 5, content })]).prompts[0]?.askedBy).toBe('machine');
+  });
+
+  it('still says a human asked, for a slash command typed by hand', () => {
+    const content = '<command-name>/handoff</command-name>\n<command-args>resume doc-agent</command-args>';
+    const human = { origin: { kind: 'human' }, promptSource: 'typed' };
+
+    expect(parse([prompt({ minute: 5, content, extra: human })]).prompts[0]?.askedBy).toBe('human');
+  });
+
+  describe('a restart of an agent-sessions copy older than its marker', () => {
+    const clear =
+      '{"parentUuid":"c6904bdd-75e9-4329-88d5-66cb587f5264","isSidechain":false,"type":"user","message":{"role":"user","content":"<command-name>/clear</command-name>\\n            <command-message>clear</command-message>\\n            <command-args></command-args>"},"uuid":"68327b70-ad79-483f-8673-ef879a01de6f","timestamp":"2026-11-18T00:21:12.485Z","userType":"external","entrypoint":"cli","cwd":"/home/user/dev/client-frontend","sessionId":"58e6d2af-c974-4fcc-8944-2a1754788970","version":"2.1.326","gitBranch":"next"}';
+    const resumeAt = (timestamp: string) =>
+      `{"parentUuid":"14d6ab9c-e13a-47c6-949c-43739e724308","isSidechain":false,"promptId":"8054b9c2-b052-4086-aab8-10b39a8bc710","type":"user","message":{"role":"user","content":"<command-message>ethlete-handoff</command-message>\\n<command-name>/ethlete-handoff</command-name>\\n<command-args>resume post-upgrade</command-args>"},"uuid":"fc3df37c-c554-4dab-9ace-4c64a6072230","timestamp":"${timestamp}","origin":{"kind":"human"},"turnOrigin":"human","turnPosition":{"promptIndex":1,"turnIndex":1},"userType":"external","entrypoint":"cli","cwd":"/home/user/dev/client-frontend","sessionId":"58e6d2af-c974-4fcc-8944-2a1754788970","version":"2.1.326","gitBranch":"next"}`;
+    const roleRestartAt = (timestamp: string) =>
+      `{"parentUuid":"8a6795ae-81ec-4d7a-aee3-0c58542b0e8d","isSidechain":false,"type":"user","message":{"role":"user","content":"<command-message>doc-agent</command-message>\\n<command-name>/doc-agent</command-name>\\n<command-args>then read .claude/handoffs/doc-agent-night.md and continue the night shift from it</command-args>"},"uuid":"4e538837-d336-4505-aaae-f4b5b2d0a50e","timestamp":"${timestamp}","origin":{"kind":"human"},"turnOrigin":"human","turnPosition":{"promptIndex":1,"turnIndex":1},"userType":"external","entrypoint":"cli","cwd":"/home/user/dev/client-frontend","sessionId":"58e6d2af-c974-4fcc-8944-2a1754788970","version":"2.1.326","gitBranch":"next"}`;
+    const roleAskedBy = (lines: string[]) =>
+      parse(lines).prompts.find((event) => event.promptId === '4e538837-d336-4505-aaae-f4b5b2d0a50e')?.askedBy;
+    const askedBy = (lines: string[]) =>
+      parse(lines).prompts.find((event) => event.promptId === 'fc3df37c-c554-4dab-9ace-4c64a6072230')?.askedBy;
+
+    it('says the machine asked, for the handoff resume it typed seconds after its /clear', () => {
+      expect(askedBy([clear, resumeAt('2026-11-18T00:21:17.445Z')])).toBe('machine');
+    });
+
+    it('still says a human asked, for a handoff resume long after a /clear', () => {
+      expect(askedBy([clear, resumeAt('2026-11-18T00:23:17.445Z')])).toBe('human');
+    });
+
+    it('still says a human asked, for a handoff resume no /clear came before', () => {
+      expect(askedBy([resumeAt('2026-11-18T00:21:17.445Z')])).toBe('human');
+    });
+
+    it('says the machine asked, for the role skill it typed seconds after its /clear', () => {
+      expect(roleAskedBy([clear, roleRestartAt('2026-11-18T00:21:17.445Z')])).toBe('machine');
+    });
+
+    it('still says a human asked, for a role skill long after a /clear', () => {
+      expect(roleAskedBy([clear, roleRestartAt('2026-11-18T00:23:17.445Z')])).toBe('human');
+    });
+
+    it('still says a human asked, for a role skill no /clear came before', () => {
+      expect(roleAskedBy([roleRestartAt('2026-11-18T00:21:17.445Z')])).toBe('human');
+    });
+  });
+
+  it('counts a queued prompt at the time it was typed, not delivered', () => {
+    const enqueue = JSON.stringify({
+      type: 'queue-operation',
+      operation: 'enqueue',
+      timestamp: at(2).toISOString(),
+      sessionId: SESSION,
+      content: 'Agree',
+    });
+    const result = parse([
+      enqueue,
+      prompt({ minute: 30, content: 'Agree', extra: { origin: { kind: 'human' }, promptSource: 'queued' } }),
+    ]);
+
+    expect(result.prompts[0]?.at.toISOString()).toBe(at(2).toISOString());
+    expect(result.prompts[0]?.askedBy).toBe('human');
+  });
+
+  it('adds no presence for a queued prompt whose typed time is unknown', () => {
+    const result = parse([prompt({ minute: 30, extra: { origin: { kind: 'human' }, promptSource: 'queued' } })]);
+
+    expect(result.prompts[0]?.askedBy).toBe('machine');
+  });
+
+  it('leaves askedBy unanswered for a log that records neither field', () => {
+    expect(parse([prompt({ minute: 5 })]).prompts[0]?.askedBy).toBeUndefined();
+  });
+
+  it('keeps one copy of a prompt whose record repeats', () => {
+    expect(parse([prompt({ minute: 5 }), prompt({ minute: 5 })]).prompts).toHaveLength(1);
+  });
+});
+
+const ALTCHA = '/home/human/dev/fut-frontend-altcha';
+const ALTCHA_DIR = `${ALTCHA}/`;
+
+const toolCall = (options: { minute: number; second?: number; name: string; input: Record<string, unknown> }) =>
+  JSON.stringify({
+    type: 'assistant',
+    uuid: `tool-${options.minute}-${options.second ?? 0}`,
+    timestamp: at(options.minute, options.second).toISOString(),
+    cwd: CWD,
+    sessionId: SESSION,
+    gitBranch: BRANCH,
+    message: {
+      id: `msg_tool_${options.minute}_${options.second ?? 0}`,
+      model: 'claude-opus-5',
+      role: 'assistant',
+      content: [{ type: 'tool_use', id: 'toolu_1', name: options.name, input: options.input }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+    },
+  });
+
+const workedIn = (events: { workedIn?: string }[]) => events.map((event) => event.workedIn);
+
+describe('parseClaudeCodeSessionLog, on where the work happened', () => {
+  it('reads the working directory as where a session worked until a tool call names another path', () => {
+    const result = parse([record({ minute: 0 })]);
+
+    expect(workedIn(result.events)).toEqual([CWD]);
+  });
+
+  it('follows a command that changes into another checkout first, and emits at the change', () => {
+    const result = parse(
+      [
+        record({ minute: 0 }),
+        toolCall({ minute: 0, second: 5, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn install` } }),
+        record({ minute: 0, second: 6, type: 'user' }),
+        record({ minute: 0, second: 30 }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([CWD, ALTCHA_DIR]);
+    expect(times(result.events)).toEqual([at(0, 0), at(0, 5)].map((date) => date.toISOString()));
+  });
+
+  it('follows the file an edit or a write names', () => {
+    const file = `${ALTCHA}/libs/domain/auth/src/lib/login.ts`;
+
+    for (const name of ['Edit', 'Write']) {
+      const result = parse([toolCall({ minute: 0, name, input: { file_path: file } })]);
+
+      expect(workedIn(result.events)).toEqual([file]);
+    }
+
+    const notebook = parse([toolCall({ minute: 0, name: 'NotebookEdit', input: { notebook_path: file } })]);
+
+    expect(workedIn(notebook.events)).toEqual([file]);
+  });
+
+  it('lets no read move where the work is, nor put it back', () => {
+    const sdk = '/home/human/dev/ethlete-sdk';
+    const result = parse(
+      [
+        toolCall({ minute: 0, name: 'Edit', input: { file_path: `${ALTCHA}/libs/login.ts` } }),
+        toolCall({ minute: 2, name: 'Read', input: { file_path: `${sdk}/libs/query/src/index.ts` } }),
+        toolCall({ minute: 4, name: 'Grep', input: { pattern: 'altcha', path: sdk } }),
+        toolCall({ minute: 6, name: 'Bash', input: { command: `cd ${sdk} && git log --oneline -5 | head -3` } }),
+        toolCall({
+          minute: 8,
+          name: 'Bash',
+          input: { command: `cd ${sdk} && rg -n "retryFn" libs; sed -n 1,20p x.ts` },
+        }),
+        toolCall({ minute: 10, name: 'Bash', input: { command: 'git status --short && cat package.json' } }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([`${ALTCHA}/libs/login.ts`, ...Array(5).fill(`${ALTCHA}/libs/login.ts`)]);
+  });
+
+  it('follows a command into another checkout once it builds, tests or writes there', () => {
+    const sdk = '/home/human/dev/ethlete-sdk';
+    const result = parse(
+      [
+        toolCall({
+          minute: 0,
+          name: 'Bash',
+          input: {
+            command: `cd ${sdk}/libs/query/src/lib/auth/features && cat > x.ts <<'EOF'\nexport const x = 1;\nEOF`,
+          },
+        }),
+        toolCall({
+          minute: 2,
+          name: 'Bash',
+          input: { command: `cd ${sdk} && timeout 600 npx nx test query 2>&1 | tail -30` },
+        }),
+        toolCall({ minute: 4, name: 'Bash', input: { command: `cd ${sdk} && git diff > /tmp/query.patch` } }),
+        toolCall({ minute: 6, name: 'Bash', input: { command: `cd ${ALTCHA} && git status -sb` } }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([
+      `${sdk}/libs/query/src/lib/auth/features/`,
+      `${sdk}/`,
+      `${sdk}/`,
+      `${sdk}/`,
+    ]);
+  });
+
+  it.each([
+    `grep -rn "provideIcons\\|injectIcons" libs | head -20`,
+    `rg -n "altcha|captcha" libs/domain`,
+    `find libs -name '*.ts' | xargs grep -l "retryFn"`,
+    `awk -F: '{print $1}' package.json | sort -u`,
+    `sed -E 's/a|b/c/' package.json`,
+    `for d in */; do echo "$d"; git -C "$d" log -1 --oneline; done`,
+    `f=$(git rev-parse --show-toplevel); [ -f "$f/nx.json" ] && cat "$f/nx.json"`,
+    `rsync -an --stats libs/ /tmp/libs-copy/`,
+    `git diff > /tmp/fut.patch && git stash list`,
+    `cat > /tmp/notes.txt <<'EOF'\nrm -rf libs\ngit commit -am x\nEOF`,
+    `npm ls @angular/core 2>/dev/null; yarn why rxjs`,
+    `echo hi # > out.txt`,
+    `ls 2> >(grep x >&2)`,
+    `perl -Ilib -MList::Util -e 'print 1' x.pl`,
+    `cat > /tmp/notes.txt <<EOF\n  EOF\nrm -rf libs\nEOF`,
+  ])('keeps a read-only command in another checkout where the work was: %s', (command) => {
+    const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && ${command}` } })]);
+
+    expect(workedIn(result.events)).toEqual([CWD]);
+  });
+
+  it.each([
+    `sed -i 's/a/b/' package.json`,
+    `git add -A && git commit -m "a | b"`,
+    `echo a > notes.txt`,
+    `printf x | tee -a CHANGELOG.md`,
+    `rm -rf dist && mkdir dist`,
+    `grep -l x libs/*.ts | xargs sed -i 's/x/y/'`,
+    `npx nx lint app --fix`,
+    `x=$(echo "it's"); rm build.log`,
+    `# don't touch\nrm build.log`,
+    `mv notes.txt /tmp/`,
+    `sudo -u me rm build.log`,
+    `nice -n 5 rm build.log`,
+    `env -u X rm build.log`,
+    `timeout -s KILL 10 rm build.log`,
+    `sh -ec 'rm build.log'`,
+    `echo $'a\\'b'; rm out.txt`,
+    `echo x > "\\/tmp/x"`,
+  ])('follows a command that clearly writes into another checkout: %s', (command) => {
+    const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && ${command}` } })]);
+
+    expect(workedIn(result.events)).toEqual([ALTCHA_DIR]);
+  });
+
+  it.each([
+    `git -C ${ALTCHA} commit -m x`,
+    `bash -c "cd ${ALTCHA} && rm build.log"`,
+    `ls; cd ${ALTCHA} && rm build.log`,
+  ])('follows the directory in force at the step that writes: %s', (command) => {
+    const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command } })]);
+
+    expect(workedIn(result.events)).toEqual([ALTCHA_DIR]);
+  });
+
+  it('returns to the working directory for a command that changes into no absolute path', () => {
+    const result = parse(
+      [
+        toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn install` } }),
+        toolCall({ minute: 2, name: 'Bash', input: { command: 'git commit -m "fix"' } }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([ALTCHA_DIR, CWD]);
+  });
+
+  it('keeps where the work was for a tool call that names no path', () => {
+    const result = parse(
+      [
+        toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn install` } }),
+        toolCall({ minute: 2, name: 'ToolSearch', input: { query: 'select:Monitor' } }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([ALTCHA_DIR, ALTCHA_DIR]);
+  });
+
+  it('stamps the turn and the prompt with it as well', () => {
+    const result = parse([
+      toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn test` } }),
+      prompt({ minute: 1 }),
+    ]);
+
+    expect(workedIn(result.usage)).toEqual([ALTCHA_DIR]);
+    expect(workedIn(result.prompts)).toEqual([ALTCHA_DIR]);
+  });
+
+  it('carries it into the next read of the same log', () => {
+    const first = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn install` } })]);
+    const next = parse([record({ minute: 3 })], {
+      resume: { after: first.events.at(-1)?.at, title: first.title, cwd: CWD, session: first.session },
+    });
+
+    expect(workedIn(next.events)).toEqual([ALTCHA_DIR]);
+  });
+});
+
+describe('subagent samples and machine prompts, from captured records', () => {
+  const PARENT = '4e85c8d9-28ba-49e8-9a82-a2b9b1a97fc7';
+  const AGENT = 'adaf31484fc75e37d';
+  const ts = (minute: number) => at(minute).toISOString();
+
+  const subagentPrompt = (minute: number) =>
+    JSON.stringify({
+      parentUuid: null,
+      isSidechain: true,
+      promptId: 'e19ca51b-7a9b-4449-85ef-b71cbefa84b7',
+      agentId: AGENT,
+      type: 'user',
+      message: {
+        role: 'user',
+        content:
+          'You fix a CI flake in /home/user/dev/client-frontend (branch next).\n\nFacts:\n- CI runs failed in Unit tests: a spec timed out at 5000 ms.',
+      },
+      uuid: 'b1',
+      timestamp: ts(minute),
+      cwd: CWD,
+      sessionId: PARENT,
+      gitBranch: 'next',
+    });
+
+  const subagentTurn = (minute: number) =>
+    JSON.stringify({
+      parentUuid: 'b1',
+      isSidechain: true,
+      agentId: AGENT,
+      type: 'assistant',
+      message: { id: `msg_${minute}`, model: 'claude-opus-5', role: 'assistant', content: [] },
+      uuid: `b-${minute}`,
+      timestamp: ts(minute),
+      cwd: CWD,
+      sessionId: PARENT,
+      gitBranch: 'next',
+    });
+
+  const machinePrompt = (minute: number, origin: Record<string, unknown>, content: string) =>
+    JSON.stringify({
+      parentUuid: 'p0',
+      isSidechain: false,
+      type: 'user',
+      message: { role: 'user', content },
+      uuid: `m-${minute}`,
+      timestamp: ts(minute),
+      origin,
+      cwd: CWD,
+      sessionId: PARENT,
+      gitBranch: 'next',
+    });
+
+  it('stamps a subagent sample with its id and the first line of its instructions', () => {
+    const result = parse([subagentPrompt(0), subagentTurn(1)]);
+
+    expect(result.events.length).toBeGreaterThan(0);
+    for (const event of result.events) {
+      expect(event).toMatchObject({
+        sessionId: PARENT,
+        agentId: AGENT,
+        agentTask: 'You fix a CI flake in /home/user/dev/client-frontend (branch next).',
+      });
+    }
+  });
+
+  it('takes a subagent task from the description the host read, in a chunk without the prompt', () => {
+    const result = parse([subagentTurn(1)], { agentTask: 'Fix the CI flake' });
+
+    expect(result.events.length).toBeGreaterThan(0);
+    for (const event of result.events) expect(event).toMatchObject({ agentId: AGENT, agentTask: 'Fix the CI flake' });
+  });
+
+  it('prefers the description over the first line of the instructions', () => {
+    const result = parse([subagentPrompt(0), subagentTurn(1)], { agentTask: 'Fix the CI flake' });
+
+    for (const event of result.events) expect(event).toMatchObject({ agentTask: 'Fix the CI flake' });
+  });
+
+  it('leaves a main-session sample without an agent id or a task', () => {
+    const [event] = parse([record({ minute: 0 })]).events;
+
+    expect(event).not.toHaveProperty('agentId');
+    expect(event).not.toHaveProperty('agentTask');
+  });
+
+  it('does not count a subagent record as a prompt', () => {
+    expect(parse([subagentPrompt(0), subagentTurn(1)]).prompts).toEqual([]);
+  });
+
+  it('keeps a subagent hand-back as machine, with the first line of its report', () => {
+    const [event] = parse([
+      machinePrompt(
+        3,
+        {
+          kind: 'peer',
+          from: AGENT,
+          name: 'general-purpose',
+          handback: true,
+          handbackReportText: '  Nothing was fixed.\n\nDetails follow.',
+        },
+        'Another Claude session sent a message:\n<agent-message from="adaf31484fc75e37d">\n[Subagent hand-back] The text below is the final report',
+      ),
+    ]).prompts;
+
+    expect(event).toMatchObject({ askedBy: 'machine', senderKind: 'subagent', text: 'Nothing was fixed.' });
+  });
+
+  it('keeps a cross-session message as machine, from the body of the peer origin', () => {
+    const [event] = parse([
+      machinePrompt(
+        4,
+        {
+          kind: 'peer',
+          from: 'uds:/run/user/1000/cc-socks/1.sock',
+          name: 'sdk-a6',
+          body: 'Approved. Copy ready.json to /tmp.\nThen merge.',
+        },
+        'Another Claude session sent a message:\n<cross-session-message from="uds:/run/user/1000/cc-socks/1.sock">\nApproved. Copy ready.json to /tmp.',
+      ),
+    ]).prompts;
+
+    expect(event).toMatchObject({
+      askedBy: 'machine',
+      senderKind: 'session',
+      text: 'Approved. Copy ready.json to /tmp.',
+    });
+  });
+
+  it('keeps a task notification as system, with its summary', () => {
+    const [event] = parse([
+      machinePrompt(
+        5,
+        { kind: 'task-notification', producer: 'session-task' },
+        '<task-notification>\n<task-id>adaf31484fc75e37d</task-id>\n<status>completed</status>\n<summary>Agent "Fix spec timeout" completed</summary>\n</task-notification>',
+      ),
+    ]).prompts;
+
+    expect(event).toMatchObject({
+      askedBy: 'machine',
+      senderKind: 'system',
+      text: 'Agent "Fix spec timeout" completed',
+    });
+  });
+
+  it('caps the text at the length of other quoted notes', () => {
+    const [event] = parse([machinePrompt(6, { kind: 'peer', body: 'x'.repeat(500) }, 'x')]).prompts;
+
+    expect(event?.text).toHaveLength(200);
+    expect(event?.text?.endsWith('…')).toBe(true);
+  });
+
+  it('gives a human prompt neither a text nor a sender', () => {
+    const [event] = parse([prompt({ minute: 7, extra: { origin: { kind: 'human' } } })]).prompts;
+
+    expect(event).not.toHaveProperty('text');
+    expect(event).not.toHaveProperty('senderKind');
+  });
+});

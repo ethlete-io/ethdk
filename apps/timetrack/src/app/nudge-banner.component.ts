@@ -1,0 +1,56 @@
+import { Component, ViewEncapsulation } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { BUTTON_IMPORTS } from '@ethlete/components';
+import { injectBandApprovals } from './day-review/band-approvals';
+import { injectDayReview } from './day-review/day-review';
+import { injectDayNudge } from './day-nudge';
+
+/**
+ * The reminder as the open window shows it, under the titlebar and above every view.
+ *
+ * It stays up until the day is finished, unlike the notification behind it: the notification is an
+ * interruption and may only interrupt once an hour, while a banner the user is looking at costs
+ * nothing and disappears on its own the moment the last row reaches Tempo.
+ */
+@Component({
+  selector: 'ethlete-nudge-banner',
+  template: `
+    @if (nudge.pending(); as pending) {
+      <div
+        class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-et-surface-border bg-et-tone-brand-fill/10 px-3 py-2"
+        role="status"
+      >
+        <p class="text-small">
+          <span class="font-medium">{{ pending.title }}</span>
+          — {{ pending.body }}
+        </p>
+
+        <div class="flex items-center gap-2">
+          @if (pending.gap.reasons[0] === 'unsynced') {
+            <a (click)="dayReview.goToDay(pending.day)" routerLink="/sync" et-button variant="filled" size="sm">
+              Sync the day
+            </a>
+          } @else {
+            <a (click)="reviewDay(pending.day)" routerLink="/day" et-button variant="filled" size="sm">
+              Review the day
+            </a>
+          }
+          <button (click)="nudge.later()" et-button variant="outline" size="sm">Later</button>
+          <button (click)="nudge.notToday()" et-button variant="transparent" size="sm">Not today</button>
+        </div>
+      </div>
+    }
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BUTTON_IMPORTS, RouterLink],
+})
+export class NudgeBannerComponent {
+  protected nudge = injectDayNudge();
+  protected dayReview = injectDayReview();
+  private bandApprovals = injectBandApprovals();
+
+  protected reviewDay(day: string) {
+    this.dayReview.goToDay(day);
+    this.bandApprovals.revealUndecided();
+  }
+}

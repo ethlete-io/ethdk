@@ -1,0 +1,92 @@
+@layer components.sdk {
+  .et-overlay-origin-clone {
+    position: fixed;
+    margin: 0;
+    z-index: 999999;
+    pointer-events: none;
+    transform-origin: center center;
+
+    &.et-animation-enter-from {
+      transform: translate(var(--enter-from-translate-x, 0), var(--enter-from-translate-y, 0))
+        scale(var(--enter-from-scale-x, 1), var(--enter-from-scale-y, 1));
+      opacity: 1;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 400ms var(--ease-out-5),
+        opacity 100ms linear;
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          transform 400ms var(--ease-spring-1),
+          opacity 100ms linear;
+      }
+    }
+
+    &.et-animation-enter-to,
+    &.et-animation-enter-done {
+      transform: translate(var(--enter-to-translate-x, 0), var(--enter-to-translate-y, 0))
+        scale(var(--enter-to-scale-x, 1), var(--enter-to-scale-y, 1));
+      opacity: 0;
+    }
+
+    &.et-animation-leave-from {
+      transform: translate(var(--leave-from-translate-x, 0), var(--leave-from-translate-y, 0))
+        scale(var(--leave-from-scale-x, 1), var(--leave-from-scale-y, 1));
+      opacity: 0;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 300ms var(--ease-in-out-5),
+        opacity 125ms 175ms linear;
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        /* must match the full-screen dialog leave, which this clone tracks */
+        --_et-origin-clone-leave-spring: linear(
+          0,
+          0.0155 2.78%,
+          0.0547 5.56%,
+          0.1092 8.33%,
+          0.1726 11.11%,
+          0.3764 19.44%,
+          0.5015 25%,
+          0.5577 27.78%,
+          0.6092 30.56%,
+          0.656 33.33%,
+          0.6982 36.11%,
+          0.7361 38.89%,
+          0.7997 44.44%,
+          0.8493 50%,
+          0.8874 55.56%,
+          0.9281 63.89%,
+          0.9612 75%,
+          0.9908 100%,
+          1
+        );
+
+        transition:
+          transform 300ms var(--_et-origin-clone-leave-spring),
+          opacity 125ms 70ms linear;
+      }
+    }
+
+    &.et-animation-leave-to,
+    &.et-animation-leave-done {
+      transform: translate(var(--leave-to-translate-x, 0), var(--leave-to-translate-y, 0))
+        scale(var(--leave-to-scale-x, 1), var(--leave-to-scale-y, 1));
+      opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &.et-animation-enter-active {
+        transition: opacity 100ms linear;
+      }
+
+      &.et-animation-leave-active {
+        transition: opacity 125ms 175ms linear;
+      }
+    }
+  }
+}

@@ -1,0 +1,106 @@
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
+import { writeJsonFile } from '../json-file';
+import { join } from 'path';
+import { CommitState, DirtySnapshot } from './commits';
+import { UPDATE_DIR } from './tasks';
+
+export const PENDING_FILE = join(UPDATE_DIR, 'pending.json');
+
+export type PendingPackage = {
+  name: string;
+  /** The version that was installed before the update, which the migrations run from. */
+  from: string | null;
+  to: string;
+};
+
+/** A codemod that already applied, so `--continue` does not run it a second time. */
+export type FinishedMigration = {
+  packageName: string;
+  name: string;
+};
+
+export type PendingUpdate = {
+  startedAt: string;
+  packages: PendingPackage[];
+  finished?: FinishedMigration[];
+  /** The `--from` versions of the run, so `--continue` migrates from the same place. */
+  from?: Record<string, string>;
+  /** Absent when the run commits nothing: `--no-commit`, or no git checkout. */
+  commits?: CommitState;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Records what an update moved, before the install replaces the versions the migrations run from. An
+ * install or a codemod that fails leaves this file behind, so `et update --continue` can pick it up.
+ */
+export const writePendingUpdate = (options: { root: string; pending: PendingUpdate }) => {
+  const { root, pending } = options;
+
+  mkdirSync(join(root, UPDATE_DIR), { recursive: true });
+  writeJsonFile({ file: join(root, PENDING_FILE), value: pending });
+};
+
+const readStringRecord = (value: unknown): DirtySnapshot | undefined =>
+  isRecord(value)
+    ? Object.fromEntries(
+        Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+      )
+    : undefined;
+
+const readCommits = (value: unknown): CommitState | undefined => {
+  if (!isRecord(value)) return undefined;
+
+  const baseline = readStringRecord(value['baseline']);
+  const snapshot = readStringRecord(value['snapshot']);
+
+  if (!baseline || !snapshot) return undefined;
+
+  return { baseline, snapshot, bumped: value['bumped'] === true };
+};
+
+export const readPendingUpdate = (root: string): PendingUpdate | undefined => {
+  const path = join(root, PENDING_FILE);
+
+  if (!existsSync(path)) return undefined;
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return undefined;
+  }
+
+  if (!isRecord(parsed) || !Array.isArray(parsed['packages'])) return undefined;
+
+  const packages = parsed['packages'].filter(
+    (entry): entry is PendingPackage =>
+      isRecord(entry) && typeof entry['name'] === 'string' && typeof entry['to'] === 'string',
+  );
+
+  const finished = Array.isArray(parsed['finished'])
+    ? parsed['finished'].filter(
+        (entry): entry is FinishedMigration =>
+          isRecord(entry) && typeof entry['packageName'] === 'string' && typeof entry['name'] === 'string',
+      )
+    : [];
+
+  const from = readStringRecord(parsed['from']);
+  const commits = readCommits(parsed['commits']);
+
+  return {
+    startedAt: typeof parsed['startedAt'] === 'string' ? parsed['startedAt'] : 'an earlier run',
+    packages: packages.map((entry) => ({ name: entry.name, from: entry.from ?? null, to: entry.to })),
+    finished: finished.map((entry) => ({ packageName: entry.packageName, name: entry.name })),
+    ...(from ? { from } : {}),
+    ...(commits ? { commits } : {}),
+  };
+};
+
+export const isFinished = (options: { finished: readonly FinishedMigration[]; packageName: string; name: string }) =>
+  options.finished.some((entry) => entry.packageName === options.packageName && entry.name === options.name);
+
+export const clearPendingUpdate = (root: string) => rmSync(join(root, PENDING_FILE), { force: true });

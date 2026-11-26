@@ -1,0 +1,5 @@
+.acme-button {
+  border-radius: 999px;
+  background: var(--acme-accent);
+  color: var(--acme-surface);
+}

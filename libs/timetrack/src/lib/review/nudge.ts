@@ -1,0 +1,282 @@
+import { DEFAULT_ROUND_OPTIONS } from '../rows/round';
+import { formatDurationMs } from '../model/duration';
+import { SyncedWorklog, syncsInState } from '../model/proposal';
+import { TempoDayCoverage, coverageAsForeignTime } from '../tempo/coverage';
+import { contentHashOf } from '../tempo/diff';
+import { subtractForeignTime } from '../tempo/subtract';
+import { DayBoundary } from './day';
+import { DayReview, ReviewedRow, isNamedRow, isStandInRow } from './model';
+
+/** What a day still owes the person who worked it. */
+export type DayNudgeReason =
+  /** Rows a sync would write that Tempo does not hold, or does not hold as they now read. */
+  | 'unsynced'
+  /** Rows nobody has said yes or no to, which a sync leaves alone. */
+  | 'undecided'
+  /** Observed time no issue claimed, which no sync can ever write. */
+  | 'unattributed'
+  /**
+   * Rows a stand-in names, which wait on a ticket rather than on the reviewer. It is never the only
+   * reason a day is reported: nothing in the app answers it.
+   */
+  | 'waiting';
+
+export type DayReviewGap = {
+  /** Widest first, so the wording leads with the reason worth acting on. */
+  reasons: DayNudgeReason[];
+  /** Time Tempo does not hold yet: whole new rows, and what a synced row grew by since it was written. */
+  unsyncedMs: number;
+  /** Synced rows a sync would rewrite that added no time Tempo lacks. */
+  changedRows: number;
+  undecidedMs: number;
+  unattributedMs: number;
+  waitingMs: number;
+};
+
+/** The clock time rows on parallel lanes cover together, never more than their durations add up to. */
+const clockMsOf = (rows: readonly Pick<ReviewedRow, 'from' | 'to' | 'durationMs'>[]) => {
+  const summedMs = rows.reduce((total, row) => total + row.durationMs, 0);
+  const spans = rows
+    .map((row) => ({ from: row.from.getTime(), to: row.to.getTime() }))
+    .sort((left, right) => left.from - right.from);
+  let coveredMs = 0;
+  let reachedMs = -Infinity;
+
+  for (const span of spans) {
+    const from = Math.max(span.from, reachedMs);
+
+    if (span.to > from) coveredMs += span.to - from;
+
+    reachedMs = Math.max(reachedMs, span.to);
+  }
+
+  return Math.min(summedMs, coveredMs);
+};
+
+/**
+ * What a day would still change if the reviewer went back to it, read from local records alone.
+ *
+ * Tempo is never asked. The ledger holds the hash of everything this app wrote, so a row it does not
+ * hold, or holds under a different hash, is a row Tempo is behind on — and answering the question
+ * locally is what lets the reminder fire on a train, and without a token in it.
+ *
+ * The ledger knows nothing about time the user logged in Tempo by hand, which is what `coverage` is
+ * for. Every syncable row is reduced by it first, exactly as `planTempoSync` reduces the same row, so
+ * this and the sync can never disagree about which days are finished.
+ */
+export const dayReviewGap = (options: {
+  review: DayReview;
+  /**
+   * The whole day's ledger, not the entries the rows name: an entry no row claims is a worklog the
+   * day has to delete, and reading by row id is how such a day reads as finished.
+   */
+  ledger: readonly SyncedWorklog[];
+  /** What Tempo already held for the day when the Sync preview last read it. */
+  coverage?: TempoDayCoverage | null;
+  /** The same attribute values the sync would write, or the hash reads every synced row as changed. */
+  attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
+  /** Under this, a gap is not worth a reminder. Defaults to one rounding increment. */
+  toleranceMs?: number;
+}): DayReviewGap | null => {
+  const tolerance = options.toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
+  const entries = new Map(options.ledger.map((entry) => [entry.proposalId, entry]));
+  const reduced = subtractForeignTime({
+    proposals: options.review.rows.filter(isNamedRow).filter((row) => syncsInState(row.state) && row.durationMs > 0),
+    foreign: coverageAsForeignTime(options.coverage),
+  });
+  const reducedById = new Map(reduced.proposals.map((proposal) => [proposal.id, proposal]));
+  const reasons: DayNudgeReason[] = [];
+  let unsyncedMs = 0;
+  let changedRows = 0;
+  const undecided: Pick<ReviewedRow, 'from' | 'to' | 'durationMs'>[] = [];
+  let waitingMs = 0;
+  let pendingDelete = false;
+
+  for (const original of options.review.rows) {
+    const row = reducedById.get(original.id) ?? original;
+    const entry = entries.get(row.id);
+
+    if (row.state === 'rejected') {
+      pendingDelete ||= !!entry;
+      continue;
+    }
+
+    if (isStandInRow(row)) {
+      waitingMs += row.durationMs;
+      continue;
+    }
+
+    if (row.state === 'suggested') {
+      undecided.push(row);
+      continue;
+    }
+
+    if (!syncsInState(row.state)) continue;
+
+    if (row.durationMs <= 0) {
+      pendingDelete ||= !!entry;
+      continue;
+    }
+
+    if (!row.issueKey) {
+      undecided.push(row);
+      continue;
+    }
+
+    const hash = contentHashOf({
+      proposal: { ...row, issueKey: row.issueKey },
+      attributes: options.attributesByProposalId?.[row.id],
+    });
+
+    if (!entry) {
+      unsyncedMs += row.durationMs;
+      continue;
+    }
+
+    if (entry.contentHash === hash) continue;
+
+    const grownMs = entry.durationMs === undefined ? 0 : row.durationMs - entry.durationMs;
+
+    if (grownMs > 0) unsyncedMs += grownMs;
+    else changedRows += 1;
+  }
+
+  const claimed = new Set(options.review.rows.map((row) => row.id));
+
+  pendingDelete ||= options.ledger.some((entry) => !claimed.has(entry.proposalId));
+
+  const undecidedMs = clockMsOf(undecided);
+  const unattributedMs = options.review.check.unattributedMs;
+
+  if (unsyncedMs >= tolerance || changedRows > 0 || pendingDelete) reasons.push('unsynced');
+  if (undecidedMs >= tolerance) reasons.push('undecided');
+  if (unattributedMs >= tolerance) reasons.push('unattributed');
+  if (waitingMs >= tolerance) reasons.push('waiting');
+
+  return reasons.length > 0 ? { reasons, unsyncedMs, changedRows, undecidedMs, unattributedMs, waitingMs } : null;
+};
+
+/** How long the desktop notification stays quiet after it fired. The banner behind it does not blink. */
+export const DEFAULT_NUDGE_REPEAT_MS = 60 * 60_000;
+
+/** How long "later" postpones the whole reminder for. */
+export const DEFAULT_NUDGE_SNOOZE_MS = 45 * 60_000;
+
+/** What the store remembers about one day's reminders. */
+export type DayNudgeRecord = {
+  day: string;
+  lastNudgedAt: Date | null;
+  /** Set by "later" and by "not today". Until it passes, the day is not reported again. */
+  silencedUntil: Date | null;
+};
+
+/** The local minute of day an instant falls on, which is the unit the reminder is configured in. */
+export const minuteOfDay = (at: Date) => at.getHours() * 60 + at.getMinutes();
+
+const MINUTES_PER_DAY = 24 * 60;
+
+/**
+ * Whether the day may be reported at this moment. It is only the clock half — what the day still owes
+ * is `dayReviewGap`, and both have to say yes.
+ */
+export const isNudgeDue = (options: {
+  now: Date;
+  /** The local minute of day the day's review is due. */
+  atMinute: number;
+  /** Where the work day ends, which is also where its reminder stops. */
+  boundary: DayBoundary;
+  record?: DayNudgeRecord | null;
+}) => {
+  const startMinute = options.boundary.startHour * 60;
+  const sinceStart = (minute: number) =>
+    (((minute - startMinute) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+
+  if (sinceStart(minuteOfDay(options.now)) < sinceStart(options.atMinute)) return false;
+
+  const silencedUntil = options.record?.silencedUntil;
+
+  return !silencedUntil || options.now >= silencedUntil;
+};
+
+/**
+ * Whether the desktop notification may be sent again.
+ *
+ * It is a separate question from `isNudgeDue` because the two surfaces want opposite things: the
+ * banner in the window should stay up until the day is finished, and a notification that arrived once
+ * an hour ago has already said everything it has to say.
+ */
+export const hasNudgeRepeatElapsed = (options: { now: Date; record?: DayNudgeRecord | null; repeatMs?: number }) => {
+  const lastNudgedAt = options.record?.lastNudgedAt;
+
+  return (
+    !lastNudgedAt || options.now.getTime() - lastNudgedAt.getTime() >= (options.repeatMs ?? DEFAULT_NUDGE_REPEAT_MS)
+  );
+};
+
+export type DayNudge = {
+  day: string;
+  gap: DayReviewGap;
+  title: string;
+  body: string;
+  /** Whether this one is also worth a desktop notification, or only the banner in the window. */
+  notify: boolean;
+};
+
+const WORDING: Record<DayNudgeReason, (gap: DayReviewGap) => string> = {
+  unsynced: (gap) => {
+    const parts = [
+      ...(gap.unsyncedMs > 0 ? [`${formatDurationMs(gap.unsyncedMs)} is not in Tempo yet`] : []),
+      ...(gap.changedRows > 0
+        ? [`${gap.changedRows} ${gap.changedRows === 1 ? 'row' : 'rows'} changed since the sync`]
+        : []),
+    ];
+
+    return parts.length > 0 ? parts.join(', ') : 'Tempo still holds time this day no longer has';
+  },
+  undecided: (gap) => `${formatDurationMs(gap.undecidedMs)} is waiting for a yes or a no`,
+  unattributed: (gap) => `${formatDurationMs(gap.unattributedMs)} matched no issue`,
+  waiting: (gap) => `${formatDurationMs(gap.waitingMs)} waits on a ticket`,
+};
+
+/**
+ * What a day still owes, in words. Every surface that reports a gap says it with this — the desktop
+ * notification, the banner behind it and the week view's list of days to catch up on.
+ */
+export const describeDayReviewGap = (gap: DayReviewGap) => gap.reasons.map((reason) => WORDING[reason](gap)).join(', ');
+
+/**
+ * The one reminder a day gets, already worded, or `null` while the day is finished or the moment is
+ * wrong. The words are here rather than in the app because the same sentence has to read the same in a
+ * desktop notification and in the banner behind it.
+ */
+export const dayNudge = (options: {
+  day: string;
+  review: DayReview;
+  ledger: readonly SyncedWorklog[];
+  coverage?: TempoDayCoverage | null;
+  now: Date;
+  atMinute: number;
+  boundary: DayBoundary;
+  record?: DayNudgeRecord | null;
+  repeatMs?: number;
+  attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
+  toleranceMs?: number;
+}): DayNudge | null => {
+  if (!isNudgeDue(options)) return null;
+
+  const gap = dayReviewGap(options);
+
+  /**
+   * A day that only waits is not reported. The reminder exists to ask for a decision, and the one a
+   * stand-in band needs is a ticket somebody else has to file.
+   */
+  if (!gap || gap.reasons.every((reason) => reason === 'waiting')) return null;
+
+  return {
+    day: options.day,
+    gap,
+    title: gap.reasons[0] === 'unsynced' ? 'Your day is not logged yet' : 'Your day still needs a review',
+    body: describeDayReviewGap(gap),
+    notify: hasNudgeRepeatElapsed(options),
+  };
+};

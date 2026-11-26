@@ -1,0 +1,19 @@
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 20px sans-serif;
+  color: var(--lab-ink, currentColor);
+}
+.rating__star {
+  opacity: 0.25;
+}
+.rating__star.is-on {
+  color: var(--lab-accent, currentColor);
+  opacity: 1;
+}
+.rating__count {
+  margin-left: 8px;
+  font: 600 14px sans-serif;
+  color: var(--lab-ink, currentColor);
+}

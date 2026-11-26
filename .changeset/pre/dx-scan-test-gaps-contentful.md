@@ -1,0 +1,3 @@
+---
+'@ethlete/contentful': none
+---

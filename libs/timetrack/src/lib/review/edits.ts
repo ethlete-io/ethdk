@@ -1,0 +1,654 @@
+import { dominantConfidence, mergeEvidence } from '../rows/merge';
+import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurationUp } from '../rows/round';
+import { storedLaneKey } from '../rows/lane';
+import { Evidence } from '../model/evidence';
+import { TimeWindow } from '../model/time-window';
+import { RowField, RowFieldSources, WriteSource, mayWrite, rowFieldSourceOf } from '../model/field-source';
+import { DayBoundary, ontoDay } from './day';
+import { DayReviewEdits, PinnedRow, ProposalOverride, ReviewedRow } from './model';
+
+const pinnedById = (edits: DayReviewEdits, id: string) => edits.pinned.find((row) => row.id === id);
+
+/**
+ * The id an edit to this row is written against. For a piece the day's re-cut split out of a
+ * background row that is the row it came out of — see {@link ReviewedRow.recutOf}.
+ */
+const editIdOf = (row: ReviewedRow) => row.recutOf ?? row.id;
+
+/**
+ * The row an edit is written against. A piece the re-cut split out of a background row resolves to
+ * that row, keeping its own bounds: both pieces are the one proposal, so naming either names the work
+ * both of them are, and a second structural edit to the pair replaces the first rather than stacking
+ * a row the engine never proposed beside it.
+ */
+const editTarget = (row: ReviewedRow): ReviewedRow => (row.recutOf ? { ...row, id: row.recutOf } : row);
+
+/** What a row stands in for, so splitting or merging an already-edited row keeps the original's claim. */
+const replacedBy = (edits: DayReviewEdits, row: ReviewedRow) =>
+  pinnedById(edits, editIdOf(row))?.replaces ?? [editIdOf(row), ...(row.folded ?? [])];
+
+const withoutHidden = <T extends { hidden?: boolean }>(entry: T): T => {
+  const { hidden: _hidden, ...kept } = entry;
+
+  return kept as T;
+};
+
+const withoutOverrides = (overrides: Record<string, ProposalOverride>, ids: readonly string[]) => {
+  const kept = { ...overrides };
+
+  for (const id of ids) delete kept[id];
+
+  return kept;
+};
+
+const pinnedIdFor = (options: { issueKey?: string; from: Date; taken: ReadonlySet<string>; prefix?: string }) => {
+  const base = `${options.prefix ?? 'pin:'}${options.issueKey ?? 'unnamed'}@${options.from.toISOString()}`;
+  let id = base;
+  let suffix = 2;
+
+  while (options.taken.has(id)) id = `${base}#${suffix++}`;
+
+  return id;
+};
+
+const sourcesOf = (row: ReviewedRow) => ({
+  issue: rowFieldSourceOf(row, 'issue'),
+  description: rowFieldSourceOf(row, 'description'),
+});
+
+/** Keeps a rejection, so splitting or merging a rejected row never puts its time back into the sync. */
+const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => ({
+  id: row.id,
+  replaces: [...replaces],
+  issueKey: row.issueKey,
+  standInId: row.standInId,
+  storyKey: row.storyKey,
+  from: row.from,
+  to: row.to,
+  durationMs: row.durationMs,
+  observedMs: row.observedMs,
+  laneKey: row.laneKey,
+  description: row.description,
+  confidence: row.confidence,
+  evidence: row.evidence,
+  excluded: row.excluded,
+  unattended: row.unattended,
+  workedOn: row.workedOn,
+  withheldIssueKey: row.withheldIssueKey,
+  sources: sourcesOf(row),
+  state: row.state === 'rejected' ? 'rejected' : undefined,
+  hidden: row.state === 'rejected' ? true : undefined,
+});
+
+const overrideOn = (options: { edits: DayReviewEdits; row: ReviewedRow; change: ProposalOverride }): DayReviewEdits => {
+  const { edits, row, change } = options;
+  const id = editIdOf(row);
+  const pinned = pinnedById(edits, id);
+
+  const merged = <T extends { sources?: RowFieldSources }>(entry: T): T =>
+    change.sources
+      ? { ...entry, ...change, sources: { ...entry.sources, ...change.sources } }
+      : { ...entry, ...change };
+
+  if (pinned) {
+    return { ...edits, pinned: edits.pinned.map((entry) => (entry.id === id ? merged(entry) : entry)) };
+  }
+
+  return { ...edits, overrides: { ...edits.overrides, [id]: merged(edits.overrides[id] ?? {}) } };
+};
+
+/**
+ * Writes one field auto mode can also set, stamped with who wrote it. An `auto` write to a field the
+ * user set returns the edits unchanged.
+ */
+const fieldOn = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  field: RowField;
+  change: Omit<ProposalOverride, 'sources'>;
+  source?: WriteSource;
+}): DayReviewEdits => {
+  const source = options.source ?? 'human';
+
+  if (!mayWrite({ source, current: rowFieldSourceOf(options.row, options.field) })) return options.edits;
+
+  return overrideOn({
+    edits: options.edits,
+    row: options.row,
+    change: { ...options.change, sources: { [options.field]: source } },
+  });
+};
+
+/** Re-attributes a row to a different issue. The evidence chain is untouched — it is what was seen. */
+export const setRowIssue = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  issueKey: string;
+  source?: WriteSource;
+}) => {
+  const laneKey = storedLaneKey(options.row.laneKey);
+  const change = laneKey ? { issueKey: options.issueKey, laneKey } : { issueKey: options.issueKey };
+
+  return fieldOn({ edits: options.edits, row: options.row, field: 'issue', change, source: options.source });
+};
+
+/**
+ * Names a row with a stand-in, while Jira holds no issue for the work.
+ *
+ * The key is cleared in the same change rather than left standing. The two answers are one field to
+ * the reviewer, and a row holding both would read as bookable through `isNamedRow` while showing the
+ * stand-in's name.
+ */
+export const setRowStandIn = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  standInId: string;
+  source?: WriteSource;
+}) =>
+  fieldOn({
+    edits: options.edits,
+    row: options.row,
+    field: 'issue',
+    change: { standInId: options.standInId, issueKey: '' },
+    source: options.source,
+  });
+
+export const setRowDescription = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  description: string;
+  source?: WriteSource;
+}) =>
+  fieldOn({
+    edits: options.edits,
+    row: options.row,
+    field: 'description',
+    change: { description: options.description },
+    source: options.source,
+  });
+
+/**
+ * Sets what a row logs by moving its end, because a row logs the time its band covers.
+ * A duration that is not a whole increment books the increment it reaches into, the same way a
+ * proposal does.
+ */
+export const setRowDuration = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  durationMs: number;
+  round?: Partial<RoundOptions>;
+}): DayReviewEdits => {
+  const durationMs = roundDurationUp(Math.max(0, Math.round(options.durationMs)), options.round);
+
+  if (durationMs <= 0) return options.edits;
+
+  return setRowRange({
+    edits: options.edits,
+    row: options.row,
+    from: options.row.from,
+    to: new Date(options.row.from.getTime() + durationMs),
+    round: options.round,
+    pinsBothEnds: true,
+  });
+};
+
+/**
+ * Accepts or rejects a row. A rejected row leaves the timeline like a hidden one, and accepting it
+ * puts it back.
+ */
+export const setRowState = (options: { edits: DayReviewEdits; row: ReviewedRow; state: 'accepted' | 'rejected' }) => {
+  const { edits, row, state } = options;
+
+  if (state === 'rejected') return overrideOn({ edits, row, change: { state, hidden: true } });
+
+  return showRow({ edits: overrideOn({ edits, row, change: { state } }), row });
+};
+
+/**
+ * Takes a row off the timeline. It is neither written nor counted as unattributed — `DayReview.hidden`
+ * holds it, and `showRow` puts it back.
+ *
+ * Hiding is the undo-able form of throwing a row away, which is why nothing deletes a proposal outright.
+ */
+export const hideRow = (options: { edits: DayReviewEdits; row: ReviewedRow }) =>
+  overrideOn({ edits: options.edits, row: options.row, change: { hidden: true } });
+
+/** Puts a hidden row back on the timeline, leaving every other edit it carries alone. */
+export const showRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): DayReviewEdits => {
+  const { edits } = options;
+  const row = editTarget(options.row);
+
+  if (pinnedById(edits, row.id)) {
+    return {
+      ...edits,
+      pinned: edits.pinned.map((entry) => (entry.id === row.id ? withoutHidden(entry) : entry)),
+    };
+  }
+
+  const stored = edits.overrides[row.id];
+
+  if (!stored) return edits;
+
+  const kept = withoutHidden(stored);
+  const overrides = { ...edits.overrides };
+
+  if (Object.keys(kept).length) overrides[row.id] = kept;
+  else delete overrides[row.id];
+
+  return { ...edits, overrides };
+};
+
+/**
+ * Puts the engine's own rows back. Resetting one half of a split undoes the whole split rather than
+ * that half alone — the other half's claim on the original proposal would otherwise keep it hidden and
+ * turn the reset half's time into drift.
+ */
+export const resetRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): DayReviewEdits => {
+  const { edits } = options;
+  const row = editTarget(options.row);
+  const replaces = new Set(replacedBy(edits, row));
+  const undone = edits.pinned.filter((entry) => entry.id === row.id || entry.replaces.some((id) => replaces.has(id)));
+  const undoneIds = undone.flatMap((entry) => [entry.id, ...entry.replaces]);
+
+  return {
+    ...edits,
+    overrides: withoutOverrides(edits.overrides, [row.id, ...undoneIds]),
+    pinned: edits.pinned.filter((entry) => !undone.includes(entry)),
+  };
+};
+
+/**
+ * Cuts a row in two at a clock instant, giving each side the evidence observed within it and the share
+ * of the observed time that falls inside it. Each side logs its own half of the clock, so a cut never
+ * changes what the pair logs between them.
+ *
+ * A cut outside the row returns the edits unchanged — there is no half of a row to hand back.
+ */
+export const splitRow = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  at: Date;
+  round?: Partial<RoundOptions>;
+}): DayReviewEdits => {
+  const { edits, at } = options;
+  const row = editTarget(options.row);
+  const span = row.to.getTime() - row.from.getTime();
+  const offset = at.getTime() - row.from.getTime();
+
+  if (span <= 0 || offset <= 0 || offset >= span) return edits;
+
+  const fraction = offset / span;
+  const observed = Math.round(row.observedMs * fraction);
+  const leftMs = offset;
+  const rightMs = span - offset;
+  const replaces = replacedBy(edits, row);
+  const kept = edits.pinned.filter((entry) => entry.id !== row.id);
+  const taken = new Set(kept.map((entry) => entry.id));
+
+  const left: PinnedRow = {
+    ...asPinned(row, replaces),
+    id: pinnedIdFor({ issueKey: row.issueKey, from: row.from, taken }),
+    to: at,
+    durationMs: leftMs,
+    observedMs: observed,
+    evidence: row.evidence.filter((entry) => entry.at < at),
+  };
+
+  taken.add(left.id);
+
+  const right: PinnedRow = {
+    ...asPinned(row, replaces),
+    id: pinnedIdFor({ issueKey: row.issueKey, from: at, taken }),
+    from: at,
+    durationMs: rightMs,
+    observedMs: row.observedMs - observed,
+    evidence: row.evidence.filter((entry) => entry.at >= at),
+  };
+
+  return {
+    ...edits,
+    overrides: withoutOverrides(edits.overrides, [row.id, ...replaces]),
+    pinned: [...kept, left, right],
+  };
+};
+
+/**
+ * Moves the instant two adjacent rows meet at, so a cut can be placed exactly rather than only halved.
+ *
+ * The slice between the old boundary and the new one moves from one row to the other and carries the
+ * density of the row it came from, so the pair's clock span and observed time both stay put and
+ * neither side is flattened by the move. Each row logs its own side of the boundary. Each keeps its
+ * own issue, description and decision — this reshapes two rows, it does not merge them.
+ *
+ * Rows that do not share a boundary, or an instant outside the pair, return the edits unchanged.
+ */
+export const moveRowBoundary = (options: {
+  edits: DayReviewEdits;
+  before: ReviewedRow;
+  after: ReviewedRow;
+  at: Date;
+  round?: Partial<RoundOptions>;
+}): DayReviewEdits => {
+  const { edits, at } = options;
+  const before = editTarget(options.before);
+  const after = editTarget(options.after);
+  const boundary = before.to.getTime();
+  const to = at.getTime();
+
+  if (boundary !== after.from.getTime()) return edits;
+  if (to === boundary || to <= before.from.getTime() || to >= after.to.getTime()) return edits;
+
+  const growsBefore = to > boundary;
+  const donor = growsBefore ? after : before;
+  const donorSpan = donor.to.getTime() - donor.from.getTime();
+
+  if (donorSpan <= 0) return edits;
+
+  const sign = growsBefore ? 1 : -1;
+  const moved = Math.abs(to - boundary) / donorSpan;
+  const movedObservedMs = Math.round(donor.observedMs * moved);
+  const beforeMs = to - before.from.getTime();
+  const afterMs = after.to.getTime() - to;
+
+  const chain = mergeEvidence([before.evidence, after.evidence]);
+  const kept = edits.pinned.filter((entry) => entry.id !== before.id && entry.id !== after.id);
+  const taken = new Set(kept.map((entry) => entry.id));
+
+  const left: PinnedRow = {
+    ...asPinned(before, replacedBy(edits, before)),
+    id: pinnedIdFor({ issueKey: before.issueKey, from: before.from, taken }),
+    to: at,
+    durationMs: beforeMs,
+    observedMs: before.observedMs + sign * movedObservedMs,
+    evidence: chain.filter((entry) => entry.at < at),
+  };
+
+  taken.add(left.id);
+
+  const right: PinnedRow = {
+    ...asPinned(after, replacedBy(edits, after)),
+    id: pinnedIdFor({ issueKey: after.issueKey, from: at, taken }),
+    from: at,
+    durationMs: afterMs,
+    observedMs: after.observedMs - sign * movedObservedMs,
+    evidence: chain.filter((entry) => entry.at >= at),
+  };
+
+  return {
+    ...edits,
+    overrides: withoutOverrides(edits.overrides, [before.id, after.id, ...left.replaces, ...right.replaces]),
+    pinned: [...kept, left, right],
+  };
+};
+
+/** The duration a hand-drawn range logs: its own clock span, on a whole increment, and never zero. */
+const roundedSpan = (options: { from: Date; to: Date; round?: Partial<RoundOptions> }) => {
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
+  const span = Math.max(0, options.to.getTime() - options.from.getTime());
+
+  return Math.max(incrementMs, Math.round(span / incrementMs) * incrementMs);
+};
+
+/** What a row the reviewer wrote holds. Everything else about it is derived. */
+export type ManualRow = {
+  issueKey: string;
+  description: string;
+  from: Date;
+  to: Date;
+  /** The issue it rolls up to, when the picker knew one. */
+  storyKey?: string;
+  /**
+   * The lane the reviewer drew the row in, so the day screen keeps the band in the column they put it
+   * in. Absent for a row written with no column in front of the reviewer, which has no checkout.
+   */
+  laneKey?: string;
+};
+
+/**
+ * Whether the reviewer wrote this row rather than the engine proposing it — a meeting nothing watched,
+ * a phone call, work on another machine. Read off the evidence, which is also where the day shows it.
+ */
+export const isManualRow = (row: Pick<ReviewedRow, 'evidence'>) =>
+  row.evidence.some((entry) => entry.kind === 'manual');
+
+/** The evidence a row written by hand carries: the reviewer's word, at the row's start. */
+export const manualEvidence = (row: Pick<ManualRow, 'from'>): Evidence[] => [
+  { kind: 'manual', at: row.from, detail: 'you added this row by hand' },
+];
+
+/**
+ * The edits stored under a day with every pinned row that lies wholly outside it moved onto it at the
+ * same clock time, so the day can draw what it counts. Returns the edits it was given when none moved.
+ */
+export const pinnedOntoDay = (options: {
+  edits: DayReviewEdits;
+  day: string;
+  boundary: DayBoundary;
+}): DayReviewEdits => {
+  const pinned = options.edits.pinned.map((row) => ontoDay(row, options));
+
+  return pinned.every((row, at) => row === options.edits.pinned[at]) ? options.edits : { ...options.edits, pinned };
+};
+
+/**
+ * Adds a row for work nothing observed.
+ *
+ * It carries no observed time, because none was: a hand-written row is the reviewer stating what
+ * happened, and reporting it as evidence-backed would make the day's `observedMs` a number nobody can
+ * check. It is `certain` for the opposite reason — a person said so, which is the strongest claim the
+ * app has, and it is what lets the row sync without being accepted a second time.
+ *
+ * A row naming no issue is not added. It could never sync, and a row that cannot sync is a row the
+ * reviewer has to delete again.
+ */
+export const addManualRow = (options: {
+  edits: DayReviewEdits;
+  row: ManualRow;
+  /** The day's rows as drawn. A band a rule excluded among them gives up the minutes the row covers. */
+  over?: readonly ReviewedRow[];
+  round?: Partial<RoundOptions>;
+}): DayReviewEdits => {
+  const { row } = options;
+  const issueKey = row.issueKey.trim().toUpperCase();
+
+  if (!issueKey || row.to.getTime() <= row.from.getTime()) return options.edits;
+
+  const durationMs = roundedSpan({ ...row, round: options.round });
+  const edits = cutExcludedBands({ edits: options.edits, row, bands: options.over ?? [] });
+
+  return {
+    ...edits,
+    pinned: [
+      ...edits.pinned,
+      {
+        id: pinnedIdFor({
+          prefix: 'manual:',
+          issueKey,
+          from: row.from,
+          taken: new Set(edits.pinned.map((entry) => entry.id)),
+        }),
+        replaces: [],
+        issueKey,
+        storyKey: row.storyKey,
+        from: row.from,
+        to: row.to,
+        durationMs,
+        observedMs: 0,
+        laneKey: row.laneKey,
+        description: row.description.trim(),
+        confidence: 'certain',
+        evidence: manualEvidence(row),
+      },
+    ],
+  };
+};
+
+const cutAwayFrom = (options: { row: TimeWindow; from: Date; to: Date }) => {
+  const rowFrom = options.row.from.getTime();
+  const rowTo = options.row.to.getTime();
+
+  return [
+    { fromMs: rowFrom, toMs: Math.min(options.from.getTime(), rowTo) },
+    { fromMs: Math.max(options.to.getTime(), rowFrom), toMs: rowTo },
+  ].filter((cut) => cut.toMs > cut.fromMs);
+};
+
+/**
+ * Moves a row to another time, or drags one of its ends — what a pointer on the timeline does.
+ *
+ * A move keeps the duration: the clock says when the work happened and the duration says how much is
+ * logged, and dragging a row an hour later changed only the first of the two. A resize re-reads the
+ * duration off the new span, because that is the whole point of the gesture. `observedMs` never moves:
+ * what was observed did not change, and the day still has to be able to say so.
+ *
+ * A drag pins the end it moved and leaves the other one following the day's own row, so dragging a
+ * row's start never stops its end growing while the work goes on. A pin holds: an end placed by an
+ * earlier drag stays where the reviewer put it, so dragging the other end never hands it back. A row
+ * pinned by anything but a drag — a split, a merge, a row written by hand — tracks neither end.
+ *
+ * An empty or inverted range returns the edits unchanged.
+ */
+export const setRowRange = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  from: Date;
+  to: Date;
+  round?: Partial<RoundOptions>;
+  /** Pins both ends even where one of them did not move. A typed duration is a span, not one end. */
+  pinsBothEnds?: boolean;
+  /** Pins the end even where it did not move, the way ending a row where it is drawn to does. */
+  pinsTo?: boolean;
+  /** Leaves what the range no longer covers to come back as a band of its own, as ending a call row does. */
+  leavesRest?: boolean;
+}): DayReviewEdits => {
+  const { edits, from, to } = options;
+  const row = editTarget(options.row);
+
+  if (to.getTime() <= from.getTime()) return edits;
+  if (!options.pinsTo && from.getTime() === row.from.getTime() && to.getTime() === row.to.getTime()) return edits;
+
+  const pinned = pinnedById(edits, row.id);
+  const moved = !options.pinsTo && to.getTime() - from.getTime() === row.to.getTime() - row.from.getTime();
+  const replaces = replacedBy(edits, row);
+  const kept = edits.pinned.filter((entry) => entry.id !== row.id);
+  const heldFrom = from.getTime() !== row.from.getTime();
+  const heldTo = !!options.pinsTo || to.getTime() !== row.to.getTime();
+  const cutAwayMs = [...(pinned?.cutAwayMs ?? []), ...(options.leavesRest ? [] : cutAwayFrom({ row, from, to }))];
+
+  return {
+    ...edits,
+    overrides: withoutOverrides(edits.overrides, [row.id, ...replaces]),
+    pinned: [
+      ...kept,
+      {
+        ...asPinned(row, replaces),
+        // A row already pinned keeps its id, so a ledger entry written for it still finds its row and
+        // a second drag does not leave two ids behind for one row.
+        id: pinned?.id ?? pinnedIdFor({ issueKey: row.issueKey, from, taken: new Set(kept.map((e) => e.id)) }),
+        from,
+        to,
+        durationMs: moved ? row.durationMs : roundedSpan({ from, to, round: options.round }),
+        tracksFrom: !options.pinsBothEnds && !heldFrom && (pinned ? !!pinned.tracksFrom : true),
+        tracksTo: !options.pinsBothEnds && !heldTo && (pinned ? !!pinned.tracksTo : true),
+        ...(cutAwayMs.length ? { cutAwayMs } : {}),
+      },
+    ],
+  };
+};
+
+/**
+ * Takes the minutes a hand-written row covers out of every band a rule excluded it was drawn over.
+ *
+ * Drawing a row across an ignored room is how the reviewer says those minutes were work after all.
+ * The band keeps the rest: the stretch in front of the row is pinned, and the stretch behind it comes
+ * back as a leftover of the day's own band. A band the row covers whole is hidden, because no stretch
+ * of it is left to draw.
+ *
+ * Only a band in the row's own lane is cut. A leftover is subtracted lane by lane, so a cut across
+ * two lanes would draw the stretch the row covers a second time.
+ */
+const cutExcludedBands = (options: {
+  edits: DayReviewEdits;
+  row: ManualRow;
+  bands: readonly ReviewedRow[];
+}): DayReviewEdits => {
+  const { row } = options;
+  const lane = storedLaneKey(row.laneKey);
+
+  if (!lane) return options.edits;
+
+  return options.bands
+    .filter(
+      (band) =>
+        band.excluded &&
+        storedLaneKey(band.laneKey) === lane &&
+        band.from.getTime() < row.to.getTime() &&
+        row.from.getTime() < band.to.getTime(),
+    )
+    .reduce((edits, band) => {
+      const head = { from: band.from, to: row.from };
+      const kept = head.to.getTime() > head.from.getTime() ? head : { from: row.to, to: band.to };
+
+      if (kept.to.getTime() <= kept.from.getTime()) return hideRow({ edits, row: band });
+
+      return setRowRange({ edits, row: band, ...kept, leavesRest: true });
+    }, options.edits);
+};
+
+/**
+ * Takes a row the reviewer added off the day. Only such a row: an engine proposal is rejected rather
+ * than removed, because it is still what the machine saw and the next re-correlation would bring it
+ * straight back.
+ */
+export const removeManualRow = (options: { edits: DayReviewEdits; row: ReviewedRow }): DayReviewEdits => {
+  const { edits } = options;
+  const row = editTarget(options.row);
+  const pinned = pinnedById(edits, row.id);
+
+  if (!pinned || pinned.replaces.length > 0) return edits;
+
+  return { ...edits, pinned: edits.pinned.filter((entry) => entry.id !== row.id) };
+};
+
+/**
+ * Combines rows into one. The first row given supplies the issue, the description and the lane, so
+ * the caller decides which of them the merged row is about; the clock spans all of them, and the one
+ * band logs the whole of what it now covers — a gap between two merged rows included. A stand-in the
+ * rows disagree about is dropped, and the merge is rejected only when every row was.
+ *
+ * Fewer than two rows returns the edits unchanged.
+ */
+export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly ReviewedRow[] }): DayReviewEdits => {
+  const { edits } = options;
+  const rows = options.rows.map(editTarget);
+  const [first] = rows;
+
+  if (!first || rows.length < 2) return edits;
+
+  const ids = rows.map((row) => row.id);
+  const replaces = [...new Set(rows.flatMap((row) => replacedBy(edits, row)))];
+  const kept = edits.pinned.filter((entry) => !ids.includes(entry.id));
+  const from = new Date(Math.min(...rows.map((row) => row.from.getTime())));
+  const to = new Date(Math.max(...rows.map((row) => row.to.getTime())));
+
+  const merged: PinnedRow = {
+    id: pinnedIdFor({ issueKey: first.issueKey, from, taken: new Set(kept.map((entry) => entry.id)) }),
+    replaces,
+    issueKey: first.issueKey,
+    standInId: rows.every((row) => row.standInId === first.standInId) ? first.standInId : undefined,
+    storyKey: first.storyKey,
+    from,
+    to,
+    durationMs: to.getTime() - from.getTime(),
+    observedMs: rows.reduce((sum, row) => sum + row.observedMs, 0),
+    laneKey: first.laneKey,
+    description: first.description,
+    confidence: dominantConfidence(rows),
+    evidence: mergeEvidence(rows.map((row) => row.evidence)),
+    sources: sourcesOf(first),
+    state: rows.every((row) => row.state === 'rejected') ? 'rejected' : undefined,
+    hidden: rows.every((row) => row.state === 'rejected') ? true : undefined,
+  };
+
+  return { ...edits, overrides: withoutOverrides(edits.overrides, [...ids, ...replaces]), pinned: [...kept, merged] };
+};

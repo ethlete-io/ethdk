@@ -1,0 +1,62 @@
+name: CI (Perf)
+
+# Wall-time specs (*.perf.spec.ts) and Studio e2e cases marked `perf: true`. A slow runner turns this run red; it is
+# not called by ci.yml, so no release (`publish` needs the reusable ci workflow) and no Verified check waits on it.
+on:
+  push:
+    branches:
+      - next
+      - main
+    paths-ignore:
+      - 'plans/**'
+  pull_request:
+
+concurrency:
+  group: ci-perf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  perf:
+    name: Perf (non-blocking)
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
+    continue-on-error: true
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: ./.github/actions/setup
+
+      - run: yarn nx run cli:test-perf
+
+      - id: browsers
+        if: ${{ !cancelled() }}
+        run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium webkit
+
+      - id: build
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        run: yarn nx run-many -t build -p cli,components,core
+
+      - if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: yarn studio:e2e --perf
+        timeout-minutes: 10
+        env:
+          STUDIO_E2E_WORKERS: 1
+
+      - if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: yarn studio:e2e --perf --engine webkit --case "ctrl-wheel zoom over 100 cells keeps the frame interval budget"
+        timeout-minutes: 10
+        continue-on-error: true
+        env:
+          STUDIO_E2E_WORKERS: 1
+
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: perf
+          path: tmp/perf
+          if-no-files-found: warn
+          retention-days: 30

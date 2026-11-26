@@ -1,0 +1,144 @@
+{
+  "BUTTON-GROUP": {
+    "pages/start: no-products-known at desktop: div[data-et-part=pages/start] > div.flex-1 > div.w-2xl > div.flex": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "pages/start: no-repo-known at desktop: div[data-et-part=pages/start] > div.flex-1 > div.w-2xl > div.flex": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    }
+  },
+  "CONTROL-STATE": {
+    "elements/shell-main: product": {
+      "finding": "489",
+      "sketch": "components/rail-bubble (queued for c8)"
+    },
+    "elements/shell-main: section": {
+      "finding": "489",
+      "sketch": "components/rail-bubble (queued for c8)"
+    }
+  },
+  "SAMPLE-TEXT": {
+    "components/command-palette: \"Titel-Skizze neu zeichnen\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/command-palette: \"Titelseite\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/command-palette: \"Title bar\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/command-palette: \"Title search\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-draft: \"Der Teil components/button existiert nicht mehr.\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-draft: \"Tonal wirkt neben filled zu blass. Zieh die Flä…\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-draft: \"Tonal wirkt neben filled zu blass.\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-flow: \"Ja, der Abstand reicht. Lass es so.\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-row: \"C\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-row: \"Claude\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-row: \"H\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-row: \"Hover ist jetzt eine Stufe heller, ich nehme ac…\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-row: \"Tonal wirkt neben filled zu blass. Zieh die Flä…\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-row: \"filled · hover\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-row: \"tonal · rest\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-row: \"vor 1 Std\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/comment-row: \"vor 3 Min\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/hold-trigger: \"Pausiert\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/hold-trigger: \"Wartet auf ADR 0331\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/sketch-head: \"Runde 1 · Reset control: SDK button or own part\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/sketch-head: \"Runde 2 · Port nach dem Merge\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/sketch-head: \"components/zoom-chip hat sich seit dem Sketch g…\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/sketch-status-badge: \"Wartet auf components/button.\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/title-search: \"Canvas viewport with a long part name that has …\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "components/title-search: \"Title bar\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "elements/variant-cell: \"Speichern\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "pages/flows: \"Hier fehlt der Rückweg.\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "pages/sketches: \"components/quantity-stepper hat sich seit dem S…\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "pages/start: \"Rot\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    },
+    "pages/system: \"Der Abstand unter der Kopfzeile wirkt zu knapp.\"": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    }
+  }
+}

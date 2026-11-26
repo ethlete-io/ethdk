@@ -1,0 +1,620 @@
+# Choice & rating
+
+The controls where the user picks from fixed options rather than typing a value:
+the boolean [checkbox & switch](#checkbox-switch), the three
+[selection-list groups](#selection-lists) (radio / checkbox / segmented), and the
+[rating](#rating) control. They bind via signal forms - see the
+[Forms overview](/components/forms) for the shared validation, mixed-state and
+theming contracts.
+
+```ts
+import { CHOICE_FIELD_IMPORTS, CHECKBOX_IMPORTS, SWITCH_IMPORTS, RATING_IMPORTS } from '@ethlete/components';
+```
+
+| Array                      | Contains                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| `CHECKBOX_IMPORTS`         | `et-checkbox`                                                                         |
+| `SWITCH_IMPORTS`           | `et-switch`                                                                           |
+| `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                                 |
+| `RATING_IMPORTS`           | `et-rating`                                                                           |
+| `CHECKBOX_GROUP_IMPORTS`   | `et-checkbox-group`, `et-checkbox-option`, `et-checkbox-group-select-all`             |
+| `RADIO_GROUP_IMPORTS`      | `et-radio-group`, `et-radio`                                                          |
+| `SEGMENTED_BUTTON_IMPORTS` | `et-segmented-button-group`, `et-segmented-button`                                    |
+| `SELECTION_LIST_IMPORTS`   | the headless engine: `etSelectionList`, `etSelectionOption`, `etSelectionListControl` |
+| `DESCRIPTION_IMPORTS`      | `et-description`                                                                      |
+
+## Checkbox & switch - `et-choice-field` {#checkbox-switch}
+
+Boolean controls pair with a label inside `et-choice-field` (instead of
+`et-form-field`):
+
+```html
+<et-choice-field>
+  <et-checkbox [formField]="demoForm.acceptTerms" />
+  <et-label>I accept the terms and conditions</et-label>
+</et-choice-field>
+
+<et-choice-field>
+  <et-switch [formField]="demoForm.notifications" />
+  <et-label>Email notifications</et-label>
+</et-choice-field>
+```
+
+@example choice-inputs/checkbox-indeterminate 220px
+@example choice-inputs/switch-default 220px
+
+- `et-checkbox` - `role="checkbox"`, `checked` + `indeterminate` models
+  (`aria-checked="mixed"` when indeterminate; toggling an indeterminate checkbox
+  resolves to checked).
+- `et-switch` - `role="switch"`, `checked` + `indeterminate` models (toggling an
+  indeterminate switch resolves to checked). Because `role="switch"` cannot carry
+  `aria-checked="mixed"`, the indeterminate state is presentational only - the
+  thumb parks mid-track behind `data-indeterminate` while `aria-checked` stays
+  boolean.
+- Outside `et-choice-field`, a native `<label>` that wraps `et-switch` or points
+  at its `id` with `for` names it and toggles it on click, like a native control.
+  An `aria-label` or `aria-labelledby` on `et-switch`, bound or static, wins.
+- Both toggle on click and <kbd>Space</kbd>, and mark themselves touched on blur.
+- Both honor `readonly` (e.g. from a `readonly(...)` schema): the control keeps
+  its normal look and stays focusable (`aria-readonly`), it just cannot be
+  toggled - distinct from the dimmed `disabled` state.
+- `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`, or the
+  `size` of `provideFormFieldDefaults()`), scaling the control and label together.
+- An `et-description` projected into `et-choice-field` renders under the label
+  and joins the control's `aria-describedby`, ahead of the hint, warning or error
+  the field is showing.
+- A bare `et-checkbox` or `et-switch` shows no error text: the hint, warning and
+  error messages render only inside `et-choice-field`.
+- When validation changes between a hint, warning, and error, the support message
+  moves in severity order; reduced-motion preferences collapse that transition.
+
+### Label placement {#choice-field-label-placement}
+
+`labelPosition="start"` puts the label text before the control (default `'end'`).
+Clicking the text still toggles the control, and the accessible name and tab order
+stay the same.
+
+`layout="subgrid"` (default `'inline'`) lets a column of fields line up: the field
+spans two columns of its parent grid, and the control and the label each take one.
+The parent must be a grid with at least two columns. Hints and errors run under
+the label column.
+
+```html
+<div style="display: grid; grid-template-columns: 1fr auto; gap: 12px 24px">
+  <et-choice-field labelPosition="start" layout="subgrid">
+    <et-switch [formField]="demoForm.notifications" />
+    <et-label>Email notifications</et-label>
+  </et-choice-field>
+  <et-choice-field labelPosition="start" layout="subgrid">
+    <et-switch [formField]="demoForm.newsletter" />
+    <et-label>Newsletter</et-label>
+  </et-choice-field>
+</div>
+```
+
+Both only apply to `variant="plain"`; a card places its control with `controlPosition`.
+
+## Selection lists
+
+Three group flavors over one selection engine - options are projected children,
+keyboard navigation is roving-tabindex with wrapping arrows:
+
+| Group                       | Options               | Mode     | Value        |
+| --------------------------- | --------------------- | -------- | ------------ |
+| `et-checkbox-group`         | `et-checkbox-option`  | multiple | array        |
+| `et-radio-group`            | `et-radio`            | single   | single value |
+| `et-segmented-button-group` | `et-segmented-button` | single   | single value |
+
+```html
+<et-radio-group [formField]="demoForm.color">
+  <et-label>Favorite color</et-label>
+  @for (option of options(); track option.value) {
+  <et-radio [value]="option.value">{{ option.label }}</et-radio>
+  }
+  <et-hint>Pick one.</et-hint>
+</et-radio-group>
+```
+
+@example choice-inputs/segmented-button-group-default 220px
+
+- The group label is a projected `et-label` - it renders the `*` marker when the
+  group is `required` and wires `aria-labelledby`. A plain
+  `<span class="et-<group>-label">` also works for text-only labels.
+- When the name lives outside the group - a filter toolbar with its own caption, a
+  segmented control that should not show a visible label - set `aria-label` or
+  `aria-labelledby` on the group instead. Either counts as an accessible name, so
+  the field's labelling guard stays quiet without a visually hidden `et-label`. A
+  consumer-supplied `aria-labelledby` wins over a projected `et-label`'s id.
+- All three groups accept `size: 'sm' | 'md' | 'lg'` (default `'md'`, or the
+  `size` of `provideFormFieldDefaults()`), matching the `et-form-field` size scale.
+- All three groups honor `readonly`: options keep their normal focusable look,
+  arrow keys, Home/End and typeahead still move focus (without the radio
+  pattern's select-while-roving), but nothing can be (de)selected - distinct
+  from the dimmed `disabled` state.
+- The segmented button group renders its options on a tonal track; the filled
+  active pill animates between options on selection.
+- The segmented button row never grows past its container. When the labels do not
+  fit, the short ones keep their full width and the longer ones truncate with an
+  ellipsis; screen readers still read the full label.
+
+Checkbox options and radios accept an `et-description` child for secondary text.
+
+An option must sit inside its group: in dev mode an `et-radio`, `et-checkbox-option` or
+`et-segmented-button` without one throws [`ET5200`–`ET5202`](/components/error-codes#selection-lists-et52xx).
+Only the bare headless `etSelectionOption` works on its own, as a standalone toggle.
+
+#### Object values {#selection-list-object-values}
+
+By default a group matches an option's value to the model with `===`, so a value that holds a
+_copy_ - a form model loaded from an API, a refetched option list - checks nothing. Pass
+`compareWith` to decide equality yourself, exactly as on the [select](/components/select#object-values):
+
+```ts
+protected readonly COMPARE_BY_ID = (a: Plan, b: Plan) => a.id === b.id;
+```
+
+```html
+<et-radio-group [formField]="demoForm.plan" [compareWith]="COMPARE_BY_ID">
+  @for (plan of plans(); track plan.id) {
+  <et-radio [value]="plan">{{ plan.name }}</et-radio>
+  }
+</et-radio-group>
+```
+
+| Input         | Type                              | Default | Description                                                                                                                                     |
+| ------------- | --------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compareWith` | `(optionValue, value) => boolean` | `===`   | Decides whether an option's value and a model value are the same choice. Only called with two non-`null` values; identical values always match. |
+
+All three groups take it. A user pick writes the option's own value into the model. The groups also
+take the `pending` input signal forms binds, so a pending async validator sets `aria-busy="true"`
+on the group while it runs - without a spinner, see the field's [busy state](/components/forms#busy-state). `hidden`
+hides a group (a schema `hidden(...)` rule does the same), and `[warnings]` shows advisories on a
+group not bound to signal forms.
+
+@example choice-inputs/radio-group-async-validation 300px
+
+#### Keyboard {#selection-list-keyboard}
+
+| Key                                          | Radio / segmented button group                                        | Checkbox group              |
+| -------------------------------------------- | --------------------------------------------------------------------- | --------------------------- |
+| <kbd>ArrowDown</kbd> / <kbd>ArrowRight</kbd> | Next enabled option, wrapping; checks it                              | Next enabled option         |
+| <kbd>ArrowUp</kbd> / <kbd>ArrowLeft</kbd>    | Previous enabled option, wrapping; checks it                          | Previous enabled option     |
+| <kbd>Home</kbd> / <kbd>End</kbd>             | First / last enabled option; checks it                                | First / last enabled option |
+| Printable characters                         | Next enabled option whose label starts with the typed text; checks it | Same, focus only            |
+| <kbd>Space</kbd>                             | Checks the focused option                                             | Toggles the focused option  |
+
+<kbd>Enter</kbd> does not select, per the ARIA radio and checkbox patterns, so it still
+submits the surrounding form. A checkbox group's value lists the checked options in their
+display order, not the order they were toggled or rendered.
+
+Typeahead buffers characters typed within 500 ms, so `bl` reaches "Blueberry" past
+"Banana"; repeating one letter cycles through the options that start with it. The
+select-all row of a checkbox group is its own tab stop and is not part of this
+navigation.
+
+### Select all {#select-all}
+
+`<et-checkbox-group-select-all>` is the prebuilt select-all row: put it in the group above the
+options and it ticks all of them, clears them, and shows the **mixed** state while only some are
+picked.
+
+```html
+<et-checkbox-group [formField]="form.toppings">
+  <et-label>Toppings</et-label>
+  <et-checkbox-group-select-all />
+  @for (topping of TOPPINGS; track topping) {
+  <et-checkbox-option [value]="topping">{{ topping }}</et-checkbox-option>
+  }
+</et-checkbox-group>
+```
+
+@example choice-inputs/checkbox-group-select-all 300px
+
+It is a real `role="checkbox"` with `aria-checked="mixed"`, **not** an option: a listbox option has
+no mixed state (it uses `aria-selected`), and "some of these are on" is exactly what this control has
+to be able to say. Its text comes from the shared `selectAll`
+[form label](/components/localization), or from a `label` input for a one-off wording.
+
+The tri-state logic is the headless `[etSelectionListControl]`, which this composes - reach for the
+directive directly only when you want entirely different markup.
+
+A child of the group reads the same state through `SELECTION_LIST_TOKEN`: `selection.allSelected()`,
+`selection.someSelected()` and `selection.selectedCount()`, e.g. for a "3 picked" summary:
+
+```ts
+@Component({
+  selector: 'app-picked-count',
+  template: `{{ list.selection.selectedCount() }} picked`,
+})
+export class PickedCountComponent {
+  list = inject(SELECTION_LIST_TOKEN);
+}
+```
+
+### Orientation {#orientation}
+
+`et-checkbox-group` and `et-radio-group` take `orientation="horizontal"` to flow their options in a
+wrapping row instead of a column:
+
+```html
+<et-radio-group [formField]="form.size" orientation="horizontal">…</et-radio-group>
+```
+
+@example choice-inputs/checkbox-group-horizontal 240px
+
+The group's label and its error/hint block keep their own lines above and below - only the options
+move, and an option is still a direct child of the group, so nothing about the projected DOM changes.
+Set `--et-checkbox-group-column-gap` / `--et-radio-group-column-gap` (20px) for the spacing between
+options in a row; the vertical `--et-*-group-gap` still spaces the rows.
+
+Vertical is the default and usually the right answer: it scans better and gives each option a
+full-width hit area. Reach for horizontal when the options are short and few - a two-way filter, a
+size picker. All four arrow keys move between options either way, as the ARIA radio pattern expects.
+
+The segmented button group is horizontal by construction and takes no `orientation`.
+
+### Card presets {#card-presets}
+
+`et-radio`, `et-checkbox-option` and `et-choice-field` take `variant="card"`: the
+option becomes a full-width clickable panel with the label leading and the
+control trailing, and the selection shows on the panel's border as well as in the
+control.
+
+In this variant the **label carries the selection too** - muted until the option
+is chosen, full strength once it is. Hover lifts the label and the panel border to
+the same full-strength surface text colour; the accent stays reserved for focus and
+selection, so an unselected card under the cursor never reads as selected.
+
+The panel's chrome follows the **`et-form-field` frame**: a neutral border at
+rest (near 3:1 against the surface), the label's hover colour (the surface text
+colour) on hover and press, the accent on focus, and the
+accent while selected. There is no tinted fill - the background stays the
+surface, so a selected card differs from its neighbours by its border alone.
+Because each card is `[etColorInteractive]`, a **selected** card's border also
+tracks the theme's hover / focus / active shade instead of freezing at the
+resting accent.
+
+Reach for it when the options are few and consequential - a plan, a shipping
+speed - and each deserves room for an `et-description`. A 20px circle is a small
+thing to aim at; a card is a large one.
+
+```html
+<et-radio-group [formField]="demoForm.plan">
+  <et-label>Plan</et-label>
+
+  <et-radio value="team" variant="card">
+    Team
+    <et-description>Everything in Solo, plus shared workspaces.</et-description>
+  </et-radio>
+</et-radio-group>
+```
+
+@example choice-inputs/radio-group-card 320px
+
+`et-checkbox-option` takes the same preset - swap `et-radio-group` for
+`et-checkbox-group` above and a multi-select list of cards renders identically
+(see the `Checkbox group / Card` story).
+
+#### Ends of the card {#card-slots}
+
+A plan row is rarely just a label: it has a mark on one end and a price on the
+other. Project them with `[etSelectionCardLeading]` and
+`[etSelectionCardTrailing]`. Both sit outside the label block, so an
+`et-description` still wraps under the label instead of around them, and neither
+slot shrinks - only the label block flexes.
+
+```html
+<et-radio value="team" variant="card">
+  <i etIcon="et-circle-check" etSelectionCardLeading></i>
+  Team
+  <et-description>Everything in Solo, plus shared workspaces.</et-description>
+  <span etSelectionCardTrailing>$29</span>
+</et-radio>
+```
+
+An `.et-icon` carries no size of its own, so one projected directly into a slot
+is sized by `--et-selection-card-icon-size` (`20px`) rather than growing into
+whatever the row has left.
+
+That leaves where the control goes, which is what `controlPosition` decides:
+`'end'` (the default) keeps the label leading and the control trailing, exactly
+as the cards above; `'start'` puts the control first, ahead of the leading slot,
+for a list that reads control-first. `variant="plain"` ignores it - the control
+already leads there.
+
+```html
+<et-radio value="team" variant="card" controlPosition="start">…</et-radio>
+```
+
+All three card components take both slots and the input. See the
+`Radio group / Card Slots` story for the two positions side by side.
+
+For a checkbox or switch the preset lives on the **wrapper**, `et-choice-field`,
+because that is what holds the label - so both controls get it from one place.
+The wrapper learns the control's checked state with `:has()`.
+
+```html
+<et-choice-field variant="card">
+  <et-checkbox [formField]="demoForm.acceptTerms" />
+  <et-label>I accept the terms</et-label>
+  <et-hint>You can withdraw consent at any time.</et-hint>
+</et-choice-field>
+```
+
+::: tip The whole panel really is the control
+`et-radio` and `et-checkbox-option` **are** the panel, so nothing extra is
+needed. In `et-choice-field` the panel is a wrapper `div`, so the preset stretches
+the projected control's own hit area over it instead of forwarding clicks - which
+keeps one activation path, and with it one cursor, one `:hover` treatment, and the
+control's own `readonly` (clicks land, nothing toggles) and `disabled` (the panel
+dims as a unit and shows `not-allowed`) behavior. Links, buttons and other
+interactive elements in the label, the description or the trailing slot sit above
+that hit area, so a click on one does not toggle the control - and a click on a
+link in any `et-label` follows the link without activating the control.
+:::
+
+@example choice-inputs/checkbox-card-interactive 260px
+
+All three components share **one** token set, so a card radius is set once and
+every card follows: `--et-selection-card-padding` (`16px`), `-border-radius`
+(`10px`), `-border-width` (`1px`), `-icon-size` (`20px`, an icon projected into
+either slot), `-transition-duration` (`150ms`) and `-disabled-opacity` (`0.5`,
+the choice field's one-unit dim).
+
+::: warning Renamed in favour of one set
+These replace `--et-radio-card-*`, `--et-checkbox-option-card-*` and
+`--et-choice-field-card-*`, which no longer resolve. The old names each styled one
+of the three components; the new ones style all of them. `--et-choice-field-card-disabled-opacity`
+is now `--et-selection-card-disabled-opacity`.
+:::
+
+The panel chrome is one stylesheet, injected the first time any of the three
+renders with `variant="card"` - an app that only ever uses `variant="plain"` never
+puts it in the document.
+
+### Custom radio card {#custom-radio-card}
+
+When neither `et-radio` nor its card preset fits - a broadcast picker, a list row with its own
+layout - write the markup yourself and keep the behavior. The group and the option are two
+headless directives the presets are built on:
+
+| Directive                                          | Put it on           | Brings                                                                                                |
+| -------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `SelectionListDirective` (`[etSelectionList]`)     | the group element   | `role="radiogroup"`, the value (`[formField]`, `[(value)]`), `disabled`, `readonly`, `compareWith`    |
+| `SelectionOptionDirective` (`[etSelectionOption]`) | each option element | `role="radio"`, `aria-checked`, the roving `tabindex`, click and [keyboard](#selection-list-keyboard) |
+
+Use them as attributes, or as `hostDirectives` of your own components. The option component
+injects `SelectionOptionDirective` to read `checked()`, `effectiveDisabled()` (its own or the
+group's `disabled`) and `labelId`, and calls `select()` when it needs to select from code. The
+group component injects `SelectionListDirective` (or `SELECTION_LIST_TOKEN`) for `value()`,
+`disabled()` and `items()`.
+
+```ts
+@Component({
+  selector: 'app-broadcast-card',
+  template: `<span [id]="option.labelId">{{ heading() }}</span>`,
+  hostDirectives: [{ directive: SelectionOptionDirective, inputs: ['value', 'disabled'] }],
+  host: { '[attr.data-checked]': 'option.checked() || null' },
+})
+export class BroadcastCardComponent {
+  protected option = inject(SelectionOptionDirective);
+  public heading = input.required<string>();
+}
+
+@Component({
+  selector: 'app-broadcast-picker',
+  template: `<ng-content />`,
+  hostDirectives: [
+    {
+      directive: SelectionListDirective,
+      inputs: ['value', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name', 'aria-label'],
+      outputs: ['valueChange', 'touchedChange'],
+    },
+  ],
+})
+export class BroadcastPickerComponent {}
+```
+
+```html
+<app-broadcast-picker [formField]="streamForm.broadcast" aria-label="Broadcast">
+  <app-broadcast-card value="main" heading="Main stage" />
+</app-broadcast-picker>
+```
+
+- The option names itself with `aria-labelledby="<labelId>"`, so put `[id]="option.labelId"` on the
+  element that holds its label. Typeahead matches the option's text content, so that label should
+  lead it.
+- Forward the group inputs `[formField]` binds (`value`, `touched`, `disabled`, `readonly`,
+  `invalid`, `errors`, `required`, `name`) and the outputs `valueChange` / `touchedChange`; signal
+  forms reaches them through the host directive. There is no `ControlValueAccessor` - a
+  `FormControl` moves to signal forms, see [Coming from reactive forms](/components/forms#coming-from-reactive-forms).
+- Style the states from your own host bindings (`data-checked` above) or from the directive's
+  attributes: `[aria-checked="true"]`, `[aria-disabled]`, `[data-readonly]`.
+- Add `multiple` to the group and the same option becomes a checkbox (`role="checkbox"`, an
+  array value).
+
+@example choice-inputs/radio-group-custom-card 360px
+
+::: tip Coming from `@ethlete/cdk`
+`RADIO_GROUP_TOKEN` and `InputStateService` on the group become `SelectionListDirective` (or
+`SELECTION_LIST_TOKEN`); `RADIO_TOKEN` and `FormFieldStateService` on the item become
+`SelectionOptionDirective`. Writing the selection is `option.select()`, or a write to the group's
+`value`.
+:::
+
+### Segmented button: form binding {#segmented-form}
+
+`et-segmented-button-group` implements `FormValueControl`, like the radio group:
+
+```html
+<et-segmented-button-group [formField]="viewForm.range">
+  <et-segmented-button value="day">Day</et-segmented-button>
+  <et-segmented-button value="week">Week</et-segmented-button>
+</et-segmented-button-group>
+```
+
+### Segmented button: equal width {#segmented-stretch}
+
+`et-segmented-button-group` takes `stretch`, which gives every segment the same
+column width and makes the group fill its container. It needs no segment count:
+the row is one column per segment, however many there are. Labels stay centered
+and truncate with an ellipsis when a column is narrower than its label.
+`--et-segmented-button-group-segment-min-width` (`0px`) sets a floor for each
+segment.
+
+@example choice-inputs/segmented-button-group-stretch 220px
+
+### Segmented button: overflow {#segmented-overflow}
+
+When the segments are wider than the container, `et-segmented-button-group`
+shrinks them down to their full label plus padding, never an ellipsis
+(`overflow="scroll"`, the default). If they are still too wide, the track
+scrolls horizontally inside an `et-scrollable` and the selected segment is
+scrolled to the center, the way nav tabs do it. A group that fits shows no
+scroll chrome. It combines with `stretch`, which fills the container only
+while the segments fit. Set `overflow="truncate"` to shrink every segment and
+cut its label with an ellipsis instead.
+
+```html
+<et-segmented-button-group [formField]="form.competition" overflow="truncate"> ... </et-segmented-button-group>
+```
+
+### Segmented button: look tokens {#segmented-tokens}
+
+Five tokens restyle the group without a new input. Each default is today's look.
+
+| Token                                          | Default                                      | Effect                                                                                                                |
+| ---------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--et-segmented-button-inactive-color`         | the muted surface colour                     | Inactive label colour.                                                                                                |
+| `--et-segmented-button-font-weight`            | `500`                                        | Label weight.                                                                                                         |
+| `--et-segmented-button-group-track-background` | an 8% tint of the surface interaction colour | Track fill.                                                                                                           |
+| `--et-segmented-button-group-stretch-track`    | `1fr`                                        | Column size under `stretch`. `auto` sizes columns to their labels, so none is cut, and they still fill the row.       |
+| `--et-segmented-button-group-columns`          | unset (one row)                              | A number wraps the segments into that many columns, with or without `stretch`. Set it per breakpoint in your own CSS. |
+
+@example choice-inputs/segmented-button-group-tokens 220px
+
+### Segmented button: tabs variant {#segmented-tabs}
+
+`et-segmented-button-group` takes `variant="tabs"`, which underlines the selected
+segment instead of filling it and drops the tonal track for a baseline rule. The
+same element the FLIP animation moves becomes the underline, so the selection
+still slides between segments.
+
+The variant reads the same [tab scale](/components/tabs#theming) real tabs do, so
+at a given `size` the two rows match: trigger padding, label size and weight,
+underline thickness and the baseline rule. The accent sits in the underline rather
+than the label, hovering an unselected segment warms its label without filling it,
+and the press does not scale the segment - all as a tab bar behaves.
+
+It also reads five of the [optional tab tokens](/components/tabs#theming), so a
+restyle set on a common ancestor reaches both rows: `--et-tab-text-transform`,
+`--et-tab-font-weight`, `--et-tab-letter-spacing`, `--et-tab-line-height` and
+`--et-tab-inactive-color`.
+
+@example choice-inputs/segmented-button-group-tabs 220px
+
+::: warning It is still a selection control
+The tabs variant only changes how the selection is drawn. The group is still a
+`radiogroup` bound to a form field. If your segments are **routes**, or panels of
+content that should be linkable and announced as tabs, use
+[tabs](/components/tabs) instead - this variant is for a filter that happens to
+look like tabs.
+:::
+
+## Rating - `et-rating` {#rating}
+
+A star rating implementing the slider pattern (`role="slider"`, one keyboard
+stop). Value is `number | null` - `null` means no rating.
+
+```html
+<et-rating [formField]="demoForm.stars" [max]="5" allowHalf>
+  <et-label>Rating</et-label>
+  <et-hint>Optional</et-hint>
+</et-rating>
+```
+
+@example choice-inputs/rating-default 220px
+
+| Input        | Type                  | Default | Description                                                                                                               |
+| ------------ | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `max`        | `number \| undefined` | `5`     | Number of steps. Reserved by signal forms - a schema `max(...)` validator binds into it.                                  |
+| `allowHalf`  | `boolean`             | `false` | Half-star steps for pointer, keyboard and rendering.                                                                      |
+| `readonly`   | `boolean`             | `false` | Display-only (still focusable, e.g. for review averages).                                                                 |
+| `mixed`      | `boolean`             | `false` | Presents an unresolved [bulk-edit](#bulk-editing) value independently of `value`. Two-way bindable (`mixedChange`).       |
+| `mixedLabel` | `string \| null`      | `null`  | The `aria-valuetext` announced while [`mixed`](#bulk-editing) is set; falls back to the `FORM_FIELD_LABELS` mixed string. |
+
+Interaction: hovering previews without committing, clicking commits (clicking the
+current value **clears** to `null`), and **dragging/swiping across the stars**
+(mouse or touch) previews continuously and commits on release - vertical page
+scrolling stays untouched (`touch-action: pan-y`). A drag the browser takes away
+mid-gesture (a system swipe, an incoming call) commits nothing and drops the
+preview. Arrows step by `1` (or `0.5`; Left/Right flip in RTL), snapping a value between steps onto the nearest step in that direction,
+<kbd>PageUp</kbd>/<kbd>PageDown</kbd> move by ten steps, <kbd>Home</kbd>/<kbd>End</kbd> jump to first/last step,
+<kbd>Backspace</kbd>/<kbd>Delete</kbd> clear - arrowing below the first step also
+clears. The host exposes `aria-valuemin="0"`/`aria-valuemax`/`aria-valuenow` (kept within `0`..`max`; `NaN` reads as no rating) and
+an `aria-valuetext` like `3.5 of 5`.
+
+The default stars fill as **one continuous motion** - a single clipped overlay
+row sweeps across the icons with the theme's primary color. Custom icons via an
+`ng-template[etRatingIcon]` (context: the state `'full' | 'half' | 'empty'` and
+the 1-based `index`) render per-step instead and don't take part in the sweep. A rating accepts one
+custom icon template; a second throws [`ET5000`](/components/error-codes#rating-et50xx) in dev mode.
+Tokens: `--et-rating-icon-size` (`24px`), `--et-rating-gap` (`4px`).
+
+## Bulk editing
+
+These controls implement the SDK-wide
+[mixed state contract](/components/mixed-state), but express it through
+ARIA/visual masking rather than a placeholder: `et-rating` drops `aria-valuenow`
+and announces its `mixedLabel` as the `aria-valuetext`, and the selection groups
+(`et-radio-group`, `et-checkbox-group`, `et-segmented-button-group`) render
+nothing as `aria-checked` and take no `mixedLabel` of their own. `et-checkbox` and
+`et-switch` carry this concept as their platform-named `indeterminate` input
+rather than `mixed` - reach for `et-checkbox` when the state itself must reach
+assistive tech (it reflects `aria-checked="mixed"`; the switch keeps
+`aria-checked` boolean). See the [Forms overview](/components/forms#mixed-values-bulk-editing).
+
+## Accessibility
+
+- Selection groups use correct roles for their mode: a single-select group is a
+  `radiogroup` of `radio`s; a multi-select checkbox group is a `role="group"` of
+  `role="checkbox"` items (and the tri-state select-all is a `checkbox`, not an
+  `option`).
+- `et-checkbox`/`et-switch` toggle on click and <kbd>Space</kbd> and mark
+  themselves touched on blur; `readonly` keeps them focusable via
+  `aria-readonly`.
+- The rating host is a `role="slider"` with a single keyboard stop and a spoken
+  `aria-valuetext` - `'No rating'` or `'3 of 5'`, localized through
+  [`FORM_FIELD_LABELS`](/components/localization) (`ratingEmpty`, `ratingValue: (value, max) => string`).
+- An option's `et-description` is wired as its `aria-describedby`, so the
+  secondary text is announced after the option's name instead of folding into
+  it. In `et-choice-field` the description and the support message are both
+  listed, description first.
+- Every group/control needs an accessible name - a projected `et-label` or your
+  own `aria-label`/`aria-labelledby`. See
+  [Validation & accessibility](/components/forms#validation-accessibility).
+
+## Theming
+
+An unchecked checkbox, radio, checkbox option and select-all box draws its border
+like a text field frame: near 3:1 against the surface at rest (a mix of the surface
+text colour into its background), and on hover the same colour as its label's hover
+colour, the surface text colour. Checked and error states keep the theme colour.
+
+Public design tokens (override them in your CSS scope):
+
+| Component                                           | Tokens                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `et-checkbox`                                       | `--et-checkbox-size`, `-border-radius`, `-border-width`, `-transition-duration`, `-opacity-disabled`                                                                                                                                                                                                                                                                                           |
+| `et-switch`                                         | `--et-switch-track-width`, `-track-height`, `-thumb-size`, `-thumb-offset`, `-transition-duration`, `-opacity-disabled`                                                                                                                                                                                                                                                                        |
+| `et-choice-field`                                   | `--et-choice-field-gap`, `-support-duration`, `-label-font-size`, `-label-font-weight`, `-label-letter-spacing`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`                                                                                                                                                                                                                   |
+| `et-radio-group` / `et-radio`                       | `--et-radio-group-*` (gap, column gap, label/error/warning/hint sizes, support), `--et-radio-size`, `-dot-size`, `-border-width`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                                                                                                                          |
+| `et-checkbox-group` / `et-checkbox-option`          | `--et-checkbox-group-*` (gap, column gap, label/error/warning/hint sizes, support), `--et-checkbox-option-size`, `-border-width`, `-border-radius`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                                                                                                        |
+| `et-segmented-button-group` / `et-segmented-button` | `--et-segmented-button-group-*` (gap, label/error/warning/hint sizes, support, `-track-padding`, `-track-radius`, `-segment-min-width`), `--et-segmented-button-padding-x` / `-padding-y`, `-font-size`, `-height`, `-gap`, `-border-radius`, `-transition-duration`, `-opacity-disabled`, `-hover-fill`, `-press-scale`, `-focus-ring-offset`, `-tab-underline-size`, `-tab-underline-radius` |
+| `et-rating`                                         | `--et-rating-icon-size` (`24px`), `--et-rating-gap` (`4px`), `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration`                                                                                                                                                                                                                              |
+
+`--et-segmented-button-font-size` (`14px`), `-height` (`auto`) and `-gap` (`0px`) are registered properties that inherit. The `sm` / `lg` sizes and the tabs variant set `-font-size` on each `et-segmented-button`, so override it there (or pick a `size`) rather than on the group; `-height` and `-gap` can be set on the group.
+
+All colors resolve through the app-registered
+[surface/color theme systems](/core/theming) (the error state forces the theme
+registered with `type: 'error'`).

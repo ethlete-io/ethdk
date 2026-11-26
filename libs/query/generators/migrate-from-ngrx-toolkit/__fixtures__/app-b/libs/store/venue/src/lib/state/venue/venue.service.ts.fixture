@@ -1,0 +1,45 @@
+import * as Models from './venue.models';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { defineResponseType, ServiceBase } from '@tomtomb/ngrx-toolkit';
+import { environment } from '@app-b/env';
+import { VenueDetailView, VenueListView, VenueRankingView, Paginated } from '@app-b/types';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class VenueService extends ServiceBase {
+  private _http: HttpClient;
+
+  constructor() {
+    const _http = inject(HttpClient);
+
+    super(_http, environment.apiBaseURL);
+
+    this._http = _http;
+  }
+
+  getVenueBySlug(args: Models.GetVenueBySlugArgs) {
+    return this.get({
+      apiRoute: (p) => `/public/venues/by-slug/${p.slug}`,
+      httpOpts: args,
+      responseType: defineResponseType<VenueDetailView>(),
+    });
+  }
+
+  getVenueRanking(args: Models.GetVenueRankingArgs) {
+    return this.get({
+      apiRoute: (p) => `/public/venues/${p.venueId}/ranking`,
+      httpOpts: args,
+      responseType: defineResponseType<VenueRankingView>(),
+    });
+  }
+
+  getVenues(args: Models.GetVenuesArgs) {
+    return this.get({
+      apiRoute: '/public/venues',
+      httpOpts: args,
+      responseType: defineResponseType<Paginated<VenueListView>>(),
+    });
+  }
+}

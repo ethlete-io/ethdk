@@ -1,0 +1,22 @@
+import { NgComponentOutlet } from '@angular/common';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
+import { NotificationItemDirective } from './headless/notification-item.directive';
+import { NotificationStackDirective } from './headless/notification-stack.directive';
+import { injectNotificationManagerConfig } from './notification-config';
+import { NotificationComponent } from './notification.component';
+
+@Component({
+  selector: 'et-notification-stack',
+  templateUrl: './notification-stack.component.html',
+  styleUrl: './notification-stack.component.css',
+  encapsulation: ViewEncapsulation.None,
+  imports: [NgComponentOutlet, NotificationComponent, NotificationItemDirective],
+  hostDirectives: [NotificationStackDirective],
+  host: {
+    class: 'et-notification-stack',
+  },
+})
+export class NotificationStackComponent {
+  protected stackDirective = inject(NotificationStackDirective);
+  protected customComponent = injectNotificationManagerConfig().component;
+}

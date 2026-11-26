@@ -1,0 +1,44 @@
+<input
+  [etInputMask]="timeInput.maskPattern()"
+  class="et-time-input-field"
+  etTimeInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+/>
+
+<ng-template etControlSuffix>
+  @if (showClear()) {
+    <button
+      [attr.aria-label]="resolvedClearLabel()"
+      (click)="handleClearClick($event)"
+      (mousedown)="$event.preventDefault()"
+      class="et-input-clear"
+      animate.enter="et-input-clear--enter"
+      animate.leave="et-input-clear--leave"
+      tabindex="-1"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  }
+
+  <button [attr.aria-label]="resolvedPickerTriggerLabel()" class="et-input-picker-trigger" etDatePickerTrigger>
+    <i etIcon="et-clock"></i>
+  </button>
+</ng-template>
+
+<ng-template etDatePickerSurface>
+  <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
+    <et-time-picker
+      [value]="timeInput.time()"
+      [disabled]="timeInput.disabled()"
+      [format]="timeInput.effectiveDisplayFormat()"
+      [locale]="timeInput.effectiveLocale()"
+      [minuteStep]="minuteStep()"
+      [min]="timeInput.minTime()"
+      [max]="timeInput.maxTime()"
+      [timeFilter]="timeInput.timeFilter()"
+      (valueChange)="timeInput.selectTime($event)"
+    />
+  </et-date-picker-panel>
+</ng-template>

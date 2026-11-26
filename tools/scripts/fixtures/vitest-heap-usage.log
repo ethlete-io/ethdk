@@ -1,0 +1,6 @@
+ ✓ |bracket| src/lib/placeholder-source.spec.ts (11 tests) 8ms 13 MB heap used
+ ✓ |bracket| src/lib/drawing/draw-man.spec.ts (5 tests) 10ms 13 MB heap used
+ ✓ |bracket| src/lib/drawing/grid/single-elimination.spec.ts (13 tests) 11ms 13 MB heap used
+ ✓ |bracket| src/lib/edge-cases.spec.ts (45 tests) 25ms 17 MB heap used
+ ✓ |bracket| src/lib/linked/resolve-bracket-slot.spec.ts (21 tests) 9ms 13 MB heap used
+ ✓ |bracket| src/lib/linked/migrate-bracket-picks.spec.ts (14 tests) 9ms 12 MB heap used

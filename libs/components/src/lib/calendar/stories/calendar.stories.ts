@@ -1,0 +1,112 @@
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { CalendarStorybookComponent } from './calendar-storybook.component';
+
+export default {
+  title: 'Components/Date & time/Calendar',
+  component: CalendarStorybookComponent,
+  decorators: [moduleMetadata({ imports: [CalendarStorybookComponent] })],
+  argTypes: {
+    mode: { control: 'select', options: ['single', 'range', 'multiple'] },
+    constrained: { control: 'boolean' },
+    disableWeekends: { control: 'boolean' },
+    startAtMonthOffset: { control: 'number' },
+    precision: { control: 'select', options: ['day', 'month', 'year'] },
+    startView: { control: 'select', options: ['month', 'year', 'multiYear'] },
+    markDates: { control: 'boolean' },
+    weekNumbers: { control: 'boolean' },
+    showComparison: { control: 'boolean' },
+    rangeStrategy: { control: 'select', options: ['default', 'week', 'fixed7'] },
+    customHeader: { control: 'boolean' },
+    monthsShown: { control: { type: 'number', min: 1, max: 3 } },
+    locale: { control: 'select', options: ['default', 'de'] },
+    color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
+  },
+  args: {
+    mode: 'single',
+    constrained: false,
+    disableWeekends: false,
+    startAtMonthOffset: null,
+    precision: 'day',
+    startView: 'month',
+    markDates: false,
+    weekNumbers: false,
+    showComparison: false,
+    rangeStrategy: 'default',
+    customHeader: false,
+    monthsShown: 1,
+    locale: 'default',
+    color: 'brand',
+  },
+} as Meta<CalendarStorybookComponent>;
+
+type Story = StoryObj<CalendarStorybookComponent>;
+
+export const Default: Story = {};
+
+export const Range: Story = {
+  args: { mode: 'range' },
+};
+
+export const TwoMonths: Story = {
+  args: { monthsShown: 2, mode: 'range' },
+};
+
+export const Multiple: Story = {
+  args: { mode: 'multiple' },
+};
+
+export const WeekRange: Story = {
+  args: { mode: 'range', rangeStrategy: 'week' },
+};
+
+export const FixedLengthRange: Story = {
+  args: { mode: 'range', rangeStrategy: 'fixed7' },
+};
+
+export const ComparisonRange: Story = {
+  args: { mode: 'range', showComparison: true },
+};
+
+export const DisabledDates: Story = {
+  args: { constrained: true, disableWeekends: true },
+};
+
+export const StartAt: Story = {
+  args: { startAtMonthOffset: 2 },
+};
+
+export const MonthView: Story = {
+  args: { startView: 'year' },
+};
+
+export const YearView: Story = {
+  args: { startView: 'multiYear' },
+};
+
+export const MonthPrecision: Story = {
+  args: { precision: 'month' },
+};
+
+export const MonthRange: Story = {
+  args: { precision: 'month', mode: 'range' },
+};
+
+export const YearPrecision: Story = {
+  args: { precision: 'year' },
+};
+
+export const DateClass: Story = {
+  args: { markDates: true },
+};
+
+export const WeekNumbers: Story = {
+  args: { weekNumbers: true },
+};
+
+export const CustomHeader: Story = {
+  args: { customHeader: true },
+};
+
+export const German: Story = {
+  args: { locale: 'de' },
+};

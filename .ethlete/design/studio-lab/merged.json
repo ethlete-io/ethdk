@@ -1,0 +1,16 @@
+{
+  "components/card": {
+    "hash": "4f87e41b247c008c",
+    "variant": "b",
+    "decidedBy": "user",
+    "at": "2026-11-23T17:44:25.346Z"
+  },
+  "elements/list-row": "214dc690f9b1d2c3",
+  "elements/shell-main": "30a2826c82be4420",
+  "pages/film-detail": {
+    "hash": "284ca8319363f85e",
+    "variant": "a",
+    "decidedBy": "B149 grill decision (ADR 0010 Empfehlung gebaut)",
+    "at": "2026-11-17T08:09:06.437Z"
+  }
+}

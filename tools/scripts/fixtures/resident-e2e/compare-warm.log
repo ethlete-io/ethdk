@@ -1,0 +1,5 @@
+building ethlete-studio:build:development for the harness app (up to 5 min)
+started the harness app on http://127.0.0.1:38437
+out ok
+every declared action works
+over target: compare took 17.5 s > 10.0 s - slowest phase harness-start 16.5 s (noisy: load 47.0 > 16 cores, no verdict)

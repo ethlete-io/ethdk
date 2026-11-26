@@ -1,0 +1,64 @@
+import { deserializeTableState, serializeTableState } from './table-state-url';
+import { TableState } from '../table.types';
+
+const STATE: TableState = {
+  v: 1,
+  columns: [
+    { key: 'name', hidden: false, sort: 'asc' },
+    { key: 'role', hidden: true, filterValues: ['Admin', 'Editor'] },
+  ],
+  expanded: ['1', '2'],
+};
+
+describe('table state URL adapter', () => {
+  it('round-trips a state through serialize → deserialize', () => {
+    expect(deserializeTableState(serializeTableState(STATE))).toEqual(STATE);
+  });
+
+  it('returns null for absent input', () => {
+    expect(deserializeTableState(null)).toBeNull();
+    expect(deserializeTableState(undefined)).toBeNull();
+    expect(deserializeTableState('')).toBeNull();
+  });
+
+  it('returns null for malformed JSON', () => {
+    expect(deserializeTableState('{not json')).toBeNull();
+  });
+
+  it('reads every known version - v1 predates the feature slices, v2 the expansion slice', () => {
+    expect(deserializeTableState(JSON.stringify({ v: 1, columns: [] }))).toEqual({ v: 1, columns: [] });
+    expect(deserializeTableState(JSON.stringify({ v: 2, columns: [], expanded: ['1'] }))).toEqual({
+      v: 2,
+      columns: [],
+      expanded: ['1'],
+    });
+    expect(deserializeTableState(JSON.stringify({ v: 3, columns: [], features: { selection: ['1'] } }))).toEqual({
+      v: 3,
+      columns: [],
+      features: { selection: ['1'] },
+    });
+  });
+
+  it('returns null when a column entry is not a column', () => {
+    expect(deserializeTableState(JSON.stringify({ v: 3, columns: [null] }))).toBeNull();
+    expect(deserializeTableState(JSON.stringify({ v: 3, columns: ['name'] }))).toBeNull();
+    expect(deserializeTableState(JSON.stringify({ v: 3, columns: [{ hidden: true }] }))).toBeNull();
+  });
+
+  it('returns null when a column carries a malformed sort, filter or width', () => {
+    const withColumn = (column: object) =>
+      deserializeTableState(JSON.stringify({ v: 3, columns: [{ key: 'name', hidden: false, ...column }] }));
+
+    expect(withColumn({ filterValues: 'abc' })).toBeNull();
+    expect(withColumn({ sort: 'up' })).toBeNull();
+    expect(withColumn({ width: '120px' })).toBeNull();
+    expect(withColumn({ sortPriority: 'first' })).toBeNull();
+    expect(withColumn({ sort: 'desc', filterValues: ['a'], width: 120, sortPriority: 0 })).not.toBeNull();
+  });
+
+  it('returns null for an unknown version or missing columns', () => {
+    expect(deserializeTableState(JSON.stringify({ v: 4, columns: [] }))).toBeNull();
+    expect(deserializeTableState(JSON.stringify({ v: 1 }))).toBeNull();
+    expect(deserializeTableState(JSON.stringify('a string'))).toBeNull();
+  });
+});

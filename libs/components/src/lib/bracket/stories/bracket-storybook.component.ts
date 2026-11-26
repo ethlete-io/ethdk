@@ -1,0 +1,444 @@
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  input,
+  numberAttribute,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
+import { BUTTON_IMPORTS } from '../../button';
+import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../../scrollable/scrollable.imports';
+import { BRACKET_DENSITY, BracketDensity } from '../bracket-density';
+import { BracketComponent } from '../bracket.component';
+import { BracketParticipantsComponent } from '../bracket-participants.component';
+import { BRACKET_ROUND_HEADER_ALIGN, BracketRoundHeaderAlign, provideBracketConfig } from '../bracket.config';
+import {
+  BRACKET_DATA_LAYOUT,
+  BRACKET_FINAL_ALIGNMENT,
+  BracketDataLayout,
+  BracketFinalAlignment,
+  BracketMatch,
+  BracketRound,
+  BracketGridSection,
+  BracketRoundSwissGroup,
+  BracketSwissColors,
+} from '@ethlete/bracket';
+import { BracketMatchNormalizer, createNormalizedBracketMatch } from '../bracket-card-context';
+import { MATCH_CARD_IMPORTS } from '../../match';
+import { BracketDataSource } from '../integrations/base';
+import {
+  doubleEliminationBracketLayout,
+  mirroredDoubleEliminationBracketLayout,
+  mirroredSingleEliminationBracketLayout,
+  singleEliminationBracketLayout,
+  swissBracketLayout,
+} from '../layouts';
+import { demoMatchNormalizer, demoParticipant } from './demo-match-normalizer';
+import { BRACKET_DEFAULT_CARDS } from '../bracket-default-cards';
+
+/**
+ * Every layout the stories can draw, created once - the `layout` control picks between these two lists
+ * rather than binding a removed input. Swiss has no mirrored variant, so a swiss source under the
+ * mirrored control simply renders as normal swiss.
+ */
+const LEFT_TO_RIGHT_LAYOUTS = [
+  singleEliminationBracketLayout(),
+  doubleEliminationBracketLayout(),
+  swissBracketLayout(),
+];
+
+const MIRRORED_LAYOUTS = [
+  mirroredSingleEliminationBracketLayout(),
+  mirroredDoubleEliminationBracketLayout(),
+  swissBracketLayout(),
+];
+
+/**
+ * Demo custom final-match card, wired via the `finalMatchComponent` input to show that
+ * consumers can override the barebones defaults. Not part of the library's public API.
+ */
+@Component({
+  selector: 'et-sb-final-match',
+  template: `
+    <p>Final</p>
+
+    <p>{{ bracketMatch().id }}</p>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-final-match-host',
+  },
+  styles: `
+    @layer components {
+      .et-sb-final-match-host {
+        display: flex;
+        flex-direction: column;
+        padding: 8px;
+        border: 1px solid orange;
+        inline-size: 100%;
+        block-size: 100%;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+        font-size: 12px;
+      }
+    }
+  `,
+})
+export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
+  public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
+  public bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
+  public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
+}
+
+/** Demo match card that carries an SVG icon, the way a VOD badge does. Not part of the library's public API. */
+@Component({
+  selector: 'et-sb-icon-match',
+  template: `
+    @if (normalizedMatch(); as match) {
+      <et-match-card [match]="match" class="et-sb-icon-match-card" size="compact" />
+
+      <svg class="et-sb-icon-match-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+        <path d="M4 6h10v12H4zM14 10l6-3v10l-6-3z" fill="currentColor" />
+      </svg>
+    }
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [MATCH_CARD_IMPORTS],
+  host: {
+    class: 'et-sb-icon-match-host',
+  },
+  styles: `
+    @layer components {
+      .et-sb-icon-match-host {
+        position: relative;
+        display: block;
+        inline-size: 100%;
+        block-size: 100%;
+      }
+
+      .et-sb-icon-match-icon {
+        position: absolute;
+        inset-block-start: 4px;
+        inset-inline-end: 4px;
+      }
+    }
+  `,
+})
+export class StorybookIconMatchComponent<TRoundData = unknown, TMatchData = unknown> {
+  public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
+  public bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
+  public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
+
+  protected normalizedMatch = createNormalizedBracketMatch(this.bracketMatch);
+}
+
+/**
+ * A round header that sizes to its own text, which is what `alignRoundHeaders` moves - the shipped one
+ * fills its column and looks the same either way. Not part of the library's public API.
+ */
+@Component({
+  selector: 'et-sb-round-header',
+  template: ` <span>{{ bracketRound().name }}</span> `,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-round-header-host',
+  },
+  styles: `
+    @layer components {
+      .et-sb-round-header-host {
+        display: inline-flex;
+        align-items: center;
+        padding-inline: 8px;
+        border: 1px dashed var(--et-surface-border);
+        border-radius: 4px;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+    }
+  `,
+})
+export class StorybookRoundHeaderComponent<TRoundData = unknown, TMatchData = unknown> {
+  public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
+  public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
+}
+
+/** Demo custom section title, wired via the `sectionTitleComponent` input. */
+@Component({
+  selector: 'et-sb-section-title',
+  template: `
+    <span class="et-sb-section-title-key">{{ bracketSection().key }}</span>
+    <span>{{ bracketSection().name }}</span>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-section-title-host',
+  },
+  styles: `
+    @layer components {
+      .et-sb-section-title-host {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        block-size: 100%;
+        padding-inline: 12px;
+        border-inline-start: 4px solid var(--et-surface-border);
+        background: var(--et-surface-background);
+        font-weight: 700;
+      }
+
+      .et-sb-section-title-key {
+        font-size: 11px;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+    }
+  `,
+})
+export class StorybookSectionTitleComponent<TRoundData = unknown, TMatchData = unknown> {
+  public bracketSection = input.required<BracketGridSection<TRoundData, TMatchData>>();
+}
+
+/**
+ * The one-round panel: the same grid, clipped to one column, with `rowSpanRoundId` squeezing the rows of
+ * the round on screen and `focusRoundId` bringing it to the inline start. Both move every cell and every
+ * connector as one transition.
+ */
+@Component({
+  selector: 'et-sb-bracket-squeeze',
+  template: `
+    <div class="flex items-center gap-2">
+      <button (click)="step(-1)" et-button size="sm" type="button" data-testid="previous-round">Previous</button>
+      <button (click)="step(1)" et-button size="sm" type="button" data-testid="next-round">Next</button>
+      <span class="text-small" data-testid="focused-round">{{ focusedRoundId() }}</span>
+    </div>
+
+    <div
+      [style.inline-size.px]="panelWidth()"
+      class="mt-4 overflow-hidden"
+      data-testid="panel"
+      style="border: 1px solid var(--et-surface-border)"
+    >
+      <et-bracket
+        [source]="source()"
+        [layouts]="LAYOUTS"
+        [matchNormalizer]="MATCH_NORMALIZER"
+        [rowSpanRoundId]="focusedRoundId()"
+        [focusRoundId]="focusedRoundId()"
+        [focusInset]="focusInset()"
+        [alignRoundHeaders]="alignRoundHeaders()"
+        [thirdPlaceTopOffset]="thirdPlaceTopOffset()"
+        [finalRoundHeaderGap]="finalRoundHeaderGap()"
+        [roundHeaderComponent]="ROUND_HEADER_COMPONENT"
+      />
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BracketComponent, BUTTON_IMPORTS],
+  providers: [provideBracketConfig(BRACKET_DEFAULT_CARDS)],
+})
+export class StorybookBracketSqueezeComponent {
+  public source = input.required<BracketDataSource<unknown, unknown>>();
+
+  public panelWidth = input(360, { transform: numberAttribute });
+  public focusInset = input(40, { transform: numberAttribute });
+  public alignRoundHeaders = input<BracketRoundHeaderAlign>(BRACKET_ROUND_HEADER_ALIGN.CENTER);
+  public thirdPlaceTopOffset = input<number | null>(null);
+  public finalRoundHeaderGap = input<number | null>(null);
+
+  public roundIndex = signal(0);
+
+  protected focusedRoundId = computed(() => this.source().rounds[this.roundIndex()]?.id ?? null);
+
+  protected readonly LAYOUTS = LEFT_TO_RIGHT_LAYOUTS;
+
+  protected readonly ROUND_HEADER_COMPONENT = StorybookRoundHeaderComponent;
+
+  protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
+
+  protected step(direction: number) {
+    const lastIndex = this.source().rounds.length - 1;
+
+    this.roundIndex.update((current) => Math.min(lastIndex, Math.max(0, current + direction)));
+  }
+}
+
+/**
+ * The density demo, which binds nothing but `density` - the whole point is that one input resizes the
+ * bracket, and every explicit layout binding would override the preset it is meant to show.
+ */
+@Component({
+  selector: 'et-sb-bracket-density',
+  template: `
+    <div [style.max-inline-size.px]="containerWidth()">
+      <et-scrollable [etScrollableButtons]="{ sticky: true }">
+        <et-bracket
+          [source]="source()"
+          [layouts]="LAYOUTS"
+          [density]="density()"
+          [matchNormalizer]="MATCH_NORMALIZER"
+        />
+      </et-scrollable>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BracketComponent, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
+  providers: [provideBracketConfig(BRACKET_DEFAULT_CARDS)],
+})
+export class StorybookBracketDensityComponent {
+  public source = input.required<BracketDataSource<unknown, unknown>>();
+
+  public density = input<BracketDensity>(BRACKET_DENSITY.DEFAULT);
+
+  /** Stands in for the article column the compact bracket is meant to fit. */
+  public containerWidth = input(760, { transform: numberAttribute });
+
+  protected readonly LAYOUTS = LEFT_TO_RIGHT_LAYOUTS;
+
+  protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
+}
+
+@Component({
+  selector: 'et-sb-bracket',
+  template: `
+    @if (withParticipantList()) {
+      <et-bracket-participants
+        [(focusedParticipantId)]="focusedParticipantId"
+        [participants]="participants()"
+        class="mb-4"
+      />
+    }
+
+    <et-scrollable [etScrollableButtons]="{ sticky: true }">
+      <et-bracket
+        [(focusedParticipantId)]="focusedParticipantId"
+        [source]="source()"
+        [matchNormalizer]="matchNormalizer()"
+        [matchComponent]="iconInCards() ? ICON_MATCH_COMPONENT : undefined"
+        [finalMatchComponent]="customFinalCard() ? FINAL_MATCH_COMPONENT : undefined"
+        [roundHeaderLevel]="roundHeaderLevel()"
+        [columnWidth]="columnWidth()"
+        [matchHeight]="matchHeight()"
+        [roundHeaderHeight]="roundHeaderHeight()"
+        [columnGap]="columnGap()"
+        [rowGap]="rowGap()"
+        [lineStartingCurveAmount]="lineStartingCurveAmount()"
+        [lineEndingCurveAmount]="lineEndingCurveAmount()"
+        [lineWidth]="lineWidth()"
+        [lineDashArray]="lineDashArray()"
+        [lineDashOffset]="lineDashOffset()"
+        [disableJourneyHighlight]="disableJourneyHighlight()"
+        [layouts]="layouts()"
+        [hideRoundHeaders]="hideRoundHeaders()"
+        [finalColumnWidth]="finalColumnWidth()"
+        [finalMatchHeight]="finalMatchHeight()"
+        [rowRoundGap]="rowRoundGap()"
+        [roundHeaderGap]="roundHeaderGap()"
+        [swissGroupPadding]="swissGroupPadding()"
+        [swissColors]="swissColors()"
+        [showContinueElement]="showContinueElement()"
+        [continueColumnWidth]="continueColumnWidth()"
+        [continueElementHeight]="continueElementHeight()"
+        [continueLineDashArray]="continueLineDashArray()"
+        [focusRoundId]="focusRoundId()"
+        [focusInset]="focusInset()"
+        [alignRoundHeaders]="alignRoundHeaders()"
+        [thirdPlaceTopOffset]="thirdPlaceTopOffset()"
+        [finalRoundHeaderGap]="finalRoundHeaderGap()"
+        [showSectionTitles]="showSectionTitles()"
+        [sectionTitleComponent]="customSectionTitle() ? SECTION_TITLE_COMPONENT : undefined"
+        [finalAlignment]="finalAlignment()"
+      />
+    </et-scrollable>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BracketComponent, BracketParticipantsComponent, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
+  providers: [provideBracketConfig(BRACKET_DEFAULT_CARDS)],
+})
+export class StorybookBracketComponent {
+  public source = input.required<BracketDataSource<unknown, unknown>>();
+
+  public columnWidth = input(250, { transform: numberAttribute });
+  public matchHeight = input(75, { transform: numberAttribute });
+  public roundHeaderHeight = input(50, { transform: numberAttribute });
+  public columnGap = input(60, { transform: numberAttribute });
+  public rowGap = input(30, { transform: numberAttribute });
+  public lineStartingCurveAmount = input(10, { transform: numberAttribute });
+  public lineEndingCurveAmount = input(0, { transform: numberAttribute });
+  public lineWidth = input(2, { transform: numberAttribute });
+  public lineDashArray = input(0, { transform: numberAttribute });
+  public lineDashOffset = input(0, { transform: numberAttribute });
+  public finalColumnWidth = input(400, { transform: numberAttribute });
+  public finalMatchHeight = input(200, { transform: numberAttribute });
+  public rowRoundGap = input(70, { transform: numberAttribute });
+  public roundHeaderGap = input<number | undefined>(undefined);
+  public swissGroupPadding = input(10, { transform: numberAttribute });
+  public focusRoundId = input<string | null>(null);
+  public focusInset = input(0, { transform: numberAttribute });
+  public alignRoundHeaders = input<BracketRoundHeaderAlign>(BRACKET_ROUND_HEADER_ALIGN.START);
+  public thirdPlaceTopOffset = input<number | null>(null);
+  public finalRoundHeaderGap = input<number | null>(null);
+
+  /**
+   * The story control for the fold. There is no `layout` input on `et-bracket` any more - the fold is a
+   * property of the registered layout, so this picks which set of layout factories gets bound.
+   */
+  public layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
+
+  public hideRoundHeaders = input(false, { transform: booleanAttribute });
+  public disableJourneyHighlight = input(false, { transform: booleanAttribute });
+
+  public showContinueElement = input(false, { transform: booleanAttribute });
+  public continueColumnWidth = input(250, { transform: numberAttribute });
+  public continueElementHeight = input(75, { transform: numberAttribute });
+  public continueLineDashArray = input(6, { transform: numberAttribute });
+
+  public swissColors = input<BracketSwissColors | undefined>(undefined);
+
+  /** Swap the shipped final card for the demo custom one, to show the override still works. */
+  public iconInCards = input(false, { transform: booleanAttribute });
+  public customFinalCard = input(false, { transform: booleanAttribute });
+  public roundHeaderLevel = input(3, { transform: numberAttribute });
+
+  public showSectionTitles = input(false, { transform: booleanAttribute });
+  public customSectionTitle = input(false, { transform: booleanAttribute });
+  public finalAlignment = input<BracketFinalAlignment>(BRACKET_FINAL_ALIGNMENT.UPPER);
+
+  /** Render the participants legend that pins a journey - the focus-mode demo. */
+  public withParticipantList = input(false, { transform: booleanAttribute });
+
+  public liveMatchId = input<string | null>(null);
+
+  protected focusedParticipantId = signal<string | null>(null);
+
+  protected matchNormalizer = computed<BracketMatchNormalizer>(() => {
+    const liveMatchId = this.liveMatchId();
+
+    if (!liveMatchId) return demoMatchNormalizer;
+
+    return (match) => {
+      const card = demoMatchNormalizer(match);
+
+      return match.id === liveMatchId ? { ...card, status: 'live', homeScore: 1, awayScore: 1 } : card;
+    };
+  });
+
+  /** What the `layout` control resolves to: the mirrored factories, or the plain ones. */
+  protected layouts = computed(() =>
+    this.layout() === BRACKET_DATA_LAYOUT.MIRRORED ? MIRRORED_LAYOUTS : LEFT_TO_RIGHT_LAYOUTS,
+  );
+
+  /** Every participant in the source, in first-appearance order, named the way the cards name them. */
+  protected participants = computed(() => {
+    const ids = new Set(this.source().matches.flatMap((match) => [match.home, match.away]));
+
+    return Array.from(ids)
+      .map((id) => demoParticipant(id))
+      .filter((participant) => !!participant);
+  });
+
+  protected readonly ICON_MATCH_COMPONENT = StorybookIconMatchComponent;
+  protected readonly FINAL_MATCH_COMPONENT = StorybookFinalMatchComponent;
+  protected readonly SECTION_TITLE_COMPONENT = StorybookSectionTitleComponent;
+}

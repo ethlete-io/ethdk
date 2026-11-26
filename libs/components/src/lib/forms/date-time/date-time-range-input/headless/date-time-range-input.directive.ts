@@ -1,0 +1,305 @@
+import { Directive, booleanAttribute, computed, input, signal } from '@angular/core';
+import { FormValueControl } from '@angular/forms/signals';
+import { CalendarDateClassFn, CalendarView, CalendarWeekStartsOn } from '../../../../calendar/headless';
+import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
+import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
+import { injectDateTimeFormat } from '../../date-time-formats';
+import {
+  DateRangePickerInputDirective,
+  DateRangeSide,
+  DateRangeValue,
+} from '../../internals/date-range-picker-input.directive';
+import { withTimeOfDay } from '../../internals/date-time-merge';
+import { combineInZone, toZoneCalendar, localReading, withZonedDay } from '../../internals/time-zone';
+import { parseDateTimeText } from '../../internals/date-time-parse';
+import { createPendingDateTime, renderPartialDateTime } from '../../internals/pending-date-time';
+import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
+import { DateRangePreset } from '../../date-range-presets';
+import { createDateRangePresets } from '../../internals/date-range-presets-state';
+import { effectiveTimeZoneOf, nextLocalReadingElementId, timeZoneLabelOf } from '../../internals/time-zone-state';
+import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
+
+export type { DateRangeValue as DateTimeRangeValue } from '../../internals/date-range-picker-input.directive';
+
+/**
+ * Rejects individual times in the picker. The candidate is the picked time of day on the side's
+ * committed day - read through getters in the input's `timeZone` when one is set - and `side` says
+ * which end is being filled.
+ */
+export type DateTimeRangeTimeFilterFn = (date: Date, side: DateRangeSide) => boolean;
+
+/**
+ * A combined date & time *range* form control: one registered field-control containing two text
+ * inputs that share a single picker holding a range-mode calendar and one time picker per side. The
+ * value is `{ start, end }` of `valueFormat` wire strings, both carrying a time; each side parses
+ * strictly against the combined `displayFormat` on blur/Enter, then leniently, exactly like the
+ * single date-time input.
+ *
+ * The picker never closes on its own. Each side is picked in two halves: whichever half lands first
+ * is held and that side's value stays `null` until the second one arrives.
+ */
+@Directive({
+  selector: '[etDateTimeRangeInput]',
+  exportAs: 'etDateTimeRangeInput',
+  providers: [{ provide: DATE_PICKER_HOST, useExisting: DateTimeRangeInputDirective }],
+})
+export class DateTimeRangeInputDirective
+  extends DateRangePickerInputDirective
+  implements FormValueControl<DateRangeValue>
+{
+  private dateTimeLabels = injectDateTimeLabels();
+
+  public defaultValueFormat = injectDateTimeFormat();
+
+  /** Message the form field shows when either side's typed text can't be parsed as a date & time. */
+  public parseErrorMessage = input<string | null>(null);
+
+  /** Combined date-fns format shown in (and parsed from) both fields. Locale-aware by default. */
+  public displayFormat = input<string | null>(null);
+
+  /**
+   * IANA name of the zone both fields' wall clock stands for - `'Asia/Tokyo'` makes the fields, the
+   * calendar and the time pickers all read in Tokyo, and writes both ends with Tokyo's offset.
+   * Unset, it follows `provideDateTimeZone()`; `null` keeps the runtime's own zone.
+   */
+  public timeZone = input<string | null | undefined>(undefined);
+
+  /** A name for {@link timeZone} in the second reading. Defaults to the IANA name's last segment. */
+  public timeZoneLabel = input<string | null>(null);
+
+  /**
+   * Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) With a
+   * {@link timeZone}, the bounds are read on the zone's calendar and `dateFilter` receives each
+   * day as a local midnight carrying the zone's date.
+   */
+  public minDate = input<Date | null>(null);
+  public maxDate = input<Date | null>(null);
+  public dateFilter = input<((date: Date) => boolean) | null>(null);
+  /** Month the picker calendar opens at while the range is empty. */
+  public startAt = input<Date | null>(null);
+
+  /** Which grid the picker calendar opens on - `'year'` to pick a month first, `'multiYear'` a year. */
+  public startView = input<CalendarView>('month');
+
+  /** Per-cell classes for the picker calendar - busy days, holidays, markers of your own. */
+  public dateClass = input<CalendarDateClassFn | null>(null);
+
+  /** Renders the picker calendar's week-number column. */
+  public weekNumbers = input(false, { transform: booleanAttribute });
+
+  /** The first day of the picker calendar's rows, `0` for Sunday. Defaults to the locale's. */
+  public firstDayOfWeek = input<CalendarWeekStartsOn | undefined>(undefined);
+
+  /**
+   * Forwarded to both of the picker's time pickers. Only the time of day of `minTime`/`maxTime` is
+   * read, so the bound applies on every day; `timeFilter` receives the full candidate timestamp and
+   * the side it belongs to. Bounds shape the picker - validate typed entry with a schema validator.
+   */
+  public minTime = input<Date | null>(null);
+  public maxTime = input<Date | null>(null);
+  public timeFilter = input<DateTimeRangeTimeFilterFn | null>(null);
+
+  /**
+   * Ranges offered beside the picker - build them with the preset factories (`lastDaysPreset(7)`,
+   * `thisMonthPreset()`, …), which run from 00:00 to 23:59, or write your own. Picking one commits
+   * both ends; the picker stays open like after any other pick.
+   */
+  public presets = input<readonly DateRangePreset[]>([]);
+
+  /** The format in effect: this instance's `displayFormat`, else `'Pp'`. */
+  public effectiveDisplayFormat = computed(() => this.displayFormat() ?? 'Pp');
+
+  public resolvedParseErrorMessage = computed(
+    () => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateTimeRange,
+  );
+
+  public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_TIME_RANGE_INPUT);
+
+  /** The zone in effect, or `null` when none is set or the name is not one `Intl` knows. */
+  public override effectiveTimeZone = effectiveTimeZoneOf(this.timeZone, 'et-date-time-range-input');
+
+  /** The name shown for the fields' zone. */
+  public resolvedTimeZoneLabel = timeZoneLabelOf(this.effectiveTimeZone, this.timeZoneLabel);
+
+  private readonly LOCAL_READING_ELEMENT_ID = nextLocalReadingElementId('et-date-time-range-input');
+
+  /** @internal Id of the second-reading element, or `null` while it does not render. */
+  public localReadingId = computed(() =>
+    this.localReading('start') === null && this.localReading('end') === null ? null : this.LOCAL_READING_ELEMENT_ID,
+  );
+
+  public override ownDescribedBy = this.localReadingId;
+
+  private halfPicks = {
+    start: createPendingDateTime((day, time) => combineInZone({ day, time }, this.effectiveTimeZone())),
+    end: createPendingDateTime((day, time) => combineInZone({ day, time }, this.effectiveTimeZone())),
+  };
+
+  /** @internal */
+  public presetList = createDateRangePresets({
+    host: this,
+    presets: this.presets,
+    labels: this.dateTimeLabels,
+    firstDayOfWeek: this.firstDayOfWeek,
+    normalize: (date) => date,
+  });
+
+  /** The two days the picker calendar highlights - committed, else picked with no time yet. */
+  public pickerDateRange = computed(() => ({
+    start: this.pickerSideDate('start') ?? this.halfPicks.start.day(),
+    end: this.pickerSideDate('end') ?? this.halfPicks.end.day(),
+  }));
+
+  /** The two times the picker's ring marks as selected - committed, else picked with no day yet. */
+  public pickerTimeRange = computed(() => ({
+    start: this.pickerSideTime('start') ?? this.halfPicks.start.time(),
+    end: this.pickerSideTime('end') ?? this.halfPicks.end.time(),
+  }));
+
+  /** {@link minDate} on the calendar the picker shows. */
+  public pickerMinDate = computed(() => toZoneCalendar(this.minDate(), this.effectiveTimeZone()));
+
+  /** {@link maxDate} on the calendar the picker shows. */
+  public pickerMaxDate = computed(() => toZoneCalendar(this.maxDate(), this.effectiveTimeZone()));
+
+  constructor() {
+    super();
+
+    warnOnUnparsedValue({
+      selector: 'et-date-time-range-input',
+      formatProvider: 'provideDateTimeFormat',
+      readings: () =>
+        this.mixed()
+          ? []
+          : [
+              { value: this.value().start, parsed: this.startDate() },
+              { value: this.value().end, parsed: this.endDate() },
+            ],
+      format: this.effectiveValueFormat,
+      locale: this.effectiveLocale,
+    });
+  }
+
+  /** One side read in the runtime's own zone, or `null` when it is empty or the readings agree. */
+  public localReading(side: DateRangeSide) {
+    return localReading(this.sideDate(side), {
+      format: this.effectiveDisplayFormat(),
+      locale: this.effectiveLocale(),
+      timeZone: this.effectiveTimeZone(),
+    });
+  }
+
+  /**
+   * Commits a picker day range onto each side's committed time of day, holding the days whose time
+   * is still missing. The picker stays open.
+   */
+  public selectCalendarRange(range: { start: Date | null; end: Date | null }) {
+    if (!this.interactive()) {
+      return;
+    }
+
+    // both merges read the value the range is about to replace, so they run before `writeRange`
+    this.writeRange({ start: this.mergeDay(range.start, 'start'), end: this.mergeDay(range.end, 'end') });
+    this.touched.set(true);
+  }
+
+  /**
+   * Commits a picker-selected time onto one side's day. While that side has no day yet the *other*
+   * side's is used, and while the range is empty the time is held until a day is picked.
+   */
+  public selectTime(side: DateRangeSide, time: Date | null) {
+    if (time === null || !this.interactive()) {
+      return;
+    }
+
+    const day = this.sideDay(side) ?? this.sideDay(side === 'start' ? 'end' : 'start');
+
+    if (day === null) {
+      this.halfPicks[side].holdTime(time);
+      this.resolvePendingMixed();
+    } else {
+      this.halfPicks[side].clear();
+      this.commitSideDate(side, combineInZone({ day, time }, this.effectiveTimeZone()));
+    }
+
+    this.touched.set(true);
+  }
+
+  /** Commits a preset's range, dropping any held half-pick. */
+  public selectPreset(preset: DateRangePreset) {
+    if (this.presetList.apply(preset)) {
+      this.halfPicks.start.clear();
+      this.halfPicks.end.clear();
+    }
+  }
+
+  /** The committed text of one side, or its half-pick rendered against placeholders. */
+  public override displayValue(side: DateRangeSide) {
+    const committed = super.displayValue(side);
+
+    if (committed !== '' || this.maskPattern() !== null) {
+      return committed;
+    }
+
+    return (
+      renderPartialDateTime({
+        day: this.halfPicks[side].day(),
+        time: this.halfPicks[side].time(),
+        format: this.effectiveDisplayFormat(),
+        locale: this.effectiveLocale(),
+      }) ?? ''
+    );
+  }
+
+  /** An actual edit to a side's field invalidates whatever half was held for it. */
+  public override beforeCommitSide(side: DateRangeSide) {
+    this.halfPicks[side].clear();
+  }
+
+  /** Drops both held halves along with the range. */
+  public override clearRange() {
+    super.clearRange();
+    this.halfPicks.start.clear();
+    this.halfPicks.end.clear();
+  }
+
+  public parseSideCommit(raw: string) {
+    return parseDateTimeText(raw, {
+      format: this.effectiveDisplayFormat(),
+      locale: this.effectiveLocale(),
+      timeZone: this.effectiveTimeZone(),
+    });
+  }
+
+  private sideDay(side: DateRangeSide) {
+    return this.pickerSideDate(side) ?? this.halfPicks[side].day();
+  }
+
+  private mergeDay(day: Date | null, side: DateRangeSide) {
+    const held = this.halfPicks[side];
+
+    // the calendar reports `end: null` for its whole first click, so dropping the held *time* here
+    // would delete a time the reader picked before the days
+    if (day === null) {
+      held.clearDay();
+
+      return null;
+    }
+
+    const committed = this.sideDate(side);
+    const timeZone = this.effectiveTimeZone();
+
+    if (committed !== null) {
+      return timeZone === null ? withTimeOfDay(day, committed) : withZonedDay(committed, { day, timeZone });
+    }
+
+    return held.holdDay(day);
+  }
+
+  private resolvePendingMixed() {
+    if (this.mixed()) {
+      this.value.set({ start: null, end: null });
+      this.mixed.set(false);
+    }
+  }
+}

@@ -1,0 +1,262 @@
+<div
+  [style.--st-side-width.px]="shownWidth()"
+  class="relative grid size-full grid-cols-[64px_1fr] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-et-surface-background font-ui text-ui-md text-et-surface-text has-[[data-side-resize]:active]:cursor-col-resize has-[[data-side-resize]:active]:select-none"
+>
+  @if (chrome(); as chrome) {
+    <ethlete-title-bar
+      [os]="chrome.os"
+      [left]="chrome.left"
+      [right]="chrome.right"
+      [update]="update()"
+      [notice]="codeNoticeAction() !== null"
+      [noticeText]="codeNoticeText()"
+      [product]="product()"
+      [restart]="codeWatch.restart()"
+      (restart)="restartCode()"
+      (dismiss)="codeWatch.dismissRestart()"
+      (minimize)="minimizeRequest.emit()"
+      (maximize)="maximizeRequest.emit()"
+      (close)="closeRequest.emit()"
+      class="col-span-full"
+    />
+  }
+  <nav
+    class="row-start-2 flex flex-col items-center gap-space-1 border-r border-et-surface-border bg-et-surface-background py-space-3"
+  >
+    <div class="relative flex min-h-10 w-full justify-center">
+      <ng-content select="[shellMainStudio]">
+        <span
+          [attr.aria-label]="SHELL_LABELS.studio"
+          class="inline-flex size-10 items-center justify-center rounded-control-lg bg-et-surface-background text-et-surface-text"
+          etAutoSurface
+        >
+          <svg width="28.8" height="28.8" viewBox="0 0 32 32" aria-hidden="true">
+            <path
+              fill="currentColor"
+              fill-rule="evenodd"
+              d="M11.5 5.5H24.1C26 5.5 27 6.9 26.4 8.7L22.8 20.9C22.5 22 21.8 22.9 20.8 23.4L8 28L9 21.6L5.9 17.4C5.2 16.5 5.2 15.2 5.9 14.2L9.4 6.8C9.8 6 10.6 5.5 11.5 5.5ZM12.8 11.5C12 11.3 11.2 11.8 11 12.6L10.2 15.7C10 16.5 10.5 17.3 11.3 17.5C12.1 17.7 12.9 17.2 13.1 16.4L13.9 13.3C14.1 12.5 13.6 11.7 12.8 11.5ZM20.1 10.6C19.3 10.4 18.5 10.9 18.3 11.7L17.5 14.8C17.3 15.6 17.8 16.4 18.6 16.6C19.4 16.8 20.2 16.3 20.4 15.5L21.2 12.4C21.4 11.6 20.9 10.8 20.1 10.6Z"
+            />
+          </svg>
+        </span>
+      </ng-content>
+    </div>
+    <div class="my-space-2 h-px w-6 bg-et-surface-border"></div>
+    @for (item of SECTIONS; track item.label) {
+      @let active = item.label === railSection();
+      <div
+        [class]="
+          active
+            ? 'before:absolute before:top-2 before:left-0 before:h-6 before:w-0.75 before:rounded-r-[3px] before:bg-et-tone-fill before:content-[\'\']'
+            : ''
+        "
+        class="relative flex w-full justify-center"
+      >
+        <button
+          [class]="sectionClass(active)"
+          [attr.aria-label]="item.label"
+          [attr.aria-current]="active ? 'page' : null"
+          (click)="pickSection(item.label, active)"
+          class="flex size-10 items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
+          et-button
+          type="button"
+          variant="transparent"
+          size="sm"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            @switch (item.icon) {
+              @case ('grid') {
+                <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" />
+                <rect x="9" y="2.5" width="4.5" height="4.5" rx="1" />
+                <rect x="2.5" y="9" width="4.5" height="4.5" rx="1" />
+                <rect x="9" y="9" width="4.5" height="4.5" rx="1" />
+              }
+              @case ('flow') {
+                <circle cx="4" cy="4" r="1.75" />
+                <circle cx="12" cy="12" r="1.75" />
+                <path d="M5.75 4H9.5a2.5 2.5 0 0 1 2.5 2.5v3.75" />
+              }
+              @case ('inbox') {
+                <path d="M2.5 8.5 4.25 4h7.5l1.75 4.5V12a.75.75 0 0 1-.75.75h-9.5A.75.75 0 0 1 2.5 12z" />
+                <path d="M2.5 8.5h3l1 1.75h3l1-1.75h3" />
+              }
+            }
+          </svg>
+        </button>
+      </div>
+    }
+    <div class="flex-1"></div>
+    <div class="my-space-2 h-px w-6 bg-et-surface-border"></div>
+    @for (name of products(); track name; let index = $index) {
+      @let active = name === product();
+      <div
+        [class]="
+          active
+            ? 'before:absolute before:top-2.5 before:left-0 before:h-5 before:w-0.75 before:rounded-r-[3px] before:bg-text before:content-[\'\']'
+            : ''
+        "
+        class="relative flex w-full justify-center"
+      >
+        <button
+          [class]="productClass(active)"
+          [attr.aria-label]="name"
+          [attr.aria-current]="active ? 'true' : null"
+          [etTooltip]="name"
+          (click)="productChange.emit(name)"
+          class="flex items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
+          placement="right"
+          etAutoSurface
+          et-button
+          type="button"
+          variant="transparent"
+          color="surface"
+          size="sm"
+        >
+          @let logo = logos()[name];
+          @if (logo) {
+            <img [src]="logo" class="pointer-events-none block size-5 object-contain" alt="" />
+          } @else {
+            {{ railLabels()[index] }}
+          }
+        </button>
+      </div>
+    }
+  </nav>
+
+  <div class="relative row-start-2 min-w-0">
+    <main
+      [class]="
+        panel() === 'hidden'
+          ? '[--st-shell-inset-left:0px]'
+          : '[--st-shell-inset-left:calc(var(--st-side-width)+var(--space-3))]'
+      "
+      class="absolute inset-0 isolate min-w-0 overflow-hidden bg-et-surface-background bg-[radial-gradient(circle,var(--et-surface-border)_1px,transparent_1.2px)] bg-size-[16px_16px] bg-position-[8px_8px]"
+    >
+      @if (server(); as server) {
+        <div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
+          @if (server === 'crashed') {
+            <div
+              class="mx-auto mt-15 box-border flex w-full max-w-6xl flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-text-muted"
+              role="alert"
+            >
+              <div class="flex flex-col gap-space-1">
+                <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface-text">{{ LABELS.crashed }}</h3>
+                @if (crash(); as crash) {
+                  <p class="m-0">{{ LABELS.crashedAt(crash) }}</p>
+                }
+              </div>
+              @if (crash(); as crash) {
+                <pre
+                  class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-tint/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
+                  >{{ crash.stack.join('\n') }}</pre>
+                <p class="m-0">
+                  {{ LABELS.crashLog }} <span class="font-code break-all text-et-surface-text">{{ crash.path }}</span>
+                </p>
+              }
+              <button
+                (click)="restartServer.emit()"
+                et-button
+                type="button"
+                variant="outline"
+                color="surface"
+                size="sm"
+              >
+                {{ LABELS.restartButton }}
+              </button>
+            </div>
+          } @else if (server !== 'stopped') {
+            <div
+              [attr.aria-busy]="server === 'starting' ? 'true' : null"
+              class="mx-auto mt-15 box-border w-full max-w-6xl px-space-5"
+            >
+              @if (server === 'starting') {
+                <div class="flex items-center gap-space-2 text-et-surface-text">
+                  <et-spinner />
+                  <h3 class="m-0 font-ui-strong text-ui-lg">{{ LABELS.startPhase[phase()] }}</h3>
+                </div>
+                <p class="m-0 mt-space-1 text-ui-sm text-et-surface-text-muted">{{ LABELS.startElapsed(phaseMs()) }}</p>
+              } @else {
+                <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface-text">{{ LABELS.stopped }}</h3>
+              }
+              @if (server === 'unanswered') {
+                <p class="m-0 mt-space-2 text-ui-sm text-et-surface-text-muted">{{ LABELS.unanswered(serverUrl()) }}</p>
+                <div class="mt-space-3">
+                  <button
+                    (click)="restartServer.emit()"
+                    et-button
+                    type="button"
+                    variant="outline"
+                    color="surface"
+                    size="sm"
+                  >
+                    {{ LABELS.restartButton }}
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <div
+              class="mx-auto mt-15 box-border flex w-full max-w-6xl flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-text-muted"
+              role="alert"
+            >
+              <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface-text">{{ LABELS.stopped }}</h3>
+              @if (log().length) {
+                <pre
+                  class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-tint/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
+                  >{{ log().join('\n') }}</pre>
+              }
+              <button
+                (click)="restartServer.emit()"
+                et-button
+                type="button"
+                variant="outline"
+                color="surface"
+                size="sm"
+              >
+                {{ LABELS.restartButton }}
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <ng-content />
+      }
+    </main>
+    @if (panel() !== 'hidden') {
+      <!-- WebKit composites the canvas iframes and only lifts the panel above them through overlap testing, which
+           lags while the WebContent process hangs; its own layer and z-index keep it on top (findings 367, 375). -->
+      <aside
+        class="absolute top-space-3 bottom-space-3 left-space-3 z-1 flex w-(--st-side-width) will-change-transform min-h-0 flex-col overflow-hidden rounded-control-lg bg-et-surface-background shadow-[inset_0_0_0_1px_var(--et-surface-border),0_12px_32px_var(--surface-shadow)]"
+      >
+        <header
+          class="box-border flex h-12 items-center justify-between gap-space-1 border-b border-et-surface-border px-space-2"
+        >
+          <ethlete-shell-system-picker
+            [product]="product()"
+            [products]="products()"
+            [sdk]="sdk()"
+            [open]="systemPicker() === 'open'"
+            (openChange)="setSystemPicker($event)"
+            (productChange)="productChange.emit($event)"
+            (sdkChange)="sdkChange.emit($event)"
+            class="contents"
+          />
+          <ethlete-shell-collapse (collapse)="collapse.emit()" />
+        </header>
+        <div class="min-h-0 flex-1 overflow-hidden p-space-2">
+          <ng-content select="[shellMainSide]" />
+        </div>
+      </aside>
+      <ethlete-shell-resize-handle [(width)]="sideWidth" (dragWidthChange)="dragWidth.set($event)" class="contents" />
+    }
+  </div>
+</div>

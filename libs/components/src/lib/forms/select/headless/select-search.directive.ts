@@ -1,0 +1,347 @@
+import {
+  DOCUMENT,
+  Directive,
+  ElementRef,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  signal,
+  untracked,
+} from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
+import { RuntimeError, createComponentId } from '@ethlete/core';
+import { SELECT_ERROR_CODES } from '../select-errors';
+import { separatorPattern } from '../../tag-input/headless/internals/separator-pattern';
+import { SelectDirective } from './select.directive';
+
+/**
+ * Opts a select into search. `et-select` renders the input inline in the trigger (combobox
+ * pattern): typing opens the panel and filters.
+ */
+@Directive({
+  selector: 'input[etSelectSearch]',
+  exportAs: 'etSelectSearch',
+  host: {
+    '[attr.autocomplete]': 'autocomplete() || null',
+    role: 'combobox',
+    'aria-autocomplete': 'list',
+    'aria-haspopup': 'listbox',
+    '[attr.aria-expanded]': 'expanded()',
+    '[attr.aria-controls]': 'controls()',
+    '[attr.aria-activedescendant]': 'activeDescendant()',
+    '[attr.aria-required]': 'select?.required() || null',
+    '[attr.aria-invalid]': 'select?.shouldDisplayError() || null',
+    '[attr.aria-describedby]': 'describedBy()',
+    '[attr.aria-label]': 'select?.ariaLabel() || null',
+    '[attr.aria-labelledby]': 'select?.labelId() || null',
+    '[disabled]': 'select?.disabled() || false',
+    '[readOnly]': 'select?.readonly() || false',
+    '(input)': 'handleInput()',
+    '(keydown)': 'handleKeydown($event)',
+    '(paste)': 'handlePaste($event)',
+    '(focus)': 'handleFocus()',
+    '(blur)': 'handleBlur()',
+  },
+})
+export class SelectSearchDirective {
+  protected select = inject(SelectDirective, { optional: true });
+  private document = inject(DOCUMENT);
+  public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
+
+  public query = model('');
+  public autocomplete = input('off');
+
+  private edited = signal(false);
+
+  protected expanded = computed(() => this.select?.open() ?? false);
+  protected controls = computed(() => (this.select?.open() ? this.select.listboxId() : null));
+  protected activeDescendant = computed(() => (this.select?.open() ? this.select.activeId() : null));
+  protected describedBy = computed(() => {
+    const select = this.select;
+
+    if (!select) {
+      return null;
+    }
+
+    const ids = [select.describedBy()];
+
+    if (select.mixed() && select.multiple() && this.isInlineInTrigger()) {
+      ids.push(select.mixedLabelId());
+    }
+
+    return ids.filter((id): id is string => !!id).join(' ') || null;
+  });
+
+  // any other placeholder on the element belongs to the consumer and is never overwritten
+  private writtenPlaceholder: string | null = null;
+
+  private fallbackPlaceholder = computed(() => {
+    const select = this.select;
+
+    if (!select || !this.isInlineInTrigger() || select.hasValue()) {
+      return '';
+    }
+
+    return select.placeholder();
+  });
+
+  constructor() {
+    const element = this.elementRef.nativeElement;
+
+    if (!element.id) {
+      element.id = createComponentId('et-select-search');
+    }
+
+    registerSingleton(this.select?.registeredSearch, this);
+
+    effect(() => {
+      const placeholder = this.fallbackPlaceholder();
+      const element = this.elementRef.nativeElement;
+
+      if (element.placeholder && element.placeholder !== this.writtenPlaceholder) {
+        return;
+      }
+
+      this.writtenPlaceholder = placeholder;
+      element.placeholder = placeholder;
+    });
+
+    effect(() => {
+      const element = this.elementRef.nativeElement;
+      const query = this.query();
+      const select = this.select;
+      let text = query;
+
+      if (
+        select &&
+        !select.multiple() &&
+        (!select.registeredValueTemplate() || select.mixed() || select.focused()) &&
+        !query &&
+        !this.edited() &&
+        this.isInlineInTrigger()
+      ) {
+        text = select.displayValue() ?? '';
+      }
+
+      if (element.value !== text) {
+        element.value = text;
+      }
+    });
+
+    effect(() => {
+      const open = this.select?.open() ?? false;
+
+      untracked(() => {
+        if (!open) {
+          this.edited.set(false);
+        }
+      });
+    });
+
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.select) {
+          throw new RuntimeError(
+            SELECT_ERROR_CODES.SEARCH_OUTSIDE_SELECT,
+            '[SelectSearchDirective] etSelectSearch must be placed inside an [etSelect] element.',
+            { element: this.elementRef.nativeElement },
+          );
+        }
+      });
+    }
+  }
+
+  /** @internal */
+  public isFocused() {
+    return this.document.activeElement === this.elementRef.nativeElement;
+  }
+
+  /** @internal */
+  public focus(options?: FocusOptions) {
+    this.elementRef.nativeElement.focus(options ?? { preventScroll: true });
+  }
+
+  /** @internal Selects a displayed value label on open, so typing replaces it (single select). */
+  public handleOpened() {
+    const select = this.select;
+
+    if (this.edited() || !select || select.multiple() || !this.isInlineInTrigger()) {
+      return;
+    }
+
+    const element = this.elementRef.nativeElement;
+
+    // written before the display effect runs, so the label can be selected for replace-on-type
+    if (select.registeredValueTemplate() && !select.mixed() && !element.value) {
+      element.value = select.displayValue() ?? '';
+    }
+
+    if (element.value) {
+      element.select();
+    }
+  }
+
+  public clear() {
+    // the display effect owns `element.value`
+    this.query.set('');
+    this.select?.queryChange.emit('');
+  }
+
+  /** @internal Restores and selects the masked label after Escape without changing normal search behavior. */
+  public restoreMixedDisplay() {
+    const select = this.select;
+
+    this.edited.set(false);
+    this.clear();
+
+    if (!select || select.multiple() || !this.isInlineInTrigger()) {
+      return;
+    }
+
+    // written before the display effect runs, so the next keystroke replaces the restored label
+    const element = this.elementRef.nativeElement;
+    element.value = select.displayValue() ?? '';
+
+    if (element.value) {
+      element.select();
+    }
+  }
+
+  protected handleInput() {
+    const value = this.elementRef.nativeElement.value;
+    const select = this.select;
+
+    if (select?.allowCustomValues()) {
+      const lastChar = value.at(-1);
+
+      if (lastChar !== undefined && select.characterSeparators().includes(lastChar)) {
+        const pending = value.slice(0, -1);
+
+        this.edited.set(true);
+        this.elementRef.nativeElement.value = pending;
+        this.query.set(pending);
+        select.queryChange.emit(pending);
+
+        if (!pending || !select.commitCustomValue(pending)) {
+          select.show();
+        }
+
+        return;
+      }
+    }
+
+    this.edited.set(true);
+    this.query.set(value);
+    select?.queryChange.emit(value);
+
+    if (!value && select && !select.multiple() && select.hasSelectedValue() && this.isInlineInTrigger()) {
+      if (select.mixed()) {
+        select.clearValue();
+      } else {
+        select.deselectValue(select.value());
+      }
+    }
+
+    select?.show();
+  }
+
+  protected handleKeydown(event: KeyboardEvent) {
+    const select = this.select;
+
+    // Enter keeps its own path, which commits the active option before any custom value
+    if (
+      select?.allowCustomValues() &&
+      !event.isComposing &&
+      event.key !== 'Enter' &&
+      select.keySeparators().includes(event.key)
+    ) {
+      // an empty field keeps the key's default (Tab still moves focus)
+      if (this.query()) {
+        event.preventDefault();
+        select.commitCustomValue(this.query());
+      }
+
+      return;
+    }
+
+    if (event.key === 'Backspace' && !this.elementRef.nativeElement.value) {
+      if (!select || select.disabled() || select.readonly()) {
+        return;
+      }
+
+      if (select.mixed()) {
+        return;
+      }
+
+      const lastEntry = select.selectedEntries().at(-1);
+
+      if (lastEntry) {
+        event.preventDefault();
+        select.deselectValue(lastEntry.value);
+      }
+
+      return;
+    }
+
+    if (
+      event.key === 'ArrowDown' ||
+      event.key === 'ArrowUp' ||
+      event.key === 'Enter' ||
+      event.key === 'Tab' ||
+      ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a')
+    ) {
+      select?.handleTriggerKeydown(event);
+    }
+  }
+
+  protected handlePaste(event: ClipboardEvent) {
+    const select = this.select;
+    const text = event.clipboardData?.getData('text/plain');
+
+    if (!select || !text || !select.allowCustomValues() || !select.multiple()) {
+      return;
+    }
+
+    const element = this.elementRef.nativeElement;
+    const selectionStart = element.selectionStart ?? element.value.length;
+    const selectionEnd = element.selectionEnd ?? selectionStart;
+    const merged = element.value.slice(0, selectionStart) + text + element.value.slice(selectionEnd);
+    const parts = merged.split(separatorPattern(select.characterSeparators()));
+
+    if (parts.length < 2) {
+      return;
+    }
+
+    event.preventDefault();
+    this.clear();
+
+    const refused = parts.filter((part) => part.trim() && !select.commitCustomValue(part));
+    const pending = refused.map((part) => part.trim()).join(' ');
+
+    if (pending) {
+      this.query.set(pending);
+      select.queryChange.emit(pending);
+    }
+  }
+
+  protected handleFocus() {
+    this.select?.triggerFocused.set(true);
+  }
+
+  protected handleBlur() {
+    this.select?.triggerFocused.set(false);
+
+    if (!this.select?.open()) {
+      this.select?.touched.set(true);
+    }
+  }
+
+  private isInlineInTrigger() {
+    const trigger = this.select?.registeredTrigger()?.elementRef.nativeElement;
+
+    return !!trigger && trigger.contains(this.elementRef.nativeElement);
+  }
+}

@@ -1,0 +1,43 @@
+@layer components.sdk {
+  @property --et-collapse-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 240ms;
+  }
+
+  @property --et-collapse-easing {
+    syntax: '*';
+    inherits: true;
+    initial-value: cubic-bezier(0.25, 0, 0.1, 1);
+  }
+
+  .et-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+
+    &:where([data-open]) {
+      grid-template-rows: 1fr;
+      visibility: visible;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .et-collapse:where([data-can-animate]) {
+      transition:
+        grid-template-rows var(--et-collapse-duration) var(--et-collapse-easing),
+        visibility 0s linear var(--et-collapse-duration);
+
+      &:where([data-open]) {
+        transition:
+          grid-template-rows var(--et-collapse-duration) var(--et-collapse-easing),
+          visibility 0s linear 0s;
+      }
+    }
+  }
+
+  .et-collapse-clip {
+    min-block-size: 0;
+    overflow: hidden;
+  }
+}

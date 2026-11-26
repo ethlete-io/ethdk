@@ -1,0 +1,1204 @@
+import { writeDesignFile } from './design-file';
+import { failedText } from '../failure-line';
+import { createHash } from 'crypto';
+import { NoVerdict, noVerdictOf } from './no-verdict';
+import { existsSync, mkdtempSync, readFileSync } from 'fs';
+import { AddressInfo } from 'net';
+import { tmpdir } from 'os';
+import { join, resolve } from 'path';
+import { chromiumOf } from '../browser';
+import { timedPhase } from '../phase-timing';
+import { DesignConfig, DesignPreset } from '../design-config';
+import { viteCacheOf } from '../vite-cache';
+import { createDesignServer } from '../serve';
+import { checkerScriptOf, createPartShooter, Picture, pixelBoxOf, viewportOf } from '../shot';
+import { recordCache } from '../timings';
+import { ActionDep, cachedActionsOf, COMPARE_ACTIONS, createActionCache } from './action-cache';
+import { actionCheckCodeOf } from '../code-hash';
+import { browserVersionOf, builtAppHashOf, cacheKeyOf, COMPARE_DESIGN_SHOTS } from './compare-cache';
+import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS, DRAWS_AT_ONCE } from '../thumb';
+import {
+  actionInputsOf,
+  ActionElement,
+  actionFailureOf,
+  ActionInput,
+  ActionOutcome,
+  actionScanScriptOf,
+  componentSelectorOf,
+  drawsStateAlreadyOf,
+  elementNameOf,
+  embeddedOwnersScriptOf,
+  enclosingControlsScriptOf,
+  exemptFromDeclaringOf,
+  nearMissesOf,
+  ownScopeOf,
+  embeddersOf,
+  listenEmbeddedScriptOf,
+  accessibleNameDriftsOf,
+  accessibleNameFailureOf,
+  pairElementsOf,
+  openedFromOf,
+  resolveActionOf,
+  targetStateOf,
+} from './actions';
+import {
+  awaitOutput,
+  dropKeyboardFocus,
+  enterValue,
+  focusKeyTarget,
+  INIT_SCRIPT,
+  OVERLAY_ROOTS,
+  settle,
+  watchMutations,
+} from './action-press';
+import { waitForHarnessHost } from './harness-host-wait';
+import { compareFrameOf } from './harness-shot';
+import { compareBoxesIn, compareBoxesScriptOf } from './compare-boxes';
+import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
+import { componentOutputsOf, modelChangesForOf } from './component-outputs';
+import { checkLiveActions, liveLineOf, liveStateCompareOf, LiveLine } from './live-actions';
+import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
+import { reachedExpandedStateOf, reachedStateOf } from './reached-state';
+import { liveSpecOf } from './live-compare';
+import { harnessStaleOf } from './harness-map';
+import { inOrderAtOnce } from './in-order-at-once';
+import { StartHarnessServer, withHarnessUrl } from './harness-server';
+import {
+  drawnSurfacesOf,
+  forcedElementsOf,
+  HARNESS_HOST_SELECTOR,
+  harnessUrlOf,
+  hostBoxScriptOf,
+  OVERLAY_PANES,
+  pointerOpensOf,
+  shotCompareLinesOf,
+  shotCompareOf,
+} from './part-compare';
+import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
+import { partLinkOf } from './sketch/part-definition';
+import { parseTarget } from './sketch/sketch';
+import { createSystemModules, productModuleIdOf } from './system-modules';
+
+export const ACTIONS_USAGE =
+  'actions <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>] | actions [<layer>/<name>] --product <name> --live [--url <app build url>]';
+
+const ROOM_PX = 1024;
+
+const ACTION_BATCH_STATES = 4;
+
+const sha256Of = (text: string | Buffer) => createHash('sha256').update(text).digest('hex');
+
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
+
+/** A state the check starts from: its harness props, and the trigger a click opens first when the state is an open surface. */
+export type ActionStart = { state: string; props: unknown; opener: string | null };
+
+type Line = {
+  state: string;
+  element: string;
+  input: ActionInput | null;
+  failure: string | null;
+  warning?: string | null;
+};
+
+const scanOf = async (page: Page, roots: string[]) =>
+  (await page.evaluate(actionScanScriptOf(roots))) as ActionElement[];
+
+const noSuchElementOf = (nearMisses: (ActionElement & { owners: readonly string[] })[]) => {
+  const named = nearMisses.map(
+    (near) => `${elementNameOf(near)}${near.owners[0] === undefined ? '' : ` in ${near.owners[0]}`}`,
+  );
+
+  return named.length === 0
+    ? 'the design draws no such element, so it declares no action'
+    : `the design draws no element of this name - it draws ${named.join(', ')}: the accessible names differ`;
+};
+
+const probeOf = (probe: number) => `[data-et-action-probe="${probe}"]`;
+
+/**
+ * Waits until the harness host shows and holds the mounted part: a page-layout host fills the viewport before the
+ * lazily loaded part renders into it.
+ */
+const harnessMountedOf = async (page: Page, timeout: number) => {
+  await waitForHarnessHost(page, timeout);
+  await page.locator(`${HARNESS_HOST_SELECTOR} > *`).first().waitFor({ state: 'attached', timeout });
+};
+
+const expandedScanOf = async (page: Page, roots: string[]) =>
+  (await page.evaluate(
+    `${actionScanScriptOf(roots)}.map((found) => ({ key: found.key, expanded: document.querySelector('[data-et-action-probe="' + found.probe + '"]')?.getAttribute('aria-expanded') ?? null }))`,
+  )) as { key: string; expanded: string | null }[];
+
+const APP_BOXES_SCRIPT = compareBoxesScriptOf({
+  root: `document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})`,
+  panes: OVERLAY_PANES,
+});
+
+const shotOf = async (options: { page: Page; size: DesignPreset | null; room: boolean; timeout: number }) => {
+  const { page, size, room, timeout } = options;
+  const host = page.locator(HARNESS_HOST_SELECTOR).first();
+
+  if (size && (await page.locator(OVERLAY_PANES).count()) === 0) {
+    const origin = await host.evaluate((element) => {
+      const { x, y } = element.getBoundingClientRect();
+
+      return { x: Math.round(x + scrollX), y: Math.round(y + scrollY) };
+    });
+
+    await page.evaluate(checkerScriptOf(origin));
+
+    return { png: await host.screenshot({ type: 'png', animations: 'disabled', timeout }), boxes: null };
+  }
+
+  await host.scrollIntoViewIfNeeded({ timeout });
+
+  const clip = pixelBoxOf(
+    (await page.evaluate(hostBoxScriptOf({ up: room }))) as { x: number; y: number; width: number; height: number },
+  );
+
+  const boxes = size ? null : compareBoxesIn(await page.evaluate(APP_BOXES_SCRIPT), clip);
+
+  await page.evaluate(checkerScriptOf(clip));
+
+  return { png: await page.screenshot({ type: 'png', fullPage: true, animations: 'disabled', clip, timeout }), boxes };
+};
+
+/**
+ * Loads the harness page of `start`, clicks its opener, then presses `input` on the element `pick` names and returns
+ * the outputs it fired, whether its keydown default was prevented, and the host shot when `shoot` asks for one. The
+ * outputs include those of the components under the `listen` selectors; `expanded` adds each element's
+ * `aria-expanded` after the press. The wait for outputs ends as soon as `output` fired or the page settled.
+ */
+export const runActionInput = async (options: {
+  browser: Browser;
+  url: string;
+  start: ActionStart;
+  pick: { key: string; occurrence: number };
+  input: ActionInput;
+  size: DesignPreset | null;
+  shoot: { room: boolean; frozen?: FrozenAnimation[] } | null;
+  timeout: number;
+  listen?: string[];
+  expanded?: boolean;
+  output?: string | null;
+  focused?: boolean;
+}) => {
+  const { browser, url, start, pick, input, size, shoot, timeout, listen = [], expanded = false } = options;
+  const room = !!shoot && !size && shoot.room;
+  const viewport = viewportOf(size);
+  const context = await browser.newContext({
+    viewport: room ? { width: viewport.width + ROOM_PX, height: viewport.height + ROOM_PX } : viewport,
+    deviceScaleFactor: 1,
+  });
+
+  try {
+    await context.addInitScript(INIT_SCRIPT);
+
+    const page = await context.newPage();
+
+    await page.goto(url, { timeout });
+    await harnessMountedOf(page, timeout);
+    await awaitFonts(page);
+
+    if (room) await page.evaluate(`document.documentElement.style.padding = '${ROOM_PX}px 0 0 ${ROOM_PX}px'`);
+
+    await page.mouse.move(-1, -1);
+
+    const roots = [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS];
+
+    if (start.opener !== null) {
+      const opener = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find((element) => element.key === start.opener);
+
+      if (!opener) throw new Error(`the app has no ${start.opener} to open state ${start.state} with`);
+
+      await page.locator(probeOf(opener.probe)).click({ timeout });
+      await page.mouse.move(-1, -1);
+      await settle(page, timeout);
+    }
+
+    const element = (await scanOf(page, roots)).find(
+      (found) => found.key === pick.key && found.occurrence === pick.occurrence,
+    );
+
+    if (!element) throw new Error('the element is gone after a fresh load');
+
+    await page.evaluate('window.__etPrevented = []; (window.__etDesignEmits ?? []).length = 0;');
+
+    const listened = listen.length > 0 ? ((await page.evaluate(listenEmbeddedScriptOf(listen))) as number) : 0;
+
+    const target = page.locator(probeOf(element.probe));
+
+    await watchMutations(page);
+
+    if (input === 'click' || input === 'dblclick') {
+      await (input === 'click' ? target.click({ timeout }) : target.dblclick({ timeout }));
+      await page.mouse.move(-1, -1);
+    } else if (input === 'type') {
+      await enterValue(target, timeout);
+    } else {
+      await page.keyboard.press('Shift');
+      await focusKeyTarget({ page, target, timeout });
+      await page.keyboard.press(input);
+    }
+
+    await awaitOutput(page, options.output ?? null);
+    await settle(page, timeout);
+
+    if (shoot && input !== 'click' && input !== 'dblclick' && input !== 'type' && !options.focused) {
+      await dropKeyboardFocus(page);
+      await settle(page, timeout);
+    }
+
+    const emitted = (await page.evaluate('(window.__etDesignEmits ?? []).map((emit) => emit.output)')) as string[];
+    const embedded = listened > 0 ? ((await page.evaluate('window.__etEmbeddedEmits')) as string[]) : [];
+    const prevented = ((await page.evaluate('window.__etPrevented')) as string[]).length > 0;
+    const after = expanded ? await expandedScanOf(page, roots) : null;
+    if (shoot?.frozen?.length) await page.evaluate(freezeAnimationsScriptOf(shoot.frozen));
+
+    const shot = shoot ? await shotOf({ page, size, room, timeout }) : null;
+
+    return {
+      emitted: [...emitted, ...embedded],
+      prevented,
+      app: shot?.png ?? null,
+      ...(shot?.boxes && { appBoxes: shot.boxes }),
+      ...(after && { after }),
+    };
+  } finally {
+    await context.close();
+  }
+};
+
+/** Presses each interactive element of each start state of a part on the app's harness page and checks its declared action. */
+export const checkActions = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  part: string;
+  url: string;
+  only: readonly string[] | null;
+  onLine?: (line: Line) => void;
+  appRoot?: string | null;
+  /** Settles once another run has drawn the design pictures into the shared store, so this check reads them instead of drawing them twice. */
+  designsDrawn?: Promise<unknown>;
+}): Promise<
+  { lines: Line[]; pictures: string | null; embedders?: string[]; hosts?: string[]; embedded?: number } | string
+> => {
+  const { target, config, product, part, url, only, onLine } = options;
+  const frame = compareFrameOf({ presets: product.presets, part, preset: null });
+
+  if (typeof frame === 'string') return frame;
+  const chromium = await chromiumOf(target);
+
+  if (!chromium) return 'actions needs playwright or playwright-core in the checkout';
+
+  const server = await createDesignServer({ target, config, listen: true, port: 0 });
+  const store = server.shotStore(viteCacheOf(target, COMPARE_DESIGN_SHOTS), browserVersionOf(chromium.from));
+  let browser: { queue: ReturnType<typeof createDrawQueue>; shooter: ReturnType<typeof createPartShooter> } | undefined;
+  const closeBrowser = async () => {
+    const open = browser;
+
+    browser = undefined;
+    await open?.shooter.close();
+    await open?.queue.close();
+  };
+
+  try {
+    await server.listen();
+
+    const { port } = server.httpServer?.address() as AddressInfo;
+    const system = createSystemModules({ target, config });
+    const freshBrowser = async () => {
+      await closeBrowser();
+
+      const queue = createDrawQueue({ target });
+
+      browser = {
+        queue,
+        shooter: createPartShooter({ target, base: `http://localhost:${port}`, system, queue, store }),
+      };
+
+      return browser;
+    };
+
+    const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
+    const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
+      default?: { states?: unknown; controls?: unknown; consumerAction?: unknown };
+    };
+    const loaded = module.default?.states;
+    const states =
+      loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? (loaded as Record<string, unknown>) : {};
+    const names = Object.keys(states);
+    const appOutputs = (() => {
+      const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
+      const link = found ? partLinkOf(found.source) : null;
+      const component =
+        link?.kind === 'component' ? link.path : link?.kind === 'route' ? (link.component ?? null) : null;
+      const source = component === null ? null : resolve(target, component);
+
+      return source && existsSync(source) ? componentOutputsOf(readFileSync(source, 'utf8')) : null;
+    })();
+
+    const unknown = only?.find((state) => !(state in states));
+
+    if (unknown !== undefined) return `${part} has no state "${unknown}" - its states: ${names.join(', ')}`;
+
+    let embedders: Promise<string[]> | undefined;
+    const embeddersOfPart = () =>
+      (embedders ??= Promise.all(
+        product.parts.map(async (candidate) => {
+          const id = productModuleIdOf({ file: candidate.file, product: product.name });
+          const controls = await server.ssrLoadModule(id).then(
+            (loaded) => (loaded as { default?: { controls?: unknown } }).default?.controls,
+            () => undefined,
+          );
+
+          return [partKeyOf(candidate), controls] as const;
+        }),
+      ).then((entries) => embeddersOf({ part, controls: Object.fromEntries(entries) })));
+
+    let { queue, shooter } = await freshBrowser();
+    const designs = new Map<string, Promise<Picture>>();
+    const draw = (state: string, opened: Record<string, unknown> | null = null) => {
+      const key = opened === null ? state : `${state}\n${JSON.stringify(opened)}`;
+      const drawn =
+        designs.get(key) ??
+        shooter.pictureOf({
+          product: product.name,
+          part,
+          state,
+          preset: frame.preset,
+          width: null,
+          sketch: null,
+          interaction: null,
+          bare: true,
+          emptySlots: true,
+          checker: true,
+          ...(opened && { compose: { [part]: opened } }),
+          params: new URLSearchParams(),
+        });
+
+      designs.set(key, drawn);
+      drawn.catch(() => designs.get(key) === drawn && designs.delete(key));
+
+      return drawn;
+    };
+
+    await options.designsDrawn;
+    await timedPhase('actions-designs', () => Promise.all(names.map((state) => draw(state))));
+
+    const markups = new Map(
+      await Promise.all([...designs].map(async ([state, design]) => [state, (await design).markup ?? ''] as const)),
+    );
+    const opens = pointerOpensOf({
+      states,
+      controls: module.default?.controls,
+      drawn: Object.fromEntries([...markups].map(([state, markup]) => [state, drawnSurfacesOf(markup)])),
+    });
+    const designScan = async (state: string) =>
+      queue.run(async (browser) => {
+        const context = await browser.newContext({ viewport: viewportOf(frame.size) });
+
+        try {
+          const page = await context.newPage();
+
+          await page.setContent(markups.get(state) ?? '');
+
+          const found = await scanOf(page, ['body']);
+          const owners = (await page.evaluate(embeddedOwnersScriptOf(part))) as Record<string, string[]>;
+          const within = (await page.evaluate(enclosingControlsScriptOf())) as Record<string, string[]>;
+
+          return found.map((element) => ({
+            ...element,
+            owners: owners[String(element.probe)] ?? [],
+            within: within[String(element.probe)] ?? [],
+          }));
+        } finally {
+          await context.close();
+        }
+      });
+    const embedded = new Map<string, Promise<{ part: string; states: string[]; selector: string | null }>>();
+    const embeddedOf = (key: string) => {
+      const cached =
+        embedded.get(key) ??
+        (async () => {
+          const found = product.parts.find((candidate) => partKeyOf(candidate) === key);
+          const loaded = found
+            ? (
+                (await server.ssrLoadModule(productModuleIdOf({ file: found.file, product: product.name }))) as {
+                  default?: { states?: unknown };
+                }
+              ).default?.states
+            : undefined;
+          const link = found ? partLinkOf(found.source) : null;
+          const component =
+            link?.kind === 'component' ? link.path : link?.kind === 'route' ? (link.component ?? null) : null;
+          const file = component === null ? null : resolve(target, component);
+
+          return {
+            part: key,
+            states: loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? Object.keys(loaded) : [],
+            selector: file && existsSync(file) ? componentSelectorOf(readFileSync(file, 'utf8')) : null,
+          };
+        })();
+
+      embedded.set(key, cached);
+
+      return cached;
+    };
+    const expectedCache = new Map<string, Promise<Record<string, string>>>();
+    const expectedOf = (owner: string, state: string) => {
+      const key = `${owner}\n${state}`;
+      const cached =
+        expectedCache.get(key) ??
+        (async () => {
+          const ownerFrame = compareFrameOf({ presets: product.presets, part: owner, preset: null });
+          const size = typeof ownerFrame === 'string' ? null : ownerFrame.size;
+          const picture = await shooter.pictureOf({
+            product: product.name,
+            part: owner,
+            state,
+            preset: typeof ownerFrame === 'string' ? null : ownerFrame.preset,
+            width: null,
+            sketch: null,
+            interaction: null,
+            bare: true,
+            emptySlots: true,
+            params: new URLSearchParams(),
+          });
+
+          return queue.run(async (browser) => {
+            const context = await browser.newContext({ viewport: viewportOf(size) });
+
+            try {
+              const page = await context.newPage();
+
+              await page.setContent(picture.markup ?? '');
+
+              return Object.fromEntries(
+                (await expandedScanOf(page, ['body'])).flatMap(({ key, expanded }) =>
+                  expanded === null ? [] : [[key, expanded]],
+                ),
+              );
+            } finally {
+              await context.close();
+            }
+          });
+        })();
+
+      expectedCache.set(key, cached);
+
+      return cached;
+    };
+    let dir: string | null = null;
+
+    const printOf = async (dep: ActionDep) =>
+      dep.kind === 'draw'
+        ? sha256Of((await draw(dep.state, dep.opened)).png)
+        : dep.kind === 'expected'
+          ? sha256Of(JSON.stringify(await expectedOf(dep.owner, dep.state)))
+          : sha256Of(JSON.stringify(await embeddersOfPart()));
+
+    const checkState = async (
+      state: string,
+      track: (dep: ActionDep, print: string) => void = () => undefined,
+    ): Promise<{ lines: Line[]; hosts: string[]; keep: boolean; embedded?: number }> => {
+      const tracked = async <T>(dep: ActionDep, value: Promise<T>) => {
+        const resolved = await value;
+
+        track(dep, await printOf(dep));
+
+        return resolved;
+      };
+      const drawFor = (drawn: string, opened: Record<string, unknown> | null) =>
+        tracked({ kind: 'draw', state: drawn, opened }, draw(drawn, opened));
+      const expectedFor = (owner: string, expected: string) =>
+        tracked({ kind: 'expected', owner, state: expected }, expectedOf(owner, expected));
+      const embeddersFor = () => tracked({ kind: 'embedders' }, embeddersOfPart());
+      let wrotePictures = false;
+      let harnessFailed = false;
+      const lines: Line[] = [];
+      const pushLine = (line: Line) => {
+        lines.push(line);
+        onLine?.(line);
+      };
+      const open = opens[state];
+
+      if (typeof open === 'string') {
+        pushLine({ state, element: '-', input: null, failure: open });
+
+        return { lines, hosts: [], keep: true };
+      }
+
+      const design = await timedPhase('actions-design-scan', () => designScan(state));
+      const opener = open ? (design.find((element) => element.control === open.control)?.key ?? null) : null;
+
+      if (open && opener === null) {
+        pushLine({ state, element: '-', input: null, failure: `no ${open.control} trigger to open it with` });
+
+        return { lines, hosts: [], keep: true };
+      }
+
+      const start: ActionStart = { state, props: open ? (open.props ?? states[open.from]) : states[state], opener };
+      const startUrl = harnessUrlOf({ url, part, state, props: start.props, layout: frame.layout });
+      const app = await timedPhase('actions-app-scan', () =>
+        queue.run(async (browser) => {
+          const context = await browser.newContext({ viewport: viewportOf(frame.size) });
+
+          try {
+            const page = await context.newPage();
+
+            await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
+            await harnessMountedOf(page, DRAW_TIMEOUT_MS);
+
+            if (opener !== null) {
+              const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find((element) => element.key === opener);
+
+              if (trigger) await page.locator(probeOf(trigger.probe)).click();
+
+              await settle(page, DRAW_TIMEOUT_MS);
+            }
+
+            return await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS]);
+          } finally {
+            await context.close();
+          }
+        }),
+      );
+      const hosts = product.config.harness?.hosts ?? [];
+      const scope = ownScopeOf({ design, app, hosts });
+
+      const { paired, missing } = pairElementsOf({ design: scope.design, app: scope.app });
+
+      for (const drift of accessibleNameDriftsOf(paired))
+        pushLine({
+          state,
+          element: elementNameOf(drift.app),
+          input: null,
+          failure: accessibleNameFailureOf(drift),
+        });
+
+      for (const element of missing)
+        pushLine({
+          state,
+          element: elementNameOf(element),
+          input: null,
+          failure: `the design declares ${element.action} but the app draws no such element`,
+        });
+
+      const checkedElements = await inOrderAtOnce({
+        items: paired,
+        limit: DRAWS_AT_ONCE,
+        run: async ({ app: element, design: drawn }) => {
+          const out: Line[] = [];
+          const finish = (): Line[] => {
+            for (const line of out) onLine?.(line);
+
+            return out;
+          };
+
+          const name = elementNameOf(element);
+
+          try {
+            const probes = await timedPhase('actions-pointer-focus', () =>
+              queue.run((browser) =>
+                probePointerFocus({
+                  open: async () => {
+                    const context = await browser.newContext({ viewport: viewportOf(frame.size) });
+                    const page = await context.newPage();
+                    const close = () => context.close();
+
+                    try {
+                      await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
+                      await harnessMountedOf(page, DRAW_TIMEOUT_MS);
+                      await page.mouse.move(-1, -1);
+
+                      if (opener !== null) {
+                        const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find(
+                          (found) => found.key === opener,
+                        );
+
+                        if (trigger) await page.locator(probeOf(trigger.probe)).click();
+
+                        await settle(page, DRAW_TIMEOUT_MS);
+                        await page.mouse.move(-1, -1);
+                      }
+
+                      const found = (await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS])).find(
+                        (candidate) => candidate.key === element.key && candidate.occurrence === element.occurrence,
+                      );
+
+                      if (!found) throw new Error('the element is gone after a fresh load');
+
+                      return { page, locator: page.locator(probeOf(found.probe)), close };
+                    } catch (error) {
+                      await close();
+                      throw error;
+                    }
+                  },
+                  settle: (page) => settle(page, DRAW_TIMEOUT_MS),
+                }),
+              ),
+            );
+
+            if (probes) {
+              const { failure, warning } = pointerFocusVerdictOf({ ...probes, activatable: !!drawn?.action });
+
+              out.push({ state, element: `${name} pointer focus`, input: null, failure, warning });
+            }
+          } catch (error) {
+            harnessFailed = true;
+            out.push({
+              state,
+              element: `${name} pointer focus`,
+              input: null,
+              failure: messageOf(error).split('\n')[0] ?? '',
+            });
+          }
+          const owners = drawn ? await Promise.all(drawn.owners.map(embeddedOf)) : [];
+          const value = drawn?.action?.trim() ?? '';
+          const settled: string[] = [];
+
+          for (const candidate of owners)
+            if (
+              candidate.states.includes(value) &&
+              drawsStateAlreadyOf({
+                expected: await expectedFor(candidate.part, value),
+                current: await expectedFor(part, state),
+              })
+            )
+              settled.push(candidate.part);
+
+          const { action, owner } = drawn
+            ? resolveActionOf({ value: drawn.action, owners, page: { part, states: names }, settled })
+            : { action: null, owner: part };
+          const embeddedState = owners.find((candidate) => candidate.part === owner);
+          const listen = owners.flatMap((candidate) => (candidate.selector === null ? [] : [candidate.selector]));
+
+          if (drawn === null || action === null || typeof action === 'string') {
+            if (typeof action !== 'string' && (await embeddersFor()).length > 0) return finish();
+            if (
+              drawn !== null &&
+              action === null &&
+              exemptFromDeclaringOf({
+                owners: drawn.owners,
+                within: drawn.within,
+                controls: module.default?.controls,
+                consumerAction: module.default?.consumerAction,
+              })
+            )
+              return finish();
+
+            out.push({
+              state,
+              element: name,
+              input: null,
+              failure:
+                typeof action === 'string'
+                  ? action
+                  : drawn === null
+                    ? noSuchElementOf(nearMissesOf({ element, design, app }))
+                    : 'the design declares no data-et-action',
+            });
+
+            return finish();
+          }
+
+          if (action.kind === 'opens') {
+            out.push({
+              state,
+              element: name,
+              input: null,
+              failure: null,
+              warning: `opens ${action.part}: the harness draws the part alone, so only --live presses it`,
+            });
+
+            return finish();
+          }
+
+          for (const input of actionInputsOf(element.key, action)) {
+            const goal =
+              action.kind === 'state'
+                ? targetStateOf({ state: action.state, input, states: embeddedState?.states ?? names })
+                : '';
+            const opened = goal === '' ? null : openedFromOf({ goal, start: state, states, open: opens[goal] });
+            const goalPicture =
+              goal === '' || embeddedState
+                ? null
+                : await timedPhase('actions-goal-draw', () => drawFor(opened ? state : goal, opened));
+
+            try {
+              const run = await timedPhase('actions-input', () =>
+                queue.run((browser) =>
+                  runActionInput({
+                    browser,
+                    url: startUrl,
+                    start,
+                    pick: element,
+                    input,
+                    size: frame.size,
+                    shoot: goalPicture
+                      ? {
+                          room: (goalPicture.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+                          frozen: frozenAnimationsOf(goalPicture.markup ?? ''),
+                        }
+                      : null,
+                    timeout: DRAW_TIMEOUT_MS,
+                    listen: action.kind === 'emit' ? listen : [],
+                    output: action.kind === 'emit' ? action.output : null,
+                    expanded: !!embeddedState && action.kind === 'state',
+                    focused: goal.endsWith('-focus-visible'),
+                  }),
+                ),
+              );
+              const shotCompare = (picture: Picture, app: Buffer) =>
+                shotCompareOf({
+                  design: picture.png,
+                  app,
+                  boxes: picture.boxes && run.appBoxes ? { design: picture.boxes, app: run.appBoxes } : null,
+                });
+              const compared = goalPicture && run.app ? shotCompare(goalPicture, run.app) : null;
+              const result = compared?.result ?? null;
+              const outcome: ActionOutcome = {
+                emitted: run.emitted,
+                prevented: run.prevented,
+                compare:
+                  embeddedState && action.kind === 'state'
+                    ? liveStateCompareOf({
+                        state: `${owner} ${goal}`,
+                        expected: await expectedFor(owner, goal),
+                        after: run.after ?? [],
+                      })
+                    : compared
+                      ? {
+                          ok: compared.ok,
+                          detail: shotCompareLinesOf(goal, compared)
+                            .map((line) => line.slice(goal.length + 1))
+                            .join('; '),
+                        }
+                      : null,
+              };
+              const app = run.app;
+
+              if (action.kind === 'state' && compared && !compared.ok && goalPicture && app)
+                outcome.reached = await timedPhase('actions-reached', () =>
+                  reachedStateOf({
+                    goal,
+                    states: names,
+                    compare: async (candidate) => {
+                      if (candidate === goal) return result;
+
+                      const reopened = openedFromOf({ goal: candidate, start: state, states, open: opens[candidate] });
+                      const reached = shotCompare(await drawFor(reopened ? state : candidate, reopened), app);
+
+                      return reached.ok || reached.result.kind !== 'ok' ? reached.result : null;
+                    },
+                  }),
+                );
+
+              if (embeddedState && action.kind === 'state' && outcome.compare && !outcome.compare.ok)
+                outcome.reached = await reachedExpandedStateOf({
+                  goal,
+                  states: embeddedState.states,
+                  expectedOf: (candidate) => expectedFor(owner, candidate),
+                  after: run.after ?? [],
+                });
+
+              const failure = actionFailureOf({
+                action,
+                target: goal,
+                input,
+                outcome,
+                modelChanges:
+                  action.kind === 'emit' && owner === part
+                    ? modelChangesForOf({ output: action.output, app: appOutputs, states })
+                    : [],
+              });
+
+              if (failure !== null && compared && !compared.ok && goalPicture && run.app) {
+                wrotePictures = true;
+                dir ??= mkdtempSync(join(tmpdir(), 'et-design-actions-'));
+
+                const stem = `${state}--${name}--${input}`.replace(/[^\w.-]/g, '-');
+                const boxes = [
+                  {
+                    name: stem,
+                    ...(compared.boxed?.root ?? { design: goalPicture.png, app: run.app, result: compared.result }),
+                  },
+                  ...(compared.boxed?.panes ?? []).map((pane, at) => ({ name: `${stem}.pane-${at + 1}`, ...pane })),
+                ];
+
+                for (const box of boxes) {
+                  writeDesignFile(join(dir, `${box.name}.design.png`), box.design);
+                  writeDesignFile(join(dir, `${box.name}.app.png`), box.app);
+                  if (box.result.kind !== 'ok') writeDesignFile(join(dir, `${box.name}.diff.png`), box.result.diff);
+                }
+              }
+
+              out.push({ state, element: name, input, failure });
+            } catch (error) {
+              harnessFailed = true;
+              out.push({ state, element: name, input, failure: messageOf(error).split('\n')[0] ?? '' });
+            }
+          }
+
+          return finish();
+        },
+      });
+
+      lines.push(...checkedElements.flat());
+
+      return { lines, hosts: scope.skipped, keep: !wrotePictures && !harnessFailed, embedded: scope.embedded };
+    };
+
+    const cacheInputs = options.appRoot
+      ? {
+          salt: `${actionCheckCodeOf()} ${browserVersionOf(chromium.from)}`,
+          built: builtAppHashOf(options.appRoot),
+        }
+      : null;
+    const actionCache = cacheInputs ? createActionCache(viteCacheOf(target, COMPARE_ACTIONS)) : null;
+    const actionKeyOf = (state: string) => {
+      if (!cacheInputs) return null;
+
+      try {
+        return cacheKeyOf([
+          cacheInputs.salt,
+          cacheInputs.built,
+          url === '' ? '' : new URL(url).pathname,
+          part,
+          state,
+          sha256Of(markups.get(state) ?? ''),
+          states[state] ?? null,
+          opens[state] ?? null,
+          names,
+          module.default?.controls ?? null,
+          appOutputs,
+          product.config.harness?.hosts ?? [],
+          frame,
+        ]);
+      } catch {
+        return null;
+      }
+    };
+    const lines: Line[] = [];
+    const skippedHosts: string[] = [];
+    let embeddedElements = 0;
+    const checked = names.filter(
+      (state) => (only === null || only.includes(state)) && forcedElementsOf(markups.get(state) ?? '').length === 0,
+    );
+
+    for (let at = 0; at < checked.length; at += ACTION_BATCH_STATES) {
+      designs.clear();
+      ({ queue, shooter } = await timedPhase('actions-browser', freshBrowser));
+
+      const batch = await inOrderAtOnce({
+        items: checked.slice(at, at + ACTION_BATCH_STATES),
+        limit: ACTION_BATCH_STATES,
+        run: (state) =>
+          timedPhase(`actions-state ${state}`, async () => {
+            const key = actionKeyOf(state);
+
+            if (key === null) return checkState(state);
+
+            const { value, hit } = await cachedActionsOf({
+              cache: actionCache,
+              key,
+              printOf,
+              run: async (track) => {
+                const checkedState = await checkState(state, track);
+
+                return { value: checkedState, keep: checkedState.keep };
+              },
+            });
+
+            recordCache(hit);
+
+            if (hit) for (const line of value.lines) onLine?.(line);
+
+            return value;
+          }),
+      });
+
+      for (const checkedState of batch) {
+        lines.push(...checkedState.lines);
+        embeddedElements += checkedState.embedded ?? 0;
+        skippedHosts.push(...checkedState.hosts.filter((host) => !skippedHosts.includes(host)));
+      }
+    }
+
+    return {
+      lines,
+      pictures: dir,
+      embedders: embedders ? await embedders : [],
+      hosts: skippedHosts,
+      embedded: embeddedElements,
+    };
+  } catch (error) {
+    return messageOf(error);
+  } finally {
+    await closeBrowser();
+    await server.close();
+  }
+};
+
+/** The line `design actions` prints for one checked element and input. */
+export const actionLineOf = ({ state, element, input, failure, warning }: Line) =>
+  `${state} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : failedText(failure)}`;
+
+/** The line the action check prints once per run for a declared host component it skipped in a state. */
+export const hostLineOf = (host: string) =>
+  `host ${host}: skipped - the app's own chrome around the part, which the design does not draw`;
+
+/** The line the action check prints for a part it skips because no app component renders it in the harness. */
+export const unlinkedSkipLineOf = (part: string) => `actions ${part}: skipped - no implements link, nothing to click`;
+
+/** The failed lines `design actions` prints for a part, or why the check could not run (`[]` for a part without an implements link); with `harness` it checks the part harness at that URL instead of starting one. */
+export const partActionFailuresOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  part: string;
+  url?: string;
+  harness?: string;
+  start?: StartHarnessServer;
+  check?: typeof checkActions;
+  checkLive?: typeof checkLiveActions;
+  onNote?: (line: string) => void;
+  appRoot?: string | null;
+  designsDrawn?: Promise<unknown>;
+  /** Checks only these states of the part's harness; `null` or omitted checks every state. */
+  only?: readonly string[] | null;
+}): Promise<string[] | NoVerdict> => {
+  const { target, config, product, part } = options;
+  const source = product.parts.find((candidate) => partKeyOf(candidate) === part)?.source;
+
+  if (source !== undefined && partLinkOf(source).kind === 'none') {
+    options.onNote?.(unlinkedSkipLineOf(part));
+
+    return [];
+  }
+
+  const stale = harnessStaleOf({ target, product });
+
+  if (stale !== null) return noVerdictOf(stale);
+
+  const check = (url: string, root: string | null = null) =>
+    (options.check ?? checkActions)({
+      target,
+      config,
+      product,
+      part,
+      url,
+      only: options.only ?? null,
+      appRoot: options.appRoot ?? root,
+      designsDrawn: options.designsDrawn,
+    });
+  const checked = options.harness
+    ? await check(options.harness)
+    : await withHarnessUrl({ target, product, url: options.url, start: options.start, run: check });
+
+  if (typeof checked === 'string') return noVerdictOf(checked);
+
+  for (const host of checked.hosts ?? []) options.onNote?.(hostLineOf(host));
+
+  const failures = checked.lines.filter((line) => line.failure !== null).map(actionLineOf);
+
+  if (!options.url || typeof liveSpecOf({ target, product }) === 'string') return failures;
+
+  const live = await (options.checkLive ?? checkLiveActions)({ target, config, product, url: options.url, part });
+
+  if (typeof live === 'string') return noVerdictOf(`the live action check: ${live}`);
+
+  return [...failures, ...live.lines.filter((line) => line.failure !== null).map((line) => `live ${liveLineOf(line)}`)];
+};
+
+/** The note a ready refusal adds when the action check ran on the part harness only. */
+export const PART_HARNESS_ONLY =
+  'checked on the part harness only - pass --url <studio build> to check the live pages too';
+
+/**
+ * `et design actions <layer>/<name> …` clicks and presses Enter and Space on each interactive element of a part in the
+ * app's harness page and fails unless each reaches the state or fires the output its design's `data-et-action` declares.
+ */
+export const designActions = async (options: {
+  target: string;
+  argv: string[];
+  invocation: string;
+  check?: typeof checkActions;
+  checkLive?: typeof checkLiveActions;
+  start?: StartHarnessServer;
+}) => {
+  const { target, invocation } = options;
+  const args = argsOf(options.argv, { values: ['--product', '--url', '--state'], switches: ['--live'] });
+  const live = typeof args !== 'string' && args.flags.has('--live');
+
+  if (typeof args === 'string' || args.positional.length > 1 || (!live && args.positional.length !== 1)) {
+    if (typeof args === 'string') console.error(args);
+
+    console.error(`usage: ${invocation} ${ACTIONS_USAGE}`);
+
+    return 2;
+  }
+
+  const config = configOf(target);
+
+  if (live) return designLiveActions({ ...options, args, config });
+
+  const parsed = parseTarget(args.positional[0]);
+
+  if (typeof config === 'string' || typeof parsed === 'string') {
+    console.error(typeof config === 'string' ? config : parsed);
+
+    return 1;
+  }
+
+  const product = oneProductOf({ target, config, asked: args.values['--product'] });
+
+  if (typeof product === 'string') {
+    console.error(product);
+
+    return 1;
+  }
+
+  const part = partKeyOf(parsed);
+  const refusal = product.parts.some((candidate) => partKeyOf(candidate) === part)
+    ? harnessStaleOf({ target, product })
+    : `${product.name} has no part ${part}`;
+
+  if (refusal !== null) {
+    console.error(refusal);
+
+    return 1;
+  }
+
+  const printed = new Set<Line>();
+  const checked = await withHarnessUrl({
+    target,
+    product,
+    url: args.values['--url'],
+    start: options.start,
+    run: (url) =>
+      (options.check ?? checkActions)({
+        target,
+        config,
+        product,
+        part: part,
+        url,
+        only: args.values['--state'] === undefined ? null : [args.values['--state']],
+        onLine: (line) => {
+          printed.add(line);
+          console.log(actionLineOf(line));
+        },
+      }),
+  });
+
+  if (typeof checked === 'string') {
+    console.error(checked);
+
+    return 1;
+  }
+
+  for (const line of checked.lines) if (!printed.has(line)) console.log(actionLineOf(line));
+  for (const host of checked.hosts ?? []) console.log(hostLineOf(host));
+
+  if (checked.pictures !== null) console.log(`pictures: ${checked.pictures}`);
+
+  const failed = checked.lines.filter((line) => line.failure !== null).length;
+
+  if (checked.lines.length === 0) {
+    console.log(
+      checked.embedders?.length
+        ? `${part}: exempt - ${checked.embedders.join(', ')} declare(s) the actions of its elements`
+        : checked.embedded
+          ? `${part}: warning - no action checked: every interactive element comes from an embedded part, which checks its own`
+          : `${part} has no interactive element`,
+    );
+
+    return 0;
+  }
+
+  console.log(
+    failed === 0
+      ? `${part}: every declared action works`
+      : `${part}: ${failed} of ${checked.lines.length} action check(s) failed`,
+  );
+
+  return failed === 0 ? 0 : 1;
+};
+
+const designLiveActions = async (options: {
+  target: string;
+  args: Exclude<ReturnType<typeof argsOf>, string>;
+  config: ReturnType<typeof configOf>;
+  start?: StartHarnessServer;
+  checkLive?: typeof checkLiveActions;
+}) => {
+  const { target, args, config } = options;
+  const parsed = args.positional[0] === undefined ? null : parseTarget(args.positional[0]);
+
+  if (typeof config === 'string' || typeof parsed === 'string') {
+    console.error(typeof config === 'string' ? config : parsed);
+
+    return 1;
+  }
+
+  const product = oneProductOf({ target, config, asked: args.values['--product'] });
+
+  if (typeof product === 'string') {
+    console.error(product);
+
+    return 1;
+  }
+
+  const part = parsed === null ? null : partKeyOf(parsed);
+
+  if (part !== null && !product.parts.some((candidate) => partKeyOf(candidate) === part)) {
+    console.error(`${product.name} has no part ${part}`);
+
+    return 1;
+  }
+
+  const printed = new Set<LiveLine>();
+  const checked = await withHarnessUrl({
+    target,
+    product,
+    url: args.values['--url'],
+    start: options.start,
+    run: (url) =>
+      (options.checkLive ?? checkLiveActions)({
+        target,
+        config,
+        product,
+        url,
+        part,
+        onLine: (line) => {
+          printed.add(line);
+          console.log(liveLineOf(line));
+        },
+      }),
+  });
+
+  if (typeof checked === 'string') {
+    console.error(checked);
+
+    return 1;
+  }
+
+  for (const line of checked.lines) if (!printed.has(line)) console.log(liveLineOf(line));
+
+  const failed = checked.lines.filter((line) => line.failure !== null).length;
+  const scope = part ?? 'the live pages';
+
+  console.log(
+    failed === 0
+      ? `${scope}: every shell control reaches its declared action and behaves the same on every page`
+      : `${scope}: ${failed} of ${checked.lines.length} live action check(s) failed`,
+  );
+
+  return failed === 0 ? 0 : 1;
+};

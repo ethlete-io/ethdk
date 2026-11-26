@@ -1,0 +1,69 @@
+import { Component, inject, input, ViewEncapsulation } from '@angular/core';
+import { createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
+import { FormSupportComponent } from '../../form-field/partials/form-support.component';
+import { injectFormFieldDefaults } from '../../form-field/form-field-defaults';
+import { FormFieldSize } from '../../form-field/form-field.variants';
+import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
+import { SELECTION_LIST_MULTIPLE, SelectionListDirective } from '../headless';
+import { SelectionListOrientation } from '../selection-list.types';
+import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../../form-field/headless/field-state-control.directive';
+
+@Component({
+  selector: 'et-checkbox-group',
+  templateUrl: './checkbox-group.component.html',
+  styleUrl: './checkbox-group.component.css',
+  encapsulation: ViewEncapsulation.None,
+  imports: [FormSupportComponent],
+  providers: [{ provide: SELECTION_LIST_MULTIPLE, useValue: true }, provideFormSupport()],
+  hostDirectives: [
+    FormFieldDirective,
+    {
+      directive: SelectionListDirective,
+      inputs: [
+        'value',
+        'mixed',
+        'touched',
+        'disabled',
+        'readonly',
+        'invalid',
+        'errors',
+        'required',
+        'name',
+        'pending',
+        'compareWith',
+        ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
+      ],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
+    },
+    { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
+  ],
+  host: {
+    class: 'et-checkbox-group',
+    '[attr.data-size]': 'size()',
+    '[attr.data-orientation]': 'orientation()',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
+    '[attr.data-error]': 'support.displaysError() || null',
+    '[attr.data-warning]': 'support.displaysWarning() || null',
+    '[style.display]': 'list.hidden() ? "none" : null',
+    '[attr.aria-busy]': 'list.pending() ? "true" : null',
+  },
+})
+export class CheckboxGroupComponent {
+  protected list = inject(SelectionListDirective);
+  public support = injectFormSupport();
+  public size = input<FormFieldSize>(injectFormFieldDefaults().size);
+
+  /**
+   * Lay the options out in a row instead of a column. Horizontal wraps, and the group's label and its
+   * error/hint block keep their own lines above and below - only the options flow.
+   */
+  public orientation = input<SelectionListOrientation>('vertical');
+
+  public canAnimate = createCanAnimateSignal();
+
+  public focus(options?: FocusOptions) {
+    this.list.focus(options);
+  }
+}

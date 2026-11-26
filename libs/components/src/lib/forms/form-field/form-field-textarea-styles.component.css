@@ -1,0 +1,94 @@
+@layer components.sdk {
+  et-form-field[data-control-type='textarea'] {
+    .et-form-field-control-frame {
+      align-items: stretch;
+    }
+
+    &[data-appearance='box']:not([data-label-mode='floating-inside']) {
+      --_et-form-field-textarea-font-size: var(--et-form-field-control-font-size);
+      --_et-form-field-textarea-padding-block: max(
+        var(--et-form-field-control-padding-block),
+        (
+            var(--et-form-field-control-min-height) - var(--_et-form-field-textarea-font-size) *
+              var(--et-form-field-control-line-height) - 2 * var(--et-form-field-control-border-width)
+          ) /
+          2
+      );
+
+      .et-form-field-control-frame {
+        padding-block: 0;
+      }
+
+      .et-form-field-affix {
+        padding-block: var(--_et-form-field-textarea-padding-block);
+      }
+
+      .et-textarea-native {
+        box-sizing: border-box;
+        padding-block: var(--_et-form-field-textarea-padding-block);
+      }
+
+      .et-form-field-control-frame:not(:has(> .et-form-field-suffix:not(:empty))) {
+        padding-inline-end: 0;
+
+        .et-textarea-native {
+          padding-inline-end: var(--et-form-field-control-padding-inline);
+        }
+      }
+
+      :where(.et-textarea-native[data-resize='vertical']) {
+        min-block-size: calc(1lh + 2 * var(--_et-form-field-textarea-padding-block));
+      }
+
+      textarea[data-et-textarea-autosize] {
+        min-block-size: calc(var(--et-textarea-min-rows, 1) * 1lh + 2 * var(--_et-form-field-textarea-padding-block));
+        max-block-size: calc(
+          var(--et-textarea-max-block-size, 1000lh) + 2 * var(--_et-form-field-textarea-padding-block)
+        );
+      }
+
+      &[data-label-mode='floating-outside'] .et-form-field-label-area--floating {
+        margin-block-start: var(--_et-form-field-textarea-padding-block);
+      }
+
+      &[data-label-mode='inline'] .et-form-field-label-area--inline {
+        margin-block: 0;
+        padding-block-start: calc(
+          var(--_et-form-field-textarea-padding-block) +
+            (var(--_et-form-field-textarea-font-size) - var(--et-form-field-control-font-size)) *
+            var(--et-form-field-control-line-height) / 2
+        );
+      }
+
+      /* Mirrors the 16px floor form-field.component.css puts on a coarse-pointer textarea. */
+      @media (pointer: coarse) {
+        --_et-form-field-textarea-font-size: max(var(--et-form-field-control-font-size), 16px);
+      }
+    }
+
+    .et-form-field-control-area,
+    .et-form-field-control-slot {
+      align-items: stretch;
+    }
+
+    .et-form-field-affix {
+      align-items: flex-start;
+    }
+
+    &:not([data-label-floated]) .et-form-field-label-area--floating {
+      inset-block-start: calc((var(--et-form-field-control-font-size) * var(--et-form-field-control-line-height)) / 2);
+    }
+
+    &[data-label-mode='floating-inside']:not([data-label-floated]) .et-form-field-label-area--floating {
+      inset-block-start: calc(
+        var(--_et-form-field-float-inside-extra-padding) +
+          (var(--et-form-field-control-font-size) * var(--et-form-field-control-line-height)) / 2
+      );
+    }
+
+    &[data-label-mode='inline'] .et-form-field-label-area--inline {
+      align-items: flex-start;
+      padding-block-start: var(--et-form-field-control-padding-block);
+    }
+  }
+}

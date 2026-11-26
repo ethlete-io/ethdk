@@ -1,0 +1,1534 @@
+import { failedText } from '../failure-line';
+import { dirname, relative, resolve, sep } from 'path';
+import { baseIssuesFileOf, oldRenderIssuesOf } from './base-issues';
+import { designHashOf } from './design-hash';
+import { repoRootOf } from './reachable-files';
+import { chromiumOf } from '../browser';
+import { configPathOf, DESIGN_DIR, DesignConfig } from '../design-config';
+import { autoAcceptOf, DrawStates, settleCommittedEdits } from './accepted-pictures';
+import { importProblemsOf } from './imports';
+import { CompletenessGap, partsCompletenessOf } from './complete';
+import { actionsRerunLineOf } from './embedded-actions';
+import { actionLostProblemsOf, declaredPartActionsOf, withPartLoader } from './action-lost';
+import { stateInnerProblemsOf } from './rules/state-inner';
+import { refreshHarnessMap } from './harness-map';
+import { runningCliBuildLine, runningCliStaleWarning } from '../stale-cli-dist';
+import { capabilityPlaceOf } from './rules/capability-place';
+import { productLogoOf } from './rules/product-logo';
+import { bespokeControlProblemsOf } from './bespoke-controls';
+import { contrastPairProblemsOf } from './contrast-pairs';
+import { droppedPropProblemsOf } from './dropped-props';
+import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
+import { openPointsText, PartOpenPoints } from './open-points';
+import { doneParts, gitDiffFilesOf } from './part-task';
+import { actionsRerunOf, dropPartRecord, READY_FILE, readyPartsOf } from './part-ready';
+import { BuildReadyInputs } from './part-build-ready';
+import { actionFailuresOf, recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
+import { partActionFailuresOf } from './actions-command';
+import { APP_CODE, renderFindingsOf, tallyKeyOf, withFoundRules } from './render-findings';
+import { ruleBaselineLinesOf, ruleBaselineOf, unbaselinedProblemsOf } from './rule-baseline';
+import { isDrawRule, isSlowRule, unjudgedStateWarningsOf } from './slow-checks';
+import { withoutWaitingUndesigned } from './sketch/undesigned-sketch';
+import {
+  staleLineOf,
+  stalePartsOf,
+  UNCOMPARED_RULE,
+  uncomparedAppProblemsOf,
+  upgradeLegacyMarksOf,
+} from './stale-parts';
+import { Problem } from './problem';
+import { collectingSkips, isCiEnv, isFailingSkip, RuleSkip, skipLineOf } from './rule-skips';
+import { staleDistWarningsOf } from './stale-dist';
+import { instantLinesOf, partPointsOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
+import { partKeyOf, partOfFile, PRODUCT_PART_KEY, resolveProduct, ResolvedProduct } from './resolve-product';
+import { canonicalClassesOf } from './rules/canonical-class';
+import { prefetchPartClassFactsOf } from './rules/tailwind-classes';
+import { embeddedPartsOf } from './embedded-actions';
+import { statesHoldingPartOf } from './embedder-states';
+import { componentCopiesOf } from './rules/component-copy';
+import { deniedClassesOf } from './rules/denied-class';
+import { nativeTitlesOf } from './rules/native-title';
+import { commandTextOf } from './rules/command-text';
+import {
+  BASELINED_RENDER_RULES,
+  BusyState,
+  RenderIssue,
+  preloadRenderModules,
+  renderIssueLineOf,
+  renderIssuesOf,
+} from './render-check';
+import { flowProblemsOf } from './rules/flow';
+import { badLinksOf, unlinkedNamesOf } from './rules/implements';
+import { statesNotInComponentOf } from './rules/state-in-component';
+import { partRewritesOf } from './rules/part-rewrite';
+import { hardCodedColoursOf } from './rules/hard-coded-colour';
+import { accentPrimariesOf } from './rules/accent-primary';
+import { compositionWithInteractionsOf } from './rules/composition';
+import { unknownInteractionsOf } from './rules/interactions';
+import { kitOutsidePagesOf } from './rules/kit-outside-pages';
+import { inlineUiInPageProblemsOf, inlineUiInPageWarningsOf } from './rules/inline-ui-in-page';
+import { inlineSvgsOf } from './rules/inline-svg';
+import { ownCanvasesOf } from './rules/own-canvas';
+import { ownPartsInFramesOf } from './rules/own-part-in-frame';
+import { directEditPendingOf } from './rules/direct-edit-pending';
+import { topLevelAwaitsOf } from './rules/top-level-await';
+import { badSkipsOf } from './rules/skips';
+import { badMotionsOf, badUnreachableOf, hardCodedMotionOf, scriptedMotionOf } from './rules/motion';
+import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
+import { gluedInterpolationsOf } from './rules/glued-interpolation';
+import { undefinedClassesOf } from './rules/undefined-class';
+import { undefinedTokensOf } from './rules/undefined-token';
+import { tokenSelectorsOf } from './rules/token-selectors';
+import { sdkAttributeValuesOf } from './rules/sdk-attribute-value';
+import { sdkPrivateVarsOf } from './rules/sdk-private-var';
+import { upwardDependenciesOf } from './rules/upward-dependency';
+import { badSvgAssetsOf } from './rules/svg-asset';
+import { staleReplacesOf } from './rules/stale-replace';
+import { CHECK_RULES } from './check-rules';
+import { unusedSharedExportsOf } from './rules/unused-shared-export';
+import { utilityCssOf } from './rules/utility-css';
+import { orphanEndpointProblemsOf, orphanEndpointWarningsOf } from './rules/orphan-endpoint';
+import { sampleDefaultProblemsOf, sampleDefaultWarningsOf } from './rules/sample-default';
+import { pendingStateWarningsOf } from './rules/pending-state';
+import { orphanPartsOf } from './rules/orphan-part';
+import { sampleTextsOf } from './rules/sample-text';
+import { stateGroupProblemsOf } from './rules/state-groups';
+import { missingStateSentencesOf } from './rules/state-sentences';
+import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
+import { designCoverageOf } from './rules/design-coverage';
+import { badWidthsOf } from './rules/widths';
+import { listPartsWithoutDataStatesOf } from './rules/data-states';
+import { logoPartsWithoutSectionsOf } from './rules/logo-sections';
+import { placeholderStatesOf } from './rules/placeholder-state';
+import { stillMotionStatesOf } from './rules/still-motion';
+import { startVariantTypechecks, typecheckVariant, typecheckVariantAsync, variantKeyOf } from './sketch/check-sketches';
+import { MERGED_FILE } from './sketch/merged-parts';
+import { keepHeldStamps, withStampsInMemory } from './stamp-files';
+import { readyUncommittedLinesOf } from '../uncommitted-state';
+import { staleSketchBasesOf } from './sketch/stale-base';
+import { listSketches, variantDirOf } from './sketch/sketch';
+import { typecheckProduct, typecheckProductAsync, writeEditorTsconfig } from './system-tsconfig';
+import { repoInvocation } from '../../invocation';
+import { TypecheckResult } from '../typecheck';
+import { leftoverGateFilesWarningOf } from './leftover-gate-files';
+import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';
+import { timedPhase } from '../phase-timing';
+import { developerPartLinesOf } from './part-builder';
+import { createRunDraw, WarmDraw } from '../warm-draw';
+
+const RULES = [
+  importProblemsOf,
+  upwardDependenciesOf,
+  hardCodedColoursOf,
+  undefinedTokensOf,
+  componentCopiesOf,
+  scriptedMotionOf,
+  badMotionsOf,
+  badUnreachableOf,
+  badSkipsOf,
+  hardCodedMotionOf,
+  staleCommentsOf,
+  staleNotesOf,
+  badWidthsOf,
+  listPartsWithoutDataStatesOf,
+  logoPartsWithoutSectionsOf,
+  placeholderStatesOf,
+  stillMotionStatesOf,
+  badLinksOf,
+  unlinkedNamesOf,
+  statesNotInComponentOf,
+  partRewritesOf,
+  unknownInteractionsOf,
+  compositionWithInteractionsOf,
+  kitOutsidePagesOf,
+  ownCanvasesOf,
+  ownPartsInFramesOf,
+  inlineUiInPageProblemsOf,
+  flowProblemsOf,
+  badSvgAssetsOf,
+  inlineSvgsOf,
+  topLevelAwaitsOf,
+  directEditPendingOf,
+  canonicalClassesOf,
+  undefinedClassesOf,
+  deniedClassesOf,
+  accentPrimariesOf,
+  nativeTitlesOf,
+  commandTextOf,
+  utilityCssOf,
+  orphanEndpointProblemsOf,
+  sampleDefaultProblemsOf,
+  gluedInterpolationsOf,
+  sdkAttributeValuesOf,
+  sdkPrivateVarsOf,
+  missingStateSentencesOf,
+  stateGroupProblemsOf,
+  sampleTextsOf,
+  orphanPartsOf,
+];
+
+const isStaticRule = (rule: string) =>
+  !isSlowRule(rule) && !BASELINED_RENDER_RULES.has(rule) && rule !== UNCOMPARED_RULE;
+
+const PART_SCOPED_RULES: ((product: ResolvedProduct, only?: readonly string[]) => Problem[])[] = [
+  canonicalClassesOf,
+  undefinedClassesOf,
+];
+
+export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
+  ...unusedSharedExportsOf(product),
+  ...staleReplacesOf(product),
+  ...tokenSelectorsOf(product),
+  ...orphanEndpointWarningsOf(product),
+  ...sampleDefaultWarningsOf(product),
+  ...inlineUiInPageWarningsOf(product),
+  ...pendingStateWarningsOf(product),
+];
+
+export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
+  ruleProblemsOf(product).map((problem) => lineOf(target, problem));
+
+/**
+ * Runs only the static rules of `products` - no draw, no tsc - and prints each problem a product's own files hold
+ * that its rule baseline does not list, each baselined hit and each warning; exits 1 on a problem. With `base`, it also flags each app file changed since `base` that moved since its part's implemented record.
+ * Prints one line per rule that did not run; under `CI` a rule skipped for a missing input, such as no `base`, fails.
+ */
+export const checkRules = (options: {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  base?: string;
+  invocation?: string;
+}) => {
+  const { target, config, base } = options;
+  const changed = base === undefined ? [] : gitDiffFilesOf({ root: target, range: base });
+  const invocation = options.invocation ?? repoInvocation({ root: target, subcommand: 'design' });
+  const ci = isCiEnv();
+  let failed = 0;
+  const failing: string[] = [];
+
+  for (const name of options.products) {
+    const entry = config.products?.[name];
+
+    if (!entry) {
+      console.error(`NO PRODUCT "${name}" in config.json.`);
+      failed++;
+      failing.push(name);
+      continue;
+    }
+
+    const product = resolveProduct({ target, name, config: entry });
+    const { result: own, skips } = collectingSkips(() =>
+      ruleProblemsOf(product).filter((problem) => !isInBasePart(product, problem.file)),
+    );
+    const baselined = ruleBaselineOf({ product, problems: own, checked: isStaticRule });
+    const problems = [
+      ...baselined.problems.filter((problem) => !isInBasePart(product, problem.file)),
+      ...uncomparedOf({ product, changed, invocation }),
+    ];
+    const allSkips: RuleSkip[] = [
+      ...skips,
+      ...(base === undefined
+        ? [{ rule: UNCOMPARED_RULE, product: name, kind: 'missing-input' as const, reason: 'no --base given' }]
+        : []),
+    ];
+    const failingSkips = allSkips.filter((skip) => isFailingSkip(skip, ci));
+
+    [...baselined.lines, ...ruleBaselineLinesOf(product, (rule) => !isStaticRule(rule))].forEach((line) =>
+      console.log(line),
+    );
+    allSkips.filter((skip) => !isFailingSkip(skip, ci)).forEach((skip) => console.log(skipLineOf(skip, ci)));
+    warningProblemsOf(product)
+      .filter((problem) => !isInBasePart(product, problem.file))
+      .forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
+    problems.forEach((problem) => console.error(lineOf(target, problem)));
+    failingSkips.forEach((skip) => console.error(skipLineOf(skip, ci)));
+    failed += problems.length + failingSkips.length;
+
+    if (problems.length + failingSkips.length > 0) failing.push(name);
+  }
+
+  console.log(
+    failed === 0 ? 'No static design rule finds a problem.' : `${failed} problem(s) in ${failing.join(', ')}.`,
+  );
+
+  return failed === 0 ? 0 : 1;
+};
+
+const uncomparedOf = (options: {
+  product: ResolvedProduct;
+  changed: string[];
+  invocation: string;
+  onlyChanged?: boolean;
+}) =>
+  (options.changed.length > 0 ? uncomparedAppProblemsOf(options) : []).filter(
+    (problem) => !isInBasePart(options.product, problem.file),
+  );
+
+/**
+ * The IMPLEMENTATION-UNCOMPARED lines `check --rules --base` prints for `products`, limited to the files in `changed`,
+ * without the other rules, and the uncompared parts they name.
+ */
+export const uncomparedLinesOf = (options: {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  changed: string[];
+  invocation?: string;
+}) => {
+  const { target, config, changed } = options;
+  const invocation = options.invocation ?? repoInvocation({ root: target, subcommand: 'design' });
+  const files = new Set(changed.map((file) => resolve(target, file)));
+
+  return options.products.flatMap((name) => {
+    const entry = config.products?.[name];
+
+    if (!entry) return [];
+
+    const product = resolveProduct({ target, name, config: entry });
+    const problems = uncomparedOf({ product, changed, invocation, onlyChanged: true }).filter((problem) =>
+      files.has(resolve(target, problem.file)),
+    );
+    const parts = [...new Set(problems.flatMap((problem) => (problem.part ? [problem.part] : [])))].sort();
+
+    return problems.length > 0
+      ? [{ product: name, lines: problems.map((problem) => lineOf(target, problem)), parts }]
+      : [];
+  });
+};
+
+/** The resolution problems, then those of every static rule; with `only`, the class rules skip files outside those parts. */
+export const ruleProblemsOf = (product: ResolvedProduct, only?: readonly string[]): Problem[] => [
+  ...product.problems,
+  ...RULES.flatMap((rule) => {
+    const scoped = PART_SCOPED_RULES.find((candidate) => candidate === rule);
+
+    return scoped ? scoped(product, only) : rule(product);
+  }),
+];
+
+/**
+ * Build-ready inputs from the open points of `points`, read without a draw by default, and the static rule `problems`
+ * of the product, run by default, that its rule baseline does not list.
+ */
+export const buildReadyInputsOf = (
+  product: ResolvedProduct,
+  {
+    points = readOpenPoints(product),
+    problems = ruleProblemsOf(product),
+  }: { points?: PartOpenPoints[]; problems?: Problem[] } = {},
+): BuildReadyInputs => {
+  const unbaselined = unbaselinedProblemsOf(product, problems);
+
+  return {
+    pointsOf: (part) => partPointsOf(points, part),
+    problemsOf: (part) => unbaselined.filter((problem) => partOfFile(product, problem.file) === part),
+  };
+};
+
+/** The parts whose rule problems the build-ready record of `part` reads: its own and those of its embedded parts. */
+export const readyInputPartsOf = (product: ResolvedProduct, part: string) => {
+  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
+
+  return [part, ...(resolved ? embeddedPartsOf({ product, part: resolved }).map(partKeyOf) : [])];
+};
+
+export const lineOf = (target: string, problem: Problem) =>
+  `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`;
+
+/** What `design check` found per part of each product: the rules of its problems, its warnings and open points. */
+type PartTally = { problems: string[]; warnings: number; open: number };
+
+type Tally = Map<string, Map<string, PartTally>>;
+
+type CheckOptions = {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  known?: string[];
+  newParts?: string[];
+  /** Only this part's findings, `<layer>/<name>`. */
+  part?: string;
+  tally?: Tally;
+  drawPictures?: DrawStates;
+  /** How the repo runs `et design`; defaults to the one its package.json implies. */
+  invocation?: string;
+  chromiumOf?: typeof chromiumOf;
+  warm?: WarmDraw;
+  typechecks?: Map<string, ReturnType<typeof typecheckProduct>>;
+  /** The typecheck of each open sketch variant by product, keyed by `variantKeyOf`; a variant missing here runs then. */
+  sketchTypechecks?: Map<string, Map<string, TypecheckResult>>;
+};
+
+const PRODUCT_LEVEL = PRODUCT_PART_KEY;
+
+const ACTION_FAILED_RULE = 'ACTION-FAILED';
+
+const tallyOf = (tally: Tally | undefined, at: { product: string; part: string }) => {
+  const { product, part } = at;
+
+  if (!tally) return null;
+
+  const parts = tally.get(product) ?? new Map<string, PartTally>();
+  const entry = parts.get(part) ?? { problems: [], warnings: 0, open: 0 };
+
+  tally.set(product, parts);
+  parts.set(part, entry);
+
+  return entry;
+};
+
+const countText = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+/**
+ * One line per part with findings, then one line with the count of clean parts; with `only`, one line for that part
+ * even when it is clean.
+ */
+export const summaryText = (options: {
+  product: string;
+  parts: string[];
+  tally: Tally;
+  only?: string;
+  done?: number;
+}): string[] => {
+  const found = options.tally.get(options.product) ?? new Map<string, PartTally>();
+  const keys = options.only ? [options.only] : [...new Set([...options.parts, ...found.keys()])];
+  const lineOf = (key: string) => {
+    const entry = found.get(key);
+    const rules = [...new Set(entry?.problems ?? [])].join(', ');
+    const items = [
+      ...(entry?.problems.length ? [`${countText(entry.problems.length, 'problem')} (${rules})`] : []),
+      ...(entry?.warnings ? [countText(entry.warnings, 'warning')] : []),
+      ...(entry?.open ? [countText(entry.open, 'open point')] : []),
+    ];
+
+    if (items.length === 0) return null;
+
+    return key.startsWith(APP_CODE)
+      ? `APP CODE ${options.product} ${key.slice(APP_CODE.length)}: ${items.join(', ')}`
+      : `PART ${options.product} ${key}: ${items.join(', ')}`;
+  };
+  const lines = keys.map((key) => ({ key, line: lineOf(key) }));
+
+  if (options.only) return [lines[0]?.line ?? `PART ${options.product} ${options.only}: clean`];
+
+  const clean = lines.filter(
+    ({ key, line }) => line === null && key !== PRODUCT_LEVEL && !key.startsWith(APP_CODE),
+  ).length;
+
+  return [
+    ...lines.flatMap(({ line }) => (line ? [line] : [])),
+    `PARTS ${options.product}: ${clean} of ${options.parts.length} clean`,
+    ...(options.done === undefined ? [] : [`DONE ${options.product}: ${options.done} of ${options.parts.length}`]),
+  ];
+};
+
+/** One line per rule with how many problems this run found, zeros included, rules outside `CHECK_RULES` after them. */
+export const ruleSummaryText = (tally: Tally): string[] => {
+  const counts = new Map<string, number>(CHECK_RULES.map((rule) => [rule, 0]));
+
+  for (const parts of tally.values())
+    for (const { problems } of parts.values())
+      for (const rule of problems) counts.set(rule, (counts.get(rule) ?? 0) + 1);
+
+  return [...counts].map(([rule, n]) => `${rule} ${n}`);
+};
+
+const typecheckOpenSketches = (options: {
+  target: string;
+  product: ResolvedProduct;
+  done?: Map<string, TypecheckResult>;
+}): Problem[] =>
+  listSketches({ productDir: options.product.dir, product: options.product.name }).flatMap((sketch) =>
+    typeof sketch === 'string'
+      ? []
+      : sketch.variants.flatMap((variant): Problem[] => {
+          const result =
+            options.done?.get(variantKeyOf(sketch.target, variant)) ??
+            typecheckVariant({ target: options.target, product: options.product, sketch, variant });
+
+          return result.kind === 'ok'
+            ? []
+            : [
+                {
+                  rule: 'TYPE-ERROR',
+                  file: variantDirOf(sketch, variant),
+                  message: `\n${result.kind === 'failed' ? result.output : result.message}`,
+                },
+              ];
+        }),
+  );
+
+const isInBasePart = (product: ResolvedProduct, file: string) =>
+  product.parts.some((part) => part.origin === 'base' && !relative(dirname(part.file), file).startsWith('..'));
+
+const printBaseFindings = (product: ResolvedProduct, rules: string[]) => {
+  if (rules.length === 0 || !product.base) return;
+
+  const counts = new Map<string, number>();
+
+  for (const rule of rules) counts.set(rule, (counts.get(rule) ?? 0) + 1);
+
+  const perRule = [...counts]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([rule, n]) => `${rule} ${n}`);
+
+  console.log(
+    `${rules.length} finding${rules.length === 1 ? '' : 's'} in base product ${product.base.name} (${perRule.join(', ')}) - they do not block this product; run et design check --product ${product.base.name} for the base's own`,
+  );
+};
+
+const reportSystem = (
+  options: CheckOptions & { warn?: boolean; embedder?: boolean },
+): { code: number; fatal: boolean } => {
+  const { target, config, products } = options;
+  const declared = config.products ?? {};
+  let failed = false;
+  const report = (problem: Problem & { line?: string }, product: ResolvedProduct) => {
+    const line = problem.line ?? lineOf(target, problem);
+    if (options.newParts?.includes(line)) {
+      console.warn(`NOTE (new in this merge; a page must embed it) ${line}`);
+
+      return;
+    }
+
+    if (options.known?.includes(line)) {
+      console.warn(`NOTE (was there before) ${line}`);
+
+      return;
+    }
+
+    console.error(line);
+    failed = true;
+    tallyOf(options.tally, {
+      product: product.name,
+      part: tallyKeyOf(target, { product, file: problem.file }),
+    })?.problems.push(problem.rule);
+  };
+
+  for (const name of products) {
+    const entry = declared[name];
+
+    if (!entry) {
+      console.error(`NO PRODUCT "${name}" - config.json declares ${Object.keys(declared).join(', ') || 'none'}.`);
+
+      return { code: 1, fatal: true };
+    }
+
+    const product = resolveProduct({ target, name, config: entry });
+
+    if (options.part && !product.parts.some((part) => partKeyOf(part) === options.part)) {
+      console.error(`NO PART "${options.part}" in product ${name}.`);
+
+      return { code: 1, fatal: true };
+    }
+
+    const uncommitted = options.warn ? uncommittedDecisionsWarningOf(product) : null;
+
+    if (uncommitted) console.warn(uncommitted);
+
+    const leftover = options.warn ? leftoverGateFilesWarningOf(product) : null;
+
+    if (leftover) console.warn(leftover);
+
+    if (!options.part) goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
+    const isWanted = (problem: Problem) => !options.part || partOfFile(product, problem.file) === options.part;
+    const isOwn = (problem: Problem) => !isInBasePart(product, problem.file) && isWanted(problem);
+    const warnings = warningProblemsOf(product);
+    const found = ruleProblemsOf(product, options.part ? [options.part] : undefined);
+    const baselined = ruleBaselineOf({
+      product,
+      problems: found.filter(isOwn),
+      checked: (rule, part) => isStaticRule(rule) && (!options.part || part === options.part),
+    });
+    const problems = [...baselined.problems, ...found.filter((problem) => !isOwn(problem))];
+
+    warnings.filter(isOwn).forEach((problem) => {
+      console.warn(`WARNING ${lineOf(target, problem)}`);
+      const counted = tallyOf(options.tally, {
+        product: name,
+        part: tallyKeyOf(target, { product, file: problem.file }),
+      });
+
+      if (counted) counted.warnings += 1;
+    });
+    baselined.lines.forEach((line) => console.log(line));
+    problems.filter(isOwn).forEach((problem) => report(problem, product));
+    if (!options.part)
+      printBaseFindings(
+        product,
+        problems.filter((problem) => !isOwn(problem)).map((problem) => problem.rule),
+      );
+
+    writeEditorTsconfig({ target, product });
+
+    const result = options.typechecks?.get(name) ?? typecheckProduct({ target, product });
+
+    options.typechecks?.set(name, result);
+
+    if (result.kind === 'unavailable') {
+      console.error(result.message);
+
+      return { code: 1, fatal: true };
+    }
+
+    if (result.kind === 'failed' && !options.embedder)
+      report({ rule: 'TYPE-ERROR', file: product.dir, message: `\n${result.output}` }, product);
+
+    if (options.warn && !options.part)
+      typecheckOpenSketches({ target, product, done: options.sketchTypechecks?.get(name) }).forEach((problem) =>
+        report(problem, product),
+      );
+
+    if (options.warn && !options.part)
+      staleSketchBasesOf({
+        product,
+        invocation: options.invocation ?? repoInvocation({ root: target, subcommand: 'design' }),
+      }).forEach((problem) => report(problem, product));
+  }
+
+  return { code: failed ? 1 : 0, fatal: false };
+};
+
+/**
+ * Checks the design system of each named product: the rules, then `tsc --noEmit` over its
+ * generated tsconfig. Prints one line per problem and `ok` when there is none. The problems of a part the
+ * product takes from its base are counted in one line and do not fail it.
+ */
+export const checkSystem = (options: CheckOptions) => {
+  const { code } = reportSystem(options);
+
+  if (code === 0) console.log('ok');
+
+  return code;
+};
+
+const cannotDrawLine = (options: { product: string; line: string }) =>
+  `CANNOT DRAW ${options.product} ${options.line} - et design ready refuses the part until it draws`;
+
+const countCannotDraw = (options: CheckOptions & { product: ResolvedProduct; why: string }) => {
+  for (const part of statefulPartsOf(options.product, options.part ? [options.part] : null)) {
+    console.log(cannotDrawLine({ product: options.product.name, line: `${part}: ${options.why}` }));
+
+    const counted = tallyOf(options.tally, { product: options.product.name, part });
+
+    if (counted) counted.open += 1;
+  }
+};
+
+type Completeness = ReturnType<typeof partsCompletenessOf>;
+
+const completenessOf = (options: CheckOptions & { product: ResolvedProduct }): Completeness | null => {
+  const stateful = statefulPartsOf(options.product, options.part ? [options.part] : null);
+
+  return stateful.length > 0 ? partsCompletenessOf({ ...options, parts: stateful, cached: true }) : null;
+};
+
+const drawnFindingsFor = async (
+  options: CheckOptions & {
+    product: ResolvedProduct;
+    rendered: RenderIssue[];
+    busy?: BusyState[];
+    completeness?: Completeness | null;
+  },
+): Promise<DrawnFindings> => {
+  const { product, rendered, busy } = options;
+  const stateful = statefulPartsOf(product, options.part ? [options.part] : null);
+  let gaps: Map<string, CompletenessGap[] | string> | null = null;
+  const completeness = options.completeness === undefined ? completenessOf(options) : options.completeness;
+
+  if (completeness) {
+    const checked = await completeness;
+
+    if ('unavailable' in checked) {
+      console.log(`COMPLETE CHECK SKIPPED - ${checked.unavailable}`);
+      countCannotDraw({ ...options, why: checked.unavailable });
+    } else {
+      for (const hint of [...checked.hints.values()].flat()) console.log(hint);
+
+      gaps = checked.gaps;
+    }
+  }
+
+  const { failed, ...findings } = drawnFindingsFrom({ product, issues: rendered, busy, gaps, stateful });
+
+  for (const line of failed) {
+    console.log(cannotDrawLine({ product: product.name, line }));
+
+    const counted = tallyOf(options.tally, { product: product.name, part: line.slice(0, line.indexOf(':')) });
+
+    if (counted) counted.open += 1;
+  }
+
+  return findings;
+};
+
+const printOpenPoints = async (
+  options: CheckOptions & {
+    rendered: RenderIssue[] | null;
+    busy?: BusyState[];
+    notDrawn?: string;
+    completeness?: Map<string, Completeness | null>;
+  },
+) => {
+  const { target, config, products, rendered } = options;
+  let actionFailures = 0;
+
+  for (const name of products) {
+    const entry = config.products?.[name];
+
+    if (!entry) continue;
+
+    const product = resolveProduct({ target, name, config: entry });
+    const findings =
+      rendered === null
+        ? {}
+        : await timedPhase('completeness', () =>
+            drawnFindingsFor({ ...options, product, rendered, completeness: options.completeness?.get(name) }),
+          );
+
+    actionFailures += await timedPhase('open-points', () => printProductOpenPoints({ ...options, product, findings }));
+  }
+
+  return actionFailures;
+};
+
+const noHarnessLine = (product: string) =>
+  `NO HARNESS ${product}: its app checks and actions never run, so no part is build-ready - add "harness": { "app": "<repo path of the app>", "map": "<repo path of the generated .ts file>" } to the ${product} product in ${DESIGN_DIR}/config.json`;
+
+const printProductOpenPoints = async (
+  options: CheckOptions & {
+    rendered: RenderIssue[] | null;
+    notDrawn?: string;
+    product: ResolvedProduct;
+    findings: Partial<DrawnFindings>;
+  },
+) => {
+  const { target, config, rendered, product, findings } = options;
+  const name = product.name;
+
+  if (rendered === null && options.notDrawn) countCannotDraw({ ...options, product, why: options.notDrawn });
+
+  const allPoints = timedPhase('open-points read', () => readOpenPoints(product, findings));
+  const points = allPoints.filter(({ part }) => !options.part || part === options.part);
+
+  for (const { part, points: ofPart } of points) {
+    const counted = tallyOf(options.tally, { product: name, part });
+
+    if (counted) counted.open += ofPart.length;
+  }
+
+  openPointsText(name, points).forEach((line) => console.log(line));
+
+  if (product.config.harness === undefined) console.log(noHarnessLine(name));
+
+  if (!options.part) uncoveredViewsText(name, uncoveredViewsOf(product)).forEach((line) => console.log(line));
+
+  const unlinked = unlinkedPartsOf(product).filter((part) => !options.part || part === options.part);
+
+  if (unlinked.length > 0) console.log(`UNLINKED ${name}: ${unlinked.join(', ')}`);
+
+  timedPhase('open-points instant', () =>
+    instantLinesOf(
+      product,
+      options.part
+        ? [options.part]
+        : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
+    ),
+  ).forEach((line) => console.log(line));
+
+  const upgraded = timedPhase('open-points upgrade-marks', () => upgradeLegacyMarksOf({ product, only: options.part }));
+
+  const rehashed = upgraded
+    .map(({ part, marks }) => ({ part, marks: marks.filter((mark) => mark !== 'dropped') }))
+    .filter(({ marks }) => marks.length > 0);
+
+  if (rehashed.length > 0)
+    console.log(`REHASHED ${name}: ${rehashed.map(({ part, marks }) => `${part} (${marks.join(', ')})`).join(', ')}`);
+
+  upgraded
+    .filter(({ marks }) => marks.includes('dropped'))
+    .forEach(({ part }) =>
+      console.log(
+        `DROPPED ${name} ${part}: implemented record from before file lists at a design that moved since - run ${repoInvocation({ root: target, subcommand: 'design' })} task ${part} --product ${name} --verify to record it`,
+      ),
+    );
+
+  let slowFailures = 0;
+  let noRecords = 0;
+  const recorded = await recordCheckedBuildReady({
+    target,
+    config,
+    settle: options.part && rendered !== null ? [options.part] : [],
+    product,
+    parts: options.part
+      ? [options.part]
+      : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
+    inputs: timedPhase('open-points inputs', () =>
+      withFoundRules(
+        buildReadyInputsOf(product, {
+          points: allPoints,
+          problems: ruleProblemsOf(product, options.part ? readyInputPartsOf(product, options.part) : undefined),
+        }),
+        (part) => options.tally?.get(name)?.get(part)?.problems ?? [],
+      ),
+    ),
+    ...(rendered === null
+      ? {}
+      : {
+          actionsOf: (part: string) =>
+            timedPhase('open-points actions', () =>
+              partActionFailuresOf({ target, config, product, part, ...(options.part ? { onNote: console.log } : {}) }),
+            ),
+          declaredActionsOf: async (part: string) => {
+            const declared = await timedPhase('open-points declared-actions', () =>
+              declaredPartActionsOf({ target, config, product, part, warm: options.warm }),
+            );
+
+            if (typeof declared === 'string') console.log(`ACTIONS NOT RECORDED ${name} ${part}: ${declared}`);
+
+            return declared;
+          },
+        }),
+    ...(options.part
+      ? {
+          onNoRecord: (line: string) => {
+            noRecords += 1;
+            console.log(line);
+          },
+        }
+      : {}),
+    onRecordDropped: (line: string) => console.log(line),
+    onSlowProblems: (part, problems) => {
+      slowFailures += problems.length;
+      tallyOf(options.tally, { product: name, part })?.problems.push(...problems.map(({ rule }) => rule));
+    },
+  });
+
+  const actionFailures = actionFailuresOf({ product, recorded });
+
+  for (const { part, failures } of actionFailures) {
+    const counted = tallyOf(options.tally, { product: name, part });
+
+    if (counted) counted.problems.push(...failures.map(() => ACTION_FAILED_RULE));
+  }
+
+  for (const [part] of recorded) {
+    const warnings = timedPhase('open-points unjudged', () => unjudgedStateWarningsOf({ product, parts: [part] }));
+    const counted = warnings.length > 0 ? tallyOf(options.tally, { product: name, part }) : null;
+
+    warnings.forEach((line) => console.warn(line));
+    if (counted) counted.warnings += warnings.length;
+  }
+
+  const waiting = [...recorded.values()].filter(
+    (result) => !result.ready && result.blockers.some((blocker) => blocker.kind === 'pending'),
+  ).length;
+
+  if (waiting > 0) console.log(slowWaitingLineOf({ product: name, count: waiting }));
+
+  const ready = timedPhase('open-points ready', () => readyPartsOf(product)).filter(
+    (key) => !options.part || key === options.part,
+  );
+
+  if (ready.length > 0) console.log(`READY ${name}: ${ready.join(', ')}`);
+
+  timedPhase('open-points developer', () =>
+    developerPartLinesOf({ product, ...(options.part ? { parts: [options.part] } : {}) }),
+  ).forEach((line) => console.log(line));
+
+  for (const part of ready) {
+    const embedded = timedPhase('open-points rerun', () => actionsRerunOf({ product, part }));
+
+    if (embedded.length === 0) continue;
+
+    console.log(actionsRerunLineOf({ product: name, part, embedded }));
+
+    const counted = tallyOf(options.tally, { product: name, part });
+
+    if (counted) counted.open += 1;
+  }
+
+  timedPhase('open-points stale', () => stalePartsOf({ product, only: options.part })).forEach((stale) =>
+    console.log(staleLineOf(name, stale)),
+  );
+
+  return slowFailures + noRecords + actionFailures.reduce((count, { failures }) => count + failures.length, 0);
+};
+
+const notCheckedLineOf = (options: { product: string; parts: string; why: string }) =>
+  `NOT CHECKED ${options.product} render rules on ${options.parts} - ${options.why}`;
+
+const printUndrawn = (issues: RenderIssue[]) => {
+  for (const product of new Set(issues.map((issue) => issue.product))) {
+    const own = issues.filter((issue) => issue.product === product);
+    const parts = [...new Set(own.filter(isPartUndrawn).map((issue) => issue.part))];
+    const states = [
+      ...new Set(
+        own
+          .filter((issue) => isStateUndrawn(issue) && !parts.includes(issue.part))
+          .map((issue) => `${issue.part} state ${issue.state}`),
+      ),
+    ];
+
+    if (parts.length > 0)
+      console.log(
+        notCheckedLineOf({
+          product,
+          parts: `${countText(parts.length, 'part')}: ${parts.join(', ')}`,
+          why: `${parts.length === 1 ? 'it' : 'they'} did not draw, see RENDER above`,
+        }),
+      );
+
+    states.forEach((state) =>
+      console.log(notCheckedLineOf({ product, parts: state, why: 'it did not draw, see RENDER above' })),
+    );
+  }
+};
+
+const RENDER_INPUTS_OUTSIDE_PARTS = ['libs/', 'package.json', 'yarn.lock'];
+
+const oldIssuesOfRun = (options: {
+  resolved: ResolvedProduct[];
+  part: string | undefined;
+  issues: RenderIssue[];
+  undrawn: Set<string>;
+}): Set<RenderIssue> => {
+  try {
+    return new Set(
+      options.resolved.flatMap((product) => {
+        const root = repoRootOf(product);
+        const parts = product.parts
+          .filter((part) => part.origin !== 'base' && (!options.part || partKeyOf(part) === options.part))
+          .filter((part) => !options.undrawn.has(partKeyOf(part)))
+          .map((part) => ({
+            part: partKeyOf(part),
+            inputs: [
+              ...Object.keys(designHashOf({ product, part }).files),
+              `${relative(root, dirname(part.file)).split(sep).join('/')}/`,
+              ...RENDER_INPUTS_OUTSIDE_PARTS,
+            ],
+          }));
+
+        return [
+          ...oldRenderIssuesOf({
+            root,
+            file: baseIssuesFileOf(product),
+            parts,
+            issues: options.issues.filter((issue) => issue.product === product.name),
+          }),
+        ];
+      }),
+    );
+  } catch {
+    return new Set();
+  }
+};
+
+const SKETCH_TYPECHECKS_AT_ONCE = 4;
+
+const sketchTypechecksOf = async (options: CheckOptions) =>
+  new Map(
+    await Promise.all(
+      options.products.flatMap((name) => {
+        const entry = options.config.products?.[name];
+
+        if (!entry) return [];
+
+        const product = resolveProduct({ target: options.target, name, config: entry });
+        const started = startVariantTypechecks({
+          entries: listSketches({ productDir: product.dir, product: name }).flatMap((sketch) =>
+            typeof sketch === 'string' ? [] : sketch.variants.map((variant) => ({ sketch, variant })),
+          ),
+          limit: SKETCH_TYPECHECKS_AT_ONCE,
+          run: ({ sketch, variant }) => typecheckVariantAsync({ target: options.target, product, sketch, variant }),
+        });
+
+        return [
+          Promise.all(
+            [...started].map(([key, result]) =>
+              result.then(
+                (done): [string, TypecheckResult][] => [[key, done]],
+                (): [string, TypecheckResult][] => [],
+              ),
+            ),
+          ).then((done) => [name, new Map(done.flat())] as const),
+        ];
+      }),
+    ),
+  );
+
+/** Runs the typecheck and the Tailwind class facts of `part` side by side, for the static rules to read. */
+const prefetchPartChecks = (options: CheckOptions & { part: string; typechecks: Map<string, TypecheckResult> }) =>
+  Promise.all(
+    options.products.map(async (name) => {
+      const entry = options.config.products?.[name];
+
+      if (!entry) return;
+
+      const product = resolveProduct({ target: options.target, name, config: entry });
+
+      if (!product.parts.some((part) => partKeyOf(part) === options.part)) return;
+
+      await Promise.all([
+        prefetchPartClassFactsOf(product, readyInputPartsOf(product, options.part)),
+        options.typechecks.has(name)
+          ? undefined
+          : typecheckProductAsync({ target: options.target, product }).then((result) =>
+              options.typechecks.set(name, result),
+            ),
+      ]);
+    }),
+  );
+
+const renderSystem = async (
+  options: CheckOptions & { embedder?: boolean; states?: Record<string, string[]> },
+): Promise<{
+  code: number;
+  rendered: RenderIssue[] | null;
+  busy?: BusyState[];
+  notDrawn?: string;
+  completeness?: Map<string, Completeness | null>;
+}> => {
+  const sketchTypechecks = options.part
+    ? undefined
+    : await timedPhase('sketch-typecheck', () => sketchTypechecksOf(options));
+  const typechecks = options.typechecks ?? new Map<string, TypecheckResult>();
+  const part = options.part;
+
+  if (part) {
+    preloadRenderModules(options).catch(() => undefined);
+    await timedPhase('static-prefetch', () => prefetchPartChecks({ ...options, part, typechecks }));
+  }
+
+  const { code, fatal } = timedPhase('static', () =>
+    reportSystem({ ...options, typechecks, warn: !options.embedder, sketchTypechecks }),
+  );
+
+  if (fatal) return { code, rendered: null };
+
+  const completeness = new Map(
+    options.products.flatMap((name) => {
+      const entry = options.config.products?.[name];
+
+      if (!entry || options.embedder) return [];
+
+      const started = completenessOf({
+        ...options,
+        product: resolveProduct({ target: options.target, name, config: entry }),
+      });
+
+      started?.catch(() => undefined);
+
+      return [[name, started] as const];
+    }),
+  );
+
+  const rendered = await timedPhase('render-inspect', () =>
+    renderIssuesOf({
+      ...options,
+      cached: true,
+      onProgress: (line) => console.log(line),
+      jobs: options.products.map((product) => {
+        const states = options.part ? options.states?.[product] : undefined;
+
+        return {
+          product,
+          sketch: null,
+          parts: options.part ? [options.part] : null,
+          ...(options.part && states ? { only: { [options.part]: states } } : {}),
+        };
+      }),
+    }),
+  );
+
+  const resolved = options.products.flatMap((name) => {
+    const entry = options.config.products?.[name];
+
+    return entry ? [resolveProduct({ target: options.target, name, config: entry })] : [];
+  });
+
+  if ('unavailable' in rendered) {
+    const ci = Boolean(process.env['CI']);
+
+    if (ci) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
+    else console.log(`RENDER CHECK ${failedText(`- no usable browser: ${rendered.unavailable}`)}`);
+
+    for (const product of resolved) {
+      const parts = product.parts
+        .filter((part) => part.origin !== 'base')
+        .map(partKeyOf)
+        .filter((key) => !options.part || key === options.part);
+
+      if (parts.length > 0)
+        console.log(
+          notCheckedLineOf({
+            product: product.name,
+            parts: parts.length === 1 ? `1 part: ${parts[0]}` : `all ${parts.length} parts`,
+            why: rendered.unavailable,
+          }),
+        );
+    }
+
+    return { code: ci ? code : 1, rendered: null, notDrawn: rendered.unavailable };
+  }
+  const found = renderFindingsOf({ target: options.target, resolved, issues: rendered.issues, part: options.part });
+  const { issues, countedPartOf, isInBase } = found;
+
+  found.baselineLines.forEach((line) => console.log(line));
+  found.baselineProblems.forEach(({ problem }) => console.error(lineOf(options.target, problem)));
+  found.failed.forEach(({ product, part, rule }) => tallyOf(options.tally, { product, part })?.problems.push(rule));
+
+  rendered.warnings
+    .filter((issue) => !isInBase(issue))
+    .forEach((issue) => {
+      console.warn(`WARNING ${renderIssueLineOf(issue)}`);
+      const counted = tallyOf(options.tally, { product: issue.product, part: countedPartOf(issue) });
+
+      if (counted) counted.warnings += 1;
+    });
+  const old = oldIssuesOfRun({
+    resolved,
+    part: options.part,
+    issues: rendered.issues.filter((issue) => !isInBase(issue)),
+    undrawn: new Set(issues.filter(isPartUndrawn).map((issue) => issue.part)),
+  });
+
+  issues.forEach((issue) => {
+    console.error(old.has(issue) ? `OLD ${renderIssueLineOf(issue)}` : renderIssueLineOf(issue));
+  });
+  printUndrawn(issues.filter((issue) => isPartUndrawn(issue) || isStateUndrawn(issue)));
+
+  if (!options.part)
+    for (const product of resolved)
+      printBaseFindings(
+        product,
+        rendered.issues.filter((issue) => issue.product === product.name && isInBase(issue)).map((issue) => issue.rule),
+      );
+
+  return {
+    code: code !== 0 || issues.length > 0 || found.baselineProblems.length > 0 ? 1 : 0,
+    rendered: issues,
+    busy: rendered.busy,
+    completeness,
+  };
+};
+
+const checkProductTail = async (
+  options: CheckOptions & {
+    tally: Tally;
+    name: string;
+    entry: NonNullable<DesignConfig['products']>[string];
+    problemsOfEdits: Problem[];
+  },
+) => {
+  const { tally, name, entry } = options;
+  const resolved = resolveProduct({ target: options.target, name, config: entry });
+  const capabilities = await capabilityPlaceOf({ ...options, product: resolved });
+
+  const isWanted = (problem: { file: string }) => !options.part || partOfFile(resolved, problem.file) === options.part;
+
+  const coverage = await designCoverageOf({ ...options, product: resolved });
+
+  [...capabilities.warnings, ...coverage].filter(isWanted).forEach((warning) => {
+    console.warn(`WARNING ${lineOf(options.target, warning)}`);
+    const counted = tallyOf(tally, {
+      product: name,
+      part: tallyKeyOf(options.target, { product: resolved, file: warning.file }),
+    });
+
+    if (counted) counted.warnings += 1;
+  });
+  const drawn = ruleBaselineOf({
+    product: resolved,
+    problems: [
+      ...(await droppedPropProblemsOf({ ...options, product: resolved })),
+      ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
+      ...(await contrastPairProblemsOf({ ...options, product: resolved })),
+      ...(await stateInnerProblemsOf({ ...options, product: resolved })),
+      ...(await actionLostProblemsOf({
+        ...options,
+        product: resolved,
+        invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
+      })),
+    ].filter(isWanted),
+    checked: (rule, part) => isDrawRule(rule) && (!options.part || part === options.part),
+  });
+
+  drawn.lines.forEach((line) => console.log(line));
+
+  const problems = [
+    ...withoutWaitingUndesigned(resolved, drawn.problems),
+    ...capabilities.errors,
+    ...productLogoOf({
+      target: options.target,
+      config: { products: { [name]: entry } },
+      file: configPathOf(options.target),
+    }),
+    ...options.problemsOfEdits,
+  ].filter(isWanted);
+
+  for (const problem of problems) {
+    console.error(lineOf(options.target, problem));
+    tallyOf(tally, {
+      product: name,
+      part: tallyKeyOf(options.target, { product: resolved, file: problem.file }),
+    })?.problems.push(problem.rule);
+  }
+
+  return problems.length;
+};
+
+/**
+ * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
+ * render rule a drawing breaks, also when a static rule failed. A part that does not
+ * draw, each state that does not draw, or every part without a browser, gets one `NOT CHECKED` line; without a browser it passes on the other checks.
+ * It then lists the open points of each product's parts, with the missing states
+ * of each component part as `design complete` draws them, the blockers `design ready` refuses on; of these, only a
+ * failed action of a part left without a record and a slow rule that fails in the check fail the exit code.
+ */
+export const checkSystemRendered = async (
+  options: CheckOptions & {
+    /** Checks each of these parts in turn as `part` does, on one design server, browser and typecheck. */
+    parts?: string[];
+    /** Runs after each part's check and returns the exit code that part counts with. */
+    afterPart?: (part: string | undefined, code: number) => number | Promise<number>;
+    /** Runs once the part's edits are accepted, before its static and render checks. */
+    afterEdits?: (part: string | undefined) => void;
+  },
+) => {
+  const run = options.warm
+    ? { warm: { ...options.warm, perRun: true }, close: async () => undefined }
+    : createRunDraw(options.target, { chromiumOf: options.chromiumOf });
+  const typechecks = new Map<string, ReturnType<typeof typecheckProduct>>();
+
+  try {
+    return await withStampsInMemory(async () => {
+      let code = 0;
+
+      for (const part of options.parts ?? [options.part]) {
+        const checked = await checkSystemRenderedOn({ ...options, part, typechecks, warm: run.warm });
+
+        code = Math.max(code, options.afterPart ? await options.afterPart(part, checked) : checked);
+      }
+
+      const settled: string[] = [];
+
+      if (options.part && !options.parts)
+        code = Math.max(
+          code,
+          await checkEmbedders({ ...options, part: options.part, typechecks, warm: run.warm, settled }),
+        );
+
+      const checked = options.parts ?? (options.part ? [options.part] : 'all');
+
+      keepHeldStamps(READY_FILE, checked);
+      keepHeldStamps(MERGED_FILE, checked === 'all' ? checked : [...checked, ...settled]);
+
+      for (const name of options.products) {
+        const entry = options.config.products?.[name];
+
+        if (entry)
+          readyUncommittedLinesOf(resolveProduct({ target: options.target, name, config: entry })).forEach((line) =>
+            console.log(line),
+          );
+      }
+
+      return code;
+    });
+  } finally {
+    await run.close();
+  }
+};
+
+/**
+ * Each part that embeds `part`, directly or through another part, with the products of `products` that hold it,
+ * sorted by part key.
+ */
+export const embeddersOfPart = (options: {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  part: string;
+}) => {
+  const found = new Map<string, string[]>();
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+    const product = entry ? resolveProduct({ target: options.target, name, config: entry }) : null;
+    const embedded = product?.parts.find((candidate) => partKeyOf(candidate) === options.part);
+
+    if (!product || !embedded) continue;
+
+    for (const candidate of product.parts) {
+      if (candidate === embedded || candidate.origin === 'base') continue;
+      if (!embeddedPartsOf({ product, part: candidate }).includes(embedded)) continue;
+
+      const key = partKeyOf(candidate);
+
+      found.set(key, [...(found.get(key) ?? []), name]);
+    }
+  }
+
+  return [...found].sort(([a], [b]) => a.localeCompare(b)).map(([part, products]) => ({ part, products }));
+};
+
+/**
+ * Checks each embedder of `part` as `check --part` would, without its open points or ready marks, and answers 1
+ * when one fails; then the ready mark of `part` does not hold either, so this run drops it. Of an embedder's edits it
+ * settles only the ones HEAD holds, as its own check does, and pushes each part it settled onto `settled`.
+ */
+const checkEmbedders = async (
+  options: CheckOptions & {
+    part: string;
+    warm: WarmDraw;
+    typechecks: Map<string, TypecheckResult>;
+    settled: string[];
+  },
+) => {
+  const embedders = timedPhase('embedders', () => embeddersOfPart(options));
+
+  if (embedders.length === 0) return 0;
+
+  const failed: string[] = [];
+
+  for (const { part, products } of embedders) {
+    for (const name of products) {
+      const entry = options.config.products?.[name];
+
+      if (!entry) continue;
+
+      const lines: string[] = [];
+      const product = resolveProduct({ target: options.target, name, config: entry });
+
+      options.settled.push(...settleCommittedEdits({ target: options.target, product, parts: [part], lines }));
+      lines.forEach((line) => console.log(line));
+    }
+
+    const checked = await checkSystemRenderedOn({ ...options, products, part, embedder: true, embedded: options.part });
+
+    if (checked !== 0) failed.push(part);
+  }
+
+  if (failed.length === 0) {
+    console.log(`EMBEDDERS PASS ${options.part}: ${countText(embedders.length, 'part')}`);
+
+    return 0;
+  }
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+
+    if (entry)
+      dropPartRecord({ product: resolveProduct({ target: options.target, name, config: entry }), part: options.part });
+  }
+
+  console.error(
+    `EMBEDDERS FAIL ${options.part}: ${failed.length} of ${embedders.length} - ${failed.join(', ')}; ${options.part} is not ready until they pass`,
+  );
+
+  return 1;
+};
+
+type EmbedderRun = CheckOptions & { warm: WarmDraw; tally: Tally; part?: string; embedded?: string };
+
+const checkEmbedderOn = async (options: EmbedderRun) => (await embedderRunOf(options)).exit;
+
+const statesHoldingEmbeddedOf = async (options: EmbedderRun) => {
+  const { part, embedded } = options;
+
+  if (!part || !embedded) return undefined;
+
+  const states: Record<string, string[]> = {};
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+    const product = entry ? resolveProduct({ target: options.target, name, config: entry }) : null;
+    const held = product
+      ? await withPartLoader(options, (load) => statesHoldingPartOf({ load, product, embedder: part, part: embedded }))
+      : null;
+
+    if (!held) continue;
+
+    states[name] = held;
+  }
+
+  return states;
+};
+
+const embedderRunOf = async (options: EmbedderRun) => {
+  const states = await timedPhase('embedder-states', () => statesHoldingEmbeddedOf(options));
+  const { code, notDrawn } = await renderSystem({ ...options, embedder: true, states });
+  let failed = 0;
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+
+    if (entry)
+      failed += await timedPhase('tail', () => checkProductTail({ ...options, name, entry, problemsOfEdits: [] }));
+  }
+
+  const denied = [...new Set(options.warm.takeDeniedIds?.() ?? [])];
+
+  denied.forEach((id) => console.error(deniedLineOf(id)));
+
+  for (const name of options.products)
+    summaryText({ product: name, parts: [], tally: options.tally, only: options.part })
+      .filter((line) => !line.endsWith(': clean'))
+      .forEach((line) => console.log(line));
+
+  return { exit: code !== 0 || failed + denied.length > 0 ? 1 : 0, notDrawn };
+};
+
+const silently = async <T>(run: () => Promise<T>) => {
+  const { log, warn, error } = console;
+  const mute = () => undefined;
+
+  console.log = mute;
+  console.warn = mute;
+  console.error = mute;
+
+  try {
+    return await run();
+  } finally {
+    Object.assign(console, { log, warn, error });
+  }
+};
+
+/**
+ * The problem codes each of `embedders` shows when checked as `check --part` checks an embedder, sorted, by part key;
+ * `null` for a part that did not draw. Prints nothing and writes no ready mark.
+ */
+export const embedderProblemCodesOf = async (
+  options: CheckOptions & { embedders: { part: string; products: string[] }[] },
+) => {
+  const run = createRunDraw(options.target, { chromiumOf: options.chromiumOf });
+  const typechecks = new Map<string, TypecheckResult>();
+  const codes = new Map<string, string[] | null>();
+
+  try {
+    await withStampsInMemory(() =>
+      silently(async () => {
+        for (const { part, products } of options.embedders) {
+          const tally: Tally = new Map();
+          const { notDrawn } = await embedderRunOf({ ...options, products, part, tally, typechecks, warm: run.warm });
+          const found = products.flatMap((name) => tally.get(name)?.get(part)?.problems ?? []);
+
+          codes.set(part, notDrawn === undefined ? [...new Set(found)].sort() : null);
+        }
+      }),
+    );
+  } finally {
+    await run.close();
+  }
+
+  return codes;
+};
+
+export const deniedLineOf = (id: string) =>
+  `SERVE-DENIED ${id}: the design server answered 403, the file is outside its allow list, so a drawing got other content`;
+
+const checkSystemRenderedOn = async (
+  options: CheckOptions & {
+    warm: WarmDraw;
+    afterEdits?: (part: string | undefined) => void;
+    embedder?: boolean;
+    embedded?: string;
+  },
+) => {
+  const tally: Tally = new Map();
+
+  options.warm.takeDeniedIds?.();
+  const counted = { ...options, tally };
+
+  if (options.embedder) return checkEmbedderOn(counted);
+
+  for (const line of timedPhase('stale-dist', () => staleDistWarningsOf(options))) console.warn(line);
+
+  const editProblems = new Map<string, Problem[]>();
+  const opened: string[] = [];
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+
+    if (!entry) continue;
+
+    const product = resolveProduct({ target: options.target, name, config: entry });
+    const refreshed = timedPhase('harness-map', () => refreshHarnessMap({ target: options.target, product }));
+
+    if (typeof refreshed === 'string') console.log(`HARNESS MAP STALE ${name}: ${refreshed}`);
+    if (refreshed === true) console.log(`REGENERATED ${name}: the stale harness map`);
+
+    const problems: Problem[] = [];
+    const lines = await timedPhase('auto-accept', () =>
+      autoAcceptOf({ ...options, product, only: options.part, draw: options.drawPictures, problems, opened }),
+    );
+
+    editProblems.set(name, problems);
+
+    lines.forEach((line) => console.log(line));
+  }
+
+  options.afterEdits?.(options.part);
+
+  const { code, rendered, busy, notDrawn, completeness } = await renderSystem(counted);
+
+  let failed = await printOpenPoints({ ...counted, rendered, busy, notDrawn, completeness });
+  let partsTotal = 0;
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+
+    if (!entry) continue;
+
+    failed += await timedPhase('tail', () =>
+      checkProductTail({ ...options, tally, name, entry, problemsOfEdits: editProblems.get(name) ?? [] }),
+    );
+  }
+
+  const denied = [...new Set(options.warm.takeDeniedIds?.() ?? [])];
+
+  denied.forEach((id) => console.error(deniedLineOf(id)));
+  failed += denied.length;
+
+  timedPhase('summary', () => {
+    const staleCli = runningCliStaleWarning();
+
+    console.log(runningCliBuildLine());
+    if (staleCli) console.log(staleCli);
+
+    for (const name of options.products) {
+      const entry = options.config.products?.[name];
+
+      if (!entry) continue;
+
+      const resolved = resolveProduct({ target: options.target, name, config: entry });
+      const parts = resolved.parts.filter((part) => part.origin !== 'base').map(partKeyOf);
+
+      partsTotal += options.part ? parts.filter((key) => key === options.part).length : parts.length;
+
+      summaryText({
+        product: name,
+        parts,
+        tally,
+        only: options.part,
+        done: options.part ? undefined : doneParts({ product: resolved, parts }).length,
+      }).forEach((line) => console.log(line));
+    }
+  });
+
+  const exit = code !== 0 || failed > 0 ? 1 : 0;
+
+  if (exit === 0) console.log('ok');
+
+  ruleSummaryText(tally).forEach((line) => console.log(line));
+  opened.forEach((line) => console.log(line));
+
+  const findings = [...tally.values()]
+    .flatMap((found) => [...found.values()])
+    .reduce((n, e) => n + e.problems.length, 0);
+
+  console.log(`check complete: ${countText(partsTotal, 'part')}, ${countText(findings, 'finding')}`);
+
+  return exit;
+};

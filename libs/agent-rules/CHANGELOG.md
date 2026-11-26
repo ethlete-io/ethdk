@@ -1,0 +1,760 @@
+# @ethlete/agent-rules
+
+## 0.1.0-next.46
+
+### Patch Changes
+
+- The `builder-idle-check` hook no longer counts a subagent as done when it stopped to wait on its own background work.
+- A failed `et design sketch check` now ends with a line telling the agent to fix the cause in its variant files and draw every variant, and the design-exploration guide says a stub variant is not done.
+- `sketch ready` refuses interactions in round 1 of a new part and demands them in the round after the pick (`INTERACTION-ROUND`).
+
+## 0.1.0-next.45
+
+### Minor Changes
+
+- New opt-in `builder-idle-check` Stop hook: a builder session that ends a turn with nothing running while `plans/QUEUE.md` has open Builder rows is sent back to work, with those rows named.
+- Restore the `away-mode` hook and the `awayMode` config key, including the report on return.
+
+### Patch Changes
+
+- `agent-sessions run` and `restart` no longer refuse a command that sets CLAUDE_CONFIG_DIR when the caller is a human shell (no CLAUDECODE, no CLAUDE_CONFIG_DIR), so `claude2` starts from a plain terminal.
+- `et design sketch check` warns when a state draws a title next to an `<img data-et-carries-title>`, a picture with the title baked in.
+- `sync` registers the `design-live-check` hook in every repo with `.ethlete/design/config.json`, without the repo listing it in `hooks`. Before, no repo turned it on, so a design agent never got its live findings.
+- `et design product new --colors` registers an error and a warning colour theme, so a danger button no longer falls back to the accent.
+- `design sketch check` now also catches an element a variant draws in an existing part's root class or tag under another prefix (`<span class="tsh-badge">Serie</span>` for `et-badge`) as an inline rebuild, and checks only parts the drawing layer may embed.
+- The sketch check fails a variant that draws an existing part inline (`<span>${FIXTURE.badge}</span>` beside the SDK badge) unless it embeds the part or the target states the difference.
+- A parent sketch merge now also writes each approved sub-sketch's `shared/` and asset changes, and refuses when two of its sketches change the same file.
+- A parent sketch merges together with its sub-sketches once every one is approved; until then each merge path refuses it.
+- Picking another variant of a parent sketch now discards the sub-sketches it no longer marks, after a confirmation in `sketch pick` (`--discard-sub-sketches`) and in Studio.
+- Marked sub-parts may differ between composition variants, a name match with an existing part needs `--not-rebuild-of` and a stated difference, a mark change reopens a ready sketch, and Studio shows the marks at the variant header.
+- `et design studio open` keeps its request when Studio is not running and exits 3 (queued); Studio adds the checkout at its next start and drops requests older than 7 days or whose checkout lost its design config.
+- `sketch check` warns when a state uses an `et-color--<name>` class that no foundation of the product defines, and names the defined ones, instead of letting it fall back to the accent silently.
+
+## 0.1.0-next.44
+
+### Minor Changes
+
+- The `codex-subagent` skill and its wrapper now default to `gpt-6.2-sol`; `gpt-6.2-astra` is for the hardest work and needs the user's approval first.
+- Add the opt-in `design-live-check` hook: after each write of a design file it runs `et design lint` on it and hands every finding back to the agent.
+- Remove the `away-mode` and `builder-chat-words` hooks and the `awayMode` config key.
+- Add `et design studio open [<dir>]`: it adds a checkout to the running Studio and switches Studio to it, after the agent asks the human.
+
+### Patch Changes
+
+- The domain-modeling and grill-with-docs skills record a decision as a test or a tool, never as an ADR; `ADR-FORMAT.md` is gone.
+- `agent-sessions run` called from an agent shell inside tmux now starts the session detached instead of switching the human's client to it.
+- The design guidance keeps a variant note to two short sentences in the words of the screen, and lets the agent work only from its repo and what the user hands it, asking for missing images in one plain sentence.
+- Teach a new product to start with one real screen in finished moods instead of a wireframe round, and add rules for looking at a shot before `ready`, talking about the product, hover and focus states, and the app shell.
+- The design exploration guide draws interactions once, on the first grid row, and a content row only at rest with `interactionRows` `restOnly`.
+- Reword the design skill so a mood round asks for comments, not a pick, and the first real page is drawn from them.
+- Reword the design skill so the first sketch draws the shell as an imported element and interaction states live on the parts a page imports.
+- Make the design check's FONT-FACE rule flag a font the design names but that did not load in the shot, and tell the agent to self-host it.
+- `interactionRows` takes a plain row-name list as `restOnly` when it is called with explicit type arguments.
+- The Studio logo part gets anatomy, clear space, minimum size, colour variants, misuse and motion sections and owns the busy animation; the design check reports a merged logo part that lacks one.
+- Stop the design check's OVERFLOW rule from failing a page taller than its preset height, so a page can scroll.
+- Drop the ADR plan-question open point and ADR numbers from design CLI texts and comments.
+- `agent-sessions restart` refuses a stored command that does not run `claude` or `codex` instead of starting a bare shell, and a footer with only "↓ to manage" no longer counts as background work.
+- The design-exploration skill says that the pick of another sketch is not a wait: a sketch draws with the part as merged now and goes ready, so the user can choose it.
+- The design exploration skill says a composition's variants differ only in arrangement and how a sub-part from an open sketch is used.
+- The Studio menu puts client runs in a submenu named by date and time, lists projects apart from the actions, opens the design server as a submenu and marks "Projekt entfernen" as dangerous; the Start page tells same-name checkouts apart.
+- The design guide asks for states that read as different from rest at a glance, not a lift of a few px alone.
+
+## 0.1.0-next.43
+
+### Patch Changes
+
+- Use neutral example names in the design exploration skill instead of parts from a real product.
+
+## 0.1.0-next.42
+
+### Patch Changes
+
+- The domain-modeling ADR format names the `parts` frontmatter: an ADR with `parts` and no `built` is an open plan question on each part.
+- On Linux, `agent-sessions` starts the agent in its own systemd user scope that systemd-oomd avoids, so a heavy job is killed before the agent.
+- When the checkout has `tools/scripts/own-scope-preload.mjs`, `agent-sessions` registers it through `NODE_OPTIONS` for the agent, so each nx, vitest and tsc run the agent starts leaves the avoided agent scope.
+- Fix `agent-sessions restart --process`: a command a login shell wraps (`zsh -lic '...'`) is rewritten inside the wrapper and keeps the prompt inside it, and the new process takes the role of the target session, not a stale one.
+
+## 0.1.0-next.41
+
+### Patch Changes
+
+- `agent-sessions restart --process` starts the agent program itself when the stored command is a `run` of the script, `run` inside the pane of its own session starts the agent in place, and `run --dry-run` shows the caller `CLAUDE_CONFIG_DIR`.
+- `agent-sessions` gives the builder flags to a `claude` that follows `env` and env assignments, as in a stored `env CLAUDE_CONFIG_DIR=... claude`.
+
+## 0.1.0-next.40
+
+### Patch Changes
+
+- `agent-sessions restart` takes the `--process` path when the pane shows background shells or agents, so their reports no longer start a turn in a cleared session.
+- `restart` heals a stored command without an agent program (written by an older `run`) or refuses before stopping the session, and `run` exits non-zero with a message when it started no agent.
+- `agent-sessions restart` (also with `--process`) starts the mailbox dispatcher when none runs for the checkout, so a session that was restarted into a repo without one still receives messages.
+- `agent-sessions run` inside tmux switches your client to the new session or refuses a duplicate, and keeps one `CLAUDE_CONFIG_DIR` per checkout.
+- Keep the agent binary in the command `agent-sessions run` stores when it follows an `env` wrapper, so `restart --process` starts the agent again.
+
+## 0.1.0-next.39
+
+### Minor Changes
+
+- `timetrack rows <day> --compare <file>` compares a day's rows with another machine's `rows --json` export, ignoring paths and order, and exits 1 on a difference.
+
+### Patch Changes
+
+- `timetrack rows` marks a row nobody was at the machine for with `unattended`, and `timetrack snapshot --help` prints usage instead of recording a snapshot.
+- `timetrack rows <day> --compare <file>` maps a paired machine's checkout paths onto this machine's by repository key, so one repository under differently named folders compares as the same rows.
+- An agent's night on one paired machine now reads unattended on both, and `timetrack day --received` adds the events paired machines sent.
+- Keep the latest stand-in verdict per context and day and print it under `timetrack naming`, so a row that stays "Not yet named" can be explained.
+- The `status-line` mod shows its band only in a session that ran the `doc-agent` skill (typed `/doc-agent` or called by the model); `builder-agent` hides it again, and every other session never shows it nor polls git and CI for it.
+- `timetrack rules` lists the day a day-scoped attribution rule holds on, in the JSON and in the printed line.
+
+## 0.1.0-next.38
+
+### Minor Changes
+
+- Add the opt-in `away-mode` hook, which switches a tracked agent session to away mode after `awayMode.thresholdMinutes` without typed input and back on the next typed prompt.
+- The away-mode hook appends the report table for the time away to its "user is back" message when `awayMode.reportCommand` is set.
+- The `subagent-model-policy` hook no longer denies a subagent call that names no model: it runs it on `sonnet` and
+  returns the model table as a note. The delegating rule now says sonnet is the default.
+- The `background-design-commands` hook no longer denies a long design command run in the foreground: it starts it with
+  `run_in_background: true` and says so in a note.
+- The `context-warning` hook warns once per tier and no longer repeats a reminder on every later prompt. A session
+  started with the builder role gets `CLAUDE_CODE_SILENT_TURN_REMINDER=0`, so Claude Code's silent-turn reminder stays off
+  for it and its subagents.
+- The `background-design-commands` hook also starts a wait loop in the background: a Bash call with an `until` or
+  `while` loop that sleeps runs with `run_in_background: true`, and the completion notice ends the wait.
+- `timetrack edit --day <D> --edits <file.json>` queues many row edits of one day as one approval. The timetrack skill names the user's rules for tidying a day.
+- Add `ethlete-agents report`, which prints a fixed progress table for a period, and a `report` skill that pastes it.
+- Add the `status-line` Claude Code mod: a band above the prompt with the running slice and its duration, the open queue, open questions and a blocked mark when the branch's CI is red.
+- The `subagent-model-policy` hook logs each subagent start to `.git/ethlete/subagent-starts.jsonl`: model, effort, HEAD, branch, description, prompt head and the file paths the prompt names.
+- Add `timetrack rules --repoint --from <KEY> --to <KEY>`, which queues pointing every attribution rule that names one issue at another.
+
+### Patch Changes
+
+- List the `prefer-computed-linked-signal-source` rule in the styleguide lint rule lookup.
+- The subagent rule tells the session to stop each background subagent once its result is in.
+- The `agent-sessions` skill no longer says that lint runs only in CI: the pre-commit hook lints the staged files.
+- The `design-exploration` skill names one exception to "the user chooses": a role that the project gives its own picks
+  builds its recommendation and records the pick.
+- An accepted or edited row between midnight and 6 am now carries a `night-row` day warning, and `timetrack rows` shows each row's desk events and human prompts.
+- The builder claude launch starts with a smaller fixed context: only the repo MCP config and seven unused tools denied.
+- A repo can set the `designMcpCommand` var to start the `ethlete-design` MCP server with its own command.
+- Split the handoff skill: `SKILL.md` keeps the resume mode, and save mode, handoff mode and clearing on your own move to a sibling `save.md` that is read only when saving.
+- Shorten the frontmatter descriptions of the bundled skills so they load less context into every session.
+- `timetrack` output into a pipe is no longer cut off, `timetrack approvals` and `approval <id>` print the day, rows and issue of a waiting write, and `timetrack standins --stale [days]` lists old placeholders with no work.
+- A prompt another program typed into a pane (mailbox wake, restart resume prompt, `/clear`) no longer counts as a person being there. The restart now ends its prompts in `[typed by agent-sessions]`.
+
+## 0.1.0-next.37
+
+### Patch Changes
+
+- The agent-sessions dispatcher no longer types messages from before it started, even ones addressed to the woken agent; `inbox` still lists them.
+- The agent-sessions dispatcher no longer types into a tmux session of another checkout, and `send --to` refuses an agent that has no session in this checkout.
+- `send --to` and the dispatcher accept a tmux session named only `<agent>` again when its pane runs in this checkout.
+- The styling rule tells agents to style an SDK component's state through its inputs, never with a `!`-utility or an `--et-*` override.
+
+## 0.1.0-next.36
+
+### Patch Changes
+
+- agent-sessions: the dispatcher types unread mailbox messages into the pane, a pending restart blocks a second one and the wake, and `run` without a terminal starts a detached session.
+
+## 0.1.0-next.35
+
+### Patch Changes
+
+- The context warning and the shell functions from `shell-install` also find the agent-sessions script under `.claude/skills`, so a session in such a repo starts in tmux and restarts itself after a handoff instead of asking the user to clear.
+- List the collapse guide in the sdk-docs skill.
+
+## 0.1.0-next.34
+
+### Minor Changes
+
+- `app-styling` allows app CSS in `@layer components` again, and `et update` no longer leaves the `app-styling-utilities` task.
+
+### Patch Changes
+
+- The git-safety hook now allows the commit that concludes a merge when a plan archive under `plans/**/archive/` is staged next to the merge paths, so an archive run that shrinks a merged plan can go into the merge commit.
+- `agent-sessions restart` refuses while a `❓` question of a Claude session has no later human message, unless the resumed handoff names it under "Open for the human".
+- The `background-design-commands` hook lets a `--help` or `-h` call of a long `design` command run in the foreground; `studio:e2e --help` stays denied because it runs the suite.
+- The agent-sessions `restart` and wake-up commands now see a focused footer pill or agent panel row of the current Claude Code build, and move the focus back to the prompt before they type.
+- Tighten the agent-sessions skill, mainly the restart section.
+- The agent-sessions skill starts each agent with `CLAUDE_CODE_TMPDIR=~/.cache/claude-tmp`, in `run`, the shell functions and `restart --process`, so a full `/tmp` does not stop the agent's shell.
+- Remove `et design check --visible-change` and the `harness.baseBranch` setting it read; `et design compare --base <rev>` still compares against a clone at `<rev>`. The `background-design-commands` hook no longer names `--visible-change`.
+- Tighten the timetrack skill and list transcript and resync in its command table.
+
+## 0.1.0-next.33
+
+### Minor Changes
+
+- `agent-sessions restart --process` starts the agent as a new process in its tmux pane, so a plugin, settings or `PATH` change takes effect.
+
+### Patch Changes
+
+- The builder Stop hook now blocks a turn that ends with more than one line of chat text. `restart --process` keeps the session's role. Resuming a role handoff loads its role skill.
+- The builder Stop hook now counts the final message of the turn from `last_assistant_message`. Claude Code calls the hook before that message reaches the transcript.
+- `agent-sessions restart` treats a pane that shows "Waiting for" background agents as busy, and the skill says to mail the grill session when a self-restart is denied.
+- `agent-sessions restart` accepts the paired builder or grill/docs session as target and logs each peer restart to `restart.log`.
+- `agent-sessions restart` no longer hangs when the background-agent panel is open, and it tells the caller and `--notify` agents when it waits or gives up.
+- `agent-sessions restart --process` keeps the tmux session of the agent, does not send the first prompt of `run` again, and answers the background work dialog of Claude Code with "exit and stop tasks".
+- `agent-sessions restart --process` no longer passes a stored prompt twice, and `run` switches only the client of the calling tmux session.
+- The design exploration skill documents `et design sketch covers` (ADR 0222).
+- `et design sketch covers` on a multi-target sketch takes the part, `<layer>/<name>:<state>[@x,y,w,h]`, and refuses a bare state; compare matches a covered DIFF against that part.
+- The `background-design-commands` hook matches long design commands only at command position, so a heredoc, an unquoted `echo` or a `git commit` message that names `design check` no longer gets denied.
+- The builder Stop hook now parses each Bash command into its simple commands. A heredoc body or a quoted string that names `agent-sessions.mjs send` or `git commit` no longer counts as a report or a commit.
+- The builder Stop hook also blocks a stop one time when the turn ran `git commit` or `git push` and sent no report with `SendMessage` or `agent-sessions send`.
+- The design-exploration skill now describes build-ready, a current check record from `design check`, instead of the removed `design go` and `design accept` commands.
+- The git-safety hook now allows a pathless `git commit` that concludes a merge, no longer denies commands that only mention `git commit` in a grep pattern or heredoc, and drops the obsolete `go.json` rule.
+- Fix `agent-sessions restart` never restarting an idle session whose own chat text said "Waiting for": only the spinner line and the footer count as busy.
+
+## 0.1.0-next.32
+
+### Minor Changes
+
+- Add the `background-design-commands` hook: it denies a Bash call that runs a long design command (`design check`, `compare`, `ready`, `sketch ready`, `harness`, `studio:e2e`, `--visible-change`) without `run_in_background`.
+- Add the `git-safety` hook: it denies `git add -A`, `git stash`, `git commit --amend`, a `git commit` without a pathspec and any `go.json` in a commit.
+
+### Patch Changes
+
+- Add `--role builder` to the agent-sessions `run` command and a `builder-chat-words` Stop hook that logs the chat words of each builder turn.
+- `ethlete-agents sync` and `et` write their JSON files (`.mcp.json`, design and update state) in the checkout's Prettier format.
+- The git-commit skill asks for one commit per finished slice (code, specs, changeset and plan note together), one per sketch round or merge, and no history rewrites in a shared checkout.
+- The design-exploration skill tells parts to use `data-et-auto-surface` and `data-et-surface-interactive` instead of a picked `et-surface--<name>` class.
+- The design-exploration skill keeps its hard rules in SKILL.md and moves the command details into reference files, and the subagent rule says a job of under about 10 tool calls stays in the session.
+- The design-exploration skill tells parts to use `data-et-semantic-color="<type>"` instead of a picked `et-color--<name>` class.
+- The design-exploration skill tells an agent to take every colour from the SDK surface and colour theming, never from its own tokens.
+- The `handoff` skill spawns no sub-agent from 70 %, and a self-restart no longer waits for sub-agents that report into a result file.
+- Fix the nx-layout rule to describe inferred lint and test targets instead of the removed `@nx/eslint:lint` and `@nx/jest:jest` executors.
+- The context-warning hook tells an agent in a tmux pane with the agent-sessions skill to save the handoff and run `restart` on its own session, instead of asking the user to clear. The skill description names self-restart.
+- Let `git stash list` and `git stash show` through the git-safety hook. Every writing stash subcommand stays refused, and the refusal names it.
+- `sync` keeps the existing order of hook events and entries in `.claude/settings.json` and only updates, appends or removes its own entries, so a second run is a no-op.
+- The design skill now says visible UI is built only from a picked sketch, and the grilling skill says to decide technical questions yourself.
+- The agent-sessions skill notes that `yarn commit` runs the related specs before it takes the index lock.
+- `et design check` fails a frame-loaded design module that awaits at the top level (`TOP-LEVEL-AWAIT`), which can hang WebKit; a call variant may default-export a promise of its drawing instead.
+- `et design sketch report` refuses a ready sketch. Add `--reopen` to move it back to in progress when the user asks for a change.
+
+## 0.1.0-next.31
+
+### Minor Changes
+
+- The design-exploration skill now describes the `ethlete-design` MCP server: its tools by job, when to use them instead of the `et design` CLI, and the `sketch_report` and `sketch_ready` rules.
+
+### Patch Changes
+
+- The Codex subagent skill lists gpt-6-luna, gpt-6.1-terra (the new default), gpt-6.1-sol and gpt-6-astra. The context hook gives gpt-6.1 a 500k pricing boundary.
+- `agent-sessions restart` types the prompt after the clear even when a message woke the fresh session. Only typed text in its prompt holds the prompt back.
+- The design exploration skill lists `et design sketch target add`.
+- `agent-sessions restart` no longer reads the Claude Code IDE context chip (`[⧉ In file]`) on the prompt line as a draft, so it types the resume prompt after the clear.
+- `control(markup, name)` from `@ethlete/components/design/control` renames a control that is already marked, so a design reuses a control part under its own control name.
+- CONTROL-STATE counts an interaction word only as the last word of a state name, drops modifier words from the element name, and asks a component without controls to declare them (Q164).
+- `et design check`, `sketch check`, `sketch ready` and `design complete` fail interaction states on a part that declares no control (`CONTROL-STATE`). `design complete` hints a state that changes under 10 % of its frame.
+- Design checks report a drawn button, link, input or control role without `data-et-control` as `CONTROL-PART-INPUT`: a hint on merged parts, an error when a sketch adds one.
+
+## 0.1.0-next.30
+
+### Minor Changes
+
+- `sync` registers `et design mcp` as the `ethlete-design` MCP server in `.mcp.json` (Claude Code) and `.codex/config.toml` (Codex) when `@ethlete/cli` is installed.
+
+### Patch Changes
+
+- Design exploration skill: before `sketch ready`, critique each variant's hierarchy, spacing, nesting and host context, and drop visually weak ones.
+- Design exploration skill: a reference informs a design and is never copied, and variant-only code stays out of a sketch's `shared/` folder.
+- Design exploration: mark a sketch `ready` only when no change to it waits on an open decision or a helper still to land.
+- `restart` logs why it waits (`restart.log` next to the mailbox) and gives up 60 s after the clear: it tells the pane via tmux and saves the prompt to `restart.prompt.<session>.txt` instead of waiting silently.
+- Add `et design motion shots <part> <motion>`: it draws a motion at its keyframes in full and reduced motion into one sheet and writes its tracks as JSON.
+
+## 0.1.0-next.29
+
+### Patch Changes
+
+- `agent-sessions restart` now waits until the session ended its turn and its prompt is empty, so it no longer types into a running turn or into your draft.
+- A multi-target sketch merge gives each target only the `shared/` files it imports, directly or transitively; an unimported file returns to the target that held it. `sketch new` refuses targets whose `shared/` files clash.
+- `et design sketch new` takes several parts: one sketch, one variant folder holding them all, one `ready`, one merge; `ready` and `preview` name every part a `shared/` edit reaches; Studio shows every target part.
+
+## 0.1.0-next.28
+
+### Minor Changes
+
+- New `mods` config key: `sync` turns on Claude Code mods that the package ships, starting with `e2e-progress`, a live Playwright run progress in the status line.
+- Add the consumer skill `e2e-triage`: read the failures file of the `@ethlete/cli` failure reporter, group the failures by error, fix the largest group first, and re-run only the failed spec files.
+- Add the `agent-sessions` skill and `ethlete-agents sessions`: agents in one checkout run in `tmux`, message each other, claim paths, and restart a session with a prompt. The `handoff` skill uses it to clear and resume.
+
+### Patch Changes
+
+- `agent-sessions restart` refuses a session the caller does not run in, and the handoff skill says how to read the own session name.
+- The `claude` and `codex` shell functions no longer switch your tmux client when a script or a one-shot flag such as `--version` calls them.
+- `agent-sessions run` starts `<name>-2`, `<name>-3` and so on when the session already has a terminal attached, so a second `claude` terminal gets its own agent.
+- The e2e-triage skill treats connection-refused groups on a local mock as infrastructure, and the e2e-progress mod shows the failure `detail`.
+- The handoff skill counts an open item as the next task, so an agent in tmux restarts itself with it instead of handing the prompt to the user.
+- A handoff self-restart now resumes with the installed skill name and keeps both the restart reason and the text after the slug.
+- In an agent-sessions tmux session, the context-warning hook tells the agent to save and restart itself, not to ask the user for `/clear`.
+- The `sdk-update` skill warns that after Angular 22, `a?.b` gives `undefined`, not `null`, which breaks pipes that treat the two differently.
+- Shorten the mailbox wake-up prompt: it runs `npx ethlete-agents sessions inbox <name>` or the `agents:sessions` script when one exists, and the full script path otherwise.
+- `et design shot --variants` takes `--round <key>` and `--variant <name>` to draw only the current round next to the merged row.
+- Reject and reopen single sketch variants with `et design sketch reject|reopen` or in Studio; a rejected variant keeps its reason, origin and history and can no longer be picked or merged.
+- The `agent-sessions` dispatcher waits when the prompt of an agent holds typed text or an open menu, and sends the wake-up line after the text is sent or cleared.
+
+## 0.1.0-next.27
+
+### Minor Changes
+
+- The design-exploration skill says every `et design` write takes `--by <model id>`, that `sketch report` names its variant with `--variant`, and that the coordinator writes the exact model id into each sub-agent prompt; an agent never guesses it.
+- The design-exploration skill says a flow may name a page that exists only as an open sketch, and Studio draws its first variant.
+- The design-exploration skill says elements may draw with the wireframe kit, and a rough shell is a kit element each page imports.
+- The design render check warns of grid rows that leave out interaction columns other rows fill (`GRID-COVERAGE`).
+- `design check` warns of a `.replace` on markup that neither the part nor a part it uses draws (`STALE-REPLACE`).
+- The design render check warns of a class with a product prefix that no stylesheet of the frame defines (`UNDEFINED-CLASS`).
+
+### Patch Changes
+
+- The design-exploration skill explains the open, addressed and resolved comment states, and that the agent never merges after a pick.
+- The design-exploration skill says when to pass `--question` to `et design comment reply`.
+- The design-exploration skill covers `et design comment reply` and the inbox group "waiting for the user".
+- The design-exploration skill says to call `node dist/libs/cli/src/index.js design` in a check-and-shot loop instead of `yarn design`, which builds the CLI first.
+- The design-exploration skill now forbids `vh`, `dvh` and `svh` in parts, and requires every flow line to carry a label naming an element visible in the frame before it.
+- Document product flows, the wireframe kit and the FLOW and WIREFRAME-KIT checks in the design-exploration skill.
+- The design exploration skill explains comments on an element variant inside a page.
+- The design-exploration skill says a product's own `presets` replace its base's, so a desktop-only app lists `desktop` alone.
+- Tell design agents that a Tailwind product registers its drawing folders in a stylesheet, so sketches use the app's utilities.
+- Explain a sketch's `shared/` folder, `sketch new --like` and `embedPage()` in the design-exploration skill.
+- Teach the design-exploration skill the product and sketch workflow of Ethlete Studio: `et design product new`, sketches, the inbox, and Studio-side merge.
+- The design exploration skill describes the product config `tokens` list.
+- The design-exploration skill says how a part imports the product's tokens through `@system/foundations/tokens.css?inline`.
+- The design and git-commit skills add rules for variants, pages and commits in a shared checkout.
+- The design-exploration skill draws wireframes first, then foundations, logo and CI, components, elements and pages.
+- The design-exploration skill says a part with `definePart({ styles })` may draw `drawing({ body })` without styles.
+- The design-exploration skill says `et design inbox done` needs `--note`, which replaces the part's note.
+- The design-exploration skill says a part may export named helpers, and that another part imports a piece instead of copying its markup.
+- The design-exploration skill says `sketch check` and `sketch ready` note a problem the product already had instead of failing on it.
+- The design-exploration skill says `sketch new` starts no report, so `report --done` follows only a report of your own.
+- The design-exploration skill says to start each `et design sketch report` message with `variant <name>`, so Studio can mark that variant as drawing.
+- The design-exploration skill names `sketch round` and says `sketch list` shows the rounds.
+- The design-exploration skill tells agents to answer a combine comment with `et design sketch variant --from` in a new round, noting why the old round lost.
+- The design-exploration skill makes wireframes strict: keep what the app already has, one sketch per screen, regions and names only, no polish, no subagent, and stop the stage early.
+- The design-exploration skill lists the wireframe kit's new controls (`select`, `tabs`, `segmented`, `checkbox`, `badge`, `dot`), an icon `glyph` and a box `fill`, and says to draw a control as its type.
+- The design-exploration skill teaches the wireframe kit's `heading`, `image` `ratio` and row `stackBelow` instead of fixed sizes.
+- The delegation rule says a subagent starts with the full start context, so a small lookup stays in the session. The format rule asks for one Prettier call over all edited files.
+- The design-exploration skill says the auto merge blocks only on problems it adds, and that `sketch ready` can be re-run on a ready sketch.
+- The design-exploration skill says that `design check` warns of a merged part changed outside a sketch.
+- Design parts and stylesheets load product assets as `@assets/<file>`.
+- `et design check --tsconfig` also typechecks each variant of an open sketch and prints the tsc output of a failing one.
+- `et design sketch new` takes `--note <text>`, the note of the first round.
+- `et design <command> [<subcommand>] --help` prints the usage of that one command and skips its checks.
+- `et design check` reports a `var(--token)` without a fallback that no part or stylesheet of the product or its base defines.
+- `et design shot --crop x,y,width,height` and `/__design/shot?clip=x,y,width,height` cut a picture to a box in CSS pixels, so a hairline can be judged with `--scale`.
+- `et design shot --variants --diff-props` compares each variant with the merged part drawn with the variant's state props, so changed props no longer paint the whole diff red.
+- `et design shot --interaction <hover|focus-visible|active|disabled>` forces an interaction on every cell, and `--help` names it. The design-exploration skill names it.
+- The diff row of `et design shot --variants` says "no pixel change, but the markup differs" when a variant draws other markup to the same pixels.
+- `et design shot --scale <1-4>` and `/__design/shot?scale=` draw a part at a device scale, so a small part is legible. The design-exploration skill names it.
+- `et design shot --state <a>,<b>` draws only the named states, side by side, and names the states of the part when one does not exist. The design-exploration skill names it.
+- `et design sketch check --fix` writes the variants in the checkout's Prettier format before it checks them; a FORMAT problem points to it.
+- `et design sketch check` warns of a variant that restyles a class of the sketch's `shared/` folder and of a variant file nothing imports.
+- `et design sketch new --round` requires `--note`, so `sketch ready` no longer stops on a round without a note.
+- `et design sketch new` takes `--variant-note`, `sketch variant` takes several variants, and sketch commands format their output, explain each flag and infer `--product`.
+- `et design sketch variant` refuses a sketch the user discarded and asks for a variant pick first; a pick is still cleared.
+- `design check` warns of an export in a part's `shared/` that nothing imports, and `sketch check` of a sketch `shared/` export a variant does not import.
+- `sketch new --variant-note` keeps each variant's note in `sketch.json` instead of overwriting the part's merged note; Studio shows it in the variant's head, and a merge gives it to a new part.
+- A sketch variant may hold its own copy of a shared file at `<variant>/shared/<path>`: `@shared/<path>` resolves to it first in rendering, typechecks and checks, and a merge of that variant carries it.
+- The context-warning hook now tells the agent to apply the handoff save test before it suggests a handoff. When nothing is left to hand off, the agent suggests a fresh session instead.
+- The design-exploration skill says when to run `design accept`.
+- `et design check` also type-checks each variant of an open sketch and fails with a `TYPE-ERROR` line per broken variant. A merge's own check still types only the product.
+- The design-exploration skill lists the render rules of `design check` and how a part opts out of one.
+- The design exploration skill documents component states per axis, and treats an icon set as a foundation asset.
+- The design exploration skill extracts a component only when two hosts draw the same case.
+- `forceInteraction` from `@design-system` forces an interaction on one element of a part's markup, not only its root.
+- The design-exploration skill says the frame loads a product's tokens, so parts stop importing them.
+- The render check reads each drawn part's `grid`: `sketch check` prints `grid <rows> x <columns> ok` or the states it leaves out, and a state in two cells or a cell naming no state fails as `GRID`.
+- `interactionRows` from `@design-system` builds a part's states and grid from one props object per row and a list of interactions.
+- `et design part remove <layer>/<name>` deletes a merged part with its `merged.json` entry and tsconfig path, and resolves its comments. It refuses a part another part imports, a base part, and a part with an open sketch.
+- `definePart({ styles })` exposes a part's stylesheet on its default export and adds it to every drawing of the part.
+- Tell the design-exploration skill to take its own check shots with `et design shot` instead of a scratch script.
+- The design exploration skill now sends every change to a merged part through a sketch. When there is nothing to choose, the sketch has one variant.
+- The design-exploration skill keeps a component's frame-only wrapper in `render` and out of the markup a host embeds.
+- The design-exploration skill mentions the duplicate-class warning of `sketch check`.
+- `svgAsset` sets a `class` and `attrs` on the root `<svg>` of an asset.
+- Add `svgAsset(raw, { size })` to `@design-system`, fail `design check` on an SVG asset without a root `<svg>` or the SVG namespace, print each variant's `assets/` folder, and add a pixel diff row to `design shot --variants`.
+- The design render check reports `UNKNOWN-THEME` when a drawing uses a colour theme that no stylesheet of its frame defines.
+- The grilling skill now asks for questions that read alone: plain words, no chains of question or ADR numbers, a short reminder when a new topic starts, facts checked before a recommendation, and a confirmed summary at the end.
+- When the handoff save test finds nothing to hand off, the handoff skill and the context-warning hook now ask the agent for a prompt the user can copy into the fresh session.
+- The design-exploration skill says the merge note is optional and which sketch commands record a variant's authors.
+- Document design notes in the design-exploration skill: the note file format, the size a pointed note needs, free flow notes, and when to write a note instead of a comment.
+- The design exploration skill says a closed comment thread is resolved, not deleted.
+- The design exploration skill says a merge, discard or new round closes the sketch's open comments.
+- `et design sketch check` and `sketch ready` fail when a variant drops a state the product's part has.
+- `et design sketch ready` merges a sketch by itself when no state of any variant differs by a pixel from the product, and logs it as `auto` in `accepted.json`.
+- `sketch report --variant <key> --done` ends the live "drawing" report of that variant, so Studio shows its frames before `sketch ready`. The design exploration skill names the command.
+- The design-exploration skill says that `sketch variant` without `--round` fails while the sketch has open comments.
+
+## 0.1.0-next.26
+
+### Patch Changes
+
+- `et design new --feature <name>` groups a call under a feature, and `et design legacy` now also writes the stage its group folder implies.
+- Studio reads a call's `closed` and `waitsFor`: closed calls count as settled, waiting calls sit under "On hold", legacy calls with a stage clear the stage gate, and open calls now lead the sidebar.
+
+## 0.1.0-next.25
+
+### Patch Changes
+
+- Link the generated skills to the next docs site, which matches the prerelease line.
+
+## 0.1.0-next.24
+
+### Minor Changes
+
+- The design-exploration skill names the order of a product design: themes, logo and CI, wireframes, components, larger elements, pages, then the working prototype.
+
+### Patch Changes
+
+- The design-exploration skill explains that `setup` has no cleanup hook and what the `ngStates` host wrapper means for `flow.body`.
+- The design-exploration skill shows how to draw a prototype with states through `ngStates()`.
+- The `ethlete-design-exploration` skill tells agents to draw SDK parts with `ng()`, which renders the real components, before drawing a new part.
+- Note in the design-exploration skill that a drawing's `setup` can be an array of functions.
+- The design-exploration skill names `setup(root)` as the way to give a drawing behavior, because a `<script>` in its body never runs.
+- The design exploration skill says every call needs a `stage`, and that a quick idea takes `sketch`.
+- The `ethlete-design-exploration` skill makes agents draw from the project design system and the SDK mocks before drawing a new part, and defines what an accepted entry holds.
+- The design-exploration skill explains the theme switch of a design project.
+- `init` and the default commands now follow the repo's package manager (yarn, pnpm, bun) and detect Claude from a `CLAUDE.md`. The generated banners name that runner, and `sync` only warns about a missing lint script when emitted content uses it.
+- Run `ethlete-agents` without `tslib` installed. The CLI now inlines its TypeScript helpers, so a fresh Yarn 4 repo no longer fails with "Cannot find module 'tslib'".
+- The `nx-layout` rule now makes one domain lib per app (`libs/domain/<app>`, a folder per feature) the default. A feature gets its own lib only for a concrete reason, such as size or build time.
+- The design-exploration skill no longer describes the removed `et design` call page (round bands, contact sheet, compare overlay, theme switch). Calls are read in Ethlete Studio.
+- In an existing app, an agent now converts the styles of every component it changes, and reports a repo-wide styling deviation once.
+- A wireframe call lists the parts it needs in `inventory`, each an SDK component or a new part with its component call. `et design check` warns about an inventory on any other call.
+- `ng()` and `ngStates()` take `fields`: each entry becomes a signal form field with a value, errors and a touched state, bound as `[formField]="fields.<name>"`.
+- `ng()` in the design tool renders an open select panel or menu, and the frame places it below its trigger.
+- The design-exploration skill lists the call commands (`new`, `status`, `--help`), the `stage` field, nested surface panels, and colour overrides with `themeCss()`.
+- The design-exploration skill starts a design with foundations (type scale, spacing, radius), ends the wireframe stage with a component inventory, and sends a missing part back to a component call.
+- The theming docs and skill warn that `hover:bg-et-surface-interaction-hover` is a full-strength tint and name `etSurfaceInteractive` for hover rows.
+
+## 0.1.0-next.23
+
+### Patch Changes
+
+- The `api-source` skill now finds the managed clone in `.ethlete/<name>` when `apiRepoPaths` has no entry, and reads the checkout and the local url from `yarn et api help <name>`.
+- Theming: `provideColorScheme()` now swaps the default accent of the root surface through its `colorThemeVariants`, so the app root needs no `[etProvideSurface]` for it.
+- Theming: add `SurfaceTheme.colorThemeVariants`, which swaps any chosen accent for a version that reads well on the surface, and deprecate `colorTheme` and `semanticColorThemes`.
+
+## 0.1.0-next.22
+
+### Patch Changes
+
+- Fix `sync` deleting hand-written hooks named `ethlete*` and mis-pruning skill folders with a relative `--root`; `migrate` now validates the config first and leaves a symlinked `CLAUDE.md` alone.
+- The context-warning hook now warns a Claude sub-agent from its own transcript and, at the critical tier, makes it commit and hand back its remaining steps instead of growing past the budget.
+- The `rxjs-signals` skill says which operators may follow `takeUntilDestroyed()`.
+- A locked Timetrack asks to be unlocked when an agent calls it and holds the request up to a minute, and a write queued for approval surfaces the app; the `timetrack` CLI waits long enough for both.
+
+## 0.1.0-next.21
+
+### Patch Changes
+
+- The subagent model rule now gives haiku small, fully specified jobs as well as lookups. The model hook also finds an agent definition whose file name is capitalized, for example an `Explore.md` that overrides the built-in agent.
+
+## 0.1.0-next.20
+
+### Minor Changes
+
+- `ethlete-agents` rejects unknown flags, derives the lint and Storybook commands from `package.json`, names a config file that does not parse, and warns about unknown config keys.
+- `timetrack approvals` lists the writes that wait for approval, and `timetrack approval <id> --reject` rejects one the way the Reject button does; approving stays the user's click in the app.
+- `timetrack ask` asks auto mode again about a stand-in or an unnamed band of any day, as the app's "Ask auto mode again" does.
+- `timetrack standins --resolve <id> --issue <KEY>` resolves a stand-in to a Jira issue, or moves a resolved one to another, once the user approves it in the app.
+- Read a day's call transcript through the read-only `transcript.day` agent op and `ethlete-agents timetrack transcript [day]`.
+
+### Patch Changes
+
+- `ethlete-agents sync`, `check` and `migrate` now reject a value on a flag that takes none (`--dry-run=false`) and ignore empty `--targets` entries.
+- The `context-warning` hook no longer asks to finish or hand off while a handoff is being saved.
+- The theming skill and styling rules recommend `injectSemanticColorTheme(type)` over the deprecated `injectErrorTheme()` and its siblings.
+- The `sdk-docs` skill lists the `testing` component docs page.
+- The theming skill covers `injectSemanticColorTheme()` and `SurfaceTheme.semanticColorThemes`.
+- The `app-styling` rule now also fits apps on Tailwind 3 and apps that define their own colour palette.
+- The `tslib` peer is the range `^2.3.0` instead of an exact version.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- The query skill names `createQueryGroup` and `withOptimisticUpdate` and links the query groups page; the sdk-docs skill lists the `paged-query-trigger` domain.
+- List the stat tile in the component domains of the `sdk-docs` skill.
+
+## 0.1.0-next.19
+
+### Minor Changes
+
+- `timetrack snapshot` records the rows of recent days and `timetrack snapshot --compare <file>` lists every row a change altered, exiting 1 when any did.
+
+### Patch Changes
+
+- Each migration task now asks for a change one session can finish and ends with a `Done when` list; restyling views and moving lists or hand-built UI happen when a file is next edited.
+- The `search-query-field` task tells a search inside a dialog to pass `syncOnNavigation: false` too, so it stops reading the page's URL params.
+
+## 0.1.0-next.18
+
+### Minor Changes
+
+- Timetrack: every write command now queues for the user's approval in the app and prints an approval id; `timetrack approval <id>` reads the outcome, and the agent contract moves to version 3.
+- Timetrack: add `timetrack sync <day>` to plan a day's Tempo sync, and `--write --plan <hash>` to write the confirmed plan; `worklogs --json` now reports a midnight `startTime`.
+- Timetrack: add `timetrack worklog --delete <id> --day <YYYY-MM-DD>` to delete one of the account's own Tempo worklogs; the app refuses any other id.
+- Timetrack: add `timetrack standins --merge <id> --into <id>` and the `standIn.merge` agent op, which waits for the user's approval. `standIn.list` now reports `hiddenOn` and `mergedIds`.
+
+### Patch Changes
+
+- `parseBranch` now reads a leading issue key from a deprecated spelling such as `dev-FIP-2721-subject`, so it returns the key and a rename suggestion that carries it.
+- The design exploration skill now tells an agent in the ethlete SDK that the user reads calls in Ethlete Studio (`yarn studio`), so the agent does not start `yarn design` next to it.
+- Git-flow matches a project key prefix as a whole word, keeps the subject with a grouped `keyPattern`, drops the `CI_JOB_TOKEN` fallback, and prints an undo hint when the push after a repair rename fails.
+- `git-flow repair` sends `GITLAB_TOKEN` only to the hosts in `GITLAB_HOST` or `CI_SERVER_HOST`, and no longer follows redirects.
+- `git-flow repair` and `start` no longer mistake a remote branch that only ends with the name, such as `team/feat/x` for `feat/x`, for the branch.
+- `sync` writes only changed files, survives dangling symlinks, warns about an unparseable hook settings file, and rejects duplicate frontmatter keys; `output-style --remove` works for a style no longer shipped.
+- `timetrack` rejects a flag whose value is another flag, a malformed `naming` day and a non-positive `--limit`; `day --out` honours `--json` and resolves against the root.
+- `timetrack` reads a date-only `--at`, `--from` or `--to` as local midnight and accepts a local `HH:MM`, and `timetrack project` resolves a relative path.
+- `sync` refuses a file whose ethlete marker block has lost a marker, instead of deleting the text after it on the next run.
+- Git flow: a lowercase `<word>-<number>` branch subject such as `step-2-rework` is no longer read as an issue key when no key prefixes are configured.
+- `tableSortQueryField()` holds the `et-table` sort and keeps it in the URL, so `[(sort)]="qf.fields.sort().value"` binds it with no mapping.
+- Recommend `sonnet` for scoped subagent work and keep `opus` for hard work, in the subagent-models rule and the subagent-model-policy hook.
+
+## 0.1.0-next.17
+
+### Minor Changes
+
+- `et update` now leaves tasks to fix code written under the earlier guidance: app styling, URL-bound list state, hand-debounced search, hand-built charts, avatars and progress bars, and the Nx layout.
+- `timetrack resync --replace` re-reads a checkout's agent logs and replaces the samples the store already holds for those sessions, so a parser fix reaches stored days.
+
+### Patch Changes
+
+- The Angular and signals skills cover shared `injectX()` logic, per-row formatting, writing query params and effects that only write a signal; the comment rule says app code rarely has public API.
+- Add the consumer skills `verify-in-app` (drive the served app headlessly with Playwright) and `app-testing` (specs for query, router and overlay code), and link the new query testing docs page from the query skill.
+- The `app-styling` rule and its migration now keep `ViewEncapsulation.None` on app components, as the `require-view-encapsulation-none` lint rule requires, and scope the remaining CSS under the component's host class.
+- Consumer repos get an `app-styling` rule (Tailwind in app templates, 10px rem root) instead of the SDK's component styling rule, and the `query` and `sdk-docs` skills now point to `defineQueryForm` and every component domain.
+- Query skill: bridge a correlated result into RxJS with `executeUntilSettled$`, keeping the Promise form for signal-forms `submit()`.
+- The `list-state-query-form` task binds pagination, page size and a table sort the way that works, and keeps `replaceUrl: true`. The query skill names `observe({ replaceUrl: true })`.
+- The guidance migrations find the call sites they missed in a real app, and generated commands use the repo's package manager.
+- The `app-styling-utilities`, `sdk-components-over-hand-built-ui` and `nx-layout` migration tasks name the real theme utilities, find more call sites, and stop before overriding a repo's own rules or the generated `AGENTS.md` block.
+- Consumer Nx workspaces get an `nx-layout` rule: thin apps, feature code in `libs/domain`, and shared `queries`, `types`, `uikit`, `theme` and `env` libs with `scope:*` tags.
+- The consumer query skill now maps every @ethlete/query capability to its docs page, so agents find APIs like `defineQueryForm` instead of hand-building them.
+- `ethlete-agents` commands run from a subdirectory now use the nearest directory holding `ethlete-agents.config.json` as the repo root, so `check` no longer reports false drift there.
+- The `sdk-docs` skill points consumer agents at the new App setup docs page first: root font size, theme generation and the providers an app needs.
+- `sync` and `check` now name every skill or rule skipped for an unmet `requires` or missing var, and warn when a path var like `themeStylesheet` points at a missing file.
+- `vars.themeStylesheet` may now name a folder of theme files. The `story-styling` skill searches it recursively.
+- `recommendedTs` now uses `ethlete/consistent-type-definitions` instead of `@typescript-eslint/consistent-type-definitions`, so `--fix` no longer turns an interface inside `declare module` or `declare global` (such as the theme-name registry the `@ethlete/core` generators emit) into a type alias that merges into nothing.
+- The `ET100` error now says mutations need `withArgs` too and calls `silenceMissingWithArgsFeatureError` an escape hatch; the query skill recommends `withArgs` for mutations.
+
+## 0.1.0-next.16
+
+### Patch Changes
+
+- Name the `take-until-destroyed-last` lint rule in the styleguide lint lookup and the RxJS skill.
+- A design call now lists its drawings as `variants` in `variant-<key>.ts` files, and `et design check` takes `--variant`; the old `options` key and `--option` flag are gone.
+
+## 0.1.0-next.15
+
+### Minor Changes
+
+- Three skills vendored from mattpocock/skills: `grilling`, `domain-modeling`, and the `grill-with-docs` entry point that runs both.
+- New opt-in `subagent-model-policy` hook: a Claude Code subagent call must name its `model`, and `fable` asks the user first. The new `subagent-models` rule says which model fits which task.
+- Add a `codex-subagent` skill: delegate a task to a Codex agent through a wrapper that prints only the final message, read-only unless you pass `--write`.
+- The `context-warning` hook now reaches the agent at session start, between its own tool
+  batches and as a turn ends, not only when the user sends a message.
+- Give a design call rounds, a result band for the chain of winners, a contact sheet of every option and a compare overlay
+- `spec/` is now a branch type of its own, for specification and planning work, so it no longer reports
+  `unknown-type`.
+- Two new agent endpoint ops: `day.rows` answers the rows a day drew with the id each edit names, and
+  `day.edits` corrects one. `timetrack rows` and `timetrack edit` reach both.
+- A new `settings.rules` agent op, and an `ethlete-agents timetrack rules` command, read the rules that
+  name a day's work out of the encrypted store.
+- `timetrack day --out` writes a private file it will not overwrite unasked, printed provider text can
+  no longer drive the terminal, and `timetrack edit` refuses a call naming two edits.
+- The timetrack CLI now makes the server prove it holds this run's token before it sends a request,
+  and follows no redirect. It needs Timetrack with agent contract version 2.
+
+### Patch Changes
+
+- A placeholder now says which checkout, and which piece of it, its name stands for. Two of them may
+  carry one name: a spec track and the branch that implements it are both called after the feature.
+- A placeholder repair now reads every branch and only the checkout's own author, so work on an
+  unmerged branch is no longer invisible to it.
+- Splitting a checkout-wide placeholder no longer refuses over a day with no commit. It always
+  removes the record and its checkout-wide rule, so later branches can get records of their own.
+- Let an agent delete a placeholder through `timetrack standins --remove`, and report
+  which checkout and branch each one covers. A record of the wider grain blocked every
+  branch of its checkout, and only a click could clear it.
+- A placeholder can be given another name: `timetrack standins --rename <id> --name <text>`. Its
+  days and the rules that name it stay, which a delete and a fresh record would lose.
+- Design exploration: the story checker and the screenshot template now also detect Vite's compile error overlay, not only webpack's.
+- The `handoff` skill now tells the agent to name only its own invocation form, so a saved handoff no longer reports the Claude Code and Codex commands side by side.
+- A handoff is now written only when work is actually left: the `handoff` skill tests for it first, and the `context-warning` hook's auto-mode escalation no longer forces a file.
+- `ethlete-agents timetrack day [YYYY-MM-DD]` reports the evidence a day holds, and `--out <path>`
+  writes it to a file. The app's store is encrypted, so this is the only way a script reads a real day.
+- `context-warning` hook: the critical tier now asks the agent to finish or hand off instead of forcing a handoff, and every later prompt repeats the remaining budget.
+- Context warnings now distinguish sub-agent pressure from the main session and track each thread independently.
+- A work path is cut to the project its checkout declares, not to a fixed depth. Where a repository
+  declares none, its own commits pick the grain between them.
+- Add the `design-exploration` skill: visual design work runs as a dialog, one open call at a time.
+- The design-exploration skill now works in calls instead of story ids, and carries three sub-agent
+  briefs for drawing, checking and writing up one.
+- The design-exploration skill now puts a repository's design work in `.ethlete/design/`, with one
+  project per slug segment. Each project names its own `styles` and `head`, so one project's type
+  scale and fonts no longer reach another project's drawings.
+- On resume, the handoff skill now says to read only what you are about to change, instead of
+  re-reading the plan files the handoff already summarises.
+- Say which placeholder holds a whole checkout, and refuse a delete that would strand
+  the days it covers. A checkout answered by a placeholder no longer reports as named
+  by an issue.
+- A placeholder that covered a whole checkout can be cut into one per directory its commits worked in.
+  `timetrack standins --split <id>` reads the directories and the user picks the pieces.
+- A split can name the checkout of a record that holds none, and a claimed directory the commits
+  never named opens a piece of its own.
+- `et design [checkout]` serves the design page of any repository that keeps a `.ethlete/design`
+  folder, and `et design check` says why a call does not render.
+- `et design check --call` now reports `NO BROWSER` when neither the checkout nor the package
+  resolves `playwright`, instead of throwing the module loader's own error.
+- `repoNamingDecisions`, the `naming.offers` op and `ethlete-agents timetrack naming` say why a checkout was offered no name.
+- An agent reads the open stand-ins through `standIn.list` and `ethlete-agents timetrack standins`. It may list them and never write one.
+- `status` and `ethlete-agents timetrack status` report `tempoReady`. Without a Tempo token the app reads no worklog history, and nothing said so.
+
+## 0.1.0-next.14
+
+### Minor Changes
+
+- [#3075](https://github.com/ethlete-io/ethdk/pull/3075) [`1d38e7e`](https://github.com/ethlete-io/ethdk/commit/1d38e7e0a025769f065d8ca7d506cb75ad89139a) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et update` moves the `@ethlete/*` packages to a newer version, runs the codemods those versions
+  declare in their own `migrations.json`, and reports what needs a decision or an agent.
+
+## 0.1.0-next.13
+
+### Minor Changes
+
+- [`b6fe4be`](https://github.com/ethlete-io/ethdk/commit/b6fe4beae010aaa2e0e367d636f6759442983395) Thanks [@TomTomB](https://github.com/TomTomB)! - `sdkSourcePath`, `apiRepoPaths` and `apiRepoBranches` moved to `ethlete.config.local.json`, owned by
+  `@ethlete/cli`. The old file is still read, and reports where they went.
+
+## 0.1.0-next.12
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a258308`](https://github.com/ethlete-io/ethdk/commit/a258308e0753eb65d08b3d7fb9a9f14507229047) Thanks [@github-actions](https://github.com/apps/github-actions)! - Agent rules: make generated guidance safer, reference-aware, example-validated, and cheaper to load.
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`973462e`](https://github.com/ethlete-io/ethdk/commit/973462ebb9ec7c2eef1aca3fc9f01615824d0074) Thanks [@github-actions](https://github.com/apps/github-actions)! - Agent rules: warn about unknown exclusions and apply Codex model-specific long-context pricing limits in the context warning hook.
+
+## 0.1.0-next.11
+
+### Patch Changes
+
+- [`16ae17e`](https://github.com/ethlete-io/ethdk/commit/16ae17e30238ef4539f3e168ca8299a4546ac292) Thanks [@TomTomB](https://github.com/TomTomB)! - The theming skill now states that a component which tints with `--et-theme-color-primary-opacity`
+  must compose the color itself, and that an `@property` `initial-value` cannot use a font-relative or
+  container unit.
+
+## 0.1.0-next.10
+
+### Minor Changes
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`226fd3d`](https://github.com/ethlete-io/ethdk/commit/226fd3d0b52f1a131ccbaa417ffe96682752d3f8) Thanks [@github-actions](https://github.com/apps/github-actions)! - New `ethlete-agents output-style` command: it installs the `ste-clarity` ASD-STE100 output style into Claude Code's user config and switches to it. Claude Code only.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`3657156`](https://github.com/ethlete-io/ethdk/commit/36571560c755468459a87da9d9ec5764d976ee96) Thanks [@github-actions](https://github.com/apps/github-actions)! - `ethlete-agents timetrack instance` reports the Jira instance's own levels and the custom fields a
+  branch subject could go in, so a setup step reads the answer instead of guessing it.
+
+## 0.1.0-next.9
+
+### Minor Changes
+
+- [`ae165cc`](https://github.com/ethlete-io/ethdk/commit/ae165cc4123e3f2abaa88c5cfd8262b13aac81d1) Thanks [@TomTomB](https://github.com/TomTomB)! - New `api-source` skill reads the API repo of the app you are in, from the local config's new `apiRepoPaths` map (`{ "hub": "../fut-hub-backend" }`).
+
+- [`f132d0b`](https://github.com/ethlete-io/ethdk/commit/f132d0b64e322c5823c9f50adeedecf388c5aa65) Thanks [@TomTomB](https://github.com/TomTomB)! - `ethlete-agents timetrack` reaches Jira through the running Timetrack app, so no repository holds a
+  token any more — the `jira` credentials in the local config and the `JIRA_*` variables are gone.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`fef4586`](https://github.com/ethlete-io/ethdk/commit/fef45868b10b0a0f01efff741958d65d9e405a31) Thanks [@github-actions](https://github.com/apps/github-actions)! - `git-flow`: add `conformingNameFor()`, which names what a non-conforming branch should be renamed to, and `git-flow repair` now handles a keyless branch it previously refused.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`fef4586`](https://github.com/ethlete-io/ethdk/commit/fef45868b10b0a0f01efff741958d65d9e405a31) Thanks [@github-actions](https://github.com/apps/github-actions)! - `git-flow`: export `featureBranchesFor()` and `nestedSpecFor()`, so a host can plan a nested branch without running the CLI.
+
+## 0.1.0-next.8
+
+### Patch Changes
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`7074ffc`](https://github.com/ethlete-io/ethdk/commit/7074ffcb99812faed82a4e32fa3f8a1a43fcaf9d) Thanks [@github-actions](https://github.com/apps/github-actions)! - The `sdk-docs` skill points agents at the docs site's `llms.txt` index and the `.md` suffix on any page URL, so a page can be found and read without guessing a URL from the hardcoded domain list.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`86fce5b`](https://github.com/ethlete-io/ethdk/commit/86fce5b87770ef4d5b069e59fec745eae93fda7b) Thanks [@github-actions](https://github.com/apps/github-actions)! - The `sdk-source` skill points at `apps/storybook/`, the SDK repo's renamed Storybook host.
+
+## 0.1.0-next.7
+
+### Minor Changes
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`8aec5ff`](https://github.com/ethlete-io/ethdk/commit/8aec5ff1a3ea6dd459d0e00bc691468019dcaca6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Generated files no longer stamp the package version into their banner, so a release bump alone no longer reports every repo as out of sync - only real content changes do.
+
+### Patch Changes
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`b5f72d6`](https://github.com/ethlete-io/ethdk/commit/b5f72d6bf35dd0e49cf14588b651012fb5d6a7c5) Thanks [@github-actions](https://github.com/apps/github-actions)! - The git-commit guide now presents its format as the repo's own convention unless a commitlint config is actually there, instead of pointing every repo at a `commitlint.config.js` it may not have.
+
+## 0.1.0-next.6
+
+### Minor Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`86cd6e9`](https://github.com/ethlete-io/ethdk/commit/86cd6e97072d38436650ddc94a15527da34fa946) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the git-flow branch convention: a `git-flow` skill, `ethlete-agents git-flow start|check|repair|explain`, opt-in git hooks, and the parser at `@ethlete/agent-rules/git-flow`.
+
+### Patch Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`01b0797`](https://github.com/ethlete-io/ethdk/commit/01b0797d80df17e740419402034bc3eec739daaf) Thanks [@github-actions](https://github.com/apps/github-actions)! - The context-warning hook now points at `/ethlete-handoff`, the name the generated skill actually has, instead of a `/handoff` command that does not exist in a consumer repo.
+
+## 0.1.0-next.5
+
+### Minor Changes
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`6e19999`](https://github.com/ethlete-io/ethdk/commit/6e199997f51b88aaa1860a56a6b96be057ba1205) Thanks [@github-actions](https://github.com/apps/github-actions)! - The `context-warning` hook now runs under Codex as well as Claude Code, registered in
+  `.codex/hooks.json` whenever the `codex` target is on.
+
+- [#3049](https://github.com/ethlete-io/ethdk/pull/3049) [`a606dda`](https://github.com/ethlete-io/ethdk/commit/a606dda0695ac8cc4370816bf3ff1c0814436091) Thanks [@TomTomB](https://github.com/TomTomB)! - Add the `figma-export` skill, guiding agents through reconciling a component against a Figma "copy as CSS" export.
+
+### Patch Changes
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`fc56189`](https://github.com/ethlete-io/ethdk/commit/fc56189450a45f2b5819d40945a71205a6d67ba0) Thanks [@github-actions](https://github.com/apps/github-actions)! - The `query` skill now says to prefer `withArgs` over passing `args` to `execute()`, and when the imperative form is still right.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`a16cc69`](https://github.com/ethlete-io/ethdk/commit/a16cc698a3cd3f14d0419d8f9710929fb41b4711) Thanks [@github-actions](https://github.com/apps/github-actions)! - Figma export skill: read an SVG frame as well as the CSS dump, with a `dump-figma-svg.py`
+  that prints its box tree and measures the auto-layout gaps.
+
+## 0.1.0-next.4
+
+### Minor Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`fcd14f0`](https://github.com/ethlete-io/ethdk/commit/fcd14f09b4b09f81b5bde9f128a0fac4b0e2245c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `disableAutoHandoffSave` to `ethlete-agents.config.local.json`, to opt out of the context-warning hook's auto-mode auto-save at the critical tier while keeping its normal warnings.
+
+### Patch Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`eb1b0a9`](https://github.com/ethlete-io/ethdk/commit/eb1b0a9cfb4e868b13a2b8eb6fd13221a6e0a654) Thanks [@github-actions](https://github.com/apps/github-actions)! - `context-warning` hook: in auto mode, the critical-tier warning now saves a `/handoff` immediately instead of just recommending it.
+
+## 0.1.0-next.3
+
+### Patch Changes
+
+- [`ca0bf2f`](https://github.com/ethlete-io/ethdk/commit/ca0bf2f09cd5bd925da52bdb17c93bb62bda8735) Thanks [@TomTomB](https://github.com/TomTomB)! - The `comments` rule is now an allowlist: four kinds of comment are allowed and everything else gets deleted.
+
+## 0.1.0-next.2
+
+### Minor Changes
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`a311f80`](https://github.com/ethlete-io/ethdk/commit/a311f80455bc9cc9a925fe8f72ac945a1b057315) Thanks [@github-actions](https://github.com/apps/github-actions)! - New `sdk-source` and `sdk-local-build` skills let an agent read the SDK's own sources and test an unreleased build via `file:`, from the checkout named by the local config's new `sdkSourcePath`.
+
+### Patch Changes
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`9627646`](https://github.com/ethlete-io/ethdk/commit/96276462e1c2ecde5394b8b1eafcebbb9f56a973) Thanks [@github-actions](https://github.com/apps/github-actions)! - Styleguide: changeset notes are now capped at one to two sentences, with mechanism and API inventories
+  explicitly sent to the docs instead.
+
+## 0.1.0-next.1
+
+### Minor Changes
+
+- [#3042](https://github.com/ethlete-io/ethdk/pull/3042) [`28a58eb`](https://github.com/ethlete-io/ethdk/commit/28a58ebc56420b7e067d8c56108b39601d7b367e) Thanks [@github-actions](https://github.com/apps/github-actions)! - - Skills now compile to the cross-tool `.agents/skills/ethlete-*/SKILL.md` format, discovered natively by Codex, Cursor and Copilot; the `.agents/ethlete/` pointer tree is pruned on sync.
+  - New `ethlete-agents migrate` converts a repo to the `AGENTS.md`-canonical layout: `CLAUDE.md` becomes an `@AGENTS.md` import and hand-written skills move to `.agents/skills` with symlinks.
+  - New opt-in `hooks` config: `context-warning` warns (and instructs Claude) before the context crosses the 200k long-context pricing boundary, recommending `/handoff`.
+  - A gitignored `ethlete-agents.config.local.json` (`"disableHooks": true` or a list of hook names) disables generated hooks per machine at runtime — committed files never change, and `sync`/`check` warn about unsupported keys or unknown hook names in it.
+
+## 0.1.0-next.0
+
+### Minor Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`9808192`](https://github.com/ethlete-io/ethdk/commit/9808192d7af173712284ce3f65d968fc8214393c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `@ethlete/agent-rules`: the portable Ethlete coding guidance - styleguide, Angular
+  patterns, signals vs RxJS, theming, query, commits, Storybook verification - packaged
+  for consumer repos and compiled into Claude Code, Codex (`AGENTS.md`), Cursor and
+  Copilot formats from one canonical source. `npx ethlete-agents sync` writes the
+  generated files, `check` fails CI on drift, and `init` scaffolds the config. Content is
+  filtered per repo by installed packages (`requires`), profile (`scope`) and configured
+  template variables.
+
+- [`c6ebe63`](https://github.com/ethlete-io/ethdk/commit/c6ebe63aaa8d3a8fbf193baa6706258977adfff6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add the `sdk-docs` guide: where the `@ethlete` docs site and Storybook live, how page URLs
+  map to libraries and component domains, and the rule that an API is read rather than
+  inferred from a component's name. Aimed at repos that consume the SDK without its source.
+
+### Patch Changes
+
+- [`c6ebe63`](https://github.com/ethlete-io/ethdk/commit/c6ebe63aaa8d3a8fbf193baa6706258977adfff6) Thanks [@TomTomB](https://github.com/TomTomB)! - Render a `{% skill:… %}` cross-reference as a bare name when the guide it points at was
+  filtered out of the target repo, instead of emitting a path to a file that was never
+  written. `sync` now reports each such reference.

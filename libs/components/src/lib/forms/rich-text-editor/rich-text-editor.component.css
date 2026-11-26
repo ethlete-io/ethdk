@@ -1,0 +1,175 @@
+@layer components.sdk {
+  @property --et-rich-text-editor-toolbar-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
+
+  @property --et-rich-text-editor-toolbar-padding {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-rich-text-editor-button-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-rich-text-editor-min-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 96px;
+  }
+
+  et-rich-text-editor {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-rte-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--et-rich-text-editor-toolbar-gap);
+      padding: var(--et-rich-text-editor-toolbar-padding);
+      padding-inline: calc(var(--et-form-field-control-padding-inline) - var(--et-rich-text-editor-toolbar-padding));
+      border-block-end: var(--et-form-field-control-border-width, 1px) solid
+        color-mix(in srgb, currentColor 12%, transparent);
+
+      .et-icon-button {
+        --_et-icon-button-border-radius: var(--et-rich-text-editor-button-radius);
+      }
+
+      /* dense toolbar: the default outward ring offset (3px) reaches past the toolbar padding (4px)
+         and gap (2px), stacking the ring on the field border and neighboring buttons — pull it onto
+         the button edge instead */
+      .et-icon-button {
+        --_et-focus-ring-offset: -1px;
+      }
+
+      /* readonly disables every tool, but the editor is view-only rather than broken - the button's
+         `not-allowed` would say the wrong thing */
+      :where([data-readonly]) & .et-icon-button {
+        cursor: default;
+      }
+    }
+
+    /* On touch the toolbar is a full-width bar fixed above the on-screen keyboard (the OS selection
+       menu owns the top). It never sits at the top: it's hidden until the editor is active, then
+       fades/slides in rather than popping.
+
+       The keyboard is cleared by *padding*, not by `inset-block-end`: the box itself always reaches the
+       bottom of the layout viewport and the measured inset (driven by JS from `visualViewport`) pushes
+       the tools up out of the keyboard's way. The difference matters where the measurement cannot be
+       exact — Chrome for Android reports a visible viewport one tab-group-strip too short while a tab
+       belongs to a tab group, and nothing in the page can tell — because the bar's own background
+       covers whatever is between it and the keyboard instead of letting page content show through a
+       gap. Everything below the tools is behind the keyboard (or behind browser chrome), so nobody can
+       reach it. The padding deliberately has NO transition: it must track the viewport instantly as the
+       page scrolls (a transition would make it lag a frame behind the keyboard). */
+    /* the tools' own scrollbar hangs at the bottom edge of the scrollport, so the keyboard
+       clearance below has to belong to the dock - not to the tools - or the bar sits behind the
+       keyboard */
+    &.et-rich-text-editor--touch .et-rte-toolbar-dock {
+      position: fixed;
+      inset-inline: 0;
+      inset-block-end: 0;
+      z-index: 60;
+      /* Two sources, whichever is available, and never both: `env(keyboard-inset-height)` is the
+         browser telling us exactly where the keyboard is — but only for a page that opted into the
+         VirtualKeyboard API (`navigator.virtualKeyboard.overlaysContent = true`), which is also what
+         stops the viewport from resizing, so the measured inset is 0 there. Without that opt-in (or
+         in a browser without the API) the env var falls back to 0 and the measurement carries it.
+         `max()` needs no feature detection and cannot place the bar too low. */
+      padding-block-end: max(var(--_et-rte-keyboard-inset, 0px), env(keyboard-inset-height, 0px));
+      background: var(--et-surface-background, rgb(24 24 24));
+      border-block-start: var(--et-form-field-control-border-width, 1px) solid
+        color-mix(in srgb, currentColor 12%, transparent);
+      box-shadow: 0 -6px 20px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 24%, transparent);
+      opacity: 0;
+      transform: translateY(100%);
+      pointer-events: none;
+      transition:
+        opacity 160ms var(--ease-out-5, ease),
+        transform 260ms var(--ease-out-5, ease);
+    }
+
+    .et-rte-toolbar-viewport {
+      position: relative;
+    }
+
+    &.et-rich-text-editor--touch .et-rte-toolbar-viewport {
+      --et-scrollbar-thickness: 6px;
+      --et-scrollbar-thumb-thickness: 3px;
+    }
+
+    &.et-rich-text-editor--touch .et-rte-toolbar {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      /* scroll the tools horizontally when they overflow, without triggering browser back-swipe */
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-inline: 8px;
+      padding-block: 6px;
+      border-block-end: none;
+    }
+
+    &.et-rich-text-editor--touch.et-rich-text-editor--docked-toolbar .et-rte-toolbar-dock {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* iOS Safari zooms the whole page when a focused editable's font-size is below 16px — floor
+       it there on touch devices (1em = the inherited size, so larger fonts pass through; on
+       desktop nothing changes). */
+    &.et-rich-text-editor--touch .et-rte-content {
+      font-size: max(1em, 16px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &.et-rich-text-editor--touch .et-rte-toolbar-dock {
+        transition: opacity 160ms var(--ease-out-5, ease);
+      }
+    }
+
+    .et-rte-toolbar .et-divider {
+      --et-divider-color: color-mix(in srgb, currentColor 12%, transparent);
+      --et-divider-spacing: 2px;
+      --et-divider-inset: 4px;
+    }
+
+    .et-rte-content {
+      /* Rendered content is display, not the field's interactive chrome. The editor frame is an
+         `et-color-interactive--has-focus` ancestor that retints `--et-tone-*` on focus, and
+         content that reads the accent — token chips (outline + fill), links, the caret — would
+         otherwise pick that shift up. Re-anchor the accent tokens to their resting (base) values
+         here so content stays stable whether or not the editor is focused. This is the same
+         immunity the interactive toolbar buttons already get from carrying `et-color-interactive`
+         themselves; content can't (a chip must not react to its own hover), so it re-anchors once
+         at the root instead. */
+      --et-tone-fill: var(--et-tone-fill-rest);
+      --et-tone-text: var(--et-tone-text-rest, var(--et-tone-fill-rest));
+
+      display: block;
+      flex: 1;
+      min-inline-size: 0;
+      padding-block: var(--et-form-field-control-padding-block);
+      padding-inline: var(--et-form-field-control-padding-inline);
+      min-block-size: var(--et-rich-text-editor-min-height);
+      outline: none;
+      color: inherit;
+      caret-color: var(--et-tone-fill, currentColor);
+
+      &:empty::before {
+        content: attr(data-placeholder);
+        color: color-mix(in srgb, currentColor 60%, transparent);
+        pointer-events: none;
+      }
+    }
+  }
+}

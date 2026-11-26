@@ -1,0 +1,721 @@
+import { TOOLTIP_IMPORTS } from '@ethlete/components';
+import { NgTemplateOutlet } from '@angular/common';
+import {
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+  viewChild,
+  viewChildren,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { DomSanitizer } from '@angular/platform-browser';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  combineLatest,
+  defer,
+  filter,
+  fromEvent,
+  map,
+  of,
+  switchMap,
+  take,
+  tap,
+  timer,
+} from 'rxjs';
+import {
+  ColorScheme,
+  FITTED_VIEWPORT_WIDTH,
+  FOLLOWED_VIEWPORT_HEIGHT,
+  FrameCell,
+  FrameGrid,
+  FrameMessage,
+  SCHEME_LABELS,
+  frameMessageOf,
+  withScheme,
+} from '../canvas-frame';
+import { CANVAS_LABELS } from '../../../i18n/canvas-labels';
+import { SYSTEM_LABELS } from '../../../i18n/system-labels';
+import { stateDiff$ } from '../../../../host/design';
+import { Rect, Size } from '../canvas-math';
+import { diffMarkOf } from './diff-mark';
+import { FRAME_UNREPORTED_PAINT_MS, failedLoadReason$, frameLoad$, paintedFrame$ } from '../frame-paint';
+import { ShotRankDirective } from './shot-rank';
+import { ShotStateComponent, ShotStateDirective } from './shot-state';
+
+type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
+
+const cellKeyOf = (row: string, column: string) => JSON.stringify([row, column]);
+
+const settledKeyOf = (id: string, scheme: ColorScheme | null) => JSON.stringify([id, scheme]);
+
+export const LIVE_REVEAL_TIMEOUT_MS = 3000;
+
+@Component({
+  selector: 'ethlete-canvas-frame-cell',
+  template: `
+    @if (screenshot(); as screenshot) {
+      <img
+        #shot
+        #shotState="ethleteShot"
+        [src]="screenshot"
+        [ethleteShotRank]="screenshot"
+        [class.opacity-0]="painted()"
+        (load)="readScreenshotSize($event)"
+        (error)="loadEnd.emit()"
+        class="absolute left-0 top-0 max-w-none"
+        alt=""
+        ethleteShot
+      />
+      @if (!painted()) {
+        <ethlete-shot-state [state]="shotState.state()" />
+      }
+    }
+    @if (live() || painted()) {
+      <iframe
+        #iframe
+        [src]="url()"
+        [title]="cell().label"
+        [class.opacity-0]="!painted()"
+        [style.min-width.px]="cell().width === undefined ? FITTED_VIEWPORT_WIDTH : null"
+        [style.min-height.px]="FOLLOWED_VIEWPORT_HEIGHT"
+        class="absolute inset-0 size-full border-0 scheme-normal group-data-dragging/canvas:pointer-events-none"
+      ></iframe>
+    }
+    @if (diffMark(); as mark) {
+      <div class="pointer-events-none absolute inset-0 overflow-clip" data-diff-mark>
+        <div
+          [style.left]="mark.left"
+          [style.top]="mark.top"
+          [style.right]="mark.right"
+          [style.bottom]="mark.bottom"
+          class="absolute shadow-[0_0_0_100vmax_color-mix(in_srgb,var(--et-surface-background)_50%,transparent)]"
+        ></div>
+      </div>
+    }
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [ShotStateDirective, ShotStateComponent, ShotRankDirective],
+  host: {
+    class: 'relative block overflow-clip',
+    '[style.width.px]': 'cell().width ?? size()?.width ?? 0',
+    '[style.height.px]': 'size()?.height ?? 0',
+    '[attr.data-cell-id]': 'cell().id',
+    '[attr.data-cell-scheme]': 'scheme()',
+    '[attr.data-painted]': 'painted() ? "" : null',
+    '[class.min-h-20]': 'failed() || slow()',
+    '[class.min-w-40]': 'failed() || slow()',
+    '[class.opacity-50]': 'unchanged()',
+  },
+})
+export class CanvasFrameCellComponent {
+  private sanitizer = inject(DomSanitizer);
+  private unreportedPaintMs = inject(FRAME_UNREPORTED_PAINT_MS);
+  public cell = input.required<FrameCell>();
+
+  public live = input(false);
+
+  public scheme = input<ColorScheme | null>(null);
+  public revealLive = input(true);
+  public loadEnd = output<void>();
+  public pageReadyChange = output<boolean>();
+  private iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
+  private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
+
+  public shotState = viewChild(ShotStateDirective);
+
+  protected readonly FITTED_VIEWPORT_WIDTH = FITTED_VIEWPORT_WIDTH;
+
+  protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
+
+  private pageRevealed$ = toObservable(computed(() => this.live() && this.revealLive()));
+
+  private src = computed(() => this.schemed(this.cell().src));
+
+  protected screenshot = computed(() => this.schemed(this.cell().screenshot ?? ''));
+
+  protected url = computed(() => this.sanitizer.bypassSecurityTrustResourceUrl(this.src()));
+
+  private diff = toSignal(
+    toObservable(computed(() => this.schemed(this.cell().diff ?? ''))).pipe(
+      switchMap((url) =>
+        url
+          ? stateDiff$(url).pipe(
+              // eslint-disable-next-line ethlete/no-silent-catch-error -- a cell whose difference cannot be read stays unmarked
+              catchError(() => of(null)),
+            )
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  protected diffMark = computed(() => diffMarkOf(this.diff()));
+
+  protected unchanged = computed(() => this.diff() !== null && this.diff()?.box === null);
+
+  protected size = signal<Size | null>(null);
+
+  protected painted = linkedSignal<string, boolean>({ source: () => this.src(), computation: () => false });
+
+  protected failed = computed(() => this.shotState()?.state() === 'failed');
+
+  public failure = linkedSignal<string, string | null>({ source: () => this.src(), computation: () => null });
+
+  protected slow = computed(() => this.shotState()?.state() === 'slow');
+
+  /** The window of the cell's live page once it painted; `null` while the cell shows a shot. */
+  public liveWindow = computed(() =>
+    this.live() && this.painted() ? (this.iframe()?.nativeElement.contentWindow ?? null) : null,
+  );
+
+  private page = computed(() => ({ iframe: this.iframe()?.nativeElement ?? null, src: this.src() }));
+
+  constructor() {
+    toObservable(this.page)
+      .pipe(
+        tap(() => this.pageReadyChange.emit(false)),
+        switchMap(({ iframe }) =>
+          iframe
+            ? combineLatest([this.reportedSizes$(iframe), paintedFrame$(iframe).pipe(filter(Boolean))]).pipe(
+                tap(() => this.pageReadyChange.emit(true)),
+                switchMap(([size]) =>
+                  this.pageRevealed$.pipe(
+                    filter(Boolean),
+                    take(1),
+                    map(() => size),
+                  ),
+                ),
+              )
+            : EMPTY,
+        ),
+        tap((size) => {
+          this.size.set(size);
+          this.painted.set(true);
+          this.loadEnd.emit();
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.page)
+      .pipe(
+        switchMap(({ iframe, src }) =>
+          iframe
+            ? frameLoad$(iframe, { unreportedMs: this.unreportedPaintMs }).pipe(
+                switchMap((load) => (load === 'failed' ? failedLoadReason$(src) : of(null))),
+              )
+            : of(null),
+        ),
+        tap((reason) => this.failure.set(reason)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.live)
+      .pipe(
+        switchMap((live) => (live ? EMPTY : this.decodedShot$())),
+        tap((image) => {
+          if (image) this.size.set({ width: image.naturalWidth, height: image.naturalHeight });
+          this.painted.set(false);
+          this.pageReadyChange.emit(false);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.slow)
+      .pipe(
+        filter(Boolean),
+        tap(() => this.loadEnd.emit()),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+
+  public reload() {
+    const iframe = this.iframe()?.nativeElement;
+
+    if (iframe) iframe.src = this.src();
+  }
+
+  protected readScreenshotSize(event: Event) {
+    const image = event.target as HTMLImageElement;
+
+    if (!this.painted()) this.size.set({ width: image.naturalWidth, height: image.naturalHeight });
+    this.loadEnd.emit();
+  }
+
+  private decodedShot$() {
+    const image = this.shot()?.nativeElement;
+
+    if (!this.painted()) return EMPTY;
+    if (!image) return of(null);
+
+    return defer(() => image.decode()).pipe(
+      map(() => image),
+      // eslint-disable-next-line ethlete/no-silent-catch-error -- an image that fails to decode renders as the existing empty frame
+      catchError(() => of(null)),
+    );
+  }
+
+  private schemed(url: string) {
+    const scheme = this.scheme();
+
+    return scheme ? withScheme(url, scheme) : url;
+  }
+
+  private reportedSizes$(iframe: HTMLIFrameElement): Observable<Size> {
+    const host = iframe.ownerDocument.defaultView;
+
+    if (!host) return EMPTY;
+
+    return fromEvent<MessageEvent>(host, 'message').pipe(
+      filter((event) => !!iframe.contentWindow && event.source === iframe.contentWindow),
+      map(({ data }) => frameMessageOf(data)),
+      filter((message): message is HeightMessage => message?.type === 'height'),
+      map((message) => ({ width: message.width ?? 0, height: message.height })),
+    );
+  }
+}
+
+/**
+ * The cells of a frame's grid under a header row of interactions, each row led by its state. A `sheet` grid draws its
+ * cells as one sheet on a sunken body: a `table` sheet every row in that table, each cell centred; a `groups` sheet the
+ * rows that use more than the first column as that table, the others packed as many to a line as the grid has columns,
+ * each under its state. A grid with `schemes` draws its columns once per colour scheme, side by side under the scheme.
+ */
+@Component({
+  selector: 'ethlete-canvas-frame-grid',
+  template: `
+    @if (sheet(); as sheet) {
+      <div
+        #table
+        [class.invisible]="!revealed()"
+        [style.grid-template-columns]="templateColumns()"
+        class="absolute left-0 top-0 grid w-max gap-px px-6 pb-6 pt-4 text-[1.1rem]/[1.4rem] text-text-muted"
+        data-grid-sheet
+      >
+        @if (sheet.interactive.length > 0) {
+          <span
+            class="col-span-full mb-2 border-b border-(--et-surface-border) pb-1 text-[1rem] uppercase tracking-[0.04em] text-text-subtle"
+            data-grid-group
+            >{{ SYSTEM_LABELS.statesByInteraction }}</span
+          >
+          <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'mb-2' }" />
+          <span></span>
+          @for (scheme of schemes(); track $index; let firstScheme = $first) {
+            @if (!firstScheme) {
+              <span></span>
+            }
+            @for (column of grid().columns; track column) {
+              <span class="self-end pb-1 font-code" data-grid-column>{{ column }}</span>
+            }
+          }
+          @for (row of sheet.interactive; track row) {
+            <span class="self-center pr-2"
+              ><ng-container *ngTemplateOutlet="rowHead; context: { $implicit: row, code: true }"
+            /></span>
+            @for (scheme of schemes(); track $index; let firstScheme = $first) {
+              @if (!firstScheme) {
+                <span></span>
+              }
+              @for (column of grid().columns; track column) {
+                <div
+                  [class.grid]="sheet.centered"
+                  [class.place-items-center]="sheet.centered"
+                  [class.justify-self-start]="sheet.contentWidth"
+                  [class]="backdropOf(scheme)"
+                  class="p-space-3 ring-1"
+                  data-grid-cell
+                >
+                  @if (cellOf(row, column); as cell) {
+                    <ethlete-canvas-frame-cell
+                      #cell
+                      [cell]="cell"
+                      [scheme]="scheme"
+                      [live]="cellLive(cell.id)"
+                      [revealLive]="liveRevealed()"
+                      (loadEnd)="settle(cell.id, scheme)"
+                      (pageReadyChange)="markReady({ id: cell.id, scheme }, $event)"
+                    />
+                  } @else if (drawnRows().has(row)) {
+                    <span class="font-code text-text-muted italic" data-grid-empty>{{ LABELS.notDrawn }}</span>
+                  }
+                </div>
+              }
+            }
+          }
+        }
+        @if (sheet.packed.length > 0) {
+          <span
+            class="col-span-full mb-2 mt-6 border-b border-(--et-surface-border) pb-1 text-[1rem] uppercase tracking-[0.04em] first:mt-0"
+            data-grid-group
+            >{{ LABELS.restOnly }}</span
+          >
+          <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'mb-2' }" />
+          @for (line of sheet.packed; track $index; let firstLine = $first) {
+            <span></span>
+            @for (scheme of schemes(); track $index; let firstScheme = $first) {
+              @if (!firstScheme) {
+                <span></span>
+              }
+              @for (row of line; track row) {
+                <span [class.pt-3]="!firstLine" class="self-end pb-1"
+                  ><ng-container *ngTemplateOutlet="rowHead; context: { $implicit: row, code: true }"
+                /></span>
+              }
+              @for (blank of blanksOf(line); track $index) {
+                <span></span>
+              }
+            }
+            <span></span>
+            @for (scheme of schemes(); track $index; let firstScheme = $first) {
+              @if (!firstScheme) {
+                <span></span>
+              }
+              @for (row of line; track row) {
+                <div [class]="backdropOf(scheme)" class="p-space-3 ring-1" data-grid-cell>
+                  @if (cellOf(row, sheet.first); as cell) {
+                    <ethlete-canvas-frame-cell
+                      #cell
+                      [cell]="cell"
+                      [scheme]="scheme"
+                      [live]="cellLive(cell.id)"
+                      [revealLive]="liveRevealed()"
+                      (loadEnd)="settle(cell.id, scheme)"
+                      (pageReadyChange)="markReady({ id: cell.id, scheme }, $event)"
+                    />
+                  }
+                </div>
+              }
+              @for (blank of blanksOf(line); track $index) {
+                <span></span>
+              }
+            }
+          }
+        }
+      </div>
+    } @else {
+      <div
+        #table
+        [class.invisible]="!revealed()"
+        [style.grid-template-columns]="templateColumns()"
+        class="absolute left-0 top-0 grid w-max items-center gap-x-8 gap-y-6 p-6 text-[1.2rem] text-text-muted"
+      >
+        <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'self-end' }" />
+        <span></span>
+        @for (scheme of schemes(); track $index; let firstScheme = $first) {
+          @if (!firstScheme) {
+            <span></span>
+          }
+          @for (column of grid().columns; track column) {
+            <span data-grid-column>{{ column }}</span>
+          }
+        }
+        @for (row of grid().rows; track row) {
+          <span class="pr-2"
+            ><ng-container *ngTemplateOutlet="rowHead; context: { $implicit: row, code: false }"
+          /></span>
+          @for (scheme of schemes(); track $index; let firstScheme = $first) {
+            @if (!firstScheme) {
+              <span></span>
+            }
+            @for (column of grid().columns; track column) {
+              @if (cellOf(row, column); as cell) {
+                <ethlete-canvas-frame-cell
+                  #cell
+                  [cell]="cell"
+                  [scheme]="scheme"
+                  [live]="cellLive(cell.id)"
+                  [revealLive]="liveRevealed()"
+                  (loadEnd)="settle(cell.id, scheme)"
+                  (pageReadyChange)="markReady({ id: cell.id, scheme }, $event)"
+                />
+              } @else if (drawnRows().has(row)) {
+                <span class="font-code text-text-muted italic" data-grid-empty>{{ LABELS.notDrawn }}</span>
+              } @else {
+                <span></span>
+              }
+            }
+          }
+        }
+      </div>
+    }
+    <ng-template #rowHead let-row let-code="code">
+      <span [class.font-code]="code" data-grid-row>{{ row }}</span>
+      @if (grid().descriptions?.[row]; as description) {
+        <span
+          class="block w-0 min-w-full whitespace-normal font-sans text-[1rem]/[1.3rem] text-text-muted"
+          data-grid-row-description
+          >{{ description }}</span
+        >
+      }
+    </ng-template>
+    <ng-template #schemeHeads let-placement>
+      @if (schemes().length > 1) {
+        <span></span>
+        @for (scheme of schemes(); track $index; let firstScheme = $first) {
+          @if (!firstScheme) {
+            <span></span>
+          }
+          <span
+            [class]="placement"
+            [style.grid-column]="'span ' + grid().columns.length"
+            class="border-b border-(--et-surface-border) pb-1 text-[1rem] uppercase tracking-[0.04em]"
+            data-grid-scheme
+            >{{ schemeLabelOf(scheme) }}</span
+          >
+        }
+      }
+    </ng-template>
+    @if (!revealed()) {
+      <span
+        class="absolute left-6 top-6 size-3 animate-pulse rounded-full bg-(--et-tone-fill)"
+        etTooltip="Rendering"
+        data-grid-loading
+      ></span>
+    }
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [CanvasFrameCellComponent, NgTemplateOutlet, TOOLTIP_IMPORTS],
+})
+export class CanvasFrameGridComponent {
+  public grid = input.required<FrameGrid>();
+
+  public live = input(false);
+
+  /** The cells that go live while `live`; `null` makes every cell live. */
+  public liveCells = input<ReadonlySet<string> | null>(null);
+  public sizeChange = output<Size>();
+  /** Each cell's box in CSS pixels from the grid's top left corner, by cell id. */
+  public cellsChange = output<Record<string, Rect>>();
+
+  private table = viewChild<ElementRef<HTMLElement>>('table');
+  private cells = viewChildren('cell', { read: ElementRef<HTMLElement> });
+
+  private cellViews = viewChildren(CanvasFrameCellComponent);
+  protected readonly LABELS = CANVAS_LABELS;
+  protected readonly SYSTEM_LABELS = SYSTEM_LABELS;
+
+  private cellAt = computed(
+    () => new Map<string, FrameCell>(this.grid().cells.map((cell) => [cellKeyOf(cell.row, cell.column), cell])),
+  );
+
+  protected drawnRows = computed(() => new Set(this.grid().cells.map((cell) => cell.row)));
+
+  protected schemes = computed<(ColorScheme | null)[]>(() => this.grid().schemes ?? [null]);
+
+  protected templateColumns = computed(() => {
+    const repeat = `repeat(${this.grid().columns.length}, ${this.grid().sheet ? 'max-content' : 'auto'})`;
+    const groups = this.schemes().map(() => repeat);
+
+    const head = this.grid().descriptions ? '20rem' : '12rem';
+
+    return this.grid().sheet ? `minmax(${head}, max-content) ${groups.join(' 1.6rem ')}` : `auto ${groups.join(' 0 ')}`;
+  });
+
+  private shotsKey = computed(() =>
+    [this.schemes().join(' '), ...this.grid().cells.map((cell) => `${cell.id}\n${cell.screenshot ?? ''}`)].join('\n'),
+  );
+
+  private settledCells = linkedSignal<string, ReadonlySet<string>>({
+    source: this.shotsKey,
+    computation: () => new Set(),
+  });
+
+  private shotsSettled = computed(() => {
+    const settled = this.settledCells();
+    const schemes = this.schemes();
+
+    return this.grid().cells.every(
+      (cell) => !cell.screenshot || schemes.every((scheme) => settled.has(settledKeyOf(cell.id, scheme))),
+    );
+  });
+
+  private layoutKey = computed(() =>
+    [this.schemes().join(' '), ...this.grid().cells.map((cell) => cell.id)].join('\n'),
+  );
+
+  protected revealed = linkedSignal<{ layout: string; settled: boolean }, boolean>({
+    source: () => ({ layout: this.layoutKey(), settled: this.shotsSettled() }),
+    computation: ({ layout, settled }, previous) =>
+      settled || (previous !== undefined && previous.source.layout === layout && previous.value),
+  });
+
+  private liveKeys = computed(() => {
+    const schemes = this.schemes();
+
+    return this.grid()
+      .cells.filter((cell) => this.cellLive(cell.id))
+      .flatMap((cell) => schemes.map((scheme) => settledKeyOf(cell.id, scheme)));
+  });
+
+  private liveRound = computed(() =>
+    this.live() ? [...this.liveKeys(), ...this.grid().cells.map((cell) => cell.src)].join('\n') : null,
+  );
+
+  private readyCells = signal<ReadonlySet<string>>(new Set());
+
+  private liveTimedOut = linkedSignal<string | null, boolean>({
+    source: () => this.liveRound(),
+    computation: () => false,
+  });
+
+  protected liveRevealed = computed(() => {
+    const ready = this.readyCells();
+
+    return this.liveTimedOut() || this.liveKeys().every((key) => ready.has(key));
+  });
+
+  private observed = computed(() => {
+    const table = this.table()?.nativeElement;
+
+    return table && this.revealed() ? [table, ...this.cells().map((cell) => cell.nativeElement)] : [];
+  });
+
+  protected sheet = computed(() => {
+    const { columns, rows, sheet } = this.grid();
+
+    if (!sheet) return null;
+
+    const [first = ''] = columns;
+    const restOnly = (row: string) =>
+      sheet === 'groups' && columns.slice(1).every((column) => !this.cellOf(row, column));
+    const rest = rows.filter(restOnly);
+    const perLine = Math.max(columns.length, 1);
+
+    return {
+      first,
+      centered: sheet === 'table',
+      contentWidth: sheet === 'table' && columns.length === 1,
+      interactive: rows.filter((row) => !restOnly(row)),
+      packed: Array.from({ length: Math.ceil(rest.length / perLine) }, (_, line) =>
+        rest.slice(line * perLine, (line + 1) * perLine),
+      ),
+    };
+  });
+
+  public failure = computed(
+    () =>
+      this.cellViews()
+        .find((view) => view.failure() !== null)
+        ?.failure() ?? null,
+  );
+
+  constructor() {
+    toObservable(this.observed)
+      .pipe(
+        switchMap((elements) => this.resized$(elements)),
+        tap(() => this.report()),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.liveRound)
+      .pipe(
+        switchMap((round) => (round === null ? EMPTY : timer(LIVE_REVEAL_TIMEOUT_MS))),
+        tap(() => this.liveTimedOut.set(true)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+
+  public reloadFailed() {
+    for (const view of this.cellViews()) if (view.failure() !== null) view.reload();
+  }
+
+  /** The window of the cell `id` once its live page painted, in the first colour scheme that painted; `null` before. */
+  public liveWindowOf(id: string) {
+    return (
+      this.cellViews()
+        .filter((view) => view.cell().id === id)
+        .map((view) => view.liveWindow())
+        .find(Boolean) ?? null
+    );
+  }
+
+  protected cellLive(id: string) {
+    const liveCells = this.liveCells();
+
+    return this.live() && (liveCells === null || liveCells.has(id));
+  }
+
+  protected settle(id: string, scheme: ColorScheme | null) {
+    const key = settledKeyOf(id, scheme);
+
+    this.settledCells.update((settled) => (settled.has(key) ? settled : new Set(settled).add(key)));
+  }
+
+  protected markReady({ id, scheme }: { id: string; scheme: ColorScheme | null }, ready: boolean) {
+    const key = settledKeyOf(id, scheme);
+
+    this.readyCells.update((cells) => {
+      if (cells.has(key) === ready) return cells;
+
+      const next = new Set(cells);
+
+      if (ready) next.add(key);
+      else next.delete(key);
+
+      return next;
+    });
+  }
+
+  protected backdropOf(scheme: ColorScheme | null) {
+    return scheme === 'light' ? 'bg-white ring-black/15' : 'bg-(--et-surface-background) ring-(--et-surface-border)';
+  }
+
+  protected schemeLabelOf(scheme: ColorScheme | null) {
+    return scheme ? SCHEME_LABELS[scheme] : '';
+  }
+
+  protected blanksOf(line: string[]) {
+    return Array.from({ length: this.grid().columns.length - line.length });
+  }
+
+  protected cellOf(row: string, column: string) {
+    return this.cellAt().get(cellKeyOf(row, column));
+  }
+
+  private report() {
+    const table = this.table()?.nativeElement;
+
+    if (!table) return;
+
+    this.sizeChange.emit({ width: table.offsetWidth, height: table.offsetHeight });
+    const [firstScheme = null] = this.schemes();
+
+    this.cellsChange.emit(
+      Object.fromEntries(
+        this.cells()
+          .filter(({ nativeElement: cell }) => (cell.dataset['cellScheme'] ?? null) === firstScheme)
+          .map(({ nativeElement: cell }) => [
+            cell.dataset['cellId'] ?? '',
+            { x: cell.offsetLeft, y: cell.offsetTop, width: cell.offsetWidth, height: cell.offsetHeight },
+          ]),
+      ),
+    );
+  }
+
+  private resized$(elements: HTMLElement[]) {
+    const Observer = elements[0]?.ownerDocument.defaultView?.ResizeObserver;
+
+    if (!Observer) return EMPTY;
+
+    return new Observable<void>((subscriber) => {
+      const observer = new Observer(() => subscriber.next());
+
+      elements.forEach((element) => observer.observe(element));
+
+      return () => observer.disconnect();
+    });
+  }
+}

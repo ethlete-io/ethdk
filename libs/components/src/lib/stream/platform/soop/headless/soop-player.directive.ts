@@ -1,0 +1,129 @@
+import { isPlatformBrowser } from '@angular/common';
+import { Directive, ErrorHandler, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { injectHostElement, injectRenderer } from '@ethlete/core';
+import { EMPTY, Observable, throwError } from 'rxjs';
+import { missingStreamSourceError } from '../../../stream-errors';
+import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
+import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
+import { SoopPlayerParamsDirective } from './soop-player-params.directive';
+import { injectStreamLabels } from '../../../stream-labels';
+
+export const SOOP_PLAYER_TOKEN = new InjectionToken<SoopPlayerDirective>('SOOP_PLAYER_TOKEN');
+
+@Directive({
+  providers: [
+    { provide: SOOP_PLAYER_TOKEN, useExisting: SoopPlayerDirective },
+    { provide: STREAM_PLAYER_TOKEN, useExisting: SoopPlayerDirective },
+  ],
+})
+export class SoopPlayerDirective implements StreamPlayer {
+  private streamLabels = injectStreamLabels();
+
+  private platformId = inject(PLATFORM_ID);
+  private errorHandler = inject(ErrorHandler);
+  private params = inject(SoopPlayerParamsDirective);
+  private el = injectHostElement();
+  private renderer = injectRenderer();
+
+  public readonly CAPABILITIES: StreamPlayerCapabilities = {
+    canPlay: false,
+    canPause: false,
+    canMute: false,
+    canSeek: false,
+    canGetDuration: false,
+    isLiveCapable: true,
+    hasThumbnail: false,
+  };
+
+  public state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
+  public thumbnail = signal<string | null>(null);
+
+  private playerResource = rxResource({
+    params: (): { userId: string | null; videoId: string | null } | null => {
+      if (!isPlatformBrowser(this.platformId)) return null;
+      return { userId: this.params.userId(), videoId: this.params.videoId() };
+    },
+    stream: ({ params }) => {
+      if (!params) return EMPTY;
+
+      if (!params.userId && !params.videoId) {
+        const error = missingStreamSourceError('EtSoopPlayer', '`userId` (a live channel) or `videoId` (a VOD)');
+
+        if (ngDevMode) this.errorHandler.handleError(error);
+
+        return throwError(() => error);
+      }
+
+      return new Observable<void>((subscriber) => {
+        const iframe = this.renderer.createElement('iframe');
+        const w = this.params.width();
+        const h = this.params.height();
+
+        if (params.userId) {
+          iframe.src = `https://play.afreecatv.com/${encodeURIComponent(params.userId)}/embed`;
+        } else {
+          iframe.src = `https://vod.afreecatv.com/player/${encodeURIComponent(params.videoId ?? '')}`;
+        }
+
+        iframe.title = this.streamLabels().playerFrame('SOOP');
+        iframe.width = typeof w === 'number' ? String(w) : w;
+        iframe.height = typeof h === 'number' ? String(h) : h;
+        this.renderer.setStyle(iframe, { border: 'none' });
+        this.renderer.setAttribute(iframe, 'scrolling', 'no');
+        iframe.allowFullscreen = true;
+        iframe.allow = 'autoplay; encrypted-media';
+
+        iframe.onload = () => {
+          this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });
+          subscriber.next();
+        };
+
+        this.renderer.appendChild(this.el, iframe);
+
+        return () => {
+          if (this.el.contains(iframe)) {
+            this.renderer.removeChild(this.el, iframe);
+          }
+          this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
+        };
+      });
+    },
+  });
+
+  constructor() {
+    effect(() => {
+      const isLoading = this.playerResource.isLoading();
+      const error = isLoading ? undefined : this.playerResource.error();
+      this.state.update((s) => ({
+        ...s,
+        isLoading: error !== undefined ? false : isLoading,
+        error: error ?? null,
+      }));
+    });
+  }
+
+  public play() {
+    // no-op
+  }
+
+  public pause() {
+    // no-op
+  }
+
+  public mute() {
+    // no-op
+  }
+
+  public unmute() {
+    // no-op
+  }
+
+  public seek() {
+    // no-op
+  }
+
+  public retry() {
+    this.playerResource.reload();
+  }
+}

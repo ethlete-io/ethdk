@@ -1,0 +1,63 @@
+<input
+  [attr.aria-label]="resolvedStartAriaLabel()"
+  [etInputMask]="rangeInput.maskPattern()"
+  class="et-time-range-input-field"
+  etTimeRangeInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+  side="start"
+/>
+
+<span class="et-time-range-input-separator" aria-hidden="true">–</span>
+
+<input
+  [attr.aria-label]="resolvedEndAriaLabel()"
+  [etInputMask]="rangeInput.maskPattern()"
+  class="et-time-range-input-field"
+  etTimeRangeInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+  side="end"
+/>
+
+<ng-template etControlSuffix>
+  @if (showClear()) {
+    <button
+      [attr.aria-label]="resolvedClearLabel()"
+      (click)="handleClearClick($event)"
+      (mousedown)="$event.preventDefault()"
+      class="et-input-clear"
+      animate.enter="et-input-clear--enter"
+      animate.leave="et-input-clear--leave"
+      tabindex="-1"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  }
+
+  <button [attr.aria-label]="resolvedPickerTriggerLabel()" class="et-input-picker-trigger" etDatePickerTrigger>
+    <i etIcon="et-clock"></i>
+  </button>
+</ng-template>
+
+<ng-template etDatePickerSurface>
+  <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
+    <et-time-picker
+      [(activeSide)]="rangeInput.pickerActiveSide"
+      [rangeValue]="rangeInput.calendarRange()"
+      [disabled]="rangeInput.disabled()"
+      [format]="rangeInput.effectiveDisplayFormat()"
+      [locale]="rangeInput.effectiveLocale()"
+      [minuteStep]="minuteStep()"
+      [min]="rangeInput.minTime()"
+      [max]="rangeInput.maxTime()"
+      [timeFilter]="rangeInput.timeFilter()"
+      [startLabel]="startTimeLabel()"
+      [endLabel]="endTimeLabel()"
+      (timeSelect)="rangeInput.selectTime($event.side, $event.time)"
+      (rangeHandOff)="rangeInput.focusSideFromPicker($event)"
+      mode="range"
+    />
+  </et-date-picker-panel>
+</ng-template>

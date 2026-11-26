@@ -1,0 +1,104 @@
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+import {
+  YoutubePlayerSlotConsentProviderStorybookComponent,
+  YoutubePlayerSlotCustomPipChromeStorybookComponent,
+  YoutubePlayerSlotConsentStorybookComponent,
+  YoutubePlayerSlotControlsStorybookComponent,
+  YoutubePlayerSlotStorybookComponent,
+  YoutubePlayerStorybookComponent,
+} from './components';
+
+export default {
+  title: 'Components/Media/Stream/YouTube',
+  component: YoutubePlayerStorybookComponent,
+  argTypes: {
+    videoId: {
+      control: { type: 'text' },
+    },
+  },
+  args: {
+    videoId: 'dQw4w9WgXcQ',
+  },
+} as Meta<YoutubePlayerStorybookComponent>;
+
+const Template: StoryFn<YoutubePlayerStorybookComponent> = (args) => ({
+  props: args,
+});
+
+export const Default = {
+  render: Template,
+};
+
+export const LiveStream = {
+  render: Template,
+  args: {
+    videoId: 'jfKfPfyJRdk',
+  },
+};
+
+const SlotTemplate: StoryFn<YoutubePlayerSlotStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-youtube-player-slot [videoId]="videoId" />`,
+});
+
+export const SlotPictureInPicture = {
+  render: SlotTemplate,
+  decorators: [
+    moduleMetadata({
+      imports: [YoutubePlayerSlotStorybookComponent],
+    }),
+  ],
+  args: {
+    videoId: 'dQw4w9WgXcQ',
+  },
+};
+
+const SlotConsentTemplate: StoryFn<YoutubePlayerSlotConsentStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-youtube-player-slot-consent [videoId]="videoId" />`,
+});
+
+export const SlotWithConsent = {
+  render: SlotConsentTemplate,
+  decorators: [
+    moduleMetadata({
+      imports: [YoutubePlayerSlotConsentStorybookComponent],
+    }),
+  ],
+  args: {
+    videoId: 'dQw4w9WgXcQ',
+  },
+};
+
+const SlotControlsTemplate: StoryFn<YoutubePlayerSlotControlsStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-youtube-player-slot-controls [videoId]="videoId" />`,
+});
+
+export const SlotControls = {
+  render: SlotControlsTemplate,
+  decorators: [moduleMetadata({ imports: [YoutubePlayerSlotControlsStorybookComponent] })],
+  args: { videoId: 'dQw4w9WgXcQ' },
+};
+
+const ConsentProviderTemplate: StoryFn<YoutubePlayerSlotConsentProviderStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-youtube-player-slot-consent-provider [videoId]="videoId" />`,
+});
+
+export const ConsentProvider = {
+  render: ConsentProviderTemplate,
+  decorators: [moduleMetadata({ imports: [YoutubePlayerSlotConsentProviderStorybookComponent] })],
+  args: { videoId: 'dQw4w9WgXcQ' },
+};
+
+const CustomPipChromeTemplate: StoryFn<YoutubePlayerSlotCustomPipChromeStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-youtube-player-slot-custom-pip-chrome [videoId]="videoId" />`,
+});
+
+export const CustomPipChrome = {
+  render: CustomPipChromeTemplate,
+  decorators: [moduleMetadata({ imports: [YoutubePlayerSlotCustomPipChromeStorybookComponent] })],
+  args: { videoId: 'dQw4w9WgXcQ' },
+};

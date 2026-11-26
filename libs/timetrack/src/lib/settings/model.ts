@@ -1,0 +1,488 @@
+import { TranscribeLanguage } from './transcription';
+import { ActionClasses } from '../agent-api/action-classes';
+import { DEFAULT_EPIC_CHILD_LIMIT, MIN_EPIC_CHILD_LIMIT } from '../jira/children';
+import { PriceTable } from '../model/price';
+import { TimetrackProjectLink } from '../model/project-link';
+import { AttributionRule } from '../model/attribution';
+import { StandIn, StandInRefusal } from '../model/stand-in';
+import { SharedStamp } from '../review/model';
+import { CallNaming } from '../model/call-naming';
+import { MeetingNaming } from '../model/meeting-naming';
+import { JiraParenting } from '../jira/hierarchy';
+import { DEFAULT_REASONING_OPTIONS, DEFAULT_WORKLOG_LANGUAGE } from '../reason/model';
+import { TimetrackExclusionRule } from '../store/exclusion';
+import { DEFAULT_DISPLAY_SETTINGS, TimetrackDisplaySettings } from './display';
+
+/** How much time a day is expected to account for when nothing else is configured. */
+export const DEFAULT_DAY_TARGET_MS = 8 * 60 * 60_000;
+
+export const MIN_DAY_TARGET_MS = 15 * 60_000;
+export const MAX_DAY_TARGET_MS = 24 * 60 * 60_000;
+
+/** Holds a day target inside the range a day can hold, whether it came from an input or a document. */
+export const clampDayTargetMs = (value: number) =>
+  Math.min(MAX_DAY_TARGET_MS, Math.max(MIN_DAY_TARGET_MS, Math.round(value)));
+
+/** How long an idle gap may be and still count as the work around it. */
+export const DEFAULT_GAP_FILL_MS = 15 * 60_000;
+
+/** Midnight, so a day is a calendar date until the user says otherwise. */
+export const DEFAULT_DAY_START_HOUR = 0;
+
+/** Past noon a day would start after most of it had happened, which is a setting, not a boundary. */
+export const MAX_DAY_START_HOUR = 12;
+
+export const clampDayStartHour = (value: number) => Math.min(MAX_DAY_START_HOUR, Math.max(0, Math.round(value)));
+
+/**
+ * A cap rather than a preference. The block builder ends a block after 30 unobserved minutes, so a
+ * longer gap is a stretch nothing watched at all — and claiming it would be inventing time, not
+ * reading evidence.
+ */
+export const MAX_GAP_FILL_MS = 30 * 60_000;
+
+/** Holds a gap-fill threshold inside its range. Zero is meaningful: it fills nothing. */
+export const clampGapFillMs = (value: number) => Math.min(MAX_GAP_FILL_MS, Math.max(0, Math.round(value)));
+
+export const MAX_EPIC_CHILD_LIMIT = 500;
+
+/**
+ * Holds the epic child cap in range. Zero is not meaningful here: a parent has to hold the sibling
+ * and one other child before elimination can say anything, so it clamps up rather than turning off.
+ */
+export const clampEpicChildLimit = (value: number) =>
+  Math.min(MAX_EPIC_CHILD_LIMIT, Math.max(MIN_EPIC_CHILD_LIMIT, Math.round(value)));
+
+/**
+ * The Jira instance issue keys are resolved against. The API token is not here — it lives in the OS
+ * keychain, and this document holds only what may be read back into the window.
+ */
+export type TimetrackJiraSettings = {
+  /** The Cloud host, with or without a scheme. `normalizeJiraHost` is what makes it a base URL. */
+  host: string;
+  email: string;
+};
+
+/**
+ * One Jira project the user works in, picked from the instance rather than typed.
+ *
+ * The name is stored beside the key so a picker can read `FIP — Fanily Platform` with no call, and so
+ * a list of keys somebody has to recognise stays readable on a machine that is offline or whose token
+ * expired. It is a cache of one string, not a source of truth: a project renamed in Jira reads under
+ * its old name until the list is picked again, which is a wrong label, never a wrong worklog.
+ */
+export type TimetrackFavoriteProject = {
+  key: string;
+  name: string;
+};
+
+/**
+ * The Google account meetings are read from. The client secret and the refresh token are keychain
+ * entries; the client id is not one, and the settings screen has to show it to be editable at all.
+ */
+export type TimetrackGoogleSettings = {
+  /** The OAuth desktop client the user registered themselves, as `…apps.googleusercontent.com`. */
+  clientId: string;
+  /**
+   * The calendars that count as work. Empty reads nothing: a personal calendar is on the same account,
+   * and guessing which one is work would put someone's private appointments in a worklog.
+   */
+  calendarIds: string[];
+};
+
+/** The GitLab instance `glab` reads review activity from and writes merge requests to. */
+export type TimetrackGitLabSettings = {
+  /** The instance, with or without a scheme. `forgeHostname` is what makes it the host `glab` takes. */
+  host: string;
+};
+
+/**
+ * Whether pull request activity is read from github.com.
+ *
+ * There is no host and no token to configure — `gh` holds its own login — so a switch is all that is
+ * left. It is off by default: a shell-out that reads an account-wide feed must be asked for, not
+ * inherited from having the binary installed.
+ */
+export type TimetrackGitHubSettings = {
+  enabled: boolean;
+};
+
+/**
+ * The local agent CLI that proposes an issue for a context nothing deterministic could name.
+ *
+ * Off until the user turns it on, and it is the one part of the app that sends anything about the
+ * day anywhere but Jira and Tempo. There is no API key here or in the keychain: the call runs as the
+ * user's own CLI and uses whatever subscription that CLI is already signed in to.
+ */
+export type TimetrackReasoningSettings = {
+  enabled: boolean;
+  /** `claude` or `codex`. The host runs no other binary. */
+  command: string;
+  /** A model alias such as `sonnet`. Empty uses the CLI's own default, which is the usual answer. */
+  model: string;
+  /**
+   * The language every answer is written in, as the user names it — `Deutsch`, `English`. The model reads a
+   * language name, so any stored name is kept, listed or not.
+   *
+   * Empty leaves each call following the evidence it was given, so a repository whose commits are
+   * German already gets a German ticket. Naming one here is for a user whose evidence is mixed.
+   */
+  language: string;
+  /**
+   * The language a worklog description is written in, named the same way as `language`, which it
+   * takes the place of for descriptions. Empty follows the notes of the row.
+   */
+  worklogLanguage: string;
+  /**
+   * The names that become pseudonyms in anything sent to the model — clients, products, Jira project
+   * keys. Grown by hand, because only the user knows which word in their own commit subjects is a
+   * client; `unmaskedWords` reports every capitalised word this list does not hold, before a send.
+   *
+   * The list is the map. Nothing derived from it is stored, so the same list is what reads an answer
+   * written in pseudonyms back into real names.
+   */
+  maskedNames: string[];
+  /**
+   * Whether the model runs without a press on each new unnamed band and open stand-in of today. Off
+   * until the user turns it on, and only while `enabled` is on too.
+   */
+  autoMode: boolean;
+  /**
+   * Whether auto mode may send an excerpt of a call's own transcript when it asks about that call. Off
+   * until the user turns it on, and read only while calls are transcribed.
+   */
+  autoModeTranscripts: boolean;
+};
+
+/**
+ * How this instance wants a ticket filed, for the work a day found that no issue covers.
+ *
+ * Every value here is instance-specific and none of it can be worked out from the outside: Jira's
+ * default hierarchy puts Story and Task on the same level, so whether a parent is even expressible
+ * through the parent field depends on the levels the instance defines. `describeJiraHierarchy$`
+ * reports what it can express; this is where the answer is written down.
+ */
+export type TimetrackTicketSettings = {
+  /** The type a created ticket gets, by name — the name Jira shows, such as `Task`. */
+  issueTypeName: string;
+  /** The types a parent may be, by name. Empty offers every open issue in the project. */
+  parentIssueTypeNames: string[];
+  /** How the instance expresses the relation to a parent. */
+  parenting: JiraParenting;
+  /** The link type used when `parenting` is `issue-link`, by name, such as `Relates`. */
+  parentLinkType: string;
+  /**
+   * The field holding a branch subject, such as `customfield_10057`. It is a field id rather than a
+   * name because that is what the REST API writes to. Empty writes no subject at all.
+   */
+  subjectField: string;
+  /**
+   * The status a filed ticket is moved to once it exists, by name. Empty leaves it where the workflow
+   * files it. A ticket written from a day review covers work that already happened, so the first
+   * status of the workflow is regularly the wrong one for it.
+   */
+  initialStatus: string;
+};
+
+/**
+ * When the app says a day is not finished yet.
+ *
+ * The minute is local and the reminder is only ever about today: a past day is caught up in the week
+ * view, and a machine that was off at the configured minute has nothing to be reminded about at 03:00.
+ */
+export type TimetrackNudgeSettings = {
+  enabled: boolean;
+  /** The local minute of day the day's review is due. */
+  atMinute: number;
+};
+
+export const DEFAULT_NUDGE_AT_MINUTE = 17 * 60 + 30;
+
+/**
+ * When a stand-in has waited long enough that the app says so.
+ *
+ * Two limits, and either one alone marks it: work that sat for a week and work that piled up four
+ * hours in two days are both debts worth naming. Nothing is blocked and nothing notifies — the list
+ * marks it and the day header counts it. Zero or less turns that one limit off.
+ */
+export type TimetrackStandInSettings = {
+  overdueAfterWorkdays: number;
+  overdueAfterMs: number;
+};
+
+export const DEFAULT_STAND_IN_OVERDUE_AFTER_WORKDAYS = 5;
+
+/** A month of workdays. Past that the mark arrives long after anyone can still say what the work was. */
+export const MAX_STAND_IN_OVERDUE_WORKDAYS = 20;
+
+/** Holds the age limit in range. Zero is meaningful: it turns this limit off and leaves the other one. */
+export const clampStandInOverdueWorkdays = (value: number) =>
+  Math.min(MAX_STAND_IN_OVERDUE_WORKDAYS, Math.max(0, Math.round(value)));
+
+export const DEFAULT_STAND_IN_OVERDUE_AFTER_MS = 4 * 3_600_000;
+
+/** A working week of held time, which is already a week of days nobody named. */
+export const MAX_STAND_IN_OVERDUE_MS = 40 * 3_600_000;
+
+/** Holds the held-time limit in range. Zero is meaningful: it turns this limit off. */
+export const clampStandInOverdueMs = (value: number) =>
+  Math.min(MAX_STAND_IN_OVERDUE_MS, Math.max(0, Math.round(value)));
+
+/**
+ * Which calls on this machine were work. Both lists are regular expressions, matched case-insensitively
+ * against the process that held the microphone and against the window title the call was named from.
+ *
+ * This is a second system beside `TimetrackExclusionRule`, and the two must not be merged: an exclusion
+ * rule runs before the store and fails closed, and this runs at read time and fails open. Excluding a
+ * call would drop a presence sample, so the hours in an open voice room would become **absence** rather
+ * than unclassified time — the bug `ownAppIds` avoided by deciding at read time as well.
+ *
+ * `neverCountsAsWork` beats `countsAsWork`, and a call neither list names is not work unless it overlaps
+ * a meeting the user accepted or is held in a `WORK_CALL_APPS` application; `neverCountsAsWork` beats
+ * both. The process matters on its own, because a huddle's title may not name the workspace at all.
+ */
+export type TimetrackCallRules = {
+  countsAsWork: string[];
+  neverCountsAsWork: string[];
+};
+
+export const MAX_MINUTE_OF_DAY = 24 * 60 - 1;
+
+/** Holds a reminder time inside a day, whether it came from a control or from a stored document. */
+export const clampMinuteOfDay = (value: number) => Math.min(MAX_MINUTE_OF_DAY, Math.max(0, Math.round(value)));
+
+/** The currency the providers bill agent tokens in. */
+export const DEFAULT_PRICE_CURRENCY = 'USD';
+
+/** How long the window waits after the user goes idle before it locks itself. */
+export const DEFAULT_LOCK_AFTER_IDLE_MS = 60_000;
+
+/**
+ * An hour is already far past the point the wait is protecting anything, and a document that asked for
+ * a day would read as a lock that never engages.
+ */
+export const MAX_LOCK_AFTER_IDLE_MS = 60 * 60_000;
+
+/** Holds an idle-lock wait inside its range. Zero is meaningful: it locks the moment the user is idle. */
+export const clampLockAfterIdleMs = (value: number) => Math.min(MAX_LOCK_AFTER_IDLE_MS, Math.max(0, Math.round(value)));
+
+/**
+ * Everything the user configures that is not a secret, read and written as one document.
+ *
+ * It is deliberately small: a value belongs here only when the app cannot work it out and being wrong
+ * about it costs the user something. Everything derived — a repository's author, the Jira account id —
+ * is read from the source that owns it instead.
+ */
+
+export type TimetrackSettings = {
+  dayTargetMs: number;
+  /**
+   * The longest idle gap that is logged as the work around it. Five minutes without a keystroke is
+   * reading a diff rather than a break, and a day is short by the sum of them. Zero fills nothing.
+   */
+  gapFillMs: number;
+  /**
+   * The local hour a day starts at. Work at 01:00 belongs to the evening it came from, so a day is
+   * not a calendar date. Zero keeps the two the same.
+   */
+  dayStartHour: number;
+  /**
+   * How many open children of one parent the sibling-checkout rung reads. It guards a Jira read, not
+   * a judgement about the work, which is why it is settable at all.
+   */
+  epicChildLimit: number;
+  jira: TimetrackJiraSettings;
+  google: TimetrackGoogleSettings;
+  gitlab: TimetrackGitLabSettings;
+  github: TimetrackGitHubSettings;
+  ticket: TimetrackTicketSettings;
+  reasoning: TimetrackReasoningSettings;
+  /** The actions the user made stricter than the class table. See `actionClassOf`. */
+  actionClasses: ActionClasses;
+  nudge: TimetrackNudgeSettings;
+  standIn: TimetrackStandInSettings;
+  /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
+  exclusionRules: TimetrackExclusionRule[];
+  /** Which calls were work. Deliberately not an exclusion rule — see `TimetrackCallRules`. */
+  callRules: TimetrackCallRules;
+  /**
+   * The applications the user has said hold no work context at all, `app_id` as the compositor reports
+   * it. A music player and a chat client are the whole of it.
+   *
+   * Deliberately not an exclusion rule. A rule drops the event, and the minutes of the folded line
+   * would then stop reconciling with the Today screen; this keeps both and drops only the row, so a
+   * media player proposes no time and takes no lane. It is also the one thing no collector can ever
+   * observe — Spotify will never name a checkout, and no amount of reading a process says whether
+   * that is a defect.
+   */
+  noWorkContextApps: string[];
+  /**
+   * The applications the user took back off that list, the shipped part of it included. It is also the
+   * only thing that gives an application a lane of its own on the day screen: with no checkout to name
+   * the work, nothing else says the application's own time is work.
+   */
+  holdsWorkApps: string[];
+  /** Whether the shipped defaults still apply. Turning them off is a deliberate, visible choice. */
+  keepDefaultExclusionRules: boolean;
+  /** Directories the repository discovery walks. Empty means the host decides. */
+  gitScanRoots: string[];
+  /**
+   * The key a paired machine matches a checkout by, by checkout path, where the origin URL does not
+   * match it: two clones with different remotes, or a checkout with none. It replaces `repoKeyOf` for
+   * that path, and the same alias has to be set on both machines.
+   */
+  repoAliases: Record<string, string>;
+  /**
+   * Every linked worktree this machine has seen, mapped to its main checkout. The git collector adds to
+   * it and never removes from it, so the work done in a worktree that was deleted since still folds into
+   * its repository.
+   */
+  knownWorktrees: Record<string, string>;
+  /**
+   * The Jira projects this machine works in, picked from the instance.
+   *
+   * They are the app's whole notion of "your projects": the keys a branch name or a window title may
+   * name, and the projects every issue picker reads from. An instance has hundreds of projects and a
+   * person works in a handful, so a picker that offered all of them would be a list nobody reads.
+   *
+   * Empty is the unconfigured state, and it costs accuracy: a key in free text is then never trusted,
+   * because anything shaped like one would count and `GCP-1234` in a browser title is not an issue.
+   */
+  favoriteProjects: TimetrackFavoriteProject[];
+  /**
+   * The projects whose work runs behind the day rather than being it — the checkout you sit in all day
+   * while the work you book happens elsewhere. A band of one of these keeps only the minutes no other
+   * band claims; see `cutBackground`.
+   *
+   * It has to be said rather than read off a day. The same repository is the background of one day and
+   * the whole of the work on the next, and no rule can tell the two apart.
+   */
+  backgroundProjects: string[];
+  /**
+   * What the user answered when a meeting asked which issue it belongs to, by calendar series. The app
+   * asks once and names every later occurrence of that series from the answer, rather than logging
+   * every meeting on one standing issue.
+   */
+  meetingNamings: MeetingNaming[];
+  /**
+   * The same answers for a call the calendar never held, which has no series to be remembered under.
+   * It is recognised by the call's own features instead — see `matchCallNaming`.
+   */
+  callNamings: CallNaming[];
+  /**
+   * What the user decided a context belongs to, for repositories the branch grammar cannot name an
+   * issue in. A setting rather than a table of its own: it is a handful of statements the user wrote,
+   * and it is read and written whole exactly like the rest of this document.
+   */
+  attributionRules: AttributionRule[];
+  /**
+   * Which paths are work, and which project each files its tickets in. A path nobody linked keeps
+   * behaving as it always has — it becomes a context the review offers to name, because a checkout
+   * that vanished from the day without being asked about is worse than one row too many.
+   */
+  projectLinks: TimetrackProjectLink[];
+  /**
+   * The names the user gave work Jira does not hold an issue for yet. A setting for the same reason
+   * the rules are one: a handful of records the user wrote, read and written whole.
+   *
+   * A resolved stand-in stays in the list. It is what an undo reads, and its day list names the days a
+   * resolve made bookable — neither survives being deleted at the moment the issue appears.
+   */
+  standIns: StandIn[];
+  /**
+   * The work the user refused a placeholder for, by deleting one the app opened. One branch of a
+   * checkout, or the whole checkout when the entry names no branch.
+   *
+   * Without it the delete does not stick: the work is still unnamed, so the next pass opens another
+   * placeholder within seconds and the user cannot clear the list at all. The settings screen is where
+   * an entry is taken back off.
+   */
+  noStandInCheckouts: StandInRefusal[];
+  /** When each rule and stand-in that travels to paired machines last changed here, by `sharedSettingsEntriesOf` id. */
+  sharedStamps?: Record<string, SharedStamp>;
+  /**
+   * Whether the window locks itself, so the months of window titles in the database are not readable by
+   * whoever walks up to an unlocked desktop.
+   *
+   * It never gates collection: a lock that stopped the collectors would punch a hole in the day. The
+   * host is what reads this, because it starts the window locked before any view is mounted, and it
+   * ignores the setting where the account password cannot be checked at all.
+   */
+  lockWindow: boolean;
+  /**
+   * How long after the user goes idle the window locks itself. It is a wait on top of the five minutes
+   * the window source takes to call them idle at all, so the two add up.
+   *
+   * The host reads this for itself, the same way it reads `lockWindow`, because the thread that acts on
+   * it must not depend on a webview that is showing the password prompt.
+   */
+  lockAfterIdleMs: number;
+  /**
+   * Whether the host transcribes the user's own microphone during a call, locally, into the encrypted
+   * store. Off by default, and only a build with the host's `transcribe` feature acts on it.
+   */
+  transcribeCalls: boolean;
+  /** The language whisper transcribes a call in. `auto` lets it guess again for each 30-second chunk. */
+  transcribeLanguage: TranscribeLanguage;
+  /** What each agent model costs, which turns a day's spend into a cost. Empty until the user writes a price. */
+  priceTable: PriceTable;
+  /** How the app prints a date and a clock time. Display only: stored keys and the agent API stay ISO and 24h. */
+  display: TimetrackDisplaySettings;
+};
+
+export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
+  dayTargetMs: DEFAULT_DAY_TARGET_MS,
+  gapFillMs: DEFAULT_GAP_FILL_MS,
+  dayStartHour: DEFAULT_DAY_START_HOUR,
+  epicChildLimit: DEFAULT_EPIC_CHILD_LIMIT,
+  jira: { host: '', email: '' },
+  google: { clientId: '', calendarIds: [] },
+  gitlab: { host: '' },
+  github: { enabled: false },
+  ticket: {
+    issueTypeName: 'Task',
+    parentIssueTypeNames: ['Story', 'Epic'],
+    parenting: 'parent-field',
+    parentLinkType: 'Relates',
+    subjectField: '',
+    initialStatus: '',
+  },
+  reasoning: {
+    enabled: false,
+    command: DEFAULT_REASONING_OPTIONS.command,
+    model: DEFAULT_REASONING_OPTIONS.model,
+    language: DEFAULT_REASONING_OPTIONS.language,
+    worklogLanguage: DEFAULT_WORKLOG_LANGUAGE,
+    maskedNames: [],
+    autoMode: false,
+    autoModeTranscripts: false,
+  },
+  actionClasses: {},
+  nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
+  standIn: {
+    overdueAfterWorkdays: DEFAULT_STAND_IN_OVERDUE_AFTER_WORKDAYS,
+    overdueAfterMs: DEFAULT_STAND_IN_OVERDUE_AFTER_MS,
+  },
+  exclusionRules: [],
+  callRules: { countsAsWork: [], neverCountsAsWork: [] },
+  noWorkContextApps: [],
+  holdsWorkApps: [],
+  keepDefaultExclusionRules: true,
+  gitScanRoots: [],
+  repoAliases: {},
+  knownWorktrees: {},
+  favoriteProjects: [],
+  backgroundProjects: [],
+  meetingNamings: [],
+  callNamings: [],
+  attributionRules: [],
+  projectLinks: [],
+  standIns: [],
+  noStandInCheckouts: [],
+  lockWindow: true,
+  lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
+  transcribeCalls: false,
+  transcribeLanguage: 'de',
+  priceTable: { currency: DEFAULT_PRICE_CURRENCY, prices: [] },
+  display: DEFAULT_DISPLAY_SETTINGS,
+};

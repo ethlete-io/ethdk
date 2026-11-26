@@ -1,0 +1,228 @@
+<div
+  #world
+  [class]="smooth() ? 'transition-transform duration-250 ease-[ease]' : ''"
+  [style.transform]="worldTransform()"
+  [style.--et-design-canvas-label-scale]="labelScale()"
+  (transitionend)="smooth.set(false)"
+  class="absolute top-0 left-0 origin-top-left"
+>
+  @for (group of groupHeads(); track group.key) {
+    <div
+      [style.left.px]="group.x"
+      [style.margin-top.px]="group.y"
+      [style.min-width.px]="group.width"
+      [class]="
+        columnHeadsNoted()
+          ? 'top-[calc(-6.8rem-4.032rem*var(--et-design-canvas-label-scale))]'
+          : 'top-[calc(-6.8rem-2.24rem*var(--et-design-canvas-label-scale))]'
+      "
+      class="absolute w-max -translate-y-full"
+    >
+      <div [style.zoom]="labelScale()" class="flex items-center gap-space-2 text-(length:--text-sm) whitespace-nowrap">
+        <button
+          [etTooltip]="group.title ?? group.label"
+          (click)="toggleColumn(group.key, $event)"
+          class="min-w-0 shrink-0"
+          et-button
+          type="button"
+          variant="transparent"
+          color="surface"
+          size="sm"
+          aria-expanded="true"
+        >
+          {{ group.label }}
+        </button>
+        @if (group.switch; as groupSwitch) {
+          <button
+            [pressed]="groupSwitch.on"
+            [etTooltip]="groupSwitch.title ?? groupSwitch.label"
+            [attr.data-group-switch]="group.key"
+            (click)="switchGroup(group.key, $event)"
+            class="shrink-0"
+            et-button
+            type="button"
+            variant="outline"
+            color="surface"
+            size="sm"
+          >
+            {{ groupSwitch.label }}
+          </button>
+        }
+        @if (group.note) {
+          <span [etTooltip]="group.note" class="min-w-0 truncate text-text-muted">
+            {{ group.note }}
+          </span>
+        }
+      </div>
+    </div>
+  }
+
+  @for (column of columnHeads(); track column.key) {
+    @if (column.folded; as folded) {
+      <div
+        [style.left.px]="column.x"
+        [style.margin-top.px]="column.y"
+        [style.width.px]="column.width"
+        [class]="
+          columnHeadsNoted()
+            ? 'top-[calc(-6.8rem-4.032rem*var(--et-design-canvas-label-scale))]'
+            : 'top-[calc(-6.8rem-2.24rem*var(--et-design-canvas-label-scale))]'
+        "
+        class="absolute"
+      >
+        <div [style.zoom]="labelScale()" class="flex flex-col gap-space-3 text-(length:--text-sm) leading-[1.4]">
+          <div class="flex h-0 flex-col justify-end">
+            <button
+              [etTooltip]="column.title ?? column.label"
+              (click)="toggleColumn(column.key, $event)"
+              class="w-full whitespace-normal"
+              et-button
+              type="button"
+              variant="outline"
+              color="surface"
+              size="sm"
+              aria-expanded="false"
+            >
+              {{ column.label }}
+            </button>
+          </div>
+          @if (folded.note) {
+            <p [textContent]="folded.note" class="m-0 line-clamp-12 whitespace-pre-wrap text-text-muted"></p>
+          }
+        </div>
+      </div>
+    } @else {
+      <span
+        [style.left.px]="column.x"
+        [style.margin-top.px]="column.y"
+        [style.max-width.px]="column.width"
+        [class]="column.muted ? 'italic text-text-muted' : 'text-text'"
+        [etTooltip]="column.title ?? column.label"
+        class="absolute -top-12 w-max -translate-y-full overflow-hidden text-[calc(1.6rem*var(--et-design-canvas-label-scale))] leading-[1.4] font-semibold text-ellipsis whitespace-nowrap"
+      >
+        {{ column.label }}
+        @if (column.note) {
+          <span class="block text-[0.8em] font-normal whitespace-normal text-text-muted" data-column-note>{{
+            column.note
+          }}</span>
+        }
+      </span>
+    }
+  }
+
+  @for (head of rowHeads(); track head.key) {
+    <h3
+      [style.margin-top.px]="head.y"
+      class="absolute top-[calc(-6.4rem*var(--et-design-canvas-label-scale))] left-0 m-0 -translate-y-full text-[calc(1.6rem*var(--et-design-canvas-label-scale))] leading-normal font-semibold whitespace-nowrap text-text"
+      data-row-head
+    >
+      {{ head.label }}
+    </h3>
+  }
+
+  @for (placed of placedFrames(); track placed.frame.id) {
+    <ethlete-canvas-frame
+      [frame]="placed.frame"
+      [width]="placed.page.width"
+      [height]="placed.page.height"
+      [live]="placed.live"
+      [liveCells]="placed.liveCells"
+      [active]="placed.active"
+      [selected]="placed.selected"
+      [captionBelow]="arrangement() === 'grid'"
+      [captionLimit]="captionLimits().get(placed.frame.id) ?? null"
+      [style.left.px]="placed.x"
+      [style.top.px]="placed.y"
+      [style.width.px]="placed.width"
+      [style.height.px]="placed.height"
+      [attr.data-unsized]="placed.unsized || null"
+      (click)="select(placed.frame.id, $event)"
+      (dblclick)="activate(placed.frame.id)"
+      (heightChange)="storeHeight(placed.frame.id, $event)"
+      (widthChange)="storeWidth(placed.frame.id, $event)"
+      (escapeKeydown)="leaveActiveFrame()"
+      (cellsChange)="storeCells(placed.frame.id, $event)"
+      (pageReload)="reload.emit(placed.frame.id)"
+    />
+  }
+
+  @for (target of pointTargets(); track target.frame.id) {
+    <ethlete-comment-target
+      [style.left.px]="target.x"
+      [style.top.px]="target.y"
+      [style.width.px]="target.width"
+      [style.height.px]="target.height"
+      [frame]="target.frame.label"
+      (comment)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
+      class="absolute"
+      data-comment-target
+    />
+  }
+
+  @for (placed of placedPins(); track placed.pin.id) {
+    <div
+      [style.left.px]="placed.x"
+      [style.top.px]="placed.y"
+      [style.transform]="'scale(' + labelScale() + ') translateY(-100%)'"
+      [class]="placed.open ? 'z-4' : 'z-3'"
+      class="absolute origin-top-left"
+    >
+      <ethlete-comment-pin
+        [author]="placed.pin.author"
+        [initials]="placed.pin.initials"
+        [agent]="placed.pin.agent"
+        [count]="placed.pin.count"
+        [selected]="placed.open"
+        [resolved]="!!placed.pin.resolved"
+        (pinToggle)="togglePin(placed.pin.id)"
+        (click)="$event.stopPropagation()"
+        data-comment-pin
+      />
+      @if (placed.open && pinCard(); as card) {
+        <div (click)="$event.stopPropagation()" class="absolute top-0 left-full ml-space-3" role="presentation">
+          <ng-container [ngTemplateOutlet]="card" />
+        </div>
+      } @else if (placed.open && pinCard() === undefined) {
+        <div
+          class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-(--et-surface-border) bg-(--et-surface-background) p-3 text-[1.3rem] text-text shadow-lg"
+          data-comment-text
+        >
+          <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
+        </div>
+      }
+    </div>
+  }
+  @if (placedDraft(); as placed) {
+    <div
+      [style.left.px]="placed.x"
+      [style.top.px]="placed.y"
+      [style.transform]="'scale(' + labelScale() + ')'"
+      (click)="$event.stopPropagation()"
+      class="absolute z-4 origin-top-left"
+      role="presentation"
+      data-comment-draft
+    >
+      <ng-content select="[canvasDraft]" />
+    </div>
+  }
+  <ng-content />
+</div>
+
+<ethlete-zoom-chip
+  [percent]="zoomPercent()"
+  [class]="zoomChipClass()"
+  (zoomOut)="zoomBy(1 / ZOOM_STEP)"
+  (zoomReset)="resetZoom()"
+  (zoomIn)="zoomBy(ZOOM_STEP)"
+  (fit)="fitAll()"
+/>
+<div
+  #actionsProbe
+  class="pointer-events-none invisible absolute top-0 right-0 h-(--st-canvas-actions-bottom,0px) w-(--st-canvas-actions-reach,0px)"
+  aria-hidden="true"
+></div>
+<div
+  #shellInsetProbe
+  class="pointer-events-none invisible absolute top-0 left-0 h-0 w-(--st-shell-inset-left,0px)"
+  aria-hidden="true"
+></div>

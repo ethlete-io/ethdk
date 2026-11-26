@@ -1,0 +1,332 @@
+import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
+import { describe, expect, it } from 'vitest';
+import { WorkGroup } from '../rows/merge';
+import { UnnamedContext } from '../model/attribution';
+import { ActivityBlock, contextKey } from '../model/block';
+import { Evidence } from '../model/evidence';
+import {
+  contextHasTicketText,
+  draftParentDescription,
+  draftRepoTicket,
+  draftTicket,
+  humanized,
+  readableStandInDraft,
+  standInHasTicketText,
+  standInNameFor,
+} from './draft';
+
+const REPO = '/Users/human/dev/ea-frontend';
+const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
+
+const evidence = (kind: Evidence['kind'], detail: string, summary?: string): Evidence => ({
+  kind,
+  at: new Date('2026-08-16T09:30:00Z'),
+  detail,
+  summary,
+});
+
+const block = (context: ActivityBlock['context'], entries: Evidence[] = []): ActivityBlock => ({
+  from: new Date('2026-08-16T09:00:00Z'),
+  to: new Date('2026-08-16T10:00:00Z'),
+  context,
+  evidence: entries,
+});
+
+const group = (blocks: ActivityBlock[]): WorkGroup => ({
+  from: blocks[0]?.from ?? new Date(0),
+  to: blocks[blocks.length - 1]?.to ?? new Date(0),
+  observedMs: 0,
+  confidence: 'weak',
+  evidence: [],
+  blocks,
+});
+
+const unnamed = (context: UnnamedContext['context'], observedMs = 135 * 60_000): UnnamedContext => ({
+  id: contextKey(context),
+  context,
+  observedMs,
+  from: new Date('2026-08-16T09:00:00Z'),
+  to: new Date('2026-08-16T11:15:00Z'),
+  suggestion: { repoPath: context.repoPath, branch: context.branch, appId: context.appId },
+});
+
+const draft = (options: { context: UnnamedContext['context']; entries?: Evidence[] }) => {
+  const context = unnamed(options.context);
+
+  return draftTicket({
+    context,
+    unattributed: [group([block(options.context, options.entries ?? [])])],
+    config: CONFIG,
+  });
+};
+
+describe('draftTicket', () => {
+  it('reads the summary out of the branch, which is what the user called the work', () => {
+    const drafted = draft({ context: { repoPath: REPO, branch: 'feat/user-management-screen' } });
+
+    expect(drafted.summary).toBe('User management screen');
+    expect(drafted.subject).toBe('user-management-screen');
+  });
+
+  it('falls back to the strongest observation when the branch says nothing', () => {
+    const drafted = draft({
+      context: { repoPath: REPO, branch: 'next' },
+      entries: [evidence('commit', '4 commits', 'Rework the invite flow')],
+    });
+
+    expect(drafted.summary).toBe('Rework the invite flow');
+  });
+
+  it('falls back to the repository, so a draft always has a summary', () => {
+    expect(draft({ context: { repoPath: REPO, branch: 'next' } }).summary).toBe('ea-frontend');
+    expect(draft({ context: { appId: 'com.figma.Desktop' } }).summary).toBe('com.figma.Desktop');
+  });
+
+  it('says where the time came from, and says it last', () => {
+    const drafted = draft({ context: { repoPath: REPO, branch: 'feat/user-management' } });
+
+    expect(drafted.description).toContain(
+      'Recorded from 2h 15m of work in ea-frontend, on branch feat/user-management.',
+    );
+    expect(drafted.description.split('\n').at(-1)).toContain('Recorded from');
+  });
+
+  it('quotes commit and agent-session wording, never a window title', () => {
+    const drafted = draft({
+      context: { repoPath: REPO, branch: 'feat/user-management' },
+      entries: [
+        evidence('commit', '4 commits', 'feat(admin): Add the user list'),
+        evidence('agent-session', 'session', 'Wire the invite endpoint'),
+        evidence('window-title', 'Salary review 2026 — Numbers'),
+      ],
+    });
+
+    expect(drafted.notes).toEqual(['feat(admin): Add the user list', 'Wire the invite endpoint']);
+    expect(drafted.description).toContain('- feat(admin): Add the user list');
+    expect(drafted.description).not.toContain('Salary review');
+  });
+
+  it('quotes nothing from an agent session with no title, so no session id or path reaches the draft', () => {
+    const drafted = draft({
+      context: { repoPath: REPO, branch: 'next' },
+      entries: [evidence('agent-session', `agent session 5f0c2a9e-1b7d-4c3e-9a51-0d8e6f4b2c17 in ${REPO}/libs/env`)],
+    });
+
+    expect(drafted.summary).toBe('ea-frontend');
+    expect(drafted.notes).toEqual([]);
+    expect(drafted.description).not.toContain('5f0c2a9e');
+    expect(drafted.description).not.toContain('/Users/human');
+  });
+
+  it('leads with the work rather than with where the time came from', () => {
+    const drafted = draft({
+      context: { repoPath: REPO, branch: 'feat/user-management' },
+      entries: [evidence('commit', '4 commits', 'feat(admin): Add the user list')],
+    });
+
+    expect(drafted.description.split('\n')[0]).toBe('What the work says it was:');
+  });
+
+  it('quotes no more notes than it was allowed', () => {
+    const context = { repoPath: REPO, branch: 'feat/user-management' };
+    const entries = Array.from({ length: 8 }, (_, index) =>
+      evidence('commit', `commit ${index}`, `Fix subject ${index}`),
+    );
+    const drafted = draftTicket({
+      context: unnamed(context),
+      unattributed: [group([block(context, entries)])],
+      config: CONFIG,
+      maxNotes: 3,
+    });
+
+    expect(drafted.notes).toHaveLength(3);
+  });
+
+  it('ignores evidence from another context', () => {
+    const context = { repoPath: REPO, branch: 'feat/user-management' };
+    const other = { repoPath: '/Users/human/dev/other', branch: 'next' };
+    const drafted = draftTicket({
+      context: unnamed(context),
+      unattributed: [group([block(other, [evidence('commit', 'x', 'Not this work')])])],
+      config: CONFIG,
+    });
+
+    expect(drafted.notes).toEqual([]);
+  });
+});
+
+describe('contextHasTicketText', () => {
+  const hasText = (options: { context: UnnamedContext['context']; entries?: Evidence[] }) =>
+    contextHasTicketText({
+      context: unnamed(options.context),
+      unattributed: [group([block(options.context, options.entries ?? [])])],
+      config: CONFIG,
+    });
+
+  it('finds nothing to write from where the only note does not read as words', () => {
+    expect(
+      hasText({
+        context: { repoPath: REPO, branch: 'main' },
+        entries: [evidence('agent-session', 'agent session', '(click)=')],
+      }),
+    ).toBe(false);
+  });
+
+  it('writes from a readable note, or from the branch subject alone', () => {
+    expect(
+      hasText({
+        context: { repoPath: REPO, branch: 'main' },
+        entries: [evidence('agent-session', 'agent session', 'Bind the click event in the hub')],
+      }),
+    ).toBe(true);
+    expect(hasText({ context: { repoPath: REPO, branch: 'feat/user-management-screen' } })).toBe(true);
+  });
+});
+
+describe('draftTicket quoting', () => {
+  it('leaves a note that does not read as words out of the description', () => {
+    const drafted = draft({
+      context: { repoPath: REPO, branch: 'main' },
+      entries: [evidence('agent-session', 'agent session', '(click)=')],
+    });
+
+    expect(drafted.notes).toEqual([]);
+    expect(drafted.summary).not.toContain('(click)=');
+  });
+});
+
+describe('draftParentDescription', () => {
+  it('says what the parent gathers and how much time it was recorded from', () => {
+    const body = draftParentDescription(unnamed({ repoPath: REPO, branch: 'feat/user-management-screen' }));
+
+    expect(body).toContain('ea-frontend, on branch feat/user-management-screen');
+    expect(body).toContain('2h 15m');
+  });
+
+  it('quotes none of the child notes, so an epic never restates its first task', () => {
+    const context = { repoPath: REPO, branch: 'feat/user-management-screen' };
+    const child = draftTicket({
+      context: unnamed(context),
+      unattributed: [group([block(context, [evidence('commit', 'x', 'Name the columns of the table')])])],
+      config: CONFIG,
+    });
+
+    expect(child.description).toContain('Name the columns of the table');
+    expect(draftParentDescription(unnamed(context))).not.toContain('Name the columns of the table');
+  });
+
+  it('is never empty, which is what an epic filed with no description was', () => {
+    expect(draftParentDescription(unnamed({ appId: 'com.slack.Slack' })).trim().length).toBeGreaterThan(0);
+  });
+});
+
+describe('humanized', () => {
+  it('reads a branch subject as words', () => {
+    expect(humanized('user-management')).toBe('User management');
+  });
+
+  it('drops a leading date, whichever shape it is written in', () => {
+    expect(humanized('20260911_competition-journey-overlay')).toBe('Competition journey overlay');
+    expect(humanized('2026-09-11-competition-journey-overlay')).toBe('Competition journey overlay');
+  });
+
+  it('keeps a number that is not a leading date', () => {
+    expect(humanized('totw-16-9-special-layout')).toBe('Totw 16 9 special layout');
+    expect(humanized('20260911x-overlay')).toBe('20260911x overlay');
+  });
+
+  it('keeps the date of a subject that is nothing else', () => {
+    expect(humanized('20260911')).toBe('20260911');
+  });
+});
+
+describe('standInNameFor', () => {
+  it('reads the branch subject as words, which is what the user called the work', () => {
+    expect(standInNameFor({ context: { repoPath: REPO, branch: 'feat/competition-journey' }, config: CONFIG })).toBe(
+      'Competition journey',
+    );
+  });
+
+  it('drops the date a branch of dated work leads with', () => {
+    expect(
+      standInNameFor({
+        context: { repoPath: REPO, branch: 'feature/20260911_competition-journey-overlay' },
+        config: CONFIG,
+      }),
+    ).toBe('Competition journey overlay');
+  });
+
+  it('falls back to the checkout name when the branch carries no subject', () => {
+    expect(standInNameFor({ context: { repoPath: REPO, branch: 'next' }, config: CONFIG })).toBe('ea-frontend');
+  });
+
+  it('names the application for work no checkout holds', () => {
+    expect(standInNameFor({ context: { appId: 'com.slack.Slack' }, config: CONFIG })).toBe('com.slack.Slack');
+  });
+});
+
+describe('stand-ins drafted from a note that does not read as words', () => {
+  const onMain = { repoPath: REPO, branch: 'main' };
+  const drafted = (notes: string[]) =>
+    draftRepoTicket({
+      repoPath: REPO,
+      contexts: [unnamed(onMain)],
+      unattributed: [
+        group([
+          block(
+            onMain,
+            notes.map((note) => evidence('agent-session', note, note)),
+          ),
+        ]),
+      ],
+      config: CONFIG,
+    });
+  const stored = {
+    id: 'stand-in-1',
+    name: '(click)=',
+    description: 'What the work says it was:\n\n- (click)=\n\nCovers main.\n\nRecorded from 7m of work in ea-frontend.',
+    author: 'app' as const,
+    openedFor: REPO,
+    openedForBranch: 'main',
+  };
+
+  it('renames a stored one after where the work happened, and quotes the note no more', () => {
+    expect(readableStandInDraft({ standIn: stored, config: CONFIG })).toEqual({
+      name: 'ea-frontend',
+      description:
+        'Nothing in the day names this work beyond where it happened.\n\nCovers main.\n\nRecorded from 7m of work in ea-frontend.',
+    });
+  });
+
+  it('renames one after the first note that reads as words', () => {
+    const description = 'What the work says it was:\n\n- (click)=\n- Bind the click event in the hub\n\nCovers main.';
+
+    expect(readableStandInDraft({ standIn: { ...stored, description }, config: CONFIG })).toEqual({
+      name: 'Bind the click event in the hub',
+      description: 'What the work says it was:\n\n- Bind the click event in the hub\n\nCovers main.',
+    });
+  });
+
+  it('keeps a name the user gave, one the user renamed, and one drafted from where the work happened', () => {
+    expect(readableStandInDraft({ standIn: { ...stored, author: 'user' }, config: CONFIG })).toBeNull();
+    expect(readableStandInDraft({ standIn: { ...stored, name: 'Lantern' }, config: CONFIG })).toBeNull();
+    expect(readableStandInDraft({ standIn: { ...stored, name: drafted([]).summary }, config: CONFIG })).toBeNull();
+  });
+
+  it('says nothing a ticket could be written from, until a note or the user says more', () => {
+    const band = (note: string) => ({
+      standInId: stored.id,
+      observedMs: 60_000,
+      evidence: [evidence('agent-session', note, note)],
+    });
+    const hasText = (standIn: Parameters<typeof standInHasTicketText>[0]['standIn'], note = '(click)=') =>
+      standInHasTicketText({ standIn, bands: [band(note)], config: CONFIG });
+
+    expect(hasText({ ...stored, name: 'ea-frontend' })).toBe(false);
+    expect(hasText(stored)).toBe(false);
+    expect(hasText({ ...stored, name: 'ea-frontend' }, 'Bind the click event in the hub')).toBe(true);
+    expect(hasText({ ...stored, name: 'Bind the click event in the hub' })).toBe(true);
+    expect(hasText({ ...stored, openedForBranch: 'feat/user-management' })).toBe(true);
+    expect(hasText({ ...stored, author: 'user' })).toBe(true);
+  });
+});

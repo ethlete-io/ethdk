@@ -1,0 +1,320 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Components/Actions/Button/Icon" />
+
+# Icon Button — Design Specification
+
+Square icon-only button. Default variant is `transparent` (unlike the Surface Button which defaults to `filled`).
+
+---
+
+## Anatomy
+
+```
+[ icon ]                      ← sized per `size`
+[ loader overlay ]            ← absolute, fades in during loading state
+```
+
+- **Icon slot** — `[etIcon]` attribute selector; sized per `size` (see Sizes)
+- **Loader** — absolutely positioned spinner that replaces the icon visually
+
+---
+
+## Variants
+
+<table>
+  <tr>
+    <td>Variant</td>
+    <td>Background</td>
+    <td>Text</td>
+    <td>Border</td>
+  </tr>
+  <tr>
+    <td>`filled`</td>
+    <td>primary color solid</td>
+    <td>on-primary</td>
+    <td>none</td>
+  </tr>
+  <tr>
+    <td>`outline`</td>
+    <td>primary at 0% opacity</td>
+    <td>ink</td>
+    <td>ink, 1 px</td>
+  </tr>
+  <tr>
+    <td>`tonal`</td>
+    <td>primary at 16% opacity</td>
+    <td>ink</td>
+    <td>none</td>
+  </tr>
+  <tr>
+    <td>`transparent` (default)</td>
+    <td>primary at 0% opacity</td>
+    <td>ink</td>
+    <td>none</td>
+  </tr>
+</table>
+
+**Opacity of the primary color layer per interaction state:**
+
+<table>
+  <tr>
+    <td>Variant</td>
+    <td>Rest</td>
+    <td>Hover</td>
+    <td>Focus-visible</td>
+    <td>Active</td>
+  </tr>
+  <tr>
+    <td>`filled`</td>
+    <td>100%</td>
+    <td>100%</td>
+    <td>100%</td>
+    <td>100%</td>
+  </tr>
+  <tr>
+    <td>`outline`</td>
+    <td>0%</td>
+    <td>8%</td>
+    <td>12%</td>
+    <td>16%</td>
+  </tr>
+  <tr>
+    <td>`tonal`</td>
+    <td>16%</td>
+    <td>24%</td>
+    <td>28%</td>
+    <td>32%</td>
+  </tr>
+  <tr>
+    <td>`transparent`</td>
+    <td>0%</td>
+    <td>8%</td>
+    <td>12%</td>
+    <td>16%</td>
+  </tr>
+</table>
+
+---
+
+## Sizes
+
+The system uses **1rem = 10px**. All values below are in px. The button is square (width = height) and fully round; its size matches the surface button's height at the same `size` so the two line up in a row.
+
+<table>
+  <tr>
+    <td>Size</td>
+    <td>Button size (W = H)</td>
+    <td>Icon size</td>
+  </tr>
+  <tr>
+    <td>`xs`</td>
+    <td>24</td>
+    <td>14</td>
+  </tr>
+  <tr>
+    <td>`sm`</td>
+    <td>31</td>
+    <td>18</td>
+  </tr>
+  <tr>
+    <td>`md` (default)</td>
+    <td>39</td>
+    <td>20</td>
+  </tr>
+  <tr>
+    <td>`lg`</td>
+    <td>46</td>
+    <td>24</td>
+  </tr>
+  <tr>
+    <td>`xl`</td>
+    <td>57</td>
+    <td>28</td>
+  </tr>
+</table>
+
+All variants are fully round (`border-radius: 9999px`); the `outline` variant carries a 1 px border.
+
+**Loading spinner dimensions (px):**
+
+<table>
+  <tr>
+    <td>Size</td>
+    <td>Diameter</td>
+    <td>Stroke width</td>
+  </tr>
+  <tr>
+    <td>`xs`</td>
+    <td>12</td>
+    <td>1.5</td>
+  </tr>
+  <tr>
+    <td>`sm`</td>
+    <td>14</td>
+    <td>1.75</td>
+  </tr>
+  <tr>
+    <td>`md`</td>
+    <td>16</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>`lg`</td>
+    <td>20</td>
+    <td>2.5</td>
+  </tr>
+  <tr>
+    <td>`xl`</td>
+    <td>24</td>
+    <td>3</td>
+  </tr>
+</table>
+
+---
+
+## States
+
+<table>
+  <tr>
+    <td>State</td>
+    <td>Visual behavior</td>
+  </tr>
+  <tr>
+    <td>Default</td>
+    <td>Base variant colors</td>
+  </tr>
+  <tr>
+    <td>Hover</td>
+    <td>Opacity shift on primary layer (see variant table)</td>
+  </tr>
+  <tr>
+    <td>Focus-visible</td>
+    <td>Opacity shift + focus ring (see Focus Ring section)</td>
+  </tr>
+  <tr>
+    <td>Active</td>
+    <td>Higher opacity shift (see variant table)</td>
+  </tr>
+  <tr>
+    <td>Disabled</td>
+    <td>`cursor: not-allowed`; outline/tonal/transparent → 40% opacity; filled: no opacity change</td>
+  </tr>
+  <tr>
+    <td>Loading</td>
+    <td>Icon → opacity 0; spinner overlay fades in (absolute center)</td>
+  </tr>
+  <tr>
+    <td>Pressed</td>
+    <td>Switches visual variant (see Pressed State section)</td>
+  </tr>
+</table>
+
+All transitions run at **120 ms ease** across background, color, border-color, box-shadow, outline-color, and opacity.
+
+---
+
+## Pressed state — variant swap
+
+When the button is in a toggled/pressed state it renders a different visual variant:
+
+<table>
+  <tr>
+    <td>Base variant</td>
+    <td>Pressed renders as</td>
+  </tr>
+  <tr>
+    <td>`filled`</td>
+    <td>`transparent`</td>
+  </tr>
+  <tr>
+    <td>`outline`</td>
+    <td>`filled`</td>
+  </tr>
+  <tr>
+    <td>`tonal`</td>
+    <td>`filled`</td>
+  </tr>
+  <tr>
+    <td>`transparent`</td>
+    <td>`tonal`</td>
+  </tr>
+</table>
+
+---
+
+## Color theming
+
+See **Core/Theming/Color** for full system documentation including ColorTheme structure, registration, and Figma mapping.
+
+Tokens this button consumes:
+
+<table>
+  <tr>
+    <td>Token</td>
+    <td>Role</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-primary-solid`</td>
+    <td>Solid background for `filled` variant</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-primary`</td>
+    <td>Tint layer for `outline`, `tonal`, `transparent` variants</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-primary-opacity`</td>
+    <td>Opacity of the tint layer — set by the component per variant + state</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-on-primary`</td>
+    <td>Icon color on a solid primary background (`filled` variant)</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-ink-solid`</td>
+    <td>Icon and border color for non-filled variants</td>
+  </tr>
+</table>
+
+---
+
+## CSS custom properties (override API)
+
+These tokens adjust appearance without touching internals. The generic `--et-button-*` tokens (font-weight, cursor, disabled opacity, border-width) apply here too — see the Surface Button spec.
+
+> **Note:** the diameter and icon size are set **per size** by the component, in a `:where([data-size='…'])` block on the button itself. So the override has to land on the button element (one class in the selector is enough to win), not on an ancestor — and it applies to all sizes unless you scope it with a size selector too. `--et-icon-button-border-radius` is the exception: the component never declares it, so an ancestor context can set it.
+
+<table>
+  <tr>
+    <td>Token</td>
+    <td>Default</td>
+    <td>Size-overridden</td>
+    <td>Controls</td>
+  </tr>
+  <tr>
+    <td>`--et-icon-button-size`</td>
+    <td>39 px</td>
+    <td>Yes</td>
+    <td>Diameter (width = height)</td>
+  </tr>
+  <tr>
+    <td>`--et-icon-button-icon-size`</td>
+    <td>20 px</td>
+    <td>Yes</td>
+    <td>Icon width/height</td>
+  </tr>
+  <tr>
+    <td>`--et-icon-button-border-radius`</td>
+    <td>9999px</td>
+    <td>No</td>
+    <td>Corner rounding — set on an ancestor (e.g. a toolbar) to square off the button</td>
+  </tr>
+</table>
+
+---
+
+## Focus ring
+
+Rendered by `FocusRingDirective` — a separate visual layer outside the button's own box model. Shown only on keyboard focus (`:focus-visible`).
+
+In Figma, implement the focus ring as an overlay frame placed around the button component, not as a property of the button itself.

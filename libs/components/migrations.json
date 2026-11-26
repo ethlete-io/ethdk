@@ -1,0 +1,211 @@
+{
+  "migrations": [
+    {
+      "name": "query-error-labels",
+      "version": "1.0.0-next.33",
+      "kind": "auto",
+      "level": "required",
+      "description": "Find the query-error call sites the English-only label default changes, and report where German must be opted back in.",
+      "generator": "@ethlete/components:migrate-query-error-labels",
+      "docs": "/components/query-error"
+    },
+    {
+      "name": "rich-text-editor-link-editor",
+      "version": "1.0.0-next.33",
+      "kind": "auto",
+      "level": "required",
+      "description": "Find the rich text editors that lose the link editor popover, and report where to opt back in.",
+      "generator": "@ethlete/components:migrate-rich-text-editor-link-editor",
+      "docs": "/components/rich-text-editor"
+    },
+    {
+      "name": "rich-text-editor-tools",
+      "version": "1.0.0-next.36",
+      "kind": "auto",
+      "level": "required",
+      "description": "Find the rich text editors that lose the heading, quote, code-block and link tools, and report where to opt back in.",
+      "generator": "@ethlete/components:migrate-rich-text-editor-tools",
+      "docs": "/components/rich-text-editor"
+    },
+    {
+      "name": "rich-text-editor-floating-toolbar",
+      "version": "1.0.0-next.36",
+      "kind": "auto",
+      "level": "required",
+      "description": "Find the rich text editors that lose the selection toolbar, and report where to opt back in.",
+      "generator": "@ethlete/components:migrate-rich-text-editor-floating-toolbar",
+      "docs": "/components/rich-text-editor"
+    },
+    {
+      "name": "bracket-ethlete-renames",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "level": "required",
+      "description": "Rename generateTournamentModeFormEthleteRounds to generateTournamentModeFromEthleteRounds.",
+      "generator": "@ethlete/components:migrate-bracket-ethlete-renames",
+      "docs": "/components/bracket"
+    },
+    {
+      "name": "bracket-default-cards",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "level": "required",
+      "description": "Spread BRACKET_DEFAULT_CARDS into provideBracketConfig, and report the brackets that need it by hand.",
+      "generator": "@ethlete/components:migrate-bracket-default-cards",
+      "docs": "/components/bracket"
+    },
+    {
+      "name": "overlay-nav-tab-imports",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "level": "required",
+      "description": "Add OVERLAY_NAV_TAB_IMPORTS where a NAV_TAB_IMPORTS component renders et-overlay-nav-tab-link.",
+      "generator": "@ethlete/components:migrate-overlay-nav-tab-imports",
+      "docs": "/components/tabs"
+    },
+    {
+      "name": "youtube-player-slot-directive",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove YoutubePlayerSlotDirective and YOUTUBE_PLAYER_SLOT_TOKEN, and mark the uses that need a YoutubePlayerSlotComponent.",
+      "generator": "@ethlete/components:migrate-youtube-player-slot-directive",
+      "docs": "/components/stream"
+    },
+    {
+      "name": "chart-baseline-y",
+      "version": "1.0.0-next.65",
+      "kind": "auto",
+      "level": "required",
+      "description": "Rename the removed chart-grid baselineY alias to baseline.",
+      "generator": "@ethlete/components:migrate-chart-baseline-y",
+      "docs": "/components/chart"
+    },
+    {
+      "name": "grid-engine-internals",
+      "version": "1.0.0-next.65",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove the grid layout engine internals from @ethlete/components imports and mark the uses that need another approach.",
+      "generator": "@ethlete/components:migrate-grid-engine-internals",
+      "docs": "/components/grid"
+    },
+    {
+      "name": "overlay-fullscreen-animation",
+      "version": "1.0.0-next.65",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove the overlay fullscreen animation internals from @ethlete/components imports and mark the uses that need another approach.",
+      "generator": "@ethlete/components:migrate-overlay-fullscreen-animation",
+      "docs": "/components/overlays"
+    },
+    {
+      "name": "stream-default-components",
+      "version": "1.0.0-next.65",
+      "kind": "auto",
+      "level": "required",
+      "description": "Spread STREAM_DEFAULT_COMPONENTS into provideStreamConfig, add it to the app config of an app without one, and report the rest.",
+      "generator": "@ethlete/components:migrate-stream-default-components",
+      "docs": "/components/stream"
+    },
+    {
+      "name": "time-picker-ring",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Replace the removed time picker setActiveSide with activeSide.set, and mark the removed column and option directives.",
+      "generator": "@ethlete/components:migrate-time-picker-ring",
+      "docs": "/components/time-picker"
+    },
+    {
+      "name": "cascader-tree-internals",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove the cascader tree helpers from @ethlete/components imports and mark the uses that need another approach.",
+      "generator": "@ethlete/components:migrate-cascader-tree-internals",
+      "docs": "/components/cascader"
+    },
+    {
+      "name": "duration-format-internals",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove the duration format helpers from @ethlete/components imports and mark the uses that need another approach.",
+      "generator": "@ethlete/components:migrate-duration-format-internals",
+      "docs": "/components/date-time-inputs"
+    },
+    {
+      "name": "line-chart-stacked-area-mix",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Rename --et-line-chart-stacked-area-opacity to --et-line-chart-stacked-area-mix and map each opacity to a percentage.",
+      "generator": "@ethlete/components:migrate-line-chart-stacked-area-mix",
+      "docs": "/components/line-chart"
+    },
+    {
+      "name": "error-color-theme-signal",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Call errorColorTheme() where an injectFormSupport() result or a TableComponent reads it, now that it is a signal.",
+      "generator": "@ethlete/components:migrate-error-color-theme-signal",
+      "docs": "/components/forms"
+    },
+    {
+      "name": "select-input-renames",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Rename the et-select inputs error, customValueSeparators and normalizeCustomValue, and the tag input inputs maxTags and normalizeTag, in templates.",
+      "generator": "@ethlete/components:migrate-select-input-renames",
+      "docs": "/components/select"
+    },
+    {
+      "name": "loader-determinate",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove determinate from et-spinner and indeterminate from et-progress-bar, which now follow whether value is bound, and rewrite value where the mode was dynamic.",
+      "generator": "@ethlete/components:migrate-loader-determinate",
+      "docs": "/components/loader"
+    },
+    {
+      "name": "components-sdk-layer",
+      "version": "1.0.0-next.82",
+      "kind": "assisted",
+      "level": "required",
+      "description": "Check the app CSS in @layer components that now beats SDK component styles, and drop the overrides that only existed to beat them.",
+      "instructions": "./migrations/components-sdk-layer.md",
+      "docs": "/components/setup"
+    },
+    {
+      "name": "overlay-and-column-api",
+      "version": "1.0.0-next.83",
+      "kind": "auto",
+      "level": "required",
+      "description": "Give opener afterClosed and beforeClosed callbacks a T | undefined result, rename injectCommandPalette to createCommandPaletteOpener and the TableColumnVisibilityHost allColumns key to availableColumns, and report the rest.",
+      "generator": "@ethlete/components:migrate-overlay-and-column-api",
+      "docs": "/components/overlay-openers"
+    },
+    {
+      "name": "pip-window-z-index",
+      "version": "1.0.0-next.100",
+      "kind": "auto",
+      "level": "required",
+      "description": "Move --et-pip-window-z-index, which is removed, into providePipWindowConfig({ overlayLayer }), and report the sites that need it by hand.",
+      "generator": "@ethlete/components:migrate-pip-window-z-index",
+      "docs": "/components/stream"
+    },
+    {
+      "name": "tabs-active-underline",
+      "version": "1.0.0-next.101",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove activeUnderline from provideTabsConfig, which is removed: the active underline is always on.",
+      "generator": "@ethlete/components:migrate-tabs-active-underline",
+      "docs": "/components/tabs"
+    }
+  ]
+}

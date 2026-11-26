@@ -1,0 +1,58 @@
+import { skeleton, skeletonItem, skeletonStyles, skeletonText } from '@ethlete/components/design/skeleton';
+import { definePart, drawing } from '@design-system';
+import frame from './skeleton.css?inline';
+
+type Props = {
+  form: 'card' | 'text' | 'shapes' | 'in-text';
+  animated: boolean;
+};
+
+const CARD = [
+  `<div class="skeleton-row">${skeletonItem({ shape: 'circle', style: '--et-skeleton-size: 40px' })}${skeletonText({ lines: 2 })}</div>`,
+  skeletonItem({ shape: 'rect', style: 'block-size: 140px; --et-skeleton-radius: 12px' }),
+].join('');
+
+const SHAPES = [
+  skeletonItem(),
+  skeletonItem({ shape: 'rect', style: 'block-size: 80px' }),
+  `<div class="skeleton-row">${[24, 40, 64].map((size) => skeletonItem({ shape: 'circle', style: `--et-skeleton-size: ${size}px` })).join('')}</div>`,
+].join('');
+
+const render = ({ form, animated }: Props) => {
+  switch (form) {
+    case 'card':
+      return skeleton({ content: CARD, animated });
+    case 'text':
+      return skeleton({ content: skeletonText(), animated });
+    case 'shapes':
+      return skeleton({ content: SHAPES, animated });
+    case 'in-text':
+      return `<p class="skeleton-text">Real text, then ${skeletonItem({ style: 'max-inline-size: 120px' })} in the middle of it.</p>`;
+  }
+};
+
+export default definePart({
+  note: "Today's look",
+  madeBy: ['claude-opus-5-5'],
+  states: {
+    card: { form: 'card', animated: true },
+    text: { form: 'text', animated: true },
+    shapes: { form: 'shapes', animated: true },
+    'in-text': { form: 'in-text', animated: true },
+    static: { form: 'card', animated: false },
+  },
+  describe: {
+    card: 'An animated card skeleton with avatar, two lines and an image block; check the shimmer and the rounded image.',
+    text: 'An animated text skeleton; check that the lines vary in length like a paragraph.',
+    shapes: 'A line, a block and circles at 24, 40 and 64px; check that each shape keeps its size and radius.',
+    'in-text': 'A skeleton bar inside a sentence; check that it sits on the text line and is capped at 120px.',
+    static: 'The card skeleton without animation; check that no shimmer runs and the shapes match the animated card.',
+  },
+  widths: [480],
+  frame: (body) => `<div class="skeleton-frame">${body}</div>`,
+  render: (props: Props) =>
+    drawing({
+      body: render(props),
+      styles: [skeletonStyles, frame].join('\n'),
+    }),
+});

@@ -1,0 +1,568 @@
+import { computed, effect, inject, isSignal, signal, untracked } from '@angular/core';
+import { Meta } from '@angular/platform-browser';
+import { injectLocale } from '../providers';
+import { MaybeSignal } from '../signals';
+import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
+import { HeadLayerOptions, layerPriority } from './head-layer';
+import { applyHeadBinding, createArrayPropertyBinding, createPropertyBinding, toStringBinding } from './head-binding';
+import { applyHeadTitleBinding } from './title-binding';
+
+export type MetaTagConfig = {
+  /** Unique identifier for the tag  */
+  key?: string;
+
+  /** Whether multiple instances of this tag are allowed */
+  allowMultiple?: boolean;
+
+  charset?: string;
+  content?: string;
+  httpEquiv?: string;
+  id?: string;
+  itemprop?: string;
+  name?: string;
+  property?: string;
+  scheme?: string;
+  url?: string;
+};
+
+type MetaTagBinding = {
+  config: MetaTagConfig;
+  priority: number;
+};
+
+export type MetaConfig = {
+  /**
+   * A function to transform meta tag content based on locale.
+   * Use `provideLocale()` to update the locale dynamically.
+   */
+  transformer: (content: string, locale: string) => string;
+
+  /**
+   * Tags that are allowed to have multiple instances
+   * If you want to override the default set, extend your set from {@link DEFAULT_MULTI_INSTANCE_TAGS}.
+   * Otherwise, common multiple instance tags may be removed unintentionally.
+   * @example
+   * ```ts
+   * import { DEFAULT_MULTI_INSTANCE_TAGS, provideMetaConfig } from '@ethlete/core';
+   *
+   * provideMetaConfig({
+   *   multiInstanceTags: new Set([
+   *     ...DEFAULT_MULTI_INSTANCE_TAGS,
+   *     'name="custom-multiple-tag"',
+   *   ]),
+   * });
+   * ```
+   */
+  multiInstanceTags: Set<string>;
+};
+
+export const DEFAULT_MULTI_INSTANCE_TAGS = /* @__PURE__ */ new Set([
+  'property="og:image"',
+  'property="og:image:url"',
+  'property="og:image:secure_url"',
+  'property="og:video"',
+  'property="og:video:url"',
+  'property="og:video:secure_url"',
+  'property="og:audio"',
+  'property="og:audio:url"',
+  'property="og:audio:secure_url"',
+  'property="og:locale:alternate"',
+  'name="twitter:image"',
+  'name="twitter:player"',
+  'property="article:author"',
+  'property="article:tag"',
+  'property="music:song"',
+  'property="music:musician"',
+  'property="music:album"',
+  'property="video:actor"',
+  'property="video:director"',
+  'property="video:writer"',
+  'property="video:tag"',
+  'property="book:author"',
+  'property="book:tag"',
+  'property="profile:username"',
+  'property="product:category"',
+  'property="product:retailer_item_id"',
+  'property="al:ios:url"',
+  'property="al:ios:app_store_id"',
+  'property="al:ios:app_name"',
+  'property="al:android:url"',
+  'property="al:android:app_name"',
+  'property="al:android:package"',
+  'property="al:web:url"',
+  'property="al:windows_phone:url"',
+  'property="al:windows_phone:app_id"',
+  'property="al:windows_phone:app_name"',
+  'property="al:windows:url"',
+  'property="al:windows:app_id"',
+  'property="al:windows:app_name"',
+  'property="al:windows_universal:url"',
+  'property="al:windows_universal:app_id"',
+  'property="al:windows_universal:app_name"',
+  'name="DC.creator"',
+  'name="DC.contributor"',
+  'name="DC.subject"',
+  'itemprop="image"',
+  'itemprop="author"',
+  'name="apple-itunes-app"', // Can have multiple app arguments
+  'name="google-site-verification"',
+  'name="msvalidate.01"',
+  'name="yandex-verification"',
+  'name="p:domain_verify"', // Pinterest
+  'name="facebook-domain-verification"',
+]);
+
+const META_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<MetaConfig>(
+  {
+    transformer: (content: string) => content,
+    multiInstanceTags: DEFAULT_MULTI_INSTANCE_TAGS,
+  },
+  { name: 'Meta Config' },
+);
+
+export const provideMetaConfig = /* @__PURE__ */ toProvideFn(META_CONFIG_DEF);
+export const injectMetaConfig = /* @__PURE__ */ toInjectFn(META_CONFIG_DEF);
+
+const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
+  () => {
+    const metaService = inject(Meta);
+    const config = injectMetaConfig();
+    const { currentLocale } = injectLocale();
+
+    const metaTagsBySelector = signal<Map<string, Map<symbol, MetaTagBinding>>>(new Map());
+    const originals = new Map<string, Record<string, string>[]>();
+    let priorityCounter = 0;
+
+    const getSelector = (config: MetaTagConfig) => {
+      if (config.name) return `name="${config.name}"`;
+      if (config.property) return `property="${config.property}"`;
+      if (config.httpEquiv) return `http-equiv="${config.httpEquiv}"`;
+      if (config.itemprop) return `itemprop="${config.itemprop}"`;
+      if (config.charset) return `charset="${config.charset}"`;
+      return config.key ?? '';
+    };
+
+    const isMultiInstanceTag = (selector: string) => {
+      return config.multiInstanceTags.has(selector);
+    };
+
+    const applyTag = (rawConfig: MetaTagConfig, locale: string): HTMLMetaElement => {
+      const transformedConfig = { ...rawConfig };
+
+      if (transformedConfig.content) {
+        transformedConfig.content = config.transformer(transformedConfig.content, locale);
+      }
+
+      const { key, allowMultiple, ...metaConfig } = transformedConfig;
+
+      return metaService.addTag(metaConfig) as HTMLMetaElement;
+    };
+
+    const applyActiveTag = (selector: string) => {
+      const locale = currentLocale();
+      const bindings = untracked(() => metaTagsBySelector().get(selector));
+
+      if (!bindings || bindings.size === 0) {
+        metaService.getTags(selector).forEach((tag) => metaService.removeTagElement(tag));
+        originals.get(selector)?.forEach((definition) => metaService.addTag(definition, true));
+        originals.delete(selector);
+
+        return;
+      }
+
+      if (!originals.has(selector)) {
+        originals.set(
+          selector,
+          metaService
+            .getTags(selector)
+            .map((tag) => Object.fromEntries(Array.from(tag.attributes, (attr) => [attr.name, attr.value]))),
+        );
+      }
+
+      const allowMultiple =
+        isMultiInstanceTag(selector) || Array.from(bindings.values()).some((b) => b.config.allowMultiple);
+
+      const existingTags = metaService.getTags(selector);
+      existingTags.forEach((tag) => metaService.removeTagElement(tag));
+
+      if (allowMultiple) {
+        const sortedBindings = Array.from(bindings.values()).sort((a, b) => a.priority - b.priority);
+
+        sortedBindings.forEach((binding) => {
+          applyTag(binding.config, locale);
+        });
+      } else {
+        const activeBinding = Array.from(bindings.values()).reduce((highest, current) =>
+          current.priority > highest.priority ? current : highest,
+        );
+
+        applyTag(activeBinding.config, locale);
+      }
+    };
+
+    const claimPriority = () => priorityCounter++;
+
+    const addTag = (id: symbol, rawConfig: MetaTagConfig, priority = claimPriority()) =>
+      untracked(() => {
+        const selector = getSelector(rawConfig);
+
+        metaTagsBySelector.update((tagsBySelector) => {
+          const newTagsBySelector = new Map(tagsBySelector);
+          const selectorBindings = newTagsBySelector.get(selector) || new Map();
+
+          selectorBindings.set(id, { config: rawConfig, priority });
+          newTagsBySelector.set(selector, new Map(selectorBindings));
+
+          return newTagsBySelector;
+        });
+
+        applyActiveTag(selector);
+      });
+
+    const removeTag = (id: symbol, selector?: string) =>
+      untracked(() => {
+        if (selector) {
+          metaTagsBySelector.update((tagsBySelector) => {
+            const newTagsBySelector = new Map(tagsBySelector);
+            const selectorBindings = newTagsBySelector.get(selector);
+
+            if (selectorBindings) {
+              selectorBindings.delete(id);
+
+              if (selectorBindings.size === 0) {
+                newTagsBySelector.delete(selector);
+              } else {
+                newTagsBySelector.set(selector, new Map(selectorBindings));
+              }
+            }
+
+            return newTagsBySelector;
+          });
+
+          applyActiveTag(selector);
+
+          return;
+        }
+
+        metaTagsBySelector.update((tagsBySelector) => {
+          const newTagsBySelector = new Map(tagsBySelector);
+          let affectedSelector: string | undefined;
+
+          for (const [sel, bindings] of newTagsBySelector) {
+            if (bindings.has(id)) {
+              bindings.delete(id);
+              affectedSelector = sel;
+
+              if (bindings.size === 0) {
+                newTagsBySelector.delete(sel);
+              } else {
+                newTagsBySelector.set(sel, new Map(bindings));
+              }
+              break;
+            }
+          }
+
+          if (affectedSelector) {
+            queueMicrotask(() => applyActiveTag(affectedSelector));
+          }
+
+          return newTagsBySelector;
+        });
+      });
+
+    effect(() => {
+      currentLocale();
+      const tagsBySelector = untracked(() => metaTagsBySelector());
+
+      tagsBySelector.forEach((_, selector) => {
+        applyActiveTag(selector);
+      });
+    });
+
+    return { addTag, removeTag, getSelector, claimPriority };
+  },
+  { name: 'Meta Store' },
+);
+
+export const provideMetaStore = /* @__PURE__ */ toProvideFn(META_STORE_DEF);
+export const injectMetaStore = /* @__PURE__ */ toInjectFn(META_STORE_DEF);
+
+/**
+ * Binds a meta tag. While it is bound, pre-existing tags matching the same selector (e.g. from `index.html`) are removed;
+ * they come back once the last binding for that selector is released. Link bindings leave pre-existing links alone.
+ * Pass `{ layer: 'overlay' }` to outrank every page binding.
+ */
+export const applyMetaBinding = (
+  binding: MaybeSignal<MetaTagConfig | null | undefined>,
+  options?: HeadLayerOptions,
+) => {
+  const metaStore = injectMetaStore();
+  const tagId = Symbol('meta-tag');
+  const priority = layerPriority(options?.layer, metaStore.claimPriority());
+  let currentSelector: string | undefined;
+
+  applyHeadBinding(
+    binding,
+    (config) => {
+      const selector = metaStore.getSelector(config);
+
+      if (currentSelector !== undefined && currentSelector !== selector) metaStore.removeTag(tagId, currentSelector);
+
+      currentSelector = selector;
+      metaStore.addTag(tagId, config, priority);
+    },
+    () => metaStore.removeTag(tagId, currentSelector),
+  );
+};
+
+export const applyDescriptionBinding = /* @__PURE__ */ createPropertyBinding(
+  (content) => ({ name: 'description', content }),
+  applyMetaBinding,
+);
+
+export const applyKeywordsBinding = (binding: MaybeSignal<string[] | null | undefined>) => {
+  applyMetaBinding(
+    computed(() => {
+      const keywords = isSignal(binding) ? binding() : binding;
+      return keywords && keywords.length > 0 ? { name: 'keywords', content: keywords.join(', ') } : null;
+    }),
+  );
+};
+
+export const applyAuthorBinding = /* @__PURE__ */ createPropertyBinding(
+  (content) => ({ name: 'author', content }),
+  applyMetaBinding,
+);
+
+export type RobotsConfig = {
+  index?: boolean;
+  follow?: boolean;
+  noarchive?: boolean;
+  nosnippet?: boolean;
+  noimageindex?: boolean;
+  maxSnippet?: number;
+  maxImagePreview?: 'none' | 'standard' | 'large';
+  maxVideoPreview?: number;
+};
+
+export const applyRobotsBinding = (binding: MaybeSignal<RobotsConfig | null | undefined>) => {
+  applyMetaBinding(
+    computed(() => {
+      const config = isSignal(binding) ? binding() : binding;
+      if (!config) return null;
+
+      const directives: string[] = [];
+
+      if (config.index === false) directives.push('noindex');
+      if (config.follow === false) directives.push('nofollow');
+      if (config.noarchive) directives.push('noarchive');
+      if (config.nosnippet) directives.push('nosnippet');
+      if (config.noimageindex) directives.push('noimageindex');
+      if (config.maxSnippet !== undefined) directives.push(`max-snippet:${config.maxSnippet}`);
+      if (config.maxImagePreview) directives.push(`max-image-preview:${config.maxImagePreview}`);
+      if (config.maxVideoPreview !== undefined) directives.push(`max-video-preview:${config.maxVideoPreview}`);
+
+      return directives.length > 0 ? { name: 'robots', content: directives.join(', ') } : null;
+    }),
+  );
+};
+
+export const applyOgBinding = (property: string, binding: MaybeSignal<string | null | undefined>) => {
+  createPropertyBinding((content) => ({ property: `og:${property}`, content }), applyMetaBinding)(binding);
+};
+
+const createOgArrayBinding = (property: string) =>
+  createArrayPropertyBinding(
+    (value, index) => ({
+      property: `og:${property}`,
+      content: value,
+      allowMultiple: true,
+      key: `og:${property}:${index}`,
+    }),
+    applyMetaBinding,
+  );
+
+export type OpenGraphConfig = {
+  title?: MaybeSignal<string | null | undefined>;
+  description?: MaybeSignal<string | null | undefined>;
+  url?: MaybeSignal<string | null | undefined>;
+  type?: MaybeSignal<string | null | undefined>;
+  siteName?: MaybeSignal<string | null | undefined>;
+  locale?: MaybeSignal<string | null | undefined>;
+  image?: MaybeSignal<string | null | undefined>;
+  images?: MaybeSignal<string[] | null | undefined>;
+  imageUrl?: MaybeSignal<string | null | undefined>;
+  imageSecureUrl?: MaybeSignal<string | null | undefined>;
+  imageType?: MaybeSignal<string | null | undefined>;
+  imageWidth?: MaybeSignal<string | number | null | undefined>;
+  imageHeight?: MaybeSignal<string | number | null | undefined>;
+  imageAlt?: MaybeSignal<string | null | undefined>;
+  video?: MaybeSignal<string | null | undefined>;
+  videos?: MaybeSignal<string[] | null | undefined>;
+  videoUrl?: MaybeSignal<string | null | undefined>;
+  videoSecureUrl?: MaybeSignal<string | null | undefined>;
+  videoType?: MaybeSignal<string | null | undefined>;
+  videoWidth?: MaybeSignal<string | number | null | undefined>;
+  videoHeight?: MaybeSignal<string | number | null | undefined>;
+  audio?: MaybeSignal<string | null | undefined>;
+  audios?: MaybeSignal<string[] | null | undefined>;
+};
+
+export const applyOpenGraphBindings = (config: OpenGraphConfig) => {
+  const applyOg = (property: string, binding?: MaybeSignal<string | null | undefined>) => {
+    if (binding) applyOgBinding(property, binding);
+  };
+
+  applyOg('title', config.title);
+  applyOg('description', config.description);
+  applyOg('url', config.url);
+  applyOg('type', config.type);
+  applyOg('site_name', config.siteName);
+  applyOg('locale', config.locale);
+  applyOg('image', config.image);
+  applyOg('image:url', config.imageUrl);
+  applyOg('image:secure_url', config.imageSecureUrl);
+  applyOg('image:type', config.imageType);
+  applyOg('image:alt', config.imageAlt);
+  applyOg('video', config.video);
+  applyOg('video:url', config.videoUrl);
+  applyOg('video:secure_url', config.videoSecureUrl);
+  applyOg('video:type', config.videoType);
+  applyOg('audio', config.audio);
+
+  if (config.imageWidth) applyOg('image:width', toStringBinding(config.imageWidth));
+  if (config.imageHeight) applyOg('image:height', toStringBinding(config.imageHeight));
+  if (config.videoWidth) applyOg('video:width', toStringBinding(config.videoWidth));
+  if (config.videoHeight) applyOg('video:height', toStringBinding(config.videoHeight));
+
+  if (config.images) createOgArrayBinding('image')(config.images);
+  if (config.videos) createOgArrayBinding('video')(config.videos);
+  if (config.audios) createOgArrayBinding('audio')(config.audios);
+};
+
+export type TwitterCardConfig = {
+  card?: MaybeSignal<'summary' | 'summary_large_image' | 'app' | 'player' | null | undefined>;
+  site?: MaybeSignal<string | null | undefined>;
+  siteId?: MaybeSignal<string | null | undefined>;
+  creator?: MaybeSignal<string | null | undefined>;
+  creatorId?: MaybeSignal<string | null | undefined>;
+  title?: MaybeSignal<string | null | undefined>;
+  description?: MaybeSignal<string | null | undefined>;
+  image?: MaybeSignal<string | null | undefined>;
+  images?: MaybeSignal<string[] | null | undefined>;
+  imageAlt?: MaybeSignal<string | null | undefined>;
+  player?: MaybeSignal<string | null | undefined>;
+  playerWidth?: MaybeSignal<string | number | null | undefined>;
+  playerHeight?: MaybeSignal<string | number | null | undefined>;
+  playerStream?: MaybeSignal<string | null | undefined>;
+};
+
+const createTwitterArrayBinding = (property: string) =>
+  createArrayPropertyBinding(
+    (value, index) => ({
+      name: `twitter:${property}`,
+      content: value,
+      allowMultiple: true,
+      key: `twitter:${property}:${index}`,
+    }),
+    applyMetaBinding,
+  );
+
+export const applyTwitterCardBindings = (config: TwitterCardConfig) => {
+  const applyTwitter = (property: string, binding?: MaybeSignal<string | null | undefined>) => {
+    if (!binding) return;
+    createPropertyBinding((content) => ({ name: `twitter:${property}`, content }), applyMetaBinding)(binding);
+  };
+
+  applyTwitter('card', config.card);
+  applyTwitter('site', config.site);
+  applyTwitter('site:id', config.siteId);
+  applyTwitter('creator', config.creator);
+  applyTwitter('creator:id', config.creatorId);
+  applyTwitter('title', config.title);
+  applyTwitter('description', config.description);
+  applyTwitter('image', config.image);
+  applyTwitter('image:alt', config.imageAlt);
+  applyTwitter('player', config.player);
+  applyTwitter('player:stream', config.playerStream);
+
+  if (config.playerWidth) applyTwitter('player:width', toStringBinding(config.playerWidth));
+  if (config.playerHeight) applyTwitter('player:height', toStringBinding(config.playerHeight));
+
+  if (config.images) createTwitterArrayBinding('image')(config.images);
+};
+
+export type ArticleConfig = {
+  publishedTime?: MaybeSignal<string | null | undefined>;
+  modifiedTime?: MaybeSignal<string | null | undefined>;
+  expirationTime?: MaybeSignal<string | null | undefined>;
+  author?: MaybeSignal<string | null | undefined>;
+  authors?: MaybeSignal<string[] | null | undefined>;
+  section?: MaybeSignal<string | null | undefined>;
+  tag?: MaybeSignal<string | null | undefined>;
+  tags?: MaybeSignal<string[] | null | undefined>;
+};
+
+const createArticleArrayBinding = (property: string) =>
+  createArrayPropertyBinding(
+    (value, index) => ({
+      property: `article:${property}`,
+      content: value,
+      allowMultiple: true,
+      key: `article:${property}:${index}`,
+    }),
+    applyMetaBinding,
+  );
+
+export const applyArticleBindings = (config: ArticleConfig) => {
+  const applyArticle = (property: string, binding?: MaybeSignal<string | null | undefined>) => {
+    if (!binding) return;
+    createPropertyBinding((content) => ({ property: `article:${property}`, content }), applyMetaBinding)(binding);
+  };
+
+  applyArticle('published_time', config.publishedTime);
+  applyArticle('modified_time', config.modifiedTime);
+  applyArticle('expiration_time', config.expirationTime);
+  applyArticle('author', config.author);
+  applyArticle('section', config.section);
+  applyArticle('tag', config.tag);
+
+  if (config.authors) createArticleArrayBinding('author')(config.authors);
+  if (config.tags) createArticleArrayBinding('tag')(config.tags);
+};
+
+export type SocialMediaConfig = {
+  title?: MaybeSignal<string | null | undefined>;
+  description?: MaybeSignal<string | null | undefined>;
+  image?: MaybeSignal<string | null | undefined>;
+  url?: MaybeSignal<string | null | undefined>;
+  openGraph?: Partial<OpenGraphConfig>;
+  twitter?: Partial<TwitterCardConfig>;
+  article?: Partial<ArticleConfig>;
+};
+
+export const applySocialMediaBindings = (config: SocialMediaConfig) => {
+  if (config.title) applyHeadTitleBinding(config.title);
+  if (config.description) applyDescriptionBinding(config.description);
+
+  if (config.openGraph || config.title || config.description || config.image || config.url) {
+    applyOpenGraphBindings({
+      ...config.openGraph,
+      title: config.openGraph?.title ?? config.title,
+      description: config.openGraph?.description ?? config.description,
+      image: config.openGraph?.image ?? config.image,
+      url: config.openGraph?.url ?? config.url,
+    });
+  }
+
+  if (config.twitter || config.title || config.description || config.image) {
+    applyTwitterCardBindings({
+      ...config.twitter,
+      title: config.twitter?.title ?? config.title,
+      description: config.twitter?.description ?? config.description,
+      image: config.twitter?.image ?? config.image,
+    });
+  }
+
+  if (config.article) applyArticleBindings(config.article);
+};

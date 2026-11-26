@@ -1,0 +1,14 @@
+@layer components.sdk {
+  .et-bracket-svg {
+    .et-bracket-swiss-group-border {
+      color: var(
+        --et-bracket-swiss-group-border-color,
+        var(--et-bracket-line-color, var(--et-surface-border, rgb(255 255 255 / 0.1)))
+      );
+    }
+
+    [data-swiss-toned] > .et-bracket-swiss-group-border {
+      color: var(--et-bracket-swiss-group-border-color, color-mix(in srgb, var(--et-tone-text) 55%, transparent));
+    }
+  }
+}

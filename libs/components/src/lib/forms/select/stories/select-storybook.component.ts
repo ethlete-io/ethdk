@@ -1,0 +1,597 @@
+import { JsonPipe } from '@angular/common';
+import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { tap, timer } from 'rxjs';
+import { FormField, disabled, form, readonly, required } from '@angular/forms/signals';
+import { ProvideColorDirective } from '@ethlete/core';
+import {
+  FORM_FIELD_APPEARANCES,
+  FORM_FIELD_FILLS,
+  FORM_FIELD_IMPORTS,
+  FORM_FIELD_LABEL_MODES,
+  FORM_FIELD_SIZES,
+  FORM_FIELD_VARIANTS,
+  FormFieldAppearance,
+  FormFieldFill,
+  FormFieldLabelMode,
+  FormFieldLabelPosition,
+  FORM_FIELD_LABEL_POSITIONS,
+  FormFieldSize,
+  FormFieldVariant,
+} from '../../form-field';
+import { TAB_IMPORTS } from '../../../tabs/tabs.imports';
+import { SELECT_IMPORTS } from '../select.imports';
+
+const FRUIT_OPTIONS = [
+  { value: 'apple', label: 'Apple' },
+  { value: 'banana', label: 'Banana' },
+  { value: 'cherry', label: 'Cherry' },
+  { value: 'dragonfruit', label: 'Dragonfruit' },
+  { value: 'elderberry', label: 'Elderberry' },
+  { value: 'fig', label: 'Fig' },
+  { value: 'grape', label: 'Grape' },
+] as const;
+
+@Component({
+  selector: 'et-sb-form-field-select',
+  template: `
+    <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
+      <et-form-field
+        [appearance]="appearance()"
+        [fill]="fill()"
+        [size]="size()"
+        [variant]="variant()"
+        [labelMode]="labelMode()"
+        [labelPosition]="labelPosition()"
+      >
+        @if (label()) {
+          <et-label>{{ label() }}</et-label>
+        }
+        <et-select
+          [(mixed)]="mixedState"
+          [aria-label]="label() ? null : 'Fruit'"
+          [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
+          [placeholder]="placeholder()"
+          [multiple]="multiple()"
+          [allowCustomValues]="allowCustomValues()"
+          [separators]="separators()"
+          [commitCustomValueOnClose]="commitCustomValueOnClose()"
+          [maxSelection]="maxSelection()"
+          [selectAll]="selectAll()"
+        >
+          @if (withSearch()) {
+            <input etSelectSearch placeholder="Search fruits" />
+          }
+          @if (nullOptionLabel()) {
+            <et-select-option [value]="null">{{ nullOptionLabel() }}</et-select-option>
+          }
+          @for (fruit of FRUITS; track fruit.value) {
+            <et-select-option [value]="fruit.value" [disabled]="fruit.value === disabledOption()">
+              {{ fruit.label }}
+            </et-select-option>
+          }
+          @if (longOption()) {
+            <et-select-option value="long">{{ longOption() }}</et-select-option>
+          }
+        </et-select>
+        @if (hint()) {
+          <et-hint>{{ hint() }}</et-hint>
+        }
+      </et-form-field>
+
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() | json }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      } @else {
+        <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      }
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectStorybookComponent {
+  public appearance = input<FormFieldAppearance>(FORM_FIELD_APPEARANCES.BOX);
+  public fill = input<FormFieldFill>(FORM_FIELD_FILLS.TRANSPARENT);
+  public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
+  public variant = input<FormFieldVariant>(FORM_FIELD_VARIANTS.DEFAULT);
+  public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
+  public labelPosition = input<FormFieldLabelPosition>(FORM_FIELD_LABEL_POSITIONS.TOP);
+  public label = input('Fruit');
+  public placeholder = input('Pick a fruit');
+  public hint = input('');
+  public value = input<string | string[] | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
+  public multiple = input(false);
+  public withSearch = input(false);
+  public allowCustomValues = input(false);
+  public separators = input<string[]>([]);
+  public commitCustomValueOnClose = input(false);
+  public maxSelection = input<number | undefined>(undefined);
+  public selectAll = input(false);
+  public disabled = input(false);
+  public readonly = input(false);
+  public required = input(false);
+  public disabledOption = input('elderberry');
+  public longOption = input('');
+  public nullOptionLabel = input('');
+  public color = input('brand');
+
+  protected readonly FRUITS = FRUIT_OPTIONS;
+
+  public mixedState = linkedSignal(() => this.mixed());
+
+  private formModel = linkedSignal(() => ({
+    value: this.multiple() ? ((this.value() as string[] | null) ?? []) : this.value(),
+  }));
+
+  public demoForm = form(this.formModel, (s) => {
+    disabled(s, () => this.disabled());
+    readonly(s.value, () => this.readonly());
+    required(s.value, { when: () => this.required(), message: 'This field is required' });
+  });
+}
+
+const ISSUE_TYPES = ['Story', 'Epic', 'Task', 'Bug'] as const;
+
+@Component({
+  selector: 'et-sb-form-field-select-in-tabs',
+  template: `
+    <div [etProvideColor]="color()" class="flex max-w-xl flex-col p-8 font-sans">
+      <et-tab-group>
+        <et-tab label="Tickets">
+          <div class="flex flex-col py-6">
+            <et-form-field appearance="underline" size="sm">
+              <et-label>A parent may be</et-label>
+              <et-select [(value)]="parentTypes" placeholder="Any open issue in the project" multiple>
+                <input etSelectSearch placeholder="Search types" />
+                @for (type of ISSUE_TYPES; track type) {
+                  <et-select-option [value]="type">{{ type }}</et-select-option>
+                }
+              </et-select>
+              <et-hint>Empty offers every open issue in the project.</et-hint>
+            </et-form-field>
+          </div>
+        </et-tab>
+        <et-tab label="Projects">
+          <div class="flex flex-col py-6">
+            <et-form-field appearance="underline" size="sm">
+              <et-label>Projects</et-label>
+              <et-select [(value)]="projects" placeholder="Pick the projects you work in" multiple>
+                <input etSelectSearch placeholder="Search projects" />
+                @for (type of PROJECTS; track type) {
+                  <et-select-option [value]="type">{{ type }}</et-select-option>
+                }
+              </et-select>
+              <et-hint>Without one of these, a branch name has to carry the whole issue key to be read.</et-hint>
+            </et-form-field>
+          </div>
+        </et-tab>
+      </et-tab-group>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, ...TAB_IMPORTS, ProvideColorDirective],
+})
+export class FormFieldSelectInTabsStorybookComponent {
+  public color = input('brand');
+
+  protected readonly ISSUE_TYPES = ISSUE_TYPES;
+  protected readonly PROJECTS = ['ABC', 'XYZ'] as const;
+
+  protected parentTypes = signal<string[]>(['Story', 'Epic']);
+  protected projects = signal<string[]>(['ABC']);
+}
+
+@Component({
+  selector: 'et-sb-form-field-select-async',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>User</et-label>
+        <et-select
+          [formField]="demoForm.value"
+          [loading]="loading()"
+          [loadError]="error()"
+          [hasMoreItems]="hasMore()"
+          (queryChange)="search($event)"
+          (loadMore)="loadMore()"
+          filterMode="external"
+          placeholder="Search for a user"
+        >
+          <input etSelectSearch placeholder="Type to search…" />
+          @for (user of shownUsers(); track user) {
+            <et-select-option [value]="user">{{ user }}</et-select-option>
+          }
+        </et-select>
+        <et-hint>Options load from a simulated backend (600ms latency)</et-hint>
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectAsyncStorybookComponent {
+  private destroyRef = inject(DestroyRef);
+  protected loading = signal(false);
+  protected shownUsers = signal<string[]>([]);
+  protected hasMore = signal(false);
+  protected error = signal<string | null>(null);
+
+  private formModel = linkedSignal(() => ({ value: null as string | null }));
+  public demoForm = form(this.formModel);
+  private requestId = 0;
+  private readonly PAGE_SIZE = 4;
+  private currentQuery = '';
+  private shownCount = this.PAGE_SIZE;
+
+  constructor() {
+    this.request();
+  }
+
+  protected search(query: string) {
+    this.currentQuery = query;
+    this.shownCount = this.PAGE_SIZE;
+    this.request();
+  }
+
+  protected loadMore() {
+    this.shownCount += this.PAGE_SIZE;
+    this.request();
+  }
+
+  private request() {
+    const id = ++this.requestId;
+
+    this.loading.set(true);
+    this.error.set(null);
+
+    timer(600)
+      .pipe(
+        tap(() => {
+          if (id !== this.requestId) {
+            return;
+          }
+
+          const matches = ALL_USERS.filter((user) => user.toLowerCase().includes(this.currentQuery.toLowerCase()));
+
+          this.shownUsers.set(matches.slice(0, this.shownCount));
+          this.hasMore.set(matches.length > this.shownCount);
+          this.loading.set(false);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+}
+
+const ALL_USERS = [
+  'Ada Lovelace',
+  'Alan Turing',
+  'Anita Borg',
+  'Barbara Liskov',
+  'Dennis Ritchie',
+  'Donald Knuth',
+  'Edsger Dijkstra',
+  'Grace Hopper',
+  'John von Neumann',
+  'Katherine Johnson',
+  'Ken Thompson',
+  'Margaret Hamilton',
+];
+
+@Component({
+  selector: 'et-sb-form-field-select-country',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Country</et-label>
+        <et-select [formField]="demoForm.value" placeholder="Pick a country">
+          <input etSelectSearch placeholder="Search countries" />
+
+          <ng-template etSelectValue let-entries>
+            @for (entry of entries; track entry.value) {
+              <span class="flex items-center gap-2">
+                <span aria-hidden="true">{{ flagOf(entry.value) }}</span>
+                {{ entry.label }}
+              </span>
+            }
+          </ng-template>
+
+          @for (country of COUNTRIES; track country.iso) {
+            <et-select-option [value]="country.iso" [label]="country.name">
+              <span aria-hidden="true">{{ country.flag }}</span>
+              {{ country.name }}
+            </et-select-option>
+          }
+        </et-select>
+        <et-hint>Custom option and value rendering (flags) + search</et-hint>
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectCountryStorybookComponent {
+  protected readonly COUNTRIES = COUNTRY_OPTIONS;
+
+  private formModel = linkedSignal(() => ({ value: 'de' as string | null }));
+  public demoForm = form(this.formModel);
+
+  protected flagOf(iso: unknown) {
+    return COUNTRY_OPTIONS.find((country) => country.iso === iso)?.flag ?? '';
+  }
+}
+
+@Component({
+  selector: 'et-sb-form-field-select-add-new',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Project</et-label>
+        <et-select
+          [formField]="demoForm.value"
+          (addNew)="createProject($event)"
+          allowAddNew
+          addNewLabel="Create a new project"
+          placeholder="Pick a project"
+        >
+          <input etSelectSearch placeholder="Search projects" />
+          @for (project of projects(); track project) {
+            <et-select-option [value]="project">{{ project }}</et-select-option>
+          }
+        </et-select>
+        <et-hint>The add-new row emits the current query - here it creates and selects the option</et-hint>
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectAddNewStorybookComponent {
+  protected projects = signal(['Website relaunch', 'Mobile app', 'Design system']);
+
+  private formModel = linkedSignal(() => ({ value: null as string | null }));
+  public demoForm = form(this.formModel);
+
+  protected createProject(query: string) {
+    // Deliberately not a template literal: an interpolated one above the inline template of the
+    // component below breaks Angular language service completions there. See the
+    // `ethlete/no-template-literal-before-inline-template` lint rule.
+    const name = query || 'Project ' + (this.projects().length + 1);
+
+    if (!this.projects().includes(name)) {
+      this.projects.update((projects) => [...projects, name]);
+    }
+
+    this.formModel.set({ value: name });
+  }
+}
+
+@Component({
+  selector: 'et-sb-form-field-select-many-options',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Item</et-label>
+        <et-select [formField]="demoForm.value" [options]="ITEMS" placeholder="Pick an item">
+          <input etSelectSearch placeholder="Search 2000 items" />
+        </et-select>
+        <et-hint>2000 options via the data-driven API - only the rows near the viewport are in the DOM</et-hint>
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectManyOptionsStorybookComponent {
+  // Deliberately not template literals: an interpolated one above the inline template of a
+  // component below breaks Angular language service completions there. See
+  // `ethlete/no-template-literal-before-inline-template`.
+  protected readonly ITEMS = Array.from({ length: 2000 }, (_, index) => ({
+    value: 'item-' + (index + 1),
+    label: 'Item ' + (index + 1) + ' - ' + (FRUIT_OPTIONS[index % FRUIT_OPTIONS.length]?.label ?? ''),
+  }));
+
+  private formModel = linkedSignal(() => ({ value: null as string | null }));
+  public demoForm = form(this.formModel);
+}
+
+type StoryTeam = { id: number; name: string };
+
+const TEAMS: StoryTeam[] = [
+  { id: 1, name: 'Platform' },
+  { id: 2, name: 'Payments' },
+  { id: 3, name: 'Growth' },
+  { id: 4, name: 'Design' },
+];
+
+const cloneTeam = (team: StoryTeam): StoryTeam => ({ ...team });
+const compareTeamsById = (a: StoryTeam, b: StoryTeam) => a.id === b.id;
+
+@Component({
+  selector: 'et-sb-form-field-select-object-values',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Teams</et-label>
+        <et-select
+          [formField]="demoForm.value"
+          [options]="options()"
+          [compareWith]="COMPARE_TEAMS"
+          multiple
+          placeholder="Pick teams"
+        />
+        <et-hint>The saved value holds copies of the team objects - compareWith matches them by id</et-hint>
+      </et-form-field>
+
+      <div class="flex gap-2">
+        <button (click)="reloadOptions()" class="et-sb-object-values-reload" type="button">Reload options</button>
+        <button (click)="resetToSaved()" class="et-sb-object-values-reset" type="button">Reset to saved</button>
+      </div>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectObjectValuesStorybookComponent {
+  protected options = signal(this.toOptions());
+
+  private formModel = signal({ value: this.savedTeams() });
+  public demoForm = form(this.formModel);
+
+  protected readonly COMPARE_TEAMS = compareTeamsById;
+
+  protected reloadOptions() {
+    this.options.set(this.toOptions());
+  }
+
+  protected resetToSaved() {
+    this.formModel.set({ value: this.savedTeams() });
+  }
+
+  private savedTeams() {
+    return [TEAMS[0], TEAMS[2]].filter((team) => team !== undefined).map(cloneTeam);
+  }
+
+  private toOptions() {
+    return TEAMS.map((team) => ({ value: cloneTeam(team), label: team.name }));
+  }
+}
+
+const PEOPLE = [
+  { id: 1, name: 'Alex Adler' },
+  { id: 2, name: 'Chris Berg' },
+  { id: 3, name: 'Dana Castro' },
+  { id: 4, name: 'Eli Diaz' },
+  { id: 5, name: 'Femi Egede' },
+] as const;
+
+@Component({
+  selector: 'et-sb-form-field-select-pick-only',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Add members</et-label>
+        <et-select
+          [value]="memberIds()"
+          (pickOption)="toggleMember($event)"
+          pickOnly
+          multiple
+          placeholder="Add a member"
+        >
+          <input etSelectSearch placeholder="Search people" />
+          @for (person of PEOPLE; track person.id) {
+            <et-select-option [value]="person.id">{{ person.name }}</et-select-option>
+          }
+        </et-select>
+        <et-hint>The select never holds a value - every pick travels out through (pickOption)</et-hint>
+      </et-form-field>
+
+      <ul class="et-sb-pick-only-members flex flex-col gap-2">
+        @for (person of members(); track person.id) {
+          <li class="flex items-center gap-2">
+            {{ person.name }}
+            <button (click)="toggleMember(person.id)" type="button">Remove</button>
+          </li>
+        } @empty {
+          <li class="text-small opacity-60">No members yet</li>
+        }
+      </ul>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, ProvideColorDirective],
+})
+export class FormFieldSelectPickOnlyStorybookComponent {
+  protected readonly PEOPLE = PEOPLE;
+
+  protected memberIds = signal<number[]>([]);
+  protected members = computed(() => PEOPLE.filter((person) => this.memberIds().includes(person.id)));
+
+  protected toggleMember(id: unknown) {
+    this.memberIds.update((ids) =>
+      ids.includes(id as number) ? ids.filter((member) => member !== id) : [...ids, id as number],
+    );
+  }
+}
+
+const FIRST_NAMES = ['Alex', 'Chris', 'Dana', 'Eli', 'Femi', 'Ines', 'Jona', 'Kim', 'Lior', 'Mara'];
+const LAST_NAMES = ['Adler', 'Berg', 'Castro', 'Diaz', 'Egede', 'Fuchs', 'Grau', 'Haas', 'Ito', 'Juhl'];
+
+@Component({
+  selector: 'et-sb-form-field-select-option-template',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Assignee</et-label>
+        <et-select [formField]="demoForm.value" [options]="USERS" placeholder="Pick a user">
+          <input etSelectSearch placeholder="Search 1000 users" />
+          <ng-template [options]="USERS" etSelectOptionTemplate let-user>
+            <span class="flex items-center gap-2 py-1">
+              <span class="flex size-6 flex-none items-center justify-center rounded-full bg-white/10 text-[10px]">
+                {{ user.initials }}
+              </span>
+              <span class="flex min-w-0 flex-col leading-tight">
+                <span class="truncate">{{ user.label }}</span>
+                <span class="truncate text-[11px] opacity-60">{{ user.email }}</span>
+              </span>
+            </span>
+          </ng-template>
+        </et-select>
+        <et-hint>Windowed rows render through etSelectOptionTemplate - extra option fields stay available</et-hint>
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectOptionTemplateStorybookComponent {
+  protected readonly USERS = Array.from({ length: 1000 }, (_, index) => {
+    const firstName = FIRST_NAMES[index % FIRST_NAMES.length] ?? '';
+    const lastName = LAST_NAMES[Math.floor(index / FIRST_NAMES.length) % LAST_NAMES.length] ?? '';
+    const name = `${firstName} ${lastName}`;
+
+    return {
+      value: `user-${index + 1}`,
+      label: `${name} ${index + 1}`,
+      initials: `${firstName[0]}${lastName[0]}`,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${index + 1}@example.com`,
+    };
+  });
+
+  private formModel = linkedSignal(() => ({ value: null as string | null }));
+  public demoForm = form(this.formModel);
+}
+
+const COUNTRY_OPTIONS = [
+  { iso: 'br', name: 'Brazil', flag: '🇧🇷' },
+  { iso: 'de', name: 'Germany', flag: '🇩🇪' },
+  { iso: 'es', name: 'Spain', flag: '🇪🇸' },
+  { iso: 'fr', name: 'France', flag: '🇫🇷' },
+  { iso: 'gb', name: 'United Kingdom', flag: '🇬🇧' },
+  { iso: 'it', name: 'Italy', flag: '🇮🇹' },
+  { iso: 'jp', name: 'Japan', flag: '🇯🇵' },
+  { iso: 'nl', name: 'Netherlands', flag: '🇳🇱' },
+  { iso: 'no', name: 'Norway', flag: '🇳🇴' },
+  { iso: 'pl', name: 'Poland', flag: '🇵🇱' },
+  { iso: 'se', name: 'Sweden', flag: '🇸🇪' },
+  { iso: 'us', name: 'United States', flag: '🇺🇸' },
+];

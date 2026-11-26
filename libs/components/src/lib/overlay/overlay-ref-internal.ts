@@ -1,0 +1,211 @@
+import {
+  Injector,
+  Signal,
+  TemplateRef,
+  computed,
+  effect,
+  runInInjectionContext,
+  signal,
+  untracked,
+} from '@angular/core';
+import { OverlayRuntimeCloseEvent, OverlayRuntimeCloseSource, OverlayRuntimeRef, injectRenderer } from '@ethlete/core';
+import { Subject, take, tap } from 'rxjs';
+import { OverlayConfig } from './overlay-config';
+import { OverlayCloseGuard, OverlayLayout, OverlayRef } from './overlay-ref';
+import { OverlaySizeUpdate } from './strategies/overlay-strategy.types';
+
+export type OverlayRefSizing = {
+  updateSize: (size: OverlaySizeUpdate) => void;
+  reapplySizing: () => void;
+};
+
+export type OverlayRefInternals<TComponent extends object = object, TResult = unknown> = {
+  attachRuntime: (runtimeRef: OverlayRuntimeRef<TComponent, TResult>, injector: Injector) => void;
+  attachComponentInstanceOverride: (getter: () => TComponent | null) => void;
+  closeVia: (source: OverlayRuntimeCloseSource, result?: TResult) => void;
+  /** True from the moment a close was accepted until the overlay is destroyed. */
+  isClosing: () => boolean;
+  attachLayout: (layout: Signal<OverlayLayout | null>) => void;
+  attachSizing: (sizing: OverlayRefSizing) => void;
+  registerHeaderTemplate: (template: TemplateRef<unknown>) => () => void;
+  /** The result every close without one reports instead of `undefined`. */
+  setDismissResult: (result: TResult) => void;
+};
+
+const INTERNALS = /* @__PURE__ */ new WeakMap<object, OverlayRefInternals<object, unknown>>();
+
+/** `null` for a ref this module did not create, e.g. a test fake. */
+export const getOverlayRefInternals = <TComponent extends object = object, TResult = unknown>(
+  ref: OverlayRef<TComponent, TResult> | null | undefined,
+) => (ref ? ((INTERNALS.get(ref) ?? null) as OverlayRefInternals<TComponent, TResult> | null) : null);
+
+export const createOverlayRef = <TComponent extends object, TResult = unknown>(config: OverlayConfig) => {
+  let id = '';
+  let _runtimeRef: OverlayRuntimeRef<TComponent, TResult> | null = null;
+  let _componentInstanceOverride: (() => TComponent | null) | null = null;
+  let dismissResult: TResult | undefined;
+  let sizing: OverlayRefSizing | null = null;
+
+  const busy = signal(false);
+  const _headerTemplates = signal<TemplateRef<unknown>[]>([]);
+  const headerTemplate = computed(() => _headerTemplates().at(-1) ?? null);
+
+  const layoutSource = signal<Signal<OverlayLayout | null> | null>(null);
+  const layout = computed(() => layoutSource()?.() ?? null);
+
+  const afterOpened$ = new Subject<void>();
+  const beforeClosed$ = new Subject<TResult | undefined>();
+  const beforeClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
+  const afterClosed$ = new Subject<TResult | undefined>();
+  const afterClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
+  const backdropClick$ = new Subject<MouseEvent>();
+  const closeGuards = new Set<OverlayCloseGuard<TResult>>();
+
+  const withDismissResult = (event: OverlayRuntimeCloseEvent<TResult | undefined>) =>
+    event.result === undefined && dismissResult !== undefined ? { ...event, result: dismissResult } : event;
+
+  const attachRuntime = (runtimeRef: OverlayRuntimeRef<TComponent, TResult>, injector: Injector) => {
+    _runtimeRef = runtimeRef;
+    id = runtimeRef.id;
+
+    const paneElement = runtimeRef.elements.paneElement;
+    const renderer = runInInjectionContext(injector, () => injectRenderer());
+    // An overlay may open from an effect or computed, where effect() throws NG0602.
+    const busyAttributeEffect = untracked(() =>
+      effect(() => renderer.setAttribute(paneElement, 'aria-busy', busy() ? 'true' : null), {
+        injector,
+        manualCleanup: true,
+      }),
+    );
+
+    runtimeRef.registerCloseGuard((event) => {
+      if (busy() && event.source !== 'api') {
+        return false;
+      }
+
+      for (const guard of closeGuards) {
+        if (!guard(event)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    runtimeRef
+      .backdropClick()
+      .pipe(tap((event) => backdropClick$.next(event)))
+      .subscribe();
+
+    runtimeRef
+      .afterOpened()
+      .pipe(
+        take(1),
+        tap(() => {
+          afterOpened$.next();
+          afterOpened$.complete();
+        }),
+      )
+      .subscribe();
+
+    runtimeRef
+      .beforeClosed()
+      .pipe(
+        take(1),
+        tap((rawEvent) => {
+          const event = withDismissResult(rawEvent);
+
+          beforeClosed$.next(event.result);
+          beforeClosed$.complete();
+          beforeClosedEvent$.next(event);
+          beforeClosedEvent$.complete();
+        }),
+      )
+      .subscribe();
+
+    runtimeRef
+      .afterClosed()
+      .pipe(
+        take(1),
+        tap((rawEvent) => {
+          const event = withDismissResult(rawEvent);
+
+          busyAttributeEffect.destroy();
+          afterOpened$.complete();
+          backdropClick$.complete();
+          afterClosed$.next(event.result);
+          afterClosed$.complete();
+          afterClosedEvent$.next(event);
+          afterClosedEvent$.complete();
+        }),
+      )
+      .subscribe();
+  };
+
+  const ref: OverlayRef<TComponent, TResult> = {
+    get id() {
+      return id;
+    },
+    get elements() {
+      return _runtimeRef?.elements ?? null;
+    },
+    config,
+    headerTemplate,
+    layout,
+    componentInstance: () => {
+      if (_componentInstanceOverride) {
+        return _componentInstanceOverride();
+      }
+
+      return _runtimeRef?.componentInstance() ?? null;
+    },
+    close: (result) => _runtimeRef?.close(result),
+    busy,
+    registerCloseGuard: (guard) => {
+      closeGuards.add(guard);
+
+      return () => closeGuards.delete(guard);
+    },
+    forceClose: (result, source = 'api') => _runtimeRef?.forceClose(result, source),
+    updatePositionStrategy: (strategy) => {
+      _runtimeRef?.updatePositionStrategy(strategy);
+      sizing?.reapplySizing();
+    },
+    updateSize: (size) => sizing?.updateSize(size),
+    afterOpened: () => afterOpened$.asObservable(),
+    beforeClosed: () => beforeClosed$.asObservable(),
+    beforeClosedEvent: () => beforeClosedEvent$.asObservable(),
+    afterClosed: () => afterClosed$.asObservable(),
+    afterClosedEvent: () => afterClosedEvent$.asObservable(),
+    backdropClick: () => backdropClick$.asObservable(),
+  };
+
+  const internals: OverlayRefInternals<TComponent, TResult> = {
+    attachRuntime,
+    attachComponentInstanceOverride: (getter) => {
+      _componentInstanceOverride = getter;
+    },
+    closeVia: (source, result) => _runtimeRef?.close(result, source),
+    isClosing: () => {
+      const state = _runtimeRef?.state();
+
+      return state === 'closing' || state === 'closed';
+    },
+    attachLayout: (source) => layoutSource.set(source),
+    attachSizing: (source) => {
+      sizing = source;
+    },
+    registerHeaderTemplate: (template) => {
+      _headerTemplates.update((templates) => [...templates.filter((t) => t !== template), template]);
+
+      return () => _headerTemplates.update((templates) => templates.filter((t) => t !== template));
+    },
+    setDismissResult: (result) => {
+      dismissResult = result;
+    },
+  };
+
+  INTERNALS.set(ref, internals as OverlayRefInternals<object, unknown>);
+
+  return { ref, internals };
+};

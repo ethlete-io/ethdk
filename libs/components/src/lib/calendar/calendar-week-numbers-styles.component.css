@@ -1,0 +1,32 @@
+@layer components.sdk {
+  @property --et-calendar-week-number-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 28px;
+  }
+
+  .et-calendar {
+    &:where([data-week-numbers]) {
+      --_et-calendar-week-column: var(--et-calendar-week-number-size);
+
+      & .et-calendar-weekdays,
+      & .et-calendar-week {
+        grid-template-columns: var(--et-calendar-week-number-size) repeat(7, var(--et-calendar-cell-size));
+      }
+    }
+
+    .et-calendar-week-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-inline-end: 1px solid var(--et-surface-border);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      color: var(--et-surface-text-muted);
+    }
+
+    .et-calendar-week-number-heading {
+      border-inline-end: 1px solid var(--et-surface-border);
+    }
+  }
+}

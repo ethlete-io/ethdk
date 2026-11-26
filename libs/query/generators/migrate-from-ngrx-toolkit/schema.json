@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "migrate-from-ngrx-toolkit",
+  "title": "Migrate from @tomtomb/ngrx-toolkit",
+  "type": "object",
+  "properties": {
+    "client": {
+      "type": "string",
+      "description": "The v3 query client the creators are built on, e.g. `apiClient` (or its `apiClientConfig`). Its generated helpers (`apiGet`, `apiPostSecure`, …) must exist - run `migrate-to-query-v3` first."
+    },
+    "clientImport": {
+      "type": "string",
+      "description": "Where the client helpers are imported from: a module specifier (e.g. `@app/queries`) or a workspace file (e.g. `libs/queries/src/lib/api.client.ts`)."
+    },
+    "publicRoutes": {
+      "type": "string",
+      "description": "Comma separated route prefixes that are public, e.g. `/public,/status`. Every other route gets the secure helper. Without it every creator uses the public helper."
+    },
+    "serviceApiBase": {
+      "type": "string",
+      "description": "The `ServiceBase` API base the client points at, as written in the services (e.g. `environment.apiBaseURL`). Required when the services use more than one; features on the others are left alone."
+    },
+    "projects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Nx projects to migrate. Defaults to every project in the workspace.",
+      "alias": "project"
+    },
+    "include": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Path prefixes to migrate, relative to the workspace root (e.g. 'libs/store'). Unioned with `projects`. Defaults to the whole workspace.",
+      "alias": "includePath"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after migration",
+      "default": false
+    }
+  },
+  "required": ["client", "clientImport"]
+}

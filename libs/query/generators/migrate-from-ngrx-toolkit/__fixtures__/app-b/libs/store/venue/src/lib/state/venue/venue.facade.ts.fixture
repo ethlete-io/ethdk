@@ -1,0 +1,45 @@
+import * as Actions from './venue.actions';
+import * as Models from './venue.models';
+import * as Selectors from './venue.selectors';
+import * as fromReducer from './venue.reducer';
+import { Actions as ActionsNative } from '@ngrx/effects';
+import { FacadeBase } from '@tomtomb/ngrx-toolkit';
+import { Injectable, inject } from '@angular/core';
+import { Store } from '@ngrx/store';
+
+@Injectable({ providedIn: 'root' })
+export class VenueFacade extends FacadeBase {
+  private store: Store<fromReducer.VenuePartialState>;
+  private actions: ActionsNative;
+
+  constructor() {
+    const store = inject<Store<fromReducer.VenuePartialState>>(Store);
+    const actions = inject(ActionsNative);
+
+    super(store, actions, Selectors.entitySelectors);
+
+    this.store = store;
+    this.actions = actions;
+  }
+
+  /**
+   * Public route for getting the details of a venue.
+   */
+  getVenueBySlug(args: Models.GetVenueBySlugArgs) {
+    return this.call(Actions.getVenueBySlug, args);
+  }
+
+  /**
+   * Public route for getting the rankings of a venue.
+   */
+  getVenueRanking(args: Models.GetVenueRankingArgs) {
+    return this.call(Actions.getVenueRanking, args);
+  }
+
+  /**
+   * Public route for listing all venues.
+   */
+  getVenues(args: Models.GetVenuesArgs) {
+    return this.call(Actions.getVenues, args);
+  }
+}

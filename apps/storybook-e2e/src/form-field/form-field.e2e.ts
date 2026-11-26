@@ -1,0 +1,589 @@
+import { Locator, Page, expect, test } from '@playwright/test';
+import {
+  boxOf,
+  colorIn,
+  contrastAgainstPage,
+  openStory,
+  pressKey,
+  setColorScheme,
+  tap,
+  themeErrorHoverIn,
+  themePrimaryIn,
+} from '../support';
+
+const INPUT_STORY_ID = 'components-forms-input--default';
+const TEXTAREA_STORY_ID = 'components-forms-textarea--default';
+const DESCRIPTION_STORY_ID = 'components-forms-input--description';
+const WARNING_STORY_ID = 'components-forms-warning--default';
+const COUNTER_STORY_ID = 'components-forms-counter--default';
+const SELECT_IN_TABS_STORY_ID = 'components-forms-select--in-tabs';
+const READONLY_STORY_ID = 'components-forms-control-states--readonly';
+
+interface FieldParts {
+  field: Locator;
+  frame: Locator;
+  label: Locator;
+  control: Locator;
+}
+
+function fieldParts(scope: Locator): FieldParts {
+  const field = scope.locator('et-form-field').first();
+
+  return {
+    field,
+    frame: field.locator('.et-form-field-control-frame'),
+    label: field.locator('.et-form-field-label-area'),
+    control: field.locator('input.et-input-native'),
+  };
+}
+
+/** Storybook always provides the dark surface; this swaps every surface scope in the story to `surface`. */
+async function renderOnSurface(root: Locator, surface: 'light' | 'dark'): Promise<void> {
+  await root.evaluate((host, name) => {
+    for (const el of [host, ...host.querySelectorAll('[class*="et-surface--"]')]) {
+      for (const cls of [...el.classList]) {
+        if (cls.startsWith('et-surface--')) el.classList.replace(cls, `et-surface--${name}`);
+      }
+    }
+    document.documentElement.style.colorScheme = name;
+    const scope = host.querySelector('et-form-field') ?? host;
+    document.documentElement.style.background = getComputedStyle(scope).getPropertyValue('--et-surface-background');
+  }, surface);
+  await root.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+}
+
+async function openLabelMode(page: Page, labelMode: string, value = ''): Promise<FieldParts> {
+  const root = await openStory(page, INPUT_STORY_ID, { args: { labelMode, value } });
+
+  return fieldParts(root);
+}
+
+async function labelOffsetFromFrameTop({ label, frame }: FieldParts): Promise<number> {
+  const [labelBox, frameBox] = [await boxOf(label), await boxOf(frame)];
+
+  return labelBox.y - frameBox.y;
+}
+
+async function labelBottomAboveControlCentre({ label, control }: FieldParts): Promise<number> {
+  const [labelBox, controlBox] = [await boxOf(label), await boxOf(control)];
+
+  return controlBox.y + controlBox.height / 2 - (labelBox.y + labelBox.height);
+}
+
+async function labelBottomAboveFrameTop({ label, frame }: FieldParts): Promise<number> {
+  const [labelBox, frameBox] = [await boxOf(label), await boxOf(frame)];
+
+  return frameBox.y - (labelBox.y + labelBox.height);
+}
+
+async function labelCentreOffset({ label, frame }: FieldParts): Promise<number> {
+  const [labelBox, frameBox] = [await boxOf(label), await boxOf(frame)];
+
+  return Math.abs(labelBox.y + labelBox.height / 2 - (frameBox.y + frameBox.height / 2));
+}
+
+async function placeholderColor(control: Locator): Promise<string> {
+  return control.evaluate((el) => getComputedStyle(el, '::placeholder').color);
+}
+
+async function expectLabelAtRestInside(parts: FieldParts): Promise<void> {
+  await expect(parts.field).not.toHaveAttribute('data-label-floated');
+  await expect.poll(() => labelCentreOffset(parts)).toBeLessThanOrEqual(4);
+  await expect.poll(() => placeholderColor(parts.control)).toBe('rgba(0, 0, 0, 0)');
+}
+
+async function expectLabelFloatedInside(parts: FieldParts): Promise<void> {
+  await expect(parts.field).toHaveAttribute('data-label-floated', '');
+  await expect.poll(() => labelBottomAboveControlCentre(parts)).toBeGreaterThan(0);
+  expect(await labelOffsetFromFrameTop(parts)).toBeGreaterThanOrEqual(0);
+}
+
+async function supportHeights(field: Locator): Promise<{ region: number; active: number }> {
+  return field.evaluate((el) => {
+    const region = el.querySelector('.et-form-field-support');
+    const active = el.querySelector('.et-form-field-support-content[data-active]');
+
+    return {
+      region: region?.getBoundingClientRect().height ?? -1,
+      active: active?.getBoundingClientRect().height ?? -2,
+    };
+  });
+}
+
+const HIDDEN_ROOT_STYLE_ID = 'e2e-hidden-root';
+
+async function mountStoryHidden(page: Page): Promise<void> {
+  await page.addInitScript((styleId) => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const style = document.createElement('style');
+
+      style.id = styleId;
+      style.textContent = '#storybook-root { display: none; }';
+      document.head.append(style);
+    });
+  }, HIDDEN_ROOT_STYLE_ID);
+}
+
+async function revealStory(page: Page): Promise<void> {
+  await page.evaluate((styleId) => document.getElementById(styleId)?.remove(), HIDDEN_ROOT_STYLE_ID);
+}
+
+async function supportTransitions(field: Locator): Promise<string[]> {
+  return field.evaluate(
+    (el) =>
+      new Promise<string[]>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() =>
+            resolve(
+              el
+                .getAnimations({ subtree: true })
+                .filter((animation) =>
+                  (animation.effect as KeyframeEffect | null)?.target?.closest('.et-form-field-support'),
+                )
+                .map((animation) => (animation as CSSTransition).transitionProperty),
+            ),
+          ),
+        ),
+      ),
+  );
+}
+
+async function supportHeightsPerFrameAfterClick(field: Locator, target: Locator, frames = 6): Promise<number[]> {
+  const targetHandle = await target.elementHandle();
+
+  return field.evaluate(
+    (el, { clicked, count }) =>
+      new Promise<number[]>((resolve) => {
+        const heights: number[] = [];
+        const sample = () => {
+          heights.push(Math.round(el.querySelector('.et-form-field-support')?.getBoundingClientRect().height ?? -1));
+
+          if (heights.length < count) requestAnimationFrame(sample);
+          else resolve(heights);
+        };
+
+        (clicked as HTMLElement | null)?.click();
+        requestAnimationFrame(sample);
+      }),
+    { clicked: targetHandle, count: frames },
+  );
+}
+
+async function expectSupportFitsActiveMessage(field: Locator): Promise<void> {
+  await expect
+    .poll(async () => {
+      const { region, active } = await supportHeights(field);
+
+      return Math.abs(region - active);
+    })
+    .toBeLessThanOrEqual(1);
+}
+
+test.describe('form-field / floating label', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus');
+
+  test('floating-inside rests centred in the frame and hides the placeholder', async ({ page }) => {
+    const parts = await openLabelMode(page, 'floating-inside');
+
+    await expectLabelAtRestInside(parts);
+  });
+
+  test('floating-inside floats to the top of the frame on focus, shrinks and reveals the placeholder', async ({
+    page,
+  }) => {
+    const parts = await openLabelMode(page, 'floating-inside');
+    const restHeight = (await boxOf(parts.label)).height;
+
+    await pressKey(page, 'Tab');
+    await expect(parts.control).toBeFocused();
+
+    await expectLabelFloatedInside(parts);
+    await expect.poll(async () => (await boxOf(parts.label)).height).toBeLessThan(restHeight);
+    await expect.poll(() => placeholderColor(parts.control)).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
+  test('floating-inside stays floated after blur while it holds a value, and drops back once cleared', async ({
+    page,
+  }) => {
+    const parts = await openLabelMode(page, 'floating-inside');
+
+    await pressKey(page, 'Tab');
+    await page.keyboard.type('team-a');
+    await pressKey(page, 'Tab');
+
+    await expect(parts.control).not.toBeFocused();
+    await expectLabelFloatedInside(parts);
+
+    await parts.control.focus();
+    await parts.control.fill('');
+    await parts.control.blur();
+
+    await expectLabelAtRestInside(parts);
+  });
+
+  test('a prefilled floating-inside field loads with the label floated', async ({ page }) => {
+    const parts = await openLabelMode(page, 'floating-inside', 'team-a');
+
+    await expectLabelFloatedInside(parts);
+  });
+
+  test('floating-outside rests inside the frame and floats above it on focus', async ({ page }) => {
+    const parts = await openLabelMode(page, 'floating-outside');
+
+    await expect.poll(() => labelCentreOffset(parts)).toBeLessThanOrEqual(4);
+
+    await pressKey(page, 'Tab');
+
+    await expect(parts.field).toHaveAttribute('data-label-floated', '');
+    await expect.poll(() => labelBottomAboveFrameTop(parts)).toBeGreaterThanOrEqual(0);
+  });
+
+  test('static keeps the label above the frame, focused or not', async ({ page }) => {
+    const parts = await openLabelMode(page, 'static');
+
+    expect(await labelBottomAboveFrameTop(parts)).toBeGreaterThanOrEqual(0);
+    const restY = (await boxOf(parts.label)).y;
+
+    await pressKey(page, 'Tab');
+
+    await expect(parts.control).toBeFocused();
+    await expect(parts.field).not.toHaveAttribute('data-label-floated');
+    expect((await boxOf(parts.label)).y).toBe(restY);
+  });
+
+  test('inline puts the label on the control row, before the input', async ({ page }) => {
+    const parts = await openLabelMode(page, 'inline');
+    const [labelBox, controlBox, frameBox] = [
+      await boxOf(parts.label),
+      await boxOf(parts.control),
+      await boxOf(parts.frame),
+    ];
+
+    expect(labelBox.x + labelBox.width).toBeLessThanOrEqual(controlBox.x);
+    expect(labelBox.y).toBeGreaterThanOrEqual(frameBox.y);
+    expect(labelBox.y + labelBox.height).toBeLessThanOrEqual(frameBox.y + frameBox.height);
+  });
+});
+
+test.describe('form-field / floating label placeholder', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: computed colour');
+
+  const SELECT_STORY_ID = 'components-forms-select--default';
+
+  for (const labelMode of ['floating-inside', 'floating-outside']) {
+    test(`${labelMode} without a label keeps the input placeholder visible`, async ({ page }) => {
+      const root = await openStory(page, INPUT_STORY_ID, {
+        args: { labelMode, label: '', ariaLabel: 'Search', placeholder: 'Search…' },
+      });
+      const placeholder = fieldParts(root).control;
+
+      await expect
+        .poll(() => placeholder.evaluate((el) => getComputedStyle(el, '::placeholder').color))
+        .not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+    });
+
+    test(`${labelMode} without a label keeps the select placeholder visible`, async ({ page }) => {
+      const root = await openStory(page, SELECT_STORY_ID, { args: { labelMode, label: '' } });
+      const placeholder = root.locator('.et-select-value[data-placeholder]');
+
+      await expect(placeholder).toBeVisible();
+      await expect
+        .poll(() => placeholder.evaluate((el) => getComputedStyle(el).color))
+        .not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+    });
+
+    test(`${labelMode} with a label hides the placeholder until the label floats`, async ({ page }) => {
+      const root = await openStory(page, INPUT_STORY_ID, { args: { labelMode, placeholder: 'Search…' } });
+      const { control } = fieldParts(root);
+      const color = () => control.evaluate((el) => getComputedStyle(el, '::placeholder').color);
+
+      await expect.poll(color).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+
+      await pressKey(page, 'Tab');
+      await expect(control).toBeFocused();
+      await expect.poll(color).not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+    });
+  }
+});
+
+test.describe('form-field / support region', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard editing');
+
+  test('a warning takes the hint slot, is announced politely and describes the control', async ({ page }) => {
+    const root = await openStory(page, WARNING_STORY_ID);
+    const { field, control } = fieldParts(root);
+    const warning = field.locator('.et-form-field-warnings');
+
+    await expect(warning).toHaveAttribute('data-active', 'true');
+    await expect(warning).toHaveAttribute('aria-live', 'polite');
+    await expect(warning).toContainText('leaked-password');
+    await expect(field.locator('et-hint')).toBeHidden();
+    await expect(control).toHaveAttribute('aria-describedby', (await warning.getAttribute('id')) ?? '');
+    await expectSupportFitsActiveMessage(field);
+  });
+
+  test('an error replaces the warning once the edited field is touched', async ({ page }) => {
+    const root = await openStory(page, WARNING_STORY_ID);
+    const { field, control } = fieldParts(root);
+    const errors = field.locator('.et-form-field-errors');
+
+    await control.fill('abc');
+    await control.blur();
+
+    await expect(errors).toHaveAttribute('data-active', 'true');
+    await expect(errors).toHaveAttribute('aria-live', 'polite');
+    await expect(errors).toContainText('Use at least 8 characters');
+    await expect(field.locator('.et-form-field-warnings[data-active]')).toHaveCount(0);
+    await expect(control).toHaveAttribute('aria-describedby', (await errors.getAttribute('id')) ?? '');
+    await expectSupportFitsActiveMessage(field);
+  });
+
+  test('an invalid field draws its frame in the full tone of the error theme', async ({ page }) => {
+    const root = await openStory(page, INPUT_STORY_ID, { args: { required: true } });
+    const { field, frame, control } = fieldParts(root);
+
+    await control.focus();
+    await control.blur();
+
+    await expect(field).toHaveAttribute('data-error');
+    await expect(frame).toHaveCSS('border-top-color', await themePrimaryIn(field));
+  });
+
+  for (const scheme of ['dark', 'light'] as const) {
+    test(`an invalid field draws its hovered frame in the error hover tone (${scheme})`, async ({ page, isMobile }) => {
+      test.skip(isMobile, 'pointer-only: the frame is checked under hover');
+
+      const root = await openStory(page, INPUT_STORY_ID, { args: { required: true } });
+      const { field, frame: shellBorder, control } = fieldParts(root);
+
+      await setColorScheme(root, scheme);
+      await control.focus();
+      await control.blur();
+      await expect(field).toHaveAttribute('data-error');
+
+      await shellBorder.hover();
+      await expect(shellBorder).toHaveCSS('border-top-color', await themeErrorHoverIn(field, scheme));
+    });
+  }
+
+  test('the hint returns once neither an error nor a warning applies', async ({ page }) => {
+    const root = await openStory(page, WARNING_STORY_ID);
+    const { field, control } = fieldParts(root);
+    const hint = field.locator('.et-form-field-hint');
+
+    await control.fill('correct-horse-battery');
+    await control.blur();
+
+    await expect(hint).toHaveAttribute('data-active', 'true');
+    await expect(hint).toContainText('At least 8 characters.');
+    await expect(field.locator('.et-form-field-support-content[data-active]')).toHaveCount(1);
+    await expect(control).toHaveAttribute('aria-describedby', (await hint.getAttribute('id')) ?? '');
+    await expectSupportFitsActiveMessage(field);
+  });
+
+  test('a message shown from the first render does not animate in when its hidden field is revealed', async ({
+    page,
+  }) => {
+    await mountStoryHidden(page);
+    const root = await openStory(page, WARNING_STORY_ID);
+    const { field } = fieldParts(root);
+
+    await revealStory(page);
+
+    expect(await supportTransitions(field)).toEqual([]);
+    await expectSupportFitsActiveMessage(field);
+  });
+
+  test('a hint in a hidden tab panel does not animate in when its tab is first shown', async ({ page }) => {
+    const root = await openStory(page, SELECT_IN_TABS_STORY_ID);
+    const projects = root.locator('et-form-field').filter({ hasText: 'Projects' });
+
+    await root.getByRole('tab', { name: 'Projects' }).click();
+
+    expect(await supportTransitions(projects)).toEqual([]);
+    await expectSupportFitsActiveMessage(projects);
+  });
+
+  test('a hint in a hidden tab panel has its full height in the first frame its tab is shown', async ({ page }) => {
+    const root = await openStory(page, SELECT_IN_TABS_STORY_ID);
+    const projects = root.locator('et-form-field').filter({ hasText: 'Projects' });
+
+    const heights = await supportHeightsPerFrameAfterClick(projects, root.getByRole('tab', { name: 'Projects' }));
+
+    expect(heights[0]).toBeGreaterThan(0);
+    expect(new Set(heights).size).toBe(1);
+  });
+
+  test('a hint does not animate in again when its tab is shown again', async ({ page }) => {
+    const root = await openStory(page, SELECT_IN_TABS_STORY_ID);
+    const parentTypes = root.locator('et-form-field').filter({ hasText: 'A parent may be' });
+
+    await root.getByRole('tab', { name: 'Projects' }).click();
+    await expect(parentTypes).toBeHidden();
+    await root.getByRole('tab', { name: 'Tickets' }).click();
+
+    expect(await supportTransitions(parentTypes)).toEqual([]);
+    await expectSupportFitsActiveMessage(parentTypes);
+  });
+
+  test('a message that replaces another later animates in', async ({ page }) => {
+    const root = await openStory(page, WARNING_STORY_ID);
+    const { field, control } = fieldParts(root);
+
+    await control.fill('correct-horse-battery');
+
+    expect(await supportTransitions(field)).toContain('opacity');
+  });
+});
+
+test.describe('form-field / description', () => {
+  test('an et-description describes the control', async ({ page }) => {
+    const root = await openStory(page, DESCRIPTION_STORY_ID);
+    const control = root.getByRole('textbox', { name: 'IBAN' });
+
+    await expect(control).toHaveAccessibleDescription(/Payouts go to this account within two working days\./);
+  });
+});
+
+test.describe('form-field / busy', () => {
+  test('a busy field reports aria-busy and shows a spinner in its suffix', async ({ page }) => {
+    const root = await openStory(page, COUNTER_STORY_ID);
+    const field = root.locator('et-form-field[busy]');
+
+    await expect(field).toHaveAttribute('aria-busy', 'true');
+    await expect(field.locator('.et-form-field-suffix .et-form-field-busy-spinner')).toBeVisible();
+  });
+});
+
+test.describe('form-field / touch', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only: tap');
+
+  test('a tap on a floating-inside field focuses the control and floats the label', async ({ page }) => {
+    const parts = await openLabelMode(page, 'floating-inside');
+
+    await expectLabelAtRestInside(parts);
+
+    await tap(parts.frame);
+
+    await expect(parts.control).toBeFocused();
+    await expectLabelFloatedInside(parts);
+  });
+});
+
+test.describe('form-field / frame states', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus and hover');
+
+  async function invalidField(page: Page): Promise<FieldParts> {
+    const parts = fieldParts(await openStory(page, INPUT_STORY_ID, { args: { required: true } }));
+
+    await parts.control.focus();
+    await parts.control.blur();
+    await expect(parts.field).toHaveAttribute('data-error');
+
+    return parts;
+  }
+
+  test('the rest frame keeps 3:1 against the page, also in error', async ({ page }) => {
+    const { frame } = fieldParts(await openStory(page, INPUT_STORY_ID));
+    expect(await contrastAgainstPage(frame, 'borderTopColor')).toBeGreaterThanOrEqual(3);
+
+    const invalid = await invalidField(page);
+    expect(await contrastAgainstPage(invalid.frame, 'borderTopColor')).toBeGreaterThanOrEqual(3);
+  });
+
+  for (const [control, storyId] of [
+    ['input', INPUT_STORY_ID],
+    ['textarea', TEXTAREA_STORY_ID],
+  ] as const) {
+    for (const surface of ['light', 'dark'] as const) {
+      test(`a resting ${control} frame sits near 3:1 and hover draws it in the label colour (${surface})`, async ({
+        page,
+      }) => {
+        const root = await openStory(page, storyId);
+        const frame = root.locator('et-form-field .et-form-field-control-frame').first();
+
+        await renderOnSurface(root, surface);
+        await expect
+          .poll(async () => {
+            const ratio = await contrastAgainstPage(frame, 'borderTopColor');
+            return ratio >= 3 && ratio <= 3.6 ? 'near 3:1' : ratio;
+          })
+          .toBe('near 3:1');
+        const label = root.locator('et-form-field .et-form-field-label-area').first();
+
+        await frame.hover();
+        await expect
+          .poll(async () => {
+            const [edge, ink] = [
+              await frame.evaluate((el) => getComputedStyle(el).borderTopColor),
+              await label.evaluate((el) => getComputedStyle(el).color),
+            ];
+            return edge === ink ? 'label colour' : `${edge} vs ${ink}`;
+          })
+          .toBe('label colour');
+      });
+    }
+  }
+
+  test('the placeholder keeps 4.5:1 against the page and stays lighter than the value', async ({ page }) => {
+    const { control } = fieldParts(await openStory(page, INPUT_STORY_ID));
+    const placeholder = await contrastAgainstPage(control, 'color', '::placeholder');
+
+    expect(placeholder).toBeGreaterThanOrEqual(4.5);
+    expect(placeholder).toBeLessThan(await contrastAgainstPage(control, 'color'));
+  });
+
+  test('the required marker keeps 4.5:1 against the page in error', async ({ page }) => {
+    const { field } = await invalidField(page);
+    const marker = field.locator('.et-label-required-marker');
+
+    await expect(marker).toHaveCSS('color', await colorIn(field, 'var(--et-tone-text)'));
+    expect(await contrastAgainstPage(marker, 'color')).toBeGreaterThanOrEqual(4.5);
+  });
+
+  test('focus keeps the 1px frame and turns it the theme colour, and hover does not change it', async ({ page }) => {
+    const { field, frame, control } = fieldParts(await openStory(page, INPUT_STORY_ID));
+    const theme = await colorIn(field, 'var(--et-tone-fill)');
+
+    await pressKey(page, 'Tab');
+    await expect(control).toBeFocused();
+    await expect(frame).toHaveCSS('border-top-color', theme);
+    await expect(frame).toHaveCSS('border-top-width', '1px');
+    await expect(frame).toHaveCSS('box-shadow', 'none');
+
+    await frame.hover();
+    await expect(frame).toHaveCSS('border-top-color', theme);
+  });
+
+  test('an invalid field turns its 1px focus frame the error ink', async ({ page }) => {
+    const { field, frame, control } = await invalidField(page);
+    const ink = await colorIn(field, 'var(--et-tone-text)');
+
+    await control.focus();
+    await expect(frame).toHaveCSS('border-top-color', ink);
+    await expect(frame).toHaveCSS('border-top-width', '1px');
+    await expect(frame).toHaveCSS('box-shadow', 'none');
+  });
+
+  for (const control of ['input', 'textarea'] as const) {
+    test(`a readonly ${control} draws a quiet solid frame, and a 2px focus frame in the surface text colour`, async ({
+      page,
+    }) => {
+      const root = await openStory(page, READONLY_STORY_ID);
+      const field = root.locator(`et-form-field:has(.et-${control}-native)`).first();
+      const frame = field.locator('.et-form-field-control-frame');
+      const native = field.locator(`.et-${control}-native`);
+
+      await expect(field).toHaveAttribute('data-readonly');
+      await expect(frame).toHaveCSS('border-top-style', 'solid');
+      await expect(frame).toHaveCSS('border-top-color', await colorIn(field, 'var(--et-surface-border)'));
+      await expect(frame).toHaveCSS('box-shadow', 'none');
+
+      await native.focus();
+      const ink = await colorIn(field, 'var(--et-surface-text)');
+      await expect(frame).toHaveCSS('border-top-color', ink);
+      await expect(frame).toHaveCSS('border-top-width', '1px');
+      await expect(frame).toHaveCSS('box-shadow', `${ink} 0px 0px 0px 1px inset`);
+    });
+  }
+});

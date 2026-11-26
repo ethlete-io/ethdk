@@ -1,0 +1,25 @@
+import { Component, ViewEncapsulation, inject } from '@angular/core';
+import { SoopPlayerParamsDirective } from './headless/soop-player-params.directive';
+import { SOOP_PLAYER_TOKEN, SoopPlayerDirective } from './headless/soop-player.directive';
+
+@Component({
+  selector: 'et-soop-player',
+  template: '',
+  encapsulation: ViewEncapsulation.None,
+  hostDirectives: [
+    {
+      directive: SoopPlayerParamsDirective,
+      inputs: ['userId', 'videoId', 'width', 'height'],
+    },
+    SoopPlayerDirective,
+  ],
+  host: {
+    class: 'et-soop-player et-stream-player',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
+  },
+})
+export class SoopPlayerComponent {
+  public player = inject(SOOP_PLAYER_TOKEN);
+}

@@ -1,0 +1,580 @@
+import { existsSync, readFileSync } from 'fs';
+import { resolve } from 'path';
+import ts from 'typescript';
+import { INTERACTIONS } from '../force-interactions';
+import { DesignConfig } from '../design-config';
+import { DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, STATE_UNDESIGNED_RULE } from './build-ready-contract';
+import { productFedPropsOf, productSampledPropsOf } from './harness-samples';
+import { designOnlyPropsOf, pointerOpensOf } from './part-compare';
+import { Problem } from './problem';
+import { linkedComponentOf } from './part-task';
+import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { appSourcesOf, selectorOf } from './rules/implemented-components';
+import { KNOWN_UNBOUND_INPUTS } from './rules/unbound-input-known';
+import { productModuleIdOf } from './system-modules';
+import { sourceFileOf } from './ts-source';
+import {
+  angularCompilerOf,
+  componentTemplateOf,
+  missingStateOf,
+  undesignedBranchesOf,
+  undesignedBranchMessageOf,
+} from './undesigned-branches';
+import { DesignServer, loadingOn, WarmDraw } from '../warm-draw';
+
+const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+
+const tagsOf = (selector: string, texts: string[]): string[] => {
+  const tag = new RegExp(`<${escaped(selector)}(?=[\\s/>])((?:[^>"']|"[^"]*"|'[^']*')*)>`, 'gu');
+
+  return texts.flatMap((text) => [...text.matchAll(tag)].map((match) => match[1] as string));
+};
+
+const isBare = (name: string, attributes: string) =>
+  new RegExp(`(?<=\\s)${name}(?=\\s*(?:/|$)|\\s+[^\\s=])`, 'u').test(attributes.replace(/"[^"]*"|'[^']*'/gu, '""'));
+
+const isBound = (name: string, tags: string[]) =>
+  tags.some(
+    (attributes) =>
+      new RegExp(`(?:\\[\\(?${name}\\)?\\]|(?<![\\w\\[(-])${name}\\s*=)`, 'u').test(attributes) ||
+      isBare(name, attributes),
+  );
+
+const classNameOf = (source: string) => source.match(/export\s+class\s+(\w+)/u)?.[1] ?? null;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const aliasOf = (call: ts.CallExpression) => {
+  for (const argument of call.arguments) {
+    if (!ts.isObjectLiteralExpression(argument)) continue;
+
+    for (const property of argument.properties)
+      if (
+        ts.isPropertyAssignment(property) &&
+        ts.isIdentifier(property.name) &&
+        property.name.text === 'alias' &&
+        ts.isStringLiteralLike(property.initializer)
+      )
+        return property.initializer.text;
+  }
+
+  return null;
+};
+
+const signalInputOf = (expression: ts.Expression | undefined) => {
+  if (!expression || !ts.isCallExpression(expression)) return null;
+
+  const callee = ts.isPropertyAccessExpression(expression.expression)
+    ? expression.expression.expression
+    : expression.expression;
+
+  return ts.isIdentifier(callee) && (callee.text === 'input' || callee.text === 'model') ? expression : null;
+};
+
+/**
+ * The input names of the one `@Component` class a source declares (`input()`, `input.required()`, `model()` and
+ * `@Input()`, aliases applied), or `null` when the class extends another or uses host directives, so its inputs are not all in the source.
+ */
+const componentClassOf = (source: string) =>
+  sourceFileOf(source).statements.find(
+    (statement): statement is ts.ClassDeclaration =>
+      ts.isClassDeclaration(statement) &&
+      (ts.getDecorators(statement) ?? []).some(
+        (decorator) =>
+          ts.isCallExpression(decorator.expression) &&
+          ts.isIdentifier(decorator.expression.expression) &&
+          decorator.expression.expression.text === 'Component',
+      ),
+  );
+
+export const componentInputsOf = (source: string): string[] | null => {
+  const component = componentClassOf(source);
+
+  if (!component || component.heritageClauses?.some((clause) => clause.token === ts.SyntaxKind.ExtendsKeyword))
+    return null;
+  if (/hostDirectives[\s\S]*\binputs\s*:/.test(component.getText())) return null;
+
+  const names: string[] = [];
+
+  for (const member of component.members) {
+    if (!ts.isPropertyDeclaration(member) || !ts.isIdentifier(member.name)) continue;
+
+    const decorator = (ts.getDecorators(member) ?? []).find(
+      (candidate) =>
+        ts.isCallExpression(candidate.expression) &&
+        ts.isIdentifier(candidate.expression.expression) &&
+        candidate.expression.expression.text === 'Input',
+    );
+    const call = signalInputOf(member.initializer);
+    const alias = call
+      ? aliasOf(call)
+      : decorator && ts.isCallExpression(decorator.expression)
+        ? (decorator.expression.arguments.map((argument) =>
+            ts.isStringLiteralLike(argument) ? argument.text : null,
+          )[0] ?? aliasOf(decorator.expression))
+        : null;
+
+    if (call || decorator) names.push(alias ?? member.name.text);
+  }
+
+  return names;
+};
+
+const literalOf = (expression: ts.Expression | undefined): string | null => {
+  if (!expression) return null;
+  if (ts.isStringLiteralLike(expression) || ts.isNumericLiteral(expression)) return expression.text;
+  if (expression.kind === ts.SyntaxKind.TrueKeyword) return 'true';
+  if (expression.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+
+  return null;
+};
+
+/** The literal default of each signal input of the source's `@Component` class (`input('100%')` gives `'100%'`), by input name. */
+export const inputDefaultsOf = (source: string): Record<string, string> => {
+  const defaults: Record<string, string> = {};
+
+  for (const member of componentClassOf(source)?.members ?? []) {
+    if (!ts.isPropertyDeclaration(member) || !ts.isIdentifier(member.name)) continue;
+
+    const call = signalInputOf(member.initializer);
+    const value = call ? literalOf(call.arguments[0]) : null;
+
+    if (call && value !== null) defaults[aliasOf(call) ?? member.name.text] = value;
+  }
+
+  return defaults;
+};
+
+export type InputInitial = { input: string; initial: ts.Expression | undefined | null; type: string | null };
+
+/**
+ * Each input of the source's `@Component` class by member name: its input name, its declared type, and its initial
+ * value expression (the first argument of `input()` or `model()`, the initializer of an `@Input()` property,
+ * `undefined` without one, `null` when required).
+ */
+export const inputInitialsOf = (source: string): Map<string, InputInitial> => {
+  const initials = new Map<string, InputInitial>();
+
+  for (const member of componentClassOf(source)?.members ?? []) {
+    if (!ts.isPropertyDeclaration(member) || !ts.isIdentifier(member.name)) continue;
+
+    const call = signalInputOf(member.initializer);
+    const decorated = (ts.getDecorators(member) ?? []).some(
+      (decorator) =>
+        ts.isCallExpression(decorator.expression) &&
+        ts.isIdentifier(decorator.expression.expression) &&
+        decorator.expression.expression.text === 'Input',
+    );
+
+    if (call) {
+      const required = ts.isPropertyAccessExpression(call.expression) && call.expression.name.text === 'required';
+
+      initials.set(member.name.text, {
+        input: aliasOf(call) ?? member.name.text,
+        initial: required ? null : call.arguments[0],
+        type: call.typeArguments?.[0]?.getText() ?? null,
+      });
+    } else if (decorated)
+      initials.set(member.name.text, {
+        input: member.name.text,
+        initial: member.initializer,
+        type: member.type?.getText() ?? null,
+      });
+  }
+
+  return initials;
+};
+
+/**
+ * The props of each state that no component input takes and compare could not reproduce either: `designOnlyPropsOf`
+ * with no drawn markup, so a state that sets an interaction value counts as forcing it.
+ */
+export const droppedStatePropsOf = (options: {
+  states: Record<string, unknown>;
+  inputs: readonly string[];
+  sampled?: readonly string[];
+  controls?: unknown;
+}): Map<string, string[]> => {
+  const { states, inputs, sampled = [], controls } = options;
+  const opens = pointerOpensOf({ states, controls });
+  const forcedOf = forcedInteractionsOf;
+  const forcing = new Set(
+    Object.entries(states).flatMap(([state, props]) => (forcedOf(state, props).length > 0 ? [state] : [])),
+  );
+  const dropped = new Map<string, string[]>();
+
+  for (const [state, props] of Object.entries(states)) {
+    const designOnly = designOnlyPropsOf({
+      states,
+      opens,
+      state,
+      forced: forcedOf(state, props),
+      forcing,
+      selected: true,
+    });
+    const keys = Object.keys(isRecord(props) ? props : {}).filter(
+      (key) => !inputs.includes(key) && !sampled.includes(key) && !designOnly.has(key),
+    );
+
+    if (keys.length > 0) dropped.set(state, keys);
+  }
+
+  return dropped;
+};
+
+/** Whether the component in `source` takes every design prop of `states`, by the check DROPPED-PROP runs. */
+export const takesEveryPropOf = (options: {
+  states: Record<string, unknown>;
+  sampled: readonly string[];
+  source: string;
+}) => {
+  const inputs = componentInputsOf(options.source);
+
+  return (
+    inputs !== null && droppedStatePropsOf({ states: options.states, inputs, sampled: options.sampled }).size === 0
+  );
+};
+
+/** Answers whether the app component at `path` takes every design prop of the page part `page` of `product`. */
+export const pagePropTakerOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  warm?: WarmDraw;
+}): Promise<(page: string, path: string) => boolean> => {
+  const { target, config, product } = options;
+  const pages = product.parts.filter((part) => part.layer === 'pages');
+  const states = await loadingOn({ target, config, warm: options.warm }, async (server) => {
+    const loaded = new Map<string, Record<string, unknown>>();
+
+    for (const part of pages) {
+      const module = (await server
+        .ssrLoadModule(productModuleIdOf({ file: part.file, product: product.name }))
+        .catch(() => null)) as { default?: { states?: unknown } } | null;
+      const found = module?.default?.states;
+
+      if (isRecord(found)) loaded.set(partKeyOf(part), found);
+    }
+
+    return loaded;
+  });
+
+  return (page, path) => {
+    const pageStates = states.get(page);
+    const file = resolve(target, path);
+
+    return (
+      pageStates !== undefined &&
+      existsSync(file) &&
+      takesEveryPropOf({
+        states: pageStates,
+        sampled: productSampledPropsOf({ target, product, part: page }),
+        source: readFileSync(file, 'utf8'),
+      })
+    );
+  };
+};
+
+const CONSTANT_BINDING = /^(?:'([^']*)'|"([^"]*)"|true|false|null|undefined|-?\d+(?:\.\d+)?)$/u;
+
+type Binding = { expression: string; fixed: boolean };
+
+const bindingOf = (name: string, attributes: string): Binding | null => {
+  const quoted = '(?:"([^"]*)"|\'([^\']*)\')';
+  const bound = attributes.match(new RegExp(`\\[\\(?${name}\\)?\\]\\s*=\\s*${quoted}`, 'u'));
+  const fixed = attributes.match(new RegExp(`(?<![\\w\\[(-])${name}\\s*=\\s*${quoted}`, 'u'));
+
+  if (bound) return { expression: (bound[1] ?? bound[2] ?? '').trim(), fixed: false };
+
+  if (fixed) return { expression: fixed[1] ?? fixed[2] ?? '', fixed: true };
+
+  return isBare(name, attributes) ? { expression: '', fixed: true } : null;
+};
+
+const constantOf = (binding: Binding): string | null => {
+  if (binding.fixed) return binding.expression;
+
+  const match = binding.expression.match(CONSTANT_BINDING);
+
+  return match ? (match[1] ?? match[2] ?? match[0]) : null;
+};
+
+const forcedInteractionsOf = (state: string, props: unknown): string[] => [
+  ...INTERACTIONS.filter((known) => state.endsWith(`-${known}`)),
+  ...Object.values(isRecord(props) ? props : {}).flatMap((value) => {
+    const named = isRecord(value) ? value['interaction'] : value;
+
+    return typeof named === 'string' && INTERACTIONS.some((known) => known === named) ? [named] : [];
+  }),
+];
+
+const forcedKeyOf = (options: {
+  key: string;
+  value: unknown;
+  forced: readonly string[];
+  states: Record<string, unknown>;
+  forcing: ReadonlySet<string>;
+}) => {
+  const { key, value, forced, states, forcing } = options;
+  const named = isRecord(value) ? value['interaction'] : value;
+
+  return (
+    (typeof named === 'string' && forced.includes(named)) ||
+    Object.entries(states).every(([name, props]) => forcing.has(name) || !isRecord(props) || props[key] === undefined)
+  );
+};
+
+/**
+ * The state props that name an input no consumer template feeds: no tag of `selector` binds it, or every tag binds a
+ * constant (a tag that leaves it out feeds its literal default from `defaults`) that differs from the value the state
+ * sets, so the app can never reach that state. A prop in `fed` is fed by the design harness, so it needs no template.
+ */
+export const statesWithoutSourceOf = (options: {
+  states: Record<string, unknown>;
+  inputs: readonly string[];
+  selector: string;
+  templates: readonly string[];
+  defaults?: Readonly<Record<string, string>>;
+  component?: string | null;
+  fed?: readonly string[];
+}): Map<string, string[]> => {
+  const { states, inputs, selector, templates, defaults = {}, component = null, fed = [] } = options;
+  const openers =
+    component === null ? [] : templates.filter((text) => new RegExp(`\\b${escaped(component)}\\b`, 'u').test(text));
+  const isOpened = (key: string) =>
+    openers.some((text) => new RegExp(`(?:inputBinding|twoWayBinding)\\(\\s*['"]${escaped(key)}['"]`, 'u').test(text));
+  const tags = tagsOf(selector, [...templates]);
+  const missing = new Map<string, string[]>();
+  const forcing = new Set(
+    Object.entries(states).flatMap(([state, props]) => (forcedInteractionsOf(state, props).length > 0 ? [state] : [])),
+  );
+
+  for (const [state, props] of Object.entries(states)) {
+    if (!isRecord(props)) continue;
+
+    const forced = forcedInteractionsOf(state, props);
+    const keys = Object.entries(props)
+      .filter(([key]) => inputs.includes(key))
+      .filter(([key, value]) => !(forced.length > 0 && forcedKeyOf({ key, value, forced, states, forcing })))
+      .filter(([key, value]) => {
+        if (isOpened(key) || fed.includes(key)) return false;
+
+        if (!isBound(key, tags)) return true;
+
+        const constants = tags.map((attributes) => {
+          const binding = bindingOf(key, attributes);
+
+          return binding ? constantOf(binding) : (defaults[key] ?? null);
+        });
+
+        return (
+          constants.length > 0 &&
+          constants.every(
+            (constant) => constant !== null && constant !== String(value) && !(constant === '' && value === true),
+          )
+        );
+      })
+      .map(([key]) => key);
+
+    if (keys.length > 0) missing.set(state, keys);
+  }
+
+  return missing;
+};
+
+export const stateNoSourceMessageOf = (props: readonly string[], selector: string) =>
+  `the design prop${props.length > 1 ? 's' : ''} ${props.join(', ')} ${props.length > 1 ? 'have' : 'has'} no data source in the app - no template feeds ${props.length > 1 ? 'them' : 'it'} on ${selector} with anything but a different fixed value, so the app can never reach this state`;
+
+export const droppedPropsMessageOf = (dropped: readonly string[]) =>
+  `the design prop${dropped.length > 1 ? 's' : ''} ${dropped.join(', ')} ${dropped.length > 1 ? 'have' : 'has'} no input on the app component - the harness drops ${dropped.length > 1 ? 'them' : 'it'}, so compare cannot check this state`;
+
+const statesOn = async (server: DesignServer, options: { product: string; file: string }) => {
+  const module = (await server.ssrLoadModule(productModuleIdOf(options)).catch(() => null)) as {
+    default?: { states?: unknown; controls?: unknown };
+  } | null;
+
+  return { states: module?.default?.states, controls: module?.default?.controls };
+};
+
+/** The props any of `states` sends that `inputs` lacks, as DROPPED-PROP counts them, each once. */
+export const unportedStatePropsOf = (options: {
+  target: string;
+  product: ResolvedProduct;
+  part: string;
+  states: Record<string, unknown>;
+  inputs: readonly string[];
+  controls?: unknown;
+}) => {
+  const sampled = productSampledPropsOf({ target: options.target, product: options.product, part: options.part });
+
+  return [
+    ...new Set(
+      [
+        ...droppedStatePropsOf({
+          states: options.states,
+          inputs: options.inputs,
+          sampled,
+          controls: options.controls,
+        }).values(),
+      ].flat(),
+    ),
+  ];
+};
+
+/** A part of `parts` whose design states send props its linked app component has no input for, by the DROPPED-PROP check. */
+export type UnportedProps = { part: string; component: string; props: string[] };
+
+/** The props each of `parts` sends from its design states that its app component takes no input for. */
+export const unportedPropsOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  parts: readonly string[];
+  warm?: WarmDraw;
+}): Promise<UnportedProps[]> => {
+  const { target, product } = options;
+  const linked = product.parts.flatMap((part) => {
+    const path = linkedComponentOf(part.source);
+    const file = path === null ? null : resolve(target, path);
+
+    if (!options.parts.includes(partKeyOf(part)) || part.origin === 'base' || file === null || !existsSync(file))
+      return [];
+
+    const inputs = componentInputsOf(readFileSync(file, 'utf8'));
+
+    return inputs === null ? [] : [{ part, component: path ?? '', inputs }];
+  });
+
+  if (linked.length === 0) return [];
+
+  return loadingOn(options, async (server) => {
+    const unported: UnportedProps[] = [];
+
+    for (const { part, component, inputs } of linked) {
+      const { states, controls } = await statesOn(server, { file: part.file, product: product.name });
+
+      if (!isRecord(states)) continue;
+
+      const props = unportedStatePropsOf({ target, product, part: partKeyOf(part), states, inputs, controls });
+
+      if (props.length > 0) unported.push({ part: partKeyOf(part), component, props });
+    }
+
+    return unported;
+  });
+};
+
+/** The merge output line that opens the port item of `unported`, pointing at the `design task` that lists it again. */
+export const portItemLineOf = (unported: UnportedProps, product: string) =>
+  `PORT ${product} ${unported.part}: the merged design states send ${unported.props.join(', ')} - ${unported.component} has no input for ${unported.props.length > 1 ? 'them' : 'it'}; add the input${unported.props.length > 1 ? 's' : ''}, see design task ${unported.part} --product ${product}`;
+
+/** `DROPPED-PROP` for each part whose design states set a prop its app component has no input for, loading the states without drawing. */
+export const droppedPropProblemsOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  part?: string;
+  parts?: readonly string[];
+  warm?: WarmDraw;
+}): Promise<Problem[]> => {
+  const { target, config, product } = options;
+  const candidates = product.parts.flatMap((part) => {
+    const key = partKeyOf(part);
+    const path = linkedComponentOf(part.source);
+    const file = path === null ? null : resolve(target, path);
+
+    if (
+      (options.part && key !== options.part) ||
+      (options.parts && !options.parts.includes(key)) ||
+      part.origin === 'base' ||
+      file === null ||
+      !existsSync(file)
+    )
+      return [];
+
+    const text = readFileSync(file, 'utf8');
+    const inputs = componentInputsOf(text);
+    const src = path?.match(/^(.*?\/src)\//u)?.[1];
+
+    return inputs === null
+      ? []
+      : [
+          {
+            part,
+            path,
+            inputs,
+            initials: inputInitialsOf(text),
+            template: file === null ? null : componentTemplateOf(file),
+            defaults: inputDefaultsOf(text),
+            unbound: KNOWN_UNBOUND_INPUTS.filter((known) => resolve(target, known.file) === file).map(
+              (known) => known.input,
+            ),
+            selector: selectorOf(text),
+            text,
+            appDir: src ? resolve(target, src) : null,
+          },
+        ];
+  });
+
+  if (candidates.length === 0) return [];
+
+  const compiler = await angularCompilerOf();
+
+  return loadingOn({ target, config, warm: options.warm }, async (server) => {
+    const problems: Problem[] = [];
+
+    for (const { part, path, inputs, initials, template, defaults, unbound, selector, appDir, text } of candidates) {
+      const { states, controls } = await statesOn(server, { file: part.file, product: product.name });
+
+      if (!isRecord(states)) continue;
+
+      const sampled = productSampledPropsOf({ target, product, part: partKeyOf(part) });
+
+      for (const [state, dropped] of droppedStatePropsOf({ states, inputs, sampled, controls }))
+        problems.push({
+          rule: DROPPED_PROP_RULE,
+          file: part.file,
+          message: `${state}: ${droppedPropsMessageOf(dropped)}`,
+          at: state,
+          states: [state],
+        });
+
+      if (compiler !== null && template !== null)
+        for (const branch of undesignedBranchesOf({ compiler, template, inputs: initials, states, sampled })) {
+          const missing = missingStateOf({ compiler, template, inputs: initials, states, branch });
+
+          problems.push({
+            rule: STATE_UNDESIGNED_RULE,
+            file: part.file,
+            message: undesignedBranchMessageOf(branch, path ?? ''),
+            at: branch,
+            ...(missing ? { missing } : {}),
+          });
+        }
+
+      if (selector === null || appDir === null || !existsSync(appDir)) continue;
+
+      const templates = appSourcesOf(appDir).map(({ text }) => text);
+
+      for (const [state, props] of statesWithoutSourceOf({
+        states,
+        inputs: inputs.filter((input) => !unbound.includes(input)),
+        selector,
+        templates,
+        defaults,
+        component: classNameOf(text),
+        fed: productFedPropsOf({ target, product, part: partKeyOf(part) }),
+      }))
+        problems.push({
+          rule: STATE_NO_SOURCE_RULE,
+          file: part.file,
+          message: `${state}: ${stateNoSourceMessageOf(props, selector)}`,
+          at: state,
+          states: [state],
+        });
+    }
+
+    return problems;
+  });
+};

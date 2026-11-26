@@ -1,0 +1,14 @@
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { StoreModule } from '@ngrx/store';
+import { EffectsModule } from '@ngrx/effects';
+import * as fromReducer from './state';
+
+@NgModule({
+  imports: [
+    CommonModule,
+    StoreModule.forFeature(fromReducer.EVENT_FEATURE_KEY, fromReducer.reducer),
+    EffectsModule.forFeature([fromReducer.EventEffects]),
+  ],
+})
+export class StoreEventModule {}

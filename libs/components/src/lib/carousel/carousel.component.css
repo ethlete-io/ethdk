@@ -1,0 +1,220 @@
+@layer components.sdk {
+  @property --et-carousel-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-carousel-slide-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --et-carousel-dot-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  /* The dot's tap target, kept at a comfortable size while the dot itself stays small. */
+  @property --et-carousel-dot-target-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 24px;
+  }
+
+  /* How far the track's edges fade out where slides are cut off by them. Set it to `0px` for a hard cut. */
+  @property --et-carousel-edge-fade {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 32px;
+  }
+
+  @property --et-carousel-controls-inset {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  .et-carousel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-carousel-gap);
+  }
+
+  /* `overflow-x: auto` forces a clip on the cross axis too; without the bleed it sits on the slide's own
+     border, which fractional device pixel ratios then eat. */
+  .et-carousel-track {
+    --_et-carousel-track-bleed: 4px;
+
+    display: block;
+    margin-block: calc(var(--_et-carousel-track-bleed) * -1);
+
+    & .et-scrollable-container {
+      gap: var(--et-carousel-slide-gap);
+      padding-block: var(--_et-carousel-track-bleed);
+    }
+
+    &:where([direction='vertical']) {
+      margin-block: 0;
+      margin-inline: calc(var(--_et-carousel-track-bleed) * -1);
+
+      & .et-scrollable-container {
+        padding-block: 0;
+        padding-inline: var(--_et-carousel-track-bleed);
+      }
+    }
+  }
+
+  .et-carousel:where([data-slide-align='center']) .et-carousel-track:not([item-size='full']) {
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--et-carousel-edge-fade),
+      black calc(100% - var(--et-carousel-edge-fade)),
+      transparent 100%
+    );
+
+    &:where([direction='vertical']) {
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        black var(--et-carousel-edge-fade),
+        black calc(100% - var(--et-carousel-edge-fade)),
+        transparent 100%
+      );
+    }
+  }
+
+  .et-carousel-slide-content {
+    display: block;
+    block-size: 100%;
+  }
+
+  .et-carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: var(--et-carousel-controls-background, transparent);
+  }
+
+  .et-carousel:where([data-controls-position='overlay'], [data-pause-toggle-position^='top-']) {
+    position: relative;
+  }
+
+  .et-carousel:where([data-controls-position='overlay']) .et-carousel-controls,
+  .et-carousel-play-toggle-corner {
+    position: absolute;
+    border-radius: var(--et-carousel-controls-radius, 999px);
+    background: var(
+      --et-carousel-controls-background,
+      color-mix(in srgb, var(--et-surface-background, white) 80%, transparent)
+    );
+  }
+
+  .et-carousel:where([data-controls-position='overlay']) .et-carousel-controls {
+    inset-inline: var(--et-carousel-controls-inset);
+    inset-block-end: var(--et-carousel-controls-inset);
+    inline-size: fit-content;
+    margin-inline: auto;
+  }
+
+  .et-carousel-play-toggle-corner {
+    display: flex;
+    inset-block-start: var(--et-carousel-controls-inset);
+  }
+
+  .et-carousel:where([data-pause-toggle-position='top-start']) .et-carousel-play-toggle-corner {
+    inset-inline-start: var(--et-carousel-controls-inset);
+  }
+
+  .et-carousel:where([data-pause-toggle-position='top-end']) .et-carousel-play-toggle-corner {
+    inset-inline-end: var(--et-carousel-controls-inset);
+  }
+
+  /* Two classes deep: the icon button's own colour rule is one class deep and injected at runtime. */
+  .et-carousel .et-carousel-control {
+    color: var(--et-carousel-control-color, var(--et-tone-text));
+  }
+
+  .et-carousel-control {
+    &:where([aria-disabled='true']) {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  .et-carousel-control-icon {
+    inline-size: 14px;
+    block-size: 14px;
+
+    &:where(.et-carousel-control-icon--previous) {
+      rotate: -90deg;
+    }
+
+    &:where(.et-carousel-control-icon--next) {
+      rotate: 90deg;
+    }
+  }
+
+  .et-carousel-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .et-carousel-dot {
+    display: grid;
+    place-items: center;
+    inline-size: var(--et-carousel-dot-target-size);
+    block-size: var(--et-carousel-dot-target-size);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    &::before {
+      content: '';
+      inline-size: var(--et-carousel-dot-size);
+      block-size: var(--et-carousel-dot-size);
+      border-radius: 50%;
+      background: var(--et-carousel-dot-color, color-mix(in srgb, var(--et-surface-tint, gray) 35%, transparent));
+    }
+
+    &:hover::before {
+      background: var(--et-carousel-dot-hover-color, color-mix(in srgb, var(--et-surface-tint, gray) 55%, transparent));
+    }
+
+    &:active::before {
+      background: var(
+        --et-carousel-dot-pressed-color,
+        color-mix(in srgb, var(--et-surface-tint, gray) 85%, transparent)
+      );
+    }
+
+    &:where([data-active])::before {
+      background: var(--et-carousel-dot-active-color, light-dark(var(--et-tone-text), var(--et-tone-fill)));
+    }
+
+    /* `:hover`/`:active` above outrank the `:where()` rule, so the selected dot needs its own state selector. */
+    &:where([data-active]):is(:hover, :active)::before {
+      background: var(--et-carousel-dot-active-color, light-dark(var(--et-tone-text), var(--et-tone-fill)));
+    }
+  }
+
+  .et-carousel:where(.et-carousel--can-animate) {
+    & .et-carousel-dot::before {
+      transition:
+        background-color 160ms var(--ease-3, ease-out),
+        scale 220ms var(--ease-3, ease-out);
+    }
+
+    & .et-carousel-dot {
+      transition: outline-color 160ms var(--ease-3, ease-out);
+    }
+  }
+}

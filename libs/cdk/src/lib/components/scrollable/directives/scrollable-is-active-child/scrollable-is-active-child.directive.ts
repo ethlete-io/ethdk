@@ -1,0 +1,52 @@
+import { Directive, ElementRef, InjectionToken, Input, booleanAttribute, inject, signal } from '@angular/core';
+import { signalHostAttributes } from '@ethlete/core';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export const SCROLLABLE_IS_ACTIVE_CHILD_TOKEN = new InjectionToken<ScrollableIsActiveChildDirective>(
+  'SCROLLABLE_IS_ACTIVE_CHILD_TOKEN',
+);
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export const SCROLLABLE_IS_ACTIVE_CHILD_ATTRIBUTE = 'etScrollableIsActiveChild';
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+export const isScrollableChildActive = (e: HTMLElement) => {
+  const attr = e.attributes.getNamedItem(SCROLLABLE_IS_ACTIVE_CHILD_ATTRIBUTE)?.value;
+
+  return attr === 'true' || attr === '';
+};
+
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
+@Directive({
+  // eslint-disable-next-line @angular-eslint/directive-selector
+  selector: `[${SCROLLABLE_IS_ACTIVE_CHILD_ATTRIBUTE}]`,
+  providers: [
+    {
+      provide: SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
+      useExisting: ScrollableIsActiveChildDirective,
+    },
+  ],
+})
+export class ScrollableIsActiveChildDirective {
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
+  @Input({ transform: booleanAttribute, alias: SCROLLABLE_IS_ACTIVE_CHILD_ATTRIBUTE })
+  set _isActiveChildEnabled(v: boolean) {
+    this.isActiveChildEnabled.set(v);
+  }
+  readonly isActiveChildEnabled = signal(true);
+
+  readonly hostAttributeBindings = signalHostAttributes({
+    [SCROLLABLE_IS_ACTIVE_CHILD_ATTRIBUTE]: this.isActiveChildEnabled,
+  });
+}

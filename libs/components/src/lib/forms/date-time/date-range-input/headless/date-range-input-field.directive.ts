@@ -1,0 +1,42 @@
+import { Directive, inject } from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
+import { INPUT_MASK_HOST } from '../../../masked-input/headless/input-mask-host';
+import { DateRangePickerInputFieldDirective } from '../../internals/date-range-picker-input-field.directive';
+import { DATE_RANGE_INPUT_ERROR_CODES } from '../date-range-input-errors';
+import { DateRangeInputDirective } from './date-range-input.directive';
+
+/**
+ * One side of a date range input: shows the committed side value in the
+ * display format, commits typed text strictly on blur/Enter, keeps
+ * unparseable text visible, and opens the picker on Alt+ArrowDown.
+ */
+@Directive({
+  selector: 'input[etDateRangeInputField]',
+  exportAs: 'etDateRangeInputField',
+  providers: [{ provide: INPUT_MASK_HOST, useExisting: DateRangeInputFieldDirective }],
+})
+export class DateRangeInputFieldDirective extends DateRangePickerInputFieldDirective {
+  // eslint-disable-next-line ethlete/inject-member-accessibility -- referenced from the base class's host bindings
+  protected rangeInput = inject(DateRangeInputDirective, { optional: true });
+
+  constructor() {
+    super();
+
+    if (ngDevMode && !this.rangeInput) {
+      throw new RuntimeError(
+        DATE_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_RANGE_INPUT,
+        '[DateRangeInputFieldDirective] etDateRangeInputField must be placed inside an [etDateRangeInput] element.',
+        { element: this.elementRef.nativeElement },
+      );
+    }
+  }
+
+  /** @internal */
+  public duplicateFieldError(side: 'start' | 'end') {
+    return new RuntimeError(
+      DATE_RANGE_INPUT_ERROR_CODES.DUPLICATE_FIELD,
+      `[DateRangeInputFieldDirective] An [etDateRangeInput] accepts only one etDateRangeInputField for its "${side}" side.`,
+      { element: this.elementRef.nativeElement },
+    );
+  }
+}

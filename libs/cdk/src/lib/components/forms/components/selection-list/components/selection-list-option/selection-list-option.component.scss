@@ -1,0 +1,40 @@
+:where(.et-selection-list-option) {
+  --et-selection-list-option-state-size: 25px;
+  --et-selection-list-option-state-check-size: 10px;
+  --et-selection-list-option-state-border-color: #e5e5e5;
+  --et-selection-list-option-state-state-color: #e5e5e5;
+  --et-selection-list-option-state-indeterminate-width: 10px;
+  --et-selection-list-option-state-indeterminate-height: 2px;
+}
+
+.et-selection-list-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+}
+
+.et-selection-list-field--multiple .et-selection-list-option-state,
+.et-selection-list-field--multiple .et-selection-list-option-state .et-selection-list-option-state-check {
+  border-radius: 0%;
+}
+
+.et-selection-list-option-state {
+  inline-size: var(--et-selection-list-option-state-size);
+  block-size: var(--et-selection-list-option-state-size);
+  border: 1px solid var(--et-selection-list-option-state-border-color);
+  display: inline-grid;
+  position: relative;
+  align-items: center;
+  border-radius: 50%;
+  justify-items: center;
+}
+
+.et-selection-list-option-state-check {
+  inline-size: var(--et-selection-list-option-state-check-size);
+  block-size: var(--et-selection-list-option-state-check-size);
+  border-radius: 50%;
+
+  .et-selection-list-option--selected & {
+    background-color: var(--et-selection-list-option-state-state-color);
+  }
+}
