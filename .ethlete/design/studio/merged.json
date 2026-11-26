@@ -135,7 +135,13 @@
     "decidedBy": "builder",
     "at": "2026-11-21T01:27:24.435Z"
   },
-  "foundations/icons": "809d48ca497cdfb9",
+  "foundations/icons": {
+    "hash": "c75e6ec1d9f0cb30",
+    "variant": "new",
+    "decidedBy": "plan: docs/process.md:49",
+    "at": "2026-11-26T21:04:58.751Z",
+    "note": "merged without a pick: allowed by docs/process.md:49"
+  },
   "foundations/logo": {
     "hash": "a98bc4417dd67803",
     "variant": "a",
