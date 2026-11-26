@@ -26,10 +26,10 @@ describe('scrollable buttons end space', () => {
   it.each([
     'padding-inline-end: var(--et-scrollable-buttons-end-space)',
     'padding-block-end: var(--et-scrollable-buttons-end-space)',
-  ])('applies %s only while the list can scroll and is not at the end', (declaration) => {
+  ])('applies %s while the list can scroll, also at its end', (declaration) => {
     const selectors = selectorsAbove(declaration);
 
     expect(selectors).toContain('.et-scrollable--can-scroll');
-    expect(selectors).toContain(':not(.et-scrollable--is-at-end)');
+    expect(selectors).not.toContain('et-scrollable--is-at-end');
   });
 });
