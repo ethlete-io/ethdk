@@ -18,10 +18,7 @@ const MATRIX_GUTTER_ESTIMATE = 92;
 
 const MATRIX_PADDING = 16;
 
-/**
- * The frame scale at which `blocks` blocks of `columns` columns fill `room` px of width. The first block's columns never
- * get narrower than a head, so below that width they stay fixed and only the later blocks shrink.
- */
+/** The frame scale at which `blocks` blocks of `columns` frame-width columns fill `room` px of width. */
 export const matrixWidthFit = ({
   room,
   columns,
@@ -32,13 +29,7 @@ export const matrixWidthFit = ({
   columns: number;
   blocks: number;
   frameWidth: number;
-}) => {
-  const even = room / (blocks * columns * frameWidth);
-
-  if (even * frameWidth >= MATRIX_HEAD_MIN || blocks === 1) return even;
-
-  return (room - columns * MATRIX_HEAD_MIN) / ((blocks - 1) * columns * frameWidth);
-};
+}) => room / (blocks * columns * frameWidth);
 
 type MatrixViewport = { width: number; height: number };
 

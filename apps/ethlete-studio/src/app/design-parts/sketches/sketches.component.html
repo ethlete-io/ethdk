@@ -155,11 +155,14 @@
                       @if (blockIndex === 0) {
                         <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
                       } @else {
-                        <span
-                          class="inline-flex max-w-full items-center truncate rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
-                          data-sk-head-tag
-                          >{{ row.label ?? (row.key === CURRENT ? LABELS.current : LABELS.variant(row.key)) }}</span
-                        >
+                        <ng-container
+                          *ngTemplateOutlet="
+                            compactHeadTemplate;
+                            context: {
+                              $implicit: row.label ?? (row.key === CURRENT ? LABELS.current : LABELS.variant(row.key)),
+                            }
+                          "
+                        />
                       }
                     </section>
                     @for (item of row.shots; track item.state) {
@@ -603,14 +606,22 @@
     </p>
   }
 </ng-template>
+<ng-template #compactHeadTemplate let-label>
+  <span
+    class="inline-block max-w-full rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text wrap-anywhere shadow-[0_0_0_1px_var(--et-surface-border)]"
+    data-sk-head-tag
+    >{{ label }}</span
+  >
+</ng-template>
 <ng-template #headTemplate let-row>
   @let drawn = isDrawn(row);
   @if (headHidden()) {
-    <span
-      class="inline-flex w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
-      data-sk-head-tag
-      >{{ row.label ?? (row.key === CURRENT ? LABELS.current : row.key) }}</span
-    >
+    <ng-container
+      *ngTemplateOutlet="
+        compactHeadTemplate;
+        context: { $implicit: row.label ?? (row.key === CURRENT ? LABELS.current : row.key) }
+      "
+    />
     @if (row.note) {
       <p
         [attr.title]="row.note"
@@ -624,7 +635,7 @@
   <div [class.hidden]="headHidden()" class="flex min-w-0 flex-col gap-space-2">
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
       <span
-        class="inline-flex max-w-full items-center truncate rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
+        class="max-w-full rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text wrap-anywhere shadow-[0_0_0_1px_var(--et-surface-border)]"
         data-sk-head-name
         >{{ row.label ?? (row.key === CURRENT ? LABELS.current : LABELS.variant(row.key)) }}</span
       >

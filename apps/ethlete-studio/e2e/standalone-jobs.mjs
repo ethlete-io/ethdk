@@ -8,6 +8,7 @@ export const STANDALONE_FILES = [
   { file: 'frame-load-failed.e2e.mjs', takesBuilt: true, ownShard: true },
   { file: 'frame-scrollbar.e2e.mjs', takesBuilt: false },
   { file: 'server-restart.e2e.mjs', takesBuilt: true },
+  { file: 'sketch-inbox-edit-heads.e2e.mjs', takesBuilt: true },
 ];
 
 /** The standalone e2e files as canvas.e2e queue jobs, filtered by `--case` (file name) and `--page Standalone`. */

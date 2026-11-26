@@ -1288,10 +1288,9 @@ export class SketchesComponent {
     scale: number,
   ) {
     const frame = `${this.widest() * scale}px`;
-    const first = `max-content repeat(${columns}, max(${frame}, ${headMin}px))`;
-    const later = `max-content repeat(${columns}, ${frame})`;
+    const block = `max-content repeat(${columns}, max(${frame}, ${headMin}px))`;
 
-    return `${[first, ...Array.from({ length: blocks - 1 }, () => later)].join(' ')}${this.screenMode() ? '' : ' auto'}`;
+    return `${Array.from({ length: blocks }, () => block).join(' ')}${this.screenMode() ? '' : ' auto'}`;
   }
 
   private matrixHeightFit({ matrix, scale }: { matrix: HTMLElement; scale: number }, { gutters, list }: FitDom) {
