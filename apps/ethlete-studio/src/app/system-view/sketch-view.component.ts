@@ -1111,7 +1111,7 @@ export class SketchViewComponent {
     if (variant) this.showVariant(variant);
   }
 
-  /** Moves the canvas onto the first frame of `part`, once the view draws one. */
+  /** Selects the first frame of `part` and fits the canvas, once the view draws one. */
   public showPart(part: string) {
     this.pendingPart.set(this.focusPart(part) ? null : part);
   }
@@ -1226,7 +1226,7 @@ export class SketchViewComponent {
 
     if (key === undefined) return false;
 
-    return this.sketches()?.focusFrame(key) ?? false;
+    return this.sketches()?.fitFrame(key) ?? false;
   }
 
   private shotOfPlace(variant: string, place: { state: string; size?: string | number }) {

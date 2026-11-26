@@ -5740,6 +5740,11 @@ const CASES = [
         page.evaluate(() => ({
           sketchView: !!document.querySelector('[data-sk-rows]'),
           selected: document.querySelector('[data-sk-frame][data-selected]')?.getAttribute('data-sk-frame') ?? null,
+          percent: Number.parseInt(
+            document.querySelector('ethlete-zoom-chip')?.textContent?.match(/\d+/)?.[0] ?? '',
+            10,
+          ),
+          offset: document.querySelector('[data-sk-rows] > div')?.style.transform ?? null,
           ring: (() => {
             const border = document.querySelector('[data-sk-frame][data-selected] [data-frame-border]');
             const style = border && getComputedStyle(border);
@@ -5809,6 +5814,8 @@ const CASES = [
           return (
             shown.sketchView &&
             shown.selected === expected[0] &&
+            shown.percent <= 100 &&
+            shown.offset === 'translate(0px, 0px) scale(1)' &&
             shown.ring === null &&
             JSON.stringify(shown.frames) === JSON.stringify(expected)
           );

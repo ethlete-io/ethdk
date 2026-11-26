@@ -14,6 +14,7 @@ import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../i18n/system-labels';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
+import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { SystemViewComponent } from './system-view.component';
 import { PageShellAction } from './page-shell';
@@ -1312,6 +1313,18 @@ describe('SystemViewComponent on a merge', () => {
     expect(view.selectedKey()).toBe('sketch:foundations/colors');
     expect(element.querySelector('[data-sk-frame="a default"]')?.hasAttribute('data-selected')).toBe(true);
     expect(element.querySelector('[data-shot="a default"]')?.hasAttribute('data-active')).toBe(false);
+  });
+
+  it('fits the canvas to the part a target row opens instead of zooming onto its first frame', async () => {
+    const fixture = await mountSketch(MULTI_PART);
+    const view = fixture.componentInstance;
+    const canvas = () => fixture.debugElement.query(By.directive(SketchesComponent)).componentInstance['canvas'];
+
+    view['activate']('sketch:foundations/colors/foundations/type');
+    await settle(fixture);
+
+    expect(canvas().zoom()).toBe('fit');
+    expect(canvas().pan()).toEqual({ x: 0, y: 0 });
   });
 
   // A target row stays in the sketch view, also for a part the product lists, and carries no hint.

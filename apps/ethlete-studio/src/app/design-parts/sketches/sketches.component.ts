@@ -1114,6 +1114,18 @@ export class SketchesComponent {
     return true;
   }
 
+  /** Selects the frame with `key` and fits the view to the whole canvas; `false` when the canvas draws none. */
+  public fitFrame(key: string) {
+    const frame = this.frames().find((candidate) => candidate.nativeElement.getAttribute('data-sk-frame') === key);
+
+    if (!frame) return false;
+
+    this.selectedFrame.set(key);
+    this.fit();
+
+    return true;
+  }
+
   protected stackedGridRowOf(block: number | undefined) {
     const lines = this.grid()?.lines.length;
 
