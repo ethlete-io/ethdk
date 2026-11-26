@@ -2414,7 +2414,7 @@ describe('agent-sessions stop-own', () => {
     expect(isRunning(siblingB)).toBe(true);
     expect(isRunning(main)).toBe(true);
 
-    const asMain = stopOwn(session);
+    stopOwn(session);
     settle();
 
     expect(isRunning(main)).toBe(false);
