@@ -1,8 +1,0 @@
-{
-  "port": 4413,
-  "projects": {
-    "tomflix": {
-      "styles": [".ethlete/design/styles.css"]
-    }
-  }
-}

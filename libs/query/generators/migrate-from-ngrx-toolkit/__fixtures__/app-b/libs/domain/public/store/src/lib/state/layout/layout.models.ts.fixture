@@ -1,2 +1,0 @@
-// This can be removed once we have types in here
-export type Dummy = string;

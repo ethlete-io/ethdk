@@ -1,3 +1,0 @@
-export * from './lib/stores/item/item/item.actions';
-export * from './lib/stores/item/item/item.facade';
-export * from './lib/stores/item/item/item.models';

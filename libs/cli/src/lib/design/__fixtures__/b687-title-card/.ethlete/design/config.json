@@ -1,8 +1,0 @@
-{
-  "products": {
-    "tomflix": {
-      "styles": [".ethlete/design/styles.css"],
-      "base": "@ethlete/components"
-    }
-  }
-}

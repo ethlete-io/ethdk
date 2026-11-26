@@ -1,5 +1,0 @@
-import { ListingSearchRequestData } from '@app-a/types';
-
-export interface GetCatalogListingTopMembersArgs {
-  params: ListingSearchRequestData;
-}

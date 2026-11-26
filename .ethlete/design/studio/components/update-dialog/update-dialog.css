@@ -1,9 +1,0 @@
-@layer components {
-  .ud-wrap {
-    overflow-wrap: anywhere;
-  }
-
-  [data-et-control='update'] {
-    anchor-name: --ud-update;
-  }
-}

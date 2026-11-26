@@ -1,3 +1,0 @@
-[mcp_servers.ethlete-design]
-command = "node"
-args = ["tools/scripts/et-design.mjs", "mcp"]

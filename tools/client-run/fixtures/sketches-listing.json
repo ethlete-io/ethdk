@@ -1,9 +1,0 @@
-[
-  {
-    "target": "components/title-card",
-    "name": "title-card",
-    "status": "ready",
-    "variants": ["a", "b", "c"],
-    "targetParts": ["components/title-card"]
-  }
-]

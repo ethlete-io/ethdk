@@ -1,7 +1,0 @@
-@layer components.sdk {
-  .et-scheduler-edit-surface-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-  }
-}

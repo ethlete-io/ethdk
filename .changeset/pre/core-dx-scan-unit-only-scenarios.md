@@ -1,3 +1,0 @@
----
-'@ethlete/core': none
----

@@ -1,5 +1,0 @@
-        on
-        <a
-          class="font-bold text-aa-tone-fill hover:text-aa-tone-fill-hover focus:text-aa-tone-fill-focus active:text-aa-tone-fill-active transition"
-          href="https://www.app.aa"
-          rel="noopener noreferrer"

@@ -1,3 +1,0 @@
----
-'@ethlete/agent-rules': none
----

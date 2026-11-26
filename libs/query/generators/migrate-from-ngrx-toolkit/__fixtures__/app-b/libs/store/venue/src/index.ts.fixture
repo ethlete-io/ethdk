@@ -1,2 +1,0 @@
-export * from './lib/store-venue.module';
-export * from './lib/state';

@@ -1,3 +1,0 @@
-export * from './lib/stores/catalog/session/session.actions';
-export * from './lib/stores/catalog/session/session.facade';
-export * from './lib/stores/catalog/session/session.models';

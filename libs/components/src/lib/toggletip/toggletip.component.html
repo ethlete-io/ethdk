@@ -1,9 +1,0 @@
-<div class="et-toggletip__surface">
-  <div [attr.id]="contentId()" class="et-toggletip__content">
-    @if (contentText(); as text) {
-      <p class="et-toggletip__text">{{ text }}</p>
-    } @else if (contentTemplate()) {
-      <ng-container [ngTemplateOutlet]="contentTemplate()" [ngTemplateOutletInjector]="injector" />
-    }
-  </div>
-</div>

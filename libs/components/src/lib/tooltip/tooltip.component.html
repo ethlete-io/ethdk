@@ -1,9 +1,0 @@
-<div class="et-tooltip__surface">
-  <div class="et-tooltip__content">
-    @if (contentText(); as text) {
-      <p class="et-tooltip__text">{{ text }}</p>
-    } @else if (contentTemplate()) {
-      <ng-container [ngTemplateOutlet]="contentTemplate()" />
-    }
-  </div>
-</div>
