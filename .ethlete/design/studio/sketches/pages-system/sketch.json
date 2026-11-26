@@ -133,5 +133,11 @@
       "a": "8fdfd7989b61f642"
     },
     "at": "2026-11-26T11:04:07.417Z"
+  },
+  "portAfterMerge": {
+    "merged": ["pages/system"],
+    "parts": ["pages/system"],
+    "reasons": ["a: pages/system/system.ts - the variant and the product both changed it"],
+    "at": "2026-11-26T17:35:19.065Z"
   }
 }

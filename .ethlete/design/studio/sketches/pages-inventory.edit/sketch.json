@@ -97,17 +97,18 @@
     "elements/shell-main": "db1a3f8965164a96",
     "elements/studio-menu": "18d6cb580595f84e",
     "elements/variant-cell": "ac4cdc7232e390d6",
-    "pages/flows": "ee95f84d435bb3d4",
-    "pages/inbox": "2cdc95a4a51639da",
-    "pages/inventory": "e24a7f77f0578bb2",
-    "pages/sketches": "ea3d71606ca4d0eb",
+    "pages/flows": "3addc7e5f20cb73d",
+    "pages/inbox": "45b517e0cc2324df",
+    "pages/inventory": "42b01b80f10cd7ab",
+    "pages/sketches": "5b38fed2179a7995",
     "pages/start": "ce59d97ea0c350e1",
-    "pages/system": "cf49e47c731fd7a4",
+    "pages/system": "acd71eaa6b910ad6",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "d83af46c975c5da7104bcbbdab6485cc0af87bb4",
+  "baselineTree": "f0b32ccc3b6e91e6211a3b61b39a22cb6786e380",
+  "editOldCommit": "d69a28bcc0ae5c913d5a0af89d459e1e1ef1da87",
   "sharedBase": {
-    "pages/inventory/shared/inventory-sample.ts": "0c67c6f0855a8c44"
+    "pages/inventory/shared/inventory-sample.ts": "9d359d2c7f78863f"
   },
   "rounds": [
     {
@@ -131,6 +132,5 @@
   "readyContent": {
     "new": "1acf5056a11670e1",
     "old": "6d140ffe1b97739c"
-  },
-  "editOldCommit": "d69a28bcc0ae5c913d5a0af89d459e1e1ef1da87"
+  }
 }

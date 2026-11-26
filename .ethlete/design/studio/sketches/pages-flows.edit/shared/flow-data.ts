@@ -1,10 +1,11 @@
-import { embedPage, html, slot, withAction } from '@design-system';
+import { html, slot, withAction } from '@design-system';
 import button from '@system/components/button';
 import select from '@system/components/select';
 import textarea from '@system/components/textarea';
 import treeRow from '@system/components/tree-row';
 import { icon } from '@system/foundations/icons';
 import { FLOWS_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/flows-labels';
+import { samplePage } from '../../../../../../apps/ethlete-studio/src/app/design-harness/sample-product';
 import { SYSTEM_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 export type FlowProps = {
@@ -20,13 +21,13 @@ export type FlowProps = {
 export type FlowNoteSample = { id: string; text: string; x: number; y: number };
 
 export const FLOW_NOTES: FlowNoteSample[] = [
-  { id: 'gap', text: 'Hier fehlt noch der Weg, wenn der Nutzer den Sketch verwirft.', x: 790, y: 262 },
+  { id: 'gap', text: 'Hier fehlt noch der Weg, wenn der Korb leer bleibt.', x: 790, y: 262 },
   { id: 'new', text: '', x: 0, y: 262 },
 ];
 
 export const ORPHAN_NOTES: FlowNoteSample[] = [
-  { id: 'lost-1', text: 'Rückweg nach Verwerfen', x: 1420, y: 60 },
-  { id: 'lost-2', text: 'Merge-Knopf klären', x: 1420, y: 300 },
+  { id: 'lost-1', text: 'Rückweg bei leerem Korb', x: 1420, y: 60 },
+  { id: 'lost-2', text: 'Lieferzeit klären', x: 1420, y: 300 },
 ];
 
 export const ORPHAN_TITLE = FLOWS_LABELS.orphans;
@@ -92,14 +93,14 @@ export const noteField = (id: string) =>
     },
   });
 
-type Step = { page: `pages/${string}`; state: string; title: string; via?: string };
+type Step = { state: string; title: string };
 
-export const FLOW_NAME = 'Sketch prüfen';
+export const FLOW_NAME = 'Pflanze bestellen';
 
-const OTHER_FLOWS = ['Kommentar beantworten', 'Produkt anlegen'];
+const OTHER_FLOWS = ['Konto anlegen', 'Retoure melden'];
 
 const shot = (step: Step, scale: number) =>
-  embedPage(step.page, { state: step.state, width: 1440, height: 900, scale }).body;
+  `<div class="origin-top-left" style="width:1440px;height:900px;transform:scale(${scale})">${samplePage(step.state)}</div>`;
 
 export const presetPickerOf = async () => {
   const picker = await select.render({
@@ -167,26 +168,16 @@ export const pagePadding = 'p-space-5 ps-[calc(var(--st-shell-inset-left)+var(--
 type Node = { id: string; step: Step; col: number; row: number };
 
 const NODES: Node[] = [
-  { id: 'inbox', step: { page: 'pages/inbox', state: 'open', title: 'Inbox · open' }, col: 0, row: 0 },
-  {
-    id: 'sketch',
-    step: { page: 'pages/sketches', state: 'page-sketch', title: 'Sketches · page-sketch' },
-    col: 1,
-    row: 0,
-  },
-  {
-    id: 'resolved',
-    step: { page: 'pages/inbox', state: 'with-resolved', title: 'Inbox · with-resolved' },
-    col: 1,
-    row: 1,
-  },
-  { id: 'system', step: { page: 'pages/system', state: 'part', title: 'System · part' }, col: 2, row: 0 },
+  { id: 'start', step: { state: '1', title: 'Shop · Monstera' }, col: 0, row: 0 },
+  { id: 'plant', step: { state: '2', title: 'Shop · Calathea' }, col: 1, row: 0 },
+  { id: 'pot', step: { state: '3', title: 'Shop · Geigenfeige' }, col: 1, row: 1 },
+  { id: 'basket', step: { state: '4', title: 'Shop · Zamioculcas' }, col: 2, row: 0 },
 ];
 
 const EDGES = [
-  { from: 'inbox', to: 'sketch', label: "Nutzer klickt 'Sketches' in der Leiste" },
-  { from: 'inbox', to: 'resolved', label: "Nutzer klickt 'Erledigte zeigen'" },
-  { from: 'sketch', to: 'system', label: "Nutzer klickt 'Merge'" },
+  { from: 'start', to: 'plant', label: "Nutzer klickt 'Calathea' in der Liste" },
+  { from: 'start', to: 'pot', label: "Nutzer klickt 'Geigenfeige'" },
+  { from: 'plant', to: 'basket', label: "Nutzer klickt 'In den Korb'" },
 ];
 
 const CAPTION = 20;
