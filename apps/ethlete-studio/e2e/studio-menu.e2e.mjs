@@ -25,6 +25,27 @@ const radii = (page) =>
     };
   }, TRIGGER);
 
+const tileChroma = (page) =>
+  page.evaluate((selector) => {
+    const button = document.querySelector(selector);
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const toRgba = (color) => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+
+      return [...context.getImageData(0, 0, 1, 1).data];
+    };
+    const fills = [getComputedStyle(button).backgroundColor, getComputedStyle(button.querySelector('svg rect')).fill];
+
+    return fills
+      .map(toRgba)
+      .filter(([, , , alpha]) => alpha > 0)
+      .map(([red, green, blue]) => (Math.max(red, green, blue) - Math.min(red, green, blue)) / 255);
+  }, TRIGGER);
+
 const STATES = [
   { name: 'rest', enter: async () => undefined },
   { name: 'hover', enter: (page) => page.hover(TRIGGER) },
@@ -71,6 +92,16 @@ const results = await withStudio(
       console.log(
         `${ok ? 'PASS' : 'FAIL'}  trigger ${state.name.padEnd(14)} button radius ${measured.button}px, mark radius ${measured.mark}px`,
       );
+
+      if (state.name === 'hover' || state.name === 'open') {
+        const chroma = await tileChroma(page);
+        const grey = chroma.length > 0 && chroma.every((value) => value < 0.12);
+
+        rows.push({ state: `${state.name} tile`, ok: grey });
+        console.log(
+          `${grey ? 'PASS' : 'FAIL'}  trigger ${state.name.padEnd(14)} tile stays grey, chroma ${chroma.map((value) => value.toFixed(3)).join('/')}`,
+        );
+      }
     }
 
     await page.goto(studioUrl);
