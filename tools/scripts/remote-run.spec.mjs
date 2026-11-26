@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from './remote-run.mjs';
+import { LINUX_IMAGE, parseArgs, remoteScript } from './remote-run.mjs';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'remote-run.mjs');
 const SHA = 'a'.repeat(40);
@@ -17,7 +17,7 @@ const stubDir = () => {
     `#!/usr/bin/env bash
 script=$(cat)
 printf '%s\\n' "$*" >> "$STUB_LOG"
-if [[ "$script" == *"eval "* ]]; then echo "suite output"; exit "\${FAKE_SUITE_CODE:-0}"; fi
+if [[ "$script" == *"suite exit"* ]]; then echo "suite output"; exit "\${FAKE_SUITE_CODE:-0}"; fi
 exit 0
 `,
   );
@@ -79,12 +79,12 @@ test('rejects an unknown host, a missing suite and unknown options', () => {
   assert.throws(() => parseArgs(['--host', 'rack']), /missing suite command/);
   assert.throws(() => parseArgs(['--host', 'rack', '--fast', '--', 'true']), /unknown or incomplete option --fast/);
   assert.throws(() => parseArgs(['--host', 'rack', '--slot', '../x', '--', 'true']), /--slot/);
-  assert.throws(() => parseArgs(['--host', 'rack', '--linux', '--', 'true']), /B814 step 4/);
 });
 
-test('refuses picture-comparing suites', () => {
-  assert.throws(() => parseArgs(['--host', 'rack', '--', 'yarn playwright test --project=visual']), /stay on tank/);
-  assert.throws(() => parseArgs(['--host', 'mac', '--', 'yarn nx run storybook:visual']), /stay on tank/);
+test('refuses picture-comparing suites outside the Linux container', () => {
+  assert.throws(() => parseArgs(['--host', 'rack', '--', 'yarn playwright test --project=visual']), /add --linux/);
+  assert.throws(() => parseArgs(['--host', 'mac', '--', 'yarn nx run storybook:visual']), /add --linux/);
+  assert.equal(parseArgs(['--host', 'mac', '--linux', '--', 'yarn playwright test --project=visual']).linux, true);
   assert.doesNotThrow(() => parseArgs(['--host', 'rack', '--', 'STUDIO_E2E_SHARD=1/10 yarn studio:e2e']));
 });
 
@@ -98,6 +98,33 @@ test('exits with the suite exit code and tees the log', () => {
   assert.doesNotMatch(failed.calls, /git push|origin/);
 
   assert.equal(run(['--host', 'mac', '--', 'yarn test']).status, 0);
+});
+
+test('--linux runs the suite in the pinned Playwright image, on the rack through the WSL helper', () => {
+  const mac = run(['--host', 'mac', '--linux', '--', 'yarn test'], { FAKE_SUITE_CODE: '3' });
+  assert.equal(mac.status, 3);
+  assert.match(mac.calls, /ethlete-mac bash -l -s/);
+
+  const script = remoteScript({ sha: SHA, slot: 'w1', suite: 'yarn test', host: 'mac', linux: true });
+  assert.match(
+    script,
+    new RegExp(`docker run --rm --init --ipc=host .*\\n.*\\n.*\\n.*\\n *${LINUX_IMAGE.replace(/[.]/g, '\\.')} bash -c`),
+  );
+  assert.match(script, /work="\$HOME\/ethlete-rr\/w1-linux"/);
+
+  const rack = remoteScript({
+    sha: SHA,
+    slot: 'w1',
+    suite: 'yarn test',
+    host: 'rack',
+    linux: true,
+    rackHelper: 'echo helper\n',
+  });
+  assert.match(
+    rack,
+    /wsl\.exe -d ethlete -- bash \/mnt\/c\/Users\/trbor\/ethlete-rr\/rack-docker-run\.sh "\$sha" 'w1' -- 'yarn test'/,
+  );
+  assert.doesNotMatch(rack, /worktree add/);
 });
 
 test('exits 2 on bad arguments without calling ssh', () => {

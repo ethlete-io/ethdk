@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { createWriteStream, mkdirSync, rmSync } from 'node:fs';
+import { createWriteStream, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,11 @@ export const HOSTS = {
     shell: 'bash -l -s',
   },
 };
+
+export const LINUX_IMAGE =
+  'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f';
+
+const RACK_HELPER = join(dirname(fileURLToPath(import.meta.url)), 'rack-docker-run.sh');
 
 const PICTURE_SUITE = /--project[= ]visual\b|\bvisual\b|screenshot|golden|baseline|--update-snapshots/i;
 
@@ -40,11 +45,8 @@ export const parseArgs = (argv) => {
 
   if (!HOSTS[opts.host]) throw new Error(`--host must be one of ${Object.keys(HOSTS).join(', ')}\n${USAGE}`);
   if (!opts.suite.trim()) throw new Error(`missing suite command after --\n${USAGE}`);
-  if (opts.linux) {
-    throw new Error(`--linux has no Linux container on ${opts.host} yet (B814 step 4 adds it); run the suite on tank`);
-  }
-  if (PICTURE_SUITE.test(opts.suite)) {
-    throw new Error(`picture-comparing suites stay on tank: their baselines are Linux-only (${opts.host} is not)`);
+  if (!opts.linux && PICTURE_SUITE.test(opts.suite)) {
+    throw new Error(`picture-comparing suites need Linux baselines: add --linux or run them on tank`);
   }
   if (!/^[\w.-]+$/.test(opts.slot)) throw new Error(`--slot must match [\\w.-]+`);
   return opts;
@@ -52,25 +54,7 @@ export const parseArgs = (argv) => {
 
 const shellQuote = (value) => `'${value.replaceAll("'", `'\\''`)}'`;
 
-export const remoteScript = ({ sha, slot, suite, bundle }) => `main() {
-  export PATH="$HOME/.local/bin:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
-  local mirror="$HOME/ethlete-mirror.git" work="$HOME/ethlete-rr/${slot}" sha=${shellQuote(sha)}
-  ${
-    bundle
-      ? `git -C "$mirror" fetch --quiet --force "$HOME/${bundle}" "refs/remote-run/$sha:refs/heads/remote-run-$sha" || return 1
-  rm -f "$HOME/${bundle}"`
-      : ':'
-  }
-  if [ -e "$work/.git" ]; then
-    git -C "$work" checkout --quiet --force --detach "$sha" || return 1
-    git -C "$work" clean -ffdxq -e node_modules -e .nx || return 1
-  else
-    mkdir -p "$HOME/ethlete-rr"
-    git -C "$mirror" worktree prune
-    git -C "$mirror" -c core.longpaths=true worktree add --quiet --detach "$work" "$sha" || return 1
-  fi
-  cd "$work" || return 1
-  echo "[remote-run] $(hostname) $work at $(git rev-parse --short HEAD)"
+const nativeRun = (suite) => `  export PATH="$HOME/.local/bin:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
   local started=$SECONDS
   yarn install --immutable > "$work/.remote-run-install.log" 2>&1 || { tail -40 "$work/.remote-run-install.log"; return 1; }
   echo "[remote-run] install $((SECONDS - started))s"
@@ -78,10 +62,65 @@ export const remoteScript = ({ sha, slot, suite, bundle }) => `main() {
   eval ${shellQuote(suite)}
   local code=$?
   echo "[remote-run] suite exit $code after $((SECONDS - started))s"
-  return $code
+  return $code`;
+
+const containerSetup = `[ -x /opt/tools/bin/corepack ] || npm install --global --silent --prefix /opt/tools corepack >/dev/null
+export PATH=/opt/tools/bin:$PATH COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+corepack enable --install-directory /opt/tools/bin
+started=$SECONDS
+yarn install --immutable >/tmp/yarn-install.log 2>&1 || { tail -40 /tmp/yarn-install.log; exit 1; }
+echo "[remote-run] install $((SECONDS - started))s"
+started=$SECONDS
+`;
+
+const linuxRun = (suite, slot) => `  export PATH="/usr/local/bin:$PATH"
+  docker image inspect ${LINUX_IMAGE} >/dev/null 2>&1 || docker pull --quiet ${LINUX_IMAGE} || return 1
+  docker run --rm --init --ipc=host -v "$work:$work" -w "$work" -v "$mirror:$mirror" \\
+    -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0="*" \\
+    -v ethlete-rr-yarn-${slot}:/root/.yarn/berry -v ethlete-rr-tools:/opt/tools \\
+    -e CI=1 -e NX_NO_CLOUD=true -e NX_DAEMON=false \\
+    ${LINUX_IMAGE} bash -c ${shellQuote(`${containerSetup}${suite}
+code=$?
+echo "[remote-run] suite exit $code after $((SECONDS - started))s"
+exit $code`)}`;
+
+const rackLinuxRun = (suite, slot, helper) => `  cat > "$HOME/ethlete-rr/rack-docker-run.sh" <<'REMOTE_RUN_HELPER'
+${helper}REMOTE_RUN_HELPER
+  wsl.exe -d ethlete -- bash /mnt/c/Users/trbor/ethlete-rr/rack-docker-run.sh "$sha" ${shellQuote(slot)} -- ${shellQuote(suite)}`;
+
+export const remoteScript = ({ sha, slot, suite, bundle, host, linux, rackHelper }) => {
+  const run = !linux
+    ? nativeRun(suite)
+    : host === 'rack'
+      ? rackLinuxRun(suite, slot, rackHelper)
+      : linuxRun(suite, slot);
+  const checkout = !(linux && host === 'rack');
+  return `main() {
+  local mirror="$HOME/ethlete-mirror.git" work="$HOME/ethlete-rr/${slot}${linux ? '-linux' : ''}" sha=${shellQuote(sha)}
+  ${
+    bundle
+      ? `git -C "$mirror" fetch --quiet --force "$HOME/${bundle}" "refs/remote-run/$sha:refs/heads/remote-run-$sha" || return 1
+  rm -f "$HOME/${bundle}"`
+      : ':'
+  }
+  mkdir -p "$HOME/ethlete-rr"
+  ${
+    checkout
+      ? `if [ -e "$work/.git" ]; then
+    git -C "$work" checkout --quiet --force --detach "$sha" || return 1
+    git -C "$work" clean -ffdxq -e node_modules -e .nx || return 1
+  else
+    git -C "$mirror" worktree prune
+    git -C "$mirror" -c core.longpaths=true worktree add --quiet --detach "$work" "$sha" || return 1
+  fi
+  echo "[remote-run] $(hostname) $work at $(git -C "$work" rev-parse --short HEAD)"`
+      : 'echo "[remote-run] $(hostname) WSL ethlete container run"'
+  }
+${run}
 }
 main </dev/null
 `;
+};
 
 export const initScript = () => `main() {
   local mirror="$HOME/ethlete-mirror.git"
@@ -149,7 +188,19 @@ export const remoteRun = async (opts) => {
     if (copy.status !== 0) return finish(file, copy.status ?? 1, `scp failed: ${copy.stderr.trim()}`);
   }
 
-  const code = await runSsh(host, remoteScript({ sha, slot: opts.slot, suite: opts.suite, bundle }), { onData: tee });
+  const code = await runSsh(
+    host,
+    remoteScript({
+      sha,
+      slot: opts.slot,
+      suite: opts.suite,
+      bundle,
+      host: opts.host,
+      linux: opts.linux,
+      rackHelper: opts.linux && opts.host === 'rack' ? readFileSync(RACK_HELPER, 'utf8') : undefined,
+    }),
+    { onData: tee },
+  );
   return finish(file, code);
 };
 
