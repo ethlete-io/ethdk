@@ -255,7 +255,7 @@ describe('the first full sketch listing', () => {
     await vi.waitFor(() => expect(warmRenderer).toHaveBeenCalledTimes(1));
   });
 
-  it('draws its compare pictures at low priority, behind the shots the Studio shows', async () => {
+  it('draws its compare pictures at idle priority, behind the shots the Studio shows', async () => {
     const target = acme();
     const pictureOf = vi.fn<PictureOf>(async () => ({
       png: encodePng({ width: 1, height: 1, data: Buffer.alloc(4, 255) }),
@@ -269,7 +269,7 @@ describe('the first full sketch listing', () => {
     await listing(target, '', load, { pictureOf });
 
     expect(pictureOf).toHaveBeenCalled();
-    expect(new Set(pictureOf.mock.calls.map(([options]) => options.priority))).toEqual(new Set(['low']));
+    expect(new Set(pictureOf.mock.calls.map(([options]) => options.priority))).toEqual(new Set(['idle']));
   });
 });
 

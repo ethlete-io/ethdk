@@ -244,7 +244,7 @@ export const heldAnimations = `document.getAnimations()
   .filter((animation) => typeof ScrollTimeline === 'undefined' || !(animation.timeline instanceof ScrollTimeline))
   .forEach((animation) => animation.cancel())`;
 
-export type DrawPriority = 'high' | 'low';
+export type DrawPriority = 'high' | 'low' | 'idle';
 
 /**
  * What one ask wants of a drawing. `view` is a number the asker raises with each view change; the
@@ -258,9 +258,10 @@ export type DrawWant = {
   rank?: 'active' | 'visible' | null;
   board?: { key: string; boardView: number };
   onWithdraw?: (withdraw: () => void) => void;
+  onStart?: (start: { lane: number; waitedMs: number; busyLanes: number[] }) => void;
 };
 
-type WaitingDraw = { job: () => Promise<void>; wants: Set<DrawWant>; drop: () => void };
+type WaitingDraw = { job: () => Promise<void>; wants: Set<DrawWant>; drop: () => void; asked: number };
 
 // Partial raster redraws only the invalidated part of a tile, so the anti-aliased edge of a rounded clip over an
 // embedded frame depends on which frame painted first: two draws of the same page differed under load.
@@ -269,11 +270,15 @@ export const DRAW_BROWSER_ARGS = ['--disable-partial-raster'];
 // while the renderer idled. The flag breaks a view-transition screenshot, so only the inspect browser takes it.
 export const INSPECT_BROWSER_ARGS = [...DRAW_BROWSER_ARGS, '--disable-frame-rate-limit'];
 export const DRAWS_AT_ONCE = 8;
+export const IDLE_DRAWS_AT_ONCE = DRAWS_AT_ONCE / 4;
+const IDLE_LANE = 5;
 
 /**
  * One shared headless Chromium, launched on the first ask, that runs up to `DRAWS_AT_ONCE` drawings at once.
  * A waiting `high` drawing runs first; of the `low` ones, those for the active frame of the shown view,
- * then its visible cells, then the rest, then those of views no longer shown, each lane in the order asked.
+ * then its visible cells, then the rest, then those of views no longer shown, then the `idle` ones, each lane in the
+ * order asked. `idle` drawings take at most `IDLE_DRAWS_AT_ONCE` places and none start while a shown shot draws, so a
+ * shot the viewer waits for starts at once and shares the CPU with few of them.
  * A drawing every ask withdrew before it started is dropped. A failed launch is not kept, so the next ask
  * tries again.
  */
@@ -329,7 +334,7 @@ export const createDrawQueue = (options: {
   let closed = false;
   const waiting: WaitingDraw[] = [];
   const entries = new WeakMap<Promise<unknown>, WaitingDraw>();
-  let drawing = 0;
+  const drawingLanes: number[] = [];
   let shownView = 0;
 
   const launch = () => {
@@ -361,6 +366,7 @@ export const createDrawQueue = (options: {
 
     if (shown) return shown;
     if (typeof want.view === 'number' && want.view < shownView) return 4;
+    if (want.priority === 'idle') return IDLE_LANE;
 
     return want.rank === 'active' ? 1 : want.rank === 'visible' ? 2 : 3;
   };
@@ -368,16 +374,26 @@ export const createDrawQueue = (options: {
   const entryLaneOf = (entry: WaitingDraw) => Math.min(...[...entry.wants].map(laneOf));
 
   const next = () => {
-    while (drawing < DRAWS_AT_ONCE && waiting.length > 0) {
-      const lanes = waiting.map(entryLaneOf);
-      const at = lanes.indexOf(Math.min(...lanes));
+    while (drawingLanes.length < DRAWS_AT_ONCE && waiting.length > 0) {
+      const idleFull =
+        drawingLanes.some((lane) => lane <= 2) ||
+        drawingLanes.filter((lane) => lane === IDLE_LANE).length >= IDLE_DRAWS_AT_ONCE;
+      const lanes = waiting.map(entryLaneOf).map((lane) => (idleFull && lane === IDLE_LANE ? Infinity : lane));
+      const lane = Math.min(...lanes);
+
+      if (lane === Infinity) return;
+
+      const at = lanes.indexOf(lane);
       const [entry] = waiting.splice(at, 1);
 
       if (!entry) return;
 
-      drawing++;
+      const start = { lane, waitedMs: performance.now() - entry.asked, busyLanes: [...drawingLanes] };
+
+      drawingLanes.push(lane);
+      entry.wants.forEach((want) => want.onStart?.(start));
       void entry.job().finally(() => {
-        drawing--;
+        drawingLanes.splice(drawingLanes.indexOf(lane), 1);
         next();
       });
     }
@@ -424,6 +440,7 @@ export const createDrawQueue = (options: {
         job: () => Promise.resolve(),
         wants: new Set(),
         drop: () => undefined,
+        asked,
       };
       const drawn = new Promise<T>((resolve, reject) => {
         entry.job = () => {

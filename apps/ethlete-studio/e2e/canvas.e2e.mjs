@@ -1660,11 +1660,18 @@ const CASES = [
         designPort,
         async ({ edit, phaseLine }) => {
           const sources = new Map();
+          const queued = [];
           const countSource = (response) => {
             if (!response.url().includes('/__design/shot?')) return;
             const source = response.headers()['x-design-shot'] ?? 'none';
 
             sources.set(source, (sources.get(source) ?? 0) + 1);
+            const params = new URL(response.url()).searchParams;
+            const timing = response.request().timing();
+
+            queued.push(
+              `${params.get('variant') ?? '-'}/${params.get('state') ?? params.get('part') ?? '-'} q${response.headers()['x-design-shot-queue'] ?? '-'} total ${Math.round(Date.now() - timing.startTime)}`,
+            );
           };
 
           page.on('response', countSource);
@@ -1676,7 +1683,7 @@ const CASES = [
           return {
             ok:
               shownAt !== null && shownAt - cellsAt <= HEAVY_EDIT_HOLD_MS && loadingInView === 0 && blank.length === 0,
-            detail: `${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${hold}, shot sources ${JSON.stringify(Object.fromEntries(sources))}, ${phaseLine()}`,
+            detail: `${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${hold}, shot sources ${JSON.stringify(Object.fromEntries(sources))}, shot queue [${queued.join(', ')}], ${phaseLine()}`,
           };
         },
         HEAVY_EDIT,

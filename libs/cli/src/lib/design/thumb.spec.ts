@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DRAWS_AT_ONCE,
+  IDLE_DRAWS_AT_ONCE,
   FrameUnservedError,
   ShotTimeoutError,
   createDrawQueue,
@@ -272,6 +273,47 @@ describe('createDrawQueue', () => {
     await Promise.all(drawn);
 
     expect(order).toEqual([...busyNames, 'high 1', 'high 2', 'low 1', 'low 2', 'low 3']);
+  });
+
+  it('keeps places free of idle jobs, so a low job asked behind them starts at once', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const started: string[] = [];
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const busy = (name: string) => async () => {
+      started.push(name);
+      await held;
+    };
+    const idleNames = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `idle ${at + 1}`);
+    const drawn = [...idleNames.map((name) => queue.run(busy(name), 'idle')), queue.run(busy('low'), 'low')];
+
+    await vi.waitFor(() => expect(started).toEqual([...idleNames.slice(0, IDLE_DRAWS_AT_ONCE), 'low']));
+    await new Promise((done) => setTimeout(done, 5));
+    expect(started).toHaveLength(IDLE_DRAWS_AT_ONCE + 1);
+
+    release();
+    await Promise.all(drawn);
+    expect(started).toHaveLength(DRAWS_AT_ONCE + 1);
+  });
+
+  it('starts no idle job while a high job draws', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const started: string[] = [];
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const high = queue.run(async () => {
+      started.push('high');
+      await held;
+    }, 'high');
+    const idle = queue.run(async () => void started.push('idle'), 'idle');
+
+    await vi.waitFor(() => expect(started).toEqual(['high']));
+    await new Promise((done) => setTimeout(done, 5));
+    expect(started).toEqual(['high']);
+
+    release();
+    await Promise.all([high, idle]);
+    expect(started).toEqual(['high', 'idle']);
   });
 
   it('launches Chromium without partial raster, so the same page draws the same pixels each time', async () => {

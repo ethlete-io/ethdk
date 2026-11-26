@@ -971,6 +971,11 @@ export const createPartShooter = (options: {
       const want: DrawWant = {
         ...wantOf(params, response),
         board: { key: shotKeyOf(request.url ?? ''), boardView: board.view() },
+        onStart: ({ lane, waitedMs, busyLanes }) => {
+          if (!response.headersSent) {
+            response.setHeader('x-design-shot-queue', `${lane};${Math.round(waitedMs)};${busyLanes.join('')}`);
+          }
+        },
       };
       const onSource = (source: ShotSource) => response.setHeader('x-design-shot', source);
 
