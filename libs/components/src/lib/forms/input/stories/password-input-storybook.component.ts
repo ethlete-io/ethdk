@@ -33,9 +33,7 @@ import { PASSWORD_INPUT_IMPORTS } from '../input.imports';
         <div class="flex items-center gap-2" aria-hidden="true">
           @for (segment of [1, 2, 3, 4]; track segment) {
             <div
-              [style.background]="
-                pw.strength() >= segment ? 'var(--et-theme-color-primary-solid)' : 'rgb(128 128 128 / 0.3)'
-              "
+              [style.background]="pw.strength() >= segment ? 'var(--et-tone-fill)' : 'rgb(128 128 128 / 0.3)'"
               class="h-1 flex-1 rounded-full"
             ></div>
           }

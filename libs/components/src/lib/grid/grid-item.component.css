@@ -20,11 +20,10 @@
     outline: none;
     will-change: translate;
     border-radius: var(--et-grid-item-radius, 0);
-    background: var(--et-grid-item-bg, var(--et-surface-background-solid));
+    background: var(--et-grid-item-bg, var(--et-surface-background));
 
     &:focus-visible {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: -2px;
     }
 
@@ -72,7 +71,7 @@
     content: '';
     position: absolute;
     border-radius: 2px;
-    background: var(--et-grid-item-resize-handle-color, var(--et-surface-color-solid));
+    background: var(--et-grid-item-resize-handle-color, var(--et-surface-text));
     opacity: 0.2;
   }
 

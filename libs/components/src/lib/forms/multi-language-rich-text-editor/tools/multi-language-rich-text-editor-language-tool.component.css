@@ -33,14 +33,14 @@
     block-size: var(--et-multi-language-rich-text-editor-dot-size);
     border-radius: 50%;
     /* empty: a hollow ring in a muted neutral — reads as "not filled in yet" */
-    border: 1.5px solid var(--et-surface-color-muted-solid, color-mix(in srgb, currentColor 40%, transparent));
+    border: 1.5px solid var(--et-surface-text-muted, color-mix(in srgb, currentColor 40%, transparent));
     background: transparent;
   }
 
   .et-ml-rte-lang-dot--filled {
     /* has content: a solid accent dot */
-    border-color: var(--et-theme-color-primary-solid, var(--et-surface-color-solid, currentColor));
-    background: var(--et-theme-color-primary-solid, var(--et-surface-color-solid, currentColor));
+    border-color: var(--et-tone-fill, var(--et-surface-text, currentColor));
+    background: var(--et-tone-fill, var(--et-surface-text, currentColor));
   }
 
   /* A square, neutral toolbar control that mirrors the icon buttons beside it (same size, same
@@ -66,16 +66,16 @@
 
   @media (hover: hover) {
     .et-ml-rte-lang-trigger:hover:not(:disabled) {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction) 12%, transparent);
     }
   }
 
   .et-ml-rte-lang-trigger:focus-visible {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction) 16%, transparent);
   }
 
   .et-ml-rte-lang-trigger:active:not(:disabled) {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction) 20%, transparent);
   }
 
   .et-ml-rte-lang-trigger:disabled {
@@ -99,6 +99,6 @@
     inline-size: var(--et-multi-language-rich-text-editor-badge-size);
     block-size: var(--et-multi-language-rich-text-editor-badge-size);
     border-radius: 50%;
-    background: var(--et-theme-color-primary-solid, var(--et-surface-interaction-solid, currentColor));
+    background: var(--et-tone-fill, var(--et-surface-interaction, currentColor));
   }
 }

@@ -19,7 +19,7 @@
     margin: 8px 0 0;
     font-size: 14px;
     font-weight: 600;
-    color: var(--et-surface-color-solid);
+    color: var(--et-surface-text);
   }
 
   .et-scheduler-agenda-view-day {
@@ -33,13 +33,13 @@
     align-items: center;
     gap: 8px;
     padding-block-end: 4px;
-    border-block-end: 1px solid var(--et-surface-border-solid);
+    border-block-end: 1px solid var(--et-surface-border);
   }
 
   .et-scheduler-agenda-view-day-weekday {
     font-size: 12px;
     font-weight: 600;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
   }
 
   .et-scheduler-agenda-view-day-date {
@@ -51,12 +51,12 @@
     border-radius: 999px;
     font-size: 13px;
     font-variant-numeric: tabular-nums;
-    color: var(--et-surface-color-solid);
+    color: var(--et-surface-text);
   }
 
   .et-scheduler-agenda-view-day-header:where([data-today]) .et-scheduler-agenda-view-day-date {
-    background: var(--et-theme-color-primary-solid);
-    color: var(--et-theme-color-on-primary);
+    background: var(--et-tone-fill);
+    color: var(--et-tone-on-fill);
     font-weight: 600;
   }
 
@@ -87,7 +87,7 @@
       inset-block: -1px;
       inset-inline-start: 50%;
       inline-size: 1px;
-      background: var(--et-surface-border-solid, currentColor);
+      background: var(--et-surface-border, currentColor);
     }
 
     &:where([data-guide='last-branch'])::before {
@@ -100,7 +100,7 @@
       inset-block-start: 50%;
       inset-inline: 50% 0;
       block-size: 1px;
-      background: var(--et-surface-border-solid, currentColor);
+      background: var(--et-surface-border, currentColor);
     }
   }
 }

@@ -181,6 +181,6 @@
   }
 
   .et-progress-bar:where(.et-progress-bar--themed) {
-    --et-progress-bar-indicator-color: var(--et-theme-color-ink-solid);
+    --et-progress-bar-indicator-color: var(--et-tone-text);
   }
 }

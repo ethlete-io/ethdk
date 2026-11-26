@@ -6,8 +6,8 @@ import { Component, ViewEncapsulation } from '@angular/core';
   encapsulation: ViewEncapsulation.None,
   styles: `
     .et-overlay--dialog.et-sb-overlay-panel {
-      background-color: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background-color: var(--et-surface-background);
+      color: var(--et-surface-text);
       border-radius: 12px;
     }
   `,

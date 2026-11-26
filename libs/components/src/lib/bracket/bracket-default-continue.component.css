@@ -10,8 +10,8 @@
     inline-size: 100%;
     block-size: 100%;
     padding: 10px;
-    color: var(--et-surface-color-muted-solid, currentColor);
-    border: 1px dashed var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    color: var(--et-surface-text-muted, currentColor);
+    border: 1px dashed var(--et-surface-border, rgb(255 255 255 / 0.1));
     border-radius: var(--et-match-card-border-radius, 10px);
   }
 

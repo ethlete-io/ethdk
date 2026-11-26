@@ -32,7 +32,7 @@
       font: inherit;
       color: inherit;
       padding: 0;
-      caret-color: var(--et-theme-color-primary-solid, currentColor);
+      caret-color: var(--et-tone-fill, currentColor);
 
       &::placeholder {
         color: color-mix(in srgb, currentColor 60%, transparent);

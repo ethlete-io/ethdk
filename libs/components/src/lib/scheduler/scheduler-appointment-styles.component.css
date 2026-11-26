@@ -14,8 +14,8 @@
     padding: 2px 6px;
     border: none;
     border-radius: 4px;
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid) 14%, transparent);
-    color: var(--et-theme-color-ink-solid);
+    background: color-mix(in srgb, var(--et-tone-fill) 14%, transparent);
+    color: var(--et-tone-text);
     font: inherit;
     font-size: 12px;
     text-align: start;
@@ -25,19 +25,18 @@
 
     @media (hover: hover) {
       &:hover {
-        background: color-mix(in srgb, var(--et-theme-color-primary-solid) 22%, transparent);
+        background: color-mix(in srgb, var(--et-tone-fill) 22%, transparent);
       }
     }
 
     &:focus-visible {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: 1px;
     }
 
     &:where([data-selected]) {
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
     }
 
     &:where([data-draggable]) {
@@ -50,7 +49,10 @@
     }
 
     &:where([data-dragging]) {
-      box-shadow: var(--et-scheduler-appointment-drag-shadow, 0 2px 8px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.25));
+      box-shadow: var(
+        --et-scheduler-appointment-drag-shadow,
+        0 2px 8px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 25%, transparent)
+      );
       cursor: grabbing;
     }
   }
@@ -69,12 +71,12 @@
     inline-size: 6px;
     block-size: 6px;
     border-radius: 999px;
-    background: var(--et-theme-color-primary-solid);
+    background: var(--et-tone-fill);
   }
 
   :where(.et-scheduler-appointment, .et-scheduler-time-grid-block):where([data-selected])
     .et-scheduler-appointment-dot {
-    background: var(--et-theme-color-on-primary);
+    background: var(--et-tone-on-fill);
   }
 
   .et-scheduler-appointment-time-range {

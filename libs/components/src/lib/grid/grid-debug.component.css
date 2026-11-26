@@ -2,11 +2,11 @@
   .et-grid-debug-panel {
     font-family: monospace;
     font-size: 11px;
-    border: 1px solid var(--et-surface-border-solid, #d1d5db);
+    border: 1px solid var(--et-surface-border, #d1d5db);
     border-radius: 4px;
     margin-top: 8px;
-    background: var(--et-surface-background-solid, #f9fafb);
-    color: var(--et-surface-color-solid, #111);
+    background: var(--et-surface-background, #f9fafb);
+    color: var(--et-surface-text, #111);
   }
 
   .et-grid-debug-summary {
@@ -22,15 +22,15 @@
 
   .et-grid-debug-title {
     font-weight: 700;
-    color: var(--et-surface-color-muted-solid, #6b7280);
+    color: var(--et-surface-text-muted, #6b7280);
   }
 
   .et-grid-debug-muted {
-    color: var(--et-surface-color-muted-solid, #6b7280);
+    color: var(--et-surface-text-muted, #6b7280);
   }
 
   .et-grid-debug-strong {
-    color: var(--et-surface-color-solid, #111827);
+    color: var(--et-surface-text, #111827);
   }
 
   .et-grid-debug-warning {
@@ -49,12 +49,12 @@
   .et-grid-debug-copy {
     margin-left: auto;
     padding: 2px 8px;
-    border: 1px solid var(--et-surface-border-solid, #d1d5db);
+    border: 1px solid var(--et-surface-border, #d1d5db);
     border-radius: 3px;
-    background: var(--et-surface-interaction-solid, #fff);
+    background: var(--et-surface-interaction, #fff);
     cursor: pointer;
     font-size: 11px;
-    color: var(--et-surface-color-solid, #374151);
+    color: var(--et-surface-text, #374151);
   }
 
   .et-grid-debug-copied {
@@ -65,7 +65,7 @@
   .et-grid-debug-body {
     padding: 8px 10px;
     overflow-x: auto;
-    border-top: 1px solid var(--et-surface-border-solid, #e5e7eb);
+    border-top: 1px solid var(--et-surface-border, #e5e7eb);
   }
 
   .et-grid-debug-legend {
@@ -79,12 +79,12 @@
     padding: 1px 7px;
     border: 1px solid currentColor;
     border-radius: 99px;
-    color: var(--et-surface-color-subtle-solid, #9ca3af);
+    color: var(--et-surface-text-subtle, #9ca3af);
   }
 
   .et-grid-debug-breakpoint--active {
     font-weight: 700;
-    color: var(--et-theme-color-primary-solid, #1d4ed8);
+    color: var(--et-tone-fill, #1d4ed8);
   }
 
   .et-grid-debug-table {
@@ -93,17 +93,17 @@
   }
 
   .et-grid-debug-head-row {
-    background: var(--et-surface-interaction-solid, #f3f4f6);
+    background: var(--et-surface-interaction, #f3f4f6);
   }
 
   .et-grid-debug-cell {
     padding: 3px 8px;
-    border: 1px solid var(--et-surface-border-solid, #e5e7eb);
+    border: 1px solid var(--et-surface-border, #e5e7eb);
     text-align: center;
   }
 
   .et-grid-debug-cell--active {
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid, #1d4ed8) 15%, transparent);
+    background: color-mix(in srgb, var(--et-tone-fill, #1d4ed8) 15%, transparent);
   }
 
   .et-grid-debug-cell-start {
@@ -115,16 +115,16 @@
   }
 
   .et-grid-debug-id {
-    color: var(--et-surface-color-muted-solid, #6b7280);
+    color: var(--et-surface-text-muted, #6b7280);
   }
 
   .et-grid-debug-type {
-    color: var(--et-surface-color-subtle-solid, #9ca3af);
+    color: var(--et-surface-text-subtle, #9ca3af);
   }
 
   .et-grid-debug-note {
     margin-top: 6px;
-    color: var(--et-surface-color-subtle-solid, #9ca3af);
+    color: var(--et-surface-text-subtle, #9ca3af);
     font-size: 10px;
   }
 }

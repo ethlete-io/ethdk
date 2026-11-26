@@ -2,7 +2,7 @@
   et-form-field {
     .et-form-field-hint {
       font-size: var(--et-form-field-hint-font-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       padding-inline-start: var(--_et-form-field-supporting-inset);
       transition: color 150ms ease;
 
@@ -12,7 +12,7 @@
     }
 
     &[data-disabled] .et-form-field-hint {
-      color: var(--et-surface-interaction-disabled-solid, currentColor);
+      color: var(--et-surface-interaction-disabled, currentColor);
     }
   }
 }

@@ -197,7 +197,7 @@ describe('StatTileComponent', () => {
     const delta = fixture.nativeElement.querySelector('.et-stat-tile-delta') as HTMLElement;
 
     expect(delta.dataset['sentiment']).toBe('good');
-    expect(delta.style.getPropertyValue('--et-theme-color-default')).toBe('');
+    expect(delta.style.getPropertyValue('--et-tone-fill-rest')).toBe('');
     expect(warn).toHaveBeenCalledTimes(1);
 
     warn.mockRestore();

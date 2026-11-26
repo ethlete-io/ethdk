@@ -140,14 +140,14 @@
     }
 
     a {
-      color: var(--et-theme-color-ink-solid, currentColor);
+      color: var(--et-tone-text, currentColor);
       text-decoration: underline;
     }
 
     code {
       padding: 0.1em 0.3em;
       border-radius: 4px;
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 14%, transparent);
       font-family: var(--et-font-family-mono, ui-monospace, monospace);
       font-size: 0.9em;
     }
@@ -157,7 +157,7 @@
       margin-block-end: 0;
       padding-inline-start: var(--et-rich-text-editor-quote-indent);
       border-inline-start: var(--et-rich-text-editor-quote-bar-width) solid
-        color-mix(in srgb, var(--et-surface-border-solid, currentColor) 80%, transparent);
+        color-mix(in srgb, var(--et-surface-border, currentColor) 80%, transparent);
       color: color-mix(in srgb, currentColor 82%, transparent);
     }
 
@@ -170,7 +170,7 @@
       margin-block-end: 0;
       padding: 8px 10px;
       border-radius: var(--et-rich-text-editor-code-block-radius);
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 10%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 10%, transparent);
       font-family: var(--et-font-family-mono, ui-monospace, monospace);
       font-size: 0.9em;
       /* pre-wrap, not pre: newlines are the block's content (Enter inserts one), but a long line
@@ -187,14 +187,14 @@
     }
 
     .et-rte-token {
-      --_et-rte-token-accent: var(--et-theme-color-primary-solid, var(--et-surface-interaction-solid, currentColor));
+      --_et-rte-token-accent: var(--et-tone-fill, var(--et-surface-interaction, currentColor));
 
       display: inline;
       padding-inline: var(--et-rich-text-editor-token-padding-inline);
       border-radius: var(--et-rich-text-editor-token-radius);
       background: color-mix(in srgb, var(--_et-rte-token-accent) 22%, transparent);
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--_et-rte-token-accent) 45%, transparent);
-      color: var(--et-theme-color-ink-solid, inherit);
+      color: var(--et-tone-text, inherit);
       font-weight: 500;
       white-space: nowrap;
       -webkit-user-select: all;

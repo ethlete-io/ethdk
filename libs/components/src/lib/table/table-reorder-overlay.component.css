@@ -32,11 +32,11 @@
     font-weight: 600;
     white-space: nowrap;
     text-overflow: ellipsis;
-    color: var(--et-surface-color-solid, CanvasText);
-    background: var(--et-surface-background-solid, Canvas);
-    border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    color: var(--et-surface-text, CanvasText);
+    background: var(--et-surface-background, Canvas);
+    border: 1px solid var(--et-surface-border, rgb(128 128 128 / 0.3));
     border-radius: 6px;
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--et-surface-interaction-solid, black) 18%, transparent);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--et-surface-interaction, black) 18%, transparent);
     pointer-events: none;
   }
 }

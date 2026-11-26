@@ -26,7 +26,7 @@
   .et-alert-dialog {
     --et-overlay-body-min-block-size: 0px;
 
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
 
     .et-alert-dialog-title {
       margin: 0;
@@ -37,7 +37,7 @@
     .et-alert-dialog-message {
       margin: 0;
       font-size: var(--et-alert-dialog-message-font-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       white-space: pre-line;
     }
 

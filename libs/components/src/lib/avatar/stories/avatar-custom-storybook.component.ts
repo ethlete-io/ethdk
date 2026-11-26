@@ -24,13 +24,13 @@ import { AVATAR_IMPORTS } from '../avatar.imports';
   imports: [AVATAR_IMPORTS],
   styles: `
     .et-sb-avatar-tonal {
-      --et-avatar-background: color-mix(in srgb, var(--et-theme-color-primary-solid) 16%, transparent);
-      --et-avatar-color: var(--et-theme-color-ink-solid);
+      --et-avatar-background: color-mix(in srgb, var(--et-tone-fill) 16%, transparent);
+      --et-avatar-color: var(--et-tone-text);
     }
 
     .et-sb-avatar-inverted {
-      --et-avatar-background: var(--et-surface-color-solid);
-      --et-avatar-color: var(--et-surface-background-solid);
+      --et-avatar-background: var(--et-surface-text);
+      --et-avatar-color: var(--et-surface-background);
     }
   `,
 })

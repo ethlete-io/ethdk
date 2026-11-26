@@ -35,7 +35,7 @@
   }
 
   .et-toggletip {
-    --_et-toggletip-focus-ring: var(--et-theme-color-primary-solid, rgb(59 130 246));
+    --_et-toggletip-focus-ring: var(--et-tone-fill, rgb(59 130 246));
 
     font-size: var(--et-toggletip-font-size);
     font-weight: 500;

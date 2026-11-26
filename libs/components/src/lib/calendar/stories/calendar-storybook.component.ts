@@ -107,11 +107,11 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
   imports: [...CALENDAR_IMPORTS, ProvideColorDirective],
   styles: `
     .et-sb-calendar-busy .et-calendar-cell-content {
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--et-theme-color-primary-solid) 60%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--et-tone-fill) 60%, transparent);
     }
 
     .et-sb-calendar-holiday .et-calendar-cell-content {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
+      background: color-mix(in srgb, var(--et-tone-fill) 18%, transparent);
       font-weight: 600;
     }
 
@@ -124,7 +124,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
 
       & button {
         padding: 4px 8px;
-        border: 1px solid var(--et-surface-border-solid);
+        border: 1px solid var(--et-surface-border);
         border-radius: 6px;
         background: transparent;
         font: inherit;

@@ -24,7 +24,7 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     &:has(.et-dropzone-list) .et-dropzone-area {

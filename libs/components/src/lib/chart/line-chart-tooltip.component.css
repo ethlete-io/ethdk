@@ -33,8 +33,8 @@
       border-radius: 1px;
       background: color-mix(
         in oklab,
-        var(--et-theme-color-primary-solid, currentColor) var(--_et-chart-accent-mix, 100%),
-        var(--et-surface-background-solid, transparent)
+        var(--et-tone-fill, currentColor) var(--_et-chart-accent-mix, 100%),
+        var(--et-surface-background, transparent)
       );
     }
 

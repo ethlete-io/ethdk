@@ -9,9 +9,9 @@ import { SpinnerComponent } from '../../spinner.component';
       <div class="flex flex-col gap-3">
         <p class="m-0 text-xs font-semibold uppercase tracking-widest">spinner</p>
         <div
-          class="flex min-h-36 items-center justify-center rounded-2xl border p-6 text-et-brand"
+          class="flex min-h-36 items-center justify-center rounded-2xl border p-6 text-et-tone-brand-fill"
           etProvideSurface="dark-elevated"
-          style="background: rgb(var(--et-surface-background)); border-color: rgb(var(--et-surface-border))"
+          style="background: var(--et-surface-background); border-color: var(--et-surface-border)"
         >
           <et-spinner
             [diameter]="diameter()"

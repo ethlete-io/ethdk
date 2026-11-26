@@ -129,18 +129,18 @@ export class AccordionLazyStorybookComponent {
 
     .et-sb-step {
       border-radius: 16px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
       box-shadow: inset 0 0 0 1px transparent;
       transition:
         background-color 120ms ease,
         box-shadow 160ms ease;
 
       &:has(> .et-sb-step-heading > .et-sb-step-trigger:hover) {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 6%, var(--et-surface-background-solid));
+        background: color-mix(in srgb, var(--et-surface-interaction) 6%, var(--et-surface-background));
       }
 
       &[data-open] {
-        box-shadow: inset 0 0 0 1px var(--et-theme-color-primary-solid);
+        box-shadow: inset 0 0 0 1px var(--et-tone-fill);
       }
     }
 
@@ -163,8 +163,7 @@ export class AccordionLazyStorybookComponent {
       cursor: pointer;
 
       &:focus-visible {
-        outline: 2px solid
-          light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+        outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
         outline-offset: 2px;
       }
     }
@@ -176,16 +175,16 @@ export class AccordionLazyStorybookComponent {
       inline-size: 32px;
       block-size: 32px;
       border-radius: 50%;
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
-      color: var(--et-theme-color-primary-solid);
+      background: color-mix(in srgb, var(--et-tone-fill) 18%, transparent);
+      color: var(--et-tone-fill);
       font-weight: 600;
       transition:
         background-color 160ms ease,
         color 160ms ease;
 
       [aria-expanded='true'] & {
-        background: var(--et-theme-color-primary);
-        color: var(--et-theme-color-on-primary);
+        background: var(--et-tone-fill);
+        color: var(--et-tone-on-fill);
       }
     }
 
@@ -202,7 +201,7 @@ export class AccordionLazyStorybookComponent {
     }
 
     .et-sb-step-summary {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.3rem;
     }
 
@@ -210,11 +209,11 @@ export class AccordionLazyStorybookComponent {
       flex: none;
       inline-size: 16px;
       block-size: 16px;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
 
       [aria-expanded='true'] & {
         rotate: 45deg;
-        color: var(--et-theme-color-primary-solid);
+        color: var(--et-tone-fill);
       }
     }
 
@@ -237,7 +236,7 @@ export class AccordionLazyStorybookComponent {
     .et-sb-step-body {
       margin: 0;
       padding: 0 16px 16px 62px;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
 
     @media (prefers-reduced-motion: no-preference) {

@@ -11,7 +11,7 @@ import { BrandLoaderComponent } from '../../brand-loader.component';
         <div
           class="flex min-h-36 items-center justify-center rounded-2xl border p-6"
           etProvideSurface="dark-elevated"
-          style="background: rgb(var(--et-surface-background)); border-color: rgb(var(--et-surface-border)); color: rgb(var(--et-surface-background))"
+          style="background: var(--et-surface-background); border-color: var(--et-surface-border); color: var(--et-surface-background)"
         >
           <et-brand-loader />
         </div>

@@ -14,7 +14,7 @@
     overflow: auto;
     border-radius: var(--et-stream-overlay-card-border-radius, 0px);
     text-align: center;
-    background: var(--et-surface-background-solid, inherit);
+    background: var(--et-surface-background, inherit);
     container-type: size;
   }
 
@@ -44,7 +44,7 @@
   .et-pip-slot-placeholder-icon {
     width: var(--et-stream-overlay-card-icon-size, 36px);
     height: var(--et-stream-overlay-card-icon-size, 36px);
-    color: var(--et-surface-color-subtle-solid, currentColor);
+    color: var(--et-surface-text-subtle, currentColor);
   }
 
   .et-stream-consent-heading,
@@ -54,7 +54,7 @@
     font-weight: var(--et-stream-overlay-card-heading-weight, 600);
     line-height: var(--et-stream-overlay-card-heading-line-height, 122%);
     letter-spacing: var(--et-stream-overlay-card-heading-letter-spacing, 0.2px);
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
   }
 
   .et-stream-consent-description,
@@ -64,6 +64,6 @@
     font-size: var(--et-stream-overlay-card-description-size, 14px);
     font-weight: var(--et-stream-overlay-card-description-weight, 400);
     line-height: var(--et-stream-overlay-card-description-line-height, 150%);
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 }

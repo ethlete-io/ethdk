@@ -4,7 +4,7 @@
 
     .et-form-field-busy-spinner {
       flex: none;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
 
       &.et-form-field-busy-spinner--enter {
         animation: et-form-field-busy-spinner-in 120ms ease;

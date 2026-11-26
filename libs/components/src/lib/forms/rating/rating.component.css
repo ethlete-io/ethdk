@@ -45,7 +45,7 @@
     display: inline-flex;
     flex-direction: column;
     gap: 6px;
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
     outline: none;
 
     --et-form-support-duration: var(--et-rating-support-duration);
@@ -58,14 +58,13 @@
       font-weight: 500;
       line-height: 1.2;
       letter-spacing: -0.01em;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       -webkit-user-select: none;
       user-select: none;
     }
 
     &:focus-visible .et-rating-icons {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: 2px;
       border-radius: 4px;
     }
@@ -133,11 +132,11 @@
     }
 
     .et-rating-icon-base {
-      color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 32%, transparent);
+      color: color-mix(in srgb, var(--et-surface-interaction, currentColor) 32%, transparent);
     }
 
     .et-rating-icon-fill {
-      color: var(--et-theme-color-primary-solid, currentColor);
+      color: var(--et-tone-fill, currentColor);
     }
 
     /* an unresolved bulk-edit rating fills nothing — the stars themselves become a dashed accent
@@ -159,7 +158,7 @@
       }
 
       .et-rating-icon-base {
-        color: var(--et-theme-color-primary-solid, currentColor);
+        color: var(--et-tone-fill, currentColor);
 
         /* Stroke widths are in the icon's own viewBox units, so the dash keeps its weight at every
            --et-rating-icon-size rather than needing a knob per size. */
@@ -175,11 +174,11 @@
 
     /* custom icon templates render per-step — expose the state for their own styling */
     .et-rating-icon[data-state] {
-      color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 32%, transparent);
+      color: color-mix(in srgb, var(--et-surface-interaction, currentColor) 32%, transparent);
 
       &[data-state='full'],
       &[data-state='half'] {
-        color: var(--et-theme-color-primary-solid, currentColor);
+        color: var(--et-tone-fill, currentColor);
       }
     }
 

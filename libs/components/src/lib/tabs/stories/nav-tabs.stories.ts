@@ -88,7 +88,7 @@ export const RestyledWithTokens: Story = {
       '--et-tab-line-height': '1',
       '--et-tab-underline-size': '4px',
       '--et-tab-baseline-size': '1px',
-      '--et-tab-hover-color': 'var(--et-surface-color-solid)',
+      '--et-tab-hover-color': 'var(--et-surface-text)',
       '--et-tab-hover-underline-opacity': '1',
     },
   },
@@ -100,7 +100,7 @@ export const ThickUnderlineThinBaseline: Story = {
       '--et-tab-underline-size': '2px',
       '--et-tab-baseline-size': '1px',
       '--et-tab-baseline-opacity': '1',
-      '--et-tab-baseline-color': 'var(--et-surface-color-solid)',
+      '--et-tab-baseline-color': 'var(--et-surface-text)',
     },
   },
 };
@@ -115,7 +115,7 @@ export const ColoredLabelsWithoutUnderline: Story = {
   args: {
     activeUnderline: false,
     tokens: {
-      '--et-tab-active-color': 'var(--et-theme-color-primary-solid)',
+      '--et-tab-active-color': 'var(--et-tone-fill)',
       '--et-tab-inactive-color': '#fff',
     },
   },

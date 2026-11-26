@@ -45,8 +45,8 @@ describe('overlay panel tokens', () => {
     const containerCss = readFileSync(libRoot + 'overlay/overlay-container.component.css', 'utf8');
 
     expect(containerCss).not.toMatch(/--et-overlay-backdrop-color\s*:/);
-    expect(containerCss).toContain(
-      'background-color: var(--et-overlay-backdrop-color, rgb(var(--et-scrim-color-rgb, 0 0 0) / 0.32));',
+    expect(containerCss).toMatch(
+      /background-color: var\(\s*--et-overlay-backdrop-color,\s*color-mix\(in srgb, var\(--et-scrim-color, rgb\(0 0 0\)\) 32%, transparent\)\s*\);/,
     );
   });
 

@@ -157,7 +157,7 @@
     min-inline-size: var(--et-match-card-min-inline-size);
     border-radius: var(--et-match-card-border-radius);
     /* Set rather than inherited, so a card on an `<a>` doesn't come out link-blue and underlined. */
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
     text-decoration: none;
   }
 
@@ -181,8 +181,8 @@
     gap: var(--_et-match-card-gap);
     box-sizing: border-box;
     padding: var(--_et-match-card-padding);
-    background: var(--et-surface-background-solid, transparent);
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    background: var(--et-surface-background, transparent);
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     font-family: var(--et-match-card-font-family, inherit);
     border-radius: inherit;
   }
@@ -291,7 +291,7 @@
     min-inline-size: 0;
     font-size: var(--et-match-card-meta-font-size);
     line-height: 1.4;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 
   .et-match-card-label {
@@ -326,8 +326,8 @@
     font-weight: var(--et-match-card-status-font-weight);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--et-theme-color-ink-solid, currentColor);
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 14%, transparent);
+    color: var(--et-tone-text, currentColor);
+    background: color-mix(in srgb, var(--et-tone-fill, currentColor) 14%, transparent);
     border-radius: 4px;
   }
 
@@ -338,7 +338,7 @@
     font-weight: var(--et-match-card-status-font-weight);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 12%, transparent);
     border-radius: 4px;
   }
 
@@ -350,7 +350,7 @@
     flex: none;
     inline-size: 6px;
     block-size: 6px;
-    background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+    background: light-dark(var(--et-tone-text), var(--et-tone-fill));
     border-radius: 50%;
     animation: et-match-card-live-pulse 2s ease-in-out infinite;
   }
@@ -381,7 +381,7 @@
   }
 
   .et-match-card-side {
-    --_et-match-card-side-color: var(--et-surface-color-solid, currentColor);
+    --_et-match-card-side-color: var(--et-surface-text, currentColor);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -427,7 +427,7 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 
   /* The other form the result slot takes — never together with a score, so it can share its metrics. */
@@ -482,17 +482,14 @@
      winner keeps full weight and color and gets the accent bar, the other side steps back. A draw
      emphasizes neither, and draws no bars at all. */
   .et-match-card:where([data-winner]) .et-match-card-side {
-    --_et-match-card-side-color: var(--et-surface-color-muted-solid, currentColor);
+    --_et-match-card-side-color: var(--et-surface-text-muted, currentColor);
     --_et-match-card-side-marker-display: block;
   }
 
   .et-match-card:where([data-winner='home']) .et-match-card-side:where([data-side='home']),
   .et-match-card:where([data-winner='away']) .et-match-card-side:where([data-side='away']) {
-    --_et-match-card-side-color: var(--et-surface-color-solid, currentColor);
-    --_et-match-card-side-marker-color: light-dark(
-      var(--et-theme-color-ink-solid),
-      var(--et-theme-color-primary-solid)
-    );
+    --_et-match-card-side-color: var(--et-surface-text, currentColor);
+    --_et-match-card-side-marker-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
     --_et-match-card-side-marker-display: block;
 
     .et-match-participant-name {
@@ -502,7 +499,7 @@
 
   /* Called off: no result to emphasize, so both sides step back and neither gets a bar. */
   .et-match-card:where([data-status='cancelled']) .et-match-card-side {
-    --_et-match-card-side-color: var(--et-surface-color-muted-solid, currentColor);
+    --_et-match-card-side-color: var(--et-surface-text-muted, currentColor);
     --_et-match-card-side-marker-display: none;
   }
 
@@ -522,7 +519,7 @@
     margin: 0;
     padding: 0;
     font-size: var(--et-match-card-games-font-size);
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     list-style: none;
   }
 
@@ -531,7 +528,7 @@
     padding-inline: 5px;
     font-variant-numeric: tabular-nums;
     line-height: 18px;
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 10%, transparent);
     border-radius: 4px;
   }
 
@@ -542,15 +539,7 @@
   /* Bare rather than `:where()`-flattened: an interaction state is meant to escalate over the config
      modifiers above it. */
   .et-match-card:where([data-interactive]):hover .et-match-card-content {
-    background: color-mix(
-      in srgb,
-      var(--et-surface-interaction-solid, gray) 6%,
-      var(--et-surface-background-solid, transparent)
-    );
-    border-color: color-mix(
-      in srgb,
-      var(--et-surface-interaction-solid, gray) 24%,
-      var(--et-surface-border-solid, transparent)
-    );
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 6%, var(--et-surface-background, transparent));
+    border-color: color-mix(in srgb, var(--et-surface-interaction, gray) 24%, var(--et-surface-border, transparent));
   }
 }

@@ -69,7 +69,7 @@
 
     & + .et-select-option {
       border-block-start: var(--et-select-option-divider-width) solid
-        var(--et-select-option-divider-color, var(--et-surface-border-solid, currentColor));
+        var(--et-select-option-divider-color, var(--et-surface-border, currentColor));
     }
 
     &:where([data-selected]) {
@@ -78,7 +78,7 @@
     }
 
     &:where([data-active][data-active-source='keyboard']) {
-      outline: 2px solid var(--et-select-option-outline-color-active, var(--et-theme-color-ink-solid, currentColor));
+      outline: 2px solid var(--et-select-option-outline-color-active, var(--et-tone-text, currentColor));
       outline-offset: -2px;
       background: var(--et-select-option-background-active, transparent);
       color: var(--et-select-option-color-active, var(--_et-select-option-color-rest));
@@ -88,14 +88,14 @@
       &:where([data-active]:hover) {
         background: var(
           --et-select-option-background-hover,
-          color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent)
+          color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 12%, transparent)
         );
         color: var(--et-select-option-color-hover, var(--_et-select-option-color-rest));
       }
     }
 
     &:active {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 20%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 20%, transparent);
     }
 
     &:where([aria-disabled='true']) {
@@ -115,7 +115,7 @@
       inline-size: var(--et-select-option-check-size);
       block-size: var(--et-select-option-check-size);
       order: var(--et-select-option-check-order);
-      color: var(--et-select-option-check-color, var(--et-theme-color-ink-solid, currentColor));
+      color: var(--et-select-option-check-color, var(--et-tone-text, currentColor));
       /* hidden via opacity, NOT visibility — an explicit `visibility: visible` would punch
          through the pane's positioning phase (`visibility: hidden`) and paint the check
          before the panel itself becomes visible */
@@ -145,7 +145,7 @@
     }
 
     &.et-select-create-option {
-      color: var(--et-theme-color-ink-solid, currentColor);
+      color: var(--et-tone-text, currentColor);
 
       .et-select-option-check {
         display: none;

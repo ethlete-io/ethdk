@@ -55,14 +55,14 @@
     border-radius: var(--et-banner-border-radius);
     /* The tint is whatever type/color resolved onto this host's color scope, so the banner reads as its
        type without a hardcoded color - including a neutral `currentColor` tint for `info` with nothing forced. */
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 8%, transparent);
-    border: var(--et-banner-border-width) solid var(--et-theme-color-ink-solid);
+    background: color-mix(in srgb, var(--et-tone-fill, currentColor) 8%, transparent);
+    border: var(--et-banner-border-width) solid var(--et-tone-text);
 
     > .et-icon {
       flex-shrink: 0;
       inline-size: var(--et-banner-icon-size);
       block-size: var(--et-banner-icon-size);
-      color: var(--et-theme-color-ink-solid, currentColor);
+      color: var(--et-tone-text, currentColor);
     }
 
     .et-banner-content {
@@ -79,7 +79,7 @@
       margin: 0;
       font-size: var(--et-banner-heading-size);
       font-weight: var(--et-banner-heading-weight);
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
       overflow-wrap: anywhere;
     }
 
@@ -87,7 +87,7 @@
     [etBannerBody] {
       margin: 0;
       font-size: var(--et-banner-description-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       overflow-wrap: anywhere;
     }
 

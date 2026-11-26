@@ -49,7 +49,7 @@ export const cardStyles = /* @__PURE__ */ [
   .et-card-mock-subtitle {
     margin: 0.2rem 0 0;
     font-size: 1.3rem;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
   }
 
   .et-card-mock-text {

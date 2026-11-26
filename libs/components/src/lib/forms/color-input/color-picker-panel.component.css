@@ -45,10 +45,13 @@
     overflow: hidden;
     padding: 12px;
     border-radius: var(--_et-overlay-surface-radius, 10px);
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    background: var(--et-surface-background-solid, rgb(32 32 32));
-    color: var(--et-surface-color-solid, rgb(244 244 245));
-    box-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
+    background: var(--et-surface-background, rgb(32 32 32));
+    color: var(--et-surface-text, rgb(244 244 245));
+    box-shadow: var(
+      --et-anchored-panel-shadow,
+      0 10px 24px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 16%, transparent)
+    );
     /* the pane is detached from the field, so it inherits the root font size (10px in this
        workspace) rather than the field's - it has to name its own */
     font-size: var(--et-color-picker-font-size);
@@ -88,8 +91,7 @@
     cursor: crosshair;
 
     &:has(.et-color-picker-channel:focus-visible) {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: 2px;
     }
   }
@@ -100,8 +102,7 @@
     border-radius: 999px;
 
     &:has(.et-color-picker-channel:focus-visible) {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: 2px;
     }
   }
@@ -156,7 +157,7 @@
     block-size: var(--et-color-picker-thumb-size);
     border-radius: 50%;
     border: 2px solid #fff;
-    box-shadow: 0 0 0 1px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.35);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 35%, transparent);
     pointer-events: none;
   }
 
@@ -212,11 +213,11 @@
     block-size: 20px;
     padding: 0;
     border-radius: 4px;
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     cursor: pointer;
 
     &[aria-pressed='true'] {
-      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline: 2px solid var(--et-tone-fill, currentColor);
       outline-offset: 1px;
     }
 
@@ -234,7 +235,7 @@
     inline-size: 20px;
     block-size: 20px;
     border-radius: 4px;
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     background-image:
       linear-gradient(var(--_et-color-picker-preview-color), var(--_et-color-picker-preview-color)),
       linear-gradient(
@@ -273,12 +274,12 @@
     text-underline-offset: 3px;
 
     &:focus-visible {
-      color: var(--et-surface-color-solid, rgb(244 244 245));
+      color: var(--et-surface-text, rgb(244 244 245));
     }
 
     @media (hover: hover) {
       &:hover {
-        color: var(--et-surface-color-solid, rgb(244 244 245));
+        color: var(--et-surface-text, rgb(244 244 245));
       }
     }
 
@@ -332,7 +333,7 @@
         margin-inline: auto;
         margin-block-end: 12px;
         border-radius: 999px;
-        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+        background: var(--et-surface-border, rgb(255 255 255 / 0.2));
       }
     }
 

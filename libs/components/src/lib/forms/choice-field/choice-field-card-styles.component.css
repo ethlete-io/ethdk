@@ -41,17 +41,17 @@
 
     /* Inside `:where()` so the disabled label colour still wins. */
     .et-choice-field-label-area {
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     &:where(:has(:is([aria-checked='true'], [aria-checked='mixed']))) .et-choice-field-label-area {
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
     }
 
     @media (hover: hover) {
       &:where(:has(.et-choice-field-control:hover)):where(:not(:has([aria-disabled='true'], [data-readonly])))
         .et-choice-field-label-area {
-        color: var(--et-surface-color-solid, currentColor);
+        color: var(--et-surface-text, currentColor);
       }
     }
 

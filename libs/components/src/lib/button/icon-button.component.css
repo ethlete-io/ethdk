@@ -24,9 +24,12 @@
     height: var(--_et-icon-button-size);
     background: var(
       --_et-button-state-background,
-      var(--_et-icon-button-background, rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity)))
+      var(
+        --_et-icon-button-background,
+        color-mix(in srgb, var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%), transparent)
+      )
     );
-    color: var(--et-theme-color-ink-solid);
+    color: var(--et-tone-text);
     border: none;
     border-radius: var(--_et-icon-button-border-radius);
     padding: 0;
@@ -85,40 +88,33 @@
 
     &:where([data-variant='filled']):not([data-pressed='true']),
     &[data-pressed='true']:where([data-pressed-variant='filled']) {
-      --et-theme-color-primary-opacity: 1;
-      --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
-      color: var(--et-theme-color-on-primary);
+      --_et-tone-fill-opacity: 1;
+      --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-tone-text), transparent);
+      color: var(--et-tone-on-fill);
       box-shadow: var(--et-button-shadow, none);
 
       @media (hover: hover) {
         &:not([disabled], [aria-disabled='true']):hover {
-          --et-theme-color-primary-opacity: 1;
-          --et-theme-color-primary-rgb: var(
-            --et-button-filled-hover-rgb,
-            var(
-              --et-color-primary-active,
-              var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
-            )
+          --_et-tone-fill-opacity: 1;
+          --et-tone-fill: var(
+            --et-button-filled-hover,
+            var(--et-tone-fill-active, var(--et-tone-fill-focus, var(--et-tone-fill-hover, var(--et-tone-fill-rest))))
           );
         }
       }
 
       &:focus-visible {
-        --et-theme-color-primary-opacity: calc(1 - var(--et-button-variant-opacity-focus-delta));
+        --_et-tone-fill-opacity: calc(1 - var(--et-button-variant-opacity-focus-delta));
       }
 
       &:not([disabled], [aria-disabled='true']):active {
-        --_et-icon-button-background: color-mix(
-          in srgb,
-          var(--et-theme-color-primary-solid) 96%,
-          var(--et-theme-color-on-primary-solid)
-        );
+        --_et-icon-button-background: color-mix(in srgb, var(--et-tone-fill) 96%, var(--et-tone-on-fill));
       }
     }
 
     &:where([data-variant='outline']) {
       border: var(--et-button-border-width, 0.1rem) solid
-        var(--_et-button-state-border-color, var(--et-button-outline-border-color, var(--et-theme-color-ink-solid)));
+        var(--_et-button-state-border-color, var(--et-button-outline-border-color, var(--et-tone-text)));
     }
 
     &[data-pressed='true']:where([data-pressed-variant='filled']) {

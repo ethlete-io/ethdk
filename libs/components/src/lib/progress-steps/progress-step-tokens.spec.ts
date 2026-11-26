@@ -61,7 +61,7 @@ describe('progress-step.component.css tokens', () => {
     expect(css.match(/--et-progress-step-upcoming-marker-content,/g)).toHaveLength(1);
     expect(css.match(/--et-progress-step-upcoming-marker-background,/g)).toHaveLength(1);
     expect(rule("&[data-state='upcoming'] .et-progress-step-marker")).toContain(
-      'var(--et-progress-step-upcoming-marker-background, var(--et-surface-background-solid, Canvas))',
+      'var(--et-progress-step-upcoming-marker-background, var(--et-surface-background, Canvas))',
     );
     expect(rule("&[data-state='upcoming'] .et-progress-step-marker-number::before")).toContain(
       'var(--et-progress-step-upcoming-marker-content, counter(et-progress-step))',

@@ -70,10 +70,10 @@ const MEDIA_CONSENT = new InjectionToken<WritableSignal<boolean>>('MEDIA_CONSENT
       gap: 12px;
       max-width: 560px;
       padding: 10px 12px 10px 10px;
-      border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
       border-radius: 14px;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
     }
 
     .et-sb-cookie-bar__badge {
@@ -83,14 +83,14 @@ const MEDIA_CONSENT = new InjectionToken<WritableSignal<boolean>>('MEDIA_CONSENT
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      background: color-mix(in srgb, var(--et-surface-color-solid, #fff) 8%, transparent);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      background: color-mix(in srgb, var(--et-surface-text, #fff) 8%, transparent);
+      color: var(--et-surface-text-muted, currentColor);
       font-size: 18px;
     }
 
     .et-sb-cookie-bar--granted .et-sb-cookie-bar__badge {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
-      color: var(--et-theme-color-ink-solid, currentColor);
+      background: color-mix(in srgb, var(--et-tone-fill) 18%, transparent);
+      color: var(--et-tone-text, currentColor);
     }
 
     .et-sb-cookie-bar__badge i {
@@ -112,7 +112,7 @@ const MEDIA_CONSENT = new InjectionToken<WritableSignal<boolean>>('MEDIA_CONSENT
     .et-sb-cookie-bar__status {
       margin: 2px 0 0;
       font-size: 12px;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
   `,
 })

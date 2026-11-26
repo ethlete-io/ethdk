@@ -390,7 +390,7 @@ export class ControlStatesStorybookComponent {
     <div class="flex flex-col font-sans">
       <div
         class="sticky top-0 z-10 flex flex-col gap-1 border-b px-8 py-4"
-        style="background: var(--et-surface-background-solid); border-color: var(--et-surface-border-solid)"
+        style="background: var(--et-surface-background); border-color: var(--et-surface-border)"
         etAutoSurface
       >
         @if (focused(); as state) {

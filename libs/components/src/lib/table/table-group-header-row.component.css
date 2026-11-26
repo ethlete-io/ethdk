@@ -29,7 +29,7 @@
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--et-surface-color-muted-solid, CanvasText);
+    color: var(--et-surface-text-muted, CanvasText);
     /* The vertical rule the base sheet draws between header cells and body cells, extended to labelled
        group runs. Unlabelled runs get none, so the band above an ungrouped column reads as empty rather
        than as a one-column group. */

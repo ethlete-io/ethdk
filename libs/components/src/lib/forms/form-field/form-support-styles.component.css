@@ -57,7 +57,7 @@
     flex-direction: column;
     gap: 2px;
     padding-block-start: 4px;
-    color: var(--et-theme-color-ink-solid, currentColor);
+    color: var(--et-tone-text, currentColor);
   }
 
   .et-form-support-errors {
@@ -71,7 +71,7 @@
   .et-form-support-hint {
     padding-block-start: 4px;
     font-size: var(--et-form-support-hint-font-size);
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
 
     &:empty {
       display: none;

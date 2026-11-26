@@ -73,10 +73,10 @@ import { TOOLBAR_IMPORTS } from '../toolbar.imports';
   ],
   styles: `
     et-sb-toolbar-nested > div > .et-toolbar {
-      --et-toolbar-background: var(--et-surface-background-solid);
+      --et-toolbar-background: var(--et-surface-background);
 
       inline-size: fit-content;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
     }
   `,
 })

@@ -24,7 +24,7 @@ describe('match-participant.component.css emblem frame tokens', () => {
   it('colours the shield from the surface tokens', () => {
     const body = css.match(/\.et-match-participant-shield\s*\{([^}]*)\}/)?.[1] ?? '';
 
-    expect(body).toContain('var(--et-surface-border-solid');
-    expect(body).toContain('var(--et-surface-interaction-solid');
+    expect(body).toContain('var(--et-surface-border');
+    expect(body).toContain('var(--et-surface-interaction');
   });
 });

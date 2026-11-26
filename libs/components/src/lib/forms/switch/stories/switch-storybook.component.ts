@@ -23,9 +23,11 @@ import { SWITCH_IMPORTS } from '../switch.imports';
         <et-label>Accept terms</et-label>
       </et-choice-field>
 
-      <p class="text-xs text-et-surface-muted">"Accept terms" is required. Click away from it to trigger validation.</p>
+      <p class="text-xs text-et-surface-text-muted">
+        "Accept terms" is required. Click away from it to trigger validation.
+      </p>
 
-      <pre class="rounded bg-et-surface-bg p-2 text-xs">{{ debugInfo() }}</pre>
+      <pre class="rounded bg-et-surface-background p-2 text-xs">{{ debugInfo() }}</pre>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -59,11 +61,11 @@ export class FormFieldSwitchStorybookComponent {
         <et-label>Push notifications</et-label>
       </et-choice-field>
 
-      <p class="text-xs text-et-surface-muted">
+      <p class="text-xs text-et-surface-text-muted">
         Bulk edit over records that disagree - the switch parks mid-track. The first toggle resolves it to on.
       </p>
 
-      <pre class="rounded bg-et-surface-bg p-2 text-xs">
+      <pre class="rounded bg-et-surface-background p-2 text-xs">
 Checked: {{ checkedState() }}
 Indeterminate: {{ indeterminateState() }}</pre>
     </div>

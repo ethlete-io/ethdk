@@ -71,7 +71,7 @@ export class SportRecipesMatchRailStorybookComponent {
           [style.max-inline-size.px]="320"
           class="flex flex-col gap-3 rounded-xl p-4"
           href="#"
-          style="background: var(--et-surface-background-solid); border: 1px solid var(--et-surface-border-solid)"
+          style="background: var(--et-surface-background); border: 1px solid var(--et-surface-border)"
         >
           <et-picture
             [defaultSrc]="BANNER"
@@ -100,7 +100,7 @@ export class SportRecipesMatchRailStorybookComponent {
             <div
               [style.inline-size.px]="240"
               class="flex flex-col gap-3 rounded-xl p-4"
-              style="background: var(--et-surface-background-solid); border: 1px solid var(--et-surface-border-solid)"
+              style="background: var(--et-surface-background); border: 1px solid var(--et-surface-border)"
             >
               <!-- On an anchor: the whole participant is the link, named after the participant rather than
                    after its emblem's alt text plus the same name again. -->
@@ -113,7 +113,7 @@ export class SportRecipesMatchRailStorybookComponent {
           <div
             [style.inline-size.px]="240"
             class="flex flex-col gap-3 rounded-xl p-4"
-            style="background: var(--et-surface-background-solid); border: 1px solid var(--et-surface-border-solid)"
+            style="background: var(--et-surface-background); border: 1px solid var(--et-surface-border)"
           >
             <et-match-participant [participant]="null" loading />
             <et-skeleton-item shape="text" />

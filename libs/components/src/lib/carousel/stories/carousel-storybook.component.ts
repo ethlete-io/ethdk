@@ -36,7 +36,7 @@ const SLIDES: Slide[] = [
         >
           <ng-template [etCarouselSlide]="shownSlides()" let-slide let-index="index" let-count="count">
             <div
-              [style.background]="'var(--et-surface-background-solid)'"
+              [style.background]="'var(--et-surface-background)'"
               [style.min-block-size.px]="200"
               class="flex h-full flex-col justify-end gap-2 rounded-xl border border-white/15 p-6"
               etAutoSurface
@@ -137,7 +137,7 @@ export class CarouselWipeStorybookComponent {
           <ng-template [etCarouselSlide]="WIDTHS" let-width let-index="index">
             <div
               [style.inline-size.px]="width"
-              [style.background]="'var(--et-surface-background-solid)'"
+              [style.background]="'var(--et-surface-background)'"
               class="text-small flex h-full items-center justify-center rounded-xl border border-white/15 p-6"
               etAutoSurface
             >
@@ -189,9 +189,9 @@ export class CarouselVariableWidthsStorybookComponent {
               [style.background]="
                 'linear-gradient(' +
                 (140 + index * 25) +
-                'deg, color-mix(in oklab, var(--et-theme-color-primary-solid) ' +
+                'deg, color-mix(in oklab, var(--et-tone-fill) ' +
                 (70 - index * 10) +
-                '%, transparent), color-mix(in oklab, var(--et-theme-color-primary-solid) 8%, transparent))'
+                '%, transparent), color-mix(in oklab, var(--et-tone-fill) 8%, transparent))'
               "
               class="flex min-h-[16rem] flex-col justify-end gap-2 overflow-hidden rounded-2xl p-6"
               etCarouselItem
@@ -207,7 +207,7 @@ export class CarouselVariableWidthsStorybookComponent {
           <div class="flex flex-1 gap-2">
             @for (slide of SLIDES; track slide.title; let index = $index) {
               <button
-                [style.background]="'var(--et-theme-color-primary-solid)'"
+                [style.background]="'var(--et-tone-fill)'"
                 [style.opacity]="index === carousel.activeIndex() ? 1 : 0.25"
                 [attr.aria-label]="'Go to ' + slide.title"
                 [attr.aria-current]="index === carousel.activeIndex() ? 'true' : null"

@@ -45,7 +45,7 @@ type TimelineStoryEvent = {
             <p class="text-medium m-0">{{ event.label }}</p>
 
             @if (!compact()) {
-              <p [style.color]="'var(--et-surface-color-muted-solid)'" class="text-small m-0">
+              <p [style.color]="'var(--et-surface-text-muted)'" class="text-small m-0">
                 {{ event.description }}
               </p>
             }

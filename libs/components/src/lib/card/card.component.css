@@ -24,20 +24,20 @@
     padding: var(--et-card-padding);
     border-radius: var(--et-card-border-radius);
     box-sizing: border-box;
-    background: var(--et-surface-background-solid, Canvas);
-    color: var(--et-surface-color-solid, currentColor);
+    background: var(--et-surface-background, Canvas);
+    color: var(--et-surface-text, currentColor);
     border: 1px solid transparent;
 
     &:where([data-variant='outlined']) {
-      border-color: var(--et-surface-border-solid, currentColor);
+      border-color: var(--et-surface-border, currentColor);
     }
 
     &:where([data-variant='elevated']) {
-      box-shadow: 0 4px 16px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.12);
+      box-shadow: 0 4px 16px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 12%, transparent);
     }
   }
 
   .et-card .et-button:where([data-variant='filled']) {
-    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
+    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-tone-text), transparent);
   }
 }

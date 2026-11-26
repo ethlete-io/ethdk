@@ -33,9 +33,9 @@
      the two are the same kind of thing to a user, and each component carries its own stylesheet, so
      the rules cannot be shared without a third component whose only job is to hold them. */
   .et-overlay.et-rte-image-editor-overlay {
-    background: var(--et-surface-background-solid, rgb(30 30 30));
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    box-shadow: 0 12px 32px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.24);
+    background: var(--et-surface-background, rgb(30 30 30));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 24%, transparent);
   }
 
   .et-overlay.et-rte-image-editor-overlay.et-overlay--anchored-dialog {
@@ -113,7 +113,7 @@
     inline-size: 100%;
     box-sizing: border-box;
     padding: var(--et-rich-text-editor-image-editor-padding);
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
   }
 
   .et-rte-image-editor-header {
@@ -142,12 +142,12 @@
     block-size: var(--et-rich-text-editor-image-editor-thumb-size);
     border-radius: 6px;
     object-fit: cover;
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, #888) 12%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction, #888) 12%, transparent);
   }
 
   .et-rte-image-editor-file {
     overflow: hidden;
-    color: var(--et-surface-color-muted-solid, inherit);
+    color: var(--et-surface-text-muted, inherit);
     font-size: 1.2rem;
     text-overflow: ellipsis;
     white-space: nowrap;

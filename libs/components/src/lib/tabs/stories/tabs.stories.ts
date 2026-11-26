@@ -83,7 +83,7 @@ export const RestyledWithTokens: Story = {
       '--et-tab-line-height': '1',
       '--et-tab-underline-size': '4px',
       '--et-tab-baseline-size': '1px',
-      '--et-tab-hover-color': 'var(--et-surface-color-solid)',
+      '--et-tab-hover-color': 'var(--et-surface-text)',
       '--et-tab-hover-underline-opacity': '1',
     },
   },

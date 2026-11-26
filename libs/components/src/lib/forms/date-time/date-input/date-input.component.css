@@ -15,7 +15,7 @@
       font: inherit;
       color: inherit;
       padding: 0;
-      caret-color: var(--et-theme-color-primary-solid, currentColor);
+      caret-color: var(--et-tone-fill, currentColor);
       font-variant-numeric: tabular-nums;
 
       &::placeholder {

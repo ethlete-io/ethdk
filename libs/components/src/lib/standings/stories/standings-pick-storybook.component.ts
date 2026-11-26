@@ -36,7 +36,7 @@ import { STANDINGS_PICK_IMPORTS } from '../standings.imports';
                     [etProvideColor]="mark.color"
                     [title]="mark.outcome"
                     class="text-small"
-                    style="color: var(--et-theme-color-ink-solid)"
+                    style="color: var(--et-tone-text)"
                   >
                     {{ mark.points }}
                   </span>

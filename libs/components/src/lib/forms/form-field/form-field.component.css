@@ -2,8 +2,8 @@
   et-form-field:where([data-variant='ghost']) {
     --et-form-field-control-border-color: transparent;
     --et-form-field-control-border-color-hover: transparent;
-    --et-form-field-value-color: var(--et-surface-color-muted-solid, currentColor);
-    --et-form-field-value-color-active: var(--et-surface-color-solid, currentColor);
+    --et-form-field-value-color: var(--et-surface-text-muted, currentColor);
+    --et-form-field-value-color-active: var(--et-surface-text, currentColor);
   }
 
   @property --et-form-field-gap {
@@ -103,9 +103,8 @@
   }
 
   et-form-field {
-    --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
     --_et-form-field-control-background: transparent;
-    --_et-form-field-control-focus-ring: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
+    --_et-form-field-control-focus-ring: color-mix(in srgb, var(--et-tone-fill) 18%, transparent);
     --_et-form-field-floating-label-scale: 0.75;
     --_et-form-field-supporting-inset: var(
       --et-form-field-supporting-inset,
@@ -115,7 +114,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--et-form-field-gap);
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
 
     .et-form-field-shell {
       display: flex;
@@ -132,7 +131,7 @@
       font-weight: var(--et-form-field-label-font-weight, 500);
       line-height: 1.2;
       letter-spacing: var(--et-form-field-label-letter-spacing, -0.01em);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       cursor: text;
       -webkit-user-select: none;
       user-select: none;
@@ -205,7 +204,7 @@
       min-block-size: var(--et-form-field-control-min-height);
       padding-block: var(--et-form-field-control-padding-block);
       padding-inline: var(--et-form-field-control-padding-inline);
-      border: var(--et-form-field-control-border-width) solid var(--et-surface-border-solid, currentColor);
+      border: var(--et-form-field-control-border-width) solid var(--et-surface-border, currentColor);
       border-radius: var(--et-form-field-control-border-radius, var(--_et-form-field-control-border-radius, 4px));
       background: var(--_et-form-field-control-background);
       font-size: var(--et-form-field-control-font-size);
@@ -224,7 +223,7 @@
       justify-content: center;
       flex-shrink: 0;
       gap: var(--et-form-field-control-affix-gap);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       pointer-events: none;
       transition: color 150ms ease;
 
@@ -335,7 +334,7 @@
       flex-direction: column;
       gap: 2px;
       font-size: var(--et-form-field-error-font-size);
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
       padding-inline-start: var(--_et-form-field-supporting-inset);
     }
 
@@ -344,7 +343,7 @@
       flex-direction: column;
       gap: 2px;
       font-size: var(--et-form-field-warning-font-size);
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
       padding-inline-start: var(--_et-form-field-supporting-inset);
     }
 

@@ -57,13 +57,13 @@ const createCards = (count: number): Card[] =>
             class="overflow-hidden rounded-lg"
             etMasonryItem
             etAutoSurface
-            style="background: var(--et-surface-background-solid)"
+            style="background: var(--et-surface-background)"
           >
             <!-- Stands in for a photo of unknown proportions, which is what a masonry exists for. -->
             <div
               [style.aspect-ratio]="card.mediaRatio"
               etProvideColor="brand"
-              style="background: var(--et-theme-color-primary-solid)"
+              style="background: var(--et-tone-fill)"
             ></div>
 
             <div class="text-small flex flex-col gap-2 p-4">

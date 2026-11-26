@@ -8,14 +8,14 @@
 
     :is(th, td) {
       padding: 6px 8px;
-      border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.15));
+      border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.15));
       text-align: start;
       vertical-align: top;
     }
 
     th {
       font-weight: 700;
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 8%, transparent);
     }
   }
 }

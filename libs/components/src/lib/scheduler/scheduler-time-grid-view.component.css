@@ -63,7 +63,7 @@
 
   .et-scheduler-time-grid-header {
     padding-block-end: 6px;
-    border-block-end: 1px solid var(--et-surface-border-solid);
+    border-block-end: 1px solid var(--et-surface-border);
   }
 
   .et-scheduler-time-grid-header-day {
@@ -74,15 +74,15 @@
     padding-block: 4px;
 
     &:where([data-today]) .et-scheduler-time-grid-header-date {
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
     }
   }
 
   .et-scheduler-time-grid-header-weekday {
     font-size: 12px;
     font-weight: 600;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
   }
 
   .et-scheduler-time-grid-header-date {
@@ -94,12 +94,12 @@
     border-radius: 999px;
     font-size: 13px;
     font-variant-numeric: tabular-nums;
-    color: var(--et-surface-color-solid);
+    color: var(--et-surface-text);
   }
 
   .et-scheduler-time-grid-all-day {
     padding-block: 4px;
-    border-block-end: 1px solid var(--et-surface-border-solid);
+    border-block-end: 1px solid var(--et-surface-border);
   }
 
   .et-scheduler-time-grid-all-day-lane {
@@ -126,14 +126,13 @@
   .et-scheduler-time-grid-hour-row {
     box-sizing: border-box;
     block-size: var(--et-scheduler-time-grid-hour-size);
-    border-block-end: 1px solid var(--et-surface-border-solid);
+    border-block-end: 1px solid var(--et-surface-border);
   }
 
   .et-scheduler-time-grid-slot,
   .et-scheduler-time-grid-all-day-cell {
     &:focus-visible {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: -2px;
     }
   }
@@ -152,16 +151,16 @@
     font-size: 11px;
     line-height: var(--_et-scheduler-time-grid-hour-label-line-height);
     font-variant-numeric: tabular-nums;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
   }
 
   .et-scheduler-time-grid-body .et-scheduler-time-grid-days {
-    border-inline-start: 1px solid var(--et-surface-border-solid);
+    border-inline-start: 1px solid var(--et-surface-border);
   }
 
   .et-scheduler-time-grid-day {
     position: relative;
-    border-inline-end: 1px solid var(--et-surface-border-solid);
+    border-inline-end: 1px solid var(--et-surface-border);
 
     /* drag-to-create arms on a long press, which is also what raises iOS' selection callout */
     -webkit-touch-callout: none;
@@ -169,7 +168,7 @@
     user-select: none;
 
     &:where([data-today]) {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 6%, transparent);
+      background: color-mix(in srgb, var(--et-tone-fill) 6%, transparent);
     }
   }
 
@@ -180,7 +179,7 @@
     block-size: calc(var(--_et-scheduler-time-grid-block-span, 0) * 1%);
     background: var(
       --et-scheduler-time-grid-non-business-background,
-      color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent)
+      color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 6%, transparent)
     );
     pointer-events: none;
   }
@@ -190,7 +189,7 @@
     inset-block-start: calc(var(--_et-scheduler-time-grid-now-offset, 0) * 1%);
     inset-inline: 0;
     block-size: 0;
-    border-block-start: 2px solid var(--et-theme-color-primary-solid, rgb(94 234 212));
+    border-block-start: 2px solid var(--et-tone-fill, rgb(94 234 212));
     pointer-events: none;
     z-index: 1;
 
@@ -202,7 +201,7 @@
       inline-size: 8px;
       block-size: 8px;
       border-radius: 999px;
-      background: var(--et-theme-color-primary-solid, rgb(94 234 212));
+      background: var(--et-tone-fill, rgb(94 234 212));
     }
   }
 
@@ -213,13 +212,13 @@
     block-size: calc(var(--_et-scheduler-time-grid-block-span, 0) * 1%);
     min-block-size: 16px;
     border-radius: 4px;
-    border: 1px dashed var(--et-theme-color-primary-solid);
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid) 10%, transparent);
+    border: 1px dashed var(--et-tone-fill);
+    background: color-mix(in srgb, var(--et-tone-fill) 10%, transparent);
     pointer-events: none;
 
     &:where([data-committed]) {
       border-style: solid;
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
+      background: color-mix(in srgb, var(--et-tone-fill) 18%, transparent);
     }
   }
 
@@ -238,8 +237,8 @@
     padding-inline-start: calc(min(var(--_et-scheduler-time-grid-block-depth, 0), 4) * 6px + 6px);
     border: none;
     border-radius: 4px;
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid) 14%, transparent);
-    color: var(--et-theme-color-ink-solid);
+    background: color-mix(in srgb, var(--et-tone-fill) 14%, transparent);
+    color: var(--et-tone-text);
     font: inherit;
     font-size: 12px;
     text-align: start;
@@ -253,19 +252,18 @@
 
     @media (hover: hover) {
       &:hover {
-        background: color-mix(in srgb, var(--et-theme-color-primary-solid) 22%, transparent);
+        background: color-mix(in srgb, var(--et-tone-fill) 22%, transparent);
       }
     }
 
     &:focus-visible {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: 1px;
     }
 
     &:where([data-selected]) {
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill);
     }
   }
 }

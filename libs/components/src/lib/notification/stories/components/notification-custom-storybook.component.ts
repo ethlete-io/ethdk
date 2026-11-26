@@ -35,8 +35,8 @@ import { injectNotificationManager, provideNotificationManager } from '../../not
       min-width: 32rem;
       padding: 1.2rem 1.6rem 1.2rem 2rem;
       border-radius: 99rem;
-      background: var(--et-surface-background-solid, #fff);
-      color: var(--et-surface-color-solid, #111);
+      background: var(--et-surface-background, #fff);
+      color: var(--et-surface-text, #111);
       box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
       font-family: sans-serif;
       font-size: 1.4rem;

@@ -9,7 +9,7 @@ import { NormalizedMatchParticipant } from '../match.types';
   template: `
     <div
       class="grid max-w-2xl grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-lg p-3"
-      style="background: var(--et-surface-background-solid)"
+      style="background: var(--et-surface-background)"
     >
       <et-match-participant [participant]="HOME">
         <button class="w-full min-w-0" etMatchParticipantEdit et-button type="button" variant="outline">

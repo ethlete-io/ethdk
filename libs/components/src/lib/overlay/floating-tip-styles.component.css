@@ -21,12 +21,12 @@
 
   .et-tooltip,
   .et-toggletip {
-    --_et-floating-tip-background: var(--et-floating-tip-background, var(--et-surface-background-solid, rgb(32 32 32)));
-    --_et-floating-tip-color: var(--et-floating-tip-color, var(--et-surface-color-solid, rgb(244 244 245)));
-    --_et-floating-tip-border: var(--et-floating-tip-border, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
+    --_et-floating-tip-background: var(--et-floating-tip-background, var(--et-surface-background, rgb(32 32 32)));
+    --_et-floating-tip-color: var(--et-floating-tip-color, var(--et-surface-text, rgb(244 244 245)));
+    --_et-floating-tip-border: var(--et-floating-tip-border, var(--et-surface-border, rgb(255 255 255 / 0.1)));
     --_et-floating-tip-shadow: var(
       --et-anchored-panel-shadow,
-      0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16)
+      0 10px 24px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 16%, transparent)
     );
     --_et-floating-tip-radius: var(--et-floating-tip-radius);
     --_et-floating-tip-max-width: var(--et-floating-tip-max-width, min(34ch, calc(100vw - 24px)));

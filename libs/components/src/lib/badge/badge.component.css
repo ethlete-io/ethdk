@@ -36,8 +36,12 @@
   }
 
   .et-badge {
-    --_et-badge-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-    --_et-badge-color: var(--et-theme-color-ink-solid);
+    --_et-badge-background: color-mix(
+      in srgb,
+      var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+      transparent
+    );
+    --_et-badge-color: var(--et-tone-text);
     --_et-badge-border-color: transparent;
 
     display: inline-flex;
@@ -61,19 +65,19 @@
     user-select: none;
 
     &:where([data-variant='filled']) {
-      --et-theme-color-primary-opacity: 1;
-      --_et-badge-color: var(--et-theme-color-on-primary);
-      --_et-badge-border-color: var(--et-theme-color-ink-solid);
+      --_et-tone-fill-opacity: 1;
+      --_et-badge-color: var(--et-tone-on-fill);
+      --_et-badge-border-color: var(--et-tone-text);
     }
 
     &:where([data-variant='tonal']) {
-      --et-theme-color-primary-opacity: 0.16;
-      --_et-badge-border-color: var(--et-theme-color-ink-solid);
+      --_et-tone-fill-opacity: 0.16;
+      --_et-badge-border-color: var(--et-tone-text);
     }
 
     &:where([data-variant='outline']) {
-      --et-theme-color-primary-opacity: 0;
-      --_et-badge-border-color: var(--et-theme-color-ink-solid);
+      --_et-tone-fill-opacity: 0;
+      --_et-badge-border-color: var(--et-tone-text);
     }
 
     /* `md` is the token initial values above, left unset so an ancestor token override still reaches it. */

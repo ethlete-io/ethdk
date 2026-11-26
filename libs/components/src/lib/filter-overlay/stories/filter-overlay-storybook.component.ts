@@ -243,7 +243,7 @@ export class FilterOverlayShellComponent {
       padding: 12px;
       border-radius: 6px;
       list-style: none;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
   `,
 })

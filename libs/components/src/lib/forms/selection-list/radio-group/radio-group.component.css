@@ -47,7 +47,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--et-radio-group-gap);
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
 
     --et-form-support-duration: var(--et-radio-group-support-duration);
     --et-form-support-error-font-size: var(--et-radio-group-error-font-size);
@@ -72,7 +72,7 @@
       font-weight: 500;
       line-height: 1.2;
       letter-spacing: -0.01em;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       -webkit-user-select: none;
       user-select: none;
     }
@@ -110,12 +110,12 @@
     }
 
     &[data-error] {
-      --_et-control-border: var(--et-theme-color-primary-solid);
+      --_et-control-border: var(--et-tone-fill);
     }
 
     &[data-mixed] .et-radio-circle {
       border-style: dashed;
-      border-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+      border-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
     }
   }
 

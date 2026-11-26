@@ -68,14 +68,12 @@
   }
 
   .et-stream-pip-chrome__stage--grid > .et-stream-pip-chrome__cell:focus-visible::after {
-    box-shadow: inset 0 0 0 5px
-      color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 35%, transparent);
+    box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 35%, transparent);
   }
 
   @media (hover: hover) {
     .et-stream-pip-chrome__stage--grid > .et-stream-pip-chrome__cell:hover::after {
-      box-shadow: inset 0 0 0 5px
-        color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 35%, transparent);
+      box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 35%, transparent);
     }
   }
 
@@ -84,8 +82,7 @@
   }
 
   .et-stream-pip-chrome__stage--grid > .et-stream-pip-chrome__cell--featured::after {
-    box-shadow: inset 0 0 0 5px
-      var(--et-stream-pip-chrome-featured-ring-color, var(--et-theme-color-primary-solid, #3b82f6));
+    box-shadow: inset 0 0 0 5px var(--et-stream-pip-chrome-featured-ring-color, var(--et-tone-fill, #3b82f6));
   }
 
   et-pip-player iframe {

@@ -3,7 +3,7 @@
     --_et-overlay-drag-handle-inline-size: 32px;
     --_et-overlay-drag-handle-block-size: 4px;
     --_et-overlay-drag-handle-block-margin: 22px;
-    --_et-overlay-drag-handle-color: var(--et-surface-border-solid, #565656);
+    --_et-overlay-drag-handle-color: var(--et-surface-border, #565656);
     --_et-overlay-drag-handle-radius: 5px;
   }
 
@@ -13,7 +13,7 @@
      the host by elevation — because most sheet content (e.g. a date picker) paints its background
      on a nested element, leaving the host itself transparent, so `inherit` would paint nothing.
      Falls back to transparent (no filler) for overlays opened without surface themes. */
-    --_et-overlay-overshoot-fill: var(--et-surface-background-solid, transparent);
+    --_et-overlay-overshoot-fill: var(--et-surface-background, transparent);
 
     @media (pointer: coarse) {
       &:where(.et-overlay--bottom-sheet, .et-overlay--top-sheet, .et-overlay--left-sheet, .et-overlay--right-sheet) {

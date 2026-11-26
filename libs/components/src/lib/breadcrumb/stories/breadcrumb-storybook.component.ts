@@ -46,7 +46,7 @@ import { BreadcrumbSeoDirective } from '../seo';
             <code>etBreadcrumbSeo</code> emitted this <code>BreadcrumbList</code> into the document - the whole trail,
             not the collapsed one, since collapsing is a layout decision.
           </p>
-          <pre class="overflow-x-auto rounded-lg p-4" style="background: var(--et-surface-background-solid)">{{
+          <pre class="overflow-x-auto rounded-lg p-4" style="background: var(--et-surface-background)">{{
             emittedJsonLd()
           }}</pre>
         </div>

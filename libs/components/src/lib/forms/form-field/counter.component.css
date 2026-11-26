@@ -13,12 +13,12 @@
     display: block;
     flex: none;
     font-size: var(--et-form-field-hint-font-size);
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 
     &:where([data-over-limit]) {
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
       font-weight: var(--et-form-field-counter-over-limit-font-weight, 600);
     }
   }

@@ -14,8 +14,8 @@ const DUMMY_TABLE_ROWS: DummyTableData['rows'] = [
   selector: 'et-sb-dummy-chart',
   template: `
     <div class="h-full flex flex-col p-3 box-border">
-      <div class="text-sm font-semibold mb-1" style="color: rgb(var(--et-surface-color))">{{ heading() }}</div>
-      <div class="text-[11px] mb-2" style="color: rgb(var(--et-surface-color-muted))">Last 10 days</div>
+      <div class="text-sm font-semibold mb-1" style="color: var(--et-surface-text)">{{ heading() }}</div>
+      <div class="text-[11px] mb-2" style="color: var(--et-surface-text-muted)">Last 10 days</div>
       <div class="flex-1 flex items-end gap-[3px]" style="min-height: 0">
         @for (bar of BARS; track $index) {
           <div
@@ -26,7 +26,7 @@ const DUMMY_TABLE_ROWS: DummyTableData['rows'] = [
           ></div>
         }
       </div>
-      <div class="flex justify-between mt-2 text-[10px]" style="color: rgb(var(--et-surface-color-muted))">
+      <div class="flex justify-between mt-2 text-[10px]" style="color: var(--et-surface-text-muted)">
         <span>Mon</span>
         <span>Wed</span>
         <span>Fri</span>
@@ -46,15 +46,15 @@ export class DummyChartComponent {
   selector: 'et-sb-dummy-table',
   template: `
     <div class="h-full flex flex-col p-3 box-border">
-      <div class="text-sm font-semibold mb-3" style="color: rgb(var(--et-surface-color))">{{ heading() }}</div>
+      <div class="text-sm font-semibold mb-3" style="color: var(--et-surface-text)">{{ heading() }}</div>
       <div class="flex-1 overflow-auto">
         @for (row of rows(); track row.name) {
           <div
             class="flex justify-between py-1.5 text-[13px]"
-            style="border-bottom: 1px solid rgb(var(--et-surface-border)); color: rgb(var(--et-surface-color))"
+            style="border-bottom: 1px solid var(--et-surface-border); color: var(--et-surface-text)"
           >
             <span>{{ row.name }}</span>
-            <span style="color: rgb(var(--et-surface-color-muted))">{{ row.value }}</span>
+            <span style="color: var(--et-surface-text-muted)">{{ row.value }}</span>
           </div>
         }
       </div>
@@ -72,8 +72,8 @@ export class DummyTableComponent {
   selector: 'et-sb-dummy-text',
   template: `
     <div class="h-full flex flex-col p-3 box-border">
-      <div class="text-sm font-semibold mb-2" style="color: rgb(var(--et-surface-color))">{{ heading() }}</div>
-      <p class="text-[13px] leading-relaxed m-0" style="color: rgb(var(--et-surface-color-muted))">{{ body() }}</p>
+      <div class="text-sm font-semibold mb-2" style="color: var(--et-surface-text)">{{ heading() }}</div>
+      <p class="text-[13px] leading-relaxed m-0" style="color: var(--et-surface-text-muted)">{{ body() }}</p>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

@@ -40,7 +40,7 @@
     flex-direction: column;
     width: fit-content;
     gap: 4px;
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
 
     --et-form-support-duration: var(--et-choice-field-support-duration);
     --et-form-support-error-font-size: var(--et-choice-field-error-font-size);
@@ -104,7 +104,7 @@
       font-weight: var(--et-choice-field-label-font-weight, 500);
       line-height: 1.2;
       letter-spacing: var(--et-choice-field-label-letter-spacing, -0.01em);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       cursor: pointer;
       -webkit-user-select: none;
       user-select: none;
@@ -136,12 +136,12 @@
        [data-readonly] gating inside checkbox/radio/switch) */
     @media (hover: hover) {
       &:where(:has(.et-choice-field-control:hover)):where(:not(:has([data-readonly]))) .et-choice-field-label-area {
-        color: var(--et-surface-color-solid, currentColor);
+        color: var(--et-surface-text, currentColor);
       }
     }
 
     &:where(:has(.et-choice-field-control:active)):where(:not(:has([data-readonly]))) .et-choice-field-label-area {
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
     }
 
     &:where(:has([data-readonly])) .et-choice-field-label-area {
@@ -149,19 +149,19 @@
     }
 
     &:where(:has(:focus-visible)) .et-choice-field-label-area {
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
     }
 
     &:has([aria-disabled='true']) .et-choice-field-label-area,
     &:has(:disabled) .et-choice-field-label-area {
       cursor: not-allowed;
-      color: var(--et-surface-interaction-disabled-solid, currentColor);
+      color: var(--et-surface-interaction-disabled, currentColor);
       pointer-events: none;
     }
 
     &:has([aria-disabled='true']) .et-form-support-hint,
     &:has(:disabled) .et-form-support-hint {
-      color: var(--et-surface-interaction-disabled-solid, currentColor);
+      color: var(--et-surface-interaction-disabled, currentColor);
     }
 
     .et-form-support {

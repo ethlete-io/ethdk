@@ -19,7 +19,7 @@
     --_et-focus-ring-width: var(--et-focus-ring-width, 2px);
     --_et-focus-ring-color: var(
       --et-focus-ring-color,
-      light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor))
+      light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor))
     );
     outline: var(--_et-focus-ring-width) solid transparent;
     outline-offset: var(--_et-focus-ring-offset);

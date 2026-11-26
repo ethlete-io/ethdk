@@ -2,6 +2,6 @@
   et-description {
     display: block;
     font-size: var(--et-description-font-size, 12px);
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 }

@@ -108,7 +108,7 @@
     justify-content: center;
     min-inline-size: var(--et-pagination-item-size);
     block-size: var(--et-pagination-item-size);
-    color: var(--et-surface-color-muted-solid, CanvasText);
+    color: var(--et-surface-text-muted, CanvasText);
     -webkit-user-select: none;
     user-select: none;
   }
@@ -117,7 +117,7 @@
     margin: 0;
     font-size: 14px;
     font-variant-numeric: tabular-nums;
-    color: var(--et-surface-color-muted-solid, CanvasText);
+    color: var(--et-surface-text-muted, CanvasText);
   }
 
   /* Both readouts stack their live text over an invisible copy of the widest string they can ever show
@@ -177,10 +177,10 @@
     font-size: 14px;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    color: var(--et-surface-color-muted-solid, CanvasText);
+    color: var(--et-surface-text-muted, CanvasText);
   }
 
   .et-pagination-host .et-pagination-button:where([aria-current='page']) {
-    --_et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
+    --_et-button-shadow: inset 0 0 0 1px light-dark(var(--et-tone-text), transparent);
   }
 }

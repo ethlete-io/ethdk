@@ -358,7 +358,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
       } @else {
         <!-- The panel's tint comes from the surface system, not a dark: utility - dark: follows the
              OS preference, which knows nothing about the surface theme this table is rendered on. -->
-        <div class="text-small rounded-lg p-4" style="background: var(--et-surface-background-solid)" etAutoSurface>
+        <div class="text-small rounded-lg p-4" style="background: var(--et-surface-background)" etAutoSurface>
           <p class="font-medium">{{ person.name }}</p>
           <p class="opacity-70">{{ person.email }} · {{ person.role }} · joined {{ person.joinedAt }}</p>
         </div>

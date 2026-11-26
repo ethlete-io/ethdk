@@ -29,8 +29,8 @@
     left: 0;
     z-index: 0;
     border-radius: 8px;
-    background: color-mix(in srgb, var(--et-surface-color-solid, rgb(23 23 23)) 8%, transparent);
-    border: 2px dashed color-mix(in srgb, var(--et-surface-color-solid, rgb(23 23 23)) 20%, transparent);
+    background: color-mix(in srgb, var(--et-surface-text, rgb(23 23 23)) 8%, transparent);
+    border: 2px dashed color-mix(in srgb, var(--et-surface-text, rgb(23 23 23)) 20%, transparent);
     box-sizing: border-box;
     pointer-events: none;
   }

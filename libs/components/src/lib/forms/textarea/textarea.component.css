@@ -13,7 +13,7 @@
       background: transparent;
       font: inherit;
       color: inherit;
-      caret-color: var(--et-theme-color-primary-solid, currentColor);
+      caret-color: var(--et-tone-fill, currentColor);
       padding: 0;
       min-width: 0;
 

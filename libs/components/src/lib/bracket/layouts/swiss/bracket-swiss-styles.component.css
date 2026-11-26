@@ -3,7 +3,7 @@
     .et-bracket-swiss-group-border {
       color: var(
         --et-bracket-swiss-group-border-color,
-        var(--et-bracket-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)))
+        var(--et-bracket-line-color, var(--et-surface-border, rgb(255 255 255 / 0.1)))
       );
     }
   }

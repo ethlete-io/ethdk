@@ -66,7 +66,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--et-segmented-button-group-gap);
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
 
     --et-form-support-duration: var(--et-segmented-button-group-support-duration);
     --et-form-support-error-font-size: var(--et-segmented-button-group-error-font-size);
@@ -91,7 +91,7 @@
       font-weight: 500;
       line-height: 1.2;
       letter-spacing: -0.01em;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       -webkit-user-select: none;
       user-select: none;
     }
@@ -133,7 +133,7 @@
       border-radius: var(--et-segmented-button-group-track-radius);
       background-color: var(
         --et-segmented-button-group-track-background,
-        color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent)
+        color-mix(in srgb, var(--et-surface-interaction, currentColor) 8%, transparent)
       );
     }
 
@@ -177,7 +177,7 @@
     }
 
     &[data-error] .et-segmented-button-group-buttons {
-      box-shadow: inset 0 0 0 1px var(--et-theme-color-primary-solid);
+      box-shadow: inset 0 0 0 1px var(--et-tone-fill);
     }
 
     &:where([data-variant='tabs']) .et-segmented-button-group-buttons {
@@ -188,13 +188,13 @@
       box-shadow: inset 0 calc(var(--et-tab-underline-size) * -1) 0 0
         color-mix(
           in srgb,
-          var(--et-surface-border-solid, currentColor) calc(var(--et-tab-baseline-opacity) * 100%),
+          var(--et-surface-border, currentColor) calc(var(--et-tab-baseline-opacity) * 100%),
           transparent
         );
     }
 
     &:where([data-variant='tabs'])[data-error] .et-segmented-button-group-buttons {
-      box-shadow: inset 0 calc(var(--et-tab-underline-size) * -1) 0 0 var(--et-theme-color-primary-solid);
+      box-shadow: inset 0 calc(var(--et-tab-underline-size) * -1) 0 0 var(--et-tone-fill);
     }
 
     &:where([data-variant='tabs']) et-segmented-button {
@@ -206,7 +206,7 @@
     }
 
     &[data-mixed] .et-segmented-button-group-buttons {
-      outline: 1px dashed var(--et-theme-color-primary-solid, currentColor);
+      outline: 1px dashed var(--et-tone-fill, currentColor);
       outline-offset: -1px;
     }
   }

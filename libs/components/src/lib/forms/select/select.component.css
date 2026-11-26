@@ -69,11 +69,11 @@
         font: inherit;
         color: inherit;
         padding: 0;
-        caret-color: var(--et-theme-color-primary-solid, currentColor);
+        caret-color: var(--et-tone-fill, currentColor);
         cursor: inherit;
 
         &::placeholder {
-          color: var(--et-surface-color-muted-solid, color-mix(in srgb, currentColor 46%, transparent));
+          color: var(--et-surface-text-muted, color-mix(in srgb, currentColor 46%, transparent));
         }
 
         &:read-only {
@@ -102,7 +102,7 @@
       min-inline-size: 0;
 
       &[data-placeholder] {
-        color: var(--et-surface-color-muted-solid, color-mix(in srgb, currentColor 46%, transparent));
+        color: var(--et-surface-text-muted, color-mix(in srgb, currentColor 46%, transparent));
       }
     }
 
@@ -141,7 +141,7 @@
       margin-inline-start: calc(
         -1 * (var(--_et-select-trigger-busy-fade) + var(--_et-select-trigger-busy-cover) + 6px)
       );
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     &:dir(rtl) {

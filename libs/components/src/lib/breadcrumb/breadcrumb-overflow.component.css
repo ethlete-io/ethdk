@@ -20,18 +20,18 @@
     .et-breadcrumb-item {
       display: block;
       padding: 4px 8px;
-      color: var(--et-surface-color-solid, CanvasText);
+      color: var(--et-surface-text, CanvasText);
       transition:
         background 120ms ease,
         color 120ms ease;
 
       &:where(a, button):hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+        background: color-mix(in srgb, var(--et-surface-interaction) 12%, transparent);
         text-decoration-color: transparent;
       }
 
       &:where(a, button):active {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+        background: color-mix(in srgb, var(--et-surface-interaction) 20%, transparent);
       }
     }
   }

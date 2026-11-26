@@ -151,7 +151,7 @@ export class StorybookIconMatchComponent<TRoundData = unknown, TMatchData = unkn
         display: inline-flex;
         align-items: center;
         padding-inline: 8px;
-        border: 1px dashed var(--et-surface-border-solid);
+        border: 1px dashed var(--et-surface-border);
         border-radius: 4px;
         font-size: 12px;
         text-transform: uppercase;
@@ -183,8 +183,8 @@ export class StorybookRoundHeaderComponent<TRoundData = unknown, TMatchData = un
         gap: 8px;
         block-size: 100%;
         padding-inline: 12px;
-        border-inline-start: 4px solid var(--et-surface-border-solid);
-        background: var(--et-surface-background-solid);
+        border-inline-start: 4px solid var(--et-surface-border);
+        background: var(--et-surface-background);
         font-weight: 700;
       }
 
@@ -218,7 +218,7 @@ export class StorybookSectionTitleComponent<TRoundData = unknown, TMatchData = u
       [style.inline-size.px]="panelWidth()"
       class="mt-4 overflow-hidden"
       data-testid="panel"
-      style="border: 1px solid var(--et-surface-border-solid)"
+      style="border: 1px solid var(--et-surface-border)"
     >
       <et-bracket
         [source]="source()"

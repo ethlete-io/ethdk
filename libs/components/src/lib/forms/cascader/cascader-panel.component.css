@@ -37,11 +37,14 @@
     );
     --_et-cascader-row-radius: max(2px, var(--_et-overlay-surface-radius, 10px) - 6px);
     border-radius: var(--_et-overlay-surface-radius, 10px);
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    background: var(--et-surface-background-solid, rgb(32 32 32));
-    color: var(--et-surface-color-solid, rgb(244 244 245));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
+    background: var(--et-surface-background, rgb(32 32 32));
+    color: var(--et-surface-text, rgb(244 244 245));
     font-size: 14px;
-    box-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
+    box-shadow: var(
+      --et-anchored-panel-shadow,
+      0 10px 24px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 16%, transparent)
+    );
     overflow: hidden;
 
     &.et-cascader-panel--resizing {
@@ -120,7 +123,7 @@
 
     .et-cascader-search {
       padding: 6px;
-      border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      border-block-end: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
 
       input[etcascadersearch] {
         inline-size: 100%;
@@ -128,22 +131,22 @@
         box-sizing: border-box;
         padding-inline: 10px;
         border-radius: var(--_et-cascader-row-radius);
-        border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent);
+        border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
+        background: color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 6%, transparent);
         color: inherit;
         font: inherit;
         outline: none;
-        caret-color: var(--et-theme-color-primary-solid, currentColor);
+        caret-color: var(--et-tone-fill, currentColor);
         transition:
           border-color 120ms ease,
           background 120ms ease;
 
         &:focus-visible {
-          border-color: var(--et-theme-color-primary-solid, rgb(255 255 255 / 0.3));
+          border-color: var(--et-tone-fill, rgb(255 255 255 / 0.3));
         }
 
         &::placeholder {
-          color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+          color: var(--et-surface-text-muted, rgb(255 255 255 / 0.55));
         }
       }
     }
@@ -184,7 +187,7 @@
     }
 
     .et-cascader-column-wrapper:not(:last-child) .et-cascader-column {
-      border-inline-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      border-inline-end: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     }
 
     .et-cascader-columns[data-sheet] .et-cascader-column {
@@ -224,21 +227,21 @@
 
       @media (hover: hover) {
         &:hover {
-          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+          background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 12%, transparent);
         }
       }
 
       &:focus-visible,
       &[data-focused] {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 16%, transparent);
+        background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 16%, transparent);
       }
 
       &[data-expanded] {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+        background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 12%, transparent);
       }
 
       &[data-selected] {
-        color: var(--et-theme-color-ink-solid, currentColor);
+        color: var(--et-tone-text, currentColor);
         font-weight: 500;
       }
 
@@ -258,7 +261,7 @@
     }
 
     .et-cascader-search-option-ancestor {
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     .et-cascader-check {
@@ -267,7 +270,7 @@
       inline-size: 16px;
       block-size: 16px;
       box-sizing: border-box;
-      border: 2px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.3));
+      border: 2px solid var(--et-surface-border, rgb(255 255 255 / 0.3));
       border-radius: 4px;
       transition:
         background 120ms ease,
@@ -282,8 +285,8 @@
 
     [data-selected] > .et-cascader-check,
     [data-indeterminate] > .et-cascader-check {
-      border-color: var(--et-theme-color-primary-solid, currentColor);
-      background: var(--et-theme-color-primary-solid, currentColor);
+      border-color: var(--et-tone-fill, currentColor);
+      background: var(--et-tone-fill, currentColor);
     }
 
     [data-selected] > .et-cascader-check::after {
@@ -291,7 +294,7 @@
       inset-block-start: 1px;
       inline-size: 4px;
       block-size: 8px;
-      border: solid var(--et-theme-color-on-primary, rgb(0 0 0));
+      border: solid var(--et-tone-on-fill, rgb(0 0 0));
       border-width: 0 2px 2px 0;
       rotate: 45deg;
       opacity: 1;
@@ -302,7 +305,7 @@
       inset-block-start: 5px;
       inline-size: 8px;
       block-size: 2px;
-      background: var(--et-theme-color-on-primary, rgb(0 0 0));
+      background: var(--et-tone-on-fill, rgb(0 0 0));
       opacity: 1;
     }
 
@@ -310,7 +313,7 @@
       flex: none;
       inline-size: 12px;
       block-size: 12px;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       rotate: 90deg;
     }
 
@@ -322,7 +325,7 @@
       min-block-size: var(--et-cascader-node-height);
       padding: 12px 16px;
       text-align: center;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
 
       &.et-cascader-state--error {
         flex-direction: column;
@@ -350,7 +353,7 @@
     }
 
     .et-cascader-state-error-message {
-      color: var(--et-theme-color-ink-solid, rgb(248 113 113));
+      color: var(--et-tone-text, rgb(248 113 113));
     }
   }
 

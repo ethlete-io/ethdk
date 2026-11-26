@@ -130,10 +130,10 @@ type SentCommand = { label: string; accepted: boolean };
       gap: 14px;
       max-width: 560px;
       padding: 16px;
-      border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
       border-radius: 20px;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
     }
 
     .et-sb-remote__header {
@@ -156,7 +156,7 @@ type SentCommand = { label: string; accepted: boolean };
     .et-sb-remote__subtitle {
       margin: 2px 0 0;
       font-size: 12px;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     .et-sb-remote__subtitle code {
@@ -171,7 +171,7 @@ type SentCommand = { label: string; accepted: boolean };
       flex: none;
       padding: 3px 10px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--et-surface-color-solid, #fff) 8%, transparent);
+      background: color-mix(in srgb, var(--et-surface-text, #fff) 8%, transparent);
       font-size: 11px;
       font-weight: 600;
     }
@@ -181,11 +181,11 @@ type SentCommand = { label: string; accepted: boolean };
       width: 6px;
       height: 6px;
       border-radius: 999px;
-      background: var(--et-surface-color-muted-solid, currentColor);
+      background: var(--et-surface-text-muted, currentColor);
     }
 
     .et-sb-remote__status--live::before {
-      background: var(--et-theme-color-primary-solid, currentColor);
+      background: var(--et-tone-fill, currentColor);
     }
 
     .et-sb-remote__bar {
@@ -199,7 +199,7 @@ type SentCommand = { label: string; accepted: boolean };
       gap: 2px;
       padding: 3px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--et-surface-color-solid, #fff) 7%, transparent);
+      background: color-mix(in srgb, var(--et-surface-text, #fff) 7%, transparent);
     }
 
     .et-sb-remote__btn {
@@ -235,18 +235,17 @@ type SentCommand = { label: string; accepted: boolean };
     }
 
     .et-sb-remote__btn:hover {
-      background: color-mix(in srgb, var(--et-surface-color-solid, #fff) 12%, transparent);
+      background: color-mix(in srgb, var(--et-surface-text, #fff) 12%, transparent);
     }
 
     .et-sb-remote__btn:focus-visible {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: 1px;
     }
 
     .et-sb-remote__btn[aria-pressed='true'] {
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary, inherit);
+      background: var(--et-tone-fill);
+      color: var(--et-tone-on-fill, inherit);
     }
 
     .et-sb-remote__state {
@@ -255,9 +254,9 @@ type SentCommand = { label: string; accepted: boolean };
       gap: 1px;
       margin: 0;
       overflow: hidden;
-      border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
       border-radius: 12px;
-      background: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      background: var(--et-surface-border, rgb(255 255 255 / 0.1));
     }
 
     .et-sb-remote__row {
@@ -265,7 +264,7 @@ type SentCommand = { label: string; accepted: boolean };
       flex-direction: column;
       gap: 2px;
       padding: 8px 10px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
 
     .et-sb-remote__row dt {
@@ -273,7 +272,7 @@ type SentCommand = { label: string; accepted: boolean };
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     .et-sb-remote__row dd {

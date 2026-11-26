@@ -6,7 +6,7 @@
     gap: 4px;
     margin-block-end: 16px;
     font-size: 13px;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
 
     &[hidden] {
       display: none;
@@ -20,7 +20,7 @@
   }
 
   .et-scheduler-edit-surface-breadcrumb-current {
-    color: var(--et-surface-color-solid);
+    color: var(--et-surface-text);
     font-weight: 600;
   }
 }

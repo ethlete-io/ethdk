@@ -69,7 +69,7 @@
     overflow: hidden;
     font-size: 15px;
     font-weight: 600;
-    color: var(--et-surface-color-solid);
+    color: var(--et-surface-text);
     white-space: nowrap;
     text-overflow: ellipsis;
   }

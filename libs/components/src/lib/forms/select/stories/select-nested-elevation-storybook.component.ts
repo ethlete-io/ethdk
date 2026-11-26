@@ -73,8 +73,8 @@ import { USERS } from './select-nested-elevation-storybook.data';
     }
 
     .et-sb-nested-avatar {
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
     }
   `,
 })

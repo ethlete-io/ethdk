@@ -38,7 +38,7 @@
      `.et-table-row.et-table-row--selected` outweighs the base sheet's stripe, hover and pressed rules
      instead of tying with them: Angular re-appends that sheet after this one when a table mounts again. */
   .et-table-row.et-table-row--selected {
-    --_et-table-selected-accent: var(--et-table-row-selected-tint, var(--et-theme-color-primary-solid, gray));
+    --_et-table-selected-accent: var(--et-table-row-selected-tint, var(--et-tone-fill, gray));
   }
 
   .et-table-row.et-table-row--selected .et-table-cell {
@@ -54,12 +54,12 @@
       color-mix(
         in srgb,
         var(--_et-table-selected-accent) 32%,
-        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+        var(--_et-table-row-surface, var(--et-surface-background, Canvas))
       ),
       color-mix(
         in srgb,
         var(--_et-table-selected-accent) 12%,
-        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+        var(--_et-table-row-surface, var(--et-surface-background, Canvas))
       )
     );
   }
@@ -80,12 +80,12 @@
         color-mix(
           in srgb,
           var(--_et-table-selected-accent) 38%,
-          var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+          var(--_et-table-row-surface, var(--et-surface-background, Canvas))
         ),
         color-mix(
           in srgb,
           var(--_et-table-selected-accent) 18%,
-          var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+          var(--_et-table-row-surface, var(--et-surface-background, Canvas))
         )
       );
     }
@@ -107,12 +107,12 @@
       color-mix(
         in srgb,
         var(--_et-table-selected-accent) 44%,
-        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+        var(--_et-table-row-surface, var(--et-surface-background, Canvas))
       ),
       color-mix(
         in srgb,
         var(--_et-table-selected-accent) 26%,
-        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+        var(--_et-table-row-surface, var(--et-surface-background, Canvas))
       )
     );
   }

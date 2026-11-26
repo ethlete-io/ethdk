@@ -74,7 +74,7 @@ const ITEMS: GridItemConfig[] = [
   selector: 'et-sb-grid-constraints',
   template: `
     <div class="flex flex-col gap-4">
-      <p class="text-small" style="color: rgb(var(--et-surface-color-muted))">
+      <p class="text-small" style="color: var(--et-surface-text-muted)">
         Active breakpoint: <strong>{{ activeBreakpoint() }}</strong> · resize the viewport to cross 1200px and 768px.
         Every row below reads the bounds the grid resolved for that item at the active breakpoint.
       </p>
@@ -91,16 +91,16 @@ const ITEMS: GridItemConfig[] = [
             [perBreakpointConstraints]="widget.perBreakpoint"
           >
             <div class="flex flex-col justify-center gap-1 h-full p-3 box-border">
-              <span class="text-base" style="color: rgb(var(--et-surface-color))">{{ widget.title }}</span>
-              <span class="text-small" style="color: rgb(var(--et-surface-color-muted))">{{ widget.note }}</span>
+              <span class="text-base" style="color: var(--et-surface-text)">{{ widget.title }}</span>
+              <span class="text-small" style="color: var(--et-surface-text-muted)">{{ widget.note }}</span>
             </div>
           </et-grid-item>
         }
       </et-grid>
 
-      <table class="text-small border-collapse" style="border: 1px solid rgb(var(--et-surface-border))">
+      <table class="text-small border-collapse" style="border: 1px solid var(--et-surface-border)">
         <thead>
-          <tr style="background: rgb(var(--et-surface-border))">
+          <tr style="background: var(--et-surface-border)">
             <th class="px-2 py-1 text-left">item</th>
             <th class="px-2 py-1 text-left">colSpan bounds here</th>
             <th class="px-2 py-1 text-left">current colSpan</th>
@@ -109,7 +109,7 @@ const ITEMS: GridItemConfig[] = [
         </thead>
         <tbody>
           @for (row of rows(); track row.id) {
-            <tr style="border-top: 1px solid rgb(var(--et-surface-border))">
+            <tr style="border-top: 1px solid var(--et-surface-border)">
               <td class="px-2 py-1">{{ row.id }}</td>
               <td class="px-2 py-1">{{ row.bounds }}</td>
               <td class="px-2 py-1">{{ row.colSpan }}</td>

@@ -134,7 +134,7 @@
       & .et-scrollable-mask {
         inset-block: 0;
         inline-size: 0;
-        border-inline-start: 1px solid var(--et-surface-border-solid, #404040);
+        border-inline-start: 1px solid var(--et-surface-border, #404040);
       }
 
       & .et-scrollable-mask--start {
@@ -150,7 +150,7 @@
       & .et-scrollable-mask {
         inset-inline: 0;
         block-size: 0;
-        border-block-start: 1px solid var(--et-surface-border-solid, #404040);
+        border-block-start: 1px solid var(--et-surface-border, #404040);
       }
 
       & .et-scrollable-mask--start {

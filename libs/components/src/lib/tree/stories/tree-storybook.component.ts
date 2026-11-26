@@ -114,9 +114,9 @@ const asyncSource: TreeDataSource<string> = {
   styles: `
     et-sb-tree .et-sb-tree-frame {
       padding: 8px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 10px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
 
     et-sb-tree .et-tree-node-label {
@@ -128,7 +128,7 @@ const asyncSource: TreeDataSource<string> = {
     et-sb-tree .et-tree-node-label i {
       inline-size: 12px;
       block-size: 12px;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
   `,
 })

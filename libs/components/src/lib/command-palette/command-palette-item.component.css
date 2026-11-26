@@ -45,7 +45,7 @@
     /* Marks the row the arrow keys reached. Not `:hover`: the pointer and the keyboard drive one
        highlight, and the component decides which row that is. */
     &.et-command-palette-item--active {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 12%, transparent);
     }
 
     &:where([aria-disabled='true']) {
@@ -58,7 +58,7 @@
     flex: none;
     inline-size: var(--et-command-palette-item-icon-size);
     block-size: var(--et-command-palette-item-icon-size);
-    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+    color: var(--et-surface-text-muted, rgb(255 255 255 / 0.55));
 
     svg {
       inline-size: 100%;
@@ -80,19 +80,19 @@
   }
 
   .et-command-palette-item-description {
-    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+    color: var(--et-surface-text-muted, rgb(255 255 255 / 0.55));
     font-size: 12px;
   }
 
   /* A `mark` carries a yellow background by default, which is not how a match should read here. */
   .et-command-palette-item-match {
     background: none;
-    color: var(--et-theme-color-ink-solid, currentcolor);
+    color: var(--et-tone-text, currentcolor);
     font-weight: 600;
   }
 
   .et-command-palette-item-shortcut {
     flex: none;
-    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+    color: var(--et-surface-text-muted, rgb(255 255 255 / 0.55));
   }
 }

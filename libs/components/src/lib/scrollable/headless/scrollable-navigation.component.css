@@ -18,7 +18,7 @@
     background-color: transparent;
 
     &.et-scrollable-navigation-item--active::after {
-      background-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary));
+      background-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
     }
 
     &::after {
@@ -27,7 +27,7 @@
       inline-size: 50%;
       block-size: 50%;
       border-radius: 50%;
-      background-color: var(--et-surface-interaction-solid, #4b4b4b);
+      background-color: var(--et-surface-interaction, #4b4b4b);
       opacity: 0.3;
       transform: scale(0);
     }

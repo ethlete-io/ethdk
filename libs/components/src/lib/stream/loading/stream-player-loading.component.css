@@ -5,12 +5,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--et-surface-background-solid, inherit);
-    color: var(--et-surface-color-solid, inherit);
+    background: var(--et-surface-background, inherit);
+    color: var(--et-surface-text, inherit);
     z-index: 1;
 
     .et-spinner {
-      --et-spinner-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+      --et-spinner-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
     }
   }
 }

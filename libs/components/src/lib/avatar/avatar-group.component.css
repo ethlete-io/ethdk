@@ -21,7 +21,7 @@
     }
 
     .et-avatar {
-      box-shadow: 0 0 0 var(--et-avatar-group-ring-width) var(--et-surface-background-solid, Canvas);
+      box-shadow: 0 0 0 var(--et-avatar-group-ring-width) var(--et-surface-background, Canvas);
 
       &:not(:first-child) {
         margin-inline-start: calc(-1 * var(--et-avatar-group-overlap));

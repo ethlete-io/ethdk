@@ -57,11 +57,7 @@
       border: var(--et-radio-border-width) solid
         var(
           --_et-control-border,
-          color-mix(
-            in oklab,
-            var(--et-surface-color-solid, currentColor) 43%,
-            var(--et-surface-background-solid, transparent)
-          )
+          color-mix(in oklab, var(--et-surface-text, currentColor) 43%, var(--et-surface-background, transparent))
         );
       background-color: transparent;
       display: grid;
@@ -72,7 +68,7 @@
         inline-size: var(--et-radio-dot-size);
         block-size: var(--et-radio-dot-size);
         border-radius: 50%;
-        background-color: var(--et-theme-color-primary-solid, currentColor);
+        background-color: var(--et-tone-fill, currentColor);
         transform: scale(0);
       }
     }
@@ -87,19 +83,19 @@
     .et-radio-label {
       font-size: 14px;
       line-height: 20px;
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
     }
 
     @media (hover: hover) {
       &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) .et-radio-circle {
-        border-color: var(--_et-control-border, var(--et-surface-color-solid, currentColor));
-        background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+        border-color: var(--_et-control-border, var(--et-surface-text, currentColor));
+        background-color: color-mix(in srgb, var(--et-surface-interaction, currentColor) 8%, transparent);
       }
     }
 
     &:focus-visible .et-radio-circle {
-      border-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
-      outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
+      border-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
+      outline: 2px solid var(--et-tone-text, currentColor);
       outline-offset: 2px;
     }
 
@@ -113,24 +109,18 @@
       cursor: default;
 
       .et-radio-label {
-        color: var(--et-surface-interaction-disabled-solid, currentColor);
+        color: var(--et-surface-interaction-disabled, currentColor);
       }
     }
 
     &[aria-checked='true'] .et-radio-circle {
-      border-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+      border-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
       background-color: transparent;
 
       &::after {
         transform: scale(1);
-        outline: 1px solid light-dark(var(--et-theme-color-ink-solid), transparent);
+        outline: 1px solid light-dark(var(--et-tone-text), transparent);
         outline-offset: -1px;
-      }
-    }
-
-    @media (hover: hover) {
-      &[aria-checked='true']:hover {
-        --et-theme-color-primary-rgb: var(--et-color-primary-active);
       }
     }
 

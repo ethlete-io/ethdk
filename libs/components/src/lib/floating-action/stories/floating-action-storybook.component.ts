@@ -30,9 +30,7 @@ import { FLOATING_ACTION_IMPORTS } from '../floating-action.imports';
 
         <ul [style.max-inline-size.px]="640" class="m-0 flex flex-col gap-2 p-0" etFloatingActionScope>
           @for (row of ROWS; track row) {
-            <li class="list-none rounded-md p-3" style="background: var(--et-surface-background-solid)">
-              Result {{ row }}
-            </li>
+            <li class="list-none rounded-md p-3" style="background: var(--et-surface-background)">Result {{ row }}</li>
           }
         </ul>
 

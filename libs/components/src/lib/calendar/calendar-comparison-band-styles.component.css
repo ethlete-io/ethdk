@@ -8,7 +8,7 @@
         inset-inline: 0;
         display: none;
         block-size: 3px;
-        background: var(--et-surface-color-muted-solid);
+        background: var(--et-surface-text-muted);
       }
 
       &:where([data-comparison-band])::after {

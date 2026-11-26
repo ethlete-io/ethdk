@@ -25,7 +25,7 @@ import { PICTURE_IMPORTS } from '../picture.imports';
                 [style.inline-size.px]="180"
                 [style.block-size.px]="120"
                 class="overflow-hidden"
-                style="border: 1px solid var(--et-surface-border-solid)"
+                style="border: 1px solid var(--et-surface-border)"
                 alt="A coloured block fitted to a fixed box"
               />
             </div>

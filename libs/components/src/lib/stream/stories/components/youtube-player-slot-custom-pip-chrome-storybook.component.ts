@@ -44,10 +44,10 @@ const DOCK_STYLES = `
     --et-pip-border-radius: 20px;
     --et-pip-title-bar-height: 44px;
     width: 340px;
-    border: 1px solid color-mix(in srgb, var(--et-surface-color-solid, #fff) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--et-surface-text, #fff) 14%, transparent);
     border-radius: 20px;
     box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.55);
-    background: var(--et-surface-background-solid, #1b1b1b);
+    background: var(--et-surface-background, #1b1b1b);
   }
 
   et-pip-window.et-sb-dock::after {
@@ -99,7 +99,7 @@ const DOCK_STYLES = `
 
   .et-sb-dock__btn:hover,
   .et-sb-dock__btn[aria-pressed='true'] {
-    background: color-mix(in srgb, var(--et-surface-color-solid, #fff) 16%, transparent);
+    background: color-mix(in srgb, var(--et-surface-text, #fff) 16%, transparent);
   }
 
   .et-sb-dock__cell-label {
@@ -158,10 +158,10 @@ const DOCK_STYLES = `
       align-items: center;
       justify-content: center;
       gap: 4px;
-      border: 2px dashed color-mix(in srgb, var(--et-surface-color-solid, #fff) 28%, transparent);
+      border: 2px dashed color-mix(in srgb, var(--et-surface-text, #fff) 28%, transparent);
       border-radius: 28px;
-      background: var(--et-surface-background-solid, #1b1b1b);
-      color: var(--et-surface-color-solid, #fff);
+      background: var(--et-surface-background, #1b1b1b);
+      color: var(--et-surface-text, #fff);
     }
 
     .et-sb-slot-parked__icon {
@@ -186,7 +186,7 @@ const DOCK_STYLES = `
     .et-sb-slot-parked__action {
       margin-top: 14px;
       padding: 6px 16px;
-      border: 1px solid color-mix(in srgb, var(--et-surface-color-solid, #fff) 40%, transparent);
+      border: 1px solid color-mix(in srgb, var(--et-surface-text, #fff) 40%, transparent);
       border-radius: 999px;
       background: transparent;
       color: inherit;
@@ -197,7 +197,7 @@ const DOCK_STYLES = `
     }
 
     .et-sb-slot-parked__action:hover {
-      background: color-mix(in srgb, var(--et-surface-color-solid, #fff) 14%, transparent);
+      background: color-mix(in srgb, var(--et-surface-text, #fff) 14%, transparent);
     }
   `,
 })

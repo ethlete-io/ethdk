@@ -12,7 +12,7 @@
     border: none;
     outline: none;
     background: transparent;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     padding: 0;
     margin: 0;
     cursor: pointer;
@@ -57,21 +57,20 @@
 
     @media (hover: hover) {
       &:hover {
-        color: var(--et-surface-color-solid, currentColor);
+        color: var(--et-surface-text, currentColor);
 
         &::before {
-          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 20%, transparent);
+          background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 20%, transparent);
         }
       }
     }
 
     &:active::before {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 28%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 28%, transparent);
     }
 
     &:focus-visible::before {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: 1px;
     }
 
@@ -99,7 +98,7 @@
     border: none;
     outline: none;
     background: transparent;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     padding: 0;
     margin: 0;
     cursor: pointer;
@@ -121,20 +120,19 @@
 
     @media (hover: hover) {
       &:hover {
-        color: var(--et-surface-color-solid, currentColor);
+        color: var(--et-surface-text, currentColor);
       }
     }
 
     &:focus-visible {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: 2px;
       border-radius: 4px;
     }
 
     &:disabled {
       cursor: not-allowed;
-      color: var(--et-surface-color-subtle-solid, currentColor);
+      color: var(--et-surface-text-subtle, currentColor);
     }
   }
 
@@ -144,16 +142,16 @@
   :where([data-readonly]:not([data-disabled])) :is(.et-input-picker-trigger, .et-input-clear),
   :where([data-readonly]:not([data-disabled])) .et-form-field-affix :is(.et-input-picker-trigger, .et-input-clear) {
     cursor: default;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
 
     &:disabled {
       cursor: default;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     @media (hover: hover) {
       &:hover {
-        color: var(--et-surface-color-muted-solid, currentColor);
+        color: var(--et-surface-text-muted, currentColor);
       }
     }
 

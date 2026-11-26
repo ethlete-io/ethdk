@@ -46,7 +46,7 @@
     flex-direction: column;
     gap: var(--et-stat-tile-gap);
     min-inline-size: 0;
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
     line-height: 1.4;
 
     > .et-stat-tile-sparkline {
@@ -75,7 +75,7 @@
 
   .et-stat-tile-label {
     font-size: var(--et-stat-tile-label-font-size);
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     text-transform: var(--et-stat-tile-label-text-transform, none);
     letter-spacing: var(--et-stat-tile-label-letter-spacing);
   }
@@ -90,13 +90,13 @@
   .et-stat-tile-unit {
     font-size: 0.6em;
     font-weight: 500;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 
   .et-stat-tile-footer {
     display: block;
     font-size: var(--et-stat-tile-footer-font-size);
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 
   .et-stat-tile-delta {
@@ -107,7 +107,7 @@
     white-space: nowrap;
 
     &:where([data-sentiment='good'], [data-sentiment='bad']) {
-      color: var(--et-theme-color-ink-solid, currentColor);
+      color: var(--et-tone-text, currentColor);
     }
   }
 

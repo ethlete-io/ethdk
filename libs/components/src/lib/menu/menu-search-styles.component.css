@@ -41,7 +41,7 @@
       margin: 6px 2px 0;
       font-size: 12px;
       /* the element carries the error color theme via etProvideColor */
-      color: var(--et-theme-color-ink-solid, rgb(248 113 113));
+      color: var(--et-tone-text, rgb(248 113 113));
     }
 
     input[etmenusearch] {
@@ -50,7 +50,7 @@
       padding-inline: var(--et-menu-item-padding-inline);
       border-radius: var(--et-menu-item-border-radius);
       border: 1px solid var(--_et-menu-border);
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 6%, transparent);
       color: inherit;
       font: inherit;
       outline: none;
@@ -60,7 +60,7 @@
         background 120ms ease;
 
       &:focus-visible {
-        border-color: var(--et-theme-color-primary-solid, rgb(255 255 255 / 0.3));
+        border-color: var(--et-tone-fill, rgb(255 255 255 / 0.3));
       }
 
       &::placeholder {

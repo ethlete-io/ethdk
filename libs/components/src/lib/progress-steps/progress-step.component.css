@@ -56,7 +56,7 @@
          `--et-progress-steps-gap` apart - without it the line falls short by exactly that gap. */
       inline-size: calc(100% + var(--et-progress-steps-gap, 8px));
       block-size: var(--et-progress-step-connector-width);
-      background: var(--et-progress-step-connector-color, var(--et-surface-border-solid, currentColor));
+      background: var(--et-progress-step-connector-color, var(--et-surface-border, currentColor));
       transition: background-color 200ms ease;
     }
 
@@ -69,7 +69,7 @@
         [data-state='error'],
         [data-state='skipped']
       ):not(:last-child)::after {
-      background: var(--et-progress-step-connector-complete-color, var(--et-theme-color-ink-solid));
+      background: var(--et-progress-step-connector-complete-color, var(--et-tone-text));
     }
 
     .et-progress-step-marker {
@@ -83,9 +83,9 @@
       flex-shrink: 0;
       border-radius: 50%;
       border: var(--et-progress-step-marker-ring-width) solid
-        var(--et-progress-step-marker-ring-color, var(--et-surface-border-solid, currentColor));
-      background: var(--et-surface-background-solid, Canvas);
-      color: var(--et-surface-color-muted-solid, currentColor);
+        var(--et-progress-step-marker-ring-color, var(--et-surface-border, currentColor));
+      background: var(--et-surface-background, Canvas);
+      color: var(--et-surface-text-muted, currentColor);
       font-size: calc(var(--et-progress-step-marker-size) * 0.5);
       /* Without this the number's line box inherits the page's line-height (~1.5), and flex
          centers that whole box rather than the glyph inside it - the digit then sits visibly
@@ -107,9 +107,9 @@
     }
 
     &[data-state='current'] .et-progress-step-marker {
-      border-color: var(--et-progress-step-marker-ring-color, var(--et-theme-color-ink-solid));
-      background: var(--et-progress-step-current-marker-background, var(--et-surface-background-solid, Canvas));
-      color: var(--et-theme-color-ink-solid, currentColor);
+      border-color: var(--et-progress-step-marker-ring-color, var(--et-tone-text));
+      background: var(--et-progress-step-current-marker-background, var(--et-surface-background, Canvas));
+      color: var(--et-tone-text, currentColor);
 
       &::after {
         content: '';
@@ -117,7 +117,7 @@
         inline-size: var(--et-progress-step-current-dot-size);
         block-size: var(--et-progress-step-current-dot-size);
         border-radius: 50%;
-        background: var(--et-progress-step-current-dot-color, var(--et-theme-color-ink-solid, currentColor));
+        background: var(--et-progress-step-current-dot-color, var(--et-tone-text, currentColor));
       }
 
       .et-progress-step-marker-number::before {
@@ -127,9 +127,9 @@
 
     &:is([data-state='complete'], [data-state='success'], [data-state='warning'], [data-state='error'])
       .et-progress-step-marker {
-      border-color: var(--et-progress-step-marker-ring-color, var(--et-theme-color-ink-solid));
-      background: var(--et-theme-color-primary-solid, currentColor);
-      color: var(--et-theme-color-on-primary-solid, white);
+      border-color: var(--et-progress-step-marker-ring-color, var(--et-tone-text));
+      background: var(--et-tone-fill, currentColor);
+      color: var(--et-tone-on-fill, white);
     }
 
     &[data-state='skipped'] .et-progress-step-marker {
@@ -141,7 +141,7 @@
     }
 
     &[data-state='upcoming'] .et-progress-step-marker {
-      background: var(--et-progress-step-upcoming-marker-background, var(--et-surface-background-solid, Canvas));
+      background: var(--et-progress-step-upcoming-marker-background, var(--et-surface-background, Canvas));
     }
 
     &[data-state='upcoming'] .et-progress-step-marker-number::before {
@@ -162,7 +162,7 @@
     }
 
     .et-progress-step-label {
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       transition: color 200ms ease;
     }
 
@@ -170,7 +170,7 @@
       margin: 0;
       font-size: var(--et-progress-step-description-font-size);
       line-height: var(--et-progress-step-description-line-height, inherit);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     [etProgressStepContent] {
@@ -182,7 +182,7 @@
     }
 
     &[data-state='current'] .et-progress-step-label {
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
       font-weight: 600;
     }
 
@@ -191,7 +191,7 @@
     }
 
     &:is([data-state='success'], [data-state='warning'], [data-state='error']) .et-progress-step-label {
-      color: var(--et-theme-color-ink-solid, currentColor);
+      color: var(--et-tone-text, currentColor);
       font-weight: var(--et-progress-step-complete-label-font-weight, 600);
     }
 
@@ -251,11 +251,11 @@
       @media (hover: hover) {
         &:hover {
           .et-progress-step-marker {
-            border-color: var(--et-theme-color-ink-solid);
+            border-color: var(--et-tone-text);
           }
 
           .et-progress-step-label {
-            color: var(--et-surface-color-solid, currentColor);
+            color: var(--et-surface-text, currentColor);
           }
         }
       }

@@ -33,15 +33,15 @@
     --_et-fab-contents-padding: 0 var(--et-fab-contents-gap) 0 0;
 
     --et-button-shadow:
-      0 0.3rem 0.8rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.2),
-      0 0.1rem 0.3rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.12);
+      0 0.3rem 0.8rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 20%, transparent),
+      0 0.1rem 0.3rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 12%, transparent);
 
     display: inline-flex;
     position: relative;
     align-items: center;
 
-    background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-    color: var(--et-theme-color-on-primary);
+    background: color-mix(in srgb, var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%), transparent);
+    color: var(--et-tone-on-fill);
     border: none;
     border-radius: 9999px;
     padding: 0;
@@ -85,20 +85,20 @@
     &:where([data-variant='filled']) {
       @media (hover: hover) {
         &:hover::after {
-          background: rgb(var(--et-theme-color-on-primary-rgb) / 0.08);
+          background: color-mix(in srgb, var(--et-tone-on-fill) 8%, transparent);
         }
       }
 
       &:focus-visible::after {
-        background: rgb(var(--et-theme-color-on-primary-rgb) / 0.12);
+        background: color-mix(in srgb, var(--et-tone-on-fill) 12%, transparent);
       }
 
       &:active::after {
-        background: rgb(var(--et-theme-color-on-primary-rgb) / 0.16);
+        background: color-mix(in srgb, var(--et-tone-on-fill) 16%, transparent);
       }
 
       &:focus-visible:active::after {
-        background: rgb(var(--et-theme-color-on-primary-rgb) / 0.16);
+        background: color-mix(in srgb, var(--et-tone-on-fill) 16%, transparent);
       }
     }
 
@@ -140,21 +140,21 @@
     @media (hover: hover) {
       &:hover {
         --et-button-shadow:
-          0 0.6rem 1.2rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.22),
-          0 0.2rem 0.4rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.14);
+          0 0.6rem 1.2rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 22%, transparent),
+          0 0.2rem 0.4rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 14%, transparent);
       }
     }
 
     &:active {
       --et-button-shadow:
-        0 0.2rem 0.6rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.18),
-        0 0.1rem 0.2rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1);
+        0 0.2rem 0.6rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 18%, transparent),
+        0 0.1rem 0.2rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent);
     }
 
     &:focus-visible:active {
       --et-button-shadow:
-        0 0.2rem 0.6rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.18),
-        0 0.1rem 0.2rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1);
+        0 0.2rem 0.6rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 18%, transparent),
+        0 0.1rem 0.2rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent);
     }
 
     &:where([disabled]),
@@ -168,9 +168,9 @@
       --et-button-shadow: none;
       background: var(
         --_et-button-state-background,
-        rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity))
+        color-mix(in srgb, var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%), transparent)
       );
-      color: var(--et-theme-color-ink-solid);
+      color: var(--et-tone-text);
 
       @media (hover: hover) {
         &:hover {
@@ -186,10 +186,7 @@
 
     &:where([data-variant='outline'])::after {
       border-width: var(--et-button-border-width, 0.1rem);
-      border-color: var(
-        --_et-button-state-border-color,
-        var(--et-button-outline-border-color, var(--et-theme-color-ink-solid))
-      );
+      border-color: var(--_et-button-state-border-color, var(--et-button-outline-border-color, var(--et-tone-text)));
     }
 
     &[data-icon-alignment='end'] {

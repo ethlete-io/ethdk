@@ -55,7 +55,7 @@
 
   .et-tree {
     display: block;
-    color: var(--et-surface-color-solid, CanvasText);
+    color: var(--et-surface-text, CanvasText);
   }
 
   .et-tree-node,
@@ -77,7 +77,7 @@
     justify-content: center;
     inline-size: var(--et-tree-marker-size);
     block-size: var(--et-tree-marker-size);
-    color: var(--et-surface-color-muted-solid, GrayText);
+    color: var(--et-surface-text-muted, GrayText);
 
     .et-tree-node-chevron {
       inline-size: 100%;
@@ -103,7 +103,7 @@
 
     .et-tree-node-error {
       flex: none;
-      color: var(--et-tree-error-color, var(--et-surface-color-muted-solid, GrayText));
+      color: var(--et-tree-error-color, var(--et-surface-text-muted, GrayText));
       font-size: 0.875em;
     }
 
@@ -122,19 +122,19 @@
     }
 
     &:where([data-error]) .et-tree-node-marker {
-      color: var(--et-tree-error-color, var(--et-surface-color-muted-solid, GrayText));
+      color: var(--et-tree-error-color, var(--et-surface-text-muted, GrayText));
     }
 
     &:not(:where([aria-disabled])):hover {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, gray) 7%, transparent);
     }
 
     &:not(:where([aria-disabled])):active {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 14%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, gray) 14%, transparent);
     }
 
     &:focus-visible {
-      outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
+      outline: 2px solid var(--et-tone-text, currentColor);
       outline-offset: -2px;
     }
 
@@ -147,15 +147,15 @@
   /* Must stay after `.et-tree-node`: it weighs the same as the bare interaction states, so source
      order is what keeps a selected row's accent while hovered. */
   .et-tree:not(:where([aria-multiselectable])) .et-tree-node:where([data-selected]) {
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 16%, transparent);
-    color: var(--et-theme-color-ink-solid, inherit);
+    background: color-mix(in srgb, var(--et-tone-fill, gray) 16%, transparent);
+    color: var(--et-tone-text, inherit);
 
     &:not(:where([aria-disabled])):hover {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 24%, transparent);
+      background: color-mix(in srgb, var(--et-tone-fill, gray) 24%, transparent);
     }
 
     &:not(:where([aria-disabled])):active {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 32%, transparent);
+      background: color-mix(in srgb, var(--et-tone-fill, gray) 32%, transparent);
     }
   }
 
@@ -165,7 +165,7 @@
     inline-size: var(--et-tree-check-size);
     block-size: var(--et-tree-check-size);
     box-sizing: border-box;
-    border: 2px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.3));
+    border: 2px solid var(--et-surface-border, rgb(255 255 255 / 0.3));
     border-radius: 4px;
     transition:
       background var(--et-tree-duration) ease,
@@ -178,7 +178,7 @@
       margin: auto;
       inline-size: 4px;
       block-size: 8px;
-      border: solid var(--et-theme-color-on-primary, rgb(0 0 0));
+      border: solid var(--et-tone-on-fill, rgb(0 0 0));
       border-width: 0 2px 2px 0;
       translate: 0 -1px;
       rotate: 45deg;
@@ -188,8 +188,8 @@
   }
 
   .et-tree-node:where([data-selected]) > .et-tree-node-check {
-    border-color: var(--et-theme-color-primary-solid, currentColor);
-    background: var(--et-theme-color-primary-solid, currentColor);
+    border-color: var(--et-tone-fill, currentColor);
+    background: var(--et-tone-fill, currentColor);
 
     &::after {
       opacity: 1;
@@ -197,15 +197,15 @@
   }
 
   .et-tree-status {
-    color: var(--et-surface-color-muted-solid, GrayText);
+    color: var(--et-surface-text-muted, GrayText);
 
     &:where(.et-tree-status--error) {
-      color: var(--et-tree-error-color, var(--et-surface-color-muted-solid, GrayText));
+      color: var(--et-tree-error-color, var(--et-surface-text-muted, GrayText));
       cursor: pointer;
     }
 
     &:focus-visible {
-      outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
+      outline: 2px solid var(--et-tone-text, currentColor);
       outline-offset: -2px;
     }
   }

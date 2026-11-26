@@ -6,7 +6,7 @@
     justify-content: center;
     gap: var(--et-button-gap);
     background: transparent;
-    color: var(--et-theme-color-ink-solid);
+    color: var(--et-tone-text);
     border: none;
     padding: 0;
     border-radius: 0.2rem;

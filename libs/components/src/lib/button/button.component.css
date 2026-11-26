@@ -1,7 +1,11 @@
 @layer components.sdk {
   .et-button {
-    --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-    --_et-button-color: var(--et-theme-color-on-primary);
+    --_et-button-background: color-mix(
+      in srgb,
+      var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+      transparent
+    );
+    --_et-button-color: var(--et-tone-on-fill);
     --_et-button-border-color: transparent;
     --_et-button-gap: var(--et-button-gap);
     --_et-button-padding: var(--et-button-padding);
@@ -98,90 +102,103 @@
     }
 
     &:where([data-variant='outline']) {
-      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-      --_et-button-color: var(--et-theme-color-ink-solid);
-      --_et-button-border-color: var(--et-button-outline-border-color, var(--et-theme-color-ink-solid));
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-text);
+      --_et-button-border-color: var(--et-button-outline-border-color, var(--et-tone-text));
     }
 
     &[data-pressed='true']:where([data-pressed-variant='outline']) {
-      --et-theme-color-primary-opacity: 0;
-      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-      --_et-button-color: var(--et-theme-color-ink-solid);
-      --_et-button-border-color: var(--et-button-outline-border-color, var(--et-theme-color-ink-solid));
+      --_et-tone-fill-opacity: 0;
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-text);
+      --_et-button-border-color: var(--et-button-outline-border-color, var(--et-tone-text));
 
       @media (hover: hover) {
         &:not([disabled], [aria-disabled='true']):hover {
-          --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
+          --_et-tone-fill-opacity: var(--et-button-variant-opacity-hover-delta);
         }
       }
 
       &:focus-visible {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
+        --_et-tone-fill-opacity: var(--et-button-variant-opacity-focus-delta);
       }
 
       &:not([disabled], [aria-disabled='true']):active {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
+        --_et-tone-fill-opacity: var(--et-button-variant-opacity-active-delta);
       }
 
       &[data-loading='true']:not([disabled], [aria-disabled='true']) {
-        --_et-button-color: var(--et-theme-color-primary-solid);
-        --_et-button-border-color: var(--et-theme-color-primary-solid);
+        --_et-button-color: var(--et-tone-fill);
+        --_et-button-border-color: var(--et-tone-fill);
       }
     }
 
     &:where([data-variant='tonal']),
     &[data-pressed='true']:where([data-pressed-variant='tonal']) {
-      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-      --_et-button-color: var(--et-theme-color-ink-solid);
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-text);
       --_et-button-border-color: transparent;
     }
 
     &:where([data-variant='transparent']) {
-      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-      --_et-button-color: var(--et-theme-color-ink-solid);
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-text);
       --_et-button-border-color: transparent;
     }
 
     &:where([data-variant='filled']) {
       @media (hover: hover) {
         &:not([disabled], [aria-disabled='true']):hover {
-          --et-theme-color-primary-rgb: var(
-            --et-button-filled-hover-rgb,
-            var(
-              --et-color-primary-active,
-              var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
-            )
+          --et-tone-fill: var(
+            --et-button-filled-hover,
+            var(--et-tone-fill-active, var(--et-tone-fill-focus, var(--et-tone-fill-hover, var(--et-tone-fill-rest))))
           );
         }
       }
 
       &:not([disabled], [aria-disabled='true']):active {
-        --_et-button-background: color-mix(
-          in srgb,
-          rgb(var(--et-color-primary)) 96%,
-          var(--et-theme-color-on-primary-solid)
-        );
+        --_et-button-background: color-mix(in srgb, var(--et-tone-fill-rest) 96%, var(--et-tone-on-fill));
       }
     }
 
     &[data-pressed='true']:where([data-pressed-variant='filled']) {
-      --et-theme-color-primary-opacity: 1;
-      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
-      --_et-button-color: var(--et-theme-color-on-primary);
+      --_et-tone-fill-opacity: 1;
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%),
+        transparent
+      );
+      --_et-button-color: var(--et-tone-on-fill);
       --_et-button-border-color: transparent;
 
       @media (hover: hover) {
         &:not([disabled], [aria-disabled='true']):hover {
-          --et-theme-color-primary-opacity: 1;
+          --_et-tone-fill-opacity: 1;
         }
       }
 
       &:focus-visible {
-        --et-theme-color-primary-opacity: 1;
+        --_et-tone-fill-opacity: 1;
       }
 
       &:not([disabled], [aria-disabled='true']):active {
-        --et-theme-color-primary-opacity: 1;
+        --_et-tone-fill-opacity: 1;
       }
     }
 

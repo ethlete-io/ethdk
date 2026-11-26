@@ -54,10 +54,10 @@
   }
 
   .et-accordion {
-    --_et-accordion-border-color: var(--et-surface-border-solid, rgb(128 128 128 / 0.25));
+    --_et-accordion-border-color: var(--et-surface-border, rgb(128 128 128 / 0.25));
 
     display: block;
-    color: var(--et-surface-color-solid, CanvasText);
+    color: var(--et-surface-text, CanvasText);
     border-block-end: 1px solid var(--_et-accordion-border-color);
 
     /* The hover lives on the trigger and the border on the host, so this has to reach back up with
@@ -66,8 +66,8 @@
       &:has(.et-accordion-trigger:hover:not([aria-disabled='true'])) {
         --_et-accordion-border-color: color-mix(
           in srgb,
-          var(--et-surface-interaction-solid, gray) 35%,
-          var(--et-surface-border-solid, rgb(128 128 128 / 0.25))
+          var(--et-surface-interaction, gray) 35%,
+          var(--et-surface-border, rgb(128 128 128 / 0.25))
         );
       }
     }
@@ -85,7 +85,7 @@
   }
 
   .et-accordion-trigger {
-    --_et-accordion-secondary-color: var(--et-surface-color-muted-solid, GrayText);
+    --_et-accordion-secondary-color: var(--et-surface-text-muted, GrayText);
 
     display: flex;
     align-items: center;
@@ -112,11 +112,11 @@
       &:hover {
         background: var(
           --et-accordion-header-hover-background,
-          color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent)
+          color-mix(in srgb, var(--et-surface-interaction, gray) 7%, transparent)
         );
 
         &:not([aria-disabled='true']) {
-          --_et-accordion-secondary-color: var(--et-surface-color-solid, CanvasText);
+          --_et-accordion-secondary-color: var(--et-surface-text, CanvasText);
 
           .et-accordion-label {
             text-decoration: var(--et-accordion-header-hover-text-decoration, none);
@@ -128,18 +128,17 @@
     &:active {
       background: var(
         --et-accordion-header-active-background,
-        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 14%, transparent)
+        color-mix(in srgb, var(--et-surface-interaction, gray) 14%, transparent)
       );
     }
 
     &:focus-visible {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: -2px;
     }
 
     &:where([aria-disabled='true']) {
-      color: var(--et-surface-color-muted-solid, GrayText);
+      color: var(--et-surface-text-muted, GrayText);
       cursor: default;
 
       &:hover,

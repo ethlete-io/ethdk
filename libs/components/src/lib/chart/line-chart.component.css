@@ -46,7 +46,7 @@
     position: relative;
     font-size: var(--et-line-chart-font-size);
     line-height: 1.4;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
 
     .et-line-chart-legend {
       margin-block-end: calc(var(--et-line-chart-axis-gap) * 1.5);
@@ -95,8 +95,8 @@
   .et-line-chart-area {
     --_et-line-chart-color: color-mix(
       in oklab,
-      var(--et-theme-color-primary-solid, currentColor) var(--_et-chart-accent-mix, 100%),
-      var(--et-surface-background-solid, transparent)
+      var(--et-tone-fill, currentColor) var(--_et-chart-accent-mix, 100%),
+      var(--et-surface-background, transparent)
     );
   }
 
@@ -116,7 +116,7 @@
 
     .et-line-chart-point {
       fill: var(--_et-line-chart-color);
-      stroke: var(--et-surface-background-solid, transparent);
+      stroke: var(--et-surface-background, transparent);
       stroke-width: 2px;
     }
   }
@@ -125,13 +125,13 @@
     fill: color-mix(
       in oklab,
       var(--_et-line-chart-color) var(--et-line-chart-stacked-area-mix),
-      var(--et-surface-background-solid, transparent)
+      var(--et-surface-background, transparent)
     );
     fill-opacity: 1;
   }
 
   .et-line-chart-slice {
-    --_et-line-chart-slice-tint: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 6%, transparent);
+    --_et-line-chart-slice-tint: color-mix(in srgb, var(--et-surface-interaction, currentColor) 6%, transparent);
 
     outline: none;
 
@@ -168,7 +168,7 @@
     }
 
     .et-line-chart-crosshair {
-      stroke: var(--et-surface-color-subtle-solid, currentColor);
+      stroke: var(--et-surface-text-subtle, currentColor);
       stroke-width: 1px;
       opacity: 0;
       pointer-events: none;
@@ -177,10 +177,10 @@
     .et-line-chart-slice-point {
       fill: color-mix(
         in oklab,
-        var(--et-theme-color-primary-solid, currentColor) var(--_et-chart-accent-mix, 100%),
-        var(--et-surface-background-solid, transparent)
+        var(--et-tone-fill, currentColor) var(--_et-chart-accent-mix, 100%),
+        var(--et-surface-background, transparent)
       );
-      stroke: var(--et-surface-background-solid, transparent);
+      stroke: var(--et-surface-background, transparent);
       stroke-width: 2px;
       opacity: 0;
       pointer-events: none;
@@ -210,7 +210,7 @@
 
     &:focus-visible .et-line-chart-focus-ring {
       fill: var(--_et-line-chart-slice-tint);
-      stroke: var(--et-theme-color-primary-solid, currentColor);
+      stroke: var(--et-tone-fill, currentColor);
     }
   }
 

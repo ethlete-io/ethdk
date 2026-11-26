@@ -49,10 +49,10 @@
     box-sizing: border-box;
     min-inline-size: var(--et-kbd-key-min-inline-size);
     padding-inline: var(--et-kbd-key-padding-inline);
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     border-radius: var(--et-kbd-key-border-radius);
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 8%, transparent);
-    color: var(--et-kbd-color, var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55)));
+    background: color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 8%, transparent);
+    color: var(--et-kbd-color, var(--et-surface-text-muted, rgb(255 255 255 / 0.55)));
     font: inherit;
     font-size: var(--et-kbd-font-size);
     font-weight: var(--et-kbd-font-weight);

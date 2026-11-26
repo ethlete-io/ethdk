@@ -124,22 +124,25 @@
   }
 
   .et-menu {
-    --_et-menu-background: var(--et-surface-background-solid, rgb(32 32 32));
-    --_et-menu-color: var(--et-surface-color-solid, rgb(244 244 245));
-    --_et-menu-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    --_et-menu-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
+    --_et-menu-background: var(--et-surface-background, rgb(32 32 32));
+    --_et-menu-color: var(--et-surface-text, rgb(244 244 245));
+    --_et-menu-border: var(--et-surface-border, rgb(255 255 255 / 0.1));
+    --_et-menu-shadow: var(
+      --et-anchored-panel-shadow,
+      0 10px 24px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 16%, transparent)
+    );
     --_et-menu-item-active-background: color-mix(
       in srgb,
-      var(--et-surface-interaction-solid, rgb(255 255 255)) 12%,
+      var(--et-surface-interaction, rgb(255 255 255)) 12%,
       transparent
     );
     --_et-menu-item-pressed-background: color-mix(
       in srgb,
-      var(--et-surface-interaction-solid, rgb(255 255 255)) 20%,
+      var(--et-surface-interaction, rgb(255 255 255)) 20%,
       transparent
     );
-    --_et-menu-muted-color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
-    --_et-menu-separator-color: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    --_et-menu-muted-color: var(--et-surface-text-muted, rgb(255 255 255 / 0.55));
+    --_et-menu-separator-color: var(--et-surface-border, rgb(255 255 255 / 0.1));
 
     display: flex;
     flex-direction: column;
@@ -252,7 +255,7 @@
         opacity 120ms ease;
 
       &[data-active]:where([data-active-source='keyboard']):focus-visible {
-        outline: 2px solid var(--et-theme-color-ink-solid);
+        outline: 2px solid var(--et-tone-text);
         outline-offset: -2px;
       }
 
@@ -287,7 +290,7 @@
 
       &[data-variant='destructive'] {
         /* the item forces the error color theme onto itself while destructive */
-        color: var(--et-theme-color-ink-solid, rgb(248 113 113));
+        color: var(--et-tone-text, rgb(248 113 113));
       }
 
       /* Every kind of item has a label — a plain one, a checkbox, a radio — so its layout lives here

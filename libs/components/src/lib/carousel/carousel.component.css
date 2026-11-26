@@ -110,7 +110,7 @@
     border-radius: var(--et-carousel-controls-radius, 999px);
     background: var(
       --et-carousel-controls-background,
-      color-mix(in srgb, var(--et-surface-background-solid, white) 80%, transparent)
+      color-mix(in srgb, var(--et-surface-background, white) 80%, transparent)
     );
   }
 
@@ -136,7 +136,7 @@
 
   /* Two classes deep: the icon button's own colour rule is one class deep and injected at runtime. */
   .et-carousel .et-carousel-control {
-    color: var(--et-carousel-control-color, var(--et-theme-color-ink-solid));
+    color: var(--et-carousel-control-color, var(--et-tone-text));
   }
 
   .et-carousel-control {
@@ -184,37 +184,31 @@
       border-radius: 50%;
       background: var(
         --et-carousel-dot-color,
-        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 35%, transparent)
+        color-mix(in srgb, var(--et-surface-interaction, gray) 35%, transparent)
       );
     }
 
     &:hover::before {
       background: var(
         --et-carousel-dot-hover-color,
-        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 55%, transparent)
+        color-mix(in srgb, var(--et-surface-interaction, gray) 55%, transparent)
       );
     }
 
     &:active::before {
       background: var(
         --et-carousel-dot-pressed-color,
-        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 85%, transparent)
+        color-mix(in srgb, var(--et-surface-interaction, gray) 85%, transparent)
       );
     }
 
     &:where([data-active])::before {
-      background: var(
-        --et-carousel-dot-active-color,
-        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
-      );
+      background: var(--et-carousel-dot-active-color, light-dark(var(--et-tone-text), var(--et-tone-fill)));
     }
 
     /* `:hover`/`:active` above outrank the `:where()` rule, so the selected dot needs its own state selector. */
     &:where([data-active]):is(:hover, :active)::before {
-      background: var(
-        --et-carousel-dot-active-color,
-        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
-      );
+      background: var(--et-carousel-dot-active-color, light-dark(var(--et-tone-text), var(--et-tone-fill)));
     }
   }
 

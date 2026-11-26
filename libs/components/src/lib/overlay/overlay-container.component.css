@@ -7,7 +7,7 @@
     --et-overlay-body-padding-block: 0;
     --et-overlay-footer-padding-block-start: 16px;
 
-    --et-overlay-body-divider-color: var(--et-surface-border-solid, #565656);
+    --et-overlay-body-divider-color: var(--et-surface-border, #565656);
 
     --et-overlay-body-min-block-size: 100px;
 
@@ -16,9 +16,9 @@
      a static fallback for theme-less setups. Kept as tokens so a specific overlay (e.g. the RTE
      link editor, the date-picker sheet) can override radius/border per instance. Anchored/centered
      panes are deliberately excluded — their content paints its own surface. */
-    --et-overlay-surface-background: var(--et-surface-background-solid, rgb(32 32 32));
-    --et-overlay-surface-color: var(--et-surface-color-solid, rgb(244 244 245));
-    --et-overlay-surface-border-color: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    --et-overlay-surface-background: var(--et-surface-background, rgb(32 32 32));
+    --et-overlay-surface-color: var(--et-surface-text, rgb(244 244 245));
+    --et-overlay-surface-border-color: var(--et-surface-border, rgb(255 255 255 / 0.1));
     --et-overlay-surface-border-width: 0.1rem;
     --_et-overlay-radius: var(--et-overlay-radius, 1.6rem);
 
@@ -146,7 +146,10 @@
   }
 
   .et-overlay-runtime-backdrop {
-    background-color: var(--et-overlay-backdrop-color, rgb(var(--et-scrim-color-rgb, 0 0 0) / 0.32));
+    background-color: var(
+      --et-overlay-backdrop-color,
+      color-mix(in srgb, var(--et-scrim-color, rgb(0 0 0)) 32%, transparent)
+    );
     backdrop-filter: var(--et-overlay-backdrop-filter, none);
     opacity: 0;
     transition: opacity 200ms linear;
@@ -165,6 +168,6 @@
   }
 
   .et-overlay--dialog .et-button:where([data-variant='filled']) {
-    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
+    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-tone-text), transparent);
   }
 }

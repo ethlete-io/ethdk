@@ -28,7 +28,7 @@
     position: relative;
     font-size: var(--et-pie-chart-font-size);
     line-height: 1.4;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 
   .et-pie-chart-figure {
@@ -52,7 +52,7 @@
 
   .et-pie-chart-empty {
     fill: none;
-    stroke: var(--et-surface-border-solid, currentColor);
+    stroke: var(--et-surface-border, currentColor);
     stroke-width: 1px;
   }
 
@@ -60,8 +60,8 @@
   .et-pie-chart-legend-item {
     --_et-pie-chart-slice-fill: color-mix(
       in oklab,
-      var(--et-theme-color-primary-solid, currentColor) var(--_et-pie-chart-accent-mix, 100%),
-      var(--et-surface-background-solid, transparent)
+      var(--et-tone-fill, currentColor) var(--_et-pie-chart-accent-mix, 100%),
+      var(--et-surface-background, transparent)
     );
   }
 
@@ -69,7 +69,7 @@
     --_et-pie-chart-slice-tint: color-mix(
       in oklab,
       var(--_et-pie-chart-slice-fill) 85%,
-      var(--et-surface-background-solid, transparent)
+      var(--et-surface-background, transparent)
     );
 
     outline: none;
@@ -90,7 +90,7 @@
 
     &:focus-visible .et-pie-chart-slice-mark {
       fill: var(--_et-pie-chart-slice-tint);
-      stroke: var(--et-surface-color-solid, currentColor);
+      stroke: var(--et-surface-text, currentColor);
     }
 
     @media (hover: hover) {
@@ -116,7 +116,7 @@
     .et-pie-chart-total {
       font-size: 1.5em;
       line-height: 1.2;
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
       font-variant-numeric: tabular-nums;
     }
   }
@@ -158,7 +158,7 @@
     }
 
     .et-pie-chart-legend-value {
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
     }
   }
 

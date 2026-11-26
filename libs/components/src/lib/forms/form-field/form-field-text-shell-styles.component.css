@@ -38,10 +38,7 @@
 
     &[data-fill='filled'],
     &[data-fill='sunken'] {
-      --_et-form-field-control-background: var(
-        --et-surface-background-solid,
-        var(--et-surface-base-solid, transparent)
-      );
+      --_et-form-field-control-background: var(--et-surface-background, transparent);
     }
 
     /* The host hook is a bare attribute selector, not `:where([data-text-shell])`: this sheet is
@@ -50,57 +47,48 @@
     &[data-text-shell] {
       --_et-form-field-frame-border: var(
         --et-form-field-control-border-color,
-        color-mix(
-          in oklab,
-          var(--et-surface-color-solid, currentColor) 43%,
-          var(--et-surface-background-solid, transparent)
-        )
+        color-mix(in oklab, var(--et-surface-text, currentColor) 43%, var(--et-surface-background, transparent))
       );
       --_et-form-field-frame-border-hover: var(
         --et-form-field-control-border-color-hover,
         var(--_et-form-field-label-color-active)
       );
-      --_et-form-field-frame-focus: var(
-        --et-form-field-control-border-color-focus,
-        var(--et-theme-color-primary-solid, currentColor)
-      );
+      --_et-form-field-frame-focus: var(--et-form-field-control-border-color-focus, var(--et-tone-fill, currentColor));
       --_et-form-field-frame-focus-readonly: var(
         --et-form-field-control-border-color-focus,
-        var(--et-surface-color-solid, currentColor)
+        var(--et-surface-text, currentColor)
       );
-      --_et-form-field-label-color: var(--et-form-field-label-color, var(--et-surface-color-muted-solid, currentColor));
+      --_et-form-field-label-color: var(--et-form-field-label-color, var(--et-surface-text-muted, currentColor));
       --_et-form-field-label-color-active: var(
         --et-form-field-label-color-active,
-        var(--et-surface-color-solid, currentColor)
+        var(--et-surface-text, currentColor)
       );
 
       &[data-error] {
-        --_et-form-field-frame-border: var(--et-theme-color-primary-solid);
+        --_et-form-field-frame-border: var(--et-tone-fill);
         --_et-form-field-frame-border-hover: light-dark(
-          rgb(var(--et-color-primary-hover, var(--et-color-primary))),
-          rgb(
+          var(--et-tone-fill-hover, var(--et-tone-fill-rest)),
+          var(
+            --et-tone-text-active,
             var(
-              --et-color-primary-ink-active,
+              --et-tone-text-focus,
               var(
-                --et-color-primary-ink-focus,
+                --et-tone-text-hover,
                 var(
-                  --et-color-primary-ink-hover,
+                  --et-tone-text-rest,
                   var(
-                    --et-color-primary-ink,
-                    var(
-                      --et-color-primary-active,
-                      var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
-                    )
+                    --et-tone-fill-active,
+                    var(--et-tone-fill-focus, var(--et-tone-fill-hover, var(--et-tone-fill-rest)))
                   )
                 )
               )
             )
           )
         );
-        --_et-form-field-frame-focus: var(--et-theme-color-ink-solid);
-        --_et-form-field-frame-focus-readonly: var(--et-theme-color-ink-solid);
-        --_et-form-field-label-color: var(--et-theme-color-ink-solid);
-        --_et-form-field-label-color-active: var(--et-theme-color-ink-solid);
+        --_et-form-field-frame-focus: var(--et-tone-text);
+        --_et-form-field-frame-focus-readonly: var(--et-tone-text);
+        --_et-form-field-label-color: var(--et-tone-text);
+        --_et-form-field-label-color-active: var(--et-tone-text);
       }
 
       &:not(:has(> .et-form-field-shell > .et-form-field-control-frame > .et-form-field-prefix svg)) {
@@ -183,8 +171,7 @@
         &[data-appearance='box'] .et-form-field-label-area--inline {
           padding-inline-end: var(--et-form-field-control-padding-inline);
           margin-inline-end: calc(var(--et-form-field-control-padding-inline) - var(--et-form-field-control-affix-gap));
-          border-inline-end: var(--et-form-field-control-border-width) solid
-            var(--et-surface-border-solid, currentColor);
+          border-inline-end: var(--et-form-field-control-border-width) solid var(--et-surface-border, currentColor);
         }
       }
 
@@ -331,14 +318,14 @@
         &:where(:not([data-error]):not([data-focused]):not(:has(:focus-visible))) .et-form-field-control-frame {
           border-color: var(
             --et-form-field-control-border-color-readonly,
-            var(--et-surface-border-solid, color-mix(in srgb, var(--_et-form-field-frame-border) 50%, transparent))
+            var(--et-surface-border, color-mix(in srgb, var(--_et-form-field-frame-border) 50%, transparent))
           );
         }
 
         &:where(:not([data-appearance='underline'])) .et-form-field-control-frame {
           background: color-mix(
             in srgb,
-            var(--et-surface-interaction-solid, currentColor) 6%,
+            var(--et-surface-interaction, currentColor) 6%,
             var(--_et-form-field-control-background)
           );
         }

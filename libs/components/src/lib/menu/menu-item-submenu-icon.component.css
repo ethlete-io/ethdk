@@ -6,7 +6,7 @@
     flex: none;
     inline-size: var(--et-menu-item-submenu-icon-size);
     block-size: var(--et-menu-item-submenu-icon-size);
-    color: var(--_et-menu-muted-color, var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55)));
+    color: var(--_et-menu-muted-color, var(--et-surface-text-muted, rgb(255 255 255 / 0.55)));
     /* the registered chevron points up natively - rotate it to point into the submenu */
     rotate: 90deg;
 

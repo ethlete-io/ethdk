@@ -59,12 +59,15 @@
     overflow: hidden;
     padding: 12px;
     border-radius: var(--_et-overlay-surface-radius, 10px);
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    background: var(--et-surface-background-solid, rgb(32 32 32));
-    color: var(--et-surface-color-solid, rgb(244 244 245));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
+    background: var(--et-surface-background, rgb(32 32 32));
+    color: var(--et-surface-text, rgb(244 244 245));
     box-shadow: var(
       --et-date-picker-panel-shadow,
-      var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16))
+      var(
+        --et-anchored-panel-shadow,
+        0 10px 24px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 16%, transparent)
+      )
     );
 
     &.et-date-picker-panel--resizing {
@@ -97,7 +100,7 @@
         margin-inline: auto;
         margin-block-end: 12px;
         border-radius: 999px;
-        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+        background: var(--et-surface-border, rgb(255 255 255 / 0.2));
       }
     }
 

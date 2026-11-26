@@ -14,9 +14,9 @@
     align-items: center;
     gap: 12px;
     padding: 8px;
-    border: 1px solid var(--et-surface-border-solid, currentColor);
+    border: 1px solid var(--et-surface-border, currentColor);
     border-radius: calc(var(--et-dropzone-border-radius) / 1.5);
-    background-color: var(--et-surface-background-solid, transparent);
+    background-color: var(--et-surface-background, transparent);
 
     .et-dropzone-item-thumbnail {
       display: grid;
@@ -26,7 +26,7 @@
       block-size: var(--et-dropzone-thumbnail-size);
       overflow: hidden;
       border-radius: calc(var(--et-dropzone-border-radius) / 2);
-      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+      background-color: color-mix(in srgb, var(--et-surface-interaction, currentColor) 8%, transparent);
 
       .et-dropzone-preview-image {
         inline-size: 100%;
@@ -53,7 +53,7 @@
       flex-wrap: wrap;
       gap: 0 8px;
       font-size: 12px;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     .et-dropzone-entry-error {
@@ -61,7 +61,7 @@
       font-size: 12px;
       text-overflow: ellipsis;
       white-space: nowrap;
-      color: var(--et-theme-color-ink-solid, currentColor);
+      color: var(--et-tone-text, currentColor);
     }
   }
 }

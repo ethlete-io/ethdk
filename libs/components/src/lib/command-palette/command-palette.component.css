@@ -30,9 +30,9 @@
   }
 
   .et-command-palette {
-    --_et-command-palette-color: var(--et-surface-color-solid, rgb(244 244 245));
-    --_et-command-palette-muted-color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
-    --_et-command-palette-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    --_et-command-palette-color: var(--et-surface-text, rgb(244 244 245));
+    --_et-command-palette-muted-color: var(--et-surface-text-muted, rgb(255 255 255 / 0.55));
+    --_et-command-palette-border: var(--et-surface-border, rgb(255 255 255 / 0.1));
     position: relative;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);

@@ -40,7 +40,7 @@
     display: block;
     box-sizing: border-box;
     font-size: var(--et-standings-pick-font-size);
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
   }
 
   .et-standings-pick-list {
@@ -61,7 +61,7 @@
   }
 
   .et-standings-pick-position {
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     font-variant-numeric: tabular-nums;
     text-align: center;
   }
@@ -76,7 +76,7 @@
 
   .et-standings-pick-ghost {
     box-sizing: border-box;
-    border: 1.5px dashed color-mix(in srgb, var(--et-surface-interaction-solid, gray) 45%, transparent);
+    border: 1.5px dashed color-mix(in srgb, var(--et-surface-interaction, gray) 45%, transparent);
     transition: translate var(--et-standings-pick-preview-duration) ease;
   }
 
@@ -91,7 +91,7 @@
     gap: var(--et-standings-pick-gap);
     min-inline-size: 0;
     padding-inline: 8px;
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 8%, transparent);
     transition:
       background-color 120ms ease,
       box-shadow 120ms ease-out;
@@ -104,19 +104,15 @@
   }
 
   .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):hover {
-    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+    background-color: color-mix(in srgb, var(--et-surface-interaction, gray) 12%, transparent);
   }
 
   .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):active,
   .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-dragging]) {
     position: relative;
     z-index: 1;
-    background-color: color-mix(
-      in srgb,
-      var(--et-surface-interaction-solid, gray) 20%,
-      var(--et-surface-background-solid, Canvas)
-    );
-    box-shadow: 0 4px 10px color-mix(in srgb, var(--et-surface-interaction-solid, black) 15%, transparent);
+    background-color: color-mix(in srgb, var(--et-surface-interaction, gray) 20%, var(--et-surface-background, Canvas));
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--et-surface-interaction, black) 15%, transparent);
     transition:
       box-shadow var(--et-standings-pick-preview-duration) ease-out,
       background-color var(--et-standings-pick-preview-duration) ease-out;
@@ -137,11 +133,7 @@
   }
 
   .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-settling]) {
-    background-color: color-mix(
-      in srgb,
-      var(--et-surface-interaction-solid, gray) 8%,
-      var(--et-surface-background-solid, Canvas)
-    );
+    background-color: color-mix(in srgb, var(--et-surface-interaction, gray) 8%, var(--et-surface-background, Canvas));
     box-shadow: 0 0 0 transparent;
     transition:
       translate var(--et-standings-pick-drop-duration) var(--et-standings-pick-drop-easing),
@@ -150,11 +142,11 @@
   }
 
   .et-standings-pick:where([data-locked]) .et-standings-pick-card {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 5%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 5%, transparent);
   }
 
   .et-standings-pick:where([data-locked]) .et-standings-pick-participant {
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 
   .et-standings-pick-participant {
@@ -176,7 +168,7 @@
   .et-standings-pick-grip {
     flex: none;
     margin-inline-end: 6px;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     inline-size: 12px;
     block-size: 8px;
     background: repeating-linear-gradient(to bottom, currentColor 0 1.5px, transparent 1.5px 3.5px);
@@ -189,7 +181,7 @@
     margin: 0;
     padding-block: calc(var(--et-standings-pick-gap) + 2px);
     padding-inline: 0;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -198,7 +190,7 @@
   .et-standings-pick-cut-line {
     flex: 1;
     block-size: 1px;
-    background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+    background: light-dark(var(--et-tone-text), var(--et-tone-fill));
     opacity: 0.5;
   }
 

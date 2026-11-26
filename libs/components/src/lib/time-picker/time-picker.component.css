@@ -45,11 +45,11 @@
     }
 
     .et-time-picker-track {
-      stroke: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
+      stroke: color-mix(in srgb, var(--et-surface-interaction, currentColor) 14%, transparent);
     }
 
     .et-time-picker-arc {
-      stroke: var(--et-theme-color-primary-solid, currentColor);
+      stroke: var(--et-tone-fill, currentColor);
       stroke-linecap: round;
       opacity: 0.45;
     }
@@ -61,18 +61,18 @@
 
     .et-time-picker-blocked {
       fill: none;
-      stroke: var(--et-surface-color-subtle-solid, currentColor);
+      stroke: var(--et-surface-text-subtle, currentColor);
       stroke-width: 1;
       stroke-dasharray: 2 5;
     }
 
     .et-time-picker-ticks line {
-      stroke: var(--et-surface-color-muted-solid, currentColor);
+      stroke: var(--et-surface-text-muted, currentColor);
       stroke-width: 1;
     }
 
     .et-time-picker-labels text {
-      fill: var(--et-surface-color-muted-solid, currentColor);
+      fill: var(--et-surface-text-muted, currentColor);
       font-size: 11px;
       text-anchor: middle;
       dominant-baseline: central;
@@ -80,17 +80,17 @@
     }
 
     .et-time-picker-mark {
-      fill: var(--et-surface-color-muted-solid, currentColor);
+      fill: var(--et-surface-text-muted, currentColor);
 
       line {
-        stroke: var(--et-surface-color-muted-solid, currentColor);
+        stroke: var(--et-surface-text-muted, currentColor);
         stroke-width: 1.2;
         stroke-linecap: round;
       }
     }
 
     .et-time-picker-readout {
-      fill: var(--et-surface-color-solid, currentColor);
+      fill: var(--et-surface-text, currentColor);
       font-size: 28px;
       font-weight: 500;
       text-anchor: middle;
@@ -111,7 +111,7 @@
     }
 
     .et-time-picker-note {
-      fill: var(--et-surface-color-muted-solid, currentColor);
+      fill: var(--et-surface-text-muted, currentColor);
       font-size: 11px;
       text-anchor: middle;
       dominant-baseline: central;
@@ -126,18 +126,14 @@
       block-size: var(--et-time-picker-handle-size);
       margin-block-start: calc(var(--et-time-picker-handle-size) / -2);
       margin-inline-start: calc(var(--et-time-picker-handle-size) / -2);
-      border: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      border: 2px solid var(--et-tone-fill, currentColor);
       border-radius: 50%;
-      background: var(--et-surface-background-solid, Canvas);
+      background: var(--et-surface-background, Canvas);
       transform: rotate(var(--_et-time-picker-handle-angle, 0deg))
         translateY(calc(var(--et-time-picker-ring-size) * -0.4))
         rotate(calc(var(--_et-time-picker-handle-angle, 0deg) * -1));
       --_et-time-picker-halo-shadow: 0 0 0 calc(var(--et-time-picker-handle-size) * var(--_et-time-picker-halo))
-        color-mix(
-          in srgb,
-          var(--et-theme-color-primary-solid, currentColor) var(--_et-time-picker-halo-opacity, 16%),
-          transparent
-        );
+        color-mix(in srgb, var(--et-tone-fill, currentColor) var(--_et-time-picker-halo-opacity, 16%), transparent);
       box-shadow: var(--_et-time-picker-halo-shadow, none);
       transition:
         background-color 120ms ease,
@@ -166,8 +162,7 @@
       }
 
       &:focus-visible:not([data-pointer-focused]) {
-        outline: 2px solid
-          light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+        outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
         outline-offset: 2px;
       }
     }
@@ -175,8 +170,8 @@
 
   .et-time-picker:where([data-mode='single']) .et-time-picker-handle,
   .et-time-picker .et-time-picker-handle:where([data-active]) {
-    border: 3px solid var(--et-surface-background-solid, Canvas);
-    background: var(--et-theme-color-primary-solid, currentColor);
+    border: 3px solid var(--et-surface-background, Canvas);
+    background: var(--et-tone-fill, currentColor);
   }
 
   .et-time-picker:where([data-mode='single']) .et-time-picker-handle {
@@ -185,11 +180,7 @@
   }
 
   .et-time-picker[data-mode='range'] .et-time-picker-handle:hover:not([data-disabled], [data-dragging], [data-active]) {
-    background: color-mix(
-      in srgb,
-      var(--et-theme-color-primary-solid, currentColor) 16%,
-      var(--et-surface-background-solid, Canvas)
-    );
+    background: color-mix(in srgb, var(--et-tone-fill, currentColor) 16%, var(--et-surface-background, Canvas));
   }
 
   .et-time-picker[data-mode='single'] .et-time-picker-handle:hover:not([data-disabled], [data-dragging]) {

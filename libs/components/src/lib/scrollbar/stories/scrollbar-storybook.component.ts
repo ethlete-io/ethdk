@@ -11,11 +11,7 @@ import { SCROLLBAR_IMPORTS } from '../scrollbar.imports';
         <div class="relative">
           <div #container class="flex h-64 flex-col gap-2 overflow-y-auto pr-6">
             @for (row of ROWS; track row) {
-              <div
-                class="text-medium rounded-lg p-4"
-                style="background: var(--et-surface-background-solid)"
-                etAutoSurface
-              >
+              <div class="text-medium rounded-lg p-4" style="background: var(--et-surface-background)" etAutoSurface>
                 {{ row }}
               </div>
             }
@@ -34,7 +30,7 @@ import { SCROLLBAR_IMPORTS } from '../scrollbar.imports';
             @for (card of CARDS; track card) {
               <div
                 class="text-medium grid h-32 w-40 shrink-0 place-items-center rounded-lg"
-                style="background: var(--et-surface-background-solid)"
+                style="background: var(--et-surface-background)"
                 etAutoSurface
               >
                 {{ card }}

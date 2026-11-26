@@ -75,31 +75,28 @@
     }
 
     .et-split-button-trigger[aria-expanded='true'] {
-      --et-theme-color-primary-rgb: var(--et-color-primary-hover, var(--et-color-primary));
-      --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
-      --et-theme-color-on-primary-rgb: var(--et-color-on-primary-hover, var(--et-color-on-primary));
-      --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
-      --et-theme-color-ink-rgb: var(
-        --et-color-primary-ink-hover,
-        var(--et-color-primary-ink, var(--et-color-primary-hover, var(--et-color-primary)))
+      --et-tone-fill: var(--et-tone-fill-hover, var(--et-tone-fill-rest));
+      --et-tone-on-fill: var(--et-tone-on-fill-hover, var(--et-tone-on-fill-rest));
+      --et-tone-text: var(
+        --et-tone-text-hover,
+        var(--et-tone-text-rest, var(--et-tone-fill-hover, var(--et-tone-fill-rest)))
       );
-      --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
       z-index: 1;
 
       &:where([data-variant='filled']) {
-        --et-theme-color-primary-opacity: 1;
-        --et-theme-color-primary-rgb: var(
-          --et-color-primary-active,
-          var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+        --_et-tone-fill-opacity: 1;
+        --et-tone-fill: var(
+          --et-tone-fill-active,
+          var(--et-tone-fill-focus, var(--et-tone-fill-hover, var(--et-tone-fill-rest)))
         );
       }
 
       &:where([data-variant='outline'], [data-variant='transparent']) {
-        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
+        --_et-tone-fill-opacity: var(--et-button-variant-opacity-hover-delta);
       }
 
       &:where([data-variant='tonal']) {
-        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
+        --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
       }
     }
   }

@@ -51,7 +51,7 @@
         margin-inline: auto;
         margin-block: 8px 4px;
         border-radius: 999px;
-        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+        background: var(--et-surface-border, rgb(255 255 255 / 0.2));
       }
     }
   }
@@ -67,7 +67,7 @@
       padding-block: 4px;
       /* column padding (6px) + node padding-inline (14px) = the option label inset */
       padding-inline: 20px;
-      border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      border-block-end: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     }
 
     .et-cascader-back {
@@ -125,7 +125,7 @@
       white-space: nowrap;
       text-overflow: ellipsis;
       font-weight: 600;
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
     }
 
     /* Direction comes from the persistent slot, so the leaving title (kept mounted by

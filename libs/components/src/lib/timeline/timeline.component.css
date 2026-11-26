@@ -2,6 +2,6 @@
   .et-timeline {
     display: flex;
     flex-direction: column;
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
   }
 }

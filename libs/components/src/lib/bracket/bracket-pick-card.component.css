@@ -13,10 +13,10 @@
     inline-size: 100%;
     block-size: 100%;
     overflow: hidden;
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     border-radius: var(--et-bracket-pick-card-border-radius, 10px);
-    background: var(--et-surface-background-solid, #fff);
-    color: var(--et-surface-color-solid, #111);
+    background: var(--et-surface-background, #fff);
+    color: var(--et-surface-text, #111);
   }
 
   .et-bracket-pick-card-sides {
@@ -34,7 +34,7 @@
     gap: var(--et-bracket-pick-card-gap, 8px);
     box-sizing: border-box;
     border: 0;
-    border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    border-block-end: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     padding: var(--et-bracket-pick-card-padding, 8px 10px);
     background: transparent;
     color: inherit;
@@ -52,7 +52,7 @@
       inset-inline-start: 0;
       inline-size: 3px;
       border-radius: 999px;
-      background: var(--et-theme-color-primary-solid, #555);
+      background: var(--et-tone-fill, #555);
       opacity: 0;
       transition:
         opacity 120ms ease,
@@ -64,15 +64,15 @@
     }
 
     &:where(button):hover {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, #777) 12%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, #777) 12%, transparent);
     }
 
     &:where(button)[aria-pressed='true']:hover {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid, #555) 20%, transparent);
+      background: color-mix(in srgb, var(--et-tone-fill, #555) 20%, transparent);
     }
 
     &:where([aria-pressed='true'], [data-selected]) {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid, #555) 12%, transparent);
+      background: color-mix(in srgb, var(--et-tone-fill, #555) 12%, transparent);
 
       &::before {
         opacity: 1;
@@ -80,7 +80,7 @@
     }
 
     &:where([data-side-state='predicted']) {
-      color: var(--et-theme-color-ink-solid, currentColor);
+      color: var(--et-tone-text, currentColor);
     }
 
     &:where([data-dimmed]) {
@@ -114,11 +114,11 @@
   /* `et-match-participant` sets its own colour rather than inheriting one, so the state's colour has
      to be applied to it directly - on the side alone it would never reach the name. */
   .et-bracket-pick-card-side:where([data-side-state='predicted']) > et-match-participant {
-    color: var(--et-theme-color-ink-solid, currentColor);
+    color: var(--et-tone-text, currentColor);
   }
 
   .et-bracket-pick-card-empty {
-    color: var(--et-surface-color-muted-solid, #666);
+    color: var(--et-surface-text-muted, #666);
     font-size: var(--et-bracket-pick-card-slot-font-size, 13px);
   }
 
@@ -136,7 +136,7 @@
     flex: none;
     inline-size: var(--et-bracket-pick-card-mark-size, 14px);
     block-size: var(--et-bracket-pick-card-mark-size, 14px);
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.2));
     border-radius: 50%;
     transition: border-color 120ms ease;
     animation: et-bracket-pick-card-mark-in 120ms ease;
@@ -146,32 +146,32 @@
       inline-size: 50%;
       block-size: 50%;
       border-radius: 50%;
-      background: var(--et-surface-interaction-solid, #777);
+      background: var(--et-surface-interaction, #777);
       opacity: 0;
       transition: opacity 120ms ease;
     }
   }
 
   .et-bracket-pick-card-side:where([aria-pressed='true'], [data-selected]) .et-bracket-pick-card-mark {
-    border-color: var(--et-theme-color-primary-solid, #555);
+    border-color: var(--et-tone-fill, #555);
 
     &::after {
-      background: var(--et-theme-color-primary-solid, #555);
+      background: var(--et-tone-fill, #555);
       opacity: 1;
     }
   }
 
   .et-bracket-pick-card:where([data-locked]) .et-bracket-pick-card-side:where([data-selected])::before {
-    background: var(--et-surface-color-muted-solid, #666);
+    background: var(--et-surface-text-muted, #666);
   }
 
   .et-bracket-pick-card:where([data-locked])
     .et-bracket-pick-card-side:where([data-selected])
     .et-bracket-pick-card-mark {
-    border-color: var(--et-surface-color-muted-solid, #666);
+    border-color: var(--et-surface-text-muted, #666);
 
     &::after {
-      background: var(--et-surface-color-muted-solid, #666);
+      background: var(--et-surface-text-muted, #666);
     }
   }
 
@@ -189,7 +189,7 @@
   .et-bracket-pick-card-invalid-outline {
     position: absolute;
     inset: 0;
-    border: 1px solid var(--et-theme-color-ink-solid, currentColor);
+    border: 1px solid var(--et-tone-text, currentColor);
     border-radius: var(--et-bracket-pick-card-border-radius, 10px);
   }
 
@@ -200,7 +200,7 @@
     display: block;
     margin-block-start: var(--et-bracket-pick-card-note-offset, 4px);
     overflow: hidden;
-    color: var(--et-surface-color-muted-solid, #666);
+    color: var(--et-surface-text-muted, #666);
     font-size: var(--et-bracket-pick-card-note-font-size, 10px);
     line-height: 1.4;
     text-overflow: ellipsis;
@@ -208,7 +208,7 @@
   }
 
   .et-bracket-pick-card:where([data-note-tone='invalid']) .et-bracket-pick-card-note {
-    color: var(--et-theme-color-ink-solid, currentColor);
+    color: var(--et-tone-text, currentColor);
   }
 
   @keyframes et-bracket-pick-card-mark-in {

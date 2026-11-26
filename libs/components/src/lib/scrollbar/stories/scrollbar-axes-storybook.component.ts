@@ -17,7 +17,7 @@ import { SCROLLBAR_IMPORTS } from '../scrollbar.imports';
                   @for (cell of row; track cell) {
                     <div
                       class="text-medium grid h-16 w-32 shrink-0 place-items-center rounded-lg"
-                      style="background: var(--et-surface-background-solid)"
+                      style="background: var(--et-surface-background)"
                       etAutoSurface
                     >
                       {{ cell }}
@@ -41,7 +41,7 @@ import { SCROLLBAR_IMPORTS } from '../scrollbar.imports';
             @for (card of RTL_CARDS; track card) {
               <div
                 class="text-medium grid h-24 w-40 shrink-0 place-items-center rounded-lg"
-                style="background: var(--et-surface-background-solid)"
+                style="background: var(--et-surface-background)"
                 etAutoSurface
               >
                 {{ card }}

@@ -128,13 +128,13 @@ type LayoutRow = {
 @Component({
   selector: 'et-sb-grid-real-world',
   template: `
-    <div class="p-4 font-sans" style="color: rgb(var(--et-surface-color))">
+    <div class="p-4 font-sans" style="color: var(--et-surface-text)">
       <div class="flex flex-wrap gap-2 mb-4 items-center">
         <span
           class="px-2 py-1 rounded text-xs font-mono"
-          style="background: rgb(var(--et-surface-border)); color: rgb(var(--et-surface-color-muted))"
+          style="background: var(--et-surface-border); color: var(--et-surface-text-muted)"
         >
-          bp: <strong style="color: rgb(var(--et-surface-color))">{{ activeBreakpoint() }}</strong>
+          bp: <strong style="color: var(--et-surface-text)">{{ activeBreakpoint() }}</strong>
         </span>
 
         <button
@@ -147,7 +147,7 @@ type LayoutRow = {
         <button
           (click)="toggleLayoutTable()"
           class="px-3 py-1.5 text-sm rounded cursor-pointer border"
-          style="border-color: rgb(var(--et-surface-border)); background: rgb(var(--et-surface-background)); color: rgb(var(--et-surface-color))"
+          style="border-color: var(--et-surface-border); background: var(--et-surface-background); color: var(--et-surface-text)"
         >
           {{ showLayoutTable() ? 'Hide' : 'Show' }} Layout Table
         </button>
@@ -155,7 +155,7 @@ type LayoutRow = {
         <button
           (click)="showApiPayload()"
           class="px-3 py-1.5 text-sm rounded cursor-pointer border"
-          style="border-color: rgb(var(--et-surface-border)); background: rgb(var(--et-surface-background)); color: rgb(var(--et-surface-color))"
+          style="border-color: var(--et-surface-border); background: var(--et-surface-background); color: var(--et-surface-text)"
         >
           Show API Payload
         </button>
@@ -163,7 +163,7 @@ type LayoutRow = {
         <button
           (click)="resetToInitial()"
           class="px-3 py-1.5 text-sm rounded cursor-pointer border"
-          style="border-color: rgb(var(--et-surface-border)); background: rgb(var(--et-surface-background)); color: rgb(var(--et-surface-color-muted))"
+          style="border-color: var(--et-surface-border); background: var(--et-surface-background); color: var(--et-surface-text-muted)"
         >
           Reset
         </button>
@@ -171,7 +171,7 @@ type LayoutRow = {
         <button
           (click)="apiPayloadJson.set(null)"
           class="px-3 py-1.5 text-sm rounded cursor-pointer border"
-          style="border-color: rgb(var(--et-surface-border)); background: rgb(var(--et-surface-background)); color: rgb(var(--et-surface-color-muted))"
+          style="border-color: var(--et-surface-border); background: var(--et-surface-background); color: var(--et-surface-text-muted)"
         >
           Clear panels
         </button>
@@ -188,12 +188,12 @@ type LayoutRow = {
         @for (item of gridItems(); track item.id) {
           <et-grid-item [itemId]="item.id" [ariaLabel]="item.type + ' widget'">
             <div class="flex flex-col justify-center h-full p-3 box-border gap-1">
-              <div class="text-xs font-semibold" style="color: rgb(var(--et-surface-color))">
+              <div class="text-xs font-semibold" style="color: var(--et-surface-text)">
                 {{ item.data.title }}
               </div>
               <div
                 class="text-[11px] px-1.5 py-0.5 rounded inline-block self-start font-mono"
-                style="background: rgb(var(--et-surface-border)); color: rgb(var(--et-surface-color-muted))"
+                style="background: var(--et-surface-border); color: var(--et-surface-text-muted)"
               >
                 {{ item.id }}
               </div>
@@ -204,21 +204,21 @@ type LayoutRow = {
 
       @if (showLayoutTable()) {
         <div class="mt-4 overflow-x-auto">
-          <p class="text-[11px] mb-2" style="color: rgb(var(--et-surface-color-muted))">
+          <p class="text-[11px] mb-2" style="color: var(--et-surface-text-muted)">
             <strong>ext</strong> = gridItems() signal &nbsp;·&nbsp; <strong>int</strong> = grid.currentItems() internal
             state &nbsp;·&nbsp; <span style="color: #ef4444">red = undefined</span> &nbsp;·&nbsp;
             <span style="color: #f59e0b">orange = ext ≠ int</span>
           </p>
-          <table class="text-[11px] font-mono border-collapse" style="border: 1px solid rgb(var(--et-surface-border))">
+          <table class="text-[11px] font-mono border-collapse" style="border: 1px solid var(--et-surface-border)">
             <thead>
-              <tr style="background: rgb(var(--et-surface-border))">
+              <tr style="background: var(--et-surface-border)">
                 <th class="px-2 py-1 text-left" rowSpan="2">id</th>
                 <th class="px-2 py-1 text-left" rowSpan="2">type</th>
                 @for (bp of BREAKPOINT_NAMES; track bp) {
                   <th class="px-2 py-1 text-center" colspan="2">{{ bp }}</th>
                 }
               </tr>
-              <tr style="background: rgb(var(--et-surface-border))">
+              <tr style="background: var(--et-surface-border)">
                 @for (bp of BREAKPOINT_NAMES; track bp) {
                   <th class="px-2 py-1 text-center" style="font-weight: normal; opacity: .7">ext</th>
                   <th class="px-2 py-1 text-center" style="font-weight: normal; opacity: .7">int</th>
@@ -227,9 +227,9 @@ type LayoutRow = {
             </thead>
             <tbody>
               @for (row of layoutRows(); track row.id) {
-                <tr style="border-top: 1px solid rgb(var(--et-surface-border))">
+                <tr style="border-top: 1px solid var(--et-surface-border)">
                   <td class="px-2 py-1">{{ row.id }}</td>
-                  <td class="px-2 py-1" style="color: rgb(var(--et-surface-color-muted))">{{ row.type }}</td>
+                  <td class="px-2 py-1" style="color: var(--et-surface-text-muted)">{{ row.type }}</td>
                   @for (bp of row.breakpoints; track bp.name) {
                     <td [style.color]="bp.extMissing ? '#ef4444' : 'inherit'" class="px-2 py-1 text-center">
                       {{ FORMAT_POS(bp.ext) }}
@@ -250,12 +250,12 @@ type LayoutRow = {
 
       @if (apiPayloadJson()) {
         <div class="mt-4">
-          <div class="text-[11px] uppercase tracking-wide mb-1" style="color: rgb(var(--et-surface-color-muted))">
+          <div class="text-[11px] uppercase tracking-wide mb-1" style="color: var(--et-surface-text-muted)">
             API payload - <code>adapter.toExternal(gridItems)</code>
           </div>
           <pre
             class="p-3 rounded text-[11px] overflow-auto max-h-64"
-            style="background: rgb(var(--et-surface-background)); border: 1px solid rgb(var(--et-surface-border)); color: rgb(var(--et-surface-color-muted))"
+            style="background: var(--et-surface-background); border: 1px solid var(--et-surface-border); color: var(--et-surface-text-muted)"
             >{{ apiPayloadJson() }}</pre>
         </div>
       }

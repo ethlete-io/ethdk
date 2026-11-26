@@ -19,7 +19,7 @@
     &:where(:not([data-hidden])) ~ & .et-select-option-group-label {
       margin-block-start: 4px;
       padding-block-start: 8px;
-      border-block-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      border-block-start: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     }
 
     .et-select-option-group-label {
@@ -28,7 +28,7 @@
       font-weight: 600;
       letter-spacing: 0.02em;
       text-transform: uppercase;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       -webkit-user-select: none;
       user-select: none;
     }

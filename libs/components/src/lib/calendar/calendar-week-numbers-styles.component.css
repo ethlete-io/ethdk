@@ -19,14 +19,14 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-inline-end: 1px solid var(--et-surface-border-solid);
+      border-inline-end: 1px solid var(--et-surface-border);
       font-size: 11px;
       font-variant-numeric: tabular-nums;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
 
     .et-calendar-week-number-heading {
-      border-inline-end: 1px solid var(--et-surface-border-solid);
+      border-inline-end: 1px solid var(--et-surface-border);
     }
   }
 }

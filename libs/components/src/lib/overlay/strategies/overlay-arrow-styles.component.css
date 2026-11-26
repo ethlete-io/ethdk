@@ -23,7 +23,7 @@
      themed arrow border without repeating this per component */
     --_et-overlay-arrow-border-color: var(
       --et-overlay-arrow-border,
-      var(--_et-overlay-arrow-pane-border-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)))
+      var(--_et-overlay-arrow-pane-border-color, var(--et-surface-border, rgb(255 255 255 / 0.1)))
     );
     /* Cut the arrow off at the *inner* edge of the pane's border: everything below the widest corners is
      unbordered silhouette, and the only part of it worth keeping is the sliver that covers the pane's
@@ -35,7 +35,7 @@
      renders (custom panelClass, themed pane) instead of re-deriving a possibly-divergent color */
     --_et-overlay-arrow-fill: var(
       --et-overlay-arrow-background,
-      var(--_et-overlay-arrow-pane-background, var(--et-surface-background-solid, rgb(32 32 32)))
+      var(--_et-overlay-arrow-pane-background, var(--et-surface-background, rgb(32 32 32)))
     );
 
     position: absolute;

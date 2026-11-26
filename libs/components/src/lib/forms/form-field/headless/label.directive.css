@@ -14,12 +14,12 @@
 
   .et-label-required-marker {
     display: inline-block;
-    color: var(--et-theme-color-ink-solid);
+    color: var(--et-tone-text);
     margin-inline-start: 0.45ch;
     transition: color 150ms ease;
   }
 
   et-label[data-disabled] .et-label-required-marker {
-    color: var(--et-surface-interaction-disabled-solid, currentColor);
+    color: var(--et-surface-interaction-disabled, currentColor);
   }
 }

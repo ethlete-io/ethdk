@@ -37,13 +37,13 @@
   }
 
   .et-stat-tile-sparkline-line {
-    stroke: var(--et-surface-color-subtle-solid, currentColor);
+    stroke: var(--et-surface-text-subtle, currentColor);
     stroke-width: var(--et-stat-tile-sparkline-line-width);
     stroke-linejoin: round;
   }
 
   .et-stat-tile-sparkline-current {
-    stroke: var(--et-theme-color-ink-solid, currentColor);
+    stroke: var(--et-tone-text, currentColor);
     stroke-width: var(--et-stat-tile-sparkline-current-size);
   }
 }

@@ -40,7 +40,7 @@
     position: relative;
     font-size: var(--et-sankey-chart-font-size);
     line-height: 1.4;
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
 
     .et-sankey-chart-scroller {
       overflow-x: auto;
@@ -77,8 +77,8 @@
       white-space: nowrap;
       translate: 0 -50%;
       text-shadow:
-        0 0 2px var(--et-surface-background-solid, transparent),
-        0 0 4px var(--et-surface-background-solid, transparent);
+        0 0 2px var(--et-surface-background, transparent),
+        0 0 4px var(--et-surface-background, transparent);
 
       &:where([data-side='start']) {
         translate: -100% -50%;
@@ -88,9 +88,9 @@
       &:where([data-side='center']) {
         box-sizing: border-box;
         padding: 1px 6px;
-        border: 1px solid var(--et-surface-border-solid, currentColor);
+        border: 1px solid var(--et-surface-border, currentColor);
         border-radius: 4px;
-        background: var(--et-surface-background-solid, transparent);
+        background: var(--et-surface-background, transparent);
         text-shadow: none;
         translate: -50% -50%;
       }
@@ -122,18 +122,18 @@
     .et-sankey-chart-node-mark {
       fill: color-mix(
         in oklab,
-        var(--et-theme-color-primary-solid, currentColor) var(--_et-chart-accent-mix, 100%),
-        var(--et-surface-background-solid, transparent)
+        var(--et-tone-fill, currentColor) var(--_et-chart-accent-mix, 100%),
+        var(--et-surface-background, transparent)
       );
       animation: et-sankey-chart-fade var(--et-sankey-chart-enter-duration) ease-out backwards;
     }
 
     &:where([data-active]) .et-sankey-chart-node-target {
-      fill: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+      fill: color-mix(in srgb, var(--et-surface-interaction, currentColor) 8%, transparent);
     }
 
     &:focus-visible .et-sankey-chart-node-target {
-      stroke: var(--et-theme-color-primary-solid, currentColor);
+      stroke: var(--et-tone-fill, currentColor);
     }
   }
 
@@ -143,8 +143,8 @@
     .et-sankey-chart-link-mark {
       fill: color-mix(
         in oklab,
-        var(--et-theme-color-primary-solid, currentColor) var(--_et-chart-accent-mix, 100%),
-        var(--et-surface-background-solid, transparent)
+        var(--et-tone-fill, currentColor) var(--_et-chart-accent-mix, 100%),
+        var(--et-surface-background, transparent)
       );
       fill-opacity: var(--et-sankey-chart-link-opacity);
       stroke: transparent;
@@ -160,7 +160,7 @@
     }
 
     &:focus-visible .et-sankey-chart-link-mark {
-      stroke: var(--et-theme-color-primary-solid, currentColor);
+      stroke: var(--et-tone-fill, currentColor);
       stroke-width: 2px;
     }
   }
@@ -196,7 +196,7 @@
     gap: 2px;
 
     .et-sankey-chart-tooltip-hint {
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       white-space: nowrap;
     }
   }

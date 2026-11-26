@@ -7,7 +7,7 @@
       flex-basis: 100%;
       font-size: var(--et-form-field-hint-font-size);
       line-height: 1.3;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
       font-variant-numeric: tabular-nums;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -15,7 +15,7 @@
     }
 
     et-form-field[data-disabled] & .et-date-time-range-input-local-reading {
-      color: var(--et-surface-interaction-disabled-solid, currentColor);
+      color: var(--et-surface-interaction-disabled, currentColor);
     }
 
     @container et-date-time-range-input (inline-size < 22em) {
@@ -44,7 +44,7 @@
        panel body snaps once instead of chasing a frame-by-frame moving target */
     > .et-date-time-range-input-panel-panes > et-time-picker {
       align-self: stretch;
-      border-inline-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.08));
+      border-inline-start: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.08));
       padding-inline-start: 12px;
     }
   }

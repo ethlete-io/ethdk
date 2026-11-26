@@ -41,7 +41,7 @@
     gap: var(--et-match-participant-gap);
     min-inline-size: 0;
     /* Set rather than inherited, so this on an `<a>` doesn't come out link-blue and underlined. */
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
     text-decoration: none;
   }
 
@@ -72,9 +72,9 @@
     overflow: hidden;
     box-sizing: border-box;
     border: var(--et-match-participant-emblem-border-width) solid
-      var(--et-match-participant-emblem-border-color, var(--et-surface-border-solid, currentColor));
+      var(--et-match-participant-emblem-border-color, var(--et-surface-border, currentColor));
     border-radius: var(--et-match-participant-emblem-radius);
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 10%, transparent);
   }
 
   .et-match-participant:where([data-tbd]) .et-match-participant-emblem {
@@ -95,7 +95,7 @@
   /* Stands in for an emblem that is absent or failed to load — a letter rather than an empty disc, so
      the frame still points at somebody. Sized off the frame, so it shrinks with a compact row. */
   .et-match-participant-emblem-mark {
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     font-size: calc(var(--et-match-participant-emblem-size) * 0.45);
     font-weight: 600;
     line-height: 1;
@@ -133,8 +133,8 @@
     inline-size: 100%;
     block-size: 100%;
     overflow: visible;
-    fill: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
-    stroke: var(--et-surface-border-solid, currentColor);
+    fill: color-mix(in srgb, var(--et-surface-interaction, gray) 10%, transparent);
+    stroke: var(--et-surface-border, currentColor);
     stroke-width: 1.5;
     stroke-linejoin: round;
   }
@@ -178,7 +178,7 @@
     overflow: hidden;
     font-size: max(10px, calc(var(--et-match-participant-font-size) - 4px));
     line-height: 1.3;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -190,7 +190,7 @@
     min-inline-size: 0;
     font-size: max(10px, calc(var(--et-match-participant-font-size) - 3px));
     line-height: 1.3;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 
   .et-match-participant-flag {
@@ -210,7 +210,7 @@
 
   /* A slot waiting to be filled reads as secondary — it is not the name of anything yet. */
   .et-match-participant-name--tbd {
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 
   .et-match-participant-name-bone {
@@ -223,8 +223,8 @@
     font-size: 11px;
     line-height: 16px;
     font-variant-numeric: tabular-nums;
-    color: var(--et-surface-color-muted-solid, currentColor);
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+    color: var(--et-surface-text-muted, currentColor);
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 12%, transparent);
     border-radius: 4px;
   }
 

@@ -71,8 +71,8 @@
     justify-content: center;
     width: 100%;
     height: 100%;
-    background: var(--et-surface-background-solid, inherit);
-    color: var(--et-surface-color-solid, inherit);
+    background: var(--et-surface-background, inherit);
+    color: var(--et-surface-text, inherit);
     container-type: size;
   }
 

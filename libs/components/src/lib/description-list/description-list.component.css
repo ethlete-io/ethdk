@@ -49,7 +49,7 @@
     dt {
       grid-column: 1;
       font-size: var(--et-description-list-term-font-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     dd {
@@ -57,7 +57,7 @@
       margin: 0;
       overflow-wrap: anywhere;
       font-size: var(--et-description-list-detail-font-size);
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
     }
 
     &:where([data-variant='stacked']) {

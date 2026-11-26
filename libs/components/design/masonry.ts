@@ -32,7 +32,7 @@ export const masonryStyles = /* @__PURE__ */ [
     box-sizing: border-box;
     padding: 12px;
     border-radius: 8px;
-    background: var(--et-surface-background-solid);
+    background: var(--et-surface-background);
   }
   .et-masonry-mock-title {
     overflow: hidden;
@@ -40,11 +40,11 @@ export const masonryStyles = /* @__PURE__ */ [
     font-weight: 600;
     white-space: nowrap;
     text-overflow: ellipsis;
-    color: var(--et-surface-color-solid);
+    color: var(--et-surface-text);
   }
   .et-masonry-mock-subtitle {
     font-size: 1.2rem;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
   }
 }`,
 ].join('\n');

@@ -28,7 +28,7 @@ import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from '../breadcrumb.i
       <div
         class="flex min-h-40 flex-col gap-3 rounded-lg p-6"
         etAutoSurface
-        style="background: var(--et-surface-background-solid)"
+        style="background: var(--et-surface-background)"
       >
         <router-outlet />
       </div>

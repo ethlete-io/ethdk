@@ -16,11 +16,7 @@
     inline-size: var(--et-checkbox-option-size, 20px);
     block-size: var(--et-checkbox-option-size, 20px);
     border: var(--et-checkbox-option-border-width, 2px) solid
-      color-mix(
-        in oklab,
-        var(--et-surface-color-solid, currentColor) 43%,
-        var(--et-surface-background-solid, transparent)
-      );
+      color-mix(in oklab, var(--et-surface-text, currentColor) 43%, var(--et-surface-background, transparent));
     border-radius: var(--et-checkbox-option-border-radius, 4px);
     transition:
       border-color var(--et-checkbox-option-transition-duration, 150ms) ease,
@@ -31,7 +27,7 @@
   .et-checkbox-group-select-all-box > * {
     grid-area: 1 / 1;
     opacity: 0;
-    color: var(--et-theme-color-on-primary-solid, white);
+    color: var(--et-tone-on-fill, white);
     transition: opacity var(--et-checkbox-option-transition-duration, 150ms) ease;
   }
 
@@ -44,18 +40,18 @@
     inline-size: 10px;
     block-size: 2px;
     border-radius: 1px;
-    background-color: var(--et-theme-color-on-primary-solid, white);
+    background-color: var(--et-tone-on-fill, white);
   }
 
   .et-checkbox-group-select-all-label {
     font-size: 14px;
     line-height: 20px;
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
   }
 
   .et-checkbox-group-select-all:where([aria-checked='true'], [aria-checked='mixed']) .et-checkbox-group-select-all-box {
-    border-color: var(--et-theme-color-primary-solid, currentColor);
-    background-color: var(--et-theme-color-primary-solid, currentColor);
+    border-color: var(--et-tone-fill, currentColor);
+    background-color: var(--et-tone-fill, currentColor);
   }
 
   .et-checkbox-group-select-all:where([aria-checked='true']) .et-checkbox-group-select-all-check,
@@ -68,27 +64,21 @@
         [aria-disabled='true']
       ):not([aria-readonly='true'])
       .et-checkbox-group-select-all-box {
-      border-color: var(--et-surface-color-solid, currentColor);
-      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+      border-color: var(--et-surface-text, currentColor);
+      background-color: color-mix(in srgb, var(--et-surface-interaction, currentColor) 8%, transparent);
     }
   }
 
   .et-checkbox-group-select-all:focus-visible .et-checkbox-group-select-all-box {
-    border-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
-    outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
+    border-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
+    outline: 2px solid var(--et-tone-text, currentColor);
     outline-offset: 2px;
   }
 
   .et-checkbox-group-select-all:is([aria-checked='true'], [aria-checked='mixed']):not(:focus-visible)
     .et-checkbox-group-select-all-box {
-    outline: 1px solid light-dark(var(--et-theme-color-ink-solid), transparent);
+    outline: 1px solid light-dark(var(--et-tone-text), transparent);
     outline-offset: -1px;
-  }
-
-  @media (hover: hover) {
-    .et-checkbox-group-select-all:is([aria-checked='true'], [aria-checked='mixed']):hover {
-      --et-theme-color-primary-rgb: var(--et-color-primary-active);
-    }
   }
 
   .et-checkbox-group-select-all:active:not([aria-disabled='true']):not([aria-readonly='true'])

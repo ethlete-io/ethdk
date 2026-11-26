@@ -17,7 +17,7 @@
      rule: a transparent button paints itself in the accent ink, but in this table accent means
      *active* (a sorted arrow, a filtered column), so a resting control has to read as header chrome. */
   .et-table-header-cell .et-table-column-menu-trigger {
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
   }
 
   .et-table-column-menu-icon {

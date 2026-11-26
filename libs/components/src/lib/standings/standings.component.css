@@ -46,7 +46,7 @@
     container-name: et-standings;
     display: block;
     box-sizing: border-box;
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
   }
 
   .et-standings-content {
@@ -87,7 +87,7 @@
   .et-standings-cell:where([data-column='position']) {
     inline-size: 1px;
     padding-inline-start: calc(var(--et-standings-cell-padding-inline) + var(--et-standings-zone-bar-width));
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     font-variant-numeric: tabular-nums;
     text-align: start;
   }
@@ -119,16 +119,16 @@
 
   .et-standings-head-row .et-standings-cell {
     block-size: var(--et-standings-row-height);
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    border-block-end: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
   }
 
   .et-standings-row .et-standings-cell {
     block-size: var(--et-standings-row-height);
-    border-block-end: 1px solid color-mix(in srgb, var(--et-surface-border-solid, gray) 60%, transparent);
+    border-block-end: 1px solid color-mix(in srgb, var(--et-surface-border, gray) 60%, transparent);
   }
 
   /* A band's colour comes from the theme the row is scoped to, which the consumer names — so "advancing"
@@ -136,7 +136,7 @@
   .et-standings-row:where([data-zone]) {
     background: color-mix(
       in srgb,
-      var(--et-theme-color-primary-solid, transparent) calc(7% * var(--et-standings-zone-strength, 1)),
+      var(--et-tone-fill, transparent) calc(7% * var(--et-standings-zone-strength, 1)),
       transparent
     );
   }
@@ -145,8 +145,7 @@
     box-shadow: inset var(--et-standings-zone-bar-width) 0 0
       color-mix(
         in srgb,
-        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
-          calc(100% * var(--et-standings-zone-strength, 1)),
+        light-dark(var(--et-tone-text), var(--et-tone-fill)) calc(100% * var(--et-standings-zone-strength, 1)),
         transparent
       );
 
@@ -154,8 +153,7 @@
       box-shadow: inset calc(var(--et-standings-zone-bar-width) * -1) 0 0
         color-mix(
           in srgb,
-          light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
-            calc(100% * var(--et-standings-zone-strength, 1)),
+          light-dark(var(--et-tone-text), var(--et-tone-fill)) calc(100% * var(--et-standings-zone-strength, 1)),
           transparent
         );
     }
@@ -164,7 +162,7 @@
   .et-standings-detail:where([data-zone]) {
     background: color-mix(
       in srgb,
-      var(--et-theme-color-primary-solid, transparent) calc(7% * var(--et-standings-zone-strength, 1)),
+      var(--et-tone-fill, transparent) calc(7% * var(--et-standings-zone-strength, 1)),
       transparent
     );
   }
@@ -173,8 +171,7 @@
     box-shadow: inset var(--et-standings-zone-bar-width) 0 0
       color-mix(
         in srgb,
-        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
-          calc(100% * var(--et-standings-zone-strength, 1)),
+        light-dark(var(--et-tone-text), var(--et-tone-fill)) calc(100% * var(--et-standings-zone-strength, 1)),
         transparent
       );
 
@@ -182,8 +179,7 @@
       box-shadow: inset calc(var(--et-standings-zone-bar-width) * -1) 0 0
         color-mix(
           in srgb,
-          light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
-            calc(100% * var(--et-standings-zone-strength, 1)),
+          light-dark(var(--et-tone-text), var(--et-tone-fill)) calc(100% * var(--et-standings-zone-strength, 1)),
           transparent
         );
     }
@@ -229,24 +225,23 @@
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     cursor: pointer;
     vertical-align: middle;
 
     @media (hover: hover) {
       &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
-        color: var(--et-surface-color-solid, currentColor);
+        background: color-mix(in srgb, var(--et-surface-interaction, gray) 10%, transparent);
+        color: var(--et-surface-text, currentColor);
       }
     }
 
     &:active {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 18%, transparent);
+      background: color-mix(in srgb, var(--et-surface-interaction, gray) 18%, transparent);
     }
 
     &:focus-visible {
-      outline: 2px solid
-        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+      outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
       outline-offset: -2px;
     }
 
@@ -272,7 +267,7 @@
   }
 
   .et-standings-row:where([data-highlighted]) {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 12%, transparent);
   }
 
   .et-standings-row:where([data-highlighted]) .et-standings-cell {
@@ -280,7 +275,7 @@
   }
 
   .et-standings-row:where([data-highlighted]) .et-standings-cell:where([data-column='position']) {
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
   }
 
   .et-standings-content .et-standings-participant {
@@ -309,16 +304,16 @@
   /* Won / drew / lost, from the surface tokens rather than a green-amber-red this file invents. The letter,
      not the fill, is what tells them apart (WCAG 1.4.1), so it must stay legible on every fill. */
   .et-standings-form-result:where([data-result='win']) {
-    color: var(--et-surface-background-solid, white);
-    background: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-background, white);
+    background: var(--et-surface-text, currentColor);
   }
 
   .et-standings-form-result:where([data-result='tie']) {
-    background: color-mix(in srgb, var(--et-surface-color-solid, gray) 25%, transparent);
+    background: color-mix(in srgb, var(--et-surface-text, gray) 25%, transparent);
   }
 
   .et-standings-form-result:where([data-result='loss']) {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 25%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 25%, transparent);
   }
 
   .et-standings-legend {
@@ -328,7 +323,7 @@
     margin: 0;
     padding: 10px var(--et-standings-cell-padding-inline) 0;
     font-size: 11px;
-    color: var(--et-surface-color-muted-solid, currentColor);
+    color: var(--et-surface-text-muted, currentColor);
     list-style: none;
   }
 
@@ -344,8 +339,7 @@
     block-size: 3px;
     background: color-mix(
       in srgb,
-      light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
-        calc(100% * var(--et-standings-zone-strength, 1)),
+      light-dark(var(--et-tone-text), var(--et-tone-fill)) calc(100% * var(--et-standings-zone-strength, 1)),
       transparent
     );
     border-radius: 2px;

@@ -43,34 +43,30 @@
     align-items: center;
     padding: var(--et-selection-card-padding);
     border-radius: var(--et-selection-card-border-radius);
-    background-color: var(--et-surface-background-solid, transparent);
+    background-color: var(--et-surface-background, transparent);
     border: var(--et-selection-card-border-width) solid
-      color-mix(
-        in oklab,
-        var(--et-surface-color-solid, currentColor) 43%,
-        var(--et-surface-background-solid, transparent)
-      );
+      color-mix(in oklab, var(--et-surface-text, currentColor) 43%, var(--et-surface-background, transparent));
 
     /* Every state guard sits in `:where()` so source order decides; the checked rule below relies on it. */
     @media (hover: hover) {
       &:where(:hover:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly]))) {
-        border-color: var(--et-surface-color-solid, currentColor);
+        border-color: var(--et-surface-text, currentColor);
       }
     }
 
     &:where(:active:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly]))) {
-      border-color: var(--et-surface-color-solid, currentColor);
+      border-color: var(--et-surface-text, currentColor);
     }
 
     /* After hover/active so a chosen card keeps its accent under the cursor. */
     &:where([aria-checked='true'], :has(:is([aria-checked='true'], [aria-checked='mixed']))) {
-      border-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+      border-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
     }
 
     /* Each host resets its own control's focus ring, so the card shows one ring. */
     &:where(:focus-visible, :has(:focus-visible)) {
-      border-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
-      outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
+      border-color: light-dark(var(--et-tone-text), var(--et-tone-fill));
+      outline: 2px solid var(--et-tone-text, currentColor);
       outline-offset: 2px;
     }
 
@@ -97,17 +93,17 @@
 
     .et-selection-card-label {
       font-weight: 500;
-      color: var(--et-surface-color-muted-solid, currentColor);
+      color: var(--et-surface-text-muted, currentColor);
     }
 
     &:where([aria-checked='true'], :has(:is([aria-checked='true'], [aria-checked='mixed']))) .et-selection-card-label {
-      color: var(--et-surface-color-solid, currentColor);
+      color: var(--et-surface-text, currentColor);
     }
 
     @media (hover: hover) {
       &:where(:hover:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly])))
         .et-selection-card-label {
-        color: var(--et-surface-color-solid, currentColor);
+        color: var(--et-surface-text, currentColor);
       }
     }
 

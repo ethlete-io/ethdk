@@ -31,21 +31,17 @@
      has to be declared here rather than in the appearance block - a `var()` in the block would resolve
      against the host, which is the surface the card is meant to stand off. */
   .et-table-row--card {
-    --_et-table-row-paint: var(--et-table-row-background, var(--et-surface-background-solid, Canvas));
+    --_et-table-row-paint: var(--et-table-row-background, var(--et-surface-background, Canvas));
     --_et-table-row-surface: var(--_et-table-row-paint);
     --_et-table-stripe-solid: var(--_et-table-row-paint);
-    --_et-table-row-hover-solid: color-mix(
-      in srgb,
-      var(--et-surface-interaction-solid, gray) 8%,
-      var(--_et-table-row-paint)
-    );
+    --_et-table-row-hover-solid: color-mix(in srgb, var(--et-surface-interaction, gray) 8%, var(--_et-table-row-paint));
     --_et-table-row-pressed-solid: color-mix(
       in srgb,
-      var(--et-surface-interaction-solid, gray) 16%,
+      var(--et-surface-interaction, gray) 16%,
       var(--_et-table-row-paint)
     );
     --_et-table-inert-row-hover-solid: var(--_et-table-row-paint);
-    color: var(--et-surface-color-solid, CanvasText);
+    color: var(--et-surface-text, CanvasText);
   }
 
   /* No surface a level above the table's to raise the card onto - a theme-less app, or a table already on
@@ -68,7 +64,7 @@
     position: absolute;
     inset: 0;
     z-index: 4;
-    border: 1px solid var(--et-table-row-border-color, var(--et-surface-border-solid, rgb(128 128 128 / 0.3)));
+    border: 1px solid var(--et-table-row-border-color, var(--et-surface-border, rgb(128 128 128 / 0.3)));
     border-radius: inherit;
     pointer-events: none;
   }
@@ -144,7 +140,7 @@
   .et-table-host:where([data-appearance='cards']) .et-table-card-corners::before,
   .et-table-host:where([data-appearance='cards']) .et-table-card-corners::after {
     --_et-table-card-radius: var(--et-table-row-radius, 10px);
-    --_et-table-card-edge: var(--et-table-row-border-color, var(--et-surface-border-solid, rgb(128 128 128 / 0.3)));
+    --_et-table-card-edge: var(--et-table-row-border-color, var(--et-surface-border, rgb(128 128 128 / 0.3)));
 
     content: '';
     flex: 0 0 auto;
@@ -240,7 +236,7 @@
     position: absolute;
     inset: 4px;
     z-index: 5;
-    border: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    border: 2px solid var(--et-tone-fill, currentColor);
     border-radius: max(0px, calc(var(--_et-table-row-corner, 0px) - 4px));
     pointer-events: none;
   }

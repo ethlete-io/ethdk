@@ -12,7 +12,7 @@
     margin: 0 0 8px;
     font-size: 13px;
     font-weight: 600;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
   }
 
   .et-scheduler-edit-surface-children-list {
@@ -29,7 +29,7 @@
     align-items: baseline;
     gap: 8px;
     inline-size: 100%;
-    color: var(--et-theme-color-ink-solid, var(--et-surface-color-solid));
+    color: var(--et-tone-text, var(--et-surface-text));
     text-align: start;
   }
 
@@ -37,7 +37,7 @@
     flex: none;
     font-size: 12px;
     font-variant-numeric: tabular-nums;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
   }
 
   .et-scheduler-edit-surface-children-item-title {
@@ -52,6 +52,6 @@
 
   .et-scheduler-edit-surface-children-item .et-scheduler-appointment-chain-count {
     flex: none;
-    color: var(--et-surface-color-muted-solid);
+    color: var(--et-surface-text-muted);
   }
 }

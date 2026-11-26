@@ -36,22 +36,15 @@
     /* The table owns this scroll container, so it owns the scrollbar in it: left to the platform, a
        horizontally scrolling table ends on a wide light-grey slab that no theme reaches. */
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 35%, transparent) transparent;
+    scrollbar-color: color-mix(in srgb, var(--et-surface-interaction, gray) 35%, transparent) transparent;
 
     /* Skin knobs — the flat cell rules read these; each appearance overrides what it needs. The band
        is a subtle neutral tint mixed over the surface so it stays opaque under the sticky header. */
-    --_et-table-band: color-mix(
-      in srgb,
-      var(--et-surface-interaction-solid, gray) 7%,
-      var(--et-surface-background-solid, Canvas)
-    );
+    --_et-table-band: color-mix(in srgb, var(--et-surface-interaction, gray) 7%, var(--et-surface-background, Canvas));
     /* The opaque paint behind the two bars rows pass under: the sticky header row and the footer bar.
        Both read it, so an app that recolours one cannot leave the other behind. */
-    --_et-table-header-bg: var(--et-table-header-background-color, var(--et-surface-background-solid, Canvas));
-    --_et-table-header-border: var(
-      --et-table-header-border-color,
-      var(--et-surface-border-solid, rgb(128 128 128 / 0.3))
-    );
+    --_et-table-header-bg: var(--et-table-header-background-color, var(--et-surface-background, Canvas));
+    --_et-table-header-border: var(--et-table-header-border-color, var(--et-surface-border, rgb(128 128 128 / 0.3)));
     --_et-table-row-divider: transparent;
     /* The box of a header adornment (a filter trigger, a column menu trigger), read both by the button
        itself and by the height the header row reserves for it. */
@@ -60,27 +53,27 @@
        so it cannot use the translucent tints the other cells layer on - it needs each of them mixed over
        what the row is actually painted on. Every `*-solid` below mixes over this one knob, and an
        appearance that paints its rows differently (`cards`) sets it once. */
-    --_et-table-row-surface: var(--et-surface-background-solid, Canvas);
+    --_et-table-row-surface: var(--et-surface-background, Canvas);
     /* Stripe as a translucent tint (layered over the row's paint for normal cells) and as an opaque
        solid (for pinned cells). */
     --_et-table-stripe-bg: transparent;
     --_et-table-stripe-solid: var(--_et-table-row-surface);
     /* The hover tint, in the same two forms and for the same reason. Read as a knob so an appearance
        can drop it, where a row has nothing to react to. */
-    --_et-table-hover-tint: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+    --_et-table-hover-tint: color-mix(in srgb, var(--et-surface-interaction, gray) 8%, transparent);
     --_et-table-hover-tint-solid: color-mix(
       in srgb,
-      var(--et-surface-interaction-solid, gray) 8%,
+      var(--et-surface-interaction, gray) 8%,
       var(--_et-table-row-surface)
     );
     --_et-table-row-hover: var(--_et-table-hover-tint);
     --_et-table-row-hover-solid: var(--_et-table-hover-tint-solid);
     /* Held rather than hovered. Twice the hover tint, the same step the library's buttons take, in the
        same two forms as the hover tint and for the same reason. */
-    --_et-table-pressed-tint: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent);
+    --_et-table-pressed-tint: color-mix(in srgb, var(--et-surface-interaction, gray) 16%, transparent);
     --_et-table-pressed-tint-solid: color-mix(
       in srgb,
-      var(--et-surface-interaction-solid, gray) 16%,
+      var(--et-surface-interaction, gray) 16%,
       var(--_et-table-row-surface)
     );
     --_et-table-row-pressed: var(--_et-table-pressed-tint);
@@ -103,11 +96,11 @@
     --_et-table-sticky-clip: none;
     --_et-table-busy-margin-block-start: 0px;
     --_et-table-busy-margin-block-end: -2px;
-    --_et-table-detail-rule: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+    --_et-table-detail-rule: 1px solid var(--et-surface-border, rgb(128 128 128 / 0.15));
     /* The paint outside a card's rounded corner - the table's own surface. Declared here and not on the
        corner box, which sits inside a card row: a card row raises its elevation, so a var() resolved
        inside it would pick the card's own surface and the rounding would vanish. */
-    --_et-table-card-outside: var(--et-surface-background-solid, Canvas);
+    --_et-table-card-outside: var(--et-surface-background, Canvas);
     /* The mark at an edge rows pass under - a pinned column's inner edge, the sticky header, the footer
        bar. The surface's own interaction neutral rather than a fixed black, which is invisible on a dark
        table: the boundary has to lighten there instead. Named per direction so a cell sitting at two of
@@ -122,7 +115,7 @@
        classes) - and every rule below composes these, so none of them needs to ask. */
     --_et-table-pin-shadow: var(
       --et-table-pin-shadow-color,
-      color-mix(in srgb, var(--et-surface-interaction-solid, black) 30%, transparent)
+      color-mix(in srgb, var(--et-surface-interaction, black) 30%, transparent)
     );
     /* Per axis as well, because the two marks answer to different designs: an app that draws its own
        rule at a pinned column's edge takes the inline mark to `transparent` and still wants the block
@@ -171,36 +164,32 @@
   /* "Panel" skins wrap the table in a bordered, rounded surface; overflow:auto (above) clips the
      rounded corners and keeps the sticky header inside the panel. */
   .et-table-host:where([data-appearance='enclosed'], [data-appearance='zebra'], [data-appearance='grid']) {
-    border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    border: 1px solid var(--et-surface-border, rgb(128 128 128 / 0.3));
     border-radius: var(--et-table-radius, 10px);
   }
 
   .et-table-host:where([data-appearance='enclosed']) {
     --_et-table-header-bg: var(--et-table-header-background-color, var(--_et-table-band));
-    --_et-table-row-divider: var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+    --_et-table-row-divider: var(--et-surface-border, rgb(128 128 128 / 0.15));
     box-shadow:
-      0 1px 2px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.04),
-      0 6px 16px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.06);
+      0 1px 2px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 4%, transparent),
+      0 6px 16px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 6%, transparent);
   }
 
   .et-table-host:where([data-appearance='divided']) {
-    --_et-table-row-divider: var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+    --_et-table-row-divider: var(--et-surface-border, rgb(128 128 128 / 0.15));
   }
 
   .et-table-host:where([data-appearance='zebra']) {
     --_et-table-header-bg: var(--et-table-header-background-color, var(--_et-table-band));
-    --_et-table-stripe-bg: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 4%, transparent);
-    --_et-table-stripe-solid: color-mix(
-      in srgb,
-      var(--et-surface-interaction-solid, gray) 4%,
-      var(--_et-table-row-surface)
-    );
+    --_et-table-stripe-bg: color-mix(in srgb, var(--et-surface-interaction, gray) 4%, transparent);
+    --_et-table-stripe-solid: color-mix(in srgb, var(--et-surface-interaction, gray) 4%, var(--_et-table-row-surface));
   }
 
   .et-table-host:where([data-appearance='grid']) {
-    --_et-table-cell-rule: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+    --_et-table-cell-rule: 1px solid var(--et-surface-border, rgb(128 128 128 / 0.15));
     --_et-table-header-bg: var(--et-table-header-background-color, var(--_et-table-band));
-    --_et-table-row-divider: var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+    --_et-table-row-divider: var(--et-surface-border, rgb(128 128 128 / 0.15));
   }
 
   .et-table-host:where([data-appearance='bare']) {
@@ -223,7 +212,7 @@
     --_et-table-busy-margin-block-end: calc((var(--et-table-row-gap, 8px) - 2px) / 2);
     --_et-table-detail-rule: 0;
     --_et-table-inert-row-hover: transparent;
-    --_et-table-header-bg: var(--et-table-header-background-color, var(--et-surface-background-solid, Canvas));
+    --_et-table-header-bg: var(--et-table-header-background-color, var(--et-surface-background, Canvas));
     --_et-table-row-divider: transparent;
   }
 
@@ -249,8 +238,8 @@
     min-inline-size: 100%;
     /* The table is a surface panel: paint its background so cells (and the sticky
        header, which reuses this token) sit on an opaque, themed surface. */
-    background: var(--et-surface-background-solid, Canvas);
-    color: var(--et-surface-color-solid, CanvasText);
+    background: var(--et-surface-background, Canvas);
+    color: var(--et-surface-text, CanvasText);
     font-size: 14px;
     line-height: 1.4;
   }
@@ -313,7 +302,7 @@
     letter-spacing: var(--et-table-header-letter-spacing);
     text-transform: var(--et-table-header-text-transform);
     min-block-size: var(--et-table-header-row-min-height, auto);
-    color: var(--et-table-header-color, var(--et-surface-color-muted-solid, CanvasText));
+    color: var(--et-table-header-color, var(--et-surface-text-muted, CanvasText));
     /* Opaque (band or plain surface) so scrolling rows pass behind the pinned header. */
     background: var(--_et-table-header-bg);
     border-block-end: 1px solid var(--_et-table-header-border);
@@ -434,7 +423,7 @@
     font-weight: 600;
     /* Opaque band so scrolling rows pass behind the pinned footer. */
     background: var(--_et-table-header-bg);
-    border-block-start: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    border-block-start: 1px solid var(--et-surface-border, rgb(128 128 128 / 0.3));
   }
 
   .et-table-footer-cell:where([data-align='center']) {
@@ -473,7 +462,7 @@
        so the public knob can fall back to a theme token (see the theming guide). */
     --_et-table-scroll-fade-color: var(
       --et-table-scroll-fade-color,
-      color-mix(in srgb, var(--et-surface-interaction-solid, black) 22%, transparent)
+      color-mix(in srgb, var(--et-surface-interaction, black) 22%, transparent)
     );
   }
 
@@ -512,7 +501,7 @@
     z-index: 4;
     padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
     background: var(--_et-table-header-bg);
-    border-block-start: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    border-block-start: 1px solid var(--et-surface-border, rgb(128 128 128 / 0.3));
   }
 
   /* Secondary text projected into the footer bar — an "Items per page:" label beside a page-size
@@ -521,7 +510,7 @@
   .et-table-footer-label {
     margin: 0;
     font-size: 14px;
-    color: var(--et-surface-color-muted-solid, CanvasText);
+    color: var(--et-surface-text-muted, CanvasText);
   }
 
   /* Tighten the footer bar on touch layouts, where it otherwise eats a lot of vertical room. */
@@ -576,8 +565,7 @@
   .et-table-expander:focus-visible,
   .et-table-cell:focus-visible,
   .et-table-header-label:focus-visible .et-table-header-label-box {
-    outline: 2px solid
-      light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
+    outline: 2px solid light-dark(var(--et-tone-text, currentColor), var(--et-tone-fill, currentColor));
     outline-offset: -2px;
   }
 
@@ -676,7 +664,7 @@
     inline-size: 1.15em;
     block-size: 1.15em;
     transform: translateY(-0.045em);
-    color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+    color: light-dark(var(--et-tone-text), var(--et-tone-fill));
     /* Reversing the sort turns the arrow over in place — the element stays mounted across the flip,
        so a plain transition on `transform` is the whole animation. The glyph is drawn centred in its
        own box (see ARROW_UP_ICON), which is what keeps the ink still while it rotates. */
@@ -737,7 +725,7 @@
     box-sizing: border-box;
     inline-size: var(--_et-table-viewport-inline-size, 100%);
     padding: 32px var(--et-table-cell-padding-inline);
-    color: var(--et-surface-color-muted-solid, CanvasText);
+    color: var(--et-surface-text-muted, CanvasText);
     text-align: center;
   }
 
@@ -767,7 +755,7 @@
     inline-size: 16px;
     block-size: 16px;
     /* Ink, not `primary`: the mark sits on the table's own surface, not on a filled swatch. */
-    color: var(--et-theme-color-ink-solid, currentColor);
+    color: var(--et-tone-text, currentColor);
   }
 
   /* A cell that failed on its own keeps its value and gains the mark in front of it, so the row stays
@@ -780,7 +768,7 @@
     flex: none;
     inline-size: 14px;
     block-size: 14px;
-    color: var(--et-theme-color-ink-solid, currentColor);
+    color: var(--et-tone-text, currentColor);
   }
 
   /* ── Loading ────────────────────────────────────────────────────────────
@@ -803,7 +791,7 @@
     margin-block-start: var(--_et-table-busy-margin-block-start);
     margin-block-end: var(--_et-table-busy-margin-block-end);
     overflow: hidden;
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction, gray) 10%, transparent);
   }
 
   .et-table-busy-bar.et-table-busy-bar--enter {
@@ -830,7 +818,7 @@
     inline-size: 40%;
     block-size: 100%;
     border-radius: 999px;
-    background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+    background: light-dark(var(--et-tone-text), var(--et-tone-fill));
     animation: et-table-busy-sweep 1.1s ease-in-out infinite;
   }
 
@@ -859,7 +847,7 @@
   }
 
   .et-table-host et-checkbox:where([aria-checked='true'], [aria-checked='mixed']) .et-checkbox-box {
-    outline: 1px solid var(--et-theme-color-ink-solid);
+    outline: 1px solid var(--et-tone-text);
     outline-offset: -1px;
   }
 }

@@ -58,12 +58,12 @@
       pointer-events: none;
       opacity: 0;
       box-shadow:
-        0 0.3rem 0.8rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.2),
-        0 0.1rem 0.3rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.12);
+        0 0.3rem 0.8rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 20%, transparent),
+        0 0.1rem 0.3rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 12%, transparent);
     }
 
     .et-floating-action-trigger:where([data-floating-action-state='floating']) {
-      --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
+      --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-tone-text), transparent);
     }
 
     .et-floating-action-trigger:where([data-floating-action-state='floating'])::before {

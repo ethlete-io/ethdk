@@ -24,9 +24,9 @@
   }
 
   .et-overlay.et-rte-link-editor-overlay {
-    background: var(--et-surface-background-solid, rgb(30 30 30));
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    box-shadow: 0 12px 32px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.24);
+    background: var(--et-surface-background, rgb(30 30 30));
+    border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 24%, transparent);
   }
 
   /* Anchored popover (>= md): a compact, fully-rounded card pointing at the selection. */
@@ -113,7 +113,7 @@
     inline-size: 100%;
     box-sizing: border-box;
     padding: var(--et-rich-text-editor-link-editor-padding);
-    color: var(--et-surface-color-solid, currentColor);
+    color: var(--et-surface-text, currentColor);
   }
 
   .et-rte-link-editor-header {

@@ -13,13 +13,13 @@ import { ProgressBarComponent } from '../../progress-bar.component';
         <div
           class="flex items-center justify-center rounded-2xl border p-6"
           etProvideSurface="dark-elevated"
-          style="background: rgb(var(--et-surface-background)); border-color: rgb(var(--et-surface-border))"
+          style="background: var(--et-surface-background); border-color: var(--et-surface-border)"
         >
           <et-progress-bar
             [value]="indeterminate() ? null : value()"
             [color]="color()"
             [roundedEnd]="roundedEnd()"
-            class="w-full text-et-brand"
+            class="w-full text-et-tone-brand-fill"
           />
         </div>
       </div>
