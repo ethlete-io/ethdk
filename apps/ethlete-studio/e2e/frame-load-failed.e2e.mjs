@@ -171,11 +171,11 @@ const cellsOf = async (page, variant) => {
   );
 };
 
-const drawnCells = async (page, { variant, timeout, rows = [] }) => {
+const drawnCells = async (page, { variant, timeout, rows = [], failedSettles = true }) => {
   const deadline = Date.now() + timeout;
   const settled = (cells) =>
     cells.length > 0 &&
-    cells.every((cell) => cell.drawn || cell.failed) &&
+    cells.every((cell) => cell.drawn || (failedSettles && cell.failed)) &&
     rows.every((row) => cells.some((cell) => cell.key.startsWith(`${row} `)));
   let cells = await cellsOf(page, variant);
 
@@ -233,7 +233,7 @@ const failedSketchModule = async (context) => {
     recovered = false;
   }
 
-  const after = await drawnCells(page, { variant: 'a', timeout: FAILED_TIMEOUT_MS });
+  const after = await drawnCells(page, { variant: 'a', timeout: FAILED_TIMEOUT_MS, failedSettles: false });
   const drawnAfter = after.filter((cell) => cell.drawn).length;
 
   return {
@@ -245,7 +245,14 @@ const failedSketchModule = async (context) => {
       recovered &&
       after.length > 0 &&
       drawnAfter === after.length,
-    detail: `badge "${badge}", Übernehmen while failed ${mergeWhileFailed}, frames failed ${failedBefore.failed}/${failedBefore.all}, recovered after a change ${recovered}, variant cells drawn after it ${drawnAfter}/${after.length}`,
+    detail: `badge "${badge}", Übernehmen while failed ${mergeWhileFailed}, frames failed ${failedBefore.failed}/${failedBefore.all}, recovered after a change ${recovered}, variant cells drawn after it ${drawnAfter}/${after.length}${
+      drawnAfter < after.length
+        ? ` (not drawn: ${after
+            .filter((cell) => !cell.drawn)
+            .map((cell) => `${cell.key} ${cell.failed ? `failed "${cell.error}"` : 'empty'}, ${cell.state}`)
+            .join('; ')})`
+        : ''
+    }`,
   };
 };
 
