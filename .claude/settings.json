@@ -37,6 +37,16 @@
             "timeout": 60
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ethlete/away-mode.py\" --agent claude",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [

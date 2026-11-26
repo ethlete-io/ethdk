@@ -32,6 +32,19 @@ const setup = (options: { config?: Record<string, unknown>; localConfig?: Record
       mkdirSync(join(root, '.git', 'ethlete', 'away'), { recursive: true });
       writeFileSync(statePath, JSON.stringify(state), 'utf8');
     },
+    loadSkill: (skill: string) => {
+      execFileSync('python3', [hookPath, '--agent', 'claude'], {
+        encoding: 'utf8',
+        env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+        input: JSON.stringify({
+          cwd: root,
+          hook_event_name: 'PostToolUse',
+          session_id: SESSION,
+          tool_name: 'Skill',
+          tool_input: { skill },
+        }),
+      });
+    },
     send: (prompt: string) => {
       const output = execFileSync('python3', [hookPath, '--agent', 'claude'], {
         encoding: 'utf8',
@@ -72,6 +85,24 @@ describe('away-mode', () => {
     expect(session.send('/doc-agent')).toBeNull();
     expect(session.state()).toMatchObject({ active: true, away: false });
     expect(session.state()?.lastHumanInput).toBeTruthy();
+  });
+
+  it('activates when the skill loads after a restart prompt with another handoff name', () => {
+    const session = setup({ config });
+
+    session.send(`/handoff resume doc-night-2026-11-26${SUFFIX}`);
+    expect(session.state()).toBeNull();
+    session.loadSkill('doc-agent');
+    expect(session.state()).toMatchObject({ active: true, away: false, lastHumanInput: null });
+    session.send('afk');
+    expect(session.state()).toMatchObject({ active: true, away: true });
+  });
+
+  it('ignores a loaded skill that is not configured', () => {
+    const session = setup({ config });
+
+    session.loadSkill('handoff');
+    expect(session.state()).toBeNull();
   });
 
   it('activates on a restart prompt without counting it as typed input', () => {

@@ -46,7 +46,7 @@ export const KNOWN_HOOKS: Record<string, HookDefinition> = {
     agents: ['claude'],
   },
   'away-mode': {
-    events: [{ event: 'UserPromptSubmit' }],
+    events: [{ event: 'UserPromptSubmit' }, { event: 'PostToolUse', matcher: 'Skill' }],
     file: 'away-mode.py',
     timeout: 10,
     agents: ['claude'],

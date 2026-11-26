@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""UserPromptSubmit hook: switch an interactive session into "user is away" mode on its own.
+"""UserPromptSubmit and PostToolUse (Skill) hook: switch an interactive session into "user is away" mode on its own.
 
 A session opts in through `awayMode` in ethlete-agents.config.json (the local config file
 overrides it): {"awayMode": {"skills": ["doc-agent"], "thresholdMinutes": 15}}. Without `skills`
 the hook does nothing. A session becomes active when a prompt starts with `/<skill>` or with
-`/handoff resume <skill>-`.
+`/handoff resume <skill>-`, or when the Skill tool loads a configured skill (PostToolUse), however the
+session was started.
 
 Prompts the agent sessions send themselves (mailbox messages, cross-session messages, task
 notifications, system reminders, the restart prompt) are not human input. The last human-typed
@@ -216,8 +217,9 @@ def main():
     data = json.load(sys.stdin)
     prompt = data.get("prompt")
     session_id = data.get("session_id")
+    skill_load = data.get("hook_event_name") == "PostToolUse"
 
-    if not isinstance(prompt, str) or not session_id:
+    if not session_id or not (skill_load or isinstance(prompt, str)):
         return
 
     root = repo_root(data)
@@ -234,6 +236,15 @@ def main():
     path = state_path(root, session_id)
 
     if not path:
+        return
+
+    if skill_load:
+        tool_input = data.get("tool_input")
+        loaded = tool_input.get("skill") if isinstance(tool_input, dict) else None
+        loaded = loaded.split(":")[-1] if isinstance(loaded, str) else None
+        existing = read_state(path)
+        if loaded in skills and not (existing and existing.get("active")):
+            write_state(path, {"active": True, "lastHumanInput": None, "away": False})
         return
 
     now = datetime.now(timezone.utc)
