@@ -8,7 +8,9 @@ type MarkBox = { left: number; top: number; width: number; height: number };
 /** A changed area of the shot; with `from`, the new place of a part that moved there from `from`. */
 export type VariantCellMark = MarkBox & { from?: MarkBox };
 
-const FRAME_RING = 'shadow-[0_0_0_var(--sk-stroke)_var(--et-surface-border)]';
+// An outset shadow ring paints under the scaled content, whose subpixel bottom edge then hides it.
+const FRAME_RING =
+  'after:pointer-events-none after:absolute after:-inset-(--sk-stroke) after:border-(length:--sk-stroke) after:border-et-surface-border';
 
 @Component({
   selector: 'ethlete-variant-cell',

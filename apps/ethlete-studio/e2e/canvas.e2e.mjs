@@ -4857,10 +4857,74 @@ const CASES = [
           : out.map((frame) => `#${frame.index}@${Math.round(frame.bottom)}`).join(',');
       };
 
+      const openBottomEdges = async () => {
+        const frames = await page.evaluate(() =>
+          [...document.querySelectorAll('ethlete-sketch-view [data-sk-frame]')].flatMap((frame, index) => {
+            const rect = frame.getBoundingClientRect();
+            const style = getComputedStyle(frame);
+            const after = getComputedStyle(frame, '::after');
+            const ring =
+              Number.parseFloat(after.borderBottomWidth) > 0
+                ? after.borderBottomColor
+                : /rgba?\([^)]*\)(?!.*rgba?\()/.exec(style.boxShadow)?.[0];
+
+            return rect.width >= 20 && rect.bottom + 3 < innerHeight && style.opacity === '1'
+              ? [{ index, left: rect.left, right: rect.right, bottom: rect.bottom, ring }]
+              : [];
+          }),
+        );
+        const open = [];
+
+        for (const frame of frames) {
+          const clip = {
+            x: Math.round(frame.left + (frame.right - frame.left) * 0.2),
+            y: Math.floor(frame.bottom) - 2,
+            width: Math.round((frame.right - frame.left) * 0.6),
+            height: 6,
+          };
+          const png = (await page.screenshot({ clip })).toString('base64');
+          const edge = await page.evaluate(
+            async ({ png, ring }) => {
+              const image = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
+              const canvas = new OffscreenCanvas(image.width, image.height);
+              const context = canvas.getContext('2d');
+
+              context.drawImage(image, 0, 0);
+              context.fillStyle = ring;
+              context.fillRect(0, 0, 1, 1);
+              const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+              context.drawImage(image, 0, 0);
+              const { data, width, height } = context.getImageData(0, 0, image.width, image.height);
+              const rows = [];
+
+              for (let y = 0; y < height; y++) {
+                let hits = 0;
+
+                for (let x = 0; x < width; x++) {
+                  const at = (y * width + x) * 4;
+
+                  if (Math.abs(data[at] - r) + Math.abs(data[at + 1] - g) + Math.abs(data[at + 2] - b) <= 18) hits++;
+                }
+
+                rows.push(Math.round((hits / width) * 100));
+              }
+
+              return { closed: rows.some((share) => share >= 80), rows };
+            },
+            { png, ring: frame.ring },
+          );
+
+          if (!edge.closed) open.push(`#${frame.index}@${Math.round(frame.bottom)} rows ${edge.rows.join('/')}%`);
+        }
+
+        return open.join(',');
+      };
+
       await page.keyboard.press('Shift+Digit1');
       await settle(page);
       const after = await probe(page);
       const shiftOut = outOfView(after, await toolbarRect());
+      const shiftOpen = await openBottomEdges();
 
       if (process.env['STUDIO_E2E_FIT_SHOTS'])
         await page.screenshot({
@@ -4874,6 +4938,7 @@ const CASES = [
       await settle(page);
       const fitted = await probe(page);
       const fitOut = outOfView(fitted, await toolbarRect());
+      const fitOpen = await openBottomEdges();
 
       const foldCovered = await page.evaluate(() => {
         const fold = document.querySelector('ethlete-sketch-view [data-sk-folded]')?.getBoundingClientRect();
@@ -4890,8 +4955,8 @@ const CASES = [
       });
 
       return {
-        ok: !shiftOut && !fitOut && !foldCovered && after.camera?.y !== before.camera?.y,
-        detail: `${describe(before, after)} view bottom ${Math.round(after.view.bottom)}; out after Shift+1: ${shiftOut || 'none'}; out after Fit: ${fitOut || 'none'}; fold bar: ${foldCovered || 'clear'}`,
+        ok: !shiftOut && !fitOut && !shiftOpen && !fitOpen && !foldCovered && after.camera?.y !== before.camera?.y,
+        detail: `${describe(before, after)} view bottom ${Math.round(after.view.bottom)}; out after Shift+1: ${shiftOut || 'none'}; out after Fit: ${fitOut || 'none'}; open bottom edge after Shift+1: ${shiftOpen || 'none'}; after Fit: ${fitOpen || 'none'}; fold bar: ${foldCovered || 'clear'}`,
       };
     },
   },
