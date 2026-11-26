@@ -372,7 +372,7 @@ export class StorybookBracketComponent {
   public finalColumnWidth = input(400, { transform: numberAttribute });
   public finalMatchHeight = input(200, { transform: numberAttribute });
   public rowRoundGap = input(70, { transform: numberAttribute });
-  public roundHeaderGap = input(20, { transform: numberAttribute });
+  public roundHeaderGap = input<number | undefined>(undefined);
   public swissGroupPadding = input(10, { transform: numberAttribute });
   public focusRoundId = input<string | null>(null);
   public focusInset = input(0, { transform: numberAttribute });

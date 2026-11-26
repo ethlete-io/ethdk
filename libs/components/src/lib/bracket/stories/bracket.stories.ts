@@ -64,7 +64,6 @@ export default {
     finalColumnWidth: 400,
     finalMatchHeight: 200,
     rowRoundGap: 70,
-    roundHeaderGap: 20,
     swissGroupPadding: 10,
     showContinueElement: false,
     continueColumnWidth: 250,

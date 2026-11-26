@@ -314,4 +314,14 @@ test.describe('bracket swiss / group border token', () => {
     expect(await box.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
     expect(await header.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 0, 0)');
   });
+
+  test('the swiss story gets the swiss round header gap, not the shared default', async ({ page }) => {
+    const root = await openStory(page, 'components-sports-bracket--swiss');
+    const header = root.locator('.et-bracket-swiss-round-header').first();
+    const box = root.locator('.et-bracket-swiss-group-border').first();
+
+    await expect(box).toBeAttached();
+    const gap = (await boxOf(box)).y - ((await boxOf(header)).y + (await boxOf(header)).height);
+    expect(Math.round(gap)).toBe(12);
+  });
 });
