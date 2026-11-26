@@ -14,7 +14,7 @@ const darkCss = () => colorsSkeletonOf({ scheme: 'dark', accent: TOMFLIX_ACCENT 
 describe('colors skeleton interaction states', () => {
   it('steps the surface tint on black as far as the SDK does', () => {
     const css = darkCss();
-    const [rest, hover] = ['', '-hover'].map((state) => tokenOf(css, `--et-surface-interaction${state}`));
+    const [rest, hover] = ['', '-hover'].map((state) => tokenOf(css, `--et-surface-control-text${state}`));
 
     expect(rest).toBeLessThanOrEqual(160);
     expect((hover ?? 0) - (rest ?? 0)).toBeGreaterThanOrEqual(0.23 * 255);
@@ -24,7 +24,7 @@ describe('colors skeleton interaction states', () => {
     const css = darkCss();
 
     // The SDK uses one value for hover and focus.
-    for (const name of ['--et-surface-interaction', '--et-tone-fill', '--et-tone-text']) {
+    for (const name of ['--et-surface-control-text', '--et-tone-fill', '--et-tone-text']) {
       expect(tokenOf(css, `${name}-hover`)).not.toBeNaN();
       expect(tokenOf(css, `${name}-focus`)).toBe(tokenOf(css, `${name}-hover`));
     }

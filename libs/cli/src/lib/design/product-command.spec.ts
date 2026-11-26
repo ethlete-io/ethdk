@@ -176,14 +176,14 @@ describe('designProduct', () => {
     expect(valueOf('tone-fill-focus')).toBe(valueOf('tone-fill-hover'));
     expect(
       distinct([
-        'surface-interaction',
-        'surface-interaction-hover',
-        'surface-interaction-active',
-        'surface-interaction-disabled',
+        'surface-control-text',
+        'surface-control-text-hover',
+        'surface-control-text-active',
+        'surface-control-text-disabled',
       ]),
     ).toBe(4);
-    expect(valueOf('surface-interaction-focus')).toBe(valueOf('surface-interaction-hover'));
-    expect(Number(valueOf('surface-interaction').split(' ')[0])).toBeLessThanOrEqual(160);
+    expect(valueOf('surface-control-text-focus')).toBe(valueOf('surface-control-text-hover'));
+    expect(Number(valueOf('surface-control-text').split(' ')[0])).toBeLessThanOrEqual(160);
     expect(valueOf('tone-on-fill-disabled')).not.toBe(valueOf('tone-on-fill-rest'));
     expect(
       distinct([
@@ -191,8 +191,8 @@ describe('designProduct', () => {
         'surface-text-muted',
         'surface-text-subtle',
         'surface-border',
-        'surface-interaction-hover',
-        'surface-interaction-disabled',
+        'surface-control-text-hover',
+        'surface-control-text-disabled',
       ]),
     ).toBe(6);
 

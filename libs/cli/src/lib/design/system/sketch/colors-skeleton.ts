@@ -107,11 +107,12 @@ const SURFACE_STEPS: [string, number][] = [
   ['text-muted', 0.7],
   ['text-subtle', 0.56],
   ['border', 0.2],
-  ['interaction', 0.62],
-  ['interaction-hover', 0.86],
-  ['interaction-focus', 0.86],
-  ['interaction-active', 1],
-  ['interaction-disabled', 0.27],
+  ['tint', 0.62],
+  ['control-text', 0.62],
+  ['control-text-hover', 0.86],
+  ['control-text-focus', 0.86],
+  ['control-text-active', 1],
+  ['control-text-disabled', 0.27],
 ];
 
 const TONE_ALIASES = [
@@ -206,7 +207,7 @@ const describeOf = (surfaces: string[]) =>
   surfaces
     .flatMap((surface) => [
       `    'surface-${surface}':`,
-      `      'The ${surface} surface: text, muted and subtle text on a card, the interaction tints in each state, and the shadow; check that the text steps stay apart and the tints read on the page.',`,
+      `      'The ${surface} surface: text, muted and subtle text on a card, the control text in each state, and the shadow; check that the text steps stay apart and the tints read on the page.',`,
       `    'accent-${surface}':`,
       `      'The accent on the ${surface} surface: the fill with its on-colour and the ink in rest, hover, focus, active and disabled, then the same for the error and warning colour themes; check that the states differ, disabled reads as disabled, and error and warning read apart from the accent.',`,
       `    'contrast-${surface}':`,
@@ -231,7 +232,7 @@ const THEMES = ['error', 'warning'];
 const AA = 4.5;
 
 const SURFACE_TOKEN =
-  /^et-(surface-(background|text(-muted|-subtle)?|border|interaction(-hover|-focus|-active|-disabled)?)|shadow-color)$/u;
+  /^et-(surface-(background|text(-muted|-subtle)?|border|(tint|control-text(-hover|-focus|-active|-disabled)?))|shadow-color)$/u;
 
 const COLOR_TOKEN = /^et-tone-(fill|on-fill|text)-(rest|hover|focus|active|disabled)$/u;
 
@@ -278,7 +279,7 @@ const surfacePanel = html\`<div class="colors-card">
     \${STATE_ENDS.map(
       (end) =>
         html\`<span class="colors-state"
-          ><span class="colors-swatch" data-fill="--et-surface-interaction\${end === '-rest' ? '' : end}"></span
+          ><span class="colors-swatch" data-fill="--et-surface-control-text\${end === '-rest' ? '' : end}"></span
           >\${labelOf(end)}</span
         >\`,
     ).join('')}
