@@ -19,7 +19,7 @@
     },
     "typesOutputPath": {
       "type": "string",
-      "description": "Where to output the generated `EthleteColorThemeNameRegistry` augmentation (a .d.ts that narrows `etProvideColor` and other theme-name APIs to your actual theme names). Defaults to `outputPath` with its extension swapped to `.d.ts`."
+      "description": "Where to output the generated `EthleteColorThemeNames` augmentation (a .d.ts that narrows `etProvideColor` and other theme-name APIs to your actual theme names). Defaults to `outputPath` with its extension swapped to `.d.ts`."
     },
     "prefix": {
       "type": "string",

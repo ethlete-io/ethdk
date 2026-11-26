@@ -52,13 +52,13 @@ export type ColorTheme = {
  * empty by default, which keeps theme-name-accepting APIs (like `etProvideColor`) typed
  * as plain `string`.
  *
- * Apps that want those APIs checked and autocompleted against their own theme names
- * should augment this interface once, near where their themes are defined:
+ * Add one `true` member per theme name to `EthleteColorThemeNames`; several sheets can each add their own:
  *
  * ```ts
  * declare module '@ethlete/core' {
- *   interface EthleteColorThemeNameRegistry {
- *     name: 'pitch-green' | 'red' | 'light-grey';
+ *   interface EthleteColorThemeNames {
+ *     'pitch-green': true;
+ *     red: true;
  *   }
  * }
  * ```
@@ -66,13 +66,24 @@ export type ColorTheme = {
 // This must stay an `interface`: consumers register their theme names by augmenting it from a
 // `declare module` block, which only works for interfaces.
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface, ethlete/consistent-type-definitions
+export interface EthleteColorThemeNames {
+  // Intentionally empty - see doc comment above.
+}
+
+/**
+ * @deprecated Add one `true` member per theme name to `EthleteColorThemeNames` instead. A single `name`
+ * member cannot be augmented by more than one sheet.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface, ethlete/consistent-type-definitions
 export interface EthleteColorThemeNameRegistry {
   // Intentionally empty - see doc comment above.
 }
 
-export type RegisteredColorThemeName = EthleteColorThemeNameRegistry extends { name: infer N extends string }
-  ? N
-  : string;
+type LegacyColorThemeName = EthleteColorThemeNameRegistry extends { name: infer N extends string } ? N : never;
+
+export type RegisteredColorThemeName = [keyof EthleteColorThemeNames | LegacyColorThemeName] extends [never]
+  ? string
+  : Extract<keyof EthleteColorThemeNames, string> | LegacyColorThemeName;
 
 /**
  * Reserved color name. Resolves the color tokens from the ambient surface's control text

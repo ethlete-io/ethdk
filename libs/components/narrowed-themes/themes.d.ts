@@ -1,6 +1,7 @@
 declare module '@ethlete/core' {
-  interface EthleteColorThemeNameRegistry {
-    name: 'alpha' | 'beta';
+  interface EthleteColorThemeNames {
+    alpha: true;
+    beta: true;
   }
 }
 

@@ -189,7 +189,7 @@ describe('tailwind-4-color-theme generator', () => {
     expect(content.match(/--et-color-theme-type:/gu)).toHaveLength(1);
   });
 
-  it('should generate an EthleteColorThemeNameRegistry augmentation next to the CSS by default', async () => {
+  it('should generate an EthleteColorThemeNames augmentation next to the CSS by default', async () => {
     const themesContent = `
     export const PITCH_GREEN = {
       name: 'pitch-green',
@@ -215,8 +215,9 @@ describe('tailwind-4-color-theme generator', () => {
 
     const content = tree.read('src/styles/tailwind-themes.d.ts', 'utf-8');
     expect(content).toContain(`declare module '@ethlete/core'`);
-    expect(content).toContain('interface EthleteColorThemeNameRegistry');
-    expect(content).toContain(`name: 'pitch-green' | 'red';`);
+    expect(content).toContain('interface EthleteColorThemeNames');
+    expect(content).toContain(`'pitch-green': true;`);
+    expect(content).toContain(`'red': true;`);
     // Must be a module (not a global script) for the module augmentation to merge correctly.
     expect(content).toContain('export {};');
   });
@@ -244,7 +245,7 @@ describe('tailwind-4-color-theme generator', () => {
     expect(tree.exists('src/styles/tw.d.ts')).toBe(false);
 
     const content = tree.read('src/types/theme-names.d.ts', 'utf-8');
-    expect(content).toContain(`name: 'brand';`);
+    expect(content).toContain(`'brand': true;`);
   });
 
   it('should use custom prefix', async () => {
@@ -717,7 +718,7 @@ describe('tailwind-4-color-theme generator', () => {
     const content = tree.read('src/styles/tw.css', 'utf-8');
     expect(content).toContain('--et-tone-fill-rest: rgb(1 1 1);');
     expect(content).toContain('9 9 9');
-    expect(tree.read('src/styles/tw.d.ts', 'utf-8')).toContain(`name: 'brand' | 'accent';`);
+    expect(tree.read('src/styles/tw.d.ts', 'utf-8')).toContain(`'accent': true;`);
   });
 
   describe('scss output path', () => {
