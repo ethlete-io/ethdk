@@ -58,7 +58,7 @@ import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
     }
 
     button {
-      --_accent: var(--et-theme-color-primary-solid, #60a5fa);
+      --_accent: var(--et-tone-fill, #60a5fa);
 
       position: relative;
       display: inline-flex;

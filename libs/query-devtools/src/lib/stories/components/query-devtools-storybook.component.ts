@@ -985,9 +985,9 @@ export class QdOverlayBarComponent {
       .et-sb-devtools-demo kbd {
         display: inline-block;
         padding: 1px 5px;
-        border: 1px solid var(--et-surface-border-solid);
+        border: 1px solid var(--et-surface-border);
         border-radius: 4px;
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 10%, transparent);
+        background: color-mix(in srgb, var(--et-surface-interaction) 10%, transparent);
         font-family: ui-monospace, monospace;
         font-size: 0.9em;
       }
@@ -1016,10 +1016,10 @@ export class QdOverlayBarComponent {
         inset-block-end: calc(12px + var(--et-viewport-inset-bottom, 0px));
         max-inline-size: 1160px;
         padding: 10px 14px;
-        border: 1px solid var(--et-surface-border-solid);
+        border: 1px solid var(--et-surface-border);
         border-radius: 12px;
-        background: var(--et-surface-background-solid);
-        color: var(--et-surface-color-solid);
+        background: var(--et-surface-background);
+        color: var(--et-surface-text);
       }
 
       .et-sb-qd-card {
@@ -1028,10 +1028,10 @@ export class QdOverlayBarComponent {
         flex-direction: column;
         gap: 8px;
         padding: 14px 16px 16px;
-        border: 1px solid var(--et-surface-border-solid);
+        border: 1px solid var(--et-surface-border);
         border-radius: 12px;
-        background: var(--et-surface-background-solid);
-        color: var(--et-surface-color-solid);
+        background: var(--et-surface-background);
+        color: var(--et-surface-text);
       }
 
       .et-sb-qd-card-heading {
@@ -1059,7 +1059,7 @@ export class QdOverlayBarComponent {
         display: flex;
         align-items: flex-start;
         gap: 8px;
-        color: var(--et-surface-color-muted-solid);
+        color: var(--et-surface-text-muted);
       }
 
       .et-sb-qd-status-dot {
@@ -1069,7 +1069,7 @@ export class QdOverlayBarComponent {
         /* centred on the first line rather than on the whole (possibly wrapped) block */
         margin-block-start: calc((1lh - 8px) / 2);
         border-radius: 999px;
-        background: var(--et-theme-color-primary-solid);
+        background: var(--et-tone-fill);
       }
 
       .et-sb-qd-status[data-state='loading'] .et-sb-qd-status-dot {

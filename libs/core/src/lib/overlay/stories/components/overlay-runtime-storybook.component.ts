@@ -18,8 +18,8 @@ const STYLES = `
     transition: opacity 150ms linear;
     border-radius: 1.2rem;
     padding: 2.4rem;
-    background: var(--et-surface-background-solid, #1d1d20);
-    color: var(--et-surface-color-solid, #fff);
+    background: var(--et-surface-background, #1d1d20);
+    color: var(--et-surface-text, #fff);
     box-shadow: 0 0.8rem 3.2rem rgb(0 0 0 / 0.4);
   }
 

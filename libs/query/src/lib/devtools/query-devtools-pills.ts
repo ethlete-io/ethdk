@@ -17,7 +17,7 @@ const COLLAPSED_KEY = 'et-query-devtools-pills-collapsed';
 
 const STYLE = `
   :host {
-    --_accent: var(--et-theme-color-primary-solid, #60a5fa);
+    --_accent: var(--et-tone-fill, #60a5fa);
     --_surface: linear-gradient(135deg, #1f1f23, #2a2a30);
     --_ring: inset 0 0 0 1px rgb(255 255 255 / 0.08);
     --_lift: 0 6px 20px rgb(0 0 0 / 0.35);

@@ -29,6 +29,32 @@ export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatc
   const inkActive = data.inkColor?.active || inkDefault;
   const inkDisabled = data.inkColor?.disabled || inkDefault;
 
+  if (swatch === 'primary' && !isAlt) {
+    return `
+  --et-tone-fill-rest: rgb(${data.color.default});
+  --et-tone-fill-hover: rgb(${data.color.hover});
+  --et-tone-fill-focus: rgb(${data.color.focus || data.color.hover});
+  --et-tone-fill-active: rgb(${data.color.active});
+  --et-tone-fill-disabled: rgb(${data.color.disabled});
+
+  --et-tone-on-fill-rest: rgb(${data.onColor.default});
+  --et-tone-on-fill-hover: rgb(${data.onColor.hover || data.onColor.default});
+  --et-tone-on-fill-focus: rgb(${data.onColor.focus || data.onColor.hover || data.onColor.default});
+  --et-tone-on-fill-active: rgb(${data.onColor.active || data.onColor.default});
+  --et-tone-on-fill-disabled: rgb(${data.onColor.disabled || data.onColor.default});
+
+  --et-tone-text-rest: rgb(${inkDefault});
+  --et-tone-text-hover: rgb(${inkHover});
+  --et-tone-text-focus: rgb(${inkFocus});
+  --et-tone-text-active: rgb(${inkActive});
+  --et-tone-text-disabled: rgb(${inkDisabled});
+
+  --et-tone-fill: var(--et-tone-fill-rest);
+  --et-tone-on-fill: var(--et-tone-on-fill-rest);
+  --et-tone-text: var(--et-tone-text-rest);
+  `;
+  }
+
   return `
   --et-color-${varSuffix}: ${data.color.default};
   --et-color-${varSuffix}-hover: ${data.color.hover};

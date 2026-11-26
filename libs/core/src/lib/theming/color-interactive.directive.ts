@@ -4,7 +4,7 @@ import { ColorInteractiveStylesComponent } from './color-interactive-styles.comp
 
 /**
  * Makes an element react to ITS OWN `:hover`/`:active`/`:focus-visible`/`[disabled]` by tinting
- * `--et-theme-color-primary-*`/`-on-primary-*`/`-ink-*` with the current color theme. Use this on
+ * `--et-tone-fill`/`--et-tone-on-fill`/`--et-tone-text` with the current color theme. Use this on
  * a single, self-contained interactive element - a button, a checkbox, a segmented button.
  *
  * Do NOT apply this to a wrapper that also contains OTHER, independently-interactive elements

@@ -2,20 +2,20 @@
   .et-query-devtools-host {
     /* Self-contained chrome tokens: resolve to the host surface theme when present, otherwise fall
        back to a coherent dark devtools palette so the panel is legible in any (even theme-less) app. */
-    --_et-qdt-bg: var(--et-surface-background-solid, rgb(24 24 27));
-    --_et-qdt-fg: var(--et-surface-color-solid, rgb(244 244 245));
-    --_et-qdt-muted: var(--et-surface-color-muted-solid, rgb(161 161 170));
-    --_et-qdt-subtle: var(--et-surface-color-subtle-solid, rgb(113 113 122));
-    --_et-qdt-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.12));
-    --_et-qdt-interaction: var(--et-surface-interaction-solid, rgb(255 255 255));
+    --_et-qdt-bg: var(--et-surface-background, rgb(24 24 27));
+    --_et-qdt-fg: var(--et-surface-text, rgb(244 244 245));
+    --_et-qdt-muted: var(--et-surface-text-muted, rgb(161 161 170));
+    --_et-qdt-subtle: var(--et-surface-text-subtle, rgb(113 113 122));
+    --_et-qdt-border: var(--et-surface-border, rgb(255 255 255 / 0.12));
+    --_et-qdt-interaction: var(--et-surface-interaction, rgb(255 255 255));
     /* Two weights of edge, and the difference is what makes a control read as one: `--_et-qdt-border`
        separates things that sit next to each other (rows, panes, cards), `--_et-qdt-line` outlines
        something that can be pressed. A control drawn with the separator weight disappears into the
        text around it. */
     --_et-qdt-line: color-mix(in srgb, var(--_et-qdt-interaction) 24%, transparent);
     --_et-qdt-line-strong: color-mix(in srgb, var(--_et-qdt-interaction) 42%, transparent);
-    --_et-qdt-accent: var(--et-theme-color-primary-solid, rgb(96 165 250));
-    --_et-qdt-on-accent: var(--et-theme-color-on-primary, #09090b);
+    --_et-qdt-accent: var(--et-tone-fill, rgb(96 165 250));
+    --_et-qdt-on-accent: var(--et-tone-on-fill, #09090b);
     --_et-qdt-hover: color-mix(in srgb, var(--_et-qdt-interaction) 10%, transparent);
     /* The one fill a text field, a search box and a select share. A control the panel *reads* from is
        filled and has no outline; a control it *runs* on is outlined and has no fill. */
@@ -548,7 +548,7 @@
   }
 
   .et-query-devtools-menu-item-note {
-    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+    color: var(--et-surface-text-muted, rgb(255 255 255 / 0.55));
     font-size: 12px;
   }
 

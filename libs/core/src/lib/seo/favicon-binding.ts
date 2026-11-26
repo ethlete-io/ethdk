@@ -22,7 +22,7 @@ const FAVICON_SIZE = 64;
 const FALLBACK_OVERLAY_COLOR = '#e11d48';
 
 const readThemeColor = (document: Document) => {
-  const value = getComputedStyle(document.documentElement).getPropertyValue('--et-theme-color-primary-solid').trim();
+  const value = getComputedStyle(document.documentElement).getPropertyValue('--et-tone-fill-rest').trim();
 
   return value || FALLBACK_OVERLAY_COLOR;
 };

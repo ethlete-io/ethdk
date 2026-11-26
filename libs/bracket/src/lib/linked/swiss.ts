@@ -55,7 +55,7 @@ export type BracketSwissGroupColorType =
  * into the target group color on the last portion before touching its border.
  * Any CSS color value is allowed. Missing entries fall back to the connector/border color
  * (the `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` custom properties,
- * which default to `--et-surface-border-solid`).
+ * which default to `--et-surface-border`).
  */
 export type BracketSwissColors = Partial<Record<BracketSwissGroupColorType, string>>;
 
