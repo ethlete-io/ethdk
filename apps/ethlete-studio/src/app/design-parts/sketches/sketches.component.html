@@ -68,8 +68,7 @@
         <div
           #world
           [attr.data-sk-sizing]="sizing() ? '' : null"
-          [class.invisible]="!partSized()"
-          [class.opacity-0]="editHeld()"
+          [class.invisible]="sizing()"
           [class.w-max]="transposed() || canvas.zoom() !== 'fit'"
           [class.min-w-full]="!transposed() || screenMode()"
           [style.transform]="canvas.transform()"
@@ -328,7 +327,7 @@
         [(roundsOpen)]="roundsOpen"
         [(commentMode)]="commentMode"
         [(withdrawn)]="withdrawn"
-        [status]="headStatus()"
+        [status]="shownStatus()"
         [subSketch]="subSketch()"
         [approved]="approved() !== null"
         [subSketchesOpen]="subSketchesOpen()"

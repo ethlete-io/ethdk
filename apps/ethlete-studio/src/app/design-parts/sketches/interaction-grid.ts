@@ -14,9 +14,6 @@ const splitOf = (state: string) => {
   return { base: state.slice(0, Math.max(0, state.length - interaction.length - 1)), interaction };
 };
 
-/** Whether `state` names an interaction (hover, active, focus-visible) rather than a rest state. */
-export const isInteractionState = (state: string) => splitOf(state).interaction !== GRID_REST;
-
 const restBaseBefore = (named: readonly { base: string; interaction: string }[], index: number) =>
   named
     .slice(0, index)
