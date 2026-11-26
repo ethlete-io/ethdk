@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { buildReadyInputsOf, checkRules, checkSystem } from './check-system';
 import { resolveProduct } from './resolve-product';
@@ -49,7 +49,12 @@ const run = (files: Record<string, string>) => {
 
 const ruleOf = (line: string) => line.split(' ')[0];
 
-afterEach(() => vi.restoreAllMocks());
+beforeEach(() => vi.stubEnv('CI', ''));
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
 
 describe('checkRules', () => {
   it('fails sample text outside the sample data', () => {
