@@ -92,7 +92,7 @@
     @media (hover: hover) {
       &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) .et-checkbox-option-box {
         border-color: var(--_et-control-border, var(--et-surface-text, currentColor));
-        background-color: color-mix(in srgb, var(--et-surface-interaction, currentColor) 8%, transparent);
+        background-color: color-mix(in srgb, var(--et-surface-tint, currentColor) 8%, transparent);
       }
     }
 
@@ -106,7 +106,7 @@
       cursor: default;
 
       .et-checkbox-option-label {
-        color: var(--et-surface-interaction-disabled, currentColor);
+        color: var(--et-surface-control-text-disabled, currentColor);
       }
     }
 

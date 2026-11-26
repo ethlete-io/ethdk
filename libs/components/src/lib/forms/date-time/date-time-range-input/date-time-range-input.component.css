@@ -15,7 +15,7 @@
     }
 
     et-form-field[data-disabled] & .et-date-time-range-input-local-reading {
-      color: var(--et-surface-interaction-disabled, currentColor);
+      color: var(--et-surface-control-text-disabled, currentColor);
     }
 
     @container et-date-time-range-input (inline-size < 22em) {

@@ -20,14 +20,13 @@ const surface = ({
   type: 'light',
   elevation,
   isDefault: elevation === 0,
-  interactionColor: {
-    color: {
-      default: '115 115 115',
-      hover: '64 64 64',
-      focus: '64 64 64',
-      active: '23 23 23',
-      disabled: '180 180 180',
-    },
+  tint: '115 115 115',
+  controlText: {
+    default: '115 115 115',
+    hover: '64 64 64',
+    focus: '64 64 64',
+    active: '23 23 23',
+    disabled: '180 180 180',
   },
   background,
   color: '23 23 23',

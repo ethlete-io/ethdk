@@ -26,7 +26,7 @@ export type RepoAlias = { path: string; key: string };
           @for (row of rows(); track row.path) {
             <li
               [attr.data-alias-path]="row.path"
-              class="group grid grid-cols-[minmax(0,1fr)_16rem_7rem] items-center gap-x-3 rounded-md px-2 text-small hover:bg-et-surface-interaction"
+              class="group grid grid-cols-[minmax(0,1fr)_16rem_7rem] items-center gap-x-3 rounded-md px-2 text-small hover:bg-et-surface-control-text"
             >
               <span [title]="row.path" class="truncate text-mono">{{ row.path }}</span>
               <span class="truncate text-mono" data-alias-key>{{ row.key }}</span>

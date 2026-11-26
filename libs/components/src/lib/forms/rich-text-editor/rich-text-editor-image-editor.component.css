@@ -142,7 +142,7 @@
     block-size: var(--et-rich-text-editor-image-editor-thumb-size);
     border-radius: 6px;
     object-fit: cover;
-    background: color-mix(in srgb, var(--et-surface-interaction, #888) 12%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, #888) 12%, transparent);
   }
 
   .et-rte-image-editor-file {

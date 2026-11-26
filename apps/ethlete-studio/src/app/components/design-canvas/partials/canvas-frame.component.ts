@@ -267,7 +267,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           <ethlete-shot-state [state]="pageShotState.state()" />
         }
       } @else if (!painted()) {
-        <div class="absolute inset-0 size-full border-0 bg-(--et-surface-interaction)"></div>
+        <div class="absolute inset-0 size-full border-0 bg-(--et-surface-control-text)"></div>
       }
       @if (live() || painted()) {
         <div class="absolute inset-0 overflow-hidden">

@@ -28,7 +28,7 @@ const PIN_RESOLVED_SELECTED = `${PIN_RESOLVED_BASE} ring-2 ring-text-muted focus
 
 const FACE = `flex size-full items-center justify-center ${SHAPE}`;
 
-const FACE_INTERACTIVE = `${FACE} group-hover/pin:bg-et-surface-interaction/9 group-active/pin:bg-et-surface-interaction/15`;
+const FACE_INTERACTIVE = `${FACE} group-hover/pin:bg-et-surface-control-text/9 group-active/pin:bg-et-surface-control-text/15`;
 
 @Component({
   selector: 'ethlete-comment-pin',

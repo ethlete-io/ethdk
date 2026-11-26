@@ -126,7 +126,7 @@
         color: var(--et-surface-text, currentColor);
         background-color: var(
           --et-segmented-button-hover-fill,
-          color-mix(in srgb, var(--et-surface-interaction, currentColor) 10%, transparent)
+          color-mix(in srgb, var(--et-surface-tint, currentColor) 10%, transparent)
         );
       }
     }
@@ -164,7 +164,7 @@
       --et-segmented-button-focus-ring-offset: 2px;
 
       border-radius: 0.5rem;
-      color: var(--et-tab-inactive-color, var(--et-surface-interaction, currentColor));
+      color: var(--et-tab-inactive-color, var(--et-surface-control-text, currentColor));
 
       font-weight: var(--et-tab-font-weight, inherit);
       line-height: var(--et-tab-line-height, inherit);

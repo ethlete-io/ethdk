@@ -155,13 +155,13 @@
     &:has([aria-disabled='true']) .et-choice-field-label-area,
     &:has(:disabled) .et-choice-field-label-area {
       cursor: not-allowed;
-      color: var(--et-surface-interaction-disabled, currentColor);
+      color: var(--et-surface-control-text-disabled, currentColor);
       pointer-events: none;
     }
 
     &:has([aria-disabled='true']) .et-form-support-hint,
     &:has(:disabled) .et-form-support-hint {
-      color: var(--et-surface-interaction-disabled, currentColor);
+      color: var(--et-surface-control-text-disabled, currentColor);
     }
 
     .et-form-support {

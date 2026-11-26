@@ -7,7 +7,7 @@ import { Component, input, output, TemplateRef, ViewEncapsulation } from '@angul
     <button
       [attr.aria-expanded]="open()"
       (click)="openChange.emit(!open())"
-      class="-m-space-1 flex cursor-pointer rounded-control-sm border-0 bg-transparent p-space-1 [transition:var(--transition-state)] outline-none hover:bg-et-surface-interaction/10 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)] focus-visible:outline-none active:bg-et-surface-interaction/15"
+      class="-m-space-1 flex cursor-pointer rounded-control-sm border-0 bg-transparent p-space-1 [transition:var(--transition-state)] outline-none hover:bg-et-surface-control-text/10 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)] focus-visible:outline-none active:bg-et-surface-control-text/15"
       type="button"
       data-sk-hold
     >

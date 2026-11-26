@@ -75,7 +75,7 @@
     }
 
     & .et-scrollable-button:where(:not([data-variant='filled'])) {
-      color: var(--et-surface-interaction, currentColor);
+      color: var(--et-surface-control-text, currentColor);
     }
 
     &.et-scrollable--can-scroll:not(.et-scrollable--is-at-start) {

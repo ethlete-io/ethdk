@@ -76,7 +76,7 @@
 
   .et-standings-pick-ghost {
     box-sizing: border-box;
-    border: 1.5px dashed color-mix(in srgb, var(--et-surface-interaction, gray) 45%, transparent);
+    border: 1.5px dashed color-mix(in srgb, var(--et-surface-tint, gray) 45%, transparent);
     transition: translate var(--et-standings-pick-preview-duration) ease;
   }
 
@@ -91,7 +91,7 @@
     gap: var(--et-standings-pick-gap);
     min-inline-size: 0;
     padding-inline: 8px;
-    background: color-mix(in srgb, var(--et-surface-interaction, gray) 8%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 8%, transparent);
     transition:
       background-color 120ms ease,
       box-shadow 120ms ease-out;
@@ -104,15 +104,15 @@
   }
 
   .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):hover {
-    background-color: color-mix(in srgb, var(--et-surface-interaction, gray) 12%, transparent);
+    background-color: color-mix(in srgb, var(--et-surface-tint, gray) 12%, transparent);
   }
 
   .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):active,
   .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-dragging]) {
     position: relative;
     z-index: 1;
-    background-color: color-mix(in srgb, var(--et-surface-interaction, gray) 20%, var(--et-surface-background, Canvas));
-    box-shadow: 0 4px 10px color-mix(in srgb, var(--et-surface-interaction, black) 15%, transparent);
+    background-color: color-mix(in srgb, var(--et-surface-tint, gray) 20%, var(--et-surface-background, Canvas));
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--et-surface-tint, black) 15%, transparent);
     transition:
       box-shadow var(--et-standings-pick-preview-duration) ease-out,
       background-color var(--et-standings-pick-preview-duration) ease-out;
@@ -133,7 +133,7 @@
   }
 
   .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-settling]) {
-    background-color: color-mix(in srgb, var(--et-surface-interaction, gray) 8%, var(--et-surface-background, Canvas));
+    background-color: color-mix(in srgb, var(--et-surface-tint, gray) 8%, var(--et-surface-background, Canvas));
     box-shadow: 0 0 0 transparent;
     transition:
       translate var(--et-standings-pick-drop-duration) var(--et-standings-pick-drop-easing),
@@ -142,7 +142,7 @@
   }
 
   .et-standings-pick:where([data-locked]) .et-standings-pick-card {
-    background: color-mix(in srgb, var(--et-surface-interaction, gray) 5%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 5%, transparent);
   }
 
   .et-standings-pick:where([data-locked]) .et-standings-pick-participant {

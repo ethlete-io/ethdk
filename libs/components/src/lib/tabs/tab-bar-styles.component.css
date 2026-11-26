@@ -34,7 +34,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--et-tab-inactive-color, var(--et-surface-interaction, inherit));
+    color: var(--et-tab-inactive-color, var(--et-surface-control-text, inherit));
     cursor: pointer;
     position: relative;
     white-space: nowrap;
@@ -180,10 +180,24 @@
     bottom: var(--et-nav-tab-link-padding-block);
   }
 
+  .et-tab-group__trigger:not(.et-tab-group__trigger--active):not(:disabled):focus-visible,
+  .et-nav-tab-link:not(.et-nav-tab-link--active):not(.et-nav-tab-link--disabled):focus-visible {
+    color: var(
+      --et-tab-inactive-color,
+      var(
+        --et-surface-control-text-focus,
+        var(--et-surface-control-text-hover, var(--et-surface-control-text, inherit))
+      )
+    );
+  }
+
   @media (hover: hover) {
     .et-tab-group__trigger:not(.et-tab-group__trigger--active):not(:disabled):hover,
     .et-nav-tab-link:not(.et-nav-tab-link--active):not(.et-nav-tab-link--disabled):hover {
-      color: var(--et-tab-hover-color, var(--et-tab-inactive-color, var(--et-surface-interaction, inherit)));
+      color: var(
+        --et-tab-hover-color,
+        var(--et-tab-inactive-color, var(--et-surface-control-text-hover, var(--et-surface-control-text, inherit)))
+      );
 
       .et-tab-bar-underline {
         opacity: var(--et-tab-hover-underline-opacity, 0);
@@ -194,6 +208,28 @@
     .et-nav-tab-link.et-nav-tab-link--active:not(.et-tab-bar-trigger--just-activated):hover {
       background: color-mix(in srgb, var(--et-tone-fill, rgb(0 0 0)) 8%, transparent);
     }
+  }
+
+  .et-tab-group__trigger:not(.et-tab-group__trigger--active):not(:disabled):active,
+  .et-nav-tab-link:not(.et-nav-tab-link--active):not(.et-nav-tab-link--disabled):active {
+    color: var(
+      --et-tab-hover-color,
+      var(
+        --et-tab-inactive-color,
+        var(
+          --et-surface-control-text-active,
+          var(--et-surface-control-text-hover, var(--et-surface-control-text, inherit))
+        )
+      )
+    );
+  }
+
+  .et-tab-group__trigger:not(.et-tab-group__trigger--active):disabled,
+  .et-nav-tab-link.et-nav-tab-link--disabled:not(.et-nav-tab-link--active) {
+    color: var(
+      --et-tab-inactive-color,
+      var(--et-surface-control-text-disabled, var(--et-surface-control-text, inherit))
+    );
   }
 
   .et-tab-group__trigger.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):focus-visible,

@@ -66,16 +66,16 @@
 
   @media (hover: hover) {
     .et-ml-rte-lang-trigger:hover:not(:disabled) {
-      background: color-mix(in srgb, var(--et-surface-interaction) 12%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 12%, transparent);
     }
   }
 
   .et-ml-rte-lang-trigger:focus-visible {
-    background: color-mix(in srgb, var(--et-surface-interaction) 16%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint) 16%, transparent);
   }
 
   .et-ml-rte-lang-trigger:active:not(:disabled) {
-    background: color-mix(in srgb, var(--et-surface-interaction) 20%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint) 20%, transparent);
   }
 
   .et-ml-rte-lang-trigger:disabled {
@@ -99,6 +99,6 @@
     inline-size: var(--et-multi-language-rich-text-editor-badge-size);
     block-size: var(--et-multi-language-rich-text-editor-badge-size);
     border-radius: 50%;
-    background: var(--et-tone-fill, var(--et-surface-interaction, currentColor));
+    background: var(--et-tone-fill, var(--et-surface-control-text, currentColor));
   }
 }

@@ -23,10 +23,10 @@ const SECTIONS: { label: ShellSection; icon: string }[] = [
   { label: 'Inbox', icon: 'inbox' },
 ];
 
-const HOVER_PRESS = 'bg-transparent hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15';
+const HOVER_PRESS = 'bg-transparent hover:bg-et-surface-control-text/9 active:bg-et-surface-control-text/15';
 
 const HOVER_PRESS_RAISED =
-  'hover:bg-linear-to-b hover:from-et-surface-interaction/9 hover:to-et-surface-interaction/9 active:bg-linear-to-b active:from-et-surface-interaction/15 active:to-et-surface-interaction/15';
+  'hover:bg-linear-to-b hover:from-et-surface-control-text/9 hover:to-et-surface-control-text/9 active:bg-linear-to-b active:from-et-surface-control-text/15 active:to-et-surface-control-text/15';
 
 @Component({
   selector: 'ethlete-shell-main',

@@ -25,6 +25,6 @@ describe('match-participant.component.css emblem frame tokens', () => {
     const body = css.match(/\.et-match-participant-shield\s*\{([^}]*)\}/)?.[1] ?? '';
 
     expect(body).toContain('var(--et-surface-border');
-    expect(body).toContain('var(--et-surface-interaction');
+    expect(body).toContain('var(--et-surface-tint');
   });
 });

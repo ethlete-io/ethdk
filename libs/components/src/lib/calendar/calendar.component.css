@@ -39,12 +39,12 @@
 
       @media (hover: hover) {
         &:not([disabled], [aria-disabled='true']):hover {
-          background: color-mix(in srgb, var(--et-surface-interaction) 12%, transparent);
+          background: color-mix(in srgb, var(--et-surface-tint) 12%, transparent);
         }
       }
 
       &:not([disabled], [aria-disabled='true']):active {
-        background: color-mix(in srgb, var(--et-surface-interaction) 22%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint) 22%, transparent);
       }
 
       &:focus-visible {
@@ -237,7 +237,7 @@
 
       @media (hover: hover) {
         &:where(:not([data-disabled])):hover .et-calendar-cell-content {
-          background: color-mix(in srgb, var(--et-surface-interaction) 12%, transparent);
+          background: color-mix(in srgb, var(--et-surface-tint) 12%, transparent);
         }
       }
 

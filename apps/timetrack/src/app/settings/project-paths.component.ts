@@ -51,7 +51,7 @@ export type PathLink = { path: string; target: ProjectLinkTarget };
         @for (row of rows(); track row.path) {
           <li
             [attr.data-path]="row.path"
-            class="group grid grid-cols-[5rem_minmax(0,1fr)_7rem_13rem_11rem_20rem] items-center gap-x-3 rounded-md px-2 text-small hover:bg-et-surface-interaction"
+            class="group grid grid-cols-[5rem_minmax(0,1fr)_7rem_13rem_11rem_20rem] items-center gap-x-3 rounded-md px-2 text-small hover:bg-et-surface-control-text"
           >
             <span class="text-et-surface-text-subtle">{{ row.kind }}</span>
 

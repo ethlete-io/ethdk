@@ -101,7 +101,7 @@
       padding-inline: 10px;
       border-radius: var(--et-select-option-border-radius);
       border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
-      background: color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 6%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, rgb(255 255 255)) 6%, transparent);
       color: inherit;
       font: inherit;
       outline: none;

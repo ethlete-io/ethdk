@@ -88,14 +88,14 @@
       &:where([data-active]:hover) {
         background: var(
           --et-select-option-background-hover,
-          color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 12%, transparent)
+          color-mix(in srgb, var(--et-surface-tint, rgb(255 255 255)) 12%, transparent)
         );
         color: var(--et-select-option-color-hover, var(--_et-select-option-color-rest));
       }
     }
 
     &:active {
-      background: color-mix(in srgb, var(--et-surface-interaction, rgb(255 255 255)) 20%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, rgb(255 255 255)) 20%, transparent);
     }
 
     &:where([aria-disabled='true']) {

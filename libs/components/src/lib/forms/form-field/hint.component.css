@@ -12,7 +12,7 @@
     }
 
     &[data-disabled] .et-form-field-hint {
-      color: var(--et-surface-interaction-disabled, currentColor);
+      color: var(--et-surface-control-text-disabled, currentColor);
     }
   }
 }

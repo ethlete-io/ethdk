@@ -10,7 +10,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { RuntimeError, SurfaceInteractiveDirective } from '@ethlete/core';
+import { RuntimeError } from '@ethlete/core';
 import { ScrollableDirective } from '../../scrollable/headless/scrollable.directive';
 import { TAB_ERROR_CODES } from '../tab-errors';
 import { TAB_BAR_TOKEN, TAB_BAR_TRIGGER_TOKEN } from './tab-bar.tokens';
@@ -20,7 +20,6 @@ let nextTriggerId = 0;
 @Directive({
   selector: '[etTabBarTrigger]',
   providers: [{ provide: TAB_BAR_TRIGGER_TOKEN, useExisting: TabBarTriggerDirective }],
-  hostDirectives: [SurfaceInteractiveDirective],
   host: {
     role: 'tab',
     '[attr.id]': 'ID',

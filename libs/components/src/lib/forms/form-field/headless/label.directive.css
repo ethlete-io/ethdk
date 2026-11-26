@@ -20,6 +20,6 @@
   }
 
   et-label[data-disabled] .et-label-required-marker {
-    color: var(--et-surface-interaction-disabled, currentColor);
+    color: var(--et-surface-control-text-disabled, currentColor);
   }
 }

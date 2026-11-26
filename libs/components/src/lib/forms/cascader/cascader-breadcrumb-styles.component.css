@@ -52,13 +52,13 @@
 
       @media (hover: hover) {
         &:hover {
-          background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 12%, transparent);
+          background: color-mix(in srgb, var(--et-surface-tint, currentColor) 12%, transparent);
           color: var(--et-surface-text, currentColor);
         }
       }
 
       &:focus-visible {
-        background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 16%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint, currentColor) 16%, transparent);
         color: var(--et-surface-text, currentColor);
       }
 

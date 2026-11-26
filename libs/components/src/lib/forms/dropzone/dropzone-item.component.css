@@ -26,7 +26,7 @@
       block-size: var(--et-dropzone-thumbnail-size);
       overflow: hidden;
       border-radius: calc(var(--et-dropzone-border-radius) / 2);
-      background-color: color-mix(in srgb, var(--et-surface-interaction, currentColor) 8%, transparent);
+      background-color: color-mix(in srgb, var(--et-surface-tint, currentColor) 8%, transparent);
 
       .et-dropzone-preview-image {
         inline-size: 100%;

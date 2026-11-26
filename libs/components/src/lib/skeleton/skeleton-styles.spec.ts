@@ -42,10 +42,10 @@ describe('skeleton styles', () => {
     expect(css).not.toContain('@property --et-skeleton-color');
     expect(css).not.toContain('@property --et-skeleton-highlight-color');
     expect(ruleBody('.et-skeleton-item')).toMatch(
-      /background: var\(\s*--et-skeleton-color,\s*color-mix\(in srgb, var\(--et-surface-interaction, gray\) 12%, transparent\)\s*\);/,
+      /background: var\(\s*--et-skeleton-color,\s*color-mix\(in srgb, var\(--et-surface-tint, gray\) 12%, transparent\)\s*\);/,
     );
     expect(css).toMatch(
-      /var\(\s*--et-skeleton-highlight-color,\s*color-mix\(in srgb, var\(--et-surface-interaction, gray\) 16%, transparent\)\s*\)/,
+      /var\(\s*--et-skeleton-highlight-color,\s*color-mix\(in srgb, var\(--et-surface-tint, gray\) 16%, transparent\)\s*\)/,
     );
   });
 

@@ -126,11 +126,11 @@
     }
 
     &:not(:where([aria-disabled])):hover {
-      background: color-mix(in srgb, var(--et-surface-interaction, gray) 7%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, gray) 7%, transparent);
     }
 
     &:not(:where([aria-disabled])):active {
-      background: color-mix(in srgb, var(--et-surface-interaction, gray) 14%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, gray) 14%, transparent);
     }
 
     &:focus-visible {

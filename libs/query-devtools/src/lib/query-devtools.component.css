@@ -7,7 +7,7 @@
     --_et-qdt-muted: var(--et-surface-text-muted, rgb(161 161 170));
     --_et-qdt-subtle: var(--et-surface-text-subtle, rgb(113 113 122));
     --_et-qdt-border: var(--et-surface-border, rgb(255 255 255 / 0.12));
-    --_et-qdt-interaction: var(--et-surface-interaction, rgb(255 255 255));
+    --_et-qdt-interaction: var(--et-surface-control-text, rgb(255 255 255));
     /* Two weights of edge, and the difference is what makes a control read as one: `--_et-qdt-border`
        separates things that sit next to each other (rows, panes, cards), `--_et-qdt-line` outlines
        something that can be pressed. A control drawn with the separator weight disappears into the

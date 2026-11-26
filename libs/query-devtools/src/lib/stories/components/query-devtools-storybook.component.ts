@@ -987,7 +987,7 @@ export class QdOverlayBarComponent {
         padding: 1px 5px;
         border: 1px solid var(--et-surface-border);
         border-radius: 4px;
-        background: color-mix(in srgb, var(--et-surface-interaction) 10%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint) 10%, transparent);
         font-family: ui-monospace, monospace;
         font-size: 0.9em;
       }

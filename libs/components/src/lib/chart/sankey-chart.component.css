@@ -129,7 +129,7 @@
     }
 
     &:where([data-active]) .et-sankey-chart-node-target {
-      fill: color-mix(in srgb, var(--et-surface-interaction, currentColor) 8%, transparent);
+      fill: color-mix(in srgb, var(--et-surface-tint, currentColor) 8%, transparent);
     }
 
     &:focus-visible .et-sankey-chart-node-target {

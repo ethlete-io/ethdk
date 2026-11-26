@@ -34,11 +34,11 @@
 
   .et-table-expander:hover,
   .et-table-expander:focus-visible {
-    background: color-mix(in srgb, var(--et-surface-interaction, gray) 12%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 12%, transparent);
   }
 
   .et-table-expander:active {
-    background: color-mix(in srgb, var(--et-surface-interaction, gray) 24%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 24%, transparent);
   }
 
   /* The shared `et-chevron` points up, and the expander wants it pointing at what it opens: right

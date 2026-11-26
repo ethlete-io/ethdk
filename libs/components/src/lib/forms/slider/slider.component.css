@@ -101,7 +101,7 @@
       inline-size: 100%;
       block-size: var(--et-slider-track-size);
       border-radius: 999px;
-      background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 32%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, currentColor) 32%, transparent);
     }
 
     .et-slider-fill {

@@ -64,7 +64,7 @@
     }
 
     &:where(button):hover {
-      background: color-mix(in srgb, var(--et-surface-interaction, #777) 12%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, #777) 12%, transparent);
     }
 
     &:where(button)[aria-pressed='true']:hover {
@@ -146,7 +146,7 @@
       inline-size: 50%;
       block-size: 50%;
       border-radius: 50%;
-      background: var(--et-surface-interaction, #777);
+      background: var(--et-surface-control-text, #777);
       opacity: 0;
       transition: opacity 120ms ease;
     }

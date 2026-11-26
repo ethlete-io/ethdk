@@ -173,7 +173,7 @@ body {
 
   option:hover,
   option:focus-visible {
-    background: color-mix(in srgb, var(--et-surface-interaction) 14%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint) 14%, transparent);
     outline: none;
   }
 }

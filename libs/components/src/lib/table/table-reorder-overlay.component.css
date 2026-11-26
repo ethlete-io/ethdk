@@ -36,7 +36,7 @@
     background: var(--et-surface-background, Canvas);
     border: 1px solid var(--et-surface-border, rgb(128 128 128 / 0.3));
     border-radius: 6px;
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--et-surface-interaction, black) 18%, transparent);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--et-surface-tint, black) 18%, transparent);
     pointer-events: none;
   }
 }

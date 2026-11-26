@@ -45,7 +45,7 @@
     }
 
     .et-time-picker-track {
-      stroke: color-mix(in srgb, var(--et-surface-interaction, currentColor) 14%, transparent);
+      stroke: color-mix(in srgb, var(--et-surface-tint, currentColor) 14%, transparent);
     }
 
     .et-time-picker-arc {

@@ -36,7 +36,7 @@ const SHOWN_LINES = 3;
                     @if (line.target; as target) {
                       <button
                         (click)="openPoint.emit(target)"
-                        class="flex w-full cursor-pointer items-center gap-space-2 border-0 bg-transparent px-space-3 py-space-1 text-start [font:inherit] outline-none [transition:var(--transition-state)] hover:bg-et-surface-interaction/9 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)] active:bg-et-surface-interaction/15"
+                        class="flex w-full cursor-pointer items-center gap-space-2 border-0 bg-transparent px-space-3 py-space-1 text-start [font:inherit] outline-none [transition:var(--transition-state)] hover:bg-et-surface-control-text/9 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)] active:bg-et-surface-control-text/15"
                         type="button"
                         data-open-point-target
                       >

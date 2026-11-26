@@ -325,7 +325,7 @@
         &:where(:not([data-appearance='underline'])) .et-form-field-control-frame {
           background: color-mix(
             in srgb,
-            var(--et-surface-interaction, currentColor) 6%,
+            var(--et-surface-control-text, currentColor) 6%,
             var(--_et-form-field-control-background)
           );
         }

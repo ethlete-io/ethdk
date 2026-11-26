@@ -338,7 +338,7 @@
     font-weight: var(--et-match-card-status-font-weight);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    background: color-mix(in srgb, var(--et-surface-interaction, gray) 12%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 12%, transparent);
     border-radius: 4px;
   }
 
@@ -528,7 +528,7 @@
     padding-inline: 5px;
     font-variant-numeric: tabular-nums;
     line-height: 18px;
-    background: color-mix(in srgb, var(--et-surface-interaction, gray) 10%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 10%, transparent);
     border-radius: 4px;
   }
 
@@ -539,7 +539,7 @@
   /* Bare rather than `:where()`-flattened: an interaction state is meant to escalate over the config
      modifiers above it. */
   .et-match-card:where([data-interactive]):hover .et-match-card-content {
-    background: color-mix(in srgb, var(--et-surface-interaction, gray) 6%, var(--et-surface-background, transparent));
-    border-color: color-mix(in srgb, var(--et-surface-interaction, gray) 24%, var(--et-surface-border, transparent));
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 6%, var(--et-surface-background, transparent));
+    border-color: color-mix(in srgb, var(--et-surface-tint, gray) 24%, var(--et-surface-border, transparent));
   }
 }

@@ -231,13 +231,13 @@
 
     @media (hover: hover) {
       &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction, gray) 10%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint, gray) 10%, transparent);
         color: var(--et-surface-text, currentColor);
       }
     }
 
     &:active {
-      background: color-mix(in srgb, var(--et-surface-interaction, gray) 18%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, gray) 18%, transparent);
     }
 
     &:focus-visible {
@@ -267,7 +267,7 @@
   }
 
   .et-standings-row:where([data-highlighted]) {
-    background: color-mix(in srgb, var(--et-surface-interaction, gray) 12%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 12%, transparent);
   }
 
   .et-standings-row:where([data-highlighted]) .et-standings-cell {
@@ -313,7 +313,7 @@
   }
 
   .et-standings-form-result:where([data-result='loss']) {
-    background: color-mix(in srgb, var(--et-surface-interaction, gray) 25%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, gray) 25%, transparent);
   }
 
   .et-standings-legend {

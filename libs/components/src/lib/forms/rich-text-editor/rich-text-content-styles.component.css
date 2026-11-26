@@ -147,7 +147,7 @@
     code {
       padding: 0.1em 0.3em;
       border-radius: 4px;
-      background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 14%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, currentColor) 14%, transparent);
       font-family: var(--et-font-family-mono, ui-monospace, monospace);
       font-size: 0.9em;
     }
@@ -170,7 +170,7 @@
       margin-block-end: 0;
       padding: 8px 10px;
       border-radius: var(--et-rich-text-editor-code-block-radius);
-      background: color-mix(in srgb, var(--et-surface-interaction, currentColor) 10%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, currentColor) 10%, transparent);
       font-family: var(--et-font-family-mono, ui-monospace, monospace);
       font-size: 0.9em;
       /* pre-wrap, not pre: newlines are the block's content (Enter inserts one), but a long line
@@ -187,7 +187,7 @@
     }
 
     .et-rte-token {
-      --_et-rte-token-accent: var(--et-tone-fill, var(--et-surface-interaction, currentColor));
+      --_et-rte-token-accent: var(--et-tone-fill, var(--et-surface-control-text, currentColor));
 
       display: inline;
       padding-inline: var(--et-rich-text-editor-token-padding-inline);

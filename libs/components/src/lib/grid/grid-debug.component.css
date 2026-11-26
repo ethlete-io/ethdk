@@ -51,7 +51,7 @@
     padding: 2px 8px;
     border: 1px solid var(--et-surface-border, #d1d5db);
     border-radius: 3px;
-    background: var(--et-surface-interaction, #fff);
+    background: var(--et-surface-control-text, #fff);
     cursor: pointer;
     font-size: 11px;
     color: var(--et-surface-text, #374151);
@@ -93,7 +93,7 @@
   }
 
   .et-grid-debug-head-row {
-    background: var(--et-surface-interaction, #f3f4f6);
+    background: var(--et-surface-control-text, #f3f4f6);
   }
 
   .et-grid-debug-cell {

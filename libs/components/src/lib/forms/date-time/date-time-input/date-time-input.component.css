@@ -38,7 +38,7 @@
     }
 
     et-form-field[data-disabled] & .et-date-time-input-local-reading {
-      color: var(--et-surface-interaction-disabled, currentColor);
+      color: var(--et-surface-control-text-disabled, currentColor);
     }
 
     &[data-mixed] .et-date-time-input-field::placeholder {

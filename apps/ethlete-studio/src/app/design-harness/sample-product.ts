@@ -65,7 +65,7 @@ export const sampleBar = (state: string, fluid = false) => {
     ><span class="text-et-surface-text">Pflanzen</span><span>Töpfe</span><span>Pflege</span><span>Geschenke</span></span
   >
   <span
-    class="ml-auto ${fluid ? 'hidden md:flex' : 'flex'} h-9 w-2xl items-center gap-space-2 rounded-full bg-et-surface-interaction/8 px-space-4 text-ui-sm text-et-surface-text-muted inset-ring inset-ring-et-surface-border"
+    class="ml-auto ${fluid ? 'hidden md:flex' : 'flex'} h-9 w-2xl items-center gap-space-2 rounded-full bg-et-surface-control-text/8 px-space-4 text-ui-sm text-et-surface-text-muted inset-ring inset-ring-et-surface-border"
     data-farn-search
     ><svg viewBox="0 0 16 16" class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5" /><path d="m10.5 10.5 3 3" /></svg
     >Pflanzen suchen</span
@@ -76,7 +76,7 @@ export const sampleBar = (state: string, fluid = false) => {
 
 const stepperTone = (interaction: string) =>
   interaction === 'hover'
-    ? 'bg-et-surface-interaction/14'
+    ? 'bg-et-surface-control-text/14'
     : interaction === 'active'
       ? 'bg-et-surface-border'
       : interaction === 'focus-visible'

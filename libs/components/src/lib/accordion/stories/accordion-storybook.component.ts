@@ -136,7 +136,7 @@ export class AccordionLazyStorybookComponent {
         box-shadow 160ms ease;
 
       &:has(> .et-sb-step-heading > .et-sb-step-trigger:hover) {
-        background: color-mix(in srgb, var(--et-surface-interaction) 6%, var(--et-surface-background));
+        background: color-mix(in srgb, var(--et-surface-tint) 6%, var(--et-surface-background));
       }
 
       &[data-open] {

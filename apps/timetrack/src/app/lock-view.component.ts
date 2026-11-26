@@ -15,7 +15,7 @@ import { injectWindowLock } from './window-lock';
   template: `
     <div class="flex h-dvh flex-col items-center justify-center p-6" data-tauri-drag-region="deep">
       <div
-        class="flex w-90 flex-col gap-5 rounded-xl border border-et-surface-border bg-et-surface-interaction/8 p-8 shadow-lg"
+        class="flex w-90 flex-col gap-5 rounded-xl border border-et-surface-border bg-et-surface-control-text/8 p-8 shadow-lg"
       >
         <div class="flex flex-col items-start gap-1">
           <div class="w-50"><ethlete-logo /></div>
