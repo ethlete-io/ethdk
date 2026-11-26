@@ -27,7 +27,14 @@ if (import.meta.main) {
   try {
     const result = spawnSync(
       'npx',
-      ['nx', 'run', 'cli:compile-tsc', `--outputPath=${relative(process.cwd(), run)}`, '--skip-nx-cache'],
+      [
+        'nx',
+        'run',
+        'cli:compile-tsc',
+        `--outputPath=${relative(process.cwd(), run)}`,
+        '--skip-nx-cache',
+        '--excludeTaskDependencies',
+      ],
       {
         stdio: 'inherit',
         shell: process.platform === 'win32',
