@@ -56,6 +56,18 @@ vi.mock('vite', () => ({
 
 vi.mock('@tailwindcss/postcss', () => ({ default: () => ({}) }));
 
+const rendered = vi.hoisted(() => new Set<string>());
+
+vi.mock('./render', async (original) => {
+  const actual = await original<typeof import('./render')>();
+
+  return {
+    ...actual,
+    createRenderer: (options: Parameters<typeof actual.createRenderer>[0]) =>
+      Object.assign(actual.createRenderer(options), { loadedFiles: () => [...rendered] }),
+  };
+});
+
 const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('drawn png'));
 
 vi.mock('./browser', async (original) => ({
@@ -102,6 +114,7 @@ beforeEach(() => vi.stubEnv('ETHLETE_DESIGN_SLOW_CHECKS', 'off'));
 afterEach(() => {
   process.chdir(cwd);
   created.length = 0;
+  rendered.clear();
   vi.restoreAllMocks();
   screenshot.mockClear();
 });
@@ -315,6 +328,74 @@ describe('the shots a design server keeps on disk', () => {
     expect((await (await start(target, graph)).shot(query)).source).toBe('drawn');
     await vi.waitFor(() => expect(storedIn(target)).toHaveLength(1));
     expect((await (await start(target)).shot(query)).source).toBe('disk');
+  });
+});
+
+describe('a shot of a part whose Angular template the render worker draws from a built package', () => {
+  const withSdkComponents = () => {
+    const { target, files } = acme();
+    const configPath = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as object;
+    const components = join(target, 'dist/libs/components/fesm2022/ethlete-components.mjs');
+
+    writeFileSync(configPath, JSON.stringify({ ...config, render: { packages: { '@ethlete/*': 'dist/libs/*' } } }));
+    mkdirSync(dirname(components), { recursive: true });
+    writeFileSync(components, '/* .et-window-control-button { background: var(--et-tone-fill); } */\n');
+    rendered.add(components);
+    onTestFinished(() => {
+      screenshot.mockImplementation(async () => Buffer.from('drawn png'));
+      rmSync(target, { recursive: true, force: true });
+    });
+
+    return { target, files, components };
+  };
+
+  it('is drawn again once a rebuild changes the component CSS in that package', async () => {
+    const { target, files, components } = withSdkComponents();
+    const server = await start(target, graphOf(files));
+
+    expect((await server.shot()).source).toBe('drawn');
+    expect((await server.shot()).source).toBe('memory');
+    await vi.waitFor(() => expect(storedIn(target)).toHaveLength(1));
+
+    writeFileSync(
+      components,
+      '/* .et-window-control-button { background: color-mix(in srgb, var(--et-tone-fill) 10%, transparent); } */\n',
+    );
+    screenshot.mockImplementation(async () => Buffer.from('changed png'));
+    server.watch('change', components);
+
+    await vi.waitFor(async () =>
+      expect(await server.shot()).toMatchObject({ source: 'drawn', body: Buffer.from('changed png') }),
+    );
+  });
+
+  it('is not served from disk by the next server once the component CSS in that package changed', async () => {
+    const { target, files, components } = withSdkComponents();
+
+    expect((await (await start(target, graphOf(files))).shot()).source).toBe('drawn');
+    await vi.waitFor(() => expect(storedIn(target)).toHaveLength(1));
+
+    writeFileSync(
+      components,
+      '/* .et-window-control-button { background: color-mix(in srgb, var(--et-tone-fill) 10%, transparent); } */\n',
+    );
+    screenshot.mockImplementation(async () => Buffer.from('changed png'));
+
+    expect(await (await start(target, graphOf(files))).shot()).toMatchObject({
+      source: 'drawn',
+      body: Buffer.from('changed png'),
+    });
+  });
+
+  it('is still served from disk by the next server when the package was rebuilt to the same code', async () => {
+    const { target, files, components } = withSdkComponents();
+
+    await (await start(target, graphOf(files))).shot();
+    await vi.waitFor(() => expect(storedIn(target)).toHaveLength(1));
+    writeFileSync(components, readFileSync(components));
+
+    expect((await (await start(target, graphOf(files))).shot()).source).toBe('disk');
   });
 });
 

@@ -69,6 +69,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
   const sentTo = new Map<number, Worker>();
   let worker: Worker | null = null;
   let watched: Record<string, number> = {};
+  const everLoaded = new Set<string>();
   let nextId = 0;
 
   const settleAll = (error: string) => {
@@ -96,6 +97,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
       const { id, watched: loaded, lines, ...result } = response;
 
       if (started === worker) watched = { ...loaded };
+      for (const path of Object.keys(loaded)) everLoaded.add(path);
       answer(id, { ...result, lines });
     });
     started.on('error', (error) =>
@@ -175,7 +177,12 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
     await stopped?.terminate();
   };
 
-  return Object.assign(render, { close, warm });
+  return Object.assign(render, {
+    close,
+    warm,
+    /** Every file a render worker of this renderer loaded, the packages it maps among them. */
+    loadedFiles: () => [...everLoaded],
+  });
 };
 
 const readBody = (request: IncomingMessage) =>

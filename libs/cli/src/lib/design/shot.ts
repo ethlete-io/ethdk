@@ -1306,6 +1306,12 @@ export const createPartShooter = (options: {
         if ('slug' in drawn && callDrawsFrom({ slug: drawn.slug, file })) cache.delete(key);
       }
     },
+    /** Drops every picture kept in memory, so the next ask serves a stored one only while the files it was drawn from read the same. */
+    recheck: () => {
+      edits++;
+      cache.clear();
+      motions.clear();
+    },
     /** Drops every picture; `announced` says the caller told Studio that every part redraws. */
     clear: ({ announced }: { announced: boolean }) => {
       edits++;

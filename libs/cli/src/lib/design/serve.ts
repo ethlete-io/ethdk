@@ -530,6 +530,7 @@ const shotStoreOf = (options: {
   salt: string;
   code: string;
   moduleById: (id: string) => ImportingModule | undefined;
+  renderedFiles?: () => string[];
 }) => {
   const { target, config, system, stylesheetImports, dir, salt, code, moduleById } = options;
   const drawnSystemsOf = (address: StoredAddress) => [
@@ -574,6 +575,7 @@ const shotStoreOf = (options: {
       return [
         ...dependencyFilesOf([...roots.flatMap((root) => root ?? []), ...styles], stylesheetImports),
         ...read,
+        ...(options.renderedFiles?.() ?? []),
         configPathOf(target),
         resolve(target, 'tsconfig.base.json'),
         ...(entry.head ? [resolve(target, entry.head)] : []),
@@ -737,6 +739,7 @@ const designExplore = ({
                 salt: '',
                 code: designPictureCodeOf(),
                 moduleById: (id) => vite.moduleGraph.getModuleById(id),
+                renderedFiles: renderer.loadedFiles,
               }),
             }
           : {}),
@@ -858,12 +861,22 @@ const designExplore = ({
       const rebuilt = new Set<string>();
       let settling: AbortController | undefined;
 
+      const isRendered = (file: string) => renderer.loadedFiles().includes(file);
+
       const redrawRebuilt = () => {
         const changed = [...rebuilt].filter((rewritten) => !isAsLoaded(rewritten));
         const modules = changed.flatMap(modulesOf);
         const [file] = changed;
 
         rebuilt.clear();
+        if (changed.some(isRendered)) {
+          revision += 1;
+          forgetUnchangedStates();
+          detachRunningListings();
+          thumbs.clear();
+          shots.recheck();
+          events.signal('parts', { revision, ...ALL_PARTS });
+        }
         if (!file || modules.length === 0) return;
 
         const dependents = dependentIdsOf(modules, stylesheetImports);
@@ -875,7 +888,7 @@ const designExplore = ({
       // A package build deletes its folder and writes it anew; a module stays stale unless it is
       // invalidated once the new file is there, so `unlink` alone redraws nothing.
       const packageChanged = (file: string) => {
-        if (modulesOf(file).length === 0) return;
+        if (modulesOf(file).length === 0 && !isRendered(resolve(file))) return;
 
         rebuilt.add(resolve(file));
         settling?.abort();
