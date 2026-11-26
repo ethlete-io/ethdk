@@ -590,3 +590,12 @@ Thrown by `@ethlete/core`, in dev mode only.
 | Code     | Cause                                                                                                                                                   | Fix                                                                                                                                                                                      |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ET9100` | An unsaved-changes tracker or guard has no `confirm`, and no `provideUnsavedChangesConfirm()` is in scope. A production build lets the discard through. | Pass `confirm`, or provide one app-wide - `provideUnsavedChangesAlertDialog()` from `@ethlete/components`, see [One confirm for the whole app](/core/utilities#unsaved-changes-confirm). |
+
+## Core theming (ET92xx)
+
+Thrown by `@ethlete/core`, in dev mode only.
+
+| Code     | Cause                                                                                                                       | Fix                                                     |
+| -------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `ET9200` | Two or more color themes passed to `provideColorThemesWithTailwind4()` are marked `isDefault: true`.                        | Keep `isDefault: true` on one color theme only.         |
+| `ET9201` | Two or more surface themes of the same `type` passed to `provideSurfaceThemesWithTailwind4()` are marked `isDefault: true`. | Keep `isDefault: true` on one surface theme per `type`. |
