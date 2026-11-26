@@ -6567,7 +6567,7 @@ dependencies = [
 
 [[package]]
 name = "timetrack"
-version = "0.2.0-next.25"
+version = "0.2.0-next.26"
 dependencies = [
  "aws-lc-rs",
  "base64 0.22.1",

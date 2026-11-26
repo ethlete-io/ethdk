@@ -1,5 +1,44 @@
 # Changelog
 
+## 1.0.0-next.101
+
+### Major Changes
+
+- Remove `activeUnderline` from `provideTabsConfig`: the active underline is always on unless a tab bar sets `[activeUnderline]="false"`. The `tabs-active-underline` migration removes the key from `provideTabsConfig({...})` calls.
+- `SurfaceInteractiveDirective` (`[etSurfaceInteractive]`) and its `et-surface-interactive` class are removed; `etButton` no longer adds it. The `et-surface-tint` utilities read the surface text color where no theme sets `tint`. `et update` runs `@ethlete/core:migrate-remove-surface-interactive`, which drops the attribute, the class and the imports.
+- Components read the new theme token names (`--et-tone-*`, `--et-surface-text*`, colour values); `--et-button-filled-hover-rgb` is now `--et-button-filled-hover` and takes a colour. Regenerate your theme files with the current `@ethlete/core` generators.
+- Component styles read `--et-surface-tint` and `--et-surface-control-text*` instead of `--et-surface-interaction*`; inactive tabs take their hover, focus, pressed and disabled colour from the control-text ladder.
+
+### Minor Changes
+
+- Swiss brackets draw a new default round header: round, rule and record above each group, toned with its border from the app's semantic themes. It beats the global header; `provideBracketConfig({ swiss })` overrides it.
+
+### Patch Changes
+
+- `et-segmented-button-group` with `variant="tabs"` now reads the `--et-tab-text-transform`, `--et-tab-font-weight`, `--et-tab-line-height`, `--et-tab-letter-spacing` and `--et-tab-inactive-color` tokens like the tab group and nav tabs.
+- `no-old-theme-token` now flags the retired surface `interaction` tokens and utilities (use `tint` and `control-text`).
+- Destroying an open select, cascader, color input, date picker or `etOverlay` host no longer logs `NG0953` for its outputs.
+- `migrate-overlay-and-column-api` now rewrites a config object shared by several openers and `allColumns` reads on a `TableColumnVisibilityHost`, and reports an inferred overlay result forwarded to another callback at the call.
+- A `filled` badge no longer draws a visible border; `tonal` and `outline` keep theirs.
+- A bracket without `swissBracketLayout()` no longer bundles the swiss tone theming (about 1.7 kB gz less).
+- Added the merge-only `EthleteColorThemeNames` interface (one `true` member per theme name), so several sheets can register theme names; the `tailwind-4-color-theme` generator now writes it and `EthleteColorThemeNameRegistry['name']` is deprecated but still read.
+- Pagination page numbers and arrows now sit at the vertical centre of their button instead of one pixel below it.
+- `@ethlete/components/design/toggletip` draws an open `et-toggletip` in its overlay pane for design parts, with `toggletip()` and `toggletipStyles`.
+- The design kit `menu()` takes an `errorColor` option and draws destructive items in that color theme instead of the accent.
+- `et update` migrates overlay callbacks typed `T | null`, `injectCommandPalette` and `TableColumnVisibilityHost.allColumns` to the current API, and stops with each `file:line` it cannot rewrite.
+- A responsive `et-pagination` collapses to the compact pager only when even its shortest number row does not fit its measured width, instead of below a fixed 480px. The compact pager keeps the regular 44px touch size.
+- `et-scrollable` no longer jumps back when it reaches the end with `--et-scrollable-buttons-end-space` set. The end space stays while the list can scroll, so it also shows after the last item.
+- The bracket stories no longer force `roundHeaderGap` 20 on every layout, so the swiss story shows the swiss default of 12, and the round header text renders with subpixel glyph positioning so the letter spacing stays even.
+- The swiss round header sits flush on the bottom of its header row, with a bolder, wider-spaced name and a full-strength rule. Its distance to the group box is now `roundHeaderGap` alone; the Swiss story sets it to 12.
+- The swiss layout defaults `roundHeaderGap` to 12 and the new `swissGroupBorderWidth` to 1 (other layouts keep 20 and 2), via the new `BracketLayout.defaults`. The round header letter-spacing is back to 0.08em, and the header follows `--et-bracket-swiss-group-border-color` like the group boxes.
+- Destroying a toggletip while it is open no longer logs `NG0953` for the `open` model.
+- Fix the toggletip surface sticking out of its centred pane: the host now takes the same minimum width as the surface.
+- A click on a tooltip trigger now hides the tooltip, and the tooltip stays hidden while the trigger has `aria-expanded="true"` (toggletip, menu, dialog open from it). Hover shows it again after the popup closes.
+- A long press on a touch screen keeps its tooltip open again: the click the lifting finger fires no longer hides it at once.
+- `et-window-control-button` mixes its theme fill with its state opacity again, so a themed window control rests transparent (round: a 10% tint) instead of fully filled.
+- Updated dependencies:
+  - @ethlete/bracket@1.0.0-next.7
+
 ## 1.0.0-next.100
 
 ### Major Changes

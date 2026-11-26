@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.20
+
+### Patch Changes
+
+- Component styles read `--et-surface-tint` and `--et-surface-control-text*` instead of `--et-surface-interaction*`; inactive tabs take their hover, focus, pressed and disabled colour from the control-text ladder.
+- The interactive colour and surface styles, the favicon dot and the deprecated `provideColorThemes` read and write the new theme token names (`--et-tone-*`, `--et-surface-*` colours).
+
 ## 1.0.0-next.19
 
 ### Minor Changes

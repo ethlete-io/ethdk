@@ -1,5 +1,67 @@
 # ethlete-studio
 
+## 0.2.0-next.37
+
+### Minor Changes
+
+- The part view shows the sketch bar with Kommentar and the open points count at the same place as the sketch view, instead of two buttons at the top right.
+- A sketch state change names each part that only moved; Studio marks it as one move and describes changes in plain words instead of pixel counts.
+- The Inventory needs no approval: the "Inventory freigeben" button, the approval line and the "bereit zur Freigabe" frame status are gone.
+- The open points in the sketch bar are an icon button: a speech bubble with a count badge in the accent colour from one open point on, and the tooltip "n offen" or "Nichts offen".
+
+### Patch Changes
+
+- Surface themes use `tint` and `controlText`, and the regenerated theme CSS writes the new surface tokens.
+- Hover, press and fill backgrounds read the surface `tint` utility instead of `control-text`.
+- The sketch view of an `@edit` sketch reads zeichnet until the cells in view are drawn, then shows; cells out of view
+  or folded into a crop group draw after it shows.
+- An edit sketch view shows only the final compare, with change marks on both sides.
+- The interaction grid of a sketch puts a bare hover, active or focus-visible state on the line of the rest state listed
+  before it, so every line has a label.
+- The sketch pick matrix reads "entfällt" in a cell of a state the variant drops instead of leaving it empty.
+- The sketch pick view shows no agent-written round note any more; only the port line stays.
+- Later blocks of a wrapped sketch matrix shorten only a one-word head (with an optional number) to initials; any
+  other head keeps its full label.
+- The design render now scans the folders a relative `@source` or `source()` names in an imported stylesheet, and Studio's sketch frames draw the sample shop Farn.
+- The narrow Farn sample bar puts the account and the basket on the right, as the wide bar does.
+- Farn, the sample product in the sketch frames, now has its own green surface and colour theme instead of Studio's.
+- Give the Farn sample shop a drawing of its own per plant, a real search field, a balanced hero and a tinted avatar.
+- Add a `farn-page` state to the system page that draws the whole Farn sample shop, fluid from 390 to 1440 px.
+- The Farn quantity stepper's hovered count field is a soft wash on the dark stepper instead of a light grey block.
+- The part tree marks a sub-part of another layer with a small layer icon instead of the layer word.
+- `SurfaceInteractiveDirective` (`[etSurfaceInteractive]`) and its `et-surface-interactive` class are removed; `etButton` no longer adds it. The `et-surface-tint` utilities read the surface text color where no theme sets `tint`. `et update` runs `@ethlete/core:migrate-remove-surface-interactive`, which drops the attribute, the class and the imports.
+- Studio registers the Farn colour theme as a non-default theme, so Studio's own theme stays the only default.
+- The Studio menu logo and the product quick switch buttons in the sidebar have their raised background again.
+- A wheel zoom in the sketches canvas no longer makes the gaps, labels and notes jump when the zoom settles: the preview lays them out at their size at the new zoom.
+- A wheel zoom in the sketches canvas keeps frame rings and dashed boxes 1 px thick during the preview, and the side labels of a transposed matrix no longer move when the zoom settles.
+- Added the merge-only `EthleteColorThemeNames` interface (one `true` member per theme name), so several sheets can register theme names; the `tailwind-4-color-theme` generator now writes it and `EthleteColorThemeNameRegistry['name']` is deprecated but still read.
+- `design check` fails on sample text outside a product's sample data, on loose button groups in pages and on unused merged parts, and drops the inventory approval.
+- The design harness sets only the inputs a part component declares, so a prop a state uses to force an interaction no longer logs NG0303.
+- The sketch status badge hugs its icon button instead of filling the width of its parent.
+- The sketch status badge draws its icons through the SDK icon directive, and its design draws the hover, pressed and focused button and the toggletip note.
+- The sketch bar sits above the folded-states pill instead of overlapping it.
+- A change mark that reaches the edge of a drawing stays inside its frame, so the frame no longer grows by the mark's outset.
+- Show the failed-load banner at once instead of after a fetch to a busy design server, and cancel that fetch when the frame moves on.
+- Shift+1 and Fit in the sketch view fit stacked variants into the window height too, so every frame is in view.
+- Flows shows Kommentar and Notiz in the shared toolbar at the bottom of the canvas instead of in its head.
+- The sketch view's bar "N unveränderte Zustände eingeklappt" is as wide as the grid above it and zooms with it like the frames, instead of keeping the screen width and text size at every zoom.
+- The "n open" button in the sketch bar shows a checklist icon instead of a speech bubble, so it no longer looks like the comment button.
+- Inventory shows Neu laden and Start shows Anderes Repo in the shared toolbar at the bottom of the page instead of in the page head.
+- A click on a part row of a several-part sketch fits the canvas to that part instead of zooming onto its first frame.
+- Studio restarts the design server it started on the newest CLI commit once no drawing, check or merge runs in it, and offers the restart otherwise, also while `libs/cli` has uncommitted edits; `/__design/queue` reports running writes and quiet time.
+- Shift+1 in the sketch view fits the grid to the list's width again, so every frame is in view after a zoom.
+- Studio ships the SDK font files its stylesheet loads, so its text renders in Source Sans 3 again instead of a fallback font.
+- The sketch bar of the part view stays clear of the zoom control in a narrow window.
+- The sketch compare grid names its later blocks with the full head ("Aktuell", "Variante a") instead of the initial.
+- Draw the head name of every matrix block in the sketch edit view as the same pill.
+- The sketch view of a reopened Studio starts the sketch name listing, the quick listing and the compare of the remembered sketch at once, and before the product listing answers, instead of one after the other.
+- The sketch status shows as an icon button with a toggletip in the sketch bar, so the bar keeps its width, and the round button only appears from two rounds.
+- A stacked variant cell now says "+ n weitere Zustände sehen genauso aus. Klick zeigt die Namen." instead of listing the state names; a click on it opens the names.
+- A tree click on a part taller than the view shows it at 100 % with its head at the top also when the part's picture arrives after the click.
+- A tree click on a part taller than the view shows it at 100 % with its head at the top; only the Fit button zooms out.
+- Show the open-comment marker on the parts and sketches of the explorer tree.
+- Start the stacked-states names on their own line below the label.
+
 ## 0.2.0-next.36
 
 ### Patch Changes
