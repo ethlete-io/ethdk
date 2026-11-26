@@ -82,7 +82,6 @@ import {
   MATRIX_MIN_COLUMN,
   matrixBlocksOf,
   matrixWidthFit,
-  shortLabelOf,
   variantsLeaveMatrixOf,
 } from './matrix-blocks';
 import { gridColumnWidthOf, gridScaleOf, interactionGridOf, variantsStackedOf } from './interaction-grid';
@@ -345,7 +344,6 @@ export class SketchesComponent {
   protected readonly CURRENT = SKETCH_CURRENT;
   protected readonly COLUMN_GAP = COLUMN_GAP;
   protected readonly FRAME_KEY_OF = frameKeyOf;
-  protected readonly SHORT_LABEL_OF = shortLabelOf;
   public readonly STACK_INSETS = [32, 64];
 
   protected canvas = frameZoomCamera(() => {

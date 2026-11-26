@@ -152,7 +152,7 @@
                         <span
                           class="inline-flex max-w-full items-center truncate rounded-full px-1 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
                           data-sk-head-tag
-                          >{{ SHORT_LABEL_OF(row.label ?? (row.key === CURRENT ? LABELS.current : row.key)) }}</span
+                          >{{ row.label ?? (row.key === CURRENT ? LABELS.current : LABELS.variant(row.key)) }}</span
                         >
                       }
                     </section>

@@ -986,7 +986,7 @@ describe('SketchesComponent', () => {
       expect(unmeasured).toEqual([30]);
     });
 
-    it('keeps the full head over the first block only and a name tag over the later ones', async () => {
+    it('keeps the full head over the first block only and the full name over the later ones', async () => {
       const root: HTMLElement = (await render({ rows: manyOf(30, 900), camera: 'fit' })).nativeElement;
       const sections = [...root.querySelectorAll<HTMLElement>('[data-sk-matrix] [data-sk-row]')];
       const first = sections.filter((section) => section.querySelector('[data-sk-note]'));
@@ -998,11 +998,11 @@ describe('SketchesComponent', () => {
           (section) => section.querySelector('[data-sk-head-tag]') || section.querySelector('[data-sk-note]'),
         ),
       ).toBe(true);
-      expect(
-        sections
-          .filter((section) => !section.querySelector('[data-sk-note]'))
-          .every((section) => (section.querySelector('[data-sk-head-tag]')?.textContent?.trim().length ?? 0) <= 3),
-      ).toBe(true);
+      const tags = sections
+        .filter((section) => !section.querySelector('[data-sk-note]'))
+        .map((section) => section.querySelector('[data-sk-head-tag]')?.textContent?.trim());
+
+      expect(new Set(tags)).toEqual(new Set([LABELS.current, LABELS.variant('x')]));
     });
 
     it('names the later blocks of an @edit sketch with readable tags, not initials', async () => {

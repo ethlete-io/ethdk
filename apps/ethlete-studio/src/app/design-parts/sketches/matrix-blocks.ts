@@ -153,9 +153,3 @@ export const variantsLeaveMatrixOf = ({
 
   return matrix < STACK_BELOW_SCALE && stacked >= STACK_BELOW_SCALE;
 };
-
-export const shortLabelOf = (label: string) => {
-  const [, word, number = ''] = /^(\S+)(?:\s+(\d+))?$/.exec(label.trim()) ?? [];
-
-  return word ? `${word.charAt(0)}${number}` : label;
-};
