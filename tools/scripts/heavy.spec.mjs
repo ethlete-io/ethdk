@@ -97,3 +97,24 @@ test('exit code passes through', { timeout: 30_000 }, async () => {
   assert.equal(await start('exit 7').done, 7);
   assert.equal(await start('exit 0').done, 0);
 });
+
+test('a malformed --fetch or unknown own option exits 2', { timeout: 30_000 }, async () => {
+  const { dir } = setup();
+  const stub = join(dir, 'remote-run-stub.mjs');
+  writeFileSync(stub, "console.log('ARGS ' + JSON.stringify(process.argv.slice(2)));\n");
+  const env = {
+    ...process.env,
+    HEAVY_LOCK_PREFIX: join(dir, 'lock'),
+    RUN_REGISTRY_DIR: join(dir, 'runs'),
+    HEAVY_REMOTE_RUN: stub,
+  };
+  const call = (args) =>
+    new Promise((resolve) => {
+      const child = spawn('node', [script, 'run', ...args], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+      let out = '';
+      child.stdout.on('data', (d) => (out += d));
+      child.on('close', (code) => resolve({ code, out }));
+    });
+  assert.equal((await call(['--fetch', 'a', '--bogus', 'x', '--', 'true'])).code, 2);
+  assert.equal((await call(['--fetch', '--', 'true'])).code, 2);
+});

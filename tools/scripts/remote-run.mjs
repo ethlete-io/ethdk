@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { createWriteStream, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,13 +26,13 @@ const GUARD = join(dirname(fileURLToPath(import.meta.url)), 'remote-guard.sh');
 const PICTURE_SUITE = /--project[= ]visual\b|\bvisual\b|screenshot|golden|baseline|--update-snapshots/i;
 
 const USAGE =
-  'usage: remote-run.mjs --host rack|mac [--linux] [--ref <sha>] [--slot <name>] [--log <file>] -- <suite command>';
+  'usage: remote-run.mjs --host rack|mac [--linux] [--ref <sha>] [--slot <name>] [--log <file>] [--fetch <path>]... -- <suite command>';
 
 export const parseArgs = (argv) => {
   const split = argv.indexOf('--');
   const own = split === -1 ? argv : argv.slice(0, split);
   const suite = split === -1 ? '' : argv.slice(split + 1).join(' ');
-  const opts = { host: undefined, ref: 'HEAD', slot: 'w1', log: undefined, suite };
+  const opts = { host: undefined, ref: 'HEAD', slot: 'w1', log: undefined, fetch: [], suite };
 
   for (let i = 0; i < own.length; i++) {
     if (own[i] === '--linux') {
@@ -40,8 +40,16 @@ export const parseArgs = (argv) => {
       continue;
     }
     const key = own[i].replace(/^--/, '');
-    if (!['host', 'ref', 'slot', 'log'].includes(key) || own[i + 1] === undefined) {
+    if (!['host', 'ref', 'slot', 'log', 'fetch'].includes(key) || own[i + 1] === undefined) {
       throw new Error(`unknown or incomplete option ${own[i]}\n${USAGE}`);
+    }
+    if (key === 'fetch') {
+      const path = own[++i];
+      if (path.startsWith('/') || /^[A-Za-z]:/.test(path) || path.split(/[\\/]/).includes('..')) {
+        throw new Error(`--fetch needs a path inside the repo, got ${path}`);
+      }
+      opts.fetch.push(path);
+      continue;
     }
     opts[key] = own[++i];
   }
@@ -57,8 +65,14 @@ export const parseArgs = (argv) => {
 
 const shellQuote = (value) => `'${value.replaceAll("'", `'\\''`)}'`;
 
+const fetchArgs = (fetch) => fetch.map(shellQuote).join(' ');
+
+const outTar = (runId) => `ethlete-rr/out-${runId}.tar`;
+
 const nativeRun = (
   suite,
+  fetch,
+  runId,
 ) => `  export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
   cd "$work" || return 1
   local started=$SECONDS
@@ -67,7 +81,9 @@ const nativeRun = (
   started=$SECONDS
   eval ${shellQuote(suite)}
   local code=$?
-  echo "[remote-run] suite exit $code after $((SECONDS - started))s"
+  echo "[remote-run] suite exit $code after $((SECONDS - started))s"${
+    fetch.length ? `\n  rr_fetch "$work" "$HOME/${outTar(runId)}" ${fetchArgs(fetch)}` : ''
+  }
   return $code`;
 
 const containerSetup = `[ -x /opt/tools/bin/corepack ] || npm install --global --silent --prefix /opt/tools corepack >/dev/null
@@ -79,7 +95,7 @@ echo "[remote-run] install $((SECONDS - started))s"
 started=$SECONDS
 `;
 
-const linuxRun = (suite, slot) => `  export PATH="/usr/local/bin:$PATH"
+const linuxRun = (suite, slot, fetch, runId) => `  export PATH="/usr/local/bin:$PATH"
   docker image inspect ${LINUX_IMAGE} >/dev/null 2>&1 || docker pull --quiet ${LINUX_IMAGE} || return 1
   docker run --rm --init --ipc=host -v "$work:$work" -w "$work" -v "$mirror:$mirror" \\
     -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0="*" \\
@@ -88,12 +104,27 @@ const linuxRun = (suite, slot) => `  export PATH="/usr/local/bin:$PATH"
     ${LINUX_IMAGE} bash -c ${shellQuote(`${containerSetup}${suite}
 code=$?
 echo "[remote-run] suite exit $code after $((SECONDS - started))s"
-exit $code`)}`;
+exit $code`)}
+  local code=$?${fetch.length ? `\n  rr_fetch "$work" "$HOME/${outTar(runId)}" ${fetchArgs(fetch)}` : ''}
+  return $code`;
 
-const rackLinuxRun = (suite, slot, helper) => `  cat > "$HOME/ethlete-rr/rack-docker-run.sh" <<'REMOTE_RUN_HELPER'
+const rackLinuxRun = (
+  suite,
+  slot,
+  helper,
+  fetch,
+  runId,
+) => `  cat > "$HOME/ethlete-rr/rack-docker-run.sh" <<'REMOTE_RUN_HELPER'
 ${helper}REMOTE_RUN_HELPER
   MSYS_NO_PATHCONV=1 wsl.exe -d ethlete -- bash /mnt/c/Users/trbor/ethlete-rr/remote-guard.sh ${shellQuote(slot)} -- \\
-    bash /mnt/c/Users/trbor/ethlete-rr/rack-docker-run.sh "$sha" ${shellQuote(slot)} -- ${shellQuote(suite)}`;
+    bash /mnt/c/Users/trbor/ethlete-rr/rack-docker-run.sh "$sha" ${shellQuote(slot)} -- ${shellQuote(suite)}
+  local code=$?${
+    fetch.length
+      ? `
+  MSYS_NO_PATHCONV=1 wsl.exe -d ethlete --exec bash -c '. /mnt/c/Users/trbor/ethlete-rr/remote-guard.sh; rr_fetch "$HOME/rack-linux/${slot}" "/mnt/c/Users/trbor/${outTar(runId)}" "$@"' _ ${fetchArgs(fetch)}`
+      : ''
+  }
+  return $code`;
 
 export const remoteScript = ({
   sha,
@@ -103,13 +134,15 @@ export const remoteScript = ({
   host,
   linux,
   rackHelper,
+  fetch = [],
+  runId = 'run',
   guard = readFileSync(GUARD, 'utf8'),
 }) => {
   const run = !linux
-    ? nativeRun(suite)
+    ? nativeRun(suite, fetch, runId)
     : host === 'rack'
-      ? rackLinuxRun(suite, slot, rackHelper)
-      : linuxRun(suite, slot);
+      ? rackLinuxRun(suite, slot, rackHelper, fetch, runId)
+      : linuxRun(suite, slot, fetch, runId);
   const rackLinux = linux && host === 'rack';
   return `suite_run() {
 ${run}
@@ -225,9 +258,12 @@ export const remoteRun = async (opts) => {
     if (copy.status !== 0) return end(copy.status ?? 1, `scp failed: ${copy.stderr.trim()}`);
   }
 
+  const runId = `${Date.now().toString(36)}-${process.pid}`;
   const code = await runSsh(
     host,
     remoteScript({
+      fetch: opts.fetch,
+      runId,
       sha,
       slot: opts.slot,
       suite: opts.suite,
@@ -238,7 +274,28 @@ export const remoteRun = async (opts) => {
     }),
     { onData: tee },
   );
+  if (opts.fetch?.length) await fetchOutputs(host, runId, tee);
   return end(code);
+};
+
+const fetchOutputs = async (host, runId, tee) => {
+  const dir = mkdtempSync(join(tmpdir(), 'remote-run-out-'));
+  const local = join(dir, 'out.tar');
+  const copy = spawnSync('scp', ['-q', ...SSH_OPTIONS, `${host.ssh}:${outTar(runId)}`, local], { encoding: 'utf8' });
+  if (copy.status !== 0 || !existsSync(local)) {
+    tee('[remote-run] fetch: nothing came back\n', process.stderr);
+  } else {
+    const top = git(['rev-parse', '--show-toplevel']).stdout.trim() || process.cwd();
+    const unpacked = spawnSync('tar', ['-xf', local, '-C', top], { encoding: 'utf8' });
+    tee(
+      unpacked.status === 0
+        ? `[remote-run] fetch: unpacked into ${top}\n`
+        : `[remote-run] fetch: tar -x failed: ${unpacked.stderr.trim()}\n`,
+      process.stderr,
+    );
+  }
+  rmSync(dir, { recursive: true, force: true });
+  await runSsh(host, `rm -f "$HOME/${outTar(runId)}"\n`);
 };
 
 const finish = (file, code, reason) =>

@@ -11,6 +11,18 @@ rr_remove_containers() {
   [ -z "$ids" ] || docker rm -f $ids >/dev/null 2>&1
 }
 
+# Usage: rr_fetch <dir> <tar> <path>... packs the paths that exist under <dir>; missing ones are reported, not fatal.
+rr_fetch() {
+  local dir=$1 tar=$2 path keep=()
+  shift 2
+  for path in "$@"; do
+    if [ -e "$dir/$path" ]; then keep+=("$path"); else echo "[remote-run] fetch: missing $path"; fi
+  done
+  [ "${#keep[@]}" -gt 0 ] || return 0
+  tar -C "$dir" -cf "$tar" "${keep[@]}" && echo "[remote-run] fetch: packed ${keep[*]}"
+  return 0
+}
+
 rr_guard() {
   local slot=$1 job beat code
   shift

@@ -12,7 +12,7 @@ const remoteRunScript = process.env.HEAVY_REMOTE_RUN ?? join(dirname(fileURLToPa
 const busyExit = 200;
 const forwarded = ['SIGINT', 'SIGTERM', 'SIGHUP'];
 const signalNumber = { SIGHUP: 1, SIGINT: 2, SIGKILL: 9, SIGTERM: 15 };
-const usage = 'usage: heavy.mjs run [--on tank|rack|mac] -- <command>';
+const usage = 'usage: heavy.mjs run [--on tank|rack|mac] [--fetch <path>]... -- <command>';
 
 // Slot 1 is the old lock file, so a bare `flock /tmp/fifagg-heavy.lock` caller counts as one holder.
 const slotFile = (machine, n) =>
@@ -79,7 +79,7 @@ const remoteTarget = (machine) => {
   return snapshot && { machine, ...snapshot };
 };
 
-const remoteArgv = (target, suite, n) => [
+const remoteArgv = (target, suite, n, fetch) => [
   process.execPath,
   remoteRunScript,
   '--host',
@@ -89,11 +89,12 @@ const remoteArgv = (target, suite, n) => [
   target.sha,
   '--slot',
   `heavy-${target.repo}-${n}`,
+  ...fetch.flatMap((path) => ['--fetch', path]),
   '--',
   suite,
 ];
 
-const run = async (command, wanted) => {
+const run = async (command, wanted, fetch) => {
   const label = command.join(' ');
   const preferred = wanted ?? (process.env.HEAVY_ROUTE === 'off' ? 'tank' : jobMachine(command));
   const tankName = localMachine();
@@ -104,7 +105,7 @@ const run = async (command, wanted) => {
       ? Array.from({ length: MACHINES[remote.machine].slots }, (_, i) => ({
           machine: remote.machine,
           n: i + 1,
-          argv: remoteArgv(remote, remoteSuite(command, remote.rel), i + 1),
+          argv: remoteArgv(remote, remoteSuite(command, remote.rel), i + 1, fetch),
           cwd: remote.top,
           env: { ...process.env, REMOTE_RUN_NO_REGISTRY: '1' },
         }))
@@ -143,9 +144,17 @@ const [verb, ...rest] = process.argv.slice(2);
 const sep = rest.indexOf('--');
 const command = sep === -1 ? rest : rest.slice(sep + 1);
 const own = sep === -1 ? [] : rest.slice(0, sep);
-const wanted = own[0] === '--on' ? own[1] : process.env.HEAVY_MACHINE;
-if (verb !== 'run' || command.length === 0 || (own.length && own[0] !== '--on') || (wanted && !MACHINES[wanted])) {
+let wantedMachine;
+const fetch = [];
+let bad = false;
+for (let i = 0; i < own.length; i += 2) {
+  if (own[i] === '--on' && own[i + 1]) wantedMachine = own[i + 1];
+  else if (own[i] === '--fetch' && own[i + 1]) fetch.push(own[i + 1]);
+  else bad = true;
+}
+const wanted = wantedMachine ?? process.env.HEAVY_MACHINE;
+if (verb !== 'run' || command.length === 0 || bad || (wanted && !MACHINES[wanted])) {
   console.error(usage);
   process.exit(2);
 }
-process.exit(await run(command, wanted));
+process.exit(await run(command, wanted, fetch));

@@ -27,13 +27,23 @@ exit 0
     join(dir, 'git'),
     `#!/usr/bin/env bash
 printf 'git %s\\n' "$*" >> "$STUB_LOG"
+[ "$1" = rev-parse ] && [ "$2" = --show-toplevel ] && { echo "$FAKE_TOP"; exit 0; }
 [ "$1" = rev-parse ] && echo ${SHA}
 [ "$1" = bundle ] && touch "$4"
 [ "$1" = merge-base ] && [ -z "$FAKE_ANCESTOR" ] && exit 1
 exit 0
 `,
   );
-  writeFileSync(join(dir, 'scp'), `#!/usr/bin/env bash\nprintf 'scp %s\\n' "$*" >> "$STUB_LOG"\n`);
+  writeFileSync(
+    join(dir, 'scp'),
+    `#!/usr/bin/env bash
+printf 'scp %s\\n' "$*" >> "$STUB_LOG"
+if [[ "$*" == *out-*.tar* ]]; then
+  [ -n "$FAKE_OUT_TAR" ] || exit 1
+  cp "$FAKE_OUT_TAR" "\${@: -1}"
+fi
+`,
+  );
   chmodSync(join(dir, 'scp'), 0o755);
   chmodSync(join(dir, 'ssh'), 0o755);
   chmodSync(join(dir, 'git'), 0o755);
@@ -83,6 +93,7 @@ test('parses host, ref, slot and the suite after --', () => {
     ref: 'abc',
     slot: 'w1',
     log: undefined,
+    fetch: [],
     suite: 'yarn nx run-many -t test',
   });
   assert.equal(parseArgs(['--host', 'mac', '--', 'true']).ref, 'HEAD');
@@ -200,4 +211,119 @@ test('the rack helper holds a per-slot lock before it touches the slot checkout'
   assert.ok(lock > 0, 'no flock');
   assert.ok(helper.indexOf('$slot.lock') < lock);
   assert.ok(lock < helper.indexOf('checkout --quiet --force'));
+});
+
+test('--fetch is repeatable and refuses paths outside the repo', () => {
+  const opts = parseArgs(['--host', 'rack', '--fetch', 'a/b.txt', '--fetch', 'c', '--', 'true']);
+  assert.deepEqual(opts.fetch, ['a/b.txt', 'c']);
+  assert.throws(() => parseArgs(['--host', 'rack', '--fetch', '../x', '--', 'true']), /inside the repo/);
+  assert.throws(() => parseArgs(['--host', 'rack', '--fetch', '/etc/passwd', '--', 'true']), /inside the repo/);
+  assert.throws(() => parseArgs(['--host', 'rack', '--fetch']), /incomplete option --fetch/);
+});
+
+test('the pack step differs per host and runs after the suite', () => {
+  const base = { sha: SHA, slot: 'w1', suite: 'yarn test', fetch: ['out/a b.txt'], runId: 'r1' };
+  const native = remoteScript({ ...base, host: 'mac', linux: false });
+  assert.match(
+    native,
+    /suite exit \$code[^\n]*\n {2}rr_fetch "\$work" "\$HOME\/ethlete-rr\/out-r1\.tar" 'out\/a b\.txt'\n {2}return \$code/,
+  );
+
+  const mac = remoteScript({ ...base, host: 'mac', linux: true });
+  assert.match(
+    mac,
+    /exit \$code`?\)?[^\n]*\n {2}local code=\$\?\n {2}rr_fetch "\$work" "\$HOME\/ethlete-rr\/out-r1\.tar"/,
+  );
+
+  const rack = remoteScript({ ...base, host: 'rack', linux: true, rackHelper: 'echo helper\n' });
+  assert.match(
+    rack,
+    /local code=\$\?\n {2}MSYS_NO_PATHCONV=1 wsl\.exe -d ethlete --exec bash -c '[^']*rr_fetch "\$HOME\/rack-linux\/w1" "\/mnt\/c\/Users\/trbor\/ethlete-rr\/out-r1\.tar" "\$@"' _ 'out\/a b\.txt'\n {2}return \$code/,
+  );
+  assert.doesNotMatch(remoteScript({ ...base, fetch: [], host: 'mac', linux: false }), /rr_fetch "/);
+});
+
+test('rr_fetch packs the paths that exist, reports the missing ones and is not fatal', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'remote-run-fetch-'));
+  try {
+    mkdirSync(join(dir, 'work', 'out'), { recursive: true });
+    writeFileSync(join(dir, 'work', 'out', 'x.txt'), 'hi');
+    const guard = join(dirname(SCRIPT), 'remote-guard.sh');
+    const result = spawnSync(
+      'bash',
+      ['-c', `. ${guard}; rr_fetch ${dir}/work ${dir}/o.tar out/x.txt nope.txt; echo rc=$?`],
+      { encoding: 'utf8' },
+    );
+    assert.match(result.stdout, /fetch: missing nope\.txt/);
+    assert.match(result.stdout, /packed out\/x\.txt/);
+    assert.match(result.stdout, /rc=0/);
+    const listed = spawnSync('tar', ['-tf', join(dir, 'o.tar')], { encoding: 'utf8' }).stdout;
+    assert.match(listed, /out\/x\.txt/);
+    assert.doesNotMatch(listed, /nope/);
+
+    const none = spawnSync('bash', ['-c', `. ${guard}; rr_fetch ${dir}/work ${dir}/n.tar nope; echo rc=$?`], {
+      encoding: 'utf8',
+    });
+    assert.match(none.stdout, /rc=0/);
+    assert.equal(spawnSync('test', ['-e', join(dir, 'n.tar')]).status, 1);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a native suite that fails still packs its outputs and keeps its exit code', () => {
+  const script = remoteScript({
+    sha: SHA,
+    slot: 'w1',
+    suite: 'mkdir -p out; echo shot > out/fail.png; false',
+    host: 'mac',
+    linux: false,
+    fetch: ['out/fail.png'],
+    runId: 'r2',
+  });
+  const work = mkdtempSync(join(tmpdir(), 'remote-run-native-'));
+  const home = join(work, 'home');
+  const bin = join(work, 'bin');
+  mkdirSync(join(home, 'ethlete-rr', 'w1', '.git'), { recursive: true });
+  mkdirSync(join(home, 'ethlete-mirror.git'), { recursive: true });
+  mkdirSync(bin);
+  writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\nexit 0\n');
+  for (const name of ['git', 'yarn']) chmodSync(join(bin, name), 0o755);
+  try {
+    const result = spawnSync('bash', ['-c', script], {
+      encoding: 'utf8',
+      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home },
+    });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    const listed = spawnSync('tar', ['-tf', join(home, 'ethlete-rr', 'out-r2.tar')], { encoding: 'utf8' }).stdout;
+    assert.match(listed, /out\/fail\.png/);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});
+
+test('fetch unpacks the returned tar into the repo top, also after a failing suite, and removes the remote tar', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'remote-run-top-'));
+  try {
+    mkdirSync(join(dir, 'src', 'out'), { recursive: true });
+    writeFileSync(join(dir, 'src', 'out', 'f.txt'), 'back');
+    spawnSync('tar', ['-C', join(dir, 'src'), '-cf', join(dir, 'o.tar'), 'out/f.txt']);
+    mkdirSync(join(dir, 'top'));
+    const failed = run(['--host', 'rack', '--fetch', 'out/f.txt', '--', 'yarn e2e'], {
+      FAKE_SUITE_CODE: '7',
+      FAKE_TOP: join(dir, 'top'),
+      FAKE_OUT_TAR: join(dir, 'o.tar'),
+    });
+    assert.equal(failed.status, 7);
+    assert.match(failed.calls, /scp -q (-o \S+ )+trbor@192\.168\.1\.115:ethlete-rr\/out-\S+\.tar /);
+    assert.equal(readFileSync(join(dir, 'top', 'out', 'f.txt'), 'utf8'), 'back');
+    assert.match(failed.stderr, /fetch: unpacked into/);
+
+    const empty = run(['--host', 'rack', '--fetch', 'out/f.txt', '--', 'yarn e2e'], { FAKE_TOP: join(dir, 'top') });
+    assert.equal(empty.status, 0);
+    assert.match(empty.stderr, /fetch: nothing came back/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
