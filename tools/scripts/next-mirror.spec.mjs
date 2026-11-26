@@ -4,7 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { git, gitSpawn, tempGitRepo } from './git-test-env.mjs';
-import { cleanGitEnv, mirrorCommit, mirrorSuite, newCommits, parseArgs, verdictOf } from './next-mirror.mjs';
+import {
+  cleanGitEnv,
+  mirrorCommit,
+  mirrorSuite,
+  newCommits,
+  parseArgs,
+  runningState,
+  verdictOf,
+} from './next-mirror.mjs';
 
 const commit = (repo, name) => {
   writeFileSync(join(repo, name), name);
@@ -92,6 +100,43 @@ test('mirrorCommit runs no suite for a root commit', async () => {
   try {
     const verdict = await mirrorCommit({ repo, sha, dir, remote: async () => assert.fail('no remote run') });
     assert.deepEqual([verdict.status, verdict.step], ['error', 'no parent commit']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('runningState reports a record whose process is gone as died', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'next-mirror-out-'));
+  try {
+    assert.equal(runningState(dir), undefined);
+    writeFileSync(join(dir, 'running.json'), JSON.stringify({ sha: 'abc', pid: 2 ** 22 + 12345 }));
+    assert.equal(runningState(dir).state, 'died');
+    writeFileSync(join(dir, 'running.json'), JSON.stringify({ sha: 'abc', pid: process.pid }));
+    assert.equal(runningState(dir).state, 'running');
+    writeFileSync(join(dir, 'running.json'), JSON.stringify({ sha: 'abc' }));
+    assert.equal(runningState(dir).state, 'died');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('mirrorCommit records its own pid while running', async () => {
+  const repo = tempGitRepo('next-mirror-');
+  commit(repo, 'a');
+  const sha = commit(repo, 'b');
+  const dir = mkdtempSync(join(tmpdir(), 'next-mirror-out-'));
+  try {
+    let seen;
+    await mirrorCommit({
+      repo,
+      sha,
+      dir,
+      remote: async () => {
+        seen = runningState(dir);
+        return 0;
+      },
+    });
+    assert.deepEqual([seen.state, seen.record.pid], ['running', process.pid]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

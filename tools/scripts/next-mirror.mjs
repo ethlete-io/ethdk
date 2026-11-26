@@ -102,7 +102,10 @@ export const mirrorCommit = async ({
   const log = join(dir, 'logs', `${sha}.log`);
   rmSync(log, { force: true });
   const startedAt = now();
-  writeFileSync(join(dir, 'running.json'), JSON.stringify({ sha, subject, startedAt: startedAt.toISOString(), log }));
+  writeFileSync(
+    join(dir, 'running.json'),
+    JSON.stringify({ sha, subject, startedAt: startedAt.toISOString(), log, pid: process.pid }),
+  );
   const code = parent ? await remote({ repo, sha, suite: mirrorSuite(sha, parent), log }) : 2;
   const output = existsSync(log) ? readFileSync(log, 'utf8') : '';
   const { status, step } = parent ? verdictOf(code, output) : { status: 'error', step: 'no parent commit' };
@@ -133,6 +136,14 @@ const alive = (pid) => {
   } catch {
     return false;
   }
+};
+
+/** The recorded mirror run, `died` when its process no longer exists; undefined when none is recorded. */
+export const runningState = (dir) => {
+  const file = join(dir, 'running.json');
+  if (!existsSync(file)) return undefined;
+  const record = JSON.parse(readFileSync(file, 'utf8'));
+  return { state: record.pid && alive(record.pid) ? 'running' : 'died', record };
 };
 
 /** Polls `branch` of `repo` and mirrors each new commit in order; one watcher per mirror dir. */
@@ -172,8 +183,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const dir = mirrorDir();
   if (opts.command === 'status') {
     const latest = join(dir, 'latest.txt');
-    const running = join(dir, 'running.json');
-    if (existsSync(running)) console.log(`running ${readFileSync(running, 'utf8')}`);
+    const running = runningState(dir);
+    if (running) console.log(`${running.state} ${JSON.stringify(running.record)}`);
     console.log(existsSync(latest) ? readFileSync(latest, 'utf8').trim() : 'no verdict yet');
   } else if (opts.command === 'run') {
     const sha = gitIn(opts.repo)(['rev-parse', '--verify', `${opts.rev}^{commit}`]).stdout.trim();
