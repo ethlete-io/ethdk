@@ -35,7 +35,7 @@ describe('undefinedTokensOf', () => {
     write(
       target,
       `${DESIGN_DIR}/acme/elements/hero/hero.css`,
-      '.hero { --hero-gap: 4px; gap: var(--hero-gap); padding: var(--space-8); margin: var(--space-9, 2px); color: var(--et-surface-1-solid); }',
+      '.hero { --hero-gap: 4px; gap: var(--hero-gap); padding: var(--space-8); margin: var(--space-9, 2px); color: var(--et-surface-background); }',
     );
 
     expect(messagesOf(target)).toEqual([

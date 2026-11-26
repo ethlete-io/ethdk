@@ -124,68 +124,34 @@ When a surface is active, these custom properties are available to descendants:
     <td>Role</td>
   </tr>
   <tr>
-    <td>`--et-surface-background-solid`</td>
+    <td>`--et-surface-background`</td>
     <td>Background fill (use this for `background-color`)</td>
   </tr>
   <tr>
-    <td>`--et-surface-background-rgb`</td>
-    <td>RGB channels of background (for `rgba()` overlays)</td>
-  </tr>
-  <tr>
-    <td>`--et-surface-color-solid`</td>
+    <td>`--et-surface-text`</td>
     <td>Primary text color</td>
   </tr>
   <tr>
-    <td>`--et-surface-color-rgb`</td>
-    <td>RGB channels of primary text</td>
-  </tr>
-  <tr>
-    <td>`--et-surface-color-muted-solid`</td>
+    <td>`--et-surface-text-muted`</td>
     <td>Secondary text color</td>
   </tr>
   <tr>
-    <td>`--et-surface-color-muted-rgb`</td>
-    <td>RGB channels of muted text</td>
-  </tr>
-  <tr>
-    <td>`--et-surface-color-subtle-solid`</td>
+    <td>`--et-surface-text-subtle`</td>
     <td>Tertiary text color</td>
   </tr>
   <tr>
-    <td>`--et-surface-color-subtle-rgb`</td>
-    <td>RGB channels of subtle text</td>
-  </tr>
-  <tr>
-    <td>`--et-surface-border-solid`</td>
+    <td>`--et-surface-border`</td>
     <td>Border / divider color</td>
   </tr>
   <tr>
-    <td>`--et-surface-border-rgb`</td>
-    <td>RGB channels of border</td>
-  </tr>
-  <tr>
-    <td>`--et-surface-interaction-solid`</td>
-    <td>Default interaction overlay color</td>
-  </tr>
-  <tr>
-    <td>`--et-surface-interaction-hover-solid`</td>
-    <td>Hover state overlay</td>
-  </tr>
-  <tr>
-    <td>`--et-surface-interaction-focus-solid`</td>
-    <td>Focus state overlay</td>
-  </tr>
-  <tr>
-    <td>`--et-surface-interaction-active-solid`</td>
-    <td>Active/pressed overlay</td>
-  </tr>
-  <tr>
-    <td>`--et-surface-interaction-disabled-solid`</td>
-    <td>Disabled state overlay</td>
+    <td>`--et-surface-tint`</td>
+    <td>
+      Neutral hover/active tint source; mix it, e.g. `color-mix(in srgb, var(--et-surface-tint) 12%, transparent)`
+    </td>
   </tr>
 </table>
 
-Every token above also has an `-rgb` variant for constructing `rgba()` values manually.
+Every token above is a ready color. Derive translucent values with `color-mix()`.
 
 ---
 
@@ -208,23 +174,23 @@ Each surface theme = one variable mode. Define variables for:
   </tr>
   <tr>
     <td>`surface/background`</td>
-    <td>`--et-surface-background-solid`</td>
+    <td>`--et-surface-background`</td>
   </tr>
   <tr>
     <td>`surface/text/primary`</td>
-    <td>`--et-surface-color-solid`</td>
+    <td>`--et-surface-text`</td>
   </tr>
   <tr>
     <td>`surface/text/muted`</td>
-    <td>`--et-surface-color-muted-solid`</td>
+    <td>`--et-surface-text-muted`</td>
   </tr>
   <tr>
     <td>`surface/text/subtle`</td>
-    <td>`--et-surface-color-subtle-solid`</td>
+    <td>`--et-surface-text-subtle`</td>
   </tr>
   <tr>
     <td>`surface/border`</td>
-    <td>`--et-surface-border-solid`</td>
+    <td>`--et-surface-border`</td>
   </tr>
 </table>
 
