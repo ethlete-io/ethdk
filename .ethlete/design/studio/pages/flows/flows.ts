@@ -1,7 +1,6 @@
 import { definePart, drawing, html } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import {
-  commentButton,
   commentDraftAt,
   commentLayer,
   commentModeHint,
@@ -15,6 +14,7 @@ import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
+import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 import {
   FLOW_NAME,
   FLOW_NOTES,
@@ -23,6 +23,7 @@ import {
   type FlowNoteSample,
   type FlowProps,
   addNoteButton,
+  commentToggleButton,
   copyButton,
   emptyCanvasOf,
   emptySide,
@@ -35,6 +36,9 @@ import {
   pagePadding,
   presetPickerOf,
 } from './shared/flow-data';
+
+const TRAY =
+  'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border)) bg-et-surface-background shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))';
 
 const NOTE_CLASS =
   'w-64 box-border p-space-3 rounded-md border border-et-surface-border bg-et-surface-background shadow-lg text-ui-md text-et-surface-text cursor-grab';
@@ -92,17 +96,24 @@ const contentOf = (
 ) =>
   html`<div class="relative h-full overflow-hidden" data-et-skip="CLIPPED">
     <div class="h-full box-border flex flex-col gap-space-4 ${pagePadding}">
-      ${pageHeader(
-        FLOW_NAME,
-        `${header.hint}${control(add, 'note-add')}${header.comment}<div class="w-60">${presetPicker}</div>`,
-      )}
+      ${pageHeader(FLOW_NAME, `${header.hint}<div class="w-60">${presetPicker}</div>`)}
       ${canvasViewport({ class: 'flex-1 min-h-0', body: flowGraph(SCALE, 140, notes, onShot) })}
+    </div>
+    <div class="absolute inset-x-0 bottom-space-3 z-3 flex justify-center ps-(--st-shell-inset-left)">
+      <div
+        class="flex items-center gap-space-2 p-space-1 font-ui ${TRAY}"
+        role="toolbar"
+        aria-label="${SKETCHES_LABELS.toolbar}"
+        data-sk-toolbar
+      >
+        ${control(header.comment, 'comment')}${control(add, 'note-add')}
+      </div>
     </div>
     ${chip}
   </div>`;
 
 export default definePart<FlowProps>({
-  note: 'Flows as a canvas with a page header: a flat list of the flows in the side panel, the open flow name as the header title with the size picker at its right end, and the flow as a graph on a canvas with the sketch camera (pan by wheel and drag, zoom with the zoom chip in the corner; a flow starts at 100 % with its first frame at the left edge, below the header): frames in columns along the lines, a branch on its own row, every line an elbow arrow with its label above the last segment. A free note is a bordered card with a shadow at its own canvas point; the whole card drags, a close button deletes it, a new note opens with an empty field. The Notiz button in the header adds one.',
+  note: 'Flows as a canvas with a page header: a flat list of the flows in the side panel, the open flow name as the header title with the size picker at its right end, the page actions Kommentar and Notiz as icon buttons in the shared toolbar at the bottom centre (the header has no buttons), and the flow as a graph on a canvas with the sketch camera (pan by wheel and drag, zoom with the zoom chip in the corner; a flow starts at 100 % with its first frame at the left edge, below the header): frames in columns along the lines, a branch on its own row, every line an elbow arrow with its label above the last segment. A free note is a bordered card with a shadow at its own canvas point; the whole card drags, a close button deletes it, a new note opens with an empty field. The Notiz button in the toolbar adds one.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/flows-page/flows-page.component.ts' },
   states: {
@@ -117,7 +128,7 @@ export default definePart<FlowProps>({
     'comments-draft': { flow: 'open', comments: true, commentMode: true, draft: 'Hier fehlt der Rückweg.' },
   },
   describe: {
-    flow: 'An open flow on the canvas with a free note beside the branch; check the flow list with the open one marked, its name in the header with the Notiz button and the size picker, the note with its delete button and the zoom chip in the corner.',
+    flow: 'An open flow on the canvas with a free note beside the branch; check the flow list with the open one marked, its name in the header with the size picker, the toolbar at the bottom centre with Kommentar and Notiz, the note with its delete button and the zoom chip in the corner.',
     'new-note':
       'The open flow after Notiz: the written note and a new one with its empty field; check the placeholder and the delete button on each note.',
     orphaned:
@@ -125,7 +136,7 @@ export default definePart<FlowProps>({
     empty:
       'A product without flows; check the empty side panel and the centred card with its copy button on the empty canvas.',
     'comment-mode':
-      'Comment mode on an open flow; check the pressed Kommentar button with its Esc or C hint and the faint accent wash over every frame.',
+      'Comment mode on an open flow; check the pressed Kommentar icon button in the toolbar, the Esc or C hint in the header and the faint accent wash over every frame.',
     comments:
       'A comment pin on one frame; check that it sits on its point in the shot, above the frame, and not on the other frames.',
     thread:
@@ -175,7 +186,7 @@ export default definePart<FlowProps>({
           closeTo: 'comments',
         })
       : undefined;
-    const comment = await commentButton({ on: commentMode, action: 'emit:commentToggle' });
+    const comment = await commentToggleButton({ on: commentMode, action: 'emit:commentToggle' });
     const hint = commentMode && draft === undefined ? commentModeHint() : undefined;
     const written = draft === undefined ? undefined : await commentDraftAt('left-0 top-0', { text: draft });
     const onShot =

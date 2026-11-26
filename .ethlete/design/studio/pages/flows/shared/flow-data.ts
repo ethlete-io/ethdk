@@ -5,6 +5,7 @@ import textarea from '@system/components/textarea';
 import treeRow from '@system/components/tree-row';
 import { icon } from '@system/foundations/icons';
 import { FLOWS_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/flows-labels';
+import { SYSTEM_LABELS } from '../../../../../../apps/ethlete-studio/src/app/i18n/system-labels';
 
 export type FlowProps = {
   flow: 'open' | 'none';
@@ -39,11 +40,26 @@ export const orphanButtons = async () =>
     }),
   );
 
+export const commentToggleButton = async ({ on, action }: { on: boolean; action: string }) => {
+  const toggle = await button.render({
+    iconOnly: true,
+    icon: icon('comment', { size: 16 }),
+    ariaLabel: SYSTEM_LABELS.comment,
+    variant: 'transparent',
+    color: 'surface',
+    size: 'sm',
+    pressed: on,
+  });
+
+  return { ...toggle, body: withAction(toggle.body, action) };
+};
+
 export const addNoteButton = async () => {
   const add = await button.render({
-    label: FLOWS_LABELS.addNote,
-    icon: icon('pencil', { size: 14 }),
-    variant: 'outline',
+    iconOnly: true,
+    icon: icon('pencil', { size: 16 }),
+    ariaLabel: FLOWS_LABELS.addNote,
+    variant: 'transparent',
     color: 'surface',
     size: 'sm',
   });

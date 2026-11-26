@@ -30,6 +30,7 @@ import { DesignCanvasComponent } from '../../components/design-canvas/design-can
 import { FLOWS_LABELS } from '../../i18n/flows-labels';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
+import { SketchHeadComponent } from '../sketch-head/sketch-head.component';
 import { CommentDraftComponent, CommentSendPhase } from '../system-page/comment-draft.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { CommentThread, ThreadCardComponent } from '../comment-flow/thread-card.component';
@@ -374,7 +375,10 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
           <div
             class="pointer-events-none relative box-border flex h-full flex-col gap-space-4 p-space-5 ps-[calc(var(--st-shell-inset-left)+var(--space-5))]"
           >
-            <header class="flex h-(--control-md) flex-none items-center gap-space-3 *:pointer-events-auto">
+            <header
+              class="flex h-(--control-md) flex-none items-center gap-space-3 *:pointer-events-auto"
+              data-flow-head
+            >
               <span class="text-ui-lg font-ui-strong">{{ selected() }}</span>
               <span class="flex-1"></span>
               @if (commentMode() && draft() === null) {
@@ -384,34 +388,6 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                   {{ SYSTEM_LABELS.commentModeEnds }}</span
                 >
               }
-              <button (click)="requestNote()" et-button type="button" variant="outline" color="surface" size="sm">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                  etIcon
-                >
-                  <path d="M10.5 3 13 5.5 6 12.5H3.5V10z" />
-                  <path d="m9 4.5 2.5 2.5" />
-                </svg>
-                {{ LABELS.addNote }}
-              </button>
-              <button
-                [pressed]="commentMode()"
-                (click)="commentToggle.emit()"
-                et-button
-                type="button"
-                variant="outline"
-                size="sm"
-              >
-                {{ SYSTEM_LABELS.comment }}
-              </button>
               <div class="w-60">
                 <et-form-field size="sm">
                   <et-select [value]="preset()" [aria-label]="LABELS.presetAria" (valueChange)="pickPreset($event)">
@@ -425,6 +401,46 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
               </div>
             </header>
             <div #stage class="min-h-0 flex-1" data-flow-stage></div>
+          </div>
+          <div
+            class="pointer-events-none absolute inset-x-0 bottom-space-3 z-3 flex justify-center ps-(--st-shell-inset-left)"
+          >
+            <ethlete-sketch-head
+              [commentMode]="commentMode()"
+              [status]="null"
+              (commentModeChange)="commentToggle.emit()"
+              class="pointer-events-auto min-w-0"
+              commentable
+              discardable="false"
+            >
+              <button
+                [attr.aria-label]="LABELS.addNote"
+                (click)="requestNote()"
+                sketchHeadExtra
+                et-icon-button
+                type="button"
+                variant="transparent"
+                color="surface"
+                size="sm"
+                data-flow-add-note
+              >
+                <svg
+                  class="et-icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M10.5 3 13 5.5 6 12.5H3.5V10z" />
+                  <path d="m9 4.5 2.5 2.5" />
+                </svg>
+              </button>
+            </ethlete-sketch-head>
           </div>
         </div>
       } @else {
@@ -474,6 +490,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
     SELECT_IMPORTS,
     TEXTAREA_IMPORTS,
     ShellPageComponent,
+    SketchHeadComponent,
     TreeRowComponent,
   ],
   host: { class: 'block h-screen w-full' },

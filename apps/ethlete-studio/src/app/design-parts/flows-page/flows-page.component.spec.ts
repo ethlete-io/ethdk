@@ -153,6 +153,28 @@ describe('FlowsPageComponent', () => {
     expect(deleted).toEqual(['c']);
   });
 
+  it('shows Kommentar and Notiz in the shared toolbar and no button in the header', async () => {
+    const { fixture, element } = await render();
+    const added: unknown[] = [];
+    let toggled = 0;
+
+    fixture.componentInstance.addNote.subscribe((point) => added.push(point));
+    fixture.componentInstance.commentToggle.subscribe(() => toggled++);
+
+    const toolbar = element.querySelector('ethlete-sketch-head [role="toolbar"]');
+    const labels = [...(toolbar?.querySelectorAll('button') ?? [])].map((button) => button.getAttribute('aria-label'));
+
+    expect(element.querySelector('[data-flow-head]')).not.toBeNull();
+    expect(element.querySelectorAll('[data-flow-head] [et-button], [data-flow-head] [et-icon-button]')).toHaveLength(0);
+    expect(labels).toEqual(['Kommentar', 'Notiz']);
+
+    toolbar?.querySelector<HTMLButtonElement>('button[aria-label="Kommentar"]')?.click();
+    toolbar?.querySelector<HTMLButtonElement>('button[aria-label="Notiz"]')?.click();
+
+    expect(toggled).toBe(1);
+    expect(added).toHaveLength(1);
+  });
+
   it('opens a new note with its empty field and drops it on Enter or Escape while empty', async () => {
     const { fixture, element } = await render();
     const written: unknown[] = [];
