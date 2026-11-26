@@ -1122,7 +1122,7 @@ export class SystemViewComponent {
     const open = new Set(this.expandedValues());
     const shownTarget = this.shownTargetKey();
     const selected = shownTarget ?? this.selectedKey();
-    const marksOf = (entry: Pick<TreeEntry, 'key' | 'badges'>) => {
+    const marksOf = (entry: Pick<TreeEntry, 'key' | 'badges' | 'comments'>) => {
       const warnings = entry.badges.filter(
         (badge): badge is keyof typeof TREE_ROW_LABELS.warnings => badge in TREE_ROW_LABELS.warnings,
       );
@@ -1130,6 +1130,7 @@ export class SystemViewComponent {
       return {
         key: entry.key,
         selected: entry.key === selected,
+        ...(entry.comments ? { comments: entry.comments } : {}),
         ...(warnings.length
           ? { warns: true, warnTitle: warnings.map((badge) => TREE_ROW_LABELS.warnings[badge]).join(' ') }
           : {}),

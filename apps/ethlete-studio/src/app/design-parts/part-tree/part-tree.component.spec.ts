@@ -197,6 +197,22 @@ describe('PartTreeComponent', () => {
     expect(withTooltip(fixture.nativeElement, 'plain warning')).not.toBeNull();
   });
 
+  it('shows the open comment count on a commented part and on a commented sketch', async () => {
+    const fixture = await render(
+      [{ title: 'Components', open: true, parts: [{ name: 'select', comments: 2 }, { name: 'tabs' }] }],
+      {
+        sketches: { open: true, items: [{ part: 'tabs', status: 'in-progress', comments: 1 }] },
+      },
+    );
+    const rows = rowsOf(fixture.nativeElement);
+    const labelled = (count: number) =>
+      rows.filter((row) => withTooltip(row, TREE_ROW_LABELS.openComments(count))).map((row) => row.textContent?.trim());
+
+    expect(labelled(2)).toEqual(['select']);
+    expect(labelled(1)).toEqual(['tabs']);
+    expect(rows.filter((row) => row.textContent?.trim() === 'tabs')).toHaveLength(2);
+  });
+
   it('puts the open sketches on top as part@name and the Legacy projects at the bottom', async () => {
     const fixture = await render([{ title: 'Pages', open: false, parts: [] }], {
       sketches: {
