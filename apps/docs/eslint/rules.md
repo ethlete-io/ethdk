@@ -353,15 +353,17 @@ ESLint lints no CSS by default. The plugin ships a text language, `ethlete/css`,
   files: ['**/*.{css,scss}'],
   plugins: { ethlete },
   language: 'ethlete/css',
-  rules: { 'ethlete/no-old-theme-token': ['error', { prefixes: ['et', 'app'] }] },
+  rules: { 'ethlete/no-old-theme-token': ['error', { prefixes: ['et', 'app'], themeFiles: ['src/styles/*themes.css'] }] },
 },
 {
   files: ['**/*.{ts,html}'],
-  rules: { 'ethlete/no-old-theme-token': ['error', { prefixes: ['et', 'app'] }] },
+  rules: { 'ethlete/no-old-theme-token': ['error', { prefixes: ['et', 'app'], themeFiles: ['src/styles/*themes.css'] }] },
 }
 ```
 
 `prefixes` defaults to `['et']`; add the prefix your generated Tailwind theme uses.
+
+The old tone and surface classes carry the app's own theme names (`bg-app-brand`, `text-app-danger-ink`, `text-app-surface-dark`), so the rule reads them from the generated theme CSS the way the migration does: `themeFiles` is a list of paths or globs, relative to the working directory, of the files the `tailwind-4-color-theme` and `tailwind-4-surface-theme` generators wrote. The Tailwind prefix comes from each file's `--prefix=` header (default `et`) and the names from its `/* <name> theme */` and `/* <name> surface */` comments. Without `themeFiles` (or when they match no generated file) the rule cannot tell an old name from a new one, so it never passes silently: it reports once per file that the theme names are unknown as soon as a color utility followed by a configured prefix and a word looks like an old tone or surface class.
 
 ## DOM, platform & `@ethlete/core`
 
