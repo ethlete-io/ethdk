@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { sourceFileOf } from '../../vite-paths';
 import { classifyImport, SharedDirs, sharedDirsOf, sharedFileOf } from '../imports';
+import { isLibraryProduct } from '../library-product';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { partLinkOf } from '../sketch/part-definition';
@@ -52,9 +53,11 @@ const importedPartsOf = (product: Product, part: ResolvedPart) => {
 /**
  * Each own component or element part that no other part imports, directly or through one of its files, and that
  * has no `implements` link (`ORPHAN-PART`). Pages are where use starts and foundations are drawn under every frame,
- * so neither is judged.
+ * so neither is judged; a library product's parts are made for other products, so it is not judged at all.
  */
 export const orphanPartsOf = (product: Product): Problem[] => {
+  if (isLibraryProduct(product)) return [];
+
   const used = new Set(product.parts.flatMap((part) => [...importedPartsOf(product, part)]));
 
   return product.parts

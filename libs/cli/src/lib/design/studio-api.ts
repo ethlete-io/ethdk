@@ -41,7 +41,7 @@ import {
   noteProblemOf,
 } from './system/notes/note';
 import { approveException, listExceptions } from './system/exceptions';
-import { approveInventory, Inventory } from './system/inventory';
+import { Inventory } from './system/inventory';
 import { drawnFindingsOf } from './system/drawn-open-points';
 import { openPointsInWorker } from './system/open-points-runner';
 import { flowProblemsOf } from './system/rules/flow';
@@ -120,7 +120,6 @@ export const FLOW_NOTE_PATH = '/__design/flow-note';
 export const FLOW_NOTE_CHANGE_PATH = '/__design/flow-note-change';
 export const FLOW_NOTE_DELETE_PATH = '/__design/flow-note-delete';
 export const INVENTORY_PATH = '/__design/inventory';
-export const INVENTORY_APPROVE_PATH = '/__design/inventory-approve';
 export const EXCEPTIONS_PATH = '/__design/exceptions';
 export const EXCEPTION_APPROVE_PATH = '/__design/exception-approve';
 export const MOTION_PATH = '/__design/motion';
@@ -1190,31 +1189,11 @@ const inventoryAnswerOf = async ({ asked, product }: Found, part: unknown): Prom
 
 const inventoryBodyOf = ({ dir: _dir, ...inventory }: Inventory) => inventory;
 
-/** GET `?product=&part=`: the numbered controls of each rest frame of a page, its part hash and approval state. */
+/** GET `?product=&part=`: the numbered controls of each rest frame of a page, and its part hash. */
 export const inventoryAnswer = withProduct('GET', async (found) => {
   const inventory = await inventoryAnswerOf(found, found.asked.url.searchParams.get('part'));
 
   return isAnswer(inventory) ? inventory : { status: 200, body: inventoryBodyOf(inventory) };
-});
-
-/** POST `?product=`, body `{ part, hash, by }`: the user approves the inventory Studio showed at `hash`. */
-export const inventoryApproveAnswer = withProduct('POST', async (found) => {
-  const body = await bodyOf(found.asked.request);
-
-  if (!body) return failure(400, 'the body must be a JSON object');
-
-  const inventory = await inventoryAnswerOf(found, body['part']);
-
-  if (isAnswer(inventory)) return inventory;
-
-  const approved = approveInventory({ inventory, hash: body['hash'], by: body['by'] });
-
-  return 'error' in approved
-    ? failure(approved.status, approved.error)
-    : {
-        status: 200,
-        body: inventoryBodyOf({ ...inventory, approval: approved, state: { state: 'approved' }, reason: null }),
-      };
 });
 
 /** GET `?product=`: every requested `design complete` exception with its state at the part's current hash. */

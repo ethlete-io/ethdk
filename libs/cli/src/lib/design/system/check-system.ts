@@ -26,7 +26,7 @@ import { BuildReadyInputs } from './part-build-ready';
 import { actionFailuresOf, recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { partActionFailuresOf } from './actions-command';
 import { APP_CODE, renderFindingsOf, tallyKeyOf, withFoundRules } from './render-findings';
-import { ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
+import { ruleBaselineLinesOf, ruleBaselineOf, unbaselinedProblemsOf } from './rule-baseline';
 import { isDrawRule, isSlowRule, unjudgedStateWarningsOf } from './slow-checks';
 import { withoutWaitingUndesigned } from './sketch/undesigned-sketch';
 import {
@@ -163,7 +163,11 @@ const RULES = [
   sdkPrivateVarsOf,
   missingStateSentencesOf,
   stateGroupProblemsOf,
+  sampleTextsOf,
 ];
+
+const isStaticRule = (rule: string) =>
+  !isSlowRule(rule) && !BASELINED_RENDER_RULES.has(rule) && rule !== UNCOMPARED_RULE;
 
 const PART_SCOPED_RULES: ((product: ResolvedProduct, only?: readonly string[]) => Problem[])[] = [
   canonicalClassesOf,
@@ -179,7 +183,6 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...inlineUiInPageWarningsOf(product),
   ...pendingStateWarningsOf(product),
   ...orphanPartsOf(product),
-  ...sampleTextsOf(product),
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
@@ -187,7 +190,7 @@ export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
 
 /**
  * Runs only the static rules of `products` - no draw, no tsc - and prints each problem a product's own files hold
- * that its rule baseline does not list, and each baselined hit; exits 1 on a problem. With `base`, it also flags each app file changed since `base` that moved since its part's implemented record.
+ * that its rule baseline does not list, each baselined hit and each warning; exits 1 on a problem. With `base`, it also flags each app file changed since `base` that moved since its part's implemented record.
  * Prints one line per rule that did not run; under `CI` a rule skipped for a missing input, such as no `base`, fails.
  */
 export const checkRules = (options: {
@@ -215,12 +218,10 @@ export const checkRules = (options: {
     }
 
     const product = resolveProduct({ target, name, config: entry });
-    const isStatic = (rule: string) =>
-      !isSlowRule(rule) && !BASELINED_RENDER_RULES.has(rule) && rule !== UNCOMPARED_RULE;
     const { result: own, skips } = collectingSkips(() =>
       ruleProblemsOf(product).filter((problem) => !isInBasePart(product, problem.file)),
     );
-    const baselined = ruleBaselineOf({ product, problems: own, checked: isStatic });
+    const baselined = ruleBaselineOf({ product, problems: own, checked: isStaticRule });
     const problems = [
       ...baselined.problems.filter((problem) => !isInBasePart(product, problem.file)),
       ...uncomparedOf({ product, changed, invocation }),
@@ -233,10 +234,13 @@ export const checkRules = (options: {
     ];
     const failingSkips = allSkips.filter((skip) => isFailingSkip(skip, ci));
 
-    [...baselined.lines, ...ruleBaselineLinesOf(product, (rule) => !isStatic(rule))].forEach((line) =>
+    [...baselined.lines, ...ruleBaselineLinesOf(product, (rule) => !isStaticRule(rule))].forEach((line) =>
       console.log(line),
     );
     allSkips.filter((skip) => !isFailingSkip(skip, ci)).forEach((skip) => console.log(skipLineOf(skip, ci)));
+    warningProblemsOf(product)
+      .filter((problem) => !isInBasePart(product, problem.file))
+      .forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
     problems.forEach((problem) => console.error(lineOf(target, problem)));
     failingSkips.forEach((skip) => console.error(skipLineOf(skip, ci)));
     failed += problems.length + failingSkips.length;
@@ -305,7 +309,7 @@ export const ruleProblemsOf = (product: ResolvedProduct, only?: readonly string[
 
 /**
  * Build-ready inputs from the open points of `points`, read without a draw by default, and the static rule `problems`
- * of the product, run by default.
+ * of the product, run by default, that its rule baseline does not list.
  */
 export const buildReadyInputsOf = (
   product: ResolvedProduct,
@@ -314,9 +318,11 @@ export const buildReadyInputsOf = (
     problems = ruleProblemsOf(product),
   }: { points?: PartOpenPoints[]; problems?: Problem[] } = {},
 ): BuildReadyInputs => {
+  const unbaselined = unbaselinedProblemsOf(product, problems);
+
   return {
     pointsOf: (part) => partPointsOf(points, part),
-    problemsOf: (part) => problems.filter((problem) => partOfFile(product, problem.file) === part),
+    problemsOf: (part) => unbaselined.filter((problem) => partOfFile(product, problem.file) === part),
   };
 };
 
@@ -522,7 +528,13 @@ const reportSystem = (
     const isWanted = (problem: Problem) => !options.part || partOfFile(product, problem.file) === options.part;
     const isOwn = (problem: Problem) => !isInBasePart(product, problem.file) && isWanted(problem);
     const warnings = warningProblemsOf(product);
-    const problems = ruleProblemsOf(product, options.part ? [options.part] : undefined);
+    const found = ruleProblemsOf(product, options.part ? [options.part] : undefined);
+    const baselined = ruleBaselineOf({
+      product,
+      problems: found.filter(isOwn),
+      checked: (rule, part) => isStaticRule(rule) && (!options.part || part === options.part),
+    });
+    const problems = [...baselined.problems, ...found.filter((problem) => !isOwn(problem))];
 
     warnings.filter(isOwn).forEach((problem) => {
       console.warn(`WARNING ${lineOf(target, problem)}`);
@@ -533,6 +545,7 @@ const reportSystem = (
 
       if (counted) counted.warnings += 1;
     });
+    baselined.lines.forEach((line) => console.log(line));
     problems.filter(isOwn).forEach((problem) => report(problem, product));
     if (!options.part)
       printBaseFindings(

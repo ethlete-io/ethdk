@@ -469,6 +469,15 @@ thumbnail measures the same as the full size. A compare of design and app never 
 both are off by the same amount. Its hits on merged parts that predate it are listed in the
 product's `rule-baseline.json`, and `data-et-skip="CONTROL-HEIGHT"` marks one on purpose.
 
+Three rules keep a product from growing loose parts and made-up content. `SAMPLE-TEXT` fails text in a part's states
+that does not come from the product's sample data (`fixtures.ts`), in merged parts and in the variants of an open
+sketch. `BUTTON-GROUP` is a render rule: it fails two or more buttons that a page lines up side by side in its own
+markup instead of embedding a shared part with a role such as `role="toolbar"`; buttons inside an embedded part or a
+projected slot are not the page's. The hits of both that predate them are listed in the product's
+`rule-baseline.json`. `ORPHAN-PART` warns about a component or element part that no page, no other part and no
+`implements` link uses. Neither `SAMPLE-TEXT` nor `ORPHAN-PART` judges a library product, one that another product
+extends as its `base`. `et design check --rules` prints the warnings of the static rules too.
+
 `SKIP-UNUSED` names a `data-et-skip` (or a `checks: { skip }` entry of the part) that suppresses no problem in any rendered
 state of its part: delete it, a skip lives only while it hides something.
 
@@ -1084,18 +1093,13 @@ export default definePart({
 });
 ```
 
-A page also fails as `INVENTORY-UNAPPROVED` until the user approves its control inventory in
-Studio: each rest frame with a numbered box over every control it draws. The approval stores the
-page's control ids and part hash in `.ethlete/design/<product>/inventory.json`; an added or removed
-control id or any edit of the page reopens it. A page with an undeclared or unclassified control
-cannot be approved, and no CLI command approves one. The design server answers
-`GET /__design/inventory?product=&part=` and `POST /__design/inventory-approve?product=` with
-`{ part, hash, by }`.
+Studio draws each rest frame of a page with a numbered box over every control it draws. The design
+server answers `GET /__design/inventory?product=&part=` with it.
 
 `et design complete <layer>/<name> --variant <key>` runs the same check on a variant of the part's
 open sketch, so a sketch can show it closes its gaps before it is merged. Every part is drawn as the
 variant draws it; a part the variant changes is not merged yet, so it never fails as
-`PART-UNREVIEWED`. An exception or inventory approval holds the merged part's hash, so it reads as
+`PART-UNREVIEWED`. An exception approval holds the merged part's hash, so it reads as
 reopened on a variant that changes that part.
 
 `et design complete --request <layer>/<name>.<control>.<requirement> --reason <text>` asks for an

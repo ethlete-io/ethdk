@@ -12,14 +12,6 @@ import {
   SeenFrame,
   seePart,
 } from './complete';
-import {
-  InventoryApproval,
-  inventoryReasonOf,
-  InventoryState,
-  inventoryStateOf,
-  readInventory,
-  writeInventoryApproval,
-} from './inventory-approval';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { SystemModules } from './system-modules';
 
@@ -67,16 +59,13 @@ export type InventoryItem = {
 /** A rest frame of a page, the URL of its picture, the controls and the assets and overlays it draws, in its pixels. */
 export type InventoryFrame = FrameAddress & { shot: string; controls: InventoryControl[]; items: InventoryItem[] };
 
-/** The control inventory of a page, its part hash, and whether its approval holds. `dir` holds its inventory.json. */
+/** The control inventory of a page and its part hash. `dir` holds the part. */
 export type Inventory = {
   part: string;
   dir: string;
   hash: string;
   ids: string[];
   findings: number;
-  approval: InventoryApproval | null;
-  state: InventoryState;
-  reason: string | null;
   frames: InventoryFrame[];
 };
 
@@ -206,7 +195,7 @@ export const inventoryFramesOf = (options: {
   });
 };
 
-/** Draws the rest frames of a page and answers its control inventory and approval state, or why it cannot. */
+/** Draws the rest frames of a page and answers its control inventory, or why it cannot. */
 export const inventoryOf = async (options: {
   product: ResolvedProduct;
   part: string;
@@ -234,8 +223,6 @@ export const inventoryOf = async (options: {
     addresses: sight.addresses,
   });
   const ids = inventoryIdsOf(sight.seen);
-  const approval = readInventory(sight.owner.dir)[part] ?? null;
-  const state = inventoryStateOf({ approval: approval ?? undefined, ids, hash: sight.hash });
   const findings =
     new Set(
       frames.flatMap((frame) =>
@@ -253,47 +240,7 @@ export const inventoryOf = async (options: {
     hash: sight.hash,
     ids,
     findings,
-    approval,
-    state,
-    reason: inventoryReasonOf(state),
     frames,
     dir: sight.owner.dir,
   };
-};
-
-/**
- * Records the user's approval of the inventory Studio showed, or answers why it is refused: `hash` is the part hash
- * that inventory had, and a page with an undeclared or unclassified control cannot be approved.
- */
-export const approveInventory = (options: {
-  inventory: Inventory;
-  hash: unknown;
-  by: unknown;
-  at?: string;
-}): { status: number; error: string } | InventoryApproval => {
-  const { inventory, hash, by } = options;
-
-  if (typeof by !== 'string' || by.trim() === '') return { status: 400, error: 'by is required' };
-  if (typeof hash !== 'string' || hash === '') return { status: 400, error: 'hash is required' };
-  if (inventory.findings > 0)
-    return {
-      status: 422,
-      error: `${inventory.part} has ${inventory.findings} undeclared or unclassified control(s) - declare them before approving`,
-    };
-  if (hash !== inventory.hash)
-    return {
-      status: 409,
-      error: `${inventory.part} changed since its inventory was shown - reload and check it again`,
-    };
-
-  const approval: InventoryApproval = {
-    ids: inventory.ids,
-    hash,
-    by: by.trim(),
-    at: options.at ?? new Date().toISOString(),
-  };
-
-  writeInventoryApproval({ productDir: inventory.dir, part: inventory.part, approval });
-
-  return approval;
 };

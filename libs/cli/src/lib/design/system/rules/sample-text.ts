@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import ts from 'typescript';
 import { Problem } from '../problem';
+import { isLibraryProduct } from '../library-product';
 import { ResolvedProduct } from '../resolve-product';
 import { perSource, sourceFileOf } from '../ts-source';
 
@@ -147,9 +148,11 @@ const fixtureTextsOf = (product: ResolvedProduct) => {
 
 /**
  * Each run of text a part's states carry as a literal of its own file instead of taking it from the product's sample
- * data, `fixtures.ts` (`SAMPLE-TEXT`). A run counts as text when it holds a capital or a space and is neither a class list nor a camelCase name.
+ * data, `fixtures.ts` (`SAMPLE-TEXT`); a library product has none. A run counts as text when it holds a capital or a space and is neither a class list nor a camelCase name.
  */
 export const sampleTextsOf = (product: ResolvedProduct): Problem[] => {
+  if (isLibraryProduct(product)) return [];
+
   const fixtures = fixtureTextsOf(product);
 
   return product.parts
@@ -157,10 +160,15 @@ export const sampleTextsOf = (product: ResolvedProduct): Problem[] => {
     .flatMap((part) =>
       stateTextsOf(part.source)
         .filter(({ text }) => !fixtures.has(text))
-        .map(({ text, line }) => ({
-          rule: SAMPLE_TEXT_RULE,
-          file: part.file,
-          message: `line ${line}: "${text.length > 48 ? `${text.slice(0, 47)}…` : text}" is sample text outside the product's sample data - put it in fixtures.ts and import it from @system/fixtures`,
-        })),
+        .map(({ text }) => {
+          const quoted = `"${text.length > 48 ? `${text.slice(0, 47)}…` : text}"`;
+
+          return {
+            rule: SAMPLE_TEXT_RULE,
+            file: part.file,
+            at: quoted,
+            message: `${quoted} is sample text outside the product's sample data - put it in fixtures.ts and import it from @system/fixtures`,
+          };
+        }),
     );
 };

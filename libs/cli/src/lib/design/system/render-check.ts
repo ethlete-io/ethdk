@@ -31,6 +31,7 @@ import { unknownLiveStatesOf } from './live-compare';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
+import { BUTTON_GROUP_RULE, BUTTON_GROUP_STATEMENTS } from './button-group';
 import { FONT_FACES_SCRIPT } from './font-faces';
 import { ESCAPABLE_RULES } from './skip-classes';
 import { loadScaledMs, NoVerdict, noVerdictOf } from './no-verdict';
@@ -194,7 +195,12 @@ export const renderErrorDetailOf = (error: string) =>
 export const WARNING_RULES: ReadonlySet<string> = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
 /** The render rules whose hits on merged parts the rule baseline of their product lists. */
-export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([CONTROL_HEIGHT_RULE, 'HIDDEN-CONTENT', 'SCROLLS']);
+export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([
+  CONTROL_HEIGHT_RULE,
+  BUTTON_GROUP_RULE,
+  'HIDDEN-CONTENT',
+  'SCROLLS',
+]);
 
 const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';
 
@@ -631,6 +637,7 @@ ${SEE_THROUGH_STATEMENTS}
       const named = element.tagName.toLowerCase() + (cls ? '.' + cls : '') + (text ? ' "' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '"' : '');
       report('CONTROL-PART-INPUT', element, named + ' is a control without data-et-control, so no control check sees it - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls');
     }
+${BUTTON_GROUP_STATEMENTS}
 ${ARROW_ANCHOR_STATEMENTS}
 ${CONTROL_HEIGHT_STATEMENTS}
   return withSkipMarks();

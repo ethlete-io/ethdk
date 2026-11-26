@@ -24,9 +24,6 @@ const inventoryOf = (controls: InventoryControl[]): Inventory => ({
   hash: 'h1',
   ids: controls.map((listed) => listed.id),
   findings: controls.filter((listed) => listed.status === 'undeclared' || listed.status === 'unclassified').length,
-  approval: null,
-  state: { state: 'none' },
-  reason: null,
   frames: [
     {
       state: 'default',

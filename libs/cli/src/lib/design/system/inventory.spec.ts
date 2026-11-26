@@ -1,15 +1,13 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
-import { inventoryAnswer, inventoryApproveAnswer } from '../studio-api';
+import { inventoryAnswer } from '../studio-api';
 import { SeenFrame } from './complete';
 import { Inventory, inventoryFramesOf } from './inventory';
-import { inventoryStateOf, readInventory } from './inventory-approval';
-import { formattedTextOf } from './prettier';
 
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-inventory-'));
@@ -29,9 +27,6 @@ const inventoryOf = (dir: string, findings: number): Inventory => ({
   hash: 'h1',
   ids: ['more'],
   findings,
-  approval: null,
-  state: { state: 'none' },
-  reason: 'its control inventory is not approved',
   frames: [],
 });
 
@@ -42,36 +37,6 @@ const ask = (options: { target: string; method: string; path: string; body?: unk
     method: options.method,
   }) as unknown as IncomingMessage,
   inventoryOf: () => Promise.resolve(options.inventory),
-});
-
-describe('inventoryStateOf', () => {
-  const approval = { ids: ['more', 'pick'], hash: 'h1', by: 'human', at: '2026-10-30T00:00:00.000Z' };
-
-  it('holds while the ids and the hash match', () => {
-    expect(inventoryStateOf({ approval, ids: ['more', 'pick'], hash: 'h1' })).toEqual({ state: 'approved' });
-    expect(inventoryStateOf({ approval: undefined, ids: [], hash: 'h1' })).toEqual({ state: 'none' });
-  });
-
-  it('reopens on an added id, a removed id and a part change', () => {
-    expect(inventoryStateOf({ approval, ids: ['more', 'pick', 'save'], hash: 'h1' })).toEqual({
-      state: 'reopened',
-      added: ['save'],
-      removed: [],
-      changed: false,
-    });
-    expect(inventoryStateOf({ approval, ids: ['more'], hash: 'h1' })).toEqual({
-      state: 'reopened',
-      added: [],
-      removed: ['pick'],
-      changed: false,
-    });
-    expect(inventoryStateOf({ approval, ids: ['more', 'pick'], hash: 'h2' })).toEqual({
-      state: 'reopened',
-      added: [],
-      removed: [],
-      changed: true,
-    });
-  });
 });
 
 describe('inventoryFramesOf', () => {
@@ -351,61 +316,6 @@ describe('inventory endpoints', () => {
 
     expect(answer.status).toBe(200);
     expect(answer.body).not.toHaveProperty('dir');
-    expect(answer.body).toMatchObject({ part: 'pages/home', hash: 'h1', state: { state: 'none' } });
-  });
-
-  // Inventory approval refuses an undeclared or unclassified control and writes the ids, the hash and the approver.
-  it('refuses to approve a page with an undeclared or unclassified control, or a hash that changed', async () => {
-    const { target, dir } = checkout();
-    const approve = (body: unknown, findings: number) =>
-      inventoryApproveAnswer(
-        ask({ target, method: 'POST', path: '/?product=app-a', body, inventory: inventoryOf(dir, findings) }),
-      );
-
-    expect(await approve({ part: 'pages/home', hash: 'h1', by: 'human' }, 1)).toEqual({
-      status: 422,
-      body: { error: 'pages/home has 1 undeclared or unclassified control(s) - declare them before approving' },
-    });
-    expect((await approve({ part: 'pages/home', hash: 'h0', by: 'human' }, 0)).status).toBe(409);
-    expect((await approve({ part: 'pages/home', hash: 'h1' }, 0)).status).toBe(400);
-    expect(readInventory(dir)).toEqual({});
-  });
-
-  it('writes the ids, the hash and who approved them', async () => {
-    const { target, dir } = checkout();
-    const answer = await inventoryApproveAnswer(
-      ask({
-        target,
-        method: 'POST',
-        path: '/?product=app-a',
-        body: { part: 'pages/home', hash: 'h1', by: 'human' },
-        inventory: inventoryOf(dir, 0),
-      }),
-    );
-
-    expect(answer.status).toBe(200);
-    expect(answer.body).toMatchObject({ state: { state: 'approved' }, reason: null });
-    expect(readInventory(dir)).toEqual({
-      'pages/home': { ids: ['more'], hash: 'h1', by: 'human', at: expect.any(String) },
-    });
-  });
-
-  it('writes inventory.json the way Prettier formats it', async () => {
-    const { target, dir } = checkout();
-
-    await inventoryApproveAnswer(
-      ask({
-        target,
-        method: 'POST',
-        path: '/?product=app-a',
-        body: { part: 'pages/home', hash: 'h1', by: 'human' },
-        inventory: inventoryOf(dir, 0),
-      }),
-    );
-
-    const file = join(dir, 'inventory.json');
-    const written = readFileSync(file, 'utf8');
-
-    expect(formattedTextOf({ target, file, text: written })).toBe(written);
+    expect(answer.body).toMatchObject({ part: 'pages/home', hash: 'h1' });
   });
 });

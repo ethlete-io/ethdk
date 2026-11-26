@@ -463,6 +463,43 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it("flags buttons that line up in a page's own markup, not in a part or a grouping role", async (context) => {
+    const row = 'style="display: flex"';
+    const target = checkout({
+      'pages/loose': { body: `<header ${row}><div><button>Run</button></div><button>Stop</button></header>` },
+      'pages/toolbar': { body: `<div role="toolbar" ${row}><button>Run</button><button>Stop</button></div>` },
+      'pages/embedded': {
+        body: `<header><div data-et-part="components/bar" ${row}><button>Run</button><button>Stop</button></div></header>`,
+      },
+      'components/row': { body: `<div ${row}><button>Run</button><button>Stop</button></div>` },
+      'pages/single': { body: '<header><button>Run</button></header>' },
+      'pages/projected': {
+        body: `<main data-et-projected="canvas"><div ${row}><button>Save</button><button>Save</button></div></main>`,
+      },
+      'pages/list': {
+        body: '<nav><div role="button" data-et-part="components/item">Ada</div><div role="button" data-et-part="components/item">Lin</div></nav>',
+      },
+      'components/item': { body: '<div role="button">Ada</div>' },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues.filter((issue) => issue.rule === 'BUTTON-GROUP').map((issue) => [issue.part, issue.detail]),
+    ).toEqual([
+      [
+        'pages/loose',
+        '2 buttons (Run, Stop) line up in the page\'s own markup - put them in a shared part with a role, such as a toolbar (role="toolbar"), and embed it',
+      ],
+    ]);
+  }, 120_000);
+
   it('draws every state and scheme of a part on at most one page load per lane', async (context) => {
     const target = checkout({});
     const dir = join(target, DESIGN_DIR, 'shop', 'components', 'stated');
@@ -617,6 +654,12 @@ export default definePart({
 
   it('finds the drawings the other checks pass: overflow, clipping, wrapping and zero size', async (context) => {
     const target = checkout();
+    const configFile = join(target, DESIGN_DIR, 'config.json');
+
+    writeFileSync(
+      configFile,
+      JSON.stringify({ products: { ...readConfig(target)?.products, app: { base: `${DESIGN_DIR}/shop` } } }),
+    );
     const config = readConfig(target) ?? {};
 
     vi.spyOn(console, 'log').mockImplementation(() => undefined);

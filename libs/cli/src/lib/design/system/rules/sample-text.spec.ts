@@ -9,14 +9,14 @@ import { sampleTextsOf } from './sample-text';
 const part = (before: string, states: string) =>
   `import { definePart, drawing, html } from '@design-system';\n${before}\nexport default definePart({ note: 'Not sample text', states: ${states}, describe: { default: 'Not sample text' }, render: () => drawing({ body: html\`<p>Render text</p>\` }) });\n`;
 
-const textsOf = (files: Record<string, string>) => {
+const textsOf = (files: Record<string, string>, products: Record<string, object> = { 'app-a': {} }) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-sample-text-'));
   const write = (path: string, text: string) => {
     mkdirSync(dirname(join(target, DESIGN_DIR, path)), { recursive: true });
     writeFileSync(join(target, DESIGN_DIR, path), text);
   };
 
-  write('config.json', JSON.stringify({ products: { 'app-a': {} } }));
+  write('config.json', JSON.stringify({ products }));
   Object.entries(files).forEach(([path, text]) => write(`app-a/${path}`, text));
 
   const product = resolveProduct({ target, name: 'app-a', config: readConfig(target)?.products?.['app-a'] ?? {} });
@@ -36,10 +36,7 @@ describe('sampleTextsOf', () => {
           "{ default: { title: ORDER.title }, held: { title: 'Order 1042', reason }, other: { title: 'Made up order' } }",
         ),
       }),
-    ).toEqual([
-      'components/card/card.ts line 3: "Waiting on ADR 0331"',
-      'components/card/card.ts line 4: "Made up order"',
-    ]);
+    ).toEqual(['components/card/card.ts "Waiting on ADR 0331"', 'components/card/card.ts "Made up order"']);
   });
 
   it('skips class lists, lower-case keys, camelCase names and foundations', () => {
@@ -56,7 +53,14 @@ describe('sampleTextsOf', () => {
 
   it('flags every text when the product has no sample data', () => {
     expect(textsOf({ 'pages/home/home.ts': part('', "{ default: { heading: 'Welcome back' } }") })).toEqual([
-      'pages/home/home.ts line 3: "Welcome back"',
+      'pages/home/home.ts "Welcome back"',
     ]);
+  });
+
+  it('judges no library, a product another product extends as its base', () => {
+    const files = { 'components/button/button.ts': part('', "{ default: { label: 'Export as PDF' } }") };
+
+    expect(textsOf(files, { 'app-a': {}, 'app-b': { base: `${DESIGN_DIR}/app-a` } })).toEqual([]);
+    expect(textsOf(files)).toEqual(['components/button/button.ts "Export as PDF"']);
   });
 });

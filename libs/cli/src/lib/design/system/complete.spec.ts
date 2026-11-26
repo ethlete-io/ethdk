@@ -19,9 +19,7 @@ import {
 import { designComplete } from './complete-command';
 import { approveException } from './exceptions';
 import { readHandoff, recordHandoff } from './handoff';
-import { writeInventoryApproval } from './inventory-approval';
-import { ResolvedProduct, resolveProduct } from './resolve-product';
-import { partHashOf } from './sketch/baseline';
+import { resolveProduct } from './resolve-product';
 import { createSketch } from './sketch/sketch';
 import { createSystemModules } from './system-modules';
 import { recordMerged } from './sketch/merged-parts';
@@ -356,18 +354,6 @@ export default definePart({
 
   return { target, config, product };
 };
-
-const approve = (options: { product: ResolvedProduct; part: string; ids: string[]; hash?: string }) =>
-  writeInventoryApproval({
-    productDir: options.product.dir,
-    part: options.part,
-    approval: {
-      ids: options.ids,
-      hash: options.hash ?? partHashOf({ product: options.product, dir: join(options.product.dir, options.part) }),
-      by: 'claude-opus-5-5',
-      at: '2026-10-30T00:00:00.000Z',
-    },
-  });
 
 const cwd = process.cwd();
 
@@ -1016,7 +1002,6 @@ describe('completenessOf', () => {
       'REQUIREMENT-MISSING pages/merge.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
       'REQUIREMENT-MISSING pages/merge.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
       'REQUIREMENT-MISSING pages/merge.more.body - state open draws no visible, non-empty data-et-surface="more.body" next to data-et-control="more"',
-      'INVENTORY-UNAPPROVED pages/merge - its control inventory is not approved - check and approve it in Studio',
     ]);
 
     expect(await completenessOf({ target, config, product, part: 'components/done' })).toEqual({ gaps: [] });
@@ -1051,14 +1036,12 @@ describe('completenessOf', () => {
       'REQUIREMENT-MISSING components/always-open.more.collapsed - every state that draws it also shows its body - draw a state with more.body closed',
     ]);
 
-    approve({ product, part: 'pages/uses', ids: ['more'] });
     expect(await completenessOf({ target, config, product, part: 'pages/uses' })).toEqual({ gaps: [] });
 
     const usesFlat = await completenessOf({ target, config, product, part: 'pages/uses-flat' });
 
     expect('gaps' in usesFlat && usesFlat.gaps.map(completenessGapLineOf)).toEqual([
       'CONTROL-PART-INCOMPLETE pages/uses-flat.more - components/flat is not design complete: 4 gap(s) - run design complete components/flat',
-      'INVENTORY-UNAPPROVED pages/uses-flat - its control inventory is not approved - check and approve it in Studio',
     ]);
 
     expect(await completenessOf({ target, config, product, part: 'components/rows' })).toEqual({ gaps: [] });
@@ -1209,12 +1192,8 @@ export default definePart({
 
     if (!Array.isArray(usesFlat)) return context.skip(JSON.stringify(usesFlat));
 
-    expect(usesFlat).toEqual([
-      'INVENTORY-UNAPPROVED pages/uses-flat - its control inventory is not approved - check and approve it in Studio',
-    ]);
-    expect(await lines('pages/slotted')).toEqual([
-      'INVENTORY-UNAPPROVED pages/slotted - its control inventory is not approved - check and approve it in Studio',
-    ]);
+    expect(usesFlat).toEqual([]);
+    expect(await lines('pages/slotted')).toEqual([]);
     expect(await lines('components/flat')).not.toEqual([]);
   }, 120_000);
 
@@ -1255,10 +1234,8 @@ export default definePart({
       'CONTROL-UNCLASSIFIED components/pointer - div.aa-card with :hover rule at div > div.aa-card in rest - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style',
     ]);
     expect(await lines('pages/inner')).toEqual([
-      'INVENTORY-UNAPPROVED pages/inner - its control inventory is not approved - check and approve it in Studio',
       'HINT CONTROL-UNDECLARED pages/inner - button at main > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
     ]);
-    approve({ product, part: 'pages/host', ids: [] });
     expect(await lines('pages/host')).toEqual([]);
   }, 120_000);
 
@@ -1269,7 +1246,6 @@ export default definePart({
 
       return 'gaps' in result ? result.gaps.map(completenessGapLineOf) : result;
     };
-    approve({ product, part: 'pages/owns', ids: [] });
 
     const owns = await lines('pages/owns');
 
@@ -1277,7 +1253,7 @@ export default definePart({
 
     expect(owns).toEqual([]);
     expect(await completenessOf({ target, config, product, part: 'pages/slotted' })).toEqual({
-      gaps: [expect.objectContaining({ code: 'INVENTORY-UNAPPROVED' })],
+      gaps: [],
       hints: [
         'HINT CONTROL-UNDECLARED pages/slotted - button at div.aa-slot > section > button.aa-own in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
       ],
@@ -1295,36 +1271,6 @@ export default definePart({
     expect(await lines('pages/recolours')).toEqual([
       'CONTROL-OVERRIDDEN pages/recolours - ".aa-page > div" sets padding on main.aa-page > div, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
       'CONTROL-OVERRIDDEN pages/recolours - ":is(.aa-page) .aa-toggle:hover" sets color on main.aa-page > div > button.aa-toggle, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
-      'INVENTORY-UNAPPROVED pages/recolours - its control inventory is not approved - check and approve it in Studio',
-    ]);
-  }, 120_000);
-
-  it('reopens the inventory approval of a page on an added or removed control id or a part change', async (context) => {
-    const { target, config, product } = checkout();
-    const lines = async () => {
-      const result = await completenessOf({ target, config, product, part: 'pages/uses' });
-
-      return 'gaps' in result ? result.gaps.map(completenessGapLineOf) : result;
-    };
-
-    approve({ product, part: 'pages/uses', ids: [] });
-
-    const added = await lines();
-
-    if (!Array.isArray(added)) return context.skip(JSON.stringify(added));
-
-    expect(added).toEqual([
-      'INVENTORY-UNAPPROVED pages/uses - its approved control inventory reopened: added more - check and approve it in Studio',
-    ]);
-
-    approve({ product, part: 'pages/uses', ids: ['gone', 'more'] });
-    expect(await lines()).toEqual([
-      'INVENTORY-UNAPPROVED pages/uses - its approved control inventory reopened: removed gone - check and approve it in Studio',
-    ]);
-
-    approve({ product, part: 'pages/uses', ids: ['more'], hash: 'before' });
-    expect(await lines()).toEqual([
-      'INVENTORY-UNAPPROVED pages/uses - its approved control inventory reopened: the part changed - check and approve it in Studio',
     ]);
   }, 120_000);
 
@@ -1530,7 +1476,7 @@ export default definePart({
     expect(await designComplete({ target, argv: ['pages/merge', '--product', 'app-a'], invocation: 'et design' })).toBe(
       1,
     );
-    expect(errors.at(-1)).toBe('pages/merge in app-a is not design complete: 6 gap(s)');
+    expect(errors.at(-1)).toBe('pages/merge in app-a is not design complete: 5 gap(s)');
     expect(
       await designComplete({ target, argv: ['components/done', '--product', 'app-a'], invocation: 'et design' }),
     ).toBe(0);
@@ -1564,7 +1510,7 @@ export default definePart({
 
     expect(await complete('--handoff')).toBe(1);
     expect(errors.slice(-2)).toEqual([
-      'HANDOFF pages/merge regressed - 6 gap(s)',
+      'HANDOFF pages/merge regressed - 5 gap(s)',
       '1 of 2 handoff part(s) in app-a are no longer design complete',
     ]);
     expect(await complete('components/done', '--handoff', '--variant', 'a')).toBe(2);

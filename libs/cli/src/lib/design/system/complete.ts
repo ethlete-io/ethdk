@@ -25,7 +25,7 @@ import { readMerged } from './sketch/merged-parts';
 import { INSPECTS_AT_ONCE, renderErrorDetailOf } from './render-check';
 import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } from './system-modules';
 import { ListedException, readExceptions, withExceptions } from './exceptions';
-import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
+import { partOwnerOf } from './inventory-approval';
 import { optionValuesChecker } from './rules/option-values';
 import { demoBackdropGapsOf, findDemoBackdrop } from './demo-backdrop';
 import { OVERLAY_PANE_SELECTOR } from './see-through';
@@ -795,10 +795,9 @@ export const completenessGapsOf = (options: {
   reviewed: boolean;
   grid?: unknown;
   referenced?: ReferencedParts;
-  inventory?: InventoryState;
   consumerAction?: unknown;
 }): CompletenessGap[] => {
-  const { part, states, frames, reviewed, grid, referenced = {}, inventory } = options;
+  const { part, states, frames, reviewed, grid, referenced = {} } = options;
   const declared = declaredControlsOf(options.controls) ?? {};
   const gaps: CompletenessGap[] = [];
 
@@ -892,16 +891,7 @@ export const completenessGapsOf = (options: {
     ...actionGapsOf({ part, declared, frames, consumerAction: options.consumerAction }),
     ...ownerGapsOf({ part, declared, frames, referenced }),
     ...overrideGapsOf({ part, frames }),
-    ...inventoryGapsOf({ part, inventory }),
   ];
-};
-
-const inventoryGapsOf = ({ part, inventory }: { part: string; inventory?: InventoryState }): CompletenessGap[] => {
-  const reason = inventory ? inventoryReasonOf(inventory) : null;
-
-  return reason === null
-    ? []
-    : [{ code: 'INVENTORY-UNAPPROVED', target: part, detail: `${reason} - check and approve it in Studio` }];
 };
 
 export const completenessGapLineOf = (gap: CompletenessGap) => `${gap.code} ${gap.target} - ${gap.detail}`;
@@ -1797,7 +1787,7 @@ export const seePart = async (options: {
   };
 };
 
-/** The control ids a page draws at rest, the set its inventory approval holds. */
+/** The control ids a page draws at rest, the set its inventory lists. */
 export const inventoryIdsOf = (frames: SeenFrame[]) =>
   [
     ...new Set(
@@ -1810,7 +1800,7 @@ export const inventoryIdsOf = (frames: SeenFrame[]) =>
  * and answers the gaps of its `controls` declaration, or why it could not draw. A part a control names in `part`,
  * and an embedded part whose `data-et-part` root draws a control, is checked the same way, and its gaps fail it -
  * unless it is a part of the product's base, whose gaps stay its own.
- * A page fails until the user approves its control inventory in Studio. An exception the user approved in Studio
+ * An exception the user approved in Studio
  * drops the gap it names until the part changes; a pending one still fails. With `sketch`, every part is drawn as
  * that variant draws it, and a part the variant changes is not merged yet, so it never fails as unreviewed.
  * A drawn control that no `controls` entry declares is a hint; the sketch check fails on one a sketch adds.
@@ -2025,10 +2015,6 @@ export const partsCompletenessOf = async (options: {
             grid: definition?.grid,
             consumerAction: definition?.consumerAction,
             referenced,
-            inventory:
-              resolved.layer === 'pages'
-                ? inventoryStateOf({ approval: readInventory(owner.dir)[key], ids: inventoryIdsOf(seen), hash })
-                : undefined,
           }),
           ...(resolved.layer === 'pages' ? [] : demoBackdropGapsOf({ part: key, frames: seen })),
         ],

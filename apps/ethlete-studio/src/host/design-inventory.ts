@@ -51,22 +51,12 @@ export type InventoryFrame = {
   items: InventoryItem[];
 };
 
-export type InventoryApproval = { ids: string[]; hash: string; by: string; at: string };
-
-export type InventoryState =
-  | { state: 'approved' }
-  | { state: 'reopened'; added: string[]; removed: string[]; changed: boolean }
-  | { state: 'none' };
-
-/** The control inventory of a page part, its hash, and whether its approval holds. */
+/** The control inventory of a page part, and its hash. */
 export type Inventory = {
   part: string;
   hash: string;
   ids: string[];
   findings: number;
-  approval: InventoryApproval | null;
-  state: InventoryState;
-  reason: string | null;
   frames: InventoryFrame[];
 };
 

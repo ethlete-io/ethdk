@@ -288,6 +288,26 @@ describe('openSketchProblemsOf', () => {
     );
   });
 
+  it('reports sample text a variant adds outside the sample data', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const hero = join(sketch.dir, 'a/elements/hero/hero.ts');
+
+    writeFileSync(hero, readFileSync(hero, 'utf8').replace("films[0] ?? { title: '' }", "{ title: 'Made up film' }"));
+
+    const variants = variantProblemsOf({ product, sketch });
+
+    expect(variants.find(({ variant }) => variant === 'a')?.problems).toContainEqual(
+      expect.objectContaining({ rule: 'SAMPLE-TEXT', file: hero }),
+    );
+    expect(variants.find(({ variant }) => variant === 'b')?.problems).toEqual([]);
+  });
+
   it('reports a sketch folder without sketch.json', () => {
     const target = acme();
     const product = resolveAcme(target);

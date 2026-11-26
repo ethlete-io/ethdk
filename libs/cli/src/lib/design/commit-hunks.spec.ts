@@ -184,16 +184,10 @@ const sharedJsonFiles = (dir: string): string[] =>
     .filter(
       (path) => !path.split('/').some((segment) => ['sketches', 'comments', 'notes', 'node_modules'].includes(segment)),
     )
-    .map((path) => join(dir, path));
+    .map((path) => join(dir, path))
+    .filter((path) => existsSync(path));
 
-const SPLIT = [
-  'merged.json',
-  'pictures.json',
-  'ready.json',
-  'implemented.json',
-  'inventory.json',
-  'implementation-baseline.json',
-];
+const SPLIT = ['merged.json', 'pictures.json', 'ready.json', 'implemented.json', 'implementation-baseline.json'];
 const REFUSED = [
   'config.json',
   'overrides.json',

@@ -1,5 +1,5 @@
 {
-  "apiLevel": 13,
+  "apiLevel": 14,
   "routes": [
     "/__design/calls",
     "/__design/comment",
@@ -16,7 +16,6 @@
     "/__design/flows",
     "/__design/force",
     "/__design/inventory",
-    "/__design/inventory-approve",
     "/__design/list-width",
     "/__design/motion",
     "/__design/note",
