@@ -112,18 +112,18 @@ Underneath, all of those default from **one shared scale** that `size` drives - 
 
 Both flavors, and the segmented button group's tabs variant (font weight, text transform, letter spacing, line height and inactive colour), also read these optional tokens, unset by default:
 
-| Token                              | Default when unset               | What it changes                                         |
-| ---------------------------------- | -------------------------------- | ------------------------------------------------------- |
-| `--et-tab-font-weight`             | inherited                        | Trigger label weight                                    |
-| `--et-tab-text-transform`          | none                             | Trigger label case, e.g. `uppercase`                    |
-| `--et-tab-letter-spacing`          | normal                           | Trigger label tracking, e.g. `0.12em`                   |
-| `--et-tab-line-height`             | inherited                        | Trigger label line height                               |
-| `--et-tab-baseline-size`           | the underline size               | Thickness of the divider line under the bar             |
-| `--et-tab-baseline-color`          | the surface's border             | Colour of the divider line under the bar                |
-| `--et-tab-active-color`            | the surface's colour             | Text colour of the active trigger                       |
-| `--et-tab-inactive-color`          | the surface's interaction colour | Text colour of an inactive trigger                      |
-| `--et-tab-hover-color`             | the surface's colour             | Text colour of a hovered inactive trigger               |
-| `--et-tab-hover-underline-opacity` | `0`                              | Shows the underline on a hovered inactive trigger (`1`) |
+| Token                              | Default when unset                 | What it changes                                         |
+| ---------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| `--et-tab-font-weight`             | inherited                          | Trigger label weight                                    |
+| `--et-tab-text-transform`          | none                               | Trigger label case, e.g. `uppercase`                    |
+| `--et-tab-letter-spacing`          | normal                             | Trigger label tracking, e.g. `0.12em`                   |
+| `--et-tab-line-height`             | inherited                          | Trigger label line height                               |
+| `--et-tab-baseline-size`           | the underline size                 | Thickness of the divider line under the bar             |
+| `--et-tab-baseline-color`          | the surface's border               | Colour of the divider line under the bar                |
+| `--et-tab-active-color`            | the surface's colour               | Text colour of the active trigger                       |
+| `--et-tab-inactive-color`          | the surface's `controlText` ladder | Text colour of an inactive trigger                      |
+| `--et-tab-hover-color`             | the surface's `controlText` hover  | Text colour of a hovered inactive trigger               |
+| `--et-tab-hover-underline-opacity` | `0`                                | Shows the underline on a hovered inactive trigger (`1`) |
 
 ### Defaults for the whole app
 

@@ -100,7 +100,7 @@ submit, a toolbar of icon buttons, chrome around content:
 stays a fill, outline keeps its border) and a row of neutral buttons still reads as a hierarchy. Text
 and borders follow the surface too, so it stays readable on light and dark surfaces alike, and it
 needs **no neutral color theme registered**. What the neutral fill and its text look like comes from
-the surface theme's [`interactionColor` swatch](/core/theming#surface-themes).
+the surface theme's [`tint` and `controlText`](/core/theming#surface-themes).
 
 ### Neutral until pressed
 

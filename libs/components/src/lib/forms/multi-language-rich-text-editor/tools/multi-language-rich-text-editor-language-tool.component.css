@@ -43,9 +43,6 @@
     background: var(--et-tone-fill, var(--et-surface-text, currentColor));
   }
 
-  /* A square, neutral toolbar control that mirrors the icon buttons beside it (same size, same
-     muted-until-pressed surface-interaction tint) — it just shows the active language code instead
-     of an icon. A badge dot appears while any language is still empty. */
   .et-ml-rte-lang-trigger {
     display: inline-flex;
     position: relative;

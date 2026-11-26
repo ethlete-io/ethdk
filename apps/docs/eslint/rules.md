@@ -343,7 +343,7 @@ instead of CSS-only classes.
 
 ### `no-old-theme-token`
 
-An opt-in rule for an app that finished the theme token rename (`@ethlete/core:migrate-theme-token-names`). It flags the retired names: the `-rgb` / `-solid` surface tokens, `--et-theme-color-*`, `--et-color-primary*` (and the secondary / tertiary palettes), `rgb(var(--et-surface-…))` triplet reads and, for each configured Tailwind `prefixes` entry, the old `<prefix>-theme`, `<prefix>-on-theme`, `<prefix>-theme-ink` and `<prefix>-surface-bg` / `-muted` / `-subtle` utilities. It reads the file text, so it also runs on TypeScript and templates. It has no fixer; the migration rewrites the names.
+An opt-in rule for an app that finished the theme token rename (`@ethlete/core:migrate-theme-token-names`). It flags the retired names: the `-rgb` / `-solid` surface tokens, `--et-theme-color-*`, `--et-color-primary*` (and the secondary / tertiary palettes), `rgb(var(--et-surface-…))` triplet reads, the surface `interaction` tokens and utilities (`--et-surface-interaction*`, `on-interaction`, `interaction-ink`; a fill or tint read is now `-tint`, a control text read `-control-text`, see `@ethlete/core:migrate-surface-roles`) and, for each configured Tailwind `prefixes` entry, the old `<prefix>-theme`, `<prefix>-on-theme`, `<prefix>-theme-ink` and `<prefix>-surface-bg` / `-muted` / `-subtle` utilities. It reads the file text, so it also runs on TypeScript and templates. It has no fixer; the migration rewrites the names.
 
 ESLint lints no CSS by default. The plugin ships a text language, `ethlete/css`, so the rule can lint stylesheets:
 

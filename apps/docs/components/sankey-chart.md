@@ -174,7 +174,7 @@ The hint is `aria-hidden` and not part of the link's description, so a screen re
 
 ## Theming
 
-Nodes and ribbons use `--et-tone-fill` from the node's colour scope. Labels use `--et-surface-text` with a halo in `--et-surface-background`; the hover tint behind a node mixes `--et-surface-interaction`. Theme names are registered by the application - see [theming](/core/theming).
+Nodes and ribbons use `--et-tone-fill` from the node's colour scope. Labels use `--et-surface-text` with a halo in `--et-surface-background`; the hover tint behind a node mixes `--et-surface-tint`. Theme names are registered by the application - see [theming](/core/theming).
 
 | Token                                      | Default | Description                                                      |
 | ------------------------------------------ | ------- | ---------------------------------------------------------------- |

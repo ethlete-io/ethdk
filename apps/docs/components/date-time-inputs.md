@@ -895,7 +895,7 @@ tokens. All colors resolve through the app-registered
 [surface/color theme systems](/core/theming): the range shell, the picker panel and the
 time-zone reading read `--et-surface-background`, `--et-surface-border`,
 `--et-surface-text`, `--et-surface-text-muted`,
-`--et-surface-interaction-disabled` and `--et-tone-fill`. The other
+`--et-surface-control-text-disabled` and `--et-tone-fill`. The other
 tokens this domain reads itself:
 
 | Token                              | Default                                                           | Purpose                                                                                                                                                                                                                                                                                                                            |

@@ -317,7 +317,7 @@ Colours come from the app-registered [surface and color themes](/core/theming): 
 current page takes the full-strength text colour, and the focus ring uses
 `--et-tone-fill`. A trail is chrome, so the accent colour appears in nothing else - the
 overflow button stays neutral even while its popover is open, and hover states are the neutral
-`--et-surface-interaction` tint. Geometry and type are tokens:
+`--et-surface-tint` tint. Geometry and type are tokens:
 
 | Property                         | Default   | Applies to                                           |
 | -------------------------------- | --------- | ---------------------------------------------------- |

@@ -169,7 +169,7 @@ The story `Components/Data display/Line chart/Mark activate` shows it.
 
 ## Theming
 
-Lines, areas and dots use `--et-tone-fill` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background` for a series that takes a step of the accent. The dots wear a ring in `--et-surface-background`, a stacked band mixes its color with `--et-surface-background`, the crosshair `--et-surface-text-subtle`, the focus ring `--et-tone-fill` over a tint of `--et-surface-interaction`, the grid `--et-surface-border`, and the axis and legend text `--et-surface-text-muted`. Theme names are registered by the application - see [theming](/core/theming).
+Lines, areas and dots use `--et-tone-fill` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background` for a series that takes a step of the accent. The dots wear a ring in `--et-surface-background`, a stacked band mixes its color with `--et-surface-background`, the crosshair `--et-surface-text-subtle`, the focus ring `--et-tone-fill` over a tint of `--et-surface-tint`, the grid `--et-surface-border`, and the axis and legend text `--et-surface-text-muted`. Theme names are registered by the application - see [theming](/core/theming).
 
 | Token                                  | Default | Description                                                                        |
 | -------------------------------------- | ------- | ---------------------------------------------------------------------------------- |

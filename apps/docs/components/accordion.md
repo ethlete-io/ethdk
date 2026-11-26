@@ -193,7 +193,7 @@ paused mid-way.
 
 Colours come from the app-registered [surface and color themes](/core/theming): text
 and hairlines from the surface tokens, the hover/press tint mixed from
-`--et-surface-interaction`, and the focus ring from
+`--et-surface-tint`, and the focus ring from
 `--et-tone-fill`. Geometry and timing are tokens:
 
 | Property                                      | Default                                            | Applies to                                                                                                                                                                                |
@@ -206,9 +206,9 @@ and hairlines from the surface tokens, the hover/press tint mixed from
 | `--et-accordion-padding-inline`               | `12px`                                             | header and panel side padding, so the hover tint has room                                                                                                                                 |
 | `--et-accordion-header-padding-inline`        | `--et-accordion-padding-inline`                    | header side padding only - set it apart from the panel's to inset the header label and the panel content differently                                                                      |
 | `--et-accordion-header-padding-inline-end`    | `--et-accordion-header-padding-inline`             | header end padding only - insets the chevron apart from the label (`--et-accordion-header-padding-inline` is the start)                                                                   |
-| `--et-accordion-header-hover-background`      | `7%` mix of `--et-surface-interaction`             | header fill on hover - `transparent` drops it                                                                                                                                             |
+| `--et-accordion-header-hover-background`      | `7%` mix of `--et-surface-tint`                    | header fill on hover - `transparent` drops it                                                                                                                                             |
 | `--et-accordion-header-hover-text-decoration` | `none`                                             | decoration of the title text on header hover                                                                                                                                              |
-| `--et-accordion-header-active-background`     | `14%` mix of `--et-surface-interaction`            | header fill while pressed - `transparent` drops it                                                                                                                                        |
+| `--et-accordion-header-active-background`     | `14%` mix of `--et-surface-tint`                   | header fill while pressed - `transparent` drops it                                                                                                                                        |
 | `--et-accordion-header-outset-inline`         | `0px`                                              | how far the header reaches past the group's sides, so the hover tint can be wider than the hairlines - pair it with `--et-accordion-header-padding-inline` to keep the label where it was |
 | `--et-accordion-header-tint-inset`            | `min(4px, header padding-block)`                   | gap between the hover tint and the hairlines above and below                                                                                                                              |
 | `--et-accordion-chevron-color`                | the muted text color, the full text color on hover | chevron color                                                                                                                                                                             |
@@ -224,7 +224,7 @@ and hairlines from the surface tokens, the hover/press tint mixed from
 
 Hovering a header does three things at once, all on `--et-accordion-color-duration`: the row takes
 a rounded tint that sits 4px inside the hairlines, the accordion's own bottom hairline brightens toward
-`--et-surface-interaction`, and the hint and chevron come up from the muted colour to full
+`--et-surface-tint`, and the hint and chevron come up from the muted colour to full
 strength. Across a full-width header the tint alone is easy to miss - the hairline is the edge that
 actually shows which row the pointer is on.
 

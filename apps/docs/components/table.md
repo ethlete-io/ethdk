@@ -1247,7 +1247,7 @@ the same reason; the two are never drawn together, since two marks on one bounda
 as a smear. Size the gradient with `--et-table-scroll-fade-size` (`28px`) and recolour it
 with `--et-table-scroll-fade-color`; the shadow takes `--et-table-pin-shadow-color`, which is
 the same mark the sticky header and the footer bar cast. By default all three mix the surface's
-own `--et-surface-interaction`, so they darken a light table and lighten a dark one.
+own `--et-surface-tint`, so they darken a light table and lighten a dark one.
 
 On `cards` the mark stays beside a pinned cell and never reaches the gaps above and below it,
 so the cards keep their ends.
@@ -2261,7 +2261,7 @@ so a linked row reads as one link, in one tab stop, and the grid roles stay as t
 Colors come from the [surface theming](/core/theming) tokens of the nearest
 surface scope - header/body text from `--et-surface-text*`, separators
 from `--et-surface-border`, and the row hover tint from
-`--et-surface-interaction`. Cell padding is tunable via the
+`--et-surface-tint`. Cell padding is tunable via the
 `--et-table-cell-padding-block` (`10px`) / `--et-table-cell-padding-inline`
 (`12px`) custom properties, a disabled column's header label dims by
 `--et-table-opacity-disabled` (`0.4`), and the utility columns via `--et-table-expander-width`

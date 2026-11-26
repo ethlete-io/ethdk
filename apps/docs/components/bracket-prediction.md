@@ -379,7 +379,7 @@ scaffolding are described there.
 
 Every colour resolves from the app-registered [surface and colour theme](/core/theming) systems: the
 card fill and border from `--et-surface-background` and `--et-surface-border`, a hover
-from `--et-surface-interaction`, the chosen side with its bar and mark from
+from `--et-surface-tint`, the chosen side with its bar and mark from
 `--et-tone-fill`, and a locked chosen bar and mark from
 `--et-surface-text-muted`. A
 `predicted` side's text and an `invalid` note read `--et-tone-text` of the colour theme in

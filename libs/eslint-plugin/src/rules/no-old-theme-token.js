@@ -6,7 +6,7 @@ const path = require('node:path');
 
 /**
  * Flags the theme tokens the theming revision retired: the `-rgb` / `-solid` surface triplets, the
- * `--et-theme-color-*` and `--et-color-primary*` tones, `rgb(var(--et-surface-…))` triplet reads and, for each
+ * `--et-theme-color-*` and `--et-color-primary*` tones, the surface `interaction` tokens and utilities (now `tint` / `control-text`), `rgb(var(--et-surface-…))` triplet reads and, for each
  * configured Tailwind prefix, the old dynamic-theme and surface utilities. Runs on CSS (through the
  * `ethlete/css` language), TypeScript and templates by reading the file text.
  *
@@ -19,6 +19,11 @@ const RETIRED_TOKEN_FAMILY =
 
 const SURFACE_TRIPLET_READ =
   /\brgba?\(\s*var\(\s*--et-surface-(?:background|border|interaction|on-interaction|interaction-ink)(?:-(?:hover|focus|active|disabled))?\s*[,)]/g;
+
+const RETIRED_SURFACE_ROLE =
+  '(?:on-interaction|interaction-ink|interaction)(?:-(?:hover|focus|active|disabled))?(?![\\w-])';
+
+const SURFACE_ROLE_READ = new RegExp(`--[a-z][\\w]*-surface(?:-[\\w]+)*?-${RETIRED_SURFACE_ROLE}`, 'g');
 
 const SURFACE_PROPERTY_UTILITIES =
   '--color|bg|text|border|fill|stroke|ring|outline|divide|from|via|to|shadow|decoration|accent|caret';
@@ -44,7 +49,7 @@ const tailwindDetector = (prefixes) => {
 };
 
 const STATE_SUFFIX = '(?:-(?:hover|focus|active|disabled))?';
-const NEW_SURFACE_WORDS = '(?:background|border|interaction|on-interaction|interaction-ink|text|type)';
+const NEW_SURFACE_WORDS = '(?:background|border|tint|control-text|text|type)';
 const GENERATED_COLOR_MARKER = '@ethlete/core:tailwind-4-color-theme';
 const GENERATED_SURFACE_MARKER = '@ethlete/core:tailwind-4-surface-theme';
 const STATES = ['hover', 'focus', 'active', 'disabled'];
@@ -116,6 +121,16 @@ const themeNameDetector = ({ colors, surfaces }) => {
 };
 
 /** @param {readonly string[]} prefixes */
+const surfaceRoleUtilityDetector = (prefixes) => {
+  if (!prefixes.length) return null;
+
+  return new RegExp(
+    `(?<=(?:${SURFACE_PROPERTY_UTILITIES})-)(?:${prefixes.map(escapeRegExp).join('|')})-surface(?:-[a-z0-9]+)*?-${RETIRED_SURFACE_ROLE}`,
+    'g',
+  );
+};
+
+/** @param {readonly string[]} prefixes */
 const unknownNameCandidate = (prefixes) => {
   if (!prefixes.length) return null;
 
@@ -142,6 +157,8 @@ const noOldTheme = {
         "'{{name}}' reads a surface token as an RGB triplet. The token is a color now: use it directly or in color-mix().",
       unknownThemeNames:
         "'{{name}}' could be an old tone or surface class, but the theme names are unknown. Set the 'themeFiles' option to the generated theme CSS files.",
+      retiredSurfaceRole:
+        "'{{name}}' is a retired surface interaction token. A fill or tint read is '-tint', a control text read is '-control-text' (run @ethlete/core:migrate-surface-roles); on-interaction and interaction-ink have no replacement.",
       tailwindName: "'{{name}}' is an old Tailwind theme name. Use the tone/surface names from the theming guide.",
     },
     schema: [
@@ -159,6 +176,7 @@ const noOldTheme = {
     const options = /** @type {{ prefixes?: string[]; themeFiles?: string[] } | undefined} */ (context.options[0]);
     const prefixes = options?.prefixes ?? ['et'];
     const tailwind = tailwindDetector(prefixes);
+    const surfaceRoleUtility = surfaceRoleUtilityDetector(prefixes);
     const cacheKey = `${context.cwd}\0${JSON.stringify(options?.themeFiles ?? [])}`;
     let names = themeNameCache.get(cacheKey);
 
@@ -174,6 +192,8 @@ const noOldTheme = {
     const detectors = [
       { regex: RETIRED_TOKEN_FAMILY, messageId: 'retiredToken' },
       { regex: SURFACE_TRIPLET_READ, messageId: 'tripletRead' },
+      { regex: SURFACE_ROLE_READ, messageId: 'retiredSurfaceRole' },
+      ...(surfaceRoleUtility ? [{ regex: surfaceRoleUtility, messageId: 'retiredSurfaceRole' }] : []),
       ...(tailwind ? [{ regex: tailwind, messageId: 'tailwindName' }] : []),
       ...(named ? [{ regex: named, messageId: 'tailwindName' }] : []),
     ];

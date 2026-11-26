@@ -93,7 +93,7 @@ The same widget can provide `CHIP_REMOVE_FOCUS_FALLBACK`, a `() => void` that ta
 
 ## Theming
 
-A plain chip takes its colors from the app-registered [surface theme](/core/theming) (`--et-surface-interaction` tint for the background, `--et-surface-text*` for text) - there is nothing color-related to override on it. A **selected** filter chip is the exception: its tonal fill and text come from the ambient [color theme](/core/theming) (`--et-tone-fill` / `--et-tone-text`), so wrapping the selection list in `[etProvideColor]` re-tints the selected state. Public design tokens:
+A plain chip takes its colors from the app-registered [surface theme](/core/theming) (`--et-surface-tint` tint for the background, `--et-surface-text*` for text) - there is nothing color-related to override on it. A **selected** filter chip is the exception: its tonal fill and text come from the ambient [color theme](/core/theming) (`--et-tone-fill` / `--et-tone-text`), so wrapping the selection list in `[etProvideColor]` re-tints the selected state. Public design tokens:
 
 | Token                        | Default | Purpose                             |
 | ---------------------------- | ------- | ----------------------------------- |

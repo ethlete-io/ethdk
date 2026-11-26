@@ -47,7 +47,18 @@ cssTester.run('no-old-theme-token (css)', rule, {
       code: `.a { color: rgb(var(--et-surface-border) / 0.2); }`,
       errors: [{ messageId: 'tripletRead', line: 1, column: 13 }],
     },
-    { code: `.a { color: rgba(var(--et-surface-interaction-hover), 0.2); }`, errors: [{ messageId: 'tripletRead' }] },
+    {
+      code: `.a { color: rgba(var(--et-surface-interaction-hover), 0.2); }`,
+      errors: [{ messageId: 'tripletRead' }, { messageId: 'retiredSurfaceRole' }],
+    },
+    {
+      code: `.a { color: var(--et-surface-interaction-hover); background: color-mix(in srgb, var(--app-surface-card-interaction) 12%, transparent); border-color: var(--et-surface-interaction-ink); }`,
+      errors: [
+        { messageId: 'retiredSurfaceRole' },
+        { messageId: 'retiredSurfaceRole' },
+        { messageId: 'retiredSurfaceRole' },
+      ],
+    },
     {
       code: `.a { @apply bg-et-theme text-et-on-theme-hover border-et-theme-ink; }`,
       errors: [{ messageId: 'tailwindName' }, { messageId: 'tailwindName' }, { messageId: 'tailwindName' }],
@@ -166,16 +177,7 @@ tsTester.run('no-old-theme-token (ts templates)', rule, {
   ],
 });
 
-const newSurfaceNames = [
-  'background',
-  'text',
-  'text-muted',
-  'text-subtle',
-  'border',
-  'interaction',
-  'on-interaction',
-  'interaction-ink',
-];
+const newSurfaceNames = ['background', 'text', 'text-muted', 'text-subtle', 'border', 'tint', 'control-text'];
 const states = ['hover', 'focus', 'active', 'disabled'];
 const newSurfaceTokens = newSurfaceNames.flatMap((n) => [n, ...states.map((s) => `${n}-${s}`)]);
 const newToneNames = ['fill', 'on-fill', 'text'];
@@ -202,9 +204,28 @@ tsTester.run('no-old-theme-token (named surface tokens)', rule, {
   valid: [
     { code: "expect(content).toContain('--color-et-surface-card-background: rgb(255 255 255);');" },
     { code: "expect(content).toContain('--color-et-surface-sheet-text: rgb(255 255 255);');" },
-    { code: "const c = 'bg-et-surface-dark-elevated-interaction-hover text-et-surface-card-text-muted';" },
+    {
+      code: "const c = 'bg-et-surface-dark-elevated-control-text-hover text-et-surface-card-text-muted bg-et-surface-tint/10';",
+    },
   ],
   invalid: [
+    {
+      code: "const c = 'bg-et-surface-dark-elevated-interaction-hover';",
+      errors: [{ messageId: 'retiredSurfaceRole' }],
+    },
+    {
+      code: "const c = 'bg-et-surface-interaction/10 text-et-surface-interaction-disabled hover:ring-et-surface-on-interaction';",
+      errors: [
+        { messageId: 'retiredSurfaceRole' },
+        { messageId: 'retiredSurfaceRole' },
+        { messageId: 'retiredSurfaceRole' },
+      ],
+    },
+    {
+      code: "const c = 'bg-gg-surface-interaction';",
+      options: [{ prefixes: ['gg'] }],
+      errors: [{ messageId: 'retiredSurfaceRole' }],
+    },
     {
       code: "const c = 'bg-et-surface-card-muted';",
       errors: [{ messageId: 'tailwindName' }],

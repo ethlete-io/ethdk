@@ -519,24 +519,24 @@ The panel and option group tokens inherit, so setting one on `et-select-panel`, 
 
 The colour tokens below have no value of their own: unset, each falls back to the surface or colour theme as described above. Set them on `:root` or on any ancestor of the overlay pane, because the panel is rendered outside the field.
 
-| Token                                       | Unset                               | Purpose                                                                |
-| ------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| `--et-select-panel-background`              | the elevated surface background     | Panel and sticky search row background                                 |
-| `--et-select-panel-border-color`            | `--et-surface-border`               | Panel border (always `1px`)                                            |
-| `--et-select-panel-color`                   | `--et-surface-text`                 | Panel text colour                                                      |
-| `--et-select-option-background-hover`       | 12% `--et-surface-interaction` tint | Background of the option under the pointer                             |
-| `--et-select-option-color-hover`            | inherited                           | Text colour of the option under the pointer                            |
-| `--et-select-option-background-active`      | `transparent`                       | Background of the keyboard-active option (the ink outline stays)       |
-| `--et-select-option-color-active`           | inherited                           | Text colour of the keyboard-active option                              |
-| `--et-select-option-outline-color-active`   | `--et-tone-text`                    | Outline colour of the keyboard-active option; `transparent` hides it   |
-| `--et-select-option-color-selected`         | inherited                           | Text colour of a selected option; hover and active colours win over it |
-| `--et-select-option-check-color`            | `--et-tone-text`                    | The selected check                                                     |
-| `--et-select-option-check-order`            | `0` (after the label)               | CSS `order` of the check; `-1` moves it before the label               |
-| `--et-select-option-divider-width`          | `0px`                               | Border between two adjacent option rows                                |
-| `--et-select-option-divider-color`          | `--et-surface-border`               | Colour of that border                                                  |
-| `--et-select-panel-action-color`            | `--et-tone-text`                    | Text of the "Load more" and "Add new" rows                             |
-| `--et-select-panel-action-background-hover` | 12% `--et-surface-interaction` tint | Their hover background                                                 |
-| `--et-select-panel-action-separator-color`  | `--et-surface-border`               | The line above them                                                    |
+| Token                                       | Unset                           | Purpose                                                                |
+| ------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| `--et-select-panel-background`              | the elevated surface background | Panel and sticky search row background                                 |
+| `--et-select-panel-border-color`            | `--et-surface-border`           | Panel border (always `1px`)                                            |
+| `--et-select-panel-color`                   | `--et-surface-text`             | Panel text colour                                                      |
+| `--et-select-option-background-hover`       | 12% `--et-surface-tint` tint    | Background of the option under the pointer                             |
+| `--et-select-option-color-hover`            | inherited                       | Text colour of the option under the pointer                            |
+| `--et-select-option-background-active`      | `transparent`                   | Background of the keyboard-active option (the ink outline stays)       |
+| `--et-select-option-color-active`           | inherited                       | Text colour of the keyboard-active option                              |
+| `--et-select-option-outline-color-active`   | `--et-tone-text`                | Outline colour of the keyboard-active option; `transparent` hides it   |
+| `--et-select-option-color-selected`         | inherited                       | Text colour of a selected option; hover and active colours win over it |
+| `--et-select-option-check-color`            | `--et-tone-text`                | The selected check                                                     |
+| `--et-select-option-check-order`            | `0` (after the label)           | CSS `order` of the check; `-1` moves it before the label               |
+| `--et-select-option-divider-width`          | `0px`                           | Border between two adjacent option rows                                |
+| `--et-select-option-divider-color`          | `--et-surface-border`           | Colour of that border                                                  |
+| `--et-select-panel-action-color`            | `--et-tone-text`                | Text of the "Load more" and "Add new" rows                             |
+| `--et-select-panel-action-background-hover` | 12% `--et-surface-tint` tint    | Their hover background                                                 |
+| `--et-select-panel-action-separator-color`  | `--et-surface-border`           | The line above them                                                    |
 
 The trigger's value reads the form field's `--et-form-field-value-color`, `--et-form-field-value-color-active`
 and `--et-form-field-letter-spacing`, like an `et-input` (see [Forms › Theming](/components/forms#theming)).
