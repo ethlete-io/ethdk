@@ -1,6 +1,9 @@
+import { isDevMode } from '@angular/core';
 import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
+import { RuntimeError } from '../utils/runtime-error';
 import { ColorThemeType, RegisteredColorThemeName } from './color-theme.util';
 import { provideRootFontSizeCheck } from './root-font-size-check';
+import { THEMING_ERROR_CODES } from './theming-errors';
 
 export const SURFACE_TYPE = {
   LIGHT: 'light',
@@ -99,11 +102,26 @@ export const injectSurfaceThemesPrefix = /* @__PURE__ */ toInjectFn(SURFACE_THEM
  * Registers the app's surface themes. In dev mode it also warns once the page has loaded if the root
  * font size is still the browser default, i.e. the app is missing `html { font-size: 62.5%; }`.
  */
-export const provideSurfaceThemesWithTailwind4 = (themes: SurfaceTheme[], prefix = 'et') => [
-  ɵProvideSurfaceThemes(themes),
-  ɵProvideSurfaceThemesPrefix(prefix),
-  ngDevMode ? provideRootFontSizeCheck() : [],
-];
+export const provideSurfaceThemesWithTailwind4 = (themes: SurfaceTheme[], prefix = 'et') => {
+  if (isDevMode()) {
+    for (const type of ['light', 'dark'] as const) {
+      const defaults = themes.filter((theme) => theme.isDefault && theme.type === type);
+
+      if (defaults.length > 1) {
+        throw new RuntimeError(
+          THEMING_ERROR_CODES.DUPLICATE_DEFAULT_SURFACE_THEME,
+          `[provideSurfaceThemesWithTailwind4] Surface themes ${defaults.map((t) => `"${t.name}"`).join(' and ')} are both the isDefault ${type} surface. Keep isDefault on one per type.`,
+        );
+      }
+    }
+  }
+
+  return [
+    ɵProvideSurfaceThemes(themes),
+    ɵProvideSurfaceThemesPrefix(prefix),
+    ngDevMode ? provideRootFontSizeCheck() : [],
+  ];
+};
 
 /**
  * Inject the registered `isDefault` surface theme of a `type` - the surface an app renders on

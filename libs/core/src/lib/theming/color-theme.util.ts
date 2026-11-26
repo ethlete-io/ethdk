@@ -1,5 +1,7 @@
 import { isDevMode } from '@angular/core';
 import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
+import { RuntimeError } from '../utils/runtime-error';
+import { THEMING_ERROR_CODES } from './theming-errors';
 
 export type ThemeRGBColor = `${number} ${number} ${number}`;
 export type ThemeHSLColor = `${number} ${number}% ${number}%`;
@@ -118,6 +120,17 @@ export const provideColorThemesWithTailwind4 = (themes: ColorTheme[], prefix = '
     console.error(
       `[provideColorThemesWithTailwind4] "${SURFACE_COLOR}" is a reserved color name that resolves to the ambient surface's neutral swatch. Rename your theme.`,
     );
+  }
+
+  if (isDevMode()) {
+    const defaults = themes.filter((theme) => theme.isDefault);
+
+    if (defaults.length > 1) {
+      throw new RuntimeError(
+        THEMING_ERROR_CODES.DUPLICATE_DEFAULT_COLOR_THEME,
+        `[provideColorThemesWithTailwind4] Color themes ${defaults.map((t) => `"${t.name}"`).join(' and ')} are both marked isDefault: true. Keep isDefault on one.`,
+      );
+    }
   }
 
   return [ɵProvideColorThemes(themes), ɵProvideColorThemesPrefix(prefix)];

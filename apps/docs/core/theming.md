@@ -126,7 +126,7 @@ Each also has a Tailwind utility, such as `text-et-surface-control-text-hover`.
 
 ### The root surface
 
-The `isDefault` themes paint `:root`, so an app renders on its default surface without scoping one.
+The `isDefault` themes paint `:root`, so an app renders on its default surface without scoping one. In dev mode, two defaults of the same surface `type`, or two default color themes, throw `ET9201` / `ET9200` naming both themes; one default per `type` is valid.
 How that lands depends on what the app registers:
 
 - **Both types** - the light default sits behind `@media (prefers-color-scheme: light)`, the dark one
