@@ -90,6 +90,8 @@ import { utilityCssOf } from './rules/utility-css';
 import { orphanEndpointProblemsOf, orphanEndpointWarningsOf } from './rules/orphan-endpoint';
 import { sampleDefaultProblemsOf, sampleDefaultWarningsOf } from './rules/sample-default';
 import { pendingStateWarningsOf } from './rules/pending-state';
+import { orphanPartsOf } from './rules/orphan-part';
+import { sampleTextsOf } from './rules/sample-text';
 import { stateGroupProblemsOf } from './rules/state-groups';
 import { missingStateSentencesOf } from './rules/state-sentences';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
@@ -176,6 +178,8 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...sampleDefaultWarningsOf(product),
   ...inlineUiInPageWarningsOf(product),
   ...pendingStateWarningsOf(product),
+  ...orphanPartsOf(product),
+  ...sampleTextsOf(product),
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
