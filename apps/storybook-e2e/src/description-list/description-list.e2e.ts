@@ -168,8 +168,8 @@ test.describe('description-list / structure', () => {
       return { term: getComputedStyle(term).color, detail: getComputedStyle(detail).color };
     });
 
-    expect(colors.term).toBe(await resolveTokenColor(list, '--et-surface-color-muted-solid'));
-    expect(colors.detail).toBe(await resolveTokenColor(list, '--et-surface-color-solid'));
+    expect(colors.term).toBe(await resolveTokenColor(list, '--et-surface-text-muted'));
+    expect(colors.detail).toBe(await resolveTokenColor(list, '--et-surface-text'));
     expect(colors.term).not.toBe(colors.detail);
   });
 

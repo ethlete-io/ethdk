@@ -31,15 +31,15 @@ const ICON: Record<SketchBadgeStatus, string> = {
 };
 
 const TONE: Record<SketchBadgeStatus, string> = {
-  drawing: 'text-(--et-theme-color-primary-solid) animate-pulse',
-  waiting: 'text-(--et-theme-color-primary-solid)',
-  awaitingApproval: 'text-(--et-theme-color-primary-solid)',
-  awaitingSubParts: 'text-et-surface-muted',
-  approved: 'text-et-surface',
-  paused: 'text-et-surface-muted',
-  failed: 'text-(--et-theme-color-primary-solid)',
-  merging: 'text-(--et-theme-color-primary-solid) animate-pulse',
-  autoMerge: 'text-(--et-theme-color-primary-solid)',
+  drawing: 'text-(--et-tone-fill) animate-pulse',
+  waiting: 'text-(--et-tone-fill)',
+  awaitingApproval: 'text-(--et-tone-fill)',
+  awaitingSubParts: 'text-et-surface-text-muted',
+  approved: 'text-et-surface-text',
+  paused: 'text-et-surface-text-muted',
+  failed: 'text-(--et-tone-fill)',
+  merging: 'text-(--et-tone-fill) animate-pulse',
+  autoMerge: 'text-(--et-tone-fill)',
 };
 
 @Component({
@@ -77,10 +77,10 @@ const TONE: Record<SketchBadgeStatus, string> = {
     </span>
     <ng-template #tip>
       <div class="flex max-w-64 flex-col gap-space-1 text-ui-sm" data-toggletip-body data-sk-status-tip>
-        <span class="font-ui-medium text-et-surface">{{ tipText().label }}</span>
-        <span class="text-et-surface-muted">{{ tipText().detail }}</span>
+        <span class="font-ui-medium text-et-surface-text">{{ tipText().label }}</span>
+        <span class="text-et-surface-text-muted">{{ tipText().detail }}</span>
         @if (note(); as note) {
-          <span class="text-et-surface-muted">{{ note }}</span>
+          <span class="text-et-surface-text-muted">{{ note }}</span>
         }
       </div>
     </ng-template>

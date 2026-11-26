@@ -39,7 +39,7 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
       <div class="flex flex-wrap items-end gap-3">
         <div class="flex grow flex-col gap-1">
           <h3 class="text-h4">Not yet named</h3>
-          <p class="text-small text-et-surface-muted">
+          <p class="text-small text-et-surface-text-muted">
             One line per context, not per band. The bands themselves are on the timeline and can be cut there; an answer
             here logs the context against that issue on this day and on every later day it appears in.
           </p>
@@ -70,7 +70,7 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
           <ethlete-unmasked-words [text]="printed()" />
 
           <details class="rounded-md border border-et-surface-border p-3">
-            <summary class="cursor-pointer text-small text-et-surface-muted">
+            <summary class="cursor-pointer text-small text-et-surface-text-muted">
               What gets sent — {{ request.contexts.length }} context(s), {{ request.candidates.length }} candidate(s)
             </summary>
             <pre class="mt-2 overflow-x-auto text-mono text-small">{{ printed() }}</pre>
@@ -80,15 +80,15 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
 
       @for (entry of listed(); track entry.id) {
         <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
-          <span class="w-28 shrink-0 text-mono text-small text-et-surface-muted">{{ entry.clock }}</span>
+          <span class="w-28 shrink-0 text-mono text-small text-et-surface-text-muted">{{ entry.clock }}</span>
           <span class="w-14 shrink-0 text-small">{{ entry.duration }}</span>
 
           <span class="flex min-w-50 grow flex-col">
             <span class="text-small">{{ entry.label }}</span>
             @if (entry.answered) {
-              <span class="text-small text-et-surface-muted">{{ entry.answered }}</span>
+              <span class="text-small text-et-surface-text-muted">{{ entry.answered }}</span>
             } @else if (entry.suggestion; as suggestion) {
-              <span class="text-small text-et-surface-muted">
+              <span class="text-small text-et-surface-text-muted">
                 Suggested {{ suggestion.issueKey }} — {{ suggestion.reason }}
               </span>
             }

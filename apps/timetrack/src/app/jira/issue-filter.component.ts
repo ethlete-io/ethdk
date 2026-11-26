@@ -13,7 +13,7 @@ import { injectTimetrackSettings } from '../settings/settings';
   selector: 'ethlete-issue-filter',
   template: `
     <div class="flex flex-wrap items-center gap-3">
-      <span class="text-small text-et-surface-muted">{{ scope() }}</span>
+      <span class="text-small text-et-surface-text-muted">{{ scope() }}</span>
 
       @if (catalog.isLoadingIssuesFor('')) {
         <et-spinner size="sm" />

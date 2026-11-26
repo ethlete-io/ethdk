@@ -1,7 +1,7 @@
 @if (error(); as error) {
   <p
     [etProvideColor]="errorTheme()"
-    class="m-0 max-w-5xl rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg px-space-3 py-space-2 text-ui-xs text-et-theme-ink shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
+    class="m-0 max-w-5xl rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border)) bg-et-surface-background px-space-3 py-space-2 text-ui-xs text-et-tone-text shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))"
     role="alert"
   >
     {{ error }}
@@ -12,7 +12,7 @@
   [class.ps-space-3]="hasLead()"
   [class.ps-space-1]="!hasLead()"
   [attr.aria-busy]="busy() || null"
-  class="flex max-w-full items-center gap-space-2 rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg py-space-1 pe-space-1 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
+  class="flex max-w-full items-center gap-space-2 rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border)) bg-et-surface-background py-space-1 pe-space-1 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))"
   role="toolbar"
   data-sk-toolbar
 >

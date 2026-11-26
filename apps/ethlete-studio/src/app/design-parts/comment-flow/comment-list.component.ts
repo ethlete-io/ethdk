@@ -8,8 +8,8 @@ import { CommentRowComponent } from './comment-row.component';
   template: `
     <section [attr.aria-label]="LABELS.title" class="flex flex-col gap-space-1">
       <div class="flex items-center gap-space-2 px-space-2 py-space-1">
-        <span class="text-ui-sm font-ui-strong text-et-surface">{{ LABELS.title }}</span>
-        <span class="text-ui-xs text-et-surface-muted">{{ LABELS.open(comments().length) }}</span>
+        <span class="text-ui-sm font-ui-strong text-et-surface-text">{{ LABELS.title }}</span>
+        <span class="text-ui-xs text-et-surface-text-muted">{{ LABELS.open(comments().length) }}</span>
       </div>
       @for (comment of comments(); track comment.id) {
         <ethlete-comment-row

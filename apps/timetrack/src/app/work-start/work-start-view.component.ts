@@ -26,7 +26,7 @@ import { WorkStartPlanComponent } from './work-start-plan.component';
     <div class="flex min-h-0 grow flex-col overflow-y-auto">
       <header class="flex shrink-0 flex-col gap-1 px-6 pt-6 pb-4">
         <h2 class="text-h3">Start work</h2>
-        <p class="text-small text-et-surface-muted">
+        <p class="text-small text-et-surface-text-muted">
           Files the issue, creates the branch the grammar names for it, and opens a draft merge request.
         </p>
       </header>
@@ -53,7 +53,7 @@ import { WorkStartPlanComponent } from './work-start-plan.component';
         }
 
         @if (start.isReading()) {
-          <div class="flex items-center gap-3 text-et-surface-muted">
+          <div class="flex items-center gap-3 text-et-surface-text-muted">
             <et-spinner size="sm" />
             <span class="text-small">Reading the repository…</span>
           </div>
@@ -66,7 +66,7 @@ import { WorkStartPlanComponent } from './work-start-plan.component';
         @if (start.form().repoPath) {
           <div class="flex flex-wrap items-end gap-3">
             <div class="flex w-40 flex-col gap-1">
-              <span class="text-small text-et-surface-muted">Project</span>
+              <span class="text-small text-et-surface-text-muted">Project</span>
               <ethlete-project-select
                 [value]="start.form().projectKey"
                 (valueChange)="start.setProjectKey($event)"
@@ -135,7 +135,7 @@ import { WorkStartPlanComponent } from './work-start-plan.component';
                   <span class="flex min-w-0 grow items-baseline gap-2">
                     <span class="shrink-0 text-mono">{{ candidate.issue.key }}</span>
                     <span class="min-w-0 grow truncate text-left">{{ candidate.issue.summary }}</span>
-                    <span class="shrink-0 text-et-surface-subtle">{{ candidate.issue.issueType }}</span>
+                    <span class="shrink-0 text-et-surface-text-subtle">{{ candidate.issue.issueType }}</span>
                   </span>
                 </button>
               }

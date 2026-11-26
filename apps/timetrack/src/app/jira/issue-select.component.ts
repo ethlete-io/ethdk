@@ -52,7 +52,7 @@ type IssueOption = {
         <span class="shrink-0 text-mono text-small">{{ option.key }}</span>
         <span class="min-w-0 grow truncate text-small">{{ option.summary }}</span>
         @if (option.issueType) {
-          <span class="shrink-0 text-small text-et-surface-subtle">{{ option.issueType }}</span>
+          <span class="shrink-0 text-small text-et-surface-text-subtle">{{ option.issueType }}</span>
         }
       </span>
     </ng-template>

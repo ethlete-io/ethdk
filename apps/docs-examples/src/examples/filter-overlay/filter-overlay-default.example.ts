@@ -245,7 +245,7 @@ export class FilterOverlayShellComponent {
       p {
         margin: 0.2rem 0 0;
         font-size: 1.4rem;
-        color: var(--et-surface-color-muted-solid);
+        color: var(--et-surface-text-muted);
       }
     }
 
@@ -253,7 +253,7 @@ export class FilterOverlayShellComponent {
       margin: 0;
       padding: 0;
       list-style: none;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 0.8rem;
 
       li {
@@ -264,13 +264,13 @@ export class FilterOverlayShellComponent {
       }
 
       li + li {
-        border-block-start: 1px solid var(--et-surface-border-solid);
+        border-block-start: 1px solid var(--et-surface-border);
       }
     }
 
     .app-filter-overlay-meta {
       font-size: 1.3rem;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
   `,
 })

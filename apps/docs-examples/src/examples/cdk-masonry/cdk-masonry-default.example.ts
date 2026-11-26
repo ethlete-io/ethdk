@@ -20,7 +20,7 @@ const HEIGHTS = [120, 200, 160, 260, 100, 220, 180, 140];
     .example-masonry-card {
       padding: 12px;
       border-radius: 8px;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
   `,
 })

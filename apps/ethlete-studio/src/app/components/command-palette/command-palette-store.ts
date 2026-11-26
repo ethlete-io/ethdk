@@ -92,7 +92,7 @@ export class CommandPaletteStore {
         width: 'var(--container-3xl)',
         maxWidth: 'calc(100% - var(--space-6))',
         containerClass: ['mt-16', 'self-start', 'rounded-control-lg', 'border-0', 'shadow-lg'],
-        backdropClass: ['top-8', 'bg-et-surface-bg/60'],
+        backdropClass: ['top-8', 'bg-et-surface-background/60'],
       }),
       ariaLabel: COMMAND_PALETTE_LABELS.label,
       autoFocus: 'input',

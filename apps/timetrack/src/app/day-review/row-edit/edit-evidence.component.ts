@@ -18,18 +18,18 @@ const NAMING_KINDS: ReadonlySet<EvidenceKind> = new Set([
   selector: 'ethlete-edit-evidence',
   template: `
     <div class="flex flex-col gap-2">
-      <h3 class="text-small text-et-surface-muted">Evidence</h3>
+      <h3 class="text-small text-et-surface-text-muted">Evidence</h3>
 
       @if (agentTokens(); as tokens) {
-        <p class="text-small text-et-surface-subtle">{{ tokens }} tokens by agents</p>
+        <p class="text-small text-et-surface-text-subtle">{{ tokens }} tokens by agents</p>
       }
 
       @if (evidence().length) {
         <ul class="flex flex-col gap-2">
           @for (entry of shown(); track $index) {
             <li class="flex flex-col text-small">
-              <span class="flex gap-2 text-et-surface-muted">
-                <span class="text-mono text-et-surface-subtle">{{ entry.time }}</span>
+              <span class="flex gap-2 text-et-surface-text-muted">
+                <span class="text-mono text-et-surface-text-subtle">{{ entry.time }}</span>
                 <span>{{ entry.kindLabel }}</span>
               </span>
               <span class="min-w-0 break-words">
@@ -51,7 +51,7 @@ const NAMING_KINDS: ReadonlySet<EvidenceKind> = new Set([
           </button>
         }
       } @else {
-        <p class="text-small text-et-surface-subtle">Nothing is attached to this row.</p>
+        <p class="text-small text-et-surface-text-subtle">Nothing is attached to this row.</p>
       }
     </div>
   `,

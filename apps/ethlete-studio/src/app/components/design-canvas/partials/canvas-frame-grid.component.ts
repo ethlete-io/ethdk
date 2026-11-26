@@ -96,7 +96,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
           [style.top]="mark.top"
           [style.right]="mark.right"
           [style.bottom]="mark.bottom"
-          class="absolute shadow-[0_0_0_100vmax_color-mix(in_srgb,var(--et-surface-background-solid)_50%,transparent)]"
+          class="absolute shadow-[0_0_0_100vmax_color-mix(in_srgb,var(--et-surface-background)_50%,transparent)]"
         ></div>
       </div>
     }
@@ -305,7 +305,7 @@ export class CanvasFrameCellComponent {
       >
         @if (sheet.interactive.length > 0) {
           <span
-            class="col-span-full mb-2 border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em] text-text-subtle"
+            class="col-span-full mb-2 border-b border-(--et-surface-border) pb-1 text-[1rem] uppercase tracking-[0.04em] text-text-subtle"
             data-grid-group
             >{{ SYSTEM_LABELS.statesByInteraction }}</span
           >
@@ -356,7 +356,7 @@ export class CanvasFrameCellComponent {
         }
         @if (sheet.packed.length > 0) {
           <span
-            class="col-span-full mb-2 mt-6 border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em] first:mt-0"
+            class="col-span-full mb-2 mt-6 border-b border-(--et-surface-border) pb-1 text-[1rem] uppercase tracking-[0.04em] first:mt-0"
             data-grid-group
             >{{ LABELS.restOnly }}</span
           >
@@ -469,7 +469,7 @@ export class CanvasFrameCellComponent {
           <span
             [class]="placement"
             [style.grid-column]="'span ' + grid().columns.length"
-            class="border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em]"
+            class="border-b border-(--et-surface-border) pb-1 text-[1rem] uppercase tracking-[0.04em]"
             data-grid-scheme
             >{{ schemeLabelOf(scheme) }}</span
           >
@@ -478,7 +478,7 @@ export class CanvasFrameCellComponent {
     </ng-template>
     @if (!revealed()) {
       <span
-        class="absolute left-6 top-6 size-3 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"
+        class="absolute left-6 top-6 size-3 animate-pulse rounded-full bg-(--et-tone-fill)"
         etTooltip="Rendering"
         data-grid-loading
       ></span>
@@ -670,9 +670,7 @@ export class CanvasFrameGridComponent {
   }
 
   protected backdropOf(scheme: ColorScheme | null) {
-    return scheme === 'light'
-      ? 'bg-white ring-black/15'
-      : 'bg-(--et-surface-background-solid) ring-(--et-surface-border-solid)';
+    return scheme === 'light' ? 'bg-white ring-black/15' : 'bg-(--et-surface-background) ring-(--et-surface-border)';
   }
 
   protected schemeLabelOf(scheme: ColorScheme | null) {

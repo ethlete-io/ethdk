@@ -17,9 +17,9 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
           />
         </g>
       </svg>
-      <span class="text-et-surface font-ui-strong text-ui-md">{{ LABELS.title }}</span>
+      <span class="text-et-surface-text font-ui-strong text-ui-md">{{ LABELS.title }}</span>
       @if (repo(); as name) {
-        <span class="text-et-surface-muted text-ui-sm">{{ name }}</span>
+        <span class="text-et-surface-text-muted text-ui-sm">{{ name }}</span>
         <button [loading]="busy()" (click)="otherRepo.emit()" et-button type="button" variant="transparent" size="sm">
           {{ LABELS.otherRepo }}
         </button>
@@ -29,14 +29,14 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
       <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
         @if (repo(); as name) {
           <div class="flex items-center gap-space-2" aria-hidden="true">
-            <span class="block size-10 rounded-full outline outline-et-surface-border bg-et-surface-bg"></span>
-            <span class="block size-10 rounded-full outline outline-et-surface-border bg-et-surface-bg"></span>
-            <span class="block size-10 rounded-full outline outline-et-surface-border bg-et-surface-bg"></span>
+            <span class="block size-10 rounded-full outline outline-et-surface-border bg-et-surface-background"></span>
+            <span class="block size-10 rounded-full outline outline-et-surface-border bg-et-surface-background"></span>
+            <span class="block size-10 rounded-full outline outline-et-surface-border bg-et-surface-background"></span>
           </div>
-          <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ LABELS.noProducts }}</p>
-          <p class="m-0 text-et-surface-muted">{{ LABELS.productExplainer }}</p>
+          <p class="m-0 text-et-surface-text font-ui-strong text-ui-md">{{ LABELS.noProducts }}</p>
+          <p class="m-0 text-et-surface-text-muted">{{ LABELS.productExplainer }}</p>
           <div class="flex flex-col items-center gap-space-2">
-            <p class="m-0 text-et-surface font-ui-strong text-ui-sm">{{ LABELS.colorsQuestion }}</p>
+            <p class="m-0 text-et-surface-text font-ui-strong text-ui-sm">{{ LABELS.colorsQuestion }}</p>
             <div
               [attr.aria-label]="LABELS.colorsQuestion"
               class="flex flex-wrap justify-center gap-space-2"
@@ -57,7 +57,7 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
             </div>
           </div>
           <div class="flex flex-col items-center gap-space-2">
-            <p class="m-0 text-et-surface font-ui-strong text-ui-sm">{{ LABELS.accentQuestion }}</p>
+            <p class="m-0 text-et-surface-text font-ui-strong text-ui-sm">{{ LABELS.accentQuestion }}</p>
             <div
               [attr.aria-label]="LABELS.accentQuestion"
               class="flex flex-wrap justify-center gap-space-2"
@@ -79,7 +79,7 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
             </div>
           </div>
           <div class="flex flex-col items-center gap-space-2">
-            <p class="m-0 text-et-surface font-ui-strong text-ui-sm">{{ LABELS.baseQuestion }}</p>
+            <p class="m-0 text-et-surface-text font-ui-strong text-ui-sm">{{ LABELS.baseQuestion }}</p>
             <div [attr.aria-label]="LABELS.baseQuestion" class="flex flex-wrap justify-center gap-space-2" role="group">
               @for (item of BASES; track item) {
                 <button
@@ -95,7 +95,9 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
               }
             </div>
           </div>
-          <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
+          <p
+            class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-background text-et-surface-text text-ui-sm"
+          >
             {{ LABELS.prompt({ repo: name, colors: colors(), accent: accentItem(), base: base() }) }}
           </p>
           <button
@@ -110,7 +112,7 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
             {{ LABELS.copyPrompt }}
           </button>
           @if (others().length) {
-            <p class="m-0 text-et-surface-muted text-ui-sm">{{ LABELS.knownRepos }}</p>
+            <p class="m-0 text-et-surface-text-muted text-ui-sm">{{ LABELS.knownRepos }}</p>
             <div class="flex flex-wrap justify-center gap-space-2">
               @for (other of others(); track other.id) {
                 <button
@@ -124,7 +126,7 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
                   <span class="flex min-w-0 flex-col items-center">
                     <span class="truncate">{{ other.name }}</span>
                     @if (other.hint) {
-                      <span class="truncate text-et-surface-muted text-ui-sm">{{ other.hint }}</span>
+                      <span class="truncate text-et-surface-text-muted text-ui-sm">{{ other.hint }}</span>
                     }
                   </span>
                 </button>
@@ -132,13 +134,13 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
             </div>
           }
         } @else {
-          <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ LABELS.noRepo }}</p>
-          <p class="m-0 text-et-surface-muted">{{ LABELS.repoExplainer }}</p>
+          <p class="m-0 text-et-surface-text font-ui-strong text-ui-md">{{ LABELS.noRepo }}</p>
+          <p class="m-0 text-et-surface-text-muted">{{ LABELS.repoExplainer }}</p>
           <button [loading]="busy()" (click)="openRepo.emit()" et-button type="button" variant="filled">
             {{ LABELS.openRepo }}
           </button>
           @if (others().length) {
-            <p class="m-0 text-et-surface-muted text-ui-sm">{{ LABELS.knownRepos }}</p>
+            <p class="m-0 text-et-surface-text-muted text-ui-sm">{{ LABELS.knownRepos }}</p>
             <div class="flex flex-wrap justify-center gap-space-2">
               @for (other of others(); track other.id) {
                 <button
@@ -152,7 +154,7 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
                   <span class="flex min-w-0 flex-col items-center">
                     <span class="truncate">{{ other.name }}</span>
                     @if (other.hint) {
-                      <span class="truncate text-et-surface-muted text-ui-sm">{{ other.hint }}</span>
+                      <span class="truncate text-et-surface-text-muted text-ui-sm">{{ other.hint }}</span>
                     }
                   </span>
                 </button>
@@ -165,7 +167,7 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS],
-  host: { class: 'flex font-ui h-full min-h-225 w-full flex-col bg-et-surface-bg' },
+  host: { class: 'flex font-ui h-full min-h-225 w-full flex-col bg-et-surface-background' },
 })
 export class StartComponent {
   public repo = input<string | undefined>();

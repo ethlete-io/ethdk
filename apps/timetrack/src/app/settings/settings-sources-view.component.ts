@@ -96,7 +96,7 @@ says, because walking off is not something to wait out.`;
 
         @if (glabOffers().length) {
           <div class="flex flex-wrap items-center gap-2" data-glab-offers>
-            <span class="text-small text-et-surface-muted">glab is logged in to:</span>
+            <span class="text-small text-et-surface-text-muted">glab is logged in to:</span>
 
             @for (host of glabOffers(); track host) {
               <button (click)="setGitLabHost(host)" et-button variant="outline" size="sm">{{ host }}</button>
@@ -104,7 +104,7 @@ says, because walking off is not something to wait out.`;
           </div>
         }
 
-        <p class="text-small text-et-surface-muted">
+        <p class="text-small text-et-surface-text-muted">
           Reading and writing both use glab. Run
           <code>glab auth login --hostname {{ gitlabHostname() || 'git.example.com' }}</code>
           once.
@@ -148,7 +148,7 @@ says, because walking off is not something to wait out.`;
         </div>
 
         @if (!lock.isAvailable()) {
-          <p class="text-small text-et-surface-subtle" data-lock-unavailable>
+          <p class="text-small text-et-surface-text-subtle" data-lock-unavailable>
             This build cannot lock the window. A development build never locks, and a machine with no account-password
             check never locks either.
           </p>

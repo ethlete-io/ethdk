@@ -47,9 +47,7 @@ async function renderOnSurface(root: Locator, surface: 'light' | 'dark'): Promis
     }
     document.documentElement.style.colorScheme = name;
     const scope = host.querySelector('et-form-field') ?? host;
-    document.documentElement.style.background = getComputedStyle(scope).getPropertyValue(
-      '--et-surface-background-solid',
-    );
+    document.documentElement.style.background = getComputedStyle(scope).getPropertyValue('--et-surface-background');
   }, surface);
   await root.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
 }
@@ -539,13 +537,13 @@ test.describe('form-field / frame states', () => {
     const { field } = await invalidField(page);
     const marker = field.locator('.et-label-required-marker');
 
-    await expect(marker).toHaveCSS('color', await colorIn(field, 'var(--et-theme-color-ink-solid)'));
+    await expect(marker).toHaveCSS('color', await colorIn(field, 'var(--et-tone-text)'));
     expect(await contrastAgainstPage(marker, 'color')).toBeGreaterThanOrEqual(4.5);
   });
 
   test('focus keeps the 1px frame and turns it the theme colour, and hover does not change it', async ({ page }) => {
     const { field, frame, control } = fieldParts(await openStory(page, INPUT_STORY_ID));
-    const theme = await colorIn(field, 'var(--et-theme-color-primary-solid)');
+    const theme = await colorIn(field, 'var(--et-tone-fill)');
 
     await pressKey(page, 'Tab');
     await expect(control).toBeFocused();
@@ -559,7 +557,7 @@ test.describe('form-field / frame states', () => {
 
   test('an invalid field turns its 1px focus frame the error ink', async ({ page }) => {
     const { field, frame, control } = await invalidField(page);
-    const ink = await colorIn(field, 'var(--et-theme-color-ink-solid)');
+    const ink = await colorIn(field, 'var(--et-tone-text)');
 
     await control.focus();
     await expect(frame).toHaveCSS('border-top-color', ink);
@@ -578,11 +576,11 @@ test.describe('form-field / frame states', () => {
 
       await expect(field).toHaveAttribute('data-readonly');
       await expect(frame).toHaveCSS('border-top-style', 'solid');
-      await expect(frame).toHaveCSS('border-top-color', await colorIn(field, 'var(--et-surface-border-solid)'));
+      await expect(frame).toHaveCSS('border-top-color', await colorIn(field, 'var(--et-surface-border)'));
       await expect(frame).toHaveCSS('box-shadow', 'none');
 
       await native.focus();
-      const ink = await colorIn(field, 'var(--et-surface-color-solid)');
+      const ink = await colorIn(field, 'var(--et-surface-text)');
       await expect(frame).toHaveCSS('border-top-color', ink);
       await expect(frame).toHaveCSS('border-top-width', '1px');
       await expect(frame).toHaveCSS('box-shadow', `${ink} 0px 0px 0px 1px inset`);

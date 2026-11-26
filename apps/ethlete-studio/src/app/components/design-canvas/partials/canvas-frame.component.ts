@@ -80,7 +80,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       @if (loading()) {
         <span
           [attr.data-reload]="reload()"
-          class="flex shrink-0 items-center gap-space-1 text-et-surface-muted"
+          class="flex shrink-0 items-center gap-space-1 text-et-surface-text-muted"
           data-loading-badge
           ><et-spinner [diameter]="14" [strokeWidth]="1.75" />{{ LABELS.loading }}</span
         >
@@ -92,11 +92,9 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         <span class="shrink-0 tabular-nums text-text-muted" data-frame-note>{{ note }}</span>
       }
       @if (active()) {
-        <span
-          class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)"
-          data-live-badge
-          >{{ LABELS.live }}</span
-        >
+        <span class="shrink-0 rounded-sm bg-(--et-tone-fill) px-[0.4em] text-(--et-tone-on-fill)" data-live-badge>{{
+          LABELS.live
+        }}</span>
       }
     </ng-template>
     @for (copy of copies(); track copy.scheme; let first = $first) {
@@ -113,7 +111,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     <span
       [class]="labelPlacement()"
       [style.max-width.px]="captionMaxWidth()"
-      class="absolute left-0 flex flex-col overflow-x-clip whitespace-nowrap text-et-surface text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]"
+      class="absolute left-0 flex flex-col overflow-x-clip whitespace-nowrap text-et-surface-text text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-[calc(1.6rem*var(--et-design-canvas-label-scale))]"
       ><span class="flex gap-[0.6em]"><ng-container [ngTemplateOutlet]="caption" /></span>
       @if (frame().description; as description) {
         <span
@@ -127,7 +125,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     <div class="absolute inset-0" data-et-projected="frame">
       @if (frame().empty; as empty) {
         <div
-          class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border-solid) p-4 text-center text-[calc(1.3rem*min(var(--et-design-canvas-label-scale),4))] leading-tight text-text-muted"
+          class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border) p-4 text-center text-[calc(1.3rem*min(var(--et-design-canvas-label-scale),4))] leading-tight text-text-muted"
           data-empty-cell
         >
           {{ empty }}
@@ -135,7 +133,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       } @else if (frame().error) {
         <div
           [etProvideColor]="errorTheme()"
-          class="absolute inset-0 box-border size-full overflow-hidden border-0 p-4 font-(--font-code) text-[1.3rem] whitespace-pre-wrap text-(--et-theme-color-primary-solid)"
+          class="absolute inset-0 box-border size-full overflow-hidden border-0 p-4 font-(--font-code) text-[1.3rem] whitespace-pre-wrap text-(--et-tone-fill)"
           role="alert"
         >
           {{ frame().error }}
@@ -153,7 +151,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           <div
             [style.width.px]="cropped.thumb.width"
             [style.height.px]="cropped.thumb.height"
-            class="absolute top-0 left-0 overflow-hidden outline outline-(--et-surface-border-solid)"
+            class="absolute top-0 left-0 overflow-hidden outline outline-(--et-surface-border)"
             data-crop-thumb
           >
             <img
@@ -172,7 +170,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
                 [style.top.px]="outline.y"
                 [style.width.px]="outline.width"
                 [style.height.px]="outline.height"
-                class="absolute outline-2 outline-(--et-theme-color-primary-solid) outline-solid"
+                class="absolute outline-2 outline-(--et-tone-fill) outline-solid"
                 data-crop-outline
               ></div>
             }
@@ -207,9 +205,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         }
       } @else {
         <div
-          [class]="
-            copies().length > 0 ? 'absolute left-0 top-0 bg-(--et-surface-background-solid)' : 'absolute inset-0'
-          "
+          [class]="copies().length > 0 ? 'absolute left-0 top-0 bg-(--et-surface-background)' : 'absolute inset-0'"
           [style.width.px]="copies().length > 0 ? width() : null"
           [style.height.px]="copies().length > 0 ? height() : null"
           [attr.data-scheme-copy]="copies()[0]?.scheme ?? null"
@@ -223,7 +219,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
             [style.width.px]="width()"
             [style.height.px]="height()"
             [attr.data-scheme-copy]="copy.scheme"
-            class="absolute overflow-hidden bg-(--et-surface-background-solid)"
+            class="absolute overflow-hidden bg-(--et-surface-background)"
           >
             @if (copy.shot) {
               <img
@@ -271,7 +267,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           <ethlete-shot-state [state]="pageShotState.state()" />
         }
       } @else if (!painted()) {
-        <div class="absolute inset-0 size-full border-0 bg-(--et-surface-interaction-solid)"></div>
+        <div class="absolute inset-0 size-full border-0 bg-(--et-surface-interaction)"></div>
       }
       @if (live() || painted()) {
         <div class="absolute inset-0 overflow-hidden">
@@ -297,7 +293,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     @if (failure(); as reason) {
       <div
         [etProvideColor]="errorTheme()"
-        class="absolute top-space-2 right-space-2 left-space-2 flex items-center gap-space-2 rounded-md border border-solid border-(--et-theme-color-primary-solid) bg-et-surface-bg p-space-2 text-(length:--text-xs) text-(--et-theme-color-primary-solid) shadow-md"
+        class="absolute top-space-2 right-space-2 left-space-2 flex items-center gap-space-2 rounded-md border border-solid border-(--et-tone-fill) bg-et-surface-background p-space-2 text-(length:--text-xs) text-(--et-tone-fill) shadow-md"
         role="alert"
         data-frame-failed
       >
@@ -332,7 +328,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   ],
   host: {
     class:
-      'group/frame absolute block bg-(--et-surface-background-solid) data-empty:bg-transparent data-schemed:bg-transparent data-unsized:pointer-events-none data-unsized:opacity-0 data-rejected:opacity-40',
+      'group/frame absolute block bg-(--et-surface-background) data-empty:bg-transparent data-schemed:bg-transparent data-unsized:pointer-events-none data-unsized:opacity-0 data-rejected:opacity-40',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-empty]': 'frame().empty !== undefined || null',

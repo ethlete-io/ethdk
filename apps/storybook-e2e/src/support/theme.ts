@@ -12,15 +12,15 @@ function resolveBorderColorIn(scope: Locator, value: string): Promise<string> {
   }, value);
 }
 
-/** Resolves `--et-theme-color-primary-solid` inside `scope` to the colour a border would compute to. */
+/** Resolves `--et-tone-fill` inside `scope` to the colour a border would compute to. */
 export function themePrimaryIn(scope: Locator): Promise<string> {
-  return resolveBorderColorIn(scope, 'var(--et-theme-color-primary-solid)');
+  return resolveBorderColorIn(scope, 'var(--et-tone-fill)');
 }
 
 const INK_ACTIVE =
-  'rgb(var(--et-color-primary-ink-active, var(--et-color-primary-ink-focus, var(--et-color-primary-ink-hover, var(--et-color-primary-ink, var(--et-color-primary-active, var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))))))))';
+  'var(--et-tone-text-active, var(--et-tone-text-focus, var(--et-tone-text-hover, var(--et-tone-text-rest, var(--et-tone-fill-active, var(--et-tone-fill-focus, var(--et-tone-fill-hover, var(--et-tone-fill-rest))))))))';
 
-const PRIMARY_HOVER = 'rgb(var(--et-color-primary-hover, var(--et-color-primary)))';
+const PRIMARY_HOVER = 'var(--et-tone-fill-hover, var(--et-tone-fill-rest))';
 
 export type ColorScheme = 'light' | 'dark';
 
@@ -47,7 +47,7 @@ export function themeErrorHoverMixIn(scope: Locator, scheme: ColorScheme, percen
   return resolveBorderColorIn(scope, `color-mix(in srgb, ${tone} ${percent}%, transparent)`);
 }
 
-/** Resolves a colour expression (e.g. `var(--et-surface-color-solid)`) inside `scope` to the colour a border would compute to. */
+/** Resolves a colour expression (e.g. `var(--et-surface-text)`) inside `scope` to the colour a border would compute to. */
 export function colorIn(scope: Locator, value: string): Promise<string> {
   return resolveBorderColorIn(scope, value);
 }

@@ -79,7 +79,6 @@ import { PICTURE_BROKEN_SRC, PICTURE_FALLBACK_SRC, PICTURE_TALL_SRC, PICTURE_WID
       max-inline-size: 520px;
       overflow: hidden;
       border-radius: 12px;
-      background: var(--et-surface-elevated-solid, transparent);
     }
 
     .example-picture-skeleton {

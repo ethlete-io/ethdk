@@ -11,16 +11,16 @@ const SHAPE = 'rounded-[50%_50%_50%_0]';
 
 const PIN_BASE = `group/pin relative inline-flex size-5.5 cursor-pointer items-center justify-center ${SHAPE} border-0 p-0 font-ui-strong text-ui-xs leading-none focus-visible:outline-2 focus-visible:outline-focus-ring`;
 
-const PIN_REST = `${PIN_BASE} bg-et-surface-bg text-text-muted ring-1 ring-et-surface-border hover:text-text hover:ring-text-muted focus-visible:outline-offset-2 active:text-text`;
+const PIN_REST = `${PIN_BASE} bg-et-surface-background text-text-muted ring-1 ring-et-surface-border hover:text-text hover:ring-text-muted focus-visible:outline-offset-2 active:text-text`;
 
 const SELECTED_RINGS =
-  'shadow-[0_0_0_4px_rgb(var(--et-theme-color-primary-rgb)/0.2)] ring-2 text-et-on-theme focus-visible:outline-offset-[5px]';
+  'shadow-[0_0_0_4px_color-mix(in_srgb,var(--et-tone-fill)_20%,transparent)] ring-2 text-et-tone-on-fill focus-visible:outline-offset-[5px]';
 
-const PIN_SELECTED_AGENT = `${PIN_BASE} bg-et-surface-bg ring-et-theme ${SELECTED_RINGS}`;
+const PIN_SELECTED_AGENT = `${PIN_BASE} bg-et-surface-background ring-et-tone-fill ${SELECTED_RINGS}`;
 
-const PIN_SELECTED = `${PIN_BASE} bg-et-theme ring-et-surface-bg ${SELECTED_RINGS} hover:bg-et-theme-hover active:bg-et-theme-active`;
+const PIN_SELECTED = `${PIN_BASE} bg-et-tone-fill ring-et-surface-background ${SELECTED_RINGS} hover:bg-et-tone-fill-hover active:bg-et-tone-fill-active`;
 
-const PIN_RESOLVED_BASE = `${PIN_BASE} bg-et-surface-bg text-text-muted hover:text-text active:text-text`;
+const PIN_RESOLVED_BASE = `${PIN_BASE} bg-et-surface-background text-text-muted hover:text-text active:text-text`;
 
 const PIN_RESOLVED = `${PIN_RESOLVED_BASE} ring-1 ring-et-surface-border hover:ring-text-muted focus-visible:outline-offset-2`;
 

@@ -55,11 +55,11 @@ import { injectStandIns } from './stand-ins';
                 <span class="text-h4">{{ entry.standIn.name }}</span>
               }
 
-              <div class="flex flex-wrap items-center gap-2 text-small text-et-surface-muted">
+              <div class="flex flex-wrap items-center gap-2 text-small text-et-surface-text-muted">
                 <span>{{ entry.meta }}</span>
 
                 @if (entry.isOverdue) {
-                  <span class="rounded-sm bg-et-warning/15 px-2 text-et-warning-ink" data-overdue>
+                  <span class="rounded-sm bg-et-tone-warning-fill/15 px-2 text-et-tone-warning-text" data-overdue>
                     Waited long enough
                   </span>
                 }
@@ -73,7 +73,7 @@ import { injectStandIns } from './stand-ins';
               </div>
 
               @if (entry.where) {
-                <div [title]="entry.where" class="truncate text-mono text-small text-et-surface-subtle">
+                <div [title]="entry.where" class="truncate text-mono text-small text-et-surface-text-subtle">
                   {{ entry.where }}
                 </div>
               }
@@ -153,7 +153,7 @@ import { injectStandIns } from './stand-ins';
                 @if (entry.canReopen) {
                   <button (click)="store.reopen(entry.id)" et-button variant="outline">Undo</button>
                 } @else {
-                  <span class="text-small text-et-surface-muted">
+                  <span class="text-small text-et-surface-text-muted">
                     A day it held is in Tempo, so the key is a correction from there on.
                   </span>
                 }

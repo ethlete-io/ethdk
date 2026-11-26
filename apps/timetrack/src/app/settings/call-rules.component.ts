@@ -16,7 +16,7 @@ import { TimetrackCallRules } from '@ethlete/timetrack';
     <div class="flex flex-col gap-3">
       <div class="flex flex-col gap-1">
         <h3 class="text-h4">Which calls were work</h3>
-        <p class="text-small text-et-surface-muted">
+        <p class="text-small text-et-surface-text-muted">
           A call is recognised by which application holds the microphone, so every meeting tool counts at once and no
           token is needed. Whether a call was work is yours to say: an open voice room and a client meeting look
           identical, and an application's own mute is invisible. A call no rule names is not counted, unless it overlaps
@@ -24,7 +24,7 @@ import { TimetrackCallRules } from '@ethlete/timetrack';
         </p>
       </div>
 
-      <p class="text-small text-et-surface-subtle">
+      <p class="text-small text-et-surface-text-subtle">
         Each line is a regular expression, matched against the window title the call was named from and against the
         application itself. <code class="text-mono">Braune Digital</code> matches a channel;
         <code class="text-mono">tinyspeck</code>
@@ -49,7 +49,7 @@ import { TimetrackCallRules } from '@ethlete/timetrack';
             </button>
           </div>
         } @empty {
-          <p class="text-small text-et-surface-subtle">No call is counted yet.</p>
+          <p class="text-small text-et-surface-text-subtle">No call is counted yet.</p>
         }
 
         <div class="flex flex-wrap items-center gap-3">
@@ -81,7 +81,7 @@ import { TimetrackCallRules } from '@ethlete/timetrack';
             </button>
           </div>
         } @empty {
-          <p class="text-small text-et-surface-subtle">Nothing is refused outright.</p>
+          <p class="text-small text-et-surface-text-subtle">Nothing is refused outright.</p>
         }
 
         <div class="flex flex-wrap items-center gap-3">

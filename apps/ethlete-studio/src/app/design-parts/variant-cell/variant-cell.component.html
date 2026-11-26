@@ -6,8 +6,8 @@
   data-sk-label
   ><span
     #stateLabel
-    [class.text-et-surface]="!dimmed()"
-    [class.text-et-surface-muted]="dimmed()"
+    [class.text-et-surface-text]="!dimmed()"
+    [class.text-et-surface-text-muted]="dimmed()"
     [style.font-size.px]="labelFont()"
     class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere"
     data-sk-label-text
@@ -17,7 +17,7 @@
   @if (sameAsRest().length > 0) {
     <span
       [style.font-size.px]="labelFont()"
-      class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere"
+      class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere"
       data-sk-same-as-rest
       >{{ LABELS.sameAsRest(sameAsRest(), state()) }}</span
     >
@@ -62,7 +62,7 @@
             [style.top.px]="box.top"
             [style.width.px]="box.width"
             [style.height.px]="box.height"
-            class="pointer-events-none absolute rounded-control-sm border-2 border-et-theme"
+            class="pointer-events-none absolute rounded-control-sm border-2 border-et-tone-fill"
             data-sk-crop-mark
           ></span>
         }
@@ -70,7 +70,7 @@
     </div>
     @if (loading()) {
       <span
-        class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-muted [@container(height<14px)]:hidden"
+        class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-text-muted [@container(height<14px)]:hidden"
         data-loading-badge
         ><et-spinner [diameter]="14" [strokeWidth]="1.75" /><span class="[@container(height<18px)]:hidden">{{
           LABELS.loading
@@ -83,14 +83,14 @@
     @for (inset of STACK_INSETS; track inset) {
       <div
         [style.margin-inline.px]="inset"
-        class="h-1.25 rounded-b-control-sm bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+        class="h-1.25 rounded-b-control-sm bg-et-surface-background shadow-[0_0_0_1px_var(--et-surface-border)]"
         data-sk-crop-stack
       ></div>
     }
     <span
       [style.font-size.px]="labelFont()"
       [style.width.px]="frameWidth()"
-      class="mt-space-1 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-muted wrap-anywhere"
+      class="mt-space-1 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere"
       data-sk-stack-states
       >{{ LABELS.stackedStates(stacked()) }}</span
     >

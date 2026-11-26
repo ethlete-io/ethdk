@@ -7,7 +7,7 @@ import { SYSTEM_LABELS } from '../../i18n/system-labels';
   encapsulation: ViewEncapsulation.None,
   host: {
     class:
-      'block cursor-crosshair outline-none [transition:var(--transition-state)] bg-(--et-theme-color-primary-solid)/6 hover:bg-(--et-theme-color-primary-solid)/10 active:bg-(--et-theme-color-primary-solid)/14 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]',
+      'block cursor-crosshair outline-none [transition:var(--transition-state)] bg-(--et-tone-fill)/6 hover:bg-(--et-tone-fill)/10 active:bg-(--et-tone-fill)/14 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]',
     role: 'button',
     tabindex: '0',
     '[attr.aria-label]': 'label()',

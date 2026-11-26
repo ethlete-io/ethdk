@@ -42,7 +42,7 @@ import { injectApprovalQueue } from './approval-queue';
               class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3"
             >
               <span class="text-base">{{ describe(item) }}</span>
-              <span class="text-small text-et-surface-muted">
+              <span class="text-small text-et-surface-text-muted">
                 {{ item.client ?? 'CLI' }} · approved on {{ machineLabel(item) }}, runs there
               </span>
             </div>
@@ -57,11 +57,13 @@ import { injectApprovalQueue } from './approval-queue';
             >
               <span class="text-base">{{ describe(item) }}</span>
 
-              <div class="flex flex-wrap items-center gap-2 text-small text-et-surface-muted">
+              <div class="flex flex-wrap items-center gap-2 text-small text-et-surface-text-muted">
                 <span>{{ item.client ?? 'CLI' }} · asked at {{ askedAt(item) }}</span>
 
                 @if (item.state === 'queued' && !queue.approvableByAll().includes(item)) {
-                  <span class="rounded-sm bg-et-warning/15 px-2 text-et-warning-ink">Only approved one by one</span>
+                  <span class="rounded-sm bg-et-tone-warning-fill/15 px-2 text-et-tone-warning-text"
+                    >Only approved one by one</span
+                  >
                 }
               </div>
 
@@ -71,9 +73,11 @@ import { injectApprovalQueue } from './approval-queue';
                 }
 
                 @if (item.state === 'running') {
-                  <span class="text-small text-et-surface-muted">Carrying it out…</span>
+                  <span class="text-small text-et-surface-text-muted">Carrying it out…</span>
                 } @else if (item.state === 'approved') {
-                  <span class="text-small text-et-surface-muted">Approved, waits for the paired machine to sync…</span>
+                  <span class="text-small text-et-surface-text-muted"
+                    >Approved, waits for the paired machine to sync…</span
+                  >
                 } @else {
                   <button (click)="queue.reject(item.id)" et-text-button etProvideColor="danger">Reject</button>
                   <button (click)="queue.approve(item.id)" et-text-button>Approve</button>
@@ -83,7 +87,7 @@ import { injectApprovalQueue } from './approval-queue';
           }
         </div>
       } @else {
-        <p class="text-small text-et-surface-muted">Nothing waits for your approval.</p>
+        <p class="text-small text-et-surface-text-muted">Nothing waits for your approval.</p>
       }
     </et-overlay-body>
 

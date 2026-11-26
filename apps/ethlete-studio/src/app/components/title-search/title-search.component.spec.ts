@@ -53,9 +53,13 @@ describe('TitleSearchComponent', () => {
   it('is muted at rest and takes the full surface text colour when hovered, pressed or focused', () => {
     const { button } = render({ product: 'shop', part: 'Cart' });
 
-    expect(button?.classList).toContain('text-et-surface-muted');
+    expect(button?.classList).toContain('text-et-surface-text-muted');
     expect([...(button?.classList ?? [])]).toEqual(
-      expect.arrayContaining(['hover:text-et-surface', 'active:text-et-surface', 'focus-visible:text-et-surface']),
+      expect.arrayContaining([
+        'hover:text-et-surface-text',
+        'active:text-et-surface-text',
+        'focus-visible:text-et-surface-text',
+      ]),
     );
   });
 

@@ -37,7 +37,7 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
   template: `
     <div
       [class]="caption() ? 'pl-1.5' : 'px-1.5'"
-      class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 bg-et-surface-bg shadow-[inset_0_-1px_0_var(--color-et-surface-border)] font-ui text-ui-sm text-et-surface"
+      class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 bg-et-surface-background shadow-[inset_0_-1px_0_var(--color-et-surface-border)] font-ui text-ui-sm text-et-surface-text"
       data-et-surface
       data-tauri-drag-region="deep"
     >
@@ -168,7 +168,7 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
               @case ('close') {
                 <span
                   [etProvideColor]="errorTheme()"
-                  class="contents [--et-window-control-button-close-background-active:rgb(var(--et-color-primary-active))] [--et-window-control-button-close-background:var(--et-theme-color-primary-solid)] [--et-window-control-button-close-color:var(--et-theme-color-on-primary-solid)]"
+                  class="contents [--et-window-control-button-close-background-active:var(--et-tone-fill-active)] [--et-window-control-button-close-background:var(--et-tone-fill)] [--et-window-control-button-close-color:var(--et-tone-on-fill)]"
                 >
                   <button
                     [shape]="CAPTION_SHAPE"

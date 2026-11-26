@@ -38,9 +38,9 @@ const toNodes = (parent: TreeNode<string> | null): TreeNode<string>[] =>
     .example-tree-frame {
       inline-size: 360px;
       padding: 8px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 10px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
 
     .example-tree-frame .et-tree-node-label {
@@ -52,7 +52,7 @@ const toNodes = (parent: TreeNode<string> | null): TreeNode<string>[] =>
     .example-tree-frame .et-tree-node-label i {
       inline-size: 12px;
       block-size: 12px;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
   `,
 })

@@ -110,7 +110,6 @@ import { PICTURE_WIDE_SRC } from './picture.data';
       inline-size: 180px;
       block-size: 120px;
       border-radius: 8px;
-      background: var(--et-surface-elevated-solid, transparent);
     }
 
     .example-picture-natural {

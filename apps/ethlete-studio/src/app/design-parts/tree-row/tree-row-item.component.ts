@@ -35,17 +35,17 @@ const LAYER_ICON: Record<string, string> = {
 };
 
 const STATUS_CLASS: Record<TreeRowStatus, string> = {
-  'in-progress': 'text-et-surface-muted',
-  ready: 'text-et-theme',
-  'awaiting-approval': 'text-et-theme',
-  approved: 'text-et-theme',
+  'in-progress': 'text-et-surface-text-muted',
+  ready: 'text-et-tone-fill',
+  'awaiting-approval': 'text-et-tone-fill',
+  approved: 'text-et-tone-fill',
 };
 
 const ROW_CLASS =
   'relative flex h-6 items-center font-ui gap-space-1 rounded-control-sm pr-space-2 pl-[calc(var(--space-1)+var(--depth,0)*1.6rem)] text-ui-md whitespace-nowrap outline-none cursor-default [transition:var(--transition-state)] hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]';
 
 const SELECTED_CLASS =
-  'bg-et-theme/20 text-et-theme-ink hover:[background:linear-gradient(rgb(var(--et-theme-color-primary-rgb)/0.2),rgb(var(--et-theme-color-primary-rgb)/0.2)),color-mix(in_srgb,var(--et-surface-interaction-solid)_9%,transparent)] active:[background:linear-gradient(rgb(var(--et-theme-color-primary-rgb)/0.2),rgb(var(--et-theme-color-primary-rgb)/0.2)),color-mix(in_srgb,var(--et-surface-interaction-solid)_15%,transparent)]';
+  'bg-et-tone-fill/20 text-et-tone-text hover:[background:linear-gradient(color-mix(in srgb, var(--et-tone-fill) 20%, transparent),color-mix(in srgb, var(--et-tone-fill) 20%, transparent)),color-mix(in_srgb,var(--et-surface-interaction)_9%,transparent)] active:[background:linear-gradient(color-mix(in srgb, var(--et-tone-fill) 20%, transparent),color-mix(in srgb, var(--et-tone-fill) 20%, transparent)),color-mix(in_srgb,var(--et-surface-interaction)_15%,transparent)]';
 
 /** One row of the Studio tree: a lead chevron or dot, the label, and the end marks. Put it on the row element. */
 @Component({
@@ -105,7 +105,7 @@ const SELECTED_CLASS =
       <span
         [etProvideColor]="warningTheme()"
         [etTooltip]="row.warningTitle ?? null"
-        class="flex flex-none text-et-theme"
+        class="flex flex-none text-et-tone-fill"
       >
         <svg
           width="12"
@@ -193,13 +193,13 @@ export class TreeRowItemComponent {
   protected readonly LAYER_ICON = LAYER_ICON;
   protected readonly OPEN_COMMENTS_LABEL = TREE_ROW_LABELS.openComments;
 
-  protected accentClass = computed(() => (this.item().selected ? 'text-et-theme-ink' : 'text-et-surface-muted'));
+  protected accentClass = computed(() => (this.item().selected ? 'text-et-tone-text' : 'text-et-surface-text-muted'));
 
   protected hostClass = computed(() => {
     const { selected, kind } = this.item();
 
     if (selected) return `${ROW_CLASS} ${SELECTED_CLASS}`;
 
-    return `${ROW_CLASS} ${kind === 'group' ? 'text-et-surface-muted' : 'text-et-surface'}`;
+    return `${ROW_CLASS} ${kind === 'group' ? 'text-et-surface-text-muted' : 'text-et-surface-text'}`;
   });
 }

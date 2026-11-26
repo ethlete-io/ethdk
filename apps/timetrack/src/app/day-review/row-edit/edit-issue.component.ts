@@ -21,7 +21,7 @@ import { injectProjectLinks } from '../../project-links';
     </et-form-field>
 
     @if (namedByAutoMode()) {
-      <span class="text-small text-et-surface-muted" data-auto-named>
+      <span class="text-small text-et-surface-text-muted" data-auto-named>
         Named by auto mode. Reset to the proposal takes it back.
       </span>
     }

@@ -85,7 +85,7 @@ import { SCROLLBAR_IMPORTS } from '@ethlete/components';
       inline-size: 128px;
       block-size: 64px;
       border-radius: 8px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
   `,
 })

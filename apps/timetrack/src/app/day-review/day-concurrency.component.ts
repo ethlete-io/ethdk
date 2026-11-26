@@ -11,7 +11,7 @@ import { readHeat } from './heat';
   selector: 'ethlete-day-concurrency',
   template: `
     <span class="flex items-baseline gap-2">
-      <span class="text-small text-et-surface-muted" data-concurrency>{{ label() }} at once</span>
+      <span class="text-small text-et-surface-text-muted" data-concurrency>{{ label() }} at once</span>
 
       @if (heat(); as heat) {
         <span

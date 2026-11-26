@@ -18,7 +18,7 @@ import { injectTimetrackSettings } from '../settings';
   template: `
     @if (words().length) {
       <details>
-        <summary class="cursor-pointer text-small text-et-warning-ink">{{ summary() }}</summary>
+        <summary class="cursor-pointer text-small text-et-tone-warning-text">{{ summary() }}</summary>
 
         <div class="mt-2 flex max-h-70 flex-wrap gap-2 overflow-y-auto">
           @for (entry of words(); track entry.word) {

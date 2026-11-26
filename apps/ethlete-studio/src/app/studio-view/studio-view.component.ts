@@ -114,7 +114,7 @@ const NO_PRODUCTS: ShownProducts = { checkout: null, product: '', products: [], 
         }"
         (action)="runShellAction($event)"
       >
-        <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted" shellMainSide>
+        <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-text-muted" shellMainSide>
           {{ LABELS.sideWaiting }}
         </p>
       </ethlete-shell-page>
@@ -146,7 +146,7 @@ const NO_PRODUCTS: ShownProducts = { checkout: null, product: '', products: [], 
   encapsulation: ViewEncapsulation.None,
   imports: [ShellPageComponent, SystemViewComponent],
   host: {
-    class: 'grid min-h-0 grow grid-rows-[minmax(0,1fr)] bg-(--et-surface-background-solid) text-text',
+    class: 'grid min-h-0 grow grid-rows-[minmax(0,1fr)] bg-(--et-surface-background) text-text',
   },
 })
 export class StudioViewComponent {

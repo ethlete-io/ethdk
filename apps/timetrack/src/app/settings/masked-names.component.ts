@@ -49,7 +49,7 @@ key: with FIFAGG on the list, FIFAGG-12623 goes out as ALDER-12623.`;
             </button>
           </span>
         } @empty {
-          <p class="text-small text-et-surface-subtle">
+          <p class="text-small text-et-surface-text-subtle">
             No name is masked yet, so every word goes to the model as written.
           </p>
         }
@@ -65,7 +65,7 @@ key: with FIFAGG on the list, FIFAGG-12623 goes out as ALDER-12623.`;
 
       @if (offered().length) {
         <div class="flex flex-col gap-2">
-          <span class="text-small text-et-surface-muted">From the projects you picked</span>
+          <span class="text-small text-et-surface-text-muted">From the projects you picked</span>
 
           <div class="flex flex-wrap gap-2">
             @for (name of offered(); track name) {

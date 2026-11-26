@@ -18,9 +18,14 @@ const LABELS = COMMAND_PALETTE_LABELS;
 @Component({
   selector: 'ethlete-command-palette',
   template: `
-    <div #palette="etCommandPalette" [(query)]="query" class="flex flex-col font-ui text-et-surface" etCommandPalette>
+    <div
+      #palette="etCommandPalette"
+      [(query)]="query"
+      class="flex flex-col font-ui text-et-surface-text"
+      etCommandPalette
+    >
       <div class="flex items-center gap-space-2 border-b border-et-surface-border px-space-3 py-space-2 text-ui-sm">
-        <span class="flex text-et-surface-muted">
+        <span class="flex text-et-surface-text-muted">
           <svg
             width="14"
             height="14"
@@ -41,7 +46,7 @@ const LABELS = COMMAND_PALETTE_LABELS;
           [attr.aria-label]="LABELS.placeholder"
           (keydown.arrowdown)="navigated.set(true)"
           (keydown.arrowup)="navigated.set(true)"
-          class="min-w-0 flex-1 bg-transparent text-et-surface outline-none placeholder:text-et-surface-muted"
+          class="min-w-0 flex-1 bg-transparent text-et-surface-text outline-none placeholder:text-et-surface-text-muted"
           etCommandPaletteSearch
         />
         <et-kbd keys="esc" />
@@ -49,7 +54,7 @@ const LABELS = COMMAND_PALETTE_LABELS;
       <div [id]="palette.listboxId" [attr.aria-label]="LABELS.label" class="max-h-64 overflow-auto" role="listbox">
         @for (group of palette.groups(); track group.label) {
           <div [attr.aria-label]="group.label" class="flex flex-col gap-0.5 p-space-1" role="group">
-            <div class="px-space-2 pt-space-1 text-(length:--text-xs) text-et-surface-muted" aria-hidden="true">
+            <div class="px-space-2 pt-space-1 text-(length:--text-xs) text-et-surface-text-muted" aria-hidden="true">
               {{ group.label }}
             </div>
             @for (result of group.results; track result.command.id) {
@@ -59,14 +64,14 @@ const LABELS = COMMAND_PALETTE_LABELS;
                 [id]="palette.rowId(result.command)"
                 [attr.aria-selected]="selected"
                 [attr.data-selected]="selected ? '' : null"
-                [class]="selected ? 'bg-et-theme/20' : ''"
+                [class]="selected ? 'bg-et-tone-fill/20' : ''"
                 (pointermove)="point(result)"
                 (click)="palette.run(result.command)"
-                class="flex cursor-default items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm text-et-surface"
+                class="flex cursor-default items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm text-et-surface-text"
                 role="option"
                 data-et-control="row"
               >
-                <span class="flex text-et-surface-muted">
+                <span class="flex text-et-surface-text-muted">
                   <svg
                     width="14"
                     height="14"
@@ -83,19 +88,19 @@ const LABELS = COMMAND_PALETTE_LABELS;
                   </svg>
                 </span>
                 <span class="min-w-0 flex-1 truncate">{{ result.command.label }}</span>
-                <span class="text-(length:--text-sm) text-et-surface-muted">{{ result.command.description }}</span>
+                <span class="text-(length:--text-sm) text-et-surface-text-muted">{{ result.command.description }}</span>
               </div>
             }
           </div>
         } @empty {
           @if (query()) {
             <div class="flex flex-col items-center gap-space-1 px-space-3 py-space-6 text-ui-sm" data-palette-none>
-              <span class="font-ui-strong text-et-surface">{{ LABELS.none }}</span>
-              <span class="text-et-surface-muted">{{ LABELS.noneFor(query()) }}</span>
+              <span class="font-ui-strong text-et-surface-text">{{ LABELS.none }}</span>
+              <span class="text-et-surface-text-muted">{{ LABELS.noneFor(query()) }}</span>
             </div>
           } @else {
             <div
-              class="flex flex-col items-center gap-space-2 px-space-3 py-space-6 text-ui-sm text-et-surface-muted"
+              class="flex flex-col items-center gap-space-2 px-space-3 py-space-6 text-ui-sm text-et-surface-text-muted"
               data-palette-start
             >
               <span>{{ LABELS.start }}</span>
@@ -108,7 +113,7 @@ const LABELS = COMMAND_PALETTE_LABELS;
         }
       </div>
       <div
-        class="flex gap-space-3 border-t border-et-surface-border px-space-3 py-space-2 text-(length:--text-xs) text-et-surface-muted"
+        class="flex gap-space-3 border-t border-et-surface-border px-space-3 py-space-2 text-(length:--text-xs) text-et-surface-text-muted"
       >
         <span>{{ LABELS.select }}</span>
         <span>{{ LABELS.open }}</span>

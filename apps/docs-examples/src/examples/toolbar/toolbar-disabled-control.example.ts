@@ -61,10 +61,10 @@ import {
   ],
   styles: `
     .example-toolbar {
-      --et-toolbar-background: var(--et-surface-background-solid);
+      --et-toolbar-background: var(--et-surface-background);
 
       inline-size: fit-content;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
     }
   `,
 })

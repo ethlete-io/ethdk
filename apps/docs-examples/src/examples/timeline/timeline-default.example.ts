@@ -27,7 +27,7 @@ import { TIMELINE_EVENTS } from './timeline.data';
     }
 
     .example-timeline-description {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.4rem;
     }
   `,

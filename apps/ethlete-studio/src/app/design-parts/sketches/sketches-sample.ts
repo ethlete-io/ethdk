@@ -239,7 +239,7 @@ export const SKETCH_NEIGHBOURS_SAMPLE = {
     },
   ] satisfies SketchRow[],
   looks: {
-    a: '**:data-farn-count:text-et-theme',
+    a: '**:data-farn-count:text-et-tone-fill',
     b: '**:data-farn-add:rounded-full',
   } as Record<string, string>,
   rounds: [{ value: 'round-3', label: 'Runde 3 · Nachbarschaft einer Änderung' }] satisfies SketchRound[],
@@ -296,7 +296,7 @@ export const SKETCH_MANY_SAMPLE = {
       shots: manyShotsOf(SKETCH_MANY_STATES.filter((_, index) => index % 2 === 0)),
     },
   ] satisfies SketchRow[],
-  looks: { a: '[&_div]:text-et-theme', b: '[&_div]:font-ui-strong' } as Record<string, string>,
+  looks: { a: '[&_div]:text-et-tone-fill', b: '[&_div]:font-ui-strong' } as Record<string, string>,
   rounds: [{ value: 'round-1', label: 'Runde 1 · Viele Zustände' }] satisfies SketchRound[],
   tree: {
     layers: [componentsLayerOf('plant-page'), { title: 'Pages', open: true, parts: [{ name: 'shop' }] }],

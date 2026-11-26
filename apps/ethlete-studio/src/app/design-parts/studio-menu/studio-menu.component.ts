@@ -24,7 +24,8 @@ const SERVER_ROWS: Record<DesignServerStatus, ServerRow[]> = {
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective],
   host: {
-    '[class]': "bare() ? 'block size-10' : 'box-border block h-120 w-3xl p-space-3 font-ui text-ui-md text-et-surface'",
+    '[class]':
+      "bare() ? 'block size-10' : 'box-border block h-120 w-3xl p-space-3 font-ui text-ui-md text-et-surface-text'",
   },
 })
 export class StudioMenuComponent {

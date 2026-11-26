@@ -133,11 +133,11 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
         @if (rows().length) {
           <ethlete-tree-row [rows]="rows()" (rowPress)="pick.emit($event.label)" />
         } @else {
-          <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
+          <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-text-muted">{{ LABELS.none }}</p>
         }
         @if (flow() === 'open') {
           <section class="mt-space-4 flex flex-col gap-space-1">
-            <h2 class="m-0 px-space-3 text-ui-xs font-ui-strong text-et-surface-muted">
+            <h2 class="m-0 px-space-3 text-ui-xs font-ui-strong text-et-surface-text-muted">
               {{ LABELS.orphans }} · {{ orphanNotes().length }}
             </h2>
             <div class="flex flex-col items-stretch">
@@ -153,7 +153,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                   {{ note.text }}
                 </button>
               } @empty {
-                <p class="m-0 px-space-3 text-ui-sm text-et-surface-muted">{{ LABELS.noOrphans }}</p>
+                <p class="m-0 px-space-3 text-ui-sm text-et-surface-text-muted">{{ LABELS.noOrphans }}</p>
               }
             </div>
           </section>
@@ -172,7 +172,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                 <svg
                   [attr.width]="graph().width"
                   [attr.height]="graph().height"
-                  class="absolute inset-0 overflow-visible text-et-surface-muted"
+                  class="absolute inset-0 overflow-visible text-et-surface-text-muted"
                   fill="none"
                   stroke="currentColor"
                   stroke-width="1.5"
@@ -202,7 +202,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                     class="absolute m-0 flex flex-col gap-space-1"
                     ethleteCanvasFrame
                   >
-                    <span class="text-ui-sm text-et-surface-muted">{{ box.title }}</span>
+                    <span class="text-ui-sm text-et-surface-text-muted">{{ box.title }}</span>
                     <div class="rounded-sm outline outline-et-surface-border">
                       <div
                         [style.width.px]="graph().w"
@@ -223,7 +223,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                     [style.left.px]="edge.labelX"
                     [style.top.px]="edge.labelY"
                     [style.width.px]="edge.labelWidth"
-                    class="absolute -translate-y-full pb-space-1 text-center text-ui-xs text-et-surface-muted"
+                    class="absolute -translate-y-full pb-space-1 text-center text-ui-xs text-et-surface-text-muted"
                   >
                     {{ edge.label }}
                   </span>
@@ -239,7 +239,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                     (canvasDragMove)="dragged.set({ id: note.id, x: $event.x, y: $event.y })"
                     (canvasDragEnd)="noteMove.emit({ id: note.id, x: $event.x, y: $event.y })"
                     (dblclick)="edit(note)"
-                    class="absolute box-border w-64 cursor-grab rounded-md border border-et-surface-border bg-et-surface-bg p-space-3 text-ui-md text-et-surface shadow-lg"
+                    class="absolute box-border w-64 cursor-grab rounded-md border border-et-surface-border bg-et-surface-background p-space-3 text-ui-md text-et-surface-text shadow-lg"
                   >
                     <div class="flex items-start gap-space-1">
                       @if (editing() !== note.id) {
@@ -340,7 +340,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                         }
                       } @else {
                         <div
-                          class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 text-[1.3rem] text-text shadow-lg"
+                          class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-(--et-surface-border) bg-(--et-surface-background) p-3 text-[1.3rem] text-text shadow-lg"
                           data-comment-text
                         >
                           <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
@@ -379,7 +379,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
               <span class="flex-1"></span>
               @if (commentMode() && draft() === null) {
                 <span
-                  class="flex items-center gap-space-1 self-center text-ui-xs whitespace-nowrap text-et-surface-muted"
+                  class="flex items-center gap-space-1 self-center text-ui-xs whitespace-nowrap text-et-surface-text-muted"
                   ><et-kbd keys="esc" /> {{ SYSTEM_LABELS.commentModeOr }} <et-kbd keys="c" />
                   {{ SYSTEM_LABELS.commentModeEnds }}</span
                 >
@@ -431,15 +431,23 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
         <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)">
           <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">
             <div class="flex items-center gap-space-2" aria-hidden="true">
-              <span class="block h-15 w-24 rounded-sm bg-et-surface-bg outline outline-et-surface-border"></span>
+              <span
+                class="block h-15 w-24 rounded-sm bg-et-surface-background outline outline-et-surface-border"
+              ></span>
               <span class="block h-px w-10 bg-et-surface-border"></span>
-              <span class="block h-15 w-24 rounded-sm bg-et-surface-bg outline outline-et-surface-border"></span>
+              <span
+                class="block h-15 w-24 rounded-sm bg-et-surface-background outline outline-et-surface-border"
+              ></span>
               <span class="block h-px w-10 bg-et-surface-border"></span>
-              <span class="block h-15 w-24 rounded-sm bg-et-surface-bg outline outline-et-surface-border"></span>
+              <span
+                class="block h-15 w-24 rounded-sm bg-et-surface-background outline outline-et-surface-border"
+              ></span>
             </div>
-            <p class="m-0 text-ui-md font-ui-strong text-et-surface">{{ LABELS.emptyTitle }}</p>
-            <p class="m-0 text-et-surface-muted">{{ LABELS.emptyExplainer }}</p>
-            <p class="m-0 rounded-(--radius-control-md) bg-et-surface-bg p-space-3 text-ui-sm text-et-surface">
+            <p class="m-0 text-ui-md font-ui-strong text-et-surface-text">{{ LABELS.emptyTitle }}</p>
+            <p class="m-0 text-et-surface-text-muted">{{ LABELS.emptyExplainer }}</p>
+            <p
+              class="m-0 rounded-(--radius-control-md) bg-et-surface-background p-space-3 text-ui-sm text-et-surface-text"
+            >
               {{ LABELS.emptyPrompt }}
             </p>
             <button (click)="copyPrompt.emit()" et-button type="button" variant="outline" size="sm">

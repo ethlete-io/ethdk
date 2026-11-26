@@ -120,7 +120,7 @@ describe('SketchesComponent', () => {
     expect(section?.className).toContain('grid-cols-[minmax(0,1fr)]');
     expect(section?.querySelector('[data-sk-head-row]')).not.toBeNull();
     expect(
-      root.querySelectorAll('.bg-et-surface-bg[data-sk-gutter], [data-sk-head-row].bg-et-surface-bg'),
+      root.querySelectorAll('.bg-et-surface-background[data-sk-gutter], [data-sk-head-row].bg-et-surface-background'),
     ).toHaveLength(0);
   });
 

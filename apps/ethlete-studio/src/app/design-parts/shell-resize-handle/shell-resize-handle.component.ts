@@ -25,7 +25,7 @@ import { clampSideWidth, SIDE_WIDTH, sideWidthForKey } from '../shell-main/side-
       data-side-resize
     >
       <span
-        class="absolute top-2.5 bottom-2.5 left-0.75 w-0.5 rounded-full [transition:var(--transition-state)] group-hover:bg-et-theme/50 group-focus-visible:bg-focus-ring group-active:bg-et-theme"
+        class="absolute top-2.5 bottom-2.5 left-0.75 w-0.5 rounded-full [transition:var(--transition-state)] group-hover:bg-et-tone-fill/50 group-focus-visible:bg-focus-ring group-active:bg-et-tone-fill"
       ></span>
     </div>
   `,

@@ -20,7 +20,7 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
         } @else {
           <span class="text-small">Nobody was here for this band, so it books nothing.</span>
         }
-        <span class="text-small text-et-surface-muted">The day would have called it {{ issueKey }}.</span>
+        <span class="text-small text-et-surface-text-muted">The day would have called it {{ issueKey }}.</span>
 
         <div>
           <button (click)="book(issueKey)" et-button variant="outline" size="sm">Book it as {{ issueKey }}</button>

@@ -356,7 +356,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           @if (transferError(); as message) {
             <p
               [etProvideColor]="errorTheme()"
-              class="absolute right-space-4 bottom-space-3 m-0 text-[1.2rem] text-(--et-theme-color-primary-solid)"
+              class="absolute right-space-4 bottom-space-3 m-0 text-[1.2rem] text-(--et-tone-fill)"
             >
               {{ message }}
             </p>
@@ -366,7 +366,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           @if (exceptions.error(); as message) {
             <span
               [etProvideColor]="errorTheme()"
-              class="self-center text-[1.2rem] text-(--et-theme-color-primary-solid)"
+              class="self-center text-[1.2rem] text-(--et-tone-fill)"
               data-exceptions-error
               >{{ message }}</span
             >

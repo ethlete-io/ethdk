@@ -14,25 +14,25 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
     @for (item of items(); track item.id) {
       <div
         [attr.data-row-approval]="item.id"
-        class="flex flex-col gap-2 rounded-md border border-dashed border-et-brand-ink px-3 py-2"
+        class="flex flex-col gap-2 rounded-md border border-dashed border-et-tone-brand-text px-3 py-2"
       >
-        <span class="text-small font-medium text-et-brand-ink">Auto mode suggests</span>
+        <span class="text-small font-medium text-et-tone-brand-text">Auto mode suggests</span>
         <span class="text-small">{{ describe(item) }}</span>
 
         <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-small">
           @for (line of linesOf(item); track line.label) {
-            <dt class="text-et-surface-muted">{{ line.label }}</dt>
+            <dt class="text-et-surface-text-muted">{{ line.label }}</dt>
             <dd class="min-w-0 break-words">{{ line.value }}</dd>
           }
         </dl>
 
         @if (DESCRIPTION_OF(item); as description) {
-          <p class="text-small whitespace-pre-wrap text-et-surface-muted">{{ description }}</p>
+          <p class="text-small whitespace-pre-wrap text-et-surface-text-muted">{{ description }}</p>
         }
 
         <div class="flex items-center justify-end gap-3">
           @if (item.state === 'running') {
-            <span class="text-small text-et-surface-muted">Carrying it out…</span>
+            <span class="text-small text-et-surface-text-muted">Carrying it out…</span>
           } @else {
             <button (click)="queue.reject(item.id)" et-text-button etProvideColor="danger">Reject</button>
             <button (click)="queue.approve(item.id)" et-button size="sm">Approve</button>

@@ -11,11 +11,11 @@ export const SCHEMES: SurfaceType[] = ['dark', 'light'];
 export const TONES = ['brand', 'success', 'warning', 'danger', 'neutral'];
 
 export const SURFACE_VALUES = [
-  { label: 'background', token: '--et-surface-background-solid' },
-  { label: 'text', token: '--et-surface-color-solid' },
-  { label: 'muted', token: '--et-surface-color-muted-solid' },
-  { label: 'subtle', token: '--et-surface-color-subtle-solid' },
-  { label: 'border', token: '--et-surface-border-solid' },
+  { label: 'background', token: '--et-surface-background' },
+  { label: 'text', token: '--et-surface-text' },
+  { label: 'muted', token: '--et-surface-text-muted' },
+  { label: 'subtle', token: '--et-surface-text-subtle' },
+  { label: 'border', token: '--et-surface-border' },
 ];
 
 export const ROWS: ThemingLevelRow[] = [

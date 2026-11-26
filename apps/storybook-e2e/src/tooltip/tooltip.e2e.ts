@@ -314,8 +314,8 @@ test.describe('tooltip / scheme border', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: hover opens the tooltip');
 
   for (const [scheme, expected] of [
-    ['light', 'var(--et-surface-border-solid, rgb(255 255 255 / 0.1))'],
-    ['dark', 'color-mix(in srgb, var(--et-surface-color-solid) 24%, var(--et-surface-background-solid))'],
+    ['light', 'var(--et-surface-border, rgb(255 255 255 / 0.1))'],
+    ['dark', 'color-mix(in srgb, var(--et-surface-text) 24%, var(--et-surface-background))'],
   ] as const) {
     test(`the tooltip border follows the ${scheme} scheme`, async ({ page }) => {
       const root = await openStory(page, STORY_ID);

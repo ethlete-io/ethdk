@@ -13,7 +13,7 @@ import { injectTimer } from './timer';
   template: `
     <div class="flex items-center gap-2">
       @if (timer.running(); as run) {
-        <span class="text-mono text-small text-et-surface-muted">since {{ startedAt() }}</span>
+        <span class="text-mono text-small text-et-surface-text-muted">since {{ startedAt() }}</span>
         <button (click)="timer.toggle()" et-button variant="filled" size="sm">Stop {{ elapsed() }}</button>
       } @else {
         <button (click)="timer.toggle()" et-button variant="outline" size="sm">Start timer</button>

@@ -172,7 +172,7 @@ type SourceRow = {
     <div class="flex w-full max-w-7xl flex-col gap-3 p-6">
       <h2 class="text-h3">Where the day comes from</h2>
 
-      <p class="text-small text-et-surface-muted">
+      <p class="text-small text-et-surface-text-muted">
         Everything is read on this machine and stored encrypted. Nothing leaves it except a worklog you accept.
       </p>
 
@@ -201,17 +201,17 @@ type SourceRow = {
               <et-badge [color]="row.color" [variant]="row.variant" size="sm">{{ row.label }}</et-badge>
             </div>
 
-            <p class="text-small text-et-surface-muted">{{ row.source.reads }}</p>
-            <p class="text-small text-et-surface-subtle">
+            <p class="text-small text-et-surface-text-muted">{{ row.source.reads }}</p>
+            <p class="text-small text-et-surface-text-subtle">
               <span class="font-medium">Stores:</span> {{ row.source.stores }}
             </p>
 
             @if (row.stored) {
-              <p class="text-small text-et-surface">{{ row.stored }}</p>
+              <p class="text-small text-et-surface-text">{{ row.stored }}</p>
             }
 
             @if (row.run) {
-              <p class="text-small text-et-surface-subtle">{{ row.run }}</p>
+              <p class="text-small text-et-surface-text-subtle">{{ row.run }}</p>
             }
 
             @if (row.capabilities.length) {
@@ -229,7 +229,7 @@ type SourceRow = {
                       </div>
 
                       @if (capability.detail) {
-                        <p class="text-small text-et-surface-subtle">{{ capability.detail }}</p>
+                        <p class="text-small text-et-surface-text-subtle">{{ capability.detail }}</p>
                       }
                     </li>
                   }
@@ -265,11 +265,11 @@ type SourceRow = {
                         </div>
 
                         @if (reporter.detail) {
-                          <p class="text-small text-et-surface-subtle">{{ reporter.detail }}</p>
+                          <p class="text-small text-et-surface-text-subtle">{{ reporter.detail }}</p>
                         }
 
                         @if (reporter.installedNow) {
-                          <p class="text-small text-et-surface-subtle">
+                          <p class="text-small text-et-surface-text-subtle">
                             {{ reporter.name }} loads the reporter by itself. If no heartbeat arrives, restart it.
                           </p>
                         }
@@ -279,19 +279,21 @@ type SourceRow = {
                         }
 
                         @if (reporter.command) {
-                          <code class="text-small text-et-surface-subtle">{{ reporter.command }}</code>
+                          <code class="text-small text-et-surface-text-subtle">{{ reporter.command }}</code>
                         }
                       </li>
                     }
                   </ul>
                 } @else {
-                  <p class="text-small text-et-surface-subtle">No editor this app has a reporter for is on the PATH.</p>
+                  <p class="text-small text-et-surface-text-subtle">
+                    No editor this app has a reporter for is on the PATH.
+                  </p>
                 }
               </div>
             }
 
             @if (row.detail) {
-              <p class="text-small text-et-surface-subtle">{{ row.detail }}</p>
+              <p class="text-small text-et-surface-text-subtle">{{ row.detail }}</p>
             }
 
             @if (row.warning) {
@@ -327,13 +329,13 @@ type SourceRow = {
                     <et-badge color="neutral" variant="outline" size="sm">planned</et-badge>
                   </div>
 
-                  <p class="text-small text-et-surface-muted">{{ source.reads }}</p>
-                  <p class="text-small text-et-surface-subtle">
+                  <p class="text-small text-et-surface-text-muted">{{ source.reads }}</p>
+                  <p class="text-small text-et-surface-text-subtle">
                     <span class="font-medium">Will store:</span> {{ source.stores }}
                   </p>
 
                   @if (source.detail) {
-                    <p class="text-small text-et-surface-subtle">{{ source.detail }}</p>
+                    <p class="text-small text-et-surface-text-subtle">{{ source.detail }}</p>
                   }
                 </li>
               }

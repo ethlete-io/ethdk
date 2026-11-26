@@ -14,7 +14,7 @@ import { PrivateTime, TempoDayCoverage, formatDurationMs } from '@ethlete/timetr
     <div class="flex flex-col gap-3">
       @if (inTempo().length) {
         <div class="flex flex-col gap-2">
-          <p class="text-small text-et-surface-muted">
+          <p class="text-small text-et-surface-text-muted">
             Time this day already holds, written outside this app. A sync leaves it alone.
           </p>
 
@@ -30,13 +30,13 @@ import { PrivateTime, TempoDayCoverage, formatDurationMs } from '@ethlete/timetr
       @for (entry of privateEntries(); track entry.id) {
         <div class="flex flex-wrap items-center gap-3" data-private-entry>
           <span class="w-14 shrink-0 text-small">{{ entry.duration }}</span>
-          <span class="grow break-all text-mono text-small text-et-surface-muted">{{ entry.path }}</span>
-          <span class="text-small text-et-surface-subtle">private — never logged</span>
+          <span class="grow break-all text-mono text-small text-et-surface-text-muted">{{ entry.path }}</span>
+          <span class="text-small text-et-surface-text-subtle">private — never logged</span>
         </div>
       }
 
       @if (!inTempo().length && !privateEntries().length) {
-        <p class="text-small text-et-surface-subtle">Nothing on this day is logged outside this app.</p>
+        <p class="text-small text-et-surface-text-subtle">Nothing on this day is logged outside this app.</p>
       }
     </div>
   `,

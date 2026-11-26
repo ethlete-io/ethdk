@@ -50,7 +50,7 @@ const targetOf = (rule: AttributionRule) => {
           </button>
         </div>
       } @empty {
-        <p class="text-small text-et-surface-subtle">
+        <p class="text-small text-et-surface-text-subtle">
           None yet. Name a stretch of unattributed work in the day review to write one.
         </p>
       }

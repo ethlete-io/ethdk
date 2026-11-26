@@ -39,7 +39,7 @@ import { CarouselImports } from '@ethlete/cdk';
       justify-content: center;
       block-size: 100%;
       font-size: 2.4rem;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
 
     .example-carousel-controls {

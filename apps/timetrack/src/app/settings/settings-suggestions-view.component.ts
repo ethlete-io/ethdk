@@ -92,7 +92,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
         </et-form-field>
       </div>
 
-      <span class="text-small text-et-surface-muted">
+      <span class="text-small text-et-surface-text-muted">
         Every ticket, every parent and every suggestion is written in the language, every worklog description in the
         worklog language. Leave one empty and its answers follow the language of the work they were given.
       </span>

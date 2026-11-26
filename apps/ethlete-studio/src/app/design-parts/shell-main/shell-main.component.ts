@@ -92,13 +92,13 @@ export class ShellMainComponent {
 
   protected sectionClass(active: boolean) {
     if (active && this.panel() !== 'hidden')
-      return 'rounded-control-lg bg-et-theme/20 text-et-theme-ink hover:bg-et-theme/20';
+      return 'rounded-control-lg bg-et-tone-fill/20 text-et-tone-text hover:bg-et-tone-fill/20';
 
-    return `rounded-control-lg ${active ? 'text-et-theme-ink' : 'text-et-surface-muted'} ${HOVER_PRESS}`;
+    return `rounded-control-lg ${active ? 'text-et-tone-text' : 'text-et-surface-text-muted'} ${HOVER_PRESS}`;
   }
 
   protected productClass(active: boolean) {
-    return `my-0.5 size-9 rounded-control-md bg-et-surface-bg ${active ? 'text-et-surface shadow-[inset_0_0_0_1px_var(--et-surface-border-solid)]' : 'text-et-surface-muted'} ${HOVER_PRESS_RAISED}`;
+    return `my-0.5 size-9 rounded-control-md bg-et-surface-background ${active ? 'text-et-surface-text shadow-[inset_0_0_0_1px_var(--et-surface-border)]' : 'text-et-surface-text-muted'} ${HOVER_PRESS_RAISED}`;
   }
 
   protected pickSection(section: ShellSection, active: boolean) {

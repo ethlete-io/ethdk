@@ -45,7 +45,7 @@ et-form-field {
 }
 
 .et-surface-interactive {
-  --color-et-surface-interaction: rgb(var(--et-surface-interaction-rgb));
+  --color-et-surface-interaction: var(--et-surface-interaction);
 }
 
 .et-notification {

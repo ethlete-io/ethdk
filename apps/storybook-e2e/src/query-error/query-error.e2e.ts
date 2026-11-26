@@ -19,7 +19,7 @@ function retryCounter(root: Locator): Locator {
 }
 
 function themePrimary(locator: Locator): Promise<string> {
-  return locator.evaluate((element) => getComputedStyle(element).getPropertyValue('--et-theme-color-primary-solid'));
+  return locator.evaluate((element) => getComputedStyle(element).getPropertyValue('--et-tone-fill'));
 }
 
 function openRetryableStory(page: Page): Promise<Locator> {
@@ -160,7 +160,7 @@ test.describe('query-error / colour', () => {
       'background-color',
       await banner.evaluate((element) => {
         const probe = document.createElement('div');
-        probe.style.color = getComputedStyle(element).getPropertyValue('--et-theme-color-primary-solid');
+        probe.style.color = getComputedStyle(element).getPropertyValue('--et-tone-fill');
         element.append(probe);
         const resolved = getComputedStyle(probe).color;
         probe.remove();

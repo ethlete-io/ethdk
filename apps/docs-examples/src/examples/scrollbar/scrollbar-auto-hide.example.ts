@@ -35,7 +35,7 @@ import { SCROLLBAR_IMPORTS } from '@ethlete/components';
     .example-scrollbar-row {
       padding: 16px;
       border-radius: 8px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
   `,
 })

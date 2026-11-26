@@ -14,7 +14,7 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
   template: `
     @if (transcript(); as text) {
       <div class="flex flex-col gap-1 text-small" data-call-transcript>
-        <span class="text-et-surface-muted">Call transcript, raw machine text of your microphone</span>
+        <span class="text-et-surface-text-muted">Call transcript, raw machine text of your microphone</span>
         <span class="min-w-0 break-words">{{ text }}</span>
       </div>
     }

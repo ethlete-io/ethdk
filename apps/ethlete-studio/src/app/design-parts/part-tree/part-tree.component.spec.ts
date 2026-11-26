@@ -124,7 +124,7 @@ describe('PartTreeComponent', () => {
     ).nativeElement as HTMLElement;
     const [, , ready, progress, plain] = rowsOf(element);
 
-    expect(ready?.querySelector('.text-et-theme path[d="m3.5 8.5 3 3 6-7"]')).not.toBeNull();
+    expect(ready?.querySelector('.text-et-tone-fill path[d="m3.5 8.5 3 3 6-7"]')).not.toBeNull();
     expect(progress?.querySelector('svg path[d^="M10.5"]')).not.toBeNull();
     expect(plain?.querySelector('svg')).toBeNull();
   });
@@ -142,7 +142,7 @@ describe('PartTreeComponent', () => {
     ).nativeElement as HTMLElement;
     const [, , approved] = rowsOf(element);
 
-    expect(approved?.querySelector('.text-et-theme path[d="m3.5 8.5 3 3 6-7"]')).not.toBeNull();
+    expect(approved?.querySelector('.text-et-tone-fill path[d="m3.5 8.5 3 3 6-7"]')).not.toBeNull();
     expect(withTooltip(approved, TREE_ROW_LABELS.sketchApproved)).not.toBeNull();
     expect(withTooltip(approved, TREE_ROW_LABELS.sketchReady)).toBeNull();
   });

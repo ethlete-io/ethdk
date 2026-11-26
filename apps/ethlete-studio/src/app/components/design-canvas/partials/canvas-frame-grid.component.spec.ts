@@ -321,8 +321,8 @@ describe('CanvasFrameGridComponent', () => {
           host.querySelector(`[data-grid-cell]:has([data-cell-scheme="${scheme}"])`)?.className ?? '';
 
         expect(backdropOf('light')).toContain('bg-white');
-        expect(backdropOf('light')).not.toContain('bg-(--et-surface-background-solid)');
-        expect(backdropOf('dark')).toContain('bg-(--et-surface-background-solid)');
+        expect(backdropOf('light')).not.toContain('bg-(--et-surface-background)');
+        expect(backdropOf('dark')).toContain('bg-(--et-surface-background)');
       },
     );
 

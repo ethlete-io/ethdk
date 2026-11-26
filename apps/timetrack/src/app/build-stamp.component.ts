@@ -9,13 +9,13 @@ import { appVersion$ } from '../host';
   template: `
     <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
       <span
-        class="text-small -rotate-2 rounded-sm bg-et-warning px-1.5 py-0.5 font-bold tracking-wide text-et-on-warning uppercase shadow-sm"
+        class="text-small -rotate-2 rounded-sm bg-et-tone-warning-fill px-1.5 py-0.5 font-bold tracking-wide text-et-tone-warning-on-fill uppercase shadow-sm"
         data-alpha-patch
       >
         Early alpha
       </span>
 
-      <span class="text-small text-et-surface-subtle" data-build-label>{{ label() }}</span>
+      <span class="text-small text-et-surface-text-subtle" data-build-label>{{ label() }}</span>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

@@ -9,10 +9,10 @@
 
 @theme {
   /* dark surface */
-  --color-et-surface-dark-bg: rgb(15 15 15);
-  --color-et-surface-dark: rgb(235 235 235);
-  --color-et-surface-dark-muted: rgb(164 164 164);
-  --color-et-surface-dark-subtle: rgb(146 146 146);
+  --color-et-surface-dark-background: rgb(15 15 15);
+  --color-et-surface-dark-text: rgb(235 235 235);
+  --color-et-surface-dark-text-muted: rgb(164 164 164);
+  --color-et-surface-dark-text-subtle: rgb(146 146 146);
   --color-et-surface-dark-border: rgb(56 56 56);
   --color-et-surface-dark-interaction: rgb(164 164 164);
   --color-et-surface-dark-interaction-hover: rgb(235 235 235);
@@ -26,10 +26,10 @@
   --color-et-surface-dark-on-interaction-disabled: rgb(31 31 31);
 
   /* dark-elevated surface */
-  --color-et-surface-dark-elevated-bg: rgb(32 32 32);
-  --color-et-surface-dark-elevated: rgb(235 235 235);
-  --color-et-surface-dark-elevated-muted: rgb(164 164 164);
-  --color-et-surface-dark-elevated-subtle: rgb(146 146 146);
+  --color-et-surface-dark-elevated-background: rgb(32 32 32);
+  --color-et-surface-dark-elevated-text: rgb(235 235 235);
+  --color-et-surface-dark-elevated-text-muted: rgb(164 164 164);
+  --color-et-surface-dark-elevated-text-subtle: rgb(146 146 146);
   --color-et-surface-dark-elevated-border: rgb(56 56 56);
   --color-et-surface-dark-elevated-interaction: rgb(164 164 164);
   --color-et-surface-dark-elevated-interaction-hover: rgb(235 235 235);
@@ -43,10 +43,10 @@
   --color-et-surface-dark-elevated-on-interaction-disabled: rgb(31 31 31);
 
   /* dark-elevated-2 surface */
-  --color-et-surface-dark-elevated-2-bg: rgb(43 43 43);
-  --color-et-surface-dark-elevated-2: rgb(235 235 235);
-  --color-et-surface-dark-elevated-2-muted: rgb(164 164 164);
-  --color-et-surface-dark-elevated-2-subtle: rgb(146 146 146);
+  --color-et-surface-dark-elevated-2-background: rgb(43 43 43);
+  --color-et-surface-dark-elevated-2-text: rgb(235 235 235);
+  --color-et-surface-dark-elevated-2-text-muted: rgb(164 164 164);
+  --color-et-surface-dark-elevated-2-text-subtle: rgb(146 146 146);
   --color-et-surface-dark-elevated-2-border: rgb(56 56 56);
   --color-et-surface-dark-elevated-2-interaction: rgb(164 164 164);
   --color-et-surface-dark-elevated-2-interaction-hover: rgb(235 235 235);
@@ -60,235 +60,187 @@
   --color-et-surface-dark-elevated-2-on-interaction-disabled: rgb(31 31 31);
 
   /* Dynamic surface colors (references runtime CSS variables) */
-  --color-et-surface-bg: rgb(var(--et-surface-background));
-  --color-et-surface: rgb(var(--et-surface-color));
-  --color-et-surface-muted: rgb(var(--et-surface-color-muted));
-  --color-et-surface-subtle: rgb(var(--et-surface-color-subtle));
-  --color-et-surface-border: rgb(var(--et-surface-border));
-  --color-et-surface-interaction: rgb(var(--et-surface-interaction));
-  --color-et-surface-interaction-hover: rgb(var(--et-surface-interaction-hover));
-  --color-et-surface-interaction-focus: rgb(var(--et-surface-interaction-focus));
-  --color-et-surface-interaction-active: rgb(var(--et-surface-interaction-active));
-  --color-et-surface-interaction-disabled: rgb(var(--et-surface-interaction-disabled));
-  --color-et-surface-on-interaction: rgb(var(--et-surface-on-interaction, var(--et-surface-background)));
-  --color-et-surface-on-interaction-hover: rgb(var(--et-surface-on-interaction-hover, var(--et-surface-background)));
-  --color-et-surface-on-interaction-focus: rgb(var(--et-surface-on-interaction-focus, var(--et-surface-background)));
-  --color-et-surface-on-interaction-active: rgb(var(--et-surface-on-interaction-active, var(--et-surface-background)));
-  --color-et-surface-on-interaction-disabled: rgb(
-    var(--et-surface-on-interaction-disabled, var(--et-surface-background))
-  );
-  --color-et-surface-interaction-ink: rgb(var(--et-surface-interaction-ink, var(--et-surface-color)));
-  --color-et-surface-interaction-ink-hover: rgb(var(--et-surface-interaction-ink-hover, var(--et-surface-color)));
-  --color-et-surface-interaction-ink-focus: rgb(var(--et-surface-interaction-ink-focus, var(--et-surface-color)));
-  --color-et-surface-interaction-ink-active: rgb(var(--et-surface-interaction-ink-active, var(--et-surface-color)));
-  --color-et-surface-interaction-ink-disabled: rgb(var(--et-surface-interaction-ink-disabled, var(--et-surface-color)));
+  --color-et-surface-background: var(--et-surface-background);
+  --color-et-surface-text: var(--et-surface-text);
+  --color-et-surface-text-muted: var(--et-surface-text-muted);
+  --color-et-surface-text-subtle: var(--et-surface-text-subtle);
+  --color-et-surface-border: var(--et-surface-border);
+  --color-et-surface-interaction: var(--et-surface-interaction);
+  --color-et-surface-interaction-hover: var(--et-surface-interaction-hover);
+  --color-et-surface-interaction-focus: var(--et-surface-interaction-focus);
+  --color-et-surface-interaction-active: var(--et-surface-interaction-active);
+  --color-et-surface-interaction-disabled: var(--et-surface-interaction-disabled);
+  --color-et-surface-on-interaction: var(--et-surface-on-interaction, var(--et-surface-background));
+  --color-et-surface-on-interaction-hover: var(--et-surface-on-interaction-hover, var(--et-surface-background));
+  --color-et-surface-on-interaction-focus: var(--et-surface-on-interaction-focus, var(--et-surface-background));
+  --color-et-surface-on-interaction-active: var(--et-surface-on-interaction-active, var(--et-surface-background));
+  --color-et-surface-on-interaction-disabled: var(--et-surface-on-interaction-disabled, var(--et-surface-background));
+  --color-et-surface-interaction-ink: var(--et-surface-interaction-ink, var(--et-surface-text));
+  --color-et-surface-interaction-ink-hover: var(--et-surface-interaction-ink-hover, var(--et-surface-text));
+  --color-et-surface-interaction-ink-focus: var(--et-surface-interaction-ink-focus, var(--et-surface-text));
+  --color-et-surface-interaction-ink-active: var(--et-surface-interaction-ink-active, var(--et-surface-text));
+  --color-et-surface-interaction-ink-disabled: var(--et-surface-interaction-ink-disabled, var(--et-surface-text));
 }
 
 @layer base {
   .et-surface--default-dark,
   .et-surface--dark {
-    --et-surface-background: 15 15 15;
-    --et-surface-color: 235 235 235;
-    --et-surface-color-muted: 164 164 164;
-    --et-surface-color-subtle: 146 146 146;
-    --et-surface-border: 56 56 56;
+    --et-surface-background: rgb(15 15 15);
+    --et-surface-text: rgb(235 235 235);
+    --et-surface-text-muted: rgb(164 164 164);
+    --et-surface-text-subtle: rgb(146 146 146);
+    --et-surface-border: rgb(56 56 56);
     --et-surface-type: dark;
     --et-surface-elevation: 0;
-    --et-surface-interaction: 164 164 164;
-    --et-surface-interaction-hover: 235 235 235;
-    --et-surface-interaction-focus: 235 235 235;
-    --et-surface-interaction-active: 235 235 235;
-    --et-surface-interaction-disabled: 111 111 111;
-    --et-surface-on-interaction: 15 15 15;
-    --et-surface-on-interaction-hover: 15 15 15;
-    --et-surface-on-interaction-focus: 15 15 15;
-    --et-surface-on-interaction-active: 15 15 15;
-    --et-surface-on-interaction-disabled: 31 31 31;
+    --et-surface-interaction: rgb(164 164 164);
+    --et-surface-interaction-hover: rgb(235 235 235);
+    --et-surface-interaction-focus: rgb(235 235 235);
+    --et-surface-interaction-active: rgb(235 235 235);
+    --et-surface-interaction-disabled: rgb(111 111 111);
+    --et-surface-on-interaction: rgb(15 15 15);
+    --et-surface-on-interaction-hover: rgb(15 15 15);
+    --et-surface-on-interaction-focus: rgb(15 15 15);
+    --et-surface-on-interaction-active: rgb(15 15 15);
+    --et-surface-on-interaction-disabled: rgb(31 31 31);
   }
 
   .et-surface--dark-elevated {
-    --et-surface-background: 32 32 32;
-    --et-surface-color: 235 235 235;
-    --et-surface-color-muted: 164 164 164;
-    --et-surface-color-subtle: 146 146 146;
-    --et-surface-border: 56 56 56;
+    --et-surface-background: rgb(32 32 32);
+    --et-surface-text: rgb(235 235 235);
+    --et-surface-text-muted: rgb(164 164 164);
+    --et-surface-text-subtle: rgb(146 146 146);
+    --et-surface-border: rgb(56 56 56);
     --et-surface-type: dark;
     --et-surface-elevation: 1;
-    --et-surface-interaction: 164 164 164;
-    --et-surface-interaction-hover: 235 235 235;
-    --et-surface-interaction-focus: 235 235 235;
-    --et-surface-interaction-active: 235 235 235;
-    --et-surface-interaction-disabled: 111 111 111;
-    --et-surface-on-interaction: 15 15 15;
-    --et-surface-on-interaction-hover: 15 15 15;
-    --et-surface-on-interaction-focus: 15 15 15;
-    --et-surface-on-interaction-active: 15 15 15;
-    --et-surface-on-interaction-disabled: 31 31 31;
+    --et-surface-interaction: rgb(164 164 164);
+    --et-surface-interaction-hover: rgb(235 235 235);
+    --et-surface-interaction-focus: rgb(235 235 235);
+    --et-surface-interaction-active: rgb(235 235 235);
+    --et-surface-interaction-disabled: rgb(111 111 111);
+    --et-surface-on-interaction: rgb(15 15 15);
+    --et-surface-on-interaction-hover: rgb(15 15 15);
+    --et-surface-on-interaction-focus: rgb(15 15 15);
+    --et-surface-on-interaction-active: rgb(15 15 15);
+    --et-surface-on-interaction-disabled: rgb(31 31 31);
   }
 
   .et-surface--dark-elevated-2 {
-    --et-surface-background: 43 43 43;
-    --et-surface-color: 235 235 235;
-    --et-surface-color-muted: 164 164 164;
-    --et-surface-color-subtle: 146 146 146;
-    --et-surface-border: 56 56 56;
+    --et-surface-background: rgb(43 43 43);
+    --et-surface-text: rgb(235 235 235);
+    --et-surface-text-muted: rgb(164 164 164);
+    --et-surface-text-subtle: rgb(146 146 146);
+    --et-surface-border: rgb(56 56 56);
     --et-surface-type: dark;
     --et-surface-elevation: 2;
-    --et-surface-interaction: 164 164 164;
-    --et-surface-interaction-hover: 235 235 235;
-    --et-surface-interaction-focus: 235 235 235;
-    --et-surface-interaction-active: 235 235 235;
-    --et-surface-interaction-disabled: 111 111 111;
-    --et-surface-on-interaction: 15 15 15;
-    --et-surface-on-interaction-hover: 15 15 15;
-    --et-surface-on-interaction-focus: 15 15 15;
-    --et-surface-on-interaction-active: 15 15 15;
-    --et-surface-on-interaction-disabled: 31 31 31;
+    --et-surface-interaction: rgb(164 164 164);
+    --et-surface-interaction-hover: rgb(235 235 235);
+    --et-surface-interaction-focus: rgb(235 235 235);
+    --et-surface-interaction-active: rgb(235 235 235);
+    --et-surface-interaction-disabled: rgb(111 111 111);
+    --et-surface-on-interaction: rgb(15 15 15);
+    --et-surface-on-interaction-hover: rgb(15 15 15);
+    --et-surface-on-interaction-focus: rgb(15 15 15);
+    --et-surface-on-interaction-active: rgb(15 15 15);
+    --et-surface-on-interaction-disabled: rgb(31 31 31);
   }
 
   :root {
-    --et-surface-background: 15 15 15;
-    --et-surface-color: 235 235 235;
-    --et-surface-color-muted: 164 164 164;
-    --et-surface-color-subtle: 146 146 146;
-    --et-surface-border: 56 56 56;
+    --et-surface-background: rgb(15 15 15);
+    --et-surface-text: rgb(235 235 235);
+    --et-surface-text-muted: rgb(164 164 164);
+    --et-surface-text-subtle: rgb(146 146 146);
+    --et-surface-border: rgb(56 56 56);
     --et-surface-type: dark;
     --et-surface-elevation: 0;
-    --et-surface-interaction: 164 164 164;
-    --et-surface-interaction-hover: 235 235 235;
-    --et-surface-interaction-focus: 235 235 235;
-    --et-surface-interaction-active: 235 235 235;
-    --et-surface-interaction-disabled: 111 111 111;
-    --et-surface-on-interaction: 15 15 15;
-    --et-surface-on-interaction-hover: 15 15 15;
-    --et-surface-on-interaction-focus: 15 15 15;
-    --et-surface-on-interaction-active: 15 15 15;
-    --et-surface-on-interaction-disabled: 31 31 31;
+    --et-surface-interaction: rgb(164 164 164);
+    --et-surface-interaction-hover: rgb(235 235 235);
+    --et-surface-interaction-focus: rgb(235 235 235);
+    --et-surface-interaction-active: rgb(235 235 235);
+    --et-surface-interaction-disabled: rgb(111 111 111);
+    --et-surface-on-interaction: rgb(15 15 15);
+    --et-surface-on-interaction-hover: rgb(15 15 15);
+    --et-surface-on-interaction-focus: rgb(15 15 15);
+    --et-surface-on-interaction-active: rgb(15 15 15);
+    --et-surface-on-interaction-disabled: rgb(31 31 31);
     color-scheme: dark;
   }
 }
 
-/* Convenience aliases (rgb + solid variants) */
+/* Dynamic Tailwind surface colors - re-declared per surface scope so that
+   bg-et-surface-* utilities resolve against the nearest surface
+   (e.g. a nested elevated surface) instead of the value computed once at :root. */
 @layer base {
   :root,
   :where([class*='et-surface--']) {
-    --et-surface-background-rgb: var(--et-surface-background);
-    --et-surface-background-solid: rgb(var(--et-surface-background-rgb));
-
-    --et-surface-color-rgb: var(--et-surface-color);
-    --et-surface-color-solid: rgb(var(--et-surface-color-rgb));
-
-    --et-surface-color-muted-rgb: var(--et-surface-color-muted);
-    --et-surface-color-muted-solid: rgb(var(--et-surface-color-muted-rgb));
-
-    --et-surface-color-subtle-rgb: var(--et-surface-color-subtle);
-    --et-surface-color-subtle-solid: rgb(var(--et-surface-color-subtle-rgb));
-
-    --et-surface-border-rgb: var(--et-surface-border);
-    --et-surface-border-solid: rgb(var(--et-surface-border-rgb));
-
-    --et-surface-interaction-rgb: var(--et-surface-interaction);
-    --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
-
-    --et-surface-interaction-hover-rgb: var(--et-surface-interaction-hover);
-    --et-surface-interaction-hover-solid: rgb(var(--et-surface-interaction-hover-rgb));
-
-    --et-surface-interaction-focus-rgb: var(--et-surface-interaction-focus);
-    --et-surface-interaction-focus-solid: rgb(var(--et-surface-interaction-focus-rgb));
-
-    --et-surface-interaction-active-rgb: var(--et-surface-interaction-active);
-    --et-surface-interaction-active-solid: rgb(var(--et-surface-interaction-active-rgb));
-
-    --et-surface-interaction-disabled-rgb: var(--et-surface-interaction-disabled);
-    --et-surface-interaction-disabled-solid: rgb(var(--et-surface-interaction-disabled-rgb));
-
-    /* Dynamic Tailwind surface colors - re-declared per surface scope so that
-       bg-et-surface-* utilities resolve against the nearest surface
-       (e.g. a nested elevated surface) instead of the value computed once at :root. */
-    --color-et-surface-bg: rgb(var(--et-surface-background));
-    --color-et-surface: rgb(var(--et-surface-color));
-    --color-et-surface-muted: rgb(var(--et-surface-color-muted));
-    --color-et-surface-subtle: rgb(var(--et-surface-color-subtle));
-    --color-et-surface-border: rgb(var(--et-surface-border));
-    --color-et-surface-interaction: rgb(var(--et-surface-interaction));
-    --color-et-surface-interaction-hover: rgb(var(--et-surface-interaction-hover));
-    --color-et-surface-interaction-focus: rgb(var(--et-surface-interaction-focus));
-    --color-et-surface-interaction-active: rgb(var(--et-surface-interaction-active));
-    --color-et-surface-interaction-disabled: rgb(var(--et-surface-interaction-disabled));
-    --color-et-surface-on-interaction: rgb(var(--et-surface-on-interaction, var(--et-surface-background)));
-    --color-et-surface-on-interaction-hover: rgb(var(--et-surface-on-interaction-hover, var(--et-surface-background)));
-    --color-et-surface-on-interaction-focus: rgb(var(--et-surface-on-interaction-focus, var(--et-surface-background)));
-    --color-et-surface-on-interaction-active: rgb(
-      var(--et-surface-on-interaction-active, var(--et-surface-background))
-    );
-    --color-et-surface-on-interaction-disabled: rgb(
-      var(--et-surface-on-interaction-disabled, var(--et-surface-background))
-    );
-    --color-et-surface-interaction-ink: rgb(var(--et-surface-interaction-ink, var(--et-surface-color)));
-    --color-et-surface-interaction-ink-hover: rgb(var(--et-surface-interaction-ink-hover, var(--et-surface-color)));
-    --color-et-surface-interaction-ink-focus: rgb(var(--et-surface-interaction-ink-focus, var(--et-surface-color)));
-    --color-et-surface-interaction-ink-active: rgb(var(--et-surface-interaction-ink-active, var(--et-surface-color)));
-    --color-et-surface-interaction-ink-disabled: rgb(
-      var(--et-surface-interaction-ink-disabled, var(--et-surface-color))
-    );
+    --color-et-surface-background: var(--et-surface-background);
+    --color-et-surface-text: var(--et-surface-text);
+    --color-et-surface-text-muted: var(--et-surface-text-muted);
+    --color-et-surface-text-subtle: var(--et-surface-text-subtle);
+    --color-et-surface-border: var(--et-surface-border);
+    --color-et-surface-interaction: var(--et-surface-interaction);
+    --color-et-surface-interaction-hover: var(--et-surface-interaction-hover);
+    --color-et-surface-interaction-focus: var(--et-surface-interaction-focus);
+    --color-et-surface-interaction-active: var(--et-surface-interaction-active);
+    --color-et-surface-interaction-disabled: var(--et-surface-interaction-disabled);
+    --color-et-surface-on-interaction: var(--et-surface-on-interaction, var(--et-surface-background));
+    --color-et-surface-on-interaction-hover: var(--et-surface-on-interaction-hover, var(--et-surface-background));
+    --color-et-surface-on-interaction-focus: var(--et-surface-on-interaction-focus, var(--et-surface-background));
+    --color-et-surface-on-interaction-active: var(--et-surface-on-interaction-active, var(--et-surface-background));
+    --color-et-surface-on-interaction-disabled: var(--et-surface-on-interaction-disabled, var(--et-surface-background));
+    --color-et-surface-interaction-ink: var(--et-surface-interaction-ink, var(--et-surface-text));
+    --color-et-surface-interaction-ink-hover: var(--et-surface-interaction-ink-hover, var(--et-surface-text));
+    --color-et-surface-interaction-ink-focus: var(--et-surface-interaction-ink-focus, var(--et-surface-text));
+    --color-et-surface-interaction-ink-active: var(--et-surface-interaction-ink-active, var(--et-surface-text));
+    --color-et-surface-interaction-ink-disabled: var(--et-surface-interaction-ink-disabled, var(--et-surface-text));
   }
 }
 
-/* The reserved `surface` color: resolves the color tokens from the ambient surface's neutral swatch. */
+/* The reserved `surface` color: resolves the tone from the ambient surface's neutral swatch. */
 @layer base {
   .et-color--surface {
-    --et-color-primary: var(--et-surface-interaction, var(--et-surface-color));
-    --et-color-primary-hover: var(
-      --et-surface-interaction-hover,
-      var(--et-surface-interaction, var(--et-surface-color))
-    );
-    --et-color-primary-focus: var(
-      --et-surface-interaction-focus,
-      var(--et-surface-interaction, var(--et-surface-color))
-    );
-    --et-color-primary-active: var(
-      --et-surface-interaction-active,
-      var(--et-surface-interaction, var(--et-surface-color))
-    );
-    --et-color-primary-disabled: var(
+    --et-tone-fill-rest: var(--et-surface-interaction, var(--et-surface-text));
+    --et-tone-fill-hover: var(--et-surface-interaction-hover, var(--et-surface-interaction, var(--et-surface-text)));
+    --et-tone-fill-focus: var(--et-surface-interaction-focus, var(--et-surface-interaction, var(--et-surface-text)));
+    --et-tone-fill-active: var(--et-surface-interaction-active, var(--et-surface-interaction, var(--et-surface-text)));
+    --et-tone-fill-disabled: var(
       --et-surface-interaction-disabled,
-      var(--et-surface-interaction, var(--et-surface-color))
+      var(--et-surface-interaction, var(--et-surface-text))
     );
 
-    --et-color-on-primary: var(--et-surface-on-interaction, var(--et-surface-background));
-    --et-color-on-primary-hover: var(
+    --et-tone-on-fill-rest: var(--et-surface-on-interaction, var(--et-surface-background));
+    --et-tone-on-fill-hover: var(
       --et-surface-on-interaction-hover,
       var(--et-surface-on-interaction, var(--et-surface-background))
     );
-    --et-color-on-primary-focus: var(
+    --et-tone-on-fill-focus: var(
       --et-surface-on-interaction-focus,
       var(--et-surface-on-interaction, var(--et-surface-background))
     );
-    --et-color-on-primary-active: var(
+    --et-tone-on-fill-active: var(
       --et-surface-on-interaction-active,
       var(--et-surface-on-interaction, var(--et-surface-background))
     );
-    --et-color-on-primary-disabled: var(
+    --et-tone-on-fill-disabled: var(
       --et-surface-on-interaction-disabled,
       var(--et-surface-on-interaction, var(--et-surface-background))
     );
 
-    --et-color-primary-ink: var(--et-surface-interaction-ink, var(--et-surface-color));
-    --et-color-primary-ink-hover: var(
+    --et-tone-text-rest: var(--et-surface-interaction-ink, var(--et-surface-text));
+    --et-tone-text-hover: var(
       --et-surface-interaction-ink-hover,
-      var(--et-surface-interaction-ink, var(--et-surface-color))
+      var(--et-surface-interaction-ink, var(--et-surface-text))
     );
-    --et-color-primary-ink-focus: var(
+    --et-tone-text-focus: var(
       --et-surface-interaction-ink-focus,
-      var(--et-surface-interaction-ink, var(--et-surface-color))
+      var(--et-surface-interaction-ink, var(--et-surface-text))
     );
-    --et-color-primary-ink-active: var(
+    --et-tone-text-active: var(
       --et-surface-interaction-ink-active,
-      var(--et-surface-interaction-ink, var(--et-surface-color))
+      var(--et-surface-interaction-ink, var(--et-surface-text))
     );
-    --et-color-primary-ink-disabled: var(
+    --et-tone-text-disabled: var(
       --et-surface-interaction-ink-disabled,
-      var(--et-surface-interaction-ink, var(--et-surface-color))
+      var(--et-surface-interaction-ink, var(--et-surface-text))
     );
   }
 }

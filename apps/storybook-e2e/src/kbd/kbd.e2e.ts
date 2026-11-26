@@ -269,9 +269,9 @@ test.describe('kbd / structure', () => {
           borderColor: style.borderColor,
           borderWidth: style.borderWidth,
           background: style.backgroundColor,
-          muted: style.getPropertyValue('--et-surface-color-muted-solid').trim(),
-          border: style.getPropertyValue('--et-surface-border-solid').trim(),
-          interaction: style.getPropertyValue('--et-surface-interaction-solid').trim(),
+          muted: style.getPropertyValue('--et-surface-text-muted').trim(),
+          border: style.getPropertyValue('--et-surface-border').trim(),
+          interaction: style.getPropertyValue('--et-surface-interaction').trim(),
         };
       });
 

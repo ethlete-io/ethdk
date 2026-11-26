@@ -147,7 +147,7 @@ fields rather than a box to type an id into. Leave it unset to write no subject.
                 <et-select-option [value]="field.id" [label]="field.name + ' ' + field.id">
                   <span class="flex min-w-0 items-baseline gap-2">
                     <span class="min-w-0 grow truncate text-small">{{ field.name }}</span>
-                    <span class="shrink-0 text-mono text-small text-et-surface-subtle">{{ field.id }}</span>
+                    <span class="shrink-0 text-mono text-small text-et-surface-text-subtle">{{ field.id }}</span>
                   </span>
                 </et-select-option>
               }

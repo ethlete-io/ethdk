@@ -20,9 +20,9 @@ import { ScrollableComponent, ScrollableImports } from '@ethlete/cdk';
     .example-scrollable-item {
       min-inline-size: 200px;
       block-size: 100px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 12px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
 
     .et-scrollable-container {

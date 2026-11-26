@@ -24,7 +24,7 @@ import { injectWindowLock } from './window-lock';
 
         <div class="flex flex-col gap-1">
           <h1 class="text-h4 m-0">Locked</h1>
-          <p class="text-small text-et-surface-subtle">
+          <p class="text-small text-et-surface-text-subtle">
             Your day is still being collected. Only the reading of it is locked.
           </p>
         </div>

@@ -236,9 +236,7 @@ async function renderAllOnSurface(root: Locator, surface: 'light' | 'dark'): Pro
     }
     document.documentElement.style.colorScheme = name;
     const scope = host.querySelector('et-form-field') ?? host;
-    document.documentElement.style.background = getComputedStyle(scope).getPropertyValue(
-      '--et-surface-background-solid',
-    );
+    document.documentElement.style.background = getComputedStyle(scope).getPropertyValue('--et-surface-background');
   }, surface);
   await root.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
 }

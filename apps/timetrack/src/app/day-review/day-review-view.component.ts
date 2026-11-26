@@ -50,7 +50,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           }
           @if (changed()) {
             <span
-              class="text-small text-et-warning-ink"
+              class="text-small text-et-tone-warning-text"
               data-changed-after-booking
               title="Events arrived after this day was booked. The booked rows stay as they are."
             >
@@ -64,7 +64,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
             <button
               [title]="unplacedTitle()"
               (click)="approvals.open()"
-              class="rounded-full border border-dashed border-et-brand-ink px-3 text-small leading-7 text-et-brand-ink hover:bg-et-brand/10"
+              class="rounded-full border border-dashed border-et-tone-brand-text px-3 text-small leading-7 text-et-tone-brand-text hover:bg-et-tone-brand-fill/10"
               data-waiting-pill
               type="button"
             >
@@ -83,7 +83,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
       }
 
       @if (store.isLoading()) {
-        <div class="flex items-center gap-3 px-6 text-et-surface-muted">
+        <div class="flex items-center gap-3 px-6 text-et-surface-text-muted">
           <et-spinner />
           <span class="text-base">Reading the day…</span>
         </div>
@@ -99,7 +99,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
         }
 
         @if (historyFailure(); as failure) {
-          <p class="shrink-0 px-6 pb-3 text-small text-et-warning-ink" data-tempo-history-failed>
+          <p class="shrink-0 px-6 pb-3 text-small text-et-tone-warning-text" data-tempo-history-failed>
             Tempo history could not be read, so tickets are matched without it: {{ failure }}
           </p>
         }
@@ -129,16 +129,18 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           class="flex shrink-0 flex-wrap items-baseline gap-x-8 gap-y-2 border-t border-et-surface-border px-6 py-3"
         >
           <span class="text-large">{{ proposed() }}</span>
-          <span class="text-small text-et-surface-muted">of a {{ target() }} target ({{ delta() }})</span>
+          <span class="text-small text-et-surface-text-muted">of a {{ target() }} target ({{ delta() }})</span>
           @if (concurrency(); as concurrency) {
             <ethlete-day-concurrency [concurrency]="concurrency" />
           }
           @if (covered(); as coveredTime) {
-            <span class="text-small text-et-surface-muted">{{ coveredTime }} logged outside this app</span>
+            <span class="text-small text-et-surface-text-muted">{{ coveredTime }} logged outside this app</span>
           }
-          <span class="text-small text-et-surface-muted">{{ store.syncedRowCount() }} row(s) already in Tempo</span>
+          <span class="text-small text-et-surface-text-muted"
+            >{{ store.syncedRowCount() }} row(s) already in Tempo</span
+          >
           @if (day.check.unattributedMs > 0) {
-            <span class="text-small text-et-warning-ink">{{ unattributed() }} unattributed</span>
+            <span class="text-small text-et-tone-warning-text">{{ unattributed() }} unattributed</span>
           }
         </footer>
       }

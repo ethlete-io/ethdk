@@ -41,8 +41,8 @@ const syncStorybookDocumentStyles = (documentRef: Document, rootElement?: HTMLEl
   }
 
   const styles = getComputedStyle(hostElement);
-  const background = styles.getPropertyValue('--et-surface-background-solid').trim();
-  const color = styles.getPropertyValue('--et-surface-color-solid').trim();
+  const background = styles.getPropertyValue('--et-surface-background').trim();
+  const color = styles.getPropertyValue('--et-surface-text').trim();
 
   if (background) {
     if (documentRef.documentElement.style.background !== background) {

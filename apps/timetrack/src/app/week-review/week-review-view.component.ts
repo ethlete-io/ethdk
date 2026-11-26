@@ -30,7 +30,7 @@ import { injectWeekReview, provideWeekReview } from './week-review';
       }
 
       @if (store.isLoading()) {
-        <div class="flex items-center gap-3 px-6 text-et-surface-muted">
+        <div class="flex items-center gap-3 px-6 text-et-surface-text-muted">
           <et-spinner />
           <span class="text-base">Reading the week…</span>
         </div>
@@ -45,12 +45,12 @@ import { injectWeekReview, provideWeekReview } from './week-review';
           @for (day of days(); track day.key) {
             <li
               [attr.data-day]="day.key"
-              [class]="day.owes ? 'border-et-warning-ink' : 'border-et-surface-border'"
+              [class]="day.owes ? 'border-et-tone-warning-text' : 'border-et-surface-border'"
               class="grid grid-cols-[8.5rem_4.5rem_1fr_auto] items-center gap-x-4 rounded-md border px-3 py-2"
             >
               <span class="text-base whitespace-nowrap">{{ day.label }}</span>
               <span class="text-small">{{ day.proposed }}</span>
-              <span [class]="day.owes ? 'text-et-warning-ink' : 'text-et-surface-muted'" class="text-small">
+              <span [class]="day.owes ? 'text-et-tone-warning-text' : 'text-et-surface-text-muted'" class="text-small">
                 {{ day.owes ?? day.state }}
               </span>
 
@@ -65,8 +65,8 @@ import { injectWeekReview, provideWeekReview } from './week-review';
           class="flex shrink-0 flex-wrap items-baseline gap-x-8 gap-y-2 border-t border-et-surface-border px-6 py-3"
         >
           <span class="text-large">{{ proposed() }}</span>
-          <span class="text-small text-et-surface-muted">of a {{ target() }} target ({{ delta() }})</span>
-          <span class="text-small text-et-surface-muted">{{ workedDays() }} day(s) with work</span>
+          <span class="text-small text-et-surface-text-muted">of a {{ target() }} target ({{ delta() }})</span>
+          <span class="text-small text-et-surface-text-muted">{{ workedDays() }} day(s) with work</span>
         </footer>
       }
     </div>

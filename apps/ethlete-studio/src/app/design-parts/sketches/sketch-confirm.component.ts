@@ -15,14 +15,14 @@ export type SketchConfirmText = {
   template: `
     <div class="box-border flex w-80 flex-col gap-space-3 p-space-3 text-ui-sm">
       <div class="flex flex-col gap-space-1">
-        <span class="font-ui-strong wrap-anywhere text-et-surface">{{ text().question }}</span>
-        <span class="text-et-surface-muted">{{ text().note }}</span>
+        <span class="font-ui-strong wrap-anywhere text-et-surface-text">{{ text().question }}</span>
+        <span class="text-et-surface-text-muted">{{ text().note }}</span>
       </div>
       @for (list of text().lists ?? []; track list.label) {
         <div class="flex flex-col gap-space-1" data-sk-confirm-list>
-          <span class="font-ui-medium text-et-surface">{{ list.label }}</span>
+          <span class="font-ui-medium text-et-surface-text">{{ list.label }}</span>
           @for (item of list.items; track item) {
-            <span class="wrap-anywhere text-et-surface-muted">{{ item }}</span>
+            <span class="wrap-anywhere text-et-surface-text-muted">{{ item }}</span>
           }
         </div>
       }

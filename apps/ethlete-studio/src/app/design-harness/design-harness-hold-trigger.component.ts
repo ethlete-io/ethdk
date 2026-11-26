@@ -3,8 +3,8 @@ import { Component, TemplateRef, viewChild, ViewEncapsulation } from '@angular/c
 @Component({
   selector: 'ethlete-design-harness-hold-trigger',
   template: `
-    <ng-template #content><span class="text-ui-sm text-et-surface-muted">Pausiert</span></ng-template>
-    <ng-template #reason><span class="font-ui-medium text-et-surface">Wartet auf ADR 0331</span></ng-template>
+    <ng-template #content><span class="text-ui-sm text-et-surface-text-muted">Pausiert</span></ng-template>
+    <ng-template #reason><span class="font-ui-medium text-et-surface-text">Wartet auf ADR 0331</span></ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
 })

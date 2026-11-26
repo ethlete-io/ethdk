@@ -25,7 +25,7 @@ const KIND_LABEL: Record<TimetrackExclusionRule['kind'], string> = {
     <div class="flex flex-col gap-3">
       <div class="flex flex-col gap-1">
         <h3 class="text-h4">What is never collected</h3>
-        <p class="text-small text-et-surface-muted">
+        <p class="text-small text-et-surface-text-muted">
           Rules are applied before anything is stored, so a denied window title never reaches the database.
         </p>
       </div>
@@ -38,11 +38,11 @@ const KIND_LABEL: Record<TimetrackExclusionRule['kind'], string> = {
 
       @for (entry of listed(); track entry.key) {
         <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
-          <span class="w-24 shrink-0 text-small text-et-surface-muted">{{ entry.kind }}</span>
+          <span class="w-24 shrink-0 text-small text-et-surface-text-muted">{{ entry.kind }}</span>
           <span class="grow break-all text-mono text-small">{{ entry.value }}</span>
 
           @if (entry.error) {
-            <span class="text-small text-et-warning-ink">{{ entry.error }}</span>
+            <span class="text-small text-et-tone-warning-text">{{ entry.error }}</span>
           }
 
           <button
@@ -56,7 +56,7 @@ const KIND_LABEL: Record<TimetrackExclusionRule['kind'], string> = {
           </button>
         </div>
       } @empty {
-        <p class="text-small text-et-surface-subtle">No rules of your own yet.</p>
+        <p class="text-small text-et-surface-text-subtle">No rules of your own yet.</p>
       }
 
       <div class="flex flex-wrap items-center gap-3">
@@ -80,7 +80,7 @@ const KIND_LABEL: Record<TimetrackExclusionRule['kind'], string> = {
       </div>
 
       @if (patternError(); as error) {
-        <p class="text-small text-et-warning-ink">{{ error }}</p>
+        <p class="text-small text-et-tone-warning-text">{{ error }}</p>
       }
     </div>
   `,

@@ -9,7 +9,7 @@ import { REMOVE_PROJECT_DIALOG_LABELS } from '../../i18n/shell-labels';
       <h2 class="m-0 text-[1.8rem] leading-normal font-semibold" et-overlay-title>{{ LABELS.title }}</h2>
     </div>
     <div et-overlay-body>
-      <p class="m-0 text-ui-md wrap-anywhere text-et-surface">{{ LABELS.question(name()) }}</p>
+      <p class="m-0 text-ui-md wrap-anywhere text-et-surface-text">{{ LABELS.question(name()) }}</p>
     </div>
     <div class="flex justify-end gap-space-2 px-space-3 pb-space-3">
       <button (click)="close.emit()" et-button type="button" variant="transparent" size="sm">

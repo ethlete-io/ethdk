@@ -67,9 +67,9 @@ export class GridTextWidgetComponent {
       box-sizing: border-box;
       block-size: 100%;
       padding: 12px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 8px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
 
     .example-grid-widget p {
@@ -82,7 +82,7 @@ export class GridTextWidgetComponent {
     }
 
     .example-grid-widget-text {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
 
     .example-grid-bars {
@@ -97,7 +97,7 @@ export class GridTextWidgetComponent {
       flex: 1;
       min-block-size: 4px;
       border-radius: 2px 2px 0 0;
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
   `,
 })

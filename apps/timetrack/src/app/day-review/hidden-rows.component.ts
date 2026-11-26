@@ -20,7 +20,7 @@ import { formatClockTime } from './format';
           [attr.data-hidden-row]="row.id"
           class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3"
         >
-          <span class="w-28 shrink-0 text-mono text-small text-et-surface-muted">{{ row.clock }}</span>
+          <span class="w-28 shrink-0 text-mono text-small text-et-surface-text-muted">{{ row.clock }}</span>
           <span class="w-14 shrink-0 text-small">{{ row.duration }}</span>
           <span class="min-w-0 grow truncate text-small">{{ row.label }}</span>
 

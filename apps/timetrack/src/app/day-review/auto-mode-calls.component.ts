@@ -19,25 +19,25 @@ const printedReply = (stdout: string) => {
           <details class="rounded-md border border-et-surface-border p-3">
             <summary class="cursor-pointer text-small">{{ summaryOf(call) }}</summary>
 
-            <h5 class="mb-1 mt-3 text-small text-et-surface-muted">Command</h5>
+            <h5 class="mb-1 mt-3 text-small text-et-surface-text-muted">Command</h5>
             <pre class="overflow-x-auto text-mono text-small">{{ commandOf(call) }}</pre>
 
             @if (call.stdin) {
-              <h5 class="mb-1 mt-3 text-small text-et-surface-muted">Sent</h5>
+              <h5 class="mb-1 mt-3 text-small text-et-surface-text-muted">Sent</h5>
               <pre class="overflow-x-auto whitespace-pre-wrap text-mono text-small" data-model-call-sent>{{
                 call.stdin
               }}</pre>
             }
 
             @if (call.stdout) {
-              <h5 class="mb-1 mt-3 text-small text-et-surface-muted">Reply</h5>
+              <h5 class="mb-1 mt-3 text-small text-et-surface-text-muted">Reply</h5>
               <pre class="overflow-x-auto whitespace-pre-wrap text-mono text-small" data-model-call-reply>{{
                 replyOf(call)
               }}</pre>
             }
 
             @if (call.stderr) {
-              <h5 class="mb-1 mt-3 text-small text-et-surface-muted">Error output</h5>
+              <h5 class="mb-1 mt-3 text-small text-et-surface-text-muted">Error output</h5>
               <pre class="overflow-x-auto whitespace-pre-wrap text-mono text-small">{{ call.stderr }}</pre>
             }
 

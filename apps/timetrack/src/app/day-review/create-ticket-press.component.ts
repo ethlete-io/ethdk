@@ -9,7 +9,7 @@ import { BUTTON_IMPORTS, SpinnerComponent } from '@ethlete/components';
   selector: 'ethlete-create-ticket-press',
   template: `
     @if (isArmed()) {
-      <span class="text-small text-et-surface-muted">{{ ARMED_NOTE }}</span>
+      <span class="text-small text-et-surface-text-muted">{{ ARMED_NOTE }}</span>
       <button (click)="isArmed.set(false)" et-button variant="outline">Cancel</button>
     }
 

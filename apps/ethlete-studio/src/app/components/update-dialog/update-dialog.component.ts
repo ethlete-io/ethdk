@@ -21,8 +21,8 @@ export const displayVersion = (version: string) => version.split('+')[0] ?? vers
   template: `
     <div class="box-border flex w-80 flex-col gap-space-3 p-space-3 text-ui-sm">
       <div class="flex flex-col gap-space-1">
-        <span class="font-ui-strong wrap-anywhere text-et-surface">{{ question() }}</span>
-        <span class="text-et-surface-muted">{{ LABELS.note }}</span>
+        <span class="font-ui-strong wrap-anywhere text-et-surface-text">{{ question() }}</span>
+        <span class="text-et-surface-text-muted">{{ LABELS.note }}</span>
       </div>
       <div class="flex justify-end gap-space-2">
         <button (click)="later.emit()" et-button etOverlayClose variant="outline" color="surface" size="xs">

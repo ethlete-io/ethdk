@@ -38,10 +38,10 @@ function bannerColors(banner: Locator): Promise<BannerColors> {
     };
 
     const probe = document.createElement('span');
-    probe.style.color = 'var(--et-theme-color-primary-solid)';
+    probe.style.color = 'var(--et-tone-fill)';
     host.append(probe);
     const primary = getComputedStyle(probe).color;
-    probe.style.color = 'var(--et-theme-color-ink-solid)';
+    probe.style.color = 'var(--et-tone-text)';
     const ink = getComputedStyle(probe).color;
     probe.remove();
 
@@ -101,7 +101,7 @@ test.describe('banner / tint', () => {
     const { icon } = await bannerColors(banner);
     const ink = await banner.evaluate((host) => {
       const probe = document.createElement('span');
-      probe.style.color = 'var(--et-theme-color-ink-solid)';
+      probe.style.color = 'var(--et-tone-text)';
       host.append(probe);
       const color = getComputedStyle(probe).color;
       probe.remove();

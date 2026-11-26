@@ -642,7 +642,7 @@ test.describe('menu / selection check', () => {
     await root.getByRole('button', { name: 'View options' }).click();
 
     const check = page.locator('.et-menu-item-check').first();
-    await check.evaluate((el: HTMLElement) => el.style.setProperty('--et-theme-color-ink-solid', 'rgb(1 2 3)'));
+    await check.evaluate((el: HTMLElement) => el.style.setProperty('--et-tone-text', 'rgb(1 2 3)'));
 
     await expect(check).toHaveCSS('color', 'rgb(1, 2, 3)');
   });

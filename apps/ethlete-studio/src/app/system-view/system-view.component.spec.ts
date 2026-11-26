@@ -462,8 +462,8 @@ describe('SystemViewComponent on a reload', () => {
       );
     const expectPicked = (key: string, id: string, text: string, other: string) => {
       expect(view['selectedKey']()).toBe(key);
-      expect(rowOf(text)?.classList).toContain('bg-et-theme/20');
-      expect(rowOf(other)?.classList).not.toContain('bg-et-theme/20');
+      expect(rowOf(text)?.classList).toContain('bg-et-tone-fill/20');
+      expect(rowOf(other)?.classList).not.toContain('bg-et-tone-fill/20');
       expect(
         view
           .partCanvas()
@@ -692,7 +692,7 @@ describe('SystemViewComponent on a reload', () => {
       );
     const expectResolvedPicked = () => {
       expect(view['selectedKey']()).toBe('elements/badge');
-      expect(rowOf('Badge too loud')?.classList).toContain('bg-et-theme/20');
+      expect(rowOf('Badge too loud')?.classList).toContain('bg-et-tone-fill/20');
       expect(
         view
           .partCanvas()

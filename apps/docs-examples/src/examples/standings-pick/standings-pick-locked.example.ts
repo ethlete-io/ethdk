@@ -30,11 +30,7 @@ const MARK_COLORS: Record<StandingPickOutcome, string> = {
       <et-standings-pick [participants]="participants" [storedPicks]="storedPicks" [advancingCount]="2" locked>
         <ng-template let-row etStandingsPickMark>
           @if (marks()[row.participant.id]; as mark) {
-            <span
-              [etProvideColor]="mark.color"
-              [title]="mark.outcome"
-              [style.color]="'var(--et-theme-color-ink-solid)'"
-            >
+            <span [etProvideColor]="mark.color" [title]="mark.outcome" [style.color]="'var(--et-tone-text)'">
               {{ mark.points }}
             </span>
           }

@@ -35,12 +35,14 @@ const DISCOVERY_POLL_MS = 5_000;
         @for (row of rows(); track row.machineId) {
           <div class="flex flex-wrap items-center gap-3" data-paired-machine>
             <span class="text-base">{{ row.label }}</span>
-            <span class="text-small text-et-surface-subtle" data-paired-last-seen>Last seen {{ row.lastSeen }}</span>
+            <span class="text-small text-et-surface-text-subtle" data-paired-last-seen
+              >Last seen {{ row.lastSeen }}</span
+            >
 
             @if (row.offset; as offset) {
               <span
-                [class.text-et-surface-subtle]="offset.severity === 'ok'"
-                [class.text-et-warning-ink]="offset.severity === 'warning'"
+                [class.text-et-surface-text-subtle]="offset.severity === 'ok'"
+                [class.text-et-tone-warning-text]="offset.severity === 'warning'"
                 [class.text-et-error]="offset.severity === 'error'"
                 [attr.data-clock-offset]="offset.severity"
                 class="text-small"
@@ -61,13 +63,13 @@ const DISCOVERY_POLL_MS = 5_000;
             </button>
           </div>
         } @empty {
-          <p class="text-small text-et-surface-subtle">No machine is paired.</p>
+          <p class="text-small text-et-surface-text-subtle">No machine is paired.</p>
         }
       }
 
       <h4 class="text-base">Pair a machine</h4>
 
-      <p class="text-small text-et-surface-muted">
+      <p class="text-small text-et-surface-text-muted">
         Show a code on one machine. On the other, pick that machine or enter its address, then type the code.
       </p>
 
@@ -78,7 +80,7 @@ const DISCOVERY_POLL_MS = 5_000;
 
         @if (peers.offer(); as offer) {
           <span class="text-h4 tabular-nums" data-pair-offer-code>{{ offer.code }}</span>
-          <span class="text-small text-et-surface-subtle">Valid until {{ offerUntil() }}</span>
+          <span class="text-small text-et-surface-text-subtle">Valid until {{ offerUntil() }}</span>
           <button (click)="peers.hideCode()" et-button variant="transparent" size="sm">Hide</button>
         }
       </div>
@@ -95,7 +97,7 @@ const DISCOVERY_POLL_MS = 5_000;
             {{ machine.label }}
           </button>
         } @empty {
-          <span class="text-small text-et-surface-subtle">
+          <span class="text-small text-et-surface-text-subtle">
             No other Timetrack is visible on this network. Enter its address instead.
           </span>
         }

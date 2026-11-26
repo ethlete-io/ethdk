@@ -54,7 +54,7 @@ type StoreRepair =
 
       <ethlete-build-stamp />
 
-      <p class="max-w-3xl text-small text-et-surface-subtle">
+      <p class="max-w-3xl text-small text-et-surface-text-subtle">
         An early alpha reconstructs the day from evidence collected on this machine, and it can still get a day wrong.
         Read every row before you sync it: what goes to Tempo is real time on a real issue. Screens, settings and the
         shape of the stored data all still change from build to build, so quote the version above when something looks
@@ -63,7 +63,7 @@ type StoreRepair =
 
       @switch (status().state) {
         @case ('checking') {
-          <div class="flex items-center gap-3 text-et-surface-muted">
+          <div class="flex items-center gap-3 text-et-surface-text-muted">
             <et-spinner />
             <span class="text-base">Opening the encrypted store…</span>
           </div>
@@ -83,10 +83,10 @@ type StoreRepair =
             }
           </dl>
 
-          <p class="text-small text-et-surface-subtle">The keychain answered and the database decrypted.</p>
+          <p class="text-small text-et-surface-text-subtle">The keychain answered and the database decrypted.</p>
 
           <h3 class="text-h4 mt-3">Data collected before the redaction</h3>
-          <p class="text-small text-et-surface-subtle">
+          <p class="text-small text-et-surface-text-subtle">
             A window title is redacted on the way into the store, and an agent log's cursor drops what a private link or
             an exclusion rule denies. Data collected before those rules existed still holds it. Run this once to apply
             them to what is already stored. It changes nothing else, and running it twice is free.
@@ -105,13 +105,13 @@ type StoreRepair =
 
             @switch (repair().state) {
               @case ('running') {
-                <span class="flex items-center gap-2 text-small text-et-surface-muted">
+                <span class="flex items-center gap-2 text-small text-et-surface-text-muted">
                   <et-spinner />
                   Reading the stored titles and cursors…
                 </span>
               }
               @case ('done') {
-                <span class="text-small text-et-surface-muted">{{ repaired() }}</span>
+                <span class="text-small text-et-surface-text-muted">{{ repaired() }}</span>
               }
               @case ('failed') {
                 <span class="text-small text-et-error">{{ repairFailure() }}</span>

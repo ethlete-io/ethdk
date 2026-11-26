@@ -41,10 +41,10 @@ import {
 } from './system-page-sample';
 
 export const FRAME_CLASS =
-  'relative m-0 bg-et-surface-bg shadow-[0_0_0_calc(1px*var(--st-canvas-label-scale,1))_var(--et-surface-border-solid)]';
+  'relative m-0 bg-et-surface-background shadow-[0_0_0_calc(1px*var(--st-canvas-label-scale,1))_var(--et-surface-border)]';
 
 export const FRAME_HEAD_CLASS =
-  'absolute bottom-full left-0 flex gap-[0.6em] pb-space-2 text-[calc(1.2rem*var(--st-canvas-label-scale,1))]/[calc(1.6rem*var(--st-canvas-label-scale,1))] whitespace-nowrap text-et-surface';
+  'absolute bottom-full left-0 flex gap-[0.6em] pb-space-2 text-[calc(1.2rem*var(--st-canvas-label-scale,1))]/[calc(1.6rem*var(--st-canvas-label-scale,1))] whitespace-nowrap text-et-surface-text';
 
 @Component({
   selector: 'ethlete-system-page',
@@ -53,7 +53,7 @@ export const FRAME_HEAD_CLASS =
       <ng-container ngProjectAs="[shellMainSide]">
         <ng-content select="[systemSide]">
           @if (empty()) {
-            <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
+            <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-text-muted">{{ LABELS.none }}</p>
           } @else if (listingError() === null) {
             <ethlete-part-tree
               [layers]="manyStates() ? manyStatesLayers() : tree().layers"
@@ -73,7 +73,7 @@ export const FRAME_HEAD_CLASS =
           <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">
             <span [etProvideColor]="errorTheme()" class="contents">
               <svg
-                class="text-et-theme"
+                class="text-et-tone-fill"
                 width="24"
                 height="24"
                 viewBox="0 0 16 16"
@@ -88,8 +88,8 @@ export const FRAME_HEAD_CLASS =
                 <path d="m6 6 4 4m0-4-4 4" />
               </svg>
             </span>
-            <p class="m-0 text-ui-md font-ui-strong text-et-surface">{{ LABELS.listingFailed }}</p>
-            <p class="m-0 text-et-surface-muted">{{ message }}</p>
+            <p class="m-0 text-ui-md font-ui-strong text-et-surface-text">{{ LABELS.listingFailed }}</p>
+            <p class="m-0 text-et-surface-text-muted">{{ message }}</p>
             <button (click)="reload.emit()" et-button type="button" variant="outline" size="sm">
               {{ LABELS.reload }}
             </button>
@@ -115,14 +115,14 @@ export const FRAME_HEAD_CLASS =
         <div
           class="absolute inset-s-[calc(var(--st-shell-inset-left)+var(--spacing-space-4))] top-space-3 min-w-0 max-w-1/2"
         >
-          <h2 class="m-0 truncate font-ui-strong text-ui-md text-et-surface">{{ shown.headline }}</h2>
-          <span class="font-code text-ui-xs text-et-surface-muted">{{ shown.slug }}</span>
+          <h2 class="m-0 truncate font-ui-strong text-ui-md text-et-surface-text">{{ shown.headline }}</h2>
+          <span class="font-code text-ui-xs text-et-surface-text-muted">{{ shown.slug }}</span>
         </div>
         <div class="absolute top-space-3 right-space-3 flex items-center gap-space-2">
           @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
             <div
               [attr.aria-label]="themeSwitch.kind === 'surface' ? SHELL_LABELS.surfaceTheme : SHELL_LABELS.colorTheme"
-              class="flex gap-0.5 rounded-control-lg border border-(--et-surface-border-solid) p-0.5"
+              class="flex gap-0.5 rounded-control-lg border border-(--et-surface-border) p-0.5"
               role="group"
             >
               @for (name of themeSwitch.names; track name) {
@@ -161,7 +161,7 @@ export const FRAME_HEAD_CLASS =
         <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)" data-canvas-note>
           <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">
             <svg
-              class="text-et-surface-muted"
+              class="text-et-surface-text-muted"
               width="24"
               height="24"
               viewBox="0 0 16 16"
@@ -176,11 +176,11 @@ export const FRAME_HEAD_CLASS =
               <path d="M8 6.5v3" />
               <path d="M8 11.25v.01" />
             </svg>
-            <p class="m-0 text-ui-md font-ui-strong text-et-surface">
+            <p class="m-0 text-ui-md font-ui-strong text-et-surface-text">
               {{ noteTitle() }}
             </p>
             @if (noteHint()) {
-              <p class="m-0 text-et-surface-muted">{{ noteHint() }}</p>
+              <p class="m-0 text-et-surface-text-muted">{{ noteHint() }}</p>
             }
           </div>
         </div>
@@ -202,7 +202,7 @@ export const FRAME_HEAD_CLASS =
           </figure>
           <figure [class]="FRAME_CLASS">
             <figcaption [class]="FRAME_HEAD_CLASS">
-              {{ LABELS.frameStepper }}<span class="text-et-surface-muted tabular-nums">176</span>
+              {{ LABELS.frameStepper }}<span class="text-et-surface-text-muted tabular-nums">176</span>
             </figcaption>
             <div class="w-44">
               <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'stepper' }" />
@@ -281,11 +281,11 @@ export const FRAME_HEAD_CLASS =
         }
         @if (foldedStates() > 0) {
           <div
-            class="absolute bottom-space-3 left-1/2 flex -translate-x-1/2 items-center gap-space-3 rounded-control-md border border-et-surface-border bg-et-surface-bg px-space-3 py-space-2 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))"
+            class="absolute bottom-space-3 left-1/2 flex -translate-x-1/2 items-center gap-space-3 rounded-control-md border border-et-surface-border bg-et-surface-background px-space-3 py-space-2 font-ui shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))"
             data-folded-states
           >
             @if (!allStatesShown()) {
-              <span class="text-ui-sm text-et-surface-muted">{{ LABELS.foldedStates(foldedStates()) }}</span>
+              <span class="text-ui-sm text-et-surface-text-muted">{{ LABELS.foldedStates(foldedStates()) }}</span>
             }
             <ethlete-disclosure
               [open]="allStatesShown()"
@@ -300,7 +300,8 @@ export const FRAME_HEAD_CLASS =
           <ng-content select="[systemActions]" />
           @if (part()) {
             @if (commentMode() && draft() === null) {
-              <span class="flex items-center gap-space-1 self-center text-ui-xs whitespace-nowrap text-et-surface-muted"
+              <span
+                class="flex items-center gap-space-1 self-center text-ui-xs whitespace-nowrap text-et-surface-text-muted"
                 ><et-kbd keys="esc" /> {{ LABELS.commentModeOr }} <et-kbd keys="c" /> {{ LABELS.commentModeEnds }}</span
               >
             }

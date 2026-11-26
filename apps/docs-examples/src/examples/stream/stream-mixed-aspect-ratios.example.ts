@@ -76,18 +76,18 @@ const VIDEO_LIST: Video[] = [
       align-items: center;
       gap: 1.2rem;
       padding: 1.2rem 1.6rem;
-      border: 1px solid var(--et-surface-border-solid, currentColor);
+      border: 1px solid var(--et-surface-border, currentColor);
       border-radius: 0.8rem;
       cursor: pointer;
     }
 
     .example-stream-video:has(:checked) {
-      border-color: var(--et-theme-color-primary-solid, currentColor);
+      border-color: var(--et-tone-fill, currentColor);
     }
 
     .example-stream-video input {
       margin: 0;
-      accent-color: var(--et-theme-color-primary-solid, auto);
+      accent-color: var(--et-tone-fill, auto);
     }
 
     .example-stream-video-title {

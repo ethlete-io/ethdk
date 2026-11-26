@@ -20,7 +20,7 @@ export type TimerRunLabel = { id: string; issueKey: string; note: string };
 
       @for (run of listed(); track run.id) {
         <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
-          <span class="w-28 shrink-0 text-mono text-small text-et-surface-muted">{{ run.clock }}</span>
+          <span class="w-28 shrink-0 text-mono text-small text-et-surface-text-muted">{{ run.clock }}</span>
           <span class="w-14 shrink-0 text-small">{{ run.duration }}</span>
 
           @if (run.open) {
@@ -46,7 +46,7 @@ export type TimerRunLabel = { id: string; issueKey: string; note: string };
           </et-form-field>
 
           @if (!run.issueKey) {
-            <span class="text-small text-et-warning-ink">names no issue</span>
+            <span class="text-small text-et-tone-warning-text">names no issue</span>
           }
         </div>
       }

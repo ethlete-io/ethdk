@@ -53,16 +53,18 @@ export type PathLink = { path: string; target: ProjectLinkTarget };
             [attr.data-path]="row.path"
             class="group grid grid-cols-[5rem_minmax(0,1fr)_7rem_13rem_11rem_20rem] items-center gap-x-3 rounded-md px-2 text-small hover:bg-et-surface-interaction"
           >
-            <span class="text-et-surface-subtle">{{ row.kind }}</span>
+            <span class="text-et-surface-text-subtle">{{ row.kind }}</span>
 
             <span [title]="row.path" class="truncate text-mono">
               {{ row.path }}
               @if (row.worktreeCount; as count) {
-                <span class="text-et-surface-subtle">+ {{ count }} {{ count === 1 ? 'worktree' : 'worktrees' }}</span>
+                <span class="text-et-surface-text-subtle"
+                  >+ {{ count }} {{ count === 1 ? 'worktree' : 'worktrees' }}</span
+                >
               }
             </span>
 
-            <span class="text-right text-et-surface-subtle">
+            <span class="text-right text-et-surface-text-subtle">
               @if (row.inherited) {
                 <span [title]="'Covered by ' + row.link?.path">inherited</span>
               }

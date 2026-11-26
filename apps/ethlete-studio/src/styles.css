@@ -38,14 +38,14 @@
 
   --shadow-*: initial;
   --shadow-sm:
-    0 1px 3px 0 rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1),
-    0 1px 2px -1px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1);
+    0 1px 3px 0 color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent),
+    0 1px 2px -1px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent);
   --shadow-md:
-    0 4px 6px -1px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1),
-    0 2px 4px -2px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1);
+    0 4px 6px -1px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent);
   --shadow-lg:
-    0 10px 15px -3px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1),
-    0 4px 6px -4px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1);
+    0 10px 15px -3px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent),
+    0 4px 6px -4px color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 10%, transparent);
 
   --text-*: initial;
 
@@ -161,9 +161,9 @@ body {
     border: 0.1rem solid var(--surface-border);
     border-radius: 0.6rem;
     padding: 0.4rem;
-    background: var(--et-surface-background-solid);
+    background: var(--et-surface-background);
     color: var(--text);
-    box-shadow: 0 0.8rem 2.4rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.35);
+    box-shadow: 0 0.8rem 2.4rem color-mix(in srgb, var(--et-shadow-color, rgb(0 0 0)) 35%, transparent);
   }
 
   option {
@@ -173,7 +173,7 @@ body {
 
   option:hover,
   option:focus-visible {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid) 14%, transparent);
+    background: color-mix(in srgb, var(--et-surface-interaction) 14%, transparent);
     outline: none;
   }
 }

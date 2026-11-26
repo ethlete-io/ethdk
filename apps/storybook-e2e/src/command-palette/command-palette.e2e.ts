@@ -303,10 +303,10 @@ function paletteColors(page: Page): Promise<PaletteColors> {
     }
 
     return {
-      originPrimary: resolve(origin, '--et-theme-color-primary-solid'),
-      originInk: resolve(origin, '--et-theme-color-ink-solid'),
-      palettePrimary: resolve(palette, '--et-theme-color-primary-solid'),
-      paletteInk: resolve(palette, '--et-theme-color-ink-solid'),
+      originPrimary: resolve(origin, '--et-tone-fill'),
+      originInk: resolve(origin, '--et-tone-text'),
+      palettePrimary: resolve(palette, '--et-tone-fill'),
+      paletteInk: resolve(palette, '--et-tone-text'),
       matchColor: getComputedStyle(match).color,
     };
   });

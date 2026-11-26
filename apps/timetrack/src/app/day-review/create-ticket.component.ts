@@ -35,14 +35,14 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
       [class.rounded-md]="!embedded()"
       [class.border]="!embedded()"
       [class.p-3]="!embedded()"
-      class="flex flex-col gap-4 border-et-brand-ink"
+      class="flex flex-col gap-4 border-et-tone-brand-text"
     >
       <div class="flex flex-wrap items-center gap-2">
         @if (embedded()) {
           <h3 class="grow text-h4">A new ticket</h3>
         } @else {
           <h4 class="grow text-h4">{{ heading() }}</h4>
-          <span class="text-small text-et-surface-muted">{{ duration() }}</span>
+          <span class="text-small text-et-surface-text-muted">{{ duration() }}</span>
         }
 
         @if (canWrite() && form()) {
@@ -68,7 +68,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
       </div>
 
       @if (createdKey(); as key) {
-        <div class="flex flex-col gap-2 rounded-md border border-et-brand-ink p-3">
+        <div class="flex flex-col gap-2 rounded-md border border-et-tone-brand-text p-3">
           <span class="text-h4">Filed {{ key }}</span>
 
           @if (createdParent(); as parent) {
@@ -77,7 +77,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
             </span>
           }
 
-          <span class="text-small text-et-surface-muted">{{ filedNote() }}</span>
+          <span class="text-small text-et-surface-text-muted">{{ filedNote() }}</span>
 
           @if (startStatusNote(); as note) {
             <span class="text-small text-et-warn">{{ note }}</span>
@@ -107,7 +107,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
 
         @if (matches().length) {
           <div class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3">
-            <span class="text-et-surface-muted">This work may already have a ticket.</span>
+            <span class="text-et-surface-text-muted">This work may already have a ticket.</span>
 
             <div class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2">
               @for (match of matches(); track match.key) {
@@ -116,7 +116,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                     <span class="text-mono">{{ match.key }}</span> {{ match.summary }}
                   </span>
                   @if (match.reason) {
-                    <span class="text-small text-et-surface-muted">{{ match.reason }}</span>
+                    <span class="text-small text-et-surface-text-muted">{{ match.reason }}</span>
                   }
                 </span>
                 <button (click)="useExisting.emit(match.key)" et-button variant="outline">
@@ -172,7 +172,9 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                     <span class="flex min-w-0 items-baseline gap-2">
                       <span class="shrink-0 text-mono text-small">{{ candidate.issue.key }}</span>
                       <span class="min-w-0 grow truncate text-small">{{ candidate.issue.summary }}</span>
-                      <span class="shrink-0 text-small text-et-surface-subtle">{{ candidate.issue.issueType }}</span>
+                      <span class="shrink-0 text-small text-et-surface-text-subtle">{{
+                        candidate.issue.issueType
+                      }}</span>
                     </span>
                   </et-select-option>
                 }
@@ -181,15 +183,15 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
           </div>
 
           @if (parentRule(); as rule) {
-            <span class="text-small text-et-surface-muted">{{ rule }}</span>
+            <span class="text-small text-et-surface-text-muted">{{ rule }}</span>
           }
 
           @if (spec()?.epicKey; as epicKey) {
-            <span class="text-small text-et-surface-muted">The spec names {{ epicKey }}.</span>
+            <span class="text-small text-et-surface-text-muted">The spec names {{ epicKey }}.</span>
           }
 
           @if (isSearching()) {
-            <div class="flex items-center gap-3 text-et-surface-muted">
+            <div class="flex items-center gap-3 text-et-surface-text-muted">
               <et-spinner size="sm" />
               <span class="text-small">Reading the project's issues…</span>
             </div>
@@ -241,7 +243,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                     }
                     Ask AI
                   </button>
-                  <span class="text-small text-et-surface-muted">
+                  <span class="text-small text-et-surface-text-muted">
                     It writes the wider goal this ticket rolls up to, from the same evidence. Everything stays yours to
                     edit.
                   </span>
@@ -255,7 +257,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                   <ethlete-unmasked-words [text]="printedParentPayload()" />
 
                   <details class="rounded-md border border-et-surface-border p-3">
-                    <summary class="cursor-pointer text-small text-et-surface-muted">
+                    <summary class="cursor-pointer text-small text-et-surface-text-muted">
                       What gets sent — the ticket below, and the same notes
                     </summary>
                     <pre class="mt-2 overflow-x-auto text-mono text-small">{{ printedParentPayload() }}</pre>
@@ -282,7 +284,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
 
                 <button (click)="closeParentForm.emit()" et-text-button>Cancel</button>
 
-                <span class="text-small text-et-surface-muted">It is filed with no parent of its own.</span>
+                <span class="text-small text-et-surface-text-muted">It is filed with no parent of its own.</span>
               </div>
             </div>
           } @else if (parentTypeNames().length) {
@@ -306,7 +308,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
               <ethlete-unmasked-words [text]="printedPayload()" />
 
               <details>
-                <summary class="cursor-pointer text-small text-et-surface-muted">What AI sees</summary>
+                <summary class="cursor-pointer text-small text-et-surface-text-muted">What AI sees</summary>
                 <pre class="mt-2 overflow-x-auto text-mono text-small">{{ printedPayload() }}</pre>
               </details>
             }

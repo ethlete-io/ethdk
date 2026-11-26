@@ -92,7 +92,7 @@ describe('DesignHarnessComponent', () => {
     const host = element.querySelector('[data-design-harness-host]');
     const chip = document.querySelector<HTMLElement>('.et-overlay-runtime-pane ethlete-fake-chip');
 
-    expect(host?.className).toBe('bg-et-surface-bg block h-screen w-screen');
+    expect(host?.className).toBe('bg-et-surface-background block h-screen w-screen');
     expect(host?.children).toHaveLength(1);
     expect(host?.querySelector('ethlete-fake-chip')).toBeNull();
     expect(chip?.textContent).toBe('Tag x');

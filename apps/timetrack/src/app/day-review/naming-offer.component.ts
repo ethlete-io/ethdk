@@ -15,7 +15,7 @@ import { RepoNamingOffer, formatDurationMs } from '@ethlete/timetrack';
   template: `
     @for (entry of listed(); track entry.offer.repoPath) {
       <div [attr.data-offer]="entry.offer.repoPath" class="flex flex-wrap items-baseline gap-x-3 gap-y-2 text-small">
-        <span class="text-et-surface-muted" data-offer-reason>{{ entry.reason }}</span>
+        <span class="text-et-surface-text-muted" data-offer-reason>{{ entry.reason }}</span>
         <button (click)="accept.emit(entry.offer)" et-button variant="outline" size="sm">
           Always log {{ entry.offer.label }} on {{ entry.offer.issueKey }}
         </button>

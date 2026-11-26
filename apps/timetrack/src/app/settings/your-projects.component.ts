@@ -74,7 +74,7 @@ the work on the next.`;
       </et-form-field>
 
       @if (catalog.isLoadingProjects()) {
-        <div class="flex items-center gap-3 text-et-surface-muted">
+        <div class="flex items-center gap-3 text-et-surface-text-muted">
           <et-spinner size="sm" />
           <span class="text-small">Reading the instance's projects…</span>
         </div>
@@ -89,7 +89,7 @@ the work on the next.`;
 
       @if (projects().length) {
         <div class="flex items-center gap-1">
-          <span class="text-small text-et-surface-muted">Work that runs in the background</span>
+          <span class="text-small text-et-surface-text-muted">Work that runs in the background</span>
           <ethlete-explain [text]="BACKGROUND_WHY" label="background projects" />
         </div>
 

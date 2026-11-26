@@ -86,9 +86,9 @@ function readSteps(page: Page): Promise<StepGeometry[]> {
         marker: rect(step.querySelector('.et-progress-step-marker') ?? step),
         label: rect(step.querySelector('.et-progress-step-label') ?? step),
         connector,
-        primary: resolve(step, 'var(--et-theme-color-primary-solid)'),
-        ink: resolve(step, 'var(--et-theme-color-ink-solid)'),
-        border: resolve(step, 'var(--et-surface-border-solid)'),
+        primary: resolve(step, 'var(--et-tone-fill)'),
+        ink: resolve(step, 'var(--et-tone-text)'),
+        border: resolve(step, 'var(--et-surface-border)'),
       };
     });
   });

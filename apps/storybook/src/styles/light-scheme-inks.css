@@ -1,18 +1,18 @@
 @layer base {
   :root.et-scheme--light,
   :where(:root.et-scheme--light) :is(.et-color--default, .et-color--brand) {
-    --et-color-primary-ink: 4 120 87;
-    --et-color-primary-ink-hover: 6 95 70;
-    --et-color-primary-ink-focus: 6 95 70;
-    --et-color-primary-ink-active: 6 78 59;
-    --et-color-primary-ink-disabled: 130 200 170;
+    --et-tone-text-rest: rgb(4 120 87);
+    --et-tone-text-hover: rgb(6 95 70);
+    --et-tone-text-focus: rgb(6 95 70);
+    --et-tone-text-active: rgb(6 78 59);
+    --et-tone-text-disabled: rgb(130 200 170);
   }
 
   :where(:root.et-scheme--light) .et-color--danger {
-    --et-color-primary-ink: 185 28 28;
-    --et-color-primary-ink-hover: 153 27 27;
-    --et-color-primary-ink-focus: 153 27 27;
-    --et-color-primary-ink-active: 127 29 29;
-    --et-color-primary-ink-disabled: 220 150 150;
+    --et-tone-text-rest: rgb(185 28 28);
+    --et-tone-text-hover: rgb(153 27 27);
+    --et-tone-text-focus: rgb(153 27 27);
+    --et-tone-text-active: rgb(127 29 29);
+    --et-tone-text-disabled: rgb(220 150 150);
   }
 }

@@ -20,7 +20,7 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
     @if (other(); as rival) {
       <div class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3" data-disputed-naming>
         <span class="text-small">Two answers disagree about this band.</span>
-        <span class="text-small text-et-surface-muted"
+        <span class="text-small text-et-surface-text-muted"
           >It books {{ describe(booked()) }}, and could be {{ describe(rival.label, rival.kind) }}.</span
         >
 

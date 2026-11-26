@@ -75,7 +75,7 @@ export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
   hostDirectives: [AutoSurfaceDirective],
   host: {
     class:
-      'inline-flex rounded-control-md border font-ui border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16))',
+      'inline-flex rounded-control-md border font-ui border-(--et-overlay-surface-border-color,var(--et-surface-border)) bg-et-surface-background shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))',
     'data-canvas-zoom': '',
   },
 })

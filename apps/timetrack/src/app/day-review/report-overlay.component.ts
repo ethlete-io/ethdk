@@ -48,7 +48,7 @@ type SaveState = { kind: 'saved'; path: string } | { kind: 'dismissed' } | { kin
         }
 
         @if (state(); as result) {
-          <p class="text-small text-et-surface-muted" data-report-result>
+          <p class="text-small text-et-surface-text-muted" data-report-result>
             @switch (result.kind) {
               @case ('saved') {
                 Saved to {{ result.path }}

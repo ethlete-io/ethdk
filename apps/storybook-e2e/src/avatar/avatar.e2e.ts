@@ -218,7 +218,7 @@ test.describe('avatar / structure', () => {
       return {
         overlap: style.getPropertyValue('--et-avatar-group-overlap').trim(),
         ringWidth: style.getPropertyValue('--et-avatar-group-ring-width').trim(),
-        surface: style.getPropertyValue('--et-surface-background-solid').trim(),
+        surface: style.getPropertyValue('--et-surface-background').trim(),
         firstMargin: getComputedStyle(visible[0] as HTMLElement).marginInlineStart,
         secondMargin: getComputedStyle(visible[1] as HTMLElement).marginInlineStart,
         shadow: getComputedStyle(visible[1] as HTMLElement).boxShadow,

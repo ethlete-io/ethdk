@@ -37,7 +37,7 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
   selector: 'ethlete-build-ready-footer',
   template: `
     @let current = status();
-    <footer class="border-t border-(--et-surface-border-solid) px-space-3 py-space-2">
+    <footer class="border-t border-(--et-surface-border) px-space-3 py-space-2">
       <div class="flex items-center gap-space-2">
         @switch (current.state) {
           @case ('ready') {
@@ -91,14 +91,14 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
         <ul class="m-0 list-none p-0 pb-space-1">
           @for (group of groups(); track group.kind) {
             <li>
-              <h3 class="m-0 px-space-2 pt-space-1 text-ui-xs font-ui-strong text-et-surface-muted">
+              <h3 class="m-0 px-space-2 pt-space-1 text-ui-xs font-ui-strong text-et-surface-text-muted">
                 {{ LABELS.groups[group.kind] }}
               </h3>
               <ul class="m-0 list-none p-0">
                 @for (blocker of group.blockers; track $index) {
                   <li class="flex items-center gap-space-2 px-space-2 py-space-1">
                     <svg
-                      class="flex-none text-(--et-surface-color-muted-solid)"
+                      class="flex-none text-(--et-surface-text-muted)"
                       width="14"
                       height="14"
                       viewBox="0 0 16 16"
@@ -140,7 +140,7 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
                         }
                       }
                     </svg>
-                    <span class="min-w-0 flex-1 text-et-surface">{{ blocker.text }}</span>
+                    <span class="min-w-0 flex-1 text-et-surface-text">{{ blocker.text }}</span>
                   </li>
                 }
               </ul>

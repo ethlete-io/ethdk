@@ -31,7 +31,7 @@ store every sample in it a second time.`;
           <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
             <span class="grow break-all text-mono text-small">{{ offer.cwd }}</span>
             <et-badge color="brand" size="sm">{{ offer.projectKey }}</et-badge>
-            <span class="text-small text-et-surface-subtle">{{ offer.events }} skipped</span>
+            <span class="text-small text-et-surface-text-subtle">{{ offer.events }} skipped</span>
 
             <button
               [attr.aria-label]="'Read the session logs of ' + offer.cwd + ' again'"

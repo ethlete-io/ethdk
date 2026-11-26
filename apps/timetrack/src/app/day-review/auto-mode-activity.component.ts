@@ -11,7 +11,7 @@ import { formatClockTime, formatWeekdayLabel } from './format';
         @for (entry of entries(); track entry.id) {
           <li [attr.data-auto-activity]="entry.id" [attr.data-state]="entry.state" class="flex flex-col text-small">
             <span>{{ startedAt(entry) }} · {{ entry.label }}</span>
-            <span class="text-et-surface-muted">{{ meta(entry) }}</span>
+            <span class="text-et-surface-text-muted">{{ meta(entry) }}</span>
 
             @if (entry.detail) {
               <span data-auto-activity-detail>{{ entry.detail }}</span>

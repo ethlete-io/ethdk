@@ -4,9 +4,9 @@ import { Confidence } from '@ethlete/timetrack';
 import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 const CONFIDENCE_TONE: Record<Confidence, string> = {
-  certain: 'text-et-success-ink',
-  likely: 'text-et-surface-muted',
-  weak: 'text-et-warning-ink',
+  certain: 'text-et-tone-success-text',
+  likely: 'text-et-surface-text-muted',
+  weak: 'text-et-tone-warning-text',
 };
 
 /**
@@ -27,7 +27,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
       }
 
       @if (confirmed()) {
-        <span class="text-small text-et-success-ink">confirmed by you</span>
+        <span class="text-small text-et-tone-success-text">confirmed by you</span>
       } @else {
         <span [class]="tone()" class="text-small">{{ confidence() }} match</span>
       }

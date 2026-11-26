@@ -33,15 +33,15 @@ const HEADINGS: Record<DayWarningKind, string> = {
     @if (warnings().length) {
       <details class="min-w-0" data-warnings>
         <summary class="flex min-w-0 cursor-pointer items-baseline gap-2 text-small">
-          <span class="shrink-0 text-et-warning-ink" data-warning-count>{{ count() }} to check</span>
-          <span class="min-w-0 truncate text-et-surface-muted" data-warning-headings>{{ headings() }}</span>
+          <span class="shrink-0 text-et-tone-warning-text" data-warning-count>{{ count() }} to check</span>
+          <span class="min-w-0 truncate text-et-surface-text-muted" data-warning-headings>{{ headings() }}</span>
         </summary>
 
         <ul class="mt-2 flex flex-col gap-1">
           @for (warning of entries(); track warning.kind) {
             <li [attr.data-warning]="warning.kind" class="flex flex-wrap items-baseline gap-x-3 text-small">
-              <span class="text-et-warning-ink">{{ warning.heading }}</span>
-              <span class="text-et-surface-muted">{{ warning.detail }}</span>
+              <span class="text-et-tone-warning-text">{{ warning.heading }}</span>
+              <span class="text-et-surface-text-muted">{{ warning.detail }}</span>
             </li>
           }
         </ul>

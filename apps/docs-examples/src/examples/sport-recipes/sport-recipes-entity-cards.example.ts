@@ -41,9 +41,9 @@ import { BANNER_SRC, RECIPE_PARTICIPANTS } from './sport-recipes-entity-cards.da
       flex-direction: column;
       gap: 12px;
       padding: 16px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 12px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
       color: inherit;
       text-decoration: none;
       inline-size: 240px;

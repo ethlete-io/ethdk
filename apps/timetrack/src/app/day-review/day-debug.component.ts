@@ -147,7 +147,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
             }
 
             @if (repair.isReading()) {
-              <div class="flex items-center gap-3 text-et-surface-muted">
+              <div class="flex items-center gap-3 text-et-surface-text-muted">
                 <et-spinner size="sm" />
                 <span class="text-small">Reading the repository…</span>
               </div>
@@ -204,12 +204,12 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
           <ethlete-auto-mode-readout [entries]="autoMode.readout()" (showRow)="showRow($event)" />
 
           @if (autoMode.activity().length) {
-            <h4 class="mb-2 mt-4 text-small text-et-surface-muted">Jobs since the app started</h4>
+            <h4 class="mb-2 mt-4 text-small text-et-surface-text-muted">Jobs since the app started</h4>
             <ethlete-auto-mode-activity [entries]="autoMode.activity()" />
           }
 
           @if (autoMode.modelCalls().length) {
-            <h4 class="mb-2 mt-4 text-small text-et-surface-muted">Model calls since the app started</h4>
+            <h4 class="mb-2 mt-4 text-small text-et-surface-text-muted">Model calls since the app started</h4>
             <ethlete-auto-mode-calls [calls]="autoMode.modelCalls()" />
           }
         </et-accordion>
@@ -222,7 +222,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
 
     <div class="flex items-center justify-end gap-3" etOverlayFooter>
       @if (autoMode.reportCopy(); as copy) {
-        <span class="text-small text-et-surface-muted" data-report-copy>
+        <span class="text-small text-et-surface-text-muted" data-report-copy>
           {{ copy.ok ? 'Copied the anonymous report' : 'The clipboard refused the report' }}
         </span>
       }

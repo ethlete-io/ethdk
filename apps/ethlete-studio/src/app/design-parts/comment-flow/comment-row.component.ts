@@ -6,7 +6,7 @@ import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { InboxComment } from '../inbox/inbox-sample';
 
 const SELECTED_CLASS =
-  'bg-et-theme/20 hover:[background:linear-gradient(rgb(var(--et-theme-color-primary-rgb)/0.2),rgb(var(--et-theme-color-primary-rgb)/0.2)),color-mix(in_srgb,var(--et-surface-interaction-solid)_9%,transparent)] active:[background:linear-gradient(rgb(var(--et-theme-color-primary-rgb)/0.2),rgb(var(--et-theme-color-primary-rgb)/0.2)),color-mix(in_srgb,var(--et-surface-interaction-solid)_15%,transparent)]';
+  'bg-et-tone-fill/20 hover:[background:linear-gradient(color-mix(in srgb, var(--et-tone-fill) 20%, transparent),color-mix(in srgb, var(--et-tone-fill) 20%, transparent)),color-mix(in_srgb,var(--et-surface-interaction)_9%,transparent)] active:[background:linear-gradient(color-mix(in srgb, var(--et-tone-fill) 20%, transparent),color-mix(in srgb, var(--et-tone-fill) 20%, transparent)),color-mix(in_srgb,var(--et-surface-interaction)_15%,transparent)]';
 
 @Component({
   selector: 'ethlete-comment-row',

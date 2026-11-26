@@ -103,7 +103,7 @@ const clock = (atMs: number) => formatClockTime(new Date(atMs), { seconds: true 
           <et-badge [color]="phase().color" size="sm" data-transcription-phase>{{ phase().label }}</et-badge>
 
           @if (status()?.model; as model) {
-            <span class="text-small text-et-surface-subtle">{{ model }}</span>
+            <span class="text-small text-et-surface-text-subtle">{{ model }}</span>
           }
         </div>
 
@@ -122,13 +122,13 @@ const clock = (atMs: number) => formatClockTime(new Date(atMs), { seconds: true 
 
             @for (chunk of recent(); track chunk.atMs) {
               <div class="rounded-md border border-et-surface-border p-3" data-transcription-chunk>
-                <div class="text-small text-et-surface-subtle">
+                <div class="text-small text-et-surface-text-subtle">
                   {{ CLOCK(chunk.atMs) }} · {{ chunk.appId }} · {{ chunk.language ?? 'unknown language' }}
                 </div>
                 <p class="text-small">{{ excerpt(chunk.text) }}</p>
               </div>
             } @empty {
-              <p class="text-small text-et-surface-subtle">Nothing transcribed today.</p>
+              <p class="text-small text-et-surface-text-subtle">Nothing transcribed today.</p>
             }
           </div>
         }

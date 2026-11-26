@@ -39,15 +39,15 @@ const STATUS_TEXT: Record<AutoModeReadoutStatus, string> = {
             </span>
 
             @if (entry.summary) {
-              <span class="text-et-surface-muted">Draft: {{ entry.summary }}</span>
+              <span class="text-et-surface-text-muted">Draft: {{ entry.summary }}</span>
             }
 
             @if (entry.reason) {
-              <span class="text-et-surface-muted">Why: {{ entry.reason }}</span>
+              <span class="text-et-surface-text-muted">Why: {{ entry.reason }}</span>
             }
 
             @if (entry.description) {
-              <span class="text-et-surface-muted">Worklog: {{ entry.description }}</span>
+              <span class="text-et-surface-text-muted">Worklog: {{ entry.description }}</span>
             }
 
             @if (entry.rowId; as rowId) {
@@ -70,7 +70,7 @@ const STATUS_TEXT: Record<AutoModeReadoutStatus, string> = {
         }
       </ul>
     } @else {
-      <p class="text-small text-et-surface-muted">Auto mode asked about nothing on this day.</p>
+      <p class="text-small text-et-surface-text-muted">Auto mode asked about nothing on this day.</p>
     }
   `,
   encapsulation: ViewEncapsulation.None,

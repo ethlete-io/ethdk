@@ -119,7 +119,7 @@ export class DesignHarnessComponent {
   protected state = toSignal(stateOf$(this.platformLocation.search));
   protected dialog = dialogOf(this.platformLocation.search);
   protected hostClass = this.dialog
-    ? 'block h-screen w-screen bg-et-surface-bg'
+    ? 'block h-screen w-screen bg-et-surface-background'
     : new URLSearchParams(this.platformLocation.search).get('layout') === 'page'
       ? 'block min-h-screen w-screen'
       : 'flow-root w-fit';

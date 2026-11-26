@@ -24,17 +24,17 @@ import { SelectionListDirective, SelectionOptionDirective } from '@ethlete/compo
       gap: 2px 12px;
       align-items: center;
       padding: 12px 16px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 12px;
       cursor: pointer;
       outline: none;
 
       &:focus-visible {
-        box-shadow: 0 0 0 2px var(--et-theme-color-primary-solid);
+        box-shadow: 0 0 0 2px var(--et-tone-fill);
       }
 
       &[data-checked] {
-        border-color: var(--et-theme-color-primary-solid);
+        border-color: var(--et-tone-fill);
       }
 
       &[data-disabled] {
@@ -47,11 +47,11 @@ import { SelectionListDirective, SelectionOptionDirective } from '@ethlete/compo
       grid-row: span 2;
       inline-size: 16px;
       block-size: 16px;
-      border: 2px solid var(--et-surface-border-solid);
+      border: 2px solid var(--et-surface-border);
       border-radius: 50%;
 
       .app-broadcast-card[data-checked] & {
-        border: 5px solid var(--et-theme-color-primary-solid);
+        border: 5px solid var(--et-tone-fill);
       }
     }
 
@@ -60,7 +60,7 @@ import { SelectionListDirective, SelectionOptionDirective } from '@ethlete/compo
     }
 
     .app-broadcast-card-meta {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 0.875em;
     }
   `,

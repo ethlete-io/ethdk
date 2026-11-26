@@ -28,7 +28,7 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
     @if (standIn(); as waiting) {
       <div class="flex items-center gap-3 rounded-md border border-et-surface-border px-3 py-2" data-stand-in-waiting>
         <span class="min-w-0 grow text-small">
-          Waiting on a ticket <span class="text-et-surface-muted">· {{ days() }}</span>
+          Waiting on a ticket <span class="text-et-surface-text-muted">· {{ days() }}</span>
         </span>
 
         <button (click)="file(waiting)" class="shrink-0" et-button variant="outline" size="sm">File its ticket</button>

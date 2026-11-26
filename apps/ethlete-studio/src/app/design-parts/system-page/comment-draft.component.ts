@@ -28,11 +28,11 @@ export const draftKeyOf = (event: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'isCo
     @if (phase() === 'error' || phase() === 'rejected') {
       <p
         [etProvideColor]="errorTheme()"
-        class="m-0 flex items-center gap-space-1 text-ui-xs text-et-theme-ink"
+        class="m-0 flex items-center gap-space-1 text-ui-xs text-et-tone-text"
         role="alert"
       >
         <svg
-          class="flex-none text-et-theme"
+          class="flex-none text-et-tone-fill"
           width="14"
           height="14"
           viewBox="0 0 16 16"
@@ -81,7 +81,7 @@ export const draftKeyOf = (event: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'isCo
     role: 'dialog',
     '[attr.aria-label]': 'LABELS.dialog',
     class:
-      'flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg',
+      'flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border) bg-(--et-surface-background) p-space-3 shadow-lg',
   },
 })
 export class CommentDraftComponent {

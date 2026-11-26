@@ -16,10 +16,10 @@ import { SHELL_VIEWS } from './views';
         <a
           [routerLink]="view.path"
           class="flex flex-col gap-0.5 rounded-md px-3 py-2 no-underline transition-colors hover:bg-et-surface-border/40"
-          routerLinkActive="bg-et-brand/10 text-et-brand-ink"
+          routerLinkActive="bg-et-tone-brand-fill/10 text-et-tone-brand-text"
         >
           <span class="text-base">{{ view.label }}</span>
-          <span class="text-small text-et-surface-subtle">{{ view.hint }}</span>
+          <span class="text-small text-et-surface-text-subtle">{{ view.hint }}</span>
         </a>
       }
     </nav>
@@ -33,7 +33,7 @@ import { SHELL_VIEWS } from './views';
       >
         <span
           [class.animate-pulse]="!!autoMode.running()"
-          class="size-2 shrink-0 self-start rounded-full bg-et-brand mt-1.5"
+          class="size-2 shrink-0 self-start rounded-full bg-et-tone-brand-fill mt-1.5"
           aria-hidden="true"
         ></span>
         <span class="flex min-w-0 flex-col">
@@ -45,7 +45,7 @@ import { SHELL_VIEWS } from './views';
           </span>
 
           @if (autoMode.running(); as running) {
-            <span [title]="running.label" class="truncate text-et-surface-muted" data-auto-mode-running>
+            <span [title]="running.label" class="truncate text-et-surface-text-muted" data-auto-mode-running>
               {{ running.label }}
               @if (autoMode.queuedCount() > 1) {
                 · {{ autoMode.queuedCount() - 1 }} more queued
@@ -66,7 +66,7 @@ import { SHELL_VIEWS } from './views';
         data-peers-status
       >
         <span
-          [class.bg-et-brand]="peers.connected().length"
+          [class.bg-et-tone-brand-fill]="peers.connected().length"
           [class.bg-et-surface-border]="!peers.connected().length"
           class="size-2 shrink-0 rounded-full"
           aria-hidden="true"

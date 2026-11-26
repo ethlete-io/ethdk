@@ -13,7 +13,7 @@ import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/comp
     <div class="flex flex-col gap-3">
       <div class="flex flex-col gap-1">
         <h3 class="text-h4">Where repositories are looked for</h3>
-        <p class="text-small text-et-surface-muted">
+        <p class="text-small text-et-surface-text-muted">
           {{ found() }} repositories are being watched. Naming a directory also reaches deeper than the home directory
           alone.
         </p>
@@ -34,7 +34,7 @@ import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/comp
           </button>
         </div>
       } @empty {
-        <p class="text-small text-et-surface-subtle">The home directory is walked, three levels deep.</p>
+        <p class="text-small text-et-surface-text-subtle">The home directory is walked, three levels deep.</p>
       }
 
       <div class="flex flex-wrap items-center gap-3">

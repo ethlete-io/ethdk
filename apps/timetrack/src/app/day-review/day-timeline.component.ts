@@ -216,7 +216,7 @@ type RowDrag = {
     >
       @if (markedCount(); as count) {
         <div
-          class="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-md border border-et-surface-border bg-et-surface-bg px-3 py-2 text-small shadow-lg"
+          class="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-md border border-et-surface-border bg-et-surface-background px-3 py-2 text-small shadow-lg"
           data-marked-bar
         >
           <span>{{ count }} marked for a merge</span>
@@ -231,15 +231,15 @@ type RowDrag = {
 
       <div #body #grid="etSchedulerTimeGrid" class="min-h-0 grow overflow-auto pb-6" etSchedulerTimeGrid>
         <div class="min-w-max">
-          <div class="sticky top-0 z-20 flex bg-et-surface-bg">
-            <div class="sticky left-0 w-13 shrink-0 bg-et-surface-bg"></div>
+          <div class="sticky top-0 z-20 flex bg-et-surface-background">
+            <div class="sticky left-0 w-13 shrink-0 bg-et-surface-background"></div>
 
             @for (lane of lanes(); track lane.key) {
               <div
                 [style.flexGrow]="growOf(lane)"
                 [style.minWidth.rem]="minRemOf(lane)"
                 [title]="LANE_TITLE_OF(lane)"
-                class="basis-0 truncate border-b border-l border-et-surface-border px-2 py-1 text-small text-et-surface-muted"
+                class="basis-0 truncate border-b border-l border-et-surface-border px-2 py-1 text-small text-et-surface-text-muted"
                 data-lane-header
               >
                 {{ lane.label }}
@@ -258,11 +258,11 @@ type RowDrag = {
                   [title]="entry.node.appointment.title"
                   [style]="{ height: '1.6rem' }"
                   (click)="select(entry.node.appointment, $event)"
-                  class="absolute flex cursor-pointer items-center gap-2 truncate rounded-sm border-l-2 border-l-et-theme bg-et-theme/10 px-2 text-left text-small outline-none hover:bg-et-theme/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink"
+                  class="absolute flex cursor-pointer items-center gap-2 truncate rounded-sm border-l-2 border-l-et-tone-fill bg-et-tone-fill/10 px-2 text-left text-small outline-none hover:bg-et-tone-fill/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-tone-text"
                   type="button"
                 >
                   <span class="truncate">{{ entry.node.appointment.title }}</span>
-                  <span class="shrink-0 text-et-surface-muted">{{ COUNT_DESCENDANTS(entry.node) }} rows</span>
+                  <span class="shrink-0 text-et-surface-text-muted">{{ COUNT_DESCENDANTS(entry.node) }} rows</span>
                 </button>
               }
             </div>
@@ -275,7 +275,7 @@ type RowDrag = {
                 class="absolute inset-x-0 flex -translate-y-1/2 items-center gap-2"
               >
                 <span
-                  class="sticky left-0 z-10 w-11 shrink-0 bg-et-surface-bg text-right text-mono text-et-surface-subtle"
+                  class="sticky left-0 z-10 w-11 shrink-0 bg-et-surface-background text-right text-mono text-et-surface-text-subtle"
                   >{{ labelFor(hour) }}</span
                 >
                 <span [attr.data-hour]="hour" class="h-px grow bg-et-surface-border"></span>
@@ -285,11 +285,11 @@ type RowDrag = {
             @if (grid.currentTime(); as currentTime) {
               <div
                 [style.top.%]="currentTime.offset"
-                class="pointer-events-none absolute right-0 left-13 z-10 border-t-2 border-t-et-brand-ink"
+                class="pointer-events-none absolute right-0 left-13 z-10 border-t-2 border-t-et-tone-brand-text"
                 data-now
                 role="presentation"
               >
-                <span class="absolute -top-1 -left-1 size-2 rounded-full bg-et-brand-ink"></span>
+                <span class="absolute -top-1 -left-1 size-2 rounded-full bg-et-tone-brand-text"></span>
               </div>
             }
 
@@ -308,7 +308,7 @@ type RowDrag = {
                     <div
                       [style.top.%]="draft.offset"
                       [style.height.%]="draft.span"
-                      class="pointer-events-none absolute inset-x-0 rounded-sm border border-dashed border-et-brand-ink bg-et-brand-ink/10"
+                      class="pointer-events-none absolute inset-x-0 rounded-sm border border-dashed border-et-tone-brand-text bg-et-tone-brand-text/10"
                     ></div>
                   }
 
@@ -320,7 +320,7 @@ type RowDrag = {
                       [attr.data-compact]="compact(band.span) || null"
                       (click)="breakClear.emit(band.window)"
                       (pointerdown)="$event.stopPropagation()"
-                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-interaction px-2 py-1 text-left text-small text-et-surface-muted hover:border-et-surface-border-strong hover:text-et-surface-ink data-[compact]:py-0 data-[compact]:leading-none"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-interaction px-2 py-1 text-left text-small text-et-surface-text-muted hover:border-et-surface-border-strong hover:text-et-surface-ink data-[compact]:py-0 data-[compact]:leading-none"
                       data-break
                       type="button"
                     >
@@ -336,7 +336,7 @@ type RowDrag = {
                       [style.height]="GAPPED_HEIGHT(band.span)"
                       [title]="BEHIND_LABEL_OF(band.stretch)"
                       [attr.data-compact]="compact(band.span) || null"
-                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-subtle/12 px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-text-subtle/12 px-2 py-1 text-small text-et-surface-text-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-behind
                     >
                       @if (labelled(band.span) && !band.carrier && !lane.hiddenLabels.has(BEHIND_KEY_OF(band))) {
@@ -390,7 +390,7 @@ type RowDrag = {
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
                       (keydown.space)="$event.preventDefault(); select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 [--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] hover:[--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 data-[cascade]:bg-[color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] data-[cascade]:shadow-[0_0_0_1px_var(--color-et-surface-bg)] data-[cascade]:hover:bg-[color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[read-only]:cursor-default data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 [--tt-card-bg:color-mix(in_oklab,var(--color-et-tone-fill)_15%,var(--color-et-surface-background))] hover:[--tt-card-bg:color-mix(in_oklab,var(--color-et-tone-fill)_30%,var(--color-et-surface-background))] border-l-et-tone-fill bg-et-tone-fill/15 px-2 py-1 text-left text-small outline-none hover:bg-et-tone-fill/30 data-[cascade]:bg-[color-mix(in_oklab,var(--color-et-tone-fill)_15%,var(--color-et-surface-background))] data-[cascade]:shadow-[0_0_0_1px_var(--color-et-surface-background)] data-[cascade]:hover:bg-[color-mix(in_oklab,var(--color-et-tone-fill)_30%,var(--color-et-surface-background))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-tone-text data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[read-only]:cursor-default data-[marked]:ring-2 data-[marked]:ring-et-tone-text data-[marked]:ring-inset data-[stand-in]:border-dashed"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -448,7 +448,7 @@ type RowDrag = {
                           [style.top.%]="segment.from * 100"
                           [style.height.%]="(segment.to - segment.from) * 100"
                           [style.left.%]="((segment.inlineOffset - laid.inlineOffset) / laid.inlineSize) * 100"
-                          class="pointer-events-none absolute w-0.5 bg-et-theme"
+                          class="pointer-events-none absolute w-0.5 bg-et-tone-fill"
                           data-segment-edge
                         ></span>
                       }
@@ -457,7 +457,7 @@ type RowDrag = {
                         <span
                           [style.top.%]="held.offset"
                           [style.height.%]="held.span"
-                          class="pointer-events-none absolute inset-x-0 bg-[repeating-linear-gradient(45deg,transparent_0px,transparent_5px,var(--color-et-surface-muted)_5px,var(--color-et-surface-muted)_6px)]"
+                          class="pointer-events-none absolute inset-x-0 bg-[repeating-linear-gradient(45deg,transparent_0px,transparent_5px,var(--color-et-surface-text-muted)_5px,var(--color-et-surface-text-muted)_6px)]"
                           data-break-overlap
                         ></span>
                       }
@@ -466,7 +466,7 @@ type RowDrag = {
                         <span
                           [style.top.%]="swap.offset"
                           [title]="swap.detail"
-                          class="absolute inset-x-0 border-t border-dashed border-t-et-theme"
+                          class="absolute inset-x-0 border-t border-dashed border-t-et-tone-fill"
                           data-swap
                         ></span>
                       }
@@ -475,31 +475,33 @@ type RowDrag = {
                         <span class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)]" data-label>
                           {{ LABEL_OF(laid.block.node.appointment) }}
                           @if (UNBOOKED_OF(laid.block.node.appointment); as unbooked) {
-                            <span class="text-et-surface-muted" data-unbooked>{{ unbooked }}</span>
+                            <span class="text-et-surface-text-muted" data-unbooked>{{ unbooked }}</span>
                           }
                           @if (notInTempo(laid.block.node.appointment)) {
-                            <span class="text-et-theme-ink" data-not-in-tempo>{{ NOT_IN_TEMPO }}</span>
+                            <span class="text-et-tone-text" data-not-in-tempo>{{ NOT_IN_TEMPO }}</span>
                           }
                           @if (subagentsOf(laid)?.more; as more) {
-                            <span class="text-et-surface-muted" data-subagent-more>{{ ' ' + more }}</span>
+                            <span class="text-et-surface-text-muted" data-subagent-more>{{ ' ' + more }}</span>
                           }
                           @if (
                             !detailed(laid.block.span) && descriptionOf(laid.block.node.appointment);
                             as description
                           ) {
-                            <span class="text-et-surface-muted" data-inline-description>{{ ' · ' + description }}</span>
+                            <span class="text-et-surface-text-muted" data-inline-description>{{
+                              ' · ' + description
+                            }}</span>
                           }
                         </span>
                       }
                       @if (detailed(laid.block.span) && descriptionOf(laid.block.node.appointment); as description) {
                         <span
-                          class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-muted"
+                          class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-text-muted"
                           >{{ description }}</span
                         >
                       }
                       @for (label of carriedLabelsOf(laid, lane); track $index) {
                         <span
-                          class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-muted"
+                          class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-text-muted"
                           data-carried-behind
                           >{{ label }}</span
                         >
@@ -510,13 +512,13 @@ type RowDrag = {
                             [style.top.%]="tick.offset"
                             [style.height.%]="tick.span"
                             [title]="tick.title"
-                            class="absolute right-0 min-h-1 w-2 rounded-l-sm bg-et-theme"
+                            class="absolute right-0 min-h-1 w-2 rounded-l-sm bg-et-tone-fill"
                             data-short-subagent
                           ></span>
                         }
                         @if (subagents.count; as count) {
                           <span
-                            class="relative mt-auto block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-muted"
+                            class="relative mt-auto block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-text-muted"
                             data-subagent-count
                             >{{ count }}</span
                           >
@@ -530,7 +532,7 @@ type RowDrag = {
                           [style.top.%]="rail.offset"
                           [style.height.%]="rail.span"
                           [style.left.%]="rail.inlineOffset"
-                          class="pointer-events-none absolute border-l border-dashed border-l-et-theme/40"
+                          class="pointer-events-none absolute border-l border-dashed border-l-et-tone-fill/40"
                           data-subagent-rail
                         ></div>
                       }
@@ -543,19 +545,19 @@ type RowDrag = {
                           [style.width.%]="stripe.inlineSize"
                           [title]="stripe.task"
                           (pointerdown)="$event.stopPropagation()"
-                          class="absolute flex flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme/60 bg-et-theme/8 px-1.5 py-0.5 text-small leading-tight"
+                          class="absolute flex flex-col overflow-hidden rounded-sm border-l-2 border-l-et-tone-fill/60 bg-et-tone-fill/8 px-1.5 py-0.5 text-small leading-tight"
                           data-subagent
                         >
                           @if (stripe.label; as label) {
                             @if (detailed(stripe.span)) {
                               <span class="line-clamp-2">{{ stripe.task }}</span>
-                              <span class="truncate text-et-surface-muted"
+                              <span class="truncate text-et-surface-text-muted"
                                 >{{ stripe.duration }} · books nothing{{ label.more ? ' · ' + label.more : '' }}</span
                               >
                             } @else {
                               <span class="truncate"
                                 >{{ stripe.task }}
-                                <span class="text-et-surface-muted"
+                                <span class="text-et-surface-text-muted"
                                   >{{ stripe.duration }}{{ label.more ? ' · ' + label.more : '' }}</span
                                 ></span
                               >
@@ -585,7 +587,7 @@ type RowDrag = {
                       tabindex="0"
                     >
                       <span
-                        class="h-0.5 grow rounded-full bg-et-surface-subtle opacity-40 group-hover:bg-et-theme group-hover:opacity-100 group-focus-visible:bg-et-theme group-focus-visible:opacity-100 group-active:bg-et-theme group-active:opacity-100 group-data-[dragging]:bg-et-theme group-data-[dragging]:opacity-100"
+                        class="h-0.5 grow rounded-full bg-et-surface-text-subtle opacity-40 group-hover:bg-et-tone-fill group-hover:opacity-100 group-focus-visible:bg-et-tone-fill group-focus-visible:opacity-100 group-active:bg-et-tone-fill group-active:opacity-100 group-data-[dragging]:bg-et-tone-fill group-data-[dragging]:opacity-100"
                       ></span>
                       <span
                         class="absolute top-1/2 right-0 -translate-y-1/2 rounded-sm bg-et-surface-interaction px-1 text-mono whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100 group-data-[dragging]:opacity-100"
@@ -643,7 +645,7 @@ type RowDrag = {
                       [style.top.%]="percentOf(preview.from)"
                       [style.height.%]="percentOf(preview.to) - percentOf(preview.from)"
                       [attr.data-approval-preview]="preview.item.id"
-                      class="pointer-events-none absolute inset-x-0 rounded-sm border border-dashed border-et-brand-ink bg-et-brand-ink/10"
+                      class="pointer-events-none absolute inset-x-0 rounded-sm border border-dashed border-et-tone-brand-text bg-et-tone-brand-text/10"
                     ></div>
                   }
 
@@ -734,7 +736,7 @@ type RowDrag = {
                       [title]="PEER_LABEL_OF(placed)"
                       [attr.data-compact]="compact(placed.span) || null"
                       [attr.data-booked]="placed.band.booked || null"
-                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-subtle/12 px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-text-subtle/12 px-2 py-1 text-small text-et-surface-text-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-peer-band
                     >
                       @if (labelled(placed.span) && !lane.hiddenLabels.has(PEER_KEY_OF(placed))) {
@@ -757,22 +759,22 @@ type RowDrag = {
     [data-lane] [data-kind='row'][data-growing] {
       border-image: linear-gradient(
           to bottom,
-          var(--et-theme-color-primary-solid) 0 var(--tt-cut-at),
-          rgb(var(--et-theme-color-primary-rgb) / 0) 100%
+          var(--et-tone-fill) 0 var(--tt-cut-at),
+          color-mix(in srgb, var(--et-tone-fill) 0%, transparent) 100%
         )
         1;
       background: linear-gradient(
         to bottom,
-        rgb(var(--et-theme-color-primary-rgb) / 0.15) 0 var(--tt-cut-at),
-        rgb(var(--et-theme-color-primary-rgb) / 0) 100%
+        color-mix(in srgb, var(--et-tone-fill) 15%, transparent) 0 var(--tt-cut-at),
+        color-mix(in srgb, var(--et-tone-fill) 0%, transparent) 100%
       );
     }
 
     [data-lane] [data-kind='row'][data-growing]:hover {
       background: linear-gradient(
         to bottom,
-        rgb(var(--et-theme-color-primary-rgb) / 0.3) 0 var(--tt-cut-at),
-        rgb(var(--et-theme-color-primary-rgb) / 0) 100%
+        color-mix(in srgb, var(--et-tone-fill) 30%, transparent) 0 var(--tt-cut-at),
+        color-mix(in srgb, var(--et-tone-fill) 0%, transparent) 100%
       );
     }
 
@@ -802,7 +804,7 @@ type RowDrag = {
 
     .tt-cut-line {
       flex-grow: 1;
-      border-top: 1px dashed var(--et-theme-color-ink-solid);
+      border-top: 1px dashed var(--et-tone-text);
     }
 
     .tt-cut[data-chip-only] {
@@ -826,10 +828,10 @@ type RowDrag = {
       flex-shrink: 0;
       margin: 0 0.4rem 0 0;
       padding: 0 0.4rem;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 0.25rem;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-muted-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text-muted);
       font: inherit;
       font-size: var(--text-small);
       line-height: 1.6rem;
@@ -844,18 +846,18 @@ type RowDrag = {
 
     .tt-cut:hover .tt-cut-nub,
     .tt-cut-nub:hover {
-      border-color: var(--et-theme-color-ink-solid);
-      color: var(--et-surface-color-solid);
+      border-color: var(--et-tone-text);
+      color: var(--et-surface-text);
     }
 
     .tt-cut:focus-visible .tt-cut-nub,
     .tt-cut-nub:focus-visible {
-      outline: 2px solid var(--et-theme-color-ink-solid);
+      outline: 2px solid var(--et-tone-text);
       outline-offset: 2px;
     }
 
     [data-lane] [data-kind='row'][data-pending] {
-      outline: 1px dashed var(--color-et-brand-ink);
+      outline: 1px dashed var(--color-et-tone-brand-text);
       outline-offset: -1px;
     }
 
@@ -881,7 +883,7 @@ type RowDrag = {
       width: 0.6rem;
       height: 0.6rem;
       border-radius: 50%;
-      background: var(--color-et-brand-ink);
+      background: var(--color-et-tone-brand-text);
     }
 
     .tt-approval-chip {
@@ -890,10 +892,10 @@ type RowDrag = {
       gap: 0.4rem;
       max-width: 100%;
       padding: 0 0.2rem 0 0.4rem;
-      border: 1px dashed var(--color-et-brand-ink);
+      border: 1px dashed var(--color-et-tone-brand-text);
       border-radius: 0.25rem;
-      background: var(--et-surface-background-solid);
-      color: var(--color-et-brand-ink);
+      background: var(--et-surface-background);
+      color: var(--color-et-tone-brand-text);
       font-size: var(--text-small);
       line-height: 1.6rem;
       white-space: nowrap;
@@ -918,7 +920,7 @@ type RowDrag = {
     }
 
     .tt-approval-press:focus-visible {
-      outline: 2px solid var(--color-et-brand-ink);
+      outline: 2px solid var(--color-et-tone-brand-text);
     }
 
     .tt-cut--seam {

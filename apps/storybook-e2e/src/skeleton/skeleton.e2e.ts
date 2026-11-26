@@ -212,7 +212,7 @@ test.describe('skeleton / structure', () => {
       .first()
       .evaluate((el) => ({
         background: getComputedStyle(el).backgroundColor,
-        interaction: getComputedStyle(el).getPropertyValue('--et-surface-interaction-solid').trim(),
+        interaction: getComputedStyle(el).getPropertyValue('--et-surface-interaction').trim(),
       }));
 
     const light = await openStory(page, DEFAULT_STORY_ID, { args: { surface: 'light' } });
@@ -221,7 +221,7 @@ test.describe('skeleton / structure', () => {
       .first()
       .evaluate((el) => ({
         background: getComputedStyle(el).backgroundColor,
-        interaction: getComputedStyle(el).getPropertyValue('--et-surface-interaction-solid').trim(),
+        interaction: getComputedStyle(el).getPropertyValue('--et-surface-interaction').trim(),
       }));
 
     expect(onDark.interaction).not.toBe('');

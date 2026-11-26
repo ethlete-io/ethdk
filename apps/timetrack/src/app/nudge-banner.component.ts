@@ -17,7 +17,7 @@ import { injectDayNudge } from './day-nudge';
   template: `
     @if (nudge.pending(); as pending) {
       <div
-        class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-et-surface-border bg-et-brand/10 px-3 py-2"
+        class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-et-surface-border bg-et-tone-brand-fill/10 px-3 py-2"
         role="status"
       >
         <p class="text-small">

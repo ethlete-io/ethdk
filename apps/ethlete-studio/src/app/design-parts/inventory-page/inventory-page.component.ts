@@ -79,7 +79,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
         <div class="relative min-h-0 overflow-hidden">
           @if (loading()) {
             <p
-              class="m-0 p-space-4 ps-[calc(var(--st-shell-inset-left)+var(--space-4))] text-ui-sm text-et-surface-muted"
+              class="m-0 p-space-4 ps-[calc(var(--st-shell-inset-left)+var(--space-4))] text-ui-sm text-et-surface-text-muted"
             >
               {{ LABELS.drawing }}
             </p>
@@ -93,11 +93,15 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
                     class="absolute m-0 flex flex-col gap-space-1"
                   >
                     <figcaption class="flex items-center gap-space-2 text-ui-sm whitespace-nowrap">
-                      <span [class.font-ui-strong]="frame.selected" class="text-et-surface">{{ frame.page.part }}</span>
+                      <span [class.font-ui-strong]="frame.selected" class="text-et-surface-text">{{
+                        frame.page.part
+                      }}</span>
                       @if (frame.open) {
-                        <span [etProvideColor]="errorTheme()" class="text-et-theme">{{ LABELS.open(frame.open) }}</span>
+                        <span [etProvideColor]="errorTheme()" class="text-et-tone-fill">{{
+                          LABELS.open(frame.open)
+                        }}</span>
                       } @else {
-                        <span class="text-et-surface-muted">{{
+                        <span class="text-et-surface-text-muted">{{
                           frame.page.approval === 'approved' ? LABELS.approvedShort : LABELS.readyToApprove
                         }}</span>
                       }
@@ -107,7 +111,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
                       [class.outline]="!frame.selected"
                       [style.width.px]="FRAME.width"
                       [style.height.px]="FRAME.height"
-                      class="relative bg-et-surface-bg outline-et-surface-border"
+                      class="relative bg-et-surface-background outline-et-surface-border"
                     >
                       @if (frame.page.shot) {
                         @if (shotTemplate(); as template) {
@@ -123,7 +127,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
                               [style.top]="PERCENT_OF(box.y, size.height)"
                               [style.width]="PERCENT_OF(box.width, size.width)"
                               [style.height]="PERCENT_OF(box.height, size.height)"
-                              class="pointer-events-none absolute border-2 border-et-theme"
+                              class="pointer-events-none absolute border-2 border-et-tone-fill"
                             ></div>
                           }
                         }
@@ -134,7 +138,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
                             [style.top.px]="marker.top"
                             [style.width.px]="marker.width"
                             [style.height.px]="marker.height"
-                            class="pointer-events-none absolute rounded-full bg-et-theme text-center font-code text-ui-xs leading-4 text-et-on-theme"
+                            class="pointer-events-none absolute rounded-full bg-et-tone-fill text-center font-code text-ui-xs leading-4 text-et-tone-on-fill"
                             >{{ marker.number }}</span
                           >
                         }
@@ -154,12 +158,12 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
             />
           }
         </div>
-        <aside class="flex min-h-0 flex-col border-l border-et-surface-border bg-et-surface-bg">
+        <aside class="flex min-h-0 flex-col border-l border-et-surface-border bg-et-surface-background">
           <header
             class="flex flex-wrap items-center gap-space-3 border-b border-et-surface-border px-space-4 py-space-3"
           >
             <div class="flex min-w-24 flex-1 basis-0 flex-col">
-              <span class="truncate text-ui-sm text-et-surface-muted">{{ LABELS.title }}</span>
+              <span class="truncate text-ui-sm text-et-surface-text-muted">{{ LABELS.title }}</span>
               <h2 class="m-0 truncate text-ui-lg font-ui-strong">{{ loading() ? '' : (current()?.part ?? '') }}</h2>
             </div>
             <button [disabled]="loading()" (click)="reload.emit()" et-button type="button" variant="outline" size="sm">
@@ -176,26 +180,30 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
               {{ LABELS.approve }}
             </button>
             @if (!loading() && current(); as page) {
-              <p class="m-0 w-full text-ui-sm whitespace-pre-line text-et-surface-muted">{{ page.approvalLabel }}</p>
+              <p class="m-0 w-full text-ui-sm whitespace-pre-line text-et-surface-text-muted">
+                {{ page.approvalLabel }}
+              </p>
             }
           </header>
           @if (!loading() && current(); as page) {
             <div class="flex min-h-0 flex-col gap-space-5 overflow-auto p-space-4">
               @for (section of sectionsOf(page); track section.title) {
                 <section class="flex flex-col gap-space-2">
-                  <h3 class="m-0 text-ui-sm font-ui-strong text-et-surface">
-                    {{ section.title }} <span class="font-ui text-et-surface-muted">{{ section.rows.length }}</span>
+                  <h3 class="m-0 text-ui-sm font-ui-strong text-et-surface-text">
+                    {{ section.title }}
+                    <span class="font-ui text-et-surface-text-muted">{{ section.rows.length }}</span>
                   </h3>
                   @if (section.rows.length) {
                     <ol class="m-0 flex list-none flex-col gap-space-2 p-0">
                       @for (row of section.rows; track row.number) {
                         <li [etProvideColor]="themeOf(row.tone)" class="flex gap-space-2 text-ui-sm">
-                          <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-on-theme">{{
-                            row.number
-                          }}</span>
+                          <span
+                            class="h-fit shrink-0 rounded-full bg-et-tone-fill px-1.5 font-code text-et-tone-on-fill"
+                            >{{ row.number }}</span
+                          >
                           <span class="flex min-w-0 flex-col">
-                            <span class="text-et-surface">{{ row.name }}</span>
-                            <span [class]="row.tone === 'ok' ? 'text-et-surface-muted' : 'text-et-theme'">{{
+                            <span class="text-et-surface-text">{{ row.name }}</span>
+                            <span [class]="row.tone === 'ok' ? 'text-et-surface-text-muted' : 'text-et-tone-fill'">{{
                               row.detail
                             }}</span>
                           </span>
@@ -203,7 +211,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
                       }
                     </ol>
                   } @else {
-                    <p class="m-0 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
+                    <p class="m-0 text-ui-sm text-et-surface-text-muted">{{ LABELS.none }}</p>
                   }
                 </section>
               }

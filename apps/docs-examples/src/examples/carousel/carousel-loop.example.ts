@@ -27,9 +27,9 @@ import { CAROUSEL_IMPORTS } from '@ethlete/components';
       justify-content: center;
       block-size: 100%;
       min-block-size: 160px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 12px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
   `,
 })

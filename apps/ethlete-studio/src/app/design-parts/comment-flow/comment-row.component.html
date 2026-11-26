@@ -1,4 +1,4 @@
-@let strong = thread().resolved ? 'text-et-surface-muted' : 'text-et-surface';
+@let strong = thread().resolved ? 'text-et-surface-text-muted' : 'text-et-surface-text';
 <div
   [class]="selected() ? SELECTED_CLASS : ''"
   [attr.aria-pressed]="selected()"
@@ -11,7 +11,7 @@
   tabindex="0"
 >
   <span
-    class="flex size-5 flex-none items-center justify-center rounded-full bg-et-surface-bg font-ui-strong text-(length:--text-xs) text-et-surface"
+    class="flex size-5 flex-none items-center justify-center rounded-full bg-et-surface-background font-ui-strong text-(length:--text-xs) text-et-surface-text"
     etAutoSurface
   >
     @if (thread().agent; as agent) {
@@ -23,20 +23,20 @@
   <div class="flex min-w-0 flex-1 flex-col gap-0.5">
     <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
       <span [class]="strong" class="font-ui-medium">{{ thread().author }}</span>
-      <span class="flex-1 text-et-surface-muted">{{ thread().when }}</span>
+      <span class="flex-1 text-et-surface-text-muted">{{ thread().when }}</span>
       @if (thread().unread) {
-        <span [etTooltip]="LABELS.unread" class="size-1.5 rounded-full bg-et-theme"></span>
+        <span [etTooltip]="LABELS.unread" class="size-1.5 rounded-full bg-et-tone-fill"></span>
       }
     </div>
     <p [class]="strong" class="m-0 line-clamp-2 text-ui-sm">{{ thread().text }}</p>
     <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
       <span
-        [class]="selected() ? 'text-et-theme-ink' : 'text-et-surface-muted'"
+        [class]="selected() ? 'text-et-tone-text' : 'text-et-surface-text-muted'"
         class="min-w-0 flex-1 overflow-hidden font-code text-ellipsis"
         >{{ thread().part }} › {{ thread().state }}</span
       >
       @if (thread().resolved) {
-        <span class="flex items-center gap-0.5 text-et-surface-muted">
+        <span class="flex items-center gap-0.5 text-et-surface-text-muted">
           <svg
             class="flex-none"
             width="14"
@@ -53,7 +53,7 @@
           </svg>
         </span>
       } @else if (thread().replies > 0) {
-        <span class="flex items-center gap-0.5 text-et-surface-muted">
+        <span class="flex items-center gap-0.5 text-et-surface-text-muted">
           <svg
             class="flex-none"
             width="14"

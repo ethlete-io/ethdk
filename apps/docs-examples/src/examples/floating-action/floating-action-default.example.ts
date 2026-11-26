@@ -156,7 +156,7 @@ export class FloatingActionFiltersPanelComponent {
       align-items: center;
       gap: 0.8rem;
       padding: 1rem 1.4rem;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 1rem;
       font-size: 1.4rem;
     }
@@ -166,7 +166,7 @@ export class FloatingActionFiltersPanelComponent {
     }
 
     .app-fa-muted {
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
     }
 
     .app-fa-toolbar {
@@ -200,7 +200,7 @@ export class FloatingActionFiltersPanelComponent {
       flex-direction: column;
       gap: 0.2rem;
       padding: 1.6rem 1.4rem;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 1rem;
       font-size: 1.4rem;
     }
@@ -209,9 +209,9 @@ export class FloatingActionFiltersPanelComponent {
       box-sizing: border-box;
       min-block-size: 100vh;
       padding: 2.4rem 1.4rem;
-      border: 1px dashed var(--et-surface-border-solid);
+      border: 1px dashed var(--et-surface-border);
       border-radius: 1rem;
-      color: var(--et-surface-color-muted-solid);
+      color: var(--et-surface-text-muted);
       font-size: 1.4rem;
       text-align: center;
     }

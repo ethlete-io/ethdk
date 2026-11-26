@@ -212,8 +212,8 @@ export class ThemingLevelsOverlayButtonComponent {
       flex-direction: column;
       gap: 12px;
       padding: 12px;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
     }
 
     .app-theming-switches {
@@ -228,10 +228,10 @@ export class ThemingLevelsOverlayButtonComponent {
       align-items: start;
       gap: 10px;
       padding: 10px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 12px;
-      background: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
+      background: var(--et-surface-background);
+      color: var(--et-surface-text);
     }
 
     app-theming-level > :is(header, dl, div, app-theming-level) {
@@ -260,7 +260,7 @@ export class ThemingLevelsOverlayButtonComponent {
       font-size: 1.2rem;
 
       dt {
-        color: var(--et-surface-color-muted-solid);
+        color: var(--et-surface-text-muted);
       }
 
       dd {

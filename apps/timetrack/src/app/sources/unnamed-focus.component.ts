@@ -93,7 +93,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     <section class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3">
       <span class="text-base font-medium">Focus that named no checkout</span>
 
-      <p class="text-small text-et-surface-muted">
+      <p class="text-small text-et-surface-text-muted">
         Every minute here is on the Today screen already, folded into the Other applications line. An application that
         names a checkout at another time lost this stretch. One that never names a checkout either holds no work context
         at all, or holds one this app cannot read yet. Say that one does hold work and it takes a lane of its own on the
@@ -104,7 +104,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       @if (failure()) {
         <et-banner [description]="failure()!" type="error" heading="The measurement failed" />
       } @else if (!loaded()) {
-        <p class="text-small text-et-surface-subtle">Reading the last {{ SPAN_DAYS }} days.</p>
+        <p class="text-small text-et-surface-text-subtle">Reading the last {{ SPAN_DAYS }} days.</p>
       } @else {
         <div class="flex flex-wrap gap-2">
           @for (choice of SPANS; track choice) {
@@ -121,9 +121,9 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
           }
         </div>
 
-        <p class="text-small text-et-surface" data-unnamed-total>{{ total() }}</p>
+        <p class="text-small text-et-surface-text" data-unnamed-total>{{ total() }}</p>
 
-        <p class="text-small text-et-surface-subtle">
+        <p class="text-small text-et-surface-text-subtle">
           <span data-unnamed-gap>{{ gap() }}</span
           >&ngsp;
           <span data-unnamed-unknown>{{ unknown() }}</span>
@@ -136,13 +136,13 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
                 <span class="flex min-w-0 flex-col">
                   <span [title]="row.app" class="truncate font-medium">{{ row.app }}</span>
                   @if (row.title) {
-                    <span [title]="row.title" class="truncate text-et-surface-muted">{{ row.title }}</span>
+                    <span [title]="row.title" class="truncate text-et-surface-text-muted">{{ row.title }}</span>
                   }
                 </span>
                 <span class="text-right tabular-nums">{{ row.duration }}</span>
 
                 <span class="flex min-w-0 flex-wrap items-baseline gap-2">
-                  <span class="text-et-surface-muted">{{ row.why }}</span>
+                  <span class="text-et-surface-text-muted">{{ row.why }}</span>
                   <et-badge [color]="row.color" variant="outline" size="sm">{{ row.standing }}</et-badge>
                 </span>
 
@@ -180,19 +180,19 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
                 <ul class="ml-4 flex flex-col gap-1 border-l border-et-surface-border pl-3">
                   @for (title of row.titles; track title.title) {
                     <li class="flex gap-3">
-                      <span class="w-14 shrink-0 tabular-nums text-et-surface-subtle">{{ title.duration }}</span>
+                      <span class="w-14 shrink-0 tabular-nums text-et-surface-text-subtle">{{ title.duration }}</span>
                       <span [attr.data-title]="title.title" class="grow break-all">{{ title.title }}</span>
                     </li>
                   }
 
                   @if (row.remainder) {
-                    <li class="text-et-surface-subtle" data-title-remainder>{{ row.remainder }}</li>
+                    <li class="text-et-surface-text-subtle" data-title-remainder>{{ row.remainder }}</li>
                   }
                 </ul>
               }
             </li>
           } @empty {
-            <li class="text-small text-et-surface-subtle">{{ emptyNote() }}</li>
+            <li class="text-small text-et-surface-text-subtle">{{ emptyNote() }}</li>
           }
         </ul>
       }

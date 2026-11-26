@@ -114,7 +114,7 @@ test('filled icon buttons have a round shape and inset themed edge', async ({ pa
   expect(styles.width).toBe(styles.height);
   expect(parseFloat(styles.radius)).toBeGreaterThanOrEqual(parseFloat(styles.width) / 2);
   const shadow = () => button.evaluate((el) => getComputedStyle(el).boxShadow);
-  const ink = await colorIn(button, 'var(--et-theme-color-ink-solid)');
+  const ink = await colorIn(button, 'var(--et-tone-text)');
 
   expect(styles.shadow).toContain('inset');
   await expect.poll(shadow).toContain(ink);
@@ -272,8 +272,8 @@ test.describe('button / focus ring press state', () => {
   });
 
   for (const [scheme, token] of [
-    ['light', 'var(--et-theme-color-ink-solid)'],
-    ['dark', 'var(--et-theme-color-primary-solid)'],
+    ['light', 'var(--et-tone-text)'],
+    ['dark', 'var(--et-tone-fill)'],
   ] as const) {
     test(`the focus ring is drawn in ${token} in the ${scheme} scheme`, async ({ page }) => {
       const root = await openStory(page, STORY_ID, { args: { color: 'danger' } });
@@ -283,8 +283,8 @@ test.describe('button / focus ring press state', () => {
       await pressKey(page, 'Tab');
       await expectFocusVisible(button);
 
-      const ink = await colorIn(button, 'var(--et-theme-color-ink-solid)');
-      const primary = await colorIn(button, 'var(--et-theme-color-primary-solid)');
+      const ink = await colorIn(button, 'var(--et-tone-text)');
+      const primary = await colorIn(button, 'var(--et-tone-fill)');
 
       expect(ink).not.toBe(primary);
       const expected = await colorIn(button, token);

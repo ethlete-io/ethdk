@@ -30,26 +30,26 @@ import {
             <et-accordion [attr.data-stream]="stream.key">
               <ng-template etAccordionLabel>
                 <span class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  <span class="text-mono text-et-surface-muted" data-span>{{ spanOf(stream) }}</span>
+                  <span class="text-mono text-et-surface-text-muted" data-span>{{ spanOf(stream) }}</span>
                   <span [title]="stream.repoPath ?? ''" class="text-base" data-label>{{ LABEL_OF(stream) }}</span>
                   <span class="text-small" data-engaged>{{ engagedOf(stream) }} engaged</span>
                   @if (UNATTENDED_OF(stream.unattendedMs); as unattended) {
-                    <span class="text-small text-et-surface-subtle" data-unattended>{{ unattended }}</span>
+                    <span class="text-small text-et-surface-text-subtle" data-unattended>{{ unattended }}</span>
                   }
                   @if (REBUILT_OF(stream.rebuiltMs); as rebuilt) {
-                    <span class="text-small text-et-brand-ink" data-rebuilt>{{ rebuilt }}</span>
+                    <span class="text-small text-et-tone-brand-text" data-rebuilt>{{ rebuilt }}</span>
                   }
                   @if (SESSIONS_OF(stream); as sessions) {
-                    <span class="text-small text-et-surface-muted" data-agent-sessions>{{ sessions }}</span>
+                    <span class="text-small text-et-surface-text-muted" data-agent-sessions>{{ sessions }}</span>
                   }
                   @if (SPEND_OF(stream.spend); as spend) {
-                    <span class="text-small text-et-surface-muted" data-spend>{{ spend }}</span>
+                    <span class="text-small text-et-surface-text-muted" data-spend>{{ spend }}</span>
                   }
                   @if (PEER_SPEND_OF(stream.spend); as peers) {
-                    <span class="text-small text-et-surface-muted" data-spend-peers>{{ peers }}</span>
+                    <span class="text-small text-et-surface-text-muted" data-spend-peers>{{ peers }}</span>
                   }
                   @if (stream.neverFocused) {
-                    <span class="text-small text-et-surface-subtle" data-never-focused>
+                    <span class="text-small text-et-surface-text-subtle" data-never-focused>
                       agent only, never focused
                     </span>
                   }
@@ -66,16 +66,16 @@ import {
 
               <ul class="flex list-none flex-col gap-0.5">
                 @for (entry of stream.evidence; track entry.kind + entry.detail) {
-                  <li [title]="entry.detail" class="flex gap-2 text-small text-et-surface-muted">
+                  <li [title]="entry.detail" class="flex gap-2 text-small text-et-surface-text-muted">
                     <span class="text-mono shrink-0">{{ CLOCK_OF(entry.at) }}</span>
                     <span class="min-w-0 truncate">{{ entry.detail }}</span>
                   </li>
                 } @empty {
-                  <li class="text-small text-et-surface-subtle">No evidence was recorded for this stream.</li>
+                  <li class="text-small text-et-surface-text-subtle">No evidence was recorded for this stream.</li>
                 }
 
                 @if (stream.evidenceOmitted) {
-                  <li class="text-small text-et-surface-subtle" data-evidence-omitted>
+                  <li class="text-small text-et-surface-text-subtle" data-evidence-omitted>
                     and {{ stream.evidenceOmitted }} more, not listed
                   </li>
                 }

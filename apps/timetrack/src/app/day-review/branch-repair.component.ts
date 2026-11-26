@@ -52,9 +52,9 @@ import { BranchRepairOutcome, BranchRepairPlan } from '@ethlete/timetrack';
               <li class="flex flex-col gap-1">
                 <span class="text-small">{{ $index + 1 }}. {{ step.describe }}</span>
                 @if (step.command) {
-                  <code class="text-mono text-small text-et-surface-muted">{{ step.command }}</code>
+                  <code class="text-mono text-small text-et-surface-text-muted">{{ step.command }}</code>
                 }
-                <span class="text-small text-et-surface-muted">Undo: {{ step.undo }}</span>
+                <span class="text-small text-et-surface-text-muted">Undo: {{ step.undo }}</span>
               </li>
             }
           </ol>
@@ -66,10 +66,10 @@ import { BranchRepairOutcome, BranchRepairPlan } from '@ethlete/timetrack';
               }
               Run these steps
             </button>
-            <span class="text-small text-et-surface-muted">Nothing runs until you press this.</span>
+            <span class="text-small text-et-surface-text-muted">Nothing runs until you press this.</span>
           </div>
         } @else if (!plan().refusals.length) {
-          <p class="text-small text-et-surface-muted">
+          <p class="text-small text-et-surface-text-muted">
             {{ plan().issueKey }} is already named everywhere it needs to be.
           </p>
         }

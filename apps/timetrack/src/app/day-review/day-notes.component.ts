@@ -62,8 +62,8 @@ const NO_DIRECTORY =
         <ul class="flex flex-col gap-1">
           @for (statement of statements(); track statement.id) {
             <li [attr.data-statement]="statement.id" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-small">
-              <span class="text-mono text-et-surface-muted">{{ STATEMENT_SPAN_OF(statement) }}</span>
-              <span class="text-et-surface-subtle">{{ STATEMENT_LABEL_OF(statement) }}</span>
+              <span class="text-mono text-et-surface-text-muted">{{ STATEMENT_SPAN_OF(statement) }}</span>
+              <span class="text-et-surface-text-subtle">{{ STATEMENT_LABEL_OF(statement) }}</span>
               <button
                 (click)="store.takeBackStatement(statement.id)"
                 et-button
@@ -77,11 +77,11 @@ const NO_DIRECTORY =
           }
         </ul>
 
-        <span class="text-small text-et-surface-subtle" data-statements-measured>
+        <span class="text-small text-et-surface-text-subtle" data-statements-measured>
           The collectors measured {{ measuredPresence() }} present. This day counts {{ statedPresence() }}.
         </span>
 
-        <span class="text-small text-et-surface-subtle">
+        <span class="text-small text-et-surface-text-subtle">
           The day's breaks and its present total follow what you said here, whatever the collectors measured in those
           stretches. Take a statement back and the stretch reads as it was measured again.
         </span>
@@ -92,10 +92,10 @@ const NO_DIRECTORY =
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <span class="text-base" data-rebuilt-label>Part of this day was rebuilt</span>
-          <span class="text-small text-et-surface-muted" data-rebuilt-note>{{ rebuilt }}</span>
+          <span class="text-small text-et-surface-text-muted" data-rebuilt-note>{{ rebuilt }}</span>
         </div>
 
-        <span class="text-small text-et-surface-subtle">
+        <span class="text-small text-et-surface-text-subtle">
           No window and no idle transition watched those minutes. They come from the prompts you typed and the commits
           you made, and an agent's turns hold a stretch open between two of them.
         </span>
@@ -109,19 +109,19 @@ const NO_DIRECTORY =
         <ul class="flex list-none flex-col gap-0.5">
           @for (call of calls(); track call.appId + call.from.getTime()) {
             <li [attr.data-call]="call.appId" class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small">
-              <span class="text-mono shrink-0 text-et-surface-muted">{{ CALL_SPAN_OF(call) }}</span>
+              <span class="text-mono shrink-0 text-et-surface-text-muted">{{ CALL_SPAN_OF(call) }}</span>
               <span [title]="call.appId" class="min-w-0 truncate">{{ CALL_LABEL_OF(call) }}</span>
-              <span class="text-et-surface-muted">{{ CALL_LENGTH_OF(call) }}</span>
-              <span class="text-et-surface-subtle" data-call-attended>{{ CALL_ATTENDED_OF(call) }} in front</span>
+              <span class="text-et-surface-text-muted">{{ CALL_LENGTH_OF(call) }}</span>
+              <span class="text-et-surface-text-subtle" data-call-attended>{{ CALL_ATTENDED_OF(call) }} in front</span>
 
               @if (!call.countsAsWork) {
-                <span class="text-et-surface-subtle" data-call-unclassified>not counted</span>
+                <span class="text-et-surface-text-subtle" data-call-unclassified>not counted</span>
               }
             </li>
           }
         </ul>
 
-        <span class="text-small text-et-surface-subtle">
+        <span class="text-small text-et-surface-text-subtle">
           A call is presence: an hour spent listening leaves no keystroke, so nothing else sees it. Whether it was work
           is your call, and a call no rule names is not counted unless it overlaps a meeting you accepted. Write the
           rule in Settings. A call you never brought to the front is read as a voice room left open, and is not counted
@@ -140,7 +140,7 @@ const NO_DIRECTORY =
         <ul class="flex list-none flex-col gap-1">
           @for (offer of unobserved(); track offer.id) {
             <li [attr.data-unobserved-occurrence]="offer.id" class="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span class="shrink-0 text-mono text-small text-et-surface-muted">{{ offer.clock }}</span>
+              <span class="shrink-0 text-mono text-small text-et-surface-text-muted">{{ offer.clock }}</span>
               <span [title]="offer.title" class="min-w-40 grow truncate text-small">{{ offer.title }}</span>
 
               @if (offer.issueKey) {
@@ -148,13 +148,13 @@ const NO_DIRECTORY =
                   Add {{ offer.issueKey }}
                 </button>
               } @else {
-                <span class="text-small text-et-surface-subtle" data-unobserved-unnamed>names no issue</span>
+                <span class="text-small text-et-surface-text-subtle" data-unobserved-unnamed>names no issue</span>
               }
             </li>
           }
         </ul>
 
-        <span class="text-small text-et-surface-subtle">
+        <span class="text-small text-et-surface-text-subtle">
           No call was heard over these, so the day proposes no row for them. An invitation is an intention, and a
           meeting held in a room or on a telephone leaves no evidence at all. Add the one that happened. Leave the one
           that did not. A meeting the calendar names no issue for takes its time from the add-entry panel instead.
@@ -166,10 +166,10 @@ const NO_DIRECTORY =
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <span class="text-base" data-ambiguous-label>Names that match more than one checkout</span>
-          <span class="text-mono text-small text-et-surface-muted" data-ambiguous>{{ names }}</span>
+          <span class="text-mono text-small text-et-surface-text-muted" data-ambiguous>{{ names }}</span>
         </div>
 
-        <span class="text-small text-et-surface-subtle">
+        <span class="text-small text-et-surface-text-subtle">
           A window named these, and each name has more than one checkout. Their time is in Other applications.
         </span>
       </div>
@@ -179,10 +179,10 @@ const NO_DIRECTORY =
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <span class="text-base" data-unnamed-label>No checkout named this window time</span>
-          <span class="text-small text-et-surface-muted" data-unnamed-today>{{ read.duration }}</span>
+          <span class="text-small text-et-surface-text-muted" data-unnamed-today>{{ read.duration }}</span>
         </div>
 
-        <span class="text-small text-et-surface-subtle">{{ read.why }}</span>
+        <span class="text-small text-et-surface-text-subtle">{{ read.why }}</span>
       </div>
     }
 
@@ -190,17 +190,17 @@ const NO_DIRECTORY =
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <span class="text-base" data-cost-label>What the agents cost</span>
-          <span class="text-small text-et-surface-muted" data-cost>{{ cost.total }}</span>
+          <span class="text-small text-et-surface-text-muted" data-cost>{{ cost.total }}</span>
         </div>
 
         @if (cost.unattributed) {
           <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <span class="text-small" data-unattributed-cost-label>Of that, no checkout carries</span>
-            <span class="text-small text-et-surface-muted" data-unattributed-cost>{{ cost.unattributed }}</span>
+            <span class="text-small text-et-surface-text-muted" data-unattributed-cost>{{ cost.unattributed }}</span>
           </div>
         }
 
-        <span class="text-small text-et-surface-subtle">
+        <span class="text-small text-et-surface-text-subtle">
           Every turn of the day at the price its model had when it ran, the turns no checkout carries included. A model
           with no price in Settings leaves the day without a cost.
         </span>
@@ -211,10 +211,10 @@ const NO_DIRECTORY =
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <span class="text-base" data-unattributed-label>No checkout for this spend</span>
-          <span class="text-small text-et-surface-muted" data-unattributed>{{ spend }}</span>
+          <span class="text-small text-et-surface-text-muted" data-unattributed>{{ spend }}</span>
         </div>
 
-        <span class="text-small text-et-surface-subtle">
+        <span class="text-small text-et-surface-text-subtle">
           These turns name no working directory, so no line can carry them.
         </span>
       </div>
@@ -224,10 +224,10 @@ const NO_DIRECTORY =
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <span class="text-base" data-own-spend-label>What this app spent for you</span>
-          <span class="text-small text-et-surface-muted" data-own-spend>{{ spend }}</span>
+          <span class="text-small text-et-surface-text-muted" data-own-spend>{{ spend }}</span>
         </div>
 
-        <span class="text-small text-et-surface-subtle">
+        <span class="text-small text-et-surface-text-subtle">
           You asked it to read the day or to word a ticket. That is the app's own work, not a checkout's, so no line
           carries it and it adds no time to the day.
         </span>

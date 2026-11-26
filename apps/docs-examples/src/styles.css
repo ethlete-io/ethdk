@@ -21,8 +21,8 @@ body {
   box-sizing: border-box;
   min-block-size: 100vh;
   padding: 2.4rem;
-  background-color: var(--et-surface-background-solid);
-  color: var(--et-surface-color-solid);
+  background-color: var(--et-surface-background);
+  color: var(--et-surface-text);
 }
 
 .app-examples-root > * {

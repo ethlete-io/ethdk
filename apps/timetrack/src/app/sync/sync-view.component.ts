@@ -92,7 +92,9 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
             >
               ←
             </button>
-            <p class="text-small text-et-surface-muted">{{ dayLabel() }} — plan this day, then write it to Tempo.</p>
+            <p class="text-small text-et-surface-text-muted">
+              {{ dayLabel() }} — plan this day, then write it to Tempo.
+            </p>
             <button
               [disabled]="store.isWriting()"
               (click)="store.shiftDay(1)"
@@ -133,12 +135,12 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
       }
 
       @if (store.isLoading()) {
-        <div class="flex items-center gap-3 text-et-surface-muted">
+        <div class="flex items-center gap-3 text-et-surface-text-muted">
           <et-spinner />
           <span class="text-base">Asking Jira and Tempo…</span>
         </div>
       } @else if (store.plan(); as plan) {
-        <p class="text-small text-et-surface-muted">
+        <p class="text-small text-et-surface-text-muted">
           As {{ store.account()?.displayName }} — {{ entries().length }} write(s), {{ plan.unchanged.length }} already
           in Tempo, {{ plan.skipped.length }} still awaiting review.
         </p>
@@ -149,10 +151,10 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
               <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
                 <et-badge [color]="entry.color" size="sm">{{ entry.kind }}</et-badge>
                 <span class="w-24 shrink-0 text-small">{{ entry.issueKey }}</span>
-                <span class="w-28 shrink-0 text-mono text-small text-et-surface-muted">{{ entry.clock }}</span>
+                <span class="w-28 shrink-0 text-mono text-small text-et-surface-text-muted">{{ entry.clock }}</span>
                 <span class="w-14 shrink-0 text-small">{{ entry.duration }}</span>
                 <span class="min-w-50 grow text-small">{{ entry.description }}</span>
-                <span class="text-small text-et-surface-subtle">{{ entry.reason }}</span>
+                <span class="text-small text-et-surface-text-subtle">{{ entry.reason }}</span>
               </div>
             }
           </div>
@@ -171,7 +173,7 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
           <h3 class="text-large">Already in Tempo</h3>
 
           @if (foreign().length) {
-            <p class="text-small text-et-surface-muted">
+            <p class="text-small text-et-surface-text-muted">
               Written outside this app. It is never edited or deleted here.
             </p>
 
@@ -182,13 +184,13 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
             @for (worklog of foreign(); track worklog.id) {
               <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
                 <span class="w-24 shrink-0 text-small">{{ worklog.issueKey }}</span>
-                <span class="w-28 shrink-0 text-mono text-small text-et-surface-muted">{{ worklog.clock }}</span>
+                <span class="w-28 shrink-0 text-mono text-small text-et-surface-text-muted">{{ worklog.clock }}</span>
                 <span class="w-14 shrink-0 text-small">{{ worklog.duration }}</span>
                 <span class="min-w-50 grow text-small">{{ worklog.description }}</span>
               </div>
             }
           } @else {
-            <p class="text-small text-et-surface-muted">Nothing on this day was logged outside this app.</p>
+            <p class="text-small text-et-surface-text-muted">Nothing on this day was logged outside this app.</p>
           }
         </div>
       } @else if (connected()) {
@@ -199,7 +201,7 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
       }
 
       @if (store.isWriting()) {
-        <div class="flex items-center gap-3 text-et-surface-muted">
+        <div class="flex items-center gap-3 text-et-surface-text-muted">
           <et-spinner />
           <span class="text-base">Writing to Tempo…</span>
         </div>
@@ -229,9 +231,9 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
             <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
               <et-badge [color]="result.color" size="sm">{{ result.status }}</et-badge>
               <span class="w-24 shrink-0 text-small">{{ result.issueKey }}</span>
-              <span class="w-14 shrink-0 text-small text-et-surface-subtle">{{ result.kind }}</span>
+              <span class="w-14 shrink-0 text-small text-et-surface-text-subtle">{{ result.kind }}</span>
               <span class="min-w-50 grow text-small">{{ result.description }}</span>
-              <span class="text-small text-et-surface-subtle">{{ result.detail }}</span>
+              <span class="text-small text-et-surface-text-subtle">{{ result.detail }}</span>
             </div>
           }
         </div>

@@ -15,7 +15,7 @@ import { Component, input, output, TemplateRef, ViewEncapsulation } from '@angul
     </button>
     <span
       [hidden]="!open()"
-      class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-muted"
+      class="flex min-w-0 items-center gap-space-2 text-ui-sm whitespace-nowrap text-et-surface-text-muted"
       data-sk-hold-reason
     >
       <ng-container [ngTemplateOutlet]="reason()" />

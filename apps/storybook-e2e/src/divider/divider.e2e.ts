@@ -182,7 +182,7 @@ test.describe('divider / structure', () => {
     const root = await openStory(page, DEFAULT_STORY_ID);
     const divider = root.locator(DIVIDER).first();
 
-    const surfaceBorder = await resolveTokenColor(divider, '--et-surface-border-solid');
+    const surfaceBorder = await resolveTokenColor(divider, '--et-surface-border');
 
     expect(surfaceBorder).not.toBe(TRANSPARENT);
     expect((await readBox(divider)).ruleColor).toBe(surfaceBorder);

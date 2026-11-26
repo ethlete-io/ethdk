@@ -37,7 +37,7 @@ function readChrome(badge: Locator): Promise<BadgeChrome> {
   return badge.evaluate((el) => {
     const style = getComputedStyle(el);
     const probe = document.createElement('span');
-    probe.style.color = 'var(--et-theme-color-ink-solid)';
+    probe.style.color = 'var(--et-tone-text)';
     el.append(probe);
     const ink = getComputedStyle(probe).color;
     probe.remove();
@@ -47,7 +47,7 @@ function readChrome(badge: Locator): Promise<BadgeChrome> {
       color: style.color,
       borderColor: style.borderColor,
       borderWidth: style.borderWidth,
-      primaryOpacity: style.getPropertyValue('--et-theme-color-primary-opacity').trim(),
+      primaryOpacity: style.getPropertyValue('--_et-tone-fill-opacity').trim(),
       ink,
     };
   });

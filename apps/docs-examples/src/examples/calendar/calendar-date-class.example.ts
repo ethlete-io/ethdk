@@ -24,11 +24,11 @@ const dateClass: CalendarDateClassFn = (date, view) => {
   imports: [CALENDAR_IMPORTS],
   styles: `
     .app-busy .et-calendar-cell-content {
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--et-theme-color-primary-solid) 60%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--et-tone-fill) 60%, transparent);
     }
 
     .app-holiday .et-calendar-cell-content {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
+      background: color-mix(in srgb, var(--et-tone-fill) 18%, transparent);
       font-weight: 600;
     }
   `,

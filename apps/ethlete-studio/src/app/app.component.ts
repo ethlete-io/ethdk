@@ -4,7 +4,7 @@ import { RouterOutlet } from '@angular/router';
 @Component({
   selector: 'ethlete-root',
   template: `
-    <div class="flex min-w-0 grow flex-col bg-(--et-surface-background-solid)">
+    <div class="flex min-w-0 grow flex-col bg-(--et-surface-background)">
       <router-outlet />
     </div>
   `,

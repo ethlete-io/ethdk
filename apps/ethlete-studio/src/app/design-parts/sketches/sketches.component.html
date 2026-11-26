@@ -1,7 +1,7 @@
 <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="Sketches">
   <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
     @if (empty()) {
-      <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
+      <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-text-muted">{{ LABELS.none }}</p>
     } @else {
       <ethlete-part-tree
         [layers]="tree().layers"
@@ -25,7 +25,7 @@
       data-sketches-empty
     >
       <svg
-        class="mb-space-2 size-5 text-et-theme-ink"
+        class="mb-space-2 size-5 text-et-tone-text"
         width="14"
         height="14"
         viewBox="0 0 16 16"
@@ -38,8 +38,8 @@
       >
         <path d="m3.5 8.5 3 3 6-7" />
       </svg>
-      <p class="m-0 text-(length:--text-sm) text-et-surface">{{ LABELS.emptyTitle }}</p>
-      <p class="m-0 text-(length:--text-xs) text-et-surface-muted">{{ LABELS.emptyText }}</p>
+      <p class="m-0 text-(length:--text-sm) text-et-surface-text">{{ LABELS.emptyTitle }}</p>
+      <p class="m-0 text-(length:--text-xs) text-et-surface-text-muted">{{ LABELS.emptyText }}</p>
     </div>
   }
   <div
@@ -53,7 +53,7 @@
       @if (portNote(); as note) {
         <p
           [attr.title]="note"
-          class="m-0 shrink-0 truncate pt-space-3 text-ui-sm text-et-surface-muted"
+          class="m-0 shrink-0 truncate pt-space-3 text-ui-sm text-et-surface-text-muted"
           data-sk-round-note
         >
           {{ note }}
@@ -95,7 +95,7 @@
                     [style.grid-column]="offset + 1"
                     [style.padding-left.px]="blockIndex > 0 ? COLUMN_GAP : null"
                     [attr.data-sk-block]="blockIndex"
-                    [class]="headHidden() ? 'text-transparent' : 'text-et-surface'"
+                    [class]="headHidden() ? 'text-transparent' : 'text-et-surface-text'"
                     class="flex flex-col justify-center gap-space-1 self-stretch pr-space-3 leading-[1.35]"
                     data-sk-gutter
                   >
@@ -106,7 +106,7 @@
                     @if (group && !group.whole) {
                       @let whole = !croppedOf(state);
                       @for (reason of group.reasons; track $index; let last = $last) {
-                        <span [class.text-et-surface-muted]="!headHidden()" data-sk-crop-reason
+                        <span [class.text-et-surface-text-muted]="!headHidden()" data-sk-crop-reason
                           >{{ reasonTextOf(reason)
                           }}{{ whole || !last ? '' : LABELS.magnified(magnifyTextOf(group)) }}</span
                         >
@@ -116,18 +116,18 @@
                         <span
                           [style.width.px]="noteSize() * 9"
                           [style.aspect-ratio]="locator.ratio"
-                          class="relative block rounded-control-sm bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                          class="relative block rounded-control-sm bg-et-surface-background shadow-[0_0_0_1px_var(--et-surface-border)]"
                           data-sk-crop-locator
                         >
                           <span
-                            class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border-solid)]"
+                            class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border)]"
                           ></span>
                           <span
                             [style.left]="locator.left"
                             [style.top]="locator.top"
                             [style.width]="locator.width"
                             [style.height]="locator.height"
-                            class="absolute rounded-[2px] border-2 border-et-theme"
+                            class="absolute rounded-[2px] border-2 border-et-tone-fill"
                           ></span>
                         </span>
                         <button
@@ -152,13 +152,13 @@
                     [attr.data-selected]="row.key === selected() ? '' : null"
                     [style.grid-column]="offset + column + 2"
                     [style.grid-row]="matrixTop()"
-                    class="relative min-w-0 rounded-control-md p-space-2 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
+                    class="relative min-w-0 rounded-control-md p-space-2 data-selected:shadow-[0_0_0_2px_var(--et-tone-fill)]"
                   >
                     @if (blockIndex === 0) {
                       <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
                     } @else {
                       <span
-                        class="inline-flex max-w-full items-center truncate rounded-full px-1 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                        class="inline-flex max-w-full items-center truncate rounded-full px-1 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
                         data-sk-head-tag
                         >{{ SHORT_LABEL_OF(row.label ?? (row.key === CURRENT ? LABELS.current : row.key)) }}</span
                       >
@@ -193,7 +193,7 @@
                         <div
                           [style.width.px]="row.width * scale()"
                           [style.font-size.px]="labelFont()"
-                          class="row-start-2 box-border flex items-center justify-center self-start rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center font-code leading-[1.35] text-et-surface-muted"
+                          class="row-start-2 box-border flex items-center justify-center self-start rounded-control-sm border border-dashed border-(--et-surface-border) p-space-2 text-center font-code leading-[1.35] text-et-surface-text-muted"
                         >
                           {{ matrixMissingLabelOf(row) }}
                         </div>
@@ -207,7 +207,7 @@
                   @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
                     <div
                       [style.grid-column]="blockIndex * matrixStride() + sameColumn() + ' / span ' + sameRows().length"
-                      class="row-start-1 self-end rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                      class="row-start-1 self-end rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border)]"
                       data-sk-same
                       data-open
                     >
@@ -219,7 +219,7 @@
                     #fold
                     [style.grid-column]="matrixFoldColumn()"
                     [style.grid-row]="'1 / span ' + (matrixTallest() * 2 + 1)"
-                    class="flex w-36 flex-col gap-space-2 rounded-control-md p-space-1 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                    class="flex w-36 flex-col gap-space-2 rounded-control-md p-space-1 shadow-[0_0_0_1px_var(--et-surface-border)]"
                     data-sk-same
                   >
                     <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
@@ -265,7 +265,7 @@
                       <span
                         [style.grid-row]="3 + index * 2 + ' / span 2'"
                         [style.font-size.px]="labelFont()"
-                        class="self-center pr-space-1 font-code leading-[1.35] whitespace-nowrap text-et-surface"
+                        class="self-center pr-space-1 font-code leading-[1.35] whitespace-nowrap text-et-surface-text"
                         data-sk-line-head
                         >{{ line.base }}</span
                       >
@@ -280,7 +280,7 @@
             @if (sameRows().length > 0) {
               <section
                 [attr.data-open]="sameOpen() ? '' : null"
-                class="rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                class="rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border)]"
                 data-sk-same
               >
                 <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs">
@@ -298,14 +298,14 @@
           @if (foldedStates().size > 0) {
             <section
               [attr.data-sk-pending]="pendingStates().size > 0 ? '' : null"
-              class="overflow-clip rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+              class="overflow-clip rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border)]"
               data-sk-folded
             >
               <span
                 [style.transform]="'translateX(' + canvas.stickyLeft() + 'px)'"
                 class="flex items-center gap-space-3"
               >
-                <span class="text-ui-sm text-et-surface-muted">{{ foldLabel() }}</span>
+                <span class="text-ui-sm text-et-surface-text-muted">{{ foldLabel() }}</span>
                 <ethlete-disclosure
                   [(open)]="statesOpen"
                   [label]="statesOpen() ? LABELS.hideStates : LABELS.showAllStates"
@@ -357,11 +357,9 @@
     </div>
     @if (live()) {
       <div class="pointer-events-none absolute top-space-3 right-space-3 z-3 flex text-ui-sm">
-        <span
-          class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)"
-          data-live-badge
-          >{{ CANVAS_LABELS.live }}</span
-        >
+        <span class="shrink-0 rounded-sm bg-(--et-tone-fill) px-[0.4em] text-(--et-tone-on-fill)" data-live-badge>{{
+          CANVAS_LABELS.live
+        }}</span>
       </div>
     }
   </div>
@@ -381,7 +379,7 @@
     [style.grid-column]="stackedGridRowOf(block) === null ? null : 2"
     [class.grid-rows-subgrid]="!!grid() || aligned"
     [class.row-span-2]="aligned"
-    class="grid grid-cols-[minmax(0,1fr)] rounded-control-md p-space-3 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
+    class="grid grid-cols-[minmax(0,1fr)] rounded-control-md p-space-3 data-selected:shadow-[0_0_0_2px_var(--et-tone-fill)]"
   >
     <div [class.min-w-full]="sideBySide()" [class.w-0]="sideBySide()" class="min-w-0" data-sk-head-row>
       <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
@@ -421,7 +419,7 @@
               <span
                 [style.grid-column]="column + 1"
                 [style.font-size.px]="labelFont()"
-                class="row-start-1 self-end font-code leading-[1.35] text-et-surface-muted"
+                class="row-start-1 self-end font-code leading-[1.35] text-et-surface-text-muted"
                 data-sk-column-head
               >
                 @for (part of headPartsOf(name); track $index) {
@@ -447,7 +445,7 @@
                       [style.grid-row]="gridLineOf(index)"
                       [style.font-size.px]="labelFont()"
                       [attr.data-sk-folded-cell]="state"
-                      class="self-center font-code leading-[1.35] whitespace-nowrap text-et-surface-muted"
+                      class="self-center font-code leading-[1.35] whitespace-nowrap text-et-surface-text-muted"
                       >{{ LABELS.foldedToRest }}</span
                     >
                   } @else {
@@ -460,7 +458,7 @@
                       [attr.data-sk-variant]="row.key"
                       [attr.title]="missingLabelOf(row)"
                       [attr.data-sk-failed-cell]="failures()[row.key] === undefined ? null : ''"
-                      class="box-border self-end rounded-control-sm border border-dashed border-(--et-surface-border-solid)"
+                      class="box-border self-end rounded-control-sm border border-dashed border-(--et-surface-border)"
                       data-sk-missing
                     ></div>
                   }
@@ -486,14 +484,14 @@
                     data-sk-label
                     ><span
                       [style.font-size.px]="labelFont()"
-                      class="min-w-0 font-code leading-[1.35] text-et-surface-muted wrap-anywhere"
+                      class="min-w-0 font-code leading-[1.35] text-et-surface-text-muted wrap-anywhere"
                       >{{ state }}</span
                     ></span
                   >
                   @if (failures()[row.key] === undefined) {
                     <div
                       [style.width.px]="row.width * scale()"
-                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border-solid) p-space-2 text-center text-ui-xs text-et-surface-muted"
+                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border) p-space-2 text-center text-ui-xs text-et-surface-text-muted"
                     >
                       {{ missingLabelOf(row) }}
                     </div>
@@ -501,7 +499,7 @@
                     <div
                       [style.width.px]="row.width * scale()"
                       [etProvideColor]="errorTheme()"
-                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-et-theme p-space-2 text-center text-ui-xs text-et-theme-ink"
+                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-et-tone-fill p-space-2 text-center text-ui-xs text-et-tone-text"
                       data-sk-failed-cell
                     >
                       {{ missingLabelOf(row) }}
@@ -561,7 +559,7 @@
     </span>
   }
   @if (errorInRow() && row.key === selected()) {
-    <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert" data-sk-merge-error>
+    <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-tone-text" role="alert" data-sk-merge-error>
       {{ error() }}
     </p>
   }
@@ -570,14 +568,14 @@
   @let drawn = isDrawn(row);
   @if (headHidden()) {
     <span
-      class="inline-flex w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+      class="inline-flex w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
       data-sk-head-tag
       >{{ row.label ?? (row.key === CURRENT ? LABELS.current : row.key) }}</span
     >
     @if (row.note) {
       <p
         [attr.title]="row.note"
-        class="m-0 mt-space-1 line-clamp-2 text-ui-xs text-et-surface-muted wrap-anywhere"
+        class="m-0 mt-space-1 line-clamp-2 text-ui-xs text-et-surface-text-muted wrap-anywhere"
         data-sk-tag-note
       >
         {{ row.note }}
@@ -587,12 +585,12 @@
   <div [class.hidden]="headHidden()" class="flex min-w-0 flex-col gap-space-2">
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
       @if (row.key === CURRENT) {
-        <span class="text-ui-sm font-ui-medium text-et-surface">{{ row.label ?? LABELS.current }}</span>
+        <span class="text-ui-sm font-ui-medium text-et-surface-text">{{ row.label ?? LABELS.current }}</span>
       } @else {
-        <span class="font-code text-ui-sm text-et-surface">{{ row.label ?? LABELS.variant(row.key) }}</span>
+        <span class="font-code text-ui-sm text-et-surface-text">{{ row.label ?? LABELS.variant(row.key) }}</span>
       }
       @if (row.model; as model) {
-        <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted" data-sk-model
+        <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-text-muted" data-sk-model
           ><svg [agent]="model.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ model.short }}</span
         >
       }
@@ -600,7 +598,7 @@
         <span
           [etProvideColor]="errorTheme()"
           [attr.title]="LABELS.rowFailed(failure)"
-          class="line-clamp-3 text-ui-xs text-et-theme-ink wrap-anywhere"
+          class="line-clamp-3 text-ui-xs text-et-tone-text wrap-anywhere"
           role="alert"
           data-sk-row-failed
           >{{ LABELS.rowFailed(failure) }}</span
@@ -610,13 +608,13 @@
         @if (listError(); as message) {
           <span
             [etProvideColor]="errorTheme()"
-            class="text-ui-xs text-et-theme-ink"
+            class="text-ui-xs text-et-tone-text"
             role="alert"
             data-sk-compare-failed
             >{{ LABELS.compareFailed(message) }}</span
           >
         } @else if (!isEditSide(row)) {
-          <span class="text-ui-xs whitespace-nowrap text-et-surface-muted" data-sk-comparing>{{
+          <span class="text-ui-xs whitespace-nowrap text-et-surface-text-muted" data-sk-comparing>{{
             LABELS.comparing
           }}</span>
         }
@@ -625,18 +623,18 @@
     <p
       #note
       [style.font-size.px]="noteSize()"
-      class="m-0 leading-[1.35] text-et-surface-muted wrap-anywhere"
+      class="m-0 leading-[1.35] text-et-surface-text-muted wrap-anywhere"
       data-sk-note
     >
       {{ row.note }}
     </p>
     @if (row.subParts; as subParts) {
-      <div class="flex flex-col gap-space-1 text-ui-xs text-et-surface-muted" data-sk-sub-parts>
+      <div class="flex flex-col gap-space-1 text-ui-xs text-et-surface-text-muted" data-sk-sub-parts>
         <span class="font-ui-medium">{{ LABELS.subParts }}</span>
         <ul class="m-0 flex list-none flex-col gap-space-1 p-0">
           @for (subPart of subParts; track subPart.key) {
             <li class="wrap-anywhere" data-sk-sub-part>
-              <span class="font-code text-et-surface">{{ subPart.key }}</span>
+              <span class="font-code text-et-surface-text">{{ subPart.key }}</span>
               @if (subPart.notRebuild; as stated) {
                 <span> · {{ LABELS.notRebuild(stated.of, stated.difference) }}</span>
               }
@@ -649,14 +647,13 @@
       @if (IS_WITHDRAWN(row)) {
         <span
           [style.font-size.px]="noteSize()"
-          class="leading-[1.35] text-et-surface-muted italic wrap-anywhere"
+          class="leading-[1.35] text-et-surface-text-muted italic wrap-anywhere"
           data-sk-withdrawn
           >{{ withdrawnMarkOf(row.withdrawn) }}</span
         >
       } @else if (drawn) {
-        <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
-          ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
-          >{{ LABELS.drawingMark }}</span
+        <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-text-muted"
+          ><span class="size-1.5 animate-pulse rounded-full bg-(--et-tone-fill)"></span>{{ LABELS.drawingMark }}</span
         >
       } @else {
         <ng-container *ngTemplateOutlet="mergeTemplate; context: { $implicit: row }" />

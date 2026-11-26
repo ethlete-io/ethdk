@@ -38,7 +38,7 @@ describe('CommentPinComponent', () => {
     expect(button?.getAttribute('aria-label')).toBe('Comment by human, 3 messages, resolved');
     expect(button?.getAttribute('aria-pressed')).toBe('true');
     expect(button?.classList).toContain('text-text-muted');
-    expect(button?.classList).not.toContain('bg-et-theme');
+    expect(button?.classList).not.toContain('bg-et-tone-fill');
     expect(button?.querySelector('svg path')?.getAttribute('d')).toBe('m3.5 8.5 3 3 6-7');
     expect(button?.textContent?.trim()).toBe('');
     expect(host.textContent).not.toContain('3');

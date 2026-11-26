@@ -47,11 +47,11 @@ import { WorkStartOutcome, WorkStartPlan } from '@ethlete/timetrack';
         </div>
       } @else {
         <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-small">
-          <dt class="text-et-surface-muted">branch</dt>
+          <dt class="text-et-surface-text-muted">branch</dt>
           <dd class="text-mono">{{ plan().branch || '—' }}</dd>
-          <dt class="text-et-surface-muted">from</dt>
+          <dt class="text-et-surface-text-muted">from</dt>
           <dd class="text-mono">{{ plan().baseRef || '—' }}</dd>
-          <dt class="text-et-surface-muted">merges to</dt>
+          <dt class="text-et-surface-text-muted">merges to</dt>
           <dd class="text-mono">{{ plan().mrTarget || 'no merge request — this remote is not on GitLab' }}</dd>
         </dl>
 
@@ -65,10 +65,10 @@ import { WorkStartOutcome, WorkStartPlan } from '@ethlete/timetrack';
               <li class="flex flex-col gap-1">
                 <span class="text-small">{{ $index + 1 }}. {{ step.describe }}</span>
                 @if (step.command) {
-                  <code class="text-mono text-small text-et-surface-muted">{{ step.command }}</code>
+                  <code class="text-mono text-small text-et-surface-text-muted">{{ step.command }}</code>
                 }
                 @if (step.undo) {
-                  <span class="text-small text-et-surface-muted">Undo: {{ step.undo }}</span>
+                  <span class="text-small text-et-surface-text-muted">Undo: {{ step.undo }}</span>
                 }
               </li>
             }
@@ -81,7 +81,7 @@ import { WorkStartOutcome, WorkStartPlan } from '@ethlete/timetrack';
               }
               Run these steps
             </button>
-            <span class="text-small text-et-surface-muted">Nothing runs until you press this.</span>
+            <span class="text-small text-et-surface-text-muted">Nothing runs until you press this.</span>
           </div>
         }
       }

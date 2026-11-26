@@ -661,7 +661,7 @@ test.describe('select / select all', () => {
     const colors = await dash.evaluate((element) => {
       const probe = document.createElement('span');
 
-      probe.style.color = 'var(--et-theme-color-ink-solid)';
+      probe.style.color = 'var(--et-tone-text)';
       element.append(probe);
 
       const ink = getComputedStyle(probe).color;

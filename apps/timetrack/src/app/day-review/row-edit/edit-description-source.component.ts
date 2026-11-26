@@ -7,7 +7,7 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
   selector: 'ethlete-edit-description-source',
   template: `
     @if (writtenByAutoMode()) {
-      <span class="text-small text-et-surface-muted" data-auto-described>
+      <span class="text-small text-et-surface-text-muted" data-auto-described>
         Written by auto mode. Reset to the proposal takes it back.
       </span>
     }

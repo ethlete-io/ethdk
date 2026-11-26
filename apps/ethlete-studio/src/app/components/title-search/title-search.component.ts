@@ -20,7 +20,7 @@ import { injectCommandPaletteStore } from '../command-palette/command-palette-st
       #field
       [attr.aria-label]="LABELS.search(product(), part())"
       (click)="palette?.open()"
-      class="w-2xl justify-start px-space-2 text-et-surface-muted [--et-button-gap:var(--space-2)] hover:text-et-surface focus-visible:text-et-surface active:text-et-surface"
+      class="w-2xl justify-start px-space-2 text-et-surface-text-muted [--et-button-gap:var(--space-2)] hover:text-et-surface-text focus-visible:text-et-surface-text active:text-et-surface-text"
       et-button
       stretchContents
       type="button"
@@ -47,7 +47,7 @@ import { injectCommandPaletteStore } from '../command-palette/command-palette-st
         <span class="shrink-0">{{ product() }}</span>
         @if (part()) {
           <span class="shrink-0" aria-hidden="true">/</span>
-          <span class="font-ui-strong min-w-0 truncate text-et-surface">{{ part() }}</span>
+          <span class="font-ui-strong min-w-0 truncate text-et-surface-text">{{ part() }}</span>
         }
       </span>
       <et-kbd

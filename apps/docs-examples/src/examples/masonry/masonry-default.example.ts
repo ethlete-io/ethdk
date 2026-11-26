@@ -47,11 +47,11 @@ import { MASONRY_FILLER, createCards } from './masonry.data';
     .example-masonry-card {
       overflow: hidden;
       border-radius: 8px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
 
     .example-masonry-media {
-      background: var(--et-theme-color-primary-solid);
+      background: var(--et-tone-fill);
     }
 
     .example-masonry-body {

@@ -19,7 +19,7 @@
     size="sm"
   >
     <svg
-      class="[--accent:var(--et-surface-background-solid)] [--on-accent:var(--et-surface-color-solid)] group-hover:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))] group-active:[--accent:color-mix(in_oklch,var(--et-surface-interaction-active-solid)_10%,transparent)] group-aria-expanded:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))]"
+      class="[--accent:var(--et-surface-background)] [--on-accent:var(--et-surface-text)] group-hover:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover)_5%,var(--et-surface-background))] group-active:[--accent:color-mix(in_oklch,var(--et-surface-interaction-active)_10%,transparent)] group-aria-expanded:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover)_5%,var(--et-surface-background))]"
       etAutoSurface
       width="40"
       height="40"
@@ -66,7 +66,7 @@
             <span class="flex min-w-0 flex-col">
               <span class="truncate">{{ entry.name }}</span>
               @if (entry.hint) {
-                <span class="truncate text-et-surface-muted text-ui-sm">{{ entry.hint }}</span>
+                <span class="truncate text-et-surface-text-muted text-ui-sm">{{ entry.hint }}</span>
               }
             </span>
           </et-menu-radio-item>
@@ -94,7 +94,7 @@
                   <et-menu-radio-item [value]="entry.id" [disabled]="busy() && entry.id !== project()" closeOnActivate>
                     <span class="flex min-w-0 flex-col">
                       <span class="truncate">{{ entry.name }}</span>
-                      <span class="truncate text-et-surface-muted text-ui-sm">{{ entry.run }}</span>
+                      <span class="truncate text-et-surface-text-muted text-ui-sm">{{ entry.run }}</span>
                     </span>
                   </et-menu-radio-item>
                 }

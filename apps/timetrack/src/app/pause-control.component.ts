@@ -15,7 +15,7 @@ import { injectCollectionPause } from './collection-pause';
   template: `
     @if (pause.isPaused()) {
       <div class="flex items-center gap-2">
-        <span class="text-small font-medium text-et-warning-ink">Collection paused — {{ pausedFor() }}</span>
+        <span class="text-small font-medium text-et-tone-warning-text">Collection paused — {{ pausedFor() }}</span>
         <button (click)="pause.toggle()" et-button variant="filled" size="sm">Resume</button>
       </div>
     } @else {

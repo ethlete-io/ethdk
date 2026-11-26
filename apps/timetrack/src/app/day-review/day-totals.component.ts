@@ -22,13 +22,13 @@ import { formatBreak, formatRebuilt, formatUnattended } from './stream-format';
       <ethlete-day-concurrency [concurrency]="day()?.concurrency ?? 0" />
 
       @if (unattended(); as unattended) {
-        <span class="text-small text-et-surface-subtle" data-unattended-total>+ {{ unattended }}</span>
+        <span class="text-small text-et-surface-text-subtle" data-unattended-total>+ {{ unattended }}</span>
       }
       @if (away(); as away) {
-        <span class="text-small text-et-surface-subtle" data-break-total>{{ away }}</span>
+        <span class="text-small text-et-surface-text-subtle" data-break-total>{{ away }}</span>
       }
       @if (rebuilt(); as rebuilt) {
-        <span class="text-small text-et-brand-ink" data-rebuilt-total>{{ rebuilt }}</span>
+        <span class="text-small text-et-tone-brand-text" data-rebuilt-total>{{ rebuilt }}</span>
       }
     </div>
   `,

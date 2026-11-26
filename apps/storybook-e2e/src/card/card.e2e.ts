@@ -26,7 +26,7 @@ function readChrome(card: Locator): Promise<CardChrome> {
       borderWidth: style.borderWidth,
       boxShadow: style.boxShadow,
       background: style.backgroundColor,
-      surfaceBackground: style.getPropertyValue('--et-surface-background-solid').trim(),
+      surfaceBackground: style.getPropertyValue('--et-surface-background').trim(),
     };
   });
 }
@@ -125,7 +125,7 @@ test.describe('card / focus', () => {
     await expect(card).not.toHaveAttribute('surface', /.*/);
 
     const { own, ambient } = await card.evaluate((el) => {
-      const read = (node: Element) => getComputedStyle(node).getPropertyValue('--et-surface-background-solid').trim();
+      const read = (node: Element) => getComputedStyle(node).getPropertyValue('--et-surface-background').trim();
 
       return { own: read(el), ambient: read(el.parentElement as HTMLElement) };
     });
@@ -149,7 +149,7 @@ test.describe('card / focus', () => {
 
     const projectedSurface = await scoped
       .locator('h3')
-      .evaluate((el) => getComputedStyle(el).getPropertyValue('--et-surface-background-solid').trim());
+      .evaluate((el) => getComputedStyle(el).getPropertyValue('--et-surface-background').trim());
 
     expect(projectedSurface).toBe(scopedChrome.surfaceBackground);
   });

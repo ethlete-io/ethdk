@@ -44,7 +44,7 @@ test('a colour block added to the colours part becomes a theme in every generate
 
     assert.match(themes, /export const SUCCESS_THEME: ColorTheme = {\s*name: 'success',\s*type: 'success',/);
     assert.match(themes, /THEMES = \[BRAND_THEME, DANGER_THEME, SUCCESS_THEME, WARNING_THEME\]/);
-    assert.match(css, /--color-et-success:/);
+    assert.match(css, /--color-et-tone-success-fill:/);
     assert.match(css, /\.et-color--success {/);
   } finally {
     rmSync(out, { recursive: true, force: true });

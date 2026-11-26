@@ -54,13 +54,13 @@ import { injectPeers } from './peers';
               </button>
             </div>
 
-            <div class="flex flex-wrap gap-x-4 text-small text-et-surface-subtle">
+            <div class="flex flex-wrap gap-x-4 text-small text-et-surface-text-subtle">
               <span data-paired-last-seen>Last seen {{ row.lastSeen }}</span>
               <span data-paired-last-sync>{{ row.lastSync }}</span>
 
               @if (row.offset; as offset) {
                 <span
-                  [class.text-et-warning-ink]="offset.severity === 'warning'"
+                  [class.text-et-tone-warning-text]="offset.severity === 'warning'"
                   [class.text-et-error]="offset.severity === 'error'"
                   [attr.data-clock-offset]="offset.severity"
                 >
@@ -70,7 +70,7 @@ import { injectPeers } from './peers';
             </div>
           </div>
         } @empty {
-          <p class="text-small text-et-surface-subtle">No machine is paired.</p>
+          <p class="text-small text-et-surface-text-subtle">No machine is paired.</p>
         }
 
         <ethlete-paired-machines listed="false" />

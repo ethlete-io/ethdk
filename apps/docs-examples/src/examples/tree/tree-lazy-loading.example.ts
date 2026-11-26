@@ -33,9 +33,9 @@ const toNodes = (parent: TreeNode<string> | null): TreeNode<string>[] =>
     .example-tree-frame {
       inline-size: 360px;
       padding: 8px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 10px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
     }
   `,
 })

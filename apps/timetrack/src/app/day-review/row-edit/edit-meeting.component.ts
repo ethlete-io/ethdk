@@ -29,7 +29,7 @@ type MeetingOffer = {
 
       @for (offer of offers(); track offer.id) {
         <div class="flex flex-wrap items-center gap-3">
-          <span class="w-28 shrink-0 text-mono text-small text-et-surface-subtle">{{ offer.clock }}</span>
+          <span class="w-28 shrink-0 text-mono text-small text-et-surface-text-subtle">{{ offer.clock }}</span>
           <span class="min-w-40 grow truncate text-small">{{ offer.title }}</span>
           <button (click)="take(offer)" et-button variant="outline" size="sm">
             {{ offer.issueKey ? 'Use ' + offer.issueKey : 'Use its time' }}

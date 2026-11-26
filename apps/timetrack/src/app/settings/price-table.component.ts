@@ -57,7 +57,7 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
       </div>
 
       <details class="flex flex-col gap-2" data-built-in-prices>
-        <summary class="cursor-pointer text-small text-et-surface-muted">
+        <summary class="cursor-pointer text-small text-et-surface-text-muted">
           Built-in prices, USD per million tokens, checked {{ PRESETS_CHECKED }}
         </summary>
         @for (group of BUILT_IN_GROUPS; track group.provider) {
@@ -66,7 +66,7 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
             @for (price of group.prices; track price.model) {
               <div
                 [attr.data-built-in-price]="price.model"
-                class="flex flex-wrap gap-x-3 text-small text-et-surface-muted"
+                class="flex flex-wrap gap-x-3 text-small text-et-surface-text-muted"
               >
                 <span class="text-mono min-w-44">{{ price.model }}</span>
                 <span>
@@ -80,7 +80,7 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
       </details>
 
       <h4 class="text-base">Your prices</h4>
-      <p class="text-small text-et-surface-subtle">Overrides of the list above, and models it does not know.</p>
+      <p class="text-small text-et-surface-text-subtle">Overrides of the list above, and models it does not know.</p>
 
       <et-form-field class="w-56" appearance="underline" size="sm">
         <et-label>Currency</et-label>
@@ -97,8 +97,8 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
           class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-et-surface-border p-3"
         >
           <span class="text-mono text-small">{{ price.provider }} · {{ price.model }}</span>
-          <span class="text-small text-et-surface-muted">from {{ DAY_OF(price) }}</span>
-          <span class="grow text-small text-et-surface-muted">
+          <span class="text-small text-et-surface-text-muted">from {{ DAY_OF(price) }}</span>
+          <span class="grow text-small text-et-surface-text-muted">
             in {{ price.input }} · out {{ price.output }} · cache write {{ price.cacheWrite }} · cache read
             {{ price.cacheRead }} per million
           </span>
@@ -114,7 +114,7 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
           </button>
         </div>
       } @empty {
-        <p class="text-small text-et-surface-subtle">You have none, so the built-in prices apply.</p>
+        <p class="text-small text-et-surface-text-subtle">You have none, so the built-in prices apply.</p>
       }
 
       <div class="flex flex-wrap items-end gap-3">

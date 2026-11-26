@@ -4,7 +4,7 @@ import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
 export type VariantCellMark = { left: number; top: number; width: number; height: number };
 
-const FRAME_RING = 'shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
+const FRAME_RING = 'shadow-[0_0_0_1px_var(--et-surface-border)]';
 
 @Component({
   selector: 'ethlete-variant-cell',

@@ -1,6 +1,6 @@
 <div
   [style.--st-side-width.px]="shownWidth()"
-  class="relative grid size-full grid-cols-[64px_1fr] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-et-surface-bg font-ui text-ui-md text-et-surface has-[[data-side-resize]:active]:cursor-col-resize has-[[data-side-resize]:active]:select-none"
+  class="relative grid size-full grid-cols-[64px_1fr] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-et-surface-background font-ui text-ui-md text-et-surface-text has-[[data-side-resize]:active]:cursor-col-resize has-[[data-side-resize]:active]:select-none"
 >
   @if (chrome(); as chrome) {
     <ethlete-title-bar
@@ -21,13 +21,13 @@
     />
   }
   <nav
-    class="row-start-2 flex flex-col items-center gap-space-1 border-r border-et-surface-border bg-et-surface-bg py-space-3"
+    class="row-start-2 flex flex-col items-center gap-space-1 border-r border-et-surface-border bg-et-surface-background py-space-3"
   >
     <div class="relative flex min-h-10 w-full justify-center">
       <ng-content select="[shellMainStudio]">
         <span
           [attr.aria-label]="SHELL_LABELS.studio"
-          class="inline-flex size-10 items-center justify-center rounded-control-lg bg-et-surface-bg text-et-surface"
+          class="inline-flex size-10 items-center justify-center rounded-control-lg bg-et-surface-background text-et-surface-text"
           etAutoSurface
         >
           <svg width="28.8" height="28.8" viewBox="0 0 32 32" aria-hidden="true">
@@ -46,7 +46,7 @@
       <div
         [class]="
           active
-            ? 'before:absolute before:top-2 before:left-0 before:h-6 before:w-0.75 before:rounded-r-[3px] before:bg-et-theme before:content-[\'\']'
+            ? 'before:absolute before:top-2 before:left-0 before:h-6 before:w-0.75 before:rounded-r-[3px] before:bg-et-tone-fill before:content-[\'\']'
             : ''
         "
         class="relative flex w-full justify-center"
@@ -56,7 +56,7 @@
           [attr.aria-label]="item.label"
           [attr.aria-current]="active ? 'page' : null"
           (click)="pickSection(item.label, active)"
-          class="flex size-10 items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [--et-surface-interaction-rgb:var(--et-surface-interaction)] [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
+          class="flex size-10 items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
           et-button
           type="button"
           variant="transparent"
@@ -112,7 +112,7 @@
           [attr.aria-current]="active ? 'true' : null"
           [etTooltip]="name"
           (click)="productChange.emit(name)"
-          class="flex items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [--et-surface-interaction-rgb:var(--et-surface-interaction)] [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
+          class="flex items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
           placement="right"
           etAutoSurface
           et-button
@@ -139,17 +139,17 @@
           ? '[--st-shell-inset-left:0px]'
           : '[--st-shell-inset-left:calc(var(--st-side-width)+var(--space-3))]'
       "
-      class="absolute inset-0 isolate min-w-0 overflow-hidden bg-et-surface-bg bg-[radial-gradient(circle,var(--et-surface-border-solid)_1px,transparent_1.2px)] bg-size-[16px_16px] bg-position-[8px_8px]"
+      class="absolute inset-0 isolate min-w-0 overflow-hidden bg-et-surface-background bg-[radial-gradient(circle,var(--et-surface-border)_1px,transparent_1.2px)] bg-size-[16px_16px] bg-position-[8px_8px]"
     >
       @if (server(); as server) {
         <div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
           @if (server === 'crashed') {
             <div
-              class="mx-auto mt-15 box-border flex w-full max-w-6xl flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
+              class="mx-auto mt-15 box-border flex w-full max-w-6xl flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-text-muted"
               role="alert"
             >
               <div class="flex flex-col gap-space-1">
-                <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">{{ LABELS.crashed }}</h3>
+                <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface-text">{{ LABELS.crashed }}</h3>
                 @if (crash(); as crash) {
                   <p class="m-0">{{ LABELS.crashedAt(crash) }}</p>
                 }
@@ -159,7 +159,7 @@
                   class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
                   >{{ crash.stack.join('\n') }}</pre>
                 <p class="m-0">
-                  {{ LABELS.crashLog }} <span class="font-code break-all text-et-surface">{{ crash.path }}</span>
+                  {{ LABELS.crashLog }} <span class="font-code break-all text-et-surface-text">{{ crash.path }}</span>
                 </p>
               }
               <button
@@ -179,16 +179,16 @@
               class="mx-auto mt-15 box-border w-full max-w-6xl px-space-5"
             >
               @if (server === 'starting') {
-                <div class="flex items-center gap-space-2 text-et-surface">
+                <div class="flex items-center gap-space-2 text-et-surface-text">
                   <et-spinner />
                   <h3 class="m-0 font-ui-strong text-ui-lg">{{ LABELS.startPhase[phase()] }}</h3>
                 </div>
-                <p class="m-0 mt-space-1 text-ui-sm text-et-surface-muted">{{ LABELS.startElapsed(phaseMs()) }}</p>
+                <p class="m-0 mt-space-1 text-ui-sm text-et-surface-text-muted">{{ LABELS.startElapsed(phaseMs()) }}</p>
               } @else {
-                <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">{{ LABELS.stopped }}</h3>
+                <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface-text">{{ LABELS.stopped }}</h3>
               }
               @if (server === 'unanswered') {
-                <p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.unanswered(serverUrl()) }}</p>
+                <p class="m-0 mt-space-2 text-ui-sm text-et-surface-text-muted">{{ LABELS.unanswered(serverUrl()) }}</p>
                 <div class="mt-space-3">
                   <button
                     (click)="restartServer.emit()"
@@ -205,10 +205,10 @@
             </div>
           } @else {
             <div
-              class="mx-auto mt-15 box-border flex w-full max-w-6xl flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
+              class="mx-auto mt-15 box-border flex w-full max-w-6xl flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-text-muted"
               role="alert"
             >
-              <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">{{ LABELS.stopped }}</h3>
+              <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface-text">{{ LABELS.stopped }}</h3>
               @if (log().length) {
                 <pre
                   class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
@@ -235,7 +235,7 @@
       <!-- WebKit composites the canvas iframes and only lifts the panel above them through overlap testing, which
            lags while the WebContent process hangs; its own layer and z-index keep it on top (findings 367, 375). -->
       <aside
-        class="absolute top-space-3 bottom-space-3 left-space-3 z-1 flex w-(--st-side-width) will-change-transform min-h-0 flex-col overflow-hidden rounded-control-lg bg-et-surface-bg shadow-[inset_0_0_0_1px_var(--et-surface-border-solid),0_12px_32px_var(--surface-shadow)]"
+        class="absolute top-space-3 bottom-space-3 left-space-3 z-1 flex w-(--st-side-width) will-change-transform min-h-0 flex-col overflow-hidden rounded-control-lg bg-et-surface-background shadow-[inset_0_0_0_1px_var(--et-surface-border),0_12px_32px_var(--surface-shadow)]"
       >
         <header
           class="box-border flex h-12 items-center justify-between gap-space-1 border-b border-et-surface-border px-space-2"

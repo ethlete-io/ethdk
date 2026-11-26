@@ -47,7 +47,7 @@ const read$ = <T>(source$: Observable<T>): Observable<Read<T>> =>
       <div [attr.data-issue-status]="key" class="flex flex-col gap-2">
         <div class="flex items-center justify-between gap-3">
           <span class="text-small">
-            <span class="text-et-surface-muted">Status</span>
+            <span class="text-et-surface-text-muted">Status</span>
             @switch (status().kind) {
               @case ('loading') {
                 <span data-status-name>Reading…</span>
@@ -68,7 +68,7 @@ const read$ = <T>(source$: Observable<T>): Observable<Read<T>> =>
 
         @switch (moves().kind) {
           @case ('loading') {
-            <span class="text-small text-et-surface-muted">Reading the moves {{ key }} offers…</span>
+            <span class="text-small text-et-surface-text-muted">Reading the moves {{ key }} offers…</span>
           }
           @case ('ready') {
             <div class="flex flex-wrap gap-2" role="group" aria-label="Move to">
@@ -83,14 +83,14 @@ const read$ = <T>(source$: Observable<T>): Observable<Read<T>> =>
                   {{ move.toStatusName }}
                 </button>
               } @empty {
-                <span class="text-small text-et-surface-muted">The workflow offers no move from here.</span>
+                <span class="text-small text-et-surface-text-muted">The workflow offers no move from here.</span>
               }
             </div>
           }
         }
 
         @if (moveState().kind === 'moving') {
-          <span class="text-small text-et-surface-muted">Moving…</span>
+          <span class="text-small text-et-surface-text-muted">Moving…</span>
         }
         @if (failure(); as message) {
           <span class="text-small text-et-error" data-status-error role="alert">{{ message }}</span>

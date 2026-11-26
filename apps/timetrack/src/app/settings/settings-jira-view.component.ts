@@ -140,7 +140,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             @for (naming of store.settings().meetingNamings; track naming.seriesKey) {
               <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small" data-meeting-naming>
                 <span class="min-w-40 grow truncate">{{ naming.title }}</span>
-                <span class="text-mono text-et-surface-muted">{{ naming.issueKey }}</span>
+                <span class="text-mono text-et-surface-text-muted">{{ naming.issueKey }}</span>
                 <button (click)="store.forgetMeetingNaming(naming.seriesKey)" et-button variant="transparent" size="sm">
                   Forget
                 </button>
@@ -148,7 +148,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             }
           </ul>
         } @else {
-          <span class="text-small text-et-surface-subtle">
+          <span class="text-small text-et-surface-text-subtle">
             Nothing yet. Name a meeting on a day and every later one of that series is named from your answer.
           </span>
         }
@@ -165,8 +165,8 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             @for (naming of callNamings(); track naming.key) {
               <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small" data-call-naming>
                 <span class="min-w-40 grow truncate">{{ naming.label }}</span>
-                <span class="text-et-surface-muted">{{ naming.when }}</span>
-                <span class="text-mono text-et-surface-muted">{{ naming.named }}</span>
+                <span class="text-et-surface-text-muted">{{ naming.when }}</span>
+                <span class="text-mono text-et-surface-text-muted">{{ naming.named }}</span>
                 <button (click)="store.forgetCallNaming(naming.key)" et-button variant="transparent" size="sm">
                   Forget
                 </button>
@@ -174,7 +174,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             }
           </ul>
         } @else {
-          <span class="text-small text-et-surface-subtle">
+          <span class="text-small text-et-surface-text-subtle">
             Nothing yet. Name a call the calendar never held and the next one like it is named from your answer.
           </span>
         }

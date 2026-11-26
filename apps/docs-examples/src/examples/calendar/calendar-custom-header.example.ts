@@ -32,7 +32,7 @@ import { CALENDAR_IMPORTS } from '@ethlete/components';
 
       & button {
         padding: 4px 8px;
-        border: 1px solid var(--et-surface-border-solid);
+        border: 1px solid var(--et-surface-border);
         border-radius: 6px;
         background: transparent;
         font: inherit;

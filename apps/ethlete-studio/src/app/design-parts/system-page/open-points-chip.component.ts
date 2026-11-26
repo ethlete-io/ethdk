@@ -42,7 +42,7 @@ import { OpenPointGroup, OpenPointTarget, PartException } from './system-page-sa
       @if (count() || missingShots()) {
         <span [etProvideColor]="warningTheme()" class="contents" etIcon>
           <svg
-            class="text-et-theme"
+            class="text-et-tone-fill"
             width="14"
             height="14"
             viewBox="0 0 16 16"
@@ -60,7 +60,7 @@ import { OpenPointGroup, OpenPointTarget, PartException } from './system-page-sa
         </span>
       } @else {
         <svg
-          class="flex-none text-et-theme-ink"
+          class="flex-none text-et-tone-text"
           width="14"
           height="14"
           viewBox="0 0 16 16"

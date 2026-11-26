@@ -67,18 +67,18 @@ const LAYOUT: BracketLayoutConfig = {
 
     .app-pick-match-card__side {
       padding-inline: 12px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 8px;
-      background: var(--et-surface-background-solid);
+      background: var(--et-surface-background);
       color: inherit;
       font: inherit;
       text-align: start;
       cursor: pointer;
 
       &[aria-pressed='true'] {
-        border-color: var(--et-theme-color-primary-solid);
-        background: var(--et-theme-color-primary-solid);
-        color: var(--et-theme-color-on-primary-solid);
+        border-color: var(--et-tone-fill);
+        background: var(--et-tone-fill);
+        color: var(--et-tone-on-fill);
       }
 
       &:disabled {

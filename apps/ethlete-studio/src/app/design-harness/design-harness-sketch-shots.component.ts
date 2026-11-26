@@ -37,7 +37,7 @@ const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: stri
     <ng-template #shot let-row let-state="state">
       <div [class]="lookOf(row, state)">
         @if (screenHeightOf(row, state); as height) {
-          <div [style.width.px]="row.width" [style.height.px]="height" class="bg-et-surface-bg"></div>
+          <div [style.width.px]="row.width" [style.height.px]="height" class="bg-et-surface-background"></div>
         } @else {
           <div [innerHTML]="sampleOf(state)" class="contents"></div>
         }

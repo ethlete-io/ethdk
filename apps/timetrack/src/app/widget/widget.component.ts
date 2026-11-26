@@ -40,20 +40,20 @@ const CONFIDENCE_WORDING: Record<NonNullable<WidgetReadout['confidence']>, strin
           @if (now.issueKey) {
             <span class="text-small">
               {{ now.issueKey }}
-              <span class="text-et-surface-muted">— {{ confidence() }}</span>
+              <span class="text-et-surface-text-muted">— {{ confidence() }}</span>
             </span>
           } @else if (now.state === 'working') {
-            <span class="text-small text-et-surface-muted">No issue names this work yet.</span>
+            <span class="text-small text-et-surface-text-muted">No issue names this work yet.</span>
           }
 
           @if (now.since) {
-            <span class="text-small text-et-surface-subtle">Since {{ now.since }}</span>
+            <span class="text-small text-et-surface-text-subtle">Since {{ now.since }}</span>
           }
         </div>
 
-        <span class="text-small text-et-surface-subtle">{{ now.total }}</span>
+        <span class="text-small text-et-surface-text-subtle">{{ now.total }}</span>
       } @else {
-        <span class="text-small text-et-surface-muted">Reading today…</span>
+        <span class="text-small text-et-surface-text-muted">Reading today…</span>
       }
 
       <div class="mt-auto flex items-center gap-2">

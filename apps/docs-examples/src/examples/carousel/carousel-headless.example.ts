@@ -30,7 +30,7 @@ import { CAROUSEL_IMPORTS, SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_IMPORTS } from '@
 
     .example-carousel-headless-slide {
       padding: 16px;
-      border: 1px solid var(--et-surface-border-solid);
+      border: 1px solid var(--et-surface-border);
       border-radius: 8px;
     }
 

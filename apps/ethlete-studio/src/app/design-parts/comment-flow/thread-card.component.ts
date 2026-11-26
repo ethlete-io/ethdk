@@ -44,7 +44,7 @@ export type CommentThread = {
   template: `
     <div class="flex items-center gap-space-2 border-b border-et-surface-border px-space-3 py-space-2">
       <span
-        class="min-w-0 flex-1 overflow-hidden font-code text-ellipsis whitespace-nowrap text-ui-xs text-et-surface-muted"
+        class="min-w-0 flex-1 overflow-hidden font-code text-ellipsis whitespace-nowrap text-ui-xs text-et-surface-text-muted"
         >{{ place() }}</span
       >
       <button (click)="resolveThread.emit()" et-button type="button" variant="outline" color="surface" size="xs">
@@ -92,7 +92,7 @@ export type CommentThread = {
       @for (message of messages(); track $index) {
         <li class="flex gap-space-2">
           <span
-            class="flex size-5 flex-none items-center justify-center rounded-full bg-et-surface-bg font-ui-strong text-(length:--text-xs) text-et-surface"
+            class="flex size-5 flex-none items-center justify-center rounded-full bg-et-surface-background font-ui-strong text-(length:--text-xs) text-et-surface-text"
             etAutoSurface
           >
             @if (message.agent; as agent) {
@@ -103,10 +103,10 @@ export type CommentThread = {
           </span>
           <div class="flex min-w-0 flex-1 flex-col gap-0.5">
             <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
-              <span class="font-ui-medium text-et-surface">{{ message.author }}</span>
-              <span class="flex-1 text-et-surface-muted">{{ message.when }}</span>
+              <span class="font-ui-medium text-et-surface-text">{{ message.author }}</span>
+              <span class="flex-1 text-et-surface-text-muted">{{ message.when }}</span>
             </div>
-            <p class="m-0 text-ui-sm text-et-surface">{{ message.text }}</p>
+            <p class="m-0 text-ui-sm text-et-surface-text">{{ message.text }}</p>
             @if (message.own) {
               <div class="-ml-space-2 flex">
                 <button
@@ -139,11 +139,11 @@ export type CommentThread = {
       @if (phase() === 'error' || phase() === 'rejected') {
         <p
           [etProvideColor]="errorTheme()"
-          class="m-0 flex items-center gap-space-1 text-ui-xs text-et-theme-ink"
+          class="m-0 flex items-center gap-space-1 text-ui-xs text-et-tone-text"
           role="alert"
         >
           <svg
-            class="flex-none text-et-theme"
+            class="flex-none text-et-tone-fill"
             width="14"
             height="14"
             viewBox="0 0 16 16"
@@ -161,7 +161,7 @@ export type CommentThread = {
         </p>
       }
       <div class="flex items-center justify-between gap-space-2">
-        <span class="flex items-center gap-space-1 text-ui-xs text-et-surface-muted"
+        <span class="flex items-center gap-space-1 text-ui-xs text-et-surface-text-muted"
           ><et-kbd keys="esc" /> {{ LABELS.escCloses }}</span
         >
         <button
@@ -194,7 +194,7 @@ export type CommentThread = {
     '[attr.aria-label]': 'LABELS.dialog',
     '(keydown.escape)': 'escape($event)',
     class:
-      'relative z-20 flex w-80 flex-col rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) shadow-lg',
+      'relative z-20 flex w-80 flex-col rounded-md border border-(--et-surface-border) bg-(--et-surface-background) shadow-lg',
   },
 })
 export class ThreadCardComponent {

@@ -21,13 +21,13 @@ import { AVATAR_IMPORTS } from '@ethlete/components';
   imports: [AVATAR_IMPORTS],
   styles: `
     .tonal-avatar {
-      --et-avatar-background: color-mix(in srgb, var(--et-theme-color-primary-solid) 16%, transparent);
-      --et-avatar-color: var(--et-theme-color-ink-solid);
+      --et-avatar-background: color-mix(in srgb, var(--et-tone-fill) 16%, transparent);
+      --et-avatar-color: var(--et-tone-text);
     }
 
     .inverted-avatar {
-      --et-avatar-background: var(--et-surface-color-solid);
-      --et-avatar-color: var(--et-surface-background-solid);
+      --et-avatar-background: var(--et-surface-text);
+      --et-avatar-color: var(--et-surface-background);
     }
   `,
 })

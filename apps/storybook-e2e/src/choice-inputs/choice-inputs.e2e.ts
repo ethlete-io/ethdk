@@ -713,7 +713,7 @@ test.describe('switch / track edge', () => {
       await expect(toggle).toHaveAttribute('aria-checked', 'true');
 
       const track = toggle.locator('.et-switch-track');
-      await track.evaluate((el: HTMLElement) => el.style.setProperty('--et-theme-color-ink-solid', 'rgb(1 2 3)'));
+      await track.evaluate((el: HTMLElement) => el.style.setProperty('--et-tone-text', 'rgb(1 2 3)'));
 
       await expect(track).toHaveCSS('box-shadow', edge);
     });

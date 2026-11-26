@@ -13,9 +13,9 @@ const SHOWN_LINES = 3;
   template: `
     <div class="w-96 font-ui text-ui-sm">
       <header
-        class="flex items-baseline gap-space-2 border-b border-(--et-surface-border-solid) px-space-3 pt-space-3 pb-space-2"
+        class="flex items-baseline gap-space-2 border-b border-(--et-surface-border) px-space-3 pt-space-3 pb-space-2"
       >
-        <span class="font-ui-strong text-(--et-surface-color-solid)">
+        <span class="font-ui-strong text-(--et-surface-text)">
           {{
             groups().length
               ? LABELS.openPoints
@@ -24,10 +24,10 @@ const SHOWN_LINES = 3;
                 : LABELS.nothingOpen
           }}
         </span>
-        <span class="ms-auto font-code text-ui-xs text-(--et-surface-color-muted-solid)">{{ part() }}</span>
+        <span class="ms-auto font-code text-ui-xs text-(--et-surface-text-muted)">{{ part() }}</span>
       </header>
       @if (shown().length) {
-        <ul [class.divide-y]="dividers()" class="m-0 list-none divide-(--et-surface-border-solid) p-0 py-space-1">
+        <ul [class.divide-y]="dividers()" class="m-0 list-none divide-(--et-surface-border) p-0 py-space-1">
           @for (group of shown(); track group.icon) {
             <li>
               <ul [class.py-space-1]="dividers()" class="m-0 list-none p-0">
@@ -54,7 +54,7 @@ const SHOWN_LINES = 3;
                   </li>
                 }
                 @if (group.more > 0) {
-                  <li class="py-space-1 ps-9 pe-space-3 text-(--et-surface-color-muted-solid)">
+                  <li class="py-space-1 ps-9 pe-space-3 text-(--et-surface-text-muted)">
                     {{ LABELS.more(group.more) }}
                   </li>
                 }
@@ -65,7 +65,7 @@ const SHOWN_LINES = 3;
       } @else {
         <div class="flex items-center gap-space-2 px-space-3 py-space-4">
           <svg
-            class="flex-none text-et-theme-ink"
+            class="flex-none text-et-tone-text"
             width="16"
             height="16"
             viewBox="0 0 16 16"
@@ -78,27 +78,27 @@ const SHOWN_LINES = 3;
           >
             <path d="m3.5 8.5 3 3 6-7" />
           </svg>
-          <span class="text-(--et-surface-color-muted-solid)">{{ LABELS.allDone }}</span>
+          <span class="text-(--et-surface-text-muted)">{{ LABELS.allDone }}</span>
         </div>
       }
       @if (exceptions().length) {
-        <section class="border-t border-(--et-surface-border-solid) py-space-1">
+        <section class="border-t border-(--et-surface-border) py-space-1">
           <h3
-            class="m-0 flex items-center gap-space-2 px-space-3 py-space-1 text-ui-xs font-ui-strong text-et-surface-muted"
+            class="m-0 flex items-center gap-space-2 px-space-3 py-space-1 text-ui-xs font-ui-strong text-et-surface-text-muted"
           >
             {{ EXCEPTION_LABELS.toggle }}<span class="font-code font-normal">{{ exceptions().length }}</span>
           </h3>
-          <ul class="m-0 list-none p-0 divide-y divide-(--et-surface-border-solid)">
+          <ul class="m-0 list-none p-0 divide-y divide-(--et-surface-border)">
             @for (exception of exceptions(); track exception.rule) {
               <li class="flex flex-col gap-space-1 px-space-3 py-space-2">
                 <span class="flex items-center gap-space-2">
-                  <span class="min-w-0 flex-1 font-code text-ui-xs break-all text-et-surface">{{
+                  <span class="min-w-0 flex-1 font-code text-ui-xs break-all text-et-surface-text">{{
                     exception.rule
                   }}</span>
                   <et-badge variant="outline" size="sm" data-exception-state>{{ EXCEPTION_LABELS.pending }}</et-badge>
                 </span>
                 <span class="flex items-center gap-space-2">
-                  <span class="min-w-0 flex-1 text-et-surface-muted">{{ exception.reason }}</span>
+                  <span class="min-w-0 flex-1 text-et-surface-text-muted">{{ exception.reason }}</span>
                   <button
                     (click)="approveException.emit(exception.rule)"
                     et-button
@@ -124,7 +124,7 @@ const SHOWN_LINES = 3;
     </div>
     <ng-template #lineTemplate let-line let-icon="icon">
       <svg
-        class="flex-none text-(--et-surface-color-muted-solid)"
+        class="flex-none text-(--et-surface-text-muted)"
         width="14"
         height="14"
         viewBox="0 0 16 16"
@@ -161,8 +161,8 @@ const SHOWN_LINES = 3;
           }
         }
       </svg>
-      <span class="min-w-0 flex-1 truncate text-(--et-surface-color-solid)">{{ line.text }}</span>
-      <span class="font-code text-ui-xs text-(--et-surface-color-muted-solid)">{{ line.detail }}</span>
+      <span class="min-w-0 flex-1 truncate text-(--et-surface-text)">{{ line.text }}</span>
+      <span class="font-code text-ui-xs text-(--et-surface-text-muted)">{{ line.detail }}</span>
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,

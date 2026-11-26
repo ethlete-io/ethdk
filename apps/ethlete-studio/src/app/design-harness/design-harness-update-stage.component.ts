@@ -15,7 +15,7 @@ import { TitleBarComponent } from '../components/title-bar/title-bar.component';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [TitleBarComponent],
-  host: { class: 'flex size-full flex-col bg-et-surface-bg' },
+  host: { class: 'flex size-full flex-col bg-et-surface-background' },
 })
 export class DesignHarnessUpdateStageComponent {
   private titleBar = viewChild.required(TitleBarComponent);

@@ -33,7 +33,7 @@ import { TokenFieldComponent } from './token-field.component';
         }
       </div>
 
-      <p class="text-small text-et-surface-muted">
+      <p class="text-small text-et-surface-text-muted">
         A calendar names a meeting and gives its time. It does not decide that one was held — Google writes a Meet link
         for a call held somewhere else.
         @if (!account.hasBuiltInClient()) {
@@ -89,7 +89,7 @@ import { TokenFieldComponent } from './token-field.component';
 
       @if (account.waitingForBrowser()) {
         <div class="flex flex-col items-start gap-2" data-google-waiting>
-          <p class="text-small text-et-surface-muted">
+          <p class="text-small text-et-surface-text-muted">
             Finish the sign-in in the browser that opened. If it opened the wrong browser, copy the link and paste it
             into the right one. If you closed it, cancel and connect again.
           </p>
@@ -120,7 +120,7 @@ import { TokenFieldComponent } from './token-field.component';
 
       @if (account.revokeFailed()) {
         <div class="flex flex-col items-start gap-2">
-          <p class="text-small text-et-surface-muted">
+          <p class="text-small text-et-surface-text-muted">
             The token is still on this machine and the account still works. Disconnect again to ask Google once more. To
             stop here, remove the token and then withdraw the access yourself under your Google account.
           </p>
@@ -159,10 +159,10 @@ import { TokenFieldComponent } from './token-field.component';
               <et-label>{{ calendar.name }}</et-label>
             </et-choice-field>
           } @empty {
-            <p class="text-small text-et-surface-subtle">{{ calendarsNote() }}</p>
+            <p class="text-small text-et-surface-text-subtle">{{ calendarsNote() }}</p>
           }
 
-          <p class="text-small text-et-surface-subtle">
+          <p class="text-small text-et-surface-text-subtle">
             Nothing is read until a calendar is picked. A personal calendar lives on the same account.
           </p>
         </div>
