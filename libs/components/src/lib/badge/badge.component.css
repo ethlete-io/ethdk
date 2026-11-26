@@ -67,7 +67,7 @@
     &:where([data-variant='filled']) {
       --_et-tone-fill-opacity: 1;
       --_et-badge-color: var(--et-tone-on-fill);
-      --_et-badge-border-color: var(--et-tone-text);
+      --_et-badge-border-color: transparent;
     }
 
     &:where([data-variant='tonal']) {

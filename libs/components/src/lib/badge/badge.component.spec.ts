@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -119,5 +120,23 @@ describe('BadgeComponent', () => {
 
     expect(slot.querySelector('.et-icon')).toBeTruthy();
     expect(badge.lastElementChild).toBe(slot);
+  });
+
+  describe('variant border', () => {
+    const css = readFileSync(`${__dirname}/badge.component.css`, 'utf8');
+
+    const borderColorOf = (variant: BadgeVariant) => {
+      const rule = new RegExp(`\\[data-variant='${variant}'\\]\\)\\s*\\{([^}]*)\\}`).exec(css);
+
+      return /--_et-badge-border-color:\s*([^;]+);/.exec(rule?.[1] ?? '')?.[1];
+    };
+
+    it('has no visible border on filled', () => {
+      expect(borderColorOf('filled')).toBe('transparent');
+    });
+
+    it.each(['tonal', 'outline'] as const)('keeps the tone border on %s', (variant) => {
+      expect(borderColorOf(variant)).toBe('var(--et-tone-text)');
+    });
   });
 });

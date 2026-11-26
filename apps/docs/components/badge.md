@@ -16,12 +16,12 @@ import { BADGE_IMPORTS } from '@ethlete/components';
 
 ## Options
 
-| Input           | Type                               | Default   | Description                                                                                                            |
-| --------------- | ---------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `variant`       | `'filled' \| 'tonal' \| 'outline'` | `'tonal'` | `filled` is a solid fill, `tonal` a soft tint, `outline` a transparent fill with a colored border.                     |
-| `size`          | `'sm' \| 'md' \| 'lg'`             | `'md'`    | Scales the padding, minimum height and font size together. An icon in the slot follows the font size.                  |
-| `iconAlignment` | `'start' \| 'end'`                 | `'start'` | Which side of the label the icon slot sits on.                                                                         |
-| `color`         | registered color theme name        | -         | Applies one of your app's [registered color themes](/core/theming). Unset, the badge picks up the nearest ambient one. |
+| Input           | Type                               | Default   | Description                                                                                                               |
+| --------------- | ---------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `variant`       | `'filled' \| 'tonal' \| 'outline'` | `'tonal'` | `filled` is a solid fill with no visible border, `tonal` a soft tint, `outline` a transparent fill with a colored border. |
+| `size`          | `'sm' \| 'md' \| 'lg'`             | `'md'`    | Scales the padding, minimum height and font size together. An icon in the slot follows the font size.                     |
+| `iconAlignment` | `'start' \| 'end'`                 | `'start'` | Which side of the label the icon slot sits on.                                                                            |
+| `color`         | registered color theme name        | -         | Applies one of your app's [registered color themes](/core/theming). Unset, the badge picks up the nearest ambient one.    |
 
 Theme names are project-specific - the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `success`, `warning`, `danger`).
 
@@ -42,6 +42,12 @@ An element carrying [`etIcon`](/components/icon) is projected into the badge's i
 ```
 
 The icon is decorative by default (`aria-hidden`), which is right when it sits next to a label. A badge whose icon _is_ the content needs a name on the icon: `<i etIcon="et-check" label="Verified"></i>`.
+
+## On a button corner
+
+A badge has no slot inside a button, and `et-icon-button` clips its content (`overflow: hidden`), so a badge placed in it would be cut off. Wrap the button in a `div` with `position: relative` and place the badge absolutely at the corner.
+
+@example badge/badge-corner 120px
 
 ## Design specs & tokens
 
