@@ -12,17 +12,22 @@ export type VariantCellMark = MarkBox & { from?: MarkBox };
 const FRAME_RING =
   'after:pointer-events-none after:absolute after:-inset-(--sk-stroke) after:border-(length:--sk-stroke) after:border-et-surface-border';
 
+// Chromium and WebKit rasterize a scaled-down iframe's 16 px dot-grid gradient tile as a solid grey fill once
+// the tile drops below one CSS pixel, so a cell this small shows its picture instead of the live frame.
+const THUMBNAIL_SCALE = 1 / 16;
+
 @Component({
   selector: 'ethlete-variant-cell',
   templateUrl: './variant-cell.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [SpinnerComponent],
   host: {
-    class: 'row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1',
+    class: 'group/sk-shot row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1',
     '[attr.data-sk-state]': 'state()',
     '[attr.data-sk-variant]': 'variant() || null',
     '[attr.data-sk-changed]': 'changed() || null',
     '[attr.data-sk-inherited]': 'inherited() ? "" : null',
+    '[attr.data-sk-thumbnail]': 'thumbnail() ? "" : null',
     '[style.grid-column]': 'column()',
     '[style.grid-row]': 'line()',
     '[style.--sk-scale]': 'scale()',
@@ -62,6 +67,7 @@ export class VariantCellComponent {
   protected dimmed = computed(() => this.same() || this.inherited());
   protected note = computed(() => (this.inherited() ? this.LABELS.fromSdk : this.same() ? this.LABELS.unchanged : ''));
   protected frameWidth = computed(() => this.width() * this.scale());
+  protected thumbnail = computed(() => this.scale() <= THUMBNAIL_SCALE);
   protected shownHeight = computed(() => this.shown() ?? this.height() ?? 0);
   protected arrows = computed(() =>
     this.marks().flatMap((mark) => {

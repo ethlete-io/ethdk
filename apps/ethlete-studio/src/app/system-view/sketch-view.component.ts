@@ -335,7 +335,7 @@ export const repicksOf = (sketch: ListedSketch): Record<string, SketchRepick> =>
               [src]="shown"
               [alt]="key"
               [class.opacity-0]="paintedShots().has(key)"
-              class="absolute top-0 left-0 block max-w-full"
+              class="absolute top-0 left-0 block max-w-full group-data-sk-thumbnail/sk-shot:opacity-100"
             />
           }
           <img
@@ -346,7 +346,7 @@ export const repicksOf = (sketch: ListedSketch): Record<string, SketchRepick> =>
             [class.hidden]="failedPictures().has(picture)"
             (load)="pictureLoaded({ key, picture, event: $event })"
             (error)="pictureFailed(picture)"
-            class="block max-w-full"
+            class="block max-w-full group-data-sk-thumbnail/sk-shot:opacity-100"
             data-shot-picture
           />
         }
@@ -363,7 +363,7 @@ export const repicksOf = (sketch: ListedSketch): Record<string, SketchRepick> =>
               [attr.data-painted]="paintedFrames().get(key)?.frame === shotFrame ? '' : null"
               [class.opacity-0]="paintedFrames().get(key)?.frame !== shotFrame"
               (paintedChange)="framePainted({ key, frame: shotFrame, url: frame.url, painted: $event })"
-              class="absolute inset-0 block size-full border-0 scheme-normal"
+              class="absolute inset-0 block size-full border-0 scheme-normal group-data-sk-thumbnail/sk-shot:invisible"
             ></iframe>
           }
           @if (srcs.length && activeShot() !== key) {
