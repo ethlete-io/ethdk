@@ -332,7 +332,7 @@ describe('bracket layout scenarios', () => {
 
     expect(host.querySelector('.et-bracket--swiss-with-elimination')).not.toBeNull();
 
-    const groupNames = Array.from(host.querySelectorAll('.et-bracket-default-round-header-group')).map(text);
+    const groupNames = Array.from(host.querySelectorAll('.et-bracket-swiss-round-header-record')).map(text);
 
     expect(groupNames).toEqual(['0-0', '1-0', '0-1', '1-1']);
 
@@ -411,7 +411,7 @@ describe('bracket layout scenarios', () => {
     s.tick();
     s.flush();
 
-    expect(Array.from(host.querySelectorAll('.et-bracket-default-round-header-group')).map(text)).toEqual([
+    expect(Array.from(host.querySelectorAll('.et-bracket-swiss-round-header-record')).map(text)).toEqual([
       '1-0',
       '0-1',
     ]);

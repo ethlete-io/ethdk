@@ -9,6 +9,7 @@ import {
   BracketSwissColors,
   generateBracketRoundSwissGroupMaps,
 } from '@ethlete/bracket';
+import { BracketSwissRoundHeaderComponent } from './bracket-swiss-round-header.component';
 import { BracketSwissStylesComponent } from './bracket-swiss-styles.component';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,6 +26,11 @@ export type SwissBracketLayoutOptions<TRoundData = any, TMatchData = any> = {
    * elimination stage next to it.
    */
   matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
+
+  /**
+   * Replaces the swiss default header, {@link BracketSwissRoundHeaderComponent}. Beats
+   * `provideBracketConfig({ swiss: { roundHeaderComponent } })`; a host's `roundHeaderComponent` input beats both.
+   */
   roundHeaderComponent?: BracketRoundHeaderComponent<TRoundData, TMatchData>;
 };
 
@@ -71,5 +77,7 @@ export const swissBracketLayout = <TRoundData = any, TMatchData = any>(
     match: options.matchComponent,
     roundHeader: options.roundHeaderComponent,
   },
+  configComponents: (config) => ({ roundHeader: config.swiss?.roundHeaderComponent }),
+  defaultComponents: { roundHeader: BracketSwissRoundHeaderComponent },
   styles: [BracketSwissStylesComponent],
 });

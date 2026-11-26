@@ -1,0 +1,54 @@
+@layer components.sdk {
+  .et-bracket-swiss-round-header-host {
+    display: flex;
+    align-items: flex-end;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 100%;
+    padding-block-end: 6px;
+  }
+
+  .et-bracket-swiss-round-header {
+    --_et-bracket-swiss-round-header-tone: var(--et-surface-text-muted, currentColor);
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    inline-size: 100%;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--et-bracket-swiss-neutral-color, var(--_et-bracket-swiss-round-header-tone));
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .et-bracket-swiss-round-header[data-swiss-toned] {
+    --_et-bracket-swiss-round-header-tone: var(--et-tone-text);
+  }
+
+  .et-bracket-swiss-round-header[data-swiss-tone='positive'] {
+    color: var(--et-bracket-swiss-positive-color, var(--_et-bracket-swiss-round-header-tone));
+  }
+
+  .et-bracket-swiss-round-header[data-swiss-tone='warning'] {
+    color: var(--et-bracket-swiss-warning-color, var(--_et-bracket-swiss-round-header-tone));
+  }
+
+  .et-bracket-swiss-round-header[data-swiss-tone='negative'] {
+    color: var(--et-bracket-swiss-negative-color, var(--_et-bracket-swiss-round-header-tone));
+  }
+
+  .et-bracket-swiss-round-header-name,
+  .et-bracket-swiss-round-header-record {
+    flex: none;
+  }
+
+  .et-bracket-swiss-round-header-rule {
+    flex: 1;
+    block-size: 1px;
+    background: currentColor;
+    opacity: 0.6;
+  }
+}

@@ -172,7 +172,7 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
         finalMatch: this.finalMatchComponent(),
       },
       config: this.config,
-      layoutComponents: this.resolvedLayout().components,
+      layout: this.resolvedLayout(),
       showsContinueElement: false,
     }),
   );

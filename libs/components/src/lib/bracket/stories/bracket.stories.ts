@@ -302,11 +302,5 @@ export const Swiss = {
   render: Template,
   args: {
     source: generateBracketDataForEthlete(ET_DUMMY_DATA_SWISS as unknown as RoundStageStructureWithMatchesView[]),
-    swissColors: {
-      neutral: '#374151',
-      positive: '#17D08C',
-      warning: '#F0B620',
-      negative: '#F83B51',
-    },
   },
 };

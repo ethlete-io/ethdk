@@ -11,6 +11,7 @@ import {
 import { RuntimeError } from '@ethlete/core';
 import { BracketConfig } from './bracket.config';
 import { BRACKET_ERROR_CODES } from './bracket-errors';
+import { BracketLayout } from './bracket-layout';
 
 /**
  * The cards a host component was told to draw with, each `undefined` where its input was left unset.
@@ -32,9 +33,10 @@ export const bracketCardNotRegistered = (card: string) =>
   );
 
 /**
- * Which component draws each kind of cell: the host's own inputs first, the active layout's cards
- * second (`swissBracketLayout({ matchComponent })`), `provideBracketConfig` last. The final falls back
- * to the match card. Throws `ET3414` for a match or round header card nothing names, and for a missing
+ * Which component draws each kind of cell, highest first: the host's own inputs, the active layout's cards
+ * (`swissBracketLayout({ matchComponent })`), the layout's own `provideBracketConfig` slot
+ * (`swiss: { roundHeaderComponent }`), the layout's default cards, the global `provideBracketConfig`
+ * cards. The final falls back to the match card. Throws `ET3414` for a match or round header card nothing names, and for a missing
  * continue card while the continue element is shown.
  *
  * Shared so that every representation of a bracket - the grid and the rounds list - picks the same card
@@ -45,14 +47,29 @@ export const bracketCardNotRegistered = (card: string) =>
 export const resolveBracketComponents = <TRoundData, TMatchData>(options: {
   overrides: BracketComponentOverrides<TRoundData, TMatchData>;
   config: BracketConfig<TRoundData, TMatchData>;
-  layoutComponents: BracketComponentOverrides<TRoundData, TMatchData> | undefined;
+  layout:
+    Pick<BracketLayout<TRoundData, TMatchData>, 'components' | 'configComponents' | 'defaultComponents'> | undefined;
   showsContinueElement: boolean;
 }): BracketComponents<TRoundData, TMatchData> => {
-  const { overrides, config, layoutComponents } = options;
+  const { overrides, config, layout } = options;
+  const layoutComponents = layout?.components;
+  const layoutConfig = layout?.configComponents?.(config);
+  const layoutDefaults = layout?.defaultComponents;
 
-  const match = overrides.match ?? layoutComponents?.match ?? config.matchComponent;
-  const roundHeader = overrides.roundHeader ?? layoutComponents?.roundHeader ?? config.roundHeaderComponent;
-  const continueCard = overrides.continue ?? layoutComponents?.continue ?? config.continueComponent;
+  const match =
+    overrides.match ?? layoutComponents?.match ?? layoutConfig?.match ?? layoutDefaults?.match ?? config.matchComponent;
+  const roundHeader =
+    overrides.roundHeader ??
+    layoutComponents?.roundHeader ??
+    layoutConfig?.roundHeader ??
+    layoutDefaults?.roundHeader ??
+    config.roundHeaderComponent;
+  const continueCard =
+    overrides.continue ??
+    layoutComponents?.continue ??
+    layoutConfig?.continue ??
+    layoutDefaults?.continue ??
+    config.continueComponent;
 
   if (!match) throw bracketCardNotRegistered('match');
   if (!roundHeader) throw bracketCardNotRegistered('round header');
@@ -60,7 +77,13 @@ export const resolveBracketComponents = <TRoundData, TMatchData>(options: {
 
   return {
     match,
-    finalMatch: overrides.finalMatch ?? layoutComponents?.finalMatch ?? config.finalMatchComponent ?? match,
+    finalMatch:
+      overrides.finalMatch ??
+      layoutComponents?.finalMatch ??
+      layoutConfig?.finalMatch ??
+      layoutDefaults?.finalMatch ??
+      config.finalMatchComponent ??
+      match,
     roundHeader,
     continue: continueCard,
   };

@@ -33,7 +33,7 @@ const drawing = (
     resolveBracketComponents({
       overrides: {},
       config: BRACKET_DEFAULT_CARDS,
-      layoutComponents: undefined,
+      layout: undefined,
       showsContinueElement: false,
     }),
   );

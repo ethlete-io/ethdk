@@ -392,12 +392,12 @@ could not fix in `bracket-default-cards-migration-tasks.md`:
 yarn nx g @ethlete/components:migrate-bracket-default-cards
 ```
 
-| Slot         | Default                                                                                                                 |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Match        | A compact match card - two rows, short codes, the winner emphasized with an accent bar                                  |
-| Final match  | A distinct hero cell: the round's name under a trophy, an accent frame in the color theme in scope, and a champion line |
-| Round header | The round's name, its swiss group's name where there is one, and its match count - as a real heading                    |
-| Continue     | "N winners advance", with an accessible label of its own                                                                |
+| Slot         | Default                                                                                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Match        | A compact match card - two rows, short codes, the winner emphasized with an accent bar                                                                        |
+| Final match  | A distinct hero cell: the round's name under a trophy, an accent frame in the color theme in scope, and a champion line                                       |
+| Round header | The round's name, its swiss group's name where there is one, and its match count - as a real heading. Swiss sources draw [their own](#the-swiss-round-header) |
+| Continue     | "N winners advance", with an accessible label of its own                                                                                                      |
 
 ### The normalizer
 
@@ -694,6 +694,34 @@ layout → config → shipped default. The `swissColors` **input** on `<et-brack
 over the factory's `colors`, per instance. Group geometry (`swissGroupPadding`,
 `swissGroupBorderRadius`) stays where the rest of the layout geometry is - an input, or
 `provideBracketConfig`.
+
+### The swiss round header
+
+Swiss sources draw `BracketSwissRoundHeaderComponent` by default: one line above each group box with
+the round's name (small, uppercase, letter-spaced) on the left, a thin rule across the group width, and
+the group's record (`1-0`) on the right. The header, the rule and the group box border take the
+record's tone:
+
+| Tone       | Records                                     | Color                                   |
+| ---------- | ------------------------------------------- | --------------------------------------- |
+| `neutral`  | `0-0`                                       | The surface's muted text and border     |
+| `positive` | More wins than losses (`1-0`, `2-0`)        | The app's `type: 'success'` color theme |
+| `warning`  | Everything in between (`0-1`, `1-1`)        | The app's `type: 'warning'` color theme |
+| `negative` | One loss from elimination (`0-2`, `1-2`, …) | The app's `type: 'error'` color theme   |
+
+`swissRecordTone('1-0')` returns the tone of a record. A tone whose theme type the app has not
+registered stays neutral. Explicit `colors` (or the `swissColors` input) also color the header, so the
+header always matches its box.
+
+The swiss header beats the global `roundHeaderComponent` of `provideBracketConfig`, so an app that
+names one for its elimination stages still gets it on swiss only through a swiss-specific slot. From
+highest to lowest:
+
+1. the `roundHeaderComponent` input on `<et-bracket>`
+2. `swissBracketLayout({ roundHeaderComponent })`
+3. `provideBracketConfig({ swiss: { roundHeaderComponent } })`
+4. `BracketSwissRoundHeaderComponent`
+5. `provideBracketConfig({ roundHeaderComponent })`
 
 Swiss has no mirrored variant: a stage of standings groups has nothing to fold.
 
@@ -995,13 +1023,14 @@ Connector and swiss-group-border colors are public custom properties. They defau
 ambient [surface](/core/theming) border color, so the bracket blends into whatever surface
 it sits on - set them to override:
 
-| Token                                   | Default                                   | Purpose                                                                 |
-| --------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------- |
-| `--et-bracket-line-color`               | `--et-surface-border`                     | Connector line color.                                                   |
-| `--et-bracket-swiss-group-border-color` | `var(--et-bracket-line-color)`            | Swiss group border color (per-group overrides come from `swissColors`). |
-| `--et-bracket-move-duration`            | `0.2s`                                    | How long a relayout takes - see [Narrow screens](#narrow-screens).      |
-| `--et-bracket-move-easing`              | `ease`                                    | The timing function of a relayout.                                      |
-| `--et-bracket-journey-endpoint-outline` | `1px dashed var(--et-bracket-line-color)` | The outline around the match a journey ends in. `none` hides it.        |
+| Token                                   | Default                                   | Purpose                                                                                                      |
+| --------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `--et-bracket-line-color`               | `--et-surface-border`                     | Connector line color.                                                                                        |
+| `--et-bracket-swiss-group-border-color` | `var(--et-bracket-line-color)`            | Swiss group border color; a toned group takes its theme color (per-group overrides come from `swissColors`). |
+| `--et-bracket-swiss-<tone>-color`       | the tone's theme text color               | Swiss round header color per tone (`neutral`, `positive`, `warning`, `negative`); set from `swissColors`.    |
+| `--et-bracket-move-duration`            | `0.2s`                                    | How long a relayout takes - see [Narrow screens](#narrow-screens).                                           |
+| `--et-bracket-move-easing`              | `ease`                                    | The timing function of a relayout.                                                                           |
+| `--et-bracket-journey-endpoint-outline` | `1px dashed var(--et-bracket-line-color)` | The outline around the match a journey ends in. `none` hides it.                                             |
 
 These are not declared via `@property`: an `@property` `initial-value` can't contain a
 `var()`, and the defaults intentionally resolve to a theme token. The bracket doesn't

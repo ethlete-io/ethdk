@@ -1,3 +1,5 @@
+import { BracketSwissGroupColorType } from '../linked/swiss';
+
 /** One connector between two cards, ready for an SVG `<path>`. */
 export type BracketEdge = {
   /**
@@ -35,6 +37,8 @@ export type BracketRect = {
   cssClass: string;
   stroke: string;
   strokeWidth: number;
+  /** The record tone of the swiss group the box wraps - see {@link getSwissGroupColorType}. */
+  tone?: BracketSwissGroupColorType;
 };
 
 export type BracketGradientStop = {

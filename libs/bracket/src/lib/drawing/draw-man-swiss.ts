@@ -141,6 +141,7 @@ const groupBorderRect = (
     radius: border.radius,
     stroke: color ?? 'currentColor',
     strokeWidth: border.width,
+    tone: group.colorType,
     cssClass: `et-bracket-swiss-group-border et-bracket-swiss-group-border--${group.id} et-bracket-swiss-group-border--${group.colorType}`,
   };
 };

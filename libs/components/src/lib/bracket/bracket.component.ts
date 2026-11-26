@@ -15,7 +15,7 @@ import {
   Type,
   ViewEncapsulation,
 } from '@angular/core';
-import { createComponentId, injectRenderer, injectStyleManager } from '@ethlete/core';
+import { createComponentId, injectRenderer, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import {
   BracketContinueComponent,
   BracketFinalAlignment,
@@ -53,6 +53,7 @@ import {
   createBracketHostLayout,
   createBracketHostMatchNormalizer,
 } from './bracket-host';
+import { injectSwissToneThemes } from './layouts/swiss/swiss-tone-themes';
 import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from './bracket.config';
 
 @Component({
@@ -60,7 +61,7 @@ import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from '
   templateUrl: './bracket.component.html',
   styleUrl: './bracket.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgComponentOutlet],
+  imports: [NgComponentOutlet, ProvideColorDirective],
   providers: [{ provide: BRACKET_CARD_CONTEXT, useExisting: BracketComponent }],
   host: {
     class: 'et-bracket-host',
@@ -69,6 +70,8 @@ import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from '
 export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   private config = injectBracketConfig();
 
+  protected swissToneThemes = injectSwissToneThemes();
+
   public source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
   /**
@@ -76,7 +79,6 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
    * function your own `createBracket` call uses, so the drawn lines and the resolved picks follow one graph.
    */
   public previousMatchIds = input<CreateBracketOptions<TMatchData>['previousMatchIds']>(undefined);
-
   public columnWidth = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
@@ -107,11 +109,11 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public finalRoundHeaderGap = input<number | null | undefined, OptionalNumberInput>(undefined, {
     transform: nullableNumberAttribute,
   });
+
   public alignRoundHeaders = input<BracketRoundHeaderAlign | undefined>(undefined);
 
   /** Move this round to the inline start without changing the bracket's vertical density. */
   public focusRoundId = input<string | null>(null);
-
   /**
    * Room kept to the inline start of `focusRoundId`, in px - the gutter a one-round panel puts its
    * navigation in, and that a card badge may straddle the card's edge into.
@@ -144,6 +146,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public swissGroupBorderRadius = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
+
   public swissColors = input<BracketSwissColors | undefined>(undefined);
 
   /**
@@ -166,7 +169,6 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public hideRoundHeaders = input<boolean | undefined, OptionalBooleanInput>(undefined, {
     transform: optionalBooleanAttribute,
   });
-
   /**
    * Titles each part of the bracket - a double elimination's upper bracket, lower bracket and finals -
    * and keeps the title at the inline start of the scroll container while the bracket scrolls sideways.
@@ -174,6 +176,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public showSectionTitles = input<boolean | undefined, OptionalBooleanInput>(undefined, {
     transform: optionalBooleanAttribute,
   });
+
   public sectionTitleHeight = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
@@ -183,7 +186,6 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
    * level with the upper bracket final, or `'center'` between the upper and the lower bracket final.
    */
   public finalAlignment = input<BracketFinalAlignment | undefined>(undefined);
-
   public showContinueElement = input<boolean | undefined, OptionalBooleanInput>(undefined, {
     transform: optionalBooleanAttribute,
   });
@@ -193,15 +195,16 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public continueElementHeight = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
+
   public continueLineDashArray = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
-
   public roundHeaderComponent = input<BracketRoundHeaderComponent<TRoundData, TMatchData> | undefined>();
   public matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   public finalMatchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   public matchInputs = input<BracketMatchInputs<TRoundData, TMatchData> | undefined>();
   public continueComponent = input<BracketContinueComponent<TRoundData, TMatchData> | undefined>();
+
   public sectionTitleComponent = input<BracketSectionTitleComponent<TRoundData, TMatchData> | undefined>();
 
   /**
@@ -316,7 +319,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
         continue: this.continueComponent(),
       },
       config: this.config,
-      layoutComponents: layout.components,
+      layout,
       showsContinueElement: !!options.continueElement,
     });
 
@@ -363,6 +366,16 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       colors: this.swissColors(),
     }),
   );
+
+  protected swissToneColors = computed(() => {
+    const colors: Record<string, string> = {};
+
+    for (const rect of this.drawing().rects) {
+      if (rect.tone && rect.stroke !== 'currentColor') colors[`--et-bracket-swiss-${rect.tone}-color`] = rect.stroke;
+    }
+
+    return colors;
+  });
 
   protected focusRoundOffset = computed(() => {
     const focusRoundId = this.focusRoundId();

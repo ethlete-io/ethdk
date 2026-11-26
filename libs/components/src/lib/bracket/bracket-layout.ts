@@ -1,5 +1,6 @@
 import { Type } from '@angular/core';
 import { BracketComponentOverrides } from './bracket-components';
+import { BracketConfig } from './bracket.config';
 import { BracketLayoutSettings } from './bracket-grid';
 import { BracketLabels } from './bracket-labels';
 import {
@@ -105,10 +106,18 @@ export type BracketLayout<TRoundData = any, TMatchData = any> = {
   ) => BracketListSection;
 
   /**
-   * Per-layout default cards, sitting between the host's inputs and the app config: input →
-   * these → `provideBracketConfig` components → shipped defaults.
+   * Per-layout cards, sitting between the host's inputs and the app config: input → these →
+   * {@link configComponents} → {@link defaultComponents} → `provideBracketConfig` components.
    */
   components?: BracketComponentOverrides<TRoundData, TMatchData>;
+
+  /** The cards this layout reads from its own slot of the app config, e.g. `provideBracketConfig({ swiss })`. */
+  configComponents?: (
+    config: BracketConfig<TRoundData, TMatchData>,
+  ) => BracketComponentOverrides<TRoundData, TMatchData> | undefined;
+
+  /** The cards this layout draws when neither the host, the layout options nor its config slot name one. */
+  defaultComponents?: BracketComponentOverrides<TRoundData, TMatchData>;
 
   /**
    * Styles-only components the host mounts (once, app-wide) while this layout renders - CSS only

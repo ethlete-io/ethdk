@@ -120,6 +120,14 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   sectionTitleComponent?: BracketSectionTitleComponent<TRoundData, TMatchData>;
 
   /**
+   * Cards for swiss sources only. A `roundHeaderComponent` here beats the swiss default header, which in
+   * turn beats the global `roundHeaderComponent`.
+   */
+  swiss?: {
+    roundHeaderComponent?: BracketRoundHeaderComponent<TRoundData, TMatchData>;
+  };
+
+  /**
    * How to read your match data - required by the **default** cards, ignored by cards of your own. See
    * {@link BracketMatchNormalizer}; the Ethlete integration ships a ready-made one.
    */
@@ -143,6 +151,7 @@ export type BracketLayoutConfig = Omit<
   | 'finalMatchComponent'
   | 'continueComponent'
   | 'sectionTitleComponent'
+  | 'swiss'
   | 'matchNormalizer'
 >;
 

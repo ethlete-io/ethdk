@@ -23,7 +23,7 @@ const build = (source: BracketDataSource<null, null>, rowSpanRoundId: string | n
     resolveBracketComponents({
       overrides: {},
       config: BRACKET_DEFAULT_CARDS,
-      layoutComponents: undefined,
+      layout: undefined,
       showsContinueElement: false,
     }),
   );

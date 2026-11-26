@@ -80,4 +80,13 @@ describe('drawSwissMan', () => {
 
     expect(drawing.rects.map((rect) => rect.id)).toEqual(['r0|0-0', 'r1|1-0', 'r2|2-0', 'r3|3-0', 'r4|4-0']);
   });
+
+  it('tags each group box with the tone of its record', () => {
+    const drawing = drawSwiss(swissSource([[['r0-m0', 'a', 'b', 'home']], [['r1-m0', 'a', 'c', 'home']]]));
+
+    expect(drawing.rects.map((rect) => [rect.id, rect.tone])).toEqual([
+      ['r0|0-0', 'neutral'],
+      ['r1|1-0', 'positive'],
+    ]);
+  });
 });
