@@ -29,6 +29,7 @@ How the doc session and the builder work. A process change edits this page.
 - Automatic work must not wait on a manual approval. If a permission check denies a step, nobody routes around it: the row parks with the denial text, and the doc session plans a tool change that makes the step transparent.
 - Two failed repairs: revert to the last good state.
 - Red CI is first, before every other row.
+- One heavy job runs on the machine at a time, across all repos: every design check, build, e2e or full test run goes through `flock /tmp/fifagg-heavy.lock`, with at most 2 local e2e workers. An agent stops every process it started before it hands back.
 
 ## Git
 
