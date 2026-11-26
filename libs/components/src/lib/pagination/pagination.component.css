@@ -30,8 +30,8 @@
     inline-size: 100%;
   }
 
-  /* Touch gets the comfortable 44px target. `:where()` holds this at zero specificity so the `sm` and
-     compact rules below - which floor the size on purpose - still win over it. */
+  /* Touch gets the comfortable 44px target. `:where()` holds this at zero specificity so the `sm` rule
+     below - which floors the size on purpose - still wins over it. */
   @media (pointer: coarse) {
     :where(.et-pagination-host) {
       --et-pagination-item-size: 44px;
@@ -162,11 +162,8 @@
   /* Compact pager: when the paginator's own width can't hold a comfortable numbered window, it renders
      just previous/next around a "page X of Y" readout (see `compact` in the component). Driven by the
      measured container width — not a viewport media query — so it collapses per instance, wherever it
-     sits. The remaining controls grow into roomy touch targets since there are only two of them. */
+     sits. */
   .et-pagination-host:where([data-compact]) {
-    /* Modest chevrons that sit level with a small page-size select — floored so touch stays usable
-       without the bulky whitespace of a full 44px target. */
-    --et-pagination-item-size: 34px;
     --et-pagination-gap: 2px;
   }
 

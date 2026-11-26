@@ -224,8 +224,8 @@ width** - not a viewport media query, so it reacts to the space it actually sits
 in (a sidebar, a table footer, a modal). As width shrinks it first trims the page
 window to fit one row - shedding sibling pages, then the first/last jumps
 (`siblingCount`/`boundaryCount` act as the _desired_ maximum; it only ever shows
-that many or fewer). Once the width is too tight for a useful number row, it
-**collapses to a compact pager**. Set `responsive="false"` to always render the
+that many or fewer). Only once even the shortest number row (no siblings, no
+first/last jumps) does not fit does it **collapse to a compact pager**. Set `responsive="false"` to always render the
 full configured number row.
 
 The compact pager is a range readout followed by previous/next - the item range
@@ -309,9 +309,9 @@ a standard tab stop, so keyboard users move through them with Tab and activate w
 Enter/Space (links also with the usual anchor semantics). Ellipses are inert and
 `aria-hidden`; the readout is an `aria-live="polite"` region. On coarse pointers
 (touch) the default density grows to a comfortable 44px tap target - and the
-page-size select with it, so the two stay level. `size="sm"` (28px) and the compact
-pager (34px) keep their visible size and spacing, and take a 44px hit area through an
-invisible pseudo-element instead. The hit areas sit below every visible item, so a tap on
+page-size select with it, so the two stay level. The compact pager keeps that 44px
+size. `size="sm"` (28px) keeps its visible size and spacing, and takes a 44px hit area
+through an invisible pseudo-element instead. The hit areas sit below every visible item, so a tap on
 an item's own box always reaches that item, never its neighbour. When a large set doesn't fit, the controls wrap (rather than scrolling) so
 every one stays reachable.
 

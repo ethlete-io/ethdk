@@ -202,7 +202,7 @@ test.describe('pagination / touch', () => {
   test.skip(({ isMobile }) => !isMobile, 'touch-only: tap interaction');
 
   test('a tap changes the page', async ({ page }) => {
-    // The touch viewport is under the compact threshold, so the pager has no page-number buttons.
+    // The touch viewport is too narrow for the shortest number row, so the pager has no page-number buttons.
     const root = await openStory(page, DEFAULT_STORY_ID);
     const readout = root.locator('.et-pagination-readout-text');
 
@@ -217,7 +217,7 @@ test.describe('pagination / touch', () => {
 test.describe('pagination / touch hit area', () => {
   test.skip(({ isMobile }) => !isMobile, 'touch-only: coarse pointer hit area');
 
-  test('the compact pager keeps its 34px chevrons and 2px gap but takes a 44px tap', async ({ page }) => {
+  test('the compact pager keeps 44px chevrons with a 2px gap', async ({ page }) => {
     const root = await openStory(page, PAGE_SIZE_SELECT_STORY_ID);
     await expectTouchMode(page);
 
@@ -226,16 +226,16 @@ test.describe('pagination / touch hit area', () => {
     expect(status?.gapAfter).toBe(2);
     expect(previous).toEqual({
       isButton: true,
-      width: 34,
-      height: 34,
+      width: TOUCH_TARGET,
+      height: TOUCH_TARGET,
       hitWidth: TOUCH_TARGET,
       hitHeight: TOUCH_TARGET,
       gapAfter: 2,
     });
     expect(next).toEqual({
       isButton: true,
-      width: 34,
-      height: 34,
+      width: TOUCH_TARGET,
+      height: TOUCH_TARGET,
       hitWidth: TOUCH_TARGET,
       hitHeight: TOUCH_TARGET,
       gapAfter: null,

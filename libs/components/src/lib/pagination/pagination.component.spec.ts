@@ -426,4 +426,31 @@ describe('PaginationComponent', () => {
       vi.restoreAllMocks();
     }
   });
+  it.each([
+    ['renders the full row on a 360px host with 2 pages', 360, false],
+    ['collapses to the compact pager when even the shortest row does not fit', 150, true],
+  ])('%s', (_, hostWidth, compact) => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(hostWidth);
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(44);
+
+    try {
+      const fixture = TestBed.createComponent(PaginationComponent);
+      fixture.componentRef.setInput('totalPages', 2);
+      fixture.componentRef.setInput('page', 1);
+      fixture.detectChanges();
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(host.hasAttribute('data-compact')).toBe(compact);
+      expect(host.querySelector('.et-pagination-status') !== null).toBe(compact);
+
+      if (!compact) {
+        expect(host.querySelectorAll('.et-pagination-button').length).toBe(6);
+      }
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
 });

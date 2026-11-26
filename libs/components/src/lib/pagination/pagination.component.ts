@@ -28,12 +28,6 @@ import { PAGINATION_SIZES, PaginateOptions, PaginationItem, PaginationSize } fro
 export type PaginationRenderAs = 'buttons' | 'links';
 
 /**
- * Below this measured width (px) the paginator collapses to previous/next + a "page X of Y" readout,
- * so it stays on one line with roomy touch targets instead of a cramped row of number buttons.
- */
-const COMPACT_MAX_WIDTH = 480;
-
-/**
  * The default paginator. Renders themed page-number controls (via the shared `[et-button]`) with
  * first/previous/next/last jumps and ellipsis gaps for large page counts, driven by the headless
  * {@link PaginationDirective}.
@@ -128,6 +122,7 @@ export class PaginationComponent {
   protected jumpValue = signal<number | null>(null);
 
   private hostDimensions = signalHostElementDimensions();
+  private lastItemWidth = 40;
 
   protected fitsWidth = computed(() => this.responsive() && this.compact() !== true);
 
@@ -143,22 +138,6 @@ export class PaginationComponent {
     const end = Math.min(page * size, total);
 
     return [start, end];
-  });
-
-  /**
-   * Whether to render the compact previous/next pager instead of the number row. Honors the `compact`
-   * input override; otherwise (when `responsive`) collapses once the measured width drops below
-   * {@link COMPACT_MAX_WIDTH}.
-   */
-  protected isCompact = computed(() => {
-    const forced = this.compact();
-
-    if (forced !== null) return forced;
-    if (!this.responsive()) return false;
-
-    const width = this.hostDimensions()?.client?.width ?? 0;
-
-    return width > 0 && width < COMPACT_MAX_WIDTH;
   });
 
   /** The "Showing X–Y of Z" readout, or `null` when `totalItems`/`pageSize` aren't set. */
@@ -209,11 +188,7 @@ export class PaginationComponent {
     };
   });
 
-  /**
-   * The rendered page items. With `responsive` on (the default) the window is trimmed to the richest
-   * configuration that fits the current width; otherwise it's the headless directive's full window.
-   */
-  protected items = computed<PaginationItem[]>(() => {
+  private fittedWindow = computed<{ items: PaginationItem[]; fits: boolean }>(() => {
     const base: PaginateOptions = {
       currentPage: this.pagination.page(),
       totalPages: this.pagination.totalPages(),
@@ -224,11 +199,11 @@ export class PaginationComponent {
       labels: this.pagination.resolvedLabels(),
     };
 
-    if (!this.responsive()) return paginate(base);
+    if (!this.responsive()) return { items: paginate(base), fits: true };
 
     const width = this.hostDimensions()?.client?.width ?? 0;
 
-    if (width <= 0) return paginate(base);
+    if (width <= 0) return { items: paginate(base), fits: true };
 
     const maxSlots = this.slotsThatFit(width);
 
@@ -237,11 +212,30 @@ export class PaginationComponent {
     for (const attempt of this.fitAttempts(base)) {
       items = paginate({ ...base, ...attempt });
 
-      if (items.length <= maxSlots) break;
+      if (items.length <= maxSlots) return { items, fits: true };
     }
 
-    return items;
+    return { items, fits: false };
   });
+
+  /**
+   * Whether to render the compact previous/next pager instead of the number row. Honors the `compact`
+   * input override; otherwise (when `responsive`) collapses only once even the shortest number row
+   * does not fit the measured width.
+   */
+  protected isCompact = computed(() => {
+    const forced = this.compact();
+
+    if (forced !== null) return forced;
+
+    return !this.fittedWindow().fits;
+  });
+
+  /**
+   * The rendered page items. With `responsive` on (the default) the window is trimmed to the richest
+   * configuration that fits the current width; otherwise it's the headless directive's full window.
+   */
+  protected items = computed<PaginationItem[]>(() => this.fittedWindow().items);
 
   /** The href for a link item, or `null` (renders a button) when not in links mode or the item is disabled. */
   protected hrefFor(item: PaginationItem): string | null {
@@ -324,14 +318,17 @@ export class PaginationComponent {
   /**
    * How many item cells fit across `width`. Measures the currently-rendered items rather than the CSS
    * size tokens: item width is content-/token-driven but independent of how many items there are, so
-   * this can't feed back into a layout loop. Falls back to a rough estimate before the first render.
+   * this can't feed back into a layout loop. Keeps the last measurement while the compact pager hides the items.
    */
   private slotsThatFit(width: number) {
     // Read the rendered items untracked: they're the output of this very computation, so subscribing
     // to them would loop. Item width is count-independent, so a stale-by-one-render read is still right.
     return untracked(() => {
       const items = this.itemEls();
-      const itemWidth = items.length ? Math.max(...items.map((ref) => ref.nativeElement.offsetWidth)) : 40;
+
+      if (items.length) this.lastItemWidth = Math.max(...items.map((ref) => ref.nativeElement.offsetWidth));
+
+      const itemWidth = this.lastItemWidth;
       const list = this.listEl()?.nativeElement;
       const gap = list ? Number.parseFloat(getComputedStyle(list).columnGap) || 0 : 0;
       const slot = itemWidth + gap;
