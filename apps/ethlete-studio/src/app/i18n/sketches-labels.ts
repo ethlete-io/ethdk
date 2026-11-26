@@ -54,7 +54,11 @@ export const SKETCHES_LABELS = {
   fromSdk: 'vom SDK',
   stateSeparator: ' · ',
   sameAsRest: (states: readonly string[], base: string) => `${states.join(', ')} = ${base}`,
-  stackedStates: (states: readonly string[]) => `+ ${states.join(', ')}`,
+  stackedStates: (states: readonly string[]) =>
+    states.length === 1
+      ? '+ 1 weiterer Zustand sieht genauso aus. Klick zeigt den Namen.'
+      : `+ ${states.length} weitere Zustände sehen genauso aus. Klick zeigt die Namen.`,
+  stackedStatesNames: (states: readonly string[]) => states.join(', '),
   comparing: 'vergleicht …',
   compareFailed: (message: string) => `Vergleich fehlgeschlagen: ${message}`,
   reload: 'Erneut laden',

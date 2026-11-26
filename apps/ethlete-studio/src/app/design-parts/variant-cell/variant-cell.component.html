@@ -87,12 +87,19 @@
         data-sk-crop-stack
       ></div>
     }
-    <span
+    <button
       [style.font-size.px]="labelFont()"
       [style.width.px]="frameWidth()"
-      class="mt-space-1 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere"
+      [attr.aria-expanded]="stackedOpen()"
+      (click)="stackedOpen.set(!stackedOpen())"
+      class="mt-space-1 cursor-pointer text-left text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere"
       data-sk-stack-states
-      >{{ LABELS.stackedStates(stacked()) }}</span
+      type="button"
     >
+      <span>{{ LABELS.stackedStates(stacked()) }}</span>
+      @if (stackedOpen()) {
+        <span class="font-code" data-sk-stack-names>{{ LABELS.stackedStatesNames(stacked()) }}</span>
+      }
+    </button>
   }
 </div>

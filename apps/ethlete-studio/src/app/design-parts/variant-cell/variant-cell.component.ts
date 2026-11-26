@@ -1,4 +1,4 @@
-import { Component, computed, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, computed, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { SpinnerComponent } from '@ethlete/components';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 
@@ -49,6 +49,7 @@ export class VariantCellComponent {
   public labelRowRef = viewChild<ElementRef<HTMLElement>>('labelRow');
   public stateLabelRef = viewChild<ElementRef<HTMLElement>>('stateLabel');
 
+  protected stackedOpen = signal(false);
   protected readonly LABELS = SKETCHES_LABELS;
   protected readonly STACK_INSETS = [6, 12];
 

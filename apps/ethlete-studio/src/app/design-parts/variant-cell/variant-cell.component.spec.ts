@@ -1,4 +1,4 @@
-import { Component, provideZonelessChangeDetection } from '@angular/core';
+import { ApplicationRef, Component, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { VariantCellComponent } from './variant-cell.component';
@@ -106,7 +106,13 @@ describe('VariantCellComponent', () => {
     expect(cell.querySelector('[data-sk-frame]')?.hasAttribute('data-sk-cropped')).toBe(true);
     expect(cell.querySelectorAll('[data-sk-crop-mark]').length).toBe(2);
     expect(cell.querySelectorAll('[data-sk-crop-stack]').length).toBe(2);
-    expect(cell.querySelector('[data-sk-stack-states]')?.textContent).toBe('+ title-hover, title-focus-visible');
+    const note = cell.querySelector('[data-sk-stack-states]');
+    expect(note?.textContent).toContain('+ 2 weitere Zustände sehen genauso aus');
+    expect(note?.textContent).toContain('Klick zeigt die Namen');
+    expect(cell.querySelector('[data-sk-stack-names]')).toBeNull();
+    (note as HTMLElement).click();
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(cell.querySelector('[data-sk-stack-names]')?.textContent).toBe('title-hover, title-focus-visible');
     expect(cell.querySelector<HTMLElement>('[data-sk-stack-states]')?.style.width).toBe('100px');
   });
 
