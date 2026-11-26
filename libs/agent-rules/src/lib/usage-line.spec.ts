@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatUsage } from '../../content/mods/plugins/usage-line/hooks/format';
+import { formatUsage, statusTextOf } from '../../content/mods/plugins/usage-line/hooks/format';
 
 const resetsAt = '2026-11-27T00:40:00.000Z';
 const local = new Date(resetsAt);
@@ -23,5 +23,11 @@ describe('usage-line formatting', () => {
 
   it('shows nothing without a subscription window', () => {
     expect(formatUsage([])).toBeUndefined();
+  });
+
+  it('draws the usage as the plain status line text, after a command line when one exists', () => {
+    expect(statusTextOf(null, '5h 7% · Woche 9%')).toBe('5h 7% · Woche 9%');
+    expect(statusTextOf('main', '5h 7% · Woche 9%')).toBe('main · 5h 7% · Woche 9%');
+    expect(statusTextOf('main', null)).toBe('main');
   });
 });

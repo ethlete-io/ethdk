@@ -17,3 +17,8 @@ export function formatUsage(limits: RateLimit[]) {
   if (!fiveHour && !sevenDay) return undefined;
   return `5h ${percent(fiveHour)}%${clock(fiveHour?.resetsAt)} · Woche ${percent(sevenDay)}%`;
 }
+
+export function statusTextOf(commandText: string | null, usage: string | null) {
+  if (!usage) return commandText;
+  return commandText ? `${commandText} · ${usage}` : usage;
+}
