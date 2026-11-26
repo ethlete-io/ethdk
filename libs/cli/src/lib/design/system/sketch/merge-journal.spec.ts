@@ -30,6 +30,8 @@ const checkoutCase = () => {
   git('init', '-q');
   git('config', 'maintenance.auto', 'false');
   git('config', 'gc.auto', '0');
+  git('config', 'user.name', 't');
+  git('config', 'user.email', 't@t');
   git('add', '.');
   git('commit', '-qm', 'base');
 

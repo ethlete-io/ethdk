@@ -23,6 +23,8 @@ const readyOn = (options: { variants: string[]; sketch?: string }) => {
     gitSpawn(['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
 
   git('init');
+  git('config', 'user.name', 't');
+  git('config', 'user.email', 't@t');
   git('add', '.');
   git('commit', '-m', 'base');
 
