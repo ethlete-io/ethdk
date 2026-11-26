@@ -392,3 +392,30 @@ test.describe('pagination / links modified click', () => {
     });
   }
 });
+
+test.describe('pagination / vertical centring', () => {
+  test('page numbers and arrows sit at the vertical centre of their button', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    const offsets = await root.locator('.et-pagination-button').evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        const content = button.querySelector('svg');
+        const range = document.createRange();
+
+        if (content) {
+          range.selectNode(content);
+        } else {
+          range.selectNodeContents(button);
+        }
+
+        const glyph = range.getBoundingClientRect();
+
+        return Math.abs(glyph.top + glyph.height / 2 - (rect.top + rect.height / 2));
+      }),
+    );
+
+    expect(offsets.length).toBeGreaterThanOrEqual(2);
+    for (const offset of offsets) expect(offset).toBeLessThanOrEqual(0.5);
+  });
+});

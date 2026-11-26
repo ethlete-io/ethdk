@@ -78,6 +78,8 @@
     --_et-button-padding: 0;
     --_et-button-border-radius: var(--et-pagination-radius);
 
+    align-items: center;
+
     /* Page numbers grow past the square only when the digits demand it (100+). */
     padding-inline: 4px;
     min-inline-size: var(--et-pagination-item-size);
