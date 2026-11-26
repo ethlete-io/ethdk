@@ -46,10 +46,15 @@ export const pushNext = ({
 }) => {
   const sha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' }).stdout.trim();
   for (const line of uncommittedDesignRecordLines({ cwd })) log(line);
-  if (mirrorStatus(sha, mirror) === 'red') {
+  const verdict = mirrorStatus(sha, mirror);
+  if (verdict === 'red') {
     log(`push-next: the mirror judged ${sha.slice(0, 12)} red (${join(mirror, `${sha}.json`)}); commit a fix on top.`);
     return 1;
   }
+  if (verdict !== 'green')
+    log(
+      `push-next: the mirror has ${verdict ? 'an error verdict' : 'no verdict'} for ${sha.slice(0, 12)}; only the pre-push suite checks it.`,
+    );
   if (dryRun) {
     log(`push-next: --dry-run, would push ${sha.slice(0, 12)} to ${remote} ${branch}`);
     return 0;

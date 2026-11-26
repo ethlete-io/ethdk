@@ -16,6 +16,9 @@ const run = (cwd, ...args) => {
   return result.stdout.trim();
 };
 
+const writeVerdict = (mirror, sha, status) =>
+  writeFileSync(join(mirror, `${sha}.json`), JSON.stringify({ sha, status }));
+
 const setup = (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'push-next-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
@@ -33,6 +36,8 @@ const setup = (t) => {
   const sha = run(mac, 'rev-parse', 'HEAD');
   const mirror = join(dir, 'mirror');
   mkdirSync(mirror);
+  process.env['ETHLETE_MIRROR_DIR'] = mirror;
+  writeVerdict(mirror, sha, 'green');
   return { origin, mac, sha, mirror };
 };
 
@@ -102,9 +107,6 @@ test('a push names each uncommitted design record file with its age', (t) => {
   assert.match(lines[0], /\.ethlete\/design\/studio\/ready\.json is uncommitted, last written 0 min ago/);
 });
 
-const writeVerdict = (mirror, sha, status) =>
-  writeFileSync(join(mirror, `${sha}.json`), JSON.stringify({ sha, status }));
-
 // Tom's decision: a red mirror verdict blocks `yarn push` for that commit only, nothing is reverted.
 test('a commit the mirror judged red is refused; a green, error or unjudged one pushes', (t) => {
   const { origin, mac, sha, mirror } = setup(t);
@@ -127,6 +129,24 @@ test('a commit the mirror judged red is refused; a green, error or unjudged one 
     assert.equal(pushNext({ cwd: mac, holder: 'mac', mirror, log: () => undefined }), 0);
     assert.equal(originRef(origin, 'refs/heads/next'), head);
   }
+});
+
+test('a push of a commit without a green mirror verdict says so', (t) => {
+  const { mac, sha, mirror } = setup(t);
+  rmSync(join(mirror, `${sha}.json`));
+  const linesOf = () => {
+    const lines = [];
+    pushNext({ cwd: mac, holder: 'mac', mirror, dryRun: true, log: (l) => lines.push(l) });
+    return lines.filter((line) => line.includes('mirror'));
+  };
+
+  assert.deepEqual(linesOf(), [
+    `push-next: the mirror has no verdict for ${sha.slice(0, 12)}; only the pre-push suite checks it.`,
+  ]);
+  writeVerdict(mirror, sha, 'error');
+  assert.match(linesOf()[0], /the mirror has an error verdict for [0-9a-f]{12}/);
+  writeVerdict(mirror, sha, 'green');
+  assert.deepEqual(linesOf(), []);
 });
 
 test('an expired slot of another holder is taken and released without a warning', (t) => {
