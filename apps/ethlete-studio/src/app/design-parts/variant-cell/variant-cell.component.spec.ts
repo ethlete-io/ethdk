@@ -113,6 +113,7 @@ describe('VariantCellComponent', () => {
     (note as HTMLElement).click();
     await TestBed.inject(ApplicationRef).whenStable();
     expect(cell.querySelector('[data-sk-stack-names]')?.textContent).toBe('title-hover, title-focus-visible');
+    expect(cell.querySelector('[data-sk-stack-names]')?.classList.contains('block')).toBe(true);
     expect(cell.querySelector<HTMLElement>('[data-sk-stack-states]')?.style.width).toBe('100px');
   });
 
