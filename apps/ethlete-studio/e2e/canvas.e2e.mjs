@@ -3511,7 +3511,7 @@ const CASES = [
         const stateOf = (key) => key.slice(key.indexOf(' ') + 1);
         const grouped = await page.evaluate(() =>
           [...document.querySelectorAll('ethlete-sketch-view [data-sk-crop-count]')]
-            .map((count) => Number.parseInt(count.textContent ?? '', 10) - 1)
+            .map((count) => Number.parseInt(count.textContent?.match(/\d+/)?.[0] ?? '', 10) - 1)
             .filter((extra) => extra > 0)
             .reduce((sum, extra) => sum + extra, 0),
         );
