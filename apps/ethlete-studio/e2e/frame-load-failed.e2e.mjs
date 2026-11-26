@@ -10,7 +10,8 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { connect } from 'node:net';
+import { loadavg, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { copyPart } from './copy-part.mjs';
@@ -347,7 +348,60 @@ const everyPageFrameDraws = async (context) => {
   };
 };
 
-const queueOf = async (designPort) => (await fetch(`http://[::1]:${designPort}/__design/queue`)).json();
+let lastQueueAnswerAt;
+
+const designServerPids = () =>
+  readdirSync('/proc')
+    .filter((entry) => /^\d+$/.test(entry))
+    .filter((pid) => {
+      try {
+        const commandLine = readFileSync(`/proc/${pid}/cmdline`, 'utf8').split('\0');
+
+        return commandLine.includes('design') && commandLine.includes(checkout);
+      } catch {
+        return false;
+      }
+    });
+
+const probeListening = (designPort) =>
+  new Promise((done) => {
+    const socket = connect({ port: designPort, host: '::1' });
+
+    socket.once('connect', () => (socket.destroy(), done('accepts a new connection')));
+    socket.once('error', (error) => done(`refuses a new connection (${error.code})`));
+  });
+
+const describeReset = async (designPort, error) => {
+  const pids = designServerPids();
+  const status = pids.map((pid) => {
+    try {
+      const fields = readFileSync(`/proc/${pid}/status`, 'utf8');
+
+      return `pid ${pid} ${/State:\s*(.+)/.exec(fields)?.[1]}, ${/VmRSS:\s*(.+)/.exec(fields)?.[1]}`;
+    } catch {
+      return `pid ${pid} gone`;
+    }
+  });
+  const idle = lastQueueAnswerAt === undefined ? 'no earlier answer' : `${Date.now() - lastQueueAnswerAt} ms`;
+
+  return `${error.cause?.code ?? error.code ?? error.message} on the queue poll: design server process ${
+    status.length ? status.join('; ') : 'not found (exited)'
+  }, port ${await probeListening(designPort)}, since the last queue answer ${idle}, load ${loadavg()
+    .map((value) => value.toFixed(1))
+    .join(' ')}`;
+};
+
+const queueOf = async (designPort) => {
+  try {
+    const answer = await (await fetch(`http://[::1]:${designPort}/__design/queue`)).json();
+
+    lastQueueAnswerAt = Date.now();
+
+    return answer;
+  } catch (error) {
+    throw new Error(await describeReset(designPort, error), { cause: error });
+  }
+};
 
 const abandonedListingLeavesQueue = async (context) => {
   const { page, designPort } = context;
