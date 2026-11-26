@@ -541,6 +541,16 @@ const renameTailwind = (text: string, names: TailwindThemeNames) => {
   return text.replace(pattern, (token) => map.get(token) ?? token);
 };
 
+const renameStringLiterals = (text: string) =>
+  text.replace(/(['"`])(--[\w-]+)\1/g, (whole, quote: string, name: string) => {
+    const entry = entryOf(name);
+
+    if (!entry?.new || entry.kind === 'dropped' || entry.kind === 'dropped-opacity') return whole;
+    if (entry.kind === 'triplet' && entry.old !== entry.new) return whole;
+
+    return `${quote}${entry.new}${quote}`;
+  });
+
 const collectLeftovers = (migration: FileMigration, result: string) => {
   const leftovers: ThemeTokenFinding[] = [];
   const lines = result.split('\n');
@@ -636,7 +646,7 @@ export const migrateThemeTokenNames = (
   }
 
   output += migration.rewriteValue(content.slice(cursor), cursor, { property: null, insideRgb: false });
-  output = renameTailwind(output, names);
+  output = renameStringLiterals(renameTailwind(output, names));
 
   const findings = collectLeftovers(migration, output).sort((a, b) => a.line - b.line);
 

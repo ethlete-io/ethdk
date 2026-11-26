@@ -392,4 +392,41 @@ describe('migrateThemeTokenNames on a real first-run pair', () => {
     );
     expect(migrate(source).findings).toEqual([]);
   });
+  describe('string literals that hold one token name', () => {
+    const dir = join(FIXTURES, 'e2e-strings');
+
+    it.each(readdirSync(dir))('renames every old name in %s and reports nothing', (file) => {
+      const result = migrate(readFileSync(join(dir, file), 'utf-8'));
+
+      expect(result.changed).toBe(true);
+      expect(result.content).not.toMatch(/['"`]--et-[\w-]*-solid['"`]/);
+      expect(result.findings).toEqual([]);
+      expect(migrate(result.content).changed).toBe(false);
+    });
+
+    it('renames getPropertyValue and setProperty names', () => {
+      const source = `style.getPropertyValue('--et-surface-border-solid');\nel.style.setProperty("--et-theme-color-ink-solid", 'rgb(1 2 3)');`;
+
+      expect(migrate(source).content).toBe(
+        `style.getPropertyValue('--et-surface-border');\nel.style.setProperty("--et-tone-text", 'rgb(1 2 3)');`,
+      );
+    });
+
+    it('keeps a name that is only part of a string and reports it', () => {
+      const source = `const list = '--et-surface-border-solid, --et-surface-background-solid';`;
+      const result = migrate(source);
+
+      expect(result.content).toBe(source);
+      expect(result.findings).toHaveLength(1);
+    });
+
+    it('keeps a refused -rgb triplet name and reports it', () => {
+      const source = `el.style.setProperty('--et-surface-background-rgb', '1 2 3');`;
+      const result = migrate(source);
+
+      expect(result.content).toBe(source);
+      expect(result.findings).toHaveLength(1);
+      expect(result.findings[0]?.reason).toContain('old theme token left');
+    });
+  });
 });
