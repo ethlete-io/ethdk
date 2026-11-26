@@ -12,6 +12,8 @@ import { repoRootOf } from './reachable-files';
 import { readStampText } from './stamp-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
+import { headHoldsPart } from './sketch/edit-sketch';
+import { DIRECT_EDIT_PENDING } from './rules/direct-edit-pending';
 
 export const IMPLEMENTED_FILE = 'implemented.json';
 
@@ -165,9 +167,29 @@ export const taskPartOf = (options: {
       ].join('\n');
 };
 
+const headHoldsEdit = (product: ResolvedProduct, part: string) => {
+  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
+
+  return resolved !== undefined && resolved.origin !== 'base' && headHoldsPart(product, resolved);
+};
+
+const withoutCommittedEdit = (options: { product: ResolvedProduct; part: string; inputs: BuildReadyInputs }) => {
+  const { product, part, inputs } = options;
+
+  if (!headHoldsEdit(product, part)) return inputs;
+
+  return {
+    ...inputs,
+    pointsOf: (key: string) =>
+      inputs.pointsOf(key).filter((point) => key !== part || point.kind !== 'direct-edit' || point.sketch !== null),
+    problemsOf: (key: string) =>
+      inputs.problemsOf(key).filter((problem) => key !== part || problem.rule !== DIRECT_EDIT_PENDING),
+  };
+};
+
 const noRecordTextOf = (options: { product: ResolvedProduct; part: string; inputs: BuildReadyInputs }) => {
   const check = `design check --product ${options.product.name} --part ${options.part}`;
-  const blockers = checkBlockersOf(options).filter(
+  const blockers = checkBlockersOf({ ...options, inputs: withoutCommittedEdit(options) }).filter(
     (blocker) => blocker.kind !== 'pending' && blocker.kind !== 'embedded',
   );
 

@@ -28,6 +28,8 @@ import { THEMING_TEXT } from './theming-text';
 import { ComparePart } from './compare-command';
 import { StartHarnessServer } from './harness-server';
 import { ImplementedRefusals } from './implemented-proof';
+import { recordMerged } from './sketch/merged-parts';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const CHIP_STATES = { default: { label: 'Tag' }, removable: { label: 'Tag', removable: true } };
 
@@ -432,6 +434,45 @@ describe('part task', () => {
         'resolve them, then run design check --product app-a --part components/chip',
       ].join('\n'),
     );
+    expect(green).not.toHaveBeenCalled();
+  });
+
+  it('names no direct edit that HEAD holds among what keeps design check from a record (B782)', async () => {
+    const { target, chip } = checkout();
+    const commit = (message: string) => {
+      gitExec(['add', '.'], { cwd: target });
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', message], { cwd: target });
+    };
+
+    recordMerged({ product: productOf(target), parts: ['components/chip'] });
+    record(target);
+    gitExec(['init', '-q'], { cwd: target });
+    commit('base');
+    writeFileSync(
+      chip,
+      "export default definePart({ implements: 'libs/chip/chip.component.ts', states: { default: {}, wide: {} } });\n",
+    );
+    commit('edit');
+
+    const lines = output();
+    const green = vi.fn<ComparePart>(async () => ({ green: true, states: CHIP_STATES }));
+    const exit = await designTask({
+      target,
+      argv: ['components/chip', '--product', 'app-a', '--verify', '--url', 'http://localhost:9'],
+      invocation: 'et design',
+      load: async () => CHIP_STATES,
+      diff: vi.fn(() => ['libs/chip/chip.component.ts']),
+      last: () => null,
+      compare: green,
+      start: vi.fn(async () => 'no server must start'),
+      actions: vi.fn(async () => []),
+      refusals: vi.fn(async () => []),
+    });
+
+    expect(exit).toBe(1);
+    expect(lines.join('\n')).not.toContain('DIRECT-EDIT-PENDING');
+    expect(lines.join('\n')).not.toContain('changed outside a sketch');
+    expect(lines.join('\n')).toContain('components/chip has no check record at its current design');
     expect(green).not.toHaveBeenCalled();
   });
 
