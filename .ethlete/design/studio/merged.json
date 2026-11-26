@@ -118,10 +118,10 @@
     "at": "2026-11-25T22:52:58.806Z"
   },
   "elements/variant-cell": {
-    "hash": "4a8ccbb62a83fd4f",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-25T13:15:15.517Z"
+    "hash": "7920a471949a7e45",
+    "variant": "a",
+    "decidedBy": "builder: claude-sonnet",
+    "at": "2026-11-26T14:05:18.286Z"
   },
   "foundations/agent-logos": {
     "hash": "bc651c568c63f7f1",
