@@ -48,16 +48,12 @@ describe('ACTION-LOST', () => {
     ).toEqual(['emit:pick', 'open']);
   });
 
-  it('collects the action keys of every state, and skips a state whose render throws', async () => {
+  it('collects the action keys of every state', async () => {
     const definition = {
-      states: { closed: { open: false }, open: { open: true }, broken: { fail: true } },
-      render: (props: { open?: boolean; fail?: boolean }) => {
-        if (props.fail) throw new Error('no fixture');
-
-        return {
-          body: props.open ? '<button data-et-action="closed">x</button>' : '<button data-et-action="open">o</button>',
-        };
-      },
+      states: { closed: { open: false }, open: { open: true } },
+      render: (props: { open: boolean }) => ({
+        body: props.open ? '<button data-et-action="closed">x</button>' : '<button data-et-action="open">o</button>',
+      }),
     };
 
     expect(await declaredActionsOf(definition)).toEqual(['closed', 'open']);
@@ -66,7 +62,7 @@ describe('ACTION-LOST', () => {
 
   it('collects the declared keys of every part of the product', async () => {
     const { product } = checkout({});
-    const declared = await productActionsOf({
+    const { keys, problems } = await productActionsOf({
       product,
       load: async ({ file }) => ({
         default: {
@@ -76,7 +72,8 @@ describe('ACTION-LOST', () => {
       }),
     });
 
-    expect([...declared].sort()).toEqual(['emit:remove', 'open']);
+    expect([...keys].sort()).toEqual(['emit:remove', 'open']);
+    expect(problems).toEqual([]);
   });
 
   it('fails a key a check record holds that no part declares now, and allows a key moved to another part', () => {
@@ -105,6 +102,34 @@ describe('ACTION-LOST', () => {
       '.ethlete/design/app-a/ready.json',
     ]);
     expect(lostOf(['open'], 'components/chip')).toHaveLength(1);
+  });
+
+  it.each(['load', 'render'] as const)('reports one problem when a part fails to %s', async (phase) => {
+    const part = 'components/chip';
+    const { target, product } = checkout({
+      [part]: record(['emit:remove', 'open']),
+      'pages/home': record(['emit:dismiss']),
+    });
+    const error = new Error('fixture unavailable');
+    const load: PartModuleLoader = async ({ file }) => {
+      if (!file.endsWith('/chip.ts')) return {};
+      if (phase === 'load') throw error;
+
+      return {
+        default: {
+          states: { first: {}, second: {} },
+          render: async () => {
+            throw error;
+          },
+        },
+      };
+    };
+
+    const problems = await actionLostProblemsOf({ target, config: {}, product, invocation: 'et design', load });
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatchObject({ part, message: expect.stringContaining(error.message) });
+    expect(problems[0]?.rule).not.toBe('ACTION-LOST');
   });
 
   it('fails a key from the actions design check recorded, without a go', async () => {

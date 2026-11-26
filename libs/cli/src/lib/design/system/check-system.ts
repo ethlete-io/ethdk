@@ -9,7 +9,8 @@ import { autoAcceptOf, DrawStates, settleCommittedEdits } from './accepted-pictu
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
-import { actionLostProblemsOf, declaredPartActionsOf, withPartLoader } from './action-lost';
+import { ACTION_SCAN_FAILED_RULE, actionLostProblemsOf, declaredPartActionsOf, withPartLoader } from './action-lost';
+import { ACTION_LOST_RULE } from './build-ready-contract';
 import { stateInnerProblemsOf } from './rules/state-inner';
 import { refreshHarnessMap } from './harness-map';
 import { runningCliBuildLine, runningCliStaleWarning } from '../stale-cli-dist';
@@ -1139,6 +1140,12 @@ const checkProductTail = async (
 
     if (counted) counted.warnings += 1;
   });
+  const actionProblems = await actionLostProblemsOf({
+    ...options,
+    product: resolved,
+    invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
+  });
+  const actionScanFailures = actionProblems.filter((problem) => problem.rule === ACTION_SCAN_FAILED_RULE);
   const drawn = ruleBaselineOf({
     product: resolved,
     problems: [
@@ -1146,13 +1153,12 @@ const checkProductTail = async (
       ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
       ...(await contrastPairProblemsOf({ ...options, product: resolved })),
       ...(await stateInnerProblemsOf({ ...options, product: resolved })),
-      ...(await actionLostProblemsOf({
-        ...options,
-        product: resolved,
-        invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
-      })),
+      ...actionProblems.filter((problem) => problem.rule === ACTION_LOST_RULE),
     ].filter(isWanted),
-    checked: (rule, part) => isDrawRule(rule) && (!options.part || part === options.part),
+    checked: (rule, part) =>
+      isDrawRule(rule) &&
+      (!options.part || part === options.part) &&
+      (rule !== ACTION_LOST_RULE || actionScanFailures.length === 0),
   });
 
   drawn.lines.forEach((line) => console.log(line));
@@ -1166,7 +1172,9 @@ const checkProductTail = async (
       file: configPathOf(options.target),
     }),
     ...options.problemsOfEdits,
-  ].filter(isWanted);
+  ]
+    .filter(isWanted)
+    .concat(actionScanFailures);
 
   for (const problem of problems) {
     console.error(lineOf(options.target, problem));

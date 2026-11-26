@@ -393,7 +393,7 @@ describe('runActionInput', () => {
   beforeAll(async () => {
     browser = await chromium.launch().catch(() => undefined);
     server = createServer((_, response) => {
-      response.setHeader('content-type', 'text/html');
+      response.setHeader('content-type', 'text/html; charset=utf-8');
       response.end(`<body><div data-design-harness-host>
         <button aria-label="Go" onclick="__etDesignEmits.push({ output: 'go' })">Go</button>
         <button aria-label="Hide" onclick="__etDesignEmits.push({ output: 'hide' })">Hide</button>
@@ -403,6 +403,10 @@ describe('runActionInput', () => {
         <div id="find-list" role="listbox"><div id="find-a" role="option" aria-label="A">A</div><div id="find-b" role="option" aria-label="B">B</div></div>
         <select aria-label="Size" onchange="__etDesignEmits.push({ output: 'sizeChange' })"><option>S</option><option>M</option></select>
         <app-part-a><button aria-label="Pick" onclick="__etDesignEmits.push({ output: 'pageAction' }); listeners.forEach((listener) => listener())">Pick</button></app-part-a>
+      </div>
+      <div class="et-overlay-runtime-root">
+        <button onclick="document.getElementById('reason').hidden = false">Gründe</button>
+        <button id="reason" hidden onclick="__etDesignEmits.push({ output: 'reason' })">Read reason</button>
       </div>
       <script>
         const listeners = [];
@@ -441,6 +445,23 @@ describe('runActionInput', () => {
 
     for (const input of ['click', 'Enter', 'Space'] as const)
       expect(await press('button "Go"', input)).toEqual({ emitted: ['go'], prevented: false, app: null });
+  });
+
+  it('finds an opener in an overlay root', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const result = await runActionInput({
+      browser,
+      url,
+      start: { state: 'blockers-open', props: {}, opener: 'button "Gründe"' },
+      pick: { key: 'button "Readreason"', occurrence: 0 },
+      input: 'click',
+      size: null,
+      shoot: null,
+      timeout: 10_000,
+    });
+
+    expect(result.emitted).toEqual(['reason']);
   });
 
   it('types into a text-entry control that declares an emit and records the output', async (context) => {

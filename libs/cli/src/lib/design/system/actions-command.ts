@@ -87,6 +87,7 @@ export const ACTIONS_USAGE =
 const ROOM_PX = 1024;
 
 const ACTION_BATCH_STATES = 4;
+const APP_ACTION_ROOTS = [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS];
 
 const sha256Of = (text: string | Buffer) => createHash('sha256').update(text).digest('hex');
 
@@ -209,10 +210,8 @@ export const runActionInput = async (options: {
 
     await page.mouse.move(-1, -1);
 
-    const roots = [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS];
-
     if (start.opener !== null) {
-      const opener = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find((element) => element.key === start.opener);
+      const opener = (await scanOf(page, APP_ACTION_ROOTS)).find((element) => element.key === start.opener);
 
       if (!opener) throw new Error(`the app has no ${start.opener} to open state ${start.state} with`);
 
@@ -221,7 +220,7 @@ export const runActionInput = async (options: {
       await settle(page, timeout);
     }
 
-    const element = (await scanOf(page, roots)).find(
+    const element = (await scanOf(page, APP_ACTION_ROOTS)).find(
       (found) => found.key === pick.key && found.occurrence === pick.occurrence,
     );
 
@@ -257,7 +256,7 @@ export const runActionInput = async (options: {
     const emitted = (await page.evaluate('(window.__etDesignEmits ?? []).map((emit) => emit.output)')) as string[];
     const embedded = listened > 0 ? ((await page.evaluate('window.__etEmbeddedEmits')) as string[]) : [];
     const prevented = ((await page.evaluate('window.__etPrevented')) as string[]).length > 0;
-    const after = expanded ? await expandedScanOf(page, roots) : null;
+    const after = expanded ? await expandedScanOf(page, APP_ACTION_ROOTS) : null;
     if (shoot?.frozen?.length) await page.evaluate(freezeAnimationsScriptOf(shoot.frozen));
 
     const shot = shoot ? await shotOf({ page, size, room, timeout }) : null;
@@ -558,14 +557,14 @@ export const checkActions = async (options: {
             await harnessMountedOf(page, DRAW_TIMEOUT_MS);
 
             if (opener !== null) {
-              const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find((element) => element.key === opener);
+              const trigger = (await scanOf(page, APP_ACTION_ROOTS)).find((element) => element.key === opener);
 
               if (trigger) await page.locator(probeOf(trigger.probe)).click();
 
               await settle(page, DRAW_TIMEOUT_MS);
             }
 
-            return await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS]);
+            return await scanOf(page, APP_ACTION_ROOTS);
           } finally {
             await context.close();
           }
@@ -620,9 +619,7 @@ export const checkActions = async (options: {
                       await page.mouse.move(-1, -1);
 
                       if (opener !== null) {
-                        const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find(
-                          (found) => found.key === opener,
-                        );
+                        const trigger = (await scanOf(page, APP_ACTION_ROOTS)).find((found) => found.key === opener);
 
                         if (trigger) await page.locator(probeOf(trigger.probe)).click();
 
@@ -630,7 +627,7 @@ export const checkActions = async (options: {
                         await page.mouse.move(-1, -1);
                       }
 
-                      const found = (await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS])).find(
+                      const found = (await scanOf(page, APP_ACTION_ROOTS)).find(
                         (candidate) => candidate.key === element.key && candidate.occurrence === element.occurrence,
                       );
 

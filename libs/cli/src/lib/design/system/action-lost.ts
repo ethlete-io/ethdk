@@ -11,6 +11,7 @@ import { loadingOn, WarmDraw } from '../warm-draw';
 export type PartModuleLoader = (options: { file: string; product: string }) => Promise<unknown>;
 
 const ACTION_ATTRIBUTE = /\sdata-et-action\s*=\s*(?:"([^"]*)"|'([^']*)')/gu;
+export const ACTION_SCAN_FAILED_RULE = 'ACTION-SCAN-FAILED';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
@@ -22,10 +23,6 @@ export const actionKeysOfMarkup = (markup: string) =>
     ),
   ].sort((a, b) => a.localeCompare(b));
 
-/**
- * The sorted action keys a part definition declares across all its states, read from the markup its `render` returns
- * outside a browser. A state whose render throws declares nothing.
- */
 export const declaredActionsOf = async (definition: unknown): Promise<string[]> => {
   if (!isRecord(definition) || typeof definition['render'] !== 'function' || !isRecord(definition['states'])) return [];
 
@@ -33,9 +30,7 @@ export const declaredActionsOf = async (definition: unknown): Promise<string[]> 
   const keys = new Set<string>();
 
   for (const props of Object.values(definition['states'])) {
-    const drawn = await Promise.resolve()
-      .then(() => render(props))
-      .catch(() => null);
+    const drawn = await render(props);
 
     if (isRecord(drawn) && typeof drawn['body'] === 'string')
       for (const key of actionKeysOfMarkup(drawn['body'])) keys.add(key);
@@ -67,17 +62,25 @@ export const partActionsOf = async (options: {
   }
 };
 
-/** Every action key some part of the product declares now; a part that cannot be loaded declares nothing. */
 export const productActionsOf = async (options: { load: PartModuleLoader; product: ResolvedProduct }) => {
   const keys = new Set<string>();
+  const problems: Problem[] = [];
 
   for (const part of options.product.parts) {
-    const declared = await partActionsOf({ ...options, part: partKeyOf(part) });
+    const key = partKeyOf(part);
+    const declared = await partActionsOf({ ...options, part: key });
 
-    if (typeof declared !== 'string') for (const key of declared) keys.add(key);
+    if (typeof declared === 'string')
+      problems.push({
+        rule: ACTION_SCAN_FAILED_RULE,
+        file: part.file,
+        part: key,
+        message: `could not read declared actions of ${key}: ${declared}`,
+      });
+    else for (const action of declared) keys.add(action);
   }
 
-  return keys;
+  return { keys, problems };
 };
 
 /** Runs `use` with a loader on a design server of its own, closed afterwards. */
@@ -118,7 +121,6 @@ export const actionLostOf = (options: {
     });
 };
 
-/** The ACTION-LOST problems of a product, against the actions its parts declare now. */
 export const actionLostProblemsOf = async (options: {
   target: string;
   config: DesignConfig;
@@ -132,11 +134,11 @@ export const actionLostProblemsOf = async (options: {
 
   if (!recorded) return [];
 
-  const declared = options.load
+  const { keys, problems } = options.load
     ? await productActionsOf({ load: options.load, product: options.product })
     : await withPartLoader(options, (load) => productActionsOf({ load, product: options.product }));
 
-  return actionLostOf({ ...options, declared });
+  return problems.length > 0 ? problems : actionLostOf({ ...options, declared: keys });
 };
 
 /** Reads the declared action keys of a part on a design server, or why not; the check record holds them. */
