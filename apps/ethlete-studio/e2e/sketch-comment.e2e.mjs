@@ -4,10 +4,13 @@ import { dirname, join, resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { copyPart } from './copy-part.mjs';
 import { placeSketchDraft } from './sketch-comment-draft.mjs';
+import { tempCheckout } from './temp-checkout.mjs';
 
 const args = process.argv.slice(2);
 const valueOf = (flag, fallback) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : fallback);
-const checkout = resolve(valueOf('--checkout', resolve(import.meta.dirname, '../../..')));
+const root = resolve(import.meta.dirname, '../../..');
+const ownsCheckout = !args.includes('--checkout');
+const checkout = ownsCheckout ? tempCheckout(root, 'studio-sketch-comment-e2e-') : resolve(valueOf('--checkout'));
 const built = args.includes('--built') ? resolve(valueOf('--built')) : undefined;
 const product = valueOf('--product', 'studio');
 const ownTarget = 'components/zoom-chip';
@@ -122,7 +125,8 @@ const result = await withStudio(
   { checkout, built },
 );
 
-if (createsOwnSketch) rmSync(ownSketch, { recursive: true, force: true });
+if (ownsCheckout) rmSync(checkout, { recursive: true, force: true });
+else if (createsOwnSketch) rmSync(ownSketch, { recursive: true, force: true });
 
 console.log(`${result.ok ? 'PASS' : 'FAIL'}  ${product} sketch ${target}: ${result.detail}`);
 console.log(`\n${result.ok ? 1 : 0}/1 passed`);
