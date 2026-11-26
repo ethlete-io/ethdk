@@ -259,7 +259,7 @@ function parseThemeObject(obj: ObjectLiteralExpression, sourceFile: SourceFile, 
     }
 
     const propName = prop.getName() as keyof Theme;
-    const initializer = prop.getInitializer();
+    const initializer = unwrapTypeExpressions(prop.getInitializer());
 
     if (!initializer) {
       continue;

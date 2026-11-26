@@ -1,4 +1,6 @@
 import { Tree } from '@nx/devkit';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { MockInstance } from 'vitest';
 import migrate from './generator';
@@ -883,6 +885,28 @@ describe('tailwind-4-color-theme generator', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('No theme named "nope"'));
       expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('theme1, theme2'));
       expect(tree.exists('src/styles/tw.css')).toBe(false);
+    });
+  });
+
+  describe('theme names with a type cast', () => {
+    const farn = readFileSync(join(__dirname, '__fixtures__/farn-themes.ts.txt'), 'utf-8');
+    const castFree = farn.replace(/ as ColorTheme\['name'\]/, '');
+
+    it('should write the same CSS as from a cast-free copy', async () => {
+      expect(farn).not.toBe(castFree);
+
+      const generate = async (source: string) => {
+        const scratch = createTreeWithEmptyWorkspace();
+        scratch.write('src/themes.ts', source);
+        await migrate(scratch, { themesPath: 'src/themes.ts', outputPath: 'src/out.css', skipFormat: true });
+
+        return scratch.read('src/out.css', 'utf-8');
+      };
+
+      const fromCast = await generate(farn);
+
+      expect(fromCast).toContain('farn');
+      expect(fromCast).toBe(await generate(castFree));
     });
   });
 });

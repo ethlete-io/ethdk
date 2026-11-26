@@ -1,4 +1,6 @@
 import { Tree } from '@nx/devkit';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { MockInstance } from 'vitest';
 import migrate from './generator';
@@ -662,6 +664,28 @@ describe('tailwind-4-surface-theme generator', () => {
       expect(content).not.toContain('prefers-color-scheme');
       expect(content).toContain(':root {\n  --et-surface-background: rgb(10 10 10);');
       expect(content).toContain('  color-scheme: dark;');
+    });
+  });
+
+  describe('theme names with a type cast', () => {
+    const farn = readFileSync(join(__dirname, '__fixtures__/farn-surface-themes.ts.txt'), 'utf-8');
+    const castFree = farn.replace(/ as SurfaceTheme\['name'\]/, '');
+
+    it('should write the same CSS as from a cast-free copy', async () => {
+      expect(farn).not.toBe(castFree);
+
+      const generate = async (source: string) => {
+        const scratch = createTreeWithEmptyWorkspace();
+        scratch.write('src/surface-themes.ts', source);
+        await migrate(scratch, { themesPath: 'src/surface-themes.ts', outputPath: 'src/out.css', skipFormat: true });
+
+        return scratch.read('src/out.css', 'utf-8');
+      };
+
+      const fromCast = await generate(farn);
+
+      expect(fromCast).toContain('farn');
+      expect(fromCast).toBe(await generate(castFree));
     });
   });
 });

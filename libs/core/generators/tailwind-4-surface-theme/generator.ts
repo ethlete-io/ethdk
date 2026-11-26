@@ -266,6 +266,16 @@ const SWATCH_KEYS = ['color', 'onColor', 'inkColor'] as const;
 
 const isSwatchKey = (name: string): name is (typeof SWATCH_KEYS)[number] => SWATCH_KEYS.some((key) => key === name);
 
+const unwrapTypeExpressions = (expression: Expression | undefined): Expression | undefined => {
+  let current = expression;
+
+  while (current?.isKind(SyntaxKind.AsExpression) || current?.isKind(SyntaxKind.SatisfiesExpression)) {
+    current = current.getExpression();
+  }
+
+  return current;
+};
+
 const resolveObjectLiteral = (expression: Expression, sourceFile: SourceFile): ObjectLiteralExpression | null => {
   let resolved = expression;
 
@@ -367,7 +377,7 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression, sourceFile: Sourc
     }
 
     const propName = prop.getName() as string;
-    const initializer = prop.getInitializer();
+    const initializer = unwrapTypeExpressions(prop.getInitializer());
 
     if (!initializer) {
       continue;
