@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { expectFocusVisible, expectTouchMode, openStory, pressKey, tabSequence, tap } from '../support';
+import { expectFocusVisible, expectTouchMode, openStory, pressKey, rgbaOf, tabSequence, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-feedback-query-error--default';
 const VIOLATION_LIST_STORY_ID = 'components-feedback-query-error--violation-list';
@@ -156,18 +156,12 @@ test.describe('query-error / colour', () => {
 
     await expect(retry).toBeVisible();
     expect(await themePrimary(retry)).toBe(await themePrimary(banner));
-    await expect(retry).toHaveCSS(
-      'background-color',
-      await banner.evaluate((element) => {
-        const probe = document.createElement('div');
-        probe.style.color = getComputedStyle(element).getPropertyValue('--et-tone-fill');
-        element.append(probe);
-        const resolved = getComputedStyle(probe).color;
-        probe.remove();
+    const bannerFill = await banner.evaluate((element) => getComputedStyle(element).getPropertyValue('--et-tone-fill'));
+    const expected = await rgbaOf(retry, bannerFill);
 
-        return resolved;
-      }),
-    );
+    await expect
+      .poll(async () => rgbaOf(retry, await retry.evaluate((element) => getComputedStyle(element).backgroundColor)))
+      .toEqual(expected);
   });
 });
 

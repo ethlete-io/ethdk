@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectTouchMode, focusedDescriptor, openStory, tabSequence, tap } from '../support';
+import { expectTouchMode, focusedDescriptor, openStory, rgbaOf, tabSequence, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-data-display-badge--default';
 const FILLED_STORY_ID = 'components-data-display-badge--filled';
@@ -10,8 +10,6 @@ const TRAILING_ICON_STORY_ID = 'components-data-display-badge--trailing-icon';
 const BADGE = '.et-badge';
 const ICON_SLOT = '.et-badge-icon';
 const ICON = '.et-icon';
-
-const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
 interface BadgeChrome {
   background: string;
@@ -218,8 +216,7 @@ test.describe('badge / structure', () => {
     const chrome = await readChrome(root.locator(BADGE).first());
 
     expect(chrome.primaryOpacity).toBe('0.16');
-    expect(chrome.background).toContain('rgba');
-    expect(chrome.background).not.toBe(TRANSPARENT);
+    expect((await rgbaOf(root, chrome.background))[3]).toBe(Math.round(0.16 * 255));
     expect(chrome.borderColor).toBe(chrome.ink);
   });
 
@@ -232,8 +229,7 @@ test.describe('badge / structure', () => {
     const chrome = await readChrome(badge);
 
     expect(chrome.primaryOpacity).toBe('1');
-    expect(chrome.background).not.toContain('rgba');
-    expect(chrome.background).not.toBe(TRANSPARENT);
+    expect((await rgbaOf(badge, chrome.background))[3]).toBe(255);
     expect(chrome.borderColor).toBe(chrome.ink);
   });
 
@@ -246,8 +242,8 @@ test.describe('badge / structure', () => {
     const chrome = await readChrome(badge);
 
     expect(chrome.primaryOpacity).toBe('0');
-    expect(chrome.background).toMatch(/, 0\)$/);
-    expect(chrome.borderColor).not.toBe(TRANSPARENT);
+    expect((await rgbaOf(badge, chrome.background))[3]).toBe(0);
+    expect((await rgbaOf(badge, chrome.borderColor))[3]).toBeGreaterThan(0);
     expect(chrome.borderWidth).toBe('1px');
     expect(chrome.color).toBe(chrome.borderColor);
   });

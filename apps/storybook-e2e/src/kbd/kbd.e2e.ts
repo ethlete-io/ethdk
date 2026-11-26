@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { expectTouchMode, focusedDescriptor, openStory, tabSequence, tap } from '../support';
+import { expectTouchMode, focusedDescriptor, openStory, rgbaOf, tabSequence, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-data-display-kbd--default';
 const APPLE_STORY_ID = 'components-data-display-kbd--apple';
@@ -45,10 +45,6 @@ function readChords(root: Locator): Promise<Chord[]> {
       caps: Array.from(el.querySelectorAll('kbd')).map((cap) => cap.textContent?.trim() ?? ''),
     })),
   );
-}
-
-function normalizeColor(value: string): string {
-  return value.replace(/[\s,]/g, '');
 }
 
 function detectedModifierCap(page: Page): Promise<string> {
@@ -258,28 +254,26 @@ test.describe('kbd / structure', () => {
   test('the cap colors resolve from the surface tokens, not from hardcoded values', async ({ page }) => {
     const root = await openStory(page, APPLE_STORY_ID);
 
-    const paint = await root
-      .locator(KEY)
-      .first()
-      .evaluate((el) => {
-        const style = getComputedStyle(el);
+    const key = root.locator(KEY).first();
+    const paint = await key.evaluate((el) => {
+      const style = getComputedStyle(el);
 
-        return {
-          color: style.color,
-          borderColor: style.borderColor,
-          borderWidth: style.borderWidth,
-          background: style.backgroundColor,
-          muted: style.getPropertyValue('--et-surface-text-muted').trim(),
-          border: style.getPropertyValue('--et-surface-border').trim(),
-          interaction: style.getPropertyValue('--et-surface-interaction').trim(),
-        };
-      });
+      return {
+        color: style.color,
+        borderColor: style.borderColor,
+        borderWidth: style.borderWidth,
+        background: style.backgroundColor,
+        muted: style.getPropertyValue('--et-surface-text-muted').trim(),
+        border: style.getPropertyValue('--et-surface-border').trim(),
+        tint: style.getPropertyValue('--et-surface-tint').trim(),
+      };
+    });
 
-    expect(normalizeColor(paint.color)).toBe(normalizeColor(paint.muted));
-    expect(normalizeColor(paint.borderColor)).toBe(normalizeColor(paint.border));
+    expect(await rgbaOf(key, paint.color)).toEqual(await rgbaOf(key, paint.muted));
+    expect(await rgbaOf(key, paint.borderColor)).toEqual(await rgbaOf(key, paint.border));
     expect(paint.borderWidth).toBe('1px');
-    expect(paint.interaction).not.toBe('');
-    expect(paint.background).not.toBe('rgba(0, 0, 0, 0)');
+    expect(paint.tint).not.toBe('');
+    expect((await rgbaOf(key, paint.background))[3]).toBeGreaterThan(0);
   });
 });
 

@@ -52,6 +52,21 @@ export function colorIn(scope: Locator, value: string): Promise<string> {
   return resolveBorderColorIn(scope, value);
 }
 
+/** Paints `color` onto a 1px canvas and returns its `[r, g, b, a]` bytes, so the same colour compares equal in any CSS syntax (`#a1a1a1`, `rgb()`, `color(srgb …)`). */
+export function rgbaOf(scope: Locator, color: string): Promise<number[]> {
+  return scope.evaluate((_, fill) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) throw new Error('no 2d canvas context');
+
+    context.fillStyle = fill;
+    context.fillRect(0, 0, 1, 1);
+
+    return [...context.getImageData(0, 0, 1, 1).data];
+  }, color);
+}
+
 /**
  * The WCAG contrast ratio of a computed colour of `locator` (optionally of a pseudo-element)
  * against the page background, with any alpha composited onto that background first.
