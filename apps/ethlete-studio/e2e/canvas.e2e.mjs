@@ -244,6 +244,7 @@ const PAGES = [
 const NARROW = { width: 1440, height: 900 };
 const WIDE = { width: 2000, height: 1100 };
 const CHIP_INSET = 12;
+const CHIP_INSET_ABOVE_FOLD_BAR = 64;
 
 const ARROW_STEP = 80;
 const SETTLE_MS = 600;
@@ -2359,14 +2360,19 @@ const CASES = [
               while (holder && !holder.querySelector(CANVAS)) holder = holder.parentElement;
 
               const area = (chip.closest(CANVAS) ?? holder ?? chip.offsetParent).getBoundingClientRect();
+              const folded = !!holder?.querySelector('[data-sk-folded]');
 
-              return { right: area.right - box.right, bottom: area.bottom - box.bottom, left: box.left };
+              return { right: area.right - box.right, bottom: area.bottom - box.bottom, left: box.left, folded };
             }),
         { CANVAS },
       );
       const ok =
         placed.length > 0 &&
-        placed.every((gap) => Math.abs(gap.right - CHIP_INSET) <= 2 && Math.abs(gap.bottom - CHIP_INSET) <= 2);
+        placed.every(
+          (gap) =>
+            Math.abs(gap.right - CHIP_INSET) <= 2 &&
+            Math.abs(gap.bottom - (gap.folded ? CHIP_INSET_ABOVE_FOLD_BAR : CHIP_INSET)) <= 2,
+        );
 
       return { ok, detail: JSON.stringify(placed) };
     },
