@@ -238,7 +238,8 @@ const pinToBottom = (pane: HTMLElement) => {
  * Places every open overlay a server render attached next to the element that opened it (the
  * control frame of its form field, if it has one): below its start, or its end for an `*-end`
  * placement, and above it for a `top*` placement. A bottom sheet is pinned to the bottom, full
- * width. A drawing of an open select, menu or sheet needs no position code. Safe to run again.
+ * width. A pane with `data-et-arrow-anchor` stays where its markup draws it. A drawing of an open
+ * select, menu or sheet needs no position code. Safe to run again.
  */
 export const placeOverlays = (root: HTMLElement) => {
   for (const layer of root.querySelectorAll<HTMLElement>('.et-overlay-runtime-root, .et-overlay-runtime-entry')) {
@@ -250,6 +251,8 @@ export const placeOverlays = (root: HTMLElement) => {
       pinToBottom(pane);
       continue;
     }
+
+    if (pane.hasAttribute('data-et-arrow-anchor')) continue;
 
     const trigger = triggerOf(pane, root);
     const container = pane.parentElement;

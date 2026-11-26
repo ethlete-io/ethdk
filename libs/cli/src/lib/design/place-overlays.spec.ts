@@ -144,6 +144,21 @@ describe('placeOverlays', () => {
       '0px',
     ]);
   });
+
+  it('leaves a pane that aims its arrow at an anchor where its markup draws it, next to an expanded trigger', () => {
+    const root = mount(
+      `<span class="relative inline-flex"><button aria-expanded="true" aria-haspopup="dialog" data-sk-status-button>s</button>` +
+        `<span class="absolute bottom-full left-0"><div class="et-overlay et-overlay-runtime-pane et-toggletip-mock-pane" ` +
+        `data-overlay-placement="top" data-et-arrow-anchor="[data-sk-status-button]">Tip</div></span></span>`,
+    );
+
+    rect(root.querySelector('button'), { top: 92, left: 206, width: 31, height: 31 });
+    placeOverlays(root);
+
+    const pane = root.querySelector<HTMLElement>('.et-overlay-runtime-pane');
+
+    expect([pane?.style.top, pane?.style.bottom, pane?.style.left, pane?.style.minWidth]).toEqual(['', '', '', '']);
+  });
 });
 
 describe('fitOutOfFlow', () => {
