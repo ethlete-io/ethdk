@@ -86,7 +86,7 @@ exit $code`)}`;
 
 const rackLinuxRun = (suite, slot, helper) => `  cat > "$HOME/ethlete-rr/rack-docker-run.sh" <<'REMOTE_RUN_HELPER'
 ${helper}REMOTE_RUN_HELPER
-  wsl.exe -d ethlete -- bash /mnt/c/Users/trbor/ethlete-rr/rack-docker-run.sh "$sha" ${shellQuote(slot)} -- ${shellQuote(suite)}`;
+  MSYS_NO_PATHCONV=1 wsl.exe -d ethlete -- bash /mnt/c/Users/trbor/ethlete-rr/rack-docker-run.sh "$sha" ${shellQuote(slot)} -- ${shellQuote(suite)}`;
 
 export const remoteScript = ({ sha, slot, suite, bundle, host, linux, rackHelper }) => {
   const run = !linux

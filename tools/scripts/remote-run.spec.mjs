@@ -123,7 +123,7 @@ test('--linux runs the suite in the pinned Playwright image, on the rack through
   });
   assert.match(
     rack,
-    /wsl\.exe -d ethlete -- bash \/mnt\/c\/Users\/trbor\/ethlete-rr\/rack-docker-run\.sh "\$sha" 'w1' -- 'yarn test'/,
+    /MSYS_NO_PATHCONV=1 wsl\.exe -d ethlete -- bash \/mnt\/c\/Users\/trbor\/ethlete-rr\/rack-docker-run\.sh "\$sha" 'w1' -- 'yarn test'/,
   );
   assert.doesNotMatch(rack, /worktree add/);
 });
