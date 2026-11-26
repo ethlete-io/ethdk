@@ -383,14 +383,14 @@ jobs:
       - run: yarn nx e2e docs-examples-e2e
 
   studio-e2e:
-    name: Studio e2e (${{ matrix.shard }}/9)
+    name: Studio e2e (${{ matrix.shard }}/10)
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # playwright:v1.64.1-noble
     container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     timeout-minutes: 45
     permissions:
       contents: read
@@ -418,7 +418,7 @@ jobs:
         env:
           STUDIO_E2E_WORKERS: 2
           STUDIO_E2E_BUDGET_ENFORCE: 1
-          STUDIO_E2E_SHARD: ${{ matrix.shard }}/9
+          STUDIO_E2E_SHARD: ${{ matrix.shard }}/10
 
       - name: Name the failing specs
         if: failure()

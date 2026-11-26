@@ -53,7 +53,7 @@ test('the real case list splits into shards within 10 % of the mean measured tim
   const loads = [1, 2, 3, 4, 5, 6].map((index) =>
     execFileSync(process.execPath, [runner, '--list'], {
       encoding: 'utf8',
-      env: { ...process.env, STUDIO_E2E_SHARD: `${index}/9` },
+      env: { ...process.env, STUDIO_E2E_SHARD: `${index}/10` },
     })
       .trim()
       .split('\n')
@@ -69,12 +69,12 @@ test('the real case list splits into shards within 10 % of the mean measured tim
   );
 });
 
-test('every standalone e2e file runs in exactly one of the 9 shards', () => {
+test('every standalone e2e file runs in exactly one of the 10 shards', () => {
   const runner = fileURLToPath(new URL('./canvas.e2e.mjs', import.meta.url));
-  const listed = [1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap((index) =>
+  const listed = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].flatMap((index) =>
     execFileSync(process.execPath, [runner, '--list'], {
       encoding: 'utf8',
-      env: { ...process.env, STUDIO_E2E_SHARD: `${index}/9` },
+      env: { ...process.env, STUDIO_E2E_SHARD: `${index}/10` },
     })
       .split('\n')
       .filter((line) => line.includes(` ${STANDALONE_PAGE} `))
@@ -109,7 +109,7 @@ test('without local timings, the real shard 1 starts its heaviest CI-weighted jo
   const weights = JSON.parse(readFileSync(SHARD_WEIGHTS_FILE, 'utf8'));
   const keys = execFileSync(process.execPath, [runner, '--list'], {
     encoding: 'utf8',
-    env: { ...process.env, STUDIO_E2E_SHARD: '1/9' },
+    env: { ...process.env, STUDIO_E2E_SHARD: '1/10' },
   })
     .trim()
     .split('\n')
