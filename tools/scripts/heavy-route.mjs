@@ -14,19 +14,22 @@ export const MACHINES = {
 const WRITES_FILES = /^(--fix|--write|-u|--update|--update-snapshots)(=|$)/;
 const PICTURE = /visual|screenshot|golden|baseline/i;
 const WEBKIT = /webkit/i;
+const NEEDS_CARGO = /\bstudio:e2e\b|ethlete-studio\/e2e\//;
 const TANK_JOB = /\b(build|serve|storybook|e2e|playwright|tauri|cargo|affected|design|push-suite|release)\b/i;
 const UNIT_JOB = /\b(lint|eslint|typecheck|tsc|vitest|jest|test|coverage)\b/i;
 const SPEC_FILE = /\.(spec|test)\.[cm]?[jt]sx?$/;
 
 /**
  * The machine a command runs on: visual jobs, builds, servers and anything that writes into the working tree stay on
- * tank; lint and unit tests go to rack; a single spec file and WebKit go to mac. Unknown commands stay on tank.
+ * tank, as does the Studio e2e (its design-host needs cargo, which only tank has); lint and unit tests go to rack; a
+ * single spec file and WebKit go to mac. Unknown commands stay on tank.
  */
 export const jobMachine = (command) => {
   const words = command.join(' ').split(/\s+/).filter(Boolean);
   const specFiles = words.filter((word) => SPEC_FILE.test(word.replace(/['"]/g, '')));
   const verbs = words.filter((word) => !word.includes('/') && !SPEC_FILE.test(word)).join(' ');
   if (words.some((word) => WRITES_FILES.test(word)) || PICTURE.test(verbs)) return 'tank';
+  if (NEEDS_CARGO.test(command.join(' '))) return 'tank';
   if (WEBKIT.test(verbs)) return 'mac';
   if (TANK_JOB.test(verbs)) return 'tank';
   if (UNIT_JOB.test(verbs)) return specFiles.length === 1 ? 'mac' : 'rack';

@@ -101,6 +101,8 @@ test('a command goes to the machine of its job class', () => {
     [['npx', 'vitest', 'run', '--coverage'], 'rack'],
     [['npx', 'vitest', 'related', '--run', 'libs/cli/src/lib/design/thumb.spec.ts'], 'mac'],
     [['npx', 'playwright', 'test', '--project=webkit'], 'mac'],
+    [['yarn', 'studio:e2e', '--engine', 'webkit', '--workers', '2'], 'tank'],
+    [['node', 'apps/ethlete-studio/e2e/canvas.e2e.mjs', '--engine', 'webkit'], 'tank'],
     [['npx', 'nx', 'lint', 'cli', '--fix'], 'tank'],
     [['npx', 'prettier', '--write', 'a.ts'], 'tank'],
     [['npx', 'playwright', 'test', '--project=visual'], 'tank'],
