@@ -65,6 +65,8 @@ const noAsyncAwait = require('./rules/no-async-await');
 const noSilentCatchError = require('./rules/no-silent-catch-error');
 const noEnum = require('./rules/no-enum');
 const consistentTypeDefinitions = require('./rules/consistent-type-definitions');
+const noOldThemeToken = require('./rules/no-old-theme-token');
+const { cssTextLanguage } = require('./languages/css-text');
 const takeUntilDestroyedLast = require('./rules/take-until-destroyed-last');
 const { recommendedTs, recommendedAngularTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 const { version } = require('../package.json');
@@ -141,6 +143,10 @@ const plugin = {
     'no-silent-catch-error': noSilentCatchError,
     'no-enum': noEnum,
     'consistent-type-definitions': consistentTypeDefinitions,
+    'no-old-theme-token': noOldThemeToken,
+  },
+  languages: {
+    css: cssTextLanguage,
   },
 };
 

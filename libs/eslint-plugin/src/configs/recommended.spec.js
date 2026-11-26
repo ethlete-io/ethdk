@@ -950,6 +950,7 @@ const NOT_IN_RECOMMENDED = new Set([
   'no-cdk-import',
   'no-legacy-query-import',
   'no-native-title',
+  'no-old-theme-token',
   'no-silent-catch-error',
 ]);
 

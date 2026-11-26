@@ -341,6 +341,28 @@ instead of CSS-only classes.
 
 `no-legacy-query-import` matches every `V2`/`AnyV2`-prefixed export - the prefix the library gives the legacy system's half of a colliding name - plus the legacy APIs that never collided (`def`, `filterSuccess`, `InfinityQuery`, `EntityStore`, `QueryDirective`, `toQuerySignal`, …), each carrying its counterpart from the [legacy migration map](/query/legacy#migrating-to-the-current-system). A namespace import (`import * as q from '@ethlete/query'`) is reported at each legacy name read off it, such as `new q.V2QueryClient()`. `createLegacyQueryCreator` is deliberately never reported: it is the interop seam a migration runs on until its call sites are converted. It is not type-aware on purpose; for the whole deprecated surface - including the types this rule leaves alone - enable `@typescript-eslint/no-deprecated` alongside it.
 
+### `no-old-theme-token`
+
+An opt-in rule for an app that finished the theme token rename (`@ethlete/core:migrate-theme-token-names`). It flags the retired names: the `-rgb` / `-solid` surface tokens, `--et-theme-color-*`, `--et-color-primary*` (and the secondary / tertiary palettes), `rgb(var(--et-surface-…))` triplet reads and, for each configured Tailwind `prefixes` entry, the old `<prefix>-theme`, `<prefix>-on-theme`, `<prefix>-theme-ink` and `<prefix>-surface-bg` / `-muted` / `-subtle` utilities. It reads the file text, so it also runs on TypeScript and templates. It has no fixer; the migration rewrites the names.
+
+ESLint lints no CSS by default. The plugin ships a text language, `ethlete/css`, so the rule can lint stylesheets:
+
+```js
+// eslint.config.mjs
+{
+  files: ['**/*.{css,scss}'],
+  plugins: { ethlete },
+  language: 'ethlete/css',
+  rules: { 'ethlete/no-old-theme-token': ['error', { prefixes: ['et', 'app'] }] },
+},
+{
+  files: ['**/*.{ts,html}'],
+  rules: { 'ethlete/no-old-theme-token': ['error', { prefixes: ['et', 'app'] }] },
+}
+```
+
+`prefixes` defaults to `['et']`; add the prefix your generated Tailwind theme uses.
+
 ## DOM, platform & `@ethlete/core`
 
 These rules steer code away from raw browser and Angular platform APIs toward the reactive utilities in `@ethlete/core`.
