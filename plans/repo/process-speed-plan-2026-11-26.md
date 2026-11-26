@@ -25,19 +25,50 @@ Goal: no agent waits for a machine while another machine idles.
    wakes the builder.
 3. Where each job runs:
 
-   | Job                                                     | Machine                        |
-   | ------------------------------------------------------- | ------------------------------ |
-   | Editing, design server, the Studio the human sees       | tank                           |
-   | Light jobs and at most 3 heavy ones                     | tank                           |
-   | Full unit test run, Storybook e2e, the other repo's e2e | rack                           |
-   | Studio e2e shards                                       | rack; tank until it runs there |
-   | Unit tests of one lib as overflow, all Apple checks     | Mac                            |
+   | Job                                                                | Machine                        |
+   | ------------------------------------------------------------------ | ------------------------------ |
+   | Editing, design server, the Studio the human sees                  | tank                           |
+   | Light jobs and at most 3 heavy ones                                | tank                           |
+   | Full unit test run, Storybook e2e, the other repo's non-visual e2e | rack                           |
+   | The other repo's visual shards, in chunks under 15 min             | tank, until step 4 is proven   |
+   | Studio e2e shards                                                  | rack; tank until it runs there |
+   | Container shards (picture tests in the Playwright image)           | Mac now; rack after step 4     |
+   | Unit tests of one lib as overflow, all Apple checks                | Mac                            |
 
-4. Measure once: Studio e2e on tank with 2, 3 and 4 slots taken, and the same suite on the rack. The slot count and
+   Visual baselines are bound to Linux: the other repo's visual tests are all red on the rack (its session, 26.11.).
+   A suite that compares pictures moves to the rack only after a Linux container runs there.
+
+4. The rack gets a Linux side for picture tests (the human, 26.11.): WSL 2 with a container runtime inside it. The
+   suites run in the Playwright image (`mcr.microsoft.com/playwright:v1.64.1-noble`, the version CI pins), so tank,
+   rack and CI can share baselines. `remote-run --host rack --linux` runs a suite there.
+   - The other repo's 629 baselines are recorded on tank's own Chromium, not in the image, and image against host was
+     never measured. So its baselines are recorded once in the image and the human accepts them (its plan VB-1,
+     branch `test/visual-container`, script `tools/e2e/visual-container.sh`, written for podman).
+   - Proof: the same container shard (`--grep "visual-baseline public"`) runs on tank and on the rack against
+     baselines recorded in the image on tank, and both are green. Its two container runs on tank: 245 of 255 shots
+     identical, 9 under 10 px, one at 1203 px, so the limit is a `maxDiffPixelRatio` of about 0.001.
+   - It needs on the rack: the e2e build in `dist/e2e`, and its API with the seeded database reachable from the
+     container.
+   - Measured 26.11.: Windows 11 Pro, the ssh user is admin, a hypervisor runs, `wsl.exe` is there with no
+     distribution, 65 GB free on C:. The human allowed a restart of the rack on 26.11.
+
+5. The Mac is the second container host, and it is ready before the rack. Measured 26.11.: Intel i7-9750H (x64, 12
+   threads, 32 GB, load 1.5, 132 GB free), colima 0.10.3 with the docker runtime was installed and stopped. It starts
+   in 30 s, pulls the Playwright image in 37 s and runs its Chromium (`linux/x86_64`, the architecture of tank and
+   CI). It is left running.
+   - `remote-run --host mac --linux` runs a suite in the image there; the same flag serves the rack after step 4.
+   - The VM has 4 CPUs and 8 GB. `colima stop && colima start --cpu 8 --memory 16` gives it 8 and 16 and leaves 4
+     threads and 16 GB for the simulator; an Apple check and a container shard do not run at the same time.
+   - Proof: the container shard of step 4 is green on the Mac against the baselines recorded in the image on tank.
+     Then the other repo's visual shards leave tank without waiting for the rack.
+   - The CPU is from 2019 with 6 cores: the Mac takes shards, not a full run. Its time for one shard beside tank's
+     decides how many.
+
+6. Measure once: Studio e2e on tank with 2, 3 and 4 slots taken, and the same suite on the rack. The slot count and
    the table follow the numbers.
 
-Done when: pauses over 60 s are back under 35% of subagent time, and the rack has run one full unit test run and one
-Studio e2e shard of this repo.
+Done when: pauses over 60 s are back under 35% of subagent time, the rack has run one full unit test run and one
+Studio e2e shard of this repo, and the container shard of the other repo is green on tank, on the Mac and on the rack.
 
 ## Package 2: `next` stays green (today, beside package 1)
 
