@@ -94,6 +94,15 @@ export const THEME_TOKEN_RENAME_BY_OLD: ReadonlyMap<string, TokenRename> = new M
   THEME_TOKEN_RENAMES.map((entry) => [entry.old, entry]),
 );
 
+/** Every old name the table renames or removes, as a whole name. */
+export const RENAMED_TOKEN_LEFT = new RegExp(
+  `(?<![\\w-])(?:${THEME_TOKEN_RENAMES.filter((entry) => entry.old !== entry.new)
+    .map((entry) => entry.old)
+    .sort((a, b) => b.length - a.length)
+    .join('|')})(?![\\w-])`,
+  'g',
+);
+
 /**
  * Names that are not in the table but belong to a retired family: an unknown `-rgb`/`-solid` surface name, any
  * `--et-theme-color-*`, and the tone families of `--et-color-*`.

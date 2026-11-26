@@ -1,4 +1,5 @@
 import {
+  RENAMED_TOKEN_LEFT,
   RETIRED_TOKEN_FAMILY,
   SURFACE_TRIPLET_READ,
   tailwindColorRenames,
@@ -24,6 +25,7 @@ const GENERATED_COLOR_MARKER = '@ethlete/core:tailwind-4-color-theme';
 const GENERATED_SURFACE_MARKER = '@ethlete/core:tailwind-4-surface-theme';
 const LITERAL_TRIPLET = /^\d+(?:\.\d+)?%?(?:[\s_]+\d+(?:\.\d+)?%?){2}$/;
 const NAME_CHAR = /[\w-]/;
+const TAILWIND_SHORTHAND = /^\(([a-z-]+:)?(--[a-zA-Z][\w-]*)\)/;
 
 export const emptyTailwindThemeNames = (): TailwindThemeNames => ({
   colorPrefixes: new Map(),
@@ -268,6 +270,18 @@ class FileMigration {
     return renamed;
   }
 
+  rewriteShorthand([call, type, name]: RegExpExecArray, offset: number) {
+    if (entryOf(name as string)?.kind === 'opacity') {
+      this.report(offset, `${name} has no shorthand form after the rename: rewrite it as an arbitrary value by hand`);
+
+      return call;
+    }
+
+    const renamed = this.rewriteVar(`var(${name})`, offset, { property: null, insideRgb: false });
+
+    return renamed === null ? call : `(${type ?? ''}${renamed.slice('var('.length)}`;
+  }
+
   isTripletProperty(property: string | null) {
     return !!property && entryOf(property)?.kind === 'triplet';
   }
@@ -277,6 +291,17 @@ class FileMigration {
     let i = 0;
 
     while (i < text.length) {
+      const shorthand =
+        i > 1 && text[i - 1] === '-' && NAME_CHAR.test(text[i - 2] as string)
+          ? TAILWIND_SHORTHAND.exec(text.slice(i))
+          : null;
+
+      if (shorthand) {
+        output += this.rewriteShorthand(shorthand, baseOffset + i);
+        i += shorthand[0].length;
+        continue;
+      }
+
       const match = /^(rgba?|var)\(/.exec(text.slice(i));
       const boundary = i === 0 || !NAME_CHAR.test(text[i - 1] as string);
 
@@ -323,7 +348,7 @@ type Declaration = { start: number; end: number; property: string; valueStart: n
 
 const findDeclarations = (text: string) => {
   const declarations: Declaration[] = [];
-  const pattern = /(^|[;{\s[])(--[a-zA-Z][\w-]*)\s*:/g;
+  const pattern = /(^|[;{\s["'`])(--[a-zA-Z][\w-]*)\s*:/g;
 
   for (const match of text.matchAll(pattern)) {
     const property = match[2] as string;
@@ -479,7 +504,7 @@ const renameTailwind = (text: string, names: TailwindThemeNames) => {
   if (map.size === 0) return text;
 
   const prefixes = [...new Set([...names.colorPrefixes.keys(), ...names.surfacePrefixes.keys()])];
-  const pattern = new RegExp(`(?<=[a-z0-9]-)(?:${prefixes.join('|')})-[a-z0-9-]*[a-z0-9]`, 'g');
+  const pattern = new RegExp(`(?<=[a-z0-9]-)(?<!(?:^|[^\\w-])data-)(?:${prefixes.join('|')})-[a-z0-9-]*[a-z0-9]`, 'g');
 
   return text.replace(pattern, (token) => map.get(token) ?? token);
 };
@@ -489,7 +514,9 @@ const collectLeftovers = (migration: FileMigration, result: string) => {
   const lines = result.split('\n');
 
   lines.forEach((line, index) => {
-    const families = [...line.matchAll(RETIRED_TOKEN_FAMILY)].map((match) => match[0]);
+    const families = [...line.matchAll(RETIRED_TOKEN_FAMILY), ...line.matchAll(RENAMED_TOKEN_LEFT)].map(
+      (match) => match[0],
+    );
     const surfaceTriplets = [...line.matchAll(SURFACE_TRIPLET_READ)];
 
     if (families.length === 0 && surfaceTriplets.length === 0) return;

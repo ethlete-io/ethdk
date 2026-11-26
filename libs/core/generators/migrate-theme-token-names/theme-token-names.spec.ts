@@ -245,3 +245,98 @@ describe('migrateThemeTokenNames', () => {
     expect(new Set(THEME_TOKEN_RENAMES.map((entry) => entry.old)).size).toBe(THEME_TOKEN_RENAMES.length);
   });
 });
+
+describe('migrateThemeTokenNames on Tailwind arbitrary-property shorthand', () => {
+  const findingsOf = (source: string) => migrate(source).findings.map(({ line, reason }) => ({ line, reason }));
+
+  it('renames a color read in the shorthand, with variants, a type hint and in a TS string', () => {
+    const source = `<div class="flex grow bg-(--et-surface-background-solid) hover:bg-(--et-surface-border-solid)">
+  <span class="rounded-sm bg-(--et-theme-color-primary-solid) text-(--et-theme-color-on-primary) border-(color:--et-theme-color-primary)"></span>
+</div>`;
+
+    expect(migrate(source)).toEqual({
+      content: `<div class="flex grow bg-(--et-surface-background) hover:bg-(--et-surface-border)">
+  <span class="rounded-sm bg-(--et-tone-fill) text-(--et-tone-on-fill) border-(color:--et-tone-fill)"></span>
+</div>`,
+      changed: true,
+      findings: [],
+    });
+    expect(migrate(`: 'bg-(--et-surface-background-solid) ring-(--et-surface-border-solid)';`).content).toBe(
+      `: 'bg-(--et-surface-background) ring-(--et-surface-border)';`,
+    );
+  });
+
+  it('is idempotent', () => {
+    const once = migrate(
+      '<i class="md:hover:text-(--et-surface-color-muted-solid) bg-(--et-theme-color-primary)"></i>',
+    );
+
+    expect(once.content).toBe('<i class="md:hover:text-(--et-surface-text-muted) bg-(--et-tone-fill)"></i>');
+    expect(migrate(once.content)).toEqual({ content: once.content, changed: false, findings: [] });
+  });
+
+  it('leaves a shorthand over a name outside the table alone', () => {
+    const source =
+      '<div class="md:px-(--et-overlay-padding-inline) md:py-(--et-overlay-padding-block) w-(--et-vw)"></div>';
+
+    expect(migrate(source)).toEqual({ content: source, changed: false, findings: [] });
+  });
+
+  it('stops on a triplet, a removed name and the opacity knob read through the shorthand', () => {
+    const source = `<i class="bg-(--et-surface-color-rgb)"></i>
+<i class="text-(--et-color-primary)"></i>
+<i class="bg-(--et-color-secondary)"></i>
+<i class="opacity-(--et-theme-color-primary-opacity)"></i>`;
+
+    expect(migrate(source).content).toBe(source);
+    expect(findingsOf(source)).toEqual([
+      { line: 1, reason: '--et-surface-color-rgb is a triplet read outside rgb(): check every reader by hand' },
+      { line: 2, reason: '--et-color-primary is a triplet read outside rgb(): check every reader by hand' },
+      { line: 3, reason: '--et-color-secondary is removed: replace it by hand' },
+      {
+        line: 4,
+        reason:
+          '--et-theme-color-primary-opacity has no shorthand form after the rename: rewrite it as an arbitrary value by hand',
+      },
+    ]);
+  });
+});
+
+describe('migrateThemeTokenNames on names that are not custom properties', () => {
+  it('never renames a data attribute that shares a Tailwind color name', () => {
+    const names = namesOf('app-a');
+    const source = `<div class="card" data-et-surface><div data-et-surface></div></div>
+[data-et-surface] { outline: none; }
+const surfaces = root.querySelectorAll('[data-et-surface]');
+<p class="text-et-surface hover:bg-et-surface-bg"></p>`;
+
+    expect(migrateThemeTokenNames(source, names)).toEqual({
+      content: `<div class="card" data-et-surface><div data-et-surface></div></div>
+[data-et-surface] { outline: none; }
+const surfaces = root.querySelectorAll('[data-et-surface]');
+<p class="text-et-surface-text hover:bg-et-surface-background"></p>`,
+      changed: true,
+      findings: [],
+    });
+  });
+
+  it('rewrites a triplet declared in a style attribute together with its reader', () => {
+    const source = `<div style="--et-surface-background: 60 70 80;background-color:rgb(var(--et-surface-background))"></div>
+const SURFACE = 'style="--et-surface-background: 20 30 40"';`;
+
+    expect(migrate(source)).toEqual({
+      content: `<div style="--et-surface-background: rgb(60 70 80);background-color:var(--et-surface-background)"></div>
+const SURFACE = 'style="--et-surface-background: rgb(20 30 40)"';`,
+      changed: true,
+      findings: [],
+    });
+  });
+
+  it('reports an old name set from script', () => {
+    const source = `el.style.setProperty('--et-surface-color', '1 2 3');`;
+
+    expect(migrate(source).findings.map(({ line, reason }) => ({ line, reason }))).toEqual([
+      { line: 1, reason: 'old theme token left: --et-surface-color' },
+    ]);
+  });
+});
