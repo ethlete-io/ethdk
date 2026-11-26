@@ -112,7 +112,7 @@ const themeNameDetector = ({ colors, surfaces }) => {
 
   const alternatives = [...new Set(old)].sort((a, b) => b.length - a.length).map(escapeRegExp);
 
-  return new RegExp(`(?<=[a-z0-9]-)(?:${alternatives.join('|')})(?![\\w-])`, 'g');
+  return new RegExp(`(?<=[a-z0-9]-)(?<!\\bdata-)(?:${alternatives.join('|')})(?![\\w-])`, 'g');
 };
 
 /** @param {readonly string[]} prefixes */
@@ -122,7 +122,7 @@ const unknownNameCandidate = (prefixes) => {
   const prefix = `(?:${prefixes.map(escapeRegExp).join('|')})`;
 
   return new RegExp(
-    `(?<=(?:${SURFACE_PROPERTY_UTILITIES})-)${prefix}-(?!tone-|surface-${NEW_SURFACE_WORDS}(?:-(?:muted|subtle))?${STATE_SUFFIX}(?![\\w-]))[a-z][a-z0-9-]*`,
+    `(?<=(?:${SURFACE_PROPERTY_UTILITIES})-)${prefix}-(?!tone-|surface-(?:[a-z0-9]+-)*?${NEW_SURFACE_WORDS}(?:-(?:muted|subtle))?${STATE_SUFFIX}(?![\\w-]))[a-z][a-z0-9-]*`,
     'g',
   );
 };

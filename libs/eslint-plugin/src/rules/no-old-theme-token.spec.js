@@ -93,6 +93,7 @@ const appASurfaces = writeTheme('app-a-surfaces.css', 'surface', 'aa', ['dark', 
 const appBColors = writeTheme('app-b-themes.css', 'color', 'bb', ['blue', 'brand', 'dark-grey']);
 
 const themeFiles = [appAColors, appASurfaces, appBColors];
+const appEtSurfaces = writeTheme('app-et-surfaces.css', 'surface', 'et', ['card', 'sheet']);
 
 cssTester.run('no-old-theme-token (theme names)', rule, {
   valid: [
@@ -102,6 +103,14 @@ cssTester.run('no-old-theme-token (theme names)', rule, {
     },
     { code: `.aa-red { color: red; } .x { @apply bg-aa-redwood; }`, options: [{ prefixes: ['aa'], themeFiles }] },
     { code: `@apply bg-aa-tone-fill text-aa-surface-text;`, options: [{ prefixes: ['aa'] }] },
+    {
+      code: '<header\n      data-et-surface\n      class="flex">',
+      options: [{ prefixes: ['et'], themeFiles: [appEtSurfaces] }],
+    },
+    {
+      code: `const PANE = 'data-et-surface-fill';\nconst x = '<et-select-panel data-et-surface="select.open" ';`,
+      options: [{ prefixes: ['et'], themeFiles: [appEtSurfaces] }],
+    },
   ],
   invalid: [
     {
@@ -187,6 +196,20 @@ tsTester.run('no-old-theme-token (new names stay valid)', rule, {
     { code: `const c = 'text-et-surface-text-muted text-et-surface-text-subtle';` },
   ],
   invalid: [],
+});
+
+tsTester.run('no-old-theme-token (named surface tokens)', rule, {
+  valid: [
+    { code: "expect(content).toContain('--color-et-surface-card-background: rgb(255 255 255);');" },
+    { code: "expect(content).toContain('--color-et-surface-sheet-text: rgb(255 255 255);');" },
+    { code: "const c = 'bg-et-surface-dark-elevated-interaction-hover text-et-surface-card-text-muted';" },
+  ],
+  invalid: [
+    {
+      code: "const c = 'bg-et-surface-card-muted';",
+      errors: [{ messageId: 'tailwindName' }],
+    },
+  ],
 });
 
 cssTester.run('no-old-theme-token (new names in css)', rule, {
