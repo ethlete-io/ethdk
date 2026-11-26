@@ -26,6 +26,28 @@ const frameState = (page) =>
     };
   });
 
+const frameDump = (page) =>
+  page.evaluate(() => {
+    const frames = [...document.querySelectorAll('ethlete-canvas-frame')].map((frame) => {
+      const iframes = [...frame.querySelectorAll('iframe')];
+      const flags = [
+        frame.getAttribute('data-live') === 'true' && 'live',
+        frame.hasAttribute('data-unsized') && 'unsized',
+        frame.hasAttribute('data-load-failed') && 'failed',
+        frame.querySelector('[data-loading-badge]') && 'loading',
+        frame.querySelector('[data-shot-slow]') && 'shot-slow',
+        frame.querySelector('[data-shot-failed]') && 'shot-failed',
+        frame.querySelector('img') && 'shot',
+      ].filter(Boolean);
+
+      return `${frame.getAttribute('data-frame-id')}[${flags.join(',')}] iframes ${iframes.filter((iframe) => !iframe.classList.contains('opacity-0')).length}/${iframes.length}`;
+    });
+
+    const canvas = document.querySelector('ethlete-design-canvas') ? 'canvas mounted' : 'no canvas';
+
+    return `${canvas}, ${frames.length} frame(s)${frames.length ? `: ${frames.join('; ')}` : ''}`;
+  });
+
 const epochOf = (page) =>
   page.evaluate(() =>
     Math.max(
@@ -59,7 +81,15 @@ const waitFor = async (check, timeout) => {
 
 const result = await withStudio(
   async ({ page, studioUrl, restartDesign }) => {
+    const phases = [];
+    let phaseStart = Date.now();
+    const phase = (name) => {
+      phases.push(`${name} ${Date.now() - phaseStart} ms`);
+      phaseStart = Date.now();
+    };
+
     await page.goto(studioUrl);
+    phase('studio load');
     await page.evaluate(
       ({ view, checkout }) => {
         localStorage.clear();
@@ -68,10 +98,18 @@ const result = await withStudio(
       { view: VIEW, checkout: root },
     );
     await page.goto(studioUrl);
+    phase('view load');
 
     const painted = await waitFor(async () => (await frameState(page)).shown > 0, PAINT_TIMEOUT_MS);
 
-    if (!painted) return { ok: false, detail: 'no live frame painted before the restart' };
+    phase('paint');
+
+    if (!painted) {
+      return {
+        ok: false,
+        detail: `no live frame painted before the restart (${phases.join(', ')}); ${await frameDump(page)}`,
+      };
+    }
 
     const before = await frameState(page);
     const restarted = restartDesign(DOWN_MS);
@@ -126,7 +164,7 @@ const result = await withStudio(
     return {
       ok: reloaded && !!recovered && bumps === 1,
       detail:
-        `before ${JSON.stringify(before)}, while down ${JSON.stringify(down)}, ` +
+        `${phases.join(', ')}; before ${JSON.stringify(before)}, while down ${JSON.stringify(down)}, ` +
         `after ${JSON.stringify(after)}${reloaded ? '' : ', no shown iframe to reload'}; ` +
         `Restart bumped the frame epoch ${bumps} times, expected 1`,
     };
