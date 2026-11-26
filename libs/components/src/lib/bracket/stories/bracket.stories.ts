@@ -294,6 +294,7 @@ export const JourneyIconInCard = {
   args: {
     source: generateSingleEliminationBracket(8),
     iconInCards: true,
+    withParticipantList: true,
   },
 };
 

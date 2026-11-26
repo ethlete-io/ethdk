@@ -245,6 +245,26 @@ test.describe('bracket journey highlight / icons in cards', () => {
   });
 });
 
+test.describe('bracket journey / pinned icon in a card', () => {
+  test('dims the connector lines to 0.25 but leaves an SVG icon inside a card at full opacity', async ({ page }) => {
+    const root = await openStory(page, JOURNEY_ICON_STORY_ID);
+    const host = root.locator('.et-bracket-host');
+
+    await root.getByRole('group', { name: 'Participants' }).getByRole('button').first().click();
+    await expect(host).toHaveClass(JOURNEY_FOCUSED);
+    await settle(page, 400);
+
+    const opacityOf = (selector: string) =>
+      root
+        .locator(selector)
+        .first()
+        .evaluate((el) => Number.parseFloat(getComputedStyle(el).opacity));
+
+    expect(await opacityOf('.et-sb-icon-match-icon path')).toBe(1);
+    expect(await opacityOf('.et-bracket-svg path:not(.et-bracket-journey-active)')).toBeCloseTo(0.25, 2);
+  });
+});
+
 test.describe('bracket participants / keyboard', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard navigation');
 
