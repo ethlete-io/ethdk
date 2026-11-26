@@ -826,6 +826,7 @@ const ancestorsOf = (pid) => {
 
 const stopSelection = () => {
   const callerSession = process.env.CLAUDE_PID;
+  const callerAgent = process.env.ET_AGENT_ID ?? '';
   const protectedPids = new Set([process.pid, ...ancestorsOf(process.pid)]);
   const uid = String(process.getuid());
   const pids = readdirSync('/proc')
@@ -841,11 +842,12 @@ const stopSelection = () => {
   const selected = new Map();
   for (const pid of pids) {
     if (procText(pid, 'status')?.match(/^Uid:\s+(\d+)/m)?.[1] !== uid || statFields(pid)?.[0] === 'Z') continue;
-    const owner = procEnv(pid)?.CLAUDE_PID;
+    const env = procEnv(pid);
+    const owner = env?.CLAUDE_PID;
     const cwd = procCwd(pid);
     if (!owner || cwd === null || ancestorsOf(pid).has(Number(owner))) continue;
     if (owner === callerSession) {
-      selected.set(pid, describe(pid, 'own'));
+      if ((env?.ET_AGENT_ID ?? '') === callerAgent) selected.set(pid, describe(pid, 'own'));
       continue;
     }
     const ownerStart = procStart(Number(owner));

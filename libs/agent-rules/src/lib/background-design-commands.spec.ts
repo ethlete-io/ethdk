@@ -18,9 +18,10 @@ const runHook = (options: {
   command: string;
   background?: boolean;
   toolName?: string;
+  agentId?: string;
   localConfig?: Record<string, unknown>;
 }) => {
-  const { command, background, toolName = 'Bash', localConfig } = options;
+  const { command, background, toolName = 'Bash', localConfig, agentId } = options;
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-background-design-'));
 
   if (localConfig) {
@@ -34,6 +35,7 @@ const runHook = (options: {
       cwd: root,
       hook_event_name: 'PreToolUse',
       tool_name: toolName,
+      ...(agentId === undefined ? {} : { agent_id: agentId }),
       tool_input: { command, ...(background === undefined ? {} : { run_in_background: background }) },
     }),
   });
@@ -60,6 +62,23 @@ describe('background-design-commands', () => {
     expect(result?.hookSpecificOutput.updatedInput?.['command']).toBe(command);
     expect(result?.hookSpecificOutput.permissionDecisionReason).toContain(name);
     expect(result?.hookSpecificOutput.permissionDecisionReason).toContain('run_in_background: true');
+  });
+
+  it('stamps a sub-agent Bash command with its id and leaves the main session alone', () => {
+    const stamped = runHook({ command: 'yarn test', agentId: 'a1b2c3' });
+
+    expect(stamped?.hookSpecificOutput.updatedInput?.['command']).toBe('export ET_AGENT_ID=a1b2c3; yarn test');
+    expect(stamped?.hookSpecificOutput.permissionDecision).toBeUndefined();
+    expect(runHook({ command: 'yarn test' })).toBeNull();
+  });
+
+  it('stamps and backgrounds one command in a single rewrite', () => {
+    const result = runHook({ command: 'yarn design check', agentId: 'a1b2c3' });
+
+    expect(result?.hookSpecificOutput.updatedInput).toEqual({
+      command: 'export ET_AGENT_ID=a1b2c3; yarn design check',
+      run_in_background: true,
+    });
   });
 
   it.each([

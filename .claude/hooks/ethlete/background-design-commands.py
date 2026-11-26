@@ -11,6 +11,10 @@ is allowed with that flag set, and the agent reads the output when the completio
 A wait loop gets the same flag: an `until` or `while` loop whose body runs `sleep`. In the
 foreground it holds the session for the whole wait and ends at the Bash timeout.
 
+A Bash call from a sub-agent (hook input `agent_id`) gets `export ET_AGENT_ID=<id>;` prepended, so every
+process it starts carries the id and `agent-sessions stop-own` can tell sibling sub-agents apart. This
+shares the hook because parallel hooks cannot both rewrite one command.
+
 Matches the `yarn design ...`, `node dist/libs/cli/src/index.js design ...` and
 `npx nx ... studio:e2e` forms at command position only. Quoted text, heredoc bodies and
 arguments of other commands (`echo`, `git commit`, `grep`) are ignored, so free text that
@@ -28,6 +32,8 @@ import re
 import sys
 
 HOOK_NAME = "background-design-commands"
+AGENT_STAMP = "ET_AGENT_ID="
+AGENT_ID = re.compile(r"[\w-]+")
 LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
 
 LONG_COMMANDS = (
@@ -178,7 +184,7 @@ def main():
 
     tool_input = data.get("tool_input")
 
-    if not isinstance(tool_input, dict) or tool_input.get("run_in_background") is True:
+    if not isinstance(tool_input, dict):
         return
 
     command = tool_input.get("command")
@@ -189,23 +195,30 @@ def main():
     if disabled_locally(load_local_config(repo_root(data))):
         return
 
-    name = long_command_in(command) or (WAIT_LOOP if wait_loop_in(command) else None)
+    updated = dict(tool_input)
+    reason = None
+    agent_id = data.get("agent_id")
 
-    if not name:
+    if isinstance(agent_id, str) and AGENT_ID.fullmatch(agent_id) and AGENT_STAMP not in command:
+        updated["command"] = f"export {AGENT_STAMP}{agent_id}; {command}"
+
+    if tool_input.get("run_in_background") is not True:
+        name = long_command_in(command) or (WAIT_LOOP if wait_loop_in(command) else None)
+
+        if name:
+            updated["run_in_background"] = True
+            reason = reason_for(name)
+
+    if updated == tool_input:
         return
 
-    print(
-        json.dumps(
-            {
-                "hookSpecificOutput": {
-                    "hookEventName": "PreToolUse",
-                    "permissionDecision": "allow",
-                    "permissionDecisionReason": reason_for(name),
-                    "updatedInput": {**tool_input, "run_in_background": True},
-                }
-            }
-        )
-    )
+    output = {"hookEventName": "PreToolUse", "updatedInput": updated}
+
+    if reason:
+        output["permissionDecision"] = "allow"
+        output["permissionDecisionReason"] = reason
+
+    print(json.dumps({"hookSpecificOutput": output}))
 
 
 if __name__ == "__main__":

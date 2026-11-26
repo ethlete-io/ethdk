@@ -2322,6 +2322,7 @@ describe('agent-sessions stop-own', () => {
   const sh = (script: string, env: Record<string, string>, cwd: string) => {
     const childEnv = { ...process.env, ...env };
     if (!env['CLAUDE_PID']) delete childEnv['CLAUDE_PID'];
+    if (!env['ET_AGENT_ID']) delete childEnv['ET_AGENT_ID'];
     const result = spawnSync('sh', ['-c', script], {
       cwd,
       env: childEnv,
@@ -2351,10 +2352,10 @@ describe('agent-sessions stop-own', () => {
     return [claude, attached] as const;
   };
 
-  const stopOwn = (callerPid: string, flags: string[] = []) =>
+  const stopOwn = (callerPid: string, flags: string[] = [], agentId?: string) =>
     spawnSync('node', [SCRIPT, 'stop-own', ...flags], {
       cwd: checkout,
-      env: { ...process.env, CLAUDE_PID: callerPid },
+      env: { ...process.env, CLAUDE_PID: callerPid, ET_AGENT_ID: agentId ?? '' },
       encoding: 'utf8',
     });
 
@@ -2395,6 +2396,29 @@ describe('agent-sessions stop-own', () => {
     expect(isRunning(otherSession)).toBe(true);
     expect(isRunning(elsewhere)).toBe(true);
     expect(isRunning(live)).toBe(true);
+  });
+
+  it('stops only the calling subagent runs, never a sibling or the main session', () => {
+    const [claude] = standIn(checkout);
+    const session = String(claude);
+    const mineA = sleeper({ CLAUDE_PID: session, ET_AGENT_ID: 'agent-a' }, checkout);
+    const siblingB = sleeper({ CLAUDE_PID: session, ET_AGENT_ID: 'agent-b' }, checkout);
+    const main = sleeper({ CLAUDE_PID: session }, checkout);
+    settle();
+
+    const asAgentA = stopOwn(session, [], 'agent-a');
+    settle();
+
+    expect(asAgentA.stdout).toContain(`${mineA} own`);
+    expect(isRunning(mineA)).toBe(false);
+    expect(isRunning(siblingB)).toBe(true);
+    expect(isRunning(main)).toBe(true);
+
+    const asMain = stopOwn(session);
+    settle();
+
+    expect(isRunning(main)).toBe(false);
+    expect(isRunning(siblingB)).toBe(true);
   });
 
   it('lists without signalling on --dry-run', () => {
