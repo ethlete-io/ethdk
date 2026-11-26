@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 3.0.0-next.50
+
+### Patch Changes
+
+- `design check` accepts a name or drawing that differs from the app's only in sample values the product's `fixtures.ts` declares.
+
 ## 3.0.0-next.49
 
 ### Patch Changes
