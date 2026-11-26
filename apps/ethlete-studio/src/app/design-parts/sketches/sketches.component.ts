@@ -1468,6 +1468,12 @@ export class SketchesComponent {
     return Math.max(scale, MATRIX_MIN_COLUMN / widest);
   }
 
+  private stageRoomOf(list: HTMLElement, stage: HTMLElement) {
+    const zoom = this.shownZoom() || 1;
+    const lead = (stage.getBoundingClientRect().left - list.getBoundingClientRect().left) / zoom;
+    return list.clientWidth - Math.max(0, lead);
+  }
+
   private gridFit(scale: number, dom: FitDom) {
     const { columns, list, sections, stages, frames } = dom;
     const stage = stages[0];
@@ -1478,7 +1484,7 @@ export class SketchesComponent {
       : this.stacked() && this.grid()
         ? this.stackedGridFit(dom)
         : stage
-          ? (stage.clientWidth - (columns - 1) * COLUMN_GAP) / (columns * this.widest())
+          ? (this.stageRoomOf(list, stage) - (columns - 1) * COLUMN_GAP) / (columns * this.widest())
           : 1;
     const groups = side || this.stacked() ? changed.map((section) => [section]) : [sections.slice(0, 2)];
     const heightFits = groups.flatMap((measured) => {
