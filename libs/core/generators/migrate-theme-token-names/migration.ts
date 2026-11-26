@@ -64,7 +64,9 @@ export default async function migrateThemeTokenNamesGenerator(tree: Tree, schema
   });
 
   console.log(
-    filesChanged === 0 ? '   Nothing to rename.\n' : `\n✅ Renamed theme tokens in ${filesChanged} file(s).\n`,
+    filesChanged === 0
+      ? '   Nothing to rename.\n'
+      : `\n✅ Renamed theme tokens in ${filesChanged} file(s). Regenerate your theme CSS with \`nx g @ethlete/core:tailwind-4-color-theme\` and \`nx g @ethlete/core:tailwind-4-surface-theme\`.\n`,
   );
 
   if (!schema.skipFormat) {
