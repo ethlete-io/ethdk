@@ -4,7 +4,7 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { exportCommit, revertInExport, toolsStepEnv } from './commit-export.mjs';
-import { git, tempGitRepo } from './git-test-env.mjs';
+import { gitEnv, git, tempGitRepo } from './git-test-env.mjs';
 
 const commit = (repo, content, message, file = 'file.txt') => {
   writeFileSync(join(repo, file), content);
@@ -55,7 +55,7 @@ test(
 
     const run = spawnSync('yarn', ['test:tools'], {
       cwd: dir,
-      env: { ...process.env, ...toolsStepEnv(repo), NODE_TEST_CONTEXT: undefined },
+      env: gitEnv({ ...toolsStepEnv(repo), NODE_TEST_CONTEXT: undefined }),
       encoding: 'utf8',
     });
 

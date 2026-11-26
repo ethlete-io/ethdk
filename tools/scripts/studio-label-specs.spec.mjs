@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { literalsOf, removedLiterals, staleSpecHits } from './studio-label-specs.mjs';
-import { gitExec } from './git-test-env.mjs';
+import { gitEnv, gitExec } from './git-test-env.mjs';
 
 test('splits template literals around placeholders and drops short ones', () => {
   assert.deepEqual(literalsOf("a: (f: string) => `Kommentar zu ${f} danach`, b: 'ja'"), ['Kommentar zu', 'danach']);
@@ -75,7 +75,7 @@ const stagedRepo = () => {
 };
 
 const runStaged = (root) =>
-  spawnSync('node', [script, '--staged'], { cwd: root, encoding: 'utf8', env: { ...process.env, NX_BASE: '' } });
+  spawnSync('node', [script, '--staged'], { cwd: root, encoding: 'utf8', env: gitEnv({ NX_BASE: '' }) });
 
 test('--staged refuses a staged spec that asserts a label removed since the upstream', () => {
   const { root, remote, git, write } = stagedRepo();

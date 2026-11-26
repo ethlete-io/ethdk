@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { gitSpawn } from './git-test-env.mjs';
+import { gitEnv, gitSpawn } from './git-test-env.mjs';
 
 const hook = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '.husky', 'pre-push');
 const created = [];
@@ -48,7 +48,7 @@ const push = ({ dir, base, head, bin }) =>
   spawnSync('sh', [hook], {
     cwd: dir,
     encoding: 'utf8',
-    env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+    env: gitEnv({ PATH: `${bin}:${process.env.PATH}` }),
     input: `refs/heads/next ${head} refs/heads/next ${base}\n`,
   });
 

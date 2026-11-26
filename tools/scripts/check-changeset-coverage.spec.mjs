@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { after, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { gitSpawn } from './git-test-env.mjs';
+import { gitEnv, gitSpawn } from './git-test-env.mjs';
 
 const sdk = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const created = [];
@@ -60,7 +60,7 @@ const fixture = (initial, preChangesets = [], setup = () => undefined) => {
     spawnSync('node', ['tools/scripts/check-changeset-coverage.js'], {
       cwd: repo,
       encoding: 'utf8',
-      env: { ...process.env, NX_BASE: base, NX_HEAD: 'HEAD' },
+      env: gitEnv({ NX_BASE: base, NX_HEAD: 'HEAD' }),
     });
 
   return { commit, check };

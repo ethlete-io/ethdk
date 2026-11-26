@@ -1,5 +1,8 @@
 import { leakMessageOf, openSpecTmp } from './spec-tmp.mjs';
 
+// A git hook exports GIT_DIR and GIT_INDEX_FILE; a spec, or the script it tests, would run its temp-repo git on the hook's repo.
+for (const key of Object.keys(process.env).filter((name) => name.startsWith('GIT_'))) delete process.env[key];
+
 const spec = process.env['NODE_TEST_CONTEXT'] ? process.argv[1] : undefined;
 
 if (spec) {
