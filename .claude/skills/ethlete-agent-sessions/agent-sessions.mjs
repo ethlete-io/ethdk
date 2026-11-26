@@ -69,6 +69,8 @@ const dryRun = takeFlag(args, '--dry-run', false);
 const role = takeFlag(args, '--role', true);
 const notify = takeFlag(args, '--notify', true);
 const newProcess = takeFlag(args, '--process', false);
+const config =
+  args[0] === 'restart' && args.includes('--config') ? (takeFlag(args, '--config', true) ?? '') : undefined;
 const [command, sender, ...words] = args;
 
 const help = `Shared agent mailbox: ${mailbox}
@@ -88,10 +90,11 @@ Run:     node ${script} run <name> <command...> [--role builder] [--dry-run]
 Install: node ${script} shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
                                                       (write the shell functions into ~/.zshrc or ~/.bashrc)
 Shell:   node ${script} shell-init [<agent>...]       (print shell functions that wrap each agent with run; default: claude codex)
-Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>] [--process] [--role builder|none] <prompt...>
+Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>] [--process [--config <dir>]] [--role builder|none] <prompt...>
                                                       (type the clear command and then the prompt into the tmux session of <name>;
                                                        a long wait on a draft and a give-up go to <name> and each --notify agent;
                                                        --process ends the agent and starts it again in the same pane with the prompt;
+                                                       --config changes the saved CLAUDE_CONFIG_DIR for a process restart;
                                                        it takes --role, else the role a builder-*/doc-agent-* handoff names, else keeps the role, and refuses
                                                        a session with no role while another agent session runs in the repo;
                                                        refuses while a ❓ question of a claude session has no later human message
@@ -233,11 +236,7 @@ const CONFIG_WORD = 'CLAUDE_CONFIG_DIR=';
 const callerConfigDir = () => resolve(process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude'));
 const configDirOf = (words) => words.find((word) => word.startsWith(CONFIG_WORD))?.slice(CONFIG_WORD.length);
 const callerIsAgent = () => Boolean(process.env.CLAUDECODE || process.env.CLAUDE_CONFIG_DIR);
-const configMismatch = (words) => {
-  if (!callerIsAgent()) return false;
-  const given = configDirOf(words);
-  return given !== undefined && resolve(given) !== callerConfigDir();
-};
+const configMismatch = (dir) => callerIsAgent() && dir !== undefined && resolve(dir) !== callerConfigDir();
 const callerConfigWords = (words) =>
   process.env.CLAUDE_CONFIG_DIR && configDirOf(words) === undefined
     ? [`${CONFIG_WORD}${quote(process.env.CLAUDE_CONFIG_DIR)}`]
@@ -315,6 +314,30 @@ const healedCommand = (command, agent) => {
   return binary ? `${command} ${quote(binary)}` : null;
 };
 const rewrapped = (wrap, head, inner) => `${head}${wrap.shell} ${wrap.flag} ${quote(inner)}`;
+const commandConfigDir = (command) => {
+  const wrap = wrapOf(command);
+  if (wrap) return commandConfigDir(wrap.inner) ?? configDirOf(wordsOf(wrap.head).reverse());
+  const words = wordsOf(command);
+  return configDirOf(words.slice(0, programIndexOf(words)).reverse());
+};
+const withoutConfigWords = (tokens) => tokens.filter((token) => !unquoteWord(token).startsWith(CONFIG_WORD));
+const commandWithConfig = (command, dir) => {
+  const wrap = wrapOf(command);
+  if (wrap) {
+    const head = withoutConfigWords(wrap.head.match(SHELL_WORD) ?? [])
+      .map((word) => `${word} `)
+      .join('');
+    return rewrapped(wrap, head, commandWithConfig(wrap.inner, dir));
+  }
+  const tokens = command.match(SHELL_WORD) ?? [];
+  const words = tokens.map(unquoteWord);
+  const program = programIndexOf(words);
+  const prefix = withoutConfigWords(tokens.slice(0, program));
+  const configured = words.slice(0, program).includes('env')
+    ? [...prefix, quote(`${CONFIG_WORD}${dir}`)]
+    : [`${CONFIG_WORD}${quote(dir)}`, ...prefix];
+  return [...configured, ...tokens.slice(program)].join(' ');
+};
 const commandWithoutPrompt = (command) => {
   const wrap = wrapOf(command);
   if (wrap) {
@@ -336,7 +359,6 @@ const restartRoleOf = (session, prompt) => {
   const found = role ?? handoffRoleOf(prompt) ?? roleOf(session);
   return found === 'doc-agent' ? null : found;
 };
-const claudeDir = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
 const isAlive = (pid) => {
   try {
     process.kill(pid, 0);
@@ -352,7 +374,7 @@ const readJson = (path) => {
     return null;
   }
 };
-const claudeSessionIdOf = (session, own) => {
+const claudeSessionIdOf = (session, own, claudeDir) => {
   const sessionsDir = join(claudeDir, 'sessions');
   const live = existsSync(sessionsDir)
     ? readdirSync(sessionsDir)
@@ -364,7 +386,7 @@ const claudeSessionIdOf = (session, own) => {
   if (live.length) return live[0].sessionId;
   return own === session ? process.env.CLAUDE_CODE_SESSION_ID || null : null;
 };
-const transcriptOf = (sessionId) => {
+const transcriptOf = (sessionId, claudeDir) => {
   const projects = join(claudeDir, 'projects');
   if (!existsSync(projects)) return null;
   return (
@@ -418,8 +440,10 @@ const openForHumanOf = (prompt) => {
 };
 const droppedQuestions = (session, own, prompt) => {
   if (session.startsWith('codex')) return [];
-  const sessionId = claudeSessionIdOf(session, own);
-  const transcript = sessionId && transcriptOf(sessionId);
+  const recorded = agentCommandOf(session);
+  const claudeDir = commandConfigDir(healedCommand(recorded, session) ?? recorded) || callerConfigDir();
+  const sessionId = claudeSessionIdOf(session, own, claudeDir);
+  const transcript = sessionId && transcriptOf(sessionId, claudeDir);
   if (!transcript) return [];
   const open = openForHumanOf(prompt) ?? '';
   return unansweredQuestions(transcript).filter((question) => !open.includes(question));
@@ -459,7 +483,7 @@ const commandWithRole = (command, agentRole) => {
     ...[...kept, ...rule].map(quote),
   ].join(' ');
 };
-const LEADING_ENV_WORDS = /^((?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*)/;
+const LEADING_ENV_WORDS = new RegExp(`^((?:[A-Za-z_][A-Za-z0-9_]*=(?:${SHELL_WORD.source})?\\s+)*)`);
 const bypassingShellFunction = (base) => base.replace(LEADING_ENV_WORDS, '$1command ');
 const inAgentScope = () => {
   try {
@@ -936,7 +960,7 @@ if (command === 'stop-own') {
 } else if (command === 'run' && sender && words.length && !hasAgentBinary(words)) {
   process.stderr.write(`Refused: no agent was started, ${words.join(' ')} has no program to run.\n`);
   process.exitCode = 1;
-} else if (command === 'run' && sender && words.length && configMismatch(words)) {
+} else if (command === 'run' && sender && words.length && configMismatch(configDirOf(words))) {
   process.stderr.write(
     `Refused: no agent was started, the command sets CLAUDE_CONFIG_DIR=${configDirOf(words)} but the caller runs under ${callerConfigDir()}. One checkout keeps one config.\n`,
   );
@@ -1071,7 +1095,11 @@ if (command === 'stop-own') {
       }
     }
   }
+} else if (config !== undefined && (!newProcess || !config || config.startsWith('-'))) {
+  process.stderr.write('Pass --config <dir> with restart --process.\n');
+  process.exitCode = 1;
 } else if (command === 'restart' && sender && words.length) {
+  const configOverride = config === undefined ? undefined : resolve(config.replace(/^~(?=\/|$)/, () => homedir()));
   const own = process.env.TMUX_PANE
     ? tmux('display-message', '-p', '-t', process.env.TMUX_PANE, '#{session_name}').stdout.trim()
     : null;
@@ -1134,7 +1162,7 @@ if (command === 'stop-own') {
         restartNotice(`restart of ${session} refused, its stored command has no agent program: ${recorded}`);
         process.exit(1);
       }
-      if (configMismatch(stored.split(' ').map((word) => word.replaceAll("'", '')))) {
+      if (configOverride === undefined && configMismatch(commandConfigDir(stored))) {
         restartNotice(
           `restart of ${session} refused, its command sets another CLAUDE_CONFIG_DIR than the caller (${callerConfigDir()})`,
         );
@@ -1146,7 +1174,8 @@ if (command === 'stop-own') {
       }
       const staleRole =
         !restartRole && (roleOf(session) !== null || role === 'none' || handoffRoleOf(words.join(' ')) === 'doc-agent');
-      const base = withTempDir(restartRole || staleRole ? commandWithRole(stored, restartRole) : stored);
+      const configured = configOverride === undefined ? stored : commandWithConfig(stored, configOverride);
+      const base = withTempDir(restartRole || staleRole ? commandWithRole(configured, restartRole) : configured);
       if (restartRole) tmux('set-option', '-t', pane, ROLE_OPTION, restartRole);
       else if (staleRole) tmux('set-option', '-u', '-t', pane, ROLE_OPTION);
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'on');
@@ -1227,7 +1256,11 @@ if (command === 'stop-own') {
     if (own && own !== session) restartLog(`peer restart: ${own} restarted ${session}`);
     const delay = Number(afterSeconds ?? RESTART_AFTER_SECONDS);
     const forward = notify ? ['--notify', notify] : [];
-    const mode = [...(newProcess ? ['--process'] : []), ...(role ? ['--role', role] : [])];
+    const mode = [
+      ...(newProcess ? ['--process'] : []),
+      ...(configOverride === undefined ? [] : ['--config', configOverride]),
+      ...(role ? ['--role', role] : []),
+    ];
     const child = spawn(
       process.execPath,
       [script, 'restart', sender, '--now', '--after', String(delay), ...forward, ...mode, ...words],

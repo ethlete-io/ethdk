@@ -20,7 +20,7 @@ script, so you do not need `<skill-dir>`. The older name `npx ethlete-agents mai
 ```bash
 node <skill-dir>/agent-sessions.mjs run <name> <command...> [--role builder] [--dry-run]
 node <skill-dir>/agent-sessions.mjs up <name>[=<command>]...
-node <skill-dir>/agent-sessions.mjs restart <name> [--after <seconds>] [--notify <agent,...>] [--process] [--role builder|none] <prompt...>
+node <skill-dir>/agent-sessions.mjs restart <name> [--after <seconds>] [--notify <agent,...>] [--process [--config <dir>]] [--role builder|none] <prompt...>
 node <skill-dir>/agent-sessions.mjs down [<name>...]
 node <skill-dir>/agent-sessions.mjs shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
 node <skill-dir>/agent-sessions.mjs shell-init [<agent>...]
@@ -61,6 +61,8 @@ Nothing runs until you start it, so a person who does not use this does nothing.
 `restart --process` ends the agent process instead of clearing it: it types `/exit` (`/quit` for a `codex` name) and starts the agent command again in the same tmux pane, through a login shell, with the prompt as its first message. It also stops the background shells and agents. Use it only after a change to an installed plugin, a settings file, an MCP server or `PATH`, use `--process`. The agent command is the one `run` started, without its prompt. It starts with `command`, so the shell function of the same name does not start a new session. If the exit opens the background work dialog, it selects "exit and stop tasks" and writes the stopped jobs to `restart.log` and a mailbox notice.
 
 The new process takes the target's role, not the caller's: `--role`, else a resumed `builder-*` or `doc-agent-*` handoff's (`doc-agent-*` is none), else its own. A builder process gets `ETHLETE_AGENT_ROLE=builder` and, for `claude`, the builder system prompt once. A session with no role next to another agent session in the repo, none of them a builder, is refused unless the prompt resumes a `builder-*` or `doc-agent-*` handoff or `--role` is passed (`--role none` restarts it without a role).
+
+Use `restart <name> --process --config ~/.claude-second <prompt...>` to save a new `CLAUDE_CONFIG_DIR` for the target and resume the handoff with its resolved role. Without `--config`, the process restart still refuses a saved config that differs from the calling agent's config.
 
 `shell-install` writes one shell function per agent into `~/.zshrc` or `~/.bashrc`, between two marker lines. A second run replaces the block, and `--remove` deletes it. Use `--file` for another startup file and `--dry-run` to preview. After a new terminal opens, typing `claude` or `codex` in a repo with this skill runs the agent through `run`. Elsewhere the function starts the plain command. Run `shell-install` only when the user asks: it changes a file the user owns. `shell-init` prints the same functions without writing a file.
 

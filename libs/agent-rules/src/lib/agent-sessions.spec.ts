@@ -1797,9 +1797,77 @@ process.stdin.on('data', (data) => {
         });
 
         expect(result.status).toBe(1);
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain('sets another CLAUDE_CONFIG_DIR');
         expect(spawnSync('tmux', ['has-session', '-t', `=${scoped}`]).status).toBe(0);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'moves a paired builder with restart --process --config and keeps the config for later restarts',
+    async () => {
+      const agent = `claude-move-${process.pid}`;
+      const target = `${agent}@${basename(dir)}`;
+      const caller = `claude-doc-${process.pid}@${basename(dir)}`;
+      const firstConfig = join(dir, 'claude');
+      const nextConfig = join(dir, ".claude second's");
+      const started = join(dir, 'started.log');
+      const claude = fakeAgentPath();
+      const prompt = '/handoff resume builder-move';
+      writeFileSync(
+        claude,
+        `#!/bin/sh\nprintf '%s\\n' "$CLAUDE_CONFIG_DIR" "$ETHLETE_AGENT_ROLE" "$@" > '${started}'\nread line\n`,
+        { mode: 0o755 },
+      );
+      spawnSync('tmux', ['new-session', '-d', '-s', caller, 'cat']);
+      spawnSync('tmux', ['new-session', '-d', '-s', target, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${target}:`, '@ethlete_role', 'builder']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${target}:`,
+        '@ethlete_command',
+        `'env' 'CLAUDE_CONFIG_DIR=${firstConfig}' '${claude}' '--verbose'`,
+      ]);
+      const readStart = () => (existsSync(started) ? readFileSync(started, 'utf8') : '');
+
+      try {
+        const result = run(
+          ['restart', agent, '--after', '0', '--process', '--config', "~/.claude second's", prompt],
+          undefined,
+          {
+            TMUX_PANE: paneOf(caller),
+            SHELL: 'sh',
+            HOME: dir,
+            CLAUDE_CONFIG_DIR: join(dir, 'caller-config'),
+          },
+        );
+        expect(result.status, result.stderr).toBe(0);
+        await expect.poll(readStart, { timeout: 5_000 }).toContain(`${nextConfig}\nbuilder\n--verbose\n`);
+        expect(readStart()).toContain(`${prompt} [typed by agent-sessions]\n`);
+        const stored = spawnSync('tmux', ['show-options', '-v', '-t', `=${target}:`, '@ethlete_command'], {
+          encoding: 'utf8',
+        }).stdout;
+        expect(stored).toContain(`'CLAUDE_CONFIG_DIR=${dir}/.claude second'\\''s'`);
+        expect(stored).not.toContain(firstConfig);
+        expect(stored).not.toContain(prompt);
+
+        await expect.poll(() => existsSync(join(dir, `restart.lock.${target}`))).toBe(false);
+        const later = run(['restart', agent, '--now', '--after', '0', '--process', prompt + '-again'], undefined, {
+          TMUX_PANE: paneOf(target),
+          SHELL: 'sh',
+          HOME: dir,
+          CLAUDE_CONFIG_DIR: nextConfig,
+        });
+        expect(later.status, later.stderr).toBe(0);
+        expect(readStart()).toContain(`${nextConfig}\nbuilder\n--verbose\n`);
+        expect(readStart()).toContain(`${prompt}-again [typed by agent-sessions]\n`);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${target}`]);
+        spawnSync('tmux', ['kill-session', '-t', `=${caller}`]);
       }
     },
     30_000,
