@@ -1327,6 +1327,23 @@ describe('SystemViewComponent on a merge', () => {
     expect(canvas().pan()).toEqual({ x: 0, y: 0 });
   });
 
+  it('shows a part taller than the view at 100 % with its head at the top on a target row click', async () => {
+    const fixture = await mountSketch(MULTI_PART);
+    const view = fixture.componentInstance;
+    const sketches = fixture.debugElement.query(By.directive(SketchesComponent)).componentInstance;
+    const canvas = sketches['canvas'];
+
+    Object.defineProperty(sketches['world']().nativeElement, 'offsetHeight', { value: 2000, configurable: true });
+    Object.defineProperty(sketches['list']().nativeElement, 'clientHeight', { value: 800, configurable: true });
+
+    // The human decided on 26.11. that a tree click on a tall part shows it at 100 % with its head at the top; only Fit zooms out.
+    view['activate']('sketch:foundations/colors/foundations/type');
+    await settle(fixture);
+
+    expect(canvas.zoom()).toBe(1);
+    expect(canvas.pan()).toEqual({ x: 0, y: 0 });
+  });
+
   // A target row stays in the sketch view, also for a part the product lists, and carries no hint.
   it('opens a target the product has as its part in the sketch view on a click', async () => {
     const fixture = await mountSketch(MULTI_PART);

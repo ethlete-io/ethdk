@@ -1114,14 +1114,19 @@ export class SketchesComponent {
     return true;
   }
 
-  /** Selects the frame with `key` and fits the view to the whole canvas; `false` when the canvas draws none. */
+  /** Selects the frame with `key`; shows the canvas at 100 % from its head when it is taller than the view, else fits it. `false` when the canvas draws none. */
   public fitFrame(key: string) {
     const frame = this.frames().find((candidate) => candidate.nativeElement.getAttribute('data-sk-frame') === key);
 
     if (!frame) return false;
 
     this.selectedFrame.set(key);
-    this.fit();
+
+    if (this.world().nativeElement.offsetHeight > this.list().nativeElement.clientHeight) {
+      this.move({ x: 0, y: 0, zoom: 1 });
+    } else {
+      this.fit();
+    }
 
     return true;
   }
