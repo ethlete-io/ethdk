@@ -184,8 +184,9 @@ export const remoteRun = async (opts) => {
   if (init !== 0) return end(init, 'mirror init failed');
 
   const known = [...haves.matchAll(/^have ([0-9a-f]{40})\s*$/gm)].map((m) => m[1]);
+  const reachable = known.some((have) => have === sha || git(['merge-base', '--is-ancestor', sha, have]).status === 0);
   let bundle;
-  if (!known.includes(sha)) {
+  if (!reachable) {
     const bases = known.filter((have) => git(['cat-file', '-e', `${have}^{commit}`]).status === 0);
     bundle = `ethlete-rr-${sha.slice(0, 12)}.bundle`;
     const local = join(dirname(log), bundle);

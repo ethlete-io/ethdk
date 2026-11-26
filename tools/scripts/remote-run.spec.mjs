@@ -18,6 +18,7 @@ const stubDir = () => {
     `#!/usr/bin/env bash
 script=$(cat)
 printf '%s\\n' "$*" >> "$STUB_LOG"
+if [[ "$script" == *"for-each-ref"* && -n "$FAKE_HAVE" ]]; then echo "have $FAKE_HAVE"; fi
 if [[ "$script" == *"suite exit"* ]]; then echo "suite output"; exit "\${FAKE_SUITE_CODE:-0}"; fi
 exit 0
 `,
@@ -28,6 +29,7 @@ exit 0
 printf 'git %s\\n' "$*" >> "$STUB_LOG"
 [ "$1" = rev-parse ] && echo ${SHA}
 [ "$1" = bundle ] && touch "$4"
+[ "$1" = merge-base ] && [ -z "$FAKE_ANCESTOR" ] && exit 1
 exit 0
 `,
   );
@@ -110,6 +112,16 @@ test('exits with the suite exit code and tees the log', () => {
   assert.doesNotMatch(failed.calls, /git push|origin/);
 
   assert.equal(run(['--host', 'mac', '--', 'yarn test']).status, 0);
+});
+
+test('sends no bundle when the commit is an ancestor of a ref the remote mirror has', () => {
+  const reached = run(['--host', 'rack', '--', 'yarn test'], { FAKE_HAVE: 'b'.repeat(40), FAKE_ANCESTOR: '1' });
+  assert.equal(reached.status, 0);
+  assert.match(reached.calls, /git merge-base --is-ancestor a{40} b{40}/);
+  assert.doesNotMatch(reached.calls, /git bundle|scp/);
+
+  const unreached = run(['--host', 'rack', '--', 'yarn test'], { FAKE_HAVE: 'b'.repeat(40) });
+  assert.match(unreached.calls, /git bundle create --quiet \S+ refs\/remote-run\/a{40} \^b{40}\n/);
 });
 
 test('--linux runs the suite in the pinned Playwright image, on the rack through the WSL helper', () => {
