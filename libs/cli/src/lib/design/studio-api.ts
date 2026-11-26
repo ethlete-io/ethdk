@@ -90,6 +90,7 @@ import {
   keptSameAsRestOf,
   sameAsRestAtSizesOf,
   sameAsRestOf,
+  KeptStates,
   unchangedForFoldOf,
 } from './system/sketch/unchanged-states';
 import { shotFramesOf } from './system/sketch/shot-frames';
@@ -140,6 +141,8 @@ type Asked = {
   request: IncomingMessage;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
+  /** Where a server keeps compared states across restarts. */
+  keptStates?: KeptStates;
   boxOf?: BoxOf;
   inventoryOf?: (options: { product: ResolvedProduct; part: string }) => Promise<Inventory | string>;
   drawStates?: DrawStates;
@@ -352,11 +355,12 @@ const comparedOf = async (options: {
   part: string;
   load: VariantPartLoader;
   pictureOf?: PictureOf;
+  keptStates?: KeptStates;
   problem: unknown;
 }) => {
   if (options.problem) return { unchanged: [] };
 
-  const unchanged = await unchangedForFoldOf(options);
+  const unchanged = await unchangedForFoldOf({ ...options, store: options.keptStates });
   const kept = await keptComparisonOf({ ...options, pictured: !!options.pictureOf });
   const sameAsRest = await sameAsRestOf(options);
   const sameAsRestAtSizes = await sameAsRestAtSizesOf(options);
@@ -375,6 +379,7 @@ const partTargetsOf = async ({
   part,
   load,
   pictureOf,
+  keptStates,
   signal,
   compare,
 }: {
@@ -383,6 +388,7 @@ const partTargetsOf = async ({
   part: string;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
+  keptStates?: KeptStates;
   signal?: AbortSignal;
   compare: boolean;
 }) => {
@@ -422,7 +428,7 @@ const partTargetsOf = async ({
       ...('widths' in widths ? { widths: widths.widths } : {}),
       interactions,
       ...(compare
-        ? await comparedOf({ product, sketch, variant, load, pictureOf, part, problem })
+        ? await comparedOf({ product, sketch, variant, load, pictureOf, keptStates, part, problem })
         : await keptOf({ product, sketch, variant, part, pictured: !!pictureOf, problem })),
       ...(problem || !current || current.problem
         ? {}
@@ -449,6 +455,7 @@ const targetsOf = async (options: {
   sketch: Sketch;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
+  keptStates?: KeptStates;
   signal?: AbortSignal;
   compare: boolean;
 }) => {
@@ -530,7 +537,15 @@ const listingOf = async ({
   const targetsListed = inTurns({ items: sketches, signal }, (sketch) =>
     listOnly
       ? Promise.resolve(null)
-      : targetsOf({ product, sketch, load: asked.load, pictureOf: listingPictureOf, signal, compare: !light }),
+      : targetsOf({
+          product,
+          sketch,
+          load: asked.load,
+          pictureOf: listingPictureOf,
+          keptStates: asked.keptStates,
+          signal,
+          compare: !light,
+        }),
   );
   const [checked, sketchTargets] = await Promise.all([
     light || only !== null

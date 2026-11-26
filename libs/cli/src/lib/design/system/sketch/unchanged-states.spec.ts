@@ -6,6 +6,7 @@ import { readConfig } from '../../design-config';
 import { partKeyOf, resolveProduct } from '../resolve-product';
 import { createSketch, sharedDirOf, Sketch, variantDirOf } from './sketch';
 import { PictureOf } from '../../merge-compare';
+import { createShotStore } from '../../shot-store';
 import { encodePng } from '../part-compare';
 import { interactionRows } from '../../../../../design/interaction-rows';
 import { shownSketchRowsOf } from '../../sketch-frame-set';
@@ -361,6 +362,84 @@ describe('unchangedStatesOf', () => {
         expect(await unchangedStatesOf(options)).toEqual([]);
         failed = false;
         expect(await unchangedStatesOf(options)).toEqual(['default']);
+      });
+
+      describe('with a shot store', () => {
+        const stored = () => {
+          const made = spaced();
+          const theme = join(made.product.dir, 'theme.css');
+          const dir = mkdtempSync(join(tmpdir(), 'cli-design-unchanged-store-'));
+
+          writeFileSync(theme, ':root { --tone: blue; }\n');
+
+          const storeOf = (code = 'v1') =>
+            createShotStore({
+              dir,
+              salt: '',
+              code,
+              checkout: made.product.dir,
+              inputsOf: () => [theme],
+              scopeOf: () => '',
+            });
+
+          return { ...made, theme, storeOf };
+        };
+        const drawing = () => {
+          let draws = 0;
+          const differs: PictureOf = async ({ sketch: on }) => {
+            draws += 1;
+
+            return { png: Buffer.from(on?.variant ?? 'now'), marks: [] };
+          };
+
+          return { differs, draws: () => draws };
+        };
+
+        it('reads a compare a former server kept, drawing nothing on a cold start', async () => {
+          const { product, sketch, storeOf } = stored();
+          const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true };
+          const second = drawing();
+
+          expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same'), store: storeOf() })).toEqual(
+            ['default'],
+          );
+          forgetUnchangedStates();
+          expect(await unchangedStatesOf({ ...options, pictureOf: second.differs, store: storeOf() })).toEqual([
+            'default',
+          ]);
+          expect(second.draws()).toBe(0);
+          expect(await keptComparisonOf({ product, sketch, variant: 'a', pictured: true })).toEqual({
+            unchanged: ['default'],
+            changes: {},
+          });
+        });
+
+        it('compares again on a cold start once a file both sides draw from changed', async () => {
+          const { product, sketch, theme, storeOf } = stored();
+          const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true };
+          const second = drawing();
+
+          expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same'), store: storeOf() })).toEqual(
+            ['default'],
+          );
+          forgetUnchangedStates();
+          writeFileSync(theme, ':root { --tone: red; }\n');
+          expect(await unchangedStatesOf({ ...options, pictureOf: second.differs, store: storeOf() })).toEqual([]);
+          expect(second.draws()).toBeGreaterThan(0);
+        });
+
+        it('compares again on a cold start with another picture code', async () => {
+          const { product, sketch, storeOf } = stored();
+          const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true };
+          const second = drawing();
+
+          expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same'), store: storeOf() })).toEqual(
+            ['default'],
+          );
+          forgetUnchangedStates();
+          expect(await unchangedStatesOf({ ...options, pictureOf: second.differs, store: storeOf('v2') })).toEqual([]);
+          expect(second.draws()).toBeGreaterThan(0);
+        });
       });
     });
   });

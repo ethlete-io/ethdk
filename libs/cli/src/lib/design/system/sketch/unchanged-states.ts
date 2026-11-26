@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { dirname, resolve } from 'path';
 import { ALL_PARTS, DrawnPart, PartsChange, redraws } from '../../changed-parts';
 import { drawnPair, PictureOf } from '../../merge-compare';
+import { ShotStore } from '../../shot-store';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
@@ -37,6 +38,20 @@ const CACHE_LIMIT = 200;
 type Kept = { unchanged: string[]; drawn: DrawnPart[]; changes: Record<string, ChangeBox> };
 
 const cache = new Map<string, Kept>();
+
+/** The shot store a server keeps compared states in, so a later start reads them instead of drawing them again. */
+export type KeptStates = Pick<ShotStore, 'readKept' | 'writeKept'>;
+
+const isKept = (value: unknown): value is Kept => {
+  const kept = value as Partial<Kept> | null;
+
+  return (
+    Array.isArray(kept?.unchanged) &&
+    Array.isArray(kept.drawn) &&
+    typeof kept.changes === 'object' &&
+    kept.changes !== null
+  );
+};
 
 export type RestAtSizes = Record<string, { rest: string; sizes: string[] }>;
 
@@ -249,6 +264,8 @@ export const unchangedStatesOf = async (options: {
   part?: string;
   compareFrames?: boolean;
   states?: string[];
+  /** Also reads and keeps the kept comparisons on disk, checked against every file both sides draw from. */
+  store?: KeptStates;
 }): Promise<string[]> => {
   const {
     product,
@@ -260,6 +277,7 @@ export const unchangedStatesOf = async (options: {
     part: compared = partKeyOf(sketch),
     compareFrames = true,
     states,
+    store,
   } = options;
   const current = product.parts.find((part) => partKeyOf(part) === compared);
   const merged = current?.file;
@@ -283,6 +301,17 @@ export const unchangedStatesOf = async (options: {
 
   if (known) return known;
 
+  const address = {
+    product: product.name,
+    part: compared,
+    sketch: null,
+    props: { target: sketch.target, variant },
+  };
+  const diskKey = `unchanged-states:${key}`;
+  const stored = keeps ? store?.readKept(diskKey, address) : undefined;
+
+  if (isKept(stored)) return remember(key, stored);
+
   const [now, after] = await Promise.all([
     renderedOf(() => load({ file: merged, product: product.name, sketch: null })),
     renderedOf(() => load({ file: drawn, product: product.name, sketch: { target: sketch.target, variant } })),
@@ -295,8 +324,14 @@ export const unchangedStatesOf = async (options: {
     { product: product.name, part: compared, sketch: { target: sketch.target, variant } },
   ];
 
+  const keep = (kept: Kept) => {
+    store?.writeKept(diskKey, { address, kept });
+
+    return remember(key, kept);
+  };
+
   if (compareFrames && now.frames !== after.frames)
-    return keeps ? remember(key, { unchanged: [], drawn: parts, changes: {} }) : [];
+    return keeps ? keep({ unchanged: [], drawn: parts, changes: {} }) : [];
 
   const imported = productStylesheetFilesOf(product);
   const restyled = overlaid.parts.some((part) => {
@@ -340,7 +375,7 @@ export const unchangedStatesOf = async (options: {
   );
 
   return keeps && !same.some((entry) => entry.result === 'failed')
-    ? remember(key, { unchanged, drawn: parts, changes })
+    ? keep({ unchanged, drawn: parts, changes })
     : unchanged;
 };
 

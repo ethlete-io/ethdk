@@ -28,6 +28,10 @@ export type ShotStore = {
   /** Like `read`, also answering a picture an older picture code drew from the same files, whose size only is current. */
   readAnyCode: (key: string, address: StoredAddress) => Picture | null;
   write: (key: string, drawn: { address: StoredAddress; picture: Picture }) => void;
+  /** A JSON value `writeKept` kept under `key`, served on the same terms as a picture, or null. */
+  readKept: (key: string, address: StoredAddress) => unknown;
+  /** Keeps a JSON value computed from the files `address` draws, under a key no picture uses. */
+  writeKept: (key: string, computed: { address: StoredAddress; kept: unknown }) => void;
   drop: (key: string) => void;
   /** Marks `key` as drawn by this process until `release`, or null while another live process draws it. */
   claim: (key: string) => DrawClaim | null;
@@ -56,6 +60,7 @@ type Entry = {
   boxes?: CompareBoxes;
   markup?: string;
   ambient?: TextAmbient;
+  kept?: unknown;
 };
 
 /** The shot store folder under the work root, one for every checkout that shares the `node_modules` it lies in. */
@@ -268,7 +273,7 @@ export const createShotStore = (options: {
     }
   };
 
-  const pictureOf = (name: string, wanted: { key: string; scope: string; anyCode: boolean }): Picture | null => {
+  const entryOf = (name: string, wanted: { key: string; scope: string; anyCode: boolean }): Entry | null => {
     try {
       const entry: unknown = JSON.parse(readFileSync(join(dir, name), 'utf8'));
 
@@ -276,26 +281,28 @@ export const createShotStore = (options: {
       if (!wanted.anyCode && (entry.code ?? '') !== code) return null;
       if (entry.inputs.some(([file, hash]) => hashOf(file) !== hash)) return null;
 
-      return {
-        png: Buffer.from(entry.png, 'base64'),
-        marks: entry.marks,
-        ...(entry.boxes ? { boxes: entry.boxes } : {}),
-        ...(typeof entry.markup === 'string' ? { markup: entry.markup } : {}),
-        ...(entry.ambient ? { ambient: entry.ambient } : {}),
-      };
+      return entry;
     } catch {
       return null;
     }
   };
 
+  const pictureOf = (entry: Entry): Picture => ({
+    png: Buffer.from(entry.png, 'base64'),
+    marks: entry.marks,
+    ...(entry.boxes ? { boxes: entry.boxes } : {}),
+    ...(typeof entry.markup === 'string' ? { markup: entry.markup } : {}),
+    ...(entry.ambient ? { ambient: entry.ambient } : {}),
+  });
+
   const readOf = ({ key, address, anyCode }: { key: string; address: StoredAddress; anyCode: boolean }) => {
     const scope = storedScopeOf(address);
 
     for (const name of variantsOf(key)) {
-      const picture = pictureOf(name, { key, scope, anyCode });
+      const entry = entryOf(name, { key, scope, anyCode });
 
-      if (!picture) continue;
-      if (anyCode) return picture;
+      if (!entry) continue;
+      if (anyCode) return entry;
 
       const now = new Date();
 
@@ -306,7 +313,7 @@ export const createShotStore = (options: {
       }
       used.set(key, name);
 
-      return picture;
+      return entry;
     }
 
     return null;
@@ -356,59 +363,74 @@ export const createShotStore = (options: {
     }
   };
 
-  const read = (key: string, address: StoredAddress) => readOf({ key, address, anyCode: false });
+  const read = (key: string, address: StoredAddress) => {
+    const entry = readOf({ key, address, anyCode: false });
+
+    return entry ? pictureOf(entry) : null;
+  };
+
+  const keep = (
+    key: string,
+    { address, fields }: { address: StoredAddress; fields: Pick<Entry, 'png' | 'marks'> & Partial<Entry> },
+  ) => {
+    try {
+      const files = inputsOf(address);
+
+      if (!files || checkoutGone()) return;
+
+      const scope = storedScopeOf(address);
+      const inputs = [...new Set(files.map(storedPathOf))]
+        .sort()
+        .map((file): [string, string | null] => [file, hashOf(file)]);
+      const variant = createHash('sha1')
+        .update(code)
+        .update('\n')
+        .update(scope)
+        .update('\n')
+        .update(JSON.stringify(inputs))
+        .digest('hex');
+      const name = join(keyDirOf(key), `${variant}${ENTRY_SUFFIX}`);
+      const entry: Entry = { ...fields, key, code, scope, inputs };
+      const text = JSON.stringify(entry);
+      const known = sizesOf();
+
+      if (!writeCacheEntry(join(dir, dirname(name)), { name: `${variant}${ENTRY_SUFFIX}`, text })) return;
+
+      known.set(name, Buffer.byteLength(text));
+      used.set(key, name);
+
+      const others = variantsOf(key)
+        .filter((other) => other !== name)
+        .map((other) => ({ other, at: mtimeOf(other) }))
+        .sort((a, b) => b.at - a.at);
+
+      for (const { other } of others.slice(VARIANTS_PER_KEY - 1)) remove(known, other);
+      evict(known);
+    } catch {
+      return;
+    }
+  };
 
   return {
     read,
-    readAnyCode: (key, address) => readOf({ key, address, anyCode: true }),
-    write: (key, { address, picture }) => {
-      try {
-        const files = inputsOf(address);
+    readAnyCode: (key, address) => {
+      const entry = readOf({ key, address, anyCode: true });
 
-        if (!files || checkoutGone()) return;
-
-        const scope = storedScopeOf(address);
-        const inputs = [...new Set(files.map(storedPathOf))]
-          .sort()
-          .map((file): [string, string | null] => [file, hashOf(file)]);
-        const variant = createHash('sha1')
-          .update(code)
-          .update('\n')
-          .update(scope)
-          .update('\n')
-          .update(JSON.stringify(inputs))
-          .digest('hex');
-        const name = join(keyDirOf(key), `${variant}${ENTRY_SUFFIX}`);
-        const entry: Entry = {
-          key,
-          code,
-          scope,
-          inputs,
+      return entry ? pictureOf(entry) : null;
+    },
+    write: (key, { address, picture }) =>
+      keep(key, {
+        address,
+        fields: {
           png: picture.png.toString('base64'),
           marks: picture.marks,
           ...(picture.boxes === undefined ? {} : { boxes: picture.boxes }),
           ...(picture.markup === undefined ? {} : { markup: picture.markup }),
           ...(picture.ambient === undefined ? {} : { ambient: picture.ambient }),
-        };
-        const text = JSON.stringify(entry);
-        const known = sizesOf();
-
-        if (!writeCacheEntry(join(dir, dirname(name)), { name: `${variant}${ENTRY_SUFFIX}`, text })) return;
-
-        known.set(name, Buffer.byteLength(text));
-        used.set(key, name);
-
-        const others = variantsOf(key)
-          .filter((other) => other !== name)
-          .map((other) => ({ other, at: mtimeOf(other) }))
-          .sort((a, b) => b.at - a.at);
-
-        for (const { other } of others.slice(VARIANTS_PER_KEY - 1)) remove(known, other);
-        evict(known);
-      } catch {
-        return;
-      }
-    },
+        },
+      }),
+    readKept: (key, address) => readOf({ key, address, anyCode: false })?.kept ?? null,
+    writeKept: (key, { address, kept }) => keep(key, { address, fields: { png: '', marks: [], kept } }),
     drop: (key) => {
       const name = used.get(key);
 

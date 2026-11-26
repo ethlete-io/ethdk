@@ -717,6 +717,19 @@ const designExplore = ({
 
         return module.default ?? {};
       };
+      const shotStore = shotCacheDir
+        ? shotStoreOf({
+            target,
+            config,
+            system,
+            stylesheetImports,
+            dir: shotCacheDir,
+            salt: '',
+            code: designPictureCodeOf(),
+            moduleById: (id) => vite.moduleGraph.getModuleById(id),
+            renderedFiles: renderer.loadedFiles,
+          })
+        : undefined;
       const shots = createPartShooter({
         target,
         base,
@@ -728,21 +741,7 @@ const designExplore = ({
           revision += 1;
           events.signal('parts', { revision, all: false, parts: [part] });
         },
-        ...(shotCacheDir
-          ? {
-              store: shotStoreOf({
-                target,
-                config,
-                system,
-                stylesheetImports,
-                dir: shotCacheDir,
-                salt: '',
-                code: designPictureCodeOf(),
-                moduleById: (id) => vite.moduleGraph.getModuleById(id),
-                renderedFiles: renderer.loadedFiles,
-              }),
-            }
-          : {}),
+        ...(shotStore ? { store: shotStore } : {}),
         statesOf: async (address) => {
           const definition = await partDefinitionOf(address);
 
@@ -1130,6 +1129,7 @@ const designExplore = ({
                 signal,
                 load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
                 pictureOf: shots.pictureOf,
+                ...(shotStore ? { keptStates: shotStore } : {}),
                 warmRenderer: renderer.warm,
                 boxOf: shots.changedBoxesOf,
                 checkSketches: checkSketches ?? sketchChecker,
