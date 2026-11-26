@@ -16,6 +16,9 @@ mkdir -p "$HOME/rack-linux"
 # A second run in the same slot would re-checkout the tree under the first one's running container.
 exec 9>"$HOME/rack-linux/$slot.lock"
 flock 9
+# A container a killed run left behind still writes to the slot checkout.
+leftover=$(docker ps -aq --filter "label=ethlete-rr-slot=$slot")
+[ -z "$leftover" ] || docker rm -f $leftover >/dev/null
 
 work="$HOME/rack-linux/$slot"
 if [ ! -d "$work/.git" ]; then
@@ -46,7 +49,7 @@ DOCKERFILE
 cache="$HOME/rack-linux/.cache"
 mkdir -p "$cache/yarn-$slot" "$cache/tools" "$cache/cargo-registry"
 
-exec docker run --rm --init --ipc=host \
+exec docker run --rm --init --ipc=host --label "ethlete-rr-slot=$slot" \
   --user "$(id -u):$(id -g)" -e HOME=/home/ubuntu \
   --add-host=host.docker.internal:host-gateway \
   -v "$work:/work" -w /work \

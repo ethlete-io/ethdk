@@ -3,6 +3,7 @@ import { createWriteStream, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { killWithParent } from './kill-with-parent.mjs';
 import { registerRun } from './run-registry.mjs';
 
 export const HOSTS = {
@@ -20,6 +21,7 @@ export const LINUX_IMAGE =
   'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f';
 
 const RACK_HELPER = join(dirname(fileURLToPath(import.meta.url)), 'rack-docker-run.sh');
+const GUARD = join(dirname(fileURLToPath(import.meta.url)), 'remote-guard.sh');
 
 const PICTURE_SUITE = /--project[= ]visual\b|\bvisual\b|screenshot|golden|baseline|--update-snapshots/i;
 
@@ -81,7 +83,7 @@ const linuxRun = (suite, slot) => `  export PATH="/usr/local/bin:$PATH"
   docker image inspect ${LINUX_IMAGE} >/dev/null 2>&1 || docker pull --quiet ${LINUX_IMAGE} || return 1
   docker run --rm --init --ipc=host -v "$work:$work" -w "$work" -v "$mirror:$mirror" \\
     -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0="*" \\
-    -v ethlete-rr-yarn-${slot}:/root/.yarn/berry -v ethlete-rr-tools:/opt/tools \\
+    -v ethlete-rr-yarn-${slot}:/root/.yarn/berry -v ethlete-rr-tools:/opt/tools --label ethlete-rr-slot=${slot} \\
     -e CI=1 -e NX_NO_CLOUD=true -e NX_DAEMON=false \\
     ${LINUX_IMAGE} bash -c ${shellQuote(`${containerSetup}${suite}
 code=$?
@@ -90,16 +92,29 @@ exit $code`)}`;
 
 const rackLinuxRun = (suite, slot, helper) => `  cat > "$HOME/ethlete-rr/rack-docker-run.sh" <<'REMOTE_RUN_HELPER'
 ${helper}REMOTE_RUN_HELPER
-  MSYS_NO_PATHCONV=1 wsl.exe -d ethlete -- bash /mnt/c/Users/trbor/ethlete-rr/rack-docker-run.sh "$sha" ${shellQuote(slot)} -- ${shellQuote(suite)}`;
+  MSYS_NO_PATHCONV=1 wsl.exe -d ethlete -- bash /mnt/c/Users/trbor/ethlete-rr/remote-guard.sh ${shellQuote(slot)} -- \\
+    bash /mnt/c/Users/trbor/ethlete-rr/rack-docker-run.sh "$sha" ${shellQuote(slot)} -- ${shellQuote(suite)}`;
 
-export const remoteScript = ({ sha, slot, suite, bundle, host, linux, rackHelper }) => {
+export const remoteScript = ({
+  sha,
+  slot,
+  suite,
+  bundle,
+  host,
+  linux,
+  rackHelper,
+  guard = readFileSync(GUARD, 'utf8'),
+}) => {
   const run = !linux
     ? nativeRun(suite)
     : host === 'rack'
       ? rackLinuxRun(suite, slot, rackHelper)
       : linuxRun(suite, slot);
-  const checkout = !(linux && host === 'rack');
-  return `main() {
+  const rackLinux = linux && host === 'rack';
+  return `suite_run() {
+${run}
+}
+main() {
   local mirror="$HOME/ethlete-mirror.git" work="$HOME/ethlete-rr/${slot}${linux ? '-linux' : ''}" sha=${shellQuote(sha)}
   ${
     bundle
@@ -108,8 +123,10 @@ export const remoteScript = ({ sha, slot, suite, bundle, host, linux, rackHelper
       : ':'
   }
   mkdir -p "$HOME/ethlete-rr"
+  cat > "$HOME/ethlete-rr/remote-guard.sh" <<'REMOTE_RUN_GUARD'
+${guard}REMOTE_RUN_GUARD
   ${
-    checkout
+    !rackLinux
       ? `if [ -e "$work/.git" ]; then
     git -C "$work" checkout --quiet --force --detach "$sha" || return 1
     git -C "$work" clean -ffdxq -e node_modules -e .nx || return 1
@@ -120,7 +137,12 @@ export const remoteScript = ({ sha, slot, suite, bundle, host, linux, rackHelper
   echo "[remote-run] $(hostname) $work at $(git -C "$work" rev-parse --short HEAD)"`
       : 'echo "[remote-run] $(hostname) WSL ethlete container run"'
   }
-${run}
+  ${
+    rackLinux
+      ? 'suite_run'
+      : `. "$HOME/ethlete-rr/remote-guard.sh"
+  rr_guard ${shellQuote(slot)} suite_run`
+  }
 }
 main </dev/null
 `;
@@ -138,12 +160,15 @@ main </dev/null
 
 const SSH_OPTIONS = ['-o', 'BatchMode=yes', '-o', 'ServerAliveInterval=30', '-o', 'ServerAliveCountMax=4'];
 
+const withoutHeartbeat = (chunk) => (chunk.includes(0) ? chunk.filter((byte) => byte !== 0) : chunk);
+
 const git = (args, options = {}) => spawnSync('git', args, { encoding: 'utf8', ...options });
 
 const runSsh = (host, script, { onData } = {}) =>
   new Promise((resolve) => {
     const child = spawn('ssh', [...SSH_OPTIONS, host.ssh, host.shell], { stdio: ['pipe', 'pipe', 'pipe'] });
-    child.stdout.on('data', (chunk) => onData?.(chunk, process.stdout));
+    killWithParent(child);
+    child.stdout.on('data', (chunk) => onData?.(withoutHeartbeat(chunk), process.stdout));
     child.stderr.on('data', (chunk) => onData?.(chunk, process.stderr));
     child.on('error', (error) => {
       process.stderr.write(`[remote-run] ssh failed: ${error.message}\n`);

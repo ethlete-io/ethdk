@@ -4,6 +4,7 @@ import { createWriteStream, mkdirSync, readFileSync, readdirSync, renameSync, rm
 import { hostname } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { killWithParent } from './kill-with-parent.mjs';
 
 /** The directory every run that agents wait on is registered in, one `<id>.json` per run. */
 export const registryDir = (env = process.env) => env['RUN_REGISTRY_DIR'] ?? '/tmp/ethlete-runs';
@@ -101,6 +102,7 @@ export const teeRun = (run, argv, { wrap = (a) => a, env = process.env, cwd, onS
     const [bin, ...args] = wrap(argv);
     const stdio = ['inherit', 'pipe', 'pipe', ...(onFd3 ? ['pipe'] : [])];
     const child = spawn(bin, args, { stdio, env, cwd });
+    killWithParent(child);
     onSpawn(child);
     if (onFd3) child.stdio[3].on('data', (chunk) => onFd3(String(chunk)));
     child.stdout.on('data', (chunk) => {
