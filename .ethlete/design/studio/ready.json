@@ -558,20 +558,20 @@
     "pid": 3800964
   },
   "components/shell-resize-handle": {
-    "hash": "08267305044db45e",
+    "hash": "9a96896de16dfd86",
     "files": {
       ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.css": "3f6d46121dfa54f6",
-      ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.ts": "65e9b286a267fc21",
-      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "1e3ce8197b176a38",
+      ".ethlete/design/studio/components/shell-resize-handle/shell-resize-handle.ts": "dc9a25d880b95e2c",
+      "apps/ethlete-studio/src/app/i18n/shell-labels.ts": "38d9825716a871ae",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "51c79e9eea6a27fa",
+    "app": "759d39da6597e7ed",
     "actions": ["emit:sideWidthChange"],
     "builder": "designer",
-    "at": "2026-11-21T20:39:00.382Z",
+    "at": "2026-11-26T02:26:03.026Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 1816523
+    "pid": 3803262
   },
   "components/shell-system-picker": {
     "hash": "d8b21c867b4bd0df",
