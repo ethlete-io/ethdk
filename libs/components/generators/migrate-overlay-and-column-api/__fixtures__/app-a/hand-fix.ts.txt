@@ -7,3 +7,15 @@ export const pickOpener = () =>
   createOverlayOpener(PICK_DIALOG, {
     afterClosed: (choice: string | null) => rememberChoice(choice),
   });
+
+export class PickFlow {
+  private completePick: ((choice: string | null) => void) | null = null;
+
+  private pickDialog = createOverlayOpener(PICK_DIALOG, {
+    afterClosed: (choice) => {
+      const complete = this.completePick;
+      this.completePick = null;
+      complete?.(choice);
+    },
+  });
+}

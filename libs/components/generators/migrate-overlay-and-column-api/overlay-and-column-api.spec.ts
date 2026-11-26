@@ -169,6 +169,42 @@ describe('migrate-overlay-and-column-api', () => {
       expect(result.findings.map((entry) => entry.line)).toEqual([3]);
     });
 
+    it('rewrites a config field that only goes to openers', () => {
+      expect(
+        migrate(
+          'class A {',
+          '  private onSave = { afterClosed: (saved: boolean | null) => saved !== null };',
+          '  private a = createOverlayOpener(A_DEF, this.onSave);',
+          '  private b = createOverlayOpener(B_DEF, this.onSave);',
+          '}',
+        ).content,
+      ).toContain('afterClosed: (saved: boolean | undefined) => saved !== undefined');
+    });
+
+    it('reports a config object that also goes somewhere else', () => {
+      const result = migrate(
+        'const onSave = { afterClosed: (saved: boolean | null) => saved };',
+        'createOverlayOpener(A_DEF, onSave);',
+        'keep(onSave);',
+      );
+
+      expect(result.changed).toBe(false);
+      expect(result.findings.map((entry) => entry.line)).toEqual([3]);
+    });
+
+    it('reports an inferred result that goes on to another callback, at the call', () => {
+      const result = migrate(
+        'createOverlayOpener(DEF, {',
+        '  afterClosed: (result) => {',
+        '    const complete = this.complete;',
+        '    complete?.(result);',
+        '  },',
+        '});',
+      );
+
+      expect(result.findings.map((entry) => entry.line)).toEqual([6]);
+    });
+
     it('rewrites an object typed as an overlay config', () => {
       expect(
         migrate('const config: OverlayOpenerConfig<boolean> = { afterClosed: (r: boolean | null) => r };').content,
@@ -233,11 +269,43 @@ describe('migrate-overlay-and-column-api', () => {
       );
     });
 
-    it('reports a host reference it cannot follow in a file that reads allColumns', () => {
-      const result = migrate('function chooser(host: TableColumnVisibilityHost) {', '  return host.allColumns();', '}');
+    it('renames reads through a value, a signal input and a local typed as the host', () => {
+      expect(
+        migrate(
+          'function chooser(host: TableColumnVisibilityHost) { return host.allColumns(); }',
+          'class A {',
+          '  table = input<TableColumnVisibilityHost | undefined>(undefined);',
+          '  a = computed(() => this.table()?.allColumns());',
+          '  b = computed(() => { const t = this.table(); return t!.allColumns(); });',
+          '}',
+        ).content,
+      ).toBe(
+        file(
+          'function chooser(host: TableColumnVisibilityHost) { return host.availableColumns(); }',
+          'class A {',
+          '  table = input<TableColumnVisibilityHost | undefined>(undefined);',
+          '  a = computed(() => this.table()?.availableColumns());',
+          '  b = computed(() => { const t = this.table(); return t!.availableColumns(); });',
+          '}',
+        ),
+      );
+    });
+
+    it('reports a read it cannot follow at the read, not at the host declaration', () => {
+      const result = migrate(
+        'function chooser(hosts: TableColumnVisibilityHost[]) {',
+        '  return hosts[0].allColumns();',
+        '}',
+      );
 
       expect(result.changed).toBe(false);
-      expect(result.findings.map((entry) => entry.line)).toEqual([3]);
+      expect(result.findings.map((entry) => entry.line)).toEqual([4]);
+    });
+
+    it('leaves allColumns reads on other types alone', () => {
+      const source = file('const host: TableFeatureHost = table;', 'host.allColumns();');
+
+      expect(migrateOverlayAndColumnApiInFile(source)).toEqual({ content: source, changed: false, findings: [] });
     });
   });
 

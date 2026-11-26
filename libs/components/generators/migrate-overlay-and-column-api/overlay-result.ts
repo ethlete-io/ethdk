@@ -21,6 +21,7 @@ type Rewrite = { edits: Edit[]; nullRelated: boolean; shadowed: boolean; unguard
 
 const IDENTIFIER = /^[A-Za-z_$][\w$]*/;
 const OPENER_CALLEE = /^(?:create\w*Opener|open)$/;
+const NOT_A_FORWARD = /^(?:if|while|for|switch|return|typeof|void|await|catch|with|Boolean|String|Number)$/;
 const CALLBACK_KEY = /(?<![\w$.])(afterClosed|beforeClosed)(?![\w$])/g;
 
 const parseParam = (masked: string, open: number, close: number): ParsedFunction['param'] => {
@@ -272,6 +273,38 @@ const calleeBefore = (masked: string, paren: number) => {
 
 type Context = 'opener' | 'object' | 'other';
 
+const isOpenerArgument = (masked: string, start: number, end: number) => {
+  const prev = skipSpaceBack(masked, start - 1);
+  const next = skipSpace(masked, end);
+  if (!'(,'.includes(masked[prev] ?? '') || !'),'.includes(masked[next] ?? '')) return false;
+
+  const paren = masked[prev] === '(' ? prev : enclosingOpen(masked, prev, '(');
+  return paren !== -1 && OPENER_CALLEE.test(calleeBefore(masked, paren));
+};
+
+const isSharedOpenerConfig = (masked: string, equals: number) => {
+  const nameEnd = skipSpaceBack(masked, equals - 1);
+  let nameStart = nameEnd;
+  while (nameStart >= 0 && /[\w$]/.test(masked[nameStart] ?? '')) nameStart--;
+  if (masked[nameStart] === '.') return false;
+
+  const name = masked.slice(nameStart + 1, nameEnd + 1);
+  if (!IDENTIFIER.test(name)) return false;
+
+  const uses = [...masked.matchAll(new RegExp(`(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`, 'g'))]
+    .map((match) => match.index ?? 0)
+    .filter((at) => at !== nameStart + 1);
+
+  return (
+    uses.length > 0 &&
+    uses.every((at) => {
+      const start = masked.startsWith('this.', at - 5) ? at - 5 : at;
+      if (start === at && masked[skipSpaceBack(masked, at - 1)] === '.') return false;
+      return isOpenerArgument(masked, start, at + name.length);
+    })
+  );
+};
+
 const contextOf = (masked: string, keyIndex: number): Context => {
   const open = enclosingOpen(masked, keyIndex, '{');
   if (open === -1) return 'other';
@@ -284,7 +317,8 @@ const contextOf = (masked: string, keyIndex: number): Context => {
 
   if (char === '=' && masked[before - 1] !== '=') {
     const lineStart = Math.max(masked.lastIndexOf(';', before), masked.lastIndexOf('\n', before));
-    return /:\s*Overlay\w*Config\b/.test(masked.slice(lineStart + 1, before)) ? 'opener' : 'object';
+    if (/:\s*Overlay\w*Config\b/.test(masked.slice(lineStart + 1, before))) return 'opener';
+    return isSharedOpenerConfig(masked, before) ? 'opener' : 'object';
   }
 
   if ((char && ':[?'.includes(char)) || /\breturn$/.test(masked.slice(0, before + 1))) return 'object';
@@ -435,13 +469,32 @@ export const migrateOverlayResult = (source: string, masked: string) => {
       reportUnguarded(fn, rewrite);
     }
 
-    const forwarded =
-      fn.param?.name &&
-      new RegExp(`^(?:this\\.)?([A-Za-z_$][\\w$]*)\\(\\s*${escapeRegExp(fn.param.name)}\\s*\\)$`).exec(
-        masked.slice(fn.bodyStart, fn.bodyEnd).trim(),
-      )?.[1];
+    const param = fn.param?.name;
+    if (!param) continue;
 
-    if (forwarded) resolveReference(forwarded, keyIndex, 2);
+    const forwards = new RegExp(
+      `(?<![\\w$.])(?:this\\.)?([A-Za-z_$][\\w$]*)\\s*(?:\\?\\.)?\\(\\s*${escapeRegExp(param)}\\s*\\)`,
+      'g',
+    );
+
+    for (const call of masked.slice(fn.bodyStart, fn.bodyEnd).matchAll(forwards)) {
+      const callee = call[1] ?? '';
+      if (NOT_A_FORWARD.test(callee)) continue;
+
+      const callOffset = fn.bodyStart + (call.index ?? 0);
+
+      if (declarationOf(masked, callee)) {
+        resolveReference(callee, callOffset, 2);
+      } else if (hasUnguardedUse(masked, param, fn.bodyStart, fn.bodyEnd)) {
+        findings.push(
+          finding(
+            source,
+            callOffset,
+            `\`${callee}\` gets the overlay result, which is \`T | undefined\` now: if it takes \`T | null\`, make that \`T | undefined\`.`,
+          ),
+        );
+      }
+    }
   }
 
   return { edits, findings };

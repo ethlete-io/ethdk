@@ -59,7 +59,23 @@ describe('migrate-overlay-and-column-api against the current @ethlete/components
     const after = migrateOverlayAndColumnApiInFile(fixture('hand-fix'));
     const reported = new Set(after.findings.map((entry) => entry.line));
 
-    expect(typeErrors('hand-fix', after.content)).toEqual(['8: TS2345']);
-    expect(reported).toEqual(new Set([8]));
+    expect(typeErrors('hand-fix', after.content)).toEqual(['8: TS2345', '18: TS2345']);
+    expect(reported).toEqual(new Set([8, 18]));
+  }, 60_000);
+
+  it('rewrites a config object shared by several openers and reads of a typed column host', () => {
+    const before = fixture('shared-config');
+    const after = migrateOverlayAndColumnApiInFile(before);
+
+    expect(typeErrors('shared-config', before)).toEqual([
+      '17: TS2339',
+      '20: TS2339',
+      '28: TS2769',
+      '29: TS2769',
+      '32: TS2345',
+      '36: TS2345',
+    ]);
+    expect(after.findings).toEqual([]);
+    expect(typeErrors('shared-config', after.content)).toEqual([]);
   }, 60_000);
 });
