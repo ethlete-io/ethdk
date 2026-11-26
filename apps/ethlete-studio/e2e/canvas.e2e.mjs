@@ -472,44 +472,57 @@ const showAllStates = async (page) => {
   }
 };
 
-const noVisibleCellCensus = (page) =>
-  page.evaluate((CANVAS) => {
-    const round = (value) => Math.round(value);
-    const shots = [...document.querySelectorAll('ethlete-sketch-view [data-shot]')];
-    const canvas = document.querySelector(`ethlete-sketch-view :is(${CANVAS})`);
-    const view = canvas?.getBoundingClientRect();
-    const boxes = shots.map((cell) => cell.getBoundingClientRect());
-    const frameElements = shots.map((cell) => cell.closest('[data-sk-frame]')).filter(Boolean);
-    const frames = frameElements.map((frame) => frame.getBoundingClientRect());
-    const frameSamples = frameElements
-      .filter((frame) => frame.getBoundingClientRect().height === 0)
-      .slice(0, 3)
-      .map((frame) => ` "${frame.dataset['skFrame']}" ${frame.style.height}/${frame.firstElementChild?.style.height}`)
-      .join('');
-    const scrolled = [...(canvas?.querySelectorAll('*') ?? []), canvas]
-      .filter((element) => element && (element.scrollTop || element.scrollLeft))
-      .map((element) => `${element.tagName.toLowerCase()} ${round(element.scrollLeft)},${round(element.scrollTop)}`);
-    const fold = document.querySelector('[data-sk-folded] button[aria-expanded]');
-    const zoom = document
-      .querySelector('ethlete-sketch-view ethlete-zoom-chip')
-      ?.textContent?.replace(/\s+/g, ' ')
-      .trim();
-    const span = (pick) =>
-      boxes.length ? `${round(Math.min(...boxes.map(pick)))}..${round(Math.max(...boxes.map(pick)))}` : '-';
+const describeSettle = (settle) => {
+  if (!settle) return 'not run';
 
-    return [
-      `census: ${shots.length} cells`,
-      view ? `view ${round(view.left)},${round(view.top)} ${round(view.width)}x${round(view.height)}` : 'no canvas',
-      `tops ${span((box) => box.top)}, lefts ${span((box) => box.left)}, heights ${span((box) => box.height)}`,
-      `zero-height ${boxes.filter((box) => box.height === 0).length}`,
-      `setup settle ${lastSettle ? (lastSettle.held ? `held after ${lastSettle.polls} polls` : `never held in ${lastSettle.polls} polls, last move ${lastSettle.moved}`) : 'not run'}`,
-      `zero-height frames ${frames.filter((box) => box.height === 0).length} of ${frames.length}${frameSamples}`,
-      `scrolled ${scrolled.join(' ') || 'none'}`,
-      `fold ${fold ? `${fold.getAttribute('aria-expanded')} "${fold.textContent?.trim()}"` : 'none'}`,
-      `zoom ${zoom ?? 'none'}`,
-      `focus ${document.activeElement?.tagName.toLowerCase() ?? 'none'}`,
-    ].join(', ');
-  }, CANVAS);
+  const tail = `${settle.polls} polls, ${settle.ms} ms, last layout ${(settle.layout ?? '').slice(0, 160) || 'none'}`;
+
+  if (settle.timedOut) return `timed out with pending ${settle.pending.join(', ')} after ${tail}`;
+
+  return settle.held ? `held after ${tail}` : `never held in ${tail}, last move ${settle.moved}`;
+};
+
+const noVisibleCellCensus = (page) =>
+  page.evaluate(
+    ({ CANVAS, settle }) => {
+      const round = (value) => Math.round(value);
+      const shots = [...document.querySelectorAll('ethlete-sketch-view [data-shot]')];
+      const canvas = document.querySelector(`ethlete-sketch-view :is(${CANVAS})`);
+      const view = canvas?.getBoundingClientRect();
+      const boxes = shots.map((cell) => cell.getBoundingClientRect());
+      const frameElements = shots.map((cell) => cell.closest('[data-sk-frame]')).filter(Boolean);
+      const frames = frameElements.map((frame) => frame.getBoundingClientRect());
+      const frameSamples = frameElements
+        .filter((frame) => frame.getBoundingClientRect().height === 0)
+        .slice(0, 3)
+        .map((frame) => ` "${frame.dataset['skFrame']}" ${frame.style.height}/${frame.firstElementChild?.style.height}`)
+        .join('');
+      const scrolled = [...(canvas?.querySelectorAll('*') ?? []), canvas]
+        .filter((element) => element && (element.scrollTop || element.scrollLeft))
+        .map((element) => `${element.tagName.toLowerCase()} ${round(element.scrollLeft)},${round(element.scrollTop)}`);
+      const fold = document.querySelector('[data-sk-folded] button[aria-expanded]');
+      const zoom = document
+        .querySelector('ethlete-sketch-view ethlete-zoom-chip')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim();
+      const span = (pick) =>
+        boxes.length ? `${round(Math.min(...boxes.map(pick)))}..${round(Math.max(...boxes.map(pick)))}` : '-';
+
+      return [
+        `census: ${shots.length} cells`,
+        view ? `view ${round(view.left)},${round(view.top)} ${round(view.width)}x${round(view.height)}` : 'no canvas',
+        `tops ${span((box) => box.top)}, lefts ${span((box) => box.left)}, heights ${span((box) => box.height)}`,
+        `zero-height ${boxes.filter((box) => box.height === 0).length}`,
+        `setup settle ${settle}`,
+        `zero-height frames ${frames.filter((box) => box.height === 0).length} of ${frames.length}${frameSamples}`,
+        `scrolled ${scrolled.join(' ') || 'none'}`,
+        `fold ${fold ? `${fold.getAttribute('aria-expanded')} "${fold.textContent?.trim()}"` : 'none'}`,
+        `zoom ${zoom ?? 'none'}`,
+        `focus ${document.activeElement?.tagName.toLowerCase() ?? 'none'}`,
+      ].join(', ');
+    },
+    { CANVAS, settle: describeSettle(lastSettle) },
+  );
 
 const LIVE_PAINT_GAP = { channel: 48, share: 0.08 };
 
@@ -1098,32 +1111,37 @@ let lastSettle = null;
 
 const settled = async (page, selector) => {
   await listingAnswered(page);
-  lastSettle = await settleLayout({
-    polls: WAIT_MS / 250,
-    waitedFor: `${WAIT_MS / 1000} s`,
-    wait: () => page.waitForTimeout(250),
-    read: () =>
-      page.evaluate(
-        ({ CANVAS, selector }) => {
-          const changes = document.querySelectorAll('[data-sk-changed="pending"]').length;
-          const unsized = [...document.querySelectorAll('[data-sk-row][data-sk-unsized]')].map(
-            (row) => `row ${row.getAttribute('data-sk-row')} unsized`,
-          );
+  try {
+    lastSettle = await settleLayout({
+      polls: WAIT_MS / 250,
+      waitedFor: `${WAIT_MS / 1000} s`,
+      wait: () => page.waitForTimeout(250),
+      read: () =>
+        page.evaluate(
+          ({ CANVAS, selector }) => {
+            const changes = document.querySelectorAll('[data-sk-changed="pending"]').length;
+            const unsized = [...document.querySelectorAll('[data-sk-row][data-sk-unsized]')].map(
+              (row) => `row ${row.getAttribute('data-sk-row')} unsized`,
+            );
 
-          return {
-            pending: [...unsized, ...(changes ? [`${changes} change mark(s) pending`] : [])],
-            layout: [...(document.querySelector(CANVAS)?.querySelectorAll(selector) ?? [])]
-              .map((frame) => {
-                const { left, top, width, height } = frame.getBoundingClientRect();
+            return {
+              pending: [...unsized, ...(changes ? [`${changes} change mark(s) pending`] : [])],
+              layout: [...(document.querySelector(CANVAS)?.querySelectorAll(selector) ?? [])]
+                .map((frame) => {
+                  const { left, top, width, height } = frame.getBoundingClientRect();
 
-                return [left, top, width, height].map(Math.round).join();
-              })
-              .join(' '),
-          };
-        },
-        { CANVAS, selector },
-      ),
-  });
+                  return [left, top, width, height].map(Math.round).join();
+                })
+                .join(' '),
+            };
+          },
+          { CANVAS, selector },
+        ),
+    });
+  } catch (error) {
+    if (error.settle) lastSettle = { ...error.settle, timedOut: true };
+    throw error;
+  }
 };
 
 const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) => {

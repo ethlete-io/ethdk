@@ -4,6 +4,7 @@ export const settleLayout = async ({ read, wait, polls, quiet = 3, waitedFor }) 
   let same = 0;
   let poll = 0;
   let before = now.layout;
+  const started = Date.now();
 
   for (; poll < polls && same < quiet; poll++) {
     await wait();
@@ -13,9 +14,19 @@ export const settleLayout = async ({ read, wait, polls, quiet = 3, waitedFor }) 
     last = now.pending.length ? null : now.layout;
   }
 
-  if (now.pending.length) throw new Error(`not settled after ${waitedFor}: ${now.pending.join(', ')}`);
+  if (now.pending.length) {
+    const error = new Error(`not settled after ${waitedFor}: ${now.pending.join(', ')}`);
+    error.settle = { polls: poll, ms: Date.now() - started, layout: now.layout, pending: now.pending };
+    throw error;
+  }
 
-  return { polls: poll, held: same >= quiet, moved: same >= quiet ? null : layoutMove(before, now.layout) };
+  return {
+    polls: poll,
+    ms: Date.now() - started,
+    layout: now.layout,
+    held: same >= quiet,
+    moved: same >= quiet ? null : layoutMove(before, now.layout),
+  };
 };
 
 const layoutMove = (before, after) => {
