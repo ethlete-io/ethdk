@@ -496,6 +496,49 @@ does not run it.
 
 `injectDefaultColorTheme()` returns the registered `ColorTheme` with `isDefault: true` the same way - useful for a shared component with no themed ancestor to inherit from (a page-level `et-spinner`, say), where "the app's default accent" is the right fallback. It throws if no theme is marked `isDefault: true`.
 
+## Migrating from the old token names
+
+`yarn nx g @ethlete/core:migrate-theme-token-names` renames the old theme tokens (the `-rgb` / `-solid` surface names, `--et-theme-color-*`, `--et-color-primary*`, and the matching Tailwind utilities) to the current names, and `et update` runs it for you. A case it cannot rewrite safely stays as it is and comes back as a `file:line` finding with a reason. Fix each by hand, regenerate the theme files, and run the migration again until it reports nothing.
+
+**A name inside a larger string.** A string whose whole content is one old name is renamed. A name that is only part of a string or a template string is reported as `old theme token left: <name>`:
+
+```ts
+// before
+const name = `--et-theme-color-primary-${state}`;
+const base = '--et-color-primary' + suffix;
+```
+
+Write the new name yourself: `--et-tone-fill` replaces `--et-theme-color-primary`, and `--et-tone-fill-rest` / `--et-tone-fill-<state>` replace `--et-color-primary` and `--et-color-primary-<state>` (`hover`, `focus`, `active`, `disabled`). A string that builds a name from a bare `--et-color-` prefix, such as `` `--et-color-${tone}` ``, is not reported at all: search for it.
+
+**Two old names that merge into one.** `--et-surface-border` and `--et-surface-border-solid` both become `--et-surface-border`. When one block sets both with different values, the finding is `--et-surface-border and --et-surface-border-solid are both set here and merge into --et-surface-border: keep one by hand`. Keep one declaration with the colour value:
+
+```css
+/* before */
+a {
+  --et-surface-border: var(--et-surface-color-subtle);
+  --et-surface-border-solid: var(--app-line);
+}
+
+/* after */
+a {
+  --et-surface-border: var(--app-line);
+}
+```
+
+**An old RGB triplet read outside `rgb()`.** The old `--et-surface-color` held a triplet like `255 255 255`; its replacement `--et-surface-text` holds a full colour. A read inside `rgb()` is rewritten, but a read in `color-mix()`, a Sass function or a concatenation is reported as `--et-surface-color is a triplet read outside rgb() (in --_x): check every reader by hand`. Read the new token directly:
+
+```css
+/* before */
+a {
+  --_x: color-mix(in srgb, var(--et-surface-color) 50%, transparent);
+}
+
+/* after */
+a {
+  --_x: color-mix(in srgb, var(--et-surface-text) 50%, transparent);
+}
+```
+
 ## Legacy runtime theming
 
 `provideColorThemes(themes)` (without the `WithTailwind4` suffix) is the previous, Tailwind-v3-era system: it injects `<style>` tags at runtime instead of generating CSS at build time. It - along with its helpers (`createThemeStyle`, `createTailwindColorThemes`, …) - is **deprecated** with intent to remove in v6. New apps should use the generator-based setup above.
