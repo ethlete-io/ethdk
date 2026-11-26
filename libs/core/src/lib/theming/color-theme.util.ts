@@ -75,8 +75,8 @@ export type RegisteredColorThemeName = EthleteColorThemeNameRegistry extends { n
   : string;
 
 /**
- * Reserved color name. Resolves the color tokens from the ambient surface's neutral swatch
- * (`SurfaceTheme['interactionColor']`) instead of a registered accent, so a secondary action can
+ * Reserved color name. Resolves the color tokens from the ambient surface's control text
+ * (`SurfaceTheme['controlText']`) instead of a registered accent, so a secondary action can
  * read as chrome without the app registering a neutral color theme. Apps must not register a color
  * theme under this name.
  */

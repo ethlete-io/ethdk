@@ -17,14 +17,13 @@ const APP_A_SURFACES: ThemeCssSurfaceTheme[] = [
     colorMuted: '155 161 174',
     colorSubtle: '75 85 99',
     border: '31 41 55',
-    interactionColor: {
-      color: {
-        default: '155 161 174',
-        hover: '219 223 234',
-        focus: '219 223 234',
-        active: '255 255 255',
-        disabled: '75 85 99',
-      },
+    tint: '155 161 174',
+    controlText: {
+      default: '155 161 174',
+      hover: '219 223 234',
+      focus: '219 223 234',
+      active: '255 255 255',
+      disabled: '75 85 99',
     },
   },
   {
@@ -74,14 +73,13 @@ const APP_B_SURFACES: ThemeCssSurfaceTheme[] = [
     type: 'dark',
     elevation: 0,
     isDefault: true,
-    interactionColor: {
-      color: {
-        default: '151 151 148',
-        hover: '202 202 198',
-        focus: '202 202 198',
-        active: '252 252 247',
-        disabled: '101 101 99',
-      },
+    tint: '151 151 148',
+    controlText: {
+      default: '151 151 148',
+      hover: '202 202 198',
+      focus: '202 202 198',
+      active: '252 252 247',
+      disabled: '101 101 99',
     },
     background: '2 2 2',
     color: '252 252 247',
@@ -177,8 +175,27 @@ describe('themeCss on real app themes', () => {
     expect(appB).toContain('--et-tone-fill: var(--et-tone-fill-rest);');
     expect(appB).toContain('--et-tone-text: var(--et-tone-text-rest, var(--et-tone-fill-rest));');
     expect(ruleOf(appB, '.et-color--surface')).toContain(
-      '--et-tone-on-fill-hover: var(--et-surface-on-interaction-hover, var(--et-surface-on-interaction, var(--et-surface-background)));',
+      '--et-tone-fill-hover: var(--et-surface-control-text-hover, var(--et-surface-control-text, var(--et-surface-text)));',
     );
+    expect(ruleOf(appB, '.et-color--surface')).toContain('--et-tone-on-fill-hover: var(--et-surface-background);');
+  });
+
+  it.each([
+    ['app-a', appA, 'aa', 'app-a-dark'],
+    ['app-b', appB, 'bb', 'dark'],
+  ])(
+    'writes the tint and the control text ladder in place of the interaction swatch for %s',
+    (_, css, prefix, name) => {
+      expect(css).not.toContain('interaction');
+      expect(ruleOf(css, `.et-surface--${name}`)).toContain('--et-surface-tint: rgb(');
+      expect(ruleOf(css, `.et-surface--${name}`)).toContain('--et-surface-control-text-hover: rgb(');
+      expect(css).toContain(`--color-${prefix}-surface-${name}-control-text-active: rgb(`);
+      expect(css).toContain(`--color-${prefix}-surface-tint: var(--et-surface-tint);`);
+    },
+  );
+
+  it('leaves a theme without a tint free to inherit the tint of its parent', () => {
+    expect(ruleOf(appA, '.et-surface--app-a-dark-inset')).not.toContain('--et-surface-tint');
   });
 
   it.each([

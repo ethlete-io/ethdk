@@ -1,5 +1,12 @@
 import { Tree, formatFiles, logger, visitNotIgnoredFiles } from '@nx/devkit';
-import { Expression, ObjectLiteralExpression, Project, SourceFile, SyntaxKind } from 'ts-morph';
+import {
+  Expression,
+  ObjectLiteralElementLike,
+  ObjectLiteralExpression,
+  Project,
+  SourceFile,
+  SyntaxKind,
+} from 'ts-morph';
 import { cssThemeName, surfaceThemeCss } from '../../design/theme-css.js';
 
 //#region Types
@@ -8,26 +15,12 @@ type SurfaceThemeColor = `${number} ${number} ${number}`;
 
 type SurfaceType = 'light' | 'dark';
 
-type SurfaceInteractionColorMap = {
-  default: SurfaceThemeColor;
-  hover: SurfaceThemeColor;
-  focus: SurfaceThemeColor;
-  active: SurfaceThemeColor;
-  disabled: SurfaceThemeColor;
-};
-
-type SurfaceOnInteractionColorMap = {
+type SurfaceControlTextMap = {
   default: SurfaceThemeColor;
   hover?: SurfaceThemeColor;
   focus?: SurfaceThemeColor;
   active?: SurfaceThemeColor;
   disabled?: SurfaceThemeColor;
-};
-
-type SurfaceInteractionColor = {
-  color: SurfaceInteractionColorMap;
-  onColor?: SurfaceOnInteractionColorMap;
-  inkColor?: SurfaceOnInteractionColorMap;
 };
 
 type SurfaceTheme = {
@@ -36,7 +29,8 @@ type SurfaceTheme = {
   elevation: number;
   isDefault?: boolean;
   colorThemeVariants?: Record<string, string>;
-  interactionColor?: SurfaceInteractionColor;
+  tint?: SurfaceThemeColor;
+  controlText?: SurfaceControlTextMap;
   background: SurfaceThemeColor;
   color: SurfaceThemeColor;
   colorMuted: SurfaceThemeColor;
@@ -257,14 +251,9 @@ const COLOR_PROPS = ['background', 'color', 'colorMuted', 'colorSubtle', 'border
 
 const isColorProp = (name: string): name is (typeof COLOR_PROPS)[number] => COLOR_PROPS.some((p) => p === name);
 
-const INTERACTION_KEYS = ['default', 'hover', 'focus', 'active', 'disabled'] as const;
+const STATE_KEYS = ['default', 'hover', 'focus', 'active', 'disabled'] as const;
 
-const isInteractionKey = (name: string): name is (typeof INTERACTION_KEYS)[number] =>
-  INTERACTION_KEYS.some((key) => key === name);
-
-const SWATCH_KEYS = ['color', 'onColor', 'inkColor'] as const;
-
-const isSwatchKey = (name: string): name is (typeof SWATCH_KEYS)[number] => SWATCH_KEYS.some((key) => key === name);
+const isStateKey = (name: string): name is (typeof STATE_KEYS)[number] => STATE_KEYS.some((key) => key === name);
 
 const unwrapTypeExpressions = (expression: Expression | undefined): Expression | undefined => {
   let current = expression;
@@ -295,8 +284,8 @@ const resolveObjectLiteral = (expression: Expression, sourceFile: SourceFile): O
   return resolved.isKind(SyntaxKind.ObjectLiteralExpression) ? resolved : null;
 };
 
-function parseInteractionColorMap(obj: ObjectLiteralExpression): Partial<SurfaceInteractionColorMap> {
-  const map: Partial<SurfaceInteractionColorMap> = {};
+function parseControlText(obj: ObjectLiteralExpression, themeName: string): SurfaceControlTextMap {
+  const map: Partial<SurfaceControlTextMap> = {};
 
   for (const prop of obj.getProperties()) {
     if (!prop.isKind(SyntaxKind.PropertyAssignment)) continue;
@@ -304,72 +293,36 @@ function parseInteractionColorMap(obj: ObjectLiteralExpression): Partial<Surface
     const name = prop.getName();
     const initializer = prop.getInitializer();
 
-    if (initializer?.isKind(SyntaxKind.StringLiteral) && isInteractionKey(name)) {
+    if (initializer?.isKind(SyntaxKind.StringLiteral) && isStateKey(name)) {
       map[name] = initializer.getLiteralValue() as SurfaceThemeColor;
     }
   }
 
-  return map;
-}
-
-function parseInteractionColor(
-  obj: ObjectLiteralExpression,
-  themeName: string,
-  sourceFile: SourceFile,
-): SurfaceInteractionColor {
-  const swatch: Partial<SurfaceInteractionColor> = {};
-
-  for (const prop of obj.getProperties()) {
-    if (!prop.isKind(SyntaxKind.PropertyAssignment)) continue;
-
-    const name = prop.getName();
-    const initializer = prop.getInitializer();
-
-    if (isInteractionKey(name)) {
-      throw new Error(
-        `Surface theme "${themeName}" uses the old flat \`interactionColor\` shape. It now takes a swatch: ` +
-          `{ color: { default, hover, focus, active, disabled }, onColor?, inkColor? }. ` +
-          `Run \`nx g @ethlete/core:migrate-surface-interaction-swatch\` to convert your themes.`,
-      );
-    }
-
-    if (!initializer || !isSwatchKey(name)) continue;
-
-    const mapObject = resolveObjectLiteral(initializer, sourceFile);
-    if (!mapObject) {
-      throw new Error(`Surface theme "${themeName}" has an interactionColor.${name} value that cannot be resolved.`);
-    }
-
-    const map = parseInteractionColorMap(mapObject);
-
-    if (name === 'color') {
-      if (!map.default || !map.hover || !map.focus || !map.active || !map.disabled) {
-        throw new Error(
-          `Surface theme "${themeName}" must define default, hover, focus, active and disabled interaction colors.`,
-        );
-      }
-
-      swatch.color = map as SurfaceInteractionColorMap;
-
-      continue;
-    }
-
-    if (map.default) {
-      swatch[name] = map as SurfaceOnInteractionColorMap;
-    }
+  if (!map.default) {
+    throw new Error(`Surface theme "${themeName}" controlText must define a default color.`);
   }
 
-  if (!swatch.color) {
-    throw new Error(`Surface theme "${themeName}" interactionColor must define a color swatch.`);
-  }
-
-  return swatch as SurfaceInteractionColor;
+  return map as SurfaceControlTextMap;
 }
+
+const spreadProperties = (obj: ObjectLiteralExpression, sourceFile: SourceFile): ObjectLiteralElementLike[] =>
+  obj.getProperties().flatMap((prop) => {
+    if (!prop.isKind(SyntaxKind.SpreadAssignment)) return [prop];
+
+    const spread = resolveObjectLiteral(prop.getExpression(), sourceFile);
+
+    if (!spread) {
+      throw new Error(`The spread ${prop.getText()} cannot be resolved: use a same-file object literal.`);
+    }
+
+    return spreadProperties(spread, sourceFile);
+  });
 
 function parseSurfaceThemeObject(obj: ObjectLiteralExpression, sourceFile: SourceFile): SurfaceTheme {
-  const properties = obj.getProperties();
+  const properties = spreadProperties(obj, sourceFile);
   const theme: Partial<SurfaceTheme> = {};
-  let interactionColorObj: ObjectLiteralExpression | null = null;
+  let controlTextObj: ObjectLiteralExpression | null = null;
+  let hasInteractionColor = false;
 
   for (const prop of properties) {
     if (!prop.isKind(SyntaxKind.PropertyAssignment)) {
@@ -391,9 +344,14 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression, sourceFile: Sourc
     }
 
     if (propName === 'interactionColor') {
-      interactionColorObj = resolveObjectLiteral(initializer, sourceFile);
-      if (!interactionColorObj) {
-        throw new Error('Surface theme interactionColor must be an inline or same-file object literal.');
+      hasInteractionColor = true;
+      continue;
+    }
+
+    if (propName === 'controlText') {
+      controlTextObj = resolveObjectLiteral(initializer, sourceFile);
+      if (!controlTextObj) {
+        throw new Error('Surface theme controlText cannot be resolved: use an inline or same-file object literal.');
       }
       continue;
     }
@@ -437,6 +395,8 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression, sourceFile: Sourc
 
     if (propName === 'name') {
       theme.name = initializer.getLiteralValue();
+    } else if (propName === 'tint') {
+      theme.tint = initializer.getLiteralValue() as SurfaceThemeColor;
     } else if (isColorProp(propName)) {
       theme[propName] = initializer.getLiteralValue() as SurfaceThemeColor;
     }
@@ -457,8 +417,15 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression, sourceFile: Sourc
     );
   }
 
-  if (interactionColorObj) {
-    theme.interactionColor = parseInteractionColor(interactionColorObj, theme.name, sourceFile);
+  if (hasInteractionColor) {
+    throw new Error(
+      `Surface theme "${theme.name}" still uses \`interactionColor\`, which is now split into \`tint\` and \`controlText\`. ` +
+        `Run \`nx g @ethlete/core:migrate-surface-roles\` to convert your themes.`,
+    );
+  }
+
+  if (controlTextObj) {
+    theme.controlText = parseControlText(controlTextObj, theme.name);
   }
 
   return theme as SurfaceTheme;

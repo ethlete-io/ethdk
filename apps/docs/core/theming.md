@@ -74,7 +74,8 @@ A `SurfaceTheme` - all colors are `"R G B"` channel strings:
 | `colorMuted`          | `"R G B"`                        | yes      | Secondary text.                                                                                                      |
 | `colorSubtle`         | `"R G B"`                        | yes      | Tertiary text.                                                                                                       |
 | `border`              | `"R G B"`                        | yes      | Border color.                                                                                                        |
-| `interactionColor`    | swatch                           | no       | The surface's neutral swatch - see below.                                                                            |
+| `tint`                | `"R G B"`                        | no       | The source hover and pressed feedback mixes into a neutral control - see below.                                      |
+| `controlText`         | `"R G B"` per state              | no       | The text of a neutral control per state - see below.                                                                 |
 | `colorThemeVariants`  | `{ <chosen theme>: <theme> }`    | no       | Swaps a chosen accent for a version that reads well on this surface - see [colors per surface](#colors-per-surface). |
 | `semanticColorThemes` | `{ success?, warning?, error? }` | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
 | `colorTheme`          | color theme name                 | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
@@ -85,24 +86,24 @@ A resolved elevation looks for an exact match and stays on the inherited scope w
 
 As an example, this repo's Storybook registers `light` (elevation 0), `light-elevated` (1), `dark` (0), `dark-elevated` (1) and `dark-elevated-2` (2).
 
-`interactionColor` is shaped like a color theme's swatch and does two jobs:
+`tint` and `controlText` style the neutral controls on a surface:
 
 ```ts
-interactionColor: {
-  color: { default: '115 115 115', hover: '64 64 64', focus: '64 64 64', active: '23 23 23', disabled: '180 180 180' },
-  onColor: { default: '255 255 255' },   // optional, defaults to `background`
-  inkColor: { default: '23 23 23' },     // optional, defaults to `color`
-}
+tint: '115 115 115',
+controlText: { default: '115 115 115', hover: '64 64 64', focus: '64 64 64', active: '23 23 23', disabled: '180 180 180' },
 ```
 
-`color` is the neutral tint `[etSurfaceInteractive]` mixes for hover/active feedback, and the swatch as
-a whole is the palette that [`etProvideColor="surface"`](#the-surface-color) resolves - so `onColor`
-is the text on a filled neutral button and `inkColor` the text and borders on a tinted one. Its ladder
-should escalate towards the surface's text color, the way the tint does.
+`tint` is the color hover and pressed feedback mixes in. `controlText` is the text of a neutral control
+per state; only `default` is required, a missing `focus` falls back to `hover` and the rest to `default`.
+It is also the fill that [`etProvideColor="surface"`](#the-surface-color) resolves, with the surface
+background as the text on that fill. Its ladder should escalate towards the surface's text color.
+
+A theme without `tint` inherits the tint of the surface around it, so set it on the root themes.
 
 ::: tip Upgrading
-`interactionColor` used to be the flat `{ default, hover, … }` map that is now nested under `color`.
-Run `nx g @ethlete/core:migrate-surface-interaction-swatch` to convert your definitions, then
+`interactionColor` is split: its `color.default` becomes `tint` and its `color` map becomes
+`controlText`. `onColor` and `inkColor` are gone. `et update` runs `@ethlete/core:migrate-surface-roles`,
+which rewrites your definitions and the readers of the old `--et-surface-interaction*` tokens; then
 regenerate the CSS.
 :::
 
@@ -111,11 +112,10 @@ Inside any surface scope (and on `:root` - see [The root surface](#the-root-surf
 - `--et-surface-background`
 - `--et-surface-text`, `--et-surface-text-muted`, `--et-surface-text-subtle`
 - `--et-surface-border`
-- `--et-surface-interaction`, `--et-surface-interaction-{hover,focus,active,disabled}`
+- `--et-surface-tint`, when a theme sets `tint`
+- `--et-surface-control-text`, `--et-surface-control-text-{hover,focus,active,disabled}`, when a theme sets `controlText`
 
-The swatch's `onColor` and `inkColor` are not exposed as component tokens - they reach components
-through the [`surface` color scope](#the-surface-color) - but they do generate the Tailwind utilities
-`text-et-surface-on-interaction` and `text-et-surface-interaction-ink`.
+Each also has a Tailwind utility, such as `text-et-surface-control-text-hover`.
 
 ### The root surface
 
@@ -216,15 +216,8 @@ export const SURFACE_THEMES = [
     colorMuted: '163 163 163',
     colorSubtle: '115 115 115',
     border: '64 64 64',
-    interactionColor: {
-      color: {
-        default: '255 255 255',
-        hover: '255 255 255',
-        focus: '255 255 255',
-        active: '255 255 255',
-        disabled: '255 255 255',
-      },
-    },
+    tint: '255 255 255',
+    controlText: { default: '255 255 255' },
   },
   {
     name: 'card',
@@ -235,15 +228,8 @@ export const SURFACE_THEMES = [
     colorMuted: '163 163 163',
     colorSubtle: '115 115 115',
     border: '64 64 64',
-    interactionColor: {
-      color: {
-        default: '255 255 255',
-        hover: '255 255 255',
-        focus: '255 255 255',
-        active: '255 255 255',
-        disabled: '255 255 255',
-      },
-    },
+    tint: '255 255 255',
+    controlText: { default: '255 255 255' },
   },
 ] satisfies SurfaceTheme[];
 
@@ -278,8 +264,8 @@ Keep the definitions literal objects: the generators read the files statically, 
 | `AutoSurfaceDirective`        | `[etAutoSurface]`        | Picks the registered surface with the parent's `elevation + 1` in the same `type` - nested panels elevate themselves. With no provider above it, the parent is the app's [root surface](#the-root-surface), so it elevates above that. Content rendered inside an overlay also consults the surface-context tracker (matched by DOM containment), so it elevates above the overlay's surface even though its injector points back at the trigger location - while auto-surfaces on the base page are unaffected when an overlay opens. Overlay panels that _are_ the overlay's own surface call `matchOverlaySurface()` to paint the overlay's registered elevation from the tracker exactly, instead of stacking above it. |
 | `SurfaceInteractiveDirective` | `[etSurfaceInteractive]` | Makes the surface tokens react to the host's `:hover` / `:focus-visible` / `:active` / `[disabled]` state using the neutral interaction tint.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
-::: warning Hover rows: use `etSurfaceInteractive`, not `hover:bg-et-surface-interaction-hover`
-`--et-surface-interaction-hover` (and the Tailwind utility `bg-et-surface-interaction-hover`) is a full-strength neutral tint, not a subtle overlay. As a hover background it paints a near-white row in dark mode with near-white text on top. For hover, focus and active feedback on a row, add `[etSurfaceInteractive]` to the interactive element itself: it mixes the tint at the right strength per state.
+::: warning Hover rows: use `etSurfaceInteractive`, not `hover:bg-et-surface-control-text-hover`
+`--et-surface-control-text-hover` (and the Tailwind utility `bg-et-surface-control-text-hover`) is a full-strength text color, not a subtle overlay. As a hover background it paints a near-white row in dark mode with near-white text on top. For hover, focus and active feedback on a row, add `[etSurfaceInteractive]` to the interactive element itself: it mixes the tint at the right strength per state.
 :::
 
 ## Color themes
@@ -327,7 +313,7 @@ Inside a color scope these tokens resolve, each a ready color:
 ```
 
 Inside that scope the color tokens resolve from the ambient surface's
-[`interactionColor` swatch](#surface-themes) instead of an accent, so a secondary action reads as
+[`controlText`](#surface-themes) instead of an accent, so a secondary action reads as
 chrome - and follows the surface it sits on, which a registered neutral theme cannot do. Every
 component keeps its own structural signature; only the palette changes. Apps must not register a
 color theme named `surface`.
@@ -431,7 +417,7 @@ export class ViolationHintComponent {
 Theming follows two rules:
 
 1. **A surface is where an element sits.** It has a background, text, borders and its own grey. `color="surface"`
-   and the hover tints use that grey, from the surface's `interactionColor`.
+   and the hover tints use that grey, from the surface's `tint`.
 2. **A color is an accent that you choose.** A surface can swap an accent for a version that reads well on it.
 
 The default color is an accent that nobody chose explicitly, and `success`, `warning` and `error` are accents with a
@@ -473,7 +459,7 @@ Register a variant as an ordinary color theme without a `type`, so the type look
 
 | You want                                         | Use                                                 |
 | ------------------------------------------------ | --------------------------------------------------- |
-| A neutral color that follows the surface         | `color="surface"`, values from `interactionColor`   |
+| A neutral color that follows the surface         | `color="surface"`, values from `controlText`        |
 | An accent with a better version on some surfaces | `color="<name>"`, plus `colorThemeVariants` entries |
 | An accent that stays the same on every surface   | `color="<name>"`, with no entry                     |
 

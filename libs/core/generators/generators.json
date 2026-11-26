@@ -53,6 +53,11 @@
       "implementation": "./migrate-theme-token-names/migration",
       "schema": "./migrate-theme-token-names/schema.json",
       "description": "Rename the old theme token names (surface, tone, opacity knob, component triplets) and the generated Tailwind color names"
+    },
+    "migrate-surface-roles": {
+      "implementation": "./migrate-surface-roles/migration",
+      "schema": "./migrate-surface-roles/schema.json",
+      "description": "Split surface theme interactionColor into tint and controlText, drop onColor and inkColor, and rename the surface interaction token readers"
     }
   }
 }

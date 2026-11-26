@@ -9,11 +9,8 @@ export type ThemeCssSurfaceTheme = {
   elevation: number;
   isDefault?: boolean;
   colorThemeVariants?: Partial<Record<string, string>>;
-  interactionColor?: {
-    color: Required<StateMap<Rgb>>;
-    onColor?: StateMap<Rgb>;
-    inkColor?: StateMap<Rgb>;
-  };
+  tint?: Rgb;
+  controlText?: StateMap<Rgb>;
   background: Rgb;
   color: Rgb;
   colorMuted: Rgb;
@@ -78,18 +75,12 @@ export const surfaceThemeCss = (themes: ThemeCssSurfaceTheme[], options: ThemeCs
     tailwindVars.push(`  --color-${utilityPrefix}-surface-${name}-text-subtle: ${colorOf(theme.colorSubtle)};`);
     tailwindVars.push(`  --color-${utilityPrefix}-surface-${name}-border: ${colorOf(theme.border)};`);
 
-    if (theme.interactionColor) {
-      const { color, onColor, inkColor } = theme.interactionColor;
+    if (theme.tint) {
+      tailwindVars.push(`  --color-${utilityPrefix}-surface-${name}-tint: ${colorOf(theme.tint)};`);
+    }
 
-      pushStaticInteractionColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-interaction`, color);
-
-      if (onColor) {
-        pushStaticInteractionColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-on-interaction`, onColor);
-      }
-
-      if (inkColor) {
-        pushStaticInteractionColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-interaction-ink`, inkColor);
-      }
+    if (theme.controlText) {
+      pushStaticStateColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-control-text`, theme.controlText);
     }
 
     tailwindVars.push('');
@@ -246,7 +237,7 @@ export const themeCss = (themes: {
   return `${surfaceThemeCss(themes.surfaceThemes, options)}\n${colorThemeCss(themes.colorThemes, options)}`;
 };
 
-const INTERACTION_STATE_SUFFIXES = ['', '-hover', '-focus', '-active', '-disabled'] as const;
+const STATE_SUFFIXES = ['', '-hover', '-focus', '-active', '-disabled'] as const;
 
 const TONE_STATE_SUFFIXES = ['-rest', '-hover', '-focus', '-active', '-disabled'] as const;
 
@@ -255,53 +246,35 @@ const colorOf = (value: ThemeColorValue) => (value.includes('%') ? `hsl(${value}
 // The reserved `surface` color scope lives here and not in the SDK's own CSS, so only apps that
 // use `[etProvideColor]="'surface'"` pay for it.
 const buildSurfaceColorScope = (runtimePrefix: string) => {
-  const tint = `var(--${runtimePrefix}-surface-interaction, var(--${runtimePrefix}-surface-text))`;
-  const on = `var(--${runtimePrefix}-surface-on-interaction, var(--${runtimePrefix}-surface-background))`;
-  const ink = `var(--${runtimePrefix}-surface-interaction-ink, var(--${runtimePrefix}-surface-text))`;
+  const fill = `var(--${runtimePrefix}-surface-control-text, var(--${runtimePrefix}-surface-text))`;
 
-  const state = (word: string, source: string, fallback: string) =>
-    TONE_STATE_SUFFIXES.map(
-      (suffix) =>
-        `    --${runtimePrefix}-tone-${word}${suffix}: ${suffix === '-rest' ? fallback : `var(--${runtimePrefix}-surface-${source}${suffix}, ${fallback})`};`,
-    ).join('\n');
+  const state = (word: string, value: (suffix: (typeof TONE_STATE_SUFFIXES)[number]) => string) =>
+    TONE_STATE_SUFFIXES.map((suffix) => `    --${runtimePrefix}-tone-${word}${suffix}: ${value(suffix)};`).join('\n');
 
   return `/* The reserved \`surface\` color: resolves the tone from the ambient surface's neutral swatch. */
 @layer base {
   .${runtimePrefix}-color--surface {
-${state('fill', 'interaction', tint)}
+${state('fill', (suffix) => (suffix === '-rest' ? fill : `var(--${runtimePrefix}-surface-control-text${suffix}, ${fill})`))}
 
-${state('on-fill', 'on-interaction', on)}
+${state('on-fill', () => `var(--${runtimePrefix}-surface-background)`)}
 
-${state('text', 'interaction-ink', ink)}
+${state('text', () => `var(--${runtimePrefix}-surface-text)`)}
   }
 }
 `;
 };
 
-const buildDynamicSurfaceColors = (utilityPrefix: string, runtimePrefix: string) => {
-  const onFallback = `var(--${runtimePrefix}-surface-background)`;
-  const inkFallback = `var(--${runtimePrefix}-surface-text)`;
+const buildDynamicSurfaceColors = (utilityPrefix: string, runtimePrefix: string) => [
+  ...['background', 'text', 'text-muted', 'text-subtle', 'border', 'tint'].map(
+    (token) => `--color-${utilityPrefix}-surface-${token}: var(--${runtimePrefix}-surface-${token});`,
+  ),
+  ...STATE_SUFFIXES.map(
+    (suffix) =>
+      `--color-${utilityPrefix}-surface-control-text${suffix}: var(--${runtimePrefix}-surface-control-text${suffix});`,
+  ),
+];
 
-  return [
-    ...['background', 'text', 'text-muted', 'text-subtle', 'border'].map(
-      (token) => `--color-${utilityPrefix}-surface-${token}: var(--${runtimePrefix}-surface-${token});`,
-    ),
-    ...INTERACTION_STATE_SUFFIXES.map(
-      (suffix) =>
-        `--color-${utilityPrefix}-surface-interaction${suffix}: var(--${runtimePrefix}-surface-interaction${suffix});`,
-    ),
-    ...INTERACTION_STATE_SUFFIXES.map(
-      (suffix) =>
-        `--color-${utilityPrefix}-surface-on-interaction${suffix}: var(--${runtimePrefix}-surface-on-interaction${suffix}, ${onFallback});`,
-    ),
-    ...INTERACTION_STATE_SUFFIXES.map(
-      (suffix) =>
-        `--color-${utilityPrefix}-surface-interaction-ink${suffix}: var(--${runtimePrefix}-surface-interaction-ink${suffix}, ${inkFallback});`,
-    ),
-  ];
-};
-
-const resolveInteractionStates = (map: StateMap<Rgb>): Record<(typeof INTERACTION_STATE_SUFFIXES)[number], Rgb> => {
+const resolveStates = (map: StateMap<Rgb>): Record<(typeof STATE_SUFFIXES)[number], Rgb> => {
   const hover = map.hover || map.default;
 
   return {
@@ -313,18 +286,18 @@ const resolveInteractionStates = (map: StateMap<Rgb>): Record<(typeof INTERACTIO
   };
 };
 
-const pushStaticInteractionColors = (vars: string[], name: string, map: StateMap<Rgb>) => {
-  const states = resolveInteractionStates(map);
+const pushStaticStateColors = (vars: string[], name: string, map: StateMap<Rgb>) => {
+  const states = resolveStates(map);
 
-  for (const suffix of INTERACTION_STATE_SUFFIXES) {
+  for (const suffix of STATE_SUFFIXES) {
     vars.push(`  ${name}${suffix}: ${colorOf(states[suffix])};`);
   }
 };
 
-const pushRuntimeInteractionVars = (vars: string[], name: string, map: StateMap<Rgb>, indent: string) => {
-  const states = resolveInteractionStates(map);
+const pushRuntimeStateVars = (vars: string[], name: string, map: StateMap<Rgb>, indent: string) => {
+  const states = resolveStates(map);
 
-  for (const suffix of INTERACTION_STATE_SUFFIXES) {
+  for (const suffix of STATE_SUFFIXES) {
     vars.push(`${indent}${name}${suffix}: ${colorOf(states[suffix])};`);
   }
 };
@@ -375,18 +348,12 @@ const pushSurfaceVars = (vars: string[], runtimePrefix: string, theme: ThemeCssS
     );
   }
 
-  if (theme.interactionColor) {
-    const { color, onColor, inkColor } = theme.interactionColor;
+  if (theme.tint) {
+    vars.push(`${indent}--${runtimePrefix}-surface-tint: ${colorOf(theme.tint)};`);
+  }
 
-    pushRuntimeInteractionVars(vars, `--${runtimePrefix}-surface-interaction`, color, indent);
-
-    if (onColor) {
-      pushRuntimeInteractionVars(vars, `--${runtimePrefix}-surface-on-interaction`, onColor, indent);
-    }
-
-    if (inkColor) {
-      pushRuntimeInteractionVars(vars, `--${runtimePrefix}-surface-interaction-ink`, inkColor, indent);
-    }
+  if (theme.controlText) {
+    pushRuntimeStateVars(vars, `--${runtimePrefix}-surface-control-text`, theme.controlText, indent);
   }
 };
 

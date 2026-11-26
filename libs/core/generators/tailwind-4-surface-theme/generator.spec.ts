@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { MockInstance } from 'vitest';
+import { migrateSurfaceRolesInFile } from '../migrate-surface-roles/surface-roles';
 import migrate from './generator';
 
 describe('tailwind-4-surface-theme generator', () => {
@@ -213,7 +214,7 @@ describe('tailwind-4-surface-theme generator', () => {
     // Tailwind utility prefix.
     expect(content).toContain('--color-fut-surface-card-background: rgb(255 255 255);');
     expect(content).toContain('--color-fut-surface-background: var(--et-surface-background);');
-    expect(content).toContain('--color-fut-surface-interaction: var(--et-surface-interaction);');
+    expect(content).toContain('--color-fut-surface-control-text: var(--et-surface-control-text);');
 
     // The runtime theme-swap selectors and variables use the runtime prefix, not the
     // Tailwind utility prefix.
@@ -242,14 +243,14 @@ describe('tailwind-4-surface-theme generator', () => {
     expect(content).toContain('--custom-surface-background: rgb(255 255 255);');
   });
 
-  describe('interactionColor swatch', () => {
-    const withInteractionColor = (interactionColor: string) => `
+  describe('tint and controlText', () => {
+    const withRoles = (roles: string) => `
       export const CARD = {
         name: 'card',
         type: 'light',
         elevation: 1,
         isDefault: true,
-        interactionColor: ${interactionColor},
+        ${roles}
         background: '255 255 255',
         color: '0 0 0',
         colorMuted: '100 100 100',
@@ -262,39 +263,34 @@ describe('tailwind-4-surface-theme generator', () => {
 
     const COLOR_MAP = `{ default: '115 115 115', hover: '64 64 64', focus: '60 60 60', active: '23 23 23', disabled: '180 180 180' }`;
 
-    it('emits the tint ladder from the swatch color map', async () => {
-      tree.write('src/surface-themes.ts', withInteractionColor(`{ color: ${COLOR_MAP} }`));
-
+    const generate = async () => {
       await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
 
-      const content = tree.read('src/styles/tw.css', 'utf-8');
-      expect(content).toContain('--et-surface-interaction: rgb(115 115 115);');
-      expect(content).toContain('--et-surface-interaction-active: rgb(23 23 23);');
-      expect(content).toContain('--color-et-surface-card-interaction-hover: rgb(64 64 64);');
-      expect(content).not.toContain('--et-surface-on-interaction:');
+      return tree.read('src/styles/tw.css', 'utf-8') ?? '';
+    };
+
+    it('emits the tint and the control text ladder', async () => {
+      tree.write('src/surface-themes.ts', withRoles(`tint: '115 115 115', controlText: ${COLOR_MAP},`));
+
+      const content = await generate();
+      expect(content).toContain('--et-surface-tint: rgb(115 115 115);');
+      expect(content).toContain('--et-surface-control-text-active: rgb(23 23 23);');
+      expect(content).toContain('--color-et-surface-card-control-text-hover: rgb(64 64 64);');
+      expect(content).toContain('--color-et-surface-card-tint: rgb(115 115 115);');
+      expect(content).not.toContain('interaction');
     });
 
-    it('emits on-interaction and ink variables, filling the states left out', async () => {
-      tree.write(
-        'src/surface-themes.ts',
-        withInteractionColor(
-          `{ color: ${COLOR_MAP}, onColor: { default: '255 255 255', hover: '250 250 250' }, inkColor: { default: '23 23 23' } }`,
-        ),
-      );
+    it('fills the control text states left out', async () => {
+      tree.write('src/surface-themes.ts', withRoles(`controlText: { default: '23 23 23', hover: '64 64 64' },`));
 
-      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
-
-      const content = tree.read('src/styles/tw.css', 'utf-8');
-      expect(content).toContain('--et-surface-on-interaction: rgb(255 255 255);');
-      expect(content).toContain('--et-surface-on-interaction-hover: rgb(250 250 250);');
-      // focus falls back to hover, active and disabled to default
-      expect(content).toContain('--et-surface-on-interaction-focus: rgb(250 250 250);');
-      expect(content).toContain('--et-surface-on-interaction-active: rgb(255 255 255);');
-      expect(content).toContain('--et-surface-interaction-ink-disabled: rgb(23 23 23);');
+      const content = await generate();
+      expect(content).toContain('--et-surface-control-text-focus: rgb(64 64 64);');
+      expect(content).toContain('--et-surface-control-text-disabled: rgb(23 23 23);');
+      expect(content).not.toContain('--et-surface-tint: rgb(');
     });
 
     it('emits the reserved surface color scope, following the runtime prefix', async () => {
-      tree.write('src/surface-themes.ts', withInteractionColor(`{ color: ${COLOR_MAP} }`));
+      tree.write('src/surface-themes.ts', withRoles(`controlText: ${COLOR_MAP},`));
 
       await migrate(tree, {
         themesPath: 'src/surface-themes.ts',
@@ -306,36 +302,35 @@ describe('tailwind-4-surface-theme generator', () => {
 
       const content = tree.read('src/styles/tw.css', 'utf-8');
       expect(content).toContain('.et-color--surface {');
-      expect(content).toContain('--et-tone-fill-rest: var(--et-surface-interaction, var(--et-surface-text));');
-      expect(content).toContain(
-        '--et-tone-on-fill-rest: var(--et-surface-on-interaction, var(--et-surface-background));',
-      );
-      expect(content).toContain('--et-tone-text-rest: var(--et-surface-interaction-ink, var(--et-surface-text));');
+      expect(content).toContain('--et-tone-fill-rest: var(--et-surface-control-text, var(--et-surface-text));');
+      expect(content).toContain('--et-tone-on-fill-rest: var(--et-surface-background);');
+      expect(content).toContain('--et-tone-text-rest: var(--et-surface-text);');
       expect(content).not.toContain('.fut-color--surface');
     });
 
-    it('points at the migration when a theme still uses the flat map', async () => {
-      tree.write('src/surface-themes.ts', withInteractionColor(COLOR_MAP));
+    it.each([
+      ['swatch', `interactionColor: { color: ${COLOR_MAP} },`],
+      ['flat map', `interactionColor: ${COLOR_MAP},`],
+    ])('points at the migration when a theme still uses the interactionColor %s', async (_, roles) => {
+      tree.write('src/surface-themes.ts', withRoles(roles));
 
-      await expect(
-        migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true }),
-      ).rejects.toThrow(/migrate-surface-interaction-swatch/u);
+      await expect(generate()).rejects.toThrow(/migrate-surface-roles/u);
 
       expect(tree.exists('src/styles/tw.css')).toBe(false);
     });
 
-    it('should resolve a swatch color map shared through a const by several themes', async () => {
+    it('should resolve a control text map shared through a const by several themes', async () => {
       tree.write(
         'src/surface-themes.ts',
         `
-        const TINT = ${COLOR_MAP};
+        const LADDER = ${COLOR_MAP};
 
         export const CARD = {
           name: 'card',
           type: 'light',
           elevation: 1,
           isDefault: true,
-          interactionColor: { color: TINT },
+          controlText: LADDER,
           background: '255 255 255',
           color: '0 0 0',
           colorMuted: '100 100 100',
@@ -348,7 +343,7 @@ describe('tailwind-4-surface-theme generator', () => {
           type: 'dark',
           elevation: 2,
           isDefault: true,
-          interactionColor: { color: TINT },
+          controlText: LADDER,
           background: '10 10 10',
           color: '255 255 255',
           colorMuted: '180 180 180',
@@ -360,14 +355,12 @@ describe('tailwind-4-surface-theme generator', () => {
       `,
       );
 
-      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
-
-      const content = tree.read('src/styles/tw.css', 'utf-8');
-      expect(content).toContain('--color-et-surface-card-interaction-hover: rgb(64 64 64);');
-      expect(content).toContain('--color-et-surface-sheet-interaction-hover: rgb(64 64 64);');
+      const content = await generate();
+      expect(content).toContain('--color-et-surface-card-control-text-hover: rgb(64 64 64);');
+      expect(content).toContain('--color-et-surface-sheet-control-text-hover: rgb(64 64 64);');
     });
 
-    it('should fail the generator when a theme swatch cannot be resolved', async () => {
+    it('should fail the generator when a control text map cannot be resolved', async () => {
       tree.write(
         'src/surface-themes.ts',
         `
@@ -376,7 +369,7 @@ describe('tailwind-4-surface-theme generator', () => {
           type: 'dark',
           elevation: 2,
           isDefault: true,
-          interactionColor: { color: MISSING },
+          controlText: MISSING,
           background: '10 10 10',
           color: '255 255 255',
           colorMuted: '180 180 180',
@@ -384,27 +377,34 @@ describe('tailwind-4-surface-theme generator', () => {
           border: '40 40 40',
         } as const;
 
-        export const CARD = {
-          name: 'card',
-          type: 'light',
-          elevation: 1,
-          isDefault: true,
-          background: '255 255 255',
-          color: '0 0 0',
-          colorMuted: '100 100 100',
-          colorSubtle: '200 200 200',
-          border: '220 220 220',
-        } as const;
-
-        export const SURFACE_THEMES = [BROKEN, CARD] satisfies SurfaceTheme[];
+        export const SURFACE_THEMES = [BROKEN] satisfies SurfaceTheme[];
       `,
       );
 
-      await expect(
-        migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true }),
-      ).rejects.toThrow(/BROKEN.*cannot be resolved/u);
+      await expect(generate()).rejects.toThrow(/BROKEN.*cannot be resolved/u);
 
       expect(tree.exists('src/styles/tw.css')).toBe(false);
+    });
+  });
+
+  describe('real app themes after migrate-surface-roles', () => {
+    const generate = async () => {
+      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      return tree.read('src/styles/tw.css', 'utf-8') ?? '';
+    };
+
+    it.each(['app-a', 'app-b'])('generates the tint and the control text ladder for %s', async (app) => {
+      const source = readFileSync(join(__dirname, `__fixtures__/${app}/surface-themes.ts.txt`), 'utf-8');
+      const migrated = migrateSurfaceRolesInFile('src/surface-themes.ts', source);
+
+      expect(migrated.changed).toBe(true);
+      tree.write('src/surface-themes.ts', migrated.content);
+
+      const content = await generate();
+      expect(content).toContain('--et-surface-tint: rgb(');
+      expect(content).toContain('--et-surface-control-text-hover: rgb(');
+      expect(content).not.toContain('interaction');
     });
   });
 
@@ -668,7 +668,10 @@ describe('tailwind-4-surface-theme generator', () => {
   });
 
   describe('theme names with a type cast', () => {
-    const farn = readFileSync(join(__dirname, '__fixtures__/farn-surface-themes.ts.txt'), 'utf-8');
+    const farn = migrateSurfaceRolesInFile(
+      'farn-surface-themes.ts',
+      readFileSync(join(__dirname, '__fixtures__/farn-surface-themes.ts.txt'), 'utf-8'),
+    ).content;
     const castFree = farn.replace(/ as SurfaceTheme\['name'\]/, '');
 
     it('should write the same CSS as from a cast-free copy', async () => {

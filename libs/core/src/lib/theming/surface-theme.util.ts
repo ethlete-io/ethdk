@@ -11,15 +11,7 @@ export type SurfaceType = (typeof SURFACE_TYPE)[keyof typeof SURFACE_TYPE];
 
 export type SurfaceThemeColor = `${number} ${number} ${number}`;
 
-export type SurfaceInteractionColorMap = {
-  default: SurfaceThemeColor;
-  hover: SurfaceThemeColor;
-  focus: SurfaceThemeColor;
-  active: SurfaceThemeColor;
-  disabled: SurfaceThemeColor;
-};
-
-export type SurfaceOnInteractionColorMap = {
+export type SurfaceControlTextMap = {
   default: SurfaceThemeColor;
   hover?: SurfaceThemeColor;
   focus?: SurfaceThemeColor;
@@ -27,26 +19,18 @@ export type SurfaceOnInteractionColorMap = {
   disabled?: SurfaceThemeColor;
 };
 
-/**
- * The surface's neutral color, shaped like a color theme's swatch. It serves both roles: `color`
- * is the tint source `[etSurfaceInteractive]` mixes for hover/active feedback, and the whole
- * swatch is the palette a component picks up from `[etProvideColor]="'surface'"`.
- *
- * `onColor` (text on a filled neutral) defaults to the surface background, `inkColor` (text and
- * borders on a tinted or transparent neutral) to the surface color.
- */
-export type SurfaceInteractionColor = {
-  color: SurfaceInteractionColorMap;
-  onColor?: SurfaceOnInteractionColorMap;
-  inkColor?: SurfaceOnInteractionColorMap;
-};
-
 export type SurfaceTheme = {
   name: RegisteredSurfaceThemeName;
   type: SurfaceType;
   elevation: number;
   isDefault?: boolean;
-  interactionColor?: SurfaceInteractionColor;
+  /** The source hover and pressed feedback mixes into a neutral control on this surface. */
+  tint?: SurfaceThemeColor;
+  /**
+   * The text color of a neutral control on this surface, per state. A missing state falls back to
+   * `hover` for focus and to `default` otherwise. Also the fill of `[etProvideColor]="'surface'"`.
+   */
+  controlText?: SurfaceControlTextMap;
   /**
    * Swaps a chosen color theme for a version that reads well on this surface, e.g.
    * `{ brand: 'brand-on-light', grey: 'grey-light' }`. The chosen theme is the nearest `[etProvideColor]`, the

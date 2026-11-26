@@ -354,6 +354,10 @@ Technische Festlegungen (meine, keine Rückfrage):
 - Kein Generator-Abbruch bei Farbgleichheit; die Messlatte prüft im Browser.
 - Schritt 1 und 2 sind reine Umbenennungen und zuerst dran: sie machen das System lesbar, bevor
   jemand an Zuständen baut.
+- Der Standard „Tönung = Flächentext“ wandert von Schritt 2 nach Schritt 3, an die Lesestelle:
+  schriebe der Generator ihn beim Ausgeben, verlöre ein verschachteltes Theme ohne `tint` die
+  Tönung seiner Elternfläche (Bildänderung). Schritt 2 gibt `--et-surface-tint` nur aus, wenn
+  `tint` gesetzt ist.
 - fifagg behält seine drei Accordion-Zeilen, bis der Bildvergleich den Ersatz belegt. Inset
   (Ebene −1) nutzt fifagg nirgends ✔.
 

@@ -72,12 +72,16 @@ A surface theme is a named set of tokens for a complete UI layer. Unlike color t
     <td>Divider and border color</td>
   </tr>
   <tr>
-    <td>`interactionColor?`</td>
-    <td>Swatch</td>
+    <td>`tint?`</td>
+    <td>RGB</td>
+    <td>The source hover and pressed feedback mixes into a neutral control on this surface</td>
+  </tr>
+  <tr>
+    <td>`controlText?`</td>
+    <td>RGB per state</td>
     <td>
-      The surface's neutral swatch: `color` (RGB per state) is the tint `[etSurfaceInteractive]` mixes for
-      hover/focus/active/disabled feedback, with optional `onColor` and `inkColor` maps completing it into the palette
-      `[etProvideColor]="'surface'"` resolves.
+      The text of a neutral control per state (`default`, optional `hover`, `focus`, `active`, `disabled`); also the
+      fill `[etProvideColor]="'surface'"` resolves
     </td>
   </tr>
 </table>
@@ -85,11 +89,8 @@ A surface theme is a named set of tokens for a complete UI layer. Unlike color t
 Color values use space-separated channel numbers (same format as color themes): `"R G B"`.
 
 ```ts
-interactionColor: {
-  color: { default: '115 115 115', hover: '64 64 64', focus: '64 64 64', active: '23 23 23', disabled: '180 180 180' },
-  onColor: { default: '255 255 255' },   // text on a filled neutral; defaults to `background`
-  inkColor: { default: '23 23 23' },     // text/borders on a tinted neutral; defaults to `color`
-}
+tint: '115 115 115',
+controlText: { default: '115 115 115', hover: '64 64 64', focus: '64 64 64', active: '23 23 23', disabled: '180 180 180' },
 ```
 
 ---

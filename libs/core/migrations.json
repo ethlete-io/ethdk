@@ -81,6 +81,16 @@
       "description": "Rename the old theme token names (surface, tone, opacity knob, component triplets) and the generated Tailwind color names.",
       "generator": "@ethlete/core:migrate-theme-token-names",
       "docs": "/core/theming"
+    },
+    {
+      "name": "surface-roles",
+      "version": "5.0.0-next.80",
+      "kind": "auto",
+      "level": "required",
+      "description": "Split surface theme interactionColor into tint and controlText, drop onColor and inkColor, and rename the readers of --et-surface-interaction*.",
+      "generator": "@ethlete/core:migrate-surface-roles",
+      "requires": ["ts-morph"],
+      "docs": "/core/theming"
     }
   ]
 }
