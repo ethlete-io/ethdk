@@ -147,8 +147,8 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
   it('tints the hovered stepper field as a translucent wash, not the full light interaction colour', () => {
     const count = /<span[^>]*data-farn-count/.exec(sampleStepper('count-hover'))?.[0] ?? '';
 
-    expect(count).toMatch(/bg-et-surface-control-text\/\d+/);
-    expect(count).not.toMatch(/bg-et-surface-control-text(?![/\w-])/);
+    expect(count).toMatch(/bg-et-surface-tint\/\d+/);
+    expect(count).not.toMatch(/bg-et-surface-tint(?![/\w-])/);
   });
 
   it('draws each Farn plant with its own shape', () => {
@@ -179,7 +179,7 @@ describe('DESIGN_HARNESS_SAMPLES', () => {
 
     expect(search).toContain('<svg');
     expect(search).toContain('Pflanzen suchen');
-    expect(search).not.toMatch(/bg-et-surface-control-text(?![/\w-])/);
+    expect(search).not.toMatch(/bg-et-surface-tint(?![/\w-])/);
   });
 
   it("puts every Farn root under the Farn surface and colour scope, not Studio's", () => {

@@ -42,7 +42,7 @@ const STATUS_CLASS: Record<TreeRowStatus, string> = {
 };
 
 const ROW_CLASS =
-  'relative flex h-6 items-center font-ui gap-space-1 rounded-control-sm pr-space-2 pl-[calc(var(--space-1)+var(--depth,0)*1.6rem)] text-ui-md whitespace-nowrap outline-none cursor-default [transition:var(--transition-state)] hover:bg-et-surface-control-text/9 active:bg-et-surface-control-text/15 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]';
+  'relative flex h-6 items-center font-ui gap-space-1 rounded-control-sm pr-space-2 pl-[calc(var(--space-1)+var(--depth,0)*1.6rem)] text-ui-md whitespace-nowrap outline-none cursor-default [transition:var(--transition-state)] hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]';
 
 const SELECTED_CLASS =
   'bg-et-tone-fill/20 text-et-tone-text hover:[background:linear-gradient(color-mix(in srgb, var(--et-tone-fill) 20%, transparent),color-mix(in srgb, var(--et-tone-fill) 20%, transparent)),color-mix(in_srgb,var(--et-surface-tint)_9%,transparent)] active:[background:linear-gradient(color-mix(in srgb, var(--et-tone-fill) 20%, transparent),color-mix(in srgb, var(--et-tone-fill) 20%, transparent)),color-mix(in_srgb,var(--et-surface-tint)_15%,transparent)]';

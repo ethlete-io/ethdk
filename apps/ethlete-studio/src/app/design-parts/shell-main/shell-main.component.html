@@ -156,7 +156,7 @@
               </div>
               @if (crash(); as crash) {
                 <pre
-                  class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-control-text/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
+                  class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-tint/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
                   >{{ crash.stack.join('\n') }}</pre>
                 <p class="m-0">
                   {{ LABELS.crashLog }} <span class="font-code break-all text-et-surface-text">{{ crash.path }}</span>
@@ -211,7 +211,7 @@
               <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface-text">{{ LABELS.stopped }}</h3>
               @if (log().length) {
                 <pre
-                  class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-control-text/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
+                  class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-tint/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
                   >{{ log().join('\n') }}</pre>
               }
               <button
