@@ -25,6 +25,7 @@ const GENERATED_COLOR_MARKER = '@ethlete/core:tailwind-4-color-theme';
 const GENERATED_SURFACE_MARKER = '@ethlete/core:tailwind-4-surface-theme';
 const LITERAL_TRIPLET = /^\d+(?:\.\d+)?%?(?:[\s_]+\d+(?:\.\d+)?%?){2}$/;
 const NAME_CHAR = /[\w-]/;
+const CALL_NAME_CHAR = /[a-zA-Z0-9-]/;
 const TAILWIND_COLOR_UTILITIES = [
   'bg',
   'text',
@@ -326,7 +327,7 @@ class FileMigration {
       }
 
       const match = /^(rgba?|var)\(/.exec(text.slice(i));
-      const boundary = i === 0 || !NAME_CHAR.test(text[i - 1] as string);
+      const boundary = i === 0 || !CALL_NAME_CHAR.test(text[i - 1] as string);
 
       if (!match || !boundary) {
         output += text[i];
@@ -477,16 +478,21 @@ const rewriteDeclaration = (migration: FileMigration, text: string, declaration:
       const known = chain && chain.names.every((name) => entryOf(name)?.kind === 'triplet');
       const fallbackOk = !chain?.fallback || LITERAL_TRIPLET.test(chain.fallback);
 
-      if (!chain || !known || !fallbackOk) {
+      if (entry.old === entry.new && !(chain && known && fallbackOk)) {
+        nextValue = migration.rewriteValue(declaration.value, declaration.valueStart, {
+          property: declaration.property,
+          insideRgb: false,
+        });
+      } else if (!chain || !known || !fallbackOk) {
         migration.report(
           offset,
           `${entry.old} holds a triplet; its new name ${next} holds a color: rewrite this value by hand`,
         );
 
         return null;
+      } else {
+        nextValue = migration.rewriteChainAsColor(chain) as string;
       }
-
-      nextValue = migration.rewriteChainAsColor(chain) as string;
     }
   } else {
     nextValue = migration.rewriteValue(declaration.value, declaration.valueStart, {

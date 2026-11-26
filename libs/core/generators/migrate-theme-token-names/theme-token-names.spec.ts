@@ -361,3 +361,35 @@ const SURFACE = 'style="--et-surface-background: rgb(20 30 40)"';`,
     ]);
   });
 });
+
+describe('migrateThemeTokenNames on a real first-run pair', () => {
+  const dir = join(FIXTURES, 'studio-first-run');
+  const files = readdirSync(dir);
+
+  it.each(files.filter((file) => file !== 'colors.css.txt'))(
+    'changes nothing on a second run over the output of the first run of %s',
+    (file) => {
+      const first = migrate(readFileSync(join(dir, file), 'utf-8'));
+      const second = migrate(first.content);
+
+      expect(second.changed).toBe(false);
+      expect(second.findings).toEqual([]);
+    },
+  );
+
+  it('reports nothing on the already renamed sdk colors.css', () => {
+    const result = migrate(readFileSync(join(dir, 'colors.css.txt'), 'utf-8'));
+
+    expect(result.findings).toEqual([]);
+    expect(result.changed).toBe(false);
+  });
+
+  it('renames a solid var() inside a Tailwind arbitrary value', () => {
+    const source = `<div class="h-40 w-56 rounded-control-md bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"></div>`;
+
+    expect(migrate(source).content).toBe(
+      `<div class="h-40 w-56 rounded-control-md bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border)]"></div>`,
+    );
+    expect(migrate(source).findings).toEqual([]);
+  });
+});
