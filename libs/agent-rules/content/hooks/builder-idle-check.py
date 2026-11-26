@@ -2,10 +2,11 @@
 """Stop hook: keep a builder session working while the queue has rows for it.
 
 A builder session (one that ran the `builder-agent` skill, or `/handoff resume
-builder-...`) must not end a turn idle. When a turn ends with no subagent and no
-background command running - a CI watcher or a dev server does not count - and `plans/QUEUE.md`
-has open rows owned by `Builder` without a wait reason, the stop is blocked and
-the reason names those rows, so the turn goes on.
+builder-...`) must not end a turn with free slots. When a turn ends with fewer
+subagents and background commands running than the slot limit - a CI watcher or a
+dev server does not count - and `plans/QUEUE.md` has open rows owned by `Builder`
+without a wait reason, the stop is blocked and the reason names those rows, so
+the turn goes on. The slot limit is `builderSlots` in the local config (default 4).
 
 Running work comes from the transcript: every background Bash, Monitor and
 async Agent start, minus every task-notification and every TaskStop for it. A
@@ -18,8 +19,9 @@ A row waits when its `Stand` cell contains "wartet auf" or "Offen nur:"
 Fires at most once per idle stop chain: a stop that a Stop hook already
 continued (`stop_hook_active`) passes.
 
-Can be disabled per machine via a gitignored ethlete-agents.config.local.json at
-the repo root: {"disableHooks": true} or {"disableHooks": ["builder-idle-check"]}.
+Per-machine settings come from a gitignored ethlete-agents.config.local.json at
+the repo root: {"disableHooks": true} or {"disableHooks": ["builder-idle-check"]}
+disables the hook, {"builderSlots": 2} sets the slot limit.
 
 Fail-safe: any error exits 0 with no output.
 """
@@ -34,6 +36,7 @@ HOOK_NAME = "builder-idle-check"
 LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
 QUEUE_FILE = os.path.join("plans", "QUEUE.md")
 QUEUE_OWNER = "Builder"
+DEFAULT_SLOTS = 4
 WAIT_MARKERS = ("wartet auf", "offen nur:")
 
 BUILDER_LAUNCH = re.compile(
@@ -72,14 +75,25 @@ def repo_root(data):
     return cwd if isinstance(cwd, str) and cwd else os.getcwd()
 
 
-def disabled_locally(root):
+def read_local_config(root):
     try:
         with open(os.path.join(root, LOCAL_CONFIG_FILE), encoding="utf-8") as f:
             config = json.load(f)
     except (OSError, ValueError):
-        return False
-    disabled = config.get("disableHooks") if isinstance(config, dict) else None
+        return {}
+    return config if isinstance(config, dict) else {}
+
+
+def disabled_locally(config):
+    disabled = config.get("disableHooks")
     return disabled is True or (isinstance(disabled, list) and HOOK_NAME in disabled)
+
+
+def slot_limit(config):
+    slots = config.get("builderSlots")
+    if isinstance(slots, int) and not isinstance(slots, bool) and slots >= 1:
+        return slots
+    return DEFAULT_SLOTS
 
 
 def is_watcher(command):
@@ -216,12 +230,12 @@ def open_builder_rows(queue_text):
     return rows
 
 
-def reason_for(rows, watchers):
+def reason_for(rows, watchers, working, slots):
     watching = f" (still watching: {', '.join(watchers)})" if watchers else ""
     return (
-        f"[{HOOK_NAME} hook] This turn ends with no subagent and no background command running apart from CI watchers and dev servers{watching}, "
+        f"[{HOOK_NAME} hook] This turn ends with {working} of {slots} slots in use, not counting CI watchers and dev servers{watching}, "
         f"while plans/QUEUE.md has open Builder rows without a wait reason: {', '.join(rows)}. "
-        "Do not wait idle: take the first of them now, or start a subagent on it. "
+        "Do not leave slots idle: take the first of them now, or start a subagent on it. "
         'A row waits when its Stand cell contains "wartet auf" or "Offen nur:"; if a row really waits, '
         "write the reason into its Stand cell. This hook fires once per idle stop."
     )
@@ -234,20 +248,23 @@ def main():
             return
         root = repo_root(data)
         transcript_path = data.get("transcript_path")
-        if disabled_locally(root) or not isinstance(transcript_path, str):
+        config = read_local_config(root)
+        if disabled_locally(config) or not isinstance(transcript_path, str):
             return
         state = read_transcript(transcript_path)
         if not state["builder"]:
             return
         running = running_tasks(state)
-        if any(not task["watcher"] for task in running):
+        working = sum(1 for task in running if not task["watcher"])
+        slots = slot_limit(config)
+        if working >= slots:
             return
         with open(os.path.join(root, QUEUE_FILE), encoding="utf-8") as f:
             rows = open_builder_rows(f.read())
         if not rows:
             return
         watchers = [task["label"] for task in running]
-        print(json.dumps({"decision": "block", "reason": reason_for(rows, watchers)}))
+        print(json.dumps({"decision": "block", "reason": reason_for(rows, watchers, working, slots)}))
     except Exception:
         return
 

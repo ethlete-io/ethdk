@@ -64,11 +64,11 @@ describe('builder-idle-check', () => {
   });
 
   it('stays silent while a subagent still runs', () => {
-    expect(runHook({ transcript: 'subagent-running' })).toBeNull();
+    expect(runHook({ transcript: 'subagent-running', localConfig: { builderSlots: 1 } })).toBeNull();
   });
 
   it('stays silent while a subagent is waiting on its own background work', () => {
-    expect(runHook({ transcript: 'subagent-waiting-on-background' })).toBeNull();
+    expect(runHook({ transcript: 'subagent-waiting-on-background', localConfig: { builderSlots: 1 } })).toBeNull();
   });
 
   it('blocks when only a CI watcher still runs, and names the watcher', () => {
@@ -97,5 +97,32 @@ describe('builder-idle-check', () => {
 
   it('can be disabled per machine', () => {
     expect(runHook({ transcript: 'idle-all-done', localConfig: { disableHooks: ['builder-idle-check'] } })).toBeNull();
+  });
+
+  it('blocks while fewer agents run than the slot limit and a Builder row is free', () => {
+    const result = runHook({ transcript: 'two-agents-running', localConfig: { builderSlots: 4 } });
+
+    expect(result?.decision).toBe('block');
+    expect(result?.reason).toContain('B1 (Offene Arbeit)');
+    expect(result?.reason).toContain('2 of 4');
+  });
+
+  it('stays silent once the running agents fill the slot limit', () => {
+    expect(runHook({ transcript: 'two-agents-running', localConfig: { builderSlots: 2 } })).toBeNull();
+  });
+
+  it('uses 4 slots without a config', () => {
+    expect(runHook({ transcript: 'two-agents-running' })?.reason).toContain('2 of 4');
+    expect(runHook({ transcript: 'two-agents-running', localConfig: { builderSlots: 'many' } })?.reason).toContain(
+      '2 of 4',
+    );
+  });
+
+  it('stays silent with a free slot when no Builder row is free', () => {
+    const queue = QUEUE.split('\n')
+      .filter((line) => !line.startsWith('| B1 '))
+      .join('\n');
+
+    expect(runHook({ transcript: 'two-agents-running', queue })).toBeNull();
   });
 });

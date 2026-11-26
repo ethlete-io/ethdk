@@ -505,7 +505,8 @@ that differs per developer, without touching any committed file:
 ```json
 {
   "disableHooks": true,
-  "disableAutoHandoffSave": true
+  "disableAutoHandoffSave": true,
+  "builderSlots": 2
 }
 ```
 
@@ -515,6 +516,10 @@ that differs per developer, without touching any committed file:
 - **`disableAutoHandoffSave`** - keeps the `context-warning` hook's tiered warnings but
   drops the auto-mode escalation: at the critical tier it recommends `/ethlete-handoff`
   instead of saving the handoff file itself.
+
+- **`builderSlots`** - the slot limit of the `builder-idle-check` hook (default 4): a builder
+  stop is blocked while fewer subagents and background commands run than this and a free
+  `Builder` row exists in `plans/QUEUE.md`. CI watchers and dev servers do not count.
 
 Everything in this file is read at runtime, never by `sync`: the generated files stay
 identical on every machine and in CI, which is what lets `check` diff them. That is also
