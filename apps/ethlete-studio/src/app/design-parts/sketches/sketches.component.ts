@@ -321,6 +321,7 @@ export class SketchesComponent {
   private list = viewChild.required('list', { read: ElementRef<HTMLElement> });
   private world = viewChild.required('world', { read: ElementRef<HTMLElement> });
   private matrix = viewChild('matrix', { read: ElementRef<HTMLElement> });
+  private foldBar = viewChild('foldBar', { read: ElementRef<HTMLElement> });
   private fold = viewChild('fold', { read: ElementRef<HTMLElement> });
 
   private stages = viewChildren('stage', { read: ElementRef<HTMLElement> });
@@ -1472,7 +1473,13 @@ export class SketchesComponent {
     const toolbar = this.head().toolbar()?.nativeElement;
     const covered = toolbar ? list.getBoundingClientRect().bottom - toolbar.getBoundingClientRect().top : 0;
 
-    return list.clientHeight - Math.max(0, covered);
+    const folded = this.foldBar()?.nativeElement;
+    const foldBarHeight = folded
+      ? folded.getBoundingClientRect().bottom -
+        (folded.previousElementSibling?.getBoundingClientRect().bottom ?? folded.getBoundingClientRect().top)
+      : 0;
+
+    return list.clientHeight - Math.max(0, covered) - foldBarHeight;
   }
 
   private stageRoomOf(list: HTMLElement, stage: HTMLElement) {

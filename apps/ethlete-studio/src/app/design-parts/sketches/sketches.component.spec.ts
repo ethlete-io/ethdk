@@ -2288,7 +2288,9 @@ describe('SketchesComponent', () => {
     expect(page.querySelector('[data-sk-head]')).toBeNull();
     expect(toolbar.parentElement?.parentElement).toBe(page);
     expect(toolbar.parentElement?.classList).toContain('absolute');
-    expect(toolbar.parentElement?.classList).toContain('bottom-space-3');
+    expect(toolbar.parentElement?.classList).toContain(
+      page.querySelector('[data-sk-folded]') ? 'bottom-16' : 'bottom-space-3',
+    );
     expect(toolbar.parentElement?.querySelector('ethlete-zoom-chip')).not.toBeNull();
     expect(toolbar.querySelector('[role="toolbar"]')).not.toBeNull();
   });

@@ -303,6 +303,7 @@
             }
             @if (foldedStates().size > 0) {
               <section
+                #foldBar
                 [attr.data-sk-pending]="pendingStates().size > 0 ? '' : null"
                 [style.padding]="'calc(var(--space-2) * ' + foldZoom() + ')'"
                 class="w-0 min-w-full overflow-clip rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border)]"
@@ -340,7 +341,9 @@
       }
     </div>
     <div
-      class="pointer-events-none absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 flex items-end gap-space-3"
+      [class.bottom-16]="foldedStates().size > 0"
+      [class.bottom-space-3]="foldedStates().size === 0"
+      class="pointer-events-none absolute right-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 flex items-end gap-space-3"
     >
       <ethlete-sketch-head
         [(reasonOpen)]="reasonOpen"

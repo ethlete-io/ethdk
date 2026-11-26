@@ -4875,9 +4875,23 @@ const CASES = [
       const fitted = await probe(page);
       const fitOut = outOfView(fitted, await toolbarRect());
 
+      const foldCovered = await page.evaluate(() => {
+        const fold = document.querySelector('ethlete-sketch-view [data-sk-folded]')?.getBoundingClientRect();
+        const bar = document.querySelector('ethlete-sketch-view [data-sk-toolbar]')?.getBoundingClientRect();
+
+        if (!fold || !bar || fold.width === 0) return null;
+
+        const overlaps =
+          fold.left < bar.right && fold.right > bar.left && fold.top < bar.bottom && fold.bottom > bar.top;
+
+        return overlaps
+          ? `fold ${Math.round(fold.top)}-${Math.round(fold.bottom)} under toolbar ${Math.round(bar.top)}-${Math.round(bar.bottom)}`
+          : null;
+      });
+
       return {
-        ok: !shiftOut && !fitOut && after.camera?.y !== before.camera?.y,
-        detail: `${describe(before, after)} view bottom ${Math.round(after.view.bottom)}; out after Shift+1: ${shiftOut || 'none'}; out after Fit: ${fitOut || 'none'}`,
+        ok: !shiftOut && !fitOut && !foldCovered && after.camera?.y !== before.camera?.y,
+        detail: `${describe(before, after)} view bottom ${Math.round(after.view.bottom)}; out after Shift+1: ${shiftOut || 'none'}; out after Fit: ${fitOut || 'none'}; fold bar: ${foldCovered || 'clear'}`,
       };
     },
   },
