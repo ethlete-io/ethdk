@@ -36,17 +36,18 @@ const tailwindDetector = (prefixes) => {
   return new RegExp(
     [
       `(?<![A-Za-z0-9_])${prefix}-(?:on-)?theme(?:-ink)?${state}(?![\\w-])`,
-      `(?<![A-Za-z0-9_])${prefix}-surface(?:-[a-z0-9]+)?-(?:bg|muted|subtle)(?![\\w-])`,
+      `(?<![A-Za-z0-9_])${prefix}-surface(?:-(?!${NEW_SURFACE_WORDS}(?![a-z0-9]))[a-z0-9]+)?-(?:bg|muted|subtle)(?![\\w-])`,
       `(?<=(?:${SURFACE_PROPERTY_UTILITIES})-)${prefix}-surface(?![\\w-])`,
     ].join('|'),
     'g',
   );
 };
 
+const STATE_SUFFIX = '(?:-(?:hover|focus|active|disabled))?';
+const NEW_SURFACE_WORDS = '(?:background|border|interaction|on-interaction|interaction-ink|text|type)';
 const GENERATED_COLOR_MARKER = '@ethlete/core:tailwind-4-color-theme';
 const GENERATED_SURFACE_MARKER = '@ethlete/core:tailwind-4-surface-theme';
 const STATES = ['hover', 'focus', 'active', 'disabled'];
-const NEW_SURFACE_WORDS = 'background|border|interaction|on-interaction|interaction-ink|text|type|bg|muted|subtle';
 
 /**
  * Reads the Tailwind prefix and theme names from the files a theme generator wrote, the way the
@@ -121,7 +122,7 @@ const unknownNameCandidate = (prefixes) => {
   const prefix = `(?:${prefixes.map(escapeRegExp).join('|')})`;
 
   return new RegExp(
-    `(?<=(?:${SURFACE_PROPERTY_UTILITIES})-)${prefix}-(?!tone-|surface-(?:${NEW_SURFACE_WORDS})(?![\\w-]))[a-z][a-z0-9-]*`,
+    `(?<=(?:${SURFACE_PROPERTY_UTILITIES})-)${prefix}-(?!tone-|surface-${NEW_SURFACE_WORDS}(?:-(?:muted|subtle))?${STATE_SUFFIX}(?![\\w-]))[a-z][a-z0-9-]*`,
     'g',
   );
 };

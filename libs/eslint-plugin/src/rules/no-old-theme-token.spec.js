@@ -156,3 +156,44 @@ tsTester.run('no-old-theme-token (ts templates)', rule, {
     },
   ],
 });
+
+const newSurfaceNames = [
+  'background',
+  'text',
+  'text-muted',
+  'text-subtle',
+  'border',
+  'interaction',
+  'on-interaction',
+  'interaction-ink',
+];
+const states = ['hover', 'focus', 'active', 'disabled'];
+const newSurfaceTokens = newSurfaceNames.flatMap((n) => [n, ...states.map((s) => `${n}-${s}`)]);
+const newToneNames = ['fill', 'on-fill', 'text'];
+const newToneTokens = [...newToneNames.flatMap((n) => ['rest', ...states].map((s) => `${n}-${s}`)), ...newToneNames];
+
+tsTester.run('no-old-theme-token (new names stay valid)', rule, {
+  valid: [
+    ...newSurfaceTokens.map((n) => ({ code: `const p = 'var(--et-surface-${n})';` })),
+    ...newToneTokens.map((n) => ({ code: `const p = 'var(--et-tone-${n})';` })),
+    ...newSurfaceTokens.flatMap((n) => [
+      { code: `const c = 'bg-et-surface-${n} text-et-surface-${n}';` },
+      { code: `const c = 'text-et-surface-${n}';`, options: [{ prefixes: ['et', 'gg'] }] },
+      { code: `const c = 'bg-gg-surface-${n}';`, options: [{ prefixes: ['gg'] }] },
+    ]),
+    ...newToneTokens.map((n) => ({ code: `const c = 'bg-et-tone-${n} text-et-tone-${n}';` })),
+    { code: `const p = '--et-tone-fill';` },
+    { code: `const c = 'bg-et-tone-fill hover:bg-et-tone-fill-hover';` },
+    { code: `const c = 'text-et-surface-text-muted text-et-surface-text-subtle';` },
+  ],
+  invalid: [],
+});
+
+cssTester.run('no-old-theme-token (new names in css)', rule, {
+  valid: [
+    ...newSurfaceTokens.map((n) => ({ code: `.a { color: var(--et-surface-${n}); }` })),
+    ...newToneTokens.map((n) => ({ code: `.a { color: var(--et-tone-${n}); }` })),
+    { code: `.a { @apply text-et-surface-text-muted bg-et-surface-background; }` },
+  ],
+  invalid: [],
+});
