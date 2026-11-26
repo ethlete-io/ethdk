@@ -6,11 +6,18 @@ on:
       - next
     paths-ignore:
       - 'plans/**'
+  workflow_dispatch:
+    inputs:
+      skip_ci:
+        description: 'Publish without the CI job (hotfix only)'
+        type: boolean
+        default: false
 
 concurrency: next_environment
 
 jobs:
   ci:
+    if: ${{ !inputs.skip_ci }}
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
@@ -26,6 +33,7 @@ jobs:
 
   publish:
     needs: ci
+    if: ${{ always() && github.ref == 'refs/heads/next' && (needs.ci.result == 'success' || inputs.skip_ci) }}
     uses: ./.github/workflows/publish.yml
     permissions:
       contents: write
