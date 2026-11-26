@@ -1333,47 +1333,51 @@ const slowestPhasesOf = (stderr) =>
 
 // Samples the sketch view from the start of the page load until its cells show: when they first show, any cell in view
 // still loading means a half drawn view; a sample with the canvas shown but no cell and no visible "zeichnet" is blank.
-const editLoadTimelineOf = (page, watchMs) =>
-  page.evaluate(async (watchMs) => {
-    const seen = (element) => element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
-    const inView = (element) => {
-      const rect = element.getBoundingClientRect();
+// The watch runs `watchMs` past the cell layout, which can come later than `layoutMs` after a slow check under load.
+const editLoadTimelineOf = (page, { layoutMs, watchMs }) =>
+  page.evaluate(
+    async ({ layoutMs, watchMs }) => {
+      const seen = (element) => element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+      const inView = (element) => {
+        const rect = element.getBoundingClientRect();
 
-      return rect.width > 0 && rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth;
-    };
-    const drawingShown = () => {
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        return rect.width > 0 && rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth;
+      };
+      const drawingShown = () => {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
 
-      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-        if (node.textContent.includes('zeichnet') && seen(node.parentElement) && inView(node.parentElement))
-          return true;
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          if (node.textContent.includes('zeichnet') && seen(node.parentElement) && inView(node.parentElement))
+            return true;
+        }
+
+        return false;
+      };
+      const blank = [];
+      let rowsSeen = false;
+      let cellsAt = null;
+
+      for (;;) {
+        const t = Math.round(performance.now());
+        const rows = document.querySelector('[data-sk-rows]');
+        const cells = [...document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]')];
+
+        if (rows && seen(rows)) rowsSeen = true;
+        if (cells.length > 0) cellsAt ??= t;
+        if (cells.length > 0 && cells.every(seen)) {
+          const loading = cells.filter((cell) => inView(cell) && cell.querySelector('[data-loading]')).length;
+
+          return { shownAt: t, cellsAt, loadingInView: loading, cells: cells.length, blank };
+        }
+        if (rowsSeen && !(rows && seen(rows))) return { shownAt: null, cellsAt, left: t, blank };
+        if (rowsSeen && !drawingShown()) blank.push(t);
+        if (t > (cellsAt === null ? layoutMs : cellsAt + watchMs)) return { shownAt: null, cellsAt, blank };
+
+        await new Promise((done) => setTimeout(done, 50));
       }
-
-      return false;
-    };
-    const blank = [];
-    let rowsSeen = false;
-    let cellsAt = null;
-
-    for (;;) {
-      const t = Math.round(performance.now());
-      const rows = document.querySelector('[data-sk-rows]');
-      const cells = [...document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]')];
-
-      if (rows && seen(rows)) rowsSeen = true;
-      if (cells.length > 0) cellsAt ??= t;
-      if (cells.length > 0 && cells.every(seen)) {
-        const loading = cells.filter((cell) => inView(cell) && cell.querySelector('[data-loading]')).length;
-
-        return { shownAt: t, cellsAt, loadingInView: loading, cells: cells.length, blank };
-      }
-      if (rowsSeen && !(rows && seen(rows))) return { shownAt: null, cellsAt, left: t, blank };
-      if (rowsSeen && !drawingShown()) blank.push(t);
-      if (t > watchMs) return { shownAt: null, cellsAt, blank };
-
-      await new Promise((done) => setTimeout(done, 50));
-    }
-  }, watchMs);
+    },
+    { layoutMs, watchMs },
+  );
 
 const withEditSketch = async (page, designPort, run, edited = { part: EDIT_PART, ...EDIT_LABEL }) => {
   const studio = join(checkout, '.ethlete/design/studio');
@@ -1442,7 +1446,7 @@ const withEditSketch = async (page, designPort, run, edited = { part: EDIT_PART,
       { checkout, part: edited.part },
     );
     await page.reload();
-    if (timeline) return editLoadTimelineOf(page, HEAVY_EDIT_WATCH_MS);
+    if (timeline) return editLoadTimelineOf(page, { layoutMs: EDIT_WAIT_MS, watchMs: HEAVY_EDIT_WATCH_MS });
     try {
       await page.waitForSelector('ethlete-sketches [data-sk-state]', { timeout: EDIT_WAIT_MS });
     } catch (error) {
@@ -1618,7 +1622,7 @@ const CASES = [
           return {
             ok:
               shownAt !== null && shownAt - cellsAt <= HEAVY_EDIT_HOLD_MS && loadingInView === 0 && blank.length === 0,
-            detail: `${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${phaseLine()}`,
+            detail: `${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${phaseLine()}`,
           };
         },
         HEAVY_EDIT,
