@@ -10,3 +10,4 @@ Copy each line into every subagent brief.
 - A change to a Studio view runs that view's e2e cases with `--case` (about 5 min max, in the background) and `yarn studio:classes:check` (0 findings) before you report done. The full suite stays in CI.
 - Stop only the processes you started, by their pid. Never `pkill -f`/`killall` a pattern: other agents and the human run design servers from the same command.
 - Run a code generator or migration with `--dry-run` first. If its file list holds a file outside your task, stop and report it.
+- Wrap every heavy job (e2e, design check, build, full vitest, Studio server) in `flock /tmp/fifagg-heavy.lock <cmd>`; Studio e2e runs with `--workers 2`. Stop every process you started before the handback.
