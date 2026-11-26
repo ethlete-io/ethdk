@@ -34,6 +34,42 @@ const withoutVars = (text: string) => {
   return out;
 };
 
+const topLevelCommaOf = (text: string, { open, close }: { open: number; close: number }) => {
+  let depth = 0;
+
+  for (let index = open + 1; index < close; index++) {
+    if (text[index] === '(') depth++;
+    else if (text[index] === ')') depth--;
+    else if (text[index] === ',' && depth === 0) return index;
+  }
+
+  return -1;
+};
+
+export const withoutVarFallbacks = (text: string) => {
+  let out = '';
+  let index = 0;
+
+  while (index < text.length) {
+    VAR.lastIndex = index;
+
+    if (!VAR.test(text)) {
+      out += text[index++];
+      continue;
+    }
+
+    const open = index + 'var'.length;
+    const close = closingParenOf(text, open);
+    if (close === -1) return out + text.slice(index);
+    const comma = topLevelCommaOf(text, { open, close });
+
+    out += comma === -1 ? text.slice(index, close + 1) : `${text.slice(index, comma)})`;
+    index = close + 1;
+  }
+
+  return out;
+};
+
 const channelsOf = (rest: string) => {
   const slash = rest.indexOf('/');
   if (slash !== -1) return rest.slice(0, slash);

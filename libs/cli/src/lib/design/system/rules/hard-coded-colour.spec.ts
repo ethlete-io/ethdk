@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -36,14 +36,29 @@ describe('hardCodedColoursOf', () => {
   });
 
   // A hard-coded colour in component or element CSS is flagged.
-  it('flags hex colours and colour functions in component and element CSS, var() fallbacks too', () => {
+  it('flags hex colours and colour functions in component and element CSS, but not a var() fallback', () => {
     const target = acme();
 
     write(target, 'acme/components/button/button.css', '.acme-button { color: #fff; border: 1px solid rgb(0 0 0); }');
     write(target, 'acme/elements/hero/hero.css', '.acme-hero { background: var(--acme-surface, #fafafa); }');
 
-    expect(messagesOf(target)).toEqual(['button.css: #fff', 'button.css: rgb(', 'hero.css: #fafafa']);
+    expect(messagesOf(target)).toEqual(['button.css: #fff', 'button.css: rgb(']);
   });
+
+  it.each(['slider.css', 'shell-main.css'])(
+    'passes the real %s of B757, whose rgb() is a nested var() fallback',
+    (file) => {
+      const target = acme();
+
+      write(
+        target,
+        'acme/components/button/button.css',
+        readFileSync(join(__dirname, '__fixtures__/var-fallback-colour-b757', file), 'utf8'),
+      );
+
+      expect(messagesOf(target)).toEqual([]);
+    },
+  );
 
   it('flags colours in the markup and inline CSS of a part', () => {
     const target = acme();

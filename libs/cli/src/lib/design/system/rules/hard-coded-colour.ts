@@ -1,4 +1,4 @@
-import { coloursIn } from '../colour';
+import { coloursIn, withoutVarFallbacks } from '../colour';
 import { cssBlocksOf, declarationValueOf } from '../css-source';
 import { Problem } from '../problem';
 import { ResolvedPart, ResolvedProduct } from '../resolve-product';
@@ -6,7 +6,9 @@ import { perSource, textsOf } from '../ts-source';
 import { isExemptFrom } from './exemptions';
 
 const valueColoursOf = (css: string) =>
-  cssBlocksOf(css).declarations.flatMap((declaration) => coloursIn(declarationValueOf(declaration) ?? ''));
+  cssBlocksOf(css).declarations.flatMap((declaration) =>
+    coloursIn(withoutVarFallbacks(declarationValueOf(declaration) ?? '')),
+  );
 
 const cssColoursOf = perSource(valueColoursOf);
 
@@ -32,7 +34,7 @@ const partProblemsOf = (part: ResolvedPart) => [
 
 /**
  * A hex colour or colour function in a declaration value of a part outside foundations, in its
- * CSS or in the markup and inline CSS of its TS. A fallback inside `var()` counts.
+ * CSS or in the markup and inline CSS of its TS. A colour only inside a `var()` fallback does not count.
  */
 export const hardCodedColoursOf = (product: ResolvedProduct): Problem[] =>
   product.parts.filter((part) => !isExemptFrom('HARD-CODED-COLOUR', part)).flatMap(partProblemsOf);
