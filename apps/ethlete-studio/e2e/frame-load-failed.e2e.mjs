@@ -113,20 +113,53 @@ const silentFrame = async (context) => {
       : route.continue();
 
   const startedAt = Date.now();
-  const seen = { system: null, document: null, documents: 0 };
+  const seen = { system: null, document: null, documents: 0, server: null };
   const onResponse = (response) => {
     if (seen.system === null && new URL(response.url()).pathname === '/__design/system')
       seen.system = `${response.status()} at ${Date.now() - startedAt} ms`;
   };
+  const inFlight = new Map();
+  const reasons = { asked: 0, answered: 0 };
   const onRequest = (request) => {
-    if (request.resourceType() !== 'document' || !isPartFrame(new URL(request.url()))) return;
+    const url = new URL(request.url());
+
+    inFlight.set(request, { url, at: Date.now() });
+
+    if (!isPartFrame(url)) return;
+    if (request.resourceType() !== 'document') {
+      reasons.asked++;
+      return;
+    }
     seen.documents++;
     seen.document ??= Date.now() - startedAt;
+    seen.server ??= url.origin;
+  };
+  const onDone = (request) => {
+    const entry = inFlight.get(request);
+
+    inFlight.delete(request);
+    if (entry && isPartFrame(entry.url) && request.resourceType() !== 'document') reasons.answered++;
+  };
+  const pending = () => {
+    const now = Date.now();
+    const byPath = new Map();
+
+    for (const { url, at } of inFlight.values()) {
+      if (url.origin !== seen.server) continue;
+      const path = isPartFrame(url) ? `${url.pathname}?part` : url.pathname;
+      const [count = 0, oldest = 0] = byPath.get(path) ?? [];
+
+      byPath.set(path, [count + 1, Math.max(oldest, now - at)]);
+    }
+
+    return [...byPath].map(([path, [count, oldest]]) => `${path} ${count}x oldest ${oldest} ms`).join(', ') || 'none';
   };
 
   await page.route(isPartFrame, silence);
   page.on('response', onResponse);
   page.on('request', onRequest);
+  page.on('requestfinished', onDone);
+  page.on('requestfailed', onDone);
 
   try {
     await openView(context, SYSTEM_VIEW);
@@ -140,7 +173,7 @@ const silentFrame = async (context) => {
 
       return {
         ok: false,
-        detail: `no failed-load banner for a frame page that sends no frame message: /__design/system ${seen.system ?? 'never answered'}, first part frame page asked at ${seen.document ?? '-'} ms (${seen.documents} asked), ${frames} canvas frames`,
+        detail: `no failed-load banner for a frame page that sends no frame message: /__design/system ${seen.system ?? 'never answered'}, first part frame page asked at ${seen.document ?? '-'} ms (${seen.documents} asked), ${frames} canvas frames, failed-load reason fetches ${reasons.answered}/${reasons.asked} answered, design server requests in flight: ${pending()}`,
       };
     }
 
@@ -155,6 +188,8 @@ const silentFrame = async (context) => {
   } finally {
     page.off('response', onResponse);
     page.off('request', onRequest);
+    page.off('requestfinished', onDone);
+    page.off('requestfailed', onDone);
     await page.unroute(isPartFrame, silence);
   }
 };
