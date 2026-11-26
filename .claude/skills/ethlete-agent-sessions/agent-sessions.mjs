@@ -109,7 +109,16 @@ Keep credentials and personal data out of the mailbox. No agent is started autom
 
 const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
 const SSH_ENV_NAMES = ['SSH_CONNECTION', 'SSH_CLIENT', 'SSH_TTY'];
-const withoutSshEnv = (...argv) => ['env', ...SSH_ENV_NAMES.flatMap((name) => ['-u', name]), ...argv];
+const GUI_ENV_NAMES = ['WAYLAND_DISPLAY', 'DISPLAY', 'NIRI_SOCKET', 'XDG_SESSION_TYPE', 'XDG_RUNTIME_DIR'];
+const tmuxGuiEnv = () => {
+  const shown = tmux('show-environment', '-g').stdout ?? '';
+  return shown
+    .split('\n')
+    .map((line) => line.split(/=(.*)/s))
+    .filter(([name, value]) => GUI_ENV_NAMES.includes(name) && value !== undefined)
+    .map(([name, value]) => `${name}=${value}`);
+};
+const withoutSshEnv = (...argv) => ['env', ...SSH_ENV_NAMES.flatMap((name) => ['-u', name]), ...tmuxGuiEnv(), ...argv];
 const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
 const BUILDER_PROMPT =
   'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.';

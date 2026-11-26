@@ -529,6 +529,74 @@ describe('agent-sessions', () => {
     30_000,
   );
 
+  const GUI_ENV = { WAYLAND_DISPLAY: 'wayland-fake', DISPLAY: ':fake', XDG_SESSION_TYPE: 'wayland' };
+  const callerWithoutGui = { WAYLAND_DISPLAY: '', DISPLAY: '', XDG_SESSION_TYPE: 'tty' };
+  const grepGui = (started: string) =>
+    `env | grep -E '^(WAYLAND_DISPLAY|DISPLAY|XDG_SESSION_TYPE)=' | sort > ${started}; echo done >> ${started}; exec cat`;
+  const expectedGui = 'DISPLAY=:fake\nWAYLAND_DISPLAY=wayland-fake\nXDG_SESSION_TYPE=wayland\ndone\n';
+  const setTmuxGui = () =>
+    Object.entries(GUI_ENV).forEach(([name, value]) => spawnSync('tmux', ['set-environment', '-g', name, value]));
+  const unsetTmuxGui = () =>
+    Object.keys(GUI_ENV).forEach((name) => spawnSync('tmux', ['set-environment', '-g', '-u', name]));
+
+  it.skipIf(!hasTmux)('starts the agent with the GUI variables of the tmux global environment', async () => {
+    const agent = `claude-gui-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const dispatch = `dispatch-gui-${process.pid}`;
+    const started = join(dir, 'started.log');
+    const fakeAgent = join(dir, 'fake-agent.sh');
+    writeFileSync(fakeAgent, `${grepGui(started)}\n`);
+    setTmuxGui();
+
+    try {
+      const result = run(['run', agent, 'sh', fakeAgent], undefined, {
+        HOME: dir,
+        AGENT_MAILBOX_DISPATCH_SESSION: dispatch,
+        ...callerWithoutGui,
+      });
+
+      expect(result.status).toBe(0);
+      await expect
+        .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+        .toBe(expectedGui);
+    } finally {
+      [scoped, dispatch].forEach((name) => spawnSync('tmux', ['kill-session', '-t', `=${name}`]));
+      unsetTmuxGui();
+    }
+  });
+
+  it.skipIf(!hasTmux)(
+    'restarts the agent with the GUI variables of the tmux global environment',
+    async () => {
+      const agent = `claude-guir-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(fakeAgent, `#!/bin/sh\n${grepGui(started)}\n`, { mode: 0o755 });
+      setTmuxGui();
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          HOME: dir,
+          ...callerWithoutGui,
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(expectedGui);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        unsetTmuxGui();
+      }
+    },
+    30_000,
+  );
+
   it.skipIf(!hasTmux)('starts the agent in a detached tmux session when run has no terminal', async () => {
     const agent = `claude-notty-${process.pid}`;
     const scoped = `${agent}@${basename(dir)}`;
