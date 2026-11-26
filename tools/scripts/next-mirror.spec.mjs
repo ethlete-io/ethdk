@@ -11,6 +11,7 @@ import {
   mirrorSuite,
   newCommits,
   parseArgs,
+  retryable,
   runningState,
   serviceUnit,
   verdictOf,
@@ -245,3 +246,69 @@ for (const [fixture, step] of [
     }
   });
 }
+
+test('watch retries an ERROR verdict once, keeps RED and green, and stops after the retry', async () => {
+  const repo = tempGitRepo('next-mirror-');
+  commit(repo, 'a');
+  const branch = git(repo, 'branch', '--show-current');
+  const dir = mkdtempSync(join(tmpdir(), 'next-mirror-out-'));
+  const calls = {};
+  let current;
+  const remote = async ({ sha, log }) => {
+    calls[sha] = (calls[sha] ?? 0) + 1;
+    const kind = current[sha] === 'error' && calls[sha] > 1 ? 'fixed' : current[sha];
+    if (kind === 'red') writeFileSync(log, 'push-suite: blocked lint failed at abc123\n');
+    else if (kind !== 'error') writeFileSync(log, `push-suite: ok ${sha}\n`);
+    return kind === 'error' ? 255 : 0;
+  };
+  const stop = new AbortController();
+  const watching = watch({
+    repo,
+    branch,
+    every: 0.02,
+    dir,
+    log: () => undefined,
+    remote,
+    retryAfter: 0,
+    reachable: () => true,
+    signal: stop.signal,
+  });
+  try {
+    await until(() => existsSync(join(dir, 'state.json')));
+    const errored = commit(repo, 'b');
+    const red = commit(repo, 'c');
+    const green = commit(repo, 'd');
+    current = { [errored]: 'error', [red]: 'red', [green]: 'green' };
+    await until(() => existsSync(join(dir, `${green}.json`)));
+    await until(() => JSON.parse(readFileSync(join(dir, `${errored}.json`), 'utf8')).status === 'green', 2000);
+    await new Promise((done) => setTimeout(done, 200));
+    assert.equal(calls[errored], 2);
+    assert.equal(calls[red], 1);
+    assert.equal(calls[green], 1);
+    assert.equal(JSON.parse(readFileSync(join(dir, `${errored}.json`), 'utf8')).attempt, 2);
+  } finally {
+    stop.abort();
+    await watching;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('an ERROR that already had its retry stays final', () => {
+  const repo = tempGitRepo('next-mirror-');
+  const sha = commit(repo, 'a');
+  const dir = mkdtempSync(join(tmpdir(), 'next-mirror-out-'));
+  const write = (attempt) =>
+    writeFileSync(
+      join(dir, `${sha}.json`),
+      JSON.stringify({ sha, status: 'error', attempt, finishedAt: new Date(Date.now() - 120000).toISOString() }),
+    );
+  try {
+    write(1);
+    assert.deepEqual(retryable(gitOf(repo), sha, dir), [sha]);
+    assert.deepEqual(retryable(gitOf(repo), sha, dir, { after: 600 }), []);
+    write(2);
+    assert.deepEqual(retryable(gitOf(repo), sha, dir), []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

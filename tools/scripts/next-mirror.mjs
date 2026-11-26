@@ -13,6 +13,8 @@ const USAGE = `usage: next-mirror.mjs watch [--repo <dir>] [--branch next] [--ev
 
 export const POLL_SECONDS = 15;
 export const UNIT = 'ethlete-next-mirror';
+export const RETRY_AFTER_SECONDS = 60;
+export const RETRY_WINDOW = 30;
 export const MIRROR_STEPS = 'lint,tools,coverage';
 
 export const mirrorDir = (env = process.env) => env['ETHLETE_MIRROR_DIR'] || '/tmp/ethlete-mirror';
@@ -97,6 +99,7 @@ export const mirrorCommit = async ({
   dir = mirrorDir(),
   remote = spawnRemoteRun,
   now = () => new Date(),
+  attempt = 1,
 }) => {
   const git = gitIn(repo);
   const parent = git(['rev-parse', '--verify', `${sha}^`]).stdout.trim();
@@ -118,6 +121,7 @@ export const mirrorCommit = async ({
     subject,
     status,
     step,
+    attempt,
     exitCode: code,
     startedAt: startedAt.toISOString(),
     finishedAt: finishedAt.toISOString(),
@@ -149,6 +153,26 @@ export const runningState = (dir) => {
   return { state: record.pid && alive(record.pid) ? 'running' : 'died', record };
 };
 
+const rackReachable = () =>
+  spawnSync('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', 'trbor@192.168.1.115', 'exit 0'], {
+    stdio: 'ignore',
+  }).status === 0;
+
+/** Recent commits of `head` whose only verdict is an ERROR that is older than `after` seconds, oldest first. */
+export const retryable = (git, head, dir, { after = RETRY_AFTER_SECONDS, now = () => new Date() } = {}) =>
+  git(['rev-list', '--first-parent', `--max-count=${RETRY_WINDOW}`, head])
+    .stdout.split('\n')
+    .filter(Boolean)
+    .reverse()
+    .filter((sha) => {
+      const file = join(dir, `${sha}.json`);
+      if (!existsSync(file)) return false;
+      const verdict = JSON.parse(readFileSync(file, 'utf8'));
+      return (
+        verdict.status === 'error' && (verdict.attempt ?? 1) < 2 && now() - new Date(verdict.finishedAt) >= after * 1000
+      );
+    });
+
 const startOf = (git, head, dir) => {
   const parent = git(['rev-parse', '--verify', '--quiet', `${head}^`]).stdout.trim();
   return parent && !existsSync(join(dir, `${head}.json`)) ? parent : head;
@@ -162,6 +186,8 @@ export const watch = async ({
   dir = mirrorDir(),
   log = console.log,
   remote = spawnRemoteRun,
+  retryAfter = RETRY_AFTER_SECONDS,
+  reachable = rackReachable,
   signal,
 }) => {
   mkdirSync(dir, { recursive: true });
@@ -184,6 +210,15 @@ export const watch = async ({
       log(`next-mirror: ${verdictLine({ at: verdict.finishedAt, ...verdict })}`);
       last = sha;
       writeFileSync(stateFile, JSON.stringify({ last }));
+    }
+    const due = head ? retryable(git, head, dir, { after: retryAfter }) : [];
+    if (due.length && !signal?.aborted && reachable()) {
+      for (const sha of due) {
+        if (signal?.aborted) break;
+        log(`next-mirror: retrying errored ${sha.slice(0, 12)} once`);
+        const verdict = await mirrorCommit({ repo, sha, dir, remote, attempt: 2 });
+        log(`next-mirror: ${verdictLine({ at: verdict.finishedAt, ...verdict })}`);
+      }
     }
     await new Promise((done) => {
       const timer = setTimeout(done, every * 1000);
