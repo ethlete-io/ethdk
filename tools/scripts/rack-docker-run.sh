@@ -12,6 +12,11 @@ mirror="${RACK_MIRROR:-/mnt/c/Users/trbor/ethlete-mirror.git}"
 sha="$1" slot="$2"
 shift 3
 
+mkdir -p "$HOME/rack-linux"
+# A second run in the same slot would re-checkout the tree under the first one's running container.
+exec 9>"$HOME/rack-linux/$slot.lock"
+flock 9
+
 work="$HOME/rack-linux/$slot"
 if [ ! -d "$work/.git" ]; then
   mkdir -p "$work"

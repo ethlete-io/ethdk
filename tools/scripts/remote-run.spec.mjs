@@ -193,3 +193,11 @@ test('a native run installs and runs the suite inside its slot checkout', () => 
     rmSync(work, { recursive: true, force: true });
   }
 });
+
+test('the rack helper holds a per-slot lock before it touches the slot checkout', () => {
+  const helper = readFileSync(join(dirname(SCRIPT), 'rack-docker-run.sh'), 'utf8');
+  const lock = helper.indexOf('flock 9');
+  assert.ok(lock > 0, 'no flock');
+  assert.ok(helper.indexOf('$slot.lock') < lock);
+  assert.ok(lock < helper.indexOf('checkout --quiet --force'));
+});
