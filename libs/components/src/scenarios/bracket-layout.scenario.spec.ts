@@ -1,5 +1,6 @@
 import { Component, input, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import {
   BRACKET_DATA_LAYOUT,
   BRACKET_DEFAULT_CARDS,
@@ -14,6 +15,7 @@ import {
   BracketMatchComponent,
   BRACKET_ROUNDS_LIST_IMPORTS,
   BracketRoundsListComponent,
+  BracketSwissRoundHeaderComponent,
   bracketFitsWidth,
   bracketNaturalWidth,
   COMMON_BRACKET_ROUND_TYPE,
@@ -36,6 +38,7 @@ import {
   singleEliminationBracketLayout,
   SWISS_BRACKET_ROUND_TYPE,
   swissBracketLayout,
+  swissRecordTone,
   TOURNAMENT_MODE,
 } from '../index';
 import '../test-helpers';
@@ -341,6 +344,27 @@ describe('bracket layout scenarios', () => {
     );
 
     expect(strokes).toEqual(['rgb(1, 1, 1)', 'rgb(2, 2, 2)', 'rgb(4, 4, 4)', 'rgb(4, 4, 4)']);
+  });
+
+  it('heads each swiss group with BracketSwissRoundHeaderComponent in the swissRecordTone of its record', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(BracketCanvasComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    fixture.componentInstance.source.set(SWISS);
+    s.tick();
+    s.flush();
+
+    const headers = fixture.debugElement.queryAll(By.directive(BracketSwissRoundHeaderComponent));
+    const tones = headers.map(
+      (header) => header.nativeElement.querySelector('[data-swiss-tone]')?.dataset['swissTone'],
+    );
+    const records = Array.from(host.querySelectorAll('.et-bracket-swiss-round-header-record')).map(text);
+
+    expect(records).toEqual(['0-0', '1-0', '0-1', '1-1']);
+    expect(tones).toEqual(records.map(swissRecordTone));
+    expect(tones).toEqual(['neutral', 'positive', 'warning', 'warning']);
+    expect(s.errors).toEqual([]);
   });
 
   it("hands a custom match component its round's swiss group, typed from BracketMatchComponent", () => {
