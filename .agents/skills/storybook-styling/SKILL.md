@@ -55,10 +55,10 @@ tokens - same rule as component CSS (the **`theming`** skill is the reference fo
 token names).
 
 - A tinted panel: put `etAutoSurface` on it (next elevation up) and read the token:
-  `style="background: var(--et-surface-background-solid)"`. That's how the table
+  `style="background: var(--et-surface-background)"`. That's how the table
   story's expanded-row panel and its nested sub-table are painted.
 - An accent: scope it with `[etProvideColor]="'brand'"` and read
-  `--et-theme-color-primary-solid` / `--et-theme-color-ink-solid`. Theme names
+  `--et-tone-fill` / `--et-tone-text`. Theme names
   (`brand`, `danger`, `success`, `neutral`) are what **Storybook** registers
   (`apps/storybook/src/themes.ts`) - fine to name in a story, never in library code.
 - Better still: don't hand-paint. Compose the library component that already does it

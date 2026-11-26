@@ -36,29 +36,28 @@ not the name.
 
 ## Tokens components may consume
 
-Component CSS must use these **derived** tokens - never the raw
-`--et-surface-background` / `--et-color-primary` channel triplets, and never
+Component CSS must use these **derived** tokens - never the old
+`--et-surface-*-solid` / `-rgb` and `--et-theme-color-*` names, and never
 hardcoded colors (a static fallback after the token is fine).
 
-Surface (each exists as `-solid` = usable color, `-rgb` = `R G B` channels):
+Surface (each a ready color):
 
 | Token | Use for |
 | --- | --- |
-| `--et-surface-background-solid` | component/panel background |
-| `--et-surface-color-solid` | text |
-| `--et-surface-color-muted-solid` | secondary text, placeholders, group labels |
-| `--et-surface-color-subtle-solid` | tertiary text |
-| `--et-surface-border-solid` | borders, separators |
-| `--et-surface-interaction-solid` | neutral hover/active tint source - mix it: `color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent)` (button uses 12/16/20% for hover/focus/active, 6–8% for subtle fills) |
+| `--et-surface-background` | component/panel background |
+| `--et-surface-text` | text |
+| `--et-surface-text-muted` | secondary text, placeholders, group labels |
+| `--et-surface-text-subtle` | tertiary text |
+| `--et-surface-border` | borders, separators |
+| `--et-surface-tint` | neutral hover/active tint source (set by the theme's `tint`) - mix it: `color-mix(in srgb, var(--et-surface-tint) 12%, transparent)`. `--et-surface-control-text` and `-hover/-focus/-active/-disabled` are the text of a neutral control per state; never use one as a hover background |
 
 Color (from the nearest `[etProvideColor]` scope):
 
 | Token | Use for |
 | --- | --- |
-| `--et-theme-color-primary` | filled backgrounds on an element you do **not** tint. To tint per state, set `--et-theme-color-primary-opacity: 0.16` and compose the color yourself: `rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity))` (see button tonal/outline variants). The alias is substituted at the `et-color--*` scope, so an inherited value carries the scope's opacity, never the element's |
-| `--et-theme-color-primary-solid` | accents at full strength: focus borders, selected marks |
-| `--et-theme-color-on-primary` | text/icons on a primary-filled background |
-| `--et-theme-color-ink-solid` | primary-tinted text/border on transparent/tonal fills, the strokes of a `color`-set spinner and progress bar |
+| `--et-tone-fill` | filled backgrounds; live alias of the current state. `--et-tone-fill-rest` and `-hover/-focus/-active/-disabled` are the fixed per-state colors. To tint per state, set a private opacity (`--_et-tone-fill-opacity`) and compose `color-mix(in srgb, var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%), transparent)` (see button tonal/outline variants) |
+| `--et-tone-on-fill` | text/icons on a filled background (`-rest/-hover/-focus/-active/-disabled` per state) |
+| `--et-tone-text` | tinted text/border on transparent/tonal fills and accents at full strength: focus borders, selected marks, the strokes of a `color`-set spinner and progress bar (`-rest/-hover/-focus/-active/-disabled` per state) |
 
 `[etColorInteractive]` re-resolves the color tokens per CSS state. Put it on the
 interactive element itself, never on a wrapper. Neutral hover and pressed feedback mixes
@@ -87,7 +86,7 @@ the tint instead: `hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15`.
   menu search error) or force it programmatically
   (`provideColor.forceColor(theme)` / `clearForcedColor()`, see form-field's
   error state and the menu item destructive variant). Inside that scope,
-  `--et-theme-color-primary-*` *is* the error color.
+  `--et-tone-*` *is* the error color.
 - **A surface swaps a chosen accent; it never picks one.** The chosen accent is the
   nearest `[etProvideColor]`, else the `isDefault` theme, or for
   `injectSemanticColorTheme(type)` the theme of that `type`. The nearest surface's
@@ -133,11 +132,11 @@ the tint instead: `hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15`.
   `initial-value` and put the default in a fallback at each use site:
   `var(--et-skeleton-size, 1em)`. `yarn lint:css-properties` checks this, and
   pre-commit runs it on staged files.
-- `--et-theme-color-primary-*` always resolves to the **nearest color scope** -
+- `--et-tone-*` always resolves to the **nearest color scope** -
   a hardcoded semantic color in CSS can't be replaced by it unless the right
   theme is provided on that element (see DI point above).
 - Fallbacks: tokens resolve wherever themes are registered, but keep a static
-  fallback (`var(--et-surface-border-solid, rgb(255 255 255 / 0.1))`) so
+  fallback (`var(--et-surface-border, rgb(255 255 255 / 0.1))`) so
   components degrade in theme-less setups. A `type: 'error'` theme however is a
   hard requirement - form-field and menu throw on rendering without one.
 - **Cascade layers, not `:where()`, are what make Tailwind utilities override
@@ -153,10 +152,10 @@ the tint instead: `hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15`.
 
 - `libs/components/src/lib/button/button.component.css` - canonical color-system
   consumer (opacity mechanic per variant/state) + neutral `color-mix` tints over
-  `--et-surface-interaction-solid` ("muted until pressed" block).
+  `--et-surface-tint` ("muted until pressed" block).
 - `libs/components/src/lib/forms/form-field/form-field.component.css` +
   `.component.ts` - borders/hover from surface tokens, focus border
-  `--et-theme-color-primary-solid`, error state via `forceColor(errorColorTheme())`.
+  `--et-tone-text`, error state via `forceColor(errorColorTheme())`.
 - `libs/components/src/lib/menu/` - full pattern in an overlay: context re-sync,
   surface tokens for chrome, error theme for destructive items/search error.
 
