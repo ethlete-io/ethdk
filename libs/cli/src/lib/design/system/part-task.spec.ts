@@ -5,7 +5,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
-import { BuildReadyInputs } from './part-build-ready';
+import { BuildReadyInputs, decidePartBuildReady } from './part-build-ready';
 import { writePartRecord } from './part-ready';
 import {
   allowedFilesOf,
@@ -381,12 +381,58 @@ describe('part task', () => {
       });
 
     expect(await verify()).toBe(1);
-    expect(lines.join('\n')).toContain('components/chip has no check record at its current design - run design check');
+    expect(lines.join('\n')).toContain('components/chip has no check record at its current design');
     expect(green).not.toHaveBeenCalled();
 
     record(target);
     expect(await verify()).toBe(0);
     expect(readImplemented(dir)['components/chip']?.hash).toBe(record(target)?.hash);
+  });
+
+  it('names the open point that kept the check from writing a record, and the check to run after it', async () => {
+    const { target } = checkout();
+    const product = withHarness(target);
+    const lines = output();
+    const noRecord: string[] = [];
+    const green = vi.fn<ComparePart>(async () => ({ green: true, states: CHIP_STATES }));
+    const sketchOpen: BuildReadyInputs = {
+      ...GREEN,
+      pointsOf: (part) =>
+        part === 'components/chip'
+          ? [{ kind: 'unmerged-sketch', sketch: 'chip', primary: true, status: 'ready', decision: null }]
+          : [],
+    };
+
+    await decidePartBuildReady({
+      product,
+      part: 'components/chip',
+      inputs: sketchOpen,
+      origin: originOf('et design check', 'check'),
+      actionsOf: async () => [],
+      declaredActionsOf: async () => [],
+      onNoRecord: (line) => noRecord.push(line),
+    });
+
+    expect(noRecord).toEqual(['NO RECORD app-a components/chip: open-point: sketch chip is ready, not merged']);
+    expect(
+      await task(
+        target,
+        ['--verify', '--url', 'http://localhost:9'],
+        undefined,
+        green,
+        undefined,
+        undefined,
+        sketchOpen,
+      ),
+    ).toBe(1);
+    expect(lines).toContain(
+      [
+        'components/chip has no check record at its current design - design check writes none while:',
+        '  open-point: sketch chip is ready, not merged',
+        'resolve them, then run design check --product app-a --part components/chip',
+      ].join('\n'),
+    );
+    expect(green).not.toHaveBeenCalled();
   });
 
   it('fails the verify when the actions check misses or cannot run, and records nothing', async () => {

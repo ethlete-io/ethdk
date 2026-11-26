@@ -166,7 +166,7 @@ export const designTask = async (options: {
     const found =
       rev === null
         ? taskPartOf({ product, part, inputs: (options.inputs ?? buildReadyInputsOf)(product) })
-        : verifiedTaskPartOf({ product, part });
+        : verifiedTaskPartOf({ product, part, inputs: () => (options.inputs ?? buildReadyInputsOf)(product) });
 
     if (typeof found === 'string') {
       console.error(found);

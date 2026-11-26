@@ -6,7 +6,7 @@ import { changedFilesOf, designHolds, FileHashes, isOptionalFileHashes } from '.
 import { DESIGN_DIR } from '../design-config';
 import { git, showFilesOf } from '../git-reader';
 import { matchesPattern } from './harness-config';
-import { buildReadyOf, BuildReadyInputs } from './part-build-ready';
+import { buildReadyOf, BuildReadyInputs, checkBlockersOf } from './part-build-ready';
 import { readyMarkOf, readyPartOf } from './part-ready';
 import { repoRootOf } from './reachable-files';
 import { readStampText } from './stamp-files';
@@ -165,15 +165,35 @@ export const taskPartOf = (options: {
       ].join('\n');
 };
 
-/** The part `task --verify` checks, or why not: what `linkedTaskPartOf` refuses, or a check record that does not hold. */
-export const verifiedTaskPartOf = (options: { product: ResolvedProduct; part: string }): TaskPart | string => {
+const noRecordTextOf = (options: { product: ResolvedProduct; part: string; inputs: BuildReadyInputs }) => {
+  const check = `design check --product ${options.product.name} --part ${options.part}`;
+  const blockers = checkBlockersOf(options).filter(
+    (blocker) => blocker.kind !== 'pending' && blocker.kind !== 'embedded',
+  );
+
+  return blockers.length === 0
+    ? `${options.part} has no check record at its current design - run ${check} first`
+    : [
+        `${options.part} has no check record at its current design - design check writes none while:`,
+        ...blockers.map((blocker) => `  ${blocker.kind}: ${blocker.text}`),
+        `resolve them, then run ${check}`,
+      ].join('\n');
+};
+
+/**
+ * The part `task --verify` checks, or why not: what `linkedTaskPartOf` refuses, or a check record that does not hold,
+ * naming each blocker that keeps the check from writing one.
+ */
+export const verifiedTaskPartOf = (options: {
+  product: ResolvedProduct;
+  part: string;
+  inputs: () => BuildReadyInputs;
+}): TaskPart | string => {
   const linked = linkedTaskPartOf(options);
 
   if (typeof linked === 'string') return linked;
 
-  return readyMarkOf(options) === null
-    ? `${options.part} has no check record at its current design - run design check first`
-    : linked;
+  return readyMarkOf(options) === null ? noRecordTextOf({ ...options, inputs: options.inputs() }) : linked;
 };
 
 /** The states added or changed since the implemented record; without a record every state is added. */
