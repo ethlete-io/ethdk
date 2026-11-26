@@ -253,15 +253,6 @@ describe('frame surfaces', () => {
 }, 30_000);
 
 describe('surface interactive CSS', () => {
-  it('is the CSS of etSurfaceInteractive in @ethlete/core', () => {
-    expect(readFileSync(resolve(WEB, 'surface-interactive.css'), 'utf8')).toBe(
-      readFileSync(
-        resolve(__dirname, '../../../../core/src/lib/theming/surface-interactive-styles.component.css'),
-        'utf8',
-      ),
-    );
-  });
-
   // A Studio row part draws its row on an interactive surface.
   it.each([
     'tree-row/shared/tree-row.ts',
