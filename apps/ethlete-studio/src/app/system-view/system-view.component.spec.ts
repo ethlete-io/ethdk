@@ -272,7 +272,7 @@ describe('SystemViewComponent on a reload', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const chip = (fixture.nativeElement as HTMLElement).querySelector('[data-open-points-chip]');
 
-    expect(chip?.textContent?.trim()).toBe('2 offen');
+    expect(chip?.getAttribute('aria-label')).toBe('2 offen');
   });
 
   it('shows the open points of the shown part in a chip in the sketch bar, and lists them in its popover', async () => {
@@ -305,7 +305,7 @@ describe('SystemViewComponent on a reload', () => {
     );
 
     expect(asked).toContain('http://localhost:4402/__design/open-points?product=web&part=elements%2Frating');
-    expect(chip?.textContent?.trim()).toBe('2 offen');
+    expect(chip?.getAttribute('aria-label')).toBe('2 offen');
     expect(document.querySelector('ethlete-open-points-popover')).toBeNull();
 
     chip?.click();

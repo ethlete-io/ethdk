@@ -1673,7 +1673,7 @@ describe('SketchesComponent', () => {
 
     expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-merge]'))).toBe(LABELS.merge);
     expect(root.querySelector('[data-sk-row="x"] [data-open-points-chip]')).toBeNull();
-    expect(textOf(chip)).toBe(SYSTEM_LABELS.openCount(1));
+    expect(chip?.getAttribute('aria-label')).toBe(SYSTEM_LABELS.openCount(1));
 
     chip?.click();
     await fixture.whenStable();

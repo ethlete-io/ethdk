@@ -169,7 +169,7 @@ describe('SystemPageComponent canvas note', () => {
 
     expect(bars).toHaveLength(1);
     expect(bars[0]?.querySelector('[data-sk-comment]')?.getAttribute('aria-label')).toBe(LABELS.comment);
-    expect(bars[0]?.querySelector('[data-open-points-chip]')?.textContent).toContain(LABELS.nothingOpen);
+    expect(bars[0]?.querySelector('[data-open-points-chip]')?.getAttribute('aria-label')).toBe(LABELS.nothingOpen);
     expect(root.querySelectorAll('[data-sk-comment]')).toHaveLength(1);
     expect(root.querySelectorAll('[data-open-points-chip]')).toHaveLength(1);
     expect(root.querySelector('[data-canvas-actions]')?.querySelector('[data-open-points-chip],button')).toBeNull();

@@ -16,10 +16,11 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   anchoredDialogOverlayStrategy,
   AnchoredDialogOverlayStrategyOptions,
+  BADGE_IMPORTS,
   BUTTON_IMPORTS,
   injectOverlayManager,
+  TOOLTIP_IMPORTS,
 } from '@ethlete/components';
-import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { defer, EMPTY, finalize, switchMap, tap } from 'rxjs';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
@@ -29,40 +30,24 @@ import { OpenPointGroup, OpenPointTarget, PartException } from './system-page-sa
 @Component({
   selector: 'ethlete-open-points-chip',
   template: `
-    <button
-      #chip
-      [pressed]="!closed()"
-      (click)="closed.set(!closed())"
-      et-button
-      type="button"
-      variant="outline"
-      size="sm"
-      data-open-points-chip
-    >
-      @if (count() || missingShots()) {
-        <span [etProvideColor]="warningTheme()" class="contents" etIcon>
-          <svg
-            class="text-et-tone-fill"
-            width="14"
-            height="14"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M8 2.5 14 13H2z" />
-            <path d="M8 6.5v3" />
-            <path d="M8 11.25v.01" />
-          </svg>
-        </span>
-      } @else {
+    <span class="relative flex">
+      <button
+        #chip
+        [pressed]="!closed()"
+        [attr.aria-label]="label()"
+        [etTooltip]="label()"
+        (click)="closed.set(!closed())"
+        et-icon-button
+        type="button"
+        variant="transparent"
+        color="surface"
+        size="sm"
+        data-open-points-chip
+      >
         <svg
-          class="flex-none text-et-tone-text"
-          width="14"
-          height="14"
+          class="et-icon"
+          width="16"
+          height="16"
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
@@ -70,21 +55,26 @@ import { OpenPointGroup, OpenPointTarget, PartException } from './system-page-sa
           stroke-linecap="round"
           stroke-linejoin="round"
           aria-hidden="true"
-          etIcon
+          data-open-points-icon
         >
-          <path d="m3.5 8.5 3 3 6-7" />
+          <path d="M3 4.5h10v6H7.5L5 12.5v-2H3z" />
+          <path d="M5.5 6.5h5" />
+          <path d="M5.5 8.5h3" />
         </svg>
+      </button>
+      @if (badgeCount()) {
+        <span class="pointer-events-none absolute -top-space-1 -right-space-1 flex" aria-hidden="true">
+          <et-badge variant="filled" size="sm" color="brand">{{ badgeCount() }}</et-badge>
+        </span>
       }
-      {{ label() }}
-    </button>
+    </span>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, ProvideColorDirective],
+  imports: [BADGE_IMPORTS, BUTTON_IMPORTS, TOOLTIP_IMPORTS],
   host: { class: 'contents' },
 })
 export class OpenPointsChipComponent {
   private overlay = injectOverlayManager();
-  protected warningTheme = injectSemanticColorTheme('warning');
   public part = input.required<string>();
   public groups = input.required<OpenPointGroup[]>();
   public exceptions = input<PartException[]>([]);
@@ -102,9 +92,11 @@ export class OpenPointsChipComponent {
   private chip = viewChild.required('chip', { read: ElementRef<HTMLElement> });
   public readonly LABELS = SYSTEM_LABELS;
 
-  protected count = computed(() =>
+  public count = computed(() =>
     this.groups().reduce((sum, group) => sum + group.lines.length, this.exceptions().length),
   );
+
+  protected badgeCount = computed(() => this.count() || this.missingShots());
 
   protected label = computed(() =>
     this.count()

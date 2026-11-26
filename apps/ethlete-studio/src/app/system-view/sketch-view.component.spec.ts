@@ -1323,7 +1323,7 @@ describe('SketchViewComponent', () => {
     expect(badges()).toEqual(['waiting']);
     expect(asked).toEqual(['elements/rating']);
     // B695: the agent fixes a sketch rule problem, so the chip counts only the unmerged sketch.
-    expect(chip?.textContent?.trim()).toBe(SYSTEM_LABELS.openCount(1));
+    expect(chip?.getAttribute('aria-label')).toBe(SYSTEM_LABELS.openCount(1));
     expect(root.querySelectorAll('[data-sk-points]')).toHaveLength(1);
     expect(root.querySelector('[data-sk-merge-error]')?.textContent?.trim()).toBe('UTILITY-CSS c.ts: flex');
   });
