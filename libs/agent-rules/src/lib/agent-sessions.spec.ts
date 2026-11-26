@@ -802,13 +802,19 @@ describe('agent-sessions', () => {
   );
 
   it.skipIf(!hasTmux)(
-    'types the prompt when a message wakes the session right after the clear',
+    'types the prompt once a turn that a message starts right after the clear has ended',
     async () => {
       const agent = `claude-busy-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
       const log = join(dir, 'pane.log');
 
-      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "esc to interrupt"; cat > ${log}`]);
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-s',
+        scoped,
+        `read line; echo "esc to interrupt"; sleep 3; clear; cat > ${log}`,
+      ]);
 
       try {
         run(['restart', agent, '--now', '--after', '0', 'resume', 'slug'], undefined, {
@@ -1345,50 +1351,72 @@ describe('agent-sessions', () => {
   );
 
   describe.skipIf(!hasTmux)('plain restart with background work', () => {
-    const rule = '─'.repeat(40);
-    const startPane = (agent: string, footer: string) => {
+    const fixture = (name: string) => join(__dirname, 'fixtures', name);
+    const startPane = (agent: string, idle: string, report: string | null, reportMs = 5000) => {
       const scoped = `${agent}@${basename(dir)}`;
       const started = join(dir, `${agent}.started`);
+      const typed = join(dir, 'typed.log');
+      const lost = join(dir, 'lost.log');
+      const program = join(dir, 'pane.js');
+      writeFileSync(typed, '');
+      writeFileSync(lost, '');
+      writeFileSync(
+        program,
+        `const fs = require('fs');
+const idle = fs.readFileSync(${JSON.stringify(fixture(idle))}, 'utf8');
+const report = ${JSON.stringify(report && fixture(report))};
+let busy = false;
+let cleared = false;
+const draw = (pane) => process.stdout.write('\\x1b[2J\\x1b[H' + pane);
+draw(idle);
+process.stdin.setRawMode(true);
+process.stdin.on('data', (data) => {
+  fs.appendFileSync(busy ? ${JSON.stringify(lost)} : ${JSON.stringify(typed)}, data);
+  if (cleared || !report || !data.includes('\\r')) return;
+  cleared = true;
+  busy = true;
+  draw(fs.readFileSync(report, 'utf8'));
+  setTimeout(() => { busy = false; draw(idle); }, ${reportMs});
+});`,
+      );
       const fakeAgent = fakeAgentPath();
       writeFileSync(fakeAgent, `#!/bin/sh\necho started > ${started}; exec cat\n`, { mode: 0o755 });
-      spawnSync('tmux', [
-        'new-session',
-        '-d',
-        '-s',
-        scoped,
-        `printf '${rule}\\n❯ \\n${rule}\\n${footer}\\n'; read line; exec cat`,
-      ]);
+      spawnSync('tmux', ['new-session', '-d', '-x', '120', '-y', '30', '-s', scoped, `node ${program}`]);
       spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
-      return { scoped, started };
+      return { scoped, started, typed, lost };
     };
     const restartIn = (agent: string, scoped: string) =>
-      run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
+      run(['restart', agent, '--now', '--after', '0', 'resume', 'slug'], undefined, {
         TMUX_PANE: paneOf(scoped),
         SHELL: 'sh',
         AGENT_RESTART_EXIT_WAIT_MS: '1000',
       });
 
-    it('takes the process path when the footer shows shells', async () => {
+    it('clears and keeps the process when the captured pane shows background shells and agents', () => {
       const agent = `claude-bgshell-${process.pid}`;
-      const { scoped, started } = startPane(agent, '  2 shells · ↓ to manage');
+      const { scoped, started, typed } = startPane(agent, 'claude-pane-footer-pill-unfocused.txt', null);
       try {
         restartIn(agent, scoped);
-        await expect.poll(() => existsSync(started), { timeout: 5_000, interval: 250 }).toBe(true);
-        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain('shows background work (2 shells');
+
+        expect(existsSync(started)).toBe(false);
+        expect(readFileSync(typed, 'utf8')).toBe('/clear\rresume slug [typed by agent-sessions]\r');
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).not.toContain('--process');
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
     }, 30_000);
 
-    it('clears the context when the pane shows no background work', () => {
-      const agent = `claude-bgclean-${process.pid}`;
-      const { scoped, started } = startPane(agent, '  ? for shortcuts');
+    it('types the resume prompt only after a report turn that starts after the clear has ended', () => {
+      const agent = `claude-report-${process.pid}`;
+      const { scoped, typed, lost } = startPane(agent, 'claude-pane-idle-waiting-text.txt', 'claude-pane-busy.txt');
       try {
         restartIn(agent, scoped);
-        expect(existsSync(started)).toBe(false);
-        expect(
-          existsSync(join(dir, 'restart.log')) ? readFileSync(join(dir, 'restart.log'), 'utf8') : '',
-        ).not.toContain('background work');
+
+        expect(readFileSync(lost, 'utf8')).toBe('');
+        expect(readFileSync(typed, 'utf8')).toBe('/clear\rresume slug [typed by agent-sessions]\r');
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toMatch(
+          /waits, busy: ✻ Waiting for 1 background agent to finish/,
+        );
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
@@ -1403,10 +1431,7 @@ describe('agent-sessions', () => {
     const storedCommand = (startedLine ?? '').split('started a new process: ')[1] ?? '';
     const rule = '─'.repeat(40);
 
-    it.each([
-      ['--process with the captured footer', ['--process'], footer],
-      ['with background shells in the footer', [], '2 shells · ↓ to manage'],
-    ])(
+    it.each([['--process with the captured footer', ['--process'], footer]])(
       'refuses and leaves the pane alone for restart %s',
       (_name, flags, paneFooter) => {
         const agent = `claude-bareshell-${process.pid}`;
@@ -2020,7 +2045,7 @@ process.stdin.on('data', (data) => {
   };
 
   it.skipIf(!hasTmux)(
-    'leaves the agent panel before it types the exit command into a captured pane',
+    'leaves the agent panel before it types the clear command into a captured pane',
     async () => {
       const agent = `claude-panel-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
@@ -2037,7 +2062,7 @@ process.stdin.on('data', (data) => {
         });
 
         const typed = readFileSync(log, 'utf8');
-        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/exit\r`))).toBe(true);
+        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/clear\r`))).toBe(true);
         expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain('shows background work');
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
@@ -2047,7 +2072,7 @@ process.stdin.on('data', (data) => {
   );
 
   it.skipIf(!hasTmux)(
-    'leaves a focused footer pill of a captured pane before it types the exit command',
+    'leaves a focused footer pill of a captured pane before it types the clear command',
     async () => {
       const agent = `claude-pill-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
@@ -2074,7 +2099,7 @@ process.stdin.on('data', (data) => {
         });
 
         const typed = readFileSync(log, 'utf8');
-        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/exit\r`))).toBe(true);
+        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/clear\r`))).toBe(true);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
@@ -2132,7 +2157,8 @@ process.stdin.on('data', (data) => {
         AGENT_RESTART_WAIT_MS: '6000',
         AGENT_RESTART_CLEAR_WAIT_MS: '1000',
       });
-      const log = readFileSync(join(dir, 'restart.log'), 'utf8');
+      const logFile = join(dir, 'restart.log');
+      const log = existsSync(logFile) ? readFileSync(logFile, 'utf8') : '';
       return { result, log };
     } finally {
       spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);

@@ -42,7 +42,7 @@ const RESTART_CLEAR_WAIT_MS = Number(process.env.AGENT_RESTART_CLEAR_WAIT_MS ?? 
 const RESTART_EXIT_WAIT_MS = Number(process.env.AGENT_RESTART_EXIT_WAIT_MS ?? 30 * 1000);
 const RESTART_RESUME_WAIT_MS = Number(process.env.AGENT_RESTART_RESUME_WAIT_MS ?? 60 * 1000);
 const RUN_EXIT_CHECK_MS = Number(process.env.AGENT_RUN_EXIT_CHECK_MS ?? 400);
-const RESTART_LOCK_MS = Number(process.env.AGENT_RESTART_LOCK_MS ?? RESTART_WAIT_MS + 10 * 60 * 1000);
+const RESTART_LOCK_MS = Number(process.env.AGENT_RESTART_LOCK_MS ?? 2 * RESTART_WAIT_MS + 10 * 60 * 1000);
 const repoSlug = basename(root).replace(/[.:]/g, '-');
 const sessionFor = (agent) => `${agent}@${repoSlug}`;
 const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? `mailbox-dispatch@${repoSlug}`;
@@ -572,18 +572,17 @@ const waitForFirstTurn = (session) => {
 };
 
 /**
- * Waits until the agent ended its turn and nobody types in its prompt, twice in a row; `false` after the time limit.
- * With `allowBusy`, a running turn does not block, since Claude Code queues input typed during a turn.
- * Each change of the reason it waits is logged to `restart.log` next to the mailbox.
+ * Waits until the agent ended its turn and nobody types in its prompt, twice in a row; `false` after the time limit,
+ * or once a draft stayed for `draftLimitMs`. Each change of the reason it waits is logged to `restart.log`.
  */
-const waitForQuiet = (session, limitMs = RESTART_WAIT_MS, allowBusy = false) => {
+const waitForQuiet = (session, limitMs = RESTART_WAIT_MS, draftLimitMs = limitMs) => {
   const end = Date.now() + limitMs;
   let quiet = 0;
   let reason = '';
   let draftSince = null;
   let told = false;
   while (Date.now() < end) {
-    const busy = allowBusy ? null : busyLine(session);
+    const busy = busyLine(session);
     const draft = busy === null ? draftLine(session) : null;
     const next = busy !== null ? `busy: ${busy.trim()}` : draft !== null ? `draft: ${draft}` : '';
     if (next !== reason) restartLog(`${session} ${next ? `waits, ${next}` : 'is quiet'}`);
@@ -593,9 +592,33 @@ const waitForQuiet = (session, limitMs = RESTART_WAIT_MS, allowBusy = false) => 
       told = true;
       restartNotice(`restart of ${session} waits ${Math.round((Date.now() - draftSince) / 1000)}s, draft: ${draft}`);
     }
+    if (draftSince !== null && Date.now() - draftSince >= draftLimitMs) return false;
     quiet = next ? 0 : quiet + 1;
     if (quiet === 2) return true;
     sleep(RESTART_POLL_MS);
+  }
+  return false;
+};
+
+const RESTART_TYPE_ATTEMPTS = 5;
+/**
+ * Types the resume prompt once the cleared session is idle. A report of background work can start a turn right
+ * after the clear, and Enter in that turn would queue the prompt behind it, so it waits for the turn to end and
+ * types again while the prompt still holds the text after Enter.
+ */
+const typeResume = (session, prompt) => {
+  const type = (...keys) => tmux('send-keys', '-t', `=${session}:`, ...keys);
+  const pending = () => draftLine(session)?.includes(RESTART_MARKER.trim()) === true;
+  for (let attempt = 1; attempt <= RESTART_TYPE_ATTEMPTS; attempt++) {
+    if (!waitForQuiet(session, RESTART_WAIT_MS, RESTART_CLEAR_WAIT_MS) || !leavePanel(session)) return false;
+    type('-l', prompt);
+    sleep(ENTER_DELAY_MS);
+    type('Enter');
+    sleep(ENTER_DELAY_MS);
+    if (!pending()) return true;
+    restartLog(`${session} still holds the resume prompt after Enter, attempt ${attempt}, types it again`);
+    type('C-u');
+    sleep(ENTER_DELAY_MS);
   }
   return false;
 };
@@ -1079,7 +1102,7 @@ if (command === 'stop-own') {
     );
     process.exitCode = 1;
   } else if (
-    (newProcess || (now && backgroundWorkOf(paneLines(session)) !== null)) &&
+    newProcess &&
     healedCommand(commandWithoutPrompt(agentCommandOf(session)), sender) === null
   ) {
     process.stderr.write(
@@ -1105,10 +1128,7 @@ if (command === 'stop-own') {
         `restart of ${session} gave up, the focus did not leave the agent panel after ${PANEL_UP_LIMIT} Up`,
       );
       process.exitCode = 1;
-    } else if (newProcess || backgroundWorkOf(paneLines(session)) !== null) {
-      const background = newProcess ? null : backgroundWorkOf(paneLines(session));
-      if (background !== null)
-        restartLog(`${session} shows background work (${background}), restart goes through --process`);
+    } else if (newProcess) {
       const pane = `=${session}:`;
       const restartRole = restartRoleOf(session, words.join(' '));
       const recorded = commandWithoutPrompt(agentCommandOf(session));
@@ -1181,14 +1201,14 @@ if (command === 'stop-own') {
       restartLog(`${session} started a new process: ${base}`);
       waitForFirstTurn(session);
     } else {
+      const background = backgroundWorkOf(paneLines(session));
+      if (background !== null)
+        restartLog(`${session} shows background work (${background}), the resume waits for the turns of its reports`);
       type('-l', sender.startsWith('codex') ? '/new' : '/clear');
       sleep(ENTER_DELAY_MS);
       type('Enter');
       sleep(RESTART_CLEAR_MS);
-      if (waitForQuiet(session, RESTART_CLEAR_WAIT_MS, true) && leavePanel(session)) {
-        type('-l', restartPrompt(words));
-        sleep(ENTER_DELAY_MS);
-        type('Enter');
+      if (typeResume(session, restartPrompt(words))) {
         waitForFirstTurn(session);
       } else {
         const saved = join(dirname(mailbox), `restart.prompt.${session}.txt`);
