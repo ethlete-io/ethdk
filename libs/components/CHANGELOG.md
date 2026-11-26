@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.102
+
+### Patch Changes
+
+- `et-scrollable` clears the trailing gap when the end button hides, keeps the scroll position steady, and reserves space for the visible start button.
+
 ## 1.0.0-next.101
 
 ### Major Changes
