@@ -1,17 +1,12 @@
 export const INVENTORY_LABELS = {
   title: 'Inventory',
   reload: 'Neu laden',
-  approve: 'Inventory freigeben',
-  notApproved: 'Noch nicht freigegeben',
-  approvedBy: 'Vom Designer am 31.10.2026, 14:20:00 freigegeben',
   drawing: 'Inventory wird gezeichnet …',
   controls: 'Bedienelemente',
   assets: 'Assets',
   overlays: 'Overlays',
   none: 'Keine',
   open: (count: number) => `${count} offen`,
-  readyToApprove: 'bereit zur Freigabe',
-  approvedShort: 'freigegeben',
   assetFinding: 'Inline-SVG, nicht aus den Foundations',
   overlayFinding: 'Nachgebaut, kein Overlay einer Komponente',
   sample: {
@@ -32,14 +27,4 @@ export const INVENTORY_LABELS = {
     undeclared: 'nicht deklariert',
     unclassified: 'nicht eingeordnet',
   },
-  approved: 'Freigegeben',
-  approvedByOn: (by: string, at: string) => `Von ${by} am ${at} freigegeben`,
-  reopened: (changes: string) => `Wieder offen: ${changes}`,
-  added: (ids: string) => `hinzugefügt ${ids}`,
-  removed: (ids: string) => `entfernt ${ids}`,
-  partChanged: 'der Teil hat sich geändert',
-  noLongerHolds: 'die Freigabe gilt nicht mehr',
-  pageChanged: (message: string) =>
-    `Die Seite hat sich geändert, seit diese Inventory gezeichnet wurde. Lade sie neu und prüfe sie noch einmal. (${message})`,
-  openControls: (message: string) => `Deklariere oder ordne zuerst jedes rote und gelbe Control ein. (${message})`,
 } as const;

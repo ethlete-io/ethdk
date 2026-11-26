@@ -1,5 +1,5 @@
 import { DesignRefusalError } from '../../host/design';
-import { Inventory, InventoryControl, InventoryItem, InventoryRefusal } from '../../host/design-inventory';
+import { Inventory, InventoryControl, InventoryItem } from '../../host/design-inventory';
 import {
   InventoryPageEntry,
   InventoryPageRow,
@@ -46,8 +46,6 @@ export const inventoryItemsOf = (inventory: Inventory): InventoryItem[] => {
   return [...byKey.values()].map((item) => ({ ...item, number: ++counts[item.kind] }));
 };
 
-const isOpen = (status: InventoryControl['status']) => status === 'undeclared' || status === 'unclassified';
-
 const toneOf = (status: InventoryControl['status']): InventoryPageTone =>
   status === 'undeclared' ? 'error' : status === 'unclassified' ? 'warning' : 'ok';
 
@@ -61,10 +59,7 @@ const firstFrameBoxOf = (
   return found && !found.covered ? found.box : null;
 };
 
-export const inventoryPageOf = (
-  inventory: Inventory,
-  shown: Pick<InventoryPageEntry, 'approvalLabel' | 'size'>,
-): InventoryPageEntry => {
+export const inventoryPageOf = (inventory: Inventory, shown: Pick<InventoryPageEntry, 'size'>): InventoryPageEntry => {
   const controls = inventoryControlsOf(inventory);
   const items = inventoryItemsOf(inventory);
   const itemRow = (item: InventoryItem, prefix: string): InventoryPageRow => ({
@@ -83,8 +78,7 @@ export const inventoryPageOf = (
 
   return {
     part: inventory.part,
-    approval: inventory.state.state === 'approved' ? 'approved' : canApprove(inventory) ? 'approvable' : 'open',
-    approvalLabel: shown.approvalLabel,
+    error: null,
     controls: controls.map((control) => ({
       number: String(control.number),
       name: control.label ?? control.id,
@@ -101,39 +95,9 @@ export const inventoryPageOf = (
   };
 };
 
-export const canApprove = (inventory: Inventory) =>
-  inventory.state.state !== 'approved' &&
-  inventory.findings === 0 &&
-  !inventoryControlsOf(inventory).some((control) => isOpen(control.status)) &&
-  !inventoryItemsOf(inventory).some((item) => item.status === 'finding');
-
-const dateOf = (at: string) => {
-  const date = new Date(at);
-
-  return Number.isNaN(date.getTime()) ? at : date.toLocaleString('de-DE');
-};
-
-export const approvalLabelOf = (inventory: Inventory) => {
-  const { state, approval } = inventory;
-
-  if (state.state === 'none') return LABELS.notApproved;
-  if (state.state === 'approved')
-    return approval ? LABELS.approvedByOn(approval.by, dateOf(approval.at)) : LABELS.approved;
-
-  const changes = [
-    state.added.length ? LABELS.added(state.added.join(', ')) : '',
-    state.removed.length ? LABELS.removed(state.removed.join(', ')) : '',
-    state.changed ? LABELS.partChanged : '',
-  ].filter(Boolean);
-
-  return LABELS.reopened(changes.join('; ') || LABELS.noLongerHolds);
-};
-
 export const refusalMessageOf = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
 
-  if (error instanceof InventoryRefusal && error.status === 409) return LABELS.pageChanged(message);
-  if (error instanceof InventoryRefusal && error.status === 422) return LABELS.openControls(message);
   if (error instanceof DesignRefusalError) return [message, ...error.findings].join('\n');
 
   return message;

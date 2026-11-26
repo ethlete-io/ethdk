@@ -7,8 +7,7 @@ import { InventoryPageComponent, InventoryPageEntry } from './inventory-page.com
 const PAGES: InventoryPageEntry[] = [
   {
     part: 'pages/checkout',
-    approval: 'open',
-    approvalLabel: 'Noch nicht freigegeben',
+    error: null,
     controls: [
       {
         number: '1',
@@ -26,8 +25,7 @@ const PAGES: InventoryPageEntry[] = [
   },
   {
     part: 'pages/a-very-long-page-name-that-keeps-going',
-    approval: 'approvable',
-    approvalLabel: 'Noch nicht freigegeben',
+    error: null,
     controls: [],
     assets: [{ number: 'A1', name: 'Logo', detail: 'gehört zu foundations/logo', tone: 'ok', box: null }],
     overlays: [],
@@ -63,10 +61,7 @@ describe('InventoryPageComponent', () => {
   it('draws a frame per page with its open count or status, and marks only rows with a box', async () => {
     const { element, text } = await render({});
 
-    expect(text('figcaption')).toEqual([
-      'pages/checkout 1 offen',
-      'pages/a-very-long-page-name-that-keeps-going bereit zur Freigabe',
-    ]);
+    expect(text('figcaption')).toEqual(['pages/checkout 1 offen', 'pages/a-very-long-page-name-that-keeps-going']);
 
     const boxes = [...element.querySelectorAll<HTMLElement>('figure .absolute.border-2')];
     const marks = [...element.querySelectorAll<HTMLElement>('figure span.rounded-full')];
@@ -99,40 +94,30 @@ describe('InventoryPageComponent', () => {
     expect([...element.querySelectorAll('aside section p')].map((node) => node.textContent?.trim())).toEqual(['Keine']);
   });
 
-  it('shows the selected page and enables approve only while it is approvable and nothing is approving', async () => {
-    const { fixture, element, button } = await render({ selected: 'pages/a-very-long-page-name-that-keeps-going' });
-    let approved = 0;
-
-    fixture.componentInstance.approve.subscribe(() => approved++);
+  it('shows the selected page and offers no approve button', async () => {
+    const { element, button } = await render({ selected: 'pages/a-very-long-page-name-that-keeps-going' });
 
     expect(element.querySelector('aside h2')?.textContent?.trim()).toBe('pages/a-very-long-page-name-that-keeps-going');
     expect(element.querySelector('figure figcaption span')?.classList).not.toContain('font-ui-strong');
-    button('Inventory freigeben')?.click();
-    expect(approved).toBe(1);
-
-    fixture.componentRef.setInput('approving', true);
-    await fixture.whenStable();
-    expect(button('Inventory freigeben')?.disabled).toBe(true);
+    expect(element.textContent).not.toMatch(/freigeb/i);
   });
 
-  it('keeps approve off for an open page and emits reload', async () => {
+  it('emits reload', async () => {
     const { fixture, button } = await render({});
     let reloads = 0;
 
     fixture.componentInstance.reload.subscribe(() => reloads++);
     button('Neu laden')?.click();
 
-    expect(button('Inventory freigeben')?.disabled).toBe(true);
     expect(reloads).toBe(1);
   });
 
-  it('shows only the drawing note and blocks both buttons while loading', async () => {
+  it('shows only the drawing note and blocks reload while loading', async () => {
     const { element, button } = await render({ inventory: 'loading', pages: null });
 
     expect(element.textContent).toContain('Inventory wird gezeichnet');
     expect(element.querySelector('figure')).toBeNull();
     expect(element.querySelector('ol')).toBeNull();
     expect(button('Neu laden')?.disabled).toBe(true);
-    expect(button('Inventory freigeben')?.disabled).toBe(true);
   });
 });

@@ -1,6 +1,5 @@
-import { fromFetch } from 'rxjs/fetch';
-import { Observable, from, map, switchMap } from 'rxjs';
-import { ProductAddress, designAnswer$, designJson } from './design';
+import { Observable } from 'rxjs';
+import { ProductAddress, designAnswer$ } from './design';
 
 /**
  * `declared` is green; `owned` is drawn and declared by the embedded part `owner`; `undeclared` (red) has no
@@ -71,16 +70,6 @@ export type Inventory = {
   frames: InventoryFrame[];
 };
 
-/** A refused approval: 409 when the part changed since it was shown, 422 while a control is undeclared or unclassified. */
-export class InventoryRefusal extends Error {
-  public readonly status: number;
-
-  public constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
-
 const inventoryUrl = ({ port, product, path, part }: ProductAddress & { path: string; part?: string }) =>
   `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}${
     part === undefined ? '' : `&part=${encodeURIComponent(part)}`
@@ -88,24 +77,3 @@ const inventoryUrl = ({ port, product, path, part }: ProductAddress & { path: st
 
 export const inventory$ = (address: ProductAddress & { part: string }): Observable<Inventory> =>
   designAnswer$<Inventory>(inventoryUrl({ ...address, path: 'inventory' }));
-
-export const approveInventory$ = (
-  address: ProductAddress,
-  approval: { part: string; hash: string; by: string },
-): Observable<Inventory> =>
-  fromFetch(inventoryUrl({ ...address, path: 'inventory-approve' }), {
-    method: 'POST',
-    body: JSON.stringify(approval),
-  }).pipe(
-    switchMap((response) =>
-      from(designJson(response).catch(() => null)).pipe(
-        map((body) => {
-          if (response.ok) return body as Inventory;
-
-          const error = body !== null && typeof body === 'object' ? (body as Record<string, unknown>)['error'] : null;
-
-          throw new InventoryRefusal(response.status, typeof error === 'string' ? error : `HTTP ${response.status}`);
-        }),
-      ),
-    ),
-  );

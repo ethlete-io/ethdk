@@ -73,8 +73,9 @@ const resolvedAs =
   (row: InventoryPageRow): InventoryPageRow =>
     row.tone === 'ok' ? row : { ...row, tone: 'ok', detail };
 
-const page = (entry: Omit<InventoryPageEntry, 'shot' | 'size'>): InventoryPageEntry => ({
+const page = (entry: Omit<InventoryPageEntry, 'error' | 'shot' | 'size'>): InventoryPageEntry => ({
   ...entry,
+  error: null,
   shot: null,
   size: SHOT,
 });
@@ -82,8 +83,6 @@ const page = (entry: Omit<InventoryPageEntry, 'shot' | 'size'>): InventoryPageEn
 export const inventoryPageSampleOf = (state: InventoryPageState): InventoryPageEntry[] => [
   page({
     part: 'pages/flows',
-    approval: state === 'approved' ? 'approved' : state === 'approvable' ? 'approvable' : 'open',
-    approvalLabel: state === 'approved' ? LABELS.approvedBy : LABELS.notApproved,
     ...(state === 'open'
       ? FLOWS
       : {
@@ -94,8 +93,6 @@ export const inventoryPageSampleOf = (state: InventoryPageState): InventoryPageE
   }),
   page({
     part: 'pages/inbox',
-    approval: 'approved',
-    approvalLabel: LABELS.approvedBy,
     controls: [
       { number: '1', name: NAMES.studio, detail: LABELS.ownedBy('elements/studio-menu'), tone: 'ok', box: MENU },
       {
@@ -111,8 +108,6 @@ export const inventoryPageSampleOf = (state: InventoryPageState): InventoryPageE
   }),
   page({
     part: 'pages/system',
-    approval: 'approvable',
-    approvalLabel: LABELS.notApproved,
     controls: [
       { number: '1', name: NAMES.studio, detail: LABELS.ownedBy('elements/studio-menu'), tone: 'ok', box: MENU },
       {

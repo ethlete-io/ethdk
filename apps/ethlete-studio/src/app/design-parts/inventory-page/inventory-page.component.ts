@@ -22,7 +22,7 @@ import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 import { placeMarkers } from './marker-layout';
 import { INVENTORY_PAGE_TREE, inventoryPageSampleOf } from './inventory-page-sample';
 
-export type InventoryPageState = 'open' | 'approvable' | 'approved' | 'loading';
+export type InventoryPageState = 'open' | 'loading';
 
 export type InventoryPageTone = 'ok' | 'error' | 'warning';
 
@@ -37,15 +37,12 @@ export type InventoryPageRow = {
   box: InventoryPageBox | null;
 };
 
-export type InventoryPageApproval = 'open' | 'approvable' | 'approved';
-
 export type InventoryPageEntry = {
   part: string;
-  approval: InventoryPageApproval;
-  approvalLabel: string;
   controls: InventoryPageRow[];
   assets: InventoryPageRow[];
   overlays: InventoryPageRow[];
+  error: string | null;
   shot: string | null;
   size: { width: number; height: number } | null;
 };
@@ -99,10 +96,6 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
                       @if (frame.open) {
                         <span [etProvideColor]="errorTheme()" class="text-et-tone-fill">{{
                           LABELS.open(frame.open)
-                        }}</span>
-                      } @else {
-                        <span class="text-et-surface-text-muted">{{
-                          frame.page.approval === 'approved' ? LABELS.approvedShort : LABELS.readyToApprove
                         }}</span>
                       }
                     </figcaption>
@@ -169,20 +162,8 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
             <button [disabled]="loading()" (click)="reload.emit()" et-button type="button" variant="outline" size="sm">
               {{ LABELS.reload }}
             </button>
-            <button
-              [disabled]="approveBlocked()"
-              (click)="approve.emit()"
-              et-button
-              type="button"
-              variant="filled"
-              size="sm"
-            >
-              {{ LABELS.approve }}
-            </button>
-            @if (!loading() && current(); as page) {
-              <p class="m-0 w-full text-ui-sm whitespace-pre-line text-et-surface-text-muted">
-                {{ page.approvalLabel }}
-              </p>
+            @if (!loading() && current()?.error; as error) {
+              <p class="m-0 w-full text-ui-sm whitespace-pre-line text-et-surface-text-muted">{{ error }}</p>
             }
           </header>
           @if (!loading() && current(); as page) {
@@ -242,12 +223,10 @@ export class InventoryPageComponent {
   public tree = input(INVENTORY_PAGE_TREE);
   public pages = input<InventoryPageEntry[] | null>(null);
   public selected = input<string | null>(null);
-  public approving = input(false);
   public shotTemplate = input<TemplateRef<{ $implicit: InventoryPageEntry }> | null>(null);
   public shellAction = output<ShellAction>();
 
   public reload = output();
-  public approve = output();
 
   public pick = output<string>();
   public expandedChange = output<readonly string[]>();
@@ -268,9 +247,6 @@ export class InventoryPageComponent {
 
     return pages.find((page) => page.part === this.selected()) ?? pages[0] ?? null;
   });
-  protected approveBlocked = computed(
-    () => this.loading() || this.approving() || this.current()?.approval !== 'approvable',
-  );
   protected frames = computed(() =>
     this.shown().map((page, index) => ({
       page,

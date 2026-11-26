@@ -50,22 +50,12 @@ const settle = async (fixture: ComponentFixture<InventoryViewComponent>) => {
 
 const render = async (
   inventory: Inventory,
-  post?: (body: unknown) => Promise<Response>,
   pages: Record<string, Inventory> = { [inventory.part]: inventory },
   selected: string | null = null,
 ) => {
-  const posts: unknown[] = [];
   const reads: string[] = [];
 
-  vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
-    if (url.includes('/__design/inventory-approve')) {
-      const body: unknown = JSON.parse(String(init?.body));
-
-      posts.push(body);
-
-      return post ? post(body) : json(inventory);
-    }
-
+  vi.stubGlobal('fetch', (url: string) => {
     const part = new URL(url).searchParams.get('part') ?? '';
 
     reads.push(part);
@@ -96,13 +86,11 @@ const render = async (
   }
   await settle(fixture);
 
-  return { fixture, posts, reads, element: fixture.nativeElement as HTMLElement };
+  return { fixture, reads, element: fixture.nativeElement as HTMLElement };
 };
 
 const buttonNamed = (element: HTMLElement, name: string) =>
   [...element.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === name);
-
-const approveButton = (element: HTMLElement) => buttonNamed(element, 'Inventory freigeben') as HTMLButtonElement;
 
 const marksOf = (element: HTMLElement) => [...element.querySelectorAll<HTMLElement>('figure span.rounded-full')];
 
@@ -112,8 +100,6 @@ const leafTextOf = (node: Element) =>
   [...node.querySelectorAll('span:not(:has(span))')].map((span) => span.textContent?.trim()).join(' ');
 
 const entriesOf = (element: HTMLElement) => [...element.querySelectorAll<HTMLElement>('ol > li')];
-
-const approvalOf = (element: HTMLElement) => element.querySelector('aside header > p')?.textContent ?? '';
 
 const themeClassesOf = (element: Element | undefined) =>
   [...(element?.classList ?? [])].filter((name) => /danger|warning|brand/.test(name)).join(' ');
@@ -172,75 +158,32 @@ describe('InventoryViewComponent', () => {
     expect(themeClassesOf(entriesOf(element)[1])).toContain('danger');
   });
 
-  it('keeps approve disabled while a control is red or amber', async () => {
-    expect(approveButton((await render(inventoryOf([control(1, 'help', 'undeclared')]))).element).disabled).toBe(true);
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
-    });
-    expect(approveButton((await render(inventoryOf([control(1, 'row', 'unclassified')]))).element).disabled).toBe(true);
+  it('shows the inventory without any approval and offers no approve button', async () => {
+    const { element } = await render(inventoryOf([control(1, 'help', 'undeclared')]));
+
+    expect(entriesOf(element)).toHaveLength(1);
+    expect(buttonNamed(element, 'Neu laden')).toBeDefined();
+    expect(element.textContent).not.toContain('freigeben');
+    expect(element.textContent).not.toContain('Freigabe');
   });
 
-  it('lists a control an embedded part owns with its owner and keeps approve enabled', async () => {
+  it('lists a control an embedded part owns with its owner', async () => {
     const { element } = await render(inventoryOf([control(1, 'main > et-button', 'owned')]));
     expect(entriesOf(element)[0]?.textContent).toContain('gehört zu components/button');
-    expect(approveButton(element).disabled).toBe(false);
   });
 
-  it('posts the part, the shown hash and the designer, and shows the approval', async () => {
-    const shown = inventoryOf([control(1, 'save', 'declared')]);
-    const approved: Inventory = {
-      ...shown,
-      state: { state: 'approved' },
-      approval: { ids: ['save'], hash: 'h1', by: 'designer', at: '2026-10-30T10:00:00Z' },
-    };
-    const { fixture, posts, element } = await render(shown, () => json(approved));
-
-    expect(approveButton(element).disabled).toBe(false);
-    approveButton(element).click();
-    await settle(fixture);
-
-    expect(posts).toEqual([{ part: 'pages/merge', hash: 'h1', by: 'designer' }]);
-    expect(approvalOf(element)).toContain('Von designer am');
-    expect(approveButton(element).disabled).toBe(true);
-  });
-
-  it('says the page changed when the server refuses with 409', async () => {
-    const { fixture, element } = await render(inventoryOf([control(1, 'save', 'declared')]), () =>
-      json({ error: 'pages/merge changed since its inventory was shown - reload and check it again' }, 409),
-    );
-
-    approveButton(element).click();
-    await settle(fixture);
-
-    expect(approvalOf(element)).toContain('Die Seite hat sich geändert, seit diese Inventory gezeichnet wurde.');
-  });
-
-  it('reads each page once, shows a frame per page and approves the selected page', async () => {
+  it('reads each page once and shows a frame per page', async () => {
     const merge = inventoryOf([control(1, 'save', 'undeclared')]);
     const inbox: Inventory = {
       ...inventoryOf([control(1, 'reply', 'declared')]),
       part: 'pages/inbox',
       hash: 'h2',
     };
-    const { fixture, posts, reads, element } = await render(
-      merge,
-      () => json({ ...inbox, state: { state: 'approved' } }),
-      { 'pages/merge': merge, 'pages/inbox': inbox },
-      'pages/inbox',
-    );
+    const { reads, element } = await render(merge, { 'pages/merge': merge, 'pages/inbox': inbox }, 'pages/inbox');
 
     expect(reads.sort()).toEqual(['pages/inbox', 'pages/merge']);
-    expect([...element.querySelectorAll('figcaption')].map(leafTextOf)).toEqual([
-      'pages/merge 1 offen',
-      'pages/inbox bereit zur Freigabe',
-    ]);
+    expect([...element.querySelectorAll('figcaption')].map(leafTextOf)).toEqual(['pages/merge 1 offen', 'pages/inbox']);
     expect(element.querySelector('aside h2')?.textContent?.trim()).toBe('pages/inbox');
-
-    approveButton(element).click();
-    await settle(fixture);
-
-    expect(posts).toEqual([{ part: 'pages/inbox', hash: 'h2', by: 'designer' }]);
   });
 
   it('lists each asset and overlay once across frames, numbered per kind', async () => {
@@ -279,6 +222,5 @@ describe('InventoryViewComponent', () => {
       'A2 svg Inline-SVG, nicht aus den Foundations',
       'O1 svg gehört zu components/menu',
     ]);
-    expect(approveButton(element).disabled).toBe(true);
   });
 });

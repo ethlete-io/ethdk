@@ -102,12 +102,6 @@
       "confirmed": true
     },
     {
-      "id": "inventory-approve",
-      "label": "Inventory freigeben",
-      "place": { "part": "pages/inventory", "action": "emit:approveInventory" },
-      "confirmed": true
-    },
-    {
       "id": "inventory-reload",
       "label": "Inventory neu laden",
       "place": { "part": "pages/inventory", "action": "emit:reloadInventory" },
