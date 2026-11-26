@@ -17,7 +17,7 @@ export const appConfig: ApplicationConfig = {
     // the moment the webview reloads on one.
     provideRouter(APP_ROUTES, withHashLocation()),
     ...provideColorThemesWithTailwind4([...THEMES, FARN_THEME]),
-    ...provideSurfaceThemesWithTailwind4([...SURFACE_THEMES, FARN_SURFACE]),
+    ...provideSurfaceThemesWithTailwind4([...SURFACE_THEMES, { ...FARN_SURFACE, isDefault: false }]),
     providePreferredScheme(),
     provideWindowChrome(),
     ...provideNotificationManager(),

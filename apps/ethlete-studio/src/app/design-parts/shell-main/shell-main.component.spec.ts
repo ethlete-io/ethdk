@@ -6,6 +6,7 @@ import { EMPTY, of } from 'rxjs';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { StudioCodeState } from '../../../host/studio-code';
 import { THEMES } from '../../../themes';
+import { appConfig } from '../../app.config';
 import { injectCodeWatch } from '../../code-watch';
 
 const code = vi.hoisted(() => ({ state: null as StudioCodeState | null, quit: vi.fn() }));
@@ -24,6 +25,7 @@ vi.mock('../../../host/window', () => ({
   minimizeWindow$: () => EMPTY,
   toggleMaximizeWindow$: () => EMPTY,
   isWindowMaximized$: () => of(false),
+  provideWindowChrome: () => [],
 }));
 import { ShellMainComponent, ShellSection } from './shell-main.component';
 
@@ -495,5 +497,19 @@ describe('ShellMainComponent', () => {
       expect(hint).toBeUndefined();
       expect(text ?? '').not.toContain('CLI hat uncommittete Änderungen');
     });
+  });
+  it('raises the rail logo and the product buttons one surface above the page with the app themes', async () => {
+    TestBed.configureTestingModule({ providers: appConfig.providers });
+
+    const fixture = TestBed.createComponent(ShellMainComponent);
+
+    await fixture.whenStable();
+
+    const nav: HTMLElement = fixture.nativeElement.querySelector('nav');
+    const raised = [...nav.querySelectorAll('[etautosurface]')].map((el) =>
+      [...el.classList].find((name) => name.startsWith('et-surface--')),
+    );
+
+    expect(raised).toEqual(Array(4).fill('et-surface--dark-elevated'));
   });
 });
