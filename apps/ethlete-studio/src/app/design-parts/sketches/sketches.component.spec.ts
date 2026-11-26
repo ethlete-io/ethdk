@@ -1005,6 +1005,19 @@ describe('SketchesComponent', () => {
       expect(new Set(tags)).toEqual(new Set([LABELS.current, LABELS.variant('x')]));
     });
 
+    it('shows the head name of every block as the same pill', async () => {
+      const root: HTMLElement = (await render({ rows: manyOf(30, 900), camera: 'fit' })).nativeElement;
+      const names = [...root.querySelectorAll<HTMLElement>('[data-sk-matrix] [data-sk-row]')]
+        .map((section) => section.querySelector<HTMLElement>('[data-sk-head-name], [data-sk-head-tag]'))
+        .filter((name): name is HTMLElement => !!name && !name.closest('[data-sk-head-hidden]'));
+
+      expect(names.length).toBeGreaterThan(2);
+      expect(names.some((name) => name.hasAttribute('data-sk-head-name'))).toBe(true);
+      expect(
+        names.every((name) => name.classList.contains('rounded-full') && !name.classList.contains('font-code')),
+      ).toBe(true);
+    });
+
     it('names the later blocks of an @edit sketch with readable tags, not initials', async () => {
       const [newSide, oldSide] = manyOf(30, 900);
       const rows = [

@@ -156,7 +156,7 @@
                         <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
                       } @else {
                         <span
-                          class="inline-flex max-w-full items-center truncate rounded-full px-1 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
+                          class="inline-flex max-w-full items-center truncate rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
                           data-sk-head-tag
                           >{{ row.label ?? (row.key === CURRENT ? LABELS.current : LABELS.variant(row.key)) }}</span
                         >
@@ -620,11 +620,11 @@
   }
   <div [class.hidden]="headHidden()" class="flex min-w-0 flex-col gap-space-2">
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
-      @if (row.key === CURRENT) {
-        <span class="text-ui-sm font-ui-medium text-et-surface-text">{{ row.label ?? LABELS.current }}</span>
-      } @else {
-        <span class="font-code text-ui-sm text-et-surface-text">{{ row.label ?? LABELS.variant(row.key) }}</span>
-      }
+      <span
+        class="inline-flex max-w-full items-center truncate rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
+        data-sk-head-name
+        >{{ row.label ?? (row.key === CURRENT ? LABELS.current : LABELS.variant(row.key)) }}</span
+      >
       @if (row.model; as model) {
         <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-text-muted" data-sk-model
           ><svg [agent]="model.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ model.short }}</span
