@@ -60,17 +60,20 @@ export const withEditUnchanged = <T extends EditTarget>(sketch: Sketch, targets:
   });
 };
 
+const countOf = (states: string[], what: string) =>
+  states.length ? [`${states.length} ${states.length === 1 ? 'Zustand' : 'Zustände'} ${what}`] : [];
+
 const statesLineOf = ({ removed, added, redrawn }: EditStates) => [
-  ...(removed.length ? [`Entfällt: ${removed.join(', ')}`] : []),
-  ...(added.length ? [`Neu: ${added.join(', ')}`] : []),
-  ...(redrawn.length ? [`Anders: ${redrawn.join(', ')}`] : []),
+  ...countOf(removed, 'entfällt'),
+  ...countOf(added, 'neu'),
+  ...countOf(redrawn, 'anders'),
 ];
 
-/** The note of an edit sketch's `new`: what it is, and the states it removes, adds and draws differently. */
+/** The note of an edit sketch's `new`: what it is, and how many states it removes, adds and draws differently. */
 export const editNoteOf = ({ note, states }: { note: string; states: EditStates }) =>
   [note, ...statesLineOf(states)].join(' · ');
 
-/** The `variantInfo` of an edit sketch with the note of `new` naming its differing states; any other sketch's as it is. */
+/** The `variantInfo` of an edit sketch with the note of `new` counting its differing states; any other sketch's as it is. */
 export const editVariantInfoOf = ({
   product,
   sketch,

@@ -126,13 +126,21 @@ describe('editStatesOf', () => {
 });
 
 describe('editNoteOf', () => {
-  it('names the differing states in the words of the cells, without a commit', () => {
+  it('counts the differing states, never naming them or a commit', () => {
     expect(
       editNoteOf({
         note: 'Direkt geändert',
-        states: { removed: ['selected'], added: ['merging'], redrawn: ['drawing'] },
+        states: { removed: ['selected'], added: ['merging', 'page-sketch'], redrawn: ['drawing'] },
       }),
-    ).toBe('Direkt geändert · Entfällt: selected · Neu: merging · Anders: drawing');
+    ).toBe('Direkt geändert · 1 Zustand entfällt · 2 Zustände neu · 1 Zustand anders');
+  });
+
+  it('counts a heavy edit of many states without listing one', () => {
+    const redrawn = Array.from({ length: 38 }, (_, index) => `page-${index}`);
+
+    expect(editNoteOf({ note: 'Direkt geändert', states: { removed: [], added: [], redrawn } })).toBe(
+      'Direkt geändert · 38 Zustände anders',
+    );
   });
 
   it('is the bare note when no state differs', () => {
