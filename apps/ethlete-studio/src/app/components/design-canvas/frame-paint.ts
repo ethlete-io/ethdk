@@ -18,6 +18,7 @@ import {
   takeWhile,
   timer,
 } from 'rxjs';
+import { fromFetch } from 'rxjs/fetch';
 import { DESIGN_STAMP_PATH } from '../../../host/design-server-pid';
 import { CANVAS_LABELS } from '../../i18n/canvas-labels';
 import { FrameMessage, frameMessageOf } from './canvas-frame';
@@ -105,7 +106,7 @@ export const failedLoadReason$ = (src: string): Observable<string> => {
 
   if (!url) return of(CANVAS_LABELS.noFrameMessage);
 
-  return defer(() => fetch(url, { cache: 'no-store' })).pipe(
+  return fromFetch(url.href, { cache: 'no-store' }).pipe(
     map((response) =>
       response.ok
         ? CANVAS_LABELS.loadedWithoutFrameMessage
@@ -113,6 +114,7 @@ export const failedLoadReason$ = (src: string): Observable<string> => {
     ),
     // eslint-disable-next-line ethlete/no-silent-catch-error -- a refused fetch is the reason the banner names
     catchError(() => of(CANVAS_LABELS.unanswered)),
+    startWith(CANVAS_LABELS.noFrameMessage),
   );
 };
 

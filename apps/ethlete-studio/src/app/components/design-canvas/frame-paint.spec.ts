@@ -198,6 +198,23 @@ describe('failedLoadReason$', () => {
       'Die Seite wurde geladen, hat aber keine Frame-Nachricht gesendet.',
     );
   });
+
+  it('names the failure while the design server has not answered yet, and drops that fetch on unsubscribe', () => {
+    let signal: AbortSignal | undefined;
+    vi.stubGlobal('fetch', (_url: URL, init?: RequestInit) => {
+      signal = init?.signal ?? undefined;
+
+      return new Promise<Response>(() => undefined);
+    });
+    const reasons: string[] = [];
+
+    failedLoadReason$('http://localhost:4402/frame.html')
+      .subscribe((reason) => reasons.push(reason))
+      .unsubscribe();
+
+    expect(reasons).toEqual(['Die Seite hat keine Frame-Nachricht gesendet.']);
+    expect(signal?.aborted).toBe(true);
+  });
 });
 
 describe('designServerBack$', () => {
