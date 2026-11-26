@@ -56,6 +56,31 @@ describe('statesWithoutSourceOf', () => {
   });
 });
 
+describe('statesWithoutSourceOf with harness-fed props', () => {
+  const states = { closed: { content: 'x', open: false }, open: { content: 'x', open: true } };
+  const of = (fed?: string[]) =>
+    statesWithoutSourceOf({
+      states,
+      inputs: ['content', 'open'],
+      selector: 'app-hold',
+      templates: ['<app-hold [open]="o" />'],
+      fed,
+    });
+
+  it('reports a prop no template binds when the harness does not feed it', () => {
+    expect(of()).toEqual(
+      new Map([
+        ['closed', ['content']],
+        ['open', ['content']],
+      ]),
+    );
+  });
+
+  it('accepts a prop the harness feeds', () => {
+    expect(of(['content']).size).toBe(0);
+  });
+});
+
 describe('statesWithoutSourceOf with overlay bindings', () => {
   const states = { rest: { hold: false, reason: 'late' } };
   const run = (templates: string[]) =>

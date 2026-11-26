@@ -6,15 +6,16 @@ import { ResolvedProduct } from './resolve-product';
 import { sourceFileOf } from './ts-source';
 
 const SAMPLES_EXPORT = 'DESIGN_HARNESS_SAMPLES';
+const TEMPLATES_EXPORT = 'DESIGN_HARNESS_TEMPLATES';
 
-const samplesObjectOf = (source: string) => {
+const exportedObjectOf = (source: string, exportName: string) => {
   for (const statement of sourceFileOf(source).statements) {
     if (!ts.isVariableStatement(statement)) continue;
 
     for (const declaration of statement.declarationList.declarations)
       if (
         ts.isIdentifier(declaration.name) &&
-        declaration.name.text === SAMPLES_EXPORT &&
+        declaration.name.text === exportName &&
         declaration.initializer &&
         ts.isObjectLiteralExpression(declaration.initializer)
       )
@@ -23,6 +24,8 @@ const samplesObjectOf = (source: string) => {
 
   return null;
 };
+
+const samplesObjectOf = (source: string) => exportedObjectOf(source, SAMPLES_EXPORT);
 
 const readPropsOf = (body: ts.Node, parameter: string) => {
   const names: string[] = [];
@@ -140,4 +143,69 @@ export const productSampledPropsOf = (options: {
   const file = harnessSamplesFileOf({ target: options.target, map: harness.map });
 
   return file === null ? [] : harnessSampledPropsOf({ source: readFileSync(file, 'utf8'), part: options.part });
+};
+
+const nameOf = (name: ts.PropertyName) => (ts.isIdentifier(name) || ts.isStringLiteralLike(name) ? name.text : null);
+
+const templateKeysOfClass = (source: string, className: string) => {
+  const keys: string[] = [];
+
+  for (const statement of sourceFileOf(source).statements) {
+    if (!ts.isClassDeclaration(statement) || statement.name?.text !== className) continue;
+
+    const method = statement.members.find(
+      (member): member is ts.MethodDeclaration =>
+        ts.isMethodDeclaration(member) && ts.isIdentifier(member.name) && member.name.text === 'templates',
+    );
+    const visit = (node: ts.Node) => {
+      if (ts.isReturnStatement(node) && node.expression && ts.isObjectLiteralExpression(node.expression))
+        for (const property of node.expression.properties) {
+          const name = property.name ? nameOf(property.name) : null;
+
+          if (name !== null) keys.push(name);
+        }
+
+      ts.forEachChild(node, visit);
+    };
+
+    if (method?.body) visit(method.body);
+  }
+
+  return keys;
+};
+
+/**
+ * The props the harness feeds `part` itself: the keys `templates()` returns on the component the
+ * `DESIGN_HARNESS_TEMPLATES` object of `source` names for it, found by class name in `sources`.
+ */
+export const harnessFedPropsOf = (options: { source: string; sources: readonly string[]; part: string }): string[] => {
+  const templates = exportedObjectOf(options.source, TEMPLATES_EXPORT);
+  const property = templates?.properties.find(
+    (candidate): candidate is ts.PropertyAssignment =>
+      ts.isPropertyAssignment(candidate) && nameOf(candidate.name) === options.part,
+  );
+
+  if (!property || !ts.isIdentifier(property.initializer)) return [];
+
+  const className = property.initializer.text;
+
+  return [...new Set([options.source, ...options.sources].flatMap((text) => templateKeysOfClass(text, className)))];
+};
+
+/** The props of `part` the product's harness feeds through `DESIGN_HARNESS_TEMPLATES`, so no app template has to. */
+export const productFedPropsOf = (options: { target: string; product: ResolvedProduct; part: string }): string[] => {
+  const harness = harnessOf(options.product);
+
+  if (harness === null || typeof harness === 'string') return [];
+
+  const file = harnessSamplesFileOf({ target: options.target, map: harness.map });
+
+  if (file === null) return [];
+
+  const dir = dirname(file);
+  const sources = readdirSync(dir)
+    .filter((name) => name.endsWith('.ts') && !name.endsWith('.spec.ts'))
+    .map((name) => readFileSync(join(dir, name), 'utf8'));
+
+  return harnessFedPropsOf({ source: readFileSync(file, 'utf8'), sources, part: options.part });
 };

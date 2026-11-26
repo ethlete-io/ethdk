@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { droppedStatePropsOf } from './dropped-props';
 import { droppedPropsOf } from './part-compare';
-import { harnessSampledPropsOf, harnessSamplesFileOf } from './harness-samples';
+import { harnessFedPropsOf, harnessSampledPropsOf, harnessSamplesFileOf } from './harness-samples';
 
 const SAMPLES = `
 type Props = Record<string, unknown>;
@@ -68,5 +68,33 @@ describe('harnessSamplesFileOf', () => {
       join(dir, 'design-harness-samples.ts'),
     );
     expect(harnessSamplesFileOf({ target, map: 'missing/parts.ts' })).toBeNull();
+  });
+});
+
+describe('harnessFedPropsOf', () => {
+  const source = `
+export const DESIGN_HARNESS_TEMPLATES = {
+  'components/hold-trigger': HoldHost,
+  'pages/none': Missing,
+};
+`;
+  const host = `
+export class HoldHost {
+  public templates() {
+    return { content: this.content(), reason: this.reason() };
+  }
+}
+`;
+
+  it('reads the keys templates() returns on the component named for the part', () => {
+    expect(harnessFedPropsOf({ source, sources: [host], part: 'components/hold-trigger' })).toEqual([
+      'content',
+      'reason',
+    ]);
+  });
+
+  it('feeds nothing for a part the object lacks or whose component is not found', () => {
+    expect(harnessFedPropsOf({ source, sources: [host], part: 'components/other' })).toEqual([]);
+    expect(harnessFedPropsOf({ source, sources: [host], part: 'pages/none' })).toEqual([]);
   });
 });

@@ -4,7 +4,7 @@ import ts from 'typescript';
 import { INTERACTIONS } from '../force-interactions';
 import { DesignConfig } from '../design-config';
 import { DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, STATE_UNDESIGNED_RULE } from './build-ready-contract';
-import { productSampledPropsOf } from './harness-samples';
+import { productFedPropsOf, productSampledPropsOf } from './harness-samples';
 import { designOnlyPropsOf, pointerOpensOf } from './part-compare';
 import { Problem } from './problem';
 import { linkedComponentOf } from './part-task';
@@ -328,7 +328,7 @@ const forcedKeyOf = (options: {
 /**
  * The state props that name an input no consumer template feeds: no tag of `selector` binds it, or every tag binds a
  * constant (a tag that leaves it out feeds its literal default from `defaults`) that differs from the value the state
- * sets, so the app can never reach that state.
+ * sets, so the app can never reach that state. A prop in `fed` is fed by the design harness, so it needs no template.
  */
 export const statesWithoutSourceOf = (options: {
   states: Record<string, unknown>;
@@ -337,8 +337,9 @@ export const statesWithoutSourceOf = (options: {
   templates: readonly string[];
   defaults?: Readonly<Record<string, string>>;
   component?: string | null;
+  fed?: readonly string[];
 }): Map<string, string[]> => {
-  const { states, inputs, selector, templates, defaults = {}, component = null } = options;
+  const { states, inputs, selector, templates, defaults = {}, component = null, fed = [] } = options;
   const openers =
     component === null ? [] : templates.filter((text) => new RegExp(`\\b${escaped(component)}\\b`, 'u').test(text));
   const isOpened = (key: string) =>
@@ -357,7 +358,7 @@ export const statesWithoutSourceOf = (options: {
       .filter(([key]) => inputs.includes(key))
       .filter(([key, value]) => !(forced.length > 0 && forcedKeyOf({ key, value, forced, states, forcing })))
       .filter(([key, value]) => {
-        if (isOpened(key)) return false;
+        if (isOpened(key) || fed.includes(key)) return false;
 
         if (!isBound(key, tags)) return true;
 
@@ -563,6 +564,7 @@ export const droppedPropProblemsOf = async (options: {
         templates,
         defaults,
         component: classNameOf(text),
+        fed: productFedPropsOf({ target, product, part: partKeyOf(part) }),
       }))
         problems.push({
           rule: STATE_NO_SOURCE_RULE,
