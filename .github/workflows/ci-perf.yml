@@ -11,17 +11,19 @@ on:
       - 'plans/**'
   pull_request:
 
+env:
+  NX_NO_CLOUD: 'true'
+
 concurrency:
   group: ci-perf-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   perf:
-    name: Perf (non-blocking)
+    name: Perf
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # playwright:v1.64.1-noble
     container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
-    continue-on-error: true
     timeout-minutes: 20
     permissions:
       contents: read
@@ -49,7 +51,6 @@ jobs:
       - if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: yarn studio:e2e --perf --engine webkit --case "ctrl-wheel zoom over 100 cells keeps the frame interval budget"
         timeout-minutes: 10
-        continue-on-error: true
         env:
           STUDIO_E2E_WORKERS: 1
 
