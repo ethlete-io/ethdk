@@ -33,11 +33,14 @@ const render = async (open: number) => {
 };
 
 describe('OpenPointsChipComponent', () => {
-  it('is an icon button with a speech bubble and a count badge at 3 open', async () => {
+  it('is an icon button with a checklist icon and a count badge at 3 open', async () => {
     const { root, button } = await render(3);
 
     expect(button?.hasAttribute('et-icon-button')).toBe(true);
-    expect(button?.querySelector('svg[data-open-points-icon]')).not.toBeNull();
+    expect(button?.querySelector('svg[data-open-points-icon]')?.getAttribute('data-open-points-icon')).toBe(
+      'checklist',
+    );
+    expect(button?.querySelectorAll('svg[data-open-points-icon] path')).toHaveLength(6);
     expect(root.querySelector('et-badge')?.textContent?.trim()).toBe('3');
     expect(button?.getAttribute('aria-label')).toBe(SYSTEM_LABELS.openCount(3));
     expect(describedBy(button)).toContain(SYSTEM_LABELS.openCount(3));

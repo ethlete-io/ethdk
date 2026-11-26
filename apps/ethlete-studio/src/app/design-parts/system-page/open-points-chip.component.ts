@@ -55,11 +55,14 @@ import { OpenPointGroup, OpenPointTarget, PartException } from './system-page-sa
           stroke-linecap="round"
           stroke-linejoin="round"
           aria-hidden="true"
-          data-open-points-icon
+          data-open-points-icon="checklist"
         >
-          <path d="M3 4.5h10v6H7.5L5 12.5v-2H3z" />
-          <path d="M5.5 6.5h5" />
-          <path d="M5.5 8.5h3" />
+          <path d="M2 3.5l1 1 2-2" />
+          <path d="M7.5 3.5h6" />
+          <path d="M2 8l1 1 2-2" />
+          <path d="M7.5 8h6" />
+          <path d="M2 12.5l1 1 2-2" />
+          <path d="M7.5 12.5h6" />
         </svg>
       </button>
       @if (badgeCount()) {

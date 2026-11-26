@@ -125,5 +125,13 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1"
     }
+  },
+  "autoMergeForecast": {
+    "merges": false,
+    "reason": "variant a changes part, many-states-folded, fit, points-closed, nothing-open, comment-mode, comment-draft, comment-draft-typed, send-error, send-rejected, comments, comments-mode, comments-draft, thread, thread-own, one-blocker, checking, blocked-checking, direct-edit, direct-edit-closed, blockers-open, developer-part, developer-part-blocked",
+    "contents": {
+      "a": "8fdfd7989b61f642"
+    },
+    "at": "2026-11-26T11:04:07.417Z"
   }
 }
