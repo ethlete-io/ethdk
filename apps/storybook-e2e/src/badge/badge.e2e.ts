@@ -220,7 +220,7 @@ test.describe('badge / structure', () => {
     expect(chrome.borderColor).toBe(chrome.ink);
   });
 
-  test('filled is a solid fill with the on-primary ink inside an ink border', async ({ page }) => {
+  test('filled is a solid fill with the on-primary ink and no border', async ({ page }) => {
     const root = await openStory(page, FILLED_STORY_ID);
     const badge = root.locator(BADGE).first();
 
@@ -230,7 +230,8 @@ test.describe('badge / structure', () => {
 
     expect(chrome.primaryOpacity).toBe('1');
     expect((await rgbaOf(badge, chrome.background))[3]).toBe(255);
-    expect(chrome.borderColor).toBe(chrome.ink);
+    // The human decided in B798 that a filled badge has no border.
+    expect((await rgbaOf(badge, chrome.borderColor))[3]).toBe(0);
   });
 
   test('outline is a transparent fill behind a coloured border', async ({ page }) => {
