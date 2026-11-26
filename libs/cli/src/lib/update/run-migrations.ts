@@ -6,14 +6,23 @@ import { Migration } from './migration-manifest';
 import { PackageManager, PackageManagerName, installEnv, nxCommand, spawnPackageManager } from './package-manager';
 import { PendingMigration } from './plan';
 
-export type MigrationState = 'applied' | 'failed' | 'unsupported' | 'task' | 'planned';
+export type MigrationState = 'applied' | 'failed' | 'unsupported' | 'task' | 'planned' | 'not-run';
 
 export type MigrationOutcome = {
   pending: PendingMigration;
   state: MigrationState;
   /** Why it did not apply, for a state other than `applied`. */
   reason?: string;
+  /** The `file:line` places a failed generator named in its error output. */
+  locations?: string[];
 };
+
+const LOCATION = /(?:^|\s)((?:[\w@.-]+\/)*[\w@.-]+\.\w+:\d+)(?::\d+)?(?=[:\s)]|$)/gm;
+
+/** The `file:line` places in a generator's error output, in order and without repeats. */
+export const failureLocations = (output: string) => [
+  ...new Set([...output.matchAll(LOCATION)].map((match) => match[1] ?? '')),
+];
 
 /** Nx runs the auto migrations, so a repo without it gets the command printed instead. */
 export const hasNx = (root: string) =>
@@ -46,11 +55,27 @@ export const runAutoMigration = (options: {
 
   if (binary === undefined) return { pending, state: 'failed', reason: 'no command to run the generator with' };
 
-  const result = spawnPackageManager({ binary, args, spawn: { cwd: root, stdio: 'inherit' } });
+  const result = spawnPackageManager({
+    binary,
+    args,
+    spawn: { cwd: root, stdio: ['inherit', 'inherit', 'pipe'], maxBuffer: 64 * 1024 * 1024 },
+  });
+  const errorOutput = result.stderr?.toString() ?? '';
+
+  if (errorOutput) process.stderr.write(errorOutput);
 
   if (result.error) return { pending, state: 'failed', reason: result.error.message };
 
-  if (result.status !== 0) return { pending, state: 'failed', reason: `${binary} exited with ${result.status}` };
+  if (result.status !== 0) {
+    const locations = failureLocations(errorOutput);
+
+    return {
+      pending,
+      state: 'failed',
+      reason: `${binary} exited with ${result.status}`,
+      ...(locations.length > 0 && { locations }),
+    };
+  }
 
   return { pending, state: dryRun ? 'planned' : 'applied' };
 };
@@ -213,6 +238,10 @@ const runOne = (options: {
   return runAutoMigration({ root, manager, pending: entry, dryRun });
 };
 
+/**
+ * Runs the pending migrations in order. A failed one stops the run: the ones after it come back as `not-run`,
+ * so `--continue` resumes at the failed step instead of running later codemods on code it left half done.
+ */
 export const runPendingMigrations = (options: {
   root: string;
   manager: PackageManager;
@@ -222,10 +251,14 @@ export const runPendingMigrations = (options: {
 }): MigrationOutcome[] => {
   const { root, manager, pending, dryRun, afterEach } = options;
   const nxAvailable = hasNx(root);
+  let stopped = false;
 
-  return pending.map((entry) => {
+  return pending.map((entry): MigrationOutcome => {
+    if (stopped) return { pending: entry, state: 'not-run', reason: 'an earlier migration failed' };
+
     const outcome = runOne({ root, manager, entry, dryRun, nxAvailable });
 
+    stopped = outcome.state === 'failed' && !dryRun;
     afterEach?.(outcome);
 
     return outcome;

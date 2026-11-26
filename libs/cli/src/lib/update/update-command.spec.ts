@@ -10,7 +10,9 @@ import { updateCommand } from './update-command';
 import { gitExec } from '../git-test-env.fixtures';
 
 const spawnSync = vi.hoisted(() =>
-  vi.fn<(binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => { status: number }>(),
+  vi.fn<
+    (binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => { status: number; stderr?: string }
+  >(),
 );
 
 const REAL_GIT = ['ls-files', 'rev-parse', 'status', 'add', 'commit', 'reset'];
@@ -215,6 +217,40 @@ describe('et update --continue', () => {
     expect(readFileSync(join(root, UPDATE_DIR, TASKS_FILE), 'utf8')).toContain(
       '- `@ethlete/core` first (@ethlete/core:first)\n- `@ethlete/core` second (@ethlete/core:second)',
     );
+  });
+
+  it('stops at a failed codemod and names the place it failed at', async () => {
+    const root = makeRepo();
+
+    spawnSync.mockImplementation((_binary, args) =>
+      args.includes('@ethlete/core:first')
+        ? { status: 1, stderr: '   ✗ apps/web/src/button.css:4: --old-token is reassigned\n' }
+        : { status: 0 },
+    );
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(1);
+    expect(generatorsRun()).toEqual(['@ethlete/core:first']);
+    expect(console.error).toHaveBeenCalledWith('  - @ethlete/core first: yarn exited with 1');
+    expect(console.error).toHaveBeenCalledWith('      at apps/web/src/button.css:4');
+    expect(console.error).toHaveBeenCalledWith(
+      '  1 later migration(s) not run: --continue resumes at @ethlete/core first.',
+    );
+    expect(readPendingUpdate(root)?.finished).toEqual([]);
+  });
+
+  it('resumes a stopped run at the failed codemod', async () => {
+    const root = makeRepo();
+
+    spawnSync.mockImplementation((_binary, args) => ({ status: args.includes('@ethlete/core:first') ? 1 : 0 }));
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(1);
+
+    spawnSync.mockReset();
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(generatorsRun()).toEqual(['@ethlete/core:first', '@ethlete/core:second']);
+    expect(readPendingUpdate(root)).toBeUndefined();
   });
 
   it('migrates from the --from version of the run it continues', async () => {

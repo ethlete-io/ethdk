@@ -223,6 +223,17 @@ export const printOutcomes = (outcomes: readonly MigrationOutcome[], syncFailure
 
   for (const outcome of failed) {
     console.error(`  - ${outcome.pending.packageName} ${outcome.pending.migration.name}: ${outcome.reason}`);
+
+    for (const location of outcome.locations ?? []) console.error(`      at ${location}`);
+  }
+
+  const notRun = outcomes.filter((outcome) => outcome.state === 'not-run');
+  const stoppedAt = failed[0];
+
+  if (notRun.length > 0 && stoppedAt) {
+    console.error(
+      `  ${notRun.length} later migration(s) not run: --continue resumes at ${stoppedAt.pending.packageName} ${stoppedAt.pending.migration.name}.`,
+    );
   }
 
   if (syncFailure) console.error(`  - ${syncFailure.command}: ${syncFailure.reason}`);

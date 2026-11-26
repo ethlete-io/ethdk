@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { Migration } from './migration-manifest';
 import { PackageManager } from './package-manager';
 import {
+  failureLocations,
   generatorArgs,
   hasNx,
   manualGeneratorCommand,
@@ -67,6 +68,22 @@ describe('hasNx', () => {
     writeFileSync(join(root, 'node_modules', 'nx', 'package.json'), '{}', 'utf8');
 
     expect(hasNx(root)).toBe(false);
+  });
+});
+
+describe('failureLocations', () => {
+  it('reads each file:line once, in order', () => {
+    expect(
+      failureLocations(
+        [
+          '2 place(s) need a hand fix:',
+          '   ✗ apps/web/src/button.css:4: --old is reassigned',
+          '   ✗ libs/ui/a.component.ts:12:5: unknown',
+          'at apps/web/src/button.css:4',
+          'NX  yarn exited with 1',
+        ].join('\n'),
+      ),
+    ).toEqual(['apps/web/src/button.css:4', 'libs/ui/a.component.ts:12']);
   });
 });
 
