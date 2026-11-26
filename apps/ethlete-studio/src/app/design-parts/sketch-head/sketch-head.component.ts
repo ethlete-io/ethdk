@@ -3,7 +3,8 @@ import { BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, MENU_IMPORTS, SWITCH_IMPORTS } fr
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
-import { SketchBadgeStatus, SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status-badge.component';
+import { SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status-badge.component';
+import { SketchBadgeStatus } from '../../icons/sketch-status-icons';
 import { SketchHold, SketchRound, SketchStatus, SketchWithdrawn } from '../sketches/sketches-sample';
 
 @Component({

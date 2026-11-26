@@ -3,7 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
-import { SketchBadgeStatus, SketchStatusBadgeComponent } from './sketch-status-badge.component';
+import { SketchStatusBadgeComponent } from './sketch-status-badge.component';
+import { SKETCH_STATUS_ICONS, SketchBadgeStatus } from '../../icons/sketch-status-icons';
 
 const render = async (status: SketchBadgeStatus, note: string | null = null) => {
   TestBed.configureTestingModule({
@@ -30,6 +31,18 @@ describe('SketchStatusBadgeComponent', () => {
       expect(button?.getAttribute('aria-label')).toBe(SKETCHES_LABELS.statusTip[status].label);
       expect(host.textContent?.trim()).toBe('');
       expect(host.querySelector('.rounded-full')).toBeNull();
+    },
+  );
+
+  it.each(Object.keys(SKETCHES_LABELS.statusTip) as SketchBadgeStatus[])(
+    'draws the %s icon through the SDK icon directive',
+    async (status) => {
+      const { host } = await render(status);
+      const icon = host.querySelector<HTMLElement>('[data-sk-status-icon]');
+
+      expect(icon?.classList).toContain('et-icon');
+      expect(icon?.classList).toContain(`et-icon--${SKETCH_STATUS_ICONS[status].name}`);
+      expect(icon?.querySelector('svg')).not.toBeNull();
     },
   );
 

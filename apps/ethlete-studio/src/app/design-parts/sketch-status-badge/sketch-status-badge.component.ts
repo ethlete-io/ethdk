@@ -1,46 +1,8 @@
-import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
-import { BUTTON_IMPORTS, TOGGLETIP_IMPORTS } from '@ethlete/components';
+import { Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { BUTTON_IMPORTS, ICON_IMPORTS, provideIcons, TOGGLETIP_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
-
-export type SketchBadgeStatus =
-  | 'drawing'
-  | 'waiting'
-  | 'paused'
-  | 'failed'
-  | 'merging'
-  | 'autoMerge'
-  | 'awaitingApproval'
-  | 'awaitingSubParts'
-  | 'approved';
-
-const ICON: Record<SketchBadgeStatus, string> = {
-  drawing: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
-  waiting:
-    '<path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
-  awaitingApproval: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
-  awaitingSubParts: '<path d="m12 2 10 5-10 5L2 7Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>',
-  approved: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
-  paused: '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
-  failed:
-    '<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
-  merging:
-    '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 9v12"/><path d="M6 9a9 9 0 0 0 9 9"/>',
-  autoMerge: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
-};
-
-const TONE: Record<SketchBadgeStatus, string> = {
-  drawing: 'text-(--et-tone-fill) animate-pulse',
-  waiting: 'text-(--et-tone-fill)',
-  awaitingApproval: 'text-(--et-tone-fill)',
-  awaitingSubParts: 'text-et-surface-text-muted',
-  approved: 'text-et-surface-text',
-  paused: 'text-et-surface-text-muted',
-  failed: 'text-(--et-tone-fill)',
-  merging: 'text-(--et-tone-fill) animate-pulse',
-  autoMerge: 'text-(--et-tone-fill)',
-};
+import { SKETCH_STATUS_ICONS, SKETCH_STATUS_TONE, SketchBadgeStatus } from '../../icons/sketch-status-icons';
 
 @Component({
   selector: 'ethlete-sketch-status-badge',
@@ -59,20 +21,7 @@ const TONE: Record<SketchBadgeStatus, string> = {
         size="sm"
         data-sk-status-button
       >
-        <svg
-          [class]="tone()"
-          [innerHTML]="icon()"
-          class="size-4"
-          etIcon
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-          data-sk-status-icon
-        ></svg>
+        <i [etIcon]="icon()" [class]="tone()" class="flex size-4" data-sk-status-icon></i>
       </button>
     </span>
     <ng-template #tip>
@@ -86,11 +35,11 @@ const TONE: Record<SketchBadgeStatus, string> = {
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, TOGGLETIP_IMPORTS, ProvideColorDirective],
+  imports: [BUTTON_IMPORTS, ICON_IMPORTS, TOGGLETIP_IMPORTS, ProvideColorDirective],
+  providers: [provideIcons(...Object.values(SKETCH_STATUS_ICONS))],
   host: { class: 'contents' },
 })
 export class SketchStatusBadgeComponent {
-  private sanitizer = inject(DomSanitizer);
   private errorTheme = injectSemanticColorTheme('error');
   private successTheme = injectSemanticColorTheme('success');
 
@@ -99,8 +48,8 @@ export class SketchStatusBadgeComponent {
   public open = input(false);
 
   protected tipText = computed(() => SKETCHES_LABELS.statusTip[this.status()]);
-  protected icon = computed(() => this.sanitizer.bypassSecurityTrustHtml(ICON[this.status()]));
-  protected tone = computed(() => TONE[this.status()]);
+  protected icon = computed(() => SKETCH_STATUS_ICONS[this.status()].name);
+  protected tone = computed(() => SKETCH_STATUS_TONE[this.status()]);
   protected scope = computed(() => {
     const status = this.status();
 
