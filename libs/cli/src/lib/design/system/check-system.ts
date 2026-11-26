@@ -5,7 +5,7 @@ import { designHashOf } from './design-hash';
 import { repoRootOf } from './reachable-files';
 import { chromiumOf } from '../browser';
 import { configPathOf, DESIGN_DIR, DesignConfig } from '../design-config';
-import { autoAcceptOf, DrawStates } from './accepted-pictures';
+import { autoAcceptOf, DrawStates, settleCommittedEdits } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
@@ -1180,13 +1180,18 @@ export const checkSystemRendered = async (
         code = Math.max(code, options.afterPart ? await options.afterPart(part, checked) : checked);
       }
 
+      const settled: string[] = [];
+
       if (options.part && !options.parts)
-        code = Math.max(code, await checkEmbedders({ ...options, part: options.part, typechecks, warm: run.warm }));
+        code = Math.max(
+          code,
+          await checkEmbedders({ ...options, part: options.part, typechecks, warm: run.warm, settled }),
+        );
 
       const checked = options.parts ?? (options.part ? [options.part] : 'all');
 
       keepHeldStamps(READY_FILE, checked);
-      keepHeldStamps(MERGED_FILE, checked);
+      keepHeldStamps(MERGED_FILE, checked === 'all' ? checked : [...checked, ...settled]);
 
       for (const name of options.products) {
         const entry = options.config.products?.[name];
@@ -1237,11 +1242,17 @@ export const embeddersOfPart = (options: {
 };
 
 /**
- * Checks each embedder of `part` as `check --part` would, without its edits, open points or ready marks, and answers 1
- * when one fails; then the ready mark of `part` does not hold either, so this run drops it.
+ * Checks each embedder of `part` as `check --part` would, without its open points or ready marks, and answers 1
+ * when one fails; then the ready mark of `part` does not hold either, so this run drops it. Of an embedder's edits it
+ * settles only the ones HEAD holds, as its own check does, and pushes each part it settled onto `settled`.
  */
 const checkEmbedders = async (
-  options: CheckOptions & { part: string; warm: WarmDraw; typechecks: Map<string, TypecheckResult> },
+  options: CheckOptions & {
+    part: string;
+    warm: WarmDraw;
+    typechecks: Map<string, TypecheckResult>;
+    settled: string[];
+  },
 ) => {
   const embedders = timedPhase('embedders', () => embeddersOfPart(options));
 
@@ -1250,6 +1261,18 @@ const checkEmbedders = async (
   const failed: string[] = [];
 
   for (const { part, products } of embedders) {
+    for (const name of products) {
+      const entry = options.config.products?.[name];
+
+      if (!entry) continue;
+
+      const lines: string[] = [];
+      const product = resolveProduct({ target: options.target, name, config: entry });
+
+      options.settled.push(...settleCommittedEdits({ target: options.target, product, parts: [part], lines }));
+      lines.forEach((line) => console.log(line));
+    }
+
     const checked = await checkSystemRenderedOn({ ...options, products, part, embedder: true, embedded: options.part });
 
     if (checked !== 0) failed.push(part);
