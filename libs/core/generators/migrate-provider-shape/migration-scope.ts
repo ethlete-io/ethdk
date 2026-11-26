@@ -16,6 +16,13 @@ export type MigrationScope = {
   describe: () => string;
 };
 
+export type MigrationScopeExtras = {
+  /** Also visits `.ethlete/design` in a scoped run: the Studio design files sit in no project root. */
+  designFiles?: boolean;
+};
+
+const DESIGN_ROOT = '.ethlete/design';
+
 const stripTrailingSlash = (value: string) => (value.endsWith('/') ? value.slice(0, -1) : value);
 
 /**
@@ -23,7 +30,11 @@ const stripTrailingSlash = (value: string) => (value.endsWith('/') ? value.slice
  * cross-file coupling here - every provider declaration is rewritten on its own - so any scope is safe;
  * this exists to keep the diff reviewable.
  */
-export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions): MigrationScope => {
+export const createMigrationScope = (
+  tree: Tree,
+  options: MigrationScopeOptions,
+  extras: MigrationScopeExtras = {},
+): MigrationScope => {
   const roots: string[] = [];
 
   for (const projectName of options.projects ?? []) {
@@ -40,6 +51,10 @@ export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions)
 
   for (const includePath of options.include ?? []) {
     roots.push(stripTrailingSlash(includePath));
+  }
+
+  if (roots.length > 0 && extras.designFiles && tree.exists(DESIGN_ROOT)) {
+    roots.push(DESIGN_ROOT);
   }
 
   if (roots.length === 0) {

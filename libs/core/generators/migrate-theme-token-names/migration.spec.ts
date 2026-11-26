@@ -68,4 +68,23 @@ describe('migrate-theme-token-names', () => {
     expect(logged()).toContain('Nothing to rename.');
     expect(logged()).not.toContain('Regenerate');
   });
+
+  it('renames the Studio design files in a scoped run too', async () => {
+    tree.write('apps/app-a/src/app.css', 'a {\n  color: var(--et-surface-color-muted-solid);\n}\n');
+    tree.write('apps/app-b/src/app.css', 'a {\n  color: var(--et-surface-color-muted-solid);\n}\n');
+    tree.write(
+      '.ethlete/design/app-a/components/card/card.css',
+      '.card {\n  color: var(--et-surface-color-muted-solid);\n}\n',
+    );
+
+    await migrateThemeTokenNames(tree, { skipFormat: true, include: ['apps/app-a'] });
+
+    expect(tree.read('apps/app-a/src/app.css', 'utf-8')).toBe('a {\n  color: var(--et-surface-text-muted);\n}\n');
+    expect(tree.read('apps/app-b/src/app.css', 'utf-8')).toBe(
+      'a {\n  color: var(--et-surface-color-muted-solid);\n}\n',
+    );
+    expect(tree.read('.ethlete/design/app-a/components/card/card.css', 'utf-8')).toBe(
+      '.card {\n  color: var(--et-surface-text-muted);\n}\n',
+    );
+  });
 });

@@ -36,7 +36,7 @@ export default async function migrateThemeTokenNamesGenerator(tree: Tree, schema
     }
   }
 
-  const scope = createMigrationScope(tree, schema);
+  const scope = createMigrationScope(tree, schema, { designFiles: true });
 
   console.log(`   Scope: ${scope.describe()}`);
 

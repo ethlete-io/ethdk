@@ -12,7 +12,7 @@ const isStyleOrSource = (filePath: string) =>
 export default async function migrateSurfaceRoles(tree: Tree, schema: MigrationSchema) {
   console.log('\n🔄 Splitting surface interactionColor into tint and controlText...');
 
-  const scope = createMigrationScope(tree, schema);
+  const scope = createMigrationScope(tree, schema, { designFiles: true });
 
   console.log(`   Scope: ${scope.describe()}`);
 
