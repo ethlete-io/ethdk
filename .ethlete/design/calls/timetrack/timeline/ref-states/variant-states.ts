@@ -69,7 +69,7 @@ export default drawing({
           <span class="text-et-surface-text-subtle">asks a click</span>
         </div>
         <div class="rounded-sm border-l border-et-surface-border bg-et-surface-background p-1">
-          <div class="bg-et-surface-interaction ${TILE_BASE}" style="height: ${HEIGHT_REM}rem">
+          <div class="bg-et-surface-tint ${TILE_BASE}" style="height: ${HEIGHT_REM}rem">
             <span class="block truncate">45m</span>
           </div>
         </div>
@@ -79,7 +79,8 @@ export default drawing({
   styles: css`
     /* The frame runs without the surface directive, so the value the dark theme sets at runtime is written here. */
     #root {
-      --et-surface-interaction: rgb(161 161 161);
+      --et-surface-tint: rgb(161 161 161);
+      --et-surface-control-text: rgb(161 161 161);
     }
   `,
 });

@@ -33,9 +33,8 @@ export const commentRow = ({ thread: c, selected = false, interaction }: Props) 
 
   const markup = control(
     html`<div
-      class="st-crow flex gap-space-2 p-space-2 rounded-control-md cursor-pointer outline-none ${selected ? 'bg-et-tone-fill/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15"
+      class="st-crow flex gap-space-2 p-space-2 rounded-control-md cursor-pointer outline-none ${selected ? 'bg-et-tone-fill/20' : ''} hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15"
       data-et-action="emit:pick"
-      data-et-surface-interactive
       role="button"
       tabindex="0"
       aria-pressed="${selected}"

@@ -130,10 +130,10 @@ type RailInteraction = Exclude<Interaction, 'disabled'>;
 
 type RailForce = { label: string; interaction: RailInteraction };
 
-const HOVER_PRESS = 'hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15';
+const HOVER_PRESS = 'hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15';
 
 const HOVER_PRESS_RAISED =
-  'hover:bg-linear-to-b hover:from-et-surface-interaction/9 hover:to-et-surface-interaction/9 active:bg-linear-to-b active:from-et-surface-interaction/15 active:to-et-surface-interaction/15';
+  'hover:bg-linear-to-b hover:from-et-surface-tint/9 hover:to-et-surface-tint/9 active:bg-linear-to-b active:from-et-surface-tint/15 active:to-et-surface-tint/15';
 
 const bubbleClass = (kind: RailKind, active: boolean, panelHidden: boolean) => {
   if (kind === 'section') {
@@ -286,7 +286,7 @@ const serverScreen = (
               ${
                 log.length
                   ? html`<pre
-                      class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
+                      class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-tint/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
                     >
 ${log.join('\n')}</pre>`
                   : ''

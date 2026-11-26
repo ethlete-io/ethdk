@@ -27,7 +27,7 @@ const mark = (control: string, interaction?: Interaction) =>
 const errorColor = 'danger';
 
 const row = (action: Action, attributes: string) =>
-  `<button type="button" ${attributes} class="et-action-sheet-action et-surface-interactive et-focus-ring et-color--${
+  `<button type="button" ${attributes} class="et-action-sheet-action et-focus-ring et-color--${
     action.destructive ? errorColor : 'inherited'
   }"${action.destructive ? ' data-variant="destructive"' : ''}>${action.label}</button>`;
 
@@ -56,7 +56,7 @@ const sheet = ({ header: withHeader = true, action, cancel }: Props) =>
       ${ACTIONS.map((entry, index) => row(entry, mark('action', index === 0 ? action : undefined))).join('')}
     </div>
     <button
-      class="et-action-sheet-action et-action-sheet-cancel et-surface-interactive et-focus-ring et-color--inherited"
+      class="et-action-sheet-action et-action-sheet-cancel et-focus-ring et-color--inherited"
       type="button"
       ${mark('cancel', cancel)}
     >

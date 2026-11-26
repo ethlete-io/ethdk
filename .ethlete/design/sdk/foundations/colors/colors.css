@@ -14,11 +14,12 @@
     --et-shadow-color: rgb(23 23 23);
     --et-surface-color-theme-variants:
       brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
-    --et-surface-interaction: rgb(115 115 115);
-    --et-surface-interaction-hover: rgb(64 64 64);
-    --et-surface-interaction-focus: rgb(64 64 64);
-    --et-surface-interaction-active: rgb(23 23 23);
-    --et-surface-interaction-disabled: rgb(180 180 180);
+    --et-surface-tint: rgb(115 115 115);
+    --et-surface-control-text: rgb(115 115 115);
+    --et-surface-control-text-hover: rgb(64 64 64);
+    --et-surface-control-text-focus: rgb(64 64 64);
+    --et-surface-control-text-active: rgb(23 23 23);
+    --et-surface-control-text-disabled: rgb(180 180 180);
   }
 
   .et-surface--default-dark,
@@ -31,11 +32,12 @@
     --et-surface-type: dark;
     --et-surface-elevation: 0;
     --et-shadow-color: rgb(0 0 0);
-    --et-surface-interaction: rgb(161 161 161);
-    --et-surface-interaction-hover: rgb(220 220 220);
-    --et-surface-interaction-focus: rgb(220 220 220);
-    --et-surface-interaction-active: rgb(250 250 250);
-    --et-surface-interaction-disabled: rgb(100 100 100);
+    --et-surface-tint: rgb(161 161 161);
+    --et-surface-control-text: rgb(161 161 161);
+    --et-surface-control-text-hover: rgb(220 220 220);
+    --et-surface-control-text-focus: rgb(220 220 220);
+    --et-surface-control-text-active: rgb(250 250 250);
+    --et-surface-control-text-disabled: rgb(100 100 100);
   }
 
   .et-surface--light-elevated {
@@ -49,11 +51,12 @@
     --et-shadow-color: rgb(23 23 23);
     --et-surface-color-theme-variants:
       brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
-    --et-surface-interaction: rgb(115 115 115);
-    --et-surface-interaction-hover: rgb(64 64 64);
-    --et-surface-interaction-focus: rgb(64 64 64);
-    --et-surface-interaction-active: rgb(23 23 23);
-    --et-surface-interaction-disabled: rgb(180 180 180);
+    --et-surface-tint: rgb(115 115 115);
+    --et-surface-control-text: rgb(115 115 115);
+    --et-surface-control-text-hover: rgb(64 64 64);
+    --et-surface-control-text-focus: rgb(64 64 64);
+    --et-surface-control-text-active: rgb(23 23 23);
+    --et-surface-control-text-disabled: rgb(180 180 180);
   }
 
   .et-surface--dark-elevated {
@@ -65,11 +68,12 @@
     --et-surface-type: dark;
     --et-surface-elevation: 1;
     --et-shadow-color: rgb(0 0 0);
-    --et-surface-interaction: rgb(161 161 161);
-    --et-surface-interaction-hover: rgb(220 220 220);
-    --et-surface-interaction-focus: rgb(220 220 220);
-    --et-surface-interaction-active: rgb(250 250 250);
-    --et-surface-interaction-disabled: rgb(100 100 100);
+    --et-surface-tint: rgb(161 161 161);
+    --et-surface-control-text: rgb(161 161 161);
+    --et-surface-control-text-hover: rgb(220 220 220);
+    --et-surface-control-text-focus: rgb(220 220 220);
+    --et-surface-control-text-active: rgb(250 250 250);
+    --et-surface-control-text-disabled: rgb(100 100 100);
   }
 
   @media (prefers-color-scheme: light) {
@@ -84,11 +88,12 @@
       --et-shadow-color: rgb(23 23 23);
       --et-surface-color-theme-variants:
         brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
-      --et-surface-interaction: rgb(115 115 115);
-      --et-surface-interaction-hover: rgb(64 64 64);
-      --et-surface-interaction-focus: rgb(64 64 64);
-      --et-surface-interaction-active: rgb(23 23 23);
-      --et-surface-interaction-disabled: rgb(180 180 180);
+      --et-surface-tint: rgb(115 115 115);
+      --et-surface-control-text: rgb(115 115 115);
+      --et-surface-control-text-hover: rgb(64 64 64);
+      --et-surface-control-text-focus: rgb(64 64 64);
+      --et-surface-control-text-active: rgb(23 23 23);
+      --et-surface-control-text-disabled: rgb(180 180 180);
       color-scheme: light;
     }
   }
@@ -103,11 +108,12 @@
       --et-surface-type: dark;
       --et-surface-elevation: 0;
       --et-shadow-color: rgb(0 0 0);
-      --et-surface-interaction: rgb(161 161 161);
-      --et-surface-interaction-hover: rgb(220 220 220);
-      --et-surface-interaction-focus: rgb(220 220 220);
-      --et-surface-interaction-active: rgb(250 250 250);
-      --et-surface-interaction-disabled: rgb(100 100 100);
+      --et-surface-tint: rgb(161 161 161);
+      --et-surface-control-text: rgb(161 161 161);
+      --et-surface-control-text-hover: rgb(220 220 220);
+      --et-surface-control-text-focus: rgb(220 220 220);
+      --et-surface-control-text-active: rgb(250 250 250);
+      --et-surface-control-text-disabled: rgb(100 100 100);
       color-scheme: dark;
     }
   }
@@ -123,11 +129,12 @@
     --et-shadow-color: rgb(23 23 23);
     --et-surface-color-theme-variants:
       brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
-    --et-surface-interaction: rgb(115 115 115);
-    --et-surface-interaction-hover: rgb(64 64 64);
-    --et-surface-interaction-focus: rgb(64 64 64);
-    --et-surface-interaction-active: rgb(23 23 23);
-    --et-surface-interaction-disabled: rgb(180 180 180);
+    --et-surface-tint: rgb(115 115 115);
+    --et-surface-control-text: rgb(115 115 115);
+    --et-surface-control-text-hover: rgb(64 64 64);
+    --et-surface-control-text-focus: rgb(64 64 64);
+    --et-surface-control-text-active: rgb(23 23 23);
+    --et-surface-control-text-disabled: rgb(180 180 180);
     color-scheme: light;
   }
 
@@ -140,11 +147,12 @@
     --et-surface-type: dark;
     --et-surface-elevation: 0;
     --et-shadow-color: rgb(0 0 0);
-    --et-surface-interaction: rgb(161 161 161);
-    --et-surface-interaction-hover: rgb(220 220 220);
-    --et-surface-interaction-focus: rgb(220 220 220);
-    --et-surface-interaction-active: rgb(250 250 250);
-    --et-surface-interaction-disabled: rgb(100 100 100);
+    --et-surface-tint: rgb(161 161 161);
+    --et-surface-control-text: rgb(161 161 161);
+    --et-surface-control-text-hover: rgb(220 220 220);
+    --et-surface-control-text-focus: rgb(220 220 220);
+    --et-surface-control-text-active: rgb(250 250 250);
+    --et-surface-control-text-disabled: rgb(100 100 100);
     color-scheme: dark;
   }
 }
@@ -157,50 +165,29 @@
 /* The reserved `surface` color: resolves the tone from the ambient surface's neutral swatch. */
 @layer base {
   .et-color--surface {
-    --et-tone-fill-rest: var(--et-surface-interaction, var(--et-surface-text));
-    --et-tone-fill-hover: var(--et-surface-interaction-hover, var(--et-surface-interaction, var(--et-surface-text)));
-    --et-tone-fill-focus: var(--et-surface-interaction-focus, var(--et-surface-interaction, var(--et-surface-text)));
-    --et-tone-fill-active: var(--et-surface-interaction-active, var(--et-surface-interaction, var(--et-surface-text)));
+    --et-tone-fill-rest: var(--et-surface-control-text, var(--et-surface-text));
+    --et-tone-fill-hover: var(--et-surface-control-text-hover, var(--et-surface-control-text, var(--et-surface-text)));
+    --et-tone-fill-focus: var(--et-surface-control-text-focus, var(--et-surface-control-text, var(--et-surface-text)));
+    --et-tone-fill-active: var(
+      --et-surface-control-text-active,
+      var(--et-surface-control-text, var(--et-surface-text))
+    );
     --et-tone-fill-disabled: var(
-      --et-surface-interaction-disabled,
-      var(--et-surface-interaction, var(--et-surface-text))
+      --et-surface-control-text-disabled,
+      var(--et-surface-control-text, var(--et-surface-text))
     );
 
-    --et-tone-on-fill-rest: var(--et-surface-on-interaction, var(--et-surface-background));
-    --et-tone-on-fill-hover: var(
-      --et-surface-on-interaction-hover,
-      var(--et-surface-on-interaction, var(--et-surface-background))
-    );
-    --et-tone-on-fill-focus: var(
-      --et-surface-on-interaction-focus,
-      var(--et-surface-on-interaction, var(--et-surface-background))
-    );
-    --et-tone-on-fill-active: var(
-      --et-surface-on-interaction-active,
-      var(--et-surface-on-interaction, var(--et-surface-background))
-    );
-    --et-tone-on-fill-disabled: var(
-      --et-surface-on-interaction-disabled,
-      var(--et-surface-on-interaction, var(--et-surface-background))
-    );
+    --et-tone-on-fill-rest: var(--et-surface-background);
+    --et-tone-on-fill-hover: var(--et-surface-background);
+    --et-tone-on-fill-focus: var(--et-surface-background);
+    --et-tone-on-fill-active: var(--et-surface-background);
+    --et-tone-on-fill-disabled: var(--et-surface-background);
 
-    --et-tone-text-rest: var(--et-surface-interaction-ink, var(--et-surface-text));
-    --et-tone-text-hover: var(
-      --et-surface-interaction-ink-hover,
-      var(--et-surface-interaction-ink, var(--et-surface-text))
-    );
-    --et-tone-text-focus: var(
-      --et-surface-interaction-ink-focus,
-      var(--et-surface-interaction-ink, var(--et-surface-text))
-    );
-    --et-tone-text-active: var(
-      --et-surface-interaction-ink-active,
-      var(--et-surface-interaction-ink, var(--et-surface-text))
-    );
-    --et-tone-text-disabled: var(
-      --et-surface-interaction-ink-disabled,
-      var(--et-surface-interaction-ink, var(--et-surface-text))
-    );
+    --et-tone-text-rest: var(--et-surface-text);
+    --et-tone-text-hover: var(--et-surface-text);
+    --et-tone-text-focus: var(--et-surface-text);
+    --et-tone-text-active: var(--et-surface-text);
+    --et-tone-text-disabled: var(--et-surface-text);
   }
 }
 
@@ -487,11 +474,12 @@
     --et-shadow-color: rgb(23 23 23);
     --et-surface-color-theme-variants:
       brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
-    --et-surface-interaction: rgb(115 115 115);
-    --et-surface-interaction-hover: rgb(64 64 64);
-    --et-surface-interaction-focus: rgb(64 64 64);
-    --et-surface-interaction-active: rgb(23 23 23);
-    --et-surface-interaction-disabled: rgb(180 180 180);
+    --et-surface-tint: rgb(115 115 115);
+    --et-surface-control-text: rgb(115 115 115);
+    --et-surface-control-text-hover: rgb(64 64 64);
+    --et-surface-control-text-focus: rgb(64 64 64);
+    --et-surface-control-text-active: rgb(23 23 23);
+    --et-surface-control-text-disabled: rgb(180 180 180);
   }
 
   .et-surface--dark[data-et-surface-fill] {
@@ -503,11 +491,12 @@
     --et-surface-type: dark;
     --et-surface-elevation: 1;
     --et-shadow-color: rgb(0 0 0);
-    --et-surface-interaction: rgb(161 161 161);
-    --et-surface-interaction-hover: rgb(220 220 220);
-    --et-surface-interaction-focus: rgb(220 220 220);
-    --et-surface-interaction-active: rgb(250 250 250);
-    --et-surface-interaction-disabled: rgb(100 100 100);
+    --et-surface-tint: rgb(161 161 161);
+    --et-surface-control-text: rgb(161 161 161);
+    --et-surface-control-text-hover: rgb(220 220 220);
+    --et-surface-control-text-focus: rgb(220 220 220);
+    --et-surface-control-text-active: rgb(250 250 250);
+    --et-surface-control-text-disabled: rgb(100 100 100);
   }
 
   @media (prefers-color-scheme: light) {
@@ -522,11 +511,12 @@
       --et-shadow-color: rgb(23 23 23);
       --et-surface-color-theme-variants:
         brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
-      --et-surface-interaction: rgb(115 115 115);
-      --et-surface-interaction-hover: rgb(64 64 64);
-      --et-surface-interaction-focus: rgb(64 64 64);
-      --et-surface-interaction-active: rgb(23 23 23);
-      --et-surface-interaction-disabled: rgb(180 180 180);
+      --et-surface-tint: rgb(115 115 115);
+      --et-surface-control-text: rgb(115 115 115);
+      --et-surface-control-text-hover: rgb(64 64 64);
+      --et-surface-control-text-focus: rgb(64 64 64);
+      --et-surface-control-text-active: rgb(23 23 23);
+      --et-surface-control-text-disabled: rgb(180 180 180);
     }
   }
 
@@ -540,11 +530,12 @@
       --et-surface-type: dark;
       --et-surface-elevation: 1;
       --et-shadow-color: rgb(0 0 0);
-      --et-surface-interaction: rgb(161 161 161);
-      --et-surface-interaction-hover: rgb(220 220 220);
-      --et-surface-interaction-focus: rgb(220 220 220);
-      --et-surface-interaction-active: rgb(250 250 250);
-      --et-surface-interaction-disabled: rgb(100 100 100);
+      --et-surface-tint: rgb(161 161 161);
+      --et-surface-control-text: rgb(161 161 161);
+      --et-surface-control-text-hover: rgb(220 220 220);
+      --et-surface-control-text-focus: rgb(220 220 220);
+      --et-surface-control-text-active: rgb(250 250 250);
+      --et-surface-control-text-disabled: rgb(100 100 100);
     }
   }
 
@@ -559,11 +550,12 @@
     --et-shadow-color: rgb(23 23 23);
     --et-surface-color-theme-variants:
       brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
-    --et-surface-interaction: rgb(115 115 115);
-    --et-surface-interaction-hover: rgb(64 64 64);
-    --et-surface-interaction-focus: rgb(64 64 64);
-    --et-surface-interaction-active: rgb(23 23 23);
-    --et-surface-interaction-disabled: rgb(180 180 180);
+    --et-surface-tint: rgb(115 115 115);
+    --et-surface-control-text: rgb(115 115 115);
+    --et-surface-control-text-hover: rgb(64 64 64);
+    --et-surface-control-text-focus: rgb(64 64 64);
+    --et-surface-control-text-active: rgb(23 23 23);
+    --et-surface-control-text-disabled: rgb(180 180 180);
   }
 
   :root.et-scheme--dark .et-surface--inherited[data-et-surface-fill] {
@@ -575,11 +567,12 @@
     --et-surface-type: dark;
     --et-surface-elevation: 1;
     --et-shadow-color: rgb(0 0 0);
-    --et-surface-interaction: rgb(161 161 161);
-    --et-surface-interaction-hover: rgb(220 220 220);
-    --et-surface-interaction-focus: rgb(220 220 220);
-    --et-surface-interaction-active: rgb(250 250 250);
-    --et-surface-interaction-disabled: rgb(100 100 100);
+    --et-surface-tint: rgb(161 161 161);
+    --et-surface-control-text: rgb(161 161 161);
+    --et-surface-control-text-hover: rgb(220 220 220);
+    --et-surface-control-text-focus: rgb(220 220 220);
+    --et-surface-control-text-active: rgb(250 250 250);
+    --et-surface-control-text-disabled: rgb(100 100 100);
   }
 }
 

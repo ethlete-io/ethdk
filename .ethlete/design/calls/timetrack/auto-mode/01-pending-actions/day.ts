@@ -80,7 +80,8 @@ export const band = (options: {
 export const DAY_STYLES = css`
   /* The frame runs without the surface directive, so the value the dark theme sets at runtime is written here. */
   #root {
-    --et-surface-interaction: rgb(161 161 161);
+    --et-surface-tint: rgb(161 161 161);
+    --et-surface-control-text: rgb(161 161 161);
   }
 
   .sheet {

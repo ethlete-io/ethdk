@@ -26,7 +26,7 @@
         color-mix(in srgb, var(--et-tone-fill) 20%, transparent),
         color-mix(in srgb, var(--et-tone-fill) 20%, transparent)
       ),
-      color-mix(in srgb, var(--et-surface-interaction) 9%, transparent);
+      color-mix(in srgb, var(--et-surface-tint) 9%, transparent);
   }
 
   .st-trow[data-selected]:active {
@@ -35,7 +35,7 @@
         color-mix(in srgb, var(--et-tone-fill) 20%, transparent),
         color-mix(in srgb, var(--et-tone-fill) 20%, transparent)
       ),
-      color-mix(in srgb, var(--et-surface-interaction) 15%, transparent);
+      color-mix(in srgb, var(--et-surface-tint) 15%, transparent);
   }
 
   .st-trow:focus-visible {

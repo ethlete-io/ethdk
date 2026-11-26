@@ -136,7 +136,8 @@ export default drawing({
   `,
   styles: css`
     .shell-d {
-      --et-surface-interaction: var(--et-surface-text);
+      --et-surface-tint: var(--et-surface-text);
+      --et-surface-control-text: var(--et-surface-text);
 
       display: grid;
       grid-template-columns: 40rem minmax(0, 1fr) 36rem;
@@ -225,7 +226,7 @@ export default drawing({
       padding: 0.5rem 0.9rem;
       border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.5rem;
-      background: color-mix(in srgb, var(--et-surface-interaction) 6%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 6%, transparent);
       color: var(--et-surface-text-muted);
       font-size: 1.2rem;
     }
@@ -236,7 +237,7 @@ export default drawing({
       padding: 0.9rem 1.1rem;
       border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.6rem;
-      background: color-mix(in srgb, var(--et-surface-interaction) 5%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 5%, transparent);
       color: var(--et-surface-text-subtle);
       font-size: 1.3rem;
     }
@@ -303,7 +304,7 @@ export default drawing({
       gap: 0.8rem;
       padding: 1.4rem 1.8rem 1.6rem;
       border-top: 0.1rem solid var(--et-surface-border);
-      background: color-mix(in srgb, var(--et-surface-interaction) 3%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 3%, transparent);
     }
     .shell-d__checkout-row {
       display: flex;
@@ -375,7 +376,7 @@ export default drawing({
       padding: 0.6rem;
       border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.5rem;
-      background: color-mix(in srgb, var(--et-surface-interaction) 4%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 4%, transparent);
       text-align: left;
     }
     .shell-d__tile--current {
@@ -398,12 +399,12 @@ export default drawing({
     .shell-d__thumb-bar {
       height: 0.8rem;
       border-radius: 0.1rem;
-      background: color-mix(in srgb, var(--et-surface-interaction) 22%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 22%, transparent);
     }
     .shell-d__thumb-block {
       height: 1.4rem;
       border-radius: 0.1rem;
-      background: color-mix(in srgb, var(--et-surface-interaction) 10%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 10%, transparent);
     }
     .shell-d__thumb-block--short {
       width: 60%;
@@ -438,10 +439,10 @@ export default drawing({
       background:
         repeating-linear-gradient(
           135deg,
-          color-mix(in srgb, var(--et-surface-interaction) 3%, transparent) 0 0.1rem,
+          color-mix(in srgb, var(--et-surface-tint) 3%, transparent) 0 0.1rem,
           transparent 0.1rem 1.4rem
         ),
-        color-mix(in srgb, var(--et-surface-interaction) 3%, transparent);
+        color-mix(in srgb, var(--et-surface-tint) 3%, transparent);
     }
     .shell-d__canvas span {
       color: var(--et-surface-text-subtle);
@@ -471,7 +472,7 @@ export default drawing({
       padding: 0.8rem 1.6rem;
       border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.4rem;
-      background: color-mix(in srgb, var(--et-surface-interaction) 4%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 4%, transparent);
       color: var(--et-surface-text-muted);
       font-size: 1.4rem;
     }
@@ -522,7 +523,7 @@ export default drawing({
       padding: 1rem 1.2rem;
       border: 0.1rem solid var(--et-surface-border);
       border-radius: 0.6rem;
-      background: color-mix(in srgb, var(--et-surface-interaction) 4%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 4%, transparent);
       color: var(--et-surface-text-subtle);
       font-size: 1.3rem;
     }

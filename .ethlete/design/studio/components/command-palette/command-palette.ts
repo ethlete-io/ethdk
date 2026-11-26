@@ -69,7 +69,7 @@ const start = `<div class="flex flex-col items-center gap-space-2 px-space-3 py-
 
 const row = (item: Item, selected: boolean, interaction?: RowInteraction) => {
   const markup = control(
-    `<div role="option" data-et-action="emit:choose" aria-label="${item.label} ${item.hint}" class="st-cprow flex items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm outline-none text-et-surface-text ${selected ? 'bg-et-tone-fill/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15" ${selected ? 'data-selected aria-selected="true"' : ''}>
+    `<div role="option" data-et-action="emit:choose" aria-label="${item.label} ${item.hint}" class="st-cprow flex items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm outline-none text-et-surface-text ${selected ? 'bg-et-tone-fill/20' : ''} hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15" ${selected ? 'data-selected aria-selected="true"' : ''}>
     <span class="text-et-surface-text-muted">${icon('search', { size: 14 })}</span>
     <span class="min-w-0 flex-1 truncate">${item.label}</span>
     <span class="text-et-surface-text-muted text-(length:--text-sm)">${item.hint}</span>

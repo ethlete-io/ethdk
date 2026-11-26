@@ -109,12 +109,12 @@
 
   @media (hover: hover) {
     .et-action-sheet-action:hover {
-      background: color-mix(in srgb, var(--et-surface-interaction) 12%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 12%, transparent);
     }
   }
 
   .et-action-sheet-action:active {
-    background: color-mix(in srgb, var(--et-surface-interaction) 20%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint) 20%, transparent);
   }
 
   .et-action-sheet-action:focus-visible {

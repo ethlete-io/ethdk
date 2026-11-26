@@ -9,10 +9,9 @@ export const holdTriggerStyles = styles;
 
 export const holdTrigger = ({ content, open, reason = '', action = 'emit:openChange', interaction }: Props) => {
   const trigger = html`<button
-    class="st-hold -m-space-1 flex cursor-pointer rounded-control-sm border-0 p-space-1 hover:bg-et-surface-interaction/10 active:bg-et-surface-interaction/15"
+    class="st-hold -m-space-1 flex cursor-pointer rounded-control-sm border-0 p-space-1 hover:bg-et-surface-tint/10 active:bg-et-surface-tint/15"
     type="button"
     data-et-control="hold"
-    data-et-surface-interactive
     data-can-animate="true"
     data-sk-hold
     data-et-action="${action}"

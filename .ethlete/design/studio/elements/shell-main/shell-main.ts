@@ -30,7 +30,7 @@ const crashScreen: CrashScreen = ({ time, pid, port, path, stack }) =>
       <p class="m-0">Abgestürzt am ${time} (PID ${pid}, Port ${port})</p>
     </div>
     <pre
-      class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
+      class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-tint/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
     >
 ${stack.join('\n')}</pre>
     <p class="m-0">

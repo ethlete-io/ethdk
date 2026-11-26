@@ -181,7 +181,8 @@ export const frameStyles = css`
     --et-surface-text-muted: #5f6670;
     --et-surface-text-subtle: #8a9099;
     --et-surface-border: #e3e5e8;
-    --et-surface-interaction: #1c1f24;
+    --et-surface-tint: #1c1f24;
+    --et-surface-control-text: #1c1f24;
     --et-tone-fill: #2f6fdf;
 
     display: block;

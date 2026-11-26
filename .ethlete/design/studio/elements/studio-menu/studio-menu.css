@@ -10,13 +10,13 @@
 
   .st-studio-trigger:hover,
   .st-studio-trigger[aria-expanded='true'] {
-    --accent: color-mix(in srgb, var(--et-surface-interaction-hover) 5%, var(--et-surface-background));
-    --st-tile: color-mix(in srgb, var(--et-surface-interaction-hover) 5%, var(--et-surface-background));
+    --accent: color-mix(in srgb, var(--et-surface-control-text-hover) 5%, var(--et-surface-background));
+    --st-tile: color-mix(in srgb, var(--et-surface-control-text-hover) 5%, var(--et-surface-background));
   }
 
   .st-studio-trigger:active {
-    --accent: color-mix(in oklch, var(--et-surface-interaction-active) 10%, transparent);
-    --st-tile: color-mix(in oklch, var(--et-surface-interaction-active) 10%, transparent);
+    --accent: color-mix(in oklch, var(--et-surface-control-text-active) 10%, transparent);
+    --st-tile: color-mix(in oklch, var(--et-surface-control-text-active) 10%, transparent);
   }
 
   .st-studio-menu {

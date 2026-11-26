@@ -41,7 +41,7 @@ const pinClass = ({ agent, selected, resolved }: Props) => {
 };
 
 const faceClass = ({ agent, selected, resolved }: Props) =>
-  `flex size-full items-center justify-center ${shape}${selected && !agent && !resolved ? '' : ' group-hover/pin:bg-et-surface-interaction/9 group-active/pin:bg-et-surface-interaction/15'}`;
+  `flex size-full items-center justify-center ${shape}${selected && !agent && !resolved ? '' : ' group-hover/pin:bg-et-surface-tint/9 group-active/pin:bg-et-surface-tint/15'}`;
 
 const mark = (p: Props) => {
   if (p.resolved) return icon('check', { size: 12 });
@@ -62,7 +62,6 @@ export const pin = (p: Props) => {
         type="button"
         class="${pinClass(p)}"
         ${p.selected && !p.agent && !p.resolved ? '' : 'data-et-auto-surface'}
-        data-et-surface-interactive
         data-et-action="emit:pinToggle"
         aria-label="${label(p)}"
         ${p.selected ? 'aria-pressed="true"' : ''}

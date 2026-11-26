@@ -116,7 +116,8 @@ export default drawing({
   `,
   styles: css`
     .shell-c {
-      --et-surface-interaction: var(--et-surface-text);
+      --et-surface-tint: var(--et-surface-text);
+      --et-surface-control-text: var(--et-surface-text);
 
       display: grid;
       grid-template-columns: 300px minmax(0, 1fr) 340px;
@@ -201,7 +202,7 @@ export default drawing({
       padding: 7px 10px;
       border: 1px solid var(--et-surface-border);
       border-radius: 4px;
-      background: color-mix(in srgb, var(--et-surface-interaction) 6%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 6%, transparent);
     }
 
     .shell-c__search-mark {
@@ -366,7 +367,7 @@ export default drawing({
       padding: 4px;
       border: 1px solid var(--et-surface-border);
       border-radius: 6px;
-      background: color-mix(in srgb, var(--et-surface-interaction) 6%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 6%, transparent);
     }
 
     .shell-c__variant {
@@ -507,7 +508,7 @@ export default drawing({
       padding: 10px 12px;
       border: 1px solid var(--et-surface-border);
       border-radius: 4px;
-      background: color-mix(in srgb, var(--et-surface-interaction) 6%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint) 6%, transparent);
       color: var(--et-surface-text-subtle);
       font-size: 13px;
     }

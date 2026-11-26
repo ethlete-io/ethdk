@@ -66,14 +66,13 @@ const rowMarkup = (r: Row) => {
       : 'text-et-surface-text';
 
   return `<div
-        class="st-trow relative flex items-center gap-space-1 text-ui-md rounded-control-sm ${r.selected ? 'bg-et-tone-fill/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 ${color} whitespace-nowrap outline-none cursor-default"
+        class="st-trow relative flex items-center gap-space-1 text-ui-md rounded-control-sm ${r.selected ? 'bg-et-tone-fill/20' : ''} hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15 ${color} whitespace-nowrap outline-none cursor-default"
         style="--depth: ${r.depth}"
         role="treeitem"
         aria-level="${r.depth + 1}"
         ${r.kind === 'leaf' ? '' : `aria-expanded="${r.expanded === true}"`}
         tabindex="0"
         data-et-action="${r.action ?? 'emit:rowPress'}"
-        data-et-surface-interactive
         data-kind="${r.kind}"
         ${r.selected ? 'data-selected aria-current="true"' : ''}
       >

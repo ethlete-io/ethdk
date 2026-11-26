@@ -63,7 +63,8 @@ const surfacePanel = html`<div class="sdk-card">
     ${STATE_ENDS.map(
       (end) =>
         html`<span class="sdk-state"
-          ><span class="sdk-swatch" style="background: var(--et-surface-interaction${end})"></span>${labelOf(end)}</span
+          ><span class="sdk-swatch" style="background: var(--et-surface-control-text${end})"></span
+          >${labelOf(end)}</span
         >`,
     ).join('')}
   </div>
