@@ -55,7 +55,7 @@ export default definePart({
     'close-release': { from: 'close-active', to: 'close-hover' },
   },
   controls: { close: { kind: 'button', input: ['pointer', 'keyboard'] } },
-  frame: (body) => `<div class="ad-frame overflow-hidden">${body}</div>`,
+  frame: (body) => `<div class="ad-frame overflow-hidden bg-et-surface-background text-et-surface-text">${body}</div>`,
   render: ({ version, close }: Props) =>
     drawing({
       body: overlayBackdrop(
