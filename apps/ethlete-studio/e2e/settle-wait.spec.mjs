@@ -66,3 +66,17 @@ test('a layout that moves once holds still for three more waits before it settle
 
   assert.equal(waits, 4);
 });
+
+test('reports the polls a held layout needed', async () => {
+  assert.deepEqual(await settle([{ pending: [], layout: '0,0,10,10' }]), { polls: 3, held: true, moved: null });
+});
+
+test('names the frame that moved in the last poll of a layout that never held', async () => {
+  const reads = Array.from({ length: 5 }, (_, i) => ({ pending: [], layout: `0,0,10,10 0,${i},10,0` }));
+
+  assert.deepEqual(await settle(reads, 4), {
+    polls: 4,
+    held: false,
+    moved: '2 -> 2 frames, 1 at height 0, frame 1 0,3,10,0 -> 0,4,10,0',
+  });
+});

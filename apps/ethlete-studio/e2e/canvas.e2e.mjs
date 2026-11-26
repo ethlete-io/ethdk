@@ -502,6 +502,7 @@ const noVisibleCellCensus = (page) =>
       view ? `view ${round(view.left)},${round(view.top)} ${round(view.width)}x${round(view.height)}` : 'no canvas',
       `tops ${span((box) => box.top)}, lefts ${span((box) => box.left)}, heights ${span((box) => box.height)}`,
       `zero-height ${boxes.filter((box) => box.height === 0).length}`,
+      `setup settle ${lastSettle ? (lastSettle.held ? `held after ${lastSettle.polls} polls` : `never held in ${lastSettle.polls} polls, last move ${lastSettle.moved}`) : 'not run'}`,
       `zero-height frames ${frames.filter((box) => box.height === 0).length} of ${frames.length}${frameSamples}`,
       `scrolled ${scrolled.join(' ') || 'none'}`,
       `fold ${fold ? `${fold.getAttribute('aria-expanded')} "${fold.textContent?.trim()}"` : 'none'}`,
@@ -1093,9 +1094,11 @@ const streamLines = async (result) =>
     ? result
     : { ...result, detail: `${result.detail}${await streamTimeline.lines()}` };
 
+let lastSettle = null;
+
 const settled = async (page, selector) => {
   await listingAnswered(page);
-  await settleLayout({
+  lastSettle = await settleLayout({
     polls: WAIT_MS / 250,
     waitedFor: `${WAIT_MS / 1000} s`,
     wait: () => page.waitForTimeout(250),
