@@ -13,7 +13,7 @@
     "include": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Path prefixes to migrate, relative to the workspace root (e.g. 'libs/ui'). Unioned with `projects`. Defaults to the whole workspace.",
+      "description": "Directories or files to migrate, relative to the workspace root (e.g. 'libs/ui'). Unioned with `projects`. Defaults to the whole workspace.",
       "alias": "includePath"
     },
     "skipFormat": {

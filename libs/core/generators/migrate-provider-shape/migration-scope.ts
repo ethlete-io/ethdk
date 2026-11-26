@@ -53,7 +53,9 @@ export const createMigrationScope = (
     roots.push(stripTrailingSlash(includePath));
   }
 
-  if (roots.length > 0 && extras.designFiles && tree.exists(DESIGN_ROOT)) {
+  const scopesADirectory = roots.some((root) => !tree.isFile(root));
+
+  if (scopesADirectory && extras.designFiles && tree.exists(DESIGN_ROOT)) {
     roots.push(DESIGN_ROOT);
   }
 
@@ -72,7 +74,8 @@ export const createMigrationScope = (
   return {
     visit: (targetTree, callback) => {
       for (const root of uniqueRoots) {
-        visitNotIgnoredFiles(targetTree, root, callback);
+        if (targetTree.isFile(root)) callback(root);
+        else visitNotIgnoredFiles(targetTree, root, callback);
       }
     },
     describe: () => uniqueRoots.join(', '),

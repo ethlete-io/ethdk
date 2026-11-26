@@ -62,6 +62,32 @@ describe('migrate-provider-shape -> migration scope', () => {
     expect(scope.describe()).toBe('apps/app-a');
   });
 
+  it('should visit only the named file when include is a file path', () => {
+    tree.write('apps/app-a/src/other.ts', '');
+    tree.write('.ethlete/design/app-a/components/card/card.ts', '');
+
+    const scope = createMigrationScope(tree, { include: ['apps/app-a/src/a.ts'] }, { designFiles: true });
+
+    expect(visited(scope)).toEqual(['apps/app-a/src/a.ts']);
+    expect(scope.describe()).toBe('apps/app-a/src/a.ts');
+  });
+
+  it('should add the design files when a directory is in the scope next to a file', () => {
+    tree.write('.ethlete/design/app-a/components/card/card.ts', '');
+
+    const scope = createMigrationScope(
+      tree,
+      { include: ['apps/app-a/src/a.ts', 'libs/shared'] },
+      { designFiles: true },
+    );
+
+    expect(visited(scope)).toEqual([
+      '.ethlete/design/app-a/components/card/card.ts',
+      'apps/app-a/src/a.ts',
+      'libs/shared/src/c.ts',
+    ]);
+  });
+
   it('should throw for an unknown project', () => {
     expect(() => createMigrationScope(tree, { projects: ['nope'] })).toThrow('Unknown project "nope"');
   });

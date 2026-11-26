@@ -105,8 +105,8 @@ A theme without `tint` inherits the tint of the surface around it. Where no surf
 `interactionColor` is split: its `color.default` becomes `tint` and its `color` map becomes
 `controlText`. `onColor` and `inkColor` are gone. `et update` runs `@ethlete/core:migrate-surface-roles`,
 which rewrites your definitions and the readers of the old `--et-surface-interaction*` tokens; then
-regenerate the CSS. A run scoped with `--projects` or `--include` rewrites the Studio design files in
-`.ethlete/design` too.
+regenerate the CSS. A run scoped with `--projects` or an `--include` directory rewrites the Studio design files in
+`.ethlete/design` too; a run with only `--include <file>` paths changes just those files.
 
 `SurfaceInteractiveDirective` (`[etSurfaceInteractive]`) is removed; it no longer styled anything.
 `et update` runs `@ethlete/core:migrate-remove-surface-interactive`, which drops the attribute, the
@@ -490,7 +490,7 @@ does not run it.
 
 ## Migrating from the old token names
 
-`yarn nx g @ethlete/core:migrate-theme-token-names` renames the old theme tokens (the `-rgb` / `-solid` surface names, `--et-theme-color-*`, `--et-color-primary*`, and the matching Tailwind utilities) to the current names, and `et update` runs it for you. A run scoped with `--projects` or `--include` renames the Studio design files in `.ethlete/design` too. A case it cannot rewrite safely stays as it is and comes back as a `file:line` finding with a reason. Fix each by hand, regenerate the theme files, and run the migration again until it reports nothing.
+`yarn nx g @ethlete/core:migrate-theme-token-names` renames the old theme tokens (the `-rgb` / `-solid` surface names, `--et-theme-color-*`, `--et-color-primary*`, and the matching Tailwind utilities) to the current names, and `et update` runs it for you. A run scoped with `--projects` or an `--include` directory renames the Studio design files in `.ethlete/design` too; a run with only `--include <file>` paths changes just those files. A case it cannot rewrite safely stays as it is and comes back as a `file:line` finding with a reason. Fix each by hand, regenerate the theme files, and run the migration again until it reports nothing.
 
 **A name inside a larger string.** A string whose whole content is one old name is renamed. A name that is only part of a string or a template string is reported as `old theme token left: <name>`:
 
