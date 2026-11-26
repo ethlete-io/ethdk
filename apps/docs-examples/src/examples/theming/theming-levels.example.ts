@@ -5,11 +5,13 @@ import {
   ElementRef,
   inject,
   input,
+  linkedSignal,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
 import {
   AutoSurfaceDirective,
+  injectColorScheme,
   injectParentSurface,
   injectSurfaceThemes,
   ProvideColorDirective,
@@ -147,38 +149,47 @@ export class ThemingLevelsOverlayButtonComponent {
 @Component({
   selector: 'app-theming-levels-example',
   template: `
-    <div class="app-example-row">
-      <button (click)="toggleScheme()" et-button size="sm" variant="outline" type="button" data-switch="scheme">
-        Scheme: {{ scheme() }}
-      </button>
-      <button (click)="nextTone()" et-button size="sm" variant="outline" type="button" data-switch="tone">
-        Tone: {{ tone() }}
-      </button>
-      <button
-        [attr.aria-pressed]="hoverNextLevel()"
-        (click)="hoverNextLevel.set(!hoverNextLevel())"
-        et-button
-        size="sm"
-        variant="outline"
-        type="button"
-        data-switch="hover-next-level"
-      >
-        Hover = next level: {{ hoverNextLevel() ? 'on' : 'off' }}
-      </button>
-    </div>
-
     <div
       [etProvideSurface]="rootSurface()"
       [etProvideColor]="tone()"
       [style.color-scheme]="scheme()"
       [style.--et-accordion-header-hover-background]="nextLevelBackground()"
+      class="app-theming-stage"
     >
+      <div class="app-theming-switches">
+        <button (click)="toggleScheme()" et-button size="sm" variant="outline" type="button" data-switch="scheme">
+          Scheme: {{ scheme() }}
+        </button>
+        <button (click)="nextTone()" et-button size="sm" variant="outline" type="button" data-switch="tone">
+          Tone: {{ tone() }}
+        </button>
+        <button
+          [attr.aria-pressed]="hoverNextLevel()"
+          (click)="hoverNextLevel.set(!hoverNextLevel())"
+          et-button
+          size="sm"
+          variant="outline"
+          type="button"
+          data-switch="hover-next-level"
+        >
+          Hover = next level: {{ hoverNextLevel() ? 'on' : 'off' }}
+        </button>
+      </div>
+
       <app-theming-level class="app-theming-level" data-level="root" label="Root">
         <div etAutoSurface>
           <app-theming-level class="app-theming-level" data-level="surface" label="Surface">
             <div etAutoSurface>
               <app-theming-level class="app-theming-level" data-level="card" label="Card">
                 <app-theming-levels-overlay-button />
+
+                <div etAutoSurface>
+                  <app-theming-level
+                    class="app-theming-level"
+                    data-level="overlay-static"
+                    label="Overlay level (always shown)"
+                  />
+                </div>
               </app-theming-level>
             </div>
           </app-theming-level>
@@ -196,15 +207,47 @@ export class ThemingLevelsOverlayButtonComponent {
     ThemingLevelsOverlayButtonComponent,
   ],
   styles: `
-    app-theming-level {
+    .app-examples-root > app-theming-levels-example {
+      max-inline-size: none;
+    }
+
+    .app-theming-stage {
       display: flex;
       flex-direction: column;
       gap: 12px;
-      padding: 16px;
+      padding: 12px;
+      background: var(--et-surface-background-solid);
+      color: var(--et-surface-color-solid);
+    }
+
+    .app-theming-switches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    app-theming-level {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+      gap: 10px;
+      padding: 10px;
       border: 1px solid var(--et-surface-border-solid);
       border-radius: 12px;
       background: var(--et-surface-background-solid);
       color: var(--et-surface-color-solid);
+    }
+
+    app-theming-level > :is(header, dl, div, app-theming-level) {
+      grid-column: 1 / -1;
+    }
+
+    app-theming-level > * {
+      min-inline-size: 0;
+    }
+
+    app-theming-level > et-tab-group {
+      grid-column: 1 / -1;
     }
 
     .app-theming-level-header {
@@ -239,7 +282,8 @@ export class ThemingLevelsOverlayButtonComponent {
 })
 export class ThemingLevelsExampleComponent {
   private themes = injectSurfaceThemes();
-  protected scheme = signal<SurfaceType>('dark');
+  private colorScheme = injectColorScheme();
+  protected scheme = linkedSignal<SurfaceType>(() => this.colorScheme.type());
   protected tone = signal(TONES[0]);
   protected hoverNextLevel = signal(false);
 

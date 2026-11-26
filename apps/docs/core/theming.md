@@ -16,7 +16,7 @@ top level. Every level shows its theme name and its five values as the browser r
 components, so hover and pressed show on each level without any setting. The switches change the scheme, the tone
 (`etProvideColor`), and "hover = next level".
 
-@example theming/theming-levels 1900px
+@example theming/theming-levels 1730px
 
 "Hover = next level" sets the accordion hover token to the background of elevation 1 on the root, the way an app does
 it today. On the surface level that is the background itself, so the hover disappears there.
