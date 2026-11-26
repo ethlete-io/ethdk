@@ -106,11 +106,10 @@
     "at": "2026-11-25T14:45:22.636Z"
   },
   "elements/shell-main": {
-    "hash": "8881189d79de4b30",
+    "hash": "db1a3f8965164a96",
     "variant": "new",
-    "decidedBy": "plan: ADR 0305",
-    "at": "2026-11-20T16:01:35.799Z",
-    "note": "merged without a pick: allowed by ADR 0305"
+    "decidedBy": "claude-sonnet-5-5",
+    "at": "2026-11-26T09:53:39.382Z"
   },
   "elements/studio-menu": {
     "hash": "584508a7f0aefbad",
