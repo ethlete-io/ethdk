@@ -194,21 +194,18 @@ const PAGES = [
     name: 'Sketches',
     view: { systemProduct: 'studio', systemEntry: 'sketch:pages/system' },
     shows: 'ethlete-sketch-view ethlete-sketches',
-    fits: 'width',
   },
   {
     name: 'Sketches',
     label: 'Chip',
     view: { systemProduct: 'studio', systemEntry: 'sketch:components/zoom-chip' },
     shows: 'ethlete-sketch-view ethlete-sketches',
-    fits: 'width',
   },
   {
     name: 'Sketches',
     label: 'Large',
     view: { systemProduct: 'studio', systemEntry: 'sketch:elements/shell-main' },
     shows: 'ethlete-sketch-view ethlete-sketches',
-    fits: 'width',
   },
   {
     name: 'Wide',
@@ -4825,7 +4822,7 @@ const CASES = [
     },
   },
   {
-    name: 'Shift+1 fits all, window-wide',
+    name: 'Shift+1 and Fit show every frame whole',
     run: async (page, state, target) => {
       await page.mouse.move(state.view.left + 20, state.view.top + 20);
       await page.mouse.wheel(0, 900);
@@ -4834,22 +4831,43 @@ const CASES = [
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       });
       const before = await probe(page);
+      const outOfView = ({ frames, view }) => {
+        const shown = frames.filter((frame) => frame.right - frame.left >= 1);
+        const out = shown.filter(
+          (frame) =>
+            frame.left < view.left - 2 ||
+            frame.right > view.right + 2 ||
+            frame.top < view.top - 2 ||
+            frame.bottom > view.bottom + 2,
+        );
+
+        return shown.length === 0
+          ? 'no frame'
+          : out.map((frame) => `#${frame.index}@${Math.round(frame.bottom)}`).join(',');
+      };
+
       await page.keyboard.press('Shift+Digit1');
       await settle(page);
       const after = await probe(page);
-      const { view } = after;
-      const fitsHeight = target.fits !== 'width';
-      const shown = after.frames.filter((frame) => frame.right - frame.left >= 1);
-      const all =
-        shown.every(
-          (frame) =>
-            frame.left >= view.left - 2 &&
-            frame.right <= view.right + 2 &&
-            (!fitsHeight || (frame.top >= view.top - 2 && frame.bottom <= view.bottom + 2)),
-        ) &&
-        (fitsHeight || (shown.length > 0 && Math.min(...shown.map((frame) => frame.top)) >= view.top - 2));
+      const shiftOut = outOfView(after);
 
-      return { ok: all && after.camera?.y !== before.camera?.y, detail: `${describe(before, after)} allInView=${all}` };
+      if (process.env['STUDIO_E2E_FIT_SHOTS'])
+        await page.screenshot({
+          path: join(process.env['STUDIO_E2E_FIT_SHOTS'], `shift1-${target.label ?? target.name}.png`),
+        });
+
+      await page.mouse.move(after.view.left + 20, after.view.top + 20);
+      await page.mouse.wheel(0, 900);
+      await settle(page);
+      await page.getByRole('button', { name: 'Einpassen' }).first().click();
+      await settle(page);
+      const fitted = await probe(page);
+      const fitOut = outOfView(fitted);
+
+      return {
+        ok: !shiftOut && !fitOut && after.camera?.y !== before.camera?.y,
+        detail: `${describe(before, after)} view bottom ${Math.round(after.view.bottom)}; out after Shift+1: ${shiftOut || 'none'}; out after Fit: ${fitOut || 'none'}`,
+      };
     },
   },
   {

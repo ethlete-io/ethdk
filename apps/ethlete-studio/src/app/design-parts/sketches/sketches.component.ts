@@ -1486,7 +1486,7 @@ export class SketchesComponent {
         : stage
           ? (this.stageRoomOf(list, stage) - (columns - 1) * COLUMN_GAP) / (columns * this.widest())
           : 1;
-    const groups = side || this.stacked() ? changed.map((section) => [section]) : [sections.slice(0, 2)];
+    const groups = side ? changed.map((section) => [section]) : this.stacked() ? [changed] : [sections.slice(0, 2)];
     const heightFits = groups.flatMap((measured) => {
       const first = measured[0];
       const last = measured.at(-1);
