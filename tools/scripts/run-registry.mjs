@@ -77,6 +77,10 @@ export const registerRun = ({
   writeEntry(dir, entry);
   return {
     ...entry,
+    update: (fields) => {
+      Object.assign(entry, fields);
+      writeEntry(dir, entry);
+    },
     finish: (exitCode) => {
       try {
         writeEntry(dir, { ...entry, endedAt: Date.now(), exitCode });
@@ -87,13 +91,18 @@ export const registerRun = ({
   };
 };
 
-/** Spawns `command`, tees its output to `run.log` and resolves with its exit code; `wrap` builds the spawned argv. */
-export const teeRun = (run, argv, { wrap = (a) => a, env = process.env, onSpawn = () => undefined } = {}) =>
+/**
+ * Spawns `command`, tees its output to `run.log` and resolves with its exit code; `wrap` builds the spawned argv.
+ * With `onFd3`, the child gets a pipe on fd 3 and `onFd3` receives what it writes there.
+ */
+export const teeRun = (run, argv, { wrap = (a) => a, env = process.env, cwd, onSpawn = () => undefined, onFd3 } = {}) =>
   new Promise((resolve) => {
     const file = createWriteStream(run.log, { flags: 'a' });
     const [bin, ...args] = wrap(argv);
-    const child = spawn(bin, args, { stdio: ['inherit', 'pipe', 'pipe'], env });
+    const stdio = ['inherit', 'pipe', 'pipe', ...(onFd3 ? ['pipe'] : [])];
+    const child = spawn(bin, args, { stdio, env, cwd });
     onSpawn(child);
+    if (onFd3) child.stdio[3].on('data', (chunk) => onFd3(String(chunk)));
     child.stdout.on('data', (chunk) => {
       process.stdout.write(chunk);
       file.write(chunk);

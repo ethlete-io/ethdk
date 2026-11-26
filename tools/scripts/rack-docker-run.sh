@@ -20,7 +20,8 @@ fi
 # Git reads a pack on /mnt/c through 9p at ~150 objects/s; a plain copy reads it at disk speed.
 local_mirror="$HOME/rack-linux/mirror.git"
 [ -d "$local_mirror" ] || git init --quiet --bare "$local_mirror"
-cp -ru "$mirror/objects/." "$local_mirror/objects/"
+# Git writes commit-graph files read-only, so cp -u cannot replace a changed one in place.
+cp -ru --remove-destination "$mirror/objects/." "$local_mirror/objects/"
 git -C "$work" fetch --quiet --force --depth 2 "$local_mirror" "$sha"
 git -C "$work" checkout --quiet --force --detach FETCH_HEAD
 git -C "$work" clean -fdxq -e node_modules -e .yarn/cache -e target

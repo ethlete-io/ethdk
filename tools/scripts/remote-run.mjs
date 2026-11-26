@@ -55,7 +55,7 @@ export const parseArgs = (argv) => {
 
 const shellQuote = (value) => `'${value.replaceAll("'", `'\\''`)}'`;
 
-const nativeRun = (suite) => `  export PATH="$HOME/.local/bin:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
+const nativeRun = (suite) => `  export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
   local started=$SECONDS
   yarn install --immutable > "$work/.remote-run-install.log" 2>&1 || { tail -40 "$work/.remote-run-install.log"; return 1; }
   echo "[remote-run] install $((SECONDS - started))s"
@@ -161,7 +161,9 @@ export const remoteRun = async (opts) => {
   const log = opts.log ?? join(tmpdir(), 'remote-run', `${opts.host}-${sha.slice(0, 12)}-${Date.now()}.log`);
   mkdirSync(dirname(log), { recursive: true });
   const file = createWriteStream(log);
-  const entry = registerRun({ machine: opts.host, label: `remote-run ${opts.suite}`, command: opts.suite, log });
+  const entry = process.env['REMOTE_RUN_NO_REGISTRY']
+    ? { finish: () => undefined }
+    : registerRun({ machine: opts.host, label: `remote-run ${opts.suite}`, command: opts.suite, log });
   const end = (code, reason) => {
     entry.finish(code);
     return finish(file, code, reason);
