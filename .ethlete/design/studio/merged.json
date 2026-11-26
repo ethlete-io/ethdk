@@ -12,10 +12,10 @@
     "at": "2026-11-07T17:19:30.454Z"
   },
   "components/command-palette": {
-    "hash": "b0554ffd12b00196",
+    "hash": "dd96ce040e2f25d9",
     "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-21T14:47:44.273Z"
+    "decidedBy": "claude-sonnet-5-5",
+    "at": "2026-11-26T09:52:47.388Z"
   },
   "components/comment-draft": {
     "hash": "7d28ba291026d963",
