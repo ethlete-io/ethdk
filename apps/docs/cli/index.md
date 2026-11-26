@@ -882,10 +882,9 @@ both, e.g. `--surface dark --scheme dark`, to check a dark theme.
 
 A part gets its surfaces by elevation, as the app does, not by a picked `et-surface--<name>` class. The frame gives
 each element with `data-et-auto-surface` the registered surface theme of the same type one elevation above the
-surface it sits on (outer first; without such a theme it keeps the parent's), like `etAutoSurface`, and gives each
-element with `data-et-surface-interactive` the hover, focus and pressed tint of `etSurfaceInteractive`. It reads the
+surface it sits on (outer first; without such a theme it keeps the parent's), like `etAutoSurface`. It reads the
 themes from the `.et-surface--<name>` rules of the loaded stylesheets, resolves again after every state switch, and
-`et design task` maps both attributes to these `@ethlete/core` directives. The root surface comes from the frame
+`et design task` maps the attribute to this `@ethlete/core` directive. The root surface comes from the frame
 root (`--surface`, or the product's `:root`).
 
 The floating panes from `@ethlete/components/design` carry `data-et-auto-surface` unless you pass a `surface`:

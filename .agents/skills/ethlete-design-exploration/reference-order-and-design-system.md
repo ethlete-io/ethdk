@@ -106,9 +106,8 @@ background, text, border and interaction states from the `et-surface` tokens of 
 accent, a warning or a danger colour comes from the SDK colour theming (`--et-tone-*` under a
 colour theme scope). Foundations define only the inputs of these themes. Never add a tier class
 (`bg-surface-raised`), an accent utility or a `var(--accent)` to a part or to the product
-stylesheet. Give a raised or floating area `data-et-auto-surface` and an interactive one
-`data-et-surface-interactive`, never a picked `et-surface--<name>` class: the frame resolves them by elevation like
-`etAutoSurface` and `etSurfaceInteractive`. Give a warning, error or success accent
+stylesheet. Give a raised or floating area `data-et-auto-surface`, never a picked
+`et-surface--<name>` class: the frame resolves it by elevation like `etAutoSurface`. Give a warning, error or success accent
 `data-et-semantic-color="<type>"`, never a picked `et-color--<name>` class: the frame resolves it by type like
 `injectSemanticColorTheme`. A generated colors foundation registers one theme per type, named after it
 (`et-color--error`, `et-color--warning`); an SDK drawing input that takes a theme name, like the button's `color`,
