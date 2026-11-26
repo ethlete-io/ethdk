@@ -4,11 +4,11 @@
   --et-carousel-dot-size: 10px;
   --et-carousel-dot-gap: 10px;
   --et-carousel-dot-radius: 5px;
-  --et-carousel-dot-color: rgb(var(--et-color-primary, 51 51 51));
-  --et-carousel-dot-color-hover: rgb(var(--et-color-primary-hover, 197 197 197));
-  --et-carousel-dot-color-focus: rgb(var(--et-color-primary-focus, 197 197 197));
-  --et-carousel-dot-color-active: rgb(var(--et-color-primary-active, 147 147 147));
-  --et-carousel-dot-color-current: rgb(var(--et-color-primary, 255 255 255));
+  --et-carousel-dot-color: var(--et-tone-fill-rest, rgb(51 51 51));
+  --et-carousel-dot-color-hover: var(--et-tone-fill-hover, rgb(197 197 197));
+  --et-carousel-dot-color-focus: var(--et-tone-fill-focus, rgb(197 197 197));
+  --et-carousel-dot-color-active: var(--et-tone-fill-active, rgb(147 147 147));
+  --et-carousel-dot-color-current: var(--et-tone-fill-rest, rgb(255 255 255));
 
   --et-carousel-progress-inline-size: 50px;
 
