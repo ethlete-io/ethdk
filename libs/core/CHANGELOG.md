@@ -1,5 +1,34 @@
 # @ethlete/core
 
+## 5.0.0-next.80
+
+### Major Changes
+
+- `SurfaceInteractiveDirective` (`[etSurfaceInteractive]`) and its `et-surface-interactive` class are removed; `etButton` no longer adds it. The `et-surface-tint` utilities read the surface text color where no theme sets `tint`. `et update` runs `@ethlete/core:migrate-remove-surface-interactive`, which drops the attribute, the class and the imports.
+- The interactive colour and surface styles, the favicon dot and the deprecated `provideColorThemes` read and write the new theme token names (`--et-tone-*`, `--et-surface-*` colours).
+- `SurfaceTheme.interactionColor` is split into `tint` and `controlText`, writing `--et-surface-tint` and `--et-surface-control-text*`; `onColor`, `inkColor` and `--et-surface-interaction*` are gone. `et update` migrates themes and token readers.
+- The `tailwind-4-color-theme` and `tailwind-4-surface-theme` generators write the new theme token names (`--et-tone-*`, `--et-surface-text*`, colour values instead of RGB triplets) and drop the secondary and tertiary swatches.
+
+### Minor Changes
+
+- Added the merge-only `EthleteColorThemeNames` interface (one `true` member per theme name), so several sheets can register theme names; the `tailwind-4-color-theme` generator now writes it and `EthleteColorThemeNameRegistry['name']` is deprecated but still read.
+- Dev mode throws `ET9200` when `provideColorThemesWithTailwind4()` gets two default color themes, and `ET9201` when `provideSurfaceThemesWithTailwind4()` gets two default surface themes of the same `type`. Both name the themes; production behaviour is unchanged.
+- New generator `@ethlete/core:migrate-theme-token-names` renames the old theme token names (`--et-color-primary*`, `--et-theme-color-*`, the surface triplets and `-solid` aliases, the generated Tailwind color names) and stops with file and line for every place it cannot rewrite safely.
+
+### Patch Changes
+
+- `migrate-theme-token-names` and `migrate-surface-roles` also rewrite the Studio design files in `.ethlete/design` when the run is scoped with `--projects` or `--include`.
+- The `tailwind-4-color-theme` and `tailwind-4-surface-theme` generators now read a theme whose properties carry a type cast, such as `name: 'farn' as ColorTheme['name']`, instead of skipping the theme.
+- Make `migrate-theme-token-names` idempotent on already renamed values and rename `var(--x-solid)` inside Tailwind arbitrary values.
+- The theme migrations take a file path in `--include`. A run with only file paths changes just those files and no longer adds `.ethlete/design`.
+- `migrate-surface-roles` renames a Tailwind fill utility (`bg-`, `from-`, `via-`, `to-`, and `ring-`, `border-`, `outline-`, `shadow-`, `divide-`, `fill-`, `stroke-` with an opacity) of the surface interaction color to `-tint` instead of `-control-text`.
+- `et update` now runs `@ethlete/core:migrate-theme-token-names`: the migration has its `migrations.json` entry.
+- The theme token rename now renames an old token name that is the whole content of a string literal, e.g. `getPropertyValue('--et-surface-border-solid')`.
+- Document the current surface tokens (`--et-surface-background`, `-text`, `-text-muted`, `-text-subtle`, `-border`, `-tint`) in the surface theming guide instead of the removed `-solid` and `-rgb` names.
+- `migrate-surface-roles` rewrites a declaration of a surface interaction token into both the tint and the control text token, so a `color-mix()` reader renamed to the tint still finds a value.
+- `migrate-theme-token-names` now renames tokens in Tailwind `bg-(--et-…)` shorthand classes and inline `style` triplets, and renames a theme name only after a Tailwind color utility, so attributes such as `data-et-surface` stay unchanged.
+- `migrate-theme-token-names` now prints the theme regenerate hint (with the generator commands) after a run that renamed files, not only when it fails.
+
 ## 5.0.0-next.79
 
 ### Minor Changes

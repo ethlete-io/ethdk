@@ -1,5 +1,13 @@
 # timetrack-app
 
+## 0.2.0-next.26
+
+### Patch Changes
+
+- Surface themes use `tint` and `controlText`, and the regenerated theme CSS writes the new surface tokens.
+- Hover, press and fill backgrounds read the surface `tint` utility instead of `control-text`.
+- `SurfaceInteractiveDirective` (`[etSurfaceInteractive]`) and its `et-surface-interactive` class are removed; `etButton` no longer adds it. The `et-surface-tint` utilities read the surface text color where no theme sets `tint`. `et update` runs `@ethlete/core:migrate-remove-surface-interactive`, which drops the attribute, the class and the imports.
+
 ## 0.2.0-next.25
 
 ### Minor Changes

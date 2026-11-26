@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0-next.33
+
+### Minor Changes
+
+- New opt-in rule `ethlete/no-old-theme-token` flags the retired theme token names, with an `ethlete/css` language so it can lint `.css` and `.scss` files.
+- `ethlete/no-old-theme-token` gets a `themeFiles` option: it reads the theme names from the generated theme CSS and flags old Tailwind tone and surface classes (`bg-et-brand`, `text-et-danger-ink`, `text-et-surface-dark`); without it, a possible old class is reported as unknown theme names.
+
+### Patch Changes
+
+- `no-old-theme-token` now flags the retired surface `interaction` tokens and utilities (use `tint` and `control-text`).
+- `no-old-theme-token` no longer reports the new surface and tone names (for example `--et-surface-text-muted` or `bg-et-surface-background-hover`).
+- `no-old-theme-token` no longer reports the `data-et-surface` attribute or the named-surface tokens the surface generator writes (`--color-et-surface-card-background`).
+
 ## 1.0.0-next.32
 
 ### Minor Changes

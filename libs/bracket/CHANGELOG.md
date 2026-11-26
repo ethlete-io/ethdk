@@ -1,5 +1,11 @@
 # @ethlete/bracket
 
+## 1.0.0-next.7
+
+### Minor Changes
+
+- Swiss brackets draw a new default round header: round, rule and record above each group, toned with its border from the app's semantic themes. It beats the global header; `provideBracketConfig({ swiss })` overrides it.
+
 ## 1.0.0-next.6
 
 ### Minor Changes
