@@ -102,10 +102,10 @@
     "pages/inventory": "42b01b80f10cd7ab",
     "pages/sketches": "bebadbb0fce4a4c9",
     "pages/start": "ce59d97ea0c350e1",
-    "pages/system": "acd71eaa6b910ad6",
+    "pages/system": "95fc1e93a843e076",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "ad821454592aa21abc284846213e12c8acd80112",
+  "baselineTree": "e442e7d3f985c8c53d6ff402334942c4cc84aa75",
   "editOldCommit": "f94ee4a03602d4dd14814bf7d3fc583a8b7605be",
   "sharedBase": {
     "pages/inbox/shared/inbox.css": "87b524c00df2c0b7",

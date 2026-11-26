@@ -1,7 +1,10 @@
+import { badge, badgeStyles } from '@ethlete/components/design/badge';
+import { iconButton, iconButtonStyles } from '@ethlete/components/design/button';
 import { control } from '@ethlete/components/design/control';
-import { definePart, drawing, html, slot, withAction } from '@design-system';
+import { definePart, drawing, html, slot, svgAsset, withAction } from '@design-system';
+import commentsOpen from '@assets/icons/comments-open.svg?raw';
 import anchoredDialog from '@system/components/anchored-dialog';
-import badge from '@system/components/badge';
+import badgePart from '@system/components/badge';
 import button from '@system/components/button';
 import { canvasFrame, canvasFrameStyles, canvasView, fitTransform, stateGrid } from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
@@ -33,7 +36,6 @@ import {
 } from './shared/build-ready';
 import { buildReadyView } from './build-ready-footer';
 import {
-  commentButton,
   commentDraftAt,
   commentLayer,
   commentList,
@@ -67,24 +69,50 @@ const emptyCanvasOf = (copy: string) =>
     </div>
   </div>`;
 
-const chip = async (open: PartOpenPoints, pressed: boolean, acting: boolean, exceptions: number) => {
+const BUBBLE_ICON = svgAsset(commentsOpen, { size: 16, class: 'et-icon', attrs: { 'aria-hidden': 'true' } });
+
+const TRAY =
+  'rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border)) bg-et-surface-background shadow-(--et-anchored-panel-shadow,0_10px_24px_color-mix(in_srgb,var(--et-shadow-color,rgb(0_0_0))_16%,transparent))';
+
+const chip = (open: PartOpenPoints, pressed: boolean, acting: boolean, exceptions: number) => {
   const count = open.points.length + exceptions;
-  const drawn = await button.render(
-    {
-      label: count ? `${count} offen` : SYSTEM_LABELS.nothingOpen,
-      icon: count
-        ? `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-tone-fill' })}</span>`
-        : checkIcon(14),
-      variant: 'outline',
-      size: 'sm',
-      pressed,
-    },
-    {},
-  );
+  const label = count ? SYSTEM_LABELS.openCount(count) : SYSTEM_LABELS.nothingOpen;
+  const trigger = iconButton({
+    icon: BUBBLE_ICON,
+    ariaLabel: label,
+    size: 'sm',
+    variant: 'transparent',
+    color: 'surface',
+    pressed,
+  });
   const target = pressed ? 'points-closed' : 'part';
+  const body = html`<span class="relative flex"
+    >${control(acting ? withAction(trigger, target) : trigger, 'open-points')}${
+      count
+        ? html`<span class="pointer-events-none absolute -top-space-1 -right-space-1 flex" aria-hidden="true"
+            >${badge({ label: String(count), variant: 'filled', size: 'sm', color: 'brand' })}</span
+          >`
+        : ''
+    }</span
+  >`;
   return {
-    body: control(acting ? withAction(drawn.body, target) : drawn.body, 'open-points'),
-    styles: drawn.styles,
+    body,
+    styles: iconButtonStyles + badgeStyles,
+  };
+};
+
+const commentToggle = (on: boolean, action?: string) => {
+  const drawn = iconButton({
+    icon: icon('comment', { cls: 'et-icon' }),
+    ariaLabel: SYSTEM_LABELS.comment,
+    size: 'sm',
+    variant: 'transparent',
+    color: 'surface',
+    pressed: on,
+  });
+  return {
+    body: control(action === undefined ? drawn : withAction(drawn, action), 'comment'),
+    styles: iconButtonStyles,
   };
 };
 
@@ -182,7 +210,7 @@ const pointLines = ({ icon: name, lines }: PointGroup) => {
 
 const exceptionGroup = async () => {
   const approve = await button.render({ label: EXCEPTIONS_LABELS.approve, variant: 'outline', size: 'xs' });
-  const open = await badge.render({ badges: [{ label: 'offen', variant: 'outline', size: 'sm' }] });
+  const open = await badgePart.render({ badges: [{ label: 'offen', variant: 'outline', size: 'sm' }] });
   const rows = partExceptions
     .map(
       ({ rule, reason }) =>
@@ -234,6 +262,7 @@ const popover = async (
     label: SYSTEM_LABELS.openPoints,
     modal: false,
     anchor: '[data-et-control="open-points"]',
+    placement: 'top-end',
     content: html`<div class="w-96 text-ui-sm">
       <header
         class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border)"
@@ -247,7 +276,7 @@ const popover = async (
     </div>`,
   });
   return {
-    body: html`<div class="absolute top-full right-0 mt-2.5" style="transform: translate3d(0, 0, 0)">
+    body: html`<div class="absolute -right-2 bottom-full mb-2.5" style="transform: translate3d(0, 0, 0)">
       ${dialog.body}
     </div>`,
     styles: dialog.styles + (exceptions?.styles ?? '') + build.styles,
@@ -298,7 +327,7 @@ export default definePart<{
   call?: 'open' | 'transferred';
   developer?: boolean;
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft only while slow rules run and no blocker is definite: as soon as one blocker is definite the badge reads Nicht baubereit, even while a slow rule still runs, ADR 0270); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. Steht statt eines Teils ein Hinweis auf der Fläche (Design-Server nicht gestartet, Lesefehler), zeigt sie eine Karte wie die leere Seite: ein Icon, ein kurzer Titel und darunter der Hinweis; keine Rahmen, kein Chip, keine Kommentar-Taste. A legacy call has no header bar: its headline and slug sit top left on the canvas, and top right, where a part shows Kommentar and the open-points chip, the surface and colour theme switches and Als übertragen markieren, which turns into an übertragen badge. A part with 12 or more states opens on the states with an open comment and folds the rest behind a pill at the bottom centre of the canvas: "13 weitere Zustände eingeklappt" and the disclosure Alle Zustände zeigen, which shows every state and leaves only the disclosure, open, in the pill. When no state or every state has an open comment, nothing folds.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. At the bottom centre of the canvas the sketch bar holds two icon buttons: the Kommentar toggle and the open points, a speech bubble with a small count badge in the accent colour from one open point on, no badge at nothing open, and the tooltip n offen or Nichts offen; its popover opens above it. The Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft only while slow rules run and no blocker is definite: as soon as one blocker is definite the badge reads Nicht baubereit, even while a slow rule still runs, ADR 0270); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. Steht statt eines Teils ein Hinweis auf der Fläche (Design-Server nicht gestartet, Lesefehler), zeigt sie eine Karte wie die leere Seite: ein Icon, ein kurzer Titel und darunter der Hinweis; keine Rahmen, kein Chip, keine Kommentar-Taste. A legacy call has no header bar: its headline and slug sit top left on the canvas, and top right the surface and colour theme switches and Als übertragen markieren, which turns into an übertragen badge. A part with 12 or more states opens on the states with an open comment and folds the rest behind a pill at the bottom centre of the canvas: "13 weitere Zustände eingeklappt" and the disclosure Alle Zustände zeigen, which shows every state and leaves only the disclosure, open, in the pill. When no state or every state has an open comment, nothing folds.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6', 'design check'],
   implements: {
     route: '/',
@@ -579,11 +608,8 @@ export default definePart<{
     const points = clear ? nothingOpen : partPoints;
     const acting = !fit && !clear;
     const exceptionCount = clear ? 0 : partExceptions.length;
-    const toggle = await chip(points, !closed, acting && !commentMode, exceptionCount);
-    const comment = await commentButton({
-      on: commentMode,
-      ...(acting ? { action: commentMode ? 'points-closed' : 'comment-mode' } : {}),
-    });
+    const toggle = chip(points, !closed, acting && !commentMode, exceptionCount);
+    const comment = commentToggle(commentMode, acting ? (commentMode ? 'points-closed' : 'comment-mode') : undefined);
     const status: BuildReady =
       build === 'checking'
         ? { state: 'checking', rules: slowRules }
@@ -611,8 +637,17 @@ export default definePart<{
       product: FARN_PRODUCT,
       side: list ? withCommentList(tree.body, list.body) : tree.body,
       content: html`${frames}
-        <div class="absolute top-space-3 right-space-3 flex gap-space-2">
-          ${hint?.body ?? ''}${comment.body}${toggle.body}${dialog?.body ?? ''}
+        <div class="absolute top-space-3 right-space-3 flex gap-space-2">${hint?.body ?? ''}</div>
+        <div
+          class="pointer-events-none absolute right-space-3 ${folded ? 'bottom-16' : 'bottom-space-3'} left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 flex justify-center"
+        >
+          <div
+            class="pointer-events-auto relative flex items-center gap-space-2 p-space-1 font-ui ${TRAY}"
+            role="toolbar"
+            data-sk-toolbar
+          >
+            ${comment.body}${toggle.body}${dialog?.body ?? ''}
+          </div>
         </div>
         ${folded ? foldedStatesPill(FOLDED_SAMPLE) : ''}`,
     });

@@ -183,9 +183,10 @@
     "at": "2026-11-24T09:58:55.562Z"
   },
   "pages/system": {
-    "hash": "40ad5ffbd085dc6a",
-    "variant": "new",
-    "decidedBy": "user",
-    "at": "2026-11-24T00:18:50.392Z"
+    "hash": "95fc1e93a843e076",
+    "variant": "a",
+    "decidedBy": "plan: docs/process.md:49",
+    "at": "2026-11-26T21:03:56.810Z",
+    "note": "merged without a pick: allowed by docs/process.md:49"
   }
 }

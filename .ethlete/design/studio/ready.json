@@ -1056,14 +1056,10 @@
       "comments",
       "emit:activate",
       "emit:approveException",
-      "emit:close",
       "emit:collapse",
       "emit:copyPrompt",
       "emit:expandedChange",
-      "emit:fit",
       "emit:markTransferred",
-      "emit:maximize",
-      "emit:minimize",
       "emit:openEditSketch",
       "emit:pick",
       "emit:pickTheme",
@@ -1076,15 +1072,12 @@
       "emit:showAllStates",
       "emit:sideWidthChange",
       "emit:withdrawComment",
-      "emit:zoomIn",
-      "emit:zoomOut",
-      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "part",
       "points-closed",
       "system-picker"
     ],
-    "at": "2026-11-25T23:17:14.907Z"
+    "at": "2026-11-26T09:50:20.687Z"
   }
 }
