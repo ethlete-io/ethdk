@@ -15,6 +15,8 @@ import { regenerateStudioThemesOf } from './merge-studio-themes';
 import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
 import { subSketchesOf } from './sub-sketches';
+import { EDIT_NEW, EDIT_OLD } from './edit-old-base';
+import { isEditSketch } from './merged-parts';
 import {
   decideSketch,
   findSketch,
@@ -29,12 +31,30 @@ export const MERGE_WAIT_MS = 300_000;
 
 export type DesignStep = { line: string; run: () => Promise<number> };
 
-/** The sketch with the pick a plan allows: its only live variant, when `variant` names it and nobody picked yet. */
+const isNewOverOldEdit = (options: { sketch: Sketch; live: readonly string[]; variant: string }) => {
+  const { sketch, live, variant } = options;
+
+  return (
+    isEditSketch(sketch) &&
+    variant === EDIT_NEW &&
+    live.length === 2 &&
+    live.includes(EDIT_NEW) &&
+    live.includes(EDIT_OLD)
+  );
+};
+
+/**
+ * The sketch with the pick a plan allows: its only live variant when `variant` names it and nobody picked yet, or `new`
+ * of an @edit sketch whose live variants are just `new` and its baseline `old`.
+ */
 export const allowedMergeOf = (options: { sketch: Sketch; variant: string; by?: string; editRef?: boolean }) => {
   const { sketch, variant, by = '', editRef } = options;
   const live = sketch.variants.filter((candidate) => !rejectionOf(sketch, candidate));
+  const allowed = editRef
+    ? live.includes(variant)
+    : (live.length === 1 && live[0] === variant) || isNewOverOldEdit({ sketch, live, variant });
 
-  if (editRef ? !live.includes(variant) : live.length !== 1 || live[0] !== variant)
+  if (!allowed)
     return `${sketch.target} has ${live.length} live variants (${live.join(', ') || 'none'}), not only "${variant}" - the user picks in Studio`;
 
   return decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf(by) } });

@@ -835,7 +835,8 @@ drawn yet).
 
 `et design sketch merge <layer>/<name> --variant <key> --allowed-by <plan ref> --by <model>` merges a
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags
-go together; the part note stays. With two live variants the user picks in Studio.
+go together; the part note stays. An `@edit` sketch whose live variants are just `new` and its baseline `old`
+merges `--variant new` the same way. With any other two live variants the user picks in Studio.
 
 A merge commits what it wrote as `feat(repo): Merge <target> variant <key> into <product>`. When the checkout has a
 `.changeset` folder and a merged file lies in a workspace package, the commit also holds a changeset that names each
