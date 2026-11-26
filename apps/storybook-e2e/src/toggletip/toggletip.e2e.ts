@@ -19,6 +19,26 @@ async function scrollToViewportTop(page: Page, trigger: Locator): Promise<void> 
   await trigger.evaluate((el) => el.scrollIntoView({ block: 'start' }));
 }
 
+test.describe('toggletip / surface width', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: click trigger');
+
+  test('the surface stays inside the host box and centred on the trigger', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Interactive toggletip' });
+
+    await trigger.click();
+    await waitForPanelEntered(page.getByRole('dialog'));
+
+    const host = page.locator('et-toggletip').first();
+    const surface = page.locator('.et-toggletip__surface').first();
+    const hostBox = await boxOf(host);
+    const surfaceBox = await boxOf(surface);
+
+    expect(surfaceBox.x).toBeGreaterThanOrEqual(hostBox.x - 1);
+    expect(surfaceBox.x + surfaceBox.width).toBeLessThanOrEqual(hostBox.x + hostBox.width + 1);
+  });
+});
+
 test.describe('toggletip / placement and scroll', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: click trigger');
 

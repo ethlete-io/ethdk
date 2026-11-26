@@ -43,14 +43,19 @@
     letter-spacing: var(--et-toggletip-letter-spacing, -0.01em);
   }
 
+  .et-toggletip,
   .et-toggletip__surface {
     min-inline-size: var(--et-toggletip-min-width, min(272px, calc(100vw - 24px)));
+  }
+
+  .et-toggletip__surface {
     padding: calc(var(--et-toggletip-padding-block) + 2px) calc(var(--et-toggletip-padding-inline) + 2px);
   }
 
   /* The comfortable minimum above is for prose — a sentence or two of explanation reads badly in a narrow
      column. Content that is already a list of its own rows (the breadcrumb's hidden crumbs) has no such
      problem and just looks half-empty at 272px, so it can opt out and hug its widest row. */
+  .et-toggletip:has([data-toggletip-hug]),
   .et-toggletip__surface:has([data-toggletip-hug]) {
     min-inline-size: 0;
   }
