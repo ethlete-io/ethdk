@@ -1333,11 +1333,23 @@ describe('SystemViewComponent on a merge', () => {
     const sketches = fixture.debugElement.query(By.directive(SketchesComponent)).componentInstance;
     const canvas = sketches['canvas'];
 
-    Object.defineProperty(sketches['world']().nativeElement, 'offsetHeight', { value: 2000, configurable: true });
     Object.defineProperty(sketches['list']().nativeElement, 'clientHeight', { value: 800, configurable: true });
 
     // The human decided on 26.11. that a tree click on a tall part shows it at 100 % with its head at the top; only Fit zooms out.
     view['activate']('sketch:foundations/colors/foundations/type');
+    await settle(fixture);
+    expect(canvas.zoom()).toBe('fit');
+
+    for (const frame of fixture.nativeElement.querySelectorAll('[data-sk-frame]')) {
+      Object.defineProperty(frame, 'offsetHeight', { value: 2000, configurable: true });
+    }
+    const sketchView = fixture.debugElement.query(By.directive(SketchViewComponent)).componentInstance;
+
+    sketchView['pictureLoaded']({
+      key: sketches['selectedFrame'](),
+      picture: 'tall.png',
+      event: { target: { naturalWidth: 400, naturalHeight: 2000 } },
+    });
     await settle(fixture);
 
     expect(canvas.zoom()).toBe(1);
