@@ -8,6 +8,7 @@ How the doc session and the builder work. A process change edits this page.
 - The builder only coordinates: subagents write every change, a fresh one per slice. It keeps as many at work as the slot limit allows whenever that many slices can move. The human sets the limit (default 4).
 - Only the doc session orders the queue. The builder takes the first open row that can move without the human; if none can, it takes a row marked "Füllarbeit", then a parked row. An empty queue never stops it.
 - The builder reports only to the doc session, in batched messages.
+- A message to another session (SendMessage or mailbox) starts with the sender's tmux session, e.g. `[claude@ethlete-sdk]`.
 
 ## Queue
 
