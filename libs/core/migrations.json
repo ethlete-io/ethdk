@@ -72,6 +72,15 @@
       "generator": "@ethlete/core:migrate-color-theme-variants",
       "requires": ["ts-morph"],
       "docs": "/core/theming"
+    },
+    {
+      "name": "theme-token-names",
+      "version": "5.0.0-next.80",
+      "kind": "auto",
+      "level": "required",
+      "description": "Rename the old theme token names (surface, tone, opacity knob, component triplets) and the generated Tailwind color names.",
+      "generator": "@ethlete/core:migrate-theme-token-names",
+      "docs": "/core/theming"
     }
   ]
 }
