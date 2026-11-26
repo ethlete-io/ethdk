@@ -108,6 +108,8 @@ Keep credentials and personal data out of the mailbox. No agent is started autom
 `;
 
 const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
+const SSH_ENV_NAMES = ['SSH_CONNECTION', 'SSH_CLIENT', 'SSH_TTY'];
+const withoutSshEnv = (...argv) => ['env', ...SSH_ENV_NAMES.flatMap((name) => ['-u', name]), ...argv];
 const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
 const BUILDER_PROMPT =
   'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.';
@@ -172,7 +174,7 @@ const createRunSession = (session, shellCommand, baseCommand) => {
     session,
     '-c',
     process.cwd(),
-    inAgentScopeCommand(shellCommand, session),
+    ...withoutSshEnv(process.env.SHELL || 'sh', '-c', inAgentScopeCommand(shellCommand, session)),
   );
   if (result.status !== 0) {
     process.stderr.write(`No agent was started: tmux could not create ${session}: ${result.stderr.trim()}\n`);
@@ -1058,7 +1060,7 @@ if (command === 'send' && sender) {
             session,
           )
         : `${inAgentScopeCommand(base, session, bypassingShellFunction)} ${quote(restartPrompt(words))}`;
-      tmux('respawn-pane', '-k', '-t', pane, '-c', root, shell, '-lic', launch);
+      tmux('respawn-pane', '-k', '-t', pane, '-c', root, ...withoutSshEnv(shell, '-lic', launch));
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'off');
       tmux('set-option', '-t', pane, COMMAND_OPTION, base);
       restartLog(`${session} started a new process: ${base}`);

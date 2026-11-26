@@ -460,6 +460,75 @@ describe('agent-sessions', () => {
     expect(result.stdout).toBe(`${dir}/.cache/claude-tmp`);
   });
 
+  const SSH_ENV = {
+    SSH_CONNECTION: '10.0.0.2 5000 10.0.0.1 22',
+    SSH_CLIENT: '10.0.0.2 5000 22',
+    SSH_TTY: '/dev/pts/9',
+  };
+
+  it.skipIf(!hasTmux)('starts the agent without the SSH variables of the launching process', async () => {
+    const agent = `claude-ssh-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const dispatch = `dispatch-ssh-${process.pid}`;
+    const started = join(dir, 'started.log');
+    const fakeAgent = join(dir, 'fake-agent.sh');
+    writeFileSync(
+      fakeAgent,
+      `env | grep -E '^SSH_(CONNECTION|CLIENT|TTY)=' > ${started}; echo done >> ${started}; exec cat\n`,
+    );
+
+    try {
+      const result = run(['run', agent, 'sh', fakeAgent], undefined, {
+        HOME: dir,
+        AGENT_MAILBOX_DISPATCH_SESSION: dispatch,
+        ...SSH_ENV,
+      });
+
+      expect(result.status).toBe(0);
+      await expect
+        .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+        .toBe('done\n');
+    } finally {
+      [scoped, dispatch].forEach((name) => spawnSync('tmux', ['kill-session', '-t', `=${name}`]));
+    }
+  });
+
+  it.skipIf(!hasTmux)(
+    'restarts the agent without the SSH variables of the restarting process',
+    async () => {
+      const agent = `claude-sshr-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const fakeAgent = fakeAgentPath();
+      writeFileSync(
+        fakeAgent,
+        `#!/bin/sh\nenv | grep -E '^SSH_(CONNECTION|CLIENT|TTY)=' > ${started}; echo done >> ${started}; exec cat\n`,
+        {
+          mode: 0o755,
+        },
+      );
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          HOME: dir,
+          ...SSH_ENV,
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe('done\n');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
   it.skipIf(!hasTmux)('starts the agent in a detached tmux session when run has no terminal', async () => {
     const agent = `claude-notty-${process.pid}`;
     const scoped = `${agent}@${basename(dir)}`;
