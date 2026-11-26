@@ -1334,6 +1334,7 @@ describe('SystemViewComponent on a merge', () => {
     const canvas = sketches['canvas'];
 
     Object.defineProperty(sketches['list']().nativeElement, 'clientHeight', { value: 800, configurable: true });
+    Object.defineProperty(sketches['list']().nativeElement, 'clientWidth', { value: 300, configurable: true });
 
     // The human decided on 26.11. that a tree click on a tall part shows it at 100 % with its head at the top; only Fit zooms out.
     view['activate']('sketch:foundations/colors/foundations/type');
