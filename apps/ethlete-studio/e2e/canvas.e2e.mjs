@@ -479,6 +479,13 @@ const noVisibleCellCensus = (page) =>
     const canvas = document.querySelector(`ethlete-sketch-view :is(${CANVAS})`);
     const view = canvas?.getBoundingClientRect();
     const boxes = shots.map((cell) => cell.getBoundingClientRect());
+    const frameElements = shots.map((cell) => cell.closest('[data-sk-frame]')).filter(Boolean);
+    const frames = frameElements.map((frame) => frame.getBoundingClientRect());
+    const frameSamples = frameElements
+      .filter((frame) => frame.getBoundingClientRect().height === 0)
+      .slice(0, 3)
+      .map((frame) => ` "${frame.dataset['skFrame']}" ${frame.style.height}/${frame.firstElementChild?.style.height}`)
+      .join('');
     const scrolled = [...(canvas?.querySelectorAll('*') ?? []), canvas]
       .filter((element) => element && (element.scrollTop || element.scrollLeft))
       .map((element) => `${element.tagName.toLowerCase()} ${round(element.scrollLeft)},${round(element.scrollTop)}`);
@@ -495,6 +502,7 @@ const noVisibleCellCensus = (page) =>
       view ? `view ${round(view.left)},${round(view.top)} ${round(view.width)}x${round(view.height)}` : 'no canvas',
       `tops ${span((box) => box.top)}, lefts ${span((box) => box.left)}, heights ${span((box) => box.height)}`,
       `zero-height ${boxes.filter((box) => box.height === 0).length}`,
+      `zero-height frames ${frames.filter((box) => box.height === 0).length} of ${frames.length}${frameSamples}`,
       `scrolled ${scrolled.join(' ') || 'none'}`,
       `fold ${fold ? `${fold.getAttribute('aria-expanded')} "${fold.textContent?.trim()}"` : 'none'}`,
       `zoom ${zoom ?? 'none'}`,
@@ -3689,8 +3697,9 @@ const CASES = [
       await showAllStates(page);
       await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
       let top;
+      let rounds = 0;
 
-      for (const until = Date.now() + WAIT_MS; !top && Date.now() < until;) {
+      for (const until = Date.now() + WAIT_MS; !top && Date.now() < until; rounds++) {
         top = (await sketchCells(page)).filter((cell) => cell.frameVisible).sort((a, b) => a.frameTop - b.frameTop)[0];
         if (!top) await page.waitForTimeout(250);
       }
@@ -3698,7 +3707,7 @@ const CASES = [
       if (!top)
         return {
           ok: false,
-          detail: `no visible sketch cell within ${WAIT_MS} ms; ${await noVisibleCellCensus(page)}`,
+          detail: `no visible sketch cell within ${WAIT_MS} ms (${rounds} censuses); ${await noVisibleCellCensus(page)}`,
         };
 
       const before = await loadedCell(top.key, () => true, FULL_COMPARE_MS);
