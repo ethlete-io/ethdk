@@ -1083,7 +1083,7 @@
     "pid": 2432228
   },
   "foundations/agent-logos": {
-    "hash": "d4f785b87245bd87",
+    "hash": "54dbb03f21f15705",
     "files": {
       ".ethlete/design/studio/assets/agent-copilot.svg": "35296642ce7e586e",
       ".ethlete/design/studio/assets/agent-cursor.svg": "db3d10445d26c40a",
@@ -1094,15 +1094,15 @@
       ".ethlete/design/studio/assets/agent-meta.svg": "850cd8395679621e",
       ".ethlete/design/studio/assets/agent-mistral.svg": "16ffcf06309f13df",
       ".ethlete/design/studio/assets/agent-qwen.svg": "d1f335b7ecbb0cce",
-      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "4777e8b97f76bac0",
+      ".ethlete/design/studio/foundations/agent-logos/agent-logos.ts": "7c0480dfc13a69ae",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "35036a59e894310f"
     },
     "actions": [],
     "builder": "designer",
-    "at": "2026-11-17T13:20:15.843Z",
-    "by": "et design serve",
-    "cmd": "serve",
-    "pid": 2342738
+    "at": "2026-11-26T02:32:10.913Z",
+    "by": "claude-opus-5-5",
+    "cmd": "ready",
+    "pid": 3811093
   },
   "foundations/colors": {
     "hash": "03dd7d01cdaecebc",
