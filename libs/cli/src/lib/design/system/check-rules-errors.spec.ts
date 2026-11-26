@@ -15,6 +15,8 @@ export default definePart({ note: 'A chip.', describe: { default: 'at rest' }, s
 
 const PAGE = CHIP.replace("label: 'Made up'", '');
 
+const USER = `import chip from '@system/components/chip';\n${PAGE}`;
+
 const checkout = (files: Record<string, string>) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-check-rules-errors-'));
   const write = (path: string, text: string) => {
@@ -50,19 +52,31 @@ const ruleOf = (line: string) => line.split(' ')[0];
 afterEach(() => vi.restoreAllMocks());
 
 describe('checkRules', () => {
-  it('fails sample text outside the sample data and warns about an orphan part', () => {
-    const { status, errors, warnings } = run({ 'components/chip/chip.ts': CHIP, 'pages/home/home.ts': PAGE });
+  it('fails sample text outside the sample data', () => {
+    const { status, errors } = run({
+      'components/chip/chip.ts': CHIP,
+      'pages/home/home.ts': USER,
+    });
 
     expect(status).toBe(1);
     expect(errors.map(ruleOf)).toEqual(['SAMPLE-TEXT']);
-    expect(warnings).toContainEqual(expect.stringMatching(/^WARNING ORPHAN-PART /u));
+  });
+
+  it('fails a merged part that no page, no part and no implements link uses', () => {
+    const { status, errors } = run({
+      'components/chip/chip.ts': PAGE,
+      'pages/home/home.ts': PAGE,
+    });
+
+    expect(status).toBe(1);
+    expect(errors.map(ruleOf)).toEqual(['ORPHAN-PART']);
   });
 
   it('passes the hits its rule baseline lists and prints them as baselined', () => {
     const entry = { finding: 'B1', sketch: 'components/chip' };
     const { status, errors, logs } = run({
       'components/chip/chip.ts': CHIP,
-      'pages/home/home.ts': PAGE,
+      'pages/home/home.ts': USER,
       'rule-baseline.json': JSON.stringify({
         'SAMPLE-TEXT': { 'components/chip: "Made up"': entry },
       }),
@@ -84,7 +98,7 @@ describe('checkRules', () => {
   it('records a part whose only rule hits its rule baseline lists as build-ready', () => {
     const target = checkout({
       'components/chip/chip.ts': CHIP,
-      'pages/home/home.ts': PAGE,
+      'pages/home/home.ts': USER,
       'rule-baseline.json': JSON.stringify({
         'SAMPLE-TEXT': { 'components/chip: "Made up"': { finding: 'B1', sketch: 'components/chip' } },
       }),

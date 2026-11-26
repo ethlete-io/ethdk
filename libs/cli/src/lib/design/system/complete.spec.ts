@@ -20,6 +20,8 @@ import { designComplete } from './complete-command';
 import { approveException } from './exceptions';
 import { readHandoff, recordHandoff } from './handoff';
 import { resolveProduct } from './resolve-product';
+import { hitKeyOf, RULE_BASELINE_FILE } from './rule-baseline';
+import { orphanPartsOf } from './rules/orphan-part';
 import { createSketch } from './sketch/sketch';
 import { createSystemModules } from './system-modules';
 import { recordMerged } from './sketch/merged-parts';
@@ -351,6 +353,14 @@ export default definePart({
   const product = resolveProduct({ target, name: 'app-a', config: config.products?.['app-a'] ?? {} });
 
   recordMerged({ product, parts: Object.keys(PARTS) });
+  writeFileSync(
+    join(design, 'app-a', RULE_BASELINE_FILE),
+    JSON.stringify({
+      'ORPHAN-PART': Object.fromEntries(
+        orphanPartsOf(product).map((problem) => [hitKeyOf(product, problem), { finding: 'B1', sketch: 'none' }]),
+      ),
+    }),
+  );
 
   return { target, config, product };
 };

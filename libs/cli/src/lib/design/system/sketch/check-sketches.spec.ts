@@ -1,6 +1,6 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
@@ -306,6 +306,34 @@ describe('openSketchProblemsOf', () => {
       expect.objectContaining({ rule: 'SAMPLE-TEXT', file: hero }),
     );
     expect(variants.find(({ variant }) => variant === 'b')?.problems).toEqual([]);
+  });
+
+  // The human decided in B795 that a part new in a sketch is exempt from ORPHAN-PART until the merge.
+  it('fails a merged part a variant stops using, but not a part new in the sketch', () => {
+    const target = acme();
+    const acmeDir = join(target, DESIGN_DIR, 'acme');
+    const part = (key: string) => join(acmeDir, key, `${key.split('/')[1]}.ts`);
+    const button = readFileSync(part('components/button'), 'utf8').replace('./button.css', './badge.css');
+    const embed = "import badge from '@system/components/badge';\nexport const withBadge = badge;\n";
+
+    mkdirSync(dirname(part('components/badge')), { recursive: true });
+    writeFileSync(part('components/badge'), button);
+    writeFileSync(join(acmeDir, 'components/badge/badge.css'), '');
+    writeFileSync(part('elements/hero'), `${embed}${readFileSync(part('elements/hero'), 'utf8')}`);
+
+    const product = resolveAcme(target);
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants: ['a'] }) as Sketch;
+    const hero = join(sketch.dir, 'a/elements/hero/hero.ts');
+    const tag = join(sketch.dir, 'a/components/tag/tag.ts');
+
+    writeFileSync(hero, readFileSync(hero, 'utf8').replace(embed, ''));
+    mkdirSync(dirname(tag), { recursive: true });
+    writeFileSync(tag, button.replace('./badge.css', './tag.css'));
+    writeFileSync(join(dirname(tag), 'tag.css'), '');
+
+    const orphans = variantProblemsOf({ product, sketch })[0]?.problems.filter(({ rule }) => rule === 'ORPHAN-PART');
+
+    expect(orphans?.map(({ file }) => file)).toEqual([part('components/badge')]);
   });
 
   it('reports a sketch folder without sketch.json', () => {

@@ -59,7 +59,7 @@ export default definePart({
 });
 `;
 
-    writeFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), kitPart);
+    writeFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), `import '@system/elements/hero';\n${kitPart}`);
 
     expect(check(target, ['acme'])).toBe(0);
 
@@ -103,7 +103,7 @@ export default definePart({
 
     writeFileSync(
       join(target, DESIGN_DIR, 'acme/pages/home/home.ts'),
-      "import { definePart } from '@design-system';\nexport default definePart({ describe: {}, states: {}, render: () => ({ body: '', styles: '' }) });\n",
+      "import { definePart } from '@design-system';\nimport '@system/elements/hero';\nexport default definePart({ describe: {}, states: {}, render: () => ({ body: '', styles: '' }) });\n",
     );
 
     expect(check(target, ['acme'])).toBe(1);

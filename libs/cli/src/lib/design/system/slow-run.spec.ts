@@ -196,6 +196,10 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
       join(dir, 'components/chip/chip.ts'),
       "import { definePart } from '@design-system';\nexport default definePart({ controls: {}, describe: {}, states: {} });\n",
     );
+    writeFileSync(
+      join(dir, 'elements/hero/hero.ts'),
+      `import '@system/components/chip';\n${readFileSync(join(dir, 'elements/hero/hero.ts'), 'utf8')}`,
+    );
 
     const runner = startSlowRunner({
       target,

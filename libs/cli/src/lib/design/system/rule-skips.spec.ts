@@ -10,10 +10,16 @@ const CONFIG = { products: { 'app-a': { presets: { desktop: { width: 1280, heigh
 
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-rule-skips-'));
-  const file = join(target, DESIGN_DIR, 'app-a', 'components', 'chip', 'chip.ts');
+  const part = `export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n`;
+  const write = (path: string, text: string) => {
+    const file = join(target, DESIGN_DIR, 'app-a', path);
 
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `export default definePart({ describe: { default: 'at rest' }, states: { default: {} } });\n`);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, text);
+  };
+
+  write('components/chip/chip.ts', part);
+  write('pages/home/home.ts', `import '@system/components/chip';\n${part}`);
   writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify(CONFIG));
 
   const git = (...args: string[]) => gitExec(args, { cwd: target, stdio: 'pipe' });

@@ -164,6 +164,7 @@ const RULES = [
   missingStateSentencesOf,
   stateGroupProblemsOf,
   sampleTextsOf,
+  orphanPartsOf,
 ];
 
 const isStaticRule = (rule: string) =>
@@ -182,7 +183,6 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...sampleDefaultWarningsOf(product),
   ...inlineUiInPageWarningsOf(product),
   ...pendingStateWarningsOf(product),
-  ...orphanPartsOf(product),
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
@@ -333,7 +333,7 @@ export const readyInputPartsOf = (product: ResolvedProduct, part: string) => {
   return [part, ...(resolved ? embeddedPartsOf({ product, part: resolved }).map(partKeyOf) : [])];
 };
 
-const lineOf = (target: string, problem: Problem) =>
+export const lineOf = (target: string, problem: Problem) =>
   `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`;
 
 /** What `design check` found per part of each product: the rules of its problems, its warnings and open points. */

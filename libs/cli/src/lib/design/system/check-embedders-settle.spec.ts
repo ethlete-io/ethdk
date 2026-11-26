@@ -86,6 +86,15 @@ const checkoutWithMergedChip = () => {
   );
   writeFileSync(chipFile(target), chipSource(BEFORE));
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
+  writeFileSync(
+    join(design, 'app-a', 'rule-baseline.json'),
+    JSON.stringify({
+      'ORPHAN-PART': {
+        [`${CHIP}: ${CHIP} is used by no page, no other part and no implements link - embed it where it belongs or delete it`]:
+          { finding: 'B1', sketch: 'none' },
+      },
+    }),
+  );
   writeFileSync(join(design, 'app-a', 'merged.json'), `${JSON.stringify({ [CHIP]: chipHashOf(target) }, null, 2)}\n`);
   git(target, 'init', '-q');
   git(target, 'config', 'maintenance.auto', 'false');

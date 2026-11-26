@@ -15,7 +15,8 @@ import {
 import { dirname, relative, resolve } from 'path';
 import { DESIGN_DIR, DesignConfig, readConfig } from '../../design-config';
 import { lintGateLinesOf, variantLintFilesOf } from '../../design-lint';
-import { checkSystem, ruleLinesOf } from '../check-system';
+import { checkSystem, lineOf, ruleLinesOf } from '../check-system';
+import { orphanPartsOf } from '../rules/orphan-part';
 import { addressSketchComments, resolveSketchEndComments } from '../comments/comment';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { fixturesOf, partFilesOf } from '../product';
@@ -298,6 +299,7 @@ const checkedMergeOf = (options: MergeOptions & { variant: string }): string | M
       ? resolveProduct({ target, name: base.name, config: base.config })
       : null;
   const known = [...ruleLinesOf(target, product), ...(baseProduct ? ruleLinesOf(target, baseProduct) : [])];
+  const newKeys = mergedKeys.filter((key) => !existsSync(resolve(rootOf(key), key)));
 
   const entries = [
     ...notedTargets.flatMap(({ inherited, targetDir }) =>
@@ -336,6 +338,14 @@ const checkedMergeOf = (options: MergeOptions & { variant: string }): string | M
   }
 
   rerecordChangedMerged({ product, before: dependents });
+
+  const merged = resolveProduct({ target, name: product.name, config: product.config });
+
+  known.push(
+    ...orphanPartsOf(merged)
+      .filter((problem) => newKeys.includes(problem.part ?? ''))
+      .map((problem) => lineOf(target, problem)),
+  );
 
   const checked = [product.name, ...(baseProduct ? [baseProduct.name] : [])];
 

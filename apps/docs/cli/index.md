@@ -474,8 +474,9 @@ that does not come from the product's sample data (`fixtures.ts`), in merged par
 sketch. `BUTTON-GROUP` is a render rule: it fails two or more buttons that a page lines up side by side in its own
 markup instead of embedding a shared part with a role such as `role="toolbar"`; buttons inside an embedded part or a
 projected slot are not the page's. The hits of both that predate them are listed in the product's
-`rule-baseline.json`. `ORPHAN-PART` warns about a component or element part that no page, no other part and no
-`implements` link uses. Neither `SAMPLE-TEXT` nor `ORPHAN-PART` judges a library product, one that another product
+`rule-baseline.json`. `ORPHAN-PART` fails a merged component or element part that no page, no other part and no
+`implements` link uses; a part new in an open sketch is not judged until its merge, so a component can be sketched and
+merged before the page that embeds it. Neither `SAMPLE-TEXT` nor `ORPHAN-PART` judges a library product, one that another product
 extends as its `base`. `et design check --rules` prints the warnings of the static rules too.
 
 `SKIP-UNUSED` names a `data-et-skip` (or a `checks: { skip }` entry of the part) that suppresses no problem in any rendered

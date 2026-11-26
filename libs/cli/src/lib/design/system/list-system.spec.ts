@@ -229,6 +229,7 @@ export default definePart({ note: '', family: 'components/button', describe: { r
       expect.objectContaining({ rule: 'HARD-CODED-COLOUR', file: '.ethlete/design/acme/elements/hero/hero.css' }),
     ]);
     expect(problemsOf('broken')).toEqual([
+      expect.objectContaining({ rule: 'ORPHAN-PART' }),
       expect.objectContaining({ rule: 'LOAD', message: expect.stringContaining('broken on load') }),
     ]);
     expect(problemsOf('home')).toEqual([]);
@@ -394,6 +395,11 @@ export default definePart({
   render: () => drawing({ body: '<div>row</div>', styles: '' }),
 });
 `,
+    );
+    write(
+      target,
+      'acme/elements/hero/hero.ts',
+      `import '@system/components/row';\n${readFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts'), 'utf8')}`,
     );
 
     const [product] = await list(target, ['acme']);

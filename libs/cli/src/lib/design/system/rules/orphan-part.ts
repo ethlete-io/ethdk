@@ -50,10 +50,13 @@ const importedPartsOf = (product: Product, part: ResolvedPart) => {
   return parts;
 };
 
+const isMerged = (product: Product, part: ResolvedPart) => existsSync(resolve(product.dir, partKeyOf(part)));
+
 /**
  * Each own component or element part that no other part imports, directly or through one of its files, and that
  * has no `implements` link (`ORPHAN-PART`). Pages are where use starts and foundations are drawn under every frame,
- * so neither is judged; a library product's parts are made for other products, so it is not judged at all.
+ * so neither is judged; a library product's parts are made for other products, so it is not judged at all. Only
+ * merged parts are judged: a part new in an open sketch is unused until a page embeds it, so it waits for the merge.
  */
 export const orphanPartsOf = (product: Product): Problem[] => {
   if (isLibraryProduct(product)) return [];
@@ -61,7 +64,7 @@ export const orphanPartsOf = (product: Product): Problem[] => {
   const used = new Set(product.parts.flatMap((part) => [...importedPartsOf(product, part)]));
 
   return product.parts
-    .filter((part) => part.origin === 'product' && !ROOT_LAYERS.has(part.layer))
+    .filter((part) => part.origin === 'product' && !ROOT_LAYERS.has(part.layer) && isMerged(product, part))
     .filter((part) => !used.has(partKeyOf(part)) && partLinkOf(part.source).kind === 'none')
     .map((part) => ({
       rule: ORPHAN_PART_RULE,

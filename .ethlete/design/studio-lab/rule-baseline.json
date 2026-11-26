@@ -32,5 +32,11 @@
       "finding": "B795",
       "sketch": "none yet - predates the rule"
     }
+  },
+  "ORPHAN-PART": {
+    "elements/list-row: elements/list-row is used by no page, no other part and no implements link - embed it where it belongs or delete it": {
+      "finding": "B795",
+      "sketch": "none yet - predates the rule"
+    }
   }
 }
