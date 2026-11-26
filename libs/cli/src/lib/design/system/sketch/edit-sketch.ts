@@ -322,6 +322,40 @@ export const tracksFileBelow = (product: ResolvedProduct, dir: string) => {
   }
 };
 
+/**
+ * Whether a part's edit since `commit` only renames theme tokens: git sees at least one file changed below its folder,
+ * its product's `shared/` or its assets, none added or removed, and `renamed` holds for each, from `commit` to now.
+ */
+export const editOnlyRenamesOf = (options: {
+  product: ResolvedProduct;
+  resolved: ResolvedPart;
+  renamed: (old: string, now: string) => boolean;
+  commit?: string;
+}) => {
+  const { product, resolved, renamed } = options;
+  const commit = options.commit ?? 'HEAD';
+  const root = repoRootOf(product);
+  const paths = editPathsOf(product, resolved).map((path) => `./${path}`);
+
+  try {
+    if (git(root, ['ls-files', '--others', '--exclude-standard', '--', ...paths]) !== '') return false;
+
+    const entries = splitZ(git(root, ['diff', '--no-renames', '--name-status', '-z', commit, '--', ...paths]));
+    const changed = entries.filter((_, index) => index % 2 === 1);
+    const statuses = entries.filter((_, index) => index % 2 === 0);
+
+    return (
+      changed.length > 0 &&
+      statuses.every((status) => status === 'M') &&
+      changed.every((file) =>
+        renamed(git(root, ['show', `${commit}:${file}`]), readFileSync(resolve(root, file), 'utf8')),
+      )
+    );
+  } catch {
+    return false;
+  }
+};
+
 const oldDesignOf = (
   { product, resolved }: { product: ResolvedProduct; resolved: ResolvedPart },
   commit = 'HEAD',

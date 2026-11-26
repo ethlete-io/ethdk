@@ -14,6 +14,7 @@ import { partOwnerOf } from './inventory-approval';
 import { productCacheDirOf } from './product';
 import { createPartPictureCache, PartPictureCache } from './part-picture-cache';
 import { Problem } from './problem';
+import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import {
@@ -21,6 +22,7 @@ import {
   isOpenOrPickedEditSketch,
   EditOldNotFound,
   editAwaitsPick,
+  editOnlyRenamesOf,
   pickContradictsPart,
   pickedEditRemedyOf,
   headHoldsPart,
@@ -31,10 +33,12 @@ import {
   tracksFileBelow,
   withHeadSnapshot,
 } from './sketch/edit-sketch';
+import { oldCommitOf } from './sketch/edit-old-base';
 import { discardSketch } from './sketch/merge';
 import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
 import { listSketches, Sketch } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
+import { themeTokenRenameOf } from './theme-token-renames';
 import { drawnStateNamesOf } from './unchanged-rows';
 
 export const PICTURES_FILE = 'pictures.json';
@@ -485,6 +489,23 @@ export const autoAcceptOf = async (options: {
     return result;
   };
 
+  let renamed: ((old: string, now: string) => boolean) | null | undefined;
+  const renamesOnly = (resolved: ResolvedPart, commit: string) => {
+    if (renamed === undefined) renamed = themeTokenRenameOf({ target, config });
+
+    return renamed !== null && editOnlyRenamesOf({ product, resolved, renamed, commit });
+  };
+  const holdRename = (resolved: ResolvedPart, design: string) => {
+    const part = partKeyOf(resolved);
+
+    lines.push(`RENAMED ${product.name} ${part}: changed outside a sketch, only theme tokens renamed`);
+    options.held?.push({ part, hash: partHashNowOf(resolved) });
+
+    if (writesTracked) recordMerged({ product, parts: [part] });
+
+    records.push({ part: resolved, design, baseline: null });
+  };
+
   for (const resolved of product.parts) {
     const part = partKeyOf(resolved);
 
@@ -495,6 +516,11 @@ export const autoAcceptOf = async (options: {
     const designHash = designHashOf({ product, part: resolved });
     const design = designHash.hash;
     const editSketch = editSketches.get(part);
+
+    if (edited.has(part) && !editSketch && renamesOnly(resolved, 'HEAD')) {
+      holdRename(resolved, design);
+      continue;
+    }
 
     if (edited.has(part)) {
       const baseline = baselineOf(pictures, merged[part]) ?? cachedOf(resolved, merged[part]);
@@ -512,6 +538,16 @@ export const autoAcceptOf = async (options: {
     } else if (editSketch) {
       if (!editSketch.variants.includes(EDIT_OLD)) continue;
       if (!writesTracked && tracksFileBelow(product, editSketch.dir)) continue;
+
+      if (
+        !editAwaitsPick(product, editSketch) &&
+        (writesTracked || discardsUntracked(product, editSketch)) &&
+        renamesOnly(resolved, oldCommitOf(repoRootOf(product), editSketch) ?? 'HEAD')
+      ) {
+        closeAsDrawnBefore(editSketch);
+        holdRename(resolved, design);
+        continue;
+      }
 
       const old = cachedOf(resolved, merged[part]);
 
