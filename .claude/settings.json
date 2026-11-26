@@ -3,7 +3,9 @@
     "allow": [
       "Bash(node -e ' *)",
       "Bash(git ls-remote *)",
-      "Bash(node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart *)"
+      "Bash(node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart *)",
+      "Bash(yarn agents:stop-own)",
+      "Bash(yarn agents:stop-own --dry-run)"
     ]
   },
   "hooks": {
