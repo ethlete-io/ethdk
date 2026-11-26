@@ -562,6 +562,34 @@ describe('part task', () => {
     expect(verifyRangeOf('abc')).toBe('abc^..abc');
   });
 
+  it('allows a libs/*/design file the part imports and keeps a lib design file it does not import outside', async () => {
+    const { target, chip } = checkout();
+    const lines = output();
+
+    mkdirSync(join(target, 'libs/kit/design'), { recursive: true });
+    writeFileSync(join(target, 'libs/kit/design/toggletip.ts'), 'export const toggletip = 1;\n');
+    writeFileSync(join(target, 'libs/kit/design/other.ts'), 'export const other = 1;\n');
+    writeFileSync(chip, `import { toggletip } from '@ethlete/kit/design/toggletip';\n${readFileSync(chip, 'utf8')}`);
+    record(target);
+
+    const green = vi.fn<ComparePart>(async () => ({ green: true, states: CHIP_STATES }));
+    const imported = vi.fn(() => ['libs/chip/chip.component.ts', 'libs/kit/design/toggletip.ts']);
+
+    expect(await task(target, ['--verify', '--url', 'http://localhost:9'], imported, green)).toBe(0);
+    expect(lines).toContain('2 files of HEAD^..HEAD inside the allowed files');
+
+    const foreign = vi.fn(() => [
+      'libs/chip/chip.component.ts',
+      'libs/kit/design/toggletip.ts',
+      'libs/kit/design/other.ts',
+    ]);
+
+    lines.length = 0;
+    expect(await task(target, ['--verify', '--url', 'http://localhost:9'], foreign, green)).toBe(1);
+    expect(lines).toContain('1 file of HEAD^..HEAD outside the allowed files:');
+    expect(lines).toContain('  libs/kit/design/other.ts');
+  });
+
   it('verifies the last commit touching the part folder when no rev is given, and keeps an explicit rev', async () => {
     const { target } = checkout();
     const lines = output();

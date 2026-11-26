@@ -1,6 +1,6 @@
 import { writeJsonFile } from '../../json-file';
 import { createHash } from 'crypto';
-import { posix, resolve } from 'path';
+import { posix, relative, resolve } from 'path';
 import { appFilesOf } from './app-files';
 import { changedFilesOf, designHolds, FileHashes, isOptionalFileHashes } from './design-hash';
 import { DESIGN_DIR } from '../design-config';
@@ -8,7 +8,7 @@ import { git, showFilesOf } from '../git-reader';
 import { matchesPattern } from './harness-config';
 import { buildReadyOf, BuildReadyInputs, checkBlockersOf } from './part-build-ready';
 import { readyMarkOf, readyPartOf } from './part-ready';
-import { repoRootOf } from './reachable-files';
+import { reachableFilesOf, repoRootOf } from './reachable-files';
 import { readStampText } from './stamp-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
@@ -238,20 +238,35 @@ export const taskStatesOf = (options: {
   return { added, changed, all: added.length === 0 && changed.length === 0 && !implementedHolds(record.hash, options) };
 };
 
+/** The repo paths of the `libs/<lib>/design/**` files a part imports, directly or through the files it reaches. */
+export const importedSdkDesignFilesOf = (options: { product: ResolvedProduct; part: string }): string[] => {
+  const part = options.product.parts.find((candidate) => partKeyOf(candidate) === options.part);
+
+  if (!part) return [];
+
+  const root = repoRootOf(options.product);
+
+  return [...reachableFilesOf(options.product, [part]).sdkDesign.keys()]
+    .map((file) => relative(root, file).split('\\').join('/'))
+    .filter((file) => /^libs\/[^/]+\/design\//u.test(file));
+};
+
 /**
  * The repo paths a task may change: the component folder, a changeset, the harness map, the app files the harness
- * shares with the design, and for `sdk` a docs guide.
+ * shares with the design, the `libs/<lib>/design/**` files the part imports, and for `sdk` a docs guide.
  */
 export const allowedFilesOf = (options: {
   product: string;
   component: string;
   harnessMap: string | null;
   shared?: string[];
+  imported?: string[];
 }): string[] => [
   `${posix.dirname(options.component)}/**`,
   '.changeset/*.md',
   ...(options.harnessMap === null ? [] : [options.harnessMap]),
   ...(options.shared ?? []),
+  ...(options.imported ?? []),
   ...(options.product === 'sdk' ? ['apps/docs/components/**'] : []),
 ];
 

@@ -13,6 +13,7 @@ import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import { BuildReadyInputs } from './part-build-ready';
 import {
   allowedFilesOf,
+  importedSdkDesignFilesOf,
   changesOnlySourceLines,
   designFilesOf,
   filesOutsideOf,
@@ -189,6 +190,7 @@ export const designTask = async (options: {
           component: each.component,
           harnessMap: product.config.harness?.map ?? null,
           shared: product.config.harness?.shared ?? [],
+          imported: importedSdkDesignFilesOf({ product, part: each.part }),
         }),
       ),
     ),
