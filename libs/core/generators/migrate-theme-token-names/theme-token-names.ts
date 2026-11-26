@@ -25,6 +25,29 @@ const GENERATED_COLOR_MARKER = '@ethlete/core:tailwind-4-color-theme';
 const GENERATED_SURFACE_MARKER = '@ethlete/core:tailwind-4-surface-theme';
 const LITERAL_TRIPLET = /^\d+(?:\.\d+)?%?(?:[\s_]+\d+(?:\.\d+)?%?){2}$/;
 const NAME_CHAR = /[\w-]/;
+const TAILWIND_COLOR_UTILITIES = [
+  'bg',
+  'text',
+  'decoration',
+  'border(?:-[xytrbles])?',
+  'divide',
+  'outline',
+  'ring',
+  'ring-offset',
+  'inset-ring',
+  'shadow',
+  'inset-shadow',
+  'drop-shadow',
+  'text-shadow',
+  'accent',
+  'caret',
+  'fill',
+  'stroke',
+  'placeholder',
+  'from',
+  'via',
+  'to',
+].join('|');
 const TAILWIND_SHORTHAND = /^\(([a-z-]+:)?(--[a-zA-Z][\w-]*)\)/;
 
 export const emptyTailwindThemeNames = (): TailwindThemeNames => ({
@@ -504,7 +527,10 @@ const renameTailwind = (text: string, names: TailwindThemeNames) => {
   if (map.size === 0) return text;
 
   const prefixes = [...new Set([...names.colorPrefixes.keys(), ...names.surfacePrefixes.keys()])];
-  const pattern = new RegExp(`(?<=[a-z0-9]-)(?<!(?:^|[^\\w-])data-)(?:${prefixes.join('|')})-[a-z0-9-]*[a-z0-9]`, 'g');
+  const pattern = new RegExp(
+    `(?<=(?:^|[^\\w-])(?:--color|${TAILWIND_COLOR_UTILITIES})-)(?:${prefixes.join('|')})-[a-z0-9-]*[a-z0-9]`,
+    'g',
+  );
 
   return text.replace(pattern, (token) => map.get(token) ?? token);
 };

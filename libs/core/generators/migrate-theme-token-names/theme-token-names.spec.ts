@@ -320,6 +320,27 @@ const surfaces = root.querySelectorAll('[data-et-surface]');
     });
   });
 
+  it.each(['<div aria-et-surface></div>', '<i class="foo-et-surface-bg"></i>', '<i x-et-surface="1"></i>'])(
+    'leaves %s alone because no color utility precedes the name',
+    (source) => {
+      expect(migrateThemeTokenNames(source, namesOf('app-a'))).toEqual({
+        content: source,
+        changed: false,
+        findings: [],
+      });
+    },
+  );
+
+  it('renames a theme name behind a border side, a gradient stop and the theme key', () => {
+    const source = `<i class="border-t-et-surface-bg from-et-surface-bg/50 !ring-offset-et-surface-bg"></i>
+--color-et-surface-bg: var(--x);`;
+
+    expect(migrateThemeTokenNames(source, namesOf('app-a')).content).toBe(
+      `<i class="border-t-et-surface-background from-et-surface-background/50 !ring-offset-et-surface-background"></i>
+--color-et-surface-background: var(--x);`,
+    );
+  });
+
   it('rewrites a triplet declared in a style attribute together with its reader', () => {
     const source = `<div style="--et-surface-background: 60 70 80;background-color:rgb(var(--et-surface-background))"></div>
 const SURFACE = 'style="--et-surface-background: 20 30 40"';`;
