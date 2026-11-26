@@ -26,6 +26,7 @@ import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { CommentTargetComponent } from '../comment-target/comment-target.component';
 import { CommentThread, ThreadCardComponent } from '../comment-flow/thread-card.component';
 import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
+import { SketchHeadComponent } from '../sketch-head/sketch-head.component';
 import { OpenPointsChipComponent } from './open-points-chip.component';
 import {
   CommentWriter,
@@ -305,30 +306,37 @@ export const FRAME_HEAD_CLASS =
                 ><et-kbd keys="esc" /> {{ LABELS.commentModeOr }} <et-kbd keys="c" /> {{ LABELS.commentModeEnds }}</span
               >
             }
-            <button
-              [pressed]="commentMode()"
-              (click)="toggleComments()"
-              et-button
-              type="button"
-              variant="outline"
-              size="sm"
-            >
-              {{ LABELS.comment }}
-            </button>
-            <ethlete-open-points-chip
-              [(closed)]="closed"
-              [(blockersOpen)]="blockersOpen"
-              [part]="part()"
-              [groups]="groups()"
-              [exceptions]="openExceptions()"
-              [buildReady]="buildReady()"
-              [missingShots]="missingShots()"
-              (openPoint)="openPoint.emit($event)"
-              (openEditSketch)="openEditSketch.emit($event)"
-              (approveException)="approveException.emit($event)"
-            />
           }
         </div>
+        @if (part()) {
+          <div
+            class="pointer-events-none absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 flex items-end gap-space-3"
+          >
+            <ethlete-sketch-head
+              [commentMode]="commentMode()"
+              [status]="null"
+              (commentModeChange)="setComments($event)"
+              class="pointer-events-auto mx-auto min-w-0"
+              commentable
+              discardable="false"
+            >
+              <ethlete-open-points-chip
+                [(closed)]="closed"
+                [(blockersOpen)]="blockersOpen"
+                [part]="part()"
+                [groups]="groups()"
+                [exceptions]="openExceptions()"
+                [buildReady]="buildReady()"
+                [missingShots]="missingShots()"
+                (openPoint)="openPoint.emit($event)"
+                (openEditSketch)="openEditSketch.emit($event)"
+                (approveException)="approveException.emit($event)"
+                sketchHeadExtra
+                popoverPlacement="top"
+              />
+            </ethlete-sketch-head>
+          </div>
+        }
       }
     </ethlete-shell-page>
 
@@ -368,6 +376,7 @@ export const FRAME_HEAD_CLASS =
     DisclosureComponent,
     NgTemplateOutlet,
     OpenPointsChipComponent,
+    SketchHeadComponent,
     PartTreeComponent,
     ProvideColorDirective,
     ShellPageComponent,
@@ -467,9 +476,7 @@ export class SystemPageComponent {
   });
   protected callFrame = computed(() => this.call()?.slug.split('/').pop() ?? '');
 
-  protected toggleComments() {
-    const on = !this.commentMode();
-
+  protected setComments(on: boolean) {
     this.commentMode.set(on);
     if (on) this.closed.set(true);
     else this.draft.set(null);

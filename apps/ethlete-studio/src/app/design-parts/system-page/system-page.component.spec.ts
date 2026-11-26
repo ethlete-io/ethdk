@@ -155,20 +155,26 @@ describe('SystemPageComponent', () => {
 });
 
 describe('SystemPageComponent canvas note', () => {
-  it('shows no comment button and no open points on the blank canvas until a part is loaded', async () => {
+  it('shows the sketch bar with comment and open count once a part is loaded, and no second copy', async () => {
     const fixture = await render({ noted: false, noteTitle: '', noteHint: '', empty: false, part: '' });
-    const actions = () =>
-      (fixture.nativeElement as HTMLElement).querySelector('[data-canvas-actions]')?.textContent ?? '';
+    const root: HTMLElement = fixture.nativeElement;
 
-    expect(actions()).not.toContain(LABELS.comment);
-    expect(actions()).not.toContain(LABELS.nothingOpen);
+    expect(root.querySelector('ethlete-sketch-head')).toBeNull();
 
     fixture.componentRef.setInput('part', 'components/button');
     fixture.componentRef.setInput('nothingOpen', true);
     await fixture.whenStable();
 
-    expect(actions()).toContain(LABELS.comment);
-    expect(actions()).toContain(LABELS.nothingOpen);
+    const bars = root.querySelectorAll('ethlete-sketch-head');
+
+    expect(bars).toHaveLength(1);
+    expect(bars[0]?.querySelector('[data-sk-comment]')?.getAttribute('aria-label')).toBe(LABELS.comment);
+    expect(bars[0]?.querySelector('[data-open-points-chip]')?.textContent).toContain(LABELS.nothingOpen);
+    expect(root.querySelectorAll('[data-sk-comment]')).toHaveLength(1);
+    expect(root.querySelectorAll('[data-open-points-chip]')).toHaveLength(1);
+    expect(root.querySelector('[data-canvas-actions]')?.querySelector('[data-open-points-chip],button')).toBeNull();
+    expect(bars[0]?.querySelector('[data-sk-discard]')).toBeNull();
+    expect(bars[0]?.querySelector('ethlete-sketch-status-badge')).toBeNull();
   });
 
   it('draws the note title and hint as a card, and omits an empty hint', async () => {

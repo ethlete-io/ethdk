@@ -2426,13 +2426,13 @@ const CASES = [
       const before = new Set(filesOf());
       const text = `B145 e2e ${Date.now()}`;
       const fail = (detail) => ({ ok: false, detail });
-      const toggle = page.locator('ethlete-system-page button[et-button]', { hasText: /^\s*Kommentar\s*$/ }).first();
+      const toggle = page.locator('ethlete-system-page [data-sk-comment]').first();
 
       const toggled = await toggle.click({ timeout: WAIT_MS }).then(
         () => null,
         () =>
           page.evaluate(() => {
-            const button = [...document.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Kommentar');
+            const button = document.querySelector('ethlete-system-page [data-sk-comment]');
             const box = button?.getBoundingClientRect();
             const top = box && document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
 
@@ -2678,7 +2678,7 @@ const CASES = [
     pages: ['System'],
     viewport: WIDE,
     run: async (page) => {
-      const toggle = page.locator('ethlete-system-page button[et-button]', { hasText: /^\s*Kommentar\s*$/ }).first();
+      const toggle = page.locator('ethlete-system-page [data-sk-comment]').first();
       const target = page.locator('[data-comment-target]').first();
       const hint = page.locator('[data-canvas-actions]', { hasText: /oder.*beendet/ });
       const seen = [];

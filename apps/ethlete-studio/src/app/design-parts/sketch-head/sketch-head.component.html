@@ -74,7 +74,7 @@
       </ng-template>
     </div>
   }
-  @if (commentable() && discardable()) {
+  @if (commentable()) {
     <button
       [pressed]="commentMode()"
       [disabled]="busy()"
@@ -103,6 +103,7 @@
       </svg>
     </button>
   }
+  <ng-content select="[sketchHeadExtra]" />
   @if (listError()) {
     <button (click)="retry.emit()" et-button type="button" variant="outline" color="surface" size="sm" data-sk-retry>
       {{ LABELS.reload }}

@@ -275,7 +275,7 @@ describe('SystemViewComponent on a reload', () => {
     expect(chip?.textContent?.trim()).toBe('2 offen');
   });
 
-  it('shows the open points of the shown part in a chip at the top right, and lists them in its popover', async () => {
+  it('shows the open points of the shown part in a chip in the sketch bar, and lists them in its popover', async () => {
     const asked: string[] = [];
 
     TestBed.configureTestingModule({ providers: provideColorThemesWithTailwind4(THEMES) });
@@ -301,7 +301,7 @@ describe('SystemViewComponent on a reload', () => {
 
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const chip = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      'main .absolute.top-space-3.right-space-3 [data-open-points-chip]',
+      'main ethlete-sketch-head [data-open-points-chip]',
     );
 
     expect(asked).toContain('http://localhost:4402/__design/open-points?product=web&part=elements%2Frating');

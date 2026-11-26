@@ -1,4 +1,14 @@
-import { Component, computed, ElementRef, input, model, output, viewChild, ViewEncapsulation } from '@angular/core';
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  ElementRef,
+  input,
+  model,
+  output,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, MENU_IMPORTS, SWITCH_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
@@ -26,15 +36,15 @@ import { SketchHold, SketchRound, SketchStatus, SketchWithdrawn } from '../sketc
 })
 export class SketchHeadComponent {
   protected errorTheme = injectSemanticColorTheme('error');
-  public status = input<SketchStatus>('waiting');
-  public hold = input.required<SketchHold>();
+  public status = input<SketchStatus | null>('waiting');
+  public hold = input<SketchHold | null>(null);
   public autoMerge = input(false);
   public subSketch = input(false);
   public approved = input(false);
   public subSketchesOpen = input(false);
   public error = input<string | null>(null);
-  public commentable = input(false);
-  public discardable = input(true);
+  public commentable = input(false, { transform: booleanAttribute });
+  public discardable = input(true, { transform: booleanAttribute });
   public busy = input(false);
   public listError = input(false);
   public rounds = input<SketchRound[]>([]);
@@ -71,7 +81,11 @@ export class SketchHeadComponent {
     return status === 'drawing' ? 'drawing' : null;
   });
 
-  protected holdNote = computed(() => `${SKETCHES_LABELS.holdUntil(this.hold().until)} · ${this.hold().since}`);
+  protected holdNote = computed(() => {
+    const hold = this.hold();
+
+    return hold ? `${SKETCHES_LABELS.holdUntil(hold.until)} · ${hold.since}` : null;
+  });
 
   protected hasLead = computed(() => this.badge() !== null || this.withdrawnCount() > 0);
 

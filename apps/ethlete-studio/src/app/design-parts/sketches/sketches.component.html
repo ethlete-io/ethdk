@@ -342,7 +342,7 @@
         [hold]="hold()"
         [autoMerge]="autoMerge()"
         [error]="errorInRow() ? null : error()"
-        [commentable]="comments() !== null"
+        [commentable]="comments() !== null && discardable()"
         [discardable]="discardable()"
         [busy]="merging()"
         [listError]="!!listError()"
