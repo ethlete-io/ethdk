@@ -38,11 +38,13 @@ import {
   map,
   merge,
   mergeMap,
+  startWith,
   switchMap,
   take,
   takeUntil,
   tap,
   timer,
+  withLatestFrom,
 } from 'rxjs';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
 import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.component';
@@ -317,8 +319,17 @@ export class TooltipDirective {
   }
 
   private setupClickBehavior() {
-    fromEvent(this.elementRef.nativeElement, 'click')
+    const hostElement = this.elementRef.nativeElement;
+    const pointerType$ = fromEvent<PointerEvent>(hostElement, 'pointerdown').pipe(
+      map((event) => event.pointerType),
+      startWith(null),
+    );
+
+    // The finger lifting off a long press fires a click; hiding on it would close the long-press tooltip at once.
+    fromEvent<MouseEvent>(hostElement, 'click')
       .pipe(
+        withLatestFrom(pointerType$),
+        filter(([event, pointerType]) => event.detail === 0 || pointerType !== 'touch'),
         tap(() => this.hide()),
         takeUntilDestroyed(this.destroyRef),
       )
