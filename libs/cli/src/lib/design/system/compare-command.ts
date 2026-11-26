@@ -926,6 +926,7 @@ export const designCompare = async (options: {
                 harness: url,
                 appRoot: root,
                 designsDrawn,
+                only,
                 onNote: (line) => notes.push(line),
               }),
             ).then(

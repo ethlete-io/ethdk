@@ -167,6 +167,30 @@ describe('compare draws each picture at most once per run', () => {
     expect(await compare(chip)).toMatchObject({ code: 0, drawn: [] });
   });
 
+  it('--state hands only the selected states to the action check', async () => {
+    const { target, root } = checkout();
+    const actions = vi.fn(async (options: { only?: readonly string[] | null }) => (options.only ? [] : ['all states']));
+    const start: StartHarnessServer = async () => ({
+      url: 'http://127.0.0.1:50001',
+      root,
+      stop: async () => undefined,
+    });
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const code = await designCompare({
+      target,
+      argv: ['components/chip', '--state', 'open', '--product', 'app-a'],
+      invocation: 'et design',
+      start,
+      actions: actions as never,
+    });
+
+    expect(actions.mock.calls[0]?.[0].only).toEqual(['open']);
+    expect(code).toBe(0);
+  });
+
   it('after a design edit draws the design pictures of the edited part once and no app picture', async () => {
     const { target, root } = checkout();
     const compare = compareOf(target, root);

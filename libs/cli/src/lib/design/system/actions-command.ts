@@ -280,7 +280,7 @@ export const checkActions = async (options: {
   product: ResolvedProduct;
   part: string;
   url: string;
-  only: string | null;
+  only: readonly string[] | null;
   onLine?: (line: Line) => void;
   appRoot?: string | null;
   /** Settles once another run has drawn the design pictures into the shared store, so this check reads them instead of drawing them twice. */
@@ -343,7 +343,9 @@ export const checkActions = async (options: {
       return source && existsSync(source) ? componentOutputsOf(readFileSync(source, 'utf8')) : null;
     })();
 
-    if (only !== null && !(only in states)) return `${part} has no state "${only}" - its states: ${names.join(', ')}`;
+    const unknown = only?.find((state) => !(state in states));
+
+    if (unknown !== undefined) return `${part} has no state "${unknown}" - its states: ${names.join(', ')}`;
 
     let embedders: Promise<string[]> | undefined;
     const embeddersOfPart = () =>
@@ -518,6 +520,7 @@ export const checkActions = async (options: {
         tracked({ kind: 'expected', owner, state: expected }, expectedOf(owner, expected));
       const embeddersFor = () => tracked({ kind: 'embedders' }, embeddersOfPart());
       let wrotePictures = false;
+      let harnessFailed = false;
       const lines: Line[] = [];
       const pushLine = (line: Line) => {
         lines.push(line);
@@ -648,6 +651,7 @@ export const checkActions = async (options: {
               out.push({ state, element: `${name} pointer focus`, input: null, failure, warning });
             }
           } catch (error) {
+            harnessFailed = true;
             out.push({
               state,
               element: `${name} pointer focus`,
@@ -837,6 +841,7 @@ export const checkActions = async (options: {
 
               out.push({ state, element: name, input, failure });
             } catch (error) {
+              harnessFailed = true;
               out.push({ state, element: name, input, failure: messageOf(error).split('\n')[0] ?? '' });
             }
           }
@@ -847,7 +852,7 @@ export const checkActions = async (options: {
 
       lines.push(...checkedElements.flat());
 
-      return { lines, hosts: scope.skipped, keep: !wrotePictures, embedded: scope.embedded };
+      return { lines, hosts: scope.skipped, keep: !wrotePictures && !harnessFailed, embedded: scope.embedded };
     };
 
     const cacheInputs = options.appRoot
@@ -883,8 +888,8 @@ export const checkActions = async (options: {
     const lines: Line[] = [];
     const skippedHosts: string[] = [];
     let embeddedElements = 0;
-    const checked = (only === null ? names : [only]).filter(
-      (state) => forcedElementsOf(markups.get(state) ?? '').length === 0,
+    const checked = names.filter(
+      (state) => (only === null || only.includes(state)) && forcedElementsOf(markups.get(state) ?? '').length === 0,
     );
 
     for (let at = 0; at < checked.length; at += ACTION_BATCH_STATES) {
@@ -966,6 +971,8 @@ export const partActionFailuresOf = async (options: {
   onNote?: (line: string) => void;
   appRoot?: string | null;
   designsDrawn?: Promise<unknown>;
+  /** Checks only these states of the part's harness; `null` or omitted checks every state. */
+  only?: readonly string[] | null;
 }): Promise<string[] | NoVerdict> => {
   const { target, config, product, part } = options;
   const source = product.parts.find((candidate) => partKeyOf(candidate) === part)?.source;
@@ -987,7 +994,7 @@ export const partActionFailuresOf = async (options: {
       product,
       part,
       url,
-      only: null,
+      only: options.only ?? null,
       appRoot: options.appRoot ?? root,
       designsDrawn: options.designsDrawn,
     });
@@ -1082,7 +1089,7 @@ export const designActions = async (options: {
         product,
         part: part,
         url,
-        only: args.values['--state'] ?? null,
+        only: args.values['--state'] === undefined ? null : [args.values['--state']],
         onLine: (line) => {
           printed.add(line);
           console.log(actionLineOf(line));
