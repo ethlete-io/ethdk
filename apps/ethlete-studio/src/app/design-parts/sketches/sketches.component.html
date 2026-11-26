@@ -74,6 +74,7 @@
           [class.min-w-full]="!transposed() || screenMode()"
           [style.transform]="canvas.transform()"
           [style.will-change]="canvas.preview() ? 'transform' : null"
+          [style.--sk-stroke]="strokeWidth()"
           [style.gap]="chromeSpace()(2)"
           class="flex origin-top-left flex-col gap-space-2 pb-16 [text-rendering:geometricPrecision]"
         >
@@ -109,14 +110,19 @@
                       class="flex flex-col justify-center gap-space-1 self-stretch pr-space-3 leading-[1.35]"
                       data-sk-gutter
                     >
-                      <span class="font-ui-medium">{{ state }}</span>
+                      <span class="font-ui-medium [text-box:trim-both_cap_alphabetic]">{{ state }}</span>
                       @for (reason of group?.reasons ?? []; track $index) {
-                        <span data-sk-crop-reason>{{ reasonTextOf(reason) }}</span>
+                        <span class="[text-box:trim-both_cap_alphabetic]" data-sk-crop-reason>{{
+                          reasonTextOf(reason)
+                        }}</span>
                       }
                       @if (group && group.states.length > 1) {
-                        <span [class.text-et-surface-text-muted]="!headHidden()" data-sk-crop-count>{{
-                          LABELS.sameCrop(group.states.length)
-                        }}</span>
+                        <span
+                          [class.text-et-surface-text-muted]="!headHidden()"
+                          class="[text-box:trim-both_cap_alphabetic]"
+                          data-sk-crop-count
+                          >{{ LABELS.sameCrop(group.states.length) }}</span
+                        >
                       }
                       @if (group && !group.whole) {
                         @let whole = !croppedOf(state);
@@ -187,8 +193,9 @@
                             [style.width.px]="row.width * scale()"
                             [style.font-size.px]="labelFont()"
                             [style.padding]="chromeSpace()(2)"
-                            class="row-start-2 box-border flex items-center justify-center self-start rounded-control-sm border border-dashed border-(--et-surface-border) p-space-2 text-center font-code leading-[1.35] text-et-surface-text-muted"
+                            class="row-start-2 box-border flex items-center justify-center self-start rounded-control-sm relative [--sk-dash:var(--et-surface-border)] p-space-2 text-center font-code leading-[1.35] text-et-surface-text-muted"
                           >
+                            <ng-container [ngTemplateOutlet]="dashedEdge" />
                             {{ matrixMissingLabelOf(row) }}
                           </div>
                         </div>
@@ -480,9 +487,11 @@
                       [attr.data-sk-variant]="row.key"
                       [attr.title]="missingLabelOf(row)"
                       [attr.data-sk-failed-cell]="failures()[row.key] === undefined ? null : ''"
-                      class="box-border self-end rounded-control-sm border border-dashed border-(--et-surface-border)"
+                      class="box-border self-end rounded-control-sm relative [--sk-dash:var(--et-surface-border)]"
                       data-sk-missing
-                    ></div>
+                    >
+                      <ng-container [ngTemplateOutlet]="dashedEdge" />
+                    </div>
                   }
                 }
               }
@@ -515,8 +524,9 @@
                     <div
                       [style.width.px]="row.width * scale()"
                       [style.padding]="chromeSpace()(2)"
-                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border) p-space-2 text-center text-ui-xs text-et-surface-text-muted"
+                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm relative [--sk-dash:var(--et-surface-border)] p-space-2 text-center text-ui-xs text-et-surface-text-muted"
                     >
+                      <ng-container [ngTemplateOutlet]="dashedEdge" />
                       <span [style.zoom]="chromeZoom()"> {{ missingLabelOf(row) }}</span>
                     </div>
                   } @else {
@@ -524,9 +534,10 @@
                       [style.width.px]="row.width * scale()"
                       [etProvideColor]="errorTheme()"
                       [style.padding]="chromeSpace()(2)"
-                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-et-tone-fill p-space-2 text-center text-ui-xs text-et-tone-text"
+                      class="row-start-2 box-border flex items-center justify-center rounded-control-sm relative [--sk-dash:var(--color-et-tone-fill)] p-space-2 text-center text-ui-xs text-et-tone-text"
                       data-sk-failed-cell
                     >
+                      <ng-container [ngTemplateOutlet]="dashedEdge" />
                       <span [style.zoom]="chromeZoom()"> {{ missingLabelOf(row) }}</span>
                     </div>
                   }
@@ -781,4 +792,14 @@
     [resolved]="!!comment.resolved"
     (pinToggle)="commentPick.emit(comment.id)"
   />
+</ng-template>
+
+<ng-template #dashedEdge>
+  <svg class="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden="true" data-sk-dashed>
+    <rect
+      class="fill-none stroke-(--sk-dash) [rx:var(--radius-control-sm)] [stroke-dasharray:calc(3*var(--sk-stroke,1px))] [stroke-width:var(--sk-stroke,1px)]"
+      width="100%"
+      height="100%"
+    />
+  </svg>
 </ng-template>

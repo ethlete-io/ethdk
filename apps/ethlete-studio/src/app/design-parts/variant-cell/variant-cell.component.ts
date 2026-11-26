@@ -8,7 +8,7 @@ type MarkBox = { left: number; top: number; width: number; height: number };
 /** A changed area of the shot; with `from`, the new place of a part that moved there from `from`. */
 export type VariantCellMark = MarkBox & { from?: MarkBox };
 
-const FRAME_RING = 'shadow-[0_0_0_1px_var(--et-surface-border)]';
+const FRAME_RING = 'shadow-[0_0_0_var(--sk-stroke)_var(--et-surface-border)]';
 
 @Component({
   selector: 'ethlete-variant-cell',
