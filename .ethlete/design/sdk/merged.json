@@ -185,11 +185,10 @@
   "components/tooltip": "f8d40ff6027ab7f7",
   "components/tree": "6ef8bc7bef1a165f",
   "foundations/colors": {
-    "hash": "112e6d67ddb90956",
+    "hash": "2bf142c47acb2d1d",
     "variant": "new",
-    "decidedBy": "plan: B508 slice 2 (ADR 0292)",
-    "at": "2026-11-13T14:33:44.377Z",
-    "note": "merged without a pick: allowed by B508 slice 2 (ADR 0292) - merged: contrast chips measured by measureContrastPairs per scheme"
+    "decidedBy": "claude-sonnet-5-5",
+    "at": "2026-11-26T09:52:33.556Z"
   },
   "foundations/elevation": "ac8db4dc8366e20c",
   "foundations/icons": "3f842685ac7c0e1f"
