@@ -3677,9 +3677,12 @@ describe('sketch new --name', () => {
 });
 
 describe('a sketches folder that holds only generated tsconfigs', { timeout: 120_000 }, () => {
-  it('stays out of sketch list and gets one note in the check sweep', async () => {
+  it('stays out of sketch list and is removed by the check sweep, next to a real sketch folder', async () => {
     const target = acme();
     const leftover = join(target, DESIGN_DIR, 'acme/sketches/pages-sketches.change-crop');
+    const real = join(target, DESIGN_DIR, 'acme/sketches/components-card');
+
+    expect(await write(target, 'new', 'components/card', '--variants', 'a', '--product', 'acme')).toBe(0);
 
     mkdirSync(join(leftover, 'a'), { recursive: true });
     writeFileSync(join(leftover, 'tsconfig.json'), '{}');
@@ -3688,10 +3691,14 @@ describe('a sketches folder that holds only generated tsconfigs', { timeout: 120
     const lines = output();
 
     expect(await run(target, 'list', '--product', 'acme')).toBe(0);
-    expect(lines).toEqual(['no open sketch']);
-    expect(await run(target, 'check', '--product', 'acme')).toBe(0);
-    expect(lines).toContain(`NOTE ${DESIGN_DIR}/acme/sketches/pages-sketches.change-crop: holds no sketch, skipped`);
+    expect(lines.some((line) => line.includes('change-crop'))).toBe(false);
+    await run(target, 'check', '--product', 'acme');
+    expect(lines).toContain(
+      `NOTE ${DESIGN_DIR}/acme/sketches/pages-sketches.change-crop: holds only tsconfig files, removed`,
+    );
     expect(lines.filter((line) => line.includes('change-crop'))).toHaveLength(1);
+    expect(existsSync(leftover)).toBe(false);
+    expect(existsSync(join(real, 'sketch.json'))).toBe(true);
   });
 });
 

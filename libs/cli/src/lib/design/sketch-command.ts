@@ -118,6 +118,7 @@ import {
   rejectionOf,
   staleReadyRefusalOf,
   releaseSketch,
+  removeSketchDir,
   reportSketch,
   runningRoundOf,
   sharedDirOf,
@@ -2010,7 +2011,10 @@ const checkedVariants = async (
   let failed = asked === undefined && unreadable.length > 0;
 
   if (asked === undefined)
-    leftovers.forEach((folder) => console.log(`NOTE ${relative(target, folder)}: holds no sketch, skipped`));
+    leftovers.forEach((folder) => {
+      removeSketchDir(folder);
+      console.log(`NOTE ${relative(target, folder)}: holds only tsconfig files, removed`);
+    });
 
   if (asked === undefined)
     unreadable.forEach((problem) =>
