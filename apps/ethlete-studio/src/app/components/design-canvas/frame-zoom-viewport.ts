@@ -22,6 +22,7 @@ type ZoomGesture = FrameZoomPreview & {
   origin: Point;
   base: number;
   last: WheelEvent;
+  held: WheelAnchor | null;
   idle?: ReturnType<typeof setTimeout>;
 };
 
@@ -134,6 +135,7 @@ export const mountFrameZoomViewport = (options: FrameZoomViewportOptions) => {
         scale: 1,
         zoom: camera.zoom,
         last: event,
+        held: anchorAt(event),
       };
     }
 
@@ -148,10 +150,31 @@ export const mountFrameZoomViewport = (options: FrameZoomViewportOptions) => {
       scale,
       zoom,
       last: event,
+      held: gesture.held && { ...gesture.held, x: event.clientX, y: event.clientY },
       idle: setTimeout(settle, GESTURE_IDLE_MS),
     };
     options.preview({ x: gesture.x, y: gesture.y, scale, zoom }, settle);
     if (scale < MIN_PREVIEW_SCALE) settle();
+    else if (gesture.held) options.afterRender(holdPreviewAnchor);
+  };
+
+  // A preview can re-lay out content that does not scale with the zoom (the sketch chrome), which moves the frame under
+  // the pointer; this shifts the preview back so the frame point stays under it.
+  const holdPreviewAnchor = () => {
+    if (!gesture?.held) return;
+
+    const { frame, fx, fy, x, y } = gesture.held;
+    const box = frame.getBoundingClientRect();
+
+    if (!frame.isConnected || box.width === 0) return;
+
+    const dx = x - (box.left + fx * box.width);
+    const dy = y - (box.top + fy * box.height);
+
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+
+    gesture = { ...gesture, x: gesture.x + dx, y: gesture.y + dy };
+    options.preview({ x: gesture.x, y: gesture.y, scale: gesture.scale, zoom: gesture.zoom }, settle);
   };
 
   viewport.addEventListener(

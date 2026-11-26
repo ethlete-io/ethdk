@@ -1985,6 +1985,61 @@ const CASES = [
     },
   },
   {
+    name: 'no row size change after a wheel zoom settles',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before the zoom',
+    pages: ['Sketches'],
+    run: async (page) => {
+      await listingAnswered(page);
+      await settled(page, FRAME);
+      await page.waitForTimeout(1500);
+      const list = await page.locator('ethlete-sketches [data-sk-rows]').first().boundingBox();
+
+      if (!list) return { ok: false, detail: 'no sketch rows list' };
+      await page.evaluate(() => {
+        const read = () =>
+          [...document.querySelectorAll('ethlete-sketches [data-sk-row]')]
+            .map((row) => Math.round(row.getBoundingClientRect().height))
+            .join(',');
+        const probe = { samples: [], lastWheel: 0, stop: false };
+        window.__rowProbe = probe;
+        window.addEventListener('wheel', () => (probe.lastWheel = performance.now()), { capture: true, passive: true });
+        const tick = () => {
+          probe.samples.push({ at: performance.now(), rows: read() });
+          if (!probe.stop) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+      await page.mouse.move(list.x + list.width / 2, list.y + Math.min(list.height / 2, 300));
+      await page.keyboard.down('Control');
+      for (let step = 0; step < 4; step++) {
+        await page.mouse.wheel(0, -120);
+        await page.waitForTimeout(30);
+      }
+      await page.keyboard.up('Control');
+      await page.waitForTimeout(3000);
+      const { lastWheel, samples } = await page.evaluate(() => {
+        window.__rowProbe.stop = true;
+        return window.__rowProbe;
+      });
+      const after = samples.filter((sample) => sample.at > lastWheel);
+      const preview = after.filter((sample) => sample.at <= lastWheel + 100).at(-1);
+      const changes = after.filter((sample, index) => index > 0 && sample.rows !== after[index - 1].rows);
+      const before = samples[0]?.rows ?? '-';
+      const final = after.at(-1)?.rows;
+      // A 1 px border of a head button stays at least 1 px in the counter-scaled preview: about 3 px per row.
+      const jumps = (preview?.rows ?? '')
+        .split(',')
+        .some((height, index) => Math.abs(Number(height) - Number(final?.split(',')[index])) > 4);
+
+      return {
+        ok: preview !== undefined && final !== before && !jumps,
+        detail: `row heights before the zoom ${before}, in the preview ${preview?.rows ?? '-'}, settled ${final ?? '-'}; changes after the last wheel: ${changes
+          .map((sample) => `${Math.round(sample.at - lastWheel)} ms ${sample.rows}`)
+          .join(' | ')}; ${after.length} frames sampled`,
+      };
+    },
+  },
+  {
     name: 'the sketch canvas clips its frames at the bottom of the shell main area',
     pages: ['Sketches'],
     engines: ['chromium', 'webkit'],

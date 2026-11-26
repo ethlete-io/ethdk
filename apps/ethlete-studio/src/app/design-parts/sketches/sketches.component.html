@@ -74,13 +74,15 @@
           [class.min-w-full]="!transposed() || screenMode()"
           [style.transform]="canvas.transform()"
           [style.will-change]="canvas.preview() ? 'transform' : null"
-          class="flex origin-top-left flex-col gap-space-2 pb-16"
+          [style.gap]="chromeSpace()(2)"
+          class="flex origin-top-left flex-col gap-space-2 pb-16 [text-rendering:geometricPrecision]"
         >
           @if (transposed()) {
             <div
               #matrix
               [style.grid-template-columns]="matrixColumns()"
-              [style.column-gap.px]="COLUMN_GAP"
+              [style.column-gap.px]="matrixColumnGap()"
+              [style.row-gap]="chromeSpace()(3)"
               class="grid gap-y-space-3"
               data-sk-matrix
             >
@@ -95,6 +97,7 @@
                     [style.grid-row]="matrixTop() + 1 + line * 2 + ' / span 2'"
                     [style.grid-column]="offset + 1"
                     [style.padding-left.px]="blockIndex > 0 ? COLUMN_GAP : null"
+                    [style.zoom]="chromeZoom()"
                     [attr.data-sk-block]="blockIndex"
                     [class]="headHidden() ? 'text-transparent' : 'text-et-surface-text'"
                     class="flex flex-col justify-center gap-space-1 self-stretch pr-space-3 leading-[1.35]"
@@ -134,6 +137,7 @@
                     [attr.data-selected]="row.key === selected() ? '' : null"
                     [style.grid-column]="offset + column + 2"
                     [style.grid-row]="matrixTop()"
+                    [style.zoom]="chromeZoom()"
                     class="relative min-w-0 rounded-control-md p-space-2 data-selected:shadow-[0_0_0_2px_var(--et-tone-fill)]"
                   >
                     @if (blockIndex === 0) {
@@ -169,12 +173,14 @@
                         [attr.data-sk-state]="state"
                         [attr.data-sk-variant]="row.key"
                         [attr.data-sk-failed-cell]="failures()[row.key] === undefined ? null : ''"
+                        [style.row-gap]="chromeSpace()(1)"
                         class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
                         data-sk-missing
                       >
                         <div
                           [style.width.px]="row.width * scale()"
                           [style.font-size.px]="labelFont()"
+                          [style.padding]="chromeSpace()(2)"
                           class="row-start-2 box-border flex items-center justify-center self-start rounded-control-sm border border-dashed border-(--et-surface-border) p-space-2 text-center font-code leading-[1.35] text-et-surface-text-muted"
                         >
                           {{ matrixMissingLabelOf(row) }}
@@ -189,6 +195,7 @@
                   @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
                     <div
                       [style.grid-column]="blockIndex * matrixStride() + sameColumn() + ' / span ' + sameRows().length"
+                      [style.zoom]="chromeZoom()"
                       class="row-start-1 self-end rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border)]"
                       data-sk-same
                       data-open
@@ -201,6 +208,7 @@
                     #fold
                     [style.grid-column]="matrixFoldColumn()"
                     [style.grid-row]="'1 / span ' + (matrixTallest() * 2 + 1)"
+                    [style.zoom]="chromeZoom()"
                     class="flex w-36 flex-col gap-space-2 rounded-control-md p-space-1 shadow-[0_0_0_1px_var(--et-surface-border)]"
                     data-sk-same
                   >
@@ -231,6 +239,7 @@
               [attr.data-sk-side-by-side]="sideBySide() ? '' : null"
               [attr.data-sk-stacked]="stacked() ? '' : null"
               [attr.data-sk-grid]="lines ? '' : null"
+              [style.gap]="chromeSpace()(2)"
               class="gap-space-2"
               data-sk-changed
             >
@@ -363,6 +372,8 @@
     [attr.data-sk-head-hidden]="headHidden() ? '' : null"
     [class.gap-space-2]="headHidden()"
     [class.gap-space-5]="!headHidden()"
+    [style.gap]="chromeSpace()(headHidden() ? 2 : 5)"
+    [style.padding]="chromeSpace()(3)"
     [class.row-span-full]="!!grid() && stackedGridRowOf(block) === null"
     [style.grid-row]="stackedGridRowOf(block)"
     [style.grid-column]="stackedGridRowOf(block) === null ? null : 2"
@@ -370,7 +381,13 @@
     [class.row-span-2]="aligned"
     class="grid grid-cols-[minmax(0,1fr)] rounded-control-md p-space-3 data-selected:shadow-[0_0_0_2px_var(--et-tone-fill)]"
   >
-    <div [class.min-w-full]="sideBySide()" [class.w-0]="sideBySide()" class="min-w-0" data-sk-head-row>
+    <div
+      [class.min-w-full]="sideBySide()"
+      [class.w-0]="sideBySide()"
+      [style.zoom]="chromeZoom()"
+      class="min-w-0"
+      data-sk-head-row
+    >
       <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
     </div>
     <div
@@ -397,7 +414,8 @@
           #stage
           [attr.data-sk-stage-row]="row.key"
           [style.grid-template-columns]="gridOf(row)"
-          [style.column-gap.px]="columnGap()"
+          [style.column-gap.px]="stageColumnGap()"
+          [style.row-gap]="chromeSpace()(3)"
           [class.row-span-full]="!!grid()"
           [class.grid-rows-subgrid]="!!grid()"
           class="grid min-w-0 gap-y-space-3"
@@ -464,6 +482,7 @@
                 <div
                   [attr.data-sk-state]="state"
                   [attr.data-sk-variant]="row.key"
+                  [style.row-gap]="chromeSpace()(1)"
                   class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
                   data-sk-missing
                 >
@@ -480,18 +499,20 @@
                   @if (failures()[row.key] === undefined) {
                     <div
                       [style.width.px]="row.width * scale()"
+                      [style.padding]="chromeSpace()(2)"
                       class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-(--et-surface-border) p-space-2 text-center text-ui-xs text-et-surface-text-muted"
                     >
-                      {{ missingLabelOf(row) }}
+                      <span [style.zoom]="chromeZoom()"> {{ missingLabelOf(row) }}</span>
                     </div>
                   } @else {
                     <div
                       [style.width.px]="row.width * scale()"
                       [etProvideColor]="errorTheme()"
+                      [style.padding]="chromeSpace()(2)"
                       class="row-start-2 box-border flex items-center justify-center rounded-control-sm border border-dashed border-et-tone-fill p-space-2 text-center text-ui-xs text-et-tone-text"
                       data-sk-failed-cell
                     >
-                      {{ missingLabelOf(row) }}
+                      <span [style.zoom]="chromeZoom()"> {{ missingLabelOf(row) }}</span>
                     </div>
                   }
                 </div>
@@ -678,6 +699,7 @@
     [scale]="cellScale"
     [labelFont]="labelFont()"
     [labelHidden]="labelSize() === null"
+    [style.row-gap]="chromeSpace()(1)"
     [stateHidden]="transposed() || !!grid()"
     [same]="isSame(row, item.changed)"
     [inherited]="!!item.inherited"

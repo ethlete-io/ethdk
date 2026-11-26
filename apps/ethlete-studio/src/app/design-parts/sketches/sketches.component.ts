@@ -521,18 +521,28 @@ export class SketchesComponent {
         ? (fit?.scale ?? 1)
         : previous.value,
   });
-  protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.scale(), fit: this.noteFit() }));
+  // During a zoom preview the chrome is laid out at its settled size divided by the preview scale, or it jumps at settle.
+  private settledScale = computed(() => this.canvas.preview()?.zoom ?? this.scale());
+  private previewScale = computed(() => this.canvas.preview()?.scale ?? 1);
+  protected chromeZoom = computed(() => (this.canvas.preview() ? 1 / this.previewScale() : null));
+  protected chromeSpace = computed(() => {
+    const scale = this.canvas.preview()?.scale;
+
+    return (step: number) => (scale ? `calc(var(--space-${step}) / ${scale})` : null);
+  });
+  protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.settledScale(), fit: this.noteFit() }));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
   protected portNote = computed(() => {
     const port = this.port();
 
     return port ? this.LABELS.mergePort(port.merged) : null;
   });
-  protected labelFont = computed(() =>
-    textAt(LABEL_TEXT, { scale: Math.min(this.scale(), this.noteFit()), fit: this.noteFit() }),
+  private settledLabelFont = computed(() =>
+    textAt(LABEL_TEXT, { scale: Math.min(this.settledScale(), this.noteFit()), fit: this.noteFit() }),
   );
+  protected labelFont = computed(() => this.settledLabelFont() / this.previewScale());
   protected labelSize = computed(() =>
-    this.labelsHiddenAt({ scale: this.scale(), label: this.labelFont() }) ? null : this.labelFont(),
+    this.labelsHiddenAt({ scale: this.settledScale(), label: this.settledLabelFont() }) ? null : this.labelFont(),
   );
   private shownStatus = computed(() =>
     (this.agent() && !this.agent()?.failure) || this.port()
@@ -698,12 +708,21 @@ export class SketchesComponent {
   protected matrixTallest = computed(() => Math.max(0, ...this.matrixBlocks().map((block) => block.states.length)));
   protected matrixFoldColumn = computed(() => this.matrixBlocks().length * this.matrixStride() + 1);
   protected matrixColumns = computed(() =>
-    this.matrixColumnsAt({ columns: this.matrixRows().length, blocks: this.matrixBlocks().length }, this.scale()),
+    this.matrixColumnsAt(
+      {
+        columns: this.matrixRows().length,
+        blocks: this.matrixBlocks().length,
+        headMin: MATRIX_HEAD_MIN / this.previewScale(),
+      },
+      this.scale(),
+    ),
   );
   protected percent = computed(() => {
     return Math.round((this.canvas.preview()?.zoom ?? this.shownZoom()) * 100);
   });
-  protected columnGap = computed(() => (this.grid() ? GRID_COLUMN_GAP : COLUMN_GAP));
+  private columnGap = computed(() => (this.grid() ? GRID_COLUMN_GAP : COLUMN_GAP));
+  protected stageColumnGap = computed(() => this.columnGap() / this.previewScale());
+  protected matrixColumnGap = computed(() => COLUMN_GAP / this.previewScale());
 
   constructor() {
     afterRenderEffect(() => {
@@ -847,6 +866,7 @@ export class SketchesComponent {
         this.listSize();
         this.scale();
         this.noteSize();
+        if (this.canvas.preview()) return;
         this.shownRows();
         this.matrixRows();
         this.canvas.measure(this.list().nativeElement, this.world().nativeElement);
@@ -1242,9 +1262,12 @@ export class SketchesComponent {
     return label < MIN_LABEL || (this.transposed() && this.widest() * scale < MATRIX_LABEL_MIN);
   }
 
-  private matrixColumnsAt({ columns, blocks }: { columns: number; blocks: number }, scale: number) {
+  private matrixColumnsAt(
+    { columns, blocks, headMin = MATRIX_HEAD_MIN }: { columns: number; blocks: number; headMin?: number },
+    scale: number,
+  ) {
     const frame = `${this.widest() * scale}px`;
-    const first = `max-content repeat(${columns}, max(${frame}, ${MATRIX_HEAD_MIN}px))`;
+    const first = `max-content repeat(${columns}, max(${frame}, ${headMin}px))`;
     const later = `max-content repeat(${columns}, ${frame})`;
 
     return `${[first, ...Array.from({ length: blocks - 1 }, () => later)].join(' ')}${this.screenMode() ? '' : ' auto'}`;
