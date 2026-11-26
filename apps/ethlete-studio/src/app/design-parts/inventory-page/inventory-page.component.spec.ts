@@ -95,7 +95,7 @@ describe('InventoryPageComponent', () => {
   });
 
   it('shows the selected page and offers no approve button', async () => {
-    const { element, button } = await render({ selected: 'pages/a-very-long-page-name-that-keeps-going' });
+    const { element } = await render({ selected: 'pages/a-very-long-page-name-that-keeps-going' });
 
     expect(element.querySelector('aside h2')?.textContent?.trim()).toBe('pages/a-very-long-page-name-that-keeps-going');
     expect(element.querySelector('figure figcaption span')?.classList).not.toContain('font-ui-strong');
