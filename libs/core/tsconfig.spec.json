@@ -10,6 +10,7 @@
     "vite.config.mts",
     "vitest.config.ts",
     "vitest.config.mts",
+    "design/**/*.ts",
     "generators/**/*.test.ts",
     "generators/**/*.spec.ts",
     "generators/**/*.test.tsx",
