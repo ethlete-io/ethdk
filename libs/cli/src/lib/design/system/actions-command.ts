@@ -74,6 +74,7 @@ import {
   shotCompareLinesOf,
   shotCompareOf,
 } from './part-compare';
+import { sampleValuesOf } from './sample-values';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { partLinkOf } from './sketch/part-definition';
@@ -296,6 +297,7 @@ export const checkActions = async (options: {
 
   if (!chromium) return 'actions needs playwright or playwright-core in the checkout';
 
+  const samples = sampleValuesOf(product.fixtures);
   const server = await createDesignServer({ target, config, listen: true, port: 0 });
   const store = server.shotStore(viteCacheOf(target, COMPARE_DESIGN_SHOTS), browserVersionOf(chromium.from));
   let browser: { queue: ReturnType<typeof createDrawQueue>; shooter: ReturnType<typeof createPartShooter> } | undefined;
@@ -570,11 +572,11 @@ export const checkActions = async (options: {
         }),
       );
       const hosts = product.config.harness?.hosts ?? [];
-      const scope = ownScopeOf({ design, app, hosts });
+      const scope = ownScopeOf({ design, app, hosts, samples });
 
-      const { paired, missing } = pairElementsOf({ design: scope.design, app: scope.app });
+      const { paired, missing } = pairElementsOf({ design: scope.design, app: scope.app, samples });
 
-      for (const drift of accessibleNameDriftsOf(paired))
+      for (const drift of accessibleNameDriftsOf(paired, samples))
         pushLine({
           state,
           element: elementNameOf(drift.app),
@@ -701,7 +703,7 @@ export const checkActions = async (options: {
                 typeof action === 'string'
                   ? action
                   : drawn === null
-                    ? noSuchElementOf(nearMissesOf({ element, design, app }))
+                    ? noSuchElementOf(nearMissesOf({ element, design, app, samples }))
                     : 'the design declares no data-et-action',
             });
 
@@ -784,8 +786,8 @@ export const checkActions = async (options: {
               };
               const app = run.app;
 
-              if (action.kind === 'state' && compared && !compared.ok && goalPicture && app)
-                outcome.reached = await timedPhase('actions-reached', () =>
+              if (action.kind === 'state' && compared && !compared.ok && goalPicture && app) {
+                const reached = await timedPhase('actions-reached', () =>
                   reachedStateOf({
                     goal,
                     states: names,
@@ -799,6 +801,12 @@ export const checkActions = async (options: {
                     },
                   }),
                 );
+                const panesMatch = !compared.boxed || compared.boxed.paneCount.design === compared.boxed.paneCount.app;
+
+                if (reached === null && panesMatch && !embeddedState && outcome.compare)
+                  outcome.compare = { ...outcome.compare, ok: true };
+                else outcome.reached = reached;
+              }
 
               if (embeddedState && action.kind === 'state' && outcome.compare && !outcome.compare.ok)
                 outcome.reached = await reachedExpandedStateOf({

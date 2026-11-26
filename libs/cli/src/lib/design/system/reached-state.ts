@@ -5,14 +5,16 @@ export const expandedOf = (after: readonly { key: string; expanded: string | nul
   after.find((control) => control.key === key && control.expanded !== null)?.expanded ?? 'absent';
 
 /**
- * What an app drawing that missed `goal` reached instead: the declared state it matches exactly, or the closest one by
- * differing pixels. `compare` compares the app drawing with one state's design; a state it fails to draw is skipped.
+ * What an app drawing that missed `goal` pixel for pixel reached instead: the declared state it matches exactly, or the
+ * closest one by differing pixels. `null` when `goal` is strictly closer than every other state it compared: pixels all
+ * states share, such as sample data, differ alike from each, so the ranking counts only what the states change.
+ * `compare` compares the app drawing with one state's design; a state it fails to draw is skipped.
  */
 export const reachedStateOf = async (options: {
   goal: string;
   states: readonly string[];
   compare: (state: string) => Promise<PixelCompare | null>;
-}) => {
+}): Promise<string | null> => {
   const { goal, states, compare } = options;
   const compared = await Promise.all(
     states.map(async (state) => ({ state, result: await compare(state).catch(() => null) })),
@@ -21,9 +23,12 @@ export const reachedStateOf = async (options: {
 
   if (exact) return `reaches state ${exact.state} instead`;
 
-  const closest = compared
+  const ranked = compared
     .flatMap(({ state, result }) => (result?.kind === 'diff' ? [{ state, pixels: result.pixels }] : []))
-    .sort((a, b) => a.pixels - b.pixels)[0];
+    .sort((a, b) => a.pixels - b.pixels);
+  const [closest, next] = ranked;
+
+  if (closest?.state === goal && next && closest.pixels < next.pixels) return null;
 
   return closest
     ? `reaches no declared state (closest ${closest.state}, ${closest.pixels} px)`

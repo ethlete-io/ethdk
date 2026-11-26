@@ -23,8 +23,8 @@ describe('reachedStateOf', () => {
     ).toBe('reaches state fit instead');
   });
 
-  it('names the closest declared state with its pixel count when none matches, the goal included', async () => {
-    const results: Record<string, PixelCompare> = { open: diff(456), fit: diff(5036), closed: size };
+  it('names the closest declared state with its pixel count when none matches', async () => {
+    const results: Record<string, PixelCompare> = { open: diff(5036), fit: diff(456), closed: size };
 
     expect(
       await reachedStateOf({
@@ -32,7 +32,37 @@ describe('reachedStateOf', () => {
         states: ['closed', 'fit', 'open'],
         compare: async (state) => results[state] ?? null,
       }),
-    ).toBe('reaches no declared state (closest open, 456 px)');
+    ).toBe('reaches no declared state (closest fit, 456 px)');
+  });
+
+  it('reaches the goal when its app drawing shows other sample data but is strictly closest to the goal', async () => {
+    const results: Record<string, PixelCompare> = {
+      'comment-mode': diff(21030),
+      part: diff(21212),
+      'points-closed': diff(23310),
+    };
+
+    expect(
+      await reachedStateOf({
+        goal: 'comment-mode',
+        states: ['part', 'points-closed', 'comment-mode'],
+        compare: async (state) => results[state] ?? null,
+      }),
+    ).toBeNull();
+  });
+
+  it('still misses the goal on a tie, or when no other state has the app size to rank it against', async () => {
+    const tie: Record<string, PixelCompare> = { open: diff(456), fit: diff(456) };
+    const alone: Record<string, PixelCompare> = { open: diff(456), fit: size };
+
+    for (const results of [tie, alone])
+      expect(
+        await reachedStateOf({
+          goal: 'open',
+          states: ['open', 'fit'],
+          compare: async (state) => results[state] ?? null,
+        }),
+      ).toBe('reaches no declared state (closest open, 456 px)');
   });
 
   it('skips a state it cannot draw and names no closest state when no drawing has the app size', async () => {

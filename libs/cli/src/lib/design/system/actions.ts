@@ -294,12 +294,16 @@ const labelWordsOf = (element: ActionElement) => {
 };
 
 /**
- * Whether two names of one role differ only in one word each, around at least one shared word with a letter: the
- * product or count a design's sample data puts into a name the app fills from its own data ("Suchen in farn",
- * "Suchen in studio"; "48 offen", "3 offen").
+ * Whether two names of one role differ only in one word each, around at least one shared word with a letter, and the
+ * design's word is one of `samples`, the values of the product's sample data: the product or count the design puts
+ * into a name the app fills from its own data ("Suchen in farn", "Suchen in studio" where `farn` is a sample value).
  */
-export const differsInSampleDataOf = (options: { design: ActionElement; app: ActionElement }) => {
-  const { design, app } = options;
+export const differsInSampleDataOf = (options: {
+  design: ActionElement;
+  app: ActionElement;
+  samples: ReadonlySet<string>;
+}) => {
+  const { design, app, samples } = options;
 
   if (actionRoleOf(design) !== actionRoleOf(app) || design.key === app.key) return false;
 
@@ -311,7 +315,11 @@ export const differsInSampleDataOf = (options: { design: ActionElement; app: Act
   const differing = designWords.flatMap((word, at) => (word === appWords[at] ? [] : [at]));
   const shared = designWords.filter((word, at) => word === appWords[at]);
 
-  return differing.length === 1 && shared.some((word) => /\p{L}/u.test(word));
+  return (
+    differing.length === 1 &&
+    samples.has(designWords[differing[0] as number] as string) &&
+    shared.some((word) => /\p{L}/u.test(word))
+  );
 };
 
 /**
@@ -319,7 +327,11 @@ export const differsInSampleDataOf = (options: { design: ActionElement; app: Act
  * element shares a key with: the first whose name differs only in sample data, else the one such element where the
  * role has exactly one on each side.
  */
-const renamedPairsOf = <TDesign extends ActionElement>(options: { design: TDesign[]; app: ActionElement[] }) => {
+const renamedPairsOf = <TDesign extends ActionElement>(options: {
+  design: TDesign[];
+  app: ActionElement[];
+  samples: ReadonlySet<string>;
+}) => {
   const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
   const designs = new Set(options.design.map(idOf));
   const apps = new Set(options.app.map(idOf));
@@ -329,7 +341,8 @@ const renamedPairsOf = <TDesign extends ActionElement>(options: { design: TDesig
 
   for (const app of options.app.filter((candidate) => !designs.has(idOf(candidate)))) {
     const design = designsLeft.find(
-      (candidate) => !sampled.has(candidate) && differsInSampleDataOf({ design: candidate, app }),
+      (candidate) =>
+        !sampled.has(candidate) && differsInSampleDataOf({ design: candidate, app, samples: options.samples }),
     );
 
     if (design) {
@@ -362,6 +375,7 @@ export const nearMissesOf = <TDesign extends ActionElement>(options: {
   element: ActionElement;
   design: TDesign[];
   app: ActionElement[];
+  samples: ReadonlySet<string>;
 }) => {
   const apps = new Set(options.app.map((element) => element.key));
   const role = actionRoleOf(options.element);
@@ -370,12 +384,16 @@ export const nearMissesOf = <TDesign extends ActionElement>(options: {
     (design) =>
       actionRoleOf(design) === role &&
       !apps.has(design.key) &&
-      !options.app.some((app) => differsInSampleDataOf({ design, app })),
+      !options.app.some((app) => differsInSampleDataOf({ design, app, samples: options.samples })),
   );
 };
 
 /** The design and app elements of one state, paired by key and occurrence. */
-export const pairElementsOf = <TDesign extends ActionElement>(options: { design: TDesign[]; app: ActionElement[] }) => {
+export const pairElementsOf = <TDesign extends ActionElement>(options: {
+  design: TDesign[];
+  app: ActionElement[];
+  samples: ReadonlySet<string>;
+}) => {
   const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
   const designs = new Map(options.design.map((element) => [idOf(element), element]));
   const apps = new Set(options.app.map(idOf));
@@ -395,9 +413,12 @@ export const ACCESSIBLE_NAME_RULE = 'ACCESSIBLE-NAME';
 /** The paired elements whose accessible names differ between the design and the app beyond the sample data. */
 export const accessibleNameDriftsOf = <TDesign extends ActionElement>(
   paired: { app: ActionElement; design: TDesign | null }[],
+  samples: ReadonlySet<string>,
 ) =>
   paired.flatMap(({ app, design }) =>
-    design !== null && design.key !== app.key && !differsInSampleDataOf({ design, app }) ? [{ app, design }] : [],
+    design !== null && design.key !== app.key && !differsInSampleDataOf({ design, app, samples })
+      ? [{ app, design }]
+      : [],
   );
 
 /** The failure line for an element the app names differently from the design. */
@@ -463,13 +484,14 @@ export const ownScopeOf = <TDesign extends ActionElement & { owners: readonly st
   design: TDesign[];
   app: ActionElement[];
   hosts: readonly string[];
+  samples: ReadonlySet<string>;
 }) => {
   const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
   const own = options.design.filter((element) => element.owners.length === 0);
   const embedded = new Set(options.design.filter((element) => element.owners.length > 0).map(idOf));
   const ownIds = new Set(own.map(idOf));
 
-  const renamed = renamedPairsOf({ design: options.design, app: options.app });
+  const renamed = renamedPairsOf({ design: options.design, app: options.app, samples: options.samples });
 
   for (const [app, design] of renamed) if (design.owners.length > 0 && !ownIds.has(idOf(app))) embedded.add(idOf(app));
 

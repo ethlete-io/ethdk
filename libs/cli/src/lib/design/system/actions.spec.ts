@@ -33,6 +33,8 @@ import {
 } from './actions';
 import { checkActions, designActions, runActionInput } from './actions-command';
 
+const NO_SAMPLES = new Set<string>();
+
 const element = (found: Partial<ActionElement>): ActionElement => ({
   key: 'button "Go"',
   occurrence: 0,
@@ -139,7 +141,7 @@ describe('actions', () => {
     ];
     const app = [element({ probe: 3 }), element({ key: 'tab "X"' })];
 
-    expect(pairElementsOf({ design, app })).toEqual({
+    expect(pairElementsOf({ design, app, samples: NO_SAMPLES })).toEqual({
       paired: [
         { app: app[0], design: design[0] },
         { app: app[1], design: null },
@@ -156,7 +158,7 @@ describe('actions', () => {
     ];
     const app = [element({ key: 'combobox "Runde"' }), element({ key: 'button "C"' }), element({ key: 'button "D"' })];
 
-    expect(pairElementsOf({ design, app }).paired).toEqual([
+    expect(pairElementsOf({ design, app, samples: NO_SAMPLES }).paired).toEqual([
       { app: app[0], design: design[0] },
       { app: app[1], design: null },
       { app: app[2], design: null },
@@ -166,13 +168,13 @@ describe('actions', () => {
   it('reports a paired element whose accessible name differs, and none whose name matches', () => {
     const design = [element({ key: 'combobox "Desktop·1440"' }), element({ key: 'button "Go"', occurrence: 0 })];
     const app = [element({ key: 'combobox "Bildschirmgröße"' }), element({ key: 'button "Go"' })];
-    const drifts = accessibleNameDriftsOf(pairElementsOf({ design, app }).paired);
+    const drifts = accessibleNameDriftsOf(pairElementsOf({ design, app, samples: NO_SAMPLES }).paired, NO_SAMPLES);
 
     expect(drifts).toEqual([{ app: app[0], design: design[0] }]);
     expect(accessibleNameFailureOf(drifts[0]!)).toBe(
       'ACCESSIBLE-NAME: the design names it combobox "Desktop·1440", the app names it combobox "Bildschirmgröße"',
     );
-    expect(accessibleNameDriftsOf([{ app: app[1]!, design: null }])).toEqual([]);
+    expect(accessibleNameDriftsOf([{ app: app[1]!, design: null }], NO_SAMPLES)).toEqual([]);
   });
 
   it('exempts an element without an action that an embedded part or a control declared with a part draws', () => {
@@ -525,7 +527,7 @@ describe('runActionInput', () => {
       { ...element({ key: 'button "Close"' }), owners: ['components/title-bar'] },
     ];
 
-    expect(ownScopeOf({ design, app: [], hosts: [] }).embedded).toBe(1);
+    expect(ownScopeOf({ design, app: [], hosts: [], samples: NO_SAMPLES }).embedded).toBe(1);
   });
 
   it('treats an element whose accessible name a declared host carries as that host, whatever its role', () => {
@@ -543,11 +545,11 @@ describe('runActionInput', () => {
       { ...element({ key: 'button "Close"', action: 'emit:close' }), owners: ['components/title-bar'] },
     ];
     const app = [element({ key: 'button "Own"' }), element({ key: 'button "Close"' })];
-    const scope = ownScopeOf({ design, app, hosts: [] });
+    const scope = ownScopeOf({ design, app, hosts: [], samples: NO_SAMPLES });
 
     expect(scope.design).toEqual([design[0]]);
     expect(scope.app).toEqual([app[0]]);
-    expect(pairElementsOf(scope).missing).toEqual([]);
+    expect(pairElementsOf({ ...scope, samples: NO_SAMPLES }).missing).toEqual([]);
   });
 
   it('leaves a lone app element to the embedded part that draws the lone element of its role under another name', () => {
@@ -560,11 +562,11 @@ describe('runActionInput', () => {
     ];
     const app = [element({ key: 'button "Own"' }), element({ key: 'combobox "Bildschirmgröße"' })];
 
-    expect(ownScopeOf({ design, app, hosts: [] }).app).toEqual([app[0]]);
+    expect(ownScopeOf({ design, app, hosts: [], samples: NO_SAMPLES }).app).toEqual([app[0]]);
 
     const twoApps = [...app, element({ key: 'combobox "Sprache"' })];
 
-    expect(ownScopeOf({ design, app: twoApps, hosts: [] }).app).toEqual(twoApps);
+    expect(ownScopeOf({ design, app: twoApps, hosts: [], samples: NO_SAMPLES }).app).toEqual(twoApps);
   });
 
   it('names the design elements of the same role an unpaired app element may have meant', () => {
@@ -575,14 +577,14 @@ describe('runActionInput', () => {
     ];
     const app = [element({ key: 'combobox "Bildschirmgröße"' }), element({ key: 'combobox "Sprache"' })];
 
-    expect(nearMissesOf({ element: app[0]!, design, app })).toEqual([design[0]]);
-    expect(nearMissesOf({ element: app[0]!, design: [], app })).toEqual([]);
+    expect(nearMissesOf({ element: app[0]!, design, app, samples: NO_SAMPLES })).toEqual([design[0]]);
+    expect(nearMissesOf({ element: app[0]!, design: [], app, samples: NO_SAMPLES })).toEqual([]);
   });
 
   it('skips a declared host only where the design does not draw it, and names it', () => {
     const hosts = ['DesignCanvas'];
     const app = [element({ key: 'generic "DesignCanvas"' }), element({ key: 'button "Own"' })];
-    const bare = ownScopeOf({ design: [], app, hosts });
+    const bare = ownScopeOf({ design: [], app, hosts, samples: NO_SAMPLES });
 
     expect(bare.app).toEqual([app[1]]);
     expect(bare.skipped).toEqual(['DesignCanvas']);
@@ -591,6 +593,7 @@ describe('runActionInput', () => {
       design: [{ ...element({ key: 'generic "DesignCanvas"', action: 'emit:x' }), owners: [] as string[] }],
       app,
       hosts,
+      samples: NO_SAMPLES,
     });
 
     expect(drawn.app).toEqual(app);

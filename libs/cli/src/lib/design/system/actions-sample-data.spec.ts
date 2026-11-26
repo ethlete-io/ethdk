@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 
 const scans = vi.hoisted(() => ({
@@ -76,14 +79,24 @@ vi.mock('./pointer-focus', async (importOriginal) => ({
 
 import { checkActions } from './actions-command';
 
-const failuresOf = async (design: typeof scans.design, app: string[]) => {
+const fixturesOf = (source: string) => {
+  const file = join(mkdtempSync(join(tmpdir(), 'et-sample-values-')), 'fixtures.ts');
+
+  writeFileSync(file, source);
+
+  return file;
+};
+
+const FIXTURES = fixturesOf(`export const PRODUCT = 'farn';\nexport const OPEN_POINTS = 48;\n`);
+
+const failuresOf = async (design: typeof scans.design, app: string[], fixtures: string | null = FIXTURES) => {
   scans.design = design;
   scans.app = app;
 
   const result = await checkActions({
     target: '/tmp/none',
     config: {} as never,
-    product: { name: 'app-a', config: {}, presets: {}, parts: [] } as never,
+    product: { name: 'app-a', config: {}, presets: {}, parts: [], fixtures } as never,
     part: 'components/title-bar',
     url: 'http://localhost:9',
     only: null,
@@ -95,6 +108,30 @@ const failuresOf = async (design: typeof scans.design, app: string[]) => {
 };
 
 describe('checkActions with design sample data', () => {
+  it('pairs a name that differs in a sample value the product declares and fails one that differs in another word', async () => {
+    const failures = await failuresOf(
+      [
+        { name: 'button "Suchen in farn"', action: 'opens:components/title-search' },
+        { name: 'button "Kommentar senden"', action: 'opens:components/comment-draft' },
+      ],
+      ['button "Suchen in studio"', 'button "Kommentar löschen"'],
+    );
+
+    expect(failures).toEqual([
+      'button "Kommentar löschen": ACCESSIBLE-NAME: the design names it button "Kommentar senden", the app names it button "Kommentar löschen"',
+    ]);
+  });
+
+  it('fails a one-word difference when the product declares no sample data', async () => {
+    const failures = await failuresOf(
+      [{ name: 'button "Suchen in farn"', action: 'opens:components/title-search' }],
+      ['button "Suchen in studio"'],
+      null,
+    );
+
+    expect(failures).toHaveLength(1);
+  });
+
   it('pairs the elements whose names differ only in the sample data the design draws', async () => {
     const failures = await failuresOf(
       [
