@@ -16,7 +16,7 @@ How the doc session and the builder work. A process change edits this page.
 - A 16th row needs one row dropped or parked first. Parked rows are one line at the end of the file.
 - At most 2 rows are in progress. All four subagent slots go to them, in parallel slices; a third row starts only when neither has a slice that can move, and it is "Füllarbeit".
 - A row in progress runs until it is done and verified. Only red CI or a blocked consumer interrupts it.
-- Feedback on a row in progress stays in that row. Any other new row goes to the end of the queue.
+- Feedback on a row in progress stays in that row. Any other new row, a finding of the human too, goes to the end of the queue. A row moves up only when the human names its priority.
 
 ## Proof
 
