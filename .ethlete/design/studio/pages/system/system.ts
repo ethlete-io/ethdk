@@ -609,8 +609,11 @@ export default definePart<{
     const acting = !fit && !clear;
     const exceptionCount = clear ? 0 : partExceptions.length;
     const openCount = clear ? 0 : FARN_OPEN_POINTS_COUNT;
-    const toggle = chip(openCount, !closed, acting && !commentMode);
-    const comment = commentToggle(commentMode, acting ? (commentMode ? 'points-closed' : 'comment-mode') : undefined);
+    const toggle = chip(openCount, !closed, acting && !commentMode && !comments);
+    const comment = commentToggle(
+      commentMode,
+      acting && thread === undefined ? (commentMode ? 'points-closed' : 'comment-mode') : undefined,
+    );
     const status: BuildReady =
       build === 'checking'
         ? { state: 'checking', rules: slowRules }
