@@ -112,7 +112,21 @@ const silentFrame = async (context) => {
       ? route.fulfill({ status: 200, contentType: 'text/html', body: SILENT_PAGE })
       : route.continue();
 
+  const startedAt = Date.now();
+  const seen = { system: null, document: null, documents: 0 };
+  const onResponse = (response) => {
+    if (seen.system === null && new URL(response.url()).pathname === '/__design/system')
+      seen.system = `${response.status()} at ${Date.now() - startedAt} ms`;
+  };
+  const onRequest = (request) => {
+    if (request.resourceType() !== 'document' || !isPartFrame(new URL(request.url()))) return;
+    seen.documents++;
+    seen.document ??= Date.now() - startedAt;
+  };
+
   await page.route(isPartFrame, silence);
+  page.on('response', onResponse);
+  page.on('request', onRequest);
 
   try {
     await openView(context, SYSTEM_VIEW);
@@ -122,7 +136,12 @@ const silentFrame = async (context) => {
     try {
       await banner.waitFor({ timeout: FAILED_TIMEOUT_MS });
     } catch {
-      return { ok: false, detail: 'no failed-load banner for a frame page that sends no frame message' };
+      const frames = await page.locator('ethlete-canvas-frame').count();
+
+      return {
+        ok: false,
+        detail: `no failed-load banner for a frame page that sends no frame message: /__design/system ${seen.system ?? 'never answered'}, first part frame page asked at ${seen.document ?? '-'} ms (${seen.documents} asked), ${frames} canvas frames`,
+      };
     }
 
     const text = (await banner.textContent())?.replace(/\s+/g, ' ').trim() ?? '';
@@ -134,6 +153,8 @@ const silentFrame = async (context) => {
       detail: `banner "${text}", reload buttons ${reload}, marked frames ${marked}`,
     };
   } finally {
+    page.off('response', onResponse);
+    page.off('request', onRequest);
     await page.unroute(isPartFrame, silence);
   }
 };
