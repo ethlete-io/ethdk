@@ -43,4 +43,4 @@ None of the four are required; an unconfigured `<et-empty-state />` renders noth
 
 Public design tokens: `--et-empty-state-padding`, `--et-empty-state-gap`, `--et-empty-state-icon-size`, `--et-empty-state-icon-color` (default: the muted surface colour), `--et-empty-state-max-inline-size`, `--et-empty-state-title-font-size`, `--et-empty-state-description-font-size`.
 
-Text and icon color resolve from the ambient [surface theme](/core/theming) (`--et-surface-color-solid` for the title, `--et-surface-color-muted-solid` for the description and icon) - no color input, no hardcoded colors.
+Text and icon color resolve from the ambient [surface theme](/core/theming) (`--et-surface-text` for the title, `--et-surface-text-muted` for the description and icon) - no color input, no hardcoded colors.

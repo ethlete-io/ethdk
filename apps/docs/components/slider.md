@@ -198,7 +198,7 @@ With `snapToMarks`, a "`step`" above means "one mark".
 
 ## Theming
 
-The rail is a neutral `--et-surface-interaction-solid` tint; the fill and thumbs use `--et-theme-color-primary-solid` from the nearest [color theme](/core/theming). Public design tokens (shared by both components):
+The rail is a neutral `--et-surface-interaction` tint; the fill and thumbs use `--et-tone-fill` from the nearest [color theme](/core/theming). Public design tokens (shared by both components):
 
 | Token                               | Default                       | Purpose                        |
 | ----------------------------------- | ----------------------------- | ------------------------------ |

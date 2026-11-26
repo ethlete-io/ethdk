@@ -378,11 +378,11 @@ scaffolding are described there.
 ## Theming
 
 Every colour resolves from the app-registered [surface and colour theme](/core/theming) systems: the
-card fill and border from `--et-surface-background-solid` and `--et-surface-border-solid`, a hover
-from `--et-surface-interaction-solid`, the chosen side with its bar and mark from
-`--et-theme-color-primary-solid`, and a locked chosen bar and mark from
-`--et-surface-color-muted-solid`. A
-`predicted` side's text and an `invalid` note read `--et-theme-color-ink-solid` of the colour theme in
+card fill and border from `--et-surface-background` and `--et-surface-border`, a hover
+from `--et-surface-interaction`, the chosen side with its bar and mark from
+`--et-tone-fill`, and a locked chosen bar and mark from
+`--et-surface-text-muted`. A
+`predicted` side's text and an `invalid` note read `--et-tone-text` of the colour theme in
 scope - which, for an `invalid` note, is the app's `type: 'error'` theme. No theme name is baked in.
 
 | Token                                   | Default    | What it sizes                                  |

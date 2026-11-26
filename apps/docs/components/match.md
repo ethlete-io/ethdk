@@ -546,7 +546,7 @@ component points at the app's `type: 'error'` theme by default, so it is red wit
 theme. Override it per card with `liveColor`, or leave it unset in an app that registers no error theme and the
 badge follows the ambient color scope.
 
-The winning side's accent bar uses `--et-theme-color-primary-solid` from the color scope the card sits in, so a
+The winning side's accent bar uses `--et-tone-fill` from the color scope the card sits in, so a
 bracket in a branded scope marks its winners in that brand's accent.
 
 Sizing is one token per layout, so a value you set survives the container query switching modes. The wide row

@@ -174,8 +174,8 @@ colour- or position-only.
 ## Theming
 
 Every colour resolves from the app-registered [surface and colour theme](/core/theming) systems - the
-card fills, the card states and the drop ghost from `--et-surface-interaction-solid`, the text from
-`--et-surface-color-*`, the cut line from `--et-theme-color-primary-solid`. Scope the list with
+card fills, the card states and the drop ghost from `--et-surface-interaction`, the text from
+`--et-surface-text*`, the cut line from `--et-tone-fill`. Scope the list with
 `[etProvideColor]` to change what the cut is drawn in; no theme name is baked in.
 
 | Token                                  | Default                | What it sizes                                       |

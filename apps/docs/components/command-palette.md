@@ -217,7 +217,7 @@ shortcut is given a chord of modifiers with no key, which could never fire.
 Colors resolve from the app-registered surface and color themes - the palette hardcodes none. The
 panel paints the overlay's own surface elevation, and re-applies the color context from wherever it was
 opened, since an overlay pane does not inherit it through the DOM. A matched run of characters is drawn
-in `--et-theme-color-ink-solid`. See [theming](/core/theming).
+in `--et-tone-text`. See [theming](/core/theming).
 
 | Token                                      | Default | Applies to                              |
 | ------------------------------------------ | ------- | --------------------------------------- |

@@ -220,15 +220,15 @@ yarn nx g @ethlete/components:migrate-grid-engine-internals
 ## Accessibility
 
 - The grid host is a `role="region"` labelled from `GRID_LABELS` - `interactiveGrid` normally, `readonlyGrid` when `readOnly` (both [localizable](/components/localization)).
-- Each item is a focusable `role="group"` (`tabindex="0"`) with its `ariaLabel` input as the accessible name - set it per item, the default is the generic `GRID_LABELS.item`. While the grid is editable it lists its move, resize and remove shortcuts in `aria-keyshortcuts`. A keyboard-focused item draws an inset ring in `--et-theme-color-primary-solid` (`:focus-visible` only - a pointer press leaves no ring).
+- Each item is a focusable `role="group"` (`tabindex="0"`) with its `ariaLabel` input as the accessible name - set it per item, the default is the generic `GRID_LABELS.item`. While the grid is editable it lists its move, resize and remove shortcuts in `aria-keyshortcuts`. A keyboard-focused item draws an inset ring in `--et-tone-fill` (`:focus-visible` only - a pointer press leaves no ring).
 - All editing is keyboard-reachable (see [Interaction](#interaction)); and the default remove button is labelled by `GRID_LABELS.removeItem`.
 
 ## Theming
 
 `--et-grid-padding` (default `0px`) pads the grid container. Each item resolves
 `--et-grid-item-radius` (default `0`) and `--et-grid-item-bg` (default
-`--et-surface-background-solid`) for its own box, and `--et-grid-item-resize-handle-color`
-(default `--et-surface-color-solid`) for the resize handles. The default item toolbar exposes
+`--et-surface-background`) for its own box, and `--et-grid-item-resize-handle-color`
+(default `--et-surface-text`) for the resize handles. The default item toolbar exposes
 `--et-grid-item-toolbar-gap` / `-padding` / `-radius` / `-background` overrides. An item with
 actions pads its content's end by `--et-grid-item-actions-reserve` (default fits the default
 remove button), so a long title ends before the actions; raise it for a wider custom actions

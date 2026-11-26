@@ -170,7 +170,7 @@ With no `rangeDays`, the centre shows the **duration** of the range (`8 h 30 min
 
 ## Theming
 
-Selection colors come from the nearest [color theme](/core/theming) (`--et-theme-color-primary-solid`); text and the track use surface tokens. Public design tokens:
+Selection colors come from the nearest [color theme](/core/theming) (`--et-tone-fill`); text and the track use surface tokens. Public design tokens:
 
 | Token                          | Default | Purpose                                                          |
 | ------------------------------ | ------- | ---------------------------------------------------------------- |

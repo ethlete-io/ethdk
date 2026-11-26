@@ -106,12 +106,12 @@ Run `nx g @ethlete/core:migrate-surface-interaction-swatch` to convert your defi
 regenerate the CSS.
 :::
 
-Inside any surface scope (and on `:root` - see [The root surface](#the-root-surface)), these tokens are available - each as `-rgb` (raw channels) and `-solid` (ready-to-use color):
+Inside any surface scope (and on `:root` - see [The root surface](#the-root-surface)), these tokens are available, each a ready-to-use color:
 
-- `--et-surface-background-{rgb,solid}`
-- `--et-surface-color-{rgb,solid}`, `--et-surface-color-muted-{rgb,solid}`, `--et-surface-color-subtle-{rgb,solid}`
-- `--et-surface-border-{rgb,solid}`
-- `--et-surface-interaction-{,hover-,focus-,active-,disabled-}{rgb,solid}`
+- `--et-surface-background`
+- `--et-surface-text`, `--et-surface-text-muted`, `--et-surface-text-subtle`
+- `--et-surface-border`
+- `--et-surface-interaction`, `--et-surface-interaction-{hover,focus,active,disabled}`
 
 The swatch's `onColor` and `inkColor` are not exposed as component tokens - they reach components
 through the [`surface` color scope](#the-surface-color) - but they do generate the Tailwind utilities
@@ -279,7 +279,7 @@ Keep the definitions literal objects: the generators read the files statically, 
 | `SurfaceInteractiveDirective` | `[etSurfaceInteractive]` | Makes the surface tokens react to the host's `:hover` / `:focus-visible` / `:active` / `[disabled]` state using the neutral interaction tint.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ::: warning Hover rows: use `etSurfaceInteractive`, not `hover:bg-et-surface-interaction-hover`
-`--et-surface-interaction-hover-solid` (and the Tailwind utility `bg-et-surface-interaction-hover`) is a full-strength neutral tint, not a subtle overlay. As a hover background it paints a near-white row in dark mode with near-white text on top. For hover, focus and active feedback on a row, add `[etSurfaceInteractive]` to the interactive element itself: it mixes the tint at the right strength per state.
+`--et-surface-interaction-hover` (and the Tailwind utility `bg-et-surface-interaction-hover`) is a full-strength neutral tint, not a subtle overlay. As a hover background it paints a near-white row in dark mode with near-white text on top. For hover, focus and active feedback on a row, add `[etSurfaceInteractive]` to the interactive element itself: it mixes the tint at the right strength per state.
 :::
 
 ## Color themes
@@ -301,11 +301,11 @@ A `ThemeSwatch` is `{ color, onColor, inkColor? }`:
 - `onColor` - content rendered on the fill: only `default` required; a missing `hover` falls back to `default`, `focus` to `hover`, and `active` and `disabled` to `default`.
 - `inkColor` - optional tinted text/border for transparent or tonal fills; same fallbacks as `onColor`, and `default` falls back to the fill's `default`.
 
-Inside a color scope these tokens resolve (the un-suffixed variant is opacity-aware):
+Inside a color scope these tokens resolve, each a ready color:
 
-- `--et-theme-color-primary`, `--et-theme-color-primary-{rgb,solid,opacity}`
-- `--et-theme-color-on-primary`, `--et-theme-color-on-primary-{rgb,solid,opacity}`
-- `--et-theme-color-ink`, `--et-theme-color-ink-{rgb,solid,opacity}`
+- `--et-tone-fill`, `--et-tone-fill-{rest,hover,focus,active,disabled}`
+- `--et-tone-on-fill`, `--et-tone-on-fill-{rest,hover,focus,active,disabled}`
+- `--et-tone-text`, `--et-tone-text-{rest,hover,focus,active,disabled}`
 
 ### Color directives
 
@@ -387,25 +387,25 @@ There is no separate categorical-color system: a categorical color is a register
 <et-badge color="product-pro">Pro</et-badge>
 ```
 
-The charts read the palette for series order and take a per-series `colorToken` - see [chart series colors](/components/chart#series-colors). Inside CSS, the category's color is `--et-theme-color-primary-solid` under that scope; never repeat its hex value in a stylesheet.
+The charts read the palette for series order and take a per-series `colorToken` - see [chart series colors](/components/chart#series-colors). Inside CSS, the category's color is `--et-tone-fill` under that scope; never repeat its hex value in a stylesheet.
 
 ## Shadow and scrim colors
 
 Shadows and scrims are not part of a surface or color theme - they sit behind or over one. Three
 channel tokens set their base color, and each component keeps its own opacity on top:
 
-| Token                     | Default       | Read by                                                                                                                                                                                                                                                                |
-| ------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--et-shadow-color-rgb`   | `0 0 0`       | Every component shadow: the anchored panels (menu, select, cascader, color picker, date picker, rich-text popups) while `--et-anchored-panel-shadow` is unset, tooltip, toggletip, `elevated` card, `enclosed` table, fab, slider thumbs, notification, scheduler drag |
-| `--et-scrim-color-rgb`    | `0 0 0`       | The overlay backdrop (`/ 0.32`), the dropzone preview's info bar (`/ 0.6`)                                                                                                                                                                                             |
-| `--et-on-scrim-color-rgb` | `255 255 255` | Text on a scrim - the dropzone preview's file name and size                                                                                                                                                                                                            |
+| Token                 | Default            | Read by                                                                                                                                                                                                                                                                |
+| --------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-shadow-color`   | `rgb(0 0 0)`       | Every component shadow: the anchored panels (menu, select, cascader, color picker, date picker, rich-text popups) while `--et-anchored-panel-shadow` is unset, tooltip, toggletip, `elevated` card, `enclosed` table, fab, slider thumbs, notification, scheduler drag |
+| `--et-scrim-color`    | `rgb(0 0 0)`       | The overlay backdrop (`/ 0.32`), the dropzone preview's info bar (`/ 0.6`)                                                                                                                                                                                             |
+| `--et-on-scrim-color` | `rgb(255 255 255)` | Text on a scrim - the dropzone preview's file name and size                                                                                                                                                                                                            |
 
-They are raw `R G B` channels, like the `-rgb` surface tokens, so an alpha can be applied to them.
+They are ready colors, like the surface tokens, so an alpha can be applied with `color-mix()`.
 Neither is generated with the themes; set them on `:root` or on any scope:
 
 ```css
 :root {
-  --et-shadow-color-rgb: 15 23 42;
+  --et-shadow-color: rgb(15 23 42);
 }
 ```
 
@@ -518,6 +518,6 @@ The theme data carries over: a legacy `ColorTheme` (RGB triplets, `isDefault`) i
 
 3. **Surface themes.** A legacy app has none, and every component reads its backgrounds, text and borders from one. Start with one `light` surface (`isDefault: true`, elevation 0) built from the app's existing page background, text, muted text and border colors, plus a `light-elevated` one for cards and overlays. Add `dark` surfaces only if the app has a dark mode. Generate them with `tailwind-4-surface-theme` and register them with `provideSurfaceThemesWithTailwind4()` - see [Surface themes](#surface-themes).
 
-4. **The app's own CSS.** `--et-color-primary`, `--et-color-on-primary`, `--et-color-primary-ink` (with `--runtimePrefix=et`, as above) and their `-hover`/`-focus`/`-active`/`-disabled` states (also for `secondary` and `tertiary`) are still emitted on every `.et-color--<name>` scope, as `"R G B"` channels, so `rgb(var(--et-color-primary))` keeps working. The `--et-color-alt-*` variables of the alternate theme are not emitted: put the region in its own `etProvideColor` scope and read `--et-color-primary` there. `--et-theme-color-primary` is the opacity-aware form of the same color.
+4. **The app's own CSS.** The primary swatch is emitted on every `.et-color--<name>` scope as ready colors: `--et-tone-fill-rest`, `--et-tone-on-fill-rest`, `--et-tone-text-rest` and their `-hover`/`-focus`/`-active`/`-disabled` states, plus the live aliases `--et-tone-fill`, `--et-tone-on-fill` and `--et-tone-text`. Read those instead of `rgb(var(--et-color-primary))`. The `secondary` and `tertiary` swatches keep their `--et-color-*` names, and the `--et-color-alt-*` variables of the alternate theme are not emitted: put the region in its own `etProvideColor` scope and read `--et-tone-fill` there.
 
 The runtime directives (`etProvideColor`, `injectColorThemes()`) work the same under both setups. `migrate-to-v5` renames the old `theme` names to `color` but leaves `provideColorThemes` in place: that call is the step above.

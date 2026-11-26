@@ -326,7 +326,7 @@ both as one candidate and emits no CSS for the class. A class built by interpola
 `et design check` fails with `DENIED-CLASS` when a part outside `foundations/`, a TS file below its
 folder, or a `shared/` file it imports uses a class or a `var(--name)` reference that a pattern in the
 product's `deniedClasses` matches. Each entry holds a regular expression and the fix the line prints:
-`"deniedClasses": [{ "pattern": "^bg-surface-raised$", "fix": "use bg-et-surface-bg in a data-et-surface scope" }]`.
+`"deniedClasses": [{ "pattern": "^bg-surface-raised$", "fix": "use bg-et-surface-background in a data-et-surface scope" }]`.
 The rule tests a class without its variants, its `!` and its opacity, so `hover:bg-surface-raised/50`
 counts as `bg-surface-raised`. It fails with `DENIED-STYLESHEET` when the product's own stylesheets,
 outside `foundations/`, define what would expose a denied name: a custom property, a `--color-*` theme

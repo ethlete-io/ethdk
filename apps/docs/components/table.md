@@ -165,11 +165,11 @@ card.
 
 Three custom properties tune it:
 
-| Property                      | Default                     | Sets                                                           |
-| ----------------------------- | --------------------------- | -------------------------------------------------------------- |
-| `--et-table-row-gap`          | `8px`                       | The space between two cards.                                   |
-| `--et-table-row-radius`       | `10px`                      | The card's corner radius.                                      |
-| `--et-table-row-border-color` | `--et-surface-border-solid` | The card's 1px ring, and the corner it holds at a pinned edge. |
+| Property                      | Default               | Sets                                                           |
+| ----------------------------- | --------------------- | -------------------------------------------------------------- |
+| `--et-table-row-gap`          | `8px`                 | The space between two cards.                                   |
+| `--et-table-row-radius`       | `10px`                | The card's corner radius.                                      |
+| `--et-table-row-border-color` | `--et-surface-border` | The card's 1px ring, and the corner it holds at a pinned edge. |
 
 Set `--et-table-row-border-color: transparent` for cards that read by their surface alone, which is
 what a design whose other cards carry no border wants. The rounded corner survives it: the corner
@@ -1247,7 +1247,7 @@ the same reason; the two are never drawn together, since two marks on one bounda
 as a smear. Size the gradient with `--et-table-scroll-fade-size` (`28px`) and recolour it
 with `--et-table-scroll-fade-color`; the shadow takes `--et-table-pin-shadow-color`, which is
 the same mark the sticky header and the footer bar cast. By default all three mix the surface's
-own `--et-surface-interaction-solid`, so they darken a light table and lighten a dark one.
+own `--et-surface-interaction`, so they darken a light table and lighten a dark one.
 
 On `cards` the mark stays beside a pinned cell and never reaches the gaps above and below it,
 so the cards keep their ends.
@@ -2259,9 +2259,9 @@ so a linked row reads as one link, in one tab stop, and the grid roles stay as t
 ## Theming
 
 Colors come from the [surface theming](/core/theming) tokens of the nearest
-surface scope - header/body text from `--et-surface-color-*-solid`, separators
-from `--et-surface-border-solid`, and the row hover tint from
-`--et-surface-interaction-solid`. Cell padding is tunable via the
+surface scope - header/body text from `--et-surface-text*`, separators
+from `--et-surface-border`, and the row hover tint from
+`--et-surface-interaction`. Cell padding is tunable via the
 `--et-table-cell-padding-block` (`10px`) / `--et-table-cell-padding-inline`
 (`12px`) custom properties, a disabled column's header label dims by
 `--et-table-opacity-disabled` (`0.4`), and the utility columns via `--et-table-expander-width`
@@ -2280,27 +2280,27 @@ own band is too close to the surface under it to read as a header: `cards` on a 
 page, for one, where the band and the page are the same near-black.
 
 `--et-table-header-border-color` colours the 1px rule under the header row, and under the group
-header tier when there is one. It defaults to `--et-surface-border-solid` (`transparent` in `bare`)
+header tier when there is one. It defaults to `--et-surface-border` (`transparent` in `bare`)
 and wins over every appearance, so `--et-table-header-border-color: transparent` drops the rule from
 `cards` or any other appearance.
 
 These knobs cover what apps restyle most:
 
-| Property                           | Default                          | Sets                                                                                                                  |
-| ---------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `--et-table-header-color`          | `--et-surface-color-muted-solid` | The header labels' ink.                                                                                               |
-| `--et-table-header-border-color`   | `--et-surface-border-solid`      | The rule under the header row and the group header tier. `transparent` drops it.                                      |
-| `--et-table-header-font-size`      | inherited                        | The header labels' font size.                                                                                         |
-| `--et-table-header-font-weight`    | `600`                            | The header labels' weight.                                                                                            |
-| `--et-table-header-line-height`    | inherited                        | The header labels' line height.                                                                                       |
-| `--et-table-header-letter-spacing` | inherited                        | The header labels' letter spacing.                                                                                    |
-| `--et-table-header-text-transform` | inherited                        | The header labels' text transform, e.g. `uppercase`.                                                                  |
-| `--et-table-header-row-min-height` | `auto`                           | A height floor for the header row's cells.                                                                            |
-| `--et-table-row-background`        | the row's surface                | The paint of a card row, and of a pinned cell. Set it on a row (or a class) to colour that row alone.                 |
-| `--et-table-row-hover-background`  | the hover tint                   | The paint of a hovered row's cells, and of its pinned cells. Wins over the table-level default when set on a row.     |
-| `--et-table-row-hover-radius`      | the row's corner                 | The outer corners of a hovered row's paint.                                                                           |
-| `--et-table-row-min-block-size`    | `auto`                           | A height floor for every body row, skeleton placeholder rows included. Taller content still grows the row.            |
-| `--et-table-row-selected-tint`     | `--et-theme-color-primary-solid` | The accent a selected row mixes in: 32% / 12% at rest, 38% / 18% hovered, and 44% / 26% held in light / dark schemes. |
+| Property                           | Default                   | Sets                                                                                                                  |
+| ---------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--et-table-header-color`          | `--et-surface-text-muted` | The header labels' ink.                                                                                               |
+| `--et-table-header-border-color`   | `--et-surface-border`     | The rule under the header row and the group header tier. `transparent` drops it.                                      |
+| `--et-table-header-font-size`      | inherited                 | The header labels' font size.                                                                                         |
+| `--et-table-header-font-weight`    | `600`                     | The header labels' weight.                                                                                            |
+| `--et-table-header-line-height`    | inherited                 | The header labels' line height.                                                                                       |
+| `--et-table-header-letter-spacing` | inherited                 | The header labels' letter spacing.                                                                                    |
+| `--et-table-header-text-transform` | inherited                 | The header labels' text transform, e.g. `uppercase`.                                                                  |
+| `--et-table-header-row-min-height` | `auto`                    | A height floor for the header row's cells.                                                                            |
+| `--et-table-row-background`        | the row's surface         | The paint of a card row, and of a pinned cell. Set it on a row (or a class) to colour that row alone.                 |
+| `--et-table-row-hover-background`  | the hover tint            | The paint of a hovered row's cells, and of its pinned cells. Wins over the table-level default when set on a row.     |
+| `--et-table-row-hover-radius`      | the row's corner          | The outer corners of a hovered row's paint.                                                                           |
+| `--et-table-row-min-block-size`    | `auto`                    | A height floor for every body row, skeleton placeholder rows included. Taller content still grows the row.            |
+| `--et-table-row-selected-tint`     | `--et-tone-fill`          | The accent a selected row mixes in: 32% / 12% at rest, 38% / 18% hovered, and 44% / 26% held in light / dark schemes. |
 
 The header's filter and column-menu triggers are `xs` icon buttons with a 24px floor, so an
 app that scales its own `xs` below the [WCAG 2.2 target size

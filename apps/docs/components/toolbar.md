@@ -72,4 +72,4 @@ In a horizontal toolbar the left/right keys follow the writing direction, so the
 
 Public design tokens: `--et-toolbar-gap` (default `4px`), `--et-toolbar-padding` (default `4px`), `--et-toolbar-border-radius` (default `8px`), `--et-toolbar-background` (default `transparent`).
 
-The toolbar paints no chrome of its own, because what it needs depends on where it sits - a bar inside a card wants none, one floating over content wants a surface and a border. Set `--et-toolbar-background` from a surface token (`var(--et-surface-background-solid)`) rather than a literal color, and add the border yourself; see [theming](/core/theming).
+The toolbar paints no chrome of its own, because what it needs depends on where it sits - a bar inside a card wants none, one floating over content wants a surface and a border. Set `--et-toolbar-background` from a surface token (`var(--et-surface-background)`) rather than a literal color, and add the border yourself; see [theming](/core/theming).

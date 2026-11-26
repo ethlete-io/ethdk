@@ -199,7 +199,7 @@ For a borderless panel set `--et-banner-border-width: 0` on it.
 
 There is no global "error color" variable in this system - error is a _theme_. `type="error"` makes the banner
 resolve the error theme of its surface via `injectSemanticColorTheme('error')` and provide it as a color scope, which is what
-`color` overrides. Inside that scope `--et-theme-color-primary-*` **is** the error color, so the panel's tint,
+`color` overrides. Inside that scope `--et-tone-*` **is** the error color, so the panel's tint,
 border and icon all follow whatever the app registered, and the retry button inherits it without being told.
 
 Text colors come from the surface tokens, so the panel reads correctly on any elevation.

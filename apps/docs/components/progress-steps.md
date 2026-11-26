@@ -259,9 +259,9 @@ A filled marker with a dot for the current step:
 
 ```css
 et-progress-steps {
-  --et-progress-step-current-marker-background: var(--et-theme-color-primary-solid);
+  --et-progress-step-current-marker-background: var(--et-tone-fill);
   --et-progress-step-current-dot-size: 8px;
-  --et-progress-step-current-dot-color: var(--et-theme-color-on-primary-solid);
+  --et-progress-step-current-dot-color: var(--et-tone-on-fill);
   --et-progress-step-current-marker-content: '';
 }
 ```
@@ -273,12 +273,12 @@ The `[etProgressStepMarker]` directive replaces the marker content entirely, so 
 `.et-progress-step[data-state='upcoming']`, to colour only some rings.
 
 `current`/`complete` markers and the connector after a resolved step read
-from the ambient [color theme](/core/theming) (`--et-theme-color-primary-solid` /
-`--et-theme-color-on-primary-solid`) - scope one with `[etProvideColor]` the same way any other
+from the ambient [color theme](/core/theming) (`--et-tone-fill` /
+`--et-tone-on-fill`) - scope one with `[etProvideColor]` the same way any other
 component in this library picks up an accent. `upcoming` markers and the base connector use the
 neutral surface border/text tokens instead, so an unthemed step never reads as colored.
 
 The three outcome states provide their own color scope on the step, so those same tokens resolve to
 the semantic theme rather than the ambient one - there is no separate set of error/warning/success
-variables to override. Their labels use `--et-theme-color-ink-solid`, the tint meant for text rather
+variables to override. Their labels use `--et-tone-text`, the tint meant for text rather
 than for a fill.

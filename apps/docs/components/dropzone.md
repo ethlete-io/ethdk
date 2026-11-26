@@ -402,7 +402,7 @@ handle.execute();
 
 ## Theming
 
-Colors come from the app-registered [surface and color theme systems](/components/forms#theming) - the drag-over highlight and error states use the active color theme (`--et-theme-color-primary-*`; the error state is scoped to the app's `type: 'error'` theme automatically). Public tokens:
+Colors come from the app-registered [surface and color theme systems](/components/forms#theming) - the drag-over highlight and error states use the active color theme (`--et-tone-*`; the error state is scoped to the app's `type: 'error'` theme automatically). Public tokens:
 
 | Token                               | Default | Purpose                               |
 | ----------------------------------- | ------- | ------------------------------------- |

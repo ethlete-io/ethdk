@@ -893,9 +893,9 @@ the [calendar](/components/calendar#theming) and the
 [time picker](/components/time-picker#theming) - see those guides for their
 tokens. All colors resolve through the app-registered
 [surface/color theme systems](/core/theming): the range shell, the picker panel and the
-time-zone reading read `--et-surface-background-solid`, `--et-surface-border-solid`,
-`--et-surface-color-solid`, `--et-surface-color-muted-solid`,
-`--et-surface-interaction-disabled-solid` and `--et-theme-color-primary-solid`. The other
+time-zone reading read `--et-surface-background`, `--et-surface-border`,
+`--et-surface-text`, `--et-surface-text-muted`,
+`--et-surface-interaction-disabled` and `--et-tone-fill`. The other
 tokens this domain reads itself:
 
 | Token                              | Default                                                           | Purpose                                                                                                                                                                                                                                                                                                                            |

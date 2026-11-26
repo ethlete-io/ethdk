@@ -997,7 +997,7 @@ it sits on - set them to override:
 
 | Token                                   | Default                                   | Purpose                                                                 |
 | --------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------- |
-| `--et-bracket-line-color`               | `--et-surface-border-solid`               | Connector line color.                                                   |
+| `--et-bracket-line-color`               | `--et-surface-border`                     | Connector line color.                                                   |
 | `--et-bracket-swiss-group-border-color` | `var(--et-bracket-line-color)`            | Swiss group border color (per-group overrides come from `swissColors`). |
 | `--et-bracket-move-duration`            | `0.2s`                                    | How long a relayout takes - see [Narrow screens](#narrow-screens).      |
 | `--et-bracket-move-easing`              | `ease`                                    | The timing function of a relayout.                                      |
@@ -1057,7 +1057,7 @@ are naming, packaging, and how a layout is chosen:
 | Default cards | `NewBracketDefault*Component`                                                | `BracketDefault*Component`                                                                                        |
 | Data types    | `NewBracket`, `NewBracketRound`, `NewBracketMatch`, `createNewBracket`       | `Bracket`, `BracketRound`, `BracketMatch` (build a `BracketDataSource` by hand - see [Data source](#data-source)) |
 | CSS classes   | `et-new-bracket*` / `et-bracket-new*` (+ `et-legacy` marker)                 | `et-bracket*` (no `et-legacy`)                                                                                    |
-| Color tokens  | `--bracket-line-color` (default `red`), `--bracket-swiss-group-border-color` | `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` (default `--et-surface-border-solid`)         |
+| Color tokens  | `--bracket-line-color` (default `red`), `--bracket-swiss-group-border-color` | `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` (default `--et-surface-border`)               |
 | Errors        | native `Error`                                                               | `BracketRuntimeError` / `RuntimeError` (ET34xx, with a `code`)                                                    |
 | Styling       | unlayered global CSS                                                         | wrapped in `@layer components.sdk` (utilities override without `!important`)                                      |
 

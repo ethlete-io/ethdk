@@ -315,9 +315,9 @@ provideBreadcrumbLabels({ navigation: 'Brotkrumen', overflow: 'Ausgeblendete Ebe
 
 Colours come from the app-registered [surface and color themes](/core/theming): crumbs are muted, the
 current page takes the full-strength text colour, and the focus ring uses
-`--et-theme-color-primary-solid`. A trail is chrome, so the accent colour appears in nothing else - the
+`--et-tone-fill`. A trail is chrome, so the accent colour appears in nothing else - the
 overflow button stays neutral even while its popover is open, and hover states are the neutral
-`--et-surface-interaction-solid` tint. Geometry and type are tokens:
+`--et-surface-interaction` tint. Geometry and type are tokens:
 
 | Property                         | Default   | Applies to                                           |
 | -------------------------------- | --------- | ---------------------------------------------------- |
@@ -331,12 +331,12 @@ overflow button stays neutral even while its popover is open, and hover states a
 
 The colours are tokens too; unset, each falls back to the theme colour named above:
 
-| Property                           | Default                           | Applies to                 |
-| ---------------------------------- | --------------------------------- | -------------------------- |
-| `--et-breadcrumb-item-color`       | `--et-surface-color-muted-solid`  | a crumb at rest            |
-| `--et-breadcrumb-item-hover-color` | `--et-surface-color-solid`        | a linked crumb on hover    |
-| `--et-breadcrumb-current-color`    | `--et-surface-color-solid`        | the current page           |
-| `--et-breadcrumb-separator-color`  | `--et-surface-color-subtle-solid` | the chevron between crumbs |
+| Property                           | Default                    | Applies to                 |
+| ---------------------------------- | -------------------------- | -------------------------- |
+| `--et-breadcrumb-item-color`       | `--et-surface-text-muted`  | a crumb at rest            |
+| `--et-breadcrumb-item-hover-color` | `--et-surface-text`        | a linked crumb on hover    |
+| `--et-breadcrumb-current-color`    | `--et-surface-text`        | the current page           |
+| `--et-breadcrumb-separator-color`  | `--et-surface-text-subtle` | the chevron between crumbs |
 
 The overflow button renders the built-in `et-ellipsis` icon, so
 [`provideIconOverrides`](/components/icon#overriding-the-built-in-icons) can swap the glyph.

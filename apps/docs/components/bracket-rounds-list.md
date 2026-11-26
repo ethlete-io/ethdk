@@ -199,7 +199,7 @@ Three public custom properties, all lengths. All of them inherit, so setting one
 | `--et-bracket-rounds-list-match-gap`   | `8px`   | Space between matches, and header to matches. |
 
 Colors come from the ambient [surface theme](/core/theming) - the section headings use
-`--et-surface-color-muted-solid`, and everything else is the match card's own.
+`--et-surface-text-muted`, and everything else is the match card's own.
 
 ## Error codes
 

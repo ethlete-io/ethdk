@@ -2390,7 +2390,7 @@ production builds.
 ## Theming
 
 The panel styles its own chrome from the [surface & color theming](/core/theming)
-tokens (`--et-surface-*-solid`, `--et-theme-color-primary-solid`) so it adapts to
+tokens (`--et-surface-*`, `--et-tone-fill`) so it adapts to
 the host app's current surface, and falls back to a self-contained dark palette
 when no themes are registered. Override the panel's internal `--_et-qdt-*` custom
 properties on `.et-query-devtools-host` if you need to retune it. Its CSS lives in

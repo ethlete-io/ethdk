@@ -87,8 +87,8 @@ Both are read on the avatar itself, so they can reference its own color theme - 
 
 ```css
 .tonal-avatar {
-  --et-avatar-background: color-mix(in srgb, var(--et-theme-color-primary-solid) 16%, transparent);
-  --et-avatar-color: var(--et-theme-color-ink-solid);
+  --et-avatar-background: color-mix(in srgb, var(--et-tone-fill) 16%, transparent);
+  --et-avatar-color: var(--et-tone-text);
 }
 ```
 

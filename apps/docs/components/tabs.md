@@ -133,7 +133,7 @@ Both flavors, and the segmented button group's tabs variant (font weight, text t
 providers: [provideTabsConfig({ underlineWidth: 'label' })];
 ```
 
-With `[activeUnderline]="false"` on a bar, tell the active tab apart by colour, e.g. `--et-tab-active-color: var(--et-theme-color-primary-solid)` with `--et-tab-inactive-color: #fff` on the bar.
+With `[activeUnderline]="false"` on a bar, tell the active tab apart by colour, e.g. `--et-tab-active-color: var(--et-tone-fill)` with `--et-tab-inactive-color: #fff` on the bar.
 
 ## Error codes
 

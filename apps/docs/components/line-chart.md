@@ -169,17 +169,17 @@ The story `Components/Data display/Line chart/Mark activate` shows it.
 
 ## Theming
 
-Lines, areas and dots use `--et-theme-color-primary-solid` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background-solid` for a series that takes a step of the accent. The dots wear a ring in `--et-surface-background-solid`, a stacked band mixes its color with `--et-surface-background-solid`, the crosshair `--et-surface-color-subtle-solid`, the focus ring `--et-theme-color-primary-solid` over a tint of `--et-surface-interaction-solid`, the grid `--et-surface-border-solid`, and the axis and legend text `--et-surface-color-muted-solid`. Theme names are registered by the application - see [theming](/core/theming).
+Lines, areas and dots use `--et-tone-fill` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background` for a series that takes a step of the accent. The dots wear a ring in `--et-surface-background`, a stacked band mixes its color with `--et-surface-background`, the crosshair `--et-surface-text-subtle`, the focus ring `--et-tone-fill` over a tint of `--et-surface-interaction`, the grid `--et-surface-border`, and the axis and legend text `--et-surface-text-muted`. Theme names are registered by the application - see [theming](/core/theming).
 
-| Token                                  | Default | Description                                                                              |
-| -------------------------------------- | ------- | ---------------------------------------------------------------------------------------- |
-| `--et-line-chart-font-size`            | `12px`  | Size of the axis and legend labels.                                                      |
-| `--et-line-chart-axis-gap`             | `8px`   | Space between the plot and the axis labels, and under the legend.                        |
-| `--et-line-chart-line-width`           | `2px`   | Stroke width of the lines.                                                               |
-| `--et-line-chart-area-opacity`         | `0.12`  | Opacity of an area fill.                                                                 |
-| `--et-line-chart-stacked-area-mix`     | `45%`   | Share of the series color in a stacked band, mixed with `--et-surface-background-solid`. |
-| `--et-line-chart-enter-duration`       | `600ms` | Duration of the entrance reveal.                                                         |
-| `--et-line-chart-focus-ring-min-width` | `12px`  | Narrowest width of the focus ring around the focused x.                                  |
+| Token                                  | Default | Description                                                                        |
+| -------------------------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `--et-line-chart-font-size`            | `12px`  | Size of the axis and legend labels.                                                |
+| `--et-line-chart-axis-gap`             | `8px`   | Space between the plot and the axis labels, and under the legend.                  |
+| `--et-line-chart-line-width`           | `2px`   | Stroke width of the lines.                                                         |
+| `--et-line-chart-area-opacity`         | `0.12`  | Opacity of an area fill.                                                           |
+| `--et-line-chart-stacked-area-mix`     | `45%`   | Share of the series color in a stacked band, mixed with `--et-surface-background`. |
+| `--et-line-chart-enter-duration`       | `600ms` | Duration of the entrance reveal.                                                   |
+| `--et-line-chart-focus-ring-min-width` | `12px`  | Narrowest width of the focus ring around the focused x.                            |
 
 ## Error codes
 

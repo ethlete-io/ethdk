@@ -230,7 +230,7 @@ provideChartLabels({ pieTotal: 'Gesamt', sankeyLinkSeparator: 'nach', barCategor
 
 ## Theming
 
-The bars use `--et-theme-color-primary-solid` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background-solid` for a series that takes a step of the accent. The grid uses `--et-surface-border-solid`, the axis and legend text `--et-surface-color-muted-solid`. Theme names are registered by the application - see [theming](/core/theming).
+The bars use `--et-tone-fill` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background` for a series that takes a step of the accent. The grid uses `--et-surface-border`, the axis and legend text `--et-surface-text-muted`. Theme names are registered by the application - see [theming](/core/theming).
 
 | Token                           | Default | Description                                                       |
 | ------------------------------- | ------- | ----------------------------------------------------------------- |

@@ -118,7 +118,7 @@ The story `Components/Data display/Pie chart/Mark activate` shows it.
 
 ## Theming
 
-The slices use `--et-theme-color-primary-solid` from each slice's color theme, or a mix of the accent with `--et-surface-background-solid`. The legend text uses `--et-surface-color-muted-solid`, its values and the donut total `--et-surface-color-solid`, and the empty circle `--et-surface-border-solid`. Theme names are registered by the application - see [theming](/core/theming).
+The slices use `--et-tone-fill` from each slice's color theme, or a mix of the accent with `--et-surface-background`. The legend text uses `--et-surface-text-muted`, its values and the donut total `--et-surface-text`, and the empty circle `--et-surface-border`. Theme names are registered by the application - see [theming](/core/theming).
 
 | Token                           | Default | Description                                        |
 | ------------------------------- | ------- | -------------------------------------------------- |

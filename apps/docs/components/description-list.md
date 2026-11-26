@@ -63,4 +63,4 @@ Public design tokens: `--et-description-list-row-gap`, `--et-description-list-co
 
 `--et-description-list-row-gap` separates one term/detail pair from the next in both variants. In `stacked`, `--et-description-list-stacked-term-gap` (default `2px`) is the tighter gap _inside_ a pair, between a term and its own detail - that difference is what makes a stacked pair read as one unit. `--et-description-list-column-gap` and `--et-description-list-term-min-width` only apply to `inline`, which is the only variant with two columns.
 
-Text color is not configurable per instance - the term reads in the muted surface tone, the detail in the full one (`--et-surface-color-muted-solid` / `--et-surface-color-solid`), the same pairing [empty state](/components/empty-state#theming) uses for its title/description, so a term always reads as secondary to its value.
+Text color is not configurable per instance - the term reads in the muted surface tone, the detail in the full one (`--et-surface-text-muted` / `--et-surface-text`), the same pairing [empty state](/components/empty-state#theming) uses for its title/description, so a term always reads as secondary to its value.

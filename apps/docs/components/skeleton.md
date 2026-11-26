@@ -81,16 +81,16 @@ provide [`LOADER_LABELS`](/components/localization) once for the app. The cdk co
 
 ## Custom properties
 
-| Property                        | Default                                                    | Applies to                                   |
-| ------------------------------- | ---------------------------------------------------------- | -------------------------------------------- |
-| `--et-skeleton-size`            | `1em`                                                      | `circle` diameter, item height               |
-| `--et-skeleton-radius`          | `4px`                                                      | corner radius of `text` / `rect`             |
-| `--et-skeleton-gap`             | `8px`                                                      | gap between shapes and text lines            |
-| `--et-skeleton-duration`        | `1400ms`                                                   | one shimmer sweep                            |
-| `--et-skeleton-color`           | `--et-surface-interaction-solid` at 12% over `transparent` | bone fill                                    |
-| `--et-skeleton-highlight-color` | `--et-surface-interaction-solid` at 16% over `transparent` | the shimmer's highlight                      |
-| `--et-skeleton-display`         | `flex`                                                     | container `display` (not inherited) ²        |
-| `--et-skeleton-direction`       | `column`                                                   | container `flex-direction` (not inherited) ² |
+| Property                        | Default                                              | Applies to                                   |
+| ------------------------------- | ---------------------------------------------------- | -------------------------------------------- |
+| `--et-skeleton-size`            | `1em`                                                | `circle` diameter, item height               |
+| `--et-skeleton-radius`          | `4px`                                                | corner radius of `text` / `rect`             |
+| `--et-skeleton-gap`             | `8px`                                                | gap between shapes and text lines            |
+| `--et-skeleton-duration`        | `1400ms`                                             | one shimmer sweep                            |
+| `--et-skeleton-color`           | `--et-surface-interaction` at 12% over `transparent` | bone fill                                    |
+| `--et-skeleton-highlight-color` | `--et-surface-interaction` at 16% over `transparent` | the shimmer's highlight                      |
+| `--et-skeleton-display`         | `flex`                                               | container `display` (not inherited) ²        |
+| `--et-skeleton-direction`       | `column`                                             | container `flex-direction` (not inherited) ² |
 
 ² Set these on the `et-skeleton` itself: they do not inherit, so a nested skeleton keeps its own
 flex column.

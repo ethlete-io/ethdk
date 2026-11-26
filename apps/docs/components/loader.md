@@ -31,7 +31,7 @@ import { BrandLoaderComponent, LOADER_IMPORTS } from '@ethlete/components';
 | `color`       | `null`  | A color theme name or `ColorTheme`; unset keeps the inherited `currentColor` |
 
 `color` opens a color scope on the loader itself and paints the strokes with that scope's
-`--et-theme-color-ink-solid`. It only does so when you set it: an unset spinner keeps inheriting
+`--et-tone-text`. It only does so when you set it: an unset spinner keeps inheriting
 `currentColor` from its context even when it sits inside a color scope, so a spinner in a themed
 button or a tinted text block still matches the text next to it. Set `--et-spinner-color` directly
 when the color isn't a registered theme. The progress bar's `color` works the same way and paints

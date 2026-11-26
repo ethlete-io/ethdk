@@ -256,7 +256,7 @@ The coarse grids work the same way: `calendar.monthCells()` and `calendar.yearCe
 
 ## Theming
 
-Selection and range-band colors come from the nearest [color theme](/core/theming) (`--et-theme-color-primary-solid`, `--et-theme-color-on-primary`, ink for the today ring); chrome uses surface tokens. Public design token:
+Selection and range-band colors come from the nearest [color theme](/core/theming) (`--et-tone-fill`, `--et-tone-on-fill`, ink for the today ring); chrome uses surface tokens. Public design token:
 
 | Token                            | Default | Purpose                         |
 | -------------------------------- | ------- | ------------------------------- |

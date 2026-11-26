@@ -429,8 +429,8 @@ The field chrome handles error display and aria wiring uniformly:
   faded one) and label, a checkbox's box, a dropzone's border and a switch's
   track switch to that theme and keep their rest, hover and focus states, so
   each state stays visible while the field shows an error. On hover, the borders, box and track
-  use the theme's hover tone (`--et-color-primary-hover`) in light and its
-  active ink tone (`--et-color-primary-ink-active`) in dark, a step stronger
+  use the theme's hover tone (`--et-tone-fill-hover`) in light and its
+  active ink tone (`--et-tone-text-active`) in dark, a step stronger
   than the rest tone on either surface.
 - Only a message that appears after the field first lays out animates in. A
   hint, warning or error that is there from the first render - also in a field

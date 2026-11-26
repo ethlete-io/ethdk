@@ -334,15 +334,15 @@ The header, body, and footer must have an `etOverlayMain` ancestor - either an `
 
 Spacing is tokenized, so an overlay can retune it per instance via `panelClass` without restyling the pieces:
 
-| Token                                     | Default                                          | Applies to                                                                |
-| ----------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
-| `--et-overlay-padding-inline`             | `16px`                                           | Inline padding of header, body and footer                                 |
-| `--et-overlay-padding-block`              | `16px`                                           | Block padding at the pane's outer edges (header start, footer end)        |
-| `--et-overlay-header-padding-block-end`   | `16px`                                           | Gap between the header and the body                                       |
-| `--et-overlay-body-padding-block`         | `0`                                              | Block padding inside the scrolling body                                   |
-| `--et-overlay-footer-padding-block-start` | `16px`                                           | Gap between the body and the footer                                       |
-| `--et-overlay-body-min-block-size`        | `100px`                                          | Floor for the body's row before the pane starts scrolling                 |
-| `--et-overlay-body-divider-color`         | `--et-surface-border-solid` (fallback `#565656`) | The body's edge dividers (`dividers`) and the sidebar's inline-end border |
+| Token                                     | Default                                    | Applies to                                                                |
+| ----------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------- |
+| `--et-overlay-padding-inline`             | `16px`                                     | Inline padding of header, body and footer                                 |
+| `--et-overlay-padding-block`              | `16px`                                     | Block padding at the pane's outer edges (header start, footer end)        |
+| `--et-overlay-header-padding-block-end`   | `16px`                                     | Gap between the header and the body                                       |
+| `--et-overlay-body-padding-block`         | `0`                                        | Block padding inside the scrolling body                                   |
+| `--et-overlay-footer-padding-block-start` | `16px`                                     | Gap between the body and the footer                                       |
+| `--et-overlay-body-min-block-size`        | `100px`                                    | Floor for the body's row before the pane starts scrolling                 |
+| `--et-overlay-body-divider-color`         | `--et-surface-border` (fallback `#565656`) | The body's edge dividers (`dividers`) and the sidebar's inline-end border |
 
 `--et-overlay-body-padding-block` is applied to the body's inner wrapper rather than to the scroll container itself, so its end value is part of the scrollable area: content scrolled to the bottom stops that far short of the edge instead of ending flush against the divider, which would clip the last child's border and focus ring.
 
@@ -350,8 +350,8 @@ Spacing is tokenized, so an overlay can retune it per instance via `panelClass` 
 
 The boxed overlay kinds - `dialog`, `anchoredDialog`, the four sheets and the full-screen dialog - paint a default surface on the pane itself, so plain content (header/body/footer) needs no styling of its own. The colors come from the [surface theme](/core/theming) at the pane's elevation:
 
-- **Background & text** from `--et-surface-background-solid` / `--et-surface-color-solid`.
-- **Border** (`0.1rem` of `--et-surface-border-solid`) - all around for dialogs; on a bottom/top sheet every edge but the docked one; on a side sheet only the exposed inner edge (its block edges sit flush against the viewport).
+- **Background & text** from `--et-surface-background` / `--et-surface-text`.
+- **Border** (`0.1rem` of `--et-surface-border`) - all around for dialogs; on a bottom/top sheet every edge but the docked one; on a side sheet only the exposed inner edge (its block edges sit flush against the viewport).
 - **Radius** on the exposed corners - `1.6rem` for dialogs and sheets, `1.2rem` for the anchored dialog. The full-screen dialog stays square (its radius is animated from the origin).
 
 Content inherits the radius through the pane, and the anchored-dialog arrow reads the pane's real background and border so it matches. Anchored/centered panes (menu, tooltip, select, date-picker, …) are deliberately excluded - they paint their own surface, so their pane has no background and the content must supply one.
@@ -362,18 +362,18 @@ Override per instance via `panelClass` and the pane tokens. `--et-overlay-radius
 
 | Token                               | Default                             |
 | ----------------------------------- | ----------------------------------- |
-| `--et-overlay-surface-background`   | `--et-surface-background-solid`     |
-| `--et-overlay-surface-color`        | `--et-surface-color-solid`          |
-| `--et-overlay-surface-border-color` | `--et-surface-border-solid`         |
+| `--et-overlay-surface-background`   | `--et-surface-background`           |
+| `--et-overlay-surface-color`        | `--et-surface-text`                 |
+| `--et-overlay-surface-border-color` | `--et-surface-border`               |
 | `--et-overlay-surface-border-width` | `0.1rem`                            |
 | `--et-overlay-radius`               | `1.6rem` (`1.2rem` anchored dialog) |
 
 The backdrop behind a modal overlay dims independently of the pane's own surface:
 
-| Token                          | Default                                                                                             | Styles                                               |
-| ------------------------------ | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `--et-overlay-backdrop-color`  | `rgb(var(--et-scrim-color-rgb) / 0.32)`, which is `rgb(0 0 0 / 0.32)` unless the scrim color is set | The backdrop's background (it fades in over `200ms`) |
-| `--et-overlay-backdrop-filter` | `none`                                                                                              | The backdrop's `backdrop-filter`, e.g. `blur(5px)`   |
+| Token                          | Default                                                                                                                  | Styles                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| `--et-overlay-backdrop-color`  | `color-mix(in srgb, var(--et-scrim-color) 32%, transparent)`, which is `rgb(0 0 0 / 0.32)` unless the scrim color is set | The backdrop's background (it fades in over `200ms`) |
+| `--et-overlay-backdrop-filter` | `none`                                                                                                                   | The backdrop's `backdrop-filter`, e.g. `blur(5px)`   |
 
 Both tokens are read from the backdrop element, so a value on `:root` or any ancestor of the overlay container reaches it.
 To change only the color and keep the opacity, set the [scrim color](/core/theming#shadow-and-scrim-colors) instead.

@@ -37,4 +37,4 @@ Set the public tokens on the element that carries the ring:
 
 The tokens do not inherit: a token set on a container leaves the rings of the controls inside it alone.
 
-By default the color follows the active [color theme](/core/theming): `--et-theme-color-ink-solid` in the light scheme and `--et-theme-color-primary-solid` in the dark scheme, both through `light-dark()`, so themed areas get matching rings automatically. Ink is the theme's text-safe tone, so the ring keeps its contrast on a light surface where a bright primary would not.
+By default the color follows the active [color theme](/core/theming): `--et-tone-text` in the light scheme and `--et-tone-fill` in the dark scheme, both through `light-dark()`, so themed areas get matching rings automatically. Ink is the theme's text-safe tone, so the ring keeps its contrast on a light surface where a bright primary would not.

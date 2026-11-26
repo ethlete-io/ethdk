@@ -65,7 +65,7 @@ For an uppercase, spaced label set `--et-stat-tile-label-text-transform: upperca
 
 ## Delta colour
 
-The delta's direction comes from its sign: up, down, or unchanged at zero. `goodDirection` says which of those is good. A good delta resolves the `success` theme of the tile's surface, a bad one the `error` theme (`injectSemanticColorTheme()`: the theme the surface names, else the one your app registered with that `type`), and the text and arrow use that scope's `--et-theme-color-ink-solid`. An unchanged delta, or any delta with `goodDirection` set to `null`, stays in the muted text colour - use `null` for a metric that has no better direction, like page views.
+The delta's direction comes from its sign: up, down, or unchanged at zero. `goodDirection` says which of those is good. A good delta resolves the `success` theme of the tile's surface, a bad one the `error` theme (`injectSemanticColorTheme()`: the theme the surface names, else the one your app registered with that `type`), and the text and arrow use that scope's `--et-tone-text`. An unchanged delta, or any delta with `goodDirection` set to `null`, stays in the muted text colour - use `null` for a metric that has no better direction, like page views.
 
 A theme is looked up only when a delta needs it, so an app that never shows a coloured delta registers neither. If the app registers no theme of the needed type, the delta keeps the inherited theme and logs a warning once in dev mode. The colour only reinforces the direction: the arrow's shape and the sign carry it as well.
 
@@ -77,7 +77,7 @@ A theme is looked up only when a delta needs it, so an app that never shows a co
 
 ## Sparkline
 
-`et-stat-tile-sparkline` draws `values` (oldest first, `null` for a gap) as a line in the subtle text colour, scaled to its own minimum and maximum, and marks the last value with a dot in the accent colour (`--et-theme-color-primary-solid`). It has no axes, labels or tooltip; when the reader needs those, project a [line chart](/components/line-chart) instead - the tile renders any projected content in the same slot.
+`et-stat-tile-sparkline` draws `values` (oldest first, `null` for a gap) as a line in the subtle text colour, scaled to its own minimum and maximum, and marks the last value with a dot in the accent colour (`--et-tone-fill`). It has no axes, labels or tooltip; when the reader needs those, project a [line chart](/components/line-chart) instead - the tile renders any projected content in the same slot.
 
 ## Options
 
@@ -115,4 +115,4 @@ The success and error themes your app registers decide the delta's text contrast
 
 Public design tokens on `et-stat-tile`: `--et-stat-tile-gap`, `--et-stat-tile-label-font-size`, `--et-stat-tile-label-text-transform`, `--et-stat-tile-label-letter-spacing` (the transform is unset and falls back to `none`; the spacing defaults to `0`), `--et-stat-tile-value-font-size`, `--et-stat-tile-value-font-weight`, `--et-stat-tile-footer-font-size`, `--et-stat-tile-sparkline-gap`. On `et-stat-tile-sparkline`: `--et-stat-tile-sparkline-height`, `--et-stat-tile-sparkline-line-width`, `--et-stat-tile-sparkline-current-size`.
 
-Text colours come from the surface tokens (`--et-surface-color-solid` for the value, `--et-surface-color-muted-solid` for the label, unit and caption), so a tile reads correctly on every surface it sits on. The delta and the sparkline's last point come from the colour theme in scope - see [theming](/core/theming).
+Text colours come from the surface tokens (`--et-surface-text` for the value, `--et-surface-text-muted` for the label, unit and caption), so a tile reads correctly on every surface it sits on. The delta and the sparkline's last point come from the colour theme in scope - see [theming](/core/theming).

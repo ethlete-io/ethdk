@@ -64,7 +64,7 @@ applyFaviconOverlay(computed(() => (this.saving() ? { kind: 'progress', value: t
 | `'dot'`      | `color?`                                 | Badge punched into the bottom-right corner.                       |
 | `'progress'` | `value` (0–100), `color?`, `trackColor?` | Ring around the icon. Wins over a `dot` when both are registered. |
 
-`color` defaults to `--et-theme-color-primary-solid`, read off the root element at draw time, so the overlay follows the app's [color theme](/core/theming).
+`color` defaults to `--et-tone-fill`, read off the root element at draw time, so the overlay follows the app's [color theme](/core/theming).
 
 This is the only real answer to "show progress on the tab": no browser exposes taskbar or tab progress. Notes:
 
