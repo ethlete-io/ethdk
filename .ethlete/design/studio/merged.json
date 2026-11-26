@@ -30,14 +30,14 @@
     "at": "2026-11-18T06:23:52.170Z"
   },
   "components/comment-pin": {
-    "hash": "1a98f26d98f7bbe5",
+    "hash": "e95adc8b66134bef",
     "variant": "a",
     "decidedBy": "plan: finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md",
     "at": "2026-11-12T00:13:38.669Z",
     "note": "merged without a pick: allowed by finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md - merged: 911: sample author human, initials H; only author text and initials change"
   },
   "components/comment-row": {
-    "hash": "3ee523dc46c33918",
+    "hash": "9162ba9f0706bd0c",
     "variant": "a",
     "decidedBy": "plan: finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md",
     "at": "2026-11-12T00:13:38.669Z",
@@ -69,7 +69,7 @@
     "at": "2026-11-24T02:34:27.155Z"
   },
   "components/title-search": {
-    "hash": "a5353d773f54d8a1",
+    "hash": "bd15f903b75f6799",
     "variant": "a",
     "decidedBy": "user",
     "at": "2026-11-21T02:21:10.888Z"
@@ -106,7 +106,7 @@
     "at": "2026-11-25T14:45:22.636Z"
   },
   "elements/shell-main": {
-    "hash": "e819f34d77ea3e58",
+    "hash": "8881189d79de4b30",
     "variant": "new",
     "decidedBy": "plan: ADR 0305",
     "at": "2026-11-20T16:01:35.799Z",
