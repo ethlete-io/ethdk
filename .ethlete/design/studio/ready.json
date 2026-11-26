@@ -434,18 +434,18 @@
     "pid": 3325560
   },
   "components/comment-target": {
-    "hash": "4d209cda9a09f8f1",
+    "hash": "6e53ae1f1636b37c",
     "files": {
-      ".ethlete/design/studio/components/comment-target/comment-target.ts": "522835896447fe12",
+      ".ethlete/design/studio/components/comment-target/comment-target.ts": "efb72df0625abba5",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "app": "5c19877d30eb77dc",
+    "app": "fd44f74385f8aabf",
     "actions": ["emit:comment"],
     "builder": "designer",
-    "at": "2026-11-20T20:04:04.979Z",
+    "at": "2026-11-26T02:25:08.705Z",
     "by": "claude-opus-5-5",
     "cmd": "ready",
-    "pid": 2123565
+    "pid": 3799276
   },
   "components/disclosure": {
     "actions": ["emit:openChange", "open", "rest"],
