@@ -496,6 +496,67 @@ class SharedDescriptionTestHost {
   showSecond = signal(true);
 }
 
+@Component({
+  template: `<button
+    [attr.aria-expanded]="expanded()"
+    (click)="expanded.set(!expanded())"
+    etTooltip="Tooltip body"
+    type="button"
+  >
+    Trigger
+  </button>`,
+  imports: [TooltipDirective],
+})
+class ExpandableTriggerTestHost {
+  expanded = signal(false);
+}
+
+describe('TooltipDirective on a trigger that opens a popup', () => {
+  // Human decision Q5, 26.11.: a click hides the tooltip and it stays hidden while the trigger is aria-expanded.
+  it('hides on click, stays hidden while expanded and shows on hover again once collapsed', async () => {
+    TestBed.configureTestingModule({ imports: [ExpandableTriggerTestHost] });
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: 'button', rect: { x: 300, y: 200, width: 80, height: 30 } },
+    ]);
+    const fixture = TestBed.createComponent(ExpandableTriggerTestHost);
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    const directive = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+    setInputSignal(directive.showDelay, 0);
+    fixture.detectChanges();
+    const driver = createOverlayDriver();
+
+    directive.show();
+    await driver.settle();
+    expect(directive.overlayRef()).not.toBeNull();
+
+    button.click();
+    fixture.detectChanges();
+    await driver.settle();
+    expect(fixture.componentInstance.expanded()).toBe(true);
+    expect(directive.overlayRef()).toBeNull();
+
+    pointerEnter(button);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await driver.settle();
+    expect(directive.overlayRef()).toBeNull();
+
+    button.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.expanded()).toBe(false);
+
+    button.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+    pointerEnter(button);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await driver.settle();
+    expect(directive.overlayRef()).not.toBeNull();
+
+    directive.hide();
+    driver.closeAll();
+  });
+});
+
 describe('TooltipDirective description container', () => {
   let fixture: ComponentFixture<SharedDescriptionTestHost>;
 

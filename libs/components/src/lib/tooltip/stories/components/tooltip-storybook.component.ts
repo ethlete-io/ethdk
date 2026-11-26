@@ -1,4 +1,4 @@
-import { Component, TemplateRef, ViewEncapsulation, input, viewChild } from '@angular/core';
+import { Component, TemplateRef, ViewEncapsulation, input, signal, viewChild } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { TOOLTIP_IMPORTS } from '../../tooltip.imports';
 
@@ -25,6 +25,19 @@ import { TOOLTIP_IMPORTS } from '../../tooltip.imports';
           variant="tonal"
         >
           Template tooltip
+        </button>
+
+        <button
+          [etTooltip]="tooltipText()"
+          [placement]="placement()"
+          [attr.aria-expanded]="expanded()"
+          (click)="expanded.set(!expanded())"
+          class="expanded-trigger"
+          et-button
+          size="sm"
+          variant="outline"
+        >
+          Expandable trigger
         </button>
 
         <button
@@ -64,4 +77,5 @@ export class TooltipStorybookComponent {
   );
 
   protected templateTooltip = viewChild.required<TemplateRef<unknown>>('tooltipTemplateRef');
+  protected expanded = signal(false);
 }

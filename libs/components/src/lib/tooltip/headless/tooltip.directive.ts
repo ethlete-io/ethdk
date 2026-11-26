@@ -142,6 +142,7 @@ export class TooltipDirective {
     this.setupHoverBehavior();
     this.setupLongPressBehavior();
     this.setupFocusBehavior();
+    this.setupClickBehavior();
 
     effect(() => {
       if (!this.isBrowser) return;
@@ -197,7 +198,7 @@ export class TooltipDirective {
       return;
     }
 
-    if (this.overlayRef()) {
+    if (this.overlayRef() || this.isHostExpanded()) {
       return;
     }
 
@@ -306,6 +307,19 @@ export class TooltipDirective {
             this.hide();
           }
         }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private isHostExpanded() {
+    return this.elementRef.nativeElement.getAttribute('aria-expanded') === 'true';
+  }
+
+  private setupClickBehavior() {
+    fromEvent(this.elementRef.nativeElement, 'click')
+      .pipe(
+        tap(() => this.hide()),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
