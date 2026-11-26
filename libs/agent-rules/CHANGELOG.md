@@ -1,5 +1,11 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.48
+
+### Patch Changes
+
+- `agent-sessions restart` writes a `typed /clear, resume typed` line to `restart.log` when a plain restart succeeds.
+
 ## 0.1.0-next.47
 
 ### Minor Changes
