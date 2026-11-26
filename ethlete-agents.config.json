@@ -46,5 +46,5 @@
     "reportCommand": "node dist/libs/agent-rules/src/index.js report"
   },
   "report": { "planFiles": ["plans/QUEUE.md"] },
-  "mods": ["codex-runs", "e2e-progress", "status-line"]
+  "mods": ["codex-runs", "e2e-progress", "status-line", "usage-line"]
 }

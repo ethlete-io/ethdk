@@ -1,0 +1,5 @@
+{
+  "name": "usage-line",
+  "version": "0.1.0-next.49",
+  "description": "Status line entry with the 5 hour and weekly usage and the time the 5 hour window resets"
+}

@@ -16,6 +16,11 @@
       "name": "status-line",
       "source": "./plugins/status-line",
       "description": "Always-visible band with the running task, its duration, the open queue, open questions and a CI blocked mark"
+    },
+    {
+      "name": "usage-line",
+      "source": "./plugins/usage-line",
+      "description": "Status line entry with the 5 hour and weekly usage and the time the 5 hour window resets"
     }
   ]
 }

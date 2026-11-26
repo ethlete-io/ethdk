@@ -411,6 +411,8 @@ package ships (`yarn agents:sync` writes the marketplace and `enabledPlugins` in
   count from the `### Warteschlange` list of the `report.planFiles` markdown files, `❓N` from the
   `-` lines of `<git common dir>/ethlete/open-questions.md`, and `⛔ CI rot` when the latest `gh run`
   of the branch failed (checked every 2 minutes). A field whose source is missing is left out.
+- **`usage-line`** - a status line entry in every session: `5h 36% bis 01:40 · Woche 42%`. The reset time is left
+  out when the window reports none.
 
 ## Progress report
 
