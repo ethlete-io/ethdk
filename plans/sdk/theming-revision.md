@@ -256,6 +256,42 @@ Messzahlen (vorher → Ziel; „vorher“ am 26.11. gezählt ✔, Ziel ist Vorga
 | Doku `apps/docs/core/theming.md`               | 507 Zeilen, 14 Abschnitte                                                    | Modell auf einer Seite, Rest Referenz |
 | fifagg-Bildvergleich                           | –                                                                            | Differenz null außer B-65             |
 
+### 3.1 Namenstabelle (Vertrag für fifagg und fut, Stand 26.11.)
+
+Die Quelle ist `libs/core/generators/migrate-theme-token-names/token-names.ts`; der Generator
+`@ethlete/core:migrate-theme-token-names` liest nur diese Tabelle. `<z>` ist `hover`, `focus`, `active` oder `disabled`.
+
+| Alt                                                                                 | Neu                                                                    | Art alt → neu       |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------- |
+| `--et-surface-background`, `-rgb`, `-solid`                                         | `--et-surface-background`                                              | Tripel → Farbe      |
+| `--et-surface-color`, `-rgb`, `-solid`                                              | `--et-surface-text`                                                    | Tripel → Farbe      |
+| `--et-surface-color-muted` / `-subtle`, je `-rgb`, `-solid`                         | `--et-surface-text-muted` / `-subtle`                                  | Tripel → Farbe      |
+| `--et-surface-border`, `-rgb`, `-solid`                                             | `--et-surface-border`                                                  | Tripel → Farbe      |
+| `--et-surface-{interaction,on-interaction,interaction-ink}[-<z>]`, `-rgb`, `-solid` | gleicher Name (Schritt 2 benennt um)                                   | Tripel → Farbe      |
+| `--et-color-primary`, `--et-color-primary-<z>`                                      | `--et-tone-fill-rest`, `--et-tone-fill-<z>`                            | Tripel → Farbe      |
+| `--et-color-on-primary[-<z>]`                                                       | `--et-tone-on-fill-rest`, `-<z>`                                       | Tripel → Farbe      |
+| `--et-color-primary-ink[-<z>]`                                                      | `--et-tone-text-rest`, `-<z>`                                          | Tripel → Farbe      |
+| `--et-theme-color-primary`, `-rgb`, `-solid`                                        | `--et-tone-fill`                                                       | → Farbe             |
+| `--et-theme-color-on-primary`, `-rgb`, `-solid`                                     | `--et-tone-on-fill`                                                    | → Farbe             |
+| `--et-theme-color-ink`, `-rgb`, `-solid`                                            | `--et-tone-text`                                                       | → Farbe             |
+| `--et-theme-color-primary-opacity`                                                  | `--_et-tone-fill-opacity` (privat, gelesen mit Fallback `1`)           | Zahl                |
+| `--et-theme-color-on-primary-opacity`, `--et-theme-color-ink-opacity`               | entfällt (Wert `1` wird gelöscht, jeder andere Wert stoppt)            | -                   |
+| `--et-color-{secondary,tertiary,on-secondary,on-tertiary}[-ink][-<z>]`              | entfällt (stoppt)                                                      | -                   |
+| `--et-shadow-color-rgb`, `--et-scrim-color-rgb`, `--et-on-scrim-color-rgb`          | `--et-shadow-color`, `--et-scrim-color`, `--et-on-scrim-color`         | Tripel → Farbe      |
+| `--et-button-filled-hover-rgb`                                                      | `--et-button-filled-hover`                                             | Tripel → Farbe      |
+| Tailwind dynamisch `<p>-theme[-<z>]`, `<p>-on-theme[-<z>]`, `<p>-theme-ink[-<z>]`   | `<p>-tone-fill[-<z>]`, `<p>-tone-on-fill[-<z>]`, `<p>-tone-text[-<z>]` | Utility, `--color-` |
+| Tailwind statisch `<p>-<ton>[-<z>]`, `<p>-on-<ton>[-<z>]`, `<p>-<ton>-ink[-<z>]`    | `<p>-tone-<ton>-fill[-<z>]`, `-on-fill`, `-text`                       | Utility, `--color-` |
+| Tailwind `<p>-surface[-<fläche>]-bg`, `<p>-surface[-<fläche>]`, `-muted`, `-subtle` | `…-background`, `…-text`, `…-text-muted`, `…-text-subtle`              | Utility, `--color-` |
+
+Regeln: `rgb(<tripel>)` wird die Farbe, `rgb(<tripel> / A)` wird `color-mix(in srgb, <farbe> A%, transparent)`,
+ein Tripel-Literal wird `rgb(…)`. Bleiben: `--et-surface-type`, `--et-surface-elevation`, `--et-color-theme-type`,
+`--et-surface-color-theme-variants`, `--et-color-picker-*`, `--et-color-input-*`. Fifagg und fut setzen
+`--et-theme-color-primary-opacity` nirgends von Hand (0 Treffer außer der synchronisierten Theming-Skill-Doku).
+Der Generator stoppt mit Datei und Zeile bei: `-rgb` ohne `-solid` im selben Block neu gesetzt; Tripel außerhalb
+`rgb()` gelesen; altes Tripel aus einem unbekannten Wert gesetzt; zwei alte Namen, die mit verschiedenen Werten in
+einen neuen fallen; `rgb()` über eine gemischte Kette; entfallene Namen; jeder Rest der alten Familien
+(z. B. `--et-surface-bg-solid` in fut).
+
 ## 4. Streichliste
 
 Jeder Punkt: was geht, wen es trifft (Vorkommen ✔ vom 26.11., generierte Dateien mitgezählt), wie
