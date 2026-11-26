@@ -29,7 +29,7 @@ Windows-side mirror (`/mnt/c/Users/trbor/ethlete-mirror.git`, which `remote-run.
 in the Linux checkout: the Windows worktree's modules hold Windows binaries.
 
 Git reads the mirror on `/mnt/c` through 9p at about 150 objects/s (a first fetch did not finish in 17 min), so the
-script copies the mirror's objects to `~/rack-linux/mirror.git` on ext4 and fetches `--depth 1` from there.
+script copies the mirror's objects to `~/rack-linux/mirror.git` on ext4 and fetches `--depth 2` from there (the parent makes a `<parent>..<sha>` range work).
 The CI image has no C linker or Rust, and Studio e2e builds its design host with cargo: the script builds a local
 `rack-linux-ci:<digest>` image on top of the pinned one (build-essential, rustup minimal) once per digest. Browsers
 and fonts stay those of the pin. `target/` survives `git clean`, the cargo registry lives in `~/rack-linux/.cache`.
@@ -41,3 +41,13 @@ of the script to `C:\Users\trbor\ethlete-rr\` after its bundle transfer, then ca
 (without `MSYS_NO_PATHCONV` Git Bash rewrites `/mnt/c/...` to `C:/Program Files/Git/mnt/c/...`).
 
 The container reaches services on the rack's Windows side or the distro at `host.docker.internal`.
+
+## The `next` mirror (B815)
+
+`node tools/scripts/next-mirror.mjs watch` polls `refs/heads/next` every 15 s and runs
+`push-suite.mjs --only lint,tools,coverage <parent>..<sha>` for each new commit, oldest first, through
+`remote-run --host rack --linux --slot mirror`. It writes `/tmp/ethlete-mirror/<sha>.json` (`green`, `red` with the
+failing step, or `error` for an infrastructure failure), appends one line to `/tmp/ethlete-mirror/verdicts.log` and
+replaces `latest.txt`; `next-mirror.mjs status` prints the latest line. `next-mirror.mjs run <rev>` mirrors one
+commit. It only reports: it never reverts or pushes. Stop the watcher to switch it off; `state.json` keeps the last
+mirrored commit, delete it to start from the current head.
