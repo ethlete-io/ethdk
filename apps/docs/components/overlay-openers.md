@@ -117,6 +117,8 @@ private product = createOverlayOpener(productOverlay, {
 });
 ```
 
+A dismissed overlay reports `undefined`, not `null`. The `overlay-and-column-api` migration of `et update` moves callbacks typed `T | null` and their `=== null` checks to `undefined`, and names each `file:line` it cannot rewrite.
+
 A standard opener's `open()` takes the same three callbacks for that one open, on top of the opener's own - the place to capture what the overlay was opened for:
 
 ```ts

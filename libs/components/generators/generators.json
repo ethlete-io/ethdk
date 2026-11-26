@@ -76,6 +76,11 @@
       "schema": "./migrate-grid-engine-internals/schema.json",
       "description": "Remove the grid engine internals from @ethlete/components imports and mark their uses"
     },
+    "migrate-overlay-and-column-api": {
+      "factory": "./migrate-overlay-and-column-api/migration",
+      "schema": "./migrate-overlay-and-column-api/schema.json",
+      "description": "Move overlay callback results from null to undefined, rename injectCommandPalette and the TableColumnVisibilityHost allColumns key, and report the rest"
+    },
     "migrate-overlay-fullscreen-animation": {
       "factory": "./migrate-overlay-fullscreen-animation/migration",
       "schema": "./migrate-overlay-fullscreen-animation/schema.json",

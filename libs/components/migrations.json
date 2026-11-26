@@ -181,6 +181,15 @@
       "docs": "/components/setup"
     },
     {
+      "name": "overlay-and-column-api",
+      "version": "1.0.0-next.83",
+      "kind": "auto",
+      "level": "required",
+      "description": "Give opener afterClosed and beforeClosed callbacks a T | undefined result, rename injectCommandPalette to createCommandPaletteOpener and the TableColumnVisibilityHost allColumns key to availableColumns, and report the rest.",
+      "generator": "@ethlete/components:migrate-overlay-and-column-api",
+      "docs": "/components/overlay-openers"
+    },
+    {
       "name": "pip-window-z-index",
       "version": "1.0.0-next.100",
       "kind": "auto",
