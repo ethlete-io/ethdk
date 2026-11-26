@@ -1401,6 +1401,7 @@ process.stdin.on('data', (data) => {
         expect(existsSync(started)).toBe(false);
         expect(readFileSync(typed, 'utf8')).toBe('/clear\rresume slug [typed by agent-sessions]\r');
         expect(readFileSync(join(dir, 'restart.log'), 'utf8')).not.toContain('--process');
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain(`${scoped} typed /clear, resume typed`);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }

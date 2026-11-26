@@ -1101,10 +1101,7 @@ if (command === 'stop-own') {
       `Refused: ${session} has no role and another agent session runs in this repo, so the new process could lose the builder rule. Resume a builder-* or doc-agent-* handoff, or pass --role builder or --role none.\n`,
     );
     process.exitCode = 1;
-  } else if (
-    newProcess &&
-    healedCommand(commandWithoutPrompt(agentCommandOf(session)), sender) === null
-  ) {
+  } else if (newProcess && healedCommand(commandWithoutPrompt(agentCommandOf(session)), sender) === null) {
     process.stderr.write(
       `Refused: the stored command of ${session} has no claude or codex program (${agentCommandOf(session)}), restarting would end the session. Nothing was stopped.\n`,
     );
@@ -1209,6 +1206,7 @@ if (command === 'stop-own') {
       type('Enter');
       sleep(RESTART_CLEAR_MS);
       if (typeResume(session, restartPrompt(words))) {
+        restartLog(`${session} typed ${sender.startsWith('codex') ? '/new' : '/clear'}, resume typed`);
         waitForFirstTurn(session);
       } else {
         const saved = join(dirname(mailbox), `restart.prompt.${session}.txt`);

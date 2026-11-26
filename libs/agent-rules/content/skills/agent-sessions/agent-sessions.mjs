@@ -1206,6 +1206,7 @@ if (command === 'stop-own') {
       type('Enter');
       sleep(RESTART_CLEAR_MS);
       if (typeResume(session, restartPrompt(words))) {
+        restartLog(`${session} typed ${sender.startsWith('codex') ? '/new' : '/clear'}, resume typed`);
         waitForFirstTurn(session);
       } else {
         const saved = join(dirname(mailbox), `restart.prompt.${session}.txt`);
