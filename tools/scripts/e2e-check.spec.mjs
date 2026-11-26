@@ -8,7 +8,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import * as check from './e2e-check.mjs';
 import { judgeSuiteRun, runSuite } from './e2e-check.mjs';
 import { mapChanged, suiteInvocation } from './e2e-map.mjs';
-import { gitExec } from './git-test-env.mjs';
+import { gitEnv, gitExec } from './git-test-env.mjs';
 
 const scratchDirs = [];
 const scratch = (prefix) => {
@@ -149,10 +149,21 @@ test('the worktree is the named revision, not the dirty main tree, and is remove
 });
 
 test('the result line carries the sha the suite ran at and its own worktree is removed', () => {
-  const repo = sh(process.env.ETHLETE_REPO_ROOT ?? process.cwd(), 'rev-parse', '--show-toplevel');
-  const sha = sh(repo, 'rev-parse', '9e7ebf434');
+  const repo = scratch('e2e-check-result-');
+  sh(repo, 'init', '-q');
+  sh(repo, 'config', 'user.email', 'a@b.c');
+  sh(repo, 'config', 'user.name', 'x');
+  writeFileSync(join(repo, 'file.txt'), 'one');
+  sh(repo, 'add', 'file.txt');
+  sh(repo, 'commit', '-q', '-m', 'one');
+  mkdirSync(join(repo, 'apps/ethlete-studio/e2e'), { recursive: true });
+  writeFileSync(join(repo, 'apps/ethlete-studio/e2e/canvas.e2e.mjs'), '');
+  sh(repo, 'add', '.');
+  sh(repo, 'commit', '-q', '-m', 'two');
+  const sha = sh(repo, 'rev-parse', 'HEAD');
   const out = spawnSync('node', [join(import.meta.dirname, 'e2e-check.mjs'), sha, '--list'], {
     cwd: repo,
+    env: gitEnv(),
     encoding: 'utf8',
   }).stdout;
   const dir = /, tree (\S+)\)/.exec(out)?.[1];

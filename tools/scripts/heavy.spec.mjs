@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { writeFileSync, mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './temp-dir.mjs';
 
 const script = new URL('./heavy.mjs', import.meta.url).pathname;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const setup = () => {
-  const dir = mkdtempSync(join(tmpdir(), 'heavy-spec-'));
+  const dir = tempDir('heavy-spec-');
   const env = { ...process.env, HEAVY_LOCK_PREFIX: join(dir, 'lock'), HEAVY_POLL_MS: '50' };
   const start = (cmd) => {
     const child = spawn('node', [script, 'run', '--', 'sh', '-c', cmd], { env, stdio: ['ignore', 'pipe', 'pipe'] });

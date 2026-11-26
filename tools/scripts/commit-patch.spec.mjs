@@ -3,7 +3,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { commitPatch } from './commit-patch.mjs';
-import { git, tempGitRepo } from './git-test-env.mjs';
+import { git, gitEnv, tempGitRepo } from './git-test-env.mjs';
+import { tempDir } from './temp-dir.mjs';
 
 const lines = (changed = []) =>
   Array.from({ length: 30 }, (_, i) => (changed.includes(i + 1) ? `changed ${i + 1}` : `line ${i + 1}`)).join('\n') +
@@ -24,7 +25,7 @@ const setup = () => {
   git(dir, 'add', 'other.txt');
   const [header, ...hunks] = git(dir, 'diff', '-U0', '--', 'f.txt').split('\n@@');
   const hunk1 = `${header}\n@@${hunks[0]}\n`;
-  const patch = join(dir, '..', `${dir.split('/').pop()}.patch`);
+  const patch = join(tempDir('commit-patch-file-'), 'hunk.patch');
   writeFileSync(patch, hunk1);
   return { dir, file, patch };
 };
@@ -39,7 +40,7 @@ test('commits only the patch hunk and leaves index and tree alone', () => {
   const { dir, file, patch } = setup();
   const indexBefore = git(dir, 'diff', '--cached', '--name-only');
 
-  assert.equal(commit(patch, 'feat(repo): One hunk', dir), 0);
+  assert.equal(commit(patch, 'feat(repo): One hunk', dir, gitEnv()), 0);
 
   const head = git(dir, 'show', 'HEAD:f.txt');
   assert.match(head, /changed 2\n/);

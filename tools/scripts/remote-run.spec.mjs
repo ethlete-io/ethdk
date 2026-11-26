@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { gitEnv } from './git-test-env.mjs';
 import { LINUX_IMAGE, parseArgs, remoteScript } from './remote-run.mjs';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'remote-run.mjs');
@@ -43,7 +44,7 @@ const run = (args, env = {}) => {
   const log = join(dir, 'run.log');
   const result = spawnSync(process.execPath, [SCRIPT, ...args.map((a) => (a === '$LOG' ? log : a))], {
     encoding: 'utf8',
-    env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, STUB_LOG: stubLog, ...env },
+    env: gitEnv({ PATH: `${dir}:${process.env.PATH}`, STUB_LOG: stubLog, TMPDIR: dir, ...env }),
   });
   const read = (file) => {
     try {

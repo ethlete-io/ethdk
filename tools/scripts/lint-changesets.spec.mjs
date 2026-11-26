@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { git as gitIn, gitEnv } from './git-test-env.mjs';
 import { commandsFor } from './pre-push-checks.mjs';
+import { tempDir } from './temp-dir.mjs';
 
 const bad = '---\n"@ethlete/core": patch\n---\n\none. two.\n\nsecond paragraph\n';
 
 test('an untracked bad changeset fails the working-tree run and never the committed one', () => {
-  const repo = mkdtempSync(join(tmpdir(), 'lint-changesets-'));
-  const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' });
+  const repo = tempDir('lint-changesets-');
+  const git = (...args) => gitIn(repo, ...args);
   mkdirSync(join(repo, 'tools/scripts'), { recursive: true });
   mkdirSync(join(repo, '.changeset'));
   copyFileSync(join(import.meta.dirname, 'lint-changesets.js'), join(repo, 'tools/scripts/lint-changesets.js'));
@@ -22,6 +23,7 @@ test('an untracked bad changeset fails the working-tree run and never the commit
   const run = (...args) =>
     spawnSync(process.execPath, [join(repo, 'tools/scripts/lint-changesets.js'), ...args], {
       cwd: repo,
+      env: gitEnv(),
       encoding: 'utf8',
     });
   assert.equal(run().status, 1);
@@ -31,7 +33,6 @@ test('an untracked bad changeset fails the working-tree run and never the commit
   git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'bad');
   assert.equal(run('--rev', 'HEAD').status, 1);
   assert.equal(run('--rev', 'HEAD~1').status, 0);
-  rmSync(repo, { recursive: true, force: true });
 });
 
 test('the pre-push changeset check reads the pushed commit, not the working tree', () => {
