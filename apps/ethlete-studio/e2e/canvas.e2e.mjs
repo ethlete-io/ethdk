@@ -3155,7 +3155,7 @@ const CASES = [
     },
   },
   {
-    name: 'the sketch bar shows its status as a dot and label like its other lines, not as a pill (B728)',
+    name: 'the sketch bar shows its status as an icon button with a toggletip, no text and no pill (B728)',
     pages: ['Sketches'],
     labels: ['Large'],
     run: async (page) => {
@@ -3167,20 +3167,28 @@ const CASES = [
 
       const shown = await bar.evaluate((toolbar) => {
         const status = toolbar.querySelector('[data-sk-status]');
-        const dot = status?.querySelector('span');
-        const style = status ? getComputedStyle(status) : null;
+        const button = status?.querySelector('[data-sk-status-button]');
+        const sibling = toolbar.querySelector('[data-sk-discard] button');
 
         return {
+          status: status?.getAttribute('data-sk-status') ?? null,
           text: status?.textContent?.replace(/\s+/gu, ' ').trim() ?? null,
           pills: toolbar.querySelectorAll('et-badge').length,
-          dot: dot ? Math.round(dot.getBoundingClientRect().width) : 0,
-          background: style?.backgroundColor ?? null,
+          width: button ? Math.round(button.getBoundingClientRect().width) : 0,
+          height: button ? Math.round(button.getBoundingClientRect().height) : 0,
+          siblingWidth: sibling ? Math.round(sibling.getBoundingClientRect().width) : -1,
         };
       });
 
       return {
-        ok: shown.text === 'Wahl' && shown.pills === 0 && shown.dot > 0 && shown.background === 'rgba(0, 0, 0, 0)',
-        detail: `status "${shown.text}", pills in the bar ${shown.pills}, dot ${shown.dot}px, background ${shown.background}`,
+        ok:
+          shown.status === 'waiting' &&
+          shown.text === '' &&
+          shown.pills === 0 &&
+          shown.width > 0 &&
+          shown.width === shown.height &&
+          shown.width === shown.siblingWidth,
+        detail: `status "${shown.status}", text "${shown.text}", pills in the bar ${shown.pills}, button ${shown.width}x${shown.height}px, the Verwerfen button ${shown.siblingWidth}px`,
       };
     },
   },
@@ -3216,7 +3224,7 @@ const CASES = [
           loading: document.querySelector('[data-sk-row="a"] [data-sk-merge]')?.hasAttribute('data-loading') ?? false,
           discard: document.querySelector('[data-sk-toolbar] [data-sk-discard] button')?.disabled ?? null,
           bar: document.querySelector('[data-sk-toolbar]')?.getAttribute('aria-busy') ?? null,
-          status: document.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim() ?? null,
+          status: document.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status') ?? null,
         }));
 
         await route.abort();
@@ -3233,7 +3241,7 @@ const CASES = [
           );
 
         return {
-          ok: busy.loading && busy.discard === true && busy.bar === 'true' && busy.status === 'Übernahme' && cleared,
+          ok: busy.loading && busy.discard === true && busy.bar === 'true' && busy.status === 'merging' && cleared,
           detail: `while the merge runs: Übernehmen loading ${busy.loading}, Verwerfen disabled ${busy.discard}, bar aria-busy ${busy.bar}, bar status "${busy.status}"; busy cleared after the answer ${cleared}`,
         };
       } finally {

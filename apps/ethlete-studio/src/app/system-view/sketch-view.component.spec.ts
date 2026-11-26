@@ -968,14 +968,14 @@ describe('SketchViewComponent', () => {
 
   it('shows the auto-merge badge in the head only while the forecast says merges, also on a held merge', async () => {
     const badge = (root: HTMLElement) =>
-      root.querySelector('[data-sk-toolbar] [data-sk-auto-merge]')?.textContent?.trim() ?? null;
+      root.querySelector('[data-sk-toolbar] [data-sk-status="autoMerge"]') ? 'autoMerge' : null;
     const forecast = (merges: boolean) => ({ merges, at: '2026-10-27T10:00:00Z' });
     const held = { reason: 'uncommitted edits', at: '2026-10-27T10:00:00Z', dirty: ['components/card.ts'] };
     const drawing = { ...SKETCH, status: 'in progress' as const, decision: undefined };
 
     expect(
       badge((await render({ ...drawing, autoMergeForecast: forecast(true), mergeHold: held }, noComments)).root),
-    ).toBe(SKETCHES_LABELS.autoMerge);
+    ).toBe('autoMerge');
     expect(badge((await render({ ...drawing, autoMergeForecast: forecast(false) }, noComments)).root)).toBeNull();
     expect(badge((await render({ ...drawing, autoMergeForecast: null }, noComments)).root)).toBeNull();
   });
@@ -1011,18 +1011,17 @@ describe('SketchViewComponent', () => {
 
   it('derives the head badge from the drawing report and readiness, never from the sketch status alone', async () => {
     const badgeOf = (root: HTMLElement) =>
-      root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim();
+      root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status');
     const fresh = new Date(Date.now() - 5 * 60_000).toISOString();
     const stale = new Date(Date.now() - 40 * 60_000).toISOString();
     const open = { ...SKETCH, status: 'in progress' as const, decision: undefined };
-    const status = SKETCHES_LABELS.status;
 
     const drawing = await render(
       { ...open, report: { message: 'zeichnet', updatedAt: fresh, variant: 'b', author: 'claude-opus-5-5' } },
       noComments,
     );
 
-    expect(badgeOf(drawing.root)).toBe(status.drawing);
+    expect(badgeOf(drawing.root)).toBe('drawing');
     expect(buttonNamed(drawing.root, SKETCHES_LABELS.merge)?.disabled).toBe(true);
     drawing.fixture.destroy();
 
@@ -1050,7 +1049,7 @@ describe('SketchViewComponent', () => {
 
     const ready = await render({ ...SKETCH, decision: undefined }, noComments);
 
-    expect(badgeOf(ready.root)).toBe(status.waiting);
+    expect(badgeOf(ready.root)).toBe('waiting');
     expect(buttonNamed(ready.root, SKETCHES_LABELS.merge)).toBeDefined();
   });
 
@@ -1067,9 +1066,7 @@ describe('SketchViewComponent', () => {
     );
     const toolbar = root.querySelector('[data-sk-toolbar]')?.textContent ?? '';
 
-    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
-      SKETCHES_LABELS.status.drawing,
-    );
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe('drawing');
     expect(root.querySelector('[data-sk-toolbar] svg[ethlete-agent-logo]')).toBeNull();
     expect(toolbar).not.toContain('Sonnet 5.5');
     expect(toolbar).not.toContain(SKETCHES_LABELS.since(7));
@@ -1175,8 +1172,8 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(drawing.root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
-      SKETCHES_LABELS.status.drawing,
+    expect(drawing.root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe(
+      'drawing',
     );
     expect(drawing.root.querySelector('[data-sk-toolbar]')?.textContent).not.toContain('Zustand reset-hover');
     drawing.fixture.destroy();
@@ -1215,9 +1212,7 @@ describe('SketchViewComponent', () => {
     );
     const toolbar = root.querySelector('[data-sk-toolbar]')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
-    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
-      SKETCHES_LABELS.status.paused,
-    );
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe('paused');
     expect(toolbar).not.toContain('Opus 5.5');
     expect(toolbar).not.toMatch(/Runde (\d+ )?fehlgeschlagen/);
     expect(toolbar).not.toContain('tsc failed');
@@ -1233,8 +1228,7 @@ describe('SketchViewComponent', () => {
     const { fixture, root } = await render({ ...ROUNDED, decision: undefined, report: null }, noComments);
     const frames = [...root.querySelectorAll<HTMLIFrameElement>('iframe[data-state]')];
     const failing = frames.at(-1)!;
-    const status = SKETCHES_LABELS.status;
-    const badge = () => root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim();
+    const badge = () => root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status');
     const report = async (frame: HTMLIFrameElement, extra: object = {}) => {
       window.dispatchEvent(
         new MessageEvent('message', {
@@ -1246,7 +1240,7 @@ describe('SketchViewComponent', () => {
     };
 
     expect(frames.length).toBeGreaterThan(0);
-    expect(badge()).toBe(status.drawing);
+    expect(badge()).toBe('drawing');
     expect(buttonNamed(root, SKETCHES_LABELS.merge)?.disabled).toBe(true);
 
     for (const frame of frames.slice(0, -1)) await report(frame);
@@ -1254,7 +1248,7 @@ describe('SketchViewComponent', () => {
 
     const variant = failing.dataset['variant'];
 
-    expect(badge()).toBe(status.failed);
+    expect(badge()).toBe('failed');
     expect(root.querySelector(`[data-sk-row="${variant}"] [data-sk-row-failed]`)?.textContent?.trim()).toBe(
       SKETCHES_LABELS.rowFailed('default: boom is not defined'),
     );
@@ -1263,7 +1257,7 @@ describe('SketchViewComponent', () => {
 
     await report(failing);
 
-    expect(badge()).toBe(status.waiting);
+    expect(badge()).toBe('waiting');
     expect(buttonNamed(root, SKETCHES_LABELS.merge)?.disabled).toBe(false);
   });
 
@@ -1280,9 +1274,7 @@ describe('SketchViewComponent', () => {
     );
     const toolbar = root.querySelector('[data-sk-toolbar]')?.textContent ?? '';
 
-    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
-      SKETCHES_LABELS.status.drawing,
-    );
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe('drawing');
     expect(toolbar).not.toContain('elements/hero');
     expect(toolbar).not.toContain(SKETCHES_LABELS.since(4));
   });
@@ -1315,9 +1307,11 @@ describe('SketchViewComponent', () => {
 
     const { fixture, root } = await render(sketch, fetch, null as unknown as ListedPart);
     const badges = () =>
-      [...root.querySelectorAll('[data-sk-toolbar] [data-sk-status]')].map((badge) => badge.textContent?.trim());
+      [...root.querySelectorAll('[data-sk-toolbar] [data-sk-status]')].map((badge) =>
+        badge.getAttribute('data-sk-status'),
+      );
 
-    expect(badges()).toEqual([SKETCHES_LABELS.status.waiting]);
+    expect(badges()).toEqual(['waiting']);
     expect(root.querySelector('[data-sk-row][data-selected]')).toBeNull();
     expect(asked).toEqual([]);
 
@@ -1326,7 +1320,7 @@ describe('SketchViewComponent', () => {
 
     const chip = root.querySelector('[data-sk-row="c"][data-selected] [data-sk-points] [data-open-points-chip]');
 
-    expect(badges()).toEqual([SKETCHES_LABELS.status.waiting]);
+    expect(badges()).toEqual(['waiting']);
     expect(asked).toEqual(['elements/rating']);
     // B695: the agent fixes a sketch rule problem, so the chip counts only the unmerged sketch.
     expect(chip?.textContent?.trim()).toBe(SYSTEM_LABELS.openCount(1));
@@ -1337,7 +1331,7 @@ describe('SketchViewComponent', () => {
   // The human decided Studio does not show the agent's model in the hold reason.
   it('shows a held sketch as paused with what it waits on and since when, without the model', async () => {
     const heldAt = new Date(Date.now() - 7 * 60_000).toISOString();
-    const { root } = await render(
+    const { fixture, root } = await render(
       {
         ...SKETCH,
         status: 'in progress',
@@ -1348,19 +1342,20 @@ describe('SketchViewComponent', () => {
       noComments,
     );
 
-    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(
-      SKETCHES_LABELS.status.paused,
-    );
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe('paused');
     expect(buttonNamed(root, SKETCHES_LABELS.merge)).toBeUndefined();
 
-    root.querySelector<HTMLButtonElement>('[data-sk-hold]')?.click();
-    await new Promise((done) => setTimeout(done));
+    root.querySelector<HTMLButtonElement>('[data-sk-status-button]')?.click();
+    await fixture.whenStable();
 
-    const reason = root.querySelector('[data-sk-hold-reason]')?.textContent ?? '';
+    const reason = document.querySelector('[data-sk-status-tip]')?.textContent ?? '';
 
     expect(reason).toContain(SKETCHES_LABELS.holdUntil('B99 und B100'));
     expect(reason).not.toContain('Sonnet 5.5');
     expect(reason).toContain(SKETCHES_LABELS.since(7));
+
+    root.querySelector<HTMLButtonElement>('[data-sk-status-button]')?.click();
+    await fixture.whenStable();
   });
 
   it('discards the sketch from Verwerfen', async () => {

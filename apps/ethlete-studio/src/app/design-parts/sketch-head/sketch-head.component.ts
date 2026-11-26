@@ -3,7 +3,6 @@ import { BUTTON_IMPORTS, CHOICE_FIELD_IMPORTS, MENU_IMPORTS, SWITCH_IMPORTS } fr
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { SYSTEM_LABELS } from '../../i18n/system-labels';
-import { HoldTriggerComponent } from '../hold-trigger/hold-trigger.component';
 import { SketchBadgeStatus, SketchStatusBadgeComponent } from '../sketch-status-badge/sketch-status-badge.component';
 import { SketchHold, SketchRound, SketchStatus, SketchWithdrawn } from '../sketches/sketches-sample';
 
@@ -17,7 +16,6 @@ import { SketchHold, SketchRound, SketchStatus, SketchWithdrawn } from '../sketc
     MENU_IMPORTS,
     SWITCH_IMPORTS,
     ProvideColorDirective,
-    HoldTriggerComponent,
     SketchStatusBadgeComponent,
   ],
   hostDirectives: [AutoSurfaceDirective],
@@ -71,6 +69,8 @@ export class SketchHeadComponent {
 
     return status === 'drawing' ? 'drawing' : null;
   });
+
+  protected holdNote = computed(() => `${SKETCHES_LABELS.holdUntil(this.hold().until)} · ${this.hold().since}`);
 
   protected hasLead = computed(() => this.badge() !== null || this.withdrawnCount() > 0);
 

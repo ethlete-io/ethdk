@@ -16,23 +16,11 @@
   role="toolbar"
   data-sk-toolbar
 >
-  @if (status() === 'paused') {
-    <span class="flex min-w-0 items-center gap-space-2">
-      <ethlete-hold-trigger
-        [content]="holdContent"
-        [reason]="holdReason"
-        [open]="reasonOpen()"
-        (openChange)="reasonOpen.set($event)"
-      />
-    </span>
-    <ng-template #holdContent><ethlete-sketch-status-badge status="paused" /></ng-template>
-    <ng-template #holdReason>
-      <span class="font-ui-medium text-et-surface">{{ LABELS.holdUntil(hold().until) }}</span>
-      <span>· {{ hold().since }}</span>
-    </ng-template>
-  } @else if (badge(); as badge) {
+  @if (badge(); as badge) {
     <ethlete-sketch-status-badge
+      [open]="reasonOpen()"
       [status]="badge"
+      [note]="badge === 'paused' ? holdNote() : null"
       [attr.data-sk-auto-merge]="badge === 'autoMerge' || null"
       [attr.data-sk-render-error]="badge === 'failed' || null"
     />
@@ -46,44 +34,46 @@
   @if (hasLead()) {
     <span class="mx-space-1 h-5 w-px flex-none bg-et-surface-border" aria-hidden="true" data-sk-divider></span>
   }
-  <div [(open)]="roundsOpen" class="flex" etMenu placement="top" data-sk-round>
-    <button
-      [attr.aria-label]="LABELS.roundSelect"
-      etMenuTrigger
-      et-icon-button
-      type="button"
-      variant="transparent"
-      color="surface"
-      size="sm"
-    >
-      <svg
-        class="et-icon"
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
+  @if (rounds().length > 1) {
+    <div [(open)]="roundsOpen" class="flex" etMenu placement="top" data-sk-round>
+      <button
+        [attr.aria-label]="LABELS.roundSelect"
+        etMenuTrigger
+        et-icon-button
+        type="button"
+        variant="transparent"
+        color="surface"
+        size="sm"
       >
-        <path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9" />
-        <path d="M3.5 2.5v2.2h2.2" />
-        <path d="M8 5.5V8l1.8 1.2" />
-      </svg>
-    </button>
-    <ng-template etMenuSurface>
-      <et-menu [attr.aria-label]="LABELS.roundSelect" class="box-border w-80 text-ui-md">
-        <et-menu-radio-group [value]="round()" (valueChange)="selectRound($event)">
-          <et-menu-group-label>{{ LABELS.roundSelect }}</et-menu-group-label>
-          @for (option of rounds(); track option.value) {
-            <et-menu-radio-item [value]="option.value" closeOnActivate>{{ option.label }}</et-menu-radio-item>
-          }
-        </et-menu-radio-group>
-      </et-menu>
-    </ng-template>
-  </div>
+        <svg
+          class="et-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9" />
+          <path d="M3.5 2.5v2.2h2.2" />
+          <path d="M8 5.5V8l1.8 1.2" />
+        </svg>
+      </button>
+      <ng-template etMenuSurface>
+        <et-menu [attr.aria-label]="LABELS.roundSelect" class="box-border w-80 text-ui-md">
+          <et-menu-radio-group [value]="round()" (valueChange)="selectRound($event)">
+            <et-menu-group-label>{{ LABELS.roundSelect }}</et-menu-group-label>
+            @for (option of rounds(); track option.value) {
+              <et-menu-radio-item [value]="option.value" closeOnActivate>{{ option.label }}</et-menu-radio-item>
+            }
+          </et-menu-radio-group>
+        </et-menu>
+      </ng-template>
+    </div>
+  }
   @if (commentable() && discardable()) {
     <button
       [pressed]="commentMode()"

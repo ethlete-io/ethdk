@@ -5,7 +5,7 @@ import { THEMES } from '../../../themes';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { SketchBadgeStatus, SketchStatusBadgeComponent } from './sketch-status-badge.component';
 
-const render = async (status: SketchBadgeStatus) => {
+const render = async (status: SketchBadgeStatus, note: string | null = null) => {
   TestBed.configureTestingModule({
     providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
   });
@@ -13,59 +13,67 @@ const render = async (status: SketchBadgeStatus) => {
   const fixture = TestBed.createComponent(SketchStatusBadgeComponent);
 
   fixture.componentRef.setInput('status', status);
+  fixture.componentRef.setInput('note', note);
   await fixture.whenStable();
 
-  return fixture.nativeElement as HTMLElement;
+  return { fixture, host: fixture.nativeElement as HTMLElement };
 };
 
 describe('SketchStatusBadgeComponent', () => {
-  it.each([
-    ['drawing', SKETCHES_LABELS.status.drawing],
-    ['paused', SKETCHES_LABELS.status.paused],
-  ] as const)('names the %s status', async (status, label) => {
-    const host = await render(status);
+  it.each(Object.keys(SKETCHES_LABELS.statusTip) as SketchBadgeStatus[])(
+    'shows %s as an icon button with no text',
+    async (status) => {
+      const { host } = await render(status);
+      const button = host.querySelector<HTMLElement>('[data-sk-status-button]');
 
-    expect(host.querySelector('[data-sk-status]')?.textContent?.trim()).toBe(label);
+      expect(button?.classList).toContain('et-icon-button');
+      expect(button?.getAttribute('aria-label')).toBe(SKETCHES_LABELS.statusTip[status].label);
+      expect(host.textContent?.trim()).toBe('');
+      expect(host.querySelector('.rounded-full')).toBeNull();
+    },
+  );
+
+  it('keeps the same button classes in every status, so the bar never changes width', async () => {
+    const classes = new Set<string>();
+
+    for (const status of Object.keys(SKETCHES_LABELS.statusTip) as SketchBadgeStatus[]) {
+      TestBed.resetTestingModule();
+      classes.add((await render(status)).host.querySelector('[data-sk-status-button]')?.className ?? '');
+    }
+
+    expect(classes.size).toBe(1);
   });
 
-  // Decision: a pick in Studio is a merge, so there is no picked badge.
-  it('has no picked status', () => {
-    expect(Object.keys(SKETCHES_LABELS.status)).toEqual([
-      'drawing',
-      'waiting',
-      'awaitingApproval',
-      'awaitingSubParts',
-      'approved',
-      'paused',
-      'failed',
-      'merging',
-      'autoMerge',
-    ]);
+  it('opens a toggletip with the word, the detail and the note', async () => {
+    const { fixture, host } = await render('paused', 'Wartet auf B1');
+
+    host.querySelector<HTMLElement>('[data-sk-status-button]')?.click();
+    await fixture.whenStable();
+
+    const tip = document.querySelector('[data-sk-status-tip]')?.textContent ?? '';
+
+    expect(tip).toContain(SKETCHES_LABELS.statusTip.paused.label);
+    expect(tip).toContain(SKETCHES_LABELS.statusTip.paused.detail);
+    expect(tip).toContain('Wartet auf B1');
+
+    host.querySelector<HTMLElement>('[data-sk-status-button]')?.click();
+    await fixture.whenStable();
   });
 
-  // Decision B726: an approval is a good state, so its dot takes the success tone, not the grey of a paused sketch.
-  it('puts the dot of an approved sub-sketch in the success colour theme', async () => {
-    const approved = await render('approved');
-    const dot = approved.querySelector<HTMLElement>('[data-sk-status-dot]');
+  it('puts only the failed badge in the error colour theme and approved in success', async () => {
+    const failed = (await render('failed')).host.querySelector('[data-sk-status]')?.className;
 
     TestBed.resetTestingModule();
 
-    const paused = (await render('paused')).querySelector<HTMLElement>('[data-sk-status-dot]');
-
-    expect(dot?.className).toContain('bg-(--et-theme-color-primary-solid)');
-    expect(dot?.className).toContain('et-color--success');
-    expect(paused?.className).not.toContain('et-color--success');
-  });
-
-  it('puts only the failed badge in the error colour theme', async () => {
-    const failed = await render('failed');
-    const failedStyle = failed.querySelector('span')?.className;
+    const approved = (await render('approved')).host.querySelector('[data-sk-status]')?.className;
 
     TestBed.resetTestingModule();
 
-    const waiting = await render('waiting');
+    const waiting = (await render('waiting')).host.querySelector('[data-sk-status]')?.className;
 
-    expect(failed.querySelector('[data-sk-status]')?.textContent?.trim()).toBe(SKETCHES_LABELS.status.failed);
-    expect(failedStyle).not.toBe(waiting.querySelector('span')?.className);
+    expect(failed).toContain('et-color--');
+    expect(approved).toContain('et-color--success');
+    expect(failed).not.toBe(approved);
+    expect(waiting).toContain('et-color--inherited');
   });
 });

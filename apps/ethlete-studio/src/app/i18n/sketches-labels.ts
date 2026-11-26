@@ -99,6 +99,23 @@ export const SKETCHES_LABELS = {
     merging: 'Übernahme',
     autoMerge: AUTO_MERGE,
   },
+  statusTip: {
+    drawing: { label: 'Agent zeichnet', detail: 'Der Agent zeichnet gerade eine Variante.' },
+    waiting: {
+      label: 'Variante auswählen',
+      detail: 'Alle Varianten stehen. Wähle eine aus, sie wird sofort übernommen.',
+    },
+    awaitingApproval: { label: 'Skizze freigeben', detail: 'Die Skizze wartet auf deine Freigabe. Gib sie frei.' },
+    awaitingSubParts: {
+      label: 'Unterteile freigeben',
+      detail: 'Gib zuerst die Unterteile frei, danach folgt diese Skizze.',
+    },
+    approved: { label: 'Freigegeben', detail: 'Du hast die Skizze freigegeben.' },
+    paused: { label: 'Pausiert', detail: 'Der Agent macht weiter, sobald andere Arbeit fertig ist.' },
+    failed: { label: 'Fehler prüfen', detail: 'Der Render ist fehlgeschlagen. Prüfe den Fehler.' },
+    merging: { label: 'Variante wird übernommen', detail: 'Die gewählte Variante wird gerade übernommen.' },
+    autoMerge: { label: 'Wird automatisch übernommen', detail: 'Die Skizze wird ohne dein Zutun übernommen.' },
+  },
   holdUntil: (until: string) => `Wartet auf ${until}`,
   rowFailed: (reason: string) => `Render fehlgeschlagen: ${reason}`,
   since: (minutes: number) => `seit ${spanOf(minutes)}`,

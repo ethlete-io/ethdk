@@ -756,9 +756,11 @@ describe('SketchesComponent', () => {
 
   // A sketch forecast to merge itself shows a mark in the Studio header.
   it('shows the auto-merge mark in the header only when the forecast says the sketch merges itself', async () => {
-    const mark = (root: HTMLElement) => root.querySelector('[data-sk-toolbar] [data-sk-auto-merge]');
+    const mark = (root: HTMLElement) => root.querySelector('[data-sk-toolbar] [data-sk-auto-merge] [data-sk-status]');
 
-    expect(textOf(mark((await render({ autoMerge: true, status: 'drawing' })).nativeElement))).toBe(LABELS.autoMerge);
+    expect(
+      mark((await render({ autoMerge: true, status: 'drawing' })).nativeElement)?.getAttribute('data-sk-status'),
+    ).toBe('autoMerge');
     expect(mark((await render({ status: 'drawing' })).nativeElement)).toBeNull();
   });
 
@@ -818,7 +820,7 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = (await render({ rows, status: 'drawing', drawn: 'x', camera: '100' })).nativeElement;
     const row = root.querySelector('[data-sk-row="x"]');
 
-    expect(textOf(root.querySelector('[data-sk-toolbar]'))).toContain(LABELS.status.drawing);
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe('drawing');
     expect(row?.querySelector('[data-sk-placeholder-row]')).toBeNull();
     expect(row?.querySelector('[data-sk-stage]')).not.toBeNull();
     expect(textOf(row)).toContain(LABELS.drawingMark);
@@ -829,15 +831,17 @@ describe('SketchesComponent', () => {
   it('toggles the hold reason of a paused sketch', async () => {
     const fixture = await render({ status: 'paused' });
     const root: HTMLElement = fixture.nativeElement;
-    const reason = () => root.querySelector<HTMLElement>('[data-sk-hold-reason]');
+    const reason = () => document.querySelector<HTMLElement>('[data-sk-status-tip]');
 
-    expect(reason()?.hidden).toBe(true);
+    expect(reason()).toBeNull();
 
-    root.querySelector<HTMLButtonElement>('[data-sk-hold]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-sk-status-button]')?.click();
     await fixture.whenStable();
 
-    expect(reason()?.hidden).toBe(false);
     expect(textOf(reason())).toContain(LABELS.holdUntil('B34/B36/B38'));
+
+    root.querySelector<HTMLButtonElement>('[data-sk-status-button]')?.click();
+    await fixture.whenStable();
   });
 
   it('sizes each frame from the part size at a fixed zoom', async () => {
@@ -1585,7 +1589,7 @@ describe('SketchesComponent', () => {
     const waiting: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
     const notReady: HTMLElement = (await render({ camera: '100', status: 'not-ready' })).nativeElement;
 
-    expect(textOf(waiting.querySelector('[data-sk-toolbar] [data-sk-status]'))).toBe(LABELS.status.waiting);
+    expect(waiting.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe('waiting');
     expect(textOf(waiting.querySelector('[data-sk-row="x"] button'))).toBe(LABELS.merge);
     expect(notReady.querySelector('[data-sk-row="x"] button')).toBeNull();
   });
@@ -1629,7 +1633,7 @@ describe('SketchesComponent', () => {
       })
     ).nativeElement;
 
-    expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-status]'))).toBe(LABELS.status.failed);
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe('failed');
     expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-row-failed]'))).toBe(
       LABELS.rowFailed('default: boom is not defined'),
     );
@@ -2198,7 +2202,7 @@ describe('SketchesComponent', () => {
       const root: HTMLElement = (await render({ camera: '100', status: 'waiting', ...inputs })).nativeElement;
       const toolbar = textOf(root.querySelector('[data-sk-toolbar]'));
 
-      expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-status]'))).toBe(LABELS.status.drawing);
+      expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe('drawing');
       expect(toolbar).not.toContain('Haiku 5.5');
       expect(toolbar).not.toContain('components/a');
       expect(toolbar).not.toContain('seit');
@@ -2237,7 +2241,7 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = (await render({ camera: '100', status: 'waiting', agent })).nativeElement;
     const toolbar = textOf(root.querySelector('[data-sk-toolbar]'));
 
-    expect(textOf(root.querySelector('[data-sk-toolbar] [data-sk-status]'))).toBe(LABELS.status.waiting);
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe('waiting');
     expect(toolbar).not.toContain('Runde 3 fehlgeschlagen');
     expect(toolbar).not.toContain('Haiku 5.5');
   });

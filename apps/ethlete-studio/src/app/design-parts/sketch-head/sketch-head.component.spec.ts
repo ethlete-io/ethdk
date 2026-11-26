@@ -24,7 +24,7 @@ const HOLD = { until: 'B1', since: 'seit 1 Min' };
     [discardable]="discardable()"
     [listError]="listError()"
     [withdrawnCount]="withdrawnCount()"
-    [rounds]="rounds"
+    [rounds]="rounds()"
     (discard)="discards = discards + 1"
     (retry)="retries = retries + 1"
     (roundChange)="picked.push($event)"
@@ -46,10 +46,10 @@ class HostComponent {
   commentable = true;
   withdrawnCount = signal(3);
   picked: string[] = [];
-  rounds = [
+  rounds = signal([
     { value: 'r1', label: 'Runde 1' },
     { value: 'r2', label: 'Runde 2' },
-  ];
+  ]);
   discards = 0;
   retries = 0;
 }
@@ -72,10 +72,10 @@ const setup = async () => {
 };
 
 describe('SketchHeadComponent', () => {
-  // Human decision B728: the bar holds controls and one status, a dot and one short word.
-  it('shows at most one status of one word in the bar', async () => {
+  // B728: the status is one icon button, the bar holds no status text, so its width never changes with the status.
+  it('shows at most one status icon and no status text in the bar', async () => {
     const { fixture, root, host } = await setup();
-    const shown: string[][] = [];
+    const shown: string[] = [];
 
     for (const status of ['waiting', 'drawing', 'failed', 'paused', 'not-ready'] as const) {
       for (const autoMerge of [false, true]) {
@@ -91,40 +91,71 @@ describe('SketchHeadComponent', () => {
           host.approved.set(approved);
           host.subSketchesOpen.set(subSketchesOpen);
           await fixture.whenStable();
-          shown.push(
-            [...root.querySelectorAll('[data-sk-toolbar] :is([data-sk-status], et-badge)')].map(
-              (badge) => badge.textContent?.trim() ?? '',
-            ),
-          );
+
+          const badges = [...root.querySelectorAll('[data-sk-toolbar] [data-sk-status]')];
+
+          if (badges.length > 1 || badges.some((badge) => badge.textContent?.trim())) shown.push(`${status}`);
         }
       }
     }
 
-    expect(shown.filter((texts) => texts.length > 1 || texts.some((text) => !/^\S+$/.test(text)))).toEqual([]);
-    expect(Object.values(SKETCHES_LABELS.status).filter((label) => !/^\S+$/.test(label))).toEqual([]);
+    expect(shown).toEqual([]);
+  });
+
+  it('keeps the bar the same width over every status', async () => {
+    const { fixture, root, host } = await setup();
+    const buttons = new Set<string>();
+
+    for (const status of ['waiting', 'drawing', 'failed', 'paused'] as const) {
+      host.status.set(status);
+      await fixture.whenStable();
+      buttons.add(root.querySelector('[data-sk-toolbar] [data-sk-status-button]')?.className ?? 'none');
+    }
+
+    expect(buttons.size).toBe(1);
+    expect(root.querySelector('[data-sk-toolbar]')?.classList.contains('ps-space-3')).toBe(true);
   });
 
   it.each([
-    [false, false, 'Wahl'],
-    [true, false, 'Freigabe'],
-    [true, true, 'Freigegeben'],
-  ] as const)('names a waiting sketch (sub-sketch %s, approved %s) %s', async (subSketch, approved, label) => {
+    ['waiting', 'waiting'],
+    ['drawing', 'drawing'],
+    ['paused', 'paused'],
+    ['failed', 'failed'],
+  ] as const)('names the %s sketch by its icon button', async (status, badge) => {
+    const { fixture, root, host } = await setup();
+
+    host.status.set(status);
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe(badge);
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status-button]')?.getAttribute('aria-label')).toBe(
+      SKETCHES_LABELS.statusTip[badge].label,
+    );
+  });
+
+  it.each([
+    [false, false, 'waiting'],
+    [true, false, 'awaitingApproval'],
+    [true, true, 'approved'],
+  ] as const)('marks a waiting sketch (sub-sketch %s, approved %s) %s', async (subSketch, approved, badge) => {
     const { fixture, root, host } = await setup();
 
     host.subSketch.set(subSketch);
     host.approved.set(approved);
     await fixture.whenStable();
 
-    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe(label);
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe(badge);
   });
 
-  it('names a parent whose sub-sketches are open Unterteile', async () => {
+  it('marks a parent whose sub-sketches are open awaitingSubParts', async () => {
     const { fixture, root, host } = await setup();
 
     host.subSketchesOpen.set(true);
     await fixture.whenStable();
 
-    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.textContent?.trim()).toBe('Unterteile');
+    expect(root.querySelector('[data-sk-toolbar] [data-sk-status]')?.getAttribute('data-sk-status')).toBe(
+      'awaitingSubParts',
+    );
   });
 
   // The human decided Studio does not show the new or not-ready badges, the not-ready reason, the last
@@ -144,35 +175,6 @@ describe('SketchHeadComponent', () => {
     expect(root.querySelector('[data-sk-not-ready], [data-sk-question]')).toBeNull();
   });
 
-  // The human decided the sketch bar holds only controls and one status, a dot and a short word (B728).
-  it.each(['drawing', 'waiting', 'paused', 'failed'] as const)(
-    'shows only the %s status as text beside its controls',
-    async (status) => {
-      const { fixture, root, host } = await setup();
-
-      host.status.set(status);
-      host.withdrawnCount.set(0);
-      host.listError.set(false);
-      await fixture.whenStable();
-
-      const bar = root.querySelector<HTMLElement>('[data-sk-toolbar]');
-      const text = [...(bar?.querySelectorAll('*') ?? [])]
-        .flatMap((element) => [...element.childNodes])
-        .filter(
-          (node) =>
-            node.nodeType === Node.TEXT_NODE &&
-            !node.parentElement?.closest('[hidden]') &&
-            (!!node.parentElement?.closest('[data-sk-status]') || !node.parentElement?.closest('button')),
-        )
-        .map((node) => node.textContent?.trim())
-        .filter(Boolean);
-
-      expect(text).toEqual([SKETCHES_LABELS.status[status]]);
-      expect(bar?.querySelectorAll('.rounded-full').length).toBe(1);
-      expect(bar?.querySelector('svg[ethlete-agent-logo]')).toBeNull();
-    },
-  );
-
   // The human decided Studio does not show the agent's model in the hold reason.
   it('shows the hold reason without a model', async () => {
     const { fixture, root, host } = await setup();
@@ -181,11 +183,25 @@ describe('SketchHeadComponent', () => {
     host.reasonOpen.set(true);
     await fixture.whenStable();
 
-    const text = root.textContent ?? '';
+    const text = document.body.textContent ?? '';
 
     expect(text).toContain('Wartet auf B1');
     expect(text).toContain('seit 1 Min');
     expect(root.querySelector('svg[ethlete-agent-logo]')).toBeNull();
+
+    host.reasonOpen.set(false);
+    await fixture.whenStable();
+  });
+
+  it('hides the round button with one round and shows it from two', async () => {
+    const { fixture, root, host } = await setup();
+
+    expect(root.querySelector('[data-sk-round]')).not.toBeNull();
+
+    host.rounds.set([{ value: 'r1', label: 'Runde 1' }]);
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-sk-round]')).toBeNull();
   });
 
   it('emits discard and retry, and toggles the withdrawn rows', async () => {
