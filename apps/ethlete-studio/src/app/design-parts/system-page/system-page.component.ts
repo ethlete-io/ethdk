@@ -310,31 +310,35 @@ export const FRAME_HEAD_CLASS =
         </div>
         @if (part()) {
           <div
-            class="pointer-events-none absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 flex items-end gap-space-3"
+            class="pointer-events-none absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left,0px)+var(--space-3))] z-3 @container"
           >
-            <ethlete-sketch-head
-              [commentMode]="commentMode()"
-              [status]="null"
-              (commentModeChange)="setComments($event)"
-              class="pointer-events-auto mx-auto min-w-0"
-              commentable
-              discardable="false"
+            <div
+              class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end @min-[36rem]:grid-cols-[minmax(0,1fr)_auto_minmax(18rem,1fr)] @max-[35.99rem]:mb-11"
             >
-              <ethlete-open-points-chip
-                [(closed)]="closed"
-                [(blockersOpen)]="blockersOpen"
-                [part]="part()"
-                [groups]="groups()"
-                [exceptions]="openExceptions()"
-                [buildReady]="buildReady()"
-                [missingShots]="missingShots()"
-                (openPoint)="openPoint.emit($event)"
-                (openEditSketch)="openEditSketch.emit($event)"
-                (approveException)="approveException.emit($event)"
-                sketchHeadExtra
-                popoverPlacement="top"
-              />
-            </ethlete-sketch-head>
+              <ethlete-sketch-head
+                [commentMode]="commentMode()"
+                [status]="null"
+                (commentModeChange)="setComments($event)"
+                class="pointer-events-auto col-start-2 min-w-0"
+                commentable
+                discardable="false"
+              >
+                <ethlete-open-points-chip
+                  [(closed)]="closed"
+                  [(blockersOpen)]="blockersOpen"
+                  [part]="part()"
+                  [groups]="groups()"
+                  [exceptions]="openExceptions()"
+                  [buildReady]="buildReady()"
+                  [missingShots]="missingShots()"
+                  (openPoint)="openPoint.emit($event)"
+                  (openEditSketch)="openEditSketch.emit($event)"
+                  (approveException)="approveException.emit($event)"
+                  sketchHeadExtra
+                  popoverPlacement="top"
+                />
+              </ethlete-sketch-head>
+            </div>
           </div>
         }
       }

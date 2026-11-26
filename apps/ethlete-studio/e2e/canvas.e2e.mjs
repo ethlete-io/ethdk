@@ -4901,6 +4901,40 @@ const CASES = [
     },
   },
   {
+    name: 'the sketch bar of the part view keeps a gap to the zoom chip in a narrow window',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads the bar',
+    pages: ['System'],
+    run: async (page) => {
+      await listingAnswered(page);
+      const tight = [];
+
+      for (let width = 600; width <= 1440; width += 20) {
+        await page.setViewportSize({ width, height: NARROW.height });
+        await settle(page);
+        const gap = await page.evaluate(() => {
+          const bar = document.querySelector('ethlete-system-view ethlete-sketch-head')?.getBoundingClientRect();
+          const zoom = document.querySelector('ethlete-system-view ethlete-zoom-chip')?.getBoundingClientRect();
+
+          return bar && zoom
+            ? Math.round(
+                Math.max(zoom.left - bar.right, bar.left - zoom.right, zoom.top - bar.bottom, bar.top - zoom.bottom),
+              )
+            : null;
+        });
+
+        if (gap === null) return { ok: false, detail: `no sketch bar or zoom chip at ${width} px` };
+        if (gap < 8) tight.push(`${width} px: ${gap}`);
+      }
+
+      return {
+        ok: tight.length === 0,
+        detail: tight.length
+          ? `bar to zoom chip gap under 8 px at ${tight.join(', ')}`
+          : 'bar at least 8 px clear of the zoom chip from 600 to 1440 px',
+      };
+    },
+  },
+  {
     name: 'the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms',
     listingMayPend: 'waits for the listing itself (listingAnswered) before it reads heads and pictures',
     pages: ['Sketches', 'Wide'],
