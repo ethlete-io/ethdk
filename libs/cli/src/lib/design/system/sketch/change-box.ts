@@ -104,12 +104,55 @@ const carriesOver = (
   return changed > 0 && matched / changed >= MOVE_MATCH;
 };
 
-const offsetsOf = (from: ChangedBox, to: ChangedBox) => [
-  { x: to.x - from.x, y: to.y - from.y },
-  { x: to.x + to.width - from.x - from.width, y: to.y + to.height - from.y - from.height },
-  { x: to.x - from.x, y: to.y + to.height - from.y - from.height },
-  { x: to.x + to.width - from.x - from.width, y: to.y - from.y },
-];
+const PROFILE_SHIFTS = 3;
+
+const edgeProfileOf = (picture: Picture, { box, axis }: { box: ChangedBox; axis: 'x' | 'y' }) => {
+  const profile = new Int32Array(axis === 'x' ? box.width : box.height);
+
+  for (let y = box.y; y < box.y + box.height; y++)
+    for (let x = box.x + 1; x < box.x + box.width; x++)
+      if (pixelsDiffer(wordOf(picture, { x, y }), wordOf(picture, { x: x - 1, y }))) {
+        const at = axis === 'x' ? x - box.x : y - box.y;
+
+        profile[at] = (profile[at] ?? 0) + 1;
+      }
+
+  return profile;
+};
+
+const bestShiftsOf = (from: Int32Array, to: Int32Array) => {
+  const scored: { shift: number; score: number }[] = [];
+
+  for (let shift = -from.length + 1; shift < to.length; shift++) {
+    let score = 0;
+
+    for (let index = Math.max(0, -shift); index < from.length && index + shift < to.length; index++) {
+      const one = from[index] ?? 0;
+      const other = to[index + shift] ?? 0;
+
+      score += Math.min(one, other) - Math.abs(one - other);
+    }
+
+    scored.push({ shift, score });
+  }
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, PROFILE_SHIFTS)
+    .map(({ shift }) => shift);
+};
+
+const offsetsOf = (pictures: { before: Picture; after: Picture }, { from, to }: ChangeMove) => {
+  const shifts = (axis: 'x' | 'y') =>
+    bestShiftsOf(
+      edgeProfileOf(pictures.before, { box: from, axis }),
+      edgeProfileOf(pictures.after, { box: to, axis }),
+    ).map((shift) => to[axis] - from[axis] + shift);
+  const xs = new Set([to.x - from.x, to.x + to.width - from.x - from.width, ...shifts('x')]);
+  const ys = new Set([to.y - from.y, to.y + to.height - from.y - from.height, ...shifts('y')]);
+
+  return [...xs].flatMap((x) => [...ys].map((y) => ({ x, y })));
+};
 
 const alikeInSize = (a: ChangedBox, b: ChangedBox) =>
   Math.abs(a.width - b.width) <= Math.max(a.width, b.width) * MOVE_SIZE_SLACK &&
@@ -124,7 +167,7 @@ const movesOf = ({ before, after }: { before: Picture; after: Picture }, areas: 
       if (taken.has(one) || taken.has(other) || !alikeInSize(one, other)) continue;
 
       const [from, to] = busynessOf(before, one) >= busynessOf(before, other) ? [one, other] : [other, one];
-      const moved = offsetsOf(from, to).some(
+      const moved = offsetsOf({ before, after }, { from, to }).some(
         (offset) =>
           carriesOver({ from: before, to: after }, { box: from, offset }) &&
           carriesOver({ from: after, to: before }, { box: to, offset: { x: -offset.x, y: -offset.y } }),

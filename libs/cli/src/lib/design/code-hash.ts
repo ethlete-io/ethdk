@@ -130,6 +130,9 @@ export const completenessCodeOf = () => codeHashOf({ entries: COMPLETENESS_MODUL
 /** @internal The code an app picture is drawn and kept with. */
 export const appPictureCodeOf = () => codeHashOf({ entries: ['system/harness-shot', 'system/compare-cache'] });
 
+/** @internal The code that finds where a sketch state changed, and what moved: a kept sketch compare holds its result. */
+export const sketchCompareCodeOf = () => codeHashOf({ entries: ['system/sketch/change-box'] });
+
 /** @internal The code a pixel compare of two pictures runs and is kept with. */
 export const pixelCompareCodeOf = () => codeHashOf({ entries: ['system/part-compare', 'system/pixel-cache'] });
 

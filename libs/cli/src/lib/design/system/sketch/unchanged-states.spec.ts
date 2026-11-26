@@ -1,7 +1,7 @@
 import { appendFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, resolve } from 'path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../design-config';
 import { partKeyOf, resolveProduct } from '../resolve-product';
 import { createSketch, sharedDirOf, Sketch, variantDirOf } from './sketch';
@@ -20,6 +20,13 @@ import {
   unchangedForFoldOf,
   unchangedStatesOf,
 } from './unchanged-states';
+
+const compareCode = vi.hoisted(() => ({ value: 'compare-1' }));
+
+vi.mock('../../code-hash', async (actual) => ({
+  ...(await actual<typeof import('../../code-hash')>()),
+  sketchCompareCodeOf: () => compareCode.value,
+}));
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-unchanged-'));
@@ -426,6 +433,24 @@ describe('unchangedStatesOf', () => {
           writeFileSync(theme, ':root { --tone: red; }\n');
           expect(await unchangedStatesOf({ ...options, pictureOf: second.differs, store: storeOf() })).toEqual([]);
           expect(second.draws()).toBeGreaterThan(0);
+        });
+
+        it('compares again on a cold start once the cli compares pictures with other code', async () => {
+          const { product, sketch, storeOf } = stored();
+          const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true };
+          const second = drawing();
+
+          expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same'), store: storeOf() })).toEqual(
+            ['default'],
+          );
+          forgetUnchangedStates();
+          compareCode.value = 'compare-2';
+          try {
+            expect(await unchangedStatesOf({ ...options, pictureOf: second.differs, store: storeOf() })).toEqual([]);
+            expect(second.draws()).toBeGreaterThan(0);
+          } finally {
+            compareCode.value = 'compare-1';
+          }
         });
 
         it('compares again on a cold start with another picture code', async () => {

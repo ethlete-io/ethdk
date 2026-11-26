@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { encodePng } from '../part-compare';
 import { changeBoxOf } from './change-box';
@@ -56,6 +58,14 @@ describe('changeBoxOf', () => {
       ],
       moves: [{ from: { x: 130, y: 10, width: 20, height: 15 }, to: { x: 20, y: 60, width: 20, height: 15 } }],
     });
+  });
+
+  it('reads a popover that moves while its trigger changes beside it as one move', () => {
+    const fixture = (name: string) => readFileSync(join(__dirname, '__fixtures__', 'moved-popover', name));
+
+    expect(changeBoxOf(fixture('before.png'), fixture('after.png'))?.moves).toEqual([
+      { from: { x: 1058, y: 60, width: 386, height: 515 }, to: { x: 559, y: 377, width: 386, height: 527 } },
+    ]);
   });
 
   it('reads two places that change to different content as no move', () => {

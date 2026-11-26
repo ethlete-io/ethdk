@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { dirname, resolve } from 'path';
 import { ALL_PARTS, DrawnPart, PartsChange, redraws } from '../../changed-parts';
 import { drawnPair, PictureOf } from '../../merge-compare';
+import { sketchCompareCodeOf } from '../../code-hash';
 import { ShotStore } from '../../shot-store';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
@@ -307,7 +308,7 @@ export const unchangedStatesOf = async (options: {
     sketch: null,
     props: { target: sketch.target, variant },
   };
-  const diskKey = `unchanged-states:${key}`;
+  const diskKey = `unchanged-states:${sketchCompareCodeOf()}:${key}`;
   const stored = keeps ? store?.readKept(diskKey, address) : undefined;
 
   if (isKept(stored)) return remember(key, stored);
