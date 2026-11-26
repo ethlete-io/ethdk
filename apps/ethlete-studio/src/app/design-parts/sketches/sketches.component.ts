@@ -533,6 +533,7 @@ export class SketchesComponent {
   });
   protected noteSize = computed(() => textAt(NOTE_TEXT, { scale: this.settledScale(), fit: this.noteFit() }));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
+  protected foldZoom = computed(() => this.noteSize() / NOTE_TEXT / this.previewScale());
   protected portNote = computed(() => {
     const port = this.port();
 

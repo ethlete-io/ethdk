@@ -25,7 +25,10 @@ export const STUDIO_MAP = [
     suites: [...canvas('system'), 'page-switch'],
   },
   { glob: 'apps/ethlete-studio/src/app/system-view/page-shell.ts', suites: ['page-switch', 'studio-menu'] },
-  { glob: 'apps/ethlete-studio/src/app/design-parts/sketches/**', suites: [...canvas('sketches'), 'sketches-tree'] },
+  {
+    glob: 'apps/ethlete-studio/src/app/design-parts/sketches/**',
+    suites: [...canvas('sketches'), 'sketches-tree', 'fold-bar-zoom'],
+  },
   { glob: 'apps/ethlete-studio/src/app/system-view/flow-*.ts', suites: canvas('flow') },
   { glob: 'apps/ethlete-studio/src/app/system-view/**', suites: ALL_CANVAS, fallback: true },
   { glob: 'apps/ethlete-studio/src/app/studio-view/**', suites: ['page-switch', 'studio-menu'] },

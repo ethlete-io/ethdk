@@ -77,7 +77,14 @@ test('sketch, design-canvas and system-view files map to canvas', () => {
     `${base}/components/design-canvas/b.ts`,
     `${base}/system-view/anything-else.ts`,
   ]);
-  assert.deepEqual(suites, ['canvas-flow', 'canvas-sketches', 'canvas-system', 'sketches-tree', 'studio-menu']);
+  assert.deepEqual(suites, [
+    'canvas-flow',
+    'canvas-sketches',
+    'canvas-system',
+    'fold-bar-zoom',
+    'sketches-tree',
+    'studio-menu',
+  ]);
   assert.deepEqual(mapChanged([`${base}/system-view/x.ts`]).suites, [
     'canvas-flow',
     'canvas-sketches',

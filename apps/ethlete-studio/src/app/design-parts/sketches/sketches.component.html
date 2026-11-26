@@ -77,236 +77,251 @@
           [style.gap]="chromeSpace()(2)"
           class="flex origin-top-left flex-col gap-space-2 pb-16 [text-rendering:geometricPrecision]"
         >
-          @if (transposed()) {
-            <div
-              #matrix
-              [style.grid-template-columns]="matrixColumns()"
-              [style.column-gap.px]="matrixColumnGap()"
-              [style.row-gap]="chromeSpace()(3)"
-              class="grid gap-y-space-3"
-              data-sk-matrix
-            >
-              @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
-                @let offset = blockIndex * matrixStride();
-                @for (state of block.states; track part() + ' ' + state; let line = $index) {
-                  @let group = headHidden() ? undefined : groupOfState().get(state);
-                  <div
-                    #gutter
-                    [style.font-size.px]="noteSize()"
-                    [style.width.px]="group ? noteSize() * 15 : null"
-                    [style.grid-row]="matrixTop() + 1 + line * 2 + ' / span 2'"
-                    [style.grid-column]="offset + 1"
-                    [style.padding-left.px]="blockIndex > 0 ? COLUMN_GAP : null"
-                    [style.zoom]="chromeZoom()"
-                    [attr.data-sk-block]="blockIndex"
-                    [class]="headHidden() ? 'text-transparent' : 'text-et-surface-text'"
-                    class="flex flex-col justify-center gap-space-1 self-stretch pr-space-3 leading-[1.35]"
-                    data-sk-gutter
-                  >
-                    <span class="font-ui-medium">{{ state }}</span>
-                    @for (reason of group?.reasons ?? []; track $index) {
-                      <span data-sk-crop-reason>{{ reasonTextOf(reason) }}</span>
-                    }
-                    @if (group && group.states.length > 1) {
-                      <span [class.text-et-surface-text-muted]="!headHidden()" data-sk-crop-count>{{
-                        LABELS.sameCrop(group.states.length)
-                      }}</span>
-                    }
-                    @if (group && !group.whole) {
-                      @let whole = !croppedOf(state);
-                      <span class="mt-space-1 flex">
-                        <button
-                          (click)="toggleScreen(state)"
-                          et-button
-                          type="button"
-                          variant="transparent"
-                          size="sm"
-                          data-sk-screen-toggle
+          <div
+            [class.min-w-full]="screenMode()"
+            [style.gap]="chromeSpace()(2)"
+            class="flex w-max flex-col gap-space-2"
+            data-sk-grid-span
+          >
+            @if (transposed()) {
+              <div
+                #matrix
+                [style.grid-template-columns]="matrixColumns()"
+                [style.column-gap.px]="matrixColumnGap()"
+                [style.row-gap]="chromeSpace()(3)"
+                class="grid gap-y-space-3"
+                data-sk-matrix
+              >
+                @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
+                  @let offset = blockIndex * matrixStride();
+                  @for (state of block.states; track part() + ' ' + state; let line = $index) {
+                    @let group = headHidden() ? undefined : groupOfState().get(state);
+                    <div
+                      #gutter
+                      [style.font-size.px]="noteSize()"
+                      [style.width.px]="group ? noteSize() * 15 : null"
+                      [style.grid-row]="matrixTop() + 1 + line * 2 + ' / span 2'"
+                      [style.grid-column]="offset + 1"
+                      [style.padding-left.px]="blockIndex > 0 ? COLUMN_GAP : null"
+                      [style.zoom]="chromeZoom()"
+                      [attr.data-sk-block]="blockIndex"
+                      [class]="headHidden() ? 'text-transparent' : 'text-et-surface-text'"
+                      class="flex flex-col justify-center gap-space-1 self-stretch pr-space-3 leading-[1.35]"
+                      data-sk-gutter
+                    >
+                      <span class="font-ui-medium">{{ state }}</span>
+                      @for (reason of group?.reasons ?? []; track $index) {
+                        <span data-sk-crop-reason>{{ reasonTextOf(reason) }}</span>
+                      }
+                      @if (group && group.states.length > 1) {
+                        <span [class.text-et-surface-text-muted]="!headHidden()" data-sk-crop-count>{{
+                          LABELS.sameCrop(group.states.length)
+                        }}</span>
+                      }
+                      @if (group && !group.whole) {
+                        @let whole = !croppedOf(state);
+                        <span class="mt-space-1 flex">
+                          <button
+                            (click)="toggleScreen(state)"
+                            et-button
+                            type="button"
+                            variant="transparent"
+                            size="sm"
+                            data-sk-screen-toggle
+                          >
+                            {{ whole ? LABELS.cropScreen : LABELS.wholeScreen }}
+                          </button>
+                        </span>
+                      }
+                    </div>
+                  }
+                  @for (row of matrixRows(); track row.key; let column = $index) {
+                    <section
+                      #section
+                      [attr.data-sk-row]="row.key"
+                      [attr.data-sk-unsized]="row.sized === false ? '' : null"
+                      [attr.data-selected]="row.key === selected() ? '' : null"
+                      [style.grid-column]="offset + column + 2"
+                      [style.grid-row]="matrixTop()"
+                      [style.zoom]="chromeZoom()"
+                      class="relative min-w-0 rounded-control-md p-space-2 data-selected:shadow-[0_0_0_2px_var(--et-tone-fill)]"
+                    >
+                      @if (blockIndex === 0) {
+                        <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
+                      } @else {
+                        <span
+                          class="inline-flex max-w-full items-center truncate rounded-full px-1 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
+                          data-sk-head-tag
+                          >{{ SHORT_LABEL_OF(row.label ?? (row.key === CURRENT ? LABELS.current : row.key)) }}</span
                         >
-                          {{ whole ? LABELS.cropScreen : LABELS.wholeScreen }}
-                        </button>
-                      </span>
+                      }
+                    </section>
+                    @for (item of row.shots; track item.state) {
+                      @if (block.states.includes(item.state)) {
+                        <ng-container
+                          *ngTemplateOutlet="
+                            cellTemplate;
+                            context: {
+                              $implicit: row,
+                              item,
+                              column: offset + column + 2,
+                              line: matrixLineOf(block.states, item.state),
+                            }
+                          "
+                        />
+                      }
                     }
-                  </div>
-                }
-                @for (row of matrixRows(); track row.key; let column = $index) {
-                  <section
-                    #section
-                    [attr.data-sk-row]="row.key"
-                    [attr.data-sk-unsized]="row.sized === false ? '' : null"
-                    [attr.data-selected]="row.key === selected() ? '' : null"
-                    [style.grid-column]="offset + column + 2"
-                    [style.grid-row]="matrixTop()"
-                    [style.zoom]="chromeZoom()"
-                    class="relative min-w-0 rounded-control-md p-space-2 data-selected:shadow-[0_0_0_2px_var(--et-tone-fill)]"
-                  >
-                    @if (blockIndex === 0) {
-                      <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
-                    } @else {
-                      <span
-                        class="inline-flex max-w-full items-center truncate rounded-full px-1 py-0.5 text-ui-xs font-ui-medium text-et-surface-text shadow-[0_0_0_1px_var(--et-surface-border)]"
-                        data-sk-head-tag
-                        >{{ SHORT_LABEL_OF(row.label ?? (row.key === CURRENT ? LABELS.current : row.key)) }}</span
-                      >
-                    }
-                  </section>
-                  @for (item of row.shots; track item.state) {
-                    @if (block.states.includes(item.state)) {
-                      <ng-container
-                        *ngTemplateOutlet="
-                          cellTemplate;
-                          context: {
-                            $implicit: row,
-                            item,
-                            column: offset + column + 2,
-                            line: matrixLineOf(block.states, item.state),
-                          }
-                        "
-                      />
+                    @for (state of block.states; track state) {
+                      @if (!shotOf(row, state)) {
+                        <div
+                          [style.grid-column]="offset + column + 2"
+                          [style.grid-row]="matrixLineOf(block.states, state)"
+                          [attr.data-sk-state]="state"
+                          [attr.data-sk-variant]="row.key"
+                          [attr.data-sk-failed-cell]="failures()[row.key] === undefined ? null : ''"
+                          [style.row-gap]="chromeSpace()(1)"
+                          class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
+                          data-sk-missing
+                        >
+                          <div
+                            [style.width.px]="row.width * scale()"
+                            [style.font-size.px]="labelFont()"
+                            [style.padding]="chromeSpace()(2)"
+                            class="row-start-2 box-border flex items-center justify-center self-start rounded-control-sm border border-dashed border-(--et-surface-border) p-space-2 text-center font-code leading-[1.35] text-et-surface-text-muted"
+                          >
+                            {{ matrixMissingLabelOf(row) }}
+                          </div>
+                        </div>
+                      }
                     }
                   }
-                  @for (state of block.states; track state) {
-                    @if (!shotOf(row, state)) {
+                }
+                @if (sameRows().length > 0) {
+                  @if (sameOpen()) {
+                    @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
                       <div
-                        [style.grid-column]="offset + column + 2"
-                        [style.grid-row]="matrixLineOf(block.states, state)"
-                        [attr.data-sk-state]="state"
-                        [attr.data-sk-variant]="row.key"
-                        [attr.data-sk-failed-cell]="failures()[row.key] === undefined ? null : ''"
-                        [style.row-gap]="chromeSpace()(1)"
-                        class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1"
-                        data-sk-missing
+                        [style.grid-column]="
+                          blockIndex * matrixStride() + sameColumn() + ' / span ' + sameRows().length
+                        "
+                        [style.zoom]="chromeZoom()"
+                        class="row-start-1 self-end rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border)]"
+                        data-sk-same
+                        data-open
                       >
-                        <div
-                          [style.width.px]="row.width * scale()"
-                          [style.font-size.px]="labelFont()"
-                          [style.padding]="chromeSpace()(2)"
-                          class="row-start-2 box-border flex items-center justify-center self-start rounded-control-sm border border-dashed border-(--et-surface-border) p-space-2 text-center font-code leading-[1.35] text-et-surface-text-muted"
-                        >
-                          {{ matrixMissingLabelOf(row) }}
-                        </div>
+                        <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
                       </div>
                     }
-                  }
-                }
-              }
-              @if (sameRows().length > 0) {
-                @if (sameOpen()) {
-                  @for (block of matrixBlocks(); track $index; let blockIndex = $index) {
+                  } @else {
                     <div
-                      [style.grid-column]="blockIndex * matrixStride() + sameColumn() + ' / span ' + sameRows().length"
+                      #fold
+                      [style.grid-column]="matrixFoldColumn()"
+                      [style.grid-row]="'1 / span ' + (matrixTallest() * 2 + 1)"
                       [style.zoom]="chromeZoom()"
-                      class="row-start-1 self-end rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border)]"
+                      class="flex w-36 flex-col gap-space-2 rounded-control-md p-space-1 shadow-[0_0_0_1px_var(--et-surface-border)]"
                       data-sk-same
-                      data-open
                     >
                       <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
                     </div>
                   }
-                } @else {
-                  <div
-                    #fold
-                    [style.grid-column]="matrixFoldColumn()"
-                    [style.grid-row]="'1 / span ' + (matrixTallest() * 2 + 1)"
-                    [style.zoom]="chromeZoom()"
-                    class="flex w-36 flex-col gap-space-2 rounded-control-md p-space-1 shadow-[0_0_0_1px_var(--et-surface-border)]"
-                    data-sk-same
-                  >
-                    <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
-                  </div>
                 }
-              }
-            </div>
-          } @else if (listMeasured()) {
-            @let lines = grid();
-            <div
-              [class.flex-col]="!sideBySide() && !lines"
-              [class.items-stretch]="!sideBySide() && !lines"
-              [class.grid]="!!lines || sideBySide()"
-              [class.grid-flow-col]="sideBySide() && !lines"
-              [class.auto-cols-max]="sideBySide() && !lines"
-              [class.grid-rows-[auto_auto]]="sideBySide() && !lines"
-              [class.justify-start]="sideBySide() && !lines"
-              [class.flex]="!lines && !sideBySide()"
-              [style.grid-template-columns]="
-                lines ? 'repeat(' + (stacked() ? 2 : changedRows().length + 1) + ', max-content)' : null
-              "
-              [style.grid-template-rows]="
-                lines
-                  ? 'repeat(' + (2 + lines.lines.length * 2) * (stacked() ? changedRows().length : 1) + ', auto)'
-                  : null
-              "
-              [attr.data-sk-side-by-side]="sideBySide() ? '' : null"
-              [attr.data-sk-stacked]="stacked() ? '' : null"
-              [attr.data-sk-grid]="lines ? '' : null"
-              [style.gap]="chromeSpace()(2)"
-              class="gap-space-2"
-              data-sk-changed
-            >
-              @if (lines) {
-                @for (block of stacked() ? changedRows() : [null]; track $index; let blockIndex = $index) {
-                  <div
-                    #lineHeads
-                    [class.row-span-full]="!stacked()"
-                    [style.grid-row]="stackedGridRowOf(blockIndex)"
-                    class="col-start-1 grid grid-rows-subgrid"
-                    data-sk-line-heads
-                  >
-                    @for (line of lines.lines; track line.base; let index = $index) {
-                      <span
-                        [style.grid-row]="3 + index * 2 + ' / span 2'"
-                        [style.font-size.px]="labelFont()"
-                        class="self-center pr-space-1 font-code leading-[1.35] whitespace-nowrap text-et-surface-text"
-                        data-sk-line-head
-                        >{{ line.base }}</span
-                      >
-                    }
-                  </div>
-                }
-              }
-              @for (row of changedRows(); track row.key; let block = $index) {
-                <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row, block }" />
-              }
-            </div>
-            @if (sameRows().length > 0) {
-              <section
-                [attr.data-open]="sameOpen() ? '' : null"
-                class="rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border)]"
-                data-sk-same
+              </div>
+            } @else if (listMeasured()) {
+              @let lines = grid();
+              <div
+                [class.flex-col]="!sideBySide() && !lines"
+                [class.items-stretch]="!sideBySide() && !lines"
+                [class.grid]="!!lines || sideBySide()"
+                [class.grid-flow-col]="sideBySide() && !lines"
+                [class.auto-cols-max]="sideBySide() && !lines"
+                [class.grid-rows-[auto_auto]]="sideBySide() && !lines"
+                [class.justify-start]="sideBySide() && !lines"
+                [class.flex]="!lines && !sideBySide()"
+                [style.grid-template-columns]="
+                  lines ? 'repeat(' + (stacked() ? 2 : changedRows().length + 1) + ', max-content)' : null
+                "
+                [style.grid-template-rows]="
+                  lines
+                    ? 'repeat(' + (2 + lines.lines.length * 2) * (stacked() ? changedRows().length : 1) + ', auto)'
+                    : null
+                "
+                [attr.data-sk-side-by-side]="sideBySide() ? '' : null"
+                [attr.data-sk-stacked]="stacked() ? '' : null"
+                [attr.data-sk-grid]="lines ? '' : null"
+                [style.gap]="chromeSpace()(2)"
+                class="gap-space-2"
+                data-sk-changed
               >
-                <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs">
-                  @if (sameOpen()) {
-                    <div class="flex flex-col gap-space-2 pt-space-2">
-                      @for (row of sameRows(); track row.key) {
-                        <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row }" />
+                @if (lines) {
+                  @for (block of stacked() ? changedRows() : [null]; track $index; let blockIndex = $index) {
+                    <div
+                      #lineHeads
+                      [class.row-span-full]="!stacked()"
+                      [style.grid-row]="stackedGridRowOf(blockIndex)"
+                      class="col-start-1 grid grid-rows-subgrid"
+                      data-sk-line-heads
+                    >
+                      @for (line of lines.lines; track line.base; let index = $index) {
+                        <span
+                          [style.grid-row]="3 + index * 2 + ' / span 2'"
+                          [style.font-size.px]="labelFont()"
+                          class="self-center pr-space-1 font-code leading-[1.35] whitespace-nowrap text-et-surface-text"
+                          data-sk-line-head
+                          >{{ line.base }}</span
+                        >
                       }
                     </div>
                   }
-                </ethlete-disclosure>
+                }
+                @for (row of changedRows(); track row.key; let block = $index) {
+                  <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row, block }" />
+                }
+              </div>
+              @if (sameRows().length > 0) {
+                <section
+                  [attr.data-open]="sameOpen() ? '' : null"
+                  class="rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border)]"
+                  data-sk-same
+                >
+                  <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs">
+                    @if (sameOpen()) {
+                      <div class="flex flex-col gap-space-2 pt-space-2">
+                        @for (row of sameRows(); track row.key) {
+                          <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row }" />
+                        }
+                      </div>
+                    }
+                  </ethlete-disclosure>
+                </section>
+              }
+            }
+            @if (foldedStates().size > 0) {
+              <section
+                [attr.data-sk-pending]="pendingStates().size > 0 ? '' : null"
+                [style.padding]="'calc(var(--space-2) * ' + foldZoom() + ')'"
+                class="w-0 min-w-full overflow-clip rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border)]"
+                data-sk-folded
+              >
+                <span
+                  [style.transform]="'translateX(' + canvas.stickyLeft() + 'px)'"
+                  [style.gap]="'calc(var(--space-3) * ' + foldZoom() + ')'"
+                  [class.invisible]="headHidden()"
+                  class="flex items-center"
+                >
+                  <span [style.zoom]="foldZoom()" class="text-ui-sm whitespace-nowrap text-et-surface-text-muted">{{
+                    foldLabel()
+                  }}</span>
+                  <ethlete-disclosure
+                    [(open)]="statesOpen"
+                    [label]="statesOpen() ? LABELS.hideStates : LABELS.showAllStates"
+                    [style.zoom]="foldZoom()"
+                    (openChange)="showListTop()"
+                    hug
+                    size="xs"
+                  />
+                </span>
               </section>
             }
-          }
-          @if (foldedStates().size > 0) {
-            <section
-              [attr.data-sk-pending]="pendingStates().size > 0 ? '' : null"
-              class="overflow-clip rounded-control-md p-space-2 shadow-[0_0_0_1px_var(--et-surface-border)]"
-              data-sk-folded
-            >
-              <span
-                [style.transform]="'translateX(' + canvas.stickyLeft() + 'px)'"
-                class="flex items-center gap-space-3"
-              >
-                <span class="text-ui-sm text-et-surface-text-muted">{{ foldLabel() }}</span>
-                <ethlete-disclosure
-                  [(open)]="statesOpen"
-                  [label]="statesOpen() ? LABELS.hideStates : LABELS.showAllStates"
-                  (openChange)="showListTop()"
-                  hug
-                  size="xs"
-                />
-              </span>
-            </section>
-          }
+          </div>
         </div>
       </ethlete-canvas-viewport>
       @if (editHolding()) {
