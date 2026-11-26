@@ -32,7 +32,7 @@ How the doc session and the builder work. A process change edits this page.
 - Automatic work must not wait on a manual approval. If a permission check denies a step, nobody routes around it: the row parks with the denial text, and the doc session plans a tool change that makes the step transparent.
 - Two failed repairs: revert to the last good state.
 - Red CI is first, before every other row.
-- One heavy job runs on the machine at a time, across all repos: every design check, build, e2e or full test run goes through `flock /tmp/fifagg-heavy.lock`, with at most 2 local e2e workers. A long-running server (Storybook, `design serve`) never starts under the lock. One lock hold lasts at most 15 minutes: a longer suite runs in chunks, each chunk takes the lock on its own, so waiting jobs get a turn in between. An agent stops every process it started before it hands back.
+- At most 3 heavy jobs run on tank at once, across all repos: every design check of a whole project, build, e2e suite or full test run goes through `node /home/tom/dev/ethlete-sdk/tools/scripts/heavy.mjs run -- <cmd>` (the other repo calls it by that absolute path), with at most 2 local e2e workers. Light jobs take no slot: one design check of one part, one spec file, one e2e `--case`. Visual shards and every picture-comparing suite stay on tank (Linux-only baselines) and count against the 3 slots; only non-visual suites go to the rack. A long-running server (Storybook, `design serve`) never starts under a slot. One hold lasts at most 15 minutes: a longer suite runs in chunks. An agent stops every process it started before it hands back.
 
 ## Git
 
