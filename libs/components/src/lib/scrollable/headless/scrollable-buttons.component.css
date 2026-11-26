@@ -102,7 +102,7 @@
       }
     }
 
-    &.et-scrollable--can-scroll:not(.et-scrollable--is-at-end):has(.et-scrollable-buttons--inside) {
+    &.et-scrollable--can-scroll:has(.et-scrollable-buttons--inside) {
       &[direction='horizontal'] > .et-scrollable-wrapper > .et-scrollable-container,
       &:not([direction]) > .et-scrollable-wrapper > .et-scrollable-container {
         padding-inline-end: var(--et-scrollable-buttons-end-space);

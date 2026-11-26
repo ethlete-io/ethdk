@@ -8,6 +8,7 @@ const SNAP_STORY_ID = 'components-layout-scrollable--with-snap';
 const FOOTER_BUTTONS_STORY_ID = 'components-layout-scrollable--footer-buttons';
 const STICKY_BUTTONS_STORY_ID = 'components-layout-scrollable--sticky-buttons';
 const BORDER_MASK_STORY_ID = 'components-layout-scrollable--border-mask';
+const PROVIDED_BUTTON_COLOR_STORY_ID = 'components-layout-scrollable--provided-button-color';
 
 const HOST = '.et-scrollable';
 const CONTAINER = '.et-scrollable-container';
@@ -412,6 +413,37 @@ test.describe('scrollable / edges and chrome', () => {
     await expect.poll(() => readScrollTop(container)).toBeGreaterThan(0);
     expect(await readScrollLeft(container)).toBe(0);
   });
+
+  for (const { testId, axis } of [
+    { testId: 'tokens', axis: 'horizontal' },
+    { testId: 'tokens-vertical', axis: 'vertical' },
+  ] as const) {
+    test(`a ${axis} track with an end space stays at its end once the end is reached`, async ({ page }) => {
+      const root = await openStory(page, PROVIDED_BUTTON_COLOR_STORY_ID);
+      const host = root.getByTestId(testId);
+      const container = host.locator(CONTAINER);
+      await expect(host).toHaveClass(/et-scrollable--can-scroll/);
+
+      const atMax = await container.evaluate((el, vertical) => {
+        if (vertical) el.scrollTop = el.scrollHeight - el.clientHeight;
+        else el.scrollLeft = el.scrollWidth - el.clientWidth;
+
+        return vertical ? el.scrollTop : el.scrollLeft;
+      }, axis === 'vertical');
+
+      await expect(host).toHaveClass(/et-scrollable--is-at-end/);
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+
+      const position = await container.evaluate((el, vertical) => {
+        const max = vertical ? el.scrollHeight - el.clientHeight : el.scrollWidth - el.clientWidth;
+
+        return { current: vertical ? el.scrollTop : el.scrollLeft, max };
+      }, axis === 'vertical');
+
+      expect(position.current).toBeGreaterThanOrEqual(atMax - 1);
+      expect(position.current).toBeGreaterThanOrEqual(position.max - 1);
+    });
+  }
 });
 
 test.describe('scrollable / scroll origin and margin', () => {

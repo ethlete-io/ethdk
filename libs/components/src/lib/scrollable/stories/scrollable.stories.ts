@@ -217,6 +217,18 @@ export const ProvidedButtonColor: Story = {
             }
           </div>
         </et-scrollable>
+        <et-scrollable
+          data-testid="tokens-vertical"
+          direction="vertical"
+          class="block h-64"
+          style="--et-scrollable-buttons-end-space: 4rem"
+        >
+          <div class="flex flex-col gap-2">
+            @for (i of [1,2,3,4,5,6,7,8,9,10,11,12]; track i) {
+              <div class="shrink-0 w-32 h-16 bg-gray-200 flex items-center justify-center">{{ i }}</div>
+            }
+          </div>
+        </et-scrollable>
       </div>
     `,
   }),

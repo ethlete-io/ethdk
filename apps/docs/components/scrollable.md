@@ -78,7 +78,7 @@ Three CSS custom properties tune the `'inside'` buttons. Set them on the scrolla
 | `--et-scrollable-buttons-end-space` | Space left at the end of the track, so the last items are not covered by the end button |
 | `--et-scrollable-buttons-extent`    | Box size the buttons are positioned by (default: icon button size + `0.4rem`)           |
 
-`offset` and `end-space` are `<length>` and default to `0`. `end-space` applies only while the list can scroll and is not at its end. Set `extent` to the button size (for example `30px` for a filled button) so the offset is measured from the visible fill.
+`offset` and `end-space` are `<length>` and default to `0`. `end-space` applies while the list can scroll, including at its end, so it also shows after the last item. Set `extent` to the button size (for example `30px` for a filled button) so the offset is measured from the visible fill.
 
 ## Live demo
 
