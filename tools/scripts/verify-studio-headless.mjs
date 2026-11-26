@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stripVTControlCharacters } from 'node:util';
+import { HEAVY_LOCK_POLL_MS, holderLine, waitForNoHeavyRun } from './heavy-run-lock.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
@@ -113,15 +114,35 @@ export const ensureCli = () => {
   if (staleCliBuildMessage({ root, buildDir })) throw new Error('dist/libs/cli is still stale after npx nx build cli');
 };
 
-export const buildStudio = (outputPath, stamp) => {
+export const STUDIO_BUILD_MAX_WAIT_MS = 15 * 60_000;
+
+/**
+ * Builds Studio into `outputPath` once no other process holds the heavy-run lock; throws after `maxWaitMs`.
+ */
+export const buildStudio = async (
+  outputPath,
+  stamp,
+  {
+    env = process.env,
+    maxWaitMs = Number(env['ETHLETE_HEAVY_MAX_WAIT_MS']) || STUDIO_BUILD_MAX_WAIT_MS,
+    pollMs = Number(env['ETHLETE_HEAVY_POLL_MS']) || HEAVY_LOCK_POLL_MS,
+    run = execFileSync,
+  } = {},
+) => {
   stamp('studio build starting');
-  execFileSync(
+  const free = await waitForNoHeavyRun('studio build', { env, maxWaitMs, pollMs, log: stamp });
+
+  if (!free.ok)
+    throw new Error(
+      `studio build: ${holderLine(free.holder)}, still after ${Math.round(maxWaitMs / 1000)}s; run again after it ends`,
+    );
+  run(
     'npx',
     ['nx', 'build', 'ethlete-studio', `--outputPath=${outputPath}`, '--excludeTaskDependencies', '--skip-nx-cache'],
     {
       cwd: root,
       stdio: 'inherit',
-      env: { ...process.env, NX_NO_CLOUD: 'true' },
+      env: { ...env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false', ETHLETE_HEAVY_NO_WAIT: 'true' },
     },
   );
   stamp('studio build done');
@@ -311,7 +332,7 @@ export const withStudio = async (
     ensureCli();
     ensureDesignHost();
 
-    if (build && !built) buildStudio(scratch, stamp);
+    if (build && !built) await buildStudio(scratch, stamp);
 
     design = await startDesignServer(checkout, stamp, echoDesign);
     onStep?.('designServer');

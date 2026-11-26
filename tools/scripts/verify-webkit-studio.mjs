@@ -1,9 +1,10 @@
-import { execFileSync, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
+  buildStudio,
   listen,
   missingBuildInputs,
   serveStatic,
@@ -84,12 +85,7 @@ try {
   if (missing.length) throw new Error(`build inputs missing:\n${missing.join('\n')}`);
 
   if (!built && studioChecks.some((check) => check !== 'soak')) {
-    stamp('studio build starting');
-    execFileSync(
-      'npx',
-      ['nx', 'build', 'ethlete-studio', `--outputPath=${scratch}`, '--excludeTaskDependencies', '--skip-nx-cache'],
-      { cwd: root, stdio: 'inherit', env: { ...process.env, NX_NO_CLOUD: 'true' } },
-    );
+    await buildStudio(scratch, stamp);
   }
 
   process.env['DE_PORT'] ??= String(await freePort());

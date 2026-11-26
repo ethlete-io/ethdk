@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
@@ -6,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
 import {
+  buildStudio,
   designProject,
   missingBuildInputs,
   serveOnlyAnswer,
@@ -193,4 +195,60 @@ test('serve-only injects the shim script into index.html and preselects the view
       assert.match(script, /ethlete-studio\.call-view/);
     },
   );
+});
+
+const studioBuildRun = (lockFile, module = './verify-studio-headless.mjs') => {
+  const env = { ...process.env, ETHLETE_HEAVY_LOCK_FILE: lockFile, NX_DAEMON: 'false', NX_NO_CLOUD: 'true' };
+
+  delete env['ETHLETE_HEAVY_RUN_HELD'];
+  delete env['ETHLETE_HEAVY_MAX_WAIT_MS'];
+  delete env['ETHLETE_HEAVY_POLL_MS'];
+  const script = `
+    const { buildStudio } = await import(${JSON.stringify(new URL(module, import.meta.url).href)});
+    await buildStudio('/nonexistent-studio-build', console.log, {
+      maxWaitMs: 1500,
+      pollMs: 100,
+      run: () => console.log('nx build ran'),
+    });
+  `;
+
+  return spawnSync(process.execPath, ['--input-type=module', '-e', script], {
+    cwd: root,
+    env,
+    encoding: 'utf8',
+    timeout: 45_000,
+  });
+};
+
+test('a studio build waits in the open while a heavy run holds the lock and gives up with its holder', () => {
+  const dir = tempDir('studio-build-wait-');
+  const lockFile = join(dir, 'ethlete-heavy-run.lock');
+
+  writeFileSync(lockFile, JSON.stringify({ pid: process.pid, name: 'studio:e2e', started: Date.now() }));
+  const startedAt = Date.now();
+  const run = studioBuildRun(lockFile);
+
+  assert.notEqual(run.signal, 'SIGTERM', `the build hung past 45s:\n${run.stdout}${run.stderr}`);
+  assert.equal(run.status, 1, `${run.stdout}${run.stderr}`);
+  assert.match(run.stdout, /studio build: waiting for studio:e2e/);
+  assert.match(run.stderr, /heavy run lock held by studio:e2e .*still after 2s; run again after it ends/);
+  assert.doesNotMatch(run.stdout, /nx build ran/);
+  assert.ok(Date.now() - startedAt < 15_000);
+});
+
+test('a studio build runs Nx without its wait hook once the heavy-run lock is free', async () => {
+  const dir = tempDir('studio-build-free-');
+  const calls = [];
+  const lines = [];
+
+  await buildStudio(join(dir, 'out'), (line) => lines.push(line), {
+    env: { ETHLETE_HEAVY_LOCK_FILE: join(dir, 'ethlete-heavy-run.lock') },
+    pollMs: 10,
+    run: (command, args, options) => calls.push({ command, args, env: options.env }),
+  });
+
+  assert.deepEqual(lines, ['studio build starting', 'studio build done']);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].env['NX_DAEMON'], 'false');
+  assert.equal(calls[0].env['ETHLETE_HEAVY_NO_WAIT'], 'true');
 });
