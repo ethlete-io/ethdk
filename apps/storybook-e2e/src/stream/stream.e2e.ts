@@ -28,6 +28,7 @@ const DAILYMOTION_STORY_ID = 'components-media-stream-dailymotion--default';
 const TIKTOK_STORY_ID = 'components-media-stream-tiktok--default';
 const MIXED_STORY_ID = 'components-media-stream-mixed--mixed-aspect-ratios';
 const YOUTUBE_PIP_STORY_ID = 'components-media-stream-youtube--slot-picture-in-picture';
+const KICK_PIP_OVER_SHEET_STORY_ID = 'components-media-stream-kick--slot-picture-in-picture-over-sheet';
 const PIP_WINDOW = 'et-pip-window';
 const PIP_TITLE_BAR = '.et-pip-window__title-bar';
 const PIP_WINDOW_DEFAULT_LAYER = '2147483005';
@@ -1248,5 +1249,66 @@ test.describe('stream / pip edges', () => {
     await expect(pipWindow).not.toHaveClass(/et-pip-window--collapsed/);
     await expect(pipWindow.locator(COLLAPSE_OVERLAY)).toHaveCount(0);
     await expectInsideViewportPadding(page, pipWindow);
+  });
+});
+
+test.describe('stream / pip over a sheet', () => {
+  async function openPipOverSheet(page: Page): Promise<{ pipWindow: Locator; sheet: Locator }> {
+    await blockThirdParty(page);
+    const root = await openStory(page, KICK_PIP_OVER_SHEET_STORY_ID);
+
+    await root.getByRole('button', { name: 'Enter PIP' }).click();
+
+    const pipWindow = page.locator(PIP_WINDOW);
+
+    await expect(pipWindow).toBeVisible();
+    await root.getByRole('button', { name: 'Open sheet' }).click();
+
+    const sheet = page.getByText('Match details');
+
+    await expect(sheet).toBeVisible();
+
+    return { pipWindow, sheet };
+  }
+
+  async function press(button: Locator, isMobile: boolean): Promise<void> {
+    if (isMobile) {
+      await button.tap();
+    } else {
+      await button.click();
+    }
+  }
+
+  async function drag(page: Page, from: TouchPoint, to: TouchPoint, isMobile: boolean): Promise<void> {
+    if (isMobile) {
+      await touchDrag(page, from, to);
+    } else {
+      await mouseDrag(page, from, to);
+    }
+  }
+
+  test('dragging the title bar keeps the sheet open', async ({ page, isMobile }) => {
+    const { pipWindow, sheet } = await openPipOverSheet(page);
+
+    await revealTitleBar(pipWindow);
+
+    const spacer = await boxOf(pipWindow.locator('.et-pip-window__title-bar-spacer'));
+    const grip = centerOf(spacer);
+    const to = { x: grip.x, y: grip.y - 120 };
+
+    await drag(page, grip, to, isMobile);
+
+    await expect.poll(async () => (await boxOf(pipWindow)).y).toBeLessThan(spacer.y);
+    await expect(sheet).toBeVisible();
+  });
+
+  test('pressing close keeps the sheet open', async ({ page, isMobile }) => {
+    const { pipWindow, sheet } = await openPipOverSheet(page);
+
+    await revealTitleBar(pipWindow);
+    await press(pipWindow.getByRole('button', { name: 'Close' }), isMobile);
+
+    await expect(pipWindow).toHaveCount(0);
+    await expect(sheet).toBeVisible();
   });
 });
