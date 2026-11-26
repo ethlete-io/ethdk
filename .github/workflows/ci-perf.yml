@@ -10,12 +10,18 @@ on:
     paths-ignore:
       - 'plans/**'
   pull_request:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit to measure; empty = the dispatched ref'
+        required: false
+        type: string
 
 env:
   NX_NO_CLOUD: 'true'
 
 concurrency:
-  group: ci-perf-${{ github.ref }}
+  group: ci-perf-${{ github.ref }}${{ inputs.sha && format('-{0}-{1}', inputs.sha, github.run_id) || '' }}
   cancel-in-progress: true
 
 jobs:
@@ -29,6 +35,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ inputs.sha || '' }}
 
       - uses: ./.github/actions/setup
 
