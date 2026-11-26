@@ -159,6 +159,20 @@ describe('SystemViewComponent on a reload', () => {
     expect(rememberedView().systemEntry).toBe('sketch:elements/rating');
   });
 
+  it('asks for the compare of the remembered sketch of the remembered product before the products answer', async () => {
+    const asked: string[] = [];
+
+    vi.stubGlobal('fetch', (url: string) => {
+      asked.push(url);
+
+      return new Promise(() => undefined);
+    });
+
+    await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
+
+    expect(asked).toContain('http://localhost:4402/__design/sketches?product=web&sketch=elements%2Frating');
+  });
+
   it('shows no read error, no call tree and the project name while the products of a switched project are listed', async () => {
     const call = (slug: string): ListedCall => ({
       slug,

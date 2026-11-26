@@ -62,6 +62,21 @@ describe('sketchRead$', () => {
     ]);
   });
 
+  it('asks for the names, the quick listing and the compare of the picked sketch without waiting on each other', async () => {
+    const asked: string[] = [];
+
+    vi.stubGlobal('fetch', (url: string) => {
+      asked.push(new URL(url).search);
+
+      return new Promise(() => undefined);
+    });
+
+    const read = sketchRead$({ port: 1, product: 'p', picked: 'sketch:a' }).subscribe();
+
+    expect(asked).toEqual(['?product=p&unchanged=no&targets=no', '?product=p&unchanged=no', '?product=p&sketch=a']);
+    read.unsubscribe();
+  });
+
   it('compares a sketch picked after the start alone while the full listing runs', async () => {
     const asked: string[] = [];
     const other = { target: 'b' };

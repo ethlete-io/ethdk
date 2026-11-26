@@ -552,11 +552,15 @@ export class SystemViewComponent {
 
   public productName = computed(() => this.product()?.name ?? '');
 
+  private sketchReadProduct = computed(() =>
+    this.productsRead() ? this.product()?.name : (this.pickedProduct() ?? undefined),
+  );
+
   private sketchRead: Signal<SketchRead | null> = toSignal(
     toObservable(
       computed(() => ({
         port: this.port(),
-        product: this.product()?.name,
+        product: this.sketchReadProduct(),
         epoch: this.epoch(),
         revision: this.sketchesRevision(),
         reloads: this.sketchReloads(),
