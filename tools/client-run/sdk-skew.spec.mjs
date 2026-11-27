@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, it } from 'node:test';
 import { SDK_LIBS, skewOf } from './sdk-skew.mjs';
 
 const repo = resolve(import.meta.dirname, '../..');
-const run1751 = join(process.env.HOME ?? '', 'dev/client-runs/2026-11-24-1751/tomflix');
+const installed1751 = join(import.meta.dirname, 'fixtures/run-1751-installed/ethlete');
+const sdk1751 = join(import.meta.dirname, 'fixtures/run-1751-sdk');
 
 const writeLib = (root, lib, version) => {
   mkdirSync(root, { recursive: true });
@@ -16,7 +17,9 @@ const writeLib = (root, lib, version) => {
 
 describe('skewOf', () => {
   it('reports components of the real run 2026-11-24-1751 (next.79 next to cli next.44)', () => {
-    const skew = skewOf({ target: run1751, sdk: repo });
+    const target = mkdtempSync(join(tmpdir(), 'skew-1751-'));
+    cpSync(installed1751, join(target, 'node_modules/@ethlete'), { recursive: true });
+    const skew = skewOf({ target, sdk: sdk1751 });
     assert.deepEqual(skew.find((s) => s.lib === 'components')?.installed, '1.0.0-next.79');
     assert.equal(
       skew.find((s) => s.lib === 'cli'),

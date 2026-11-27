@@ -3,6 +3,7 @@ import { cpSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFil
 import { createServer } from 'node:net';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { headOf, previousRunOf } from './findings-head.mjs';
 import { frameFindingsOf, probeFrame } from './frame-probe.mjs';
 import { decodePng, differenceOf, inkOf } from './png.mjs';
 import { textOnlyCopiesOf } from './text-only.mjs';
@@ -220,9 +221,11 @@ export const findingsOf = ({ shots, refusals, result, tree = [] }) => {
   return findings;
 };
 
-const markdownOf = ({ runDir, findings, skipped, result }) =>
+const markdownOf = ({ runDir, findings, skipped, result, previous }) =>
   [
     `# Kunden-Vorlauf ${runDir.split('/').pop()}`,
+    '',
+    headOf({ findings, previous }),
     '',
     `Lauf: \`${runDir}\`. ${findings.length} Befunde${skipped ? `, ${skipped} Bilder nicht geprüft (Grenze ${MAX_SHOTS})` : ''}.`,
     '',
@@ -276,7 +279,13 @@ export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] 
         ...logoFindingsOf({ expected, shots, katalog: katalogOf(target) }),
       ],
     });
-    const markdown = markdownOf({ runDir, findings, skipped, result: transcript.result });
+    const markdown = markdownOf({
+      runDir,
+      findings,
+      skipped,
+      result: transcript.result,
+      previous: previousRunOf(runDir),
+    });
     writeFileSync(join(runDir, 'findings.md'), markdown);
     console.log(markdown);
     return findings;
