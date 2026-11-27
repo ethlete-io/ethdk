@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Worker } from 'worker_threads';
-import { watchHeap, watchWorkerHeap } from './heap-watch';
+import { chromeProcessesLineOf, chromeProcessesOf, watchHeap, watchWorkerHeap } from './heap-watch';
 
 const MB = 1024 * 1024;
 
@@ -16,6 +16,7 @@ describe('watchHeap', () => {
       log: (line) => lines.push(line),
       heap: () => ({ used, limit: 4000 * MB }),
       workerHeaps: () => Promise.resolve([]),
+      chromeProcesses: () => Promise.resolve(null),
       everyMs: 1000,
     });
 
@@ -49,6 +50,7 @@ describe('watchHeap', () => {
     const stop = watchHeap({
       log: (line) => lines.push(line),
       heap: () => ({ used: 300 * MB, limit: 4000 * MB }),
+      chromeProcesses: () => Promise.resolve(null),
       everyMs: 1000,
     });
 
@@ -62,5 +64,21 @@ describe('watchHeap', () => {
     expect(lines[0]).toBe('heap 300/4000 MB');
     expect(lines[1]).toMatch(/^worker heaps render \d+ MB$/);
     expect(lines.slice(2)).toEqual(['heap 300/4000 MB']);
+  });
+});
+
+describe('chromeProcessesOf', () => {
+  it('counts live, zombie, root and orphan Chrome processes', () => {
+    const ps = [
+      '  10     1 Ssl  node',
+      '  20    10 Sl   chrome-headless',
+      '  21    20 S    chrome',
+      '  22    20 Z    chrome <defunct>',
+      '  30     1 Sl   chrome',
+    ].join('\n');
+    const counts = chromeProcessesOf(ps);
+
+    expect(counts).toEqual({ live: 3, zombie: 1, roots: 2, orphans: 1 });
+    expect(chromeProcessesLineOf(counts)).toBe('chromeProcesses live 3 zombie 1 roots 2 orphans 1');
   });
 });

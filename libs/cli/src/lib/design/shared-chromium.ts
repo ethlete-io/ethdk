@@ -6,9 +6,11 @@ type Browser = Awaited<ReturnType<Chromium['launch']>>;
 /**
  * A `chromiumOf` whose `launch` starts one Chromium per distinct `args` for every draw queue that asks it, so a process
  * keeps one browser root per flag set. Each launch returns a lease; its `close` ends that browser only when its last
- * lease closes.
+ * lease closes. `closeAll` ends every browser at once, leased or not.
  */
-export const sharedChromiumOf = (resolveChromium: ChromiumOf = chromiumOf): ChromiumOf => {
+export const sharedChromiumOf = (
+  resolveChromium: ChromiumOf = chromiumOf,
+): ChromiumOf & { closeAll: () => Promise<void> } => {
   let resolved: ReturnType<ChromiumOf> | null = null;
   const browsers = new Map<string, Promise<Browser>>();
   const leases = new Map<string, number>();
@@ -42,7 +44,16 @@ export const sharedChromiumOf = (resolveChromium: ChromiumOf = chromiumOf): Chro
     });
   };
 
-  return async (target) => {
+  const closeAll = async () => {
+    const open = [...browsers.values()];
+
+    browsers.clear();
+    leases.clear();
+
+    await Promise.all(open.map((launching) => launching.then((browser) => browser.close()).catch(() => undefined)));
+  };
+
+  const shared: ChromiumOf = async (target) => {
     resolved ??= resolveChromium(target);
 
     const found = await resolved;
@@ -79,4 +90,6 @@ export const sharedChromiumOf = (resolveChromium: ChromiumOf = chromiumOf): Chro
 
     return { from: found.from, chromium };
   };
+
+  return Object.assign(shared, { closeAll });
 };

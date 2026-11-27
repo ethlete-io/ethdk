@@ -1564,6 +1564,13 @@ export const serveDesign = async (options: {
           return async () => undefined;
         })
       : async () => undefined;
+  const closeServer = server.close.bind(server);
+
+  server.close = () => closeServer().finally(() => chromiumOf?.closeAll());
+  const stopHostingAndChromium = async () => {
+    await stopHosting();
+    await chromiumOf?.closeAll();
+  };
 
   const listening = server.httpServer?.address();
 
@@ -1609,7 +1616,7 @@ export const serveDesign = async (options: {
 
         console.log('design-explore: the cli was rebuilt, restarting the server from the new build');
 
-        void stopHosting()
+        void stopHostingAndChromium()
           .then(() => server.close())
           .then(() =>
             process.env[SUPERVISED_ENV] === '1'

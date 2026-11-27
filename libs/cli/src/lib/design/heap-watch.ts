@@ -1,3 +1,4 @@
+import { execFile } from 'child_process';
 import { getHeapStatistics } from 'v8';
 import { Worker } from 'worker_threads';
 
@@ -39,6 +40,36 @@ const workerHeapUsesOf = () =>
 export const workerHeapLineOf = (uses: WorkerHeapUse[]) =>
   `worker heaps ${uses.map(({ name, used }) => `${name} ${Math.round(used / MB)}`).join(', ')} MB`;
 
+export type ChromeProcesses = { live: number; zombie: number; roots: number; orphans: number };
+
+const CHROME_NAME = /chrom|headless_shell/i;
+
+/** Counts the Chrome processes in `ps -eo pid=,ppid=,stat=,comm=` output: live, zombie, roots (parent is not Chrome) and orphans (parent is init). */
+export const chromeProcessesOf = (ps: string): ChromeProcesses => {
+  const rows = ps.split('\n').flatMap((line) => {
+    const [pid, ppid, stat, ...name] = line.trim().split(/\s+/);
+
+    return pid && ppid && stat && CHROME_NAME.test(name.join(' ')) ? [{ pid, ppid, zombie: stat.startsWith('Z') }] : [];
+  });
+  const pids = new Set(rows.map((row) => row.pid));
+  const roots = rows.filter((row) => !pids.has(row.ppid));
+
+  return {
+    live: rows.filter((row) => !row.zombie).length,
+    zombie: rows.filter((row) => row.zombie).length,
+    roots: roots.length,
+    orphans: roots.filter((row) => row.ppid === '1').length,
+  };
+};
+
+export const chromeProcessesLineOf = ({ live, zombie, roots, orphans }: ChromeProcesses) =>
+  `chromeProcesses live ${live} zombie ${zombie} roots ${roots} orphans ${orphans}`;
+
+const chromeProcessesNow = () =>
+  new Promise<ChromeProcesses | null>((resolve) =>
+    execFile('ps', ['-eo', 'pid=,ppid=,stat=,comm='], (error, out) => resolve(error ? null : chromeProcessesOf(out))),
+  );
+
 export const heapStatusLineOf = ({ used, limit }: HeapUse) =>
   `heap ${Math.round(used / MB)}/${Math.round(limit / MB)} MB`;
 
@@ -51,9 +82,16 @@ export const watchHeap = (options: {
   log: (line: string) => void;
   heap?: () => HeapUse;
   workerHeaps?: () => Promise<WorkerHeapUse[]>;
+  chromeProcesses?: () => Promise<ChromeProcesses | null>;
   everyMs?: number;
 }) => {
-  const { log, heap = heapUseOf, workerHeaps = workerHeapUsesOf, everyMs = HEAP_STATUS_MS } = options;
+  const {
+    log,
+    heap = heapUseOf,
+    workerHeaps = workerHeapUsesOf,
+    chromeProcesses = chromeProcessesNow,
+    everyMs = HEAP_STATUS_MS,
+  } = options;
   let warned = false;
 
   // An RxJS interval cannot unref, and a ref'd timer keeps the process alive after the server closed.
@@ -63,6 +101,8 @@ export const watchHeap = (options: {
 
     log(heapStatusLineOf(use));
     void workerHeaps().then((uses) => uses.length > 0 && log(workerHeapLineOf(uses)));
+
+    void chromeProcesses().then((counts) => counts && log(chromeProcessesLineOf(counts)));
 
     if (warned || use.used < use.limit * HEAP_WARN_SHARE) return;
 
