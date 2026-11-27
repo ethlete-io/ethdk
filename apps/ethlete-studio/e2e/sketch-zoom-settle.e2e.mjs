@@ -11,6 +11,7 @@ const valueOf = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : 
 const built = valueOf('--built') ? resolve(valueOf('--built')) : undefined;
 const shots = valueOf('--shots');
 const only = valueOf('--case');
+const engine = valueOf('--engine') ?? 'chromium';
 const project = valueOf('--project') ? resolve(valueOf('--project')) : root;
 
 process.env['DE_PORT'] ??= '4483';
@@ -54,8 +55,7 @@ if (!valueOf('--project')) {
 
   for (const file of variantFiles) {
     const source = readFileSync(file, 'utf8');
-    const shorter = source.replace('rows: 3', 'rows: 1');
-    const changed = file === variantFiles[1] ? shorter.replace(...WIDTH_CLASS).replace(DROPPED_STATE, '') : shorter;
+    const changed = file === variantFiles[1] ? source.replace(...WIDTH_CLASS).replace(DROPPED_STATE, '') : source;
 
     if (!source.includes('rows: 3') || !source.includes(WIDTH_CLASS[0]) || !source.includes(DROPPED_STATE))
       throw new Error(`${file}: fixture drifted`);
@@ -372,7 +372,7 @@ const results = await withStudio(
 
     return rows;
   },
-  { checkout, built },
+  { checkout, built, engine },
 ).finally(() => rmSync(checkout, { recursive: true, force: true }));
 
 for (const result of results)

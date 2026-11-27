@@ -127,8 +127,9 @@
                       }
                       @if (group && !group.whole) {
                         @let whole = !croppedOf(state);
-                        <span class="mt-space-1 flex">
+                        <span [style.height.px]="screenToggleHold()" class="mt-space-1 flex">
                           <button
+                            #screenToggle
                             (click)="toggleScreen(state)"
                             et-button
                             type="button"

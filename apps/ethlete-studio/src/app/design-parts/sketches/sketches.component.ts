@@ -336,6 +336,7 @@ export class SketchesComponent {
   private takes = viewChildren('take', { read: ElementRef<HTMLElement> });
   private head = viewChild.required(SketchHeadComponent);
   private gutters = viewChildren('gutter', { read: ElementRef<HTMLElement> });
+  private screenToggles = viewChildren('screenToggle', { read: ElementRef<HTMLElement> });
   private notes = viewChildren('note', { read: ElementRef<HTMLElement> });
   public viewport = computed(() => this.list().nativeElement as HTMLElement);
   private frames = computed(() => this.cells().flatMap((cell) => cell.frameRef() ?? []));
@@ -533,6 +534,9 @@ export class SketchesComponent {
     Math.exp(-Math.round(Math.log(this.previewScale()) / STROKE_STEP) * STROKE_STEP),
   );
   protected strokeWidth = computed(() => `${this.strokeScale()}px`);
+  // A zoomed border snaps to a whole pixel, so a zoom preview grows the screen toggle and shifts the centred side label.
+  private screenToggleHeight = signal<number | null>(null);
+  protected screenToggleHold = computed(() => (this.canvas.preview() ? this.screenToggleHeight() : null));
   protected chromeSpace = computed(() => {
     const scale = this.canvas.preview()?.scale;
 
@@ -756,6 +760,7 @@ export class SketchesComponent {
         camera: () => ({ ...this.canvas.pan(), zoom: this.shownZoom() }),
         move: (camera) => this.move(camera),
         preview: (shown, settle) => {
+          if (shown && !this.canvas.preview()) this.screenToggleHeight.set(this.screenToggleHeightOf());
           this.canvas.showPreview(shown, settle);
           if (shown) this.gesture$.next();
         },
@@ -1447,6 +1452,12 @@ export class SketchesComponent {
     return (
       list.clientWidth - FIT_PADDING - lead - count * (chrome + (columns - 1) * this.columnGap()) - (count - 1) * gap
     );
+  }
+
+  private screenToggleHeightOf() {
+    const toggle = this.screenToggles()[0]?.nativeElement;
+
+    return toggle ? Number.parseFloat(getComputedStyle(toggle).height) : null;
   }
 
   private stackedOf(dom: FitDom) {
