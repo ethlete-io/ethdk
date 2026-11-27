@@ -92,6 +92,33 @@ exec sleep 30
 });
 
 test(
+  'remote-run.mjs killed with SIGKILL during the bundle upload takes its scp down',
+  { timeout: 30_000 },
+  async () => {
+    const dir = tempDir('kill-with-parent-scp-');
+    const pidFile = join(dir, 'scp.pid');
+    writeFileSync(join(dir, 'ssh'), `#!/usr/bin/env bash\ncat >/dev/null\nexit 0\n`);
+    writeFileSync(
+      join(dir, 'git'),
+      `#!/usr/bin/env bash
+[ "$1" = rev-parse ] && echo ${'a'.repeat(40)}
+[ "$1" = bundle ] && echo bundle > "$4"
+exit 0
+`,
+    );
+    writeFileSync(join(dir, 'scp'), `#!/usr/bin/env bash\necho $$ > ${pidFile}\nexec sleep 30\n`);
+    for (const name of ['ssh', 'git', 'scp']) chmodSync(join(dir, name), 0o755);
+    const remote = start(
+      [join(here, 'remote-run.mjs'), '--host', 'mac', '--log', join(dir, 'run.log'), '--', 'yarn test'],
+      { PATH: `${dir}:${process.env.PATH}`, REMOTE_RUN_NO_REGISTRY: '1', KILL_WITH_PARENT_GRACE_MS: '500' },
+    );
+    const scp = await readPid(pidFile);
+    process.kill(remote.pid, 'SIGKILL');
+    assert.ok(await waitFor(() => !isAlive(scp)), `scp ${scp} still runs after remote-run.mjs was killed`);
+  },
+);
+
+test(
   'the remote guard kills the job and removes the slot containers once the session drops',
   { timeout: 30_000 },
   async () => {

@@ -15,7 +15,15 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { gitEnv } from './git-test-env.mjs';
-import { LINUX_IMAGE, lfsFiles, neededCacheFiles, NO_VERDICT_EXIT, parseArgs, remoteScript } from './remote-run.mjs';
+import {
+  initScript,
+  LINUX_IMAGE,
+  lfsFiles,
+  neededCacheFiles,
+  NO_VERDICT_EXIT,
+  parseArgs,
+  remoteScript,
+} from './remote-run.mjs';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'remote-run.mjs');
 const SHA = 'a'.repeat(40);
@@ -600,4 +608,10 @@ test('a native run on Windows finds the pinned node.exe that npm installs under 
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
+});
+
+test('the init script sweeps the bundles and tars a killed caller left on the host', () => {
+  const script = initScript();
+  assert.match(script, /find "\$HOME" -maxdepth 1 -name 'ethlete-rr-\*\.bundle' -mmin \+60 -delete/);
+  assert.match(script, /find "\$HOME\/ethlete-rr" .*'yarn-\*\.tar'.*'lfs-\*\.tar'.*'out-\*\.tar'.* -mmin \+60 -delete/);
 });

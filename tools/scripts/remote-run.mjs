@@ -1,5 +1,15 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -258,11 +268,15 @@ main </dev/null
 `;
 };
 
+const STALE_MIN = 60;
+
 export const initScript = () => `main() {
   local mirror="$HOME/ethlete-mirror.git"
   [ -d "$mirror" ] || git init --quiet --bare "$mirror" || return 1
   git -C "$mirror" config core.autocrlf false
   git -C "$mirror" config core.longpaths true
+  find "$HOME" -maxdepth 1 -name 'ethlete-rr-*.bundle' -mmin +${STALE_MIN} -delete 2>/dev/null
+  find "$HOME/ethlete-rr" -maxdepth 1 \\( -name 'yarn-*.tar' -o -name 'lfs-*.tar' -o -name 'out-*.tar' \\) -mmin +${STALE_MIN} -delete 2>/dev/null
   git -C "$mirror" for-each-ref --format='have %(objectname)'
   echo "client \${SSH_CLIENT%% *}"
 }
@@ -290,6 +304,25 @@ const runSsh = (host, script, { onData } = {}) =>
     child.stdin.end(script);
   });
 
+const removeStaleBundles = (dir) => {
+  for (const name of readdirSync(dir)) {
+    if (!/^ethlete-rr-[0-9a-f]+\.bundle$/.test(name)) continue;
+    const file = join(dir, name);
+    if (Date.now() - statSync(file).mtimeMs > STALE_MIN * 60_000) rmSync(file, { force: true });
+  }
+};
+
+const runScp = (args) =>
+  new Promise((resolve) => {
+    const watch = killWithParent();
+    const child = spawn('scp', ['-q', ...SSH_OPTIONS, ...args], { stdio: ['ignore', 'ignore', 'pipe'] });
+    watch(child);
+    let stderr = '';
+    child.stderr.on('data', (chunk) => (stderr += chunk));
+    child.on('error', (error) => resolve({ status: 255, stderr: error.message }));
+    child.on('close', (code, signal) => resolve({ status: code ?? (signal ? 255 : 1), stderr }));
+  });
+
 export const remoteRun = async (opts) => {
   const host = HOSTS[opts.host];
   const resolved = git(['rev-parse', '--verify', `${opts.ref}^{commit}`]);
@@ -305,6 +338,7 @@ export const remoteRun = async (opts) => {
   }
   const log = opts.log ?? join(tmpdir(), 'remote-run', `${opts.host}-${sha.slice(0, 12)}-${Date.now()}.log`);
   mkdirSync(dirname(log), { recursive: true });
+  removeStaleBundles(dirname(log));
   const file = createWriteStream(log);
   const entry = process.env['REMOTE_RUN_NO_REGISTRY']
     ? { finish: () => undefined }
@@ -343,7 +377,7 @@ export const remoteRun = async (opts) => {
     const created = git(['bundle', 'create', '--quiet', local, ref, ...bases.map((have) => `^${have}`)]);
     git(['update-ref', '-d', ref]);
     if (created.status !== 0) return noVerdict(1, `bundle failed: ${created.stderr.trim()}`);
-    const copy = spawnSync('scp', ['-q', ...SSH_OPTIONS, local, `${host.ssh}:${bundle}`], { encoding: 'utf8' });
+    const copy = await runScp([local, `${host.ssh}:${bundle}`]);
     rmSync(local, { force: true });
     if (copy.status !== 0) return noVerdict(copy.status, `scp failed: ${copy.stderr.trim()}`);
   }
@@ -422,7 +456,7 @@ const seedYarnCache = async (host, slot, runId, tee) => {
   tee(`[remote-run] yarn-cache: ${needed.length} needed, ${missing.length} to copy\n`, process.stdout);
   if (!missing.length) return 0;
   const remoteTar = `ethlete-rr/yarn-${runId}.tar`;
-  const sent = sendTar(
+  const sent = await sendTar(
     host,
     ['-C', dirname(missing[0]), ...missing.map((p) => basename(p))],
     remoteTar,
@@ -441,7 +475,7 @@ const seedYarnCache = async (host, slot, runId, tee) => {
   );
 };
 
-const sendTar = (host, tarArgs, remoteTar, label, tee) => {
+const sendTar = async (host, tarArgs, remoteTar, label, tee) => {
   const dir = mkdtempSync(join(tmpdir(), 'remote-run-tar-'));
   const tar = join(dir, 'send.tar');
   try {
@@ -450,7 +484,7 @@ const sendTar = (host, tarArgs, remoteTar, label, tee) => {
       tee(`[remote-run] ${label}: tar failed: ${packed.stderr.trim()}\n`, process.stderr);
       return 1;
     }
-    const copy = spawnSync('scp', ['-q', ...SSH_OPTIONS, tar, `${host.ssh}:${remoteTar}`], { encoding: 'utf8' });
+    const copy = await runScp([tar, `${host.ssh}:${remoteTar}`]);
     if (copy.status !== 0) {
       tee(`[remote-run] ${label}: scp failed: ${copy.stderr.trim()}\n`, process.stderr);
       return copy.status ?? 1;
@@ -499,7 +533,13 @@ const seedLfs = async (host, sha, runId, tee) => {
     writeFileSync(names, `${missing.join('\n')}\n`);
     const remoteTar = `ethlete-rr/lfs-${runId}.tar`;
     try {
-      const sent = sendTar(host, ['-C', objectsDir, '--transform', 's,.*/,,', '-T', names], remoteTar, 'lfs', tee);
+      const sent = await sendTar(
+        host,
+        ['-C', objectsDir, '--transform', 's,.*/,,', '-T', names],
+        remoteTar,
+        'lfs',
+        tee,
+      );
       if (sent !== 0) return { code: sent };
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -517,7 +557,7 @@ const seedLfs = async (host, sha, runId, tee) => {
 const fetchOutputs = async (host, runId, tee) => {
   const dir = mkdtempSync(join(tmpdir(), 'remote-run-out-'));
   const local = join(dir, 'out.tar');
-  const copy = spawnSync('scp', ['-q', ...SSH_OPTIONS, `${host.ssh}:${outTar(runId)}`, local], { encoding: 'utf8' });
+  const copy = await runScp([`${host.ssh}:${outTar(runId)}`, local]);
   if (copy.status !== 0 || !existsSync(local)) {
     tee('[remote-run] fetch: nothing came back\n', process.stderr);
   } else {
