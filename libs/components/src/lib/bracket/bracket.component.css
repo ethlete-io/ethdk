@@ -47,7 +47,7 @@
 
   .et-bracket-section-title-sticky {
     position: sticky;
-    inset-inline-start: 0;
+    inset-inline-start: var(--et-scrollable-start-fade, 0px);
     inline-size: max-content;
     max-inline-size: 100%;
     block-size: 100%;

@@ -590,7 +590,8 @@ ignores `finalAlignment`.
 Set `showSectionTitles` to title each part of a double-elimination bracket - the upper bracket, the
 lower bracket and the finals. A title sits in a band of its own above its part, and stays at the inline
 start of the scroll container while the bracket scrolls sideways, so a viewer deep in the later rounds
-still sees which bracket they are in.
+still sees which bracket they are in. Inside a faded `<et-scrollable>` a stuck title sits just past the
+start fade, so it stays opaque while the cards and its rule fade at the edge.
 
 ```html
 <et-scrollable>

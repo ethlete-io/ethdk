@@ -37,6 +37,8 @@
   /* Blink counts a scrollbar into a scroll container's mask boxes, so the fade layer stops short of the
      measured scrollbar and a solid layer keeps the scrollbar strip opaque. */
   .et-scrollable.et-scrollable--masked.et-scrollable--can-scroll > .et-scrollable-wrapper > .et-scrollable-container {
+    --et-scrollable-start-fade: var(--_et-scrollable-mask-start);
+
     mask-image:
       linear-gradient(
         to right,
@@ -62,6 +64,8 @@
   .et-scrollable[direction='vertical'].et-scrollable--masked.et-scrollable--can-scroll
     > .et-scrollable-wrapper
     > .et-scrollable-container {
+    --et-scrollable-start-fade: 0px;
+
     mask-image:
       linear-gradient(
         to bottom,

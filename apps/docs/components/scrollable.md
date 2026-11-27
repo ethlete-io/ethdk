@@ -106,6 +106,8 @@ The edge fade is a CSS `mask-image` on the scroll container, so the faded edge s
 
 A `position: sticky; inset-inline-start: 0` child sits inside the faded area, so it fades with the content. Set `--et-scrollable-mask-inset-start` (and `--et-scrollable-mask-inset-end` for a child stuck to the end) on the `<et-scrollable>` to the child's size: the first that many pixels of the track stay fully opaque and the fade continues behind them. Both default to `0px`, which leaves the fade unchanged. Vertical tracks inset from the top and bottom.
 
+A sticky child that should stay opaque while the content beside it keeps the fade can clear the fade instead: the scroll container sets `--et-scrollable-start-fade` to the current width of the start fade (`0px` at the start, animated with the fade), so `inset-inline-start: var(--et-scrollable-start-fade, 0px)` pins the child just past it. Vertical tracks set it to `0px`.
+
 ```html
 <et-scrollable style="--et-scrollable-mask-inset-start: 6rem">
   <div class="sticky left-0 w-24">Sticky label</div>
