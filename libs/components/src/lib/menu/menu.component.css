@@ -133,12 +133,12 @@
     );
     --_et-menu-item-active-background: color-mix(
       in srgb,
-      var(--et-surface-control-text, rgb(255 255 255)) 12%,
+      var(--et-surface-tint, var(--et-surface-text, rgb(255 255 255))) 12%,
       transparent
     );
     --_et-menu-item-pressed-background: color-mix(
       in srgb,
-      var(--et-surface-control-text, rgb(255 255 255)) 20%,
+      var(--et-surface-tint, var(--et-surface-text, rgb(255 255 255))) 20%,
       transparent
     );
     --_et-menu-muted-color: var(--et-surface-text-muted, rgb(255 255 255 / 0.55));

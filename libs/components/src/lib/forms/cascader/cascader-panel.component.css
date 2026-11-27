@@ -132,7 +132,11 @@
         padding-inline: 10px;
         border-radius: var(--_et-cascader-row-radius);
         border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
-        background: color-mix(in srgb, var(--et-surface-tint, rgb(255 255 255)) 6%, transparent);
+        background: color-mix(
+          in srgb,
+          var(--et-surface-tint, var(--et-surface-text, rgb(255 255 255))) 6%,
+          transparent
+        );
         color: inherit;
         font: inherit;
         outline: none;
@@ -227,17 +231,17 @@
 
       @media (hover: hover) {
         &:hover {
-          background: color-mix(in srgb, var(--et-surface-tint, currentColor) 12%, transparent);
+          background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 12%, transparent);
         }
       }
 
       &:focus-visible,
       &[data-focused] {
-        background: color-mix(in srgb, var(--et-surface-tint, currentColor) 16%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 16%, transparent);
       }
 
       &[data-expanded] {
-        background: color-mix(in srgb, var(--et-surface-tint, currentColor) 12%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 12%, transparent);
       }
 
       &[data-selected] {

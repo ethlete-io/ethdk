@@ -6,7 +6,7 @@
       inset-inline: 0;
       block-size: 2px;
       overflow: hidden;
-      background: color-mix(in srgb, var(--et-surface-tint, gray) 10%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 10%, transparent);
     }
 
     .et-select-busy-bar::after {
@@ -94,13 +94,17 @@
         &:not(:disabled):hover {
           background: var(
             --et-select-panel-action-background-hover,
-            color-mix(in srgb, var(--et-surface-tint, rgb(255 255 255)) 12%, transparent)
+            color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, rgb(255 255 255))) 12%, transparent)
           );
         }
       }
 
       &:not(:disabled):active {
-        background: color-mix(in srgb, var(--et-surface-tint, rgb(255 255 255)) 20%, transparent);
+        background: color-mix(
+          in srgb,
+          var(--et-surface-tint, var(--et-surface-text, rgb(255 255 255))) 20%,
+          transparent
+        );
       }
 
       &:disabled {
