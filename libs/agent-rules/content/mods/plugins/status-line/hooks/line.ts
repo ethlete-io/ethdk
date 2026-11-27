@@ -1,7 +1,8 @@
 const STALE_MS = 2 * 60 * 60 * 1000;
-const QUEUE_HEADING = /^### Warteschlange(, Rest)?\s*$/;
+const QUEUE_HEADING = /^#{1,6} Warteschlange(, Rest)?\s*$/;
 const HEADING = /^#{1,6} /;
 const QUEUE_ITEM = /^\d+\. \*\*(?:.+ \()?[A-Z]\d+b?\)?\*\*/;
+const QUEUE_ROW = /^\| [A-Z]\d+b? \|/;
 
 export type StatusFields = {
   task?: string;
@@ -33,7 +34,7 @@ export const queueCount = (text: string) => {
   let isInQueue = false;
   for (const line of text.split('\n')) {
     if (HEADING.test(line)) isInQueue = QUEUE_HEADING.test(line);
-    else if (isInQueue && QUEUE_ITEM.test(line)) count++;
+    else if (isInQueue && (QUEUE_ITEM.test(line) || QUEUE_ROW.test(line))) count++;
   }
   return count;
 };

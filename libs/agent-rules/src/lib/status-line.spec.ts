@@ -47,6 +47,22 @@ describe('status line', () => {
     expect(queueCount('')).toBe(0);
   });
 
+  it('counts the rows of a queue table', () => {
+    const text = [
+      '# Warteschlange',
+      '',
+      'Alle offenen Zeilen, höchstens 15 ([Prozess](../docs/process.md)).',
+      '',
+      '<!-- prettier-ignore -->',
+      '| ID | Zeile | Ziel | Stand | Wer |',
+      '| --- | --- | --- | --- | --- |',
+      '| B814 | Tempo-Plan Paket 1: Maschinen | Kein Agent wartet auf eine Maschine. | `--fetch` gebaut. | Builder |',
+      '| B815 | Tempo-Plan Paket 2: `next` bleibt grün | Ein roter Commit erreicht GitHub nie. | Spiegel. | Builder |',
+      '| B706b | Echtes Signal | Ziel | Stand | Builder |',
+    ].join('\n');
+    expect(queueCount(text)).toBe(3);
+  });
+
   it('counts dash lines as open questions', () => {
     expect(questionCount('- eins\nText\n- zwei\n  - eingerückt\n')).toBe(2);
   });
