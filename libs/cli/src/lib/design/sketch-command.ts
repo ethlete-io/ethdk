@@ -499,6 +499,7 @@ const nextStepsOf = (sketch: Sketch, productSource: ResolvedProduct) => {
           `  sketch round ${sketch.target} ${running.key} --product ${product} --note "<what the round shows>" --by <model id>`,
         ]
       : []),
+    '  before ready, draw a state per case the old design or the brief shows of this part: pressed, desktop and phone width, scrolled or hidden, without an image, the longest text, each badge and kind of item - name the state after the case; no check knows these cases',
     `  sketch check ${at}`,
     ...noteLanguageLineOf(productSource),
     `  shot ${sketch.targets[0]} --states --variants --product ${product}   look at it: ready refuses a pixel diff without a viewed shot`,

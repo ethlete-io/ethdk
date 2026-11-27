@@ -601,7 +601,7 @@ sketch merge records the part. Otherwise it prints
 `PICTURES CHANGED <product> <part>: <states>` and opens an old/new edit sketch to pick from.
 `et design task components/chip --product app-a` prints what implementing a build-ready part takes: the part hash,
 the `implements` component, each state with its props, the states new or changed since the last implementation, the
-allowed files and the target, compare green, then a line naming the SDK surface and colour theming and the theming skill; `sketch new` ends its next steps with the same line. The allowed files are the folder of the component,
+allowed files and the target, compare green, then a line naming the SDK surface and colour theming and the theming skill; `sketch new` ends its next steps with the same line. Before `sketch check`, those steps ask for a state per case the old design or the brief shows of the part (pressed, desktop and phone width, scrolled, without an image, the longest text, each badge), named after the case: no check knows these cases. The allowed files are the folder of the component,
 `.changeset/*.md`, the generated harness map of the product, and for the product `sdk` also `apps/docs/components/**`. The task refuses a part that is not build-ready and prints its blockers, a part
 without an `implements` link, or with only a route link: add the `component` of the page to the link. A page part's
 allowed folder is the folder of that component.

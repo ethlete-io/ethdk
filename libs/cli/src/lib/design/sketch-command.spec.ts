@@ -2120,7 +2120,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     ).toMatchObject({ status: 'ready', rounds: [{ key: 'r1', note: 'Pille rund' }] });
   });
 
-  it('names the next steps after sketch new, and says report --done is not needed yet', async () => {
+  it('names the next steps after sketch new, the cases to draw as states, and says report --done is not needed yet', async () => {
     const target = acme();
     const lines = output();
 
@@ -2134,6 +2134,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'Next:',
       expect.stringContaining('sketch report components/button --product acme --variant a --by <model id> "'),
       expect.stringContaining('sketch round components/button r1 --product acme --note'),
+      expect.stringMatching(
+        /^ {2}before ready, draw a state per case the old design or the brief shows of this part: .*pressed.*desktop.*phone.*scrolled.*without an image.*longest text/u,
+      ),
       '  sketch check components/button --product acme',
       '  shot components/button --states --variants --product acme   look at it: ready refuses a pixel diff without a viewed shot',
       '  sketch ready components/button --product acme --by <model id>',
@@ -2777,7 +2780,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
         'acme',
       ),
     ).toBe(0);
-    expect(lines.splice(lines.indexOf('Next:')).length).toBe(8);
+    expect(lines.splice(lines.indexOf('Next:')).length).toBe(9);
     expect(lines.splice(-3)).toEqual([
       `components/button in progress: ${DESIGN_DIR}/acme/sketches/components-button with a, b`,
       `  a: ${DESIGN_DIR}/acme/sketches/components-button/a/components/button/button.ts  assets: ${DESIGN_DIR}/acme/sketches/components-button/a/assets/`,
