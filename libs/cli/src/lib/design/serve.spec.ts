@@ -1,4 +1,5 @@
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -626,6 +627,26 @@ describe('the design server for a design system', () => {
       '\0virtual:design-explore/system',
     ]);
     expect(sent).toEqual([]);
+  });
+
+  it('keeps serving when a product file that came is not readable yet, and redraws it on the next event', async () => {
+    const target = acme();
+    const { ask, watchers, invalidated } = await serveAcme(target);
+    const file = join(target, DESIGN_DIR, 'acme/pages/flows/flows.ts');
+
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, 'export default {};', { mode: 0o200 });
+    chmodSync(file, 0o200);
+
+    expect(() => watchers.get('add')?.(file)).not.toThrow();
+
+    chmodSync(file, 0o644);
+    invalidated.length = 0;
+    watchers.get('change')?.(file);
+    watchers.get('add')?.(file);
+
+    expect(invalidated).toContain('\0virtual:design-explore/system');
+    expect((await ask('/__design/system', '?product=acme')).status).toBe(200);
   });
 
   it('serves a product added to config.json while it runs, and keeps the last good config when it breaks', async () => {

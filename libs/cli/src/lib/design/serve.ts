@@ -937,7 +937,15 @@ const designExplore = ({
         unresolveParts();
         reload(`${VIRTUAL}/env`);
         reload(`${VIRTUAL}/system`);
-        redraw(addedPartsOf({ designRoot, baseDirs, system, file: resolve(file) }));
+
+        try {
+          redraw(addedPartsOf({ designRoot, baseDirs, system, file: resolve(file) }));
+        } catch (error) {
+          const code = (error as NodeJS.ErrnoException | null)?.code;
+
+          // Node's cpSync writes a file at mode 0200 before it sets the real mode; its next watcher event redraws it.
+          if (code !== 'EACCES' && code !== 'ENOENT') throw error;
+        }
       };
 
       const change = (file: string) => {
