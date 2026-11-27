@@ -121,11 +121,17 @@ const extendsMain = (checkout: string, main: string) => {
  * The main checkout a deleted checkout is filed under, from the repositories holding one of its commits:
  * the only holder, else the holder whose folder the checkout sits in or whose folder name it extends
  * (`app` for `app-fab`), the longest one winning, else the only holder in the checkout's parent folder.
+ * A local clone (`localClonesOf`) is never a main, and a holder left alone beside clones still has to match by folder.
  */
-export const mainOfDeletedCheckout = (options: { checkout: string; holders: readonly string[] }) => {
-  const holders = options.holders.map(trimmedPath);
+export const mainOfDeletedCheckout = (options: {
+  checkout: string;
+  holders: readonly string[];
+  clones?: Readonly<Record<string, string>>;
+}) => {
+  const held = options.holders.map(trimmedPath);
+  const holders = held.filter((holder) => options.clones?.[holder] === undefined);
 
-  if (holders.length <= 1) return holders[0];
+  if (held.length <= 1) return holders[0];
 
   const checkout = trimmedPath(options.checkout);
 

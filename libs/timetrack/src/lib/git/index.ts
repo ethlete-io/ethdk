@@ -1,4 +1,5 @@
 export * from './branch-timeline';
+export * from './clone';
 export * from './dependencies';
 export * from './format';
 export * from './head';

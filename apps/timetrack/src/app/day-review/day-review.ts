@@ -420,7 +420,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   effect(() => {
     const events = evidenceLoad()?.value?.events;
 
-    if (events) untracked(() => git.learnDeletedWorktrees(events));
+    if (events && git.localClones()) untracked(() => git.learnCheckoutMains(events));
   });
 
   const evidenceReady = computed(() => {

@@ -6,10 +6,12 @@ import {
   CollectedEvent,
   GitRepoScan,
   GitScanFailure,
+  cloneOwnersOf,
   collectGitEvents$,
   gitHasCommitArgs,
   gitWorktreeArgs,
   linkedWorktreesOf,
+  localClonesOf,
   mainOfDeletedCheckout,
   parseGitWorktrees,
   readRepoKey$,
@@ -112,6 +114,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const probed = new Set<string>();
   /** Each checkout's key read from its remote, before an alias the user set replaces it. */
   const remoteKeys = signal<CheckoutKeys>({});
+  const localClones = signal<Readonly<Record<string, string>> | null>(null);
 
   let repos: Repo[] = [];
   let afterSeq = 0;
@@ -146,7 +149,9 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
       toArray(),
       concatMap((entries) => {
-        const keys = resolveLocalOrigins(Object.fromEntries(entries));
+        const ownKeys = Object.fromEntries(entries);
+        const keys = resolveLocalOrigins(ownKeys);
+        localClones.set(localClonesOf(ownKeys));
         keyedAliases = aliasesNow();
         remoteKeys.set(keys);
 
@@ -323,14 +328,19 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   /**
-   * Files a checkout that stored commits name but that no longer exists under the discovered repository
-   * holding those commits, picked by `mainOfDeletedCheckout` when clones hold them too.
+   * Files each local clone under the checkout whose agents worked in it (`cloneOwnersOf`), and a checkout
+   * that stored commits name but that no longer exists under the discovered repository holding those
+   * commits, picked by `mainOfDeletedCheckout` when clones hold them too.
    */
-  const learnDeletedWorktrees = (events: readonly CollectedEvent[]) => {
+  const learnCheckoutMains = (events: readonly CollectedEvent[]) => {
     const found = discovery();
-    if (!found) return;
+    const clones = localClones();
+    if (!found || !clones) return;
 
     const linked = worktrees();
+    const owners = cloneOwnersOf({ events, clones, roots: { paths: found.repos, worktrees: linked } });
+    if (Object.keys(owners).length) settings.rememberWorktrees(owners);
+
     const mains = found.repos.filter((repo) => linked[repo] === undefined);
     const known = new Set([...found.repos, ...Object.keys(linked), ...probed]);
     const unknown = [...unknownCommitCheckoutsOf({ events, known })];
@@ -345,7 +355,9 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
           from(mains).pipe(
             concatMap((main) => hasCommit$(main, sha).pipe(map((held) => (held ? main : null)))),
             toArray(),
-            map((holders) => mainOfDeletedCheckout({ checkout, holders: holders.filter((main) => main !== null) })),
+            map((holders) =>
+              mainOfDeletedCheckout({ checkout, clones, holders: holders.filter((main) => main !== null) }),
+            ),
             map((main) => (main ? { [checkout]: main } : {})),
           ),
         ),
@@ -360,7 +372,8 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     failure,
     discovery,
     worktrees,
-    learnDeletedWorktrees,
+    learnCheckoutMains,
+    localClones: localClones.asReadonly(),
     remoteKeys: remoteKeys.asReadonly(),
   };
 });

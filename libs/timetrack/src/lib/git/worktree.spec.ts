@@ -64,6 +64,18 @@ describe('mainOfDeletedCheckout', () => {
     expect(mainOfDeletedCheckout({ checkout: '/home/human/dev/client/wt-sa-next', holders })).toBe(main);
   });
 
+  it('never files a deleted checkout under a local clone holding its commit', () => {
+    const clone = '/home/human/dev/scratch/b757-app-scratch';
+
+    expect(
+      mainOfDeletedCheckout({
+        checkout: '/home/human/dev/scratch/app-vb-rack',
+        holders: [main, clone],
+        clones: { [clone]: main },
+      }),
+    ).toBeUndefined();
+  });
+
   it('leaves a checkout unfiled when no holder matches its folder', () => {
     expect(mainOfDeletedCheckout({ checkout: '/home/human/dev/other/tool', holders })).toBeUndefined();
     expect(
