@@ -184,11 +184,10 @@
     "at": "2026-11-25T23:32:00.731Z"
   },
   "pages/start": {
-    "hash": "b074e9a2ca9413e7",
-    "variant": "new",
-    "decidedBy": "plan: plans/QUEUE.md B792 (Tom via doc session 27.11. Q5)",
-    "at": "2026-11-27T10:31:18.347Z",
-    "note": "merged without a pick: allowed by plans/QUEUE.md B792 (Tom via doc session 27.11. Q5)"
+    "hash": "9ac236d365f1f040",
+    "variant": "edit",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-27T14:03:06.759Z"
   },
   "pages/system": {
     "hash": "95fc1e93a843e076",
