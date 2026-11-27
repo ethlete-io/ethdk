@@ -1502,17 +1502,12 @@ const withEditSketch = async (page, designPort, run, edited = { part: EDIT_PART,
       file,
       edited.file ? before.split(edited.before).join(edited.after) : replaceOnce(before, edited.before, edited.after),
     );
-    const TMPDRAWS0 = await drawsSoFar(designPort);
-    const TMPT0 = performance.now();
     const check = spawnSync(
       process.execPath,
       [cliEntry, 'design', 'check', '--product', 'studio', '--part', edited.part],
       { cwd: checkout, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, ETHLETE_DESIGN_PHASES: '1' } },
     );
     phase(`check (slowest: ${slowestPhasesOf(check.stderr ?? '')})`);
-    console.log(
-      `[TMP-B736] server draws during check: ${JSON.stringify(drawsSince(await drawsSoFar(designPort), TMPDRAWS0))} in ${Math.round(performance.now() - TMPT0)} ms, url ${page.url()}`,
-    );
     // Only after the check: a check settles a committed direct edit without a sketch, and the sketch listing
     // offers the pick only once git holds the edit.
     git('commit', '-qm', 'canvas e2e edit', '--', file);
