@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { sketchFixtureCheckout } from './sketch-fixture.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -8,6 +9,8 @@ const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 
 const product = args.includes('--product') ? args[args.indexOf('--product') + 1] : 'studio';
 
 process.env['DE_PORT'] ??= '4475';
+
+const checkout = sketchFixtureCheckout(root, 'studio-sketches-tree-e2e-', 'pages/sketches');
 
 const BUDGET_MS = 2000;
 const RELOADS = 3;
@@ -43,7 +46,7 @@ const result = await withStudio(
         localStorage.clear();
         localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout, systemProduct, systemEntry }));
       },
-      { checkout: root, systemProduct: product, systemEntry: `sketch:${first.target}` },
+      { checkout, systemProduct: product, systemEntry: `sketch:${first.target}` },
     );
 
     console.log('RUN   first sketch row after cold load');
@@ -59,7 +62,7 @@ const result = await withStudio(
 
     return { cold, reloads };
   },
-  { built },
+  { built, checkout },
 );
 
 const worst = Math.max(...result.reloads);

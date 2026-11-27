@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { sketchFixtureCheckout } from './sketch-fixture.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -10,6 +11,8 @@ const product = valueOf('--product', 'studio');
 const target = valueOf('--sketch', 'pages/sketches');
 
 process.env['DE_PORT'] ??= '4476';
+
+const checkout = sketchFixtureCheckout(root, 'studio-sketch-frame-cap-e2e-', target);
 
 const LIVE_CAP = 6;
 const SETTLE_MS = 8000;
@@ -22,7 +25,7 @@ const result = await withStudio(
         localStorage.clear();
         localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout, systemProduct, systemEntry }));
       },
-      { checkout: root, systemProduct: product, systemEntry: `sketch:${target}` },
+      { checkout, systemProduct: product, systemEntry: `sketch:${target}` },
     );
     await page.goto(studioUrl);
     await page.waitForSelector('ethlete-sketch-view [data-shot]', { timeout: 120000 });
@@ -34,7 +37,7 @@ const result = await withStudio(
       pictures: document.querySelectorAll('ethlete-sketch-view img[data-shot-picture]').length,
     }));
   },
-  { built },
+  { built, checkout },
 );
 
 const ok = result.cells > 0 && result.live <= LIVE_CAP;
