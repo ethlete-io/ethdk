@@ -32,6 +32,20 @@ const PREVIEW_SAMPLE_MS = 100;
 const POSITION_TOLERANCE_PX = 1;
 const STROKE_TOLERANCE_PX = 0.25;
 const INK_MARGIN_PX = 8;
+const TEXT_INK_MARGIN_PX = 4;
+const TEXT_SELECTORS = [
+  '[data-sk-label-text]',
+  '[data-sk-same-as-rest]',
+  '[data-sk-stack-states]',
+  '[data-sk-line-head]',
+  '[data-sk-column-head]',
+  '[data-sk-folded-cell]',
+  '[data-sk-missing] > div',
+  '[data-sk-head-name]',
+  '[data-sk-head-tag]',
+  '[data-sk-note]',
+  '[data-sk-withdrawn]',
+];
 
 const checkout = mkdtempSync(join(tmpdir(), 'studio-sketch-zoom-settle-e2e-'));
 
@@ -111,7 +125,11 @@ const startProbe = (page) =>
           (stack) => stack.getBoundingClientRect().height,
         );
 
-        return frame && states && heights.length > 0 ? [{ heights, below: states.top - frame.bottom }] : [];
+        const text = cell.querySelector('[data-sk-stack-states] > span')?.getBoundingClientRect();
+
+        return frame && states && heights.length > 0
+          ? [{ heights, below: states.top - frame.bottom, text: text ? text.top - states.top : null }]
+          : [];
       });
     const read = () =>
       [...document.querySelectorAll('ethlete-sketches ethlete-variant-cell')].flatMap((cell) => {
@@ -203,6 +221,10 @@ const diffOf = (preview, settled) => {
     });
     if (Math.abs(stack.below - after.below) > POSITION_TOLERANCE_PX)
       faults.push(`crop stack ${index} label below frame ${stack.below.toFixed(1)} -> ${after.below.toFixed(1)} px`);
+    if (stack.text !== null && after.text !== null && Math.abs(stack.text - after.text) > POSITION_TOLERANCE_PX)
+      faults.push(
+        `crop stack ${index} label text ${stack.text.toFixed(1)} -> ${after.text.toFixed(1)} px below its box`,
+      );
   });
   const gutterOf = new Map(settled.gutters.map((gutter) => [gutter.key, gutter]));
 
@@ -231,29 +253,110 @@ const inPreview = (page) =>
 
 const inkOf = async (page) => {
   const before = await inPreview(page);
-  const labels = await page.evaluate(() =>
-    [...document.querySelectorAll('ethlete-sketches [data-sk-gutter] > .font-ui-medium')].map((text) => {
-      const box = text.getBoundingClientRect();
+  const { labels, texts } = await page.evaluate((selectors) => {
+    const hostOf = (element) => {
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
 
-      return {
-        key: `${text.parentElement.getAttribute('data-sk-block')}/${text.textContent.trim()}`,
-        left: box.left,
-        top: box.top,
-        width: box.width,
-        height: box.height,
-      };
-    }),
-  );
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (!node.textContent.trim()) continue;
+        const range = document.createRange();
+
+        range.selectNodeContents(node);
+        if (range.getClientRects().length > 0) return node.parentElement;
+      }
+
+      return null;
+    };
+
+    const texts = selectors.flatMap((selector) =>
+      [...document.querySelectorAll(`ethlete-sketches ${selector}`)].flatMap((anchor, index) => {
+        const host = hostOf(anchor);
+
+        if (!host) return [];
+        const box = anchor.getBoundingClientRect();
+        const text = host.getBoundingClientRect();
+
+        return [
+          {
+            key: `${selector} ${index}`,
+            anchor: box.top,
+            left: text.left,
+            width: text.width,
+            offset: text.top - box.top,
+            height: text.height,
+          },
+        ];
+      }),
+    );
+
+    return {
+      labels: [...document.querySelectorAll('ethlete-sketches [data-sk-gutter] > .font-ui-medium')].map((text) => {
+        const box = text.getBoundingClientRect();
+
+        return {
+          key: `${text.parentElement.getAttribute('data-sk-block')}/${text.textContent.trim()}`,
+          left: box.left,
+          top: box.top,
+          width: box.width,
+          height: box.height,
+        };
+      }),
+      texts,
+    };
+  }, TEXT_SELECTORS);
   const viewport = page.viewportSize();
+  const shownTexts = texts.filter(
+    (text) => text.anchor >= 0 && text.left >= 0 && text.anchor + text.offset + text.height <= viewport.height,
+  );
   const shown = labels.filter(
     (label) => label.top >= 0 && label.left >= 0 && label.top + label.height <= viewport.height,
   );
 
-  if (shown.length === 0) return { labels: [], png: null, clip: null, inPreview: before };
+  if (shown.length === 0 && shownTexts.length === 0)
+    return { labels: [], texts: [], png: null, clip: null, inPreview: before };
   const clip = { x: 0, y: 0, width: viewport.width, height: viewport.height };
   const png = (await page.screenshot()).toString('base64');
 
-  return { labels: shown, png, clip, inPreview: before && (await inPreview(page)) };
+  return { labels: shown, texts: shownTexts, png, clip, inPreview: before && (await inPreview(page)) };
+};
+
+const regionsOf = (preview, settled) => {
+  const settledLabelOf = new Map(settled.labels.map((label) => [label.key, label]));
+  const settledTextOf = new Map(settled.texts.map((text) => [text.key, text]));
+  const labels = preview.labels.flatMap((label) => {
+    const other = settledLabelOf.get(label.key);
+
+    if (!other || label.width === 0) return [];
+
+    return [
+      {
+        name: `side label ${label.key}`,
+        margin: INK_MARGIN_PX,
+        width: label.width,
+        height: label.height,
+        before: { left: label.left, top: label.top },
+        after: { left: other.left, top: other.top },
+      },
+    ];
+  });
+  const texts = preview.texts.flatMap((text) => {
+    const other = settledTextOf.get(text.key);
+
+    if (!other || text.width === 0) return [];
+
+    return [
+      {
+        name: `text ${text.key}`,
+        margin: TEXT_INK_MARGIN_PX,
+        width: Math.min(text.width, other.width),
+        height: other.height,
+        before: { left: text.left, top: text.anchor + other.offset },
+        after: { left: other.left, top: other.anchor + other.offset },
+      },
+    ];
+  });
+
+  return [...labels, ...texts];
 };
 
 const inkFaultsOf = async (page, preview, settled) => {
@@ -263,7 +366,7 @@ const inkFaultsOf = async (page, preview, settled) => {
 
   try {
     const shifts = await scratch.evaluate(
-      async ({ preview, settled, margin }) => {
+      async ({ preview, settled, regions }) => {
         const pixelsOf = async (png) => {
           const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
           const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
@@ -281,25 +384,22 @@ const inkFaultsOf = async (page, preview, settled) => {
 
           return image.data[at] * 0.3 + image.data[at + 1] * 0.59 + image.data[at + 2] * 0.11;
         };
-        const settledOf = new Map(settled.labels.map((label) => [label.key, label]));
 
-        return preview.labels.flatMap((label) => {
-          const other = settledOf.get(label.key);
-
-          if (!other || label.width === 0) return [];
-          const left = Math.round((label.left - preview.clip.x) * ratio);
-          const settledLeft = Math.round((other.left - settled.clip.x) * ratio);
-          const width = Math.round(label.width * ratio);
-          const height = Math.round((label.height + 2 * margin) * ratio);
-          const topOf = (box, clip) => Math.round((box.top - margin - clip.y) * ratio);
+        return regions.map((region) => {
+          const { margin } = region;
+          const left = Math.round((region.before.left - preview.clip.x) * ratio);
+          const settledLeft = Math.round((region.after.left - settled.clip.x) * ratio);
+          const width = Math.round(region.width * ratio);
+          const height = Math.round((region.height + 2 * margin) * ratio);
+          const top = Math.round((region.before.top - margin - preview.clip.y) * ratio);
+          const settledTop = Math.round((region.after.top - margin - settled.clip.y) * ratio);
           const costOf = (shift) => {
             let cost = 0;
 
             for (let y = 0; y < height; y++)
               for (let x = 0; x < width; x++)
                 cost += Math.abs(
-                  lumaAt(before, left + x, topOf(label, preview.clip) + y) -
-                    lumaAt(after, settledLeft + x, topOf(other, settled.clip) + y + shift),
+                  lumaAt(before, left + x, top + y) - lumaAt(after, settledLeft + x, settledTop + y + shift),
                 );
 
             return cost;
@@ -309,21 +409,24 @@ const inkFaultsOf = async (page, preview, settled) => {
           for (let shift = -margin * ratio; shift <= margin * ratio; shift++)
             if (costOf(shift) < costOf(best)) best = shift;
 
-          return [{ key: label.key, shift: best / ratio }];
+          return { name: region.name, shift: best / ratio };
         });
       },
-      { preview, settled, margin: INK_MARGIN_PX },
+      { preview, settled, regions: regionsOf(preview, settled) },
     );
 
     return shifts
       .filter(({ shift }) => Math.abs(shift) > POSITION_TOLERANCE_PX)
-      .map(({ key, shift }) => `side label ${key} text drawn ${shift.toFixed(0)} px off its box after the settle`);
+      .map(({ name, shift }) => `${name} text drawn ${shift.toFixed(0)} px off its box after the settle`);
   } finally {
     await isolated.close();
   }
 };
 
-const chromeHoldsWhenWheelZoomSettles = async (context) => {
+const chromeHoldsWhenWheelZoomSettles = async (
+  context,
+  { steps = WHEEL_STEPS, onSideLabel = false, tag = '' } = {},
+) => {
   const { page } = context;
 
   await openView(context);
@@ -332,7 +435,7 @@ const chromeHoldsWhenWheelZoomSettles = async (context) => {
       timeout: CELLS_TIMEOUT_MS,
     });
   } catch {
-    if (shots) await page.screenshot({ path: `${shots}-timeout.png` });
+    if (shots) await page.screenshot({ path: `${shots}${tag}-timeout.png` });
 
     return { ok: false, detail: `no sketch frame within ${CELLS_TIMEOUT_MS} ms` };
   }
@@ -342,21 +445,27 @@ const chromeHoldsWhenWheelZoomSettles = async (context) => {
 
   if (!list) return { ok: false, detail: 'no sketch rows list' };
   await startProbe(page);
-  if (shots) await page.screenshot({ path: `${shots}-before.png` });
-  await page.mouse.move(list.x + list.width / 2, list.y + Math.min(list.height / 2, 300));
+  if (shots) await page.screenshot({ path: `${shots}${tag}-before.png` });
+  const sideLabel = onSideLabel
+    ? await page.locator('ethlete-sketches [data-sk-gutter] > .font-ui-medium').first().boundingBox()
+    : null;
+
+  if (onSideLabel && !sideLabel) return { ok: false, detail: 'no side label to point at' };
+  if (sideLabel) await page.mouse.move(sideLabel.x + sideLabel.width / 2, sideLabel.y + sideLabel.height / 2);
+  else await page.mouse.move(list.x + list.width / 2, list.y + Math.min(list.height / 2, 300));
   await page.keyboard.down('Control');
-  for (let step = 0; step < WHEEL_STEPS; step++) {
+  for (let step = 0; step < steps; step++) {
     await page.mouse.wheel(0, -120);
     await page.waitForTimeout(30);
   }
   await page.keyboard.up('Control');
   const previewInk = await inkOf(page);
 
-  if (shots) await page.screenshot({ path: `${shots}-preview.png` });
+  if (shots) await page.screenshot({ path: `${shots}${tag}-preview.png` });
   await page.waitForTimeout(AFTER_WHEEL_MS);
   const settledInk = await inkOf(page);
 
-  if (shots) await page.screenshot({ path: `${shots}-settled.png` });
+  if (shots) await page.screenshot({ path: `${shots}${tag}-settled.png` });
   if (!previewInk.inPreview) return { ok: false, detail: 'the preview ended before its screenshot' };
 
   const { lastWheel, samples } = await stopProbe(page);
@@ -385,6 +494,10 @@ const CASES = [
   {
     name: 'no row size change after a wheel zoom settles: labels and strokes stay put',
     run: chromeHoldsWhenWheelZoomSettles,
+  },
+  {
+    name: 'side label text stays on its box after a two-step wheel zoom on the first side label',
+    run: (context) => chromeHoldsWhenWheelZoomSettles(context, { steps: 2, onSideLabel: true, tag: '-side' }),
   },
 ];
 

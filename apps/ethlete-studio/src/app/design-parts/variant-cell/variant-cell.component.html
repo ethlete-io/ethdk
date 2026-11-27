@@ -9,7 +9,7 @@
     [class.text-et-surface-text]="!dimmed()"
     [class.text-et-surface-text-muted]="dimmed()"
     [style.font-size.px]="labelFont()"
-    class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere"
+    class="min-w-0 cap-trim font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere"
     data-sk-label-text
     ><span [class.hidden]="stateHidden()">{{ state() }}{{ note() ? LABELS.stateSeparator : '' }}</span
     >{{ note() }}</span
@@ -17,7 +17,7 @@
   @if (sameAsRest().length > 0) {
     <span
       [style.font-size.px]="labelFont()"
-      class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere"
+      class="min-w-0 cap-trim font-code text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere"
       data-sk-same-as-rest
       >{{ LABELS.sameAsRest(sameAsRest(), state()) }}</span
     >
@@ -130,9 +130,11 @@
       data-sk-stack-states
       type="button"
     >
-      <span>{{ LABELS.stackedStates(stacked()) }}</span>
+      <span class="block cap-trim">{{ LABELS.stackedStates(stacked()) }}</span>
       @if (stackedOpen()) {
-        <span class="mt-space-1 block font-code" data-sk-stack-names>{{ LABELS.stackedStatesNames(stacked()) }}</span>
+        <span class="mt-space-1 block cap-trim font-code" data-sk-stack-names>{{
+          LABELS.stackedStatesNames(stacked())
+        }}</span>
       }
     </button>
   }

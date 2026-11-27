@@ -201,7 +201,7 @@
                             class="row-start-2 box-border flex items-center justify-center self-start rounded-control-sm relative [--sk-dash:var(--et-surface-border)] p-space-2 text-center font-code leading-[1.35] text-et-surface-text-muted"
                           >
                             <ng-container [ngTemplateOutlet]="dashedEdge" />
-                            {{ matrixMissingLabelOf(row) }}
+                            <span class="cap-trim">{{ matrixMissingLabelOf(row) }}</span>
                           </div>
                         </div>
                       }
@@ -276,7 +276,7 @@
                         <span
                           [style.grid-row]="3 + index * 2 + ' / span 2'"
                           [style.font-size.px]="labelFont()"
-                          class="self-center pr-space-1 font-code leading-[1.35] whitespace-nowrap text-et-surface-text"
+                          class="self-center cap-trim pr-space-1 font-code leading-[1.35] whitespace-nowrap text-et-surface-text"
                           data-sk-line-head
                           >{{ line.base }}</span
                         >
@@ -456,7 +456,7 @@
               <span
                 [style.grid-column]="column + 1"
                 [style.font-size.px]="labelFont()"
-                class="row-start-1 self-end font-code leading-[1.35] text-et-surface-text-muted"
+                class="row-start-1 self-end cap-trim font-code leading-[1.35] text-et-surface-text-muted"
                 data-sk-column-head
               >
                 @for (part of headPartsOf(name); track $index) {
@@ -482,7 +482,7 @@
                       [style.grid-row]="gridLineOf(index)"
                       [style.font-size.px]="labelFont()"
                       [attr.data-sk-folded-cell]="state"
-                      class="self-center font-code leading-[1.35] whitespace-nowrap text-et-surface-text-muted"
+                      class="self-center cap-trim font-code leading-[1.35] whitespace-nowrap text-et-surface-text-muted"
                       >{{ LABELS.foldedToRest }}</span
                     >
                   } @else {
@@ -524,7 +524,7 @@
                     data-sk-label
                     ><span
                       [style.font-size.px]="labelFont()"
-                      class="min-w-0 font-code leading-[1.35] text-et-surface-text-muted wrap-anywhere"
+                      class="min-w-0 cap-trim font-code leading-[1.35] text-et-surface-text-muted wrap-anywhere"
                       >{{ state }}</span
                     ></span
                   >
@@ -535,7 +535,7 @@
                       class="row-start-2 box-border flex items-center justify-center rounded-control-sm relative [--sk-dash:var(--et-surface-border)] p-space-2 text-center text-ui-xs text-et-surface-text-muted"
                     >
                       <ng-container [ngTemplateOutlet]="dashedEdge" />
-                      <span [style.zoom]="chromeZoom()"> {{ missingLabelOf(row) }}</span>
+                      <span [style.zoom]="chromeZoom()" class="cap-trim"> {{ missingLabelOf(row) }}</span>
                     </div>
                   } @else {
                     <div
@@ -546,7 +546,7 @@
                       data-sk-failed-cell
                     >
                       <ng-container [ngTemplateOutlet]="dashedEdge" />
-                      <span [style.zoom]="chromeZoom()"> {{ missingLabelOf(row) }}</span>
+                      <span [style.zoom]="chromeZoom()" class="cap-trim"> {{ missingLabelOf(row) }}</span>
                     </div>
                   }
                 </div>
@@ -612,7 +612,7 @@
   <span
     class="inline-block max-w-full rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text wrap-anywhere shadow-[0_0_0_1px_var(--et-surface-border)]"
     data-sk-head-tag
-    >{{ label }}</span
+    ><span class="block cap-trim">{{ label }}</span></span
   >
 </ng-template>
 <ng-template #headTemplate let-row>
@@ -639,7 +639,9 @@
       <span
         class="max-w-full rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface-text wrap-anywhere shadow-[0_0_0_1px_var(--et-surface-border)]"
         data-sk-head-name
-        >{{ row.label ?? (row.key === CURRENT ? LABELS.current : LABELS.variant(row.key)) }}</span
+        ><span class="block cap-trim">{{
+          row.label ?? (row.key === CURRENT ? LABELS.current : LABELS.variant(row.key))
+        }}</span></span
       >
       @if (row.model; as model) {
         <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-text-muted" data-sk-model
@@ -675,6 +677,7 @@
     <p
       #note
       [style.font-size.px]="noteSize()"
+      [class.cap-trim]="!!row.note"
       class="m-0 leading-[1.35] text-et-surface-text-muted wrap-anywhere"
       data-sk-note
     >
@@ -699,7 +702,7 @@
       @if (IS_WITHDRAWN(row)) {
         <span
           [style.font-size.px]="noteSize()"
-          class="leading-[1.35] text-et-surface-text-muted italic wrap-anywhere"
+          class="cap-trim leading-[1.35] text-et-surface-text-muted italic wrap-anywhere"
           data-sk-withdrawn
           >{{ withdrawnMarkOf(row.withdrawn) }}</span
         >

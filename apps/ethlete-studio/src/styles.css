@@ -131,6 +131,12 @@ html {
   font-size: 62.5%;
 }
 
+/* Workaround: Chromium floors the half-leading to a whole layout px, so text in a scaled world jumps when the scale changes. The trim takes the text edges from the baseline; the padding keeps one line height per line. */
+@utility cap-trim {
+  text-box: trim-both cap alphabetic;
+  padding-block: calc((1lh - 1cap) / 2);
+}
+
 /* Only the root: on any other box (an overflow-hidden label too) Chromium stops the wheel's scroll chain there. */
 @layer base {
   html,
