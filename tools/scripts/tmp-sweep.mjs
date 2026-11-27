@@ -115,7 +115,7 @@ export const sweepTargets = ({ tmpRoot, claudeTmp, now, maxAgeMs = MAX_AGE_MS, o
     list(dir).flatMap((name) => {
       const path = join(dir, name);
       if (stale(path)) return [path];
-      return lstatOf(path)?.isDirectory() ? prune(path) : [];
+      return lstatOf(path)?.isDirectory() && !lstatOf(join(path, '.git')) ? prune(path) : [];
     });
   return [...fromTmp, ...(claudeTmp ? prune(claudeTmp) : [])];
 };

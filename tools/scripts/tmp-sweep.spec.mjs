@@ -90,6 +90,31 @@ test('in the Claude temp dir stale entries go at any depth, while a live session
   assert.deepEqual(targets.sort(), [ended, join(live, 'tasks', 'old.output')].sort());
 });
 
+test('a git checkout in the Claude temp dir goes whole or not at all', () => {
+  const claudeTmp = tempDir('tmp-sweep-checkout-');
+  const scratchpad = join(claudeTmp, 'claude-1000', 'project', 'session', 'scratchpad');
+  const live = join(scratchpad, 'live-copy');
+  const ended = join(scratchpad, 'ended-copy');
+  for (const repo of [live, ended]) {
+    mkdirSync(join(repo, '.git'), { recursive: true });
+    mkdirSync(join(repo, 'libs', 'core'), { recursive: true });
+    writeFileSync(join(repo, 'libs', 'core', 'index.ts'), '');
+    for (const path of [
+      join(repo, 'libs', 'core', 'index.ts'),
+      join(repo, 'libs', 'core'),
+      join(repo, 'libs'),
+      join(repo, '.git'),
+      repo,
+    ])
+      old(path);
+  }
+  writeFileSync(join(live, 'edited.ts'), '');
+
+  const targets = sweepTargets({ tmpRoot: tempDir('tmp-sweep-empty-'), claudeTmp, now, openPaths: [] });
+
+  assert.deepEqual(targets, [ended]);
+});
+
 test('the units run the sweep hourly with the given node', () => {
   const files = unitFiles({ node: '/n/node', script: '/r/tmp-sweep.mjs' });
 
