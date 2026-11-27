@@ -681,6 +681,51 @@ const readUntil = async (page, read, done) => {
 
 const focusUntil = (page, done) => readUntil(page, () => ringOf(page), done);
 
+const FOCUS_TIP_STATE = 'reset-focus-visible';
+
+const FIT_REPORT_LOADS = 8;
+const FIT_SETTLE_MS = 1000;
+
+const lastFitReportOf = async (page, cell) => {
+  const own = await page.context().browser().newPage();
+
+  try {
+    await own.setContent(`<iframe style="width:${cell.width}px;height:400px;border:0"></iframe>`);
+    await own.evaluate(() =>
+      addEventListener('message', (event) => {
+        if (event.data?.type === 'design-explore:height' && event.data.width !== undefined)
+          window.lastReportedWidth = event.data.width;
+      }),
+    );
+    await own.evaluate((src) => (document.querySelector('iframe').src = src), cell.src);
+    const read = async () => {
+      const reported = await own.evaluate(() => window.lastReportedWidth ?? null);
+      const drawn = await own
+        .frames()[1]
+        ?.evaluate(() => {
+          const root = document.querySelector('#root');
+
+          return root ? Math.ceil(root.getBoundingClientRect().width) : null;
+        })
+        .catch(() => null);
+
+      return { reported, drawn: drawn ?? null, line: `reported ${reported}, drawn ${drawn}` };
+    };
+    await readUntil(own, read, (first) => first.reported !== null);
+    await own.waitForTimeout(FIT_SETTLE_MS);
+    let frame = await read();
+
+    for (const until = Date.now() + FIT_SETTLE_MS; !sameWidth(frame) && Date.now() < until; frame = await read())
+      await own.waitForTimeout(100);
+
+    return frame;
+  } finally {
+    await own.close();
+  }
+};
+
+const sameWidth = (frame) => frame.reported === frame.drawn;
+
 const LIVE_GRACE_MS = 5000;
 
 const liveFrameUntil = async (page, id) => {
@@ -2079,6 +2124,48 @@ const CASES = [
       const report = percent >= 25 ? `Fit ${percent} %` : `too large for Fit: ${percent} %`;
 
       return { ok: faults.length === 0, detail: [report, ...faults].join('; ') };
+    },
+  },
+  {
+    name: 'the last width a fitted sketch frame reports is its drawn width',
+    pages: ['Sketches'],
+    labels: ['Chip'],
+    run: async (page) => {
+      await listingAnswered(page);
+      await settled(page, FRAME);
+      const cells = await readUntil(
+        page,
+        () =>
+          page.evaluate((state) => {
+            const frames = [...document.querySelectorAll(`iframe[data-state="${state}"]`)];
+
+            return frames.map((frame) => ({
+              variant: frame.dataset.variant,
+              src: frame.src,
+              width: frame.clientWidth,
+            }));
+          }, FOCUS_TIP_STATE),
+        (cells) => cells.length >= 2,
+      );
+
+      if (cells.length < 2) return { ok: false, detail: `${cells.length} live ${FOCUS_TIP_STATE} frames, not 2` };
+
+      const lines = [];
+      const stale = [];
+
+      for (const cell of cells) {
+        for (let load = 0; load < FIT_REPORT_LOADS; load++) {
+          const frame = await lastFitReportOf(page, cell);
+
+          lines.push(frame.line);
+          if (!sameWidth(frame)) stale.push(`${cell.variant} load ${load + 1}: ${frame.line}`);
+        }
+      }
+
+      return {
+        ok: stale.length === 0,
+        detail: `${cells.map((cell) => cell.variant).join(', ')} x ${FIT_REPORT_LOADS} loads${stale.length ? `; stale: ${stale.join(' | ')}` : `: ${[...new Set(lines)].join(', ')}`}`,
+      };
     },
   },
   {

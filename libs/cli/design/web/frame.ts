@@ -610,7 +610,7 @@ const drawFrame = async () => {
   const reported = new ResizeObserver(report);
 
   reported.observe(document.documentElement);
-  if (fit) reported.observe(root);
+  if (fit) reported.observe(root, { box: 'border-box' });
   reporting = true;
   report();
   reportPainted();
