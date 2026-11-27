@@ -218,3 +218,44 @@ test('a running heavy job and its command end when the caller is killed', { time
   assert.equal(gone, true);
   assert.equal(jobGone, true);
 });
+
+const interruptedWhileRunning = async (signal) => {
+  const { dir } = setup();
+  const pidFile = join(dir, 'heavy.pid');
+  const jobPidFile = join(dir, 'job.pid');
+  const caller = spawn(
+    'sh',
+    ['-c', `node ${script} run -- sh -c 'sleep 30 & echo $! > ${jobPidFile}; wait' & echo $! > ${pidFile}; wait`],
+    {
+      env: {
+        ...process.env,
+        HEAVY_LOCK_PREFIX: join(dir, 'lock'),
+        HEAVY_POLL_MS: '50',
+        HEAVY_ROUTE: 'off',
+        RUN_REGISTRY_DIR: join(dir, 'runs'),
+        ET_AGENT_ID: 'spec-agent',
+      },
+      stdio: 'ignore',
+      detached: true,
+    },
+  );
+  spawned.add(caller);
+  await waitFor(() => existsSync(pidFile) && existsSync(jobPidFile));
+  const heavyPid = Number(readFileSync(pidFile, 'utf8'));
+  const jobPid = Number(readFileSync(jobPidFile, 'utf8'));
+  process.kill(heavyPid, signal);
+  let gone = false;
+  for (let i = 0; i < 100 && !gone; i++) {
+    gone = !alive(heavyPid) && !alive(jobPid);
+    if (!gone) await sleep(50);
+  }
+  const result = { gone };
+  for (const pid of [heavyPid, jobPid]) killQuietly(pid);
+  return result;
+};
+
+for (const signal of ['SIGTERM', 'SIGHUP']) {
+  test(`a running heavy job and its tree end on ${signal}`, { timeout: 30_000 }, async () => {
+    assert.equal((await interruptedWhileRunning(signal)).gone, true);
+  });
+}

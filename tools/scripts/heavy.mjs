@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +56,12 @@ if (process.env.HEAVY_NO_CALLER_WATCH !== '1') {
   }, pollMs).unref();
 }
 
+const descendants = (pid) => {
+  const result = spawnSync('pgrep', ['-P', String(pid)], { encoding: 'utf8' });
+  const children = result.stdout.split('\n').filter(Boolean).map(Number);
+  return children.flatMap((c) => [...descendants(c), c]);
+};
+
 const tryRun = (argv, { label, machine, n, run, cwd, env = process.env, onStart }) => {
   const info = JSON.stringify({ cwd: process.cwd(), command: label, startedAt: Date.now() });
   const script =
@@ -62,7 +69,15 @@ const tryRun = (argv, { label, machine, n, run, cwd, env = process.env, onStart 
   let child;
   const forward = (signal) => {
     interrupted = true;
-    child?.kill(signal);
+    if (!child) return;
+    for (const pid of descendants(child.pid)) {
+      try {
+        process.kill(pid, signal);
+      } catch {
+        // already gone
+      }
+    }
+    child.kill(signal);
   };
   for (const s of forwarded) process.on(s, forward);
   return teeRun(run, argv, {
