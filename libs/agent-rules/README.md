@@ -412,7 +412,8 @@ package ships (`yarn agents:sync` writes the marketplace and `enabledPlugins` in
   `-` lines of `<git common dir>/ethlete/open-questions.md`, and `⛔ CI rot` when the latest `gh run`
   of the branch failed (checked every 2 minutes). A field whose source is missing is left out.
 - **`usage-line`** - a status line entry in every session: `5h 36% bis 01:40 · Woche 42%`. The reset time is left
-  out when the window reports none.
+  out when the window reports none. The Codex 5h and weekly limit left follows it (`⛔ codex 5h 0% (02:55) · wk 72%`,
+  read from `~/.codex/sessions`, the reset time shown only for an exhausted window).
 
 ## Progress report
 

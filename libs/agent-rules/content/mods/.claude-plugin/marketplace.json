@@ -20,7 +20,7 @@
     {
       "name": "usage-line",
       "source": "./plugins/usage-line",
-      "description": "Status line entry with the 5 hour and weekly usage and the time the 5 hour window resets"
+      "description": "Status line entry with the 5 hour and weekly usage, the reset time of the 5 hour window and the Codex limit"
     }
   ]
 }
