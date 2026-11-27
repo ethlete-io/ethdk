@@ -70,7 +70,7 @@ describe('the shot store hit check', () => {
       createShotStore({ dir: store, salt: 's', code, checkout: dir, inputsOf: () => [input], scopeOf: () => '' });
 
     writeFileSync(input, 'one');
-    storeOf('older').write('key', { address, picture: { png: randomBytes(1024 * 1024), marks: [] } });
+    storeOf('older').write('key', { address, picture: { png: randomBytes(64 * 1024), marks: [] } });
     reads.bytes.clear();
 
     expect(storeOf('newer').read('key', address)).toBeNull();
@@ -83,7 +83,7 @@ describe('the shot store hit check', () => {
     const input = join(dir, 'input.ts');
     const storeOf = (code: string) =>
       createShotStore({ dir: store, salt: 's', code, checkout: dir, inputsOf: () => [input], scopeOf: () => '' });
-    const png = Buffer.concat([blankPngOf(320, 120), randomBytes(1024 * 1024)]);
+    const png = Buffer.concat([blankPngOf(320, 120), randomBytes(64 * 1024)]);
 
     writeFileSync(input, 'one');
     storeOf('older').write('key', { address, picture: { png, marks: [] } });
