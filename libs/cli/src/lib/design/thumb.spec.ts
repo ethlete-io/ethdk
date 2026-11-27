@@ -297,7 +297,7 @@ describe('createDrawQueue', () => {
     expect(started).toHaveLength(DRAWS_AT_ONCE + 1);
   });
 
-  it('starts a spare job after the idle jobs asked after it, in the places idle jobs take', async () => {
+  it('starts one spare job at a time in a place of its own beside the idle jobs', async () => {
     const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
     const started: string[] = [];
     let release = () => undefined as void;
@@ -308,17 +308,17 @@ describe('createDrawQueue', () => {
     };
     const drawn = [
       ...['idle 1', 'idle 2'].map((name) => queue.run(busy(name), 'idle')),
-      queue.run(busy('spare'), 'spare'),
+      ...['spare 1', 'spare 2'].map((name) => queue.run(busy(name), 'spare')),
       queue.run(busy('idle 3'), 'idle'),
     ];
 
-    await vi.waitFor(() => expect(started).toEqual(['idle 1', 'idle 2']));
+    await vi.waitFor(() => expect(started).toEqual(['idle 1', 'idle 2', 'spare 1']));
     await new Promise((done) => setTimeout(done, 5));
-    expect(started).toEqual(['idle 1', 'idle 2']);
+    expect(started).toEqual(['idle 1', 'idle 2', 'spare 1']);
 
     release();
     await Promise.all(drawn);
-    expect(started).toEqual(['idle 1', 'idle 2', 'idle 3', 'spare']);
+    expect(started).toEqual(['idle 1', 'idle 2', 'spare 1', 'idle 3', 'spare 2']);
   });
 
   it('keeps a running idle job a shown ask joined drawing when a shown shot starts', async () => {

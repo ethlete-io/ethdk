@@ -278,14 +278,15 @@ export const DRAWS_AT_ONCE = 8;
 export const IDLE_DRAWS_AT_ONCE = DRAWS_AT_ONCE / 4;
 const IDLE_LANE = 5;
 const SPARE_LANE = 6;
+const SPARE_DRAWS_AT_ONCE = 1;
 
 /**
  * One shared headless Chromium, launched on the first ask, that runs up to `DRAWS_AT_ONCE` drawings at once.
  * A waiting `high` drawing runs first; of the `low` ones, those for the active frame of the shown view,
  * then its visible cells, then the rest, then those of views no longer shown, then the `idle` ones, then the `spare`
- * ones, each lane in the order asked. `idle` and `spare` drawings together take at most `IDLE_DRAWS_AT_ONCE` places
- * and none start while a shown shot draws, so a shot the viewer waits for starts at once and shares the CPU with few
- * of them. A shown shot that starts stops the running `idle` and `spare` drawings no other ask joined; each waits in
+ * ones, each lane in the order asked. `idle` drawings take at most `IDLE_DRAWS_AT_ONCE` places and `spare` ones one
+ * place of their own, so a spare drawing does not wait for every idle one; none start while a shown shot draws, so a
+ * shot the viewer waits for starts at once and shares the CPU with few of them. A shown shot that starts stops the running `idle` and `spare` drawings no other ask joined; each waits in
  * its lane again and draws anew.
  * A drawing every ask withdrew before it started is dropped. A failed launch is not kept, so the next ask
  * tries again.
@@ -385,10 +386,13 @@ export const createDrawQueue = (options: {
 
   const next = () => {
     while (drawingLanes.length < DRAWS_AT_ONCE && waiting.length > 0) {
-      const idleFull =
-        drawingLanes.some((lane) => lane <= 2) ||
-        drawingLanes.filter((lane) => lane >= IDLE_LANE).length >= IDLE_DRAWS_AT_ONCE;
-      const lanes = waiting.map(entryLaneOf).map((lane) => (idleFull && lane >= IDLE_LANE ? Infinity : lane));
+      const shownDrawing = drawingLanes.some((lane) => lane <= 2);
+      const full = (lane: number) =>
+        lane >= IDLE_LANE &&
+        (shownDrawing ||
+          drawingLanes.filter((running) => running === lane).length >=
+            (lane === SPARE_LANE ? SPARE_DRAWS_AT_ONCE : IDLE_DRAWS_AT_ONCE));
+      const lanes = waiting.map(entryLaneOf).map((lane) => (full(lane) ? Infinity : lane));
       const lane = Math.min(...lanes);
 
       if (lane === Infinity) return;

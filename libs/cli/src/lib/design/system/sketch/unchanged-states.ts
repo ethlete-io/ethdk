@@ -163,9 +163,10 @@ const drawsTheSame = async (options: {
         });
         const draw = (drawn: SketchVariant | null, fresh: boolean) => pictureOf({ ...asked(drawn), fresh });
 
-        if (alongside && index === 0) void pictureOf({ ...asked(alongside), priority: 'spare' }).catch(() => undefined);
-
         const { same, change } = await drawnPair(draw, sketch);
+
+        if (alongside && index === 0 && !same)
+          void pictureOf({ ...asked(alongside), priority: 'spare' }).catch(() => undefined);
 
         return same ? null : (change ?? undefined);
       }),
