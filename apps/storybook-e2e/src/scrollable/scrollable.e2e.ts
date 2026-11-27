@@ -1,4 +1,4 @@
-import { Locator, expect, test } from '@playwright/test';
+import { Locator, Page, expect, test } from '@playwright/test';
 import { boxOf, expectFocusVisible, expectTouchMode, openStory, pressKey, touchSwipe } from '../support';
 
 const DEFAULT_STORY_ID = 'components-layout-scrollable--default';
@@ -66,6 +66,27 @@ function maskOpacities(root: Locator): Promise<[number, number]> {
     root.locator(START_MASK).evaluate((el) => Number(getComputedStyle(el).opacity)),
     root.locator(END_MASK).evaluate((el) => Number(getComputedStyle(el).opacity)),
   ]);
+}
+
+async function readFadePixels(page: Page, track: Locator): Promise<number[]> {
+  const { x, y } = await boxOf(track);
+  const screenshot = await page.screenshot({
+    clip: { x: Math.ceil(x) + 4, y: Math.ceil(y) + 4, width: 17, height: 1 },
+    scale: 'css',
+  });
+
+  return page.evaluate(async (base64) => {
+    const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${base64}`)).blob());
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const context = canvas.getContext('2d');
+
+    if (!context) throw new Error('No 2d context for the fade sample');
+
+    context.drawImage(bitmap, 0, 0);
+    const { data } = context.getImageData(0, 0, bitmap.width, 1);
+
+    return [...data].filter((_, index) => index % 16 === 0);
+  }, screenshot.toString('base64'));
 }
 
 function childOffsets(root: Locator): Promise<{ start: number; end: number; width: number }[]> {
@@ -345,6 +366,31 @@ test.describe('scrollable / edges and chrome', () => {
     await expect.poll(() => maskOpacities(root)).toEqual([1, 0]);
 
     expect(await container.evaluate((el) => getComputedStyle(el).maskImage)).toContain('linear-gradient');
+  });
+
+  test('inside buttons preserve a soft fade within the gutter after scrolling', async ({ page }) => {
+    const root = await openStory(page, PROVIDED_BUTTON_COLOR_STORY_ID);
+    const host = root.getByTestId('tokens');
+    const track = host.locator(CONTAINER);
+
+    await page.addStyleTag({
+      content: `
+        [data-testid="tokens"] { background: var(--et-surface-text); }
+        [data-testid="tokens"] :is(.et-scrollable-container, .bg-gray-200) {
+          background: var(--et-surface-background);
+        }
+      `,
+    });
+
+    await scrollTrackTo(track, 'middle');
+    await expect.poll(() => maskOpacities(host)).toEqual([1, 1]);
+
+    const pixels = await readFadePixels(page, track);
+
+    expect(pixels).toHaveLength(5);
+    expect(pixels, 'each sample should be a darker intermediate shade across the start fade').toEqual(
+      [...new Set(pixels)].sort((a, b) => b - a),
+    );
   });
 
   test('the border mask variant draws an edge line instead of a gradient', async ({ page }) => {

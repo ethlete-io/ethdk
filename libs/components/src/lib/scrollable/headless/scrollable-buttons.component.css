@@ -127,7 +127,9 @@
       }
     }
 
-    &.et-scrollable--can-scroll:has(> .et-scrollable-wrapper > .et-scrollable-buttons--inside) {
+    &.et-scrollable--can-scroll:not(.et-scrollable--masked):has(
+        > .et-scrollable-wrapper > .et-scrollable-buttons--inside
+      ) {
       & > .et-scrollable-wrapper > .et-scrollable-container {
         --_et-scrollable-button-space: clamp(0px, var(--et-scrollable-buttons-end-space), 50%);
         --_et-scrollable-start-clip: 0px;
