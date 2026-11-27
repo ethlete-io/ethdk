@@ -5,6 +5,7 @@ import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { referenceAccentOf } from './accent.mjs';
+import { cliFreshnessOf, cliVersionIn, newestPublishedCli } from './cli-fresh.mjs';
 import { clientCommitsSince, DEFAULT_MAX_AGE_DAYS, dueReasonOf, lastRunOf, openRowsOfRun, RUN_RECORD } from './due.mjs';
 import { writeImageSet } from './image-set.mjs';
 import { SDK_LIBS } from './sdk-skew.mjs';
@@ -116,6 +117,21 @@ const headOf = (dir) => {
   const result = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   return result.status === 0 ? result.stdout.trim() : null;
 };
+
+const cliSource = values.sdk
+  ? {
+      version: cliVersionIn(join(resolve(values.sdk), 'dist/libs/cli/package.json')),
+      source: `the --sdk copy ${resolve(values.sdk)}`,
+    }
+  : {
+      version: cliVersionIn(join(repo, 'libs/cli/package.json')),
+      source: `this checkout (${repo}), which the scratch SDK is built from`,
+    };
+const freshness = cliFreshnessOf({ ...cliSource, newest: newestPublishedCli() });
+if (freshness.message) (freshness.ok ? console.warn : console.error)(freshness.message);
+if (!freshness.ok) {
+  process.exit(1);
+}
 
 const stamp = stampOf(new Date());
 const runDir = join(resolve(values.out), stamp);
