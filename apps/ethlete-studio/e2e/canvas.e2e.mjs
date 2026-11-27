@@ -9,6 +9,7 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -1703,8 +1704,7 @@ const withEditSketch = async (page, designPort, run, edited = { part: EDIT_PART,
     console.log(`[ci-timing] edit sketch ${phaseLine()}`);
     rmSync(join(checkout, '.git'), { recursive: true, force: true });
     rmSync(studio, { recursive: true, force: true });
-    cpSync(saved, studio, { recursive: true });
-    rmSync(saved, { recursive: true, force: true });
+    renameSync(saved, studio);
     // The restore leaves the server's rule check cold (4 s on 2 idle cores); without this listing the next case's
     // first frame pays that full rule run inside its WAIT_MS.
     await fetch(`http://[::1]:${designPort}/__design/system`, { signal: AbortSignal.timeout(EDIT_WAIT_MS) }).then(
