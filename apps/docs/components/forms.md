@@ -246,7 +246,7 @@ counter leaves the frame at rest.
 
 A text field's frame sits near 3:1 against its surface at rest, in light and dark
 (a mix of the surface text colour into its background), and keeps at least 3:1 in
-error. Hover draws it in the label's hover colour (`-label-color-active`, the surface text
+error. Hover draws it in the label's hover colour (`-label-active-color`, the surface text
 colour), the same rule every form control follows. An OTP input's segments use the same rest and
 hover colours. Focus keeps the 1px border and turns it
 the theme colour (the error theme's ink while erroring); hover leaves it alone,
@@ -1013,16 +1013,16 @@ The field shell declares public design tokens; override them in your CSS scope:
 
 | Component       | Tokens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-control-min-height-sm` / `-md` / `-lg`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration`, `-control-border-color` / `-border-color-hover` / `-border-color-focus` / `-focus-ring-width`, `-value-color` / `-value-color-active`, `-label-color` / `-label-color-active`, `-label-font-weight` / `-label-letter-spacing`, `-letter-spacing`, `-supporting-inset` |
+| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-control-min-height-sm` / `-md` / `-lg`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration`, `-control-border-color` / `-hover-border-color` / `-focus-border-color` / `-focus-ring-width`, `-value-color` / `-value-active-color`, `-label-color` / `-label-active-color`, `-label-font-weight` / `-label-letter-spacing`, `-letter-spacing`, `-supporting-inset` |
 
-The border colours and `-value-color` default to the surface theme; `-control-border-color-hover` falls back to `-label-color-active`, so the hovered frame and label share one colour. `-value-color-active` applies
-while the frame is hovered, focused or open, and falls back to `-value-color`. `-control-border-color-focus`
+The border colours and `-value-color` default to the surface theme; `-control-hover-border-color` falls back to `-label-active-color`, so the hovered frame and label share one colour. `-value-active-color` applies
+while the frame is hovered, focused or open, and falls back to `-value-color`. `-control-focus-border-color`
 colours the focused border (default: the theme colour, on a read-only field the surface text colour). A
 focused read-only field adds a ring inside the border at `-control-focus-ring-width` (default: the border
 width); set it to `0px` for a plain border. In the error state the error theme still colours the border.
 `-letter-spacing` sets the value text; unset, it is inherited.
 
-`-label-color` colours the label at rest (default: the muted surface text colour) and `-label-color-active`
+`-label-color` colours the label at rest (default: the muted surface text colour) and `-label-active-color`
 while the field is focused or filled (default: the surface text colour). The error state still colours the label.
 
 `--et-form-field-supporting-inset` is the inline-start inset of the label (in `static` label mode), hint,

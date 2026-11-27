@@ -437,8 +437,8 @@ inactive dots a neutral tint. Each colour has a token of its own; unset, it keep
 | Property                             | Applies to                                                                                         |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------- |
 | `--et-carousel-dot-color`            | an inactive dot                                                                                    |
-| `--et-carousel-dot-hover-color`      | an inactive dot under the pointer                                                                  |
-| `--et-carousel-dot-active-color`     | the active dot and the autoplay countdown fill                                                     |
+| `--et-carousel-dot-hover`            | an inactive dot under the pointer                                                                  |
+| `--et-carousel-dot-active`           | the active dot and the autoplay countdown fill                                                     |
 | `--et-carousel-dot-ring-track-color` | the countdown ring's track, behind the fill                                                        |
 | `--et-carousel-controls-background`  | the controls row (default `transparent`; a translucent surface when overlaid) and the pause corner |
 | `--et-carousel-control-color`        | the previous, next and play/pause icons (default the theme's ink)                                  |

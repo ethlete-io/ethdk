@@ -414,7 +414,7 @@ Colors come from the app-registered [surface and color theme systems](/component
 | `--et-dropzone-gap`                 | `10px`  | Vertical gap between building blocks  |
 | `--et-dropzone-thumbnail-size`      | `48px`  | List thumbnail size (multiple mode)   |
 | `--et-dropzone-transition-duration` | `150ms` | Hover/drag-over transition            |
-| `--et-dropzone-opacity-disabled`    | `0.5`   | Disabled dimming                      |
+| `--et-dropzone-disabled-opacity`    | `0.5`   | Disabled dimming                      |
 | `--et-dropzone-label-font-size`     | `13px`  | Projected `et-label` font size        |
 | `--et-dropzone-support-duration`    | `180ms` | Hint/error region animation           |
 | `--et-dropzone-error-font-size`     | `12px`  | Error text font size                  |

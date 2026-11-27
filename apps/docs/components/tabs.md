@@ -123,7 +123,7 @@ Both flavors, and the segmented button group's tabs variant (font weight, text t
 | `--et-tab-active-color`            | the surface's colour               | Text colour of the active trigger                       |
 | `--et-tab-inactive-color`          | the surface's `controlText` ladder | Text colour of an inactive trigger                      |
 | `--et-tab-hover-color`             | the surface's `controlText` hover  | Text colour of a hovered inactive trigger               |
-| `--et-tab-hover-underline-opacity` | `0`                                | Shows the underline on a hovered inactive trigger (`1`) |
+| `--et-tab-underline-hover-opacity` | `0`                                | Shows the underline on a hovered inactive trigger (`1`) |
 
 ### Defaults for the whole app
 

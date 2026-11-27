@@ -326,4 +326,4 @@ and spacing are tunable via `--et-pagination-item-size`, `--et-pagination-gap` a
 `--et-pagination-radius`; the buttons' own `--et-button-*` tokens are overridden for
 the compact, square cells.
 
-Items draw no border by default. `--et-pagination-item-border-color` gives every item a border, and `--et-pagination-item-border-color-hover` changes it while the pointer is over an enabled item (it falls back to the resting color). The border width is `--et-button-border-width`.
+Items draw no border by default. `--et-pagination-item-border-color` gives every item a border, and `--et-pagination-item-hover-border-color` changes it while the pointer is over an enabled item (it falls back to the resting color). The border width is `--et-button-border-width`.

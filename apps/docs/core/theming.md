@@ -42,7 +42,7 @@ The part of the demo that themes it - one tone on the root, one surface, and an 
 ```css
 /* "Hover = next level: on" */
 .app-theming-stage[data-hover-next-level] et-accordion-group {
-  --et-accordion-header-hover-background: var(--et-surface-next-background);
+  --et-accordion-header-hover: var(--et-surface-next-background);
 }
 ```
 
@@ -58,7 +58,7 @@ the component's own strength over whatever lies below.
 ```css
 .et-accordion-header:hover {
   background: var(
-    --et-accordion-header-hover-background,
+    --et-accordion-header-hover,
     color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 7%, transparent)
   );
 }
@@ -67,9 +67,13 @@ the component's own strength over whatever lies below.
 - **The tint** is the surface theme's `tint`. A theme without one inherits the tint of the surface around it, and
   where no surface sets one the state reads the surface text, so the fallback chain is part of the form.
 - **The strength** (`7%` above) belongs to the component; each keeps the strength it shipped with.
-- **The token** in front (`--et-accordion-header-hover-background`) is the component's override point. Set it on the
+- **The token** in front (`--et-accordion-header-hover`) is the component's override point. Set it on the
   component's element or a scope inside its surface, never on `:root`: a `var()` resolves where it is declared, so
   on `:root` every level would get the root's value.
+- **The token name** is `--et-<component>[-<part>][-<variant>]-<state>[-<property>]`. The bare state names the
+  background (`--et-select-option-hover`); any other property follows the state (`--et-tab-hover-color`,
+  `--et-form-field-control-focus-border-color`, `--et-button-disabled-opacity`). The token still takes any color;
+  prefer `var(--et-surface-next-background)` or leaving the strength to the component over a fixed color.
 - **"Hover = next level"** is the same override with `var(--et-surface-next-background)`, as in the demo above. On
   the topmost level there is no next surface; the token then holds the tint mixed 9% over the background.
 

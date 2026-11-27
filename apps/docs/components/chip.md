@@ -103,7 +103,7 @@ A plain chip takes its colors from the app-registered [surface theme](/core/them
 | `--et-chip-border-radius`    | `999px` | Corner radius (pill)                |
 | `--et-chip-font-size`        | `12px`  | Label font size                     |
 | `--et-chip-remove-size`      | `16px`  | Remove button hit area              |
-| `--et-chip-opacity-disabled` | `0.4`   | Disabled opacity                    |
+| `--et-chip-disabled-opacity` | `0.4`   | Disabled opacity                    |
 
 ## Error codes
 
