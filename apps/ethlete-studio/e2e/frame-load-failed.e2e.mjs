@@ -371,7 +371,7 @@ const probeListening = (designPort) =>
     socket.once('error', (error) => done(`refuses a new connection (${error.code})`));
   });
 
-const describeReset = async (designPort, error) => {
+const describeReset = async (designPort, error, childState) => {
   const pids = designServerPids();
   const status = pids.map((pid) => {
     try {
@@ -388,10 +388,10 @@ const describeReset = async (designPort, error) => {
     status.length ? status.join('; ') : 'not found (exited)'
   }, port ${await probeListening(designPort)}, since the last queue answer ${idle}, load ${loadavg()
     .map((value) => value.toFixed(1))
-    .join(' ')}`;
+    .join(' ')}\n${await childState()}`;
 };
 
-const queueOf = async (designPort) => {
+const queueOf = async (designPort, childState) => {
   try {
     const answer = await (await fetch(`http://[::1]:${designPort}/__design/queue`)).json();
 
@@ -399,12 +399,13 @@ const queueOf = async (designPort) => {
 
     return answer;
   } catch (error) {
-    throw new Error(await describeReset(designPort, error), { cause: error });
+    throw new Error(await describeReset(designPort, error, childState), { cause: error });
   }
 };
 
 const abandonedListingLeavesQueue = async (context) => {
-  const { page, designPort } = context;
+  const { page, designPort, designChildState } = context;
+  const queueOfChild = (port) => queueOf(port, designChildState);
 
   await page.goto('about:blank');
   appendFileSync(join(checkout, UNRELATED_PART), '\n');
@@ -415,18 +416,18 @@ const abandonedListingLeavesQueue = async (context) => {
     () => undefined,
   );
   const deadline = Date.now() + QUEUED_TIMEOUT_MS;
-  let queued = (await queueOf(designPort)).queued;
+  let queued = (await queueOfChild(designPort)).queued;
 
   while (queued < QUEUED_BEFORE_ABANDON && Date.now() < deadline) {
     await page.waitForTimeout(100);
-    queued = (await queueOf(designPort)).queued;
+    queued = (await queueOfChild(designPort)).queued;
   }
 
   asker.abort();
   await listing;
   await page.waitForTimeout(CHANGE_SETTLE_MS);
 
-  const left = (await queueOf(designPort)).queued;
+  const left = (await queueOfChild(designPort)).queued;
 
   return {
     ok: queued >= QUEUED_BEFORE_ABANDON && left === 0,

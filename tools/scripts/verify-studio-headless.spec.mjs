@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
@@ -8,6 +9,7 @@ import { test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
 import {
   buildStudio,
+  designChildState,
   designProject,
   missingBuildInputs,
   serveOnlyAnswer,
@@ -251,4 +253,21 @@ test('a studio build runs Nx without its wait hook once the heavy-run lock is fr
   assert.equal(calls.length, 1);
   assert.equal(calls[0].env['NX_DAEMON'], 'false');
   assert.equal(calls[0].env['ETHLETE_HEAVY_NO_WAIT'], 'true');
+});
+
+test('designChildState names a live child, an exited child and the last output lines', async () => {
+  const lines = Array.from({ length: 50 }, (_, index) => `line ${index}`).join('\n');
+
+  assert.match(
+    await designChildState(
+      Object.assign(new EventEmitter(), { pid: 7, exitCode: null, signalCode: null, output: 'ready' }),
+    ),
+    /pid 7 alive.*\nready$/s,
+  );
+  const exited = await designChildState({ pid: 7, exitCode: null, signalCode: 'SIGKILL', output: lines });
+
+  assert.match(exited, /exited, code null, signal SIGKILL/);
+  assert.match(exited, /line 49$/);
+  assert.doesNotMatch(exited, /line 9\n/);
+  assert.match(await designChildState(undefined), /no design child.*\n\(none\)$/s);
 });

@@ -45,6 +45,7 @@ const spawnDesignServer = (checkout, stamp, echo, entry) =>
     let ready = false;
     const onData = (chunk) => {
       output += chunk;
+      child.output = output;
       if (echo) process.stderr.write(chunk);
       const port = /Local:\s+https?:\/\/localhost:(\d+)/.exec(stripVTControlCharacters(output))?.[1];
 
@@ -59,6 +60,29 @@ const spawnDesignServer = (checkout, stamp, echo, entry) =>
     child.stderr.on('data', onData);
     child.on('exit', (code) => reject(new Error(`design server exited with ${code}\n${output}`)));
   });
+
+const EXIT_GRACE_MS = 500;
+
+export const designChildState = async (child, tailLines = 40) => {
+  if (child?.exitCode === null && child.signalCode === null)
+    await new Promise((done) => {
+      const timer = setTimeout(done, EXIT_GRACE_MS);
+
+      child.once('exit', () => (clearTimeout(timer), done()));
+    });
+  const tail = stripVTControlCharacters(child?.output ?? '')
+    .split('\n')
+    .filter(Boolean)
+    .slice(-tailLines)
+    .join('\n');
+  const life = !child
+    ? 'no design child'
+    : child.exitCode === null && child.signalCode === null
+      ? `design child pid ${child.pid} alive`
+      : `design child pid ${child.pid} exited, code ${child.exitCode}, signal ${child.signalCode}`;
+
+  return `${life}, last output lines:\n${tail || '(none)'}`;
+};
 
 export const startDesignServer = (checkout, stamp, echo = false, entry = cliEntry) =>
   spawnDesignServer(checkout, stamp, echo, entry).catch(async (error) => {
@@ -383,7 +407,13 @@ export const withStudio = async (
     };
 
     stamp('first case starting');
-    return await run({ page, studioUrl: `http://[::1]:${studioPort}`, designPort: design.port, restartDesign });
+    return await run({
+      page,
+      studioUrl: `http://[::1]:${studioPort}`,
+      designPort: design.port,
+      restartDesign,
+      designChildState: () => designChildState(design?.child),
+    });
   } finally {
     await browser?.close();
     servers.forEach((server) => server.close());
