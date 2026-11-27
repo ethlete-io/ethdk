@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
-  provideColorThemes,
+  provideColorThemesWithTailwind4,
   provideSurfaceThemesWithTailwind4,
   ProvideSurfaceDirective,
   SurfaceTheme,
@@ -42,7 +42,7 @@ class HostComponent {
 
 const render = (fill: FormFieldFill, themes: SurfaceTheme[]) => {
   TestBed.configureTestingModule({
-    providers: [provideSurfaceThemesWithTailwind4(themes), provideColorThemes(TEST_COLOR_THEMES)],
+    providers: [provideSurfaceThemesWithTailwind4(themes), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
   });
 
   const fixture = TestBed.createComponent(HostComponent);

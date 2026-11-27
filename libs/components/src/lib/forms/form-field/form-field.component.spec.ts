@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { CheckboxComponent } from '../checkbox';
 import { InputDirective } from '../input/headless';
@@ -28,7 +28,7 @@ describe('FormFieldComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [CheckboxFormFieldTestHost],
-      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])],
     });
     fixture = TestBed.createComponent(CheckboxFormFieldTestHost);
     fixture.detectChanges();
@@ -61,7 +61,7 @@ describe('FormFieldComponent disabled state', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [InputFormFieldTestHost],
-      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])],
     });
     fixture = TestBed.createComponent(InputFormFieldTestHost);
     fixture.detectChanges();
@@ -96,7 +96,7 @@ describe('FormFieldComponent control frame pointerdown', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [PasswordFormFieldTestHost],
-      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])],
     });
     fixture = TestBed.createComponent(PasswordFormFieldTestHost);
     fixture.detectChanges();
@@ -143,7 +143,7 @@ describe('FormFieldComponent textarea styles', () => {
   it('injects the textarea frame styles only once a textarea sits in a form field', () => {
     TestBed.configureTestingModule({
       imports: [TextareaStylesTestHost],
-      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])],
     });
 
     const fixture = TestBed.createComponent(TextareaStylesTestHost);
@@ -175,7 +175,7 @@ describe('FormFieldComponent description', () => {
   it('renders the description outside the control frame and describes the control by it', () => {
     TestBed.configureTestingModule({
       imports: [DescriptionFormFieldTestHost],
-      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])],
     });
     const fixture = TestBed.createComponent(DescriptionFormFieldTestHost);
 

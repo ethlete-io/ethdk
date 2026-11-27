@@ -1,6 +1,6 @@
 import { Component, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   TIMELINE_IMPORTS,
   TimelineComponent,
@@ -80,7 +80,7 @@ class OrderTrackingComponent {
 
 describe('timeline scenarios', () => {
   const scenario = useScenario({
-    providers: [provideColorThemes([...TEST_COLOR_THEMES, ...TEST_SEMANTIC_COLOR_THEMES])],
+    providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES, ...TEST_SEMANTIC_COLOR_THEMES])],
   });
 
   it('reads as a list of events in the order the app projects them', () => {

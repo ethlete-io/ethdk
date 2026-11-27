@@ -92,7 +92,7 @@ whole template at once, not control by control.
 
 ## 5. Theming {#theming}
 
-The runtime theming (`provideColorThemes`, `createTailwindColorThemes`) is deprecated. The components
+The runtime theming (`provideColorThemes`, `createTailwindColorThemes`) is removed. The components
 read surface and colour tokens from generated Tailwind 4 CSS - see
 [Migrating from runtime theming](/core/theming#migrating-from-runtime-theming).
 

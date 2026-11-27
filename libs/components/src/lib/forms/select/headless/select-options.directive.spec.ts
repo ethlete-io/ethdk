@@ -1,6 +1,6 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../../test-helpers';
 import { SelectOptionsFromQuery } from '../select-options-from-query.types';
 import { SELECT_IMPORTS } from '../select.imports';
@@ -51,7 +51,7 @@ describe('SelectOptionsDirective', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [OptionsDirectiveHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
     });
     fixture = TestBed.createComponent(OptionsDirectiveHost);
     fixture.detectChanges();
@@ -132,7 +132,7 @@ describe('SelectOptionsDirective with a swapped bundle', () => {
   it('forwards the async state of the bundle bound now', () => {
     TestBed.configureTestingModule({
       imports: [SwappedBundleHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
     });
     const fixture = TestBed.createComponent(SwappedBundleHost);
     fixture.detectChanges();

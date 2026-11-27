@@ -1,7 +1,7 @@
 import { Component, resource, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormField, SchemaPath, form, validateAsync } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { CHECKBOX_GROUP_IMPORTS, RADIO_GROUP_IMPORTS, SEGMENTED_BUTTON_IMPORTS } from './selection-list.imports';
@@ -47,7 +47,7 @@ class SelectionListFieldStateTestHost {
 
 describe('selection-list groups field state from signal forms', () => {
   it('marks each group busy while an async validator is pending', () => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
     const fixture = TestBed.createComponent(SelectionListFieldStateTestHost);
 

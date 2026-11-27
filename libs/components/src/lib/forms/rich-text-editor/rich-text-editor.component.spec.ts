@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { caretIn, mountRichTextEditor, RichTextEditorDriver } from '../testing/rich-text-editor-driver';
@@ -50,7 +50,7 @@ describe('RichTextEditorComponent', () => {
   it('announces that a required editor is required', () => {
     TestBed.configureTestingModule({
       imports: [RequiredEditorTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
     });
 
     const fixture = TestBed.createComponent(RequiredEditorTestHost);

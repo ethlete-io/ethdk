@@ -7,7 +7,6 @@ export * from './color-palette.util';
 export * from './color-scheme';
 export * from './color-theme-variant';
 export * from './color-theme.util';
-export * from './legacy-theming';
 export * from './provide-surface.directive';
 export * from './semantic-color-theme';
 export * from './surface-context-tracker';

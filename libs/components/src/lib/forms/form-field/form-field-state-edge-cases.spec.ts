@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { InputDirective } from '../input/headless';
@@ -38,7 +38,7 @@ class FieldStateHost {
 const mount = (providers: unknown[] = []) => {
   TestBed.configureTestingModule({
     imports: [FieldStateHost],
-    providers: [provideColorThemes([...TEST_COLOR_THEMES]), ...(providers as [])],
+    providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES]), ...(providers as [])],
   });
 
   const fixture = TestBed.createComponent(FieldStateHost);

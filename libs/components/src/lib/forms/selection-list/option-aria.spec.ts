@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { expectDescribedByResolves } from '../testing/described-by';
@@ -29,7 +29,7 @@ describe('selection option aria', () => {
   const mount = () => {
     TestBed.configureTestingModule({
       imports: [OptionAriaTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
     });
 
     const fixture = TestBed.createComponent(OptionAriaTestHost);

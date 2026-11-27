@@ -1,6 +1,6 @@
 import { Component, getDebugNode, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   SCROLLABLE_DARKEN_IMPORTS,
   SCROLLABLE_DRAG_IMPORTS,
@@ -170,7 +170,7 @@ const directiveOf = (host: HTMLElement) =>
   getDebugNode(query('et-scrollable', host))!.injector.get(ScrollableDirective);
 
 describe('scrollable scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('renders a scrollable list with masks, placeholders and its scroll state', () => {
     const s = scenario();
@@ -430,7 +430,7 @@ describe('scrollable scenarios', () => {
 describe('scrollable config scenarios', () => {
   const scenario = useScenario({
     providers: [
-      provideColorThemes(TEST_COLOR_THEMES),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
       provideScrollableConfig({ buttons: { position: 'inline', size: 'sm' } }),
     ],
   });

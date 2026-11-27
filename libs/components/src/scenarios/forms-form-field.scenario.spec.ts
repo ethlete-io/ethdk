@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { disabled, email, form, FormField, hidden, maxLength, readonly, required } from '@angular/forms/signals';
 import { compatForm, SignalFormControl } from '@angular/forms/signals/compat';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   CounterComponent,
   DEFAULT_FORM_FIELD_LABELS,
@@ -244,7 +244,7 @@ const leave = (s: Scenario, field: HTMLInputElement) => {
 };
 
 describe('forms form-field scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('names the control by its label and describes it by the hint until a touched error takes over', () => {
     const s = scenario();
@@ -627,7 +627,7 @@ describe('forms form-field scenarios', () => {
 describe('forms form-field localized counter scenarios', () => {
   const scenario = useScenario({
     providers: [
-      provideColorThemes(TEST_COLOR_THEMES),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
       provideFormFieldLabels({
         counterRemaining: (remaining) => `Noch ${remaining} Zeichen`,
         counterLimitReached: (max) => `Limit von ${max} erreicht`,
@@ -661,7 +661,7 @@ describe('forms form-field localized counter scenarios', () => {
 describe('forms form-field kind resolver scenarios', () => {
   const scenario = useScenario({
     providers: [
-      provideColorThemes(TEST_COLOR_THEMES),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
       provideFormErrorMessageResolver((error) => (error.kind === 'required' ? 'Pflicht' : null)),
     ],
   });
@@ -678,7 +678,7 @@ describe('forms form-field kind resolver scenarios', () => {
 describe('forms form-field localized scenarios', () => {
   const scenario = useScenario({
     providers: [
-      provideColorThemes(TEST_COLOR_THEMES),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
       provideFormFieldLabels({ mixed: 'Gemischt' }),
       provideFormErrorMessages({
         required: () => 'Pflichtfeld',

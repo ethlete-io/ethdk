@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, maxLength } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { INPUT_IMPORTS } from '../input';
@@ -50,7 +50,7 @@ class CounterHost {
 
 describe('CounterComponent', () => {
   const setup = () => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
     const fixture = TestBed.createComponent(CounterHost);
     const host = fixture.componentInstance;

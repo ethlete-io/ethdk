@@ -1,7 +1,7 @@
 import { Component, input, signal, OnInit } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { disabled, form, FormField } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { formField } from '../../../../design/form-field';
 import {
   select,
@@ -120,7 +120,7 @@ const render = async (testCase: Case) => {
 
 describe('select design mock', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
   });
 
   it.each(CASES)('draws the classes the component renders for %o', async (testCase) => {

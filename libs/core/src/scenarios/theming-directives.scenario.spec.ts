@@ -5,10 +5,8 @@ import {
   ColorTheme,
   ColorThemeInput,
   injectColorThemes,
-  injectErrorTheme,
-  injectSuccessTheme,
+  injectSemanticColorTheme,
   injectSurfaceContextTracker,
-  injectWarningTheme,
   provideColorThemesWithTailwind4,
   ProvideColorDirective,
   ProvideSurfaceDirective,
@@ -182,9 +180,9 @@ describe('theming directive scenarios', () => {
     const s = scenario();
     const resolved = s.run(() => ({
       themes: injectColorThemes().map((theme) => theme.name),
-      error: injectErrorTheme().name,
-      warning: injectWarningTheme().name,
-      success: injectSuccessTheme().name,
+      error: injectSemanticColorTheme('error')().name,
+      warning: injectSemanticColorTheme('warning')().name,
+      success: injectSemanticColorTheme('success')().name,
     }));
 
     expect(resolved).toEqual({
@@ -196,7 +194,7 @@ describe('theming directive scenarios', () => {
 
     const bare = s.consumer([provideColorThemesWithTailwind4([COLOR_THEMES[0] as ColorTheme])]);
 
-    expect(() => bare.run(() => injectErrorTheme())).toThrow(/No color theme with type "error"/);
+    expect(() => bare.run(() => injectSemanticColorTheme('error')())).toThrow(/No color theme with type "error"/);
   });
 
   it('raises each auto surface one elevation above the surface it sits on, and stops at the top', () => {

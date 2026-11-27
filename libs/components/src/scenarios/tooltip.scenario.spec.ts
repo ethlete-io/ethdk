@@ -1,6 +1,6 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { TOOLTIP_ERROR_CODES, TOOLTIP_IMPORTS, TooltipComponent, TooltipDirective } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
@@ -81,7 +81,7 @@ class SaveHintComponent {
 }
 
 describe('tooltip scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
   it('shows a hover tooltip after the delay and points the description at it while open', () => {
     const s = scenario();

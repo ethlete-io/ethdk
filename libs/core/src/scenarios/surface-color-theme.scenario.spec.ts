@@ -17,12 +17,12 @@ const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
   onColor: { default: '255 255 255' },
 });
 
-const surface = (name: string, type: SurfaceType, colorTheme?: string, isDefault = false): SurfaceTheme => ({
+const surface = (name: string, type: SurfaceType, brandVariant?: string, isDefault = false): SurfaceTheme => ({
   name,
   type,
   elevation: 0,
   isDefault,
-  colorTheme,
+  colorThemeVariants: brandVariant ? { brand: brandVariant } : undefined,
   background: type === 'light' ? '255 255 255' : '20 20 20',
   color: type === 'light' ? '0 0 0' : '255 255 255',
   colorMuted: '120 120 120',

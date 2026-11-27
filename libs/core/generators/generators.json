@@ -63,6 +63,11 @@
       "implementation": "./migrate-remove-surface-interactive/migration",
       "schema": "./migrate-remove-surface-interactive/schema.json",
       "description": "Remove etSurfaceInteractive, its marker class and its directive imports"
+    },
+    "migrate-semantic-color-theme-injects": {
+      "implementation": "./migrate-semantic-color-theme-injects/migration",
+      "schema": "./migrate-semantic-color-theme-injects/schema.json",
+      "description": "Rewrite injectErrorTheme, injectWarningTheme and injectSuccessTheme into injectSemanticColorTheme"
     }
   }
 }

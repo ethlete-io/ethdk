@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../../test-helpers';
 import { provideOverlay } from '../../../overlay/overlay.imports';
 import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
@@ -37,7 +37,7 @@ describe('RichTextEditorFloatingToolbarDirective', () => {
   const mount = () => {
     driver = mountRichTextEditor(FloatingToolbarTestHost, { attachEditable: true }, [
       provideOverlay(),
-      provideColorThemes(TEST_COLOR_THEMES),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
     ]);
     driver.setHtml('<p>make this bold</p>');
     driver.focus();

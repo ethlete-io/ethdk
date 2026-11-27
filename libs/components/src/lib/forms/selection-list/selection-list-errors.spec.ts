@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { CheckboxOptionComponent } from './checkbox-group/checkbox-option.component';
@@ -23,7 +23,7 @@ class BareSelectionOptionTestHost {}
 
 describe('selection-list option errors', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
   });
 
   it.each([

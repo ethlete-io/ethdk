@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, inject, Injector, signal, Type, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { createPostQuery, createQueryClient } from '@ethlete/query';
 import {
   createDropzoneUpload,
@@ -179,7 +179,7 @@ const takeRuntimeError = (s: Scenario, code: number) => {
 
 describe('forms dropzone headless scenarios', () => {
   const scenario = useScenario({
-    providers: [provideColorThemes(TEST_COLOR_THEMES), provideHttpClient(), provideHttpClientTesting()],
+    providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES), provideHttpClient(), provideHttpClientTesting()],
   });
 
   it('drives a custom dropzone through the directive and builds entries outside of it', () => {

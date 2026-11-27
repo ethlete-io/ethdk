@@ -1,7 +1,7 @@
 import { isDevMode } from '@angular/core';
 import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
 import { RuntimeError } from '../utils/runtime-error';
-import { ColorThemeType, RegisteredColorThemeName } from './color-theme.util';
+import { RegisteredColorThemeName } from './color-theme.util';
 import { provideRootFontSizeCheck } from './root-font-size-check';
 import { THEMING_ERROR_CODES } from './theming-errors';
 
@@ -41,10 +41,6 @@ export type SurfaceTheme = {
    * accent without an entry stays the same on this surface.
    */
   colorThemeVariants?: Partial<Record<RegisteredColorThemeName, RegisteredColorThemeName>>;
-  /** @deprecated Use `colorThemeVariants`, keyed by the name of the theme with that `type`. */
-  semanticColorThemes?: Partial<Record<ColorThemeType, RegisteredColorThemeName>>;
-  /** @deprecated Use `colorThemeVariants`, keyed by the name of the `isDefault` color theme. */
-  colorTheme?: RegisteredColorThemeName;
   background: SurfaceThemeColor;
   color: SurfaceThemeColor;
   colorMuted: SurfaceThemeColor;

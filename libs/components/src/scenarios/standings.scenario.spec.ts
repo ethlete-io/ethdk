@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   DEFAULT_STANDINGS_LABELS,
   EthleteGroupRankingInput,
@@ -353,7 +353,7 @@ const dropErrorContext = (s: Scenario) => {
 };
 
 describe('standings scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('draws a group ranking from the API with zones, a highlighted row, form and a legend', () => {
     const s = scenario();

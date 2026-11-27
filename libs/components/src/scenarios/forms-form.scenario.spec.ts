@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FieldTree, form, FormField, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   FORM_FIELD_IMPORTS,
   FORM_IMPORTS,
@@ -87,7 +87,7 @@ class SignupStepsComponent {
 }
 
 describe('form scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
   const scrolled: Element[] = [];
 
   beforeEach(() => {

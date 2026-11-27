@@ -1,7 +1,7 @@
 import { Component, Directive, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   createCardMask,
   createCurrencyMask,
@@ -174,7 +174,7 @@ class KeyboardHintsComponent {
 }
 
 describe('forms masked-input scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('types a birthday through a guided pattern mask and keeps the form value raw', () => {
     const s = scenario();

@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../../test-helpers';
 import { expectDescribedByPointsAtErrors } from '../../testing/described-by';
 import { HintComponent } from '../../form-field/hint.component';
@@ -351,7 +351,7 @@ describe('RatingDirective errors', () => {
   it('rejects a second custom icon template', () => {
     TestBed.configureTestingModule({
       imports: [DuplicateRatingIconTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
     });
 
     expect(() => TestBed.createComponent(DuplicateRatingIconTestHost)).toThrow(

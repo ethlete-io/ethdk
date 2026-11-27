@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   CHECKBOX_IMPORTS,
   CHOICE_FIELD_IMPORTS,
@@ -92,7 +92,7 @@ const query = <T extends Element = HTMLElement>(host: Element, selector: string)
 };
 
 describe('choice field scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
   it('names each control by its label and toggles it from a label click or Space', () => {
     const s = scenario();

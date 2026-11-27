@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { DESCRIPTION_IMPORTS, FORM_FIELD_IMPORTS, RADIO_GROUP_IMPORTS, RADIO_VARIANTS } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
@@ -32,7 +32,7 @@ class PlanPickerComponent {
 }
 
 describe('description scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
   it('describes the option it sits in, under its own id or one it generates', () => {
     const s = scenario();

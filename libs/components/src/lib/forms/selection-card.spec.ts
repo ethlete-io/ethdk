@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
 import { CheckboxComponent } from './checkbox';
 import { ChoiceFieldComponent } from './choice-field/choice-field.component';
@@ -53,7 +53,7 @@ class HostComponent {
 }
 
 beforeEach(() => {
-  TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+  TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 });
 
 const create = () => {

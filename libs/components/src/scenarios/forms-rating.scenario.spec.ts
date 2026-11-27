@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, max, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   FORM_FIELD_IMPORTS,
   provideFormFieldLabels,
@@ -134,7 +134,7 @@ const render = (s: Scenario) => {
 };
 
 describe('rating scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
   it('is a labelled slider driven by the arrow, Home, End and Delete keys', () => {
     const s = scenario();

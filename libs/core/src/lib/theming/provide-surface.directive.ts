@@ -143,7 +143,7 @@ export class ProvideColorDirective {
     if (!this.colorName() || !value) return;
 
     const surface = this.injector.get(SURFACE_PROVIDER, null)?.activeTheme() ?? this.rootSurfaceTheme();
-    const variant = resolveColorThemeVariant(surface, value, this.themes);
+    const variant = resolveColorThemeVariant(surface, value);
 
     if (variant === value) return this.colorName();
 
@@ -310,15 +310,12 @@ export class ProvideSurfaceDirective {
 
     if (!chosen) return null;
 
-    const variant = resolveColorThemeVariant(this.activeTheme(), chosen, this.colorThemes);
+    const variant = resolveColorThemeVariant(this.activeTheme(), chosen);
 
     // An overlay pane's DI parent surface is not its DOM ancestor, so the pane cannot inherit the parent's class.
     const inheritsFromParent = !this.parentProvider || this.parentProvider.hostElement.contains(this.hostElement);
 
-    if (
-      inheritsFromParent &&
-      variant === resolveColorThemeVariant(this.inheritedSurfaceTheme(), chosen, this.colorThemes)
-    ) {
+    if (inheritsFromParent && variant === resolveColorThemeVariant(this.inheritedSurfaceTheme(), chosen)) {
       return null;
     }
 

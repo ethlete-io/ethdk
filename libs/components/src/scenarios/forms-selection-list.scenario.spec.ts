@@ -1,7 +1,7 @@
 import { Component, getDebugNode, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required, validate } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   CHECKBOX_OPTION_VARIANTS,
   CheckboxGroupComponent,
@@ -161,7 +161,7 @@ class HeadlessTeamsComponent {
 }
 
 describe('forms selection list scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('picks checkbox options by pointer and keyboard, with a tri-state select-all and a validation message', () => {
     const s = scenario();

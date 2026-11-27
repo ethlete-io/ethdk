@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../../test-helpers';
 import { InputDirective } from '../../input/headless';
 import { FormFieldComponent } from '../form-field.component';
@@ -75,7 +75,7 @@ describe('ControlSuffixDirective', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])],
     });
     fixture = TestBed.createComponent(TestHost);
     fixture.detectChanges();

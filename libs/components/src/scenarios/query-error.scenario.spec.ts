@@ -2,7 +2,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, getDebugNode, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { injectLocale, provideColorThemes } from '@ethlete/core';
+import { injectLocale, provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   createGetQuery,
   createQueryClient,
@@ -160,7 +160,7 @@ const settle = (s: Scenario) => {
 
 describe('query error scenarios', () => {
   const scenario = useScenario({
-    providers: [provideColorThemes(TEST_COLOR_THEMES), provideHttpClient(), provideHttpClientTesting()],
+    providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES), provideHttpClient(), provideHttpClientTesting()],
   });
 
   it('shows a final failure without a retry and replaces a message that repeats the title', () => {
@@ -363,7 +363,7 @@ describe('query error scenarios', () => {
 describe('query error label scenarios', () => {
   const scenario = useScenario({
     providers: [
-      provideColorThemes(TEST_COLOR_THEMES),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideQueryErrorLabels(queryErrorLabelsForLocale),

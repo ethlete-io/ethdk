@@ -4,7 +4,7 @@ import { Component, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormField } from '@angular/forms/signals';
 import { provideRouter } from '@angular/router';
-import { injectLocale, provideColorThemes } from '@ethlete/core';
+import { injectLocale, provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { createGetQuery, createQueryClient, defineQueryForm, queryField } from '@ethlete/query';
 import {
   DEFAULT_FILTER_OVERLAY_LABELS,
@@ -177,7 +177,7 @@ describe('filter overlay scenarios', () => {
   const scenario = useScenario({
     providers: [
       provideOverlay(),
-      provideColorThemes(TEST_COLOR_THEMES),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideRouter([{ path: '**', children: [] }]),

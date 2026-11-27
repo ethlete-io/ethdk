@@ -1,7 +1,7 @@
 import { Component, input as signalInput, signal, OnInit } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { formField, FormFieldMockOptions, input, InputMockOptions } from '../../../../design/form-field';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
@@ -65,7 +65,7 @@ const CASES: Case[] = [
 
 describe('form field design mock', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
   });
 
   it.each(CASES)('draws the classes the component renders for %o', async (testCase) => {

@@ -21,13 +21,13 @@ const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
 const surface = (
   name: string,
   type: SurfaceType,
-  semanticColorThemes?: SurfaceTheme['semanticColorThemes'],
+  colorThemeVariants?: SurfaceTheme['colorThemeVariants'],
 ): SurfaceTheme => ({
   name,
   type,
   elevation: 0,
   isDefault: name === 'night',
-  semanticColorThemes,
+  colorThemeVariants,
   background: '20 20 20',
   color: '255 255 255',
   colorMuted: '120 120 120',
@@ -63,7 +63,7 @@ describe('QueryDevtoolsErrorThemeDirective', () => {
         provideColorThemesWithTailwind4(COLOR_THEMES),
         provideSurfaceThemesWithTailwind4([
           surface('night', 'dark'),
-          surface('paper', 'light', { error: 'alertOnPaper' }),
+          surface('paper', 'light', { alert: 'alertOnPaper' }),
         ]),
       ],
     });

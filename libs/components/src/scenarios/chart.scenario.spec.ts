@@ -1,6 +1,6 @@
 import { Component, Directive, inject, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   BarChartComponent,
   BarChartDirective,
@@ -305,7 +305,7 @@ const render = <T>(s: Scenario, component: new () => T) => {
 const tooltip = () => text(document.querySelector('et-tooltip'));
 
 describe('chart scenarios', () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('draws grouped and stacked series bars with a legend, tooltips and a data table', () => {
     const s = scenario();
@@ -609,7 +609,7 @@ describe('chart scenarios', () => {
 });
 
 describe('chart scenarios with labels', () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('writes the built-in English strings and reads them through injectChartLabels', () => {
     const s = scenario();
@@ -629,7 +629,7 @@ describe('chart scenarios with app labels', () => {
   const scenario = useScenario({
     providers: [
       provideOverlay(),
-      provideColorThemes(TEST_COLOR_THEMES),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
       provideChartLabels({ pieTotal: 'Gesamt', pieShareHeader: 'Anteil' }),
     ],
   });

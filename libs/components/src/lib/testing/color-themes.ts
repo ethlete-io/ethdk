@@ -16,7 +16,7 @@ export const testColorSwatch = (color: ThemeColor): ThemeSwatch => ({
  * runs.
  *
  * @example
- * TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+ * TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
  */
 export const TEST_COLOR_THEMES: ColorTheme[] = [
   {

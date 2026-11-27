@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, hidden } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { CHECKBOX_IMPORTS } from '../checkbox/checkbox.imports';
@@ -166,7 +166,7 @@ const FIELD_STATE_WRAPPERS = [
 ];
 
 const mount = <T>(host: new () => T) => {
-  TestBed.configureTestingModule({ imports: [host], providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+  TestBed.configureTestingModule({ imports: [host], providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   const fixture = TestBed.createComponent(host);
 
@@ -259,7 +259,7 @@ describe('self-hosted control field state', () => {
 describe('field state wrappers', () => {
   for (const wrapper of FIELD_STATE_WRAPPERS) {
     it(`${wrapper.selector} exposes hidden and warnings`, () => {
-      TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+      TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
       expectWrapperExposesBaseInputs(wrapper, FIELD_STATE_INPUTS);
     });

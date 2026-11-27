@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { createGetQuery, createLegacyQueryCreator, createQueryClient, def, V2QueryClient } from '@ethlete/query';
 import {
   provideOverlay,
@@ -181,7 +181,7 @@ describe('forms select query scenarios', () => {
     const scenario = useScenario({
       providers: [
         provideOverlay(),
-        provideColorThemes(TEST_COLOR_THEMES),
+        provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -263,7 +263,7 @@ describe('forms select query scenarios', () => {
     const scenario = useScenario({
       providers: [
         provideOverlay(),
-        provideColorThemes(TEST_COLOR_THEMES),
+        provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
         provideHttpClient(),
         provideHttpClientTesting(),
       ],

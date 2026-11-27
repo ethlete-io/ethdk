@@ -98,12 +98,10 @@ level" row instead of a tint.
   registered without a `type`) swaps it; an accent without an entry stays the same on every
   surface, and a dark surface inside a light one draws the chosen accent again. The resolver
   is `resolveColorThemeVariant()` in `color-theme.util.ts`. With no surface above, the root
-  surface swaps, and `provideColorScheme()` paints its swap of the default accent on `<html>`. `colorTheme` and
-  `semanticColorThemes` are deprecated. Every component in `libs/components` and
+  surface swaps, and `provideColorScheme()` paints its swap of the default accent on `<html>`. Every component in `libs/components` and
   `libs/query-devtools` uses `injectSemanticColorTheme()` (helpers in
   `libs/components/src/lib/internals/semantic-theme.ts`; `injectOptionalSemanticTheme` where
-  a missing theme must not throw). Do not use the deprecated `injectErrorTheme()` and its
-  siblings: they ignore the surface. Never put surface logic into a color theme or add CSS
+  a missing theme must not throw). Never put surface logic into a color theme or add CSS
   vars for it.
 - **Semantic themes in overlay panels.** The lookup reads the surface of the injector
   that calls it. Content a component declares but stamps into a detached panel (select,

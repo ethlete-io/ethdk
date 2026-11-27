@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, max, min, readonly, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   DEFAULT_INPUT_LABELS,
   FORM_FIELD_IMPORTS,
@@ -232,7 +232,7 @@ const pointer = (type: string, init: MouseEventInit = {}) =>
   new MouseEvent(type, { bubbles: true, cancelable: true, ...init });
 
 describe('forms input scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('fills a signup form through the default text, number and password inputs', () => {
     const s = scenario();

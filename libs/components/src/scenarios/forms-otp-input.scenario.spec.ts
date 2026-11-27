@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, minLength } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { FORM_FIELD_IMPORTS, OtpInputComponent, OtpInputDirective } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
@@ -57,7 +57,7 @@ const segments = (host: Element) =>
   Array.from(host.querySelectorAll('.et-otp-input-segment')).map((segment) => segment.textContent?.trim() || null);
 
 describe('otp input scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
   it('fills the segments from one native input, strips non-digits and emits complete once', () => {
     const s = scenario();

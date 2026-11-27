@@ -1,7 +1,7 @@
 import { ApplicationRef, Component, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { MENU_IMPORTS, MENU_SEARCH_IMPORTS } from '../menu.imports';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
@@ -69,7 +69,7 @@ describe('MenuSearchDirective', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [MenuSearchTestHost],
-      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])],
     });
 
     fixture = TestBed.createComponent(MenuSearchTestHost);

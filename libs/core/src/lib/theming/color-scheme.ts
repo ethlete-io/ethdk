@@ -57,7 +57,7 @@ const COLOR_SCHEME_DEF = /* @__PURE__ */ defineProvider(
 
       if (!chosen) return null;
 
-      const variant = resolveColorThemeVariant(rootSurface(), chosen, colorThemes);
+      const variant = resolveColorThemeVariant(rootSurface(), chosen);
 
       return variant === chosen ? null : `${colorPrefix}-color--${createCssColorThemeName(variant)}`;
     });
@@ -66,7 +66,7 @@ const COLOR_SCHEME_DEF = /* @__PURE__ */ defineProvider(
 
     if (defaultColor) {
       for (const surface of surfaceDefaults) {
-        const variant = resolveColorThemeVariant(surface, defaultColor, colorThemes);
+        const variant = resolveColorThemeVariant(surface, defaultColor);
 
         if (variant !== defaultColor)
           root.classList.remove(`${colorPrefix}-color--${createCssColorThemeName(variant)}`);

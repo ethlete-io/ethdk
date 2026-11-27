@@ -1,6 +1,6 @@
 import { Component, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   CASCADER_ERROR_CODES,
   CascaderColumnDirective,
@@ -209,7 +209,7 @@ const takeRuntimeError = (s: Scenario, code: number) => {
 };
 
 describe('forms cascader headless scenarios', () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('composes a searchable cascader from the headless directives and the styled panel', () => {
     const s = scenario();

@@ -2,7 +2,7 @@ import { Component, signal, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormsModule, NgModel, ReactiveFormsModule, RequiredValidator, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
 import { TEST_COLOR_THEMES } from '../testing/color-themes';
 import { CHECKBOX_IMPORTS, CheckboxDirective } from './checkbox';
@@ -213,7 +213,9 @@ const caseNamed = (name: string) => CASES.find((c) => c.name === name)!;
 
 // An et-* form control works with [formControl]: it writes, reads, disables and enables like a native control.
 describe('reactive forms on et-* form controls', () => {
-  beforeEach(() => TestBed.configureTestingModule({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] }));
+  beforeEach(() =>
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] }),
+  );
 
   describe.each(CASES)('[formControl] on $name', (c) => {
     it('writes the FormControl value and setValue into the control', async () => {

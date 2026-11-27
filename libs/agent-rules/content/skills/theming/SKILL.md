@@ -102,10 +102,8 @@ level" row instead of a tint.
   variants registered without a `type`) swaps it; an accent without an entry stays the
   same on every surface. With no surface above, the root surface swaps, and
   `provideColorScheme()` paints its swap of the default accent on `<html>`. A neutral that follows the surface is `color="surface"`
-  (`controlText`), not a variant. `colorTheme` and `semanticColorThemes` are
-  deprecated. Never add per-surface logic to a color theme or new CSS vars for it.
-  `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` are
-  deprecated: they ignore the surface.
+  (`controlText`), not a variant. Never add per-surface logic to a color theme or new
+  CSS vars for it.
 
 ## Pitfalls
 

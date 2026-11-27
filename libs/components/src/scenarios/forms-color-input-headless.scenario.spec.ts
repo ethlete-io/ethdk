@@ -1,6 +1,6 @@
 import { Component, inject, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   COLOR_INPUT_ERROR_CODES,
   COLOR_INPUT_TOKEN,
@@ -168,7 +168,7 @@ const takeRuntimeError = (s: Scenario, code: number) => {
 };
 
 describe('forms color input headless scenarios', () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('composes a custom picker from the headless directives and reads the control from a child', () => {
     const s = scenario();

@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormField, form } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { SelectionListCompareWith } from './headless';
@@ -54,7 +54,7 @@ describe('selection-list groups compareWith', () => {
       .map((option) => option.textContent?.trim());
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
     fixture = TestBed.createComponent(CompareWithTestHost);
     fixture.detectChanges();

@@ -16,7 +16,6 @@ export const routes: Routes = [
   { path: 'button', component: ButtonRouteComponent },
   { path: 'table', component: TableRouteComponent },
   { path: 'theming', component: ThemingRouteComponent },
-  { path: 'legacy-theming', loadChildren: () => import('./routes/legacy-theming.routes') },
   { path: 'markdown', component: MarkdownRouteComponent },
   { path: 'rich-text', component: RichTextRouteComponent },
   { path: 'skeleton', component: SkeletonRouteComponent },

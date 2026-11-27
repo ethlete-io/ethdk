@@ -2,7 +2,7 @@ import { ApplicationRef, Component, linkedSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { FormField, form } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
 import { PENCIL_ICON, provideIcons } from '../icon';
 import { MenuDirective } from './headless';
@@ -79,7 +79,7 @@ describe('Menu selection groups with signal forms', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [MenuSelectionGroupsTestHost],
-      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])],
     });
 
     fixture = TestBed.createComponent(MenuSelectionGroupsTestHost);

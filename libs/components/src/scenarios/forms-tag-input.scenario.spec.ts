@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, maxLength } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   FORM_FIELD_IMPORTS,
   TAG_INPUT_ERROR_CODES,
@@ -110,7 +110,7 @@ const render = (s: Scenario) => {
 };
 
 describe('tag input scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
   it('commits tags on a comma, Enter and blur, normalized and without duplicates', () => {
     const s = scenario();

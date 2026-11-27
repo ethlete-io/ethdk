@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, maxLength, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { FORM_FIELD_IMPORTS, TextareaComponent, TextareaDirective } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
@@ -83,7 +83,7 @@ const typeInto = (s: Scenario, textarea: HTMLTextAreaElement, value: string) => 
 };
 
 describe('textarea scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
   it('writes typed text into the form, focuses from the component and shows the error on blur', () => {
     const s = scenario();

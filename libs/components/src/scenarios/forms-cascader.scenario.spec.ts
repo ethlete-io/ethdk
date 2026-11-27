@@ -2,7 +2,7 @@ import { Component, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { form, FormField, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { delay, map, of } from 'rxjs';
 import {
   CASCADER_LABELS,
@@ -212,7 +212,7 @@ const typeInto = (s: Scenario, input: HTMLInputElement, value: string) => {
 };
 
 describe('forms cascader scenarios', { timeout: 15_000 }, () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('drills by keyboard into a signal form, commits a leaf and reports touch and the required error', () => {
     const s = scenario();

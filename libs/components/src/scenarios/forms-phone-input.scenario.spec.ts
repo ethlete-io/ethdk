@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   DEFAULT_PHONE_INPUT_LABELS,
   FORM_FIELD_IMPORTS,
@@ -104,7 +104,7 @@ const typeInto = (s: Scenario, input: HTMLInputElement, value: string) => {
 };
 
 describe('forms phone input scenarios', { timeout: 15_000 }, () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('types a national number, picks a country from the searchable panel and clears', () => {
     const s = scenario();

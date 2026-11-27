@@ -34,13 +34,13 @@ const surface = (
   name: string,
   type: SurfaceType,
   elevation: number,
-  semanticColorThemes?: SurfaceTheme['semanticColorThemes'],
+  colorThemeVariants?: SurfaceTheme['colorThemeVariants'],
 ): SurfaceTheme => ({
   name,
   type,
   elevation,
   isDefault: name === 'night',
-  semanticColorThemes,
+  colorThemeVariants,
   background: type === 'light' ? '255 255 255' : '20 20 20',
   color: type === 'light' ? '0 0 0' : '255 255 255',
   colorMuted: '120 120 120',
@@ -58,8 +58,8 @@ const COLOR_THEMES: ColorTheme[] = [
 const SURFACE_THEMES = [
   surface('night', 'dark', 0),
   surface('nightRaised', 'dark', 1),
-  surface('paper', 'light', 0, { error: 'alertOnPaper' }),
-  surface('paperRaised', 'light', 1, { error: 'alertOnRaised' }),
+  surface('paper', 'light', 0, { alert: 'alertOnPaper' }),
+  surface('paperRaised', 'light', 1, { alert: 'alertOnRaised' }),
 ];
 
 @Component({

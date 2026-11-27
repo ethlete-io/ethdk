@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Component, signal, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { createGetQuery, createQueryClient } from '@ethlete/query';
 import { CascaderComponent, cascaderFromQuery, CascaderNode, DEFAULT_CASCADER_LABELS, provideOverlay } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
@@ -94,7 +94,7 @@ describe('forms cascader query scenarios', () => {
   const scenario = useScenario({
     providers: [
       provideOverlay(),
-      provideColorThemes(TEST_COLOR_THEMES),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
       provideHttpClient(),
       provideHttpClientTesting(),
     ],

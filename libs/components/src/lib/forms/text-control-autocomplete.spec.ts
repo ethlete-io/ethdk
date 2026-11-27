@@ -1,6 +1,6 @@
 import { Component, Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
 import { TEST_COLOR_THEMES } from '../testing/color-themes';
 import {
@@ -137,7 +137,9 @@ const render = (c: AutocompleteCase, attr: string) => {
 };
 
 describe('autocomplete on text controls', () => {
-  beforeEach(() => TestBed.configureTestingModule({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] }));
+  beforeEach(() =>
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] }),
+  );
 
   describe.each(CASES)('$name', (c) => {
     it('renders its default autocomplete', () => {

@@ -1,6 +1,6 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   provideOverlay,
   SELECT_ERROR_CODES,
@@ -265,7 +265,7 @@ const takeRuntimeError = (s: Scenario, code: number) => {
 };
 
 describe('forms select headless scenarios', () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('composes a multi select from the headless directives', () => {
     const s = scenario();

@@ -2,7 +2,7 @@ import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { form, FormField, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   COLOR_INPUT_LABELS,
   COLOR_NOTATIONS,
@@ -139,7 +139,7 @@ const slide = (s: Scenario, input: HTMLInputElement, value: number) => {
 };
 
 describe('forms color input scenarios', () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('picks colors into a signal form through the panel and validates hex and contrast', () => {
     const s = scenario();

@@ -1,6 +1,6 @@
 import { Component, DebugElement, Provider } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { RichTextEditorDirective } from './headless';
@@ -134,7 +134,7 @@ describe('rich text editor link editor', () => {
     beforeEach(() => {
       TestBed.configureTestingModule({
         imports: [RichTextEditorLinkEditorComponent],
-        providers: [provideColorThemes(TEST_COLOR_THEMES)],
+        providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
       });
       fixture = TestBed.createComponent(RichTextEditorLinkEditorComponent);
       fixture.componentRef.setInput('labels', DEFAULT_RICH_TEXT_EDITOR_LABELS);

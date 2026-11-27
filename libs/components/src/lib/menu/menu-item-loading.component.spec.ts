@@ -1,7 +1,7 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
 import { TEST_COLOR_THEMES } from '../testing/color-themes';
 import { MenuDirective } from './headless';
@@ -73,7 +73,7 @@ describe('Menu item loading state', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [MenuItemLoadingTestHost],
-      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])],
     });
 
     fixture = TestBed.createComponent(MenuItemLoadingTestHost);

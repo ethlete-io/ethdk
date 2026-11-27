@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, max, min } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   DEFAULT_SLIDER_LABELS,
   FORM_FIELD_IMPORTS,
@@ -205,7 +205,7 @@ const takeError = (s: Scenario, code: number) => {
 };
 
 describe('forms slider scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('binds a signal form field, takes its bounds from the schema and steps by keyboard', () => {
     const s = scenario();

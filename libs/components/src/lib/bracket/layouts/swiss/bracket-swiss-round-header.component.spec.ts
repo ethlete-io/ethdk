@@ -1,5 +1,5 @@
 import { Component, Directive, input } from '@angular/core';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   BracketRound,
   BracketRoundSwissGroup,
@@ -140,7 +140,7 @@ describe('the swiss default round header', () => {
         ],
       ]),
       layouts: [swissBracketLayout({ colors })],
-      providers: [provideColorThemes(TEST_SEMANTIC_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_SEMANTIC_COLOR_THEMES)],
     });
 
     return {
@@ -186,7 +186,7 @@ describe('the swiss default round header', () => {
     const driver = bracketTestDriver({
       source: swissSource([[['r0-m0', 'a', 'b', 'home']], [['r1-m0', 'a', 'b', 'home']]]),
       layouts: [swissBracketLayout()],
-      providers: [provideColorThemes(TEST_SEMANTIC_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_SEMANTIC_COLOR_THEMES)],
     });
     const boxes = Array.from(driver.element().querySelectorAll('.et-bracket-svg rect'));
 
@@ -219,7 +219,7 @@ describe('the swiss default round header', () => {
         ],
       ]),
       layouts: [swissBracketLayout({ colors })],
-      providers: [provideColorThemes(TEST_SEMANTIC_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_SEMANTIC_COLOR_THEMES)],
     });
     const root = driver.element();
     const section = root.querySelector<HTMLElement>('[style*="--et-bracket-swiss"]');

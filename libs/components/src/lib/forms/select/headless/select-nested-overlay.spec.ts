@@ -1,6 +1,6 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../../test-helpers';
 import { SELECT_IMPORTS } from '../select.imports';
 import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
@@ -44,7 +44,7 @@ describe('Select nested overlay', () => {
 
     TestBed.configureTestingModule({
       imports: [NestedSelectHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
     });
     fixture = TestBed.createComponent(NestedSelectHost);
     fixture.detectChanges();

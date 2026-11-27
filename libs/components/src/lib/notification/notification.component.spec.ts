@@ -1,6 +1,6 @@
 import { Component, DestroyRef, ViewEncapsulation, inject, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ProvideColorDirective, provideColorThemes } from '@ethlete/core';
+import { ProvideColorDirective, provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
 import { TEST_SEMANTIC_COLOR_THEMES } from '../testing/color-themes';
 import { NotificationConfig, provideNotificationManagerConfig } from './notification-config';
@@ -319,7 +319,7 @@ describe('NotificationComponent status color', () => {
     TestBed.configureTestingModule({
       imports: [NotificationComponent],
       providers: [
-        provideColorThemes(TEST_SEMANTIC_COLOR_THEMES),
+        provideColorThemesWithTailwind4(TEST_SEMANTIC_COLOR_THEMES),
         provideNotificationManagerConfig({ ...managerConfig, statusColorMapping }),
       ],
     });

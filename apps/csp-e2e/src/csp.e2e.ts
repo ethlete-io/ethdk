@@ -47,14 +47,6 @@ test.describe('SDK under a strict nonce-based CSP', () => {
     await expectNoCspViolations(csp);
   });
 
-  test('legacy runtime colour themes', async ({ page }) => {
-    const csp = await watchCsp(page);
-    await page.goto('/legacy-theming');
-    await expect(page.getByTestId('legacy')).toBeVisible();
-    await expect(page.locator('head style[id*="app-accent"]').first()).toBeAttached();
-    await expectNoCspViolations(csp);
-  });
-
   test('markdown with an aligned table', async ({ page }) => {
     const csp = await watchCsp(page);
     await page.goto('/markdown');

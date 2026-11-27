@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { switchControl, SwitchMockOptions } from '../../../../design/switch';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
@@ -53,7 +53,7 @@ const CASES: SwitchMockOptions[] = [
 
 describe('switch design mock', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
   });
 
   it.each(CASES)('draws the classes the component renders for %o', async (options) => {

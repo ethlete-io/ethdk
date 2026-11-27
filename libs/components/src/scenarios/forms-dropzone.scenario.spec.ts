@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { form, FormField, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   createDeleteQuery,
   createPostQuery,
@@ -236,7 +236,7 @@ const microtasks = async () => {
 
 describe('forms dropzone scenarios', () => {
   const scenario = useScenario({
-    providers: [provideColorThemes(TEST_COLOR_THEMES), provideHttpClient(), provideHttpClientTesting()],
+    providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES), provideHttpClient(), provideHttpClientTesting()],
   });
 
   it('validates dropped files against the signal form rule, uploads, replaces and deletes', async () => {

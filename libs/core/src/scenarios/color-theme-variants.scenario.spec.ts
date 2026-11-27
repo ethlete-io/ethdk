@@ -45,7 +45,6 @@ const SURFACE_THEMES = [
   surface('paper', 'light', {
     colorThemeVariants: { brand: 'brandOnLight', grey: 'greyLight', done: 'doneOnLight' },
   }),
-  surface('legacy', 'light', { colorTheme: 'brandOnLight', semanticColorThemes: { success: 'doneOnLight' } }),
 ];
 
 @Component({
@@ -76,10 +75,6 @@ class VariantReaderComponent {
         </section>
       </div>
       <section class="paper-with-grey" etProvideSurface="paper" etProvideColor="grey"></section>
-      <section class="legacy" etProvideSurface="legacy">
-        <div class="grey-on-legacy" etProvideColor="grey"></div>
-        <et-scenario-variant-reader class="reader-on-legacy" />
-      </section>
       <section [etProvideSurface]="switchable()" class="switchable">
         <div class="grey-on-switchable" etProvideColor="grey"></div>
       </section>
@@ -170,16 +165,6 @@ describe('color theme variant scenarios', () => {
     expect(reader(fixture, '.reader-on-night').success().name).toBe('done');
   });
 
-  it('keeps the deprecated colorTheme and semanticColorThemes working', () => {
-    const s = scenario();
-    const fixture = TestBed.createComponent(ColorThemeVariantsComponent);
-    s.tick();
-
-    expect(classesOf(fixture, '.legacy')).toEqual(['et-color--brand-on-light']);
-    expect(classesOf(fixture, '.grey-on-legacy')).toEqual(['et-color--grey']);
-    expect(reader(fixture, '.reader-on-legacy').success().name).toBe('doneOnLight');
-  });
-
   it('follows a surface that changes at runtime', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(ColorThemeVariantsComponent);
@@ -211,13 +196,12 @@ describe('color theme variant scenarios', () => {
   });
 
   it('resolves a variant the same way the directives paint it', () => {
-    const [night, paper, legacy] = SURFACE_THEMES;
+    const [night, paper] = SURFACE_THEMES;
 
-    expect(resolveColorThemeVariant(paper, 'grey', COLOR_THEMES)).toBe('greyLight');
-    expect(resolveColorThemeVariant(paper, 'brandOnLight', COLOR_THEMES)).toBe('brandOnLight');
-    expect(resolveColorThemeVariant(night, 'brand', COLOR_THEMES)).toBe('brand');
-    expect(resolveColorThemeVariant(legacy, 'done', COLOR_THEMES)).toBe('doneOnLight');
-    expect(resolveColorThemeVariant(paper, 'surface', COLOR_THEMES)).toBe('surface');
-    expect(resolveColorThemeVariant(null, 'brand', COLOR_THEMES)).toBe('brand');
+    expect(resolveColorThemeVariant(paper, 'grey')).toBe('greyLight');
+    expect(resolveColorThemeVariant(paper, 'brandOnLight')).toBe('brandOnLight');
+    expect(resolveColorThemeVariant(night, 'brand')).toBe('brand');
+    expect(resolveColorThemeVariant(paper, 'surface')).toBe('surface');
+    expect(resolveColorThemeVariant(null, 'brand')).toBe('brand');
   });
 });

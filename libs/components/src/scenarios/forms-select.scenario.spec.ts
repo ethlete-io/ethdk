@@ -2,7 +2,7 @@ import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { form, FormField, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   DEFAULT_SELECT_ICONS,
   DEFAULT_SELECT_LABELS,
@@ -247,7 +247,7 @@ class SwappedIconsComponent {
 }
 
 describe('forms select scenarios', () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('picks an option into a signal form by keyboard and reports the required error', () => {
     const s = scenario();

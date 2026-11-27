@@ -30,9 +30,6 @@ const findColorThemeByType = (themes: ColorTheme[] | null, type: ColorThemeType,
   return theme;
 };
 
-const injectColorThemeByType = (type: ColorThemeType) =>
-  findColorThemeByType(injectColorThemes({ optional: true }), type, 'injectColorThemeByType');
-
 /**
  * A signal of the color theme for `type` on the surface this element renders on: the first registered theme
  * of that `type`, swapped for the nearest surface's `colorThemeVariants` entry. Reading it throws when the app
@@ -50,7 +47,7 @@ export const injectSemanticColorTheme = (type: ColorThemeType): Signal<ColorThem
   return computed(() => {
     const chosen = findColorThemeByType(themes, type, 'injectSemanticColorTheme');
     const surface = surfaceProvider?.activeTheme() ?? rootSurface();
-    const variantName = resolveColorThemeVariant(surface, chosen.name, themes);
+    const variantName = resolveColorThemeVariant(surface, chosen.name);
 
     if (variantName === chosen.name) return chosen;
 
@@ -67,10 +64,3 @@ export const injectSemanticColorTheme = (type: ColorThemeType): Signal<ColorThem
     return chosen;
   });
 };
-
-/** @deprecated Use `injectSemanticColorTheme('error')`, which follows the surface the element renders on. */
-export const injectErrorTheme = () => injectColorThemeByType('error');
-/** @deprecated Use `injectSemanticColorTheme('warning')`, which follows the surface the element renders on. */
-export const injectWarningTheme = () => injectColorThemeByType('warning');
-/** @deprecated Use `injectSemanticColorTheme('success')`, which follows the surface the element renders on. */
-export const injectSuccessTheme = () => injectColorThemeByType('success');

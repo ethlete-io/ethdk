@@ -1,7 +1,7 @@
 import { Component, resource, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormField, form, maxLength, validateAsync } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 import { FORM_FIELD_IMPORTS } from '../../form-field/form-field.imports';
@@ -54,7 +54,7 @@ describe('CascaderDirective field state from signal forms', () => {
   let fields: HTMLElement[];
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
     const fixture = TestBed.createComponent(CascaderFieldStateTestHost);
 

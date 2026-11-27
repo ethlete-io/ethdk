@@ -1,6 +1,6 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   COPY_BUTTON_IMPORTS,
   COPY_BUTTON_LABELS,
@@ -81,7 +81,7 @@ class CopyLabelProbeComponent {
 class LocalizedCopyComponent {}
 
 describe('copy button scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
   afterEach(() => {
     stubClipboard(undefined);

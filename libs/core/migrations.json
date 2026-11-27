@@ -101,6 +101,36 @@
       "generator": "@ethlete/core:migrate-remove-surface-interactive",
       "requires": ["ts-morph"],
       "docs": "/core/theming"
+    },
+    {
+      "name": "semantic-color-theme-injects",
+      "version": "5.0.0-next.81",
+      "kind": "auto",
+      "level": "required",
+      "description": "injectErrorTheme, injectWarningTheme and injectSuccessTheme are gone: rewrite each call into injectSemanticColorTheme('<type>')().",
+      "generator": "@ethlete/core:migrate-semantic-color-theme-injects",
+      "requires": ["ts-morph"],
+      "docs": "/core/theming"
+    },
+    {
+      "name": "color-theme-variants-required",
+      "version": "5.0.0-next.81",
+      "kind": "auto",
+      "level": "required",
+      "description": "SurfaceTheme colorTheme and semanticColorThemes are gone: rewrite them into colorThemeVariants.",
+      "generator": "@ethlete/core:migrate-color-theme-variants",
+      "requires": ["ts-morph"],
+      "docs": "/core/theming"
+    },
+    {
+      "name": "legacy-color-themes-required",
+      "version": "5.0.0-next.81",
+      "kind": "assisted",
+      "level": "required",
+      "description": "provideColorThemes and the runtime theme style helpers (createThemeStyle, createRootThemeCss, createSwatchCss, createTailwind*) are gone: move to provideColorThemesWithTailwind4 and the generated CSS.",
+      "scan": "@ethlete/core:migrate-legacy-color-themes",
+      "instructions": "./migrations/legacy-color-themes.md",
+      "docs": "/core/theming#migrating-from-runtime-theming"
     }
   ]
 }

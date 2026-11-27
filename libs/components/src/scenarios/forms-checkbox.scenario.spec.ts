@@ -1,6 +1,6 @@
 import { Component, computed, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { CheckboxComponent, CheckboxDirective } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
@@ -61,7 +61,7 @@ class CustomCheckboxComponent {
 }
 
 describe('checkbox scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
   it('drives a select-all box through mixed, checked and unchecked', () => {
     const s = scenario();

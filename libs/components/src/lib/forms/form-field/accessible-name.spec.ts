@@ -1,4 +1,4 @@
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { AccessibleNameCase, describeAccessibleNameContract } from '../testing/accessible-name';
@@ -180,4 +180,4 @@ const CASES: AccessibleNameCase[] = [
   },
 ];
 
-describeAccessibleNameContract(CASES, [provideColorThemes(TEST_COLOR_THEMES)]);
+describeAccessibleNameContract(CASES, [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)]);

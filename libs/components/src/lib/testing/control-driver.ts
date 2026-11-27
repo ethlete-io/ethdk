@@ -1,6 +1,6 @@
 import { EnvironmentProviders, Provider, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { TEST_COLOR_THEMES } from './color-themes';
 import { resetOverlays } from './driver-core';
 
@@ -18,7 +18,7 @@ export const mountControl = <T>(
 ) => {
   resetOverlays();
 
-  TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES), ...providers] });
+  TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES), ...providers] });
 
   beforeCreate?.();
 

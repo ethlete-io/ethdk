@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { InputDirective } from '../input/headless';
 import { RadioGroupComponent } from '../selection-list/radio-group/radio-group.component';
@@ -42,7 +42,7 @@ class DefaultsHost {}
 const setup = (providers: unknown[] = []) => {
   TestBed.configureTestingModule({
     imports: [DefaultsHost],
-    providers: [provideColorThemes([...TEST_COLOR_THEMES]), ...(providers as [])],
+    providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES]), ...(providers as [])],
   });
 
   const fixture = TestBed.createComponent(DefaultsHost);

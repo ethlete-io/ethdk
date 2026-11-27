@@ -20,14 +20,14 @@ const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
 const surface = (
   name: string,
   type: SurfaceType,
-  semanticColorThemes?: SurfaceTheme['semanticColorThemes'],
+  colorThemeVariants?: SurfaceTheme['colorThemeVariants'],
   isDefault = false,
 ): SurfaceTheme => ({
   name,
   type,
   elevation: 0,
   isDefault,
-  semanticColorThemes,
+  colorThemeVariants,
   background: type === 'light' ? '255 255 255' : '20 20 20',
   color: type === 'light' ? '0 0 0' : '255 255 255',
   colorMuted: '120 120 120',
@@ -44,8 +44,8 @@ const COLOR_THEMES: ColorTheme[] = [
 
 const SURFACE_THEMES = [
   surface('night', 'dark', undefined, true),
-  surface('paper', 'light', { success: 'doneOnLight' }),
-  surface('broken', 'light', { success: 'missing' }),
+  surface('paper', 'light', { done: 'doneOnLight' }),
+  surface('broken', 'light', { done: 'missing' }),
 ];
 
 @Component({

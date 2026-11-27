@@ -1,6 +1,6 @@
 import { Component, TemplateRef, input, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { Subscription, firstValueFrom } from 'rxjs';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
@@ -90,7 +90,7 @@ describe('createAlertDialogOpener', () => {
   });
 
   const setup = (providers: unknown[] = []) => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes([...TEST_COLOR_THEMES]), providers] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES]), providers] });
 
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
@@ -364,7 +364,7 @@ describe('createAlertDialogOpener', () => {
   });
 
   it('answers an unsaved-changes guard: discarding closes the guarded overlay', async () => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4([...TEST_COLOR_THEMES])] });
 
     const fixture = TestBed.createComponent(GuardedEditorHostComponent);
     fixture.detectChanges();

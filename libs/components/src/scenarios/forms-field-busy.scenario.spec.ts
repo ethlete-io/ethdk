@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { FORM_FIELD_IMPORTS, InputComponent, provideOverlay, SelectComponent, SelectOptionComponent } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
@@ -58,7 +58,7 @@ const everShown = (s: Scenario, ms: number, probe: () => Element | null) => {
 };
 
 describe('form field busy spinner scenarios', () => {
-  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(TEST_COLOR_THEMES)] });
 
   it('never shows the select spinner for a load that settles within 200ms', () => {
     const s = scenario();

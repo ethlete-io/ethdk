@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
   CASCADER_IMPORTS,
   CascaderDataSource,
@@ -279,7 +279,11 @@ const mountTouchCase = ({ template, imports, initial }: TouchCase) => {
 
 describe('signal-form touch', () => {
   const scenario = useScenario({
-    providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES), provideRichTextEditorDefaultTools()],
+    providers: [
+      provideOverlay(),
+      provideColorThemesWithTailwind4(TEST_COLOR_THEMES),
+      provideRichTextEditorDefaultTools(),
+    ],
   });
 
   it.each(CASES)('marks the bound field touched when the user leaves $control', (touchCase) => {

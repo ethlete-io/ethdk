@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { expectDescribedByResolves } from '../testing/described-by';
@@ -90,7 +90,7 @@ describe('support region ids', () => {
   it('resolves aria-describedby on every control that renders its own support region', () => {
     TestBed.configureTestingModule({
       imports: [SupportRegionTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
     });
 
     const fixture = TestBed.createComponent(SupportRegionTestHost);
@@ -109,7 +109,7 @@ describe('support region ids', () => {
   it('points a touched, invalid group at its rendered error rather than its hint', () => {
     TestBed.configureTestingModule({
       imports: [SupportRegionTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+      providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES)],
     });
 
     const fixture = TestBed.createComponent(SupportRegionTestHost);
