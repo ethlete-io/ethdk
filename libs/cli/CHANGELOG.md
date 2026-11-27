@@ -1,5 +1,21 @@
 # @ethlete/cli
 
+## 3.0.0-next.51
+
+### Patch Changes
+
+- `design actions` no longer fails an action whose app drawing misses the goal only through sample data that differs from the design's.
+- `design check` now finds state openers in overlays and reports part load or render failures without spurious lost-action findings.
+- `design check` accepts whole accessible names from product fixtures when a single app element of the same role occupies the matching position.
+- The design check's focus ring probe waits for a busy page to answer instead of failing it after 1 s, so it reports ACTION-FAILED under machine load only for a real defect.
+- The design check no longer reports "did not settle its animations" when machine load stalls the page.
+- The sketch view shows an edit sketch's `new` pictures sooner: the listing queues them as spare draws ahead of time.
+- A freshly drawn design server part shot answers with `x-design-shot-draw`: whether its page opened the frame or
+  switched a booted one, and the ms of the load, the settle and the picture. The heavy edit sketch e2e case logs it.
+- The sketch view shows an edit sketch's `new` pictures sooner when the listing's compare runs long.
+- Shots with the same boot and context now draw one after another on one warm page, so only the first opens a cold page.
+- A fitted design frame reports its new width when only its fit padding changes, so a live sketch cell no longer keeps a stale wider width.
+
 ## 3.0.0-next.50
 
 ### Patch Changes

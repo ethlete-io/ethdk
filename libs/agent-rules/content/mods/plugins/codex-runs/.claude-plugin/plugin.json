@@ -1,6 +1,6 @@
 {
   "name": "codex-runs",
-  "version": "0.1.0-next.49",
+  "version": "0.1.0-next.50",
   "description": "Codex sessions in tmux with their state, duration, and recent output",
   "types": "./types/index.d.ts"
 }
