@@ -365,6 +365,26 @@ ESLint lints no CSS by default. The plugin ships a text language, `ethlete/css`,
 
 The old tone and surface classes carry the app's own theme names (`bg-app-brand`, `text-app-danger-ink`, `text-app-surface-dark`), so the rule reads them from the generated theme CSS the way the migration does: `themeFiles` is a list of paths or globs, relative to the working directory, of the files the `tailwind-4-color-theme` and `tailwind-4-surface-theme` generators wrote. The Tailwind prefix comes from each file's `--prefix=` header (default `et`) and the names from its `/* <name> theme */` and `/* <name> surface */` comments. Without `themeFiles` (or when they match no generated file) the rule cannot tell an old name from a new one, so it never passes silently: it reports once per file that the theme names are unknown as soon as a color utility followed by a configured prefix and a word looks like an old tone or surface class.
 
+### `no-hand-mixed-state`
+
+An opt-in rule for component CSS that enforces the state form of the theming guide: a hover, pressed, selected or checked look mixes the surface tint, falling back to the surface text when a theme sets no tint:
+
+```css
+background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 10%, transparent);
+```
+
+It reports three hand-mixed shapes. A `var(--et-surface-tint)` read without the `var(--et-surface-text, …)` fallback, anywhere (the state vanishes on a theme without a tint). A `color-mix()` whose first colour is `--et-surface-control-text` (the text colour of a control, not a state tint). A state background - `background` / `background-color` or a custom property under a `:hover`, `:active`, `:focus*`, `:checked`, `[aria-pressed|selected|checked|current|expanded]` or `[data-active|selected|pressed|highlighted|checked]` selector, or a custom property named `--…hover|pressed|active|selected|checked|highlight…` - that is a static colour (`#hex`, `rgb()`, a named colour, `currentColor`) or mixes one, or mixes `--et-surface-text` directly. A component token with a static fallback (`var(--et-chip-hover-bg, rgb(0 0 0 / 0.1))`) and a tone token are fine. It reads the file text through the `ethlete/css` language and has no fixer:
+
+```js
+// eslint.config.mjs
+{
+  files: ['src/**/*.css'],
+  plugins: { ethlete },
+  language: 'ethlete/css',
+  rules: { 'ethlete/no-hand-mixed-state': 'error' },
+},
+```
+
 ## DOM, platform & `@ethlete/core`
 
 These rules steer code away from raw browser and Angular platform APIs toward the reactive utilities in `@ethlete/core`.

@@ -948,6 +948,7 @@ test('template/elements-content: hosts that render their own content are valid',
 
 const NOT_IN_RECOMMENDED = new Set([
   'no-cdk-import',
+  'no-hand-mixed-state',
   'no-legacy-query-import',
   'no-native-title',
   'no-old-theme-token',

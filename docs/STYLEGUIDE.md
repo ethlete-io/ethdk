@@ -1,4 +1,4 @@
-# Style Guide v0.30.0
+# Style Guide v0.31.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -79,6 +79,7 @@ Run `npx nx lint <project> --fix` - the rules below are enforced (and mostly aut
 | Prefer `@ethlete/core` utils over raw APIs (clone/equal, rxjs timers, media query, viewport size, SEO, locale, router state)                                                                                            | `ethlete/prefer-clone-equal`, `ethlete/prefer-rxjs-timer`, `ethlete/prefer-match-media`, `ethlete/prefer-viewport-size`, `ethlete/no-angular-seo-services`, `ethlete/no-locale-id`, `ethlete/no-angular-router-api` |
 | No imports from maintenance-mode CDK or legacy query APIs when migration enforcement is enabled                                                                                                                         | `ethlete/no-cdk-import`, `ethlete/no-legacy-query-import`                                                                                                                                                           |
 | No retired theme tokens (`-rgb` / `-solid` surface triplets, `--et-theme-color-*`, `--et-color-primary*`, old Tailwind theme and surface utilities, read from `themeFiles`) when theme migration enforcement is enabled | `ethlete/no-old-theme-token`                                                                                                                                                                                        |
+| Interaction states mix `var(--et-surface-tint, var(--et-surface-text, <fallback>))`, never the control text, a static colour or a tint without the surface text fallback (component CSS)                                | `ethlete/no-hand-mixed-state`                                                                                                                                                                                       |
 
 ## Accessibility & visibility
 
