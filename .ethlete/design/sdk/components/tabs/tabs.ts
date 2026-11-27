@@ -80,6 +80,19 @@ export default definePart({
     panel: 'The tabs with a panel below; check the gap between bar and panel text.',
   },
   grid,
+  omits: [
+    { option: 'size', value: 'sm', reason: 'Drawn as the sm state, outside the grid.' },
+    { option: 'size', value: 'md', reason: 'The default size, which every grid state draws without setting it.' },
+    { option: 'size', value: 'lg', reason: 'Drawn as the lg state, outside the grid.' },
+    { option: 'variant', value: 'primary', reason: 'Drawn as the primary states, outside the grid.' },
+    {
+      option: 'variant',
+      value: 'secondary',
+      reason: 'The default variant, which every grid state draws without setting it.',
+    },
+    { option: 'orientation', value: 'horizontal', reason: 'The default orientation, which every grid state draws.' },
+    { option: 'orientation', value: 'vertical', reason: 'Drawn as the vertical state, outside the grid.' },
+  ],
   widths: [480],
   controls: {
     tab: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },

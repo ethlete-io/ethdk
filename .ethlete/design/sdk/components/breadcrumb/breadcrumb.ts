@@ -21,13 +21,13 @@ const mark = (control: string, interaction?: Interaction) =>
   [`data-et-control="${control}"`, interaction && `data-et-force="${interaction}"`].filter(Boolean).join(' ');
 
 const shortTrail = (props: Props): BreadcrumbMockCrumb[] => [
-  { label: 'Home', href: '#' },
+  { label: 'Home', href: '#', attributes: mark('link') },
   { label: 'Competitions', href: '#', attributes: mark('link', props.link) },
   { label: 'Regionalliga Nordost', attributes: mark('current', props.current) },
 ];
 
 const longTrail = (props: Props): BreadcrumbMockCrumb[] => [
-  { label: 'Home', href: '#' },
+  { label: 'Home', href: '#', attributes: mark('link') },
   { label: 'Competitions', href: '#' },
   { label: 'Regionalliga Nordost', href: '#' },
   { label: 'Season 2026/27', href: '#' },
