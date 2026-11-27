@@ -678,6 +678,8 @@ export default definePart({
       'CLIPPED components/shadow-cut fitted',
       'CLIPPED components/underline-cut fitted',
       'GRID components/gridded -',
+      'TRUNCATED components/clamped fitted',
+      'TRUNCATED components/label fitted',
       'UNKNOWN-THEME components/themed fitted',
       'WRAP components/wrapped fitted',
       'ZERO-SIZE components/empty fitted',
@@ -702,6 +704,9 @@ export default definePart({
     ]);
     expect(rendered.issues.find((issue) => issue.part === 'components/underline-cut')?.detail).toMatch(
       /^underline \d+px past p\[data-et-part=components\/underline-cut\];/,
+    );
+    expect(rendered.issues.find((issue) => issue.part === 'components/label')?.detail).toMatch(
+      /^text clipped: "A label that is cut with dots" 120\/\d+ px wide - let the box grow or shorten the text; on purpose: data-et-skip="TRUNCATED"/,
     );
     expect(rendered.issues.find((issue) => issue.rule === 'GRID')?.detail).toBe(
       'grid names the state default twice (r1 x, r1 y)',

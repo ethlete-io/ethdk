@@ -24,6 +24,7 @@ product, part, state, size and a selector path:
   `assets/` and an `@font-face` rule, never a CDN link.
 - `CLIPPED` - an element with `overflow: hidden|clip` cuts its content, unless it sets
   `text-overflow: ellipsis` or a line clamp.
+- `TRUNCATED` - text cut by `text-overflow: ellipsis` or a line clamp, with the width or height it shows and the one it needs. Widen the box or shorten the text; a state that shows truncation on purpose carries `data-et-skip="TRUNCATED"`.
 - `WRAP` - text in a button, tab, badge, chip or `white-space: nowrap` box runs onto a second line.
 - `ZERO-SIZE` - the part root has no width or no height.
 - `UNKNOWN-THEME` - a `et-color--<name>` class names a colour theme no stylesheet of the frame defines, so it draws in the fallback colour.

@@ -227,7 +227,7 @@ export type PlatformMeasure<TState extends string = string> = {
 };
 
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
-export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE' | 'SCROLLS';
+export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'TRUNCATED' | 'ZERO-SIZE' | 'SCROLLS';
 
 /** How a composing part draws another one: `interaction` forces it on the root, as a frame does. */
 export type RenderOptions = { interaction?: Interaction };

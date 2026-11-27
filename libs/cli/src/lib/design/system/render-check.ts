@@ -416,6 +416,18 @@ ${VISUALLY_HIDDEN_STATEMENTS}
       return rect.width > 0 && rect.height > 0 && rect.bottom - bottom > 1 && showsIn(control, clipper);
     });
   };
+  const truncationOf = (element, style) => {
+    const lines = style.webkitLineClamp !== 'none' && element.clientHeight > 0 && element.scrollHeight > element.clientHeight + 1;
+    const dots = style.textOverflow === 'ellipsis' && element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1;
+    const text = element.textContent.trim().replace(/\\s+/g, ' ');
+    if (style.visibility === 'hidden' || !text || !(lines || dots)) return null;
+    return {
+      text: text.length > 40 ? text.slice(0, 39) + '…' : text,
+      axis: dots ? 'x' : 'y',
+      shown: dots ? element.clientWidth : element.clientHeight,
+      needs: dots ? element.scrollWidth : element.scrollHeight,
+    };
+  };
   let scrolling = null;
   for (const element of root.querySelectorAll('*')) {
     const style = getComputedStyle(element);
@@ -430,6 +442,8 @@ ${VISUALLY_HIDDEN_STATEMENTS}
       if (!options.scrolls) report('SCROLLS', element, 'content ' + sizeOf(element) + ' scrolls in a state that does not ask for it - let the content fit, or list the state in definePart({ scrolls })');
     }
     const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none' || pans(element, style) || drawsByClipping(element);
+    const truncated = truncationOf(element, style);
+    if (truncated) report('TRUNCATED', element, 'text clipped: "' + truncated.text + '" ' + truncated.shown + '/' + truncated.needs + ' px' + (truncated.axis === 'y' ? ' tall' : ' wide') + ' - let the box grow or shorten the text');
     if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
     const hidden = cutY && !cutsOnPurpose && element.clientHeight > 0 && style.visibility !== 'hidden' && hiddenContentOf(element, style);
     if (hidden) report('HIDDEN-CONTENT', element, (hidden.matches(FOCUSABLE) ? 'the control ' + nameOf(hidden) : '"' + hidden.textContent.trim().slice(0, 32) + '"') + ' runs past the bottom edge of a ' + element.clientWidth + 'x' + element.clientHeight + ' box that clips it (overflow-y: ' + style.overflowY + ') without a scroll bar - let the box grow, scroll it with overflow-y: auto, or shorten the content');
