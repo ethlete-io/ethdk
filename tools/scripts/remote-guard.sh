@@ -3,6 +3,7 @@
 # Runs the command in its own process group and writes a NUL byte to stdout every RR_HEARTBEAT_S seconds.
 # A dropped ssh session turns that write into an error: the guard then kills the group and removes the slot's
 # containers, so a killed local remote-run leaves nothing behind. remote-run.mjs strips the NUL bytes.
+# One guard per slot at a time: a second one waits on the slot's lock file, which dies with the process.
 
 rr_remove_containers() {
   command -v docker >/dev/null 2>&1 || return 0
@@ -34,9 +35,40 @@ rr_lfs() {
   echo "[remote-run] lfs: $n files"
 }
 
+rr_lock() {
+  local file="${RR_LOCK_DIR:-$HOME/ethlete-rr/locks}/$1.lock"
+  mkdir -p "${file%/*}"
+  exec 9>"$file" || return 1
+  if command -v flock >/dev/null 2>&1; then
+    flock -n 9 && return 0
+    echo "[remote-run] slot $1 busy, waiting"
+    flock 9
+    return
+  fi
+  local dir="$file.d" waited=0
+  until mkdir "$dir" 2>/dev/null; do
+    if [ -f "$dir/pid" ] && ! kill -0 "$(cat "$dir/pid")" 2>/dev/null; then
+      rm -rf "$dir"
+      continue
+    fi
+    [ "$waited" -eq 0 ] && echo "[remote-run] slot $1 busy, waiting"
+    waited=1
+    sleep 1
+  done
+  echo $$ >"$dir/pid"
+  RR_LOCK_DIR_HELD=$dir
+}
+
+rr_unlock() {
+  exec 9>&-
+  [ -z "${RR_LOCK_DIR_HELD:-}" ] || rm -rf "$RR_LOCK_DIR_HELD"
+  RR_LOCK_DIR_HELD=
+}
+
 rr_guard() {
   local slot=$1 job beat code
   shift
+  rr_lock "$slot" || return 1
   trap '' PIPE
   set -m
   "$@" &
@@ -58,6 +90,7 @@ rr_guard() {
   wait "$job"
   code=$?
   kill -- "-$beat" 2>/dev/null
+  rr_unlock
   return $code
 }
 
