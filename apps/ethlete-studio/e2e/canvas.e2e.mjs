@@ -7192,7 +7192,7 @@ const lead = async () => {
 
       lines.push(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}${undelayed}${unheld}`);
     }
-    // A pipe stdout is async: exiting before the write drains cuts the listing short.
+    // A pipe holds 8 KiB once the user passes pipe-user-pages-soft, less than the listing: exiting before the write drains cuts it short.
     await new Promise((resolve) => process.stdout.write(`${lines.join('\n')}\n`, resolve));
     process.exit(0);
   }
