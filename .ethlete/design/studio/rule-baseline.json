@@ -92,10 +92,6 @@
       "finding": "B795",
       "sketch": "none yet - predates the rule"
     },
-    "components/hold-trigger: \"Wartet auf ADR 0331\"": {
-      "finding": "B795",
-      "sketch": "none yet - predates the rule"
-    },
     "components/sketch-head: \"Runde 1 · Reset control: SDK button or own part\"": {
       "finding": "B795",
       "sketch": "none yet - predates the rule"

@@ -1,4 +1,5 @@
 import { definePart, drawing, forceInteraction, html, interactionRows } from '@design-system';
+import { FARN_HOLD_REASON } from '@system/fixtures';
 import styles from './hold-trigger.css?inline';
 
 type HoldInteraction = 'hover' | 'active' | 'focus-visible';
@@ -33,7 +34,7 @@ export const holdTrigger = ({ content, open, reason = '', action = 'emit:openCha
 };
 
 const demo = html`<span class="text-ui-sm text-et-surface-text-muted">Pausiert</span>`;
-const demoReason = html`<span class="font-ui-medium text-et-surface-text">Wartet auf ADR 0331</span>`;
+const demoReason = html`<span class="font-ui-medium text-et-surface-text">${FARN_HOLD_REASON}</span>`;
 
 const { states, grid } = interactionRows<Props, 'closed' | 'open', HoldInteraction>(
   {
