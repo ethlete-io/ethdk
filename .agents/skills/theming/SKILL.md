@@ -9,11 +9,11 @@ Everything lives in `libs/core/src/lib/theming/`. There are **two independent
 systems**; most components consume both:
 
 - **Surface theming** - neutral, elevation-aware colors of the box a component
-  sits on: background, text, muted/subtle text, borders, and a neutral
-  "interaction" color for hover/active tints. Set via `[etProvideSurface]`.
-- **Color theming** - semantic accent palettes (brand/primary, success,
-  warning, error): a primary color, an on-primary contrast color, and an "ink"
-  color for text/borders on transparent fills. Set via `[etProvideColor]`.
+  sits on: background, text, muted/subtle text, borders, and a neutral tint
+  for hover/pressed states. Set via `[etProvideSurface]` / `[etAutoSurface]`.
+- **Color theming (tones)** - semantic accent palettes (brand, success,
+  warning, error): a fill, the text on that fill, and the tone as text or
+  border on the surface (`--et-tone-*`). Set via `[etProvideColor]`.
 
 Apps register themes with `provideSurfaceThemesWithTailwind4(SURFACE_THEMES)` and
 `provideColorThemesWithTailwind4(THEMES)`, and generate the raw CSS variables with
@@ -49,7 +49,7 @@ Surface (each a ready color):
 | `--et-surface-text-muted` | secondary text, placeholders, group labels |
 | `--et-surface-text-subtle` | tertiary text |
 | `--et-surface-border` | borders, separators |
-| `--et-surface-tint` | neutral hover/active tint source (set by the theme's `tint`) - mix it: `color-mix(in srgb, var(--et-surface-tint) 12%, transparent)`. `--et-surface-control-text` and `-hover/-focus/-active/-disabled` are the text of a neutral control per state; never use one as a hover background |
+| `--et-surface-tint` | neutral hover/pressed tint source (set by the theme's `tint`, emitted only then) - always mix it with the surface-text fallback: `color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 12%, transparent)` (`ethlete/no-hand-mixed-state` enforces it). `--et-surface-control-text` and `-hover/-focus/-active/-disabled` are the text of a neutral control per state; never use one as a hover background |
 
 Color (from the nearest `[etProvideColor]` scope):
 

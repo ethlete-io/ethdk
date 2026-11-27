@@ -13,11 +13,11 @@ vars: [docsBaseUrl]
 Two **independent** systems in `@ethlete/core`; most components consume both:
 
 - **Surface theming** - the neutral, elevation-aware colors of the box a component
-  sits on: background, text, muted/subtle text, borders, and a neutral
-  "interaction" color for hover/active tints. Set via `[etProvideSurface]`.
-- **Color theming** - semantic accent palettes (brand/primary, success, warning,
-  error): a primary color, an on-primary contrast color, and an "ink" color for
-  text/borders on transparent fills. Set via `[etProvideColor]`.
+  sits on: background, text, muted/subtle text, borders, and a neutral tint
+  for hover/pressed states. Set via `[etProvideSurface]` / `[etAutoSurface]`.
+- **Color theming (tones)** - semantic accent palettes (brand, success,
+  warning, error): a fill, the text on that fill, and the tone as text or
+  border on the surface (`--et-tone-*`). Set via `[etProvideColor]`.
 
 Full reference: {%docsBaseUrl%}/core/theming.
 
@@ -49,22 +49,22 @@ A static fallback inside `var(--token, <fallback>)` is permitted, but not requir
 
 Surface:
 
-| Token                      | Use for                                                                                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--et-surface-background`  | component/panel background                                                                                                                                                |
-| `--et-surface-text`        | text                                                                                                                                                                      |
-| `--et-surface-text-muted`  | secondary text, placeholders, group labels                                                                                                                                |
-| `--et-surface-text-subtle` | tertiary text                                                                                                                                                             |
-| `--et-surface-border`      | borders, separators                                                                                                                                                       |
-| `--et-surface-interaction` | neutral hover/active tint source - mix it: `color-mix(in srgb, var(--et-surface-interaction) 12%, transparent)` (12/16/20% for hover/focus/active, 6–8% for subtle fills) |
+| Token                      | Use for                                                                                                                                                                                                                                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--et-surface-background`  | component/panel background                                                                                                                                                                                                                                                                                               |
+| `--et-surface-text`        | text                                                                                                                                                                                                                                                                                                                     |
+| `--et-surface-text-muted`  | secondary text, placeholders, group labels                                                                                                                                                                                                                                                                               |
+| `--et-surface-text-subtle` | tertiary text                                                                                                                                                                                                                                                                                                            |
+| `--et-surface-border`      | borders, separators                                                                                                                                                                                                                                                                                                      |
+| `--et-surface-tint`        | neutral hover/pressed tint source (set by the theme's `tint`, emitted only then) - always mix it with the surface-text fallback: `color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 12%, transparent)`; `--et-surface-control-text[-<state>]` is the text of a neutral control, never a background |
 
 Color (from the nearest `[etProvideColor]` scope):
 
 | Token               | Use for                                                                                                                                                                                                                               |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--et-tone-fill`    | filled backgrounds and accents at full strength: focus borders, selected marks, spinners. To tint per state, compose it yourself: `color-mix(in srgb, var(--et-tone-fill) calc(var(--_et-tone-fill-opacity, 1) * 100%), transparent)` |
-| `--et-tone-on-fill` | text/icons on a primary-filled background                                                                                                                                                                                             |
-| `--et-tone-text`    | primary-tinted text/border on transparent/tonal fills                                                                                                                                                                                 |
+| `--et-tone-on-fill` | text/icons on a filled background                                                                                                                                                                                                     |
+| `--et-tone-text`    | the tone as text/border on transparent/tonal fills                                                                                                                                                                                    |
 
 `[etColorInteractive]` re-resolves the color tokens per CSS state. Put it on the
 interactive element itself, never on a wrapper. Neutral hover and pressed feedback mixes
