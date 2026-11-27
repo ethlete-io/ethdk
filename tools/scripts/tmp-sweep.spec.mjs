@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readdirSync, realpathSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
-import { isSweptTmpName, sweepTargets, unitFiles } from './tmp-sweep.mjs';
+import { isSweptTmpName, removeRunTmp, runTmpDir, sweepTargets, unitFiles } from './tmp-sweep.mjs';
 
 const HOUR = 60 * 60 * 1000;
 const now = Date.now();
@@ -124,4 +124,23 @@ test('the units run the sweep hourly with the given node', () => {
   assert.match(files['ethlete-tmp-sweep.service'], /^ExecStart=\/n\/node \/r\/tmp-sweep\.mjs$/m);
   assert.match(files['ethlete-tmp-sweep.timer'], /^OnCalendar=hourly$/m);
   assert.match(files['ethlete-tmp-sweep.timer'], /^WantedBy=timers\.target$/m);
+});
+
+test('a run temp dir links the shared caches and goes away after the run unless a process still uses it', () => {
+  const root = realpathSync(tempDir('run-tmp-spec-'));
+  const dir = runTmpDir(root);
+  assert.ok(isSweptTmpName(dir.slice(root.length + 1)));
+  assert.ok(lstatSync(join(dir, 'jest_rs')).isSymbolicLink());
+  writeFileSync(join(dir, 'jest_rs', 'cache-entry'), 'kept');
+  mkdirSync(join(dir, 'tmp-123-run-output'));
+
+  assert.equal(removeRunTmp(dir, [join(dir, 'tmp-123-run-output')]), false);
+  assert.ok(existsSync(dir));
+  assert.equal(removeRunTmp(dir, []), true);
+  assert.equal(existsSync(dir), false);
+  assert.ok(existsSync(join(root, 'jest_rs', 'cache-entry')));
+  assert.equal(
+    readdirSync(root).some((name) => name.startsWith('heavy-run-')),
+    false,
+  );
 });

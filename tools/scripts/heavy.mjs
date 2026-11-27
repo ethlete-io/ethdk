@@ -3,14 +3,18 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  jobIsPinned,
   jobMachine,
-  machineIsUp,
+  machineHealth,
+  machineOrder,
   MACHINES,
   remoteSuite,
   slotFile as slotFileOf,
   snapshotWorkingTree,
+  tankIsLoaded,
 } from './heavy-route.mjs';
 import { localMachine, registerRun, teeRun } from './run-registry.mjs';
+import { removeRunTmp, runTmpDir } from './tmp-sweep.mjs';
 
 const prefix = process.env.HEAVY_LOCK_PREFIX ?? '/tmp/fifagg-heavy';
 const slotCount = Number(process.env.HEAVY_SLOTS ?? MACHINES.tank.slots);
@@ -20,7 +24,7 @@ const busyExit = 200;
 const forwarded = ['SIGINT', 'SIGTERM', 'SIGHUP'];
 const signalNumber = { SIGHUP: 1, SIGINT: 2, SIGKILL: 9, SIGTERM: 15 };
 const usage =
-  'usage: heavy.mjs run [--on tank|rack|mac] [--fetch <path>]... [--env <name>]... [--forward <port>]... [--yarn-cache] -- <command>';
+  'usage: heavy.mjs run [--on tank|rack|mac] [--movable] [--fetch <path>]... [--env <name>]... [--forward <port>]... [--yarn-cache] -- <command>';
 
 const slotFile = (machine, n) => slotFileOf(machine, n, prefix);
 
@@ -74,15 +78,34 @@ const tryRun = (argv, { label, machine, n, run, cwd, env = process.env, onStart 
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const remoteTarget = (machine) => {
-  if (machine === 'tank') return undefined;
-  if (!machineIsUp(machine)) {
-    console.error(`heavy: ${machine} is down, running on tank`);
-    return undefined;
-  }
+const usableRemote = (machine) => {
+  const health = machineHealth(machine);
+  if (!health.usable) console.error(`heavy: ${machine} ${health.reason}, skipping it`);
+  return health.usable;
+};
+
+const runMachines = (command, wanted, remoteOpts) => {
+  const preferred = wanted ?? (process.env.HEAVY_ROUTE === 'off' ? 'tank' : jobMachine(command));
+  const movable =
+    !wanted &&
+    process.env.HEAVY_ROUTE !== 'off' &&
+    !jobIsPinned(command) &&
+    (preferred !== 'tank' || remoteOpts.movable || remoteOpts.fetch.length > 0);
+  let loaded = false;
+  const order = machineOrder({
+    preferred,
+    movable,
+    tankLoaded: () => (loaded = tankIsLoaded()),
+    usable: usableRemote,
+  });
+  if (loaded && order.length > 1) console.error(`heavy: tank is loaded, trying ${order.join(', ')}`);
+  return order;
+};
+
+const remoteTarget = () => {
   const snapshot = snapshotWorkingTree();
-  if (!snapshot) console.error(`heavy: no git repo here, running on tank instead of ${machine}`);
-  return snapshot && { machine, ...snapshot };
+  if (!snapshot) console.error('heavy: no git repo here, running on tank');
+  return snapshot;
 };
 
 const remoteArgv = (target, suite, n, { fetch, env, forward, yarnCache }) => [
@@ -105,47 +128,54 @@ const remoteArgv = (target, suite, n, { fetch, env, forward, yarnCache }) => [
 
 const run = async (command, wanted, remoteOpts) => {
   const label = command.join(' ');
-  const preferred = wanted ?? (process.env.HEAVY_ROUTE === 'off' ? 'tank' : jobMachine(command));
   const tankName = localMachine();
-  const remote = remoteTarget(preferred);
-  const entry = registerRun({ machine: remote ? remote.machine : tankName, label: `heavy ${label}`, command: label });
+  const machines = runMachines(command, wanted, remoteOpts);
+  const snapshot = machines.length > 1 ? remoteTarget() : undefined;
+  const remotes = snapshot ? machines.filter((machine) => machine !== 'tank') : [];
+  const entry = registerRun({ machine: remotes[0] ?? tankName, label: `heavy ${label}`, command: label });
+  const runTmp = runTmpDir();
+  const env = { ...process.env, TMPDIR: runTmp };
   const attempts = [
-    ...(remote
-      ? Array.from({ length: MACHINES[remote.machine].slots }, (_, i) => ({
-          machine: remote.machine,
-          n: i + 1,
-          argv: remoteArgv(remote, remoteSuite(command, remote.rel), i + 1, remoteOpts),
-          cwd: remote.top,
-          env: { ...process.env, REMOTE_RUN_NO_REGISTRY: '1' },
-        }))
-      : []),
-    ...Array.from({ length: slotCount }, (_, i) => ({ machine: 'tank', n: i + 1, argv: command })),
+    ...remotes.flatMap((machine) =>
+      Array.from({ length: MACHINES[machine].slots }, (_, i) => ({
+        machine,
+        n: i + 1,
+        argv: remoteArgv({ machine, ...snapshot }, remoteSuite(command, snapshot.rel), i + 1, remoteOpts),
+        cwd: snapshot.top,
+        env: { ...process.env, REMOTE_RUN_NO_REGISTRY: '1' },
+      })),
+    ),
+    ...Array.from({ length: slotCount }, (_, i) => ({ machine: 'tank', n: i + 1, argv: command, env })),
   ];
   let reported = false;
-  for (;;) {
-    for (const attempt of attempts) {
-      const code = await tryRun(attempt.argv, {
-        ...attempt,
-        label,
-        run: entry,
-        onStart: () => {
-          const machine = attempt.machine === 'tank' ? tankName : attempt.machine;
-          if (machine !== entry.machine) entry.update({ machine });
-          if (remote && attempt.machine === 'tank')
-            console.error(`heavy: ${remote.machine} slots are taken, running on tank`);
-        },
-      });
-      if (code !== busyExit) {
-        entry.finish(code);
-        return code;
+  try {
+    for (;;) {
+      for (const attempt of attempts) {
+        const code = await tryRun(attempt.argv, {
+          ...attempt,
+          label,
+          run: entry,
+          onStart: () => {
+            const machine = attempt.machine === 'tank' ? tankName : attempt.machine;
+            if (machine !== entry.machine) entry.update({ machine });
+            if (remotes.length && attempt.machine === 'tank')
+              console.error(`heavy: ${remotes.join(', ')} slots are taken, running on tank`);
+          },
+        });
+        if (code !== busyExit) {
+          entry.finish(code);
+          return code;
+        }
       }
+      if (!reported) {
+        reported = true;
+        console.error(`heavy: all ${attempts.length} slots are taken:`);
+        for (const { machine, n } of attempts) console.error(`  ${describeHolder(machine, n)}`);
+      }
+      await sleep(pollMs);
     }
-    if (!reported) {
-      reported = true;
-      console.error(`heavy: all ${attempts.length} slots are taken:`);
-      for (const { machine, n } of attempts) console.error(`  ${describeHolder(machine, n)}`);
-    }
-    await sleep(pollMs);
+  } finally {
+    if (!removeRunTmp(runTmp)) console.error(`heavy: ${runTmp} is still in use, the tmp sweep removes it later`);
   }
 };
 
@@ -157,8 +187,8 @@ let wantedMachine;
 const remoteOpts = { fetch: [], env: [], forward: [] };
 let bad = false;
 for (let i = 0; i < own.length; i += 2) {
-  if (own[i] === '--yarn-cache') {
-    remoteOpts.yarnCache = true;
+  if (own[i] === '--yarn-cache' || own[i] === '--movable') {
+    remoteOpts[own[i] === '--movable' ? 'movable' : 'yarnCache'] = true;
     i--;
     continue;
   }

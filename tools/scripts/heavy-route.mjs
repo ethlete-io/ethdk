@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, realpathSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { cpus, loadavg, tmpdir } from 'node:os';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { HOSTS } from './remote-run.mjs';
 
@@ -19,6 +19,10 @@ export const tankHasFreeSlot = (prefix = process.env.HEAVY_LOCK_PREFIX ?? '/tmp/
   Array.from({ length: Number(process.env.HEAVY_SLOTS ?? MACHINES.tank.slots) }, (_, i) =>
     slotFile('tank', i + 1, prefix),
   ).some((file) => spawnSync('flock', ['-n', '-E', '200', file, 'true'], { stdio: 'ignore' }).status !== 200);
+
+/** Whether tank has no free slot or a one-minute load above HEAVY_MAX_LOAD (default: its core count). */
+export const tankIsLoaded = (env = process.env, prefix = env.HEAVY_LOCK_PREFIX ?? '/tmp/fifagg-heavy') =>
+  loadavg()[0] > Number(env.HEAVY_MAX_LOAD || cpus().length) || !tankHasFreeSlot(prefix);
 
 const WRITES_FILES = /^(--fix|--write|-u|--update|--update-snapshots)(=|$)/;
 const PICTURE = /visual|screenshot|golden|baseline/i;
@@ -96,10 +100,74 @@ export const snapshotWorkingTree = (cwd = process.cwd(), env = process.env) => {
   }
 };
 
-/** Whether the machine answers ssh within a few seconds. */
-export const machineIsUp = (machine, env = process.env) =>
-  spawnSync(
-    env['HEAVY_SSH'] ?? 'ssh',
-    ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=3', HOSTS[machine].ssh, 'exit 0'],
-    { stdio: 'ignore', timeout: 8_000, env },
-  ).status === 0;
+export const PROBE_OK = 'heavy-probe-ok';
+export const MIN_FREE_KB = 5 * 1024 * 1024;
+
+const freeLine = (disk, path) => `echo "free_kb=$(df -Pk ${path} | awk 'NR==2{print $4}') disk=${disk}"`;
+
+/**
+ * The script a machine runs to show it can take a run: it prints the free space of every disk a run writes to and
+ * ends with PROBE_OK only when the run's shell works. On rack that is the WSL distro with Docker, whose disk image
+ * lives on C:.
+ */
+export const probeScript = (machine) =>
+  MACHINES[machine].linux
+    ? `${freeLine('C:', '/c')}
+MSYS_NO_PATHCONV=1 wsl.exe -d ethlete --exec bash -c '${freeLine('wsl', '"$HOME"').replaceAll("'", `'\\''`)}; docker info >/dev/null 2>&1 && echo ${PROBE_OK}' </dev/null
+`
+    : `${freeLine('home', '"$HOME"')}
+echo ${PROBE_OK}
+`;
+
+/** Reads a probe's exit code and output into whether the machine can take a run, and why not. */
+export const probeVerdict = ({ status, stdout = '' }, minFreeKb = MIN_FREE_KB) => {
+  if (status === 255 || status === null) return { usable: false, reason: 'does not answer' };
+  const full = [...stdout.matchAll(/^free_kb=(\d+) disk=(\S+)/gm)].find(([, kb]) => Number(kb) < minFreeKb);
+  if (full) return { usable: false, reason: `has ${(Number(full[1]) / 1024 / 1024).toFixed(1)} GB free on ${full[2]}` };
+  if (status !== 0 || !stdout.includes(PROBE_OK)) return { usable: false, reason: `fails its probe (exit ${status})` };
+  return { usable: true };
+};
+
+/** Whether the machine answers ssh, its run shell works, and its disks have room; a few seconds at most. */
+export const machineHealth = (machine, env = process.env) =>
+  probeVerdict(
+    spawnSync(
+      env['HEAVY_SSH'] ?? 'ssh',
+      ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=3', HOSTS[machine].ssh, HOSTS[machine].shell],
+      { input: probeScript(machine), encoding: 'utf8', timeout: 20_000, env },
+    ),
+    Number(env['HEAVY_MIN_FREE_KB'] ?? MIN_FREE_KB),
+  );
+
+const PINNED_JOB = /\b(serve|storybook|tauri|design|release|push-suite)\b/i;
+
+/**
+ * Whether a command must run on tank whatever its load: it writes into the working tree, compares pictures, needs
+ * cargo, or starts or reads a tank-local server or build.
+ */
+export const jobIsPinned = (command) => {
+  const words = command.join(' ').split(/\s+/).filter(Boolean);
+  const verbs = words.filter((word) => !word.includes('/') && !SPEC_FILE.test(word)).join(' ');
+  return (
+    words.some((word) => WRITES_FILES.test(word)) ||
+    PICTURE.test(verbs) ||
+    NEEDS_CARGO.test(command.join(' ')) ||
+    PINNED_JOB.test(verbs)
+  );
+};
+
+export const REMOTES = ['rack', 'mac'];
+
+/**
+ * The machines a run tries, in order; the last one is always tank, and its lock is where a run waits when all are
+ * busy. A movable job leaves a loaded tank for the first usable remote; a remote job tries the other remote too
+ * while tank is loaded.
+ */
+export const machineOrder = ({ preferred, movable, tankLoaded, usable }) => {
+  if (!movable) return preferred === 'tank' ? ['tank'] : [...(usable(preferred) ? [preferred] : []), 'tank'];
+  const loaded = tankLoaded();
+  if (preferred === 'tank' && !loaded) return ['tank'];
+  const remotes =
+    preferred === 'tank' ? REMOTES : [preferred, ...(loaded ? REMOTES.filter((m) => m !== preferred) : [])];
+  return [...remotes.filter((machine) => usable(machine)), 'tank'];
+};

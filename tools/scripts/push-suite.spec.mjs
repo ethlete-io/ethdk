@@ -42,17 +42,22 @@ test('reads the machine and the planned projects a remote checkout runs without 
   );
 });
 
-test('runs on tank while it is free, on rack while it is not, and on tank when rack does not answer', () => {
+test('runs on tank while it is free, on rack while it is not, and on tank when rack is unusable', () => {
   const lines = [];
   const pick = (on, tankFree, rackUp) =>
-    pushSuiteMachine({ on, tankIsFree: () => tankFree, rackIsUp: () => rackUp, log: (line) => lines.push(line) });
+    pushSuiteMachine({
+      on,
+      tankIsFree: () => tankFree,
+      rackHealth: () => (rackUp ? { usable: true } : { usable: false, reason: 'has 3.0 GB free on C:' }),
+      log: (line) => lines.push(line),
+    });
 
   assert.equal(pick(undefined, true, true), 'tank');
   assert.equal(pick(undefined, false, true), 'rack');
   assert.equal(pick('rack', true, true), 'rack');
   assert.equal(pick('tank', false, true), 'tank');
   assert.equal(pick(undefined, false, false), 'tank');
-  assert.deepEqual(lines, ['push-suite: rack does not answer, running on tank']);
+  assert.deepEqual(lines, ['push-suite: rack has 3.0 GB free on C:, running on tank']);
 });
 
 test('a remote run counts as red unless its suite says ok, and as no verdict when the suite never ran', () => {
@@ -416,9 +421,11 @@ const rackFixture = () => {
   return repo;
 };
 
-const runOnFakeRack = ({ out, code, ssh = 'true', machine = 'rack', lockHolder }) => {
+const runOnFakeRack = ({ out, code, sshExit = 0, machine = 'rack', lockHolder }) => {
   const repo = rackFixture();
   const dir = mkdtempSync(join(tmpdir(), 'push-suite-rack-'));
+  const ssh = join(dir, 'fake-ssh');
+  writeFileSync(ssh, `#!/bin/sh\ncat >/dev/null\necho heavy-probe-ok\nexit ${sshExit}\n`, { mode: 0o755 });
   const fake = join(dir, 'remote-run.mjs');
   writeFileSync(
     fake,
@@ -506,7 +513,7 @@ test('a rack run without a verdict and an unreachable rack both fall back to tan
   assert.match(broken.output, /rack run ended without a verdict \(exit 255\), running on tank/);
   assert.match(broken.output, /push-suite: exported/);
 
-  const down = runOnFakeRack({ out: 'unused', code: 0, ssh: 'false' });
+  const down = runOnFakeRack({ out: 'unused', code: 0, sshExit: 255 });
   assert.equal(down.argv, undefined);
   assert.match(down.output, /rack does not answer, running on tank/);
   assert.match(down.output, /push-suite: exported/);

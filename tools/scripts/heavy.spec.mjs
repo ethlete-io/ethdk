@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
@@ -117,4 +117,31 @@ test('a malformed --fetch or unknown own option exits 2', { timeout: 30_000 }, a
     });
   assert.equal((await call(['--fetch', 'a', '--bogus', 'x', '--', 'true'])).code, 2);
   assert.equal((await call(['--fetch', '--', 'true'])).code, 2);
+});
+
+test('a run writes its temp files into its own TMPDIR, which is gone after the run', async () => {
+  const dir = tempDir('heavy-tmp-spec-');
+  const root = join(dir, 'tmp');
+  mkdirSync(root);
+  const child = spawn(
+    'node',
+    [script, 'run', '--', 'sh', '-c', 'echo "$TMPDIR"; mktemp -d >/dev/null; ls -a "$TMPDIR" | grep -c jest_rs'],
+    {
+      env: { ...process.env, TMPDIR: root, HEAVY_LOCK_PREFIX: join(dir, 'lock'), RUN_REGISTRY_DIR: join(dir, 'runs') },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  );
+  let out = '';
+  child.stdout.on('data', (d) => (out += d));
+  assert.equal(await new Promise((r) => child.on('close', r)), 0);
+  const [runTmp, linked] = out.trim().split('\n');
+  assert.match(runTmp, /\/tmp\/heavy-run-\w{6}$/);
+  assert.equal(linked, '1');
+  assert.equal(existsSync(runTmp), false);
+  assert.deepEqual(
+    readdirSync(root)
+      .filter((name) => !name.startsWith('.') && !name.startsWith('playwright-transform-cache-'))
+      .sort(),
+    ['et-design-harness-cache', 'jest_rs', 'node-compile-cache'],
+  );
 });

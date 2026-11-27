@@ -1,6 +1,16 @@
 import { spawnSync } from 'node:child_process';
-import { lstatSync, mkdirSync, readdirSync, readlinkSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import {
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readlinkSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { homedir, tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -27,6 +37,7 @@ export const TMP_PATTERNS = [
     'git-env-hook-',
     'git-env-raw-',
     'git-env-temp-',
+    'heavy-run-',
     'lint-changesets-',
     'migration-entries-',
     'person-names-',
@@ -120,6 +131,26 @@ export const sweepTargets = ({ tmpRoot, claudeTmp, now, maxAgeMs = MAX_AGE_MS, o
       return lstatOf(path)?.isDirectory() && !lstatOf(join(path, '.git')) ? prune(path) : [];
     });
   return [...fromTmp, ...(claudeTmp ? prune(claudeTmp) : [])];
+};
+
+/**
+ * A fresh temp dir for one run, to pass as its TMPDIR: the shared caches under `root` appear in it as links, so the
+ * run keeps reusing them while everything else it writes goes away with removeRunTmp.
+ */
+export const runTmpDir = (root = tmpdir()) => {
+  const dir = realpathSync(mkdtempSync(join(root, 'heavy-run-')));
+  for (const name of [...KEPT_TMP_NAMES, '.nx', `playwright-transform-cache-${userInfo().uid}`]) {
+    mkdirSync(join(root, name), { recursive: true });
+    symlinkSync(join(root, name), join(dir, name));
+  }
+  return dir;
+};
+
+/** Deletes a run's temp dir unless a live process still uses it; the hourly sweep takes it later then. */
+export const removeRunTmp = (dir, openPaths = openPathsOf()) => {
+  if (usedBy(dir, openPaths)) return false;
+  rmSync(dir, { recursive: true, force: true });
+  return true;
 };
 
 const sweep = (dryRun) => {

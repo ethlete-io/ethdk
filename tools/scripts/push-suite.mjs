@@ -228,12 +228,13 @@ export const reexecCommand = (exportDir, repo, { only, range, maxLoad }, env = p
 
 /**
  * The machine the steps run on: `on` (flag `--on` or env `PUSH_SUITE_MACHINE`) wins, else tank while it is free and
- * rack while it is not. rack falls back to tank when it does not answer.
+ * rack while it is not. rack falls back to tank when it does not answer, its WSL or Docker fails, or a disk is full.
  */
-export const pushSuiteMachine = ({ on, tankIsFree, rackIsUp, log }) => {
+export const pushSuiteMachine = ({ on, tankIsFree, rackHealth, log }) => {
   if ((on ?? (tankIsFree() ? 'tank' : 'rack')) === 'tank') return 'tank';
-  if (rackIsUp()) return 'rack';
-  log('push-suite: rack does not answer, running on tank');
+  const health = rackHealth();
+  if (health.usable) return 'rack';
+  log(`push-suite: rack ${health.reason}, running on tank`);
   return 'tank';
 };
 
@@ -477,14 +478,14 @@ export const pushSuite = async (
   if (!INNER_EXPORT) {
     if (on !== undefined && !['tank', 'rack'].includes(on))
       return finish(`blocked unknown machine ${on}, expected tank or rack`);
-    const { machineIsUp, tankHasFreeSlot } = await import('./heavy-route.mjs');
+    const { machineHealth, tankHasFreeSlot } = await import('./heavy-route.mjs');
     const { holderLine, readHolder, takeHeavyLock } = await import('./heavy-run-lock.mjs');
     const limit = loadLimitOf(maxLoad);
     const machine = pushSuiteMachine({
       on,
       tankIsFree: () =>
         !heavyRunHeld(readHolder()) && tankHasFreeSlot() && (loadProbe.load ?? oneMinuteLoad)() <= limit,
-      rackIsUp: () => machineIsUp('rack'),
+      rackHealth: () => machineHealth('rack'),
       log,
     });
     if (machine === 'rack') {
