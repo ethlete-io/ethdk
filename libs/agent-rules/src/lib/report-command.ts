@@ -19,6 +19,7 @@ export type ReportOptions = {
   from: Date;
   to: Date;
   planFiles: string[];
+  now?: Date;
   ci: (query: { branch: string; from: Date; to: Date }) => CiResult;
 };
 
@@ -216,7 +217,9 @@ const shaCell = (commits: Commit[]) => {
   return commits.length > 1 ? `${latest.sha} +${commits.length - 1}` : latest.sha;
 };
 
-const readSlice = (root: string) => {
+const SLICE_STALE_MS = 2 * 60 * 60 * 1000;
+
+const readSlice = (root: string, now: Date) => {
   const path = git(root, 'rev-parse', '--git-path', 'slice-paths');
 
   if (!path || !existsSync(resolve(root, path))) return null;
@@ -227,7 +230,11 @@ const readSlice = (root: string) => {
 
   if (!name) return null;
 
-  return { name, since: written ? parseMoment(written) : null };
+  const since = written ? parseMoment(written) : null;
+
+  if (!since || now.getTime() - since.getTime() > SLICE_STALE_MS) return null;
+
+  return { name, since };
 };
 
 const readSubagentStarts = (root: string, { from, to }: Period) => {
@@ -344,7 +351,7 @@ export const buildReport = (options: ReportOptions) => {
   const branch = git(root, 'rev-parse', '--abbrev-ref', 'HEAD') ?? '';
   const ci = branch ? options.ci({ branch, from, to }) : null;
   const starts = readSubagentStarts(root, { from, to });
-  const slice = readSlice(root);
+  const slice = readSlice(root, options.now ?? new Date());
   const figures = [
     `${commits.length} Commits${types.length ? ` (${types.join(', ')})` : ''}`,
     ...(reverts ? [`${reverts} ${reverts === 1 ? 'Revert' : 'Reverts'}`] : []),
@@ -381,6 +388,7 @@ export const reportCommand = (options: { root: string; argv: string[]; now?: Dat
       root: top,
       ...period,
       planFiles: readReportConfig(options.root).planFiles ?? [],
+      now: options.now,
       ci: options.ci ?? ghCiResult,
     }),
   );

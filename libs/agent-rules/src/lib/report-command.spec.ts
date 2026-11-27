@@ -148,10 +148,15 @@ describe('buildReport', () => {
       '# slice: Mein Slice (B1)\n# written: 2026-11-18T09:15:00\nlibs/x\n',
     );
 
-    const report = buildReport({ root: dir, from, to, planFiles: [], ci: noCi });
+    const now = new Date('2026-11-18T10:00:00');
+    const report = buildReport({ root: dir, from, to, planFiles: [], ci: noCi, now });
 
     expect(report).toContain('Subagenten: sonnet 2, haiku 1');
     expect(report).toContain('Slice läuft: Mein Slice (B1) seit 09:15');
+
+    const later = buildReport({ root: dir, from, to, planFiles: [], ci: noCi, now: new Date('2026-11-18T11:16:00') });
+
+    expect(later).not.toContain('Slice');
   });
 });
 

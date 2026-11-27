@@ -419,7 +419,7 @@ package ships (`yarn agents:sync` writes the marketplace and `enabledPlugins` in
 `ethlete-agents report [today|yesterday|week | --since <date> [--until <date>]]` prints a fixed
 markdown table of the period: one line per row with a feature, fix or other non-docs commit (short
 sha, result), the parked rows, and a figures line (commit counts, reverts, red CI runs via `gh`,
-subagent starts per model, the running slice). Without config it works from the git log alone.
+subagent starts per model, the running slice unless its entry is older than 2 h). Without config it works from the git log alone.
 Opt in to short names and the parked section with
 `"report": { "planFiles": ["plans/STATUS.md", "plans/queue.md", "plans/rows.md"] }`: repo-relative paths
 of markdown files holding `| <id> | <short name> | <what> | <state> | <what is missing> | <who> |` rows
