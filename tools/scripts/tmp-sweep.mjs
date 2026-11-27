@@ -61,6 +61,9 @@ export const TMP_PATTERNS = [
 
 export const KEPT_TMP_NAMES = ['node-compile-cache', 'et-design-harness-cache', 'jest_rs'];
 
+/** The caches a heavy run's temp dir links to, so the run keeps reusing them. */
+export const RUN_SHARED_TMP_NAMES = [...KEPT_TMP_NAMES, '.nx', `playwright-transform-cache-${userInfo().uid}`];
+
 export const isSweptTmpName = (name) =>
   !KEPT_TMP_NAMES.includes(name) && TMP_PATTERNS.some((pattern) => pattern.test(name));
 
@@ -139,7 +142,7 @@ export const sweepTargets = ({ tmpRoot, claudeTmp, now, maxAgeMs = MAX_AGE_MS, o
  */
 export const runTmpDir = (root = tmpdir()) => {
   const dir = realpathSync(mkdtempSync(join(root, 'heavy-run-')));
-  for (const name of [...KEPT_TMP_NAMES, '.nx', `playwright-transform-cache-${userInfo().uid}`]) {
+  for (const name of RUN_SHARED_TMP_NAMES) {
     mkdirSync(join(root, name), { recursive: true });
     symlinkSync(join(root, name), join(dir, name));
   }

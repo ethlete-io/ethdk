@@ -1,0 +1,65 @@
+✔ a command goes to the machine of its job class (1.134626ms)
+✔ the remote suite keeps the caller directory and quoting (0.151603ms)
+✔ a lint run goes to rack with a snapshot of the working tree and registers rack (139.623845ms)
+✔ a call from a subdirectory of another repo runs there on the remote side (137.18398ms)
+✔ a worktree of the other repo shares the remote slots of its main checkout (122.730165ms)
+✔ a rack job runs on tank when rack is down (119.049193ms)
+✔ a rack job runs on tank when both rack slots are taken and tank is free (126.076651ms)
+✔ --on and HEAVY_ROUTE=off pick the machine by hand (232.803637ms)
+✔ --env, --forward and --yarn-cache reach remote-run, --yarn-cache only for rack (270.719028ms)
+✔ a movable job leaves a loaded tank for the first usable remote, and waits on tank when none is (0.359958ms)
+✔ a machine whose WSL fails or whose disk is full is unusable (0.382498ms)
+✔ jobs that write the tree, compare pictures, need cargo or a tank server stay pinned to tank (0.261366ms)
+✔ a --movable build runs on rack while tank is loaded (136.581667ms)
+✔ a build without --movable waits for a loaded tank (1093.732215ms)
+✔ a loaded tank skips an unusable rack for mac (115.628186ms)
+✔ a remote run without a verdict moves on to the next machine (133.650061ms)
+✔ a rack job runs on tank when its rack run ends without a verdict (120.190698ms)
+✔ with every slot on every machine taken a run waits for the first free one (173.977176ms)
+tmp leak: tools/scripts/heavy-route.spec.mjs left 2 folders in /tmp (.nx, playwright-transform-cache-1000). Remove each temp folder it creates when it is done.
+✖ tools/scripts/heavy-route.spec.mjs (2966.519441ms)
+✔ 4 jobs: 3 run at once, the 4th waits and prints holders (210.620119ms)
+✔ a killed holder frees its slot (310.0451ms)
+✔ exit code passes through (177.039015ms)
+✔ a malformed --fetch or unknown own option exits 2 (47.21939ms)
+✔ a run writes its temp files into its own TMPDIR, which is gone after the run (86.995073ms)
+tmp leak: tools/scripts/heavy.spec.mjs left 2 folders in /tmp (.nx, playwright-transform-cache-1000). Remove each temp folder it creates when it is done.
+✖ tools/scripts/heavy.spec.mjs (861.391829ms)
+✔ heavy.mjs killed with SIGKILL leaves no job behind (102.380928ms)
+✔ remote-run.mjs killed with SIGKILL takes its ssh session down (101.330175ms)
+✔ the remote guard kills the job and removes the slot containers once the session drops (254.341441ms)
+tmp leak: tools/scripts/kill-with-parent.spec.mjs left 3 folders in /tmp (.nx, heavy-run-NjnbQv, playwright-transform-cache-1000). Remove each temp folder it creates when it is done.
+✖ tools/scripts/kill-with-parent.spec.mjs (489.258264ms)
+✔ registerRun writes one entry per run with machine, log and pid; finish records the exit code (0.85845ms)
+✔ listRuns deletes entries of dead processes and entries ended over an hour ago, with their own logs (1.580066ms)
+✔ heavy.mjs registers its run on this machine and tees the output and the slot to the log (92.300132ms)
+✔ push-suite runStep registers each step with a log of its output (21.40371ms)
+✔ run-registry.mjs track registers a light run (29.284157ms)
+tmp leak: tools/scripts/run-registry.spec.mjs left 2 folders in /tmp (.nx, playwright-transform-cache-1000). Remove each temp folder it creates when it is done.
+✖ tools/scripts/run-registry.spec.mjs (184.325609ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 31
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2971.059242
+
+✖ failing tests:
+
+test at tools/scripts/heavy-route.spec.mjs:1:1
+✖ tools/scripts/heavy-route.spec.mjs (2966.519441ms)
+  'test failed'
+
+test at tools/scripts/heavy.spec.mjs:1:1
+✖ tools/scripts/heavy.spec.mjs (861.391829ms)
+  'test failed'
+
+test at tools/scripts/kill-with-parent.spec.mjs:1:1
+✖ tools/scripts/kill-with-parent.spec.mjs (489.258264ms)
+  'test failed'
+
+test at tools/scripts/run-registry.spec.mjs:1:1
+✖ tools/scripts/run-registry.spec.mjs (184.325609ms)
+  'test failed'

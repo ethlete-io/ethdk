@@ -161,6 +161,15 @@ test('a failed vitest spec reports its FAIL row, with and without colors', () =>
   }
 });
 
+test('a spec file that fails at file level reports its cause, the tmp leak line', () => {
+  const fixture = readFileSync(join(import.meta.dirname, 'fixtures/push-suite/tools-tmp-leak.txt'), 'utf8');
+  const filler = Array.from({ length: 45 }, (_, index) => `later line ${index}`);
+  const report = failureReport([...fixture.split('\n'), ...filler].join('\n'));
+
+  for (const spec of ['heavy-route', 'heavy', 'kill-with-parent', 'run-registry'])
+    assert.match(report, new RegExp(`^tmp leak: tools/scripts/${spec}\\.spec\\.mjs left`, 'm'));
+});
+
 test('the suite re-runs itself from the export, so every gate script is the committed one', () => {
   const plan = reexecCommand('/tmp/export', '/repo', { only: 'lint,tools', range: 'a..b' }, { PATH: 'x' });
 

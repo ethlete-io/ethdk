@@ -1,12 +1,12 @@
 import { existsSync, mkdtempSync, readdirSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { KEPT_TMP_NAMES } from './tmp-sweep.mjs';
+import { RUN_SHARED_TMP_NAMES } from './tmp-sweep.mjs';
 
 export const SPEC_TMP_PREFIX = 'et-spec-';
 
 const uid = process.getuid?.() ?? 0;
-const CACHES = [...KEPT_TMP_NAMES, `swc-node-${uid}`, `v8-compile-cache-${uid}`];
+const CACHES = [...RUN_SHARED_TMP_NAMES, `swc-node-${uid}`, `v8-compile-cache-${uid}`];
 const NEVER_COUNTED = [/^yarn--/, /^xfs-/, /^claude-\d+$/];
 
 export const isCountedTmpName = (name) =>

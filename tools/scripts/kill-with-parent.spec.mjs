@@ -53,6 +53,7 @@ test('heavy.mjs killed with SIGKILL leaves no job behind', { timeout: 30_000 }, 
   const pidFile = join(dir, 'job.pid');
   const heavy = start([join(here, 'heavy.mjs'), 'run', '--', 'sh', '-c', `sleep 30 & echo $! > ${pidFile}; wait`], {
     HEAVY_ROUTE: 'off',
+    TMPDIR: dir,
     HEAVY_LOCK_PREFIX: join(dir, 'lock'),
     RUN_REGISTRY_DIR: join(dir, 'runs'),
     KILL_WITH_PARENT_GRACE_MS: '500',
