@@ -17,6 +17,7 @@ export const TMP_PATTERNS = [
   /^studio-canvas-e2e-/,
   /^commit-export-spec-/,
   /^playwright-artifacts-/,
+  /^push-suite-\w{1,12}-[A-Za-z0-9]{6}$/,
   ...[
     'archive-',
     'archive-cli-',
@@ -39,6 +40,7 @@ export const TMP_PATTERNS = [
     'size-budget-',
     'slice-merge-',
     'spec-stress-',
+    'staged-typecheck-',
     'studio-headless-inputs-',
     'untrack-spec-',
     'vitest-targets-',

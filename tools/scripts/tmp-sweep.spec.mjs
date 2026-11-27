@@ -22,6 +22,9 @@ test('the /tmp names it sweeps are our test folders, and caches stay', () => {
     'playwright-artifacts-Xyz789',
     'archive-cli-a1B2c3',
     'wf-ZtN0x1',
+    'staged-typecheck-20Pfs2',
+    'push-suite-HEAD-prebFx',
+    'push-suite-6a83787412c4-Ab12Cd',
   ])
     assert.ok(isSweptTmpName(name), name);
   for (const name of [
