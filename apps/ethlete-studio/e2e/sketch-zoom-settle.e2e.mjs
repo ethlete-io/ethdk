@@ -17,7 +17,7 @@ const project = valueOf('--project') ? resolve(valueOf('--project')) : root;
 process.env['DE_PORT'] ??= '4483';
 
 const FIXTURE_TARGET = 'components/comment-draft';
-const WIDTH_CLASS = ['w-80', 'w-72'];
+const CANCEL_LABEL = ['label: COMMENT_DRAFT_LABELS.cancel,', "label: 'Verwerfen',"];
 const DROPPED_STATE = "    busy: { text: 'Tonal wirkt neben filled zu blass.', phase: 'busy' },\n";
 
 const VIEW = {
@@ -55,9 +55,9 @@ if (!valueOf('--project')) {
 
   for (const file of variantFiles) {
     const source = readFileSync(file, 'utf8');
-    const changed = file === variantFiles[1] ? source.replace(...WIDTH_CLASS).replace(DROPPED_STATE, '') : source;
+    const changed = file === variantFiles[1] ? source.replace(...CANCEL_LABEL).replace(DROPPED_STATE, '') : source;
 
-    if (!source.includes('rows: 3') || !source.includes(WIDTH_CLASS[0]) || !source.includes(DROPPED_STATE))
+    if (!source.includes('rows: 3') || !source.includes(CANCEL_LABEL[0]) || !source.includes(DROPPED_STATE))
       throw new Error(`${file}: fixture drifted`);
     writeFileSync(file, changed);
   }
@@ -103,6 +103,16 @@ const startProbe = (page) =>
 
       return spreads.length === 0 ? null : Math.max(...spreads) * scaleOf(element);
     };
+    const stacks = () =>
+      [...document.querySelectorAll('ethlete-sketches ethlete-variant-cell')].flatMap((cell) => {
+        const frame = cell.querySelector('[data-sk-frame]')?.getBoundingClientRect();
+        const states = cell.querySelector('[data-sk-stack-states]')?.getBoundingClientRect();
+        const heights = [...cell.querySelectorAll('[data-sk-crop-stack]')].map(
+          (stack) => stack.getBoundingClientRect().height,
+        );
+
+        return frame && states && heights.length > 0 ? [{ heights, below: states.top - frame.bottom }] : [];
+      });
     const read = () =>
       [...document.querySelectorAll('ethlete-sketches ethlete-variant-cell')].flatMap((cell) => {
         const frame = cell.querySelector('[data-sk-frame]');
@@ -148,7 +158,13 @@ const startProbe = (page) =>
     window.__zoomSettleProbe = probe;
     window.addEventListener('wheel', () => (probe.lastWheel = performance.now()), { capture: true, passive: true });
     const tick = () => {
-      probe.samples.push({ at: performance.now(), cells: read(), dashed: dashed(), gutters: gutters() });
+      probe.samples.push({
+        at: performance.now(),
+        cells: read(),
+        stacks: stacks(),
+        dashed: dashed(),
+        gutters: gutters(),
+      });
       if (!probe.stop) requestAnimationFrame(tick);
     };
 
@@ -177,6 +193,17 @@ const diffOf = (preview, settled) => {
     if (cell.ring !== null && after.ring !== null && Math.abs(cell.ring - after.ring) > STROKE_TOLERANCE_PX)
       faults.push(`${cell.key} frame ring ${cell.ring.toFixed(2)} -> ${after.ring.toFixed(2)} px`);
   }
+  preview.stacks.forEach((stack, index) => {
+    const after = settled.stacks[index];
+
+    if (!after) return;
+    stack.heights.forEach((height, edge) => {
+      if (Math.abs(height - after.heights[edge]) > POSITION_TOLERANCE_PX)
+        faults.push(`crop stack ${index}.${edge} height ${height.toFixed(1)} -> ${after.heights[edge].toFixed(1)} px`);
+    });
+    if (Math.abs(stack.below - after.below) > POSITION_TOLERANCE_PX)
+      faults.push(`crop stack ${index} label below frame ${stack.below.toFixed(1)} -> ${after.below.toFixed(1)} px`);
+  });
   const gutterOf = new Map(settled.gutters.map((gutter) => [gutter.key, gutter]));
 
   for (const gutter of preview.gutters) {
@@ -340,12 +367,13 @@ const chromeHoldsWhenWheelZoomSettles = async (context) => {
 
   if (!preview || !settled) return { ok: false, detail: `no preview sample among ${samples.length} frames` };
   if (preview.cells.length === 0) return { ok: false, detail: 'no sketch frame in the preview' };
+  if (preview.stacks.length === 0) return { ok: false, detail: 'no crop stack in the preview' };
 
   const faults = [...diffOf(preview, settled), ...(await inkFaultsOf(page, previewInk, settledInk))];
 
   return {
     ok: faults.length === 0,
-    detail: `${preview.cells.length} cells, ${preview.gutters.length} side labels, ${preview.dashed.length} dashed boxes compared preview vs settled${
+    detail: `${preview.cells.length} cells, ${preview.gutters.length} side labels, ${preview.dashed.length} dashed boxes, ${preview.stacks.length} crop stacks compared preview vs settled${
       faults.length
         ? `; ${faults.slice(0, 12).join('; ')}${faults.length > 12 ? `; +${faults.length - 12} more` : ''}`
         : ''

@@ -43,6 +43,7 @@ export class VariantCellComponent {
   public line = input<number | null>(null);
   public scale = input(1);
   public labelFont = input(13);
+  public previewScale = input(1);
   public labelHidden = input(false);
   public stateHidden = input(false);
   public same = input(false);
@@ -67,6 +68,11 @@ export class VariantCellComponent {
 
   protected dimmed = computed(() => this.same() || this.inherited());
   protected note = computed(() => (this.inherited() ? this.LABELS.fromSdk : this.same() ? this.LABELS.unchanged : ''));
+  protected chromeLength = computed(() => {
+    const scale = this.previewScale();
+
+    return (length: string) => (scale === 1 ? null : `calc(${length} / ${scale})`);
+  });
   protected frameWidth = computed(() => this.width() * this.scale());
   protected thumbnail = computed(() => this.scale() <= THUMBNAIL_SCALE);
   protected shownHeight = computed(() => this.shown() ?? this.height() ?? 0);

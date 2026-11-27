@@ -114,7 +114,8 @@
   @if (stacked().length > 0) {
     @for (inset of STACK_INSETS; track inset) {
       <div
-        [style.margin-inline.px]="inset"
+        [style.margin-inline.px]="inset / previewScale()"
+        [style.height]="chromeLength()('calc(var(--spacing) * 1.25)')"
         class="h-1.25 rounded-b-control-sm bg-et-surface-background shadow-[0_0_0_var(--sk-stroke)_var(--et-surface-border)]"
         data-sk-crop-stack
       ></div>
@@ -122,6 +123,7 @@
     <button
       [style.font-size.px]="labelFont()"
       [style.width.px]="frameWidth()"
+      [style.margin-top]="chromeLength()('var(--space-1)')"
       [attr.aria-expanded]="stackedOpen()"
       (click)="stackedOpen.set(!stackedOpen())"
       class="mt-space-1 cursor-pointer text-left text-(length:--sk-label) leading-[1.35] text-et-surface-text-muted wrap-anywhere"

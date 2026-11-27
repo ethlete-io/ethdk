@@ -528,7 +528,7 @@ export class SketchesComponent {
   });
   // During a zoom preview the chrome is laid out at its settled size divided by the preview scale, or it jumps at settle.
   private settledScale = computed(() => this.canvas.preview()?.zoom ?? this.scale());
-  private previewScale = computed(() => this.canvas.preview()?.scale ?? 1);
+  protected previewScale = computed(() => this.canvas.preview()?.scale ?? 1);
   protected chromeZoom = computed(() => (this.canvas.preview() ? 1 / this.previewScale() : null));
   protected strokeScale = computed(() =>
     Math.exp(-Math.round(Math.log(this.previewScale()) / STROKE_STEP) * STROKE_STEP),
