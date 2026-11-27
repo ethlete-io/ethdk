@@ -43,6 +43,7 @@ How the doc session and the builder work. A process change edits this page.
 - CI is the only push gate; while a CI run is in progress, pushes wait and the builder works on. Nobody waits in the foreground for CI or a subagent.
 - `git commit -- <paths>`; never amend, stash or rewrite history.
 - The doc session merges the prerelease PR twice a day, at midday and in the evening, when the SDK jobs of CI on `next` are green; a red `ci-apps` job does not block it. A consumer fix never waits for CI or a release: once its proof is in, the builder builds the lib and copies the dist into the consumer's `node_modules`, and tells the consumer session; the release follows.
+- A single-fix hotfix (a bug live for a consumer) is released at once, outside the two slots: when the SDK jobs are green and the fix has its bite and a shot of the affected story. The consumer's full visual run does not gate it; it runs on the version bump afterwards.
 - What was built lives in the commit message, not in a plan file.
 
 ## Decisions
