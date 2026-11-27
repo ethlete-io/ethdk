@@ -19,6 +19,8 @@ const started = performance.now();
 const entry = 'sketch:pages/inbox@edit';
 const names = ['Änderung behalten', 'Zuletzt gemergter Stand'];
 const faults = [];
+const steps = [];
+const step = (label) => steps.push(`${label} ${((performance.now() - started) / 1000).toFixed(1)}s`);
 
 try {
   await withStudio(
@@ -36,9 +38,13 @@ try {
           ),
         { checkout, entry },
       );
+      step('studio');
       await page.reload();
+      step('reload');
       await page.locator('ethlete-shell-collapse button').click({ timeout: 30_000 });
+      step('collapsed');
       await matrix.waitFor({ state: 'attached', timeout: 60_000 });
+      step('matrix');
       const zoomOut = sketch.locator('[data-camera-out] button');
       for (const zoom of [5, 2]) {
         for (let step = 0; step < 40; step++) {
@@ -49,6 +55,7 @@ try {
         }
         await reset.filter({ hasText: new RegExp(`^\\s*${zoom} %\\s*$`) }).waitFor({ timeout: 10_000 });
         await page.getByText('zeichnet').waitFor({ state: 'hidden', timeout: 60_000 });
+        step(`drawn ${zoom} %`);
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
         const heads = await matrix
           .locator('[data-sk-head-tag]:visible, [data-sk-head-name]:visible')
@@ -84,9 +91,10 @@ try {
   );
   assert.deepEqual(faults, []);
   console.log(
-    `PASS  ${((performance.now() - started) / 1000).toFixed(1)}s  ${name}: all four labels fit at both zooms`,
+    `PASS  ${((performance.now() - started) / 1000).toFixed(1)}s  ${name}: all four labels fit at both zooms (${steps.join(', ')})`,
   );
 } catch (error) {
   console.error(error);
+  console.log(`FAIL  ${name}: steps ${steps.join(', ') || 'none'}`);
   process.exitCode = 1;
 }
