@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.105
+
+### Patch Changes
+
+- Restore soft edge fades when scrolling with inside buttons and a button gutter.
+
 ## 1.0.0-next.104
 
 ### Major Changes
