@@ -1,11 +1,39 @@
-import { expect, test } from '@playwright/test';
-import { expectFocusVisible, focusedDescriptor, openStory, pressKey, settle, tap } from '../support';
+import { Locator, Page, expect, test } from '@playwright/test';
+import { boxOf, expectFocusVisible, focusedDescriptor, openStory, pressKey, settle, tap } from '../support';
 
 const STORY_ID = 'components-sports-bracket-prediction--interactive';
 const SLOT_SOURCES_STORY_ID = 'components-sports-bracket-prediction--slot-sources';
 const PARTICIPANT_FOCUS_STORY_ID = 'components-sports-bracket--participant-focus';
 const JOURNEY_ICON_STORY_ID = 'components-sports-bracket--journey-icon-in-card';
 const JOURNEY_FOCUSED = /et-bracket-host--journey-focused/;
+const SINGLE_ELIMINATION_STORY_ID = 'components-sports-bracket--single-elimination';
+const FADE_WIDTH = 25;
+const SCROLLED_EDGE_CASES = [
+  { position: 'middle', edges: ['start', 'end'] },
+  { position: 'end', edges: ['start'] },
+] as const;
+
+async function readEdgeShades(page: Page, track: Locator, edge: 'start' | 'end'): Promise<number[]> {
+  const { x, y, width } = await boxOf(track);
+  const left = edge === 'start' ? Math.ceil(x) : Math.floor(x + width) - FADE_WIDTH;
+  const shot = await page.screenshot({
+    clip: { x: left, y: Math.ceil(y) + 4, width: FADE_WIDTH, height: 1 },
+    scale: 'css',
+  });
+
+  return page.evaluate(async (base64) => {
+    const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${base64}`)).blob());
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const context = canvas.getContext('2d');
+
+    if (!context) throw new Error('No 2d context for the edge sample');
+
+    context.drawImage(bitmap, 0, 0);
+    const { data } = context.getImageData(0, 0, bitmap.width, 1);
+
+    return [...data].filter((_, index) => index % 20 === 0);
+  }, shot.toString('base64'));
+}
 
 test.describe('bracket prediction / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
@@ -333,4 +361,46 @@ test.describe('bracket participants / touch', () => {
     await expect(first).toHaveAttribute('aria-pressed', 'true');
     await expect(root.locator('et-bracket')).toHaveClass(JOURNEY_FOCUSED);
   });
+});
+
+test.describe('bracket / scrolled edges', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 700 });
+  });
+
+  for (const { position, edges } of SCROLLED_EDGE_CASES) {
+    test(`scrolled to the ${position}, each visible edge keeps a soft fade`, async ({ page }, testInfo) => {
+      const root = await openStory(page, SINGLE_ELIMINATION_STORY_ID);
+      const host = root.locator('et-scrollable');
+      const track = host.locator('.et-scrollable-container');
+
+      await page.addStyleTag({
+        content: `
+          body { background: #fff; }
+          et-scrollable { --et-scrollable-buttons-end-space: 40px; }
+          et-scrollable .et-scrollable-container { background: #000; }
+          et-scrollable et-bracket { visibility: hidden; }
+        `,
+      });
+
+      await track.evaluate((el, to) => {
+        const max = el.scrollWidth - el.clientWidth;
+        el.scrollLeft = to === 'end' ? max : max / 2;
+      }, position);
+      await expect(host).not.toHaveClass(/et-scrollable--is-at-start/);
+
+      for (const edge of edges) {
+        await expect
+          .poll(async () => new Set(await readEdgeShades(page, track, edge)).size, {
+            message: `the ${edge} fade shows intermediate shades, not a solid band`,
+          })
+          .toBeGreaterThanOrEqual(3);
+      }
+
+      await testInfo.attach(`bracket-scrolled-${position}`, {
+        body: await host.screenshot(),
+        contentType: 'image/png',
+      });
+    });
+  }
 });
