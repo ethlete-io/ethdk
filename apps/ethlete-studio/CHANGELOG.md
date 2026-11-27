@@ -1,5 +1,20 @@
 # ethlete-studio
 
+## 0.2.0-next.39
+
+### Patch Changes
+
+- A ctrl-wheel zoom over a large sketch runs at its earlier frame rate in WebKit again: the preview adjusts the stroke width in steps and no longer re-styles every shot for it.
+- Sketch cell frames keep the same 1 px outline during a ctrl-wheel zoom and after it settles; WebKit showed it only mid-zoom.
+- Side labels next to cropped sketch frames stay put when a ctrl-wheel zoom settles; they moved 1.7 px.
+- Stacked crops under a sketch frame keep their settled height during a ctrl-wheel zoom, so the row below no longer jumps 12 px when the zoom settles.
+- Text around sketch frames (cell labels, stack labels, heads, notes, missing-state boxes) no longer jumps up to 2.7 px when a ctrl-wheel zoom settles in Chromium.
+- Sketch compare keeps frame backgrounds dark when zoomed far out.
+- Open the system page open-points popover at the top end of its chip, as the design draws it.
+- Keep every sketch comparison column heading readable when zoomed out.
+- The hold-trigger demo shows a current wait reason instead of a removed ADR.
+- Inventory and Start show Neu laden and Anderes Repo as icon buttons with a tooltip in the shared toolbar, and a spec fails when a page head holds a button or the toolbar a text button.
+
 ## 0.2.0-next.38
 
 ### Patch Changes
