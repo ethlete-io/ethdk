@@ -17,6 +17,14 @@ beside your own. Use it also when the Claude usage limit is close, because a Cod
 draw on it - move the delegatable work there and keep the limit for the work you lead. For
 everything else, a Claude subagent stays the cheaper choice.
 
+## Check the limit first
+
+Run `node <skill-dir>/codex-limit.mjs` before every Codex start. It prints the share left of the
+5h and the weekly limit with their reset times, from the rollout files under `~/.codex`. Exit
+code 1 means a window is exhausted: do not start Codex, use a Claude subagent instead, and do not
+ask first. Exit code 2 means no data; start Codex as usual. The numbers come from the last Codex
+call, so a window that has passed its reset time counts as full.
+
 ## The call
 
 The wrapper is `.agents/skills/ethlete-codex-subagent/codex-agent.mjs`. It keeps the Codex trace in a log file and prints
