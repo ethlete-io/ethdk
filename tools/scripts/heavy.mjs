@@ -13,6 +13,7 @@ import {
   snapshotWorkingTree,
   tankIsLoaded,
 } from './heavy-route.mjs';
+import { NO_VERDICT_EXIT } from './remote-run.mjs';
 import { localMachine, registerRun, teeRun } from './run-registry.mjs';
 import { removeRunTmp, runTmpDir } from './tmp-sweep.mjs';
 
@@ -43,12 +44,17 @@ const describeHolder = (machine, n) => {
   return `${slotName(machine, n)}: held by a bare flock caller (no info)`;
 };
 
+let interrupted = false;
+
 const tryRun = (argv, { label, machine, n, run, cwd, env = process.env, onStart }) => {
   const info = JSON.stringify({ cwd: process.cwd(), command: label, startedAt: Date.now() });
   const script =
     'printf \'{"pid":%s,%s\' "$$" "${HEAVY_INFO#\\{}" > "$1"; printf \'[heavy] %s\\n\' "$2" >> "$3"; printf x >&3; exec 3>&-; shift 3; exec "$@"';
   let child;
-  const forward = (signal) => child?.kill(signal);
+  const forward = (signal) => {
+    interrupted = true;
+    child?.kill(signal);
+  };
   for (const s of forwarded) process.on(s, forward);
   return teeRun(run, argv, {
     wrap: (command) => [
@@ -147,10 +153,12 @@ const run = async (command, wanted, remoteOpts) => {
     ),
     ...Array.from({ length: slotCount }, (_, i) => ({ machine: 'tank', n: i + 1, argv: command, env })),
   ];
+  const failed = new Set();
   let reported = false;
   try {
     for (;;) {
       for (const attempt of attempts) {
+        if (failed.has(attempt.machine)) continue;
         const code = await tryRun(attempt.argv, {
           ...attempt,
           label,
@@ -158,10 +166,15 @@ const run = async (command, wanted, remoteOpts) => {
           onStart: () => {
             const machine = attempt.machine === 'tank' ? tankName : attempt.machine;
             if (machine !== entry.machine) entry.update({ machine });
-            if (remotes.length && attempt.machine === 'tank')
+            if (remotes.some((remote) => !failed.has(remote)) && attempt.machine === 'tank')
               console.error(`heavy: ${remotes.join(', ')} slots are taken, running on tank`);
           },
         });
+        if (code === NO_VERDICT_EXIT && attempt.machine !== 'tank' && !interrupted) {
+          console.error(`heavy: ${attempt.machine} ended without a verdict, trying the next machine`);
+          failed.add(attempt.machine);
+          continue;
+        }
         if (code !== busyExit) {
           entry.finish(code);
           return code;
@@ -169,8 +182,9 @@ const run = async (command, wanted, remoteOpts) => {
       }
       if (!reported) {
         reported = true;
-        console.error(`heavy: all ${attempts.length} slots are taken:`);
-        for (const { machine, n } of attempts) console.error(`  ${describeHolder(machine, n)}`);
+        const waiting = attempts.filter(({ machine }) => !failed.has(machine));
+        console.error(`heavy: all ${waiting.length} slots are taken:`);
+        for (const { machine, n } of waiting) console.error(`  ${describeHolder(machine, n)}`);
       }
       await sleep(pollMs);
     }

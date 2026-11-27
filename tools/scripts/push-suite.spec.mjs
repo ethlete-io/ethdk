@@ -14,10 +14,12 @@ import {
   otherTestProcessesOf,
   parseArgs,
   pushSuite,
-  pushSuiteMachine,
+  pushSuiteRemotes,
   remoteSuiteLine,
   remoteVerdict,
   reexecCommand,
+  remoteRunArgv,
+  runOnRemotes,
   runStepUnderLoad,
   sampleMaxLoad,
   waitForLowLoad,
@@ -42,22 +44,55 @@ test('reads the machine and the planned projects a remote checkout runs without 
   );
 });
 
-test('runs on tank while it is free, on rack while it is not, and on tank when rack is unusable', () => {
-  const lines = [];
-  const pick = (on, tankFree, rackUp) =>
-    pushSuiteMachine({
-      on,
-      tankIsFree: () => tankFree,
-      rackHealth: () => (rackUp ? { usable: true } : { usable: false, reason: 'has 3.0 GB free on C:' }),
+test('tries no remote while tank is free, rack and then mac while it is not, and only the machine --on names', () => {
+  const remotes = (on, tankFree) => pushSuiteRemotes({ on, tankIsFree: () => tankFree });
+
+  assert.deepEqual(remotes(undefined, true), []);
+  assert.deepEqual(remotes(undefined, false), ['rack', 'mac']);
+  assert.deepEqual(remotes('rack', true), ['rack']);
+  assert.deepEqual(remotes('mac', true), ['mac']);
+  assert.deepEqual(remotes('tank', false), []);
+});
+
+test('an unusable rack or a rack run without a verdict moves on to mac before tank', async () => {
+  const pass = async (rackUp, verdicts) => {
+    const lines = [];
+    const ran = [];
+    const status = await runOnRemotes({
+      remotes: ['rack', 'mac'],
+      health: (machine) =>
+        machine === 'mac' || rackUp ? { usable: true } : { usable: false, reason: 'has 3.0 GB free on C:' },
+      runOn: async (machine) => (ran.push(machine), verdicts[machine]),
       log: (line) => lines.push(line),
     });
+    return { status, ran, lines };
+  };
 
-  assert.equal(pick(undefined, true, true), 'tank');
-  assert.equal(pick(undefined, false, true), 'rack');
-  assert.equal(pick('rack', true, true), 'rack');
-  assert.equal(pick('tank', false, true), 'tank');
-  assert.equal(pick(undefined, false, false), 'tank');
-  assert.deepEqual(lines, ['push-suite: rack has 3.0 GB free on C:, running on tank']);
+  assert.deepEqual(await pass(false, { mac: 0 }), {
+    status: 0,
+    ran: ['mac'],
+    lines: ['push-suite: rack has 3.0 GB free on C:, skipping it'],
+  });
+  assert.deepEqual((await pass(true, { rack: undefined, mac: 1 })).ran, ['rack', 'mac']);
+  assert.deepEqual(await pass(true, {}), {
+    status: undefined,
+    ran: ['rack', 'mac'],
+    lines: ['push-suite: no remote machine gave a verdict, running on tank'],
+  });
+});
+
+test('mac runs the suite natively, without the Linux container or the rack yarn cache', () => {
+  assert.deepEqual(remoteRunArgv('abc', 'line', 'rr.mjs', 'mac'), [
+    'rr.mjs',
+    '--host',
+    'mac',
+    '--ref',
+    'abc',
+    '--slot',
+    'push-suite',
+    '--',
+    'line',
+  ]);
 });
 
 test('a remote run counts as red unless its suite says ok, and as no verdict when the suite never ran', () => {
@@ -421,18 +456,26 @@ const rackFixture = () => {
   return repo;
 };
 
-const runOnFakeRack = ({ out, code, sshExit = 0, machine = 'rack', lockHolder }) => {
+const runOnFakeRack = ({ out, code, sshExit = 0, machine = 'rack', lockHolder, macDown = false, rackRun }) => {
   const repo = rackFixture();
   const dir = mkdtempSync(join(tmpdir(), 'push-suite-rack-'));
   const ssh = join(dir, 'fake-ssh');
-  writeFileSync(ssh, `#!/bin/sh\ncat >/dev/null\necho heavy-probe-ok\nexit ${sshExit}\n`, { mode: 0o755 });
+  writeFileSync(
+    ssh,
+    `#!/bin/sh\ncat >/dev/null\ncase "$5" in *@*) code=${sshExit} ;; *) code=${macDown ? 255 : 0} ;; esac\necho heavy-probe-ok\nexit $code\n`,
+    { mode: 0o755 },
+  );
   const fake = join(dir, 'remote-run.mjs');
   writeFileSync(
     fake,
-    `import { writeFileSync } from 'node:fs';
-writeFileSync(${JSON.stringify(join(dir, 'argv.json'))}, JSON.stringify(process.argv.slice(2)));
-console.log(${JSON.stringify(out)});
-process.exit(${code});
+    `import { appendFileSync, writeFileSync } from 'node:fs';
+const argv = process.argv.slice(2);
+const host = argv[argv.indexOf('--host') + 1];
+writeFileSync(${JSON.stringify(join(dir, 'argv.json'))}, JSON.stringify(argv));
+appendFileSync(${JSON.stringify(join(dir, 'hosts'))}, host + '\\n');
+const { out, code } = host === 'rack' && ${JSON.stringify(rackRun ?? null)} || ${JSON.stringify({ out, code })};
+console.log(out);
+process.exit(code);
 `,
   );
   if (lockHolder)
@@ -456,8 +499,10 @@ process.exit(${code});
       },
     );
     let argv;
+    let hosts = [];
     try {
       argv = JSON.parse(readFileSync(join(dir, 'argv.json'), 'utf8'));
+      hosts = readFileSync(join(dir, 'hosts'), 'utf8').trim().split('\n');
     } catch {
       argv = undefined;
     }
@@ -465,6 +510,7 @@ process.exit(${code});
       status: run.status,
       output: `${run.stdout}${run.stderr}`,
       argv,
+      hosts,
       sha: sh(repo, 'git', ['rev-parse', 'HEAD']).stdout.trim(),
       base: sh(repo, 'git', ['rev-parse', 'HEAD~3']).stdout.trim(),
     };
@@ -510,12 +556,13 @@ test('a red suite on rack blocks the push like a red local run', () => {
 
 test('a rack run without a verdict and an unreachable rack both fall back to tank', () => {
   const broken = runOnFakeRack({ out: 'ssh: connect to host rack: No route to host', code: 255 });
-  assert.match(broken.output, /rack run ended without a verdict \(exit 255\), running on tank/);
+  assert.match(broken.output, /rack run ended without a verdict \(exit 255\)/);
+  assert.match(broken.output, /no remote machine gave a verdict, running on tank/);
   assert.match(broken.output, /push-suite: exported/);
 
   const down = runOnFakeRack({ out: 'unused', code: 0, sshExit: 255 });
   assert.equal(down.argv, undefined);
-  assert.match(down.output, /rack does not answer, running on tank/);
+  assert.match(down.output, /rack does not answer, skipping it/);
   assert.match(down.output, /push-suite: exported/);
 });
 
@@ -530,4 +577,25 @@ test('without --on the suite goes to rack instead of waiting while another heavy
   assert.equal(run.status, 0, run.output);
   assert.equal(run.argv[4], run.sha);
   assert.doesNotMatch(run.output, /heavy run lock held/);
+});
+
+test('while tank is busy an unusable rack or a rack run without a verdict sends the suite to mac', () => {
+  const ok = { out: 'push-suite: planned lint (demo), coverage (core)\npush-suite: ok 0123abcd', code: 0 };
+  const down = runOnFakeRack({ ...ok, sshExit: 255, machine: '', lockHolder: process.pid });
+  assert.equal(down.status, 0, down.output);
+  assert.deepEqual(down.hosts, ['mac']);
+  assert.deepEqual(down.argv.slice(0, 7), ['--host', 'mac', '--ref', down.sha, '--slot', 'push-suite', '--']);
+  assert.match(down.output, /rack does not answer, skipping it/);
+  assert.match(down.output, /push-suite: mac run ok/);
+
+  const broken = runOnFakeRack({
+    ...ok,
+    machine: '',
+    lockHolder: process.pid,
+    rackRun: { out: 'wsl: exit 127', code: 199 },
+  });
+  assert.equal(broken.status, 0, broken.output);
+  assert.deepEqual(broken.hosts, ['rack', 'mac']);
+  assert.match(broken.output, /rack run ended without a verdict \(exit 199\)/);
+  assert.doesNotMatch(broken.output, /push-suite: exported/);
 });

@@ -227,15 +227,30 @@ export const reexecCommand = (exportDir, repo, { only, range, maxLoad }, env = p
 });
 
 /**
- * The machine the steps run on: `on` (flag `--on` or env `PUSH_SUITE_MACHINE`) wins, else tank while it is free and
- * rack while it is not. rack falls back to tank when it does not answer, its WSL or Docker fails, or a disk is full.
+ * The remote machines the steps try before tank: none while tank is free, else rack and then mac. `on` (flag `--on` or
+ * env `PUSH_SUITE_MACHINE`) names the one machine to try instead.
  */
-export const pushSuiteMachine = ({ on, tankIsFree, rackHealth, log }) => {
-  if ((on ?? (tankIsFree() ? 'tank' : 'rack')) === 'tank') return 'tank';
-  const health = rackHealth();
-  if (health.usable) return 'rack';
-  log(`push-suite: rack ${health.reason}, running on tank`);
-  return 'tank';
+export const pushSuiteRemotes = ({ on, tankIsFree }) => {
+  if (on === 'tank' || (on === undefined && tankIsFree())) return [];
+  return on ? [on] : ['rack', 'mac'];
+};
+
+/**
+ * The verdict of the first remote that is usable (it answers, its run shell works, its disks have room) and gives one,
+ * or undefined when none does and the steps run on tank.
+ */
+export const runOnRemotes = async ({ remotes, health, runOn, log }) => {
+  for (const machine of remotes) {
+    const verdict = health(machine);
+    if (!verdict.usable) {
+      log(`push-suite: ${machine} ${verdict.reason}, skipping it`);
+      continue;
+    }
+    const status = await runOn(machine);
+    if (status !== undefined) return status;
+  }
+  if (remotes.length) log('push-suite: no remote machine gave a verdict, running on tank');
+  return undefined;
 };
 
 /** The suite line for a remote checkout: it carries the planned projects, since a shallow checkout has no range base. */
@@ -248,16 +263,16 @@ export const remoteSuiteLine = ({ chosen, lintProjects, coverageLibs }) =>
     'HEAD',
   ].join(' ');
 
-export const remoteRunArgv = (sha, line, script) => [
+export const remoteRunArgv = (sha, line, script, machine = 'rack') => [
   script,
   '--host',
-  'rack',
-  '--linux',
+  machine,
+  ...(machine === 'rack' ? ['--linux'] : []),
   '--ref',
   sha,
   '--slot',
   'push-suite',
-  '--yarn-cache',
+  ...(machine === 'rack' ? ['--yarn-cache'] : []),
   '--',
   line,
 ];
@@ -476,34 +491,44 @@ export const pushSuite = async (
   };
 
   if (!INNER_EXPORT) {
-    if (on !== undefined && !['tank', 'rack'].includes(on))
-      return finish(`blocked unknown machine ${on}, expected tank or rack`);
+    if (on !== undefined && !['tank', 'rack', 'mac'].includes(on))
+      return finish(`blocked unknown machine ${on}, expected tank, rack or mac`);
     const { machineHealth, tankHasFreeSlot } = await import('./heavy-route.mjs');
     const { holderLine, readHolder, takeHeavyLock } = await import('./heavy-run-lock.mjs');
     const limit = loadLimitOf(maxLoad);
-    const machine = pushSuiteMachine({
+    const remotes = pushSuiteRemotes({
       on,
       tankIsFree: () =>
         !heavyRunHeld(readHolder()) && tankHasFreeSlot() && (loadProbe.load ?? oneMinuteLoad)() <= limit,
-      rackHealth: () => machineHealth('rack'),
-      log,
     });
-    if (machine === 'rack') {
+    let line;
+    if (remotes.length) {
       const { files, error: diffError } = changed();
       if (diffError !== undefined) return finish(`blocked git diff ${range} failed: ${diffError.trim()}`);
-      const line = remoteSuiteLine({ chosen, lintProjects: lintedProjects(files), coverageLibs: coverageLibs(files) });
-      const script = process.env['PUSH_SUITE_REMOTE_RUN'] ?? join(import.meta.dirname, 'remote-run.mjs');
-      log(`push-suite: running ${chosen.join(', ')} of ${sha.slice(0, 12)} on rack`);
-      const startedAt = performance.now();
-      const { code, output } = await runRemote(remoteRunArgv(sha, line, script), root);
-      const status = remoteVerdict(code, output);
-      if (status !== undefined) {
-        log(`push-suite: rack run ${status === 0 ? 'ok' : 'failed'} in ${seconds(performance.now() - startedAt)}`);
+      line = remoteSuiteLine({ chosen, lintProjects: lintedProjects(files), coverageLibs: coverageLibs(files) });
+    }
+    const script = process.env['PUSH_SUITE_REMOTE_RUN'] ?? join(import.meta.dirname, 'remote-run.mjs');
+    const remoteStatus = await runOnRemotes({
+      remotes,
+      health: (machine) => machineHealth(machine),
+      log,
+      runOn: async (machine) => {
+        log(`push-suite: running ${chosen.join(', ')} of ${sha.slice(0, 12)} on ${machine}`);
+        const startedAt = performance.now();
+        const { code, output } = await runRemote(remoteRunArgv(sha, line, script, machine), root);
+        const status = remoteVerdict(code, output);
+        if (status === undefined) {
+          log(`push-suite: ${machine} run ended without a verdict (exit ${code})`);
+          return undefined;
+        }
+        log(
+          `push-suite: ${machine} run ${status === 0 ? 'ok' : 'failed'} in ${seconds(performance.now() - startedAt)}`,
+        );
         if (status !== 0) release();
         return status;
-      }
-      log(`push-suite: rack run ended without a verdict (exit ${code}), running on tank`);
-    }
+      },
+    });
+    if (remoteStatus !== undefined) return remoteStatus;
     const lock = await takeHeavyLock('push-suite', { log });
     if (!lock.ok) return finish(`blocked ${holderLine(lock.holder)}`);
     heavyLock = lock;

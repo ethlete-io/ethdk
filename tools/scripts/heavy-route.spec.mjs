@@ -4,6 +4,7 @@ import { chmodSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFil
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { jobIsPinned, jobMachine, machineOrder, probeScript, probeVerdict, remoteSuite } from './heavy-route.mjs';
+import { NO_VERDICT_EXIT } from './remote-run.mjs';
 import { tempDir } from './temp-dir.mjs';
 
 const heavy = new URL('./heavy.mjs', import.meta.url).pathname;
@@ -61,10 +62,11 @@ exit ${sshExit}
   const runner = join(dir, 'fake-remote-run.mjs');
   writeFileSync(
     runner,
-    `import { appendFileSync } from 'node:fs';
+    `import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 appendFileSync(${JSON.stringify(join(dir, 'remote.calls'))}, JSON.stringify({ argv: process.argv.slice(2), cwd: process.cwd(), noRegistry: process.env.REMOTE_RUN_NO_REGISTRY }) + '\\n');
 console.log('remote-out');
-process.exit(5);
+const host = process.argv[process.argv.indexOf('--host') + 1];
+process.exit(existsSync(${JSON.stringify(dir)} + '/exit-' + host) ? Number(readFileSync(${JSON.stringify(dir)} + '/exit-' + host, 'utf8')) : 5);
 `,
   );
   const env = {
@@ -320,6 +322,29 @@ test('a loaded tank skips an unusable rack for mac', () => {
   assert.equal(call.argv[call.argv.indexOf('--host') + 1], 'mac');
   assert.equal(call.argv.includes('--linux'), false);
   assert.equal(ctx.entries()[0].machine, 'mac');
+});
+
+test('a remote run without a verdict moves on to the next machine', () => {
+  const ctx = setup();
+  loadTank(ctx);
+  writeFileSync(join(ctx.dir, 'exit-rack'), String(NO_VERDICT_EXIT));
+  const result = ctx.runHeavy(['--', 'npx', 'nx', 'test', 'core']);
+  assert.equal(result.status, 5, result.stderr);
+  assert.match(result.stderr, /rack ended without a verdict, trying the next machine/);
+  assert.deepEqual(
+    ctx.remoteCalls().map(({ argv }) => argv[argv.indexOf('--host') + 1]),
+    ['rack', 'mac'],
+  );
+  assert.equal(ctx.entries()[0].machine, 'mac');
+});
+
+test('a rack job runs on tank when its rack run ends without a verdict', () => {
+  const ctx = setup();
+  writeFileSync(join(ctx.dir, 'exit-rack'), String(NO_VERDICT_EXIT));
+  const result = ctx.runHeavy(['--', 'sh', '-c', 'echo ran-on-tank vitest']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /ran-on-tank vitest/);
+  assert.equal(ctx.remoteCalls().length, 1);
 });
 
 test('with every slot on every machine taken a run waits for the first free one', async () => {

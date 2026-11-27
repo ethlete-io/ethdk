@@ -15,7 +15,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { gitEnv } from './git-test-env.mjs';
-import { LINUX_IMAGE, lfsFiles, neededCacheFiles, parseArgs, remoteScript } from './remote-run.mjs';
+import { LINUX_IMAGE, lfsFiles, neededCacheFiles, NO_VERDICT_EXIT, parseArgs, remoteScript } from './remote-run.mjs';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'remote-run.mjs');
 const SHA = 'a'.repeat(40);
@@ -28,7 +28,12 @@ const stubDir = () => {
 script=$(cat)
 printf '%s\\n' "$*" >> "$STUB_LOG"
 if [[ "$script" == *"for-each-ref"* && -n "$FAKE_HAVE" ]]; then echo "have $FAKE_HAVE"; fi
-if [[ "$script" == *"suite exit"* ]]; then echo "suite output"; exit "\${FAKE_SUITE_CODE:-0}"; fi
+if [[ "$script" == *"suite exit"* ]]; then
+  echo "suite output"
+  [ -n "$FAKE_NO_VERDICT" ] || printf '[remote-run] suite exit %s after 1s\\n' "\${FAKE_SUITE_CODE:-0}"
+  exit "\${FAKE_SUITE_CODE:-0}"
+fi
+[ -n "$FAKE_INIT_CODE" ] && [[ "$script" == *"for-each-ref"* ]] && exit "$FAKE_INIT_CODE"
 exit 0
 `,
   );
@@ -134,6 +139,21 @@ test('exits with the suite exit code and tees the log', () => {
   assert.doesNotMatch(failed.calls, /git push|origin/);
 
   assert.equal(run(['--host', 'mac', '--', 'yarn test']).status, 0);
+});
+
+test('exits with NO_VERDICT_EXIT when the suite never reported an exit code', () => {
+  const wsl = run(['--host', 'rack', '--log', '$LOG', '--', 'yarn test'], {
+    FAKE_SUITE_CODE: '127',
+    FAKE_NO_VERDICT: '1',
+  });
+  assert.equal(wsl.status, NO_VERDICT_EXIT);
+  assert.match(wsl.stderr, /the suite reported no exit code \(exit 127\), no verdict/);
+
+  const dropped = run(['--host', 'mac', '--', 'yarn test'], { FAKE_INIT_CODE: '255' });
+  assert.equal(dropped.status, NO_VERDICT_EXIT);
+  assert.match(dropped.stderr, /mirror init failed \(exit 255\)/);
+
+  assert.equal(run(['--host', 'rack', '--', 'yarn test'], { FAKE_SUITE_CODE: '127' }).status, 127);
 });
 
 test('sends no bundle when the commit is an ancestor of a ref the remote mirror has', () => {

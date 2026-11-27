@@ -20,6 +20,11 @@ export const HOSTS = {
 export const LINUX_IMAGE =
   'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f';
 
+/** The exit code of a run whose suite never reported an exit code: ssh, mirror, install, WSL or Docker failed. */
+export const NO_VERDICT_EXIT = 199;
+
+const SUITE_EXIT = /^\[(remote-run|rack-linux)\] suite exit \d+/m;
+
 const RACK_HELPER = join(dirname(fileURLToPath(import.meta.url)), 'rack-docker-run.sh');
 const GUARD = join(dirname(fileURLToPath(import.meta.url)), 'remote-guard.sh');
 
@@ -304,6 +309,10 @@ export const remoteRun = async (opts) => {
     entry.finish(code);
     return finish(file, code, reason);
   };
+  const noVerdict = (code, reason) => {
+    process.stderr.write(`[remote-run] ${reason} (exit ${code}), no verdict\n`);
+    return end(NO_VERDICT_EXIT);
+  };
   const tee = (chunk, stream) => {
     stream.write(chunk);
     file.write(chunk);
@@ -314,7 +323,7 @@ export const remoteRun = async (opts) => {
   const init = await runSsh(host, initScript(), {
     onData: (chunk, stream) => (stream === process.stdout ? (haves += chunk) : tee(chunk, stream)),
   });
-  if (init !== 0) return end(init, 'mirror init failed');
+  if (init !== 0) return noVerdict(init, 'mirror init failed');
 
   const caller = haves.match(/^client (\S+)\s*$/m)?.[1];
   if (opts.forward?.length && !caller) return end(1, '--forward: the remote side does not report the caller address');
@@ -329,19 +338,21 @@ export const remoteRun = async (opts) => {
     git(['update-ref', ref, sha]);
     const created = git(['bundle', 'create', '--quiet', local, ref, ...bases.map((have) => `^${have}`)]);
     git(['update-ref', '-d', ref]);
-    if (created.status !== 0) return end(1, `bundle failed: ${created.stderr.trim()}`);
+    if (created.status !== 0) return noVerdict(1, `bundle failed: ${created.stderr.trim()}`);
     const copy = spawnSync('scp', ['-q', ...SSH_OPTIONS, local, `${host.ssh}:${bundle}`], { encoding: 'utf8' });
     rmSync(local, { force: true });
-    if (copy.status !== 0) return end(copy.status ?? 1, `scp failed: ${copy.stderr.trim()}`);
+    if (copy.status !== 0) return noVerdict(copy.status, `scp failed: ${copy.stderr.trim()}`);
   }
 
   const runId = `${Date.now().toString(36)}-${process.pid}`;
   if (opts.yarnCache) {
     const seeded = await seedYarnCache(host, opts.slot, runId, tee);
-    if (seeded !== 0) return end(seeded, 'yarn cache seed failed');
+    if (seeded !== 0) return noVerdict(seeded, 'yarn cache seed failed');
   }
   const lfs = await seedLfs(host, sha, runId, tee);
-  if (lfs.code !== 0) return end(lfs.code, 'lfs seed failed');
+  if (lfs.code !== 0) return noVerdict(lfs.code, 'lfs seed failed');
+  let tail = '';
+  let verdict = false;
   const code = await runSsh(
     host,
     remoteScript({
@@ -359,10 +370,18 @@ export const remoteRun = async (opts) => {
       linux: opts.linux,
       rackHelper: opts.linux && opts.host === 'rack' ? readFileSync(RACK_HELPER, 'utf8') : undefined,
     }),
-    { onData: tee },
+    {
+      onData: (chunk, stream) => {
+        tee(chunk, stream);
+        if (verdict || stream !== process.stdout) return;
+        tail = (tail + chunk.toString()).slice(-4096);
+        verdict = SUITE_EXIT.test(tail);
+        tail = tail.slice(tail.lastIndexOf('\n') + 1);
+      },
+    },
   );
   if (opts.fetch?.length) await fetchOutputs(host, runId, tee);
-  return end(code);
+  return verdict ? end(code) : noVerdict(code, 'the suite reported no exit code');
 };
 
 /** The yarn cache files the repo's lockfile needs, from `yarn info -A -R --cache --json` output, that exist here. */
