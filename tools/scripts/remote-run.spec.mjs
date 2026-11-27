@@ -249,6 +249,31 @@ test('a native run installs and runs the suite inside its slot checkout', () => 
   }
 });
 
+test('a native run starts no Nx daemon, which would outlive the run in the slot', () => {
+  const script = remoteScript({ sha: SHA, slot: 'w1', suite: 'echo "daemon=$NX_DAEMON"', host: 'mac', linux: false });
+  const work = mkdtempSync(join(tmpdir(), 'remote-run-nx-daemon-'));
+  const home = join(work, 'home');
+  const bin = join(work, 'bin');
+  mkdirSync(join(home, 'ethlete-rr', 'w1', '.git'), { recursive: true });
+  mkdirSync(join(home, 'ethlete-mirror.git'), { recursive: true });
+  mkdirSync(bin);
+  writeFileSync(join(home, 'ethlete-rr', 'w1', '.node-version'), '24.17.0\n');
+  writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'node'), '#!/usr/bin/env bash\necho v24.17.0\n');
+  for (const name of ['git', 'yarn', 'node']) chmodSync(join(bin, name), 0o755);
+  try {
+    const result = spawnSync('bash', ['-c', script], {
+      encoding: 'utf8',
+      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home },
+    });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /^daemon=false$/m);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});
+
 test('a mac run appends ~/.cargo/bin to PATH, a rack run leaves it out', () => {
   const mac = remoteScript({ sha: SHA, slot: 'w1', suite: 'x', host: 'mac', linux: false });
   const rack = remoteScript({ sha: SHA, slot: 'w1', suite: 'x', host: 'rack', linux: false });

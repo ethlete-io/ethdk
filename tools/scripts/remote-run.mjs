@@ -139,7 +139,7 @@ const nativeRun = (
   fetch,
   runId,
   host,
-) => `  export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH${host === 'mac' ? ':$HOME/.cargo/bin' : ''}" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
+) => `  export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH${host === 'mac' ? ':$HOME/.cargo/bin' : ''}" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true NX_DAEMON=false
   cd "$work" || return 1
   ${nodePin('"$HOME/.local/node-pin"', 'return 1')}
   local started=$SECONDS
