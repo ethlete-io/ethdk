@@ -46,6 +46,15 @@ const describeHolder = (machine, n) => {
 
 let interrupted = false;
 
+// The kill-with-parent watchdog of the running job takes the job's process tree down once this process exits.
+const callerPid = process.ppid;
+if (process.env.HEAVY_NO_CALLER_WATCH !== '1') {
+  setInterval(() => {
+    if (process.ppid === callerPid) return;
+    process.exit(128 + signalNumber.SIGTERM);
+  }, pollMs).unref();
+}
+
 const tryRun = (argv, { label, machine, n, run, cwd, env = process.env, onStart }) => {
   const info = JSON.stringify({ cwd: process.cwd(), command: label, startedAt: Date.now() });
   const script =

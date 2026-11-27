@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
@@ -144,4 +144,77 @@ test('a run writes its temp files into its own TMPDIR, which is gone after the r
       .sort(),
     ['et-design-harness-cache', 'jest_rs', 'node-compile-cache'],
   );
+});
+
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const killQuietly = (pid) => {
+  try {
+    process.kill(pid, 'SIGKILL');
+  } catch {
+    return;
+  }
+};
+
+const callerKilled = async ({ waiting }) => {
+  const { dir, start } = setup();
+  const gate = join(dir, 'go');
+  const holders = waiting ? [1, 2, 3].map((i) => start(holdUntil(gate, `started-${i}`))) : [];
+  await waitFor(() => holders.every((j) => j.out.includes('started-')));
+  const pidFile = join(dir, 'heavy.pid');
+  const jobPidFile = join(dir, 'job.pid');
+  const caller = spawn(
+    'sh',
+    ['-c', `node ${script} run -- sh -c 'echo $$ > ${jobPidFile}; exec sleep 30' & echo $! > ${pidFile}; wait`],
+    {
+      env: {
+        ...process.env,
+        HEAVY_LOCK_PREFIX: join(dir, 'lock'),
+        HEAVY_POLL_MS: '50',
+        RUN_REGISTRY_DIR: join(dir, 'runs'),
+        ET_AGENT_ID: 'spec-agent',
+      },
+      stdio: 'ignore',
+      detached: true,
+    },
+  );
+  spawned.add(caller);
+  await waitFor(() => existsSync(pidFile));
+  const heavyPid = Number(readFileSync(pidFile, 'utf8'));
+  if (waiting) await sleep(500);
+  else await waitFor(() => existsSync(jobPidFile));
+  process.kill(caller.pid, 'SIGKILL');
+  let gone = false;
+  for (let i = 0; i < 60 && !gone; i++) {
+    gone = !alive(heavyPid);
+    if (!gone) await sleep(50);
+  }
+  const jobPid = existsSync(jobPidFile) ? Number(readFileSync(jobPidFile, 'utf8')) : 0;
+  let jobGone = !jobPid || !alive(jobPid);
+  for (let i = 0; i < 60 && !jobGone; i++) {
+    await sleep(50);
+    jobGone = !alive(jobPid);
+  }
+  const result = { gone, jobGone };
+  for (const pid of [heavyPid, jobPid]) if (pid) killQuietly(pid);
+  writeFileSync(gate, '');
+  await Promise.all(holders.map((j) => j.done));
+  return result;
+};
+
+test('a heavy job waiting for a slot ends when its caller is killed', { timeout: 30_000 }, async () => {
+  assert.equal((await callerKilled({ waiting: true })).gone, true);
+});
+
+test('a running heavy job and its command end when the caller is killed', { timeout: 30_000 }, async () => {
+  const { gone, jobGone } = await callerKilled({ waiting: false });
+  assert.equal(gone, true);
+  assert.equal(jobGone, true);
 });
