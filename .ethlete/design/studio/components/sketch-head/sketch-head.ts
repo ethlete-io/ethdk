@@ -135,7 +135,7 @@ export const sketchHead = async ({
     variant: 'transparent',
     color: 'surface',
   });
-  const picker = await roundMenu(rounds, roundsOpen);
+  const picker = rounds.length > 1 ? await roundMenu(rounds, roundsOpen) : { body: '', styles: '' };
   const toggle = withdrawn
     ? ((await switchPart.render({
         label: `Zurückgezogene (${withdrawn.count})`,
@@ -219,8 +219,8 @@ export default definePart({
   ],
   describe: {
     plain:
-      'A round; check one floating toolbar with no title: the status, the withdrawn switch, then the history and Verwerfen icon buttons.',
-    rounds: 'The round menu open; check the et-menu above the history button with the shown round checked.',
+      'A round; check one floating toolbar with no title: the status, the withdrawn switch, then the Verwerfen icon button; with one round there is no history button.',
+    rounds: 'Two rounds, the menu open; check the et-menu above the history button with the shown round checked.',
     agent:
       'An agent drawing the round; check the zeichnet badge as the only text, with no model, time or round line beside it.',
     edit: 'A direct edit; check Automatisch as the only status, and no Verwerfen.',
