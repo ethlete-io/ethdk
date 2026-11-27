@@ -18,6 +18,8 @@ type HookDefinition = {
   timeout: number;
   /** Agents that have the hook at all. Empty means every target registers it. */
   agents?: string[];
+  /** Other hook scripts this one imports, emitted next to it without a registration of their own. */
+  libraries?: string[];
 };
 
 /**
@@ -68,6 +70,13 @@ export const KNOWN_HOOKS: Record<string, HookDefinition> = {
     file: 'builder-idle-check.py',
     timeout: 10,
     agents: ['claude'],
+  },
+  'human-wait-check': {
+    events: [{ event: 'Stop' }],
+    file: 'human-wait-check.py',
+    timeout: 10,
+    agents: ['claude'],
+    libraries: ['builder-idle-check.py'],
   },
   'git-safety': {
     events: [{ event: 'PreToolUse', matcher: 'Bash' }],
@@ -193,15 +202,18 @@ export const mergeHookSettings = (options: {
 export const emitHookScripts = (options: { hooks: string[]; hooksDir: string; runner?: string }): EmittedFile[] => {
   const { hooks, hooksDir, runner } = options;
 
-  return hooks.flatMap((name) => {
-    const definition = KNOWN_HOOKS[name];
+  const files = new Set(
+    hooks.flatMap((name) => {
+      const definition = KNOWN_HOOKS[name];
 
-    if (!definition) return [];
+      return definition ? [definition.file, ...(definition.libraries ?? [])] : [];
+    }),
+  );
 
-    const raw = readFileSync(join(resolveContentRoot(), 'hooks', definition.file), 'utf8');
-
-    return [{ path: `${hooksDir}/${definition.file}`, contents: withBanner(raw, runner) }];
-  });
+  return [...files].map((file) => ({
+    path: `${hooksDir}/${file}`,
+    contents: withBanner(readFileSync(join(resolveContentRoot(), 'hooks', file), 'utf8'), runner),
+  }));
 };
 
 /** Only planned when the parsed content actually changes; an unparseable file is left alone. */

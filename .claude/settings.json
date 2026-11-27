@@ -111,6 +111,15 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ethlete/human-wait-check.py\" --agent claude",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SubagentStop": [

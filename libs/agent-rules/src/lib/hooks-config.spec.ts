@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { CONFIG_FILE_NAME, loadConfig } from './config';
-import { mergeHookSettings } from './targets/hooks-shared';
+import { emitHookScripts, mergeHookSettings } from './targets/hooks-shared';
 
 describe('mergeHookSettings ownership', () => {
   it('keeps a hand-written hook that only shares the directory prefix', () => {
@@ -88,5 +88,25 @@ describe('loadConfig shape validation', () => {
     writeFileSync(join(root, CONFIG_FILE_NAME), JSON.stringify({ targets: 'claude' }), 'utf8');
 
     expect(() => loadConfig({ root })).toThrow(/"targets" must be/);
+  });
+});
+
+describe('emitHookScripts libraries', () => {
+  const dir = '.claude/hooks/ethlete';
+
+  it('emits the script a hook imports once, without a settings entry of its own', () => {
+    const paths = emitHookScripts({ hooks: ['human-wait-check', 'builder-idle-check'], hooksDir: dir }).map(
+      (file) => file.path,
+    );
+    const merged = mergeHookSettings({
+      agent: 'claude',
+      existing: '',
+      hooks: ['human-wait-check'],
+      hooksDir: dir,
+      commandFor: (file) => `${dir}/${file}`,
+    });
+
+    expect(paths).toEqual([`${dir}/human-wait-check.py`, `${dir}/builder-idle-check.py`]);
+    expect(merged).not.toContain('builder-idle-check.py');
   });
 });

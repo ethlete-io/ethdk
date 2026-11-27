@@ -38,6 +38,7 @@
     "background-design-commands",
     "git-safety",
     "builder-idle-check",
+    "human-wait-check",
     "away-mode"
   ],
   "awayMode": {

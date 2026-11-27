@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+"""Stop hook: a coordinator that asks the human starts the next independent slice first.
+
+When a builder or coordinator session ends a turn with a question to the human (a line
+ending in "?") or a `! <command>` for the human to run, while fewer subagents and background
+commands run than the slot limit and free work is listed, the stop is blocked once. The
+reason names the free work, so the turn goes on with a slice that does not need the answer.
+
+Free work comes from two places, both read at runtime:
+- the queues of the `builder-idle-check` hook (`builderIdle.queues` in the local config,
+  default `plans/QUEUE.md`): open rows without a wait pattern;
+- the `## Next steps` list of the handoff the session resumed (`/handoff resume <name>` reads
+  `.claude/handoffs/<name>.md`).
+With neither, the stop passes.
+
+Session roles, the slot limit, wait patterns and running work are read exactly as the
+`builder-idle-check` hook reads them; this script imports that file from its own directory.
+Per-machine: {"disableHooks": ["human-wait-check"]} in ethlete-agents.config.local.json.
+
+Fires at most once per stop chain: a stop that a Stop hook already continued
+(`stop_hook_active`) passes. Fail-safe: any error exits 0 with no output.
+"""
+
+import importlib.util
+import json
+import os
+import re
+import sys
+
+HOOK_NAME = "human-wait-check"
+HANDOFF_DIR = os.path.join(".claude", "handoffs")
+RESUME_ARGS = re.compile(r"<command-args>\s*resume\s+([\w.@-]+)")
+NEXT_STEPS = re.compile(r"^#{2,3}\s+(?:next steps|nächste schritte)\b", re.I)
+LIST_ITEM = re.compile(r"^(?:\d+[.)]|[-*])\s+(.*)$")
+FENCE = re.compile(r"^\s*(?:```|~~~)")
+HUMAN_COMMAND_LINE = re.compile(r"^\s*!\s+\S")
+HUMAN_COMMAND_INLINE = re.compile(r"`!\s+[^`]+`")
+TRAILING_MARKUP = " \t*_~`)\"'»“”]"
+
+
+def load_idle_check():
+    sys.dont_write_bytecode = True
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "builder-idle-check.py")
+    spec = importlib.util.spec_from_file_location("ethlete_builder_idle_check", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def last_assistant_text(path):
+    text = None
+    resumed = None
+    with open(path, encoding="utf-8") as f:
+        for raw in f:
+            try:
+                line = json.loads(raw)
+            except ValueError:
+                continue
+            if not isinstance(line, dict) or line.get("isSidechain"):
+                continue
+            content = (line.get("message") or {}).get("content")
+            if line.get("type") == "user":
+                for chunk in content if isinstance(content, list) else [content]:
+                    value = chunk.get("text") if isinstance(chunk, dict) else chunk
+                    match = RESUME_ARGS.search(value) if isinstance(value, str) else None
+                    if match:
+                        resumed = match.group(1)
+            elif line.get("type") == "assistant" and isinstance(content, list):
+                texts = [item.get("text", "") for item in content if isinstance(item, dict) and item.get("type") == "text"]
+                if any(part.strip() for part in texts):
+                    text = "\n".join(texts)
+                elif any(isinstance(item, dict) and item.get("type") == "tool_use" for item in content):
+                    text = None
+    return text, resumed
+
+
+def asks_human(text):
+    in_fence = False
+    for line in text.splitlines():
+        if FENCE.match(line):
+            in_fence = not in_fence
+            continue
+        if HUMAN_COMMAND_LINE.match(line):
+            return True
+        if in_fence:
+            continue
+        if HUMAN_COMMAND_INLINE.search(line) or line.rstrip(TRAILING_MARKUP).endswith("?"):
+            return True
+    return False
+
+
+def next_steps(root, resumed):
+    if not resumed:
+        return []
+    try:
+        with open(os.path.join(root, HANDOFF_DIR, f"{resumed}.md"), encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return []
+    steps = []
+    inside = False
+    for line in lines:
+        if line.startswith("#"):
+            inside = bool(NEXT_STEPS.match(line))
+            continue
+        match = LIST_ITEM.match(line) if inside else None
+        if match:
+            steps.append(match.group(1).strip()[:80])
+    return steps
+
+
+def reason_for(rows, steps, working, slots, resumed):
+    work = []
+    if rows:
+        work.append(f"open queue rows: {', '.join(rows)}")
+    if steps:
+        listed = "; ".join(f"{index}. {step}" for index, step in enumerate(steps, 1))
+        work.append(f"Next steps in {HANDOFF_DIR}/{resumed}.md: {listed}")
+    return (
+        f"[{HOOK_NAME} hook] This turn ends with a question or a `!` command for the human while {working} of {slots} "
+        f"slots are in use and free work is listed - {' | '.join(work)}. "
+        "Do not wait idle on the human: start the next slice that does not need the answer now (or a subagent on it), "
+        "then end the turn with the question again. If every listed item needs the answer, say which item waits on what. "
+        "If the human has allowed this action before, propose a permission rule for it in the settings (only the human "
+        "edits settings) instead of asking again. This hook fires once per stop."
+    )
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+        if not isinstance(data, dict) or data.get("stop_hook_active"):
+            return
+        transcript_path = data.get("transcript_path")
+        if not isinstance(transcript_path, str):
+            return
+        idle = load_idle_check()
+        root = idle.repo_root(data)
+        config = idle.read_local_config(root)
+        disabled = config.get("disableHooks")
+        if disabled is True or (isinstance(disabled, list) and HOOK_NAME in disabled):
+            return
+        text, resumed = last_assistant_text(transcript_path)
+        if not text or not asks_human(text):
+            return
+        settings = idle.builder_idle_config(config)
+        roles = idle.string_list(settings.get("roles"), idle.DEFAULT_ROLES)
+        state = idle.read_transcript(transcript_path, idle.role_launch(roles))
+        if not state["builder"]:
+            return
+        idle.read_earlier_agents(state, transcript_path)
+        working = sum(1 for task in idle.running_tasks(state) if not task["watcher"]) + len(idle.codex_runs(root))
+        slots = idle.slot_limit(config)
+        if working >= slots:
+            return
+        patterns = idle.string_list(settings.get("waitPatterns"), idle.DEFAULT_WAIT_PATTERNS)
+        rows = idle.open_builder_rows(root, idle.queue_sources(settings), patterns)
+        steps = next_steps(root, resumed)
+        if not rows and not steps:
+            return
+        print(json.dumps({"decision": "block", "reason": reason_for(rows, steps, working, slots, resumed)}))
+    except Exception:
+        return
+
+
+if __name__ == "__main__":
+    main()

@@ -288,6 +288,17 @@ family would answer better - a second opinion, a review of your own diff, a bug 
 reading failed - and whenever the Claude usage limit is close, because a Codex run does not draw
 on it. Read `.agents/skills/ethlete-codex-subagent/SKILL.md` first.
 
+## Waiting on the human
+
+A turn that ends with a question or a `! <command>` for the human is not a reason to idle. Before you
+end it, start the next slice that does not need the answer (or a subagent on it), then ask. If every open
+item needs the answer, say which item waits on what. The `human-wait-check` hook blocks such a stop
+once while slots are free and the queue or the resumed handoff's Next steps list work.
+
+When the human allows an action the permission mode keeps refusing (a label, a pipeline retry), write
+no memory or handoff note as the fix: propose the exact permission rule for the settings file (for
+example `Bash(glab mr update:*)`) and let the human add it. Never edit a settings permission rule yourself.
+
 ## Ethlete skills
 
 On-demand package guides live in `.agents/skills/ethlete-*/SKILL.md`; `ethlete-agents sync` owns and updates them. Third-party skills may be tracked separately in `skills-lock.json`, while repository-authored skills are maintained by the repository. Each skill's frontmatter says when to read it. If your agent does not discover skills on its own, list the directory and read the matching guide before starting that kind of work — do not work from memory.

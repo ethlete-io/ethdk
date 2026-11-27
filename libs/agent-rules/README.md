@@ -382,6 +382,15 @@ Available hooks:
   row waits when its `Stand` cell contains "wartet auf" or "Offen nur:". It fires once per
   idle stop chain (`stop_hook_active` passes).
 
+- **`human-wait-check`** (Claude Code only) - a `Stop` hook for builder and coordinator sessions
+  (the roles of `builder-idle-check`). When a turn ends with a question to the human (a line ending
+  in `?`) or a `! <command>` for the human to run, while fewer subagents and background commands run
+  than `builderSlots`, and free work is listed - open rows in the `builderIdle` queues (default
+  `plans/QUEUE.md`) or the `## Next steps` of the handoff the session resumed
+  (`.claude/handoffs/<name>.md`) - it blocks the stop once and names that work, so the session starts
+  an independent slice before it waits. With no queue and no handoff it stays silent. Enabling it also
+  emits `builder-idle-check.py`, which it imports, without registering that hook.
+
 - **`away-mode`** (Claude Code only) - switches an interactive session into "user is away" mode
   on its own. Opt in with `"awayMode": { "skills": ["my-skill"], "thresholdMinutes": 15 }` in the
   config (the local config overrides it); a session is tracked once a prompt starts with
