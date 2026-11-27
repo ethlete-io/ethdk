@@ -658,7 +658,7 @@ draw and the part lacks, else in the states one of its variants changes. `sketch
 pair of live variants of a round in each asked state and refuse a pair whose visibly different pixels (a step of 32 in
 one channel) cover less than 2 % of the frame:
 `<target>: variants g and h look alike in zoom-7 (<n> px, <p> % of the frame, under 2 %) - draw the difference larger or name other --asks states`.
-A pair that draws the same pixels in every state gets the identical-variant refusal instead. `sketch check` names it even when another variant of the sketch fails to load.
+A pair that draws the same pixels in every state gets the identical-variant refusal instead. `sketch check` names it even when another variant fails to load or has a lint problem; only a type error in a variant stops the comparison.
 
 `compare`, `shot` (but `--asset`), `check --product`/`--part` (but `--rules`, `--live`, `--slow`
 and the other checks that draw nothing), `sketch check` and `sketch ready` run in a resident design process of the

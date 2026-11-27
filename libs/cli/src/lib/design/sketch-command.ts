@@ -2009,6 +2009,7 @@ const checkedVariants = async (
     );
 
   let failed = asked === undefined && unreadable.length > 0;
+  let typeBroken = false;
 
   if (asked === undefined)
     leftovers.forEach((folder) => {
@@ -2067,11 +2068,12 @@ const checkedVariants = async (
     }
 
     failed ||= all.length > 0;
+    typeBroken ||= typed.kind !== 'ok';
   }
 
   if (failed) console.error(CHECK_FAILED_LINE);
 
-  return checkedShots({ ...context, chosen, failed, stale });
+  return checkedShots({ ...context, chosen, failed, typeBroken, stale });
 };
 
 const checkedShots = async (
@@ -2079,11 +2081,12 @@ const checkedShots = async (
     product: ResolvedProduct;
     chosen: { sketch: Sketch; variant: string }[];
     failed: boolean;
+    typeBroken: boolean;
     stale: ReturnType<typeof staleBasesOf>;
     shots: WarmDraw;
   },
 ) => {
-  const { target, config, product, chosen, failed, stale, shots } = context;
+  const { target, config, product, chosen, failed, typeBroken, stale, shots } = context;
 
   if (!failed)
     for (const sketch of new Set(chosen.map((entry) => entry.sketch)))
@@ -2133,7 +2136,7 @@ const checkedShots = async (
       ...[roundNoteRefusalOf(sketch) ?? []].flat(),
     ]);
 
-    if (!failed) {
+    if (!typeBroken) {
       const renders = await timedPhase('identical', () =>
         sketchRenderLines({ target, config, product, sketch, warm: shots }),
       );

@@ -145,6 +145,25 @@ describe('sketch check', { timeout: 120_000 }, () => {
     expect(warms[0]?.perRun).toBe(true);
   });
 
+  it('compares the variants that draw when a variant has a problem that is not a type error', async () => {
+    const target = await sketched();
+    const sketchFile = join(target, DESIGN_DIR, 'acme/sketches/components-button.alt/a/components/button/button.ts');
+
+    writeFileSync(
+      sketchFile,
+      readFileSync(sketchFile, 'utf8').replace(/describe: \{[^}]*\}/, "describe: { rest: '' }"),
+    );
+    vi.mocked(identicalRenderLines).mockClear();
+    vi.mocked(identicalRenderLines).mockResolvedValueOnce([
+      'components/button variant c draws the same pixels as variant b',
+    ]);
+
+    const code = await designSketch({ target, argv: ['check', ID, '--product', 'acme'], invocation: 'et design' });
+
+    expect(code).toBe(1);
+    expect(identicalRenderLines).toHaveBeenCalledTimes(1);
+  });
+
   it('still compares the variants that draw when another variant does not load', async () => {
     const target = await sketched();
 
