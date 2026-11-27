@@ -882,6 +882,24 @@ const rowSizingOf = (page, selector, index) =>
     { CANVAS, selector, index },
   );
 
+const sketchFrameUnsizedOf = (page, selector, index) =>
+  page.evaluate(
+    ({ CANVAS, selector, index }) => {
+      const canvas = [...document.querySelectorAll(CANVAS)].sort(
+        (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+      )[0];
+      const frame = [...(canvas?.querySelectorAll(selector) ?? [])][index];
+
+      if (!frame?.closest('[data-sk-variant]')) return null;
+      if (frame.querySelector('[data-loading]')) return 'still loading';
+
+      const iframe = frame.querySelector('iframe');
+
+      return iframe && !iframe.hasAttribute('data-painted') ? 'live page not painted' : null;
+    },
+    { CANVAS, selector, index },
+  );
+
 const FEEDBACK_MS = 100;
 const SLOW_HOST_MS = 3000;
 
@@ -1940,7 +1958,18 @@ const CASES = [
 
       if (index < 0) return { ok: false, detail: 'no frame centre in view' };
 
-      const start = boxes[index];
+      // A sketch cell shows a fallback width until its live page reports; that resize between two wheels moves the
+      // world point without any zoom.
+      const unsized = await readUntil(
+        page,
+        () => sketchFrameUnsizedOf(page, selector, index),
+        (reason) => reason === null,
+      );
+
+      if (unsized) return { ok: false, detail: `frame ${index} ${unsized} after ${WAIT_MS / 1000} s` };
+
+      await settled(page, selector);
+      const start = (await frameBoxes(page, selector))[index];
       const pointer = { x: start.left + start.width * 0.3, y: start.top + start.height * 0.4 };
       const drifts = [];
       const contents = [];
