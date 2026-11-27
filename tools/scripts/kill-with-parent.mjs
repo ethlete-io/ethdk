@@ -54,26 +54,32 @@ const killTree = async (root) => {
 };
 
 /**
- * Kills `child` and its whole process tree when this process dies without `child` having exited first, even by
- * SIGKILL: a detached watchdog holds a pipe from this process and reacts to its end.
+ * Starts a detached watchdog and returns `watch(child)`, which hands it `child`: when this process dies without
+ * `child` having exited first, even by SIGKILL, the watchdog kills `child` and its whole process tree. Call it before
+ * spawning `child`, and `watch` right after the spawn, so the job never runs unwatched.
  */
-export const killWithParent = (child) => {
-  if (!child.pid) return;
-  const watchdog = spawn(process.execPath, [SELF, String(child.pid)], {
-    detached: true,
-    stdio: ['pipe', 'ignore', 'ignore'],
-  });
+export const killWithParent = () => {
+  const watchdog = spawn(process.execPath, [SELF], { detached: true, stdio: ['pipe', 'ignore', 'ignore'] });
   watchdog.unref();
   watchdog.stdin.unref();
   watchdog.stdin.on('error', () => undefined);
-  child.once('exit', () => watchdog.kill('SIGKILL'));
+  return (child) => {
+    if (!child.pid) return void watchdog.kill('SIGKILL');
+    watchdog.stdin.write(`${child.pid}\n`);
+    child.once('exit', () => watchdog.kill('SIGKILL'));
+  };
 };
 
 if (process.argv[1] === SELF) {
-  const root = Number(process.argv[2]);
-  process.stdin.resume();
-  const onEnd = () => killTree(root).then(() => process.exit(0));
+  let root;
+  let input = '';
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk) => {
+    input += chunk;
+    root ??= Number(input.match(/^(\d+)\n/)?.[1]) || undefined;
+  });
+  const onEnd = () => (root ? killTree(root).then(() => process.exit(0)) : process.exit(0));
   process.stdin.once('end', onEnd);
   process.stdin.once('error', onEnd);
-  setInterval(() => isAlive(root) || process.exit(0), 1000);
+  setInterval(() => root && !isAlive(root) && process.exit(0), 1000);
 }

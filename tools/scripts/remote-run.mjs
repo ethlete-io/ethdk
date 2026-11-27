@@ -268,8 +268,9 @@ const git = (args, options = {}) => spawnSync('git', args, { encoding: 'utf8', .
 
 const runSsh = (host, script, { onData } = {}) =>
   new Promise((resolve) => {
+    const watch = killWithParent();
     const child = spawn('ssh', [...SSH_OPTIONS, host.ssh, host.shell], { stdio: ['pipe', 'pipe', 'pipe'] });
-    killWithParent(child);
+    watch(child);
     child.stdout.on('data', (chunk) => onData?.(withoutHeartbeat(chunk), process.stdout));
     child.stderr.on('data', (chunk) => onData?.(chunk, process.stderr));
     child.on('error', (error) => {

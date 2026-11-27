@@ -101,8 +101,9 @@ export const teeRun = (run, argv, { wrap = (a) => a, env = process.env, cwd, onS
     const file = createWriteStream(run.log, { flags: 'a' });
     const [bin, ...args] = wrap(argv);
     const stdio = ['inherit', 'pipe', 'pipe', ...(onFd3 ? ['pipe'] : [])];
+    const watch = killWithParent();
     const child = spawn(bin, args, { stdio, env, cwd });
-    killWithParent(child);
+    watch(child);
     onSpawn(child);
     if (onFd3) child.stdio[3].on('data', (chunk) => onFd3(String(chunk)));
     child.stdout.on('data', (chunk) => {
