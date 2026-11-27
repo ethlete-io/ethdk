@@ -129,8 +129,8 @@ const envExports = (env, rackLinux) =>
 const outTar = (runId) => `ethlete-rr/out-${runId}.tar`;
 
 export const nodePin = (prefix, fail) => `pin=$(tr -d 'v \\r\\n' < .node-version) || ${fail}
-[ "$(node --version 2>/dev/null)" = "v$pin" ] || npm install --global --silent --prefix ${prefix} node@$pin >/dev/null || { echo "[remote-run] cannot install node $pin" >&2; ${fail}; }
 export PATH=${prefix}/bin:${prefix}/node_modules/node/bin:$PATH
+[ "$(node --version 2>/dev/null)" = "v$pin" ] || npm install --global --silent --prefix ${prefix} node@$pin >/dev/null || { echo "[remote-run] cannot install node $pin" >&2; ${fail}; }
 [ ! -f ${prefix}/node_modules/node/bin/node.exe ] || { printf '#!/bin/sh\\nexec "%s" "$@"\\n' ${prefix}/node_modules/node/bin/node.exe > ${prefix}/node_modules/node/bin/node && chmod +x ${prefix}/node_modules/node/bin/node; }
 [ "$(node --version)" = "v$pin" ] || { echo "[remote-run] node $(node --version) is not the pinned v$pin" >&2; ${fail}; }`;
 
@@ -226,7 +226,7 @@ ${
     : `checkout_and_run() {
   if [ -e "$work/.git" ]; then
     git -C "$work" checkout --quiet --force --detach "$sha" || return 1
-    git -C "$work" clean -ffdxq -e node_modules -e .nx || return 1
+    git -C "$work" clean -ffdxq -e node_modules -e .yarn/install-state.gz -e .nx || return 1
   else
     git -C "$mirror" worktree prune
     git -C "$mirror" -c core.longpaths=true worktree add --quiet --detach "$work" "$sha" || return 1
@@ -304,6 +304,24 @@ const runSsh = (host, script, { onData } = {}) =>
     child.stdin.end(script);
   });
 
+const commitsHere = (shas) =>
+  shas.length
+    ? [
+        ...git(['cat-file', '--batch-check=%(objectname) %(objecttype)'], {
+          input: `${shas.join('\n')}\n`,
+        }).stdout.matchAll(/^([0-9a-f]{40}) commit$/gm),
+      ].map((m) => m[1])
+    : [];
+
+const isReachable = (sha, bases) => {
+  if (bases.includes(sha)) return true;
+  if (!bases.length) return false;
+  const ahead = git(['rev-list', '--max-count=1', '--stdin'], {
+    input: `${[sha, ...bases.map((base) => `^${base}`)].join('\n')}\n`,
+  });
+  return ahead.status === 0 && ahead.stdout.trim() === '';
+};
+
 const removeStaleBundles = (dir) => {
   for (const name of readdirSync(dir)) {
     if (!/^ethlete-rr-[0-9a-f]+\.bundle$/.test(name)) continue;
@@ -366,10 +384,9 @@ export const remoteRun = async (opts) => {
   const caller = haves.match(/^client (\S+)\s*$/m)?.[1];
   if (opts.forward?.length && !caller) return end(1, '--forward: the remote side does not report the caller address');
   const known = [...haves.matchAll(/^have ([0-9a-f]{40})\s*$/gm)].map((m) => m[1]);
-  const reachable = known.some((have) => have === sha || git(['merge-base', '--is-ancestor', sha, have]).status === 0);
+  const bases = commitsHere(known);
   let bundle;
-  if (!reachable) {
-    const bases = known.filter((have) => git(['cat-file', '-e', `${have}^{commit}`]).status === 0);
+  if (!isReachable(sha, bases)) {
     bundle = `ethlete-rr-${sha.slice(0, 12)}.bundle`;
     const local = join(dirname(log), bundle);
     const ref = `refs/remote-run/${sha}`;

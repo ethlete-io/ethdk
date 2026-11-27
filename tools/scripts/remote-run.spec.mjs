@@ -35,7 +35,7 @@ const stubDir = () => {
     `#!/usr/bin/env bash
 script=$(cat)
 printf '%s\\n' "$*" >> "$STUB_LOG"
-if [[ "$script" == *"for-each-ref"* && -n "$FAKE_HAVE" ]]; then echo "have $FAKE_HAVE"; fi
+if [[ "$script" == *"for-each-ref"* && -n "$FAKE_HAVE" ]]; then for have in $FAKE_HAVE; do echo "have $have"; done; fi
 if [[ "$script" == *"suite exit"* ]]; then
   echo "suite output"
   [ -n "$FAKE_NO_VERDICT" ] || printf '[remote-run] suite exit %s after 1s\\n' "\${FAKE_SUITE_CODE:-0}"
@@ -52,7 +52,8 @@ printf 'git %s\\n' "$*" >> "$STUB_LOG"
 [ "$1" = rev-parse ] && [ "$2" = --show-toplevel ] && { echo "$FAKE_TOP"; exit 0; }
 [ "$1" = rev-parse ] && echo ${SHA}
 [ "$1" = bundle ] && touch "$4"
-[ "$1" = merge-base ] && [ -z "$FAKE_ANCESTOR" ] && exit 1
+[ "$1" = cat-file ] && { while read -r have; do echo "$have commit"; done; exit 0; }
+[ "$1" = rev-list ] && { cat > /dev/null; [ -n "$FAKE_ANCESTOR" ] || echo ${SHA}; exit 0; }
 exit 0
 `,
   );
@@ -167,7 +168,7 @@ test('exits with NO_VERDICT_EXIT when the suite never reported an exit code', ()
 test('sends no bundle when the commit is an ancestor of a ref the remote mirror has', () => {
   const reached = run(['--host', 'rack', '--', 'yarn test'], { FAKE_HAVE: 'b'.repeat(40), FAKE_ANCESTOR: '1' });
   assert.equal(reached.status, 0);
-  assert.match(reached.calls, /git merge-base --is-ancestor a{40} b{40}/);
+  assert.match(reached.calls, /git rev-list --max-count=1 --stdin/);
   assert.doesNotMatch(reached.calls, /git bundle|scp/);
 
   const unreached = run(['--host', 'rack', '--', 'yarn test'], { FAKE_HAVE: 'b'.repeat(40) });
@@ -281,6 +282,95 @@ test('a native run refuses a node that is not the pinned version and cannot be r
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
+});
+
+test('a native run uses the pinned node of an earlier run without reinstalling it', () => {
+  const script = remoteScript({ sha: SHA, slot: 'w1', suite: 'node -v', host: 'mac', linux: false });
+  const work = mkdtempSync(join(tmpdir(), 'remote-run-node-kept-'));
+  const home = join(work, 'home');
+  const bin = join(work, 'bin');
+  const pinned = join(home, '.local', 'node-pin', 'bin');
+  mkdirSync(join(home, 'ethlete-rr', 'w1', '.git'), { recursive: true });
+  mkdirSync(join(home, 'ethlete-mirror.git'), { recursive: true });
+  mkdirSync(bin);
+  mkdirSync(pinned, { recursive: true });
+  writeFileSync(join(home, 'ethlete-rr', 'w1', '.node-version'), '24.17.0\n');
+  writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'npm'), '#!/usr/bin/env bash\ntouch "$HOME/npm-ran"\n');
+  writeFileSync(join(bin, 'node'), '#!/usr/bin/env bash\necho v24.21.0\n');
+  writeFileSync(join(pinned, 'node'), '#!/usr/bin/env bash\necho v24.17.0\n');
+  for (const file of ['git', 'yarn', 'npm', 'node'].map((name) => join(bin, name)).concat(join(pinned, 'node'))) {
+    chmodSync(file, 0o755);
+  }
+  try {
+    const result = spawnSync('bash', ['-c', script], {
+      encoding: 'utf8',
+      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home },
+    });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /^v24\.17\.0$/m);
+    assert.equal(existsSync(join(home, 'npm-ran')), false);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});
+
+test('a native run keeps the yarn install state of the slot, so an unchanged install skips the link step', () => {
+  const work = mkdtempSync(join(tmpdir(), 'remote-run-install-state-'));
+  const home = join(work, 'home');
+  const bin = join(work, 'bin');
+  const slot = join(home, 'ethlete-rr', 'w1');
+  mkdirSync(join(home, 'ethlete-mirror.git'), { recursive: true });
+  mkdirSync(join(slot, '.yarn'), { recursive: true });
+  mkdirSync(bin);
+  const env = gitEnv({
+    HOME: home,
+    GIT_AUTHOR_NAME: 't',
+    GIT_AUTHOR_EMAIL: 't@t',
+    GIT_COMMITTER_NAME: 't',
+    GIT_COMMITTER_EMAIL: 't@t',
+  });
+  const gitIn = (...args) => spawnSync('git', ['-C', slot, ...args], { encoding: 'utf8', env });
+  writeFileSync(join(slot, '.gitignore'), '.yarn/*\n');
+  writeFileSync(join(slot, '.node-version'), '24.17.0\n');
+  gitIn('init', '--quiet');
+  gitIn('add', '.');
+  gitIn('commit', '--quiet', '-m', 'init');
+  const sha = gitIn('rev-parse', 'HEAD').stdout.trim();
+  writeFileSync(join(slot, '.yarn', 'install-state.gz'), 'state');
+  writeFileSync(join(slot, '.yarn', 'stale.log'), 'stale');
+  writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'node'), '#!/usr/bin/env bash\necho v24.17.0\n');
+  for (const name of ['yarn', 'node']) chmodSync(join(bin, name), 0o755);
+  try {
+    const result = spawnSync(
+      'bash',
+      ['-c', remoteScript({ sha, slot: 'w1', suite: 'true', host: 'mac', linux: false })],
+      {
+        encoding: 'utf8',
+        env: { ...env, PATH: `${bin}:${process.env.PATH}` },
+      },
+    );
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(existsSync(join(slot, '.yarn', 'stale.log')), false);
+    assert.equal(readFileSync(join(slot, '.yarn', 'install-state.gz'), 'utf8'), 'state');
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});
+
+test('the git calls that pick the bundle do not grow with the refs the remote mirror has', () => {
+  const haves = Array.from({ length: 300 }, (_, i) => i.toString(16).padStart(40, 'b')).join(' ');
+  const result = run(['--host', 'rack', '--', 'yarn test'], { FAKE_HAVE: haves });
+  assert.equal(result.status, 0);
+  assert.ok(result.calls.split('\ngit ').length < 20, result.calls);
+  assert.equal(result.calls.match(/^git bundle create .*$/m)?.[0].split(' ^').length, 301);
+});
+
+test('the rack helper keeps the yarn install state of the slot', () => {
+  const helper = readFileSync(join(dirname(SCRIPT), 'rack-docker-run.sh'), 'utf8');
+  assert.match(helper, /git -C "\$work" clean [^\n]*-e \.yarn\/install-state\.gz/);
 });
 
 test('the Linux container and the rack helper pin node to .node-version before the install', () => {

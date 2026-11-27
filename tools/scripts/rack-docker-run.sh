@@ -32,7 +32,7 @@ local_mirror="$HOME/rack-linux/mirror.git"
 cp -ru --remove-destination "$mirror/objects/." "$local_mirror/objects/"
 git -C "$work" fetch --quiet --force --depth 2 "$local_mirror" "$sha"
 git -C "$work" checkout --quiet --force --detach FETCH_HEAD
-git -C "$work" clean -fdxq -e node_modules -e .yarn/cache -e target
+git -C "$work" clean -fdxq -e node_modules -e .yarn/install-state.gz -e .yarn/cache -e target
 rr_home="${mirror%/*}/ethlete-rr"
 if [ -f "$rr_home/lfs-lists/$sha" ]; then
   mkdir -p "$HOME/rack-linux/lfs"
