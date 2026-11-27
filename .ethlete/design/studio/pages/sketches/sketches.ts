@@ -288,6 +288,8 @@ const ROUNDS: Record<PartKind | 'screen', string> = {
   screen: 'Runde 2 · Port nach dem Merge',
 };
 
+const SCREEN_ROUNDS = ['Runde 1 · Port vor dem Merge', ROUNDS.screen].map((label) => ({ value: label, label }));
+
 const controlsOf = async () => ({
   chip: await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' }),
 });
@@ -1043,6 +1045,7 @@ export default definePart<Props>({
     const folded = screen ? UNCHANGED_COUNT : hidden.length;
     const head = await sketchHead({
       round: ROUNDS[screen ? 'screen' : kind],
+      rounds: screen ? SCREEN_ROUNDS : undefined,
       status: (run && !run.failed) || port ? 'drawing' : status,
       autoMerge,
       discardable: kind !== 'edit' || !!screen,
