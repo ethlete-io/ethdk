@@ -8,14 +8,17 @@ export const expandedOf = (after: readonly { key: string; expanded: string | nul
  * What an app drawing that missed `goal` pixel for pixel reached instead: the declared state it matches exactly, or the
  * closest one by differing pixels. `null` when `goal` is strictly closer than every other state it compared: pixels all
  * states share, such as sample data, differ alike from each, so the ranking counts only what the states change.
- * `compare` compares the app drawing with one state's design; a state it fails to draw is skipped.
+ * `compare` compares the app drawing with one state's design; a state it fails to draw is skipped. With `apart`, the
+ * pixels two states' designs differ by, `null` also when each state at least as close as `goal` is closer by less than
+ * half of what its design differs from `goal`'s: sample data the app draws in place of the design's outweighs the change.
  */
 export const reachedStateOf = async (options: {
   goal: string;
   states: readonly string[];
   compare: (state: string) => Promise<PixelCompare | null>;
+  apart?: (goal: string, state: string) => Promise<PixelCompare | null>;
 }): Promise<string | null> => {
-  const { goal, states, compare } = options;
+  const { goal, states, compare, apart } = options;
   const compared = await Promise.all(
     states.map(async (state) => ({ state, result: await compare(state).catch(() => null) })),
   );
@@ -29,6 +32,21 @@ export const reachedStateOf = async (options: {
   const [closest, next] = ranked;
 
   if (closest?.state === goal && next && closest.pixels < next.pixels) return null;
+
+  const reachedGoal = ranked.find(({ state }) => state === goal);
+  const rivals = ranked.filter(({ state, pixels }) => state !== goal && reachedGoal && pixels <= reachedGoal.pixels);
+
+  if (apart && reachedGoal && rivals.length > 0) {
+    const outweighed = await Promise.all(
+      rivals.map(async ({ state, pixels }) => {
+        const between = await apart(goal, state).catch(() => null);
+
+        return between?.kind === 'diff' && (reachedGoal.pixels - pixels) * 2 < between.pixels;
+      }),
+    );
+
+    if (outweighed.every(Boolean)) return null;
+  }
 
   return closest
     ? `reaches no declared state (closest ${closest.state}, ${closest.pixels} px)`

@@ -65,6 +65,35 @@ describe('reachedStateOf', () => {
       ).toBe('reaches no declared state (closest open, 456 px)');
   });
 
+  it('reaches the goal when a closer state wins by less than half of what its design differs from the goal', async () => {
+    const results: Record<string, PixelCompare> = {
+      part: diff(211475),
+      'direct-edit-closed': diff(211434),
+      'points-closed': diff(260000),
+    };
+    const reached = (designsApart: number) =>
+      reachedStateOf({
+        goal: 'part',
+        states: ['part', 'direct-edit-closed', 'points-closed'],
+        compare: async (state) => results[state] ?? null,
+        apart: async () => diff(designsApart),
+      });
+
+    expect(await reached(4000)).toBeNull();
+    expect(await reached(80)).toBe('reaches no declared state (closest direct-edit-closed, 211434 px)');
+  });
+
+  it('misses the goal when the designs it ranks against cannot be compared with each other', async () => {
+    expect(
+      await reachedStateOf({
+        goal: 'open',
+        states: ['open', 'fit'],
+        compare: async (state) => (state === 'open' ? diff(500) : diff(400)),
+        apart: async () => size,
+      }),
+    ).toBe('reaches no declared state (closest fit, 400 px)');
+  });
+
   it('skips a state it cannot draw and names no closest state when no drawing has the app size', async () => {
     expect(
       await reachedStateOf({

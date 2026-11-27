@@ -66,6 +66,7 @@ import { harnessStaleOf } from './harness-map';
 import { inOrderAtOnce } from './in-order-at-once';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import {
+  comparePngs,
   drawnSurfacesOf,
   forcedElementsOf,
   HARNESS_HOST_SELECTOR,
@@ -808,6 +809,11 @@ export const checkActions = async (options: {
               const app = run.app;
 
               if (action.kind === 'state' && compared && !compared.ok && goalPicture && app) {
+                const designOf = (candidate: string) => {
+                  const reopened = openedFromOf({ goal: candidate, start: state, states, open: opens[candidate] });
+
+                  return drawFor(reopened ? state : candidate, reopened);
+                };
                 const reached = await timedPhase('actions-reached', () =>
                   reachedStateOf({
                     goal,
@@ -815,11 +821,12 @@ export const checkActions = async (options: {
                     compare: async (candidate) => {
                       if (candidate === goal) return result;
 
-                      const reopened = openedFromOf({ goal: candidate, start: state, states, open: opens[candidate] });
-                      const reached = shotCompare(await drawFor(reopened ? state : candidate, reopened), app);
+                      const reached = shotCompare(await designOf(candidate), app);
 
                       return reached.ok || reached.result.kind !== 'ok' ? reached.result : null;
                     },
+                    apart: async (from, candidate) =>
+                      comparePngs({ design: (await designOf(from)).png, app: (await designOf(candidate)).png }),
                   }),
                 );
                 const panesMatch = !compared.boxed || compared.boxed.paneCount.design === compared.boxed.paneCount.app;
